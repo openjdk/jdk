@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -634,4 +634,24 @@ class MoveD2LNode : public Node {
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual const Type* Value( PhaseTransform *phase ) const;
+};
+
+//---------- PopCountINode -----------------------------------------------------
+// Population count (bit count) of an integer.
+class PopCountINode : public Node {
+public:
+  PopCountINode(Node* in1) : Node(0, in1) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//---------- PopCountLNode -----------------------------------------------------
+// Population count (bit count) of a long.
+class PopCountLNode : public Node {
+public:
+  PopCountLNode(Node* in1) : Node(0, in1) {}
+  virtual int Opcode() const;
+  const Type* bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
 };

@@ -727,7 +727,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
   }
 
 #ifdef _LP64
-  assert(false, "fix locate_operand");
+  assert(which == narrow_oop_operand && !is_64bit, "instruction is not a movl adr, imm32");
 #else
   assert(which == imm_operand, "instruction has only an imm field");
 #endif // LP64
@@ -2193,6 +2193,25 @@ void Assembler::pop(Register dst) {
   emit_byte(0x58 | encode);
 }
 
+void Assembler::popcntl(Register dst, Address src) {
+  assert(VM_Version::supports_popcnt(), "must support");
+  InstructionMark im(this);
+  emit_byte(0xF3);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xB8);
+  emit_operand(dst, src);
+}
+
+void Assembler::popcntl(Register dst, Register src) {
+  assert(VM_Version::supports_popcnt(), "must support");
+  emit_byte(0xF3);
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xB8);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::popf() {
   emit_byte(0x9D);
 }
@@ -3224,12 +3243,6 @@ void Assembler::fyl2x() {
   emit_byte(0xF1);
 }
 
-void Assembler::mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec, int format) {
-  InstructionMark im(this);
-  int encode = prefix_and_encode(dst->encoding());
-  emit_byte(0xB8 | encode);
-  emit_data((int)imm32, rspec, format);
-}
 
 #ifndef _LP64
 
@@ -3249,6 +3262,12 @@ void Assembler::mov_literal32(Address dst, int32_t imm32,  RelocationHolder cons
   emit_data((int)imm32, rspec, 0);
 }
 
+void Assembler::mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  int encode = prefix_and_encode(dst->encoding());
+  emit_byte(0xB8 | encode);
+  emit_data((int)imm32, rspec, 0);
+}
 
 void Assembler::popa() { // 32bit
   emit_byte(0x61);
@@ -3857,6 +3876,37 @@ void Assembler::mov_literal64(Register dst, intptr_t imm64, RelocationHolder con
   emit_data64(imm64, rspec);
 }
 
+void Assembler::mov_narrow_oop(Register dst, int32_t imm32, RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  int encode = prefix_and_encode(dst->encoding());
+  emit_byte(0xB8 | encode);
+  emit_data((int)imm32, rspec, narrow_oop_operand);
+}
+
+void Assembler::mov_narrow_oop(Address dst, int32_t imm32,  RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_byte(0xC7);
+  emit_operand(rax, dst, 4);
+  emit_data((int)imm32, rspec, narrow_oop_operand);
+}
+
+void Assembler::cmp_narrow_oop(Register src1, int32_t imm32, RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  int encode = prefix_and_encode(src1->encoding());
+  emit_byte(0x81);
+  emit_byte(0xF8 | encode);
+  emit_data((int)imm32, rspec, narrow_oop_operand);
+}
+
+void Assembler::cmp_narrow_oop(Address src1, int32_t imm32, RelocationHolder const& rspec) {
+  InstructionMark im(this);
+  prefix(src1);
+  emit_byte(0x81);
+  emit_operand(rax, src1, 4);
+  emit_data((int)imm32, rspec, narrow_oop_operand);
+}
+
 void Assembler::movdq(XMMRegister dst, Register src) {
   // table D-1 says MMX/SSE2
   NOT_LP64(assert(VM_Version::supports_sse2() || VM_Version::supports_mmx(), ""));
@@ -4047,6 +4097,25 @@ void Assembler::popa() { // 64bit
   movq(rax, Address(rsp, 15 * wordSize));
 
   addq(rsp, 16 * wordSize);
+}
+
+void Assembler::popcntq(Register dst, Address src) {
+  assert(VM_Version::supports_popcnt(), "must support");
+  InstructionMark im(this);
+  emit_byte(0xF3);
+  prefixq(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0xB8);
+  emit_operand(dst, src);
+}
+
+void Assembler::popcntq(Register dst, Register src) {
+  assert(VM_Version::supports_popcnt(), "must support");
+  emit_byte(0xF3);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xB8);
+  emit_byte(0xC0 | encode);
 }
 
 void Assembler::popq(Address dst) {
@@ -7217,6 +7286,225 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 }
 
 
+void MacroAssembler::check_klass_subtype(Register sub_klass,
+                           Register super_klass,
+                           Register temp_reg,
+                           Label& L_success) {
+  Label L_failure;
+  check_klass_subtype_fast_path(sub_klass, super_klass, temp_reg,        &L_success, &L_failure, NULL);
+  check_klass_subtype_slow_path(sub_klass, super_klass, temp_reg, noreg, &L_success, NULL);
+  bind(L_failure);
+}
+
+
+void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp_reg,
+                                                   Label* L_success,
+                                                   Label* L_failure,
+                                                   Label* L_slow_path,
+                                        RegisterConstant super_check_offset) {
+  assert_different_registers(sub_klass, super_klass, temp_reg);
+  bool must_load_sco = (super_check_offset.constant_or_zero() == -1);
+  if (super_check_offset.is_register()) {
+    assert_different_registers(sub_klass, super_klass,
+                               super_check_offset.as_register());
+  } else if (must_load_sco) {
+    assert(temp_reg != noreg, "supply either a temp or a register offset");
+  }
+
+  Label L_fallthrough;
+  int label_nulls = 0;
+  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
+  if (L_slow_path == NULL) { L_slow_path = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one NULL in the batch");
+
+  int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
+                   Klass::secondary_super_cache_offset_in_bytes());
+  int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
+                    Klass::super_check_offset_offset_in_bytes());
+  Address super_check_offset_addr(super_klass, sco_offset);
+
+  // Hacked jcc, which "knows" that L_fallthrough, at least, is in
+  // range of a jccb.  If this routine grows larger, reconsider at
+  // least some of these.
+#define local_jcc(assembler_cond, label)                                \
+  if (&(label) == &L_fallthrough)  jccb(assembler_cond, label);         \
+  else                             jcc( assembler_cond, label) /*omit semi*/
+
+  // Hacked jmp, which may only be used just before L_fallthrough.
+#define final_jmp(label)                                                \
+  if (&(label) == &L_fallthrough) { /*do nothing*/ }                    \
+  else                            jmp(label)                /*omit semi*/
+
+  // If the pointers are equal, we are done (e.g., String[] elements).
+  // This self-check enables sharing of secondary supertype arrays among
+  // non-primary types such as array-of-interface.  Otherwise, each such
+  // type would need its own customized SSA.
+  // We move this check to the front of the fast path because many
+  // type checks are in fact trivially successful in this manner,
+  // so we get a nicely predicted branch right at the start of the check.
+  cmpptr(sub_klass, super_klass);
+  local_jcc(Assembler::equal, *L_success);
+
+  // Check the supertype display:
+  if (must_load_sco) {
+    // Positive movl does right thing on LP64.
+    movl(temp_reg, super_check_offset_addr);
+    super_check_offset = RegisterConstant(temp_reg);
+  }
+  Address super_check_addr(sub_klass, super_check_offset, Address::times_1, 0);
+  cmpptr(super_klass, super_check_addr); // load displayed supertype
+
+  // This check has worked decisively for primary supers.
+  // Secondary supers are sought in the super_cache ('super_cache_addr').
+  // (Secondary supers are interfaces and very deeply nested subtypes.)
+  // This works in the same check above because of a tricky aliasing
+  // between the super_cache and the primary super display elements.
+  // (The 'super_check_addr' can address either, as the case requires.)
+  // Note that the cache is updated below if it does not help us find
+  // what we need immediately.
+  // So if it was a primary super, we can just fail immediately.
+  // Otherwise, it's the slow path for us (no success at this point).
+
+  if (super_check_offset.is_register()) {
+    local_jcc(Assembler::equal, *L_success);
+    cmpl(super_check_offset.as_register(), sc_offset);
+    if (L_failure == &L_fallthrough) {
+      local_jcc(Assembler::equal, *L_slow_path);
+    } else {
+      local_jcc(Assembler::notEqual, *L_failure);
+      final_jmp(*L_slow_path);
+    }
+  } else if (super_check_offset.as_constant() == sc_offset) {
+    // Need a slow path; fast failure is impossible.
+    if (L_slow_path == &L_fallthrough) {
+      local_jcc(Assembler::equal, *L_success);
+    } else {
+      local_jcc(Assembler::notEqual, *L_slow_path);
+      final_jmp(*L_success);
+    }
+  } else {
+    // No slow path; it's a fast decision.
+    if (L_failure == &L_fallthrough) {
+      local_jcc(Assembler::equal, *L_success);
+    } else {
+      local_jcc(Assembler::notEqual, *L_failure);
+      final_jmp(*L_success);
+    }
+  }
+
+  bind(L_fallthrough);
+
+#undef local_jcc
+#undef final_jmp
+}
+
+
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp_reg,
+                                                   Register temp2_reg,
+                                                   Label* L_success,
+                                                   Label* L_failure,
+                                                   bool set_cond_codes) {
+  assert_different_registers(sub_klass, super_klass, temp_reg);
+  if (temp2_reg != noreg)
+    assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg);
+#define IS_A_TEMP(reg) ((reg) == temp_reg || (reg) == temp2_reg)
+
+  Label L_fallthrough;
+  int label_nulls = 0;
+  if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
+  if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
+  assert(label_nulls <= 1, "at most one NULL in the batch");
+
+  // a couple of useful fields in sub_klass:
+  int ss_offset = (klassOopDesc::header_size() * HeapWordSize +
+                   Klass::secondary_supers_offset_in_bytes());
+  int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
+                   Klass::secondary_super_cache_offset_in_bytes());
+  Address secondary_supers_addr(sub_klass, ss_offset);
+  Address super_cache_addr(     sub_klass, sc_offset);
+
+  // Do a linear scan of the secondary super-klass chain.
+  // This code is rarely used, so simplicity is a virtue here.
+  // The repne_scan instruction uses fixed registers, which we must spill.
+  // Don't worry too much about pre-existing connections with the input regs.
+
+  assert(sub_klass != rax, "killed reg"); // killed by mov(rax, super)
+  assert(sub_klass != rcx, "killed reg"); // killed by lea(rcx, &pst_counter)
+
+  // Get super_klass value into rax (even if it was in rdi or rcx).
+  bool pushed_rax = false, pushed_rcx = false, pushed_rdi = false;
+  if (super_klass != rax || UseCompressedOops) {
+    if (!IS_A_TEMP(rax)) { push(rax); pushed_rax = true; }
+    mov(rax, super_klass);
+  }
+  if (!IS_A_TEMP(rcx)) { push(rcx); pushed_rcx = true; }
+  if (!IS_A_TEMP(rdi)) { push(rdi); pushed_rdi = true; }
+
+#ifndef PRODUCT
+  int* pst_counter = &SharedRuntime::_partial_subtype_ctr;
+  ExternalAddress pst_counter_addr((address) pst_counter);
+  NOT_LP64(  incrementl(pst_counter_addr) );
+  LP64_ONLY( lea(rcx, pst_counter_addr) );
+  LP64_ONLY( incrementl(Address(rcx, 0)) );
+#endif //PRODUCT
+
+  // We will consult the secondary-super array.
+  movptr(rdi, secondary_supers_addr);
+  // Load the array length.  (Positive movl does right thing on LP64.)
+  movl(rcx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
+  // Skip to start of data.
+  addptr(rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+
+  // Scan RCX words at [RDI] for an occurrence of RAX.
+  // Set NZ/Z based on last compare.
+#ifdef _LP64
+  // This part is tricky, as values in supers array could be 32 or 64 bit wide
+  // and we store values in objArrays always encoded, thus we need to encode
+  // the value of rax before repne.  Note that rax is dead after the repne.
+  if (UseCompressedOops) {
+    encode_heap_oop_not_null(rax);
+    // The superclass is never null; it would be a basic system error if a null
+    // pointer were to sneak in here.  Note that we have already loaded the
+    // Klass::super_check_offset from the super_klass in the fast path,
+    // so if there is a null in that register, we are already in the afterlife.
+    repne_scanl();
+  } else
+#endif // _LP64
+    repne_scan();
+
+  // Unspill the temp. registers:
+  if (pushed_rdi)  pop(rdi);
+  if (pushed_rcx)  pop(rcx);
+  if (pushed_rax)  pop(rax);
+
+  if (set_cond_codes) {
+    // Special hack for the AD files:  rdi is guaranteed non-zero.
+    assert(!pushed_rdi, "rdi must be left non-NULL");
+    // Also, the condition codes are properly set Z/NZ on succeed/failure.
+  }
+
+  if (L_failure == &L_fallthrough)
+        jccb(Assembler::notEqual, *L_failure);
+  else  jcc(Assembler::notEqual, *L_failure);
+
+  // Success.  Cache the super we found and proceed in triumph.
+  movptr(super_cache_addr, super_klass);
+
+  if (L_success != &L_fallthrough) {
+    jmp(*L_success);
+  }
+
+#undef IS_A_TEMP
+
+  bind(L_fallthrough);
+}
+
+
 void MacroAssembler::ucomisd(XMMRegister dst, AddressLiteral src) {
   ucomisd(dst, as_Address(src));
 }
@@ -7710,14 +7998,21 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 void MacroAssembler::load_prototype_header(Register dst, Register src) {
 #ifdef _LP64
   if (UseCompressedOops) {
+    assert (Universe::heap() != NULL, "java heap should be initialized");
     movl(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+    if (Universe::narrow_oop_shift() != 0) {
+      assert(Address::times_8 == LogMinObjAlignmentInBytes &&
+             Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
+      movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+    } else {
+      movq(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+    }
   } else
 #endif
-    {
-      movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-      movptr(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
-    }
+  {
+    movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    movptr(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  }
 }
 
 void MacroAssembler::store_klass(Register dst, Register src) {
@@ -7760,11 +8055,20 @@ void MacroAssembler::store_heap_oop(Address dst, Register src) {
 // Algorithm must match oop.inline.hpp encode_heap_oop.
 void MacroAssembler::encode_heap_oop(Register r) {
   assert (UseCompressedOops, "should be compressed");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  if (Universe::narrow_oop_base() == NULL) {
+    verify_oop(r, "broken oop in encode_heap_oop");
+    if (Universe::narrow_oop_shift() != 0) {
+      assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+      shrq(r, LogMinObjAlignmentInBytes);
+    }
+    return;
+  }
 #ifdef ASSERT
   if (CheckCompressedOops) {
     Label ok;
     push(rscratch1); // cmpptr trashes rscratch1
-    cmpptr(r12_heapbase, ExternalAddress((address)Universe::heap_base_addr()));
+    cmpptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
     jcc(Assembler::equal, ok);
     stop("MacroAssembler::encode_heap_oop: heap base corrupted?");
     bind(ok);
@@ -7780,6 +8084,7 @@ void MacroAssembler::encode_heap_oop(Register r) {
 
 void MacroAssembler::encode_heap_oop_not_null(Register r) {
   assert (UseCompressedOops, "should be compressed");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
 #ifdef ASSERT
   if (CheckCompressedOops) {
     Label ok;
@@ -7790,12 +8095,18 @@ void MacroAssembler::encode_heap_oop_not_null(Register r) {
   }
 #endif
   verify_oop(r, "broken oop in encode_heap_oop_not_null");
-  subq(r, r12_heapbase);
-  shrq(r, LogMinObjAlignmentInBytes);
+  if (Universe::narrow_oop_base() != NULL) {
+    subq(r, r12_heapbase);
+  }
+  if (Universe::narrow_oop_shift() != 0) {
+    assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+    shrq(r, LogMinObjAlignmentInBytes);
+  }
 }
 
 void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
   assert (UseCompressedOops, "should be compressed");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
 #ifdef ASSERT
   if (CheckCompressedOops) {
     Label ok;
@@ -7809,18 +8120,32 @@ void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
   if (dst != src) {
     movq(dst, src);
   }
-  subq(dst, r12_heapbase);
-  shrq(dst, LogMinObjAlignmentInBytes);
+  if (Universe::narrow_oop_base() != NULL) {
+    subq(dst, r12_heapbase);
+  }
+  if (Universe::narrow_oop_shift() != 0) {
+    assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+    shrq(dst, LogMinObjAlignmentInBytes);
+  }
 }
 
 void  MacroAssembler::decode_heap_oop(Register r) {
   assert (UseCompressedOops, "should be compressed");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  if (Universe::narrow_oop_base() == NULL) {
+    if (Universe::narrow_oop_shift() != 0) {
+      assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+      shlq(r, LogMinObjAlignmentInBytes);
+    }
+    verify_oop(r, "broken oop in decode_heap_oop");
+    return;
+  }
 #ifdef ASSERT
   if (CheckCompressedOops) {
     Label ok;
     push(rscratch1);
     cmpptr(r12_heapbase,
-           ExternalAddress((address)Universe::heap_base_addr()));
+           ExternalAddress((address)Universe::narrow_oop_base_addr()));
     jcc(Assembler::equal, ok);
     stop("MacroAssembler::decode_heap_oop: heap base corrupted?");
     bind(ok);
@@ -7844,32 +8169,76 @@ void  MacroAssembler::decode_heap_oop(Register r) {
 
 void  MacroAssembler::decode_heap_oop_not_null(Register r) {
   assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
-  assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
-  leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
+  if (Universe::narrow_oop_base() == NULL) {
+    if (Universe::narrow_oop_shift() != 0) {
+      assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
+      shlq(r, LogMinObjAlignmentInBytes);
+    }
+  } else {
+      assert (Address::times_8 == LogMinObjAlignmentInBytes &&
+              Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
+    leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
+  }
 }
 
 void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
   // Cannot assert, unverified entry point counts instructions (see .ad file)
   // vtableStubs also counts instructions in pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
-  assert(Address::times_8 == LogMinObjAlignmentInBytes, "decode alg wrong");
-  leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+  if (Universe::narrow_oop_shift() != 0) {
+    assert (Address::times_8 == LogMinObjAlignmentInBytes &&
+            Address::times_8 == Universe::narrow_oop_shift(), "decode alg wrong");
+    leaq(dst, Address(r12_heapbase, src, Address::times_8, 0));
+  } else if (dst != src) {
+    movq(dst, src);
+  }
 }
 
 void  MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
   int oop_index = oop_recorder()->find_index(obj);
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
-  mov_literal32(dst, oop_index, rspec, narrow_oop_operand);
+  mov_narrow_oop(dst, oop_index, rspec);
+}
+
+void  MacroAssembler::set_narrow_oop(Address dst, jobject obj) {
+  assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int oop_index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+  mov_narrow_oop(dst, oop_index, rspec);
+}
+
+void  MacroAssembler::cmp_narrow_oop(Register dst, jobject obj) {
+  assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int oop_index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+  Assembler::cmp_narrow_oop(dst, oop_index, rspec);
+}
+
+void  MacroAssembler::cmp_narrow_oop(Address dst, jobject obj) {
+  assert (UseCompressedOops, "should only be used for compressed headers");
+  assert (Universe::heap() != NULL, "java heap should be initialized");
+  assert (oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int oop_index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = oop_Relocation::spec(oop_index);
+  Assembler::cmp_narrow_oop(dst, oop_index, rspec);
 }
 
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
-    movptr(r12_heapbase, ExternalAddress((address)Universe::heap_base_addr()));
+    movptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
   }
 }
 #endif // _LP64

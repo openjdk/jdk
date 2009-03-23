@@ -3220,7 +3220,7 @@ bool os::Solaris::set_mpss_range(caddr_t start, size_t bytes, size_t align) {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes) {
+char* os::reserve_memory_special(size_t bytes, char* addr) {
   assert(UseLargePages && UseISM, "only for ISM large pages");
 
   size_t size = bytes;
@@ -4451,6 +4451,9 @@ int_fnP_thread_t_i os::Solaris::_thr_setmutator;
 int_fnP_thread_t os::Solaris::_thr_suspend_mutator;
 int_fnP_thread_t os::Solaris::_thr_continue_mutator;
 
+// (Static) wrapper for getisax(2) call.
+os::Solaris::getisax_func_t os::Solaris::_getisax = 0;
+
 // (Static) wrappers for the liblgrp API
 os::Solaris::lgrp_home_func_t os::Solaris::_lgrp_home;
 os::Solaris::lgrp_init_func_t os::Solaris::_lgrp_init;
@@ -4465,16 +4468,19 @@ os::Solaris::lgrp_cookie_t os::Solaris::_lgrp_cookie = 0;
 // (Static) wrapper for meminfo() call.
 os::Solaris::meminfo_func_t os::Solaris::_meminfo = 0;
 
-static address resolve_symbol(const char *name) {
-  address addr;
-
-  addr = (address) dlsym(RTLD_DEFAULT, name);
+static address resolve_symbol_lazy(const char* name) {
+  address addr = (address) dlsym(RTLD_DEFAULT, name);
   if(addr == NULL) {
     // RTLD_DEFAULT was not defined on some early versions of 2.5.1
     addr = (address) dlsym(RTLD_NEXT, name);
-    if(addr == NULL) {
-      fatal(dlerror());
-    }
+  }
+  return addr;
+}
+
+static address resolve_symbol(const char* name) {
+  address addr = resolve_symbol_lazy(name);
+  if(addr == NULL) {
+    fatal(dlerror());
   }
   return addr;
 }
@@ -4673,13 +4679,24 @@ bool os::Solaris::liblgrp_init() {
 }
 
 void os::Solaris::misc_sym_init() {
-  address func = (address)dlsym(RTLD_DEFAULT, "meminfo");
-  if(func == NULL) {
-    func = (address) dlsym(RTLD_NEXT, "meminfo");
+  address func;
+
+  // getisax
+  func = resolve_symbol_lazy("getisax");
+  if (func != NULL) {
+    os::Solaris::_getisax = CAST_TO_FN_PTR(getisax_func_t, func);
   }
+
+  // meminfo
+  func = resolve_symbol_lazy("meminfo");
   if (func != NULL) {
     os::Solaris::set_meminfo(CAST_TO_FN_PTR(meminfo_func_t, func));
   }
+}
+
+uint_t os::Solaris::getisax(uint32_t* array, uint_t n) {
+  assert(_getisax != NULL, "_getisax not set");
+  return _getisax(array, n);
 }
 
 // Symbol doesn't exist in Solaris 8 pset.h
@@ -4715,6 +4732,10 @@ void os::init(void) {
   init_page_sizes((size_t) page_size);
 
   Solaris::initialize_system_info();
+
+  // Initialize misc. symbols as soon as possible, so we can use them
+  // if we need them.
+  Solaris::misc_sym_init();
 
   int fd = open("/dev/zero", O_RDWR);
   if (fd < 0) {
@@ -4857,7 +4878,6 @@ jint os::init_2(void) {
     }
   }
 
-  Solaris::misc_sym_init();
   Solaris::signal_sets_init();
   Solaris::init_signal_mem();
   Solaris::install_signal_handlers();

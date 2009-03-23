@@ -2582,7 +2582,7 @@ bool os::large_page_init() {
 #define SHM_HUGETLB 04000
 #endif
 
-char* os::reserve_memory_special(size_t bytes) {
+char* os::reserve_memory_special(size_t bytes, char* req_addr) {
   assert(UseLargePages, "only for large pages");
 
   key_t key = IPC_PRIVATE;

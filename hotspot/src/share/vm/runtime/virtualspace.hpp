@@ -73,7 +73,8 @@ class ReservedSpace VALUE_OBJ_CLASS_SPEC {
                 const size_t noaccess_prefix = 0);
   ReservedSpace(const size_t prefix_size, const size_t prefix_align,
                 const size_t suffix_size, const size_t suffix_align,
-                const size_t noaccess_prefix);
+                char* requested_address,
+                const size_t noaccess_prefix = 0);
 
   // Accessors
   char*  base()      const { return _base;      }
@@ -121,7 +122,8 @@ public:
   ReservedHeapSpace(size_t size, size_t forced_base_alignment,
                     bool large, char* requested_address);
   ReservedHeapSpace(const size_t prefix_size, const size_t prefix_align,
-                    const size_t suffix_size, const size_t suffix_align);
+                    const size_t suffix_size, const size_t suffix_align,
+                    char* requested_address);
 };
 
 // VirtualSpace is data structure for committing a previously reserved address range in smaller chunks.
