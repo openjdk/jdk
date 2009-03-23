@@ -205,8 +205,6 @@ BOOL AwtComponent::m_QueryNewPaletteCalled = FALSE;
 CriticalSection windowMoveLock;
 BOOL windowMoveLockHeld = FALSE;
 
-int AwtComponent::sm_wheelRotationAmount = 0;
-
 /************************************************************************
  * AwtComponent methods
  */
@@ -246,6 +244,7 @@ AwtComponent::AwtComponent()
     m_bSubclassed = FALSE;
 
     m_MessagesProcessing = 0;
+    m_wheelRotationAmount = 0;
 }
 
 AwtComponent::~AwtComponent()
@@ -2014,13 +2013,13 @@ MsgRouting AwtComponent::WmShowWindow(BOOL show, UINT status)
 
 MsgRouting AwtComponent::WmSetFocus(HWND hWndLostFocus)
 {
-    sm_wheelRotationAmount = 0;
+    m_wheelRotationAmount = 0;
     return mrDoDefault;
 }
 
 MsgRouting AwtComponent::WmKillFocus(HWND hWndGotFocus)
 {
-    sm_wheelRotationAmount = 0;
+    m_wheelRotationAmount = 0;
     return mrDoDefault;
 }
 
@@ -2431,11 +2430,11 @@ MsgRouting AwtComponent::WmMouseWheel(UINT flags, int x, int y,
     BOOL result;
     UINT platformLines;
 
-    sm_wheelRotationAmount += wheelRotation;
+    m_wheelRotationAmount += wheelRotation;
 
     // AWT interprets wheel rotation differently than win32, so we need to
     // decode wheel amount.
-    jint roundedWheelRotation = sm_wheelRotationAmount / (-1 * WHEEL_DELTA);
+    jint roundedWheelRotation = m_wheelRotationAmount / (-1 * WHEEL_DELTA);
     jdouble preciseWheelRotation = (jdouble) wheelRotation / (-1 * WHEEL_DELTA);
 
     MSG msg;
@@ -2461,7 +2460,9 @@ MsgRouting AwtComponent::WmMouseWheel(UINT flags, int x, int y,
                         eventPt.x, eventPt.y, GetJavaModifiers(), 0, 0, scrollType,
                         scrollLines, roundedWheelRotation, preciseWheelRotation, &msg);
 
-    sm_wheelRotationAmount %= WHEEL_DELTA;
+    m_wheelRotationAmount %= WHEEL_DELTA;
+    // this message could be propagated up to the parent chain
+    // by the mouse message post processors
     return mrConsume;
 }
 
