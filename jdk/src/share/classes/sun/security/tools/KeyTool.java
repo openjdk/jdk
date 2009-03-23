@@ -1072,8 +1072,8 @@ public final class KeyTool {
 
         X509CertInfo info = new X509CertInfo();
         info.set(X509CertInfo.VALIDITY, interval);
-        info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber
-                 ((int)(firstDate.getTime()/1000)));
+        info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(
+                    new java.util.Random().nextInt() & 0x7fffffff));
         info.set(X509CertInfo.VERSION,
                      new CertificateVersion(CertificateVersion.V3));
         info.set(X509CertInfo.ALGORITHM_ID,
@@ -2121,8 +2121,8 @@ public final class KeyTool {
         certInfo.set(X509CertInfo.VALIDITY, interval);
 
         // Make new serial number
-        certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber
-                     ((int)(firstDate.getTime()/1000)));
+        certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(
+                    new java.util.Random().nextInt() & 0x7fffffff));
 
         // Set owner and issuer fields
         X500Name owner;
