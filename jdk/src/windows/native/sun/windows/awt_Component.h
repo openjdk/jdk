@@ -807,7 +807,7 @@ private:
     int windowMoveLockPosCY;
 
     // 6524352: support finer-resolution
-    static int sm_wheelRotationAmount;
+    int m_wheelRotationAmount;
 
     /*
      * The association list of children's IDs and corresponding components.
