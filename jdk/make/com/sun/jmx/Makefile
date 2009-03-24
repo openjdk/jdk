@@ -41,7 +41,15 @@ include $(BUILDDIR)/common/Defs.gmk
 # Note : some targets are double colon rules and some single colon rules
 # within common included gmk files : that is why the following for loop
 # has been duplicated.
-SUBDIRS = snmp
+
+# When building the openjdk, build snmp only if importing binary plugs,
+ifdef OPENJDK
+  ifeq ($(IMPORT_BINARY_PLUGS),true)
+    SUBDIRS = snmp
+  endif
+else
+  SUBDIRS = snmp
+endif
 
 all build:
 	$(SUBDIRS-loop)

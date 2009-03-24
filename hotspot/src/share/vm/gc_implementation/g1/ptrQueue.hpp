@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,6 +155,9 @@ protected:
   Mutex* _fl_lock;
   void** _buf_free_list;
   size_t _buf_free_list_sz;
+  // Queue set can share a freelist. The _fl_owner variable
+  // specifies the owner. It is set to "this" by default.
+  PtrQueueSet* _fl_owner;
 
   // The size of all buffers in the set.
   size_t _sz;
@@ -188,10 +191,13 @@ public:
   // Because of init-order concerns, we can't pass these as constructor
   // arguments.
   void initialize(Monitor* cbl_mon, Mutex* fl_lock,
-                  int max_completed_queue = 0) {
+                  int max_completed_queue = 0,
+                  PtrQueueSet *fl_owner = NULL) {
     _max_completed_queue = max_completed_queue;
     assert(cbl_mon != NULL && fl_lock != NULL, "Init order issue?");
-    _cbl_mon = cbl_mon; _fl_lock = fl_lock;
+    _cbl_mon = cbl_mon;
+    _fl_lock = fl_lock;
+    _fl_owner = (fl_owner != NULL) ? fl_owner : this;
   }
 
   // Return an empty oop array of size _sz (required to be non-zero).
@@ -228,4 +234,7 @@ public:
   void reduce_free_list();
 
   size_t completed_buffers_num() { return _n_completed_buffers; }
+
+  void merge_bufferlists(PtrQueueSet* src);
+  void merge_freelists(PtrQueueSet* src);
 };

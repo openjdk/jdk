@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.tools.doclets.formats.html.markup;
 
+import java.io.*;
+
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import java.io.*;
 
 /**
  * Class for the Html format code generation.
@@ -61,6 +62,11 @@ public class HtmlWriter extends PrintWriter {
     protected Configuration configuration;
 
     /**
+     * The flag to indicate whether a member details list is printed or not.
+     */
+    protected boolean memberDetailsListPrinted;
+
+    /**
      * Constructor.
      *
      * @param path The directory path to be created for this file
@@ -79,6 +85,7 @@ public class HtmlWriter extends PrintWriter {
         super(Util.genWriter(configuration, path, filename, docencoding));
         this.configuration = configuration;
         htmlFilename = filename;
+        this.memberDetailsListPrinted = false;
     }
 
     /**
@@ -529,7 +536,14 @@ public class HtmlWriter extends PrintWriter {
     }
 
     /**
-     * Print &lt;DT&gt; tag.
+     * Print &lt;/DT&gt; tag.
+     */
+    public void dtEnd() {
+        print("</DT>");
+    }
+
+    /**
+     * Print &lt;DD&gt; tag.
      */
     public void dd() {
         print("<DD>");

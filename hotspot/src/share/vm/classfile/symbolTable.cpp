@@ -156,7 +156,7 @@ symbolOop SymbolTable::basic_add(int index, u1 *name, int len,
 
   symbolOop test = lookup(index, (char*)name, len, hashValue);
   if (test != NULL) {
-    // A race occured and another thread introduced the symbol, this one
+    // A race occurred and another thread introduced the symbol, this one
     // will be dropped and collected.
     return test;
   }
@@ -193,7 +193,7 @@ bool SymbolTable::basic_add(constantPoolHandle cp, int names_count,
     int index = hash_to_index(hashValues[i]);
     symbolOop test = lookup(index, names[i], lengths[i], hashValues[i]);
     if (test != NULL) {
-      // A race occured and another thread introduced the symbol, this one
+      // A race occurred and another thread introduced the symbol, this one
       // will be dropped and collected. Use test instead.
       cp->symbol_at_put(cp_indices[i], test);
     } else {

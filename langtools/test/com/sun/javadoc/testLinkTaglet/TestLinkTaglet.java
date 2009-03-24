@@ -59,7 +59,7 @@ public class TestLinkTaglet extends JavadocTester {
             " Link to another inner class: <A HREF=\"../pkg/C.InnerC2.html\" title=\"class in pkg\"><CODE>C.InnerC2</CODE></A>"
         },
         {BUG_ID + FS + "pkg" + FS + "C.InnerC2.html",
-            "Enclosing class:</STRONG><DD><A HREF=\"../pkg/C.html\" title=\"class in pkg\">C</A>"
+            "Enclosing class:</STRONG></DT><DD><A HREF=\"../pkg/C.html\" title=\"class in pkg\">C</A>"
         },
     };
     private static final String[][] NEGATED_TEST = {
