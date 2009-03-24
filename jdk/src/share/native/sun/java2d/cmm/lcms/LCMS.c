@@ -374,6 +374,10 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagData
     return;
 }
 
+// Modify data for a tag in a profile
+LCMSBOOL LCMSEXPORT _cmsModifyTagData(cmsHPROFILE hProfile,
+                                 icTagSignature sig, void *data, size_t size);
+
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
  * Method:    setTagData
@@ -561,10 +565,10 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_initLCMS
     PF_ID_fID = (*env)->GetFieldID (env, Pf, "ID", "J");
 }
 
-BOOL _cmsModifyTagData(cmsHPROFILE hProfile, icTagSignature sig,
+LCMSBOOL _cmsModifyTagData(cmsHPROFILE hProfile, icTagSignature sig,
                        void *data, size_t size)
 {
-    BOOL isNew;
+    LCMSBOOL isNew;
     int i, idx, delta, count;
     LPBYTE padChars[3] = {0, 0, 0};
     LPBYTE beforeBuf, afterBuf, ptr;
