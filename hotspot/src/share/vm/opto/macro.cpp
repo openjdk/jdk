@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcal
       uint old_unique = C->unique();
       Node* new_in = old_sosn->clone(jvms_adj, sosn_map);
       if (old_unique != C->unique()) {
+        new_in->set_req(0, newcall->in(0)); // reset control edge
         new_in = transform_later(new_in); // Register new node.
       }
       old_in = new_in;
@@ -215,7 +216,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
   const TypeOopPtr *tinst = phase->C->get_adr_type(alias_idx)->isa_oopptr();
   while (true) {
     if (mem == alloc_mem || mem == start_mem ) {
-      return mem;  // hit one of our sentinals
+      return mem;  // hit one of our sentinels
     } else if (mem->is_MergeMem()) {
       mem = mem->as_MergeMem()->memory_at(alias_idx);
     } else if (mem->is_Proj() && mem->as_Proj()->_con == TypeFunc::Memory) {
@@ -250,6 +251,15 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         assert(adr_idx == Compile::AliasIdxRaw, "address must match or be raw");
       }
       mem = mem->in(MemNode::Memory);
+    } else if (mem->Opcode() == Op_SCMemProj) {
+      assert(mem->in(0)->is_LoadStore(), "sanity");
+      const TypePtr* atype = mem->in(0)->in(MemNode::Address)->bottom_type()->is_ptr();
+      int adr_idx = Compile::current()->get_alias_index(atype);
+      if (adr_idx == alias_idx) {
+        assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
+        return NULL;
+      }
+      mem = mem->in(0)->in(MemNode::Memory);
     } else {
       return mem;
     }
@@ -329,8 +339,15 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
           return NULL;
         }
         values.at_put(j, val);
+      } else if (val->Opcode() == Op_SCMemProj) {
+        assert(val->in(0)->is_LoadStore(), "sanity");
+        assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
+        return NULL;
       } else {
+#ifdef ASSERT
+        val->dump();
         assert(false, "unknown node on this path");
+#endif
         return NULL;  // unknown node on this path
       }
     }
@@ -1651,7 +1668,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 
   if (UseOptoBiasInlining) {
     /*
-     *  See the full descrition in MacroAssembler::biased_locking_enter().
+     *  See the full description in MacroAssembler::biased_locking_enter().
      *
      *  if( (mark_word & biased_lock_mask) == biased_lock_pattern ) {
      *    // The object is biased.
@@ -1887,7 +1904,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
 
   if (UseOptoBiasInlining) {
     // Check for biased locking unlock case, which is a no-op.
-    // See the full descrition in MacroAssembler::biased_locking_exit().
+    // See the full description in MacroAssembler::biased_locking_exit().
     region  = new (C, 4) RegionNode(4);
     // create a Phi for the memory state
     mem_phi = new (C, 4) PhiNode( region, Type::MEMORY, TypeRawPtr::BOTTOM);

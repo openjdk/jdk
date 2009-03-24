@@ -34,7 +34,6 @@ import java.security.AllPermission;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import sun.nio.ch.Interruptible;
-import sun.net.InetAddressCachePolicy;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 import sun.reflect.annotation.AnnotationType;
@@ -310,7 +309,6 @@ public final class System {
         }
 
         security = s;
-        InetAddressCachePolicy.setIfNotSet(InetAddressCachePolicy.FOREVER);
     }
 
     /**

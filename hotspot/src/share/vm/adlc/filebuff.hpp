@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include <iostream>
 
 using namespace std;
+
 // STRUCTURE FOR HANDLING INPUT AND OUTPUT FILES
 typedef struct {
   const char *_name;
@@ -36,7 +37,7 @@ class ArchDesc;
 
 //------------------------------FileBuff--------------------------------------
 // This class defines a nicely behaved buffer of text.  Entire file of text
-// is read into buffer at creation, with sentinals at start and end.
+// is read into buffer at creation, with sentinels at start and end.
 class FileBuff {
   friend class FileBuffRegion;
  private:
@@ -45,8 +46,8 @@ class FileBuff {
   long  _bufoff;                // Start of buffer file offset
 
   char *_buf;                   // The buffer itself.
-  char *_bigbuf;                // The buffer plus sentinals; actual heap area
-  char *_bufmax;                // A pointer to the buffer end sentinal
+  char *_bigbuf;                // The buffer plus sentinels; actual heap area
+  char *_bufmax;                // A pointer to the buffer end sentinel
   char *_bufeol;                // A pointer to the last complete line end
 
   int   _err;                   // Error flag for file seek/read operations
@@ -72,7 +73,7 @@ class FileBuff {
 
   // This converts a pointer into the buffer to a file offset.  It only works
   // when the pointer is valid (i.e. just obtained from getline()).
-  int getoff(const char *s) { return _bufoff+(int)(s-_buf); }
+  long getoff(const char* s) { return _bufoff + (s - _buf); }
 };
 
 //------------------------------FileBuffRegion---------------------------------
@@ -95,8 +96,6 @@ class FileBuffRegion {
   FileBuffRegion *copy();                   // Deep copy
   FileBuffRegion *merge(FileBuffRegion*); // Merge 2 regions; delete input
 
-//  void print(std::ostream&);
-//  friend std::ostream& operator<< (std::ostream&, FileBuffRegion&);
   void print(ostream&);
   friend ostream& operator<< (ostream&, FileBuffRegion&);
 };

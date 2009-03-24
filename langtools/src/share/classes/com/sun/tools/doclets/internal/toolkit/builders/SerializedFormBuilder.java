@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 
 package com.sun.tools.doclets.internal.toolkit.builders;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.javadoc.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Builds the serialized form.
@@ -40,6 +41,7 @@ import java.util.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 public class SerializedFormBuilder extends AbstractBuilder {
@@ -379,7 +381,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * Build the method footer.
      */
     public void buildMethodFooter() {
-        methodWriter.writeMemberFooter((MethodDoc) currentMember);
+        methodWriter.writeMemberFooter();
     }
 
     /**
@@ -405,15 +407,18 @@ public class SerializedFormBuilder extends AbstractBuilder {
                 Util.asList(classDoc.serializableFields()).get(0);
             // Check to see if there are inline comments, tags or deprecation
             // information to be printed.
-            if (fieldWriter.shouldPrintMemberDetails(serialPersistentField)) {
+            if (fieldWriter.shouldPrintOverview(serialPersistentField)) {
                 fieldWriter.writeHeader(
-                    configuration.getText("doclet.Serialized_Form_class"));
+                        configuration.getText("doclet.Serialized_Form_class"));
                 fieldWriter.writeMemberDeprecatedInfo(serialPersistentField);
                 if (!configuration.nocomment) {
                     fieldWriter.writeMemberDescription(serialPersistentField);
                     fieldWriter.writeMemberTags(serialPersistentField);
                 }
-                fieldWriter.writeMemberFooter(serialPersistentField);
+                // Footer required to close the definition list tag
+                // for serialization overview.
+                fieldWriter.writeFooter(
+                        configuration.getText("doclet.Serialized_Form_class"));
             }
         }
     }
@@ -476,11 +481,11 @@ public class SerializedFormBuilder extends AbstractBuilder {
     }
 
     /**
-     * Build the field footer.
+     * Build the field sub footer.
      */
-    public void buildFieldFooter() {
+    public void buildFieldSubFooter() {
         if (! currentClass.definesSerializableFields()) {
-            fieldWriter.writeMemberFooter((FieldDoc) currentMember);
+            fieldWriter.writeMemberFooter();
         }
     }
 

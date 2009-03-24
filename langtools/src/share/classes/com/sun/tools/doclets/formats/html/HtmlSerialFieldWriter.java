@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import java.util.*;
+
+import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.javadoc.*;
-import java.util.*;
 
 /**
  * Generate serialized form for serializable fields.
@@ -37,6 +38,7 @@ import java.util.*;
  * <code>serialField</code> is processed.
  *
  * @author Joe Fialli
+ * @author Bhavesh Patel (Modified)
  */
 public class HtmlSerialFieldWriter extends FieldWriterImpl
     implements SerializedFormWriter.SerialFieldWriter {
@@ -75,7 +77,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
             writer.println();
             if (heading.equals(
                    configuration().getText("doclet.Serialized_Form_class"))) {
-                writer.dl();
+                assert !writer.getMemberDetailsListPrinted();
             }
         } else {
             writer.printTableHeadingBackground(heading);
@@ -102,7 +104,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         print(fieldDimensions + ' ');
         strong(fieldName);
         writer.preEnd();
-        writer.dl();
+        assert !writer.getMemberDetailsListPrinted();
     }
 
     /**
@@ -111,9 +113,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param field the field to document.
      */
     public void writeMemberDeprecatedInfo(FieldDoc field) {
-        print(((TagletOutputImpl)
-            (new DeprecatedTaglet()).getTagletOutput(field,
-            writer.getTagletWriterInstance(false))).toString());
+        printDeprecated(field);
     }
 
     /**
@@ -123,14 +123,17 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      */
     public void writeMemberDescription(FieldDoc field) {
         if (field.inlineTags().length > 0) {
+            writer.printMemberDetailsListStartTag();
             writer.dd();
             writer.printInlineComment(field);
+            writer.ddEnd();
         }
         Tag[] tags = field.tags("serial");
         if (tags.length > 0) {
-            writer.dt();
+            writer.printMemberDetailsListStartTag();
             writer.dd();
             writer.printInlineComment(field, tags[0]);
+            writer.ddEnd();
         }
     }
 
@@ -140,9 +143,14 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param serialFieldTag the field to document (represented by tag).
      */
     public void writeMemberDescription(SerialFieldTag serialFieldTag) {
-        writer.dd();
-        writer.print(serialFieldTag.description());
-        writer.dlEnd();
+        String serialFieldTagDesc = serialFieldTag.description().trim();
+        if (!serialFieldTagDesc.isEmpty()) {
+            writer.dl();
+            writer.dd();
+            writer.print(serialFieldTagDesc);
+            writer.ddEnd();
+            writer.dlEnd();
+        }
     }
 
     /**
@@ -151,33 +159,57 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param field the field to document.
      */
     public void writeMemberTags(FieldDoc field) {
-        writer.dl();
         TagletOutputImpl output = new TagletOutputImpl("");
         TagletWriter.genTagOuput(configuration().tagletManager, field,
             configuration().tagletManager.getCustomTags(field),
                 writer.getTagletWriterInstance(false), output);
-        if (output.toString().length() > 0) {
-            print(output.toString());
+        String outputString = output.toString().trim();
+        if (!outputString.isEmpty()) {
+            writer.printMemberDetailsListStartTag();
+            writer.dd();
+            writer.dl();
+            print(outputString);
+            writer.dlEnd();
+            writer.ddEnd();
         }
-        writer.dlEnd();
-    }
-    public void writeMemberFooter(FieldDoc member) {
-        writer.dlEnd();
     }
 
     /**
-     * Check to see if member details should be printed. If
+     * Check to see if overview details should be printed. If
      * nocomment option set or if there is no text to be printed
-     * for deprecation info, inline comment, no serial tag or inline tags,
-     * do not print member details.
+     * for deprecation info, comment or tags, do not print overview details.
+     *
+     * @param field the field to check overview details for.
+     * @return true if overview details need to be printed
      */
-    public boolean shouldPrintMemberDetails(FieldDoc field) {
-        if (!configuration().nocomment)
-            if((field.inlineTags().length > 0) ||
-                (field.tags("serial").length > 0) || (writer.hasTagsToPrint(field)))
+    public boolean shouldPrintOverview(FieldDoc field) {
+        if (!configuration().nocomment) {
+            if(!field.commentText().isEmpty() ||
+                    writer.hasSerializationOverviewTags(field))
                 return true;
-        if (!Util.isDeprecated(field))
+        }
+        if (field.tags("deprecated").length > 0)
             return true;
         return false;
+    }
+
+    public void writeMemberFooter() {
+        printMemberFooter();
+    }
+
+    /**
+     * Write the footer information. If the serilization overview section was
+     * printed, check for definition list and close list tag.
+     *
+     * @param heading the heading that was written.
+     */
+    public void writeFooter(String heading) {
+        if (printedOverallAnchor) {
+            if (heading.equals(
+                   configuration().getText("doclet.Serialized_Form_class"))) {
+                writer.printMemberDetailsListEndTag();
+                assert !writer.getMemberDetailsListPrinted();
+            }
+        }
     }
 }

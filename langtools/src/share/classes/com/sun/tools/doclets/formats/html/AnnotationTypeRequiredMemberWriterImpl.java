@@ -25,11 +25,10 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
-import com.sun.javadoc.*;
-
 import java.io.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Writes annotation type required member documentation in HTML format.
@@ -134,17 +133,14 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
             strong(member.name());
         }
         writer.preEnd();
-        writer.dl();
+        assert !writer.getMemberDetailsListPrinted();
     }
 
     /**
      * {@inheritDoc}
      */
     public void writeComments(MemberDoc member) {
-        if (member.inlineTags().length > 0) {
-            writer.dd();
-            writer.printInlineComment(member);
-        }
+        printComment(member);
     }
 
     /**
@@ -160,7 +156,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * Write the annotation type member footer.
      */
     public void writeMemberFooter() {
-        writer.dlEnd();
+        printMemberFooter();
     }
 
     /**
@@ -267,9 +263,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void writeDeprecated(MemberDoc member) {
-        print(((TagletOutputImpl)
-            (new DeprecatedTaglet()).getTagletOutput(member,
-            writer.getTagletWriterInstance(false))).toString());
+        printDeprecated(member);
     }
 
     private Type getType(MemberDoc member) {

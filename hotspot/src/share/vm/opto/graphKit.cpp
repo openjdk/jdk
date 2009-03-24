@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1148,7 +1148,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
   Node   *tst = _gvn.transform( btst );
 
   //-----------
-  // if peephole optimizations occured, a prior test existed.
+  // if peephole optimizations occurred, a prior test existed.
   // If a prior test existed, maybe it dominates as we can avoid this test.
   if (tst != btst && type == T_OBJECT) {
     // At this point we want to scan up the CFG to see if we can
@@ -1196,7 +1196,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
   // Consider using 'Reason_class_check' instead?
 
   // To cause an implicit null check, we set the not-null probability
-  // to the maximum (PROB_MAX).  For an explicit check the probablity
+  // to the maximum (PROB_MAX).  For an explicit check the probability
   // is set to a smaller value.
   if (null_control != NULL || too_many_traps(reason)) {
     // probability is less likely

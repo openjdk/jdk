@@ -32,7 +32,7 @@ extern int explicit_null_checks_inserted,
 void Parse::array_load(BasicType elem_type) {
   const Type* elem = Type::TOP;
   Node* adr = array_addressing(elem_type, 0, &elem);
-  if (stopped())  return;     // guarenteed null or range check
+  if (stopped())  return;     // guaranteed null or range check
   _sp -= 2;                   // Pop array and index
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(elem_type);
   Node* ld = make_load(control(), adr, elem, elem_type, adr_type);
@@ -43,7 +43,7 @@ void Parse::array_load(BasicType elem_type) {
 //--------------------------------array_store----------------------------------
 void Parse::array_store(BasicType elem_type) {
   Node* adr = array_addressing(elem_type, 1);
-  if (stopped())  return;     // guarenteed null or range check
+  if (stopped())  return;     // guaranteed null or range check
   Node* val = pop();
   _sp -= 2;                   // Pop array and index
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(elem_type);
@@ -1541,14 +1541,14 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_aaload: array_load(T_OBJECT); break;
   case Bytecodes::_laload: {
     a = array_addressing(T_LONG, 0);
-    if (stopped())  return;     // guarenteed null or range check
+    if (stopped())  return;     // guaranteed null or range check
     _sp -= 2;                   // Pop array and index
     push_pair( make_load(control(), a, TypeLong::LONG, T_LONG, TypeAryPtr::LONGS));
     break;
   }
   case Bytecodes::_daload: {
     a = array_addressing(T_DOUBLE, 0);
-    if (stopped())  return;     // guarenteed null or range check
+    if (stopped())  return;     // guaranteed null or range check
     _sp -= 2;                   // Pop array and index
     push_pair( make_load(control(), a, Type::DOUBLE, T_DOUBLE, TypeAryPtr::DOUBLES));
     break;
@@ -1560,7 +1560,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_fastore: array_store(T_FLOAT); break;
   case Bytecodes::_aastore: {
     d = array_addressing(T_OBJECT, 1);
-    if (stopped())  return;     // guarenteed null or range check
+    if (stopped())  return;     // guaranteed null or range check
     array_store_check();
     c = pop();                  // Oop to store
     b = pop();                  // index (already used)
@@ -1572,7 +1572,7 @@ void Parse::do_one_bytecode() {
   }
   case Bytecodes::_lastore: {
     a = array_addressing(T_LONG, 2);
-    if (stopped())  return;     // guarenteed null or range check
+    if (stopped())  return;     // guaranteed null or range check
     c = pop_pair();
     _sp -= 2;                   // Pop array and index
     store_to_memory(control(), a, c, T_LONG, TypeAryPtr::LONGS);
@@ -1580,7 +1580,7 @@ void Parse::do_one_bytecode() {
   }
   case Bytecodes::_dastore: {
     a = array_addressing(T_DOUBLE, 2);
-    if (stopped())  return;     // guarenteed null or range check
+    if (stopped())  return;     // guaranteed null or range check
     c = pop_pair();
     _sp -= 2;                   // Pop array and index
     c = dstore_rounding(c);

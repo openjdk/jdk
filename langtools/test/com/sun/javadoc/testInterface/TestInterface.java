@@ -55,7 +55,7 @@ public class TestInterface extends JavadocTester {
 
         // Make sure known implementing class list is correct and omits type parameters.
         {BUG_ID + FS + "pkg" + FS + "Interface.html",
-            "<DT><STRONG>All Known Implementing Classes:</STRONG> " +
+            "<DT><STRONG>All Known Implementing Classes:</STRONG></DT> " +
             "<DD><A HREF=\"../pkg/Child.html\" " +
             "title=\"class in pkg\">Child</A>, " +
             "<A HREF=\"../pkg/Parent.html\" title=\"class in pkg\">" +
@@ -63,7 +63,9 @@ public class TestInterface extends JavadocTester {
 
          // Make sure "All Implemented Interfaces": has substituted type parameters
          {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<STRONG>All Implemented Interfaces:</STRONG> <DD><A HREF=\"../pkg/Interface.html\" title=\"interface in pkg\">Interface</A>&lt;T&gt;"
+            "<STRONG>All Implemented Interfaces:</STRONG></DT> <DD>" +
+            "<A HREF=\"../pkg/Interface.html\" title=\"interface in pkg\">" +
+            "Interface</A>&lt;T&gt;"
          },
          //Make sure Class Tree has substituted type parameters.
          {BUG_ID + FS + "pkg" + FS + "Child.html",
@@ -75,15 +77,15 @@ public class TestInterface extends JavadocTester {
          },
          //Make sure "Direct Know Subclasses" omits type parameters
         {BUG_ID + FS + "pkg" + FS + "Parent.html",
-            "<STRONG>Direct Known Subclasses:</STRONG> <DD><A HREF=\"../pkg/Child.html\" title=\"class in pkg\">Child</A>"
+            "<STRONG>Direct Known Subclasses:</STRONG></DT> <DD><A HREF=\"../pkg/Child.html\" title=\"class in pkg\">Child</A>"
         },
         //Make sure "Specified By" has substituted type parameters.
         {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<STRONG>Specified by:</STRONG><DD><CODE><A HREF=\"../pkg/Interface.html#method()\">method</A></CODE> in interface <CODE><A HREF=\"../pkg/Interface.html\" title=\"interface in pkg\">Interface</A>&lt;<A HREF=\"../pkg/Child.html\" title=\"type parameter in Child\">T</A>&gt;</CODE>"
+            "<STRONG>Specified by:</STRONG></DT><DD><CODE><A HREF=\"../pkg/Interface.html#method()\">method</A></CODE> in interface <CODE><A HREF=\"../pkg/Interface.html\" title=\"interface in pkg\">Interface</A>&lt;<A HREF=\"../pkg/Child.html\" title=\"type parameter in Child\">T</A>&gt;</CODE>"
          },
         //Make sure "Overrides" has substituted type parameters.
         {BUG_ID + FS + "pkg" + FS + "Child.html",
-            "<STRONG>Overrides:</STRONG><DD><CODE><A HREF=\"../pkg/Parent.html#method()\">method</A></CODE> in class <CODE><A HREF=\"../pkg/Parent.html\" title=\"class in pkg\">Parent</A>&lt;<A HREF=\"../pkg/Child.html\" title=\"type parameter in Child\">T</A>&gt;</CODE>"
+            "<STRONG>Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg/Parent.html#method()\">method</A></CODE> in class <CODE><A HREF=\"../pkg/Parent.html\" title=\"class in pkg\">Parent</A>&lt;<A HREF=\"../pkg/Child.html\" title=\"type parameter in Child\">T</A>&gt;</CODE>"
          },
     };
     private static final String[][] NEGATED_TEST = {

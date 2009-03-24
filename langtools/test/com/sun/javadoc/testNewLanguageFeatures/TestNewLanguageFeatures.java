@@ -54,7 +54,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg" + FS + "Coin.html", "Enum Coin</H2>"},
             //Make sure enum signature is correct.
             {BUG_ID + FS + "pkg" + FS + "Coin.html", "public enum "+
-                "<STRONG>Coin</STRONG><DT>extends java.lang.Enum&lt;" +
+                "<STRONG>Coin</STRONG>" + NL + "extends java.lang.Enum&lt;" +
                 "<A HREF=\"../pkg/Coin.html\" title=\"enum in pkg\">Coin</A>&gt;"
             },
             //Check for enum constant section
@@ -79,20 +79,20 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "Class TypeParameters&lt;E&gt;</H2>"},
             //Check class type parameters section.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<DT><STRONG>Type Parameters:</STRONG><DD><CODE>E</CODE> - " +
+                "<DT><STRONG>Type Parameters:</STRONG></DT><DD><CODE>E</CODE> - " +
                 "the type parameter for this class."},
             //Type parameters in @see/@link
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<DT><STRONG>See Also:</STRONG><DD><A HREF=\"../pkg/TypeParameters.html\" " +
-                    "title=\"class in pkg\"><CODE>TypeParameters</CODE></A></DL>"},
+                "<DT><STRONG>See Also:</STRONG></DT><DD><A HREF=\"../pkg/TypeParameters.html\" " +
+                    "title=\"class in pkg\"><CODE>TypeParameters</CODE></A></DD></DL>"},
             //Method that uses class type parameter.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
                 "(<A HREF=\"../pkg/TypeParameters.html\" title=\"type " +
                     "parameter in TypeParameters\">E</A>&nbsp;param)"},
             //Method type parameter section.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<STRONG>Type Parameters:</STRONG><DD><CODE>T</CODE> - This is the first " +
-                    "type parameter.<DD><CODE>V</CODE> - This is the second type " +
+                "<STRONG>Type Parameters:</STRONG></DT><DD><CODE>T</CODE> - This is the first " +
+                    "type parameter.</DD><DD><CODE>V</CODE> - This is the second type " +
                     "parameter."},
             //Signature of method with type parameters
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
@@ -117,17 +117,17 @@ public class TestNewLanguageFeatures extends JavadocTester {
             //Signature of subclass that has type parameters.
             {BUG_ID + FS + "pkg" + FS + "TypeParameterSubClass.html",
                 "public class <STRONG>TypeParameterSubClass&lt;T extends java.lang.String&gt;" +
-                "</STRONG><DT>extends <A HREF=\"../pkg/TypeParameterSuperClass.html\" " +
+                "</STRONG>" + NL + "extends <A HREF=\"../pkg/TypeParameterSuperClass.html\" " +
                 "title=\"class in pkg\">TypeParameterSuperClass</A>&lt;T&gt;"},
 
             //Interface generic parameter substitution
             //Signature of subclass that has type parameters.
             {BUG_ID + FS + "pkg" + FS + "TypeParameters.html",
-                "<STRONG>All Implemented Interfaces:</STRONG> <DD><A HREF=\"../pkg/SubInterface.html\" title=\"interface in pkg\">SubInterface</A>&lt;E&gt;, <A HREF=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">SuperInterface</A>&lt;E&gt;</DD>"},
+                "<STRONG>All Implemented Interfaces:</STRONG></DT> <DD><A HREF=\"../pkg/SubInterface.html\" title=\"interface in pkg\">SubInterface</A>&lt;E&gt;, <A HREF=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">SuperInterface</A>&lt;E&gt;</DD>"},
             {BUG_ID + FS + "pkg" + FS + "SuperInterface.html",
-                "<STRONG>All Known Subinterfaces:</STRONG> <DD><A HREF=\"../pkg/SubInterface.html\" title=\"interface in pkg\">SubInterface</A>&lt;V&gt;</DD>"},
+                "<STRONG>All Known Subinterfaces:</STRONG></DT> <DD><A HREF=\"../pkg/SubInterface.html\" title=\"interface in pkg\">SubInterface</A>&lt;V&gt;</DD>"},
             {BUG_ID + FS + "pkg" + FS + "SubInterface.html",
-                "<STRONG>All Superinterfaces:</STRONG> <DD><A HREF=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">SuperInterface</A>&lt;V&gt;</DD>"},
+                "<STRONG>All Superinterfaces:</STRONG></DT> <DD><A HREF=\"../pkg/SuperInterface.html\" title=\"interface in pkg\">SuperInterface</A>&lt;V&gt;</DD>"},
 
             //=================================
             // VAR ARG TESTING
@@ -166,7 +166,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "Element Detail"},
             //Make sure default annotation type value is printed when necessary.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<STRONG>Default:</STRONG><DD>\"unknown\"</DD>"},
+                "<STRONG>Default:</STRONG></DT><DD>\"unknown\"</DD>"},
 
             //=================================
             // ANNOTATION TYPE USAGE TESTING
@@ -182,7 +182,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<FONT SIZE=\"-1\">" +
                 "<A HREF=\"../pkg/AnnotationType.html\" title=\"annotation in pkg\">@AnnotationType</A>(<A HREF=\"../pkg/AnnotationType.html#optional()\">optional</A>=\"Class Annotation\","+NL +
                 "                <A HREF=\"../pkg/AnnotationType.html#required()\">required</A>=1994)"+NL +
-                "</FONT>public class <STRONG>AnnotationTypeUsage</STRONG><DT>extends java.lang.Object</DL>"},
+                "</FONT>public class <STRONG>AnnotationTypeUsage</STRONG>" + NL +
+                "extends java.lang.Object"},
 
             //FIELD
             {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",
@@ -270,8 +271,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             {BUG_ID + FS + "pkg1" + FS + "B.html",
                 "<PRE><FONT SIZE=\"-1\"><A HREF=\"../pkg1/A.html\" title=\"annotation in pkg1\">@A</A>"},
             {BUG_ID + FS + "pkg1" + FS + "B.html",
-                "</FONT>public interface <STRONG>B</STRONG></DL>" + NL +
-                    "</PRE>"},
+                "</FONT>public interface <STRONG>B</STRONG></PRE>"},
 
 
             //==============================================================
@@ -525,7 +525,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
             "<FONT SIZE=\"-1\">" + NL +
             "<A HREF=\"../pkg/AnnotationTypeUndocumented.html\" title=\"annotation in pkg\">@AnnotationTypeUndocumented</A>(<A HREF=\"../pkg/AnnotationType.html#optional\">optional</A>=\"Class Annotation\"," + NL +
             "                <A HREF=\"../pkg/AnnotationType.html#required\">required</A>=1994)" + NL +
-            "</FONT>public class <STRONG>AnnotationTypeUsage</STRONG><DT>extends java.lang.Object</DL>"},
+            "</FONT>public class <STRONG>AnnotationTypeUsage</STRONG></DT><DT>extends java.lang.Object</DT></DL>"},
 
         //FIELD
         {BUG_ID + FS + "pkg" + FS + "AnnotationTypeUsage.html",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,7 +470,7 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
 }
 
 //------------------------------stmts_can_pack---------------------------
-// Can s1 and s2 be in a pack with s1 immediately preceeding s2 and
+// Can s1 and s2 be in a pack with s1 immediately preceding s2 and
 // s1 aligned at "align"
 bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   if (isomorphic(s1, s2)) {
@@ -869,7 +869,7 @@ bool SuperWord::profitable(Node_List* p) {
   for (uint i = start; i < end; i++) {
     if (!is_vector_use(p0, i)) {
       // For now, return false if not scalar promotion case (inputs are the same.)
-      // Later, implement PackNode and allow differring, non-vector inputs
+      // Later, implement PackNode and allow differing, non-vector inputs
       // (maybe just the ones from outside the block.)
       Node* p0_def = p0->in(i);
       for (uint j = 1; j < p->size(); j++) {

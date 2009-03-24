@@ -25,11 +25,11 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-
-import com.sun.javadoc.*;
 import java.io.*;
 import java.util.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Generate Index for all the Member Names with Indexing in
@@ -100,18 +100,22 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         h2();
         strong(unicode.toString());
         h2End();
-        dl();
-        for (int i = 0; i < memberlist.size(); i++) {
-            Doc element = memberlist.get(i);
-            if (element instanceof MemberDoc) {
-                printDescription((MemberDoc)element);
-            } else if (element instanceof ClassDoc) {
-                printDescription((ClassDoc)element);
-            } else if (element instanceof PackageDoc) {
-                printDescription((PackageDoc)element);
+        int memberListSize = memberlist.size();
+        // Display the list only if there are elements to be displayed.
+        if (memberListSize > 0) {
+            dl();
+            for (int i = 0; i < memberListSize; i++) {
+                Doc element = memberlist.get(i);
+                if (element instanceof MemberDoc) {
+                    printDescription((MemberDoc)element);
+                } else if (element instanceof ClassDoc) {
+                    printDescription((ClassDoc)element);
+                } else if (element instanceof PackageDoc) {
+                    printDescription((PackageDoc)element);
+                }
             }
+            dlEnd();
         }
-        dlEnd();
         hr();
     }
 
@@ -126,8 +130,10 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         printPackageLink(pkg, Util.getPackageName(pkg), true);
         print(" - ");
         print(configuration.getText("doclet.package") + " " + pkg.name());
+        dtEnd();
         dd();
         printSummaryComment(pkg);
+        ddEnd();
     }
 
     /**
@@ -140,8 +146,10 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_INDEX, cd, true));
         print(" - ");
         printClassInfo(cd);
+        dtEnd();
         dd();
         printComment(cd);
+        ddEnd();
     }
 
     /**
@@ -178,8 +186,10 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         println(" - ");
         printMemberDesc(member);
         println();
+        dtEnd();
         dd();
         printComment(member);
+        ddEnd();
         println();
     }
 

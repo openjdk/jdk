@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,15 +217,28 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
       (HeapWord*) align_size_up((uintptr_t)new_end, _page_size);
     assert(new_end_aligned >= (HeapWord*) new_end,
            "align up, but less");
+    // Check the other regions (excludes "ind") to ensure that
+    // the new_end_aligned does not intrude onto the committed
+    // space of another region.
     int ri = 0;
     for (ri = 0; ri < _cur_covered_regions; ri++) {
       if (ri != ind) {
         if (_committed[ri].contains(new_end_aligned)) {
-          assert((new_end_aligned >= _committed[ri].start()) &&
-                 (_committed[ri].start() > _committed[ind].start()),
+          // The prior check included in the assert
+          // (new_end_aligned >= _committed[ri].start())
+          // is redundant with the "contains" test.
+          // Any region containing the new end
+          // should start at or beyond the region found (ind)
+          // for the new end (committed regions are not expected to
+          // be proper subsets of other committed regions).
+          assert(_committed[ri].start() >= _committed[ind].start(),
                  "New end of committed region is inconsistent");
           new_end_aligned = _committed[ri].start();
-          assert(new_end_aligned > _committed[ind].start(),
+          // new_end_aligned can be equal to the start of its
+          // committed region (i.e., of "ind") if a second
+          // region following "ind" also start at the same location
+          // as "ind".
+          assert(new_end_aligned >= _committed[ind].start(),
             "New end of committed region is before start");
           debug_only(collided = true;)
           // Should only collide with 1 region
@@ -343,17 +356,61 @@ void CardTableModRefBS::write_ref_field_work(void* field, oop newVal) {
   inline_write_ref_field(field, newVal);
 }
 
+/*
+   Claimed and deferred bits are used together in G1 during the evacuation
+   pause. These bits can have the following state transitions:
+   1. The claimed bit can be put over any other card state. Except that
+      the "dirty -> dirty and claimed" transition is checked for in
+      G1 code and is not used.
+   2. Deferred bit can be set only if the previous state of the card
+      was either clean or claimed. mark_card_deferred() is wait-free.
+      We do not care if the operation is be successful because if
+      it does not it will only result in duplicate entry in the update
+      buffer because of the "cache-miss". So it's not worth spinning.
+ */
+
 
 bool CardTableModRefBS::claim_card(size_t card_index) {
   jbyte val = _byte_map[card_index];
-  if (val != claimed_card_val()) {
-    jbyte res = Atomic::cmpxchg((jbyte) claimed_card_val(), &_byte_map[card_index], val);
-    if (res == val)
+  assert(val != dirty_card_val(), "Shouldn't claim a dirty card");
+  while (val == clean_card_val() ||
+         (val & (clean_card_mask_val() | claimed_card_val())) != claimed_card_val()) {
+    jbyte new_val = val;
+    if (val == clean_card_val()) {
+      new_val = (jbyte)claimed_card_val();
+    } else {
+      new_val = val | (jbyte)claimed_card_val();
+    }
+    jbyte res = Atomic::cmpxchg(new_val, &_byte_map[card_index], val);
+    if (res == val) {
       return true;
-    else return false;
+    }
+    val = res;
   }
   return false;
 }
+
+bool CardTableModRefBS::mark_card_deferred(size_t card_index) {
+  jbyte val = _byte_map[card_index];
+  // It's already processed
+  if ((val & (clean_card_mask_val() | deferred_card_val())) == deferred_card_val()) {
+    return false;
+  }
+  // Cached bit can be installed either on a clean card or on a claimed card.
+  jbyte new_val = val;
+  if (val == clean_card_val()) {
+    new_val = (jbyte)deferred_card_val();
+  } else {
+    if (val & claimed_card_val()) {
+      new_val = val | (jbyte)deferred_card_val();
+    }
+  }
+  if (new_val != val) {
+    Atomic::cmpxchg(new_val, &_byte_map[card_index], val);
+  }
+  return true;
+}
+
 
 void CardTableModRefBS::non_clean_card_iterate(Space* sp,
                                                MemRegion mr,
