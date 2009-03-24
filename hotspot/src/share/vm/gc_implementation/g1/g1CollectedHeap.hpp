@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,6 +457,10 @@ protected:
   // And it's mod ref barrier set, used to track updates for the above.
   ModRefBarrierSet* _mr_bs;
 
+  // A set of cards that cover the objects for which the Rsets should be updated
+  // concurrently after the collection.
+  DirtyCardQueueSet _dirty_card_queue_set;
+
   // The Heap Region Rem Set Iterator.
   HeapRegionRemSetIterator** _rem_set_iterator;
 
@@ -665,6 +669,9 @@ public:
   void set_refine_cte_cl_concurrency(bool concurrent);
 
   RefToScanQueue *task_queue(int i);
+
+  // A set of cards where updates happened during the GC
+  DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
 
   // Create a G1CollectedHeap with the specified policy.
   // Must call the initialize method afterwards.

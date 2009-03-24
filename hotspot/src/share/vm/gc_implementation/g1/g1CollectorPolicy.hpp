@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -966,7 +966,7 @@ public:
     record_termination_time(0, ms);
   }
 
-  void record_pause_time(double ms) {
+  void record_pause_time_ms(double ms) {
     _last_pause_time_ms = ms;
   }
 

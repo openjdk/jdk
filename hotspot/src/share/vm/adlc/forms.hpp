@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ protected:
 public:
   // Public Data
   Form *_next;                     // Next pointer for form lists
-  long  _linenum;                  // Line number for debugging
+  int   _linenum;                  // Line number for debugging
 
   // Dynamic type check for common forms.
   virtual OpClassForm   *is_opclass()     const;
@@ -342,6 +342,7 @@ public:
   void  reset();                   // Reset iteration
   const char *iter();              // after reset(), first element : else next
   const char *current();           // return current element in iteration.
+  const char *peek(int skip = 1);  // returns element + skip in iteration if there is one
 
   bool  current_is_signal();       // Return 'true' if current entry is signal
   bool  is_signal(const char *entry); // Return true if entry is a signal

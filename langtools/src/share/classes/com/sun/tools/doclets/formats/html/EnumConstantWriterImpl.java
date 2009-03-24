@@ -25,12 +25,11 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.javadoc.*;
-
 import java.io.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Writes enum constant documentation in HTML format.
@@ -146,26 +145,21 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
             strong(enumConstant.name());
         }
         writer.preEnd();
-        writer.dl();
+        assert !writer.getMemberDetailsListPrinted();
     }
 
     /**
      * {@inheritDoc}
      */
     public void writeDeprecated(FieldDoc enumConstant) {
-        print(((TagletOutputImpl)
-            (new DeprecatedTaglet()).getTagletOutput(enumConstant,
-            writer.getTagletWriterInstance(false))).toString());
+        printDeprecated(enumConstant);
     }
 
     /**
      * {@inheritDoc}
      */
     public void writeComments(FieldDoc enumConstant) {
-        if (enumConstant.inlineTags().length > 0) {
-            writer.dd();
-            writer.printInlineComment(enumConstant);
-        }
+        printComment(enumConstant);
     }
 
     /**
@@ -179,7 +173,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
      * {@inheritDoc}
      */
     public void writeEnumConstantFooter() {
-        writer.dlEnd();
+        printMemberFooter();
     }
 
     /**

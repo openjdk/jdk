@@ -69,7 +69,7 @@ class CMSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   // end of the sweep of the tenured generation.
   PerfVariable* _avg_cms_free_counter;
   // Average of the free space in the tenured generation at the
-  // start of the sweep of the tenured genertion.
+  // start of the sweep of the tenured generation.
   PerfVariable* _avg_cms_free_at_sweep_counter;
   // Average of the free space in the tenured generation at the
   // after any resizing of the tenured generation at the end

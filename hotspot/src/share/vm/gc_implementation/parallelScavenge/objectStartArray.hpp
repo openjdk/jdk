@@ -127,7 +127,7 @@ class ObjectStartArray : public CHeapObj {
   // Optimized for finding the first object that crosses into
   // a given block. The blocks contain the offset of the last
   // object in that block. Scroll backwards by one, and the first
-  // object hit should be at the begining of the block
+  // object hit should be at the beginning of the block
   HeapWord* object_start(HeapWord* addr) const {
     assert(_covered_region.contains(addr), "Must be in covered region");
     jbyte* block = block_for_addr(addr);

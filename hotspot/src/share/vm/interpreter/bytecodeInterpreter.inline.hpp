@@ -22,7 +22,7 @@
  *
  */
 
-// This file holds platform-independant bodies of inline functions for the C++ based interpreter
+// This file holds platform-independent bodies of inline functions for the C++ based interpreter
 
 #ifdef CC_INTERP
 

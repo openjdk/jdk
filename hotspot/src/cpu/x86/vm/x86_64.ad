@@ -1,5 +1,5 @@
 //
-// Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -3462,14 +3462,12 @@ encode %{
 
   enc_class movq_ld(regD dst, memory mem) %{
     MacroAssembler _masm(&cbuf);
-    Address madr = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
-    __ movq(as_XMMRegister($dst$$reg), madr);
+    __ movq($dst$$XMMRegister, $mem$$Address);
   %}
 
   enc_class movq_st(memory mem, regD src) %{
     MacroAssembler _masm(&cbuf);
-    Address madr = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
-    __ movq(madr, as_XMMRegister($src$$reg));
+    __ movq($mem$$Address, $src$$XMMRegister);
   %}
 
   enc_class pshufd_8x8(regF dst, regF src) %{
@@ -3765,8 +3763,8 @@ encode %{
     masm.jcc(Assembler::zero, LENGTH_DIFF_LABEL);
 
     // Load first characters
-    masm.load_unsigned_word(rcx, Address(rbx, 0));
-    masm.load_unsigned_word(rdi, Address(rax, 0));
+    masm.load_unsigned_short(rcx, Address(rbx, 0));
+    masm.load_unsigned_short(rdi, Address(rax, 0));
 
     // Compare first characters
     masm.subl(rcx, rdi);
@@ -3796,8 +3794,8 @@ encode %{
 
     // Compare the rest of the characters
     masm.bind(WHILE_HEAD_LABEL);
-    masm.load_unsigned_word(rcx, Address(rbx, rsi, Address::times_2, 0));
-    masm.load_unsigned_word(rdi, Address(rax, rsi, Address::times_2, 0));
+    masm.load_unsigned_short(rcx, Address(rbx, rsi, Address::times_2, 0));
+    masm.load_unsigned_short(rdi, Address(rax, rsi, Address::times_2, 0));
     masm.subl(rcx, rdi);
     masm.jcc(Assembler::notZero, POP_LABEL);
     masm.increment(rsi);
@@ -3854,8 +3852,8 @@ encode %{
     masm.jcc(Assembler::zero, COMPARE_LOOP_HDR);
 
     // Compare 2-byte "tail" at end of arrays
-    masm.load_unsigned_word(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
-    masm.load_unsigned_word(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
+    masm.load_unsigned_short(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
+    masm.load_unsigned_short(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
     masm.cmpl(tmp1Reg, tmp2Reg);
     masm.jcc(Assembler::notEqual, FALSE_LABEL);
     masm.testl(resultReg, resultReg);
@@ -5483,7 +5481,7 @@ operand cmpOpUCF2() %{
 
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used as to simplify
-// instruction definitions by not requiring the AD writer to specify seperate
+// instruction definitions by not requiring the AD writer to specify separate
 // instructions for every form of operand when the instruction accepts
 // multiple operand types with the same basic encoding and format.  The classic
 // case of this is memory operands.
@@ -6031,70 +6029,88 @@ instruct loadB(rRegI dst, memory mem)
 
   ins_cost(125);
   format %{ "movsbl  $dst, $mem\t# byte" %}
-  opcode(0x0F, 0xBE);
-  ins_encode(REX_reg_mem(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
+
+  ins_encode %{
+    __ movsbl($dst$$Register, $mem$$Address);
+  %}
+
   ins_pipe(ialu_reg_mem);
 %}
 
-// Load Byte (8 bit signed) into long
-// instruct loadB2L(rRegL dst, memory mem)
-// %{
-//   match(Set dst (ConvI2L (LoadB mem)));
-
-//   ins_cost(125);
-//   format %{ "movsbq  $dst, $mem\t# byte -> long" %}
-//   opcode(0x0F, 0xBE);
-//   ins_encode(REX_reg_mem_wide(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
-//   ins_pipe(ialu_reg_mem);
-// %}
-
-// Load Byte (8 bit UNsigned)
-instruct loadUB(rRegI dst, memory mem, immI_255 bytemask)
+// Load Byte (8 bit signed) into Long Register
+instruct loadB2L(rRegL dst, memory mem)
 %{
-  match(Set dst (AndI (LoadB mem) bytemask));
+  match(Set dst (ConvI2L (LoadB mem)));
+
+  ins_cost(125);
+  format %{ "movsbq  $dst, $mem\t# byte -> long" %}
+
+  ins_encode %{
+    __ movsbq($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Byte (8 bit UNsigned)
+instruct loadUB(rRegI dst, memory mem)
+%{
+  match(Set dst (LoadUB mem));
 
   ins_cost(125);
   format %{ "movzbl  $dst, $mem\t# ubyte" %}
-  opcode(0x0F, 0xB6);
-  ins_encode(REX_reg_mem(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
+
+  ins_encode %{
+    __ movzbl($dst$$Register, $mem$$Address);
+  %}
+
   ins_pipe(ialu_reg_mem);
 %}
 
-// Load Byte (8 bit UNsigned) into long
-// instruct loadUB2L(rRegL dst, memory mem, immI_255 bytemask)
-// %{
-//   match(Set dst (ConvI2L (AndI (LoadB mem) bytemask)));
+// Load Unsigned Byte (8 bit UNsigned) into Long Register
+instruct loadUB2L(rRegL dst, memory mem)
+%{
+  match(Set dst (ConvI2L (LoadUB mem)));
 
-//   ins_cost(125);
-//   format %{ "movzbl  $dst, $mem\t# ubyte -> long" %}
-//   opcode(0x0F, 0xB6);
-//   ins_encode(REX_reg_mem(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
-//   ins_pipe(ialu_reg_mem);
-// %}
+  ins_cost(125);
+  format %{ "movzbq  $dst, $mem\t# ubyte -> long" %}
+
+  ins_encode %{
+    __ movzbq($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
 
 // Load Short (16 bit signed)
 instruct loadS(rRegI dst, memory mem)
 %{
   match(Set dst (LoadS mem));
 
-  ins_cost(125); // XXX
+  ins_cost(125);
   format %{ "movswl $dst, $mem\t# short" %}
-  opcode(0x0F, 0xBF);
-  ins_encode(REX_reg_mem(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
+
+  ins_encode %{
+    __ movswl($dst$$Register, $mem$$Address);
+  %}
+
   ins_pipe(ialu_reg_mem);
 %}
 
-// Load Short (16 bit signed) into long
-// instruct loadS2L(rRegL dst, memory mem)
-// %{
-//   match(Set dst (ConvI2L (LoadS mem)));
+// Load Short (16 bit signed) into Long Register
+instruct loadS2L(rRegL dst, memory mem)
+%{
+  match(Set dst (ConvI2L (LoadS mem)));
 
-//   ins_cost(125); // XXX
-//   format %{ "movswq $dst, $mem\t# short -> long" %}
-//   opcode(0x0F, 0xBF);
-//   ins_encode(REX_reg_mem_wide(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
-//   ins_pipe(ialu_reg_mem);
-// %}
+  ins_cost(125);
+  format %{ "movswq $dst, $mem\t# short -> long" %}
+
+  ins_encode %{
+    __ movswq($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
 
 // Load Unsigned Short/Char (16 bit UNsigned)
 instruct loadUS(rRegI dst, memory mem)
@@ -6103,32 +6119,71 @@ instruct loadUS(rRegI dst, memory mem)
 
   ins_cost(125);
   format %{ "movzwl  $dst, $mem\t# ushort/char" %}
-  opcode(0x0F, 0xB7);
-  ins_encode(REX_reg_mem(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
+
+  ins_encode %{
+    __ movzwl($dst$$Register, $mem$$Address);
+  %}
+
   ins_pipe(ialu_reg_mem);
 %}
 
-// Load Unsigned Short/Char (16 bit UNsigned) into long
-// instruct loadUS2L(rRegL dst, memory mem)
-// %{
-//   match(Set dst (ConvI2L (LoadUS mem)));
+// Load Unsigned Short/Char (16 bit UNsigned) into Long Register
+instruct loadUS2L(rRegL dst, memory mem)
+%{
+  match(Set dst (ConvI2L (LoadUS mem)));
 
-//   ins_cost(125);
-//   format %{ "movzwl  $dst, $mem\t# ushort/char -> long" %}
-//   opcode(0x0F, 0xB7);
-//   ins_encode(REX_reg_mem(dst, mem), OpcP, OpcS, reg_mem(dst, mem));
-//   ins_pipe(ialu_reg_mem);
-// %}
+  ins_cost(125);
+  format %{ "movzwq  $dst, $mem\t# ushort/char -> long" %}
+
+  ins_encode %{
+    __ movzwq($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
 
 // Load Integer
 instruct loadI(rRegI dst, memory mem)
 %{
   match(Set dst (LoadI mem));
 
-  ins_cost(125); // XXX
+  ins_cost(125);
   format %{ "movl    $dst, $mem\t# int" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem(dst, mem), OpcP, reg_mem(dst, mem));
+
+  ins_encode %{
+    __ movl($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer into Long Register
+instruct loadI2L(rRegL dst, memory mem)
+%{
+  match(Set dst (ConvI2L (LoadI mem)));
+
+  ins_cost(125);
+  format %{ "movslq  $dst, $mem\t# int -> long" %}
+
+  ins_encode %{
+    __ movslq($dst$$Register, $mem$$Address);
+  %}
+
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Unsigned Integer into Long Register
+instruct loadUI2L(rRegL dst, memory mem)
+%{
+  match(Set dst (LoadUI2L mem));
+
+  ins_cost(125);
+  format %{ "movl    $dst, $mem\t# uint -> long" %}
+
+  ins_encode %{
+    __ movl($dst$$Register, $mem$$Address);
+  %}
+
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -6137,10 +6192,13 @@ instruct loadL(rRegL dst, memory mem)
 %{
   match(Set dst (LoadL mem));
 
-  ins_cost(125); // XXX
+  ins_cost(125);
   format %{ "movq    $dst, $mem\t# long" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+
+  ins_encode %{
+    __ movq($dst$$Register, $mem$$Address);
+  %}
+
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
@@ -8363,7 +8421,7 @@ instruct divModL_rReg_divmod(rax_RegL rax, rdx_RegL rdx, no_rax_rdx_RegL div,
 //----------- DivL-By-Constant-Expansions--------------------------------------
 // DivI cases are handled by the compiler
 
-// Magic constant, reciprical of 10
+// Magic constant, reciprocal of 10
 instruct loadConL_0x6666666666666667(rRegL dst)
 %{
   effect(DEF dst);
@@ -10804,16 +10862,6 @@ instruct convI2L_reg_reg(rRegL dst, rRegI src)
 //   ins_pipe(ialu_reg_reg);
 // %}
 
-instruct convI2L_reg_mem(rRegL dst, memory src)
-%{
-  match(Set dst (ConvI2L (LoadI src)));
-
-  format %{ "movslq  $dst, $src\t# i2l" %}
-  opcode(0x63); // needs REX.W
-  ins_encode(REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst,src));
-  ins_pipe(ialu_reg_mem);
-%}
-
 // Zero-extend convert int to long
 instruct convI2L_reg_reg_zex(rRegL dst, rRegI src, immL_32bits mask)
 %{
@@ -12082,7 +12130,7 @@ instruct RethrowException()
 // These must follow all instruction definitions as they use the names
 // defined in the instructions definitions.
 //
-// peepmatch ( root_instr_name [precerding_instruction]* );
+// peepmatch ( root_instr_name [preceding_instruction]* );
 //
 // peepconstraint %{
 // (instruction_number.operand_name relational_op instruction_number.operand_name
