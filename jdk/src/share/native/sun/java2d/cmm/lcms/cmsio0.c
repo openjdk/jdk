@@ -190,7 +190,7 @@ LCMSBOOL MemoryGrow(struct _lcms_iccprofile_struct* Icc, size_t size)
 
     /* Follow same policies as functions in lcms.h  */
     if (ResData->Size + size < 0) return NULL;
-    if (ResData->Size + size > (size_t)1024*1024*500))) return NULL;
+    if (ResData->Size + size > ((size_t)1024*1024*500)) return NULL;
 
     newBlock = realloc(ResData->Block, ResData->Size + size);
 
