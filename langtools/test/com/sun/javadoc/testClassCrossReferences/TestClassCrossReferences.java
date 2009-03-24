@@ -48,7 +48,7 @@ public class TestClassCrossReferences extends JavadocTester {
             "<A HREF=\"http://java.sun.com/j2se/1.4/docs/api/java/math/BigInteger.html?is-external=true#gcd(java.math.BigInteger)\" " +
                 "title=\"class or interface in java.math\"><CODE>Link to external member gcd</CODE></A>"},
         {BUG_ID + FS + "C.html",
-            "<STRONG>Overrides:</STRONG><DD><CODE>toString</CODE> in class <CODE>java.lang.Object</CODE>"}
+            "<STRONG>Overrides:</STRONG></DT><DD><CODE>toString</CODE> in class <CODE>java.lang.Object</CODE>"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
     private static final String[] ARGS =

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
     }
 
     //provide common default formats
-    public String format(JCDiagnostic d, Locale l) {
+    public String formatDiagnostic(JCDiagnostic d, Locale l) {
         try {
             StringBuffer buf = new StringBuffer();
             if (d.getPosition() != Position.NOPOS) {
@@ -82,17 +82,11 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
     public String formatMessage(JCDiagnostic d, Locale l) {
         StringBuilder buf = new StringBuilder();
         Collection<String> args = formatArguments(d, l);
-        buf.append(d.getCode());
-        String sep = ": ";
-        for (Object o : args) {
-            buf.append(sep);
-            buf.append(o);
-            sep = ", ";
-        }
+        buf.append(localize(null, d.getCode(), args.toArray()));
         if (d.isMultiline() && getConfiguration().getVisible().contains(DiagnosticPart.SUBDIAGNOSTICS)) {
             List<String> subDiags = formatSubdiagnostics(d, null);
             if (subDiags.nonEmpty()) {
-                sep = "";
+                String sep = "";
                 buf.append(",{");
                 for (String sub : formatSubdiagnostics(d, null)) {
                     buf.append(sep);
@@ -116,5 +110,18 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             return "(" + s + ")";
         else
             return s;
+    }
+
+    @Override
+    protected String localize(Locale l, String key, Object... args) {
+        StringBuilder buf = new StringBuilder();
+        buf.append(key);
+        String sep = ": ";
+        for (Object o : args) {
+            buf.append(sep);
+            buf.append(o);
+            sep = ", ";
+        }
+        return buf.toString();
     }
 }

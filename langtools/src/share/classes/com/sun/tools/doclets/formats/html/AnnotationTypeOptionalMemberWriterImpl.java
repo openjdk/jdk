@@ -25,10 +25,10 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.javadoc.*;
-
 import java.io.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Writes annotation type optional member documentation in HTML format.
@@ -63,14 +63,20 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      * {@inheritDoc}
      */
     public void writeDefaultValueInfo(MemberDoc member) {
-        writer.dl();
-        writer.dt();
-        writer.strong(ConfigurationImpl.getInstance().
-            getText("doclet.Default"));
-        writer.dd();
-        writer.print(((AnnotationTypeElementDoc) member).defaultValue());
-        writer.ddEnd();
-        writer.dlEnd();
+        if (((AnnotationTypeElementDoc) member).defaultValue() != null) {
+            writer.printMemberDetailsListStartTag();
+            writer.dd();
+            writer.dl();
+            writer.dt();
+            writer.strong(ConfigurationImpl.getInstance().
+                getText("doclet.Default"));
+            writer.dtEnd();
+            writer.dd();
+            writer.print(((AnnotationTypeElementDoc) member).defaultValue());
+            writer.ddEnd();
+            writer.dlEnd();
+            writer.ddEnd();
+        }
     }
 
     /**
