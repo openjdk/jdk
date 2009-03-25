@@ -37,6 +37,7 @@ import java.awt.image.WritableRaster;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.SequenceInputStream;
@@ -59,7 +60,7 @@ import com.sun.imageio.plugins.common.SubImageInputStream;
 import java.io.ByteArrayOutputStream;
 import sun.awt.image.ByteInterleavedRaster;
 
-class PNGImageDataEnumeration implements Enumeration {
+class PNGImageDataEnumeration implements Enumeration<InputStream> {
 
     boolean firstTime = true;
     ImageInputStream stream;
@@ -72,7 +73,7 @@ class PNGImageDataEnumeration implements Enumeration {
         int type = stream.readInt(); // skip chunk type
     }
 
-    public Object nextElement() {
+    public InputStream nextElement() {
         try {
             firstTime = false;
             ImageInputStream iis = new SubImageInputStream(stream, length);
@@ -207,23 +208,15 @@ public class PNGImageReader extends ImageReader {
         resetStreamSettings();
     }
 
-    private String readNullTerminatedString(String charset) throws IOException {
+    private String readNullTerminatedString(String charset, int maxLen) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int b;
-        while ((b = stream.read()) != 0) {
+        int count = 0;
+        while ((maxLen > count++) && ((b = stream.read()) != 0)) {
+            if (b == -1) throw new EOFException();
             baos.write(b);
         }
         return new String(baos.toByteArray(), charset);
-    }
-
-    private String readNullTerminatedString() throws IOException {
-        StringBuilder b = new StringBuilder();
-        int c;
-
-        while ((c = stream.read()) != 0) {
-            b.append((char)c);
-        }
-        return b.toString();
     }
 
     private void readHeader() throws IIOException {
@@ -434,7 +427,7 @@ public class PNGImageReader extends ImageReader {
     }
 
     private void parse_iCCP_chunk(int chunkLength) throws IOException {
-        String keyword = readNullTerminatedString();
+        String keyword = readNullTerminatedString("ISO-8859-1", 80);
         metadata.iCCP_profileName = keyword;
 
         metadata.iCCP_compressionMethod = stream.readUnsignedByte();
@@ -450,7 +443,7 @@ public class PNGImageReader extends ImageReader {
     private void parse_iTXt_chunk(int chunkLength) throws IOException {
         long chunkStart = stream.getStreamPosition();
 
-        String keyword = readNullTerminatedString();
+        String keyword = readNullTerminatedString("ISO-8859-1", 80);
         metadata.iTXt_keyword.add(keyword);
 
         int compressionFlag = stream.readUnsignedByte();
@@ -459,15 +452,17 @@ public class PNGImageReader extends ImageReader {
         int compressionMethod = stream.readUnsignedByte();
         metadata.iTXt_compressionMethod.add(Integer.valueOf(compressionMethod));
 
-        String languageTag = readNullTerminatedString("UTF8");
+        String languageTag = readNullTerminatedString("UTF8", 80);
         metadata.iTXt_languageTag.add(languageTag);
 
+        long pos = stream.getStreamPosition();
+        int maxLen = (int)(chunkStart + chunkLength - pos);
         String translatedKeyword =
-            readNullTerminatedString("UTF8");
+            readNullTerminatedString("UTF8", maxLen);
         metadata.iTXt_translatedKeyword.add(translatedKeyword);
 
         String text;
-        long pos = stream.getStreamPosition();
+        pos = stream.getStreamPosition();
         byte[] b = new byte[(int)(chunkStart + chunkLength - pos)];
         stream.readFully(b);
 
@@ -511,7 +506,7 @@ public class PNGImageReader extends ImageReader {
 
     private void parse_sPLT_chunk(int chunkLength)
         throws IOException, IIOException {
-        metadata.sPLT_paletteName = readNullTerminatedString();
+        metadata.sPLT_paletteName = readNullTerminatedString("ISO-8859-1", 80);
         chunkLength -= metadata.sPLT_paletteName.length() + 1;
 
         int sampleDepth = stream.readUnsignedByte();
@@ -554,12 +549,12 @@ public class PNGImageReader extends ImageReader {
     }
 
     private void parse_tEXt_chunk(int chunkLength) throws IOException {
-        String keyword = readNullTerminatedString();
+        String keyword = readNullTerminatedString("ISO-8859-1", 80);
         metadata.tEXt_keyword.add(keyword);
 
         byte[] b = new byte[chunkLength - keyword.length() - 1];
         stream.readFully(b);
-        metadata.tEXt_text.add(new String(b));
+        metadata.tEXt_text.add(new String(b, "ISO-8859-1"));
     }
 
     private void parse_tIME_chunk() throws IOException {
@@ -640,7 +635,7 @@ public class PNGImageReader extends ImageReader {
     }
 
     private void parse_zTXt_chunk(int chunkLength) throws IOException {
-        String keyword = readNullTerminatedString();
+        String keyword = readNullTerminatedString("ISO-8859-1", 80);
         metadata.zTXt_keyword.add(keyword);
 
         int method = stream.readUnsignedByte();
@@ -648,7 +643,7 @@ public class PNGImageReader extends ImageReader {
 
         byte[] b = new byte[chunkLength - keyword.length() - 2];
         stream.readFully(b);
-        metadata.zTXt_text.add(new String(inflate(b)));
+        metadata.zTXt_text.add(new String(inflate(b), "ISO-8859-1"));
     }
 
     private void readMetadata() throws IIOException {
@@ -1263,7 +1258,7 @@ public class PNGImageReader extends ImageReader {
         try {
             stream.seek(imageStartPosition);
 
-            Enumeration e = new PNGImageDataEnumeration(stream);
+            Enumeration<InputStream> e = new PNGImageDataEnumeration(stream);
             InputStream is = new SequenceInputStream(e);
 
            /* InflaterInputStream uses an Inflater instance which consumes

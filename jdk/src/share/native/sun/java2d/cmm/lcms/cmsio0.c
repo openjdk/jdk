@@ -29,7 +29,7 @@
 //
 //
 //  Little cms
-//  Copyright (C) 1998-2006 Marti Maria
+//  Copyright (C) 1998-2007 Marti Maria
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -62,7 +62,7 @@
 typedef struct {
                 LPBYTE Block;           // Points to allocated memory
                 size_t Size;            // Size of allocated memory
-                int Pointer;            // Points to current location
+                size_t Pointer;         // Points to current location
                 int FreeBlockOnClose;   // As title
 
                 } FILEMEM;
@@ -70,17 +70,18 @@ typedef struct {
 static
 LPVOID MemoryOpen(LPBYTE Block, size_t Size, char Mode)
 {
-    FILEMEM* fm = (FILEMEM*) malloc(sizeof(FILEMEM));
+    FILEMEM* fm = (FILEMEM*) _cmsMalloc(sizeof(FILEMEM));
+    if (fm == NULL) return NULL;
+
     ZeroMemory(fm, sizeof(FILEMEM));
 
     if (Mode == 'r') {
 
-        fm ->Block   = (LPBYTE) malloc(Size);
+        fm ->Block   = (LPBYTE) _cmsMalloc(Size);
         if (fm ->Block == NULL) {
-            free(fm);
+             _cmsFree(fm);
             return NULL;
         }
-
 
         CopyMemory(fm->Block, Block, Size);
         fm ->FreeBlockOnClose = TRUE;
@@ -103,13 +104,27 @@ size_t MemoryRead(LPVOID buffer, size_t size, size_t count, struct _lcms_iccprof
      FILEMEM* ResData = (FILEMEM*) Icc ->stream;
      LPBYTE Ptr;
      size_t len = size * count;
+     size_t extent = ResData -> Pointer + len;
 
+        if (len == 0) {
+                return 0;
+        }
 
-     if (ResData -> Pointer + len > ResData -> Size){
+        if (len / size != count) {
+          cmsSignalError(LCMS_ERRC_ABORTED, "Read from memory error. Integer overflow with count / size.");
+          return 0;
+      }
+
+      if (extent < len || extent < ResData -> Pointer) {
+          cmsSignalError(LCMS_ERRC_ABORTED, "Read from memory error. Integer overflow with len.");
+          return 0;
+      }
+
+      if (ResData -> Pointer + len > ResData -> Size) {
 
          len = (ResData -> Size - ResData -> Pointer);
-         cmsSignalError(LCMS_ERRC_WARNING, "Read from memory error. Got %d bytes, block should be of %d bytes", len * size, count * size);
-
+         cmsSignalError(LCMS_ERRC_ABORTED, "Read from memory error. Got %d bytes, block should be of %d bytes", len * size, count * size);
+         return 0;
      }
 
     Ptr  = ResData -> Block;
@@ -123,7 +138,7 @@ size_t MemoryRead(LPVOID buffer, size_t size, size_t count, struct _lcms_iccprof
 // SEEK_CUR is assumed
 
 static
-BOOL MemorySeek(struct _lcms_iccprofile_struct* Icc, size_t offset)
+LCMSBOOL MemorySeek(struct _lcms_iccprofile_struct* Icc, size_t offset)
 {
     FILEMEM* ResData = (FILEMEM*) Icc ->stream;
 
@@ -147,18 +162,19 @@ size_t MemoryTell(struct _lcms_iccprofile_struct* Icc)
 }
 
 
-// Writes data to memory, also keeps used space for further reference
+// Writes data to memory, also keeps used space for further reference. NO CHECK IS PERFORMED
 
 static
-BOOL MemoryWrite(struct _lcms_iccprofile_struct* Icc, size_t size, void *Ptr)
+LCMSBOOL MemoryWrite(struct _lcms_iccprofile_struct* Icc, size_t size, void *Ptr)
 {
         FILEMEM* ResData = (FILEMEM*) Icc ->stream;
 
        if (size == 0) return TRUE;
 
        if (ResData != NULL)
-           CopyMemory(ResData ->Block + Icc ->UsedSpace, Ptr, size);
+           CopyMemory(ResData ->Block + ResData ->Pointer, Ptr, size);
 
+       ResData->Pointer += size;
        Icc->UsedSpace += size;
 
        return TRUE;
@@ -166,15 +182,37 @@ BOOL MemoryWrite(struct _lcms_iccprofile_struct* Icc, size_t size, void *Ptr)
 
 
 static
-BOOL MemoryClose(struct _lcms_iccprofile_struct* Icc)
+LCMSBOOL MemoryGrow(struct _lcms_iccprofile_struct* Icc, size_t size)
+{
+    FILEMEM* ResData = (FILEMEM*) Icc->stream;
+
+    void* newBlock = NULL;
+
+    /* Follow same policies as functions in lcms.h  */
+    if (ResData->Size + size < 0) return NULL;
+    if (ResData->Size + size > ((size_t)1024*1024*500)) return NULL;
+
+    newBlock = realloc(ResData->Block, ResData->Size + size);
+
+    if (!newBlock) {
+        return FALSE;
+    }
+    ResData->Block = newBlock;
+    ResData->Size += size;
+    return TRUE;
+}
+
+
+static
+LCMSBOOL MemoryClose(struct _lcms_iccprofile_struct* Icc)
 {
     FILEMEM* ResData = (FILEMEM*) Icc ->stream;
 
     if (ResData ->FreeBlockOnClose) {
 
-        if (ResData ->Block) free(ResData ->Block);
+        if (ResData ->Block)  _cmsFree(ResData ->Block);
     }
-    free(ResData);
+     _cmsFree(ResData);
     return 0;
 }
 
@@ -192,7 +230,7 @@ size_t FileRead(void *buffer, size_t size, size_t count, struct _lcms_iccprofile
 {
     size_t nReaded = fread(buffer, size, count, (FILE*) Icc->stream);
     if (nReaded != count) {
-            cmsSignalError(LCMS_ERRC_WARNING, "Read error. Got %d bytes, block should be of %d bytes", nReaded * size, count * size);
+            cmsSignalError(LCMS_ERRC_ABORTED, "Read error. Got %d bytes, block should be of %d bytes", nReaded * size, count * size);
             return 0;
     }
 
@@ -201,7 +239,7 @@ size_t FileRead(void *buffer, size_t size, size_t count, struct _lcms_iccprofile
 
 
 static
-BOOL FileSeek(struct _lcms_iccprofile_struct* Icc, size_t offset)
+LCMSBOOL FileSeek(struct _lcms_iccprofile_struct* Icc, size_t offset)
 {
     if (fseek((FILE*) Icc ->stream, (long) offset, SEEK_SET) != 0) {
 
@@ -223,7 +261,7 @@ size_t FileTell(struct _lcms_iccprofile_struct* Icc)
 
 
 static
-BOOL FileWrite(struct _lcms_iccprofile_struct* Icc, size_t size, LPVOID Ptr)
+LCMSBOOL FileWrite(struct _lcms_iccprofile_struct* Icc, size_t size, LPVOID Ptr)
 {
        if (size == 0) return TRUE;
 
@@ -239,7 +277,14 @@ BOOL FileWrite(struct _lcms_iccprofile_struct* Icc, size_t size, LPVOID Ptr)
 
 
 static
-BOOL FileClose(struct _lcms_iccprofile_struct* Icc)
+LCMSBOOL FileGrow(struct _lcms_iccprofile_struct* Icc, size_t size)
+{
+  return TRUE;
+}
+
+
+static
+LCMSBOOL FileClose(struct _lcms_iccprofile_struct* Icc)
 {
     return fclose((FILE*) Icc ->stream);
 }
@@ -252,7 +297,7 @@ BOOL FileClose(struct _lcms_iccprofile_struct* Icc)
 cmsHPROFILE _cmsCreateProfilePlaceholder(void)
 {
 
-    LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) malloc(sizeof(LCMSICCPROFILE));
+    LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) _cmsMalloc(sizeof(LCMSICCPROFILE));
     if (Icc == NULL) return NULL;
 
     // Empty values
@@ -290,7 +335,7 @@ icTagSignature LCMSEXPORT cmsGetTagSignature(cmsHPROFILE hProfile, icInt32Number
 // Search for a specific tag in tag dictionary
 // Returns position or -1 if tag not found
 
-icInt32Number _cmsSearchTag(LPLCMSICCPROFILE Profile, icTagSignature sig, BOOL lSignalError)
+icInt32Number _cmsSearchTag(LPLCMSICCPROFILE Profile, icTagSignature sig, LCMSBOOL lSignalError)
 {
        icInt32Number i;
 
@@ -311,7 +356,7 @@ icInt32Number _cmsSearchTag(LPLCMSICCPROFILE Profile, icTagSignature sig, BOOL l
 
 // Check existance
 
-BOOL LCMSEXPORT cmsIsTag(cmsHPROFILE hProfile, icTagSignature sig)
+LCMSBOOL LCMSEXPORT cmsIsTag(cmsHPROFILE hProfile, icTagSignature sig)
 {
        LPLCMSICCPROFILE  Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
        return _cmsSearchTag(Icc, sig, FALSE) >= 0;
@@ -330,7 +375,7 @@ LPVOID _cmsInitTag(LPLCMSICCPROFILE Icc, icTagSignature sig, size_t size, const 
 
     if (i >=0) {
 
-        if (Icc -> TagPtrs[i]) free(Icc -> TagPtrs[i]);
+        if (Icc -> TagPtrs[i]) _cmsFree(Icc -> TagPtrs[i]);
     }
     else  {
 
@@ -341,11 +386,14 @@ LPVOID _cmsInitTag(LPLCMSICCPROFILE Icc, icTagSignature sig, size_t size, const 
 
             cmsSignalError(LCMS_ERRC_ABORTED, "Too many tags (%d)", MAX_TABLE_TAG);
             Icc ->TagCount = MAX_TABLE_TAG-1;
+            return NULL;
         }
     }
 
 
-    Ptr = malloc(size);
+    Ptr = _cmsMalloc(size);
+    if (Ptr == NULL) return NULL;
+
     CopyMemory(Ptr, Init, size);
 
     Icc ->TagNames[i] = sig;
@@ -376,12 +424,15 @@ LPLCMSICCPROFILE _cmsCreateProfileFromFilePlaceholder(const char* FileName)
     if (NewIcc == NULL) return NULL;
 
     strncpy(NewIcc -> PhysicalFile, FileName, MAX_PATH-1);
+    NewIcc -> PhysicalFile[MAX_PATH-1] = 0;
+
     NewIcc ->stream = ICCfile;
 
     NewIcc ->Read  = FileRead;
     NewIcc ->Seek  = FileSeek;
     NewIcc ->Tell  = FileTell;
     NewIcc ->Close = FileClose;
+    NewIcc ->Grow  = FileGrow;
     NewIcc ->Write = NULL;
 
     NewIcc ->IsWrite = FALSE;
@@ -419,7 +470,8 @@ LPLCMSICCPROFILE _cmsCreateProfileFromMemPlaceholder(LPVOID MemPtr, DWORD dwSize
     NewIcc ->Seek  = MemorySeek;
     NewIcc ->Tell  = MemoryTell;
     NewIcc ->Close = MemoryClose;
-    NewIcc ->Write = NULL;
+    NewIcc ->Grow  = MemoryGrow;
+    NewIcc ->Write = MemoryWrite;
 
     NewIcc ->IsWrite = FALSE;
 
@@ -476,7 +528,7 @@ void _cmsSetSaveToMemory(LPLCMSICCPROFILE Icc, LPVOID MemPtr, size_t dwSize)
 
 
 
-BOOL LCMSEXPORT cmsTakeMediaWhitePoint(LPcmsCIEXYZ Dest, cmsHPROFILE hProfile)
+LCMSBOOL LCMSEXPORT cmsTakeMediaWhitePoint(LPcmsCIEXYZ Dest, cmsHPROFILE hProfile)
 {
      LPLCMSICCPROFILE    Icc = (LPLCMSICCPROFILE) hProfile;
      *Dest = Icc -> MediaWhitePoint;
@@ -484,14 +536,14 @@ BOOL LCMSEXPORT cmsTakeMediaWhitePoint(LPcmsCIEXYZ Dest, cmsHPROFILE hProfile)
 }
 
 
-BOOL LCMSEXPORT cmsTakeMediaBlackPoint(LPcmsCIEXYZ Dest, cmsHPROFILE hProfile)
+LCMSBOOL LCMSEXPORT cmsTakeMediaBlackPoint(LPcmsCIEXYZ Dest, cmsHPROFILE hProfile)
 {
       LPLCMSICCPROFILE    Icc = (LPLCMSICCPROFILE) hProfile;
       *Dest = Icc -> MediaBlackPoint;
       return TRUE;
 }
 
-BOOL  LCMSEXPORT cmsTakeIluminant(LPcmsCIEXYZ Dest, cmsHPROFILE hProfile)
+LCMSBOOL  LCMSEXPORT cmsTakeIluminant(LPcmsCIEXYZ Dest, cmsHPROFILE hProfile)
 {
        LPLCMSICCPROFILE  Icc = (LPLCMSICCPROFILE) hProfile;
        *Dest = Icc -> Illuminant;
@@ -549,7 +601,7 @@ void LCMSEXPORT cmsSetProfileID(cmsHPROFILE hProfile, LPBYTE ProfileID)
 }
 
 
-BOOL LCMSEXPORT cmsTakeCreationDateTime(struct tm *Dest, cmsHPROFILE hProfile)
+LCMSBOOL LCMSEXPORT cmsTakeCreationDateTime(struct tm *Dest, cmsHPROFILE hProfile)
 {
     LPLCMSICCPROFILE  Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
     CopyMemory(Dest, &Icc ->Created, sizeof(struct tm));
@@ -570,22 +622,17 @@ void LCMSEXPORT cmsSetPCS(cmsHPROFILE hProfile, icColorSpaceSignature pcs)
        Icc -> PCS = pcs;
 }
 
-
-
 icColorSpaceSignature LCMSEXPORT cmsGetColorSpace(cmsHPROFILE hProfile)
 {
        LPLCMSICCPROFILE  Icc = (LPLCMSICCPROFILE) hProfile;
        return Icc -> ColorSpace;
 }
 
-
-
 void LCMSEXPORT cmsSetColorSpace(cmsHPROFILE hProfile, icColorSpaceSignature sig)
 {
        LPLCMSICCPROFILE  Icc = (LPLCMSICCPROFILE) hProfile;
        Icc -> ColorSpace = sig;
 }
-
 
 icProfileClassSignature LCMSEXPORT cmsGetDeviceClass(cmsHPROFILE hProfile)
 {
@@ -598,7 +645,6 @@ DWORD LCMSEXPORT cmsGetProfileICCversion(cmsHPROFILE hProfile)
        LPLCMSICCPROFILE  Icc = (LPLCMSICCPROFILE) hProfile;
        return (DWORD) Icc -> Version;
 }
-
 
 void LCMSEXPORT cmsSetProfileICCversion(cmsHPROFILE hProfile, DWORD Version)
 {
@@ -638,7 +684,7 @@ LPVOID DupBlock(LPLCMSICCPROFILE Icc, LPVOID Block, size_t size)
 
 // This is tricky, since LUT structs does have pointers
 
-BOOL LCMSEXPORT _cmsAddLUTTag(cmsHPROFILE hProfile, icTagSignature sig, const void* lut)
+LCMSBOOL LCMSEXPORT _cmsAddLUTTag(cmsHPROFILE hProfile, icTagSignature sig, const void* lut)
 {
        LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
        LPLUT Orig, Stored;
@@ -666,7 +712,7 @@ BOOL LCMSEXPORT _cmsAddLUTTag(cmsHPROFILE hProfile, icTagSignature sig, const vo
 }
 
 
-BOOL LCMSEXPORT _cmsAddXYZTag(cmsHPROFILE hProfile, icTagSignature sig, const cmsCIEXYZ* XYZ)
+LCMSBOOL LCMSEXPORT _cmsAddXYZTag(cmsHPROFILE hProfile, icTagSignature sig, const cmsCIEXYZ* XYZ)
 {
        LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
 
@@ -675,7 +721,7 @@ BOOL LCMSEXPORT _cmsAddXYZTag(cmsHPROFILE hProfile, icTagSignature sig, const cm
 }
 
 
-BOOL LCMSEXPORT _cmsAddTextTag(cmsHPROFILE hProfile, icTagSignature sig, const char* Text)
+LCMSBOOL LCMSEXPORT _cmsAddTextTag(cmsHPROFILE hProfile, icTagSignature sig, const char* Text)
 {
        LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
 
@@ -683,7 +729,7 @@ BOOL LCMSEXPORT _cmsAddTextTag(cmsHPROFILE hProfile, icTagSignature sig, const c
        return TRUE;
 }
 
-BOOL LCMSEXPORT _cmsAddGammaTag(cmsHPROFILE hProfile, icTagSignature sig, LPGAMMATABLE TransferFunction)
+LCMSBOOL LCMSEXPORT _cmsAddGammaTag(cmsHPROFILE hProfile, icTagSignature sig, LPGAMMATABLE TransferFunction)
 {
     LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
 
@@ -692,7 +738,7 @@ BOOL LCMSEXPORT _cmsAddGammaTag(cmsHPROFILE hProfile, icTagSignature sig, LPGAMM
 }
 
 
-BOOL LCMSEXPORT _cmsAddChromaticityTag(cmsHPROFILE hProfile, icTagSignature sig, LPcmsCIExyYTRIPLE Chrm)
+LCMSBOOL LCMSEXPORT _cmsAddChromaticityTag(cmsHPROFILE hProfile, icTagSignature sig, LPcmsCIExyYTRIPLE Chrm)
 {
     LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
 
@@ -701,7 +747,7 @@ BOOL LCMSEXPORT _cmsAddChromaticityTag(cmsHPROFILE hProfile, icTagSignature sig,
 }
 
 
-BOOL LCMSEXPORT _cmsAddSequenceDescriptionTag(cmsHPROFILE hProfile, icTagSignature sig, LPcmsSEQ pseq)
+LCMSBOOL LCMSEXPORT _cmsAddSequenceDescriptionTag(cmsHPROFILE hProfile, icTagSignature sig, LPcmsSEQ pseq)
 {
     LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
 
@@ -711,28 +757,40 @@ BOOL LCMSEXPORT _cmsAddSequenceDescriptionTag(cmsHPROFILE hProfile, icTagSignatu
 }
 
 
-BOOL LCMSEXPORT _cmsAddNamedColorTag(cmsHPROFILE hProfile, icTagSignature sig, LPcmsNAMEDCOLORLIST nc)
+LCMSBOOL LCMSEXPORT _cmsAddNamedColorTag(cmsHPROFILE hProfile, icTagSignature sig, LPcmsNAMEDCOLORLIST nc)
 {
     LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
 
     _cmsInitTag(Icc, sig, sizeof(cmsNAMEDCOLORLIST) + (nc ->nColors - 1) * sizeof(cmsNAMEDCOLOR), nc);
-    return FALSE;
+    return TRUE;
 }
 
 
-BOOL LCMSEXPORT _cmsAddDateTimeTag(cmsHPROFILE hProfile, icTagSignature sig, struct tm *DateTime)
+LCMSBOOL LCMSEXPORT _cmsAddDateTimeTag(cmsHPROFILE hProfile, icTagSignature sig, struct tm *DateTime)
 {
     LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
 
     _cmsInitTag(Icc, sig, sizeof(struct tm), DateTime);
-    return FALSE;
+    return TRUE;
 }
 
 
-BOOL LCMSEXPORT _cmsAddColorantTableTag(cmsHPROFILE hProfile, icTagSignature sig, LPcmsNAMEDCOLORLIST nc)
+LCMSBOOL LCMSEXPORT _cmsAddColorantTableTag(cmsHPROFILE hProfile, icTagSignature sig, LPcmsNAMEDCOLORLIST nc)
 {
     LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
 
     _cmsInitTag(Icc, sig, sizeof(cmsNAMEDCOLORLIST) + (nc ->nColors - 1) * sizeof(cmsNAMEDCOLOR), nc);
-    return FALSE;
+    return TRUE;
 }
+
+
+LCMSBOOL LCMSEXPORT _cmsAddChromaticAdaptationTag(cmsHPROFILE hProfile, icTagSignature sig, const cmsCIEXYZ* mat)
+{
+    LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
+
+    _cmsInitTag(Icc, sig, 3*sizeof(cmsCIEXYZ), mat);
+    return TRUE;
+
+}
+
+
