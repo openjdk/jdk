@@ -216,7 +216,9 @@ public class Resolve {
                 &&
                 isAccessible(env, site)
                 &&
-                sym.isInheritedIn(site.tsym, types);
+                sym.isInheritedIn(site.tsym, types)
+                &&
+                notOverriddenIn(site, sym);
         case PROTECTED:
             return
                 (env.toplevel.packge == sym.owner.owner // fast special case
@@ -231,14 +233,23 @@ public class Resolve {
                 &&
                 isAccessible(env, site)
                 &&
-                // `sym' is accessible only if not overridden by
-                // another symbol which is a member of `site'
-                // (because, if it is overridden, `sym' is not strictly
-                // speaking a member of `site'.)
-                (sym.kind != MTH || sym.isConstructor() || sym.isStatic() ||
-                 ((MethodSymbol)sym).implementation(site.tsym, types, true) == sym);
+                notOverriddenIn(site, sym);
         default: // this case includes erroneous combinations as well
-            return isAccessible(env, site);
+            return isAccessible(env, site) && notOverriddenIn(site, sym);
+        }
+    }
+    //where
+    /* `sym' is accessible only if not overridden by
+     * another symbol which is a member of `site'
+     * (because, if it is overridden, `sym' is not strictly
+     * speaking a member of `site'.)
+     */
+    private boolean notOverriddenIn(Type site, Symbol sym) {
+        if (sym.kind != MTH || sym.isConstructor() || sym.isStatic())
+            return true;
+        else {
+            Symbol s2 = ((MethodSymbol)sym).implementation(site.tsym, types, true);
+            return (s2 == null || s2 == sym);
         }
     }
     //where
@@ -605,7 +616,7 @@ public class Resolve {
     Symbol mostSpecific(Symbol m1,
                         Symbol m2,
                         Env<AttrContext> env,
-                        Type site,
+                        final Type site,
                         boolean allowBoxing,
                         boolean useVarargs) {
         switch (m2.kind) {
@@ -661,21 +672,33 @@ public class Resolve {
                                        m2.erasure(types).getParameterTypes()))
                     return new AmbiguityError(m1, m2);
                 // both abstract, neither overridden; merge throws clause and result type
-                Symbol result;
+                Symbol mostSpecific;
                 Type result2 = mt2.getReturnType();
                 if (mt2.tag == FORALL)
                     result2 = types.subst(result2, ((ForAll)mt2).tvars, ((ForAll)mt1).tvars);
                 if (types.isSubtype(mt1.getReturnType(), result2)) {
-                    result = m1;
+                    mostSpecific = m1;
                 } else if (types.isSubtype(result2, mt1.getReturnType())) {
-                    result = m2;
+                    mostSpecific = m2;
                 } else {
                     // Theoretically, this can't happen, but it is possible
                     // due to error recovery or mixing incompatible class files
                     return new AmbiguityError(m1, m2);
                 }
-                result = result.clone(result.owner);
-                result.type = (Type)result.type.clone();
+                MethodSymbol result = new MethodSymbol(
+                        mostSpecific.flags(),
+                        mostSpecific.name,
+                        null,
+                        mostSpecific.owner) {
+                    @Override
+                    public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult) {
+                        if (origin == site.tsym)
+                            return this;
+                        else
+                            return super.implementation(origin, types, checkResult);
+                    }
+                };
+                result.type = (Type)mostSpecific.type.clone();
                 result.type.setThrown(chk.intersect(mt1.getThrownTypes(),
                                                     mt2.getThrownTypes()));
                 return result;
