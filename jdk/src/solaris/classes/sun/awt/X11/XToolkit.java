@@ -54,6 +54,7 @@ import sun.awt.*;
 import sun.font.FontManager;
 import sun.misc.PerformanceLogger;
 import sun.print.PrintJob2D;
+import sun.security.action.GetBooleanAction;
 
 public final class XToolkit extends UNIXToolkit implements Runnable {
     private static Logger log = Logger.getLogger("sun.awt.X11.XToolkit");
@@ -2304,5 +2305,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             return false;
         }
         return ((X11GraphicsConfig)gc).isTranslucencyCapable();
+    }
+
+    /**
+     * Returns the value of "sun.awt.disablegrab" property. Default
+     * value is {@code false}.
+     */
+    public static boolean getSunAwtDisableGrab() {
+        return AccessController.doPrivileged(new GetBooleanAction("sun.awt.disablegrab"));
     }
 }
