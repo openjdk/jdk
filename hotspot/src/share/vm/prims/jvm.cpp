@@ -64,6 +64,7 @@ static void trace_class_resolution_impl(klassOop to_class, TRAPS) {
   ResourceMark rm;
   int line_number = -1;
   const char * source_file = NULL;
+  const char * trace = "explicit";
   klassOop caller = NULL;
   JavaThread* jthread = JavaThread::current();
   if (jthread->has_last_Java_frame()) {
@@ -107,12 +108,21 @@ static void trace_class_resolution_impl(klassOop to_class, TRAPS) {
                (last_caller->name() == vmSymbols::loadClassInternal_name() ||
                 last_caller->name() == vmSymbols::loadClass_name())) {
       found_it = true;
+    } else if (!vfst.at_end()) {
+      if (vfst.method()->is_native()) {
+        // JNI call
+        found_it = true;
+      }
     }
     if (found_it && !vfst.at_end()) {
       // found the caller
       caller = vfst.method()->method_holder();
       line_number = vfst.method()->line_number_from_bci(vfst.bci());
-      symbolOop s = instanceKlass::cast(vfst.method()->method_holder())->source_file_name();
+      if (line_number == -1) {
+        // show method name if it's a native method
+        trace = vfst.method()->name_and_sig_as_C_string();
+      }
+      symbolOop s = instanceKlass::cast(caller)->source_file_name();
       if (s != NULL) {
         source_file = s->as_C_string();
       }
@@ -124,15 +134,15 @@ static void trace_class_resolution_impl(klassOop to_class, TRAPS) {
       const char * to = Klass::cast(to_class)->external_name();
       // print in a single call to reduce interleaving between threads
       if (source_file != NULL) {
-        tty->print("RESOLVE %s %s %s:%d (explicit)\n", from, to, source_file, line_number);
+        tty->print("RESOLVE %s %s %s:%d (%s)\n", from, to, source_file, line_number, trace);
       } else {
-        tty->print("RESOLVE %s %s (explicit)\n", from, to);
+        tty->print("RESOLVE %s %s (%s)\n", from, to, trace);
       }
     }
   }
 }
 
-static void trace_class_resolution(klassOop to_class) {
+void trace_class_resolution(klassOop to_class) {
   EXCEPTION_MARK;
   trace_class_resolution_impl(to_class, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -3213,8 +3223,12 @@ JVM_ENTRY(jclass, JVM_LoadClass0(JNIEnv *env, jobject receiver,
   }
   Handle h_loader(THREAD, loader);
   Handle h_prot  (THREAD, protection_domain);
-  return find_class_from_class_loader(env, name, true, h_loader, h_prot,
-                                      false, thread);
+  jclass result =  find_class_from_class_loader(env, name, true, h_loader, h_prot,
+                                                false, thread);
+  if (TraceClassResolution && result != NULL) {
+    trace_class_resolution(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(result)));
+  }
+  return result;
 JVM_END
 
 
