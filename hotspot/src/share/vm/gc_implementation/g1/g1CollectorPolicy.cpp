@@ -1637,7 +1637,9 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
   double obj_copy_time = avg_value(_par_last_obj_copy_times_ms);
   double termination_time = avg_value(_par_last_termination_times_ms);
 
-  double parallel_other_time;
+  double parallel_other_time = _cur_collection_par_time_ms -
+    (update_rs_time + ext_root_scan_time + mark_stack_scan_time +
+     scan_only_time + scan_rs_time + obj_copy_time + termination_time);
   if (update_stats) {
     MainBodySummary* body_summary = summary->main_body_summary();
     guarantee(body_summary != NULL, "should not be null!");
@@ -1656,9 +1658,6 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
       body_summary->record_parallel_time_ms(_cur_collection_par_time_ms);
       body_summary->record_clear_ct_time_ms(_cur_clear_ct_time_ms);
       body_summary->record_termination_time_ms(termination_time);
-      parallel_other_time = _cur_collection_par_time_ms -
-        (update_rs_time + ext_root_scan_time + mark_stack_scan_time +
-         scan_only_time + scan_rs_time + obj_copy_time + termination_time);
       body_summary->record_parallel_other_time_ms(parallel_other_time);
     }
     body_summary->record_mark_closure_time_ms(_mark_closure_time_ms);
@@ -1803,8 +1802,10 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
     gclog_or_tty->print_cr("]");
 
   _all_pause_times_ms->add(elapsed_ms);
-  summary->record_total_time_ms(elapsed_ms);
-  summary->record_other_time_ms(other_time_ms);
+  if (update_stats) {
+    summary->record_total_time_ms(elapsed_ms);
+    summary->record_other_time_ms(other_time_ms);
+  }
   for (int i = 0; i < _aux_num; ++i)
     if (_cur_aux_times_set[i])
       _all_aux_times_ms[i].add(_cur_aux_times_ms[i]);

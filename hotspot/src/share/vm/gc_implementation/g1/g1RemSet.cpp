@@ -511,9 +511,17 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
     if (G1EnableParallelRSetUpdating || (worker_i == 0)) {
       updateRS(worker_i);
       scanNewRefsRS(oc, worker_i);
+    } else {
+      _g1p->record_update_rs_start_time(worker_i, os::elapsedTime());
+      _g1p->record_update_rs_processed_buffers(worker_i, 0.0);
+      _g1p->record_update_rs_time(worker_i, 0.0);
+      _g1p->record_scan_new_refs_time(worker_i, 0.0);
     }
     if (G1EnableParallelRSetScanning || (worker_i == 0)) {
       scanRS(oc, worker_i);
+    } else {
+      _g1p->record_scan_rs_start_time(worker_i, os::elapsedTime());
+      _g1p->record_scan_rs_time(worker_i, 0.0);
     }
   } else {
     assert(worker_i == 0, "invariant");
