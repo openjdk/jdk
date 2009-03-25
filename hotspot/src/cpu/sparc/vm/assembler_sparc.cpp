@@ -4234,7 +4234,6 @@ void MacroAssembler::g1_write_barrier_pre(Register obj, Register index, int offs
 static jint num_ct_writes = 0;
 static jint num_ct_writes_filtered_in_hr = 0;
 static jint num_ct_writes_filtered_null = 0;
-static jint num_ct_writes_filtered_pop = 0;
 static G1CollectedHeap* g1 = NULL;
 
 static Thread* count_ct_writes(void* filter_val, void* new_val) {
@@ -4247,25 +4246,19 @@ static Thread* count_ct_writes(void* filter_val, void* new_val) {
     if (g1 == NULL) {
       g1 = G1CollectedHeap::heap();
     }
-    if ((HeapWord*)new_val < g1->popular_object_boundary()) {
-      Atomic::inc(&num_ct_writes_filtered_pop);
-    }
   }
   if ((num_ct_writes % 1000000) == 0) {
     jint num_ct_writes_filtered =
       num_ct_writes_filtered_in_hr +
-      num_ct_writes_filtered_null +
-      num_ct_writes_filtered_pop;
+      num_ct_writes_filtered_null;
 
     tty->print_cr("%d potential CT writes: %5.2f%% filtered\n"
-                  "   (%5.2f%% intra-HR, %5.2f%% null, %5.2f%% popular).",
+                  "   (%5.2f%% intra-HR, %5.2f%% null).",
                   num_ct_writes,
                   100.0*(float)num_ct_writes_filtered/(float)num_ct_writes,
                   100.0*(float)num_ct_writes_filtered_in_hr/
                   (float)num_ct_writes,
                   100.0*(float)num_ct_writes_filtered_null/
-                  (float)num_ct_writes,
-                  100.0*(float)num_ct_writes_filtered_pop/
                   (float)num_ct_writes);
   }
   return Thread::current();
