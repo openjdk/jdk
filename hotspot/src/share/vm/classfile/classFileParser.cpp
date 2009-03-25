@@ -3230,7 +3230,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
       // print out the superclass.
       const char * from = Klass::cast(this_klass())->external_name();
       if (this_klass->java_super() != NULL) {
-        tty->print("RESOLVE %s %s\n", from, instanceKlass::cast(this_klass->java_super())->external_name());
+        tty->print("RESOLVE %s %s (super)\n", from, instanceKlass::cast(this_klass->java_super())->external_name());
       }
       // print out each of the interface classes referred to by this class.
       objArrayHandle local_interfaces(THREAD, this_klass->local_interfaces());
@@ -3240,7 +3240,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
           klassOop k = klassOop(local_interfaces->obj_at(i));
           instanceKlass* to_class = instanceKlass::cast(k);
           const char * to = to_class->external_name();
-          tty->print("RESOLVE %s %s\n", from, to);
+          tty->print("RESOLVE %s %s (interface)\n", from, to);
         }
       }
     }
