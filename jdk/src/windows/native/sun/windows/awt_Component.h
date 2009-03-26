@@ -137,12 +137,13 @@ public:
     virtual void RegisterClass();
     virtual void UnregisterClass();
 
-    void CreateHWnd(JNIEnv *env, LPCWSTR title,
+    virtual void CreateHWnd(JNIEnv *env, LPCWSTR title,
                     DWORD windowStyle, DWORD windowExStyle,
                     int x, int y, int w, int h,
                     HWND hWndParent, HMENU hMenu,
                     COLORREF colorForeground, COLORREF colorBackground,
                     jobject peer);
+    virtual void DestroyHWnd();
     void InitPeerGraphicsConfig(JNIEnv *env, jobject peer);
 
     virtual void Dispose();
@@ -670,7 +671,13 @@ public:
     static void _SetZOrder(void *param);
 
     static HWND sm_focusOwner;
+
+private:
     static HWND sm_focusedWindow;
+
+public:
+    static inline HWND GetFocusedWindow() { return sm_focusedWindow; }
+    static void SetFocusedWindow(HWND window);
 
     static void _SetFocus(void *param);
 

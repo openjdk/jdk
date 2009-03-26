@@ -547,8 +547,10 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      private volatile int sysH = 0;
 
      Rectangle constrainBounds(int x, int y, int width, int height) {
+         GraphicsConfiguration gc = this.winGraphicsConfig;
+
          // We don't restrict the setBounds() operation if the code is trusted.
-         if (!hasWarningWindow()) {
+         if (!hasWarningWindow() || gc == null) {
              return new Rectangle(x, y, width, height);
          }
 
@@ -557,24 +559,24 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
          int newW = width;
          int newH = height;
 
-         GraphicsConfiguration gc = ((Window)target).getGraphicsConfiguration();
          Rectangle sB = gc.getBounds();
-         Insets sIn = ((Window)target).getToolkit().getScreenInsets(gc);
+         Insets sIn = Toolkit.getDefaultToolkit().getScreenInsets(gc);
 
          int screenW = sB.width - sIn.left - sIn.right;
          int screenH = sB.height - sIn.top - sIn.bottom;
 
          // If it's undecorated or is not currently visible
-         if (!((Window)target).isVisible() || isTargetUndecorated()) {
+         if (!AWTAccessor.getComponentAccessor().isVisible_NoClientCode(
+                     (Component)target) || isTargetUndecorated())
+         {
              // Now check each point is within the visible part of the screen
              int screenX = sB.x + sIn.left;
              int screenY = sB.y + sIn.top;
 
-             // First make sure the size is withing the visible part of the screen
+             // First make sure the size is within the visible part of the screen
              if (newW > screenW) {
                  newW = screenW;
              }
-
              if (newH > screenH) {
                  newH = screenH;
              }
@@ -585,7 +587,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
              } else if (newX + newW > screenX + screenW) {
                  newX = screenX + screenW - newW;
              }
-
              if (newY < screenY) {
                  newY = screenY;
              } else if (newY + newH > screenY + screenH) {
@@ -600,7 +601,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
              if (newW > maxW) {
                  newW = maxW;
              }
-
              if (newH > maxH) {
                  newH = maxH;
              }
@@ -608,6 +608,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
          return new Rectangle(newX, newY, newW, newH);
      }
+
+     public native void repositionSecurityWarning();
 
      @Override
      public void setBounds(int x, int y, int width, int height, int op) {

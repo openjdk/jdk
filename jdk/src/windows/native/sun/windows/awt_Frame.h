@@ -108,7 +108,6 @@ public:
     MsgRouting WmNcMouseDown(WPARAM hitTest, int x, int y, int button);
     MsgRouting WmNcMouseUp(WPARAM hitTest, int x, int y, int button);
     MsgRouting WmGetIcon(WPARAM iconType, LRESULT& retVal);
-    MsgRouting WmWindowPosChanged(LPARAM windowPos);
     MsgRouting WmShowWindow(BOOL show, UINT status);
 
     virtual MsgRouting WmSysCommand(UINT uCmdType, int xPos, int yPos);

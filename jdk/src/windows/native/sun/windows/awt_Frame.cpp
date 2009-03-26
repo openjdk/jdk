@@ -361,8 +361,8 @@ LRESULT CALLBACK AwtFrame::ProxyWindowProc(HWND hwnd, UINT message,
                 AwtWindow::SynthesizeWmActivate(FALSE, parent->GetHWnd(), NULL);
 
             } else if (sm_restoreFocusAndActivation) {
-                if (sm_focusedWindow != NULL) {
-                    AwtWindow *focusedWindow = (AwtWindow*)GetComponent(sm_focusedWindow);
+                if (AwtComponent::GetFocusedWindow() != NULL) {
+                    AwtWindow *focusedWindow = (AwtWindow*)GetComponent(AwtComponent::GetFocusedWindow());
                     if (focusedWindow != NULL) {
                         // Will just silently restore native focus & activation.
                         focusedWindow->AwtSetActiveWindow();
@@ -607,11 +607,6 @@ MsgRouting AwtFrame::WmNcMouseDown(WPARAM hitTest, int x, int y, int button) {
     return AwtWindow::WmNcMouseDown(hitTest, x, y, button);
 }
 
-MsgRouting AwtFrame::WmWindowPosChanged(LPARAM windowPos) {
-    return mrDoDefault;
-}
-
-
 // Override AwtWindow::Reshape() to handle minimized/maximized
 // frames (see 6525850, 4065534)
 void AwtFrame::Reshape(int x, int y, int width, int height)
@@ -848,6 +843,11 @@ MsgRouting AwtFrame::WmGetMinMaxInfo(LPMINMAXINFO lpmmi)
 
 MsgRouting AwtFrame::WmSize(UINT type, int w, int h)
 {
+    currentWmSizeState = type;
+    if (currentWmSizeState == SIZE_MINIMIZED) {
+        UpdateSecurityWarningVisibility();
+    }
+
     if (m_ignoreWmSize) {
         return mrDoDefault;
     }
@@ -941,7 +941,7 @@ MsgRouting AwtFrame::WmActivate(UINT nState, BOOL fMinimized, HWND opposite)
             return mrConsume;
         }
         type = java_awt_event_WindowEvent_WINDOW_GAINED_FOCUS;
-        sm_focusedWindow = GetHWnd();
+        AwtComponent::SetFocusedWindow(GetHWnd());
 
     } else {
         if (!::IsWindow(AwtWindow::GetModalBlocker(opposite))) {
@@ -967,7 +967,7 @@ MsgRouting AwtFrame::WmActivate(UINT nState, BOOL fMinimized, HWND opposite)
             CheckRetainActualFocusedWindow(opposite);
 
             type = java_awt_event_WindowEvent_WINDOW_LOST_FOCUS;
-            sm_focusedWindow = NULL;
+            AwtComponent::SetFocusedWindow(NULL);
             sm_focusOwner = NULL;
         }
     }
@@ -992,9 +992,9 @@ BOOL AwtFrame::CheckActivateActualFocusedWindow(HWND deactivatedOpositeHWnd)
 void AwtFrame::CheckRetainActualFocusedWindow(HWND activatedOpositeHWnd)
 {
     // If actual focused window is not this Frame
-    if (sm_focusedWindow != GetHWnd()) {
+    if (AwtComponent::GetFocusedWindow() != GetHWnd()) {
         // Make sure the actual focused window is an owned window of this frame
-        AwtWindow *focusedWindow = (AwtWindow *)AwtComponent::GetComponent(sm_focusedWindow);
+        AwtWindow *focusedWindow = (AwtWindow *)AwtComponent::GetComponent(AwtComponent::GetFocusedWindow());
         if (focusedWindow != NULL && focusedWindow->GetOwningFrameOrDialog() == this) {
 
             // Check that the opposite window is not this frame, nor an owned window of this frame

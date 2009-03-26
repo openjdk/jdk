@@ -68,6 +68,15 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     int oldWidth = -1;
     int oldHeight = -1;
 
+    protected PropMwmHints mwm_hints;
+    protected static XAtom wm_protocols;
+    protected static XAtom wm_delete_window;
+    protected static XAtom wm_take_focus;
+
+    private boolean stateChanged; // Indicates whether the value on savedState is valid
+    private int savedState; // Holds last known state of the top-level window
+
+    XWindowAttributesData winAttr;
 
     protected X11GraphicsConfig graphicsConfig;
     protected AwtGraphicsConfigData graphicsConfigData;
@@ -218,6 +227,20 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
 
         params.putIfNull(BACKING_STORE, XToolkit.getBackingStoreType());
+
+        XToolkit.awtLock();
+        try {
+            if (wm_protocols == null) {
+                wm_protocols = XAtom.get("WM_PROTOCOLS");
+                wm_delete_window = XAtom.get("WM_DELETE_WINDOW");
+                wm_take_focus = XAtom.get("WM_TAKE_FOCUS");
+            }
+        }
+        finally {
+            XToolkit.awtUnlock();
+        }
+        winAttr = new XWindowAttributesData();
+        savedState = XUtilConstants.WithdrawnState;
     }
 
     void postInit(XCreateWindowParams params) {
@@ -832,11 +855,41 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     public native boolean x11inputMethodLookupString(long event, long [] keysymArray);
     native boolean haveCurrentX11InputMethodInstance();
 
+    private boolean mouseAboveMe;
+
+    public boolean isMouseAbove() {
+        synchronized (getStateLock()) {
+            return mouseAboveMe;
+        }
+    }
+    protected void setMouseAbove(boolean above) {
+        synchronized (getStateLock()) {
+            mouseAboveMe = above;
+        }
+    }
+
+    protected void enterNotify(long window) {
+        if (window == getWindow()) {
+            setMouseAbove(true);
+        }
+    }
+    protected void leaveNotify(long window) {
+        if (window == getWindow()) {
+            setMouseAbove(false);
+        }
+    }
+
     public void handleXCrossingEvent(XEvent xev) {
         super.handleXCrossingEvent(xev);
         XCrossingEvent xce = xev.get_xcrossing();
 
         if (eventLog.isLoggable(Level.FINEST)) eventLog.finest(xce.toString());
+
+        if (xce.get_type() == XConstants.EnterNotify) {
+            enterNotify(xce.get_window());
+        } else { // LeaveNotify:
+            leaveNotify(xce.get_window());
+        }
 
         // Skip event If it was caused by a grab
         // This is needed because on displays with focus-follows-mouse on MousePress X system generates
@@ -1133,6 +1186,55 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     }
 
+    /*
+     * XmNiconic and Map/UnmapNotify (that XmNiconic relies on) are
+     * unreliable, since mapping changes can happen for a virtual desktop
+     * switch or MacOS style shading that became quite popular under X as
+     * well.  Yes, it probably should not be this way, as it violates
+     * ICCCM, but reality is that quite a lot of window managers abuse
+     * mapping state.
+     */
+    int getWMState() {
+        if (stateChanged) {
+            stateChanged = false;
+            WindowPropertyGetter getter =
+                new WindowPropertyGetter(window, XWM.XA_WM_STATE, 0, 1, false,
+                                         XWM.XA_WM_STATE);
+            try {
+                int status = getter.execute();
+                if (status != XConstants.Success || getter.getData() == 0) {
+                    return savedState = XUtilConstants.WithdrawnState;
+                }
+
+                if (getter.getActualType() != XWM.XA_WM_STATE.getAtom() && getter.getActualFormat() != 32) {
+                    return savedState = XUtilConstants.WithdrawnState;
+                }
+                savedState = (int)Native.getCard32(getter.getData());
+            } finally {
+                getter.dispose();
+            }
+        }
+        return savedState;
+    }
+
+    /**
+     * Override this methods to get notifications when top-level window state changes. The state is
+     * meant in terms of ICCCM: WithdrawnState, IconicState, NormalState
+     */
+    protected void stateChanged(long time, int oldState, int newState) {
+    }
+
+    @Override
+    public void handlePropertyNotify(XEvent xev) {
+        super.handlePropertyNotify(xev);
+        XPropertyEvent ev = xev.get_xproperty();
+        if (ev.get_atom() == XWM.XA_WM_STATE.getAtom()) {
+            // State has changed, invalidate saved value
+            stateChanged = true;
+            stateChanged(ev.get_time(), savedState, getWMState());
+        }
+    }
+
     public void reshape(Rectangle bounds) {
         reshape(bounds.x, bounds.y, bounds.width, bounds.height);
     }
@@ -1293,4 +1395,40 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     static native int getAWTKeyCodeForKeySym(int keysym);
     static native int getKeySymForAWTKeyCode(int keycode);
+
+    /* These two methods are actually applicable to toplevel windows only.
+     * However, the functionality is required by both the XWindowPeer and
+     * XWarningWindow, both of which have the XWindow as a common ancestor.
+     * See XWM.setMotifDecor() for details.
+     */
+    public PropMwmHints getMWMHints() {
+        if (mwm_hints == null) {
+            mwm_hints = new PropMwmHints();
+            if (!XWM.XA_MWM_HINTS.getAtomData(getWindow(), mwm_hints.pData, MWMConstants.PROP_MWM_HINTS_ELEMENTS)) {
+                mwm_hints.zero();
+            }
+        }
+        return mwm_hints;
+    }
+
+    public void setMWMHints(PropMwmHints hints) {
+        mwm_hints = hints;
+        if (hints != null) {
+            XWM.XA_MWM_HINTS.setAtomData(getWindow(), mwm_hints.pData, MWMConstants.PROP_MWM_HINTS_ELEMENTS);
+        }
+    }
+
+    protected final void initWMProtocols() {
+        wm_protocols.setAtomListProperty(this, getWMProtocols());
+    }
+
+    /**
+     * Returns list of protocols which should be installed on this window.
+     * Descendants can override this method to add class-specific protocols
+     */
+    protected XAtomList getWMProtocols() {
+        // No protocols on simple window
+        return new XAtomList();
+    }
+
 }

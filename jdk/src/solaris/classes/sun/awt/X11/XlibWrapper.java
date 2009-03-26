@@ -156,6 +156,8 @@ Window w;
 
     static native void XLowerWindow(long display, long window);
     static native void XRestackWindows(long display, long windows, int length);
+    static native void XConfigureWindow(long display, long window,
+            long value_mask, long values);
     static native void XSetInputFocus(long display, long window);
     static native void XSetInputFocus2(long display, long window, long time);
     static native long XGetInputFocus(long display);
@@ -533,6 +535,12 @@ static native String XSetLocaleModifiers(String modifier_list);
     static native void SetRectangularShape(long display, long window,
             int lox, int loy, int hix, int hiy,
             sun.java2d.pipe.Region region);
+    /** Each int in the bitmap array is one pixel with a 32-bit color:
+     *  R, G, B, and Alpha.
+     */
+    static native void SetBitmapShape(long display, long window,
+             int width, int height, int[] bitmap);
+
     static native void SetZOrder(long display, long window, long above);
 
 /* Global memory area used for X lib parameter passing */

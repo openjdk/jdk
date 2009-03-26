@@ -67,16 +67,11 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     // should be synchronized on awtLock
     private static Set<XWindowPeer> windows = new HashSet<XWindowPeer>();
 
-    static XAtom wm_protocols;
-    static XAtom wm_delete_window;
-    static XAtom wm_take_focus;
 
-    XWindowAttributesData winAttr;
     private boolean cachedFocusableWindow;
     XWarningWindow warningWindow;
 
     private boolean alwaysOnTop;
-    PropMwmHints mwm_hints;
     private boolean locationByPlatform;
 
     Dialog modalBlocker;
@@ -93,8 +88,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     private boolean grab = false; // Whether to do a grab during showing
 
     private boolean isMapped = false; // Is this window mapped or not
-    private boolean stateChanged; // Indicates whether the value on savedState is valid
-    private int savedState; // Holds last known state of the top-level window
     private boolean mustControlStackPosition = false; // Am override-redirect not on top
     private XEventDispatcher rootPropertyEventDispatcher = null;
 
@@ -141,25 +134,18 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         super.preInit(params);
         params.putIfNull(BIT_GRAVITY, Integer.valueOf(XConstants.NorthWestGravity));
 
-        savedState = XUtilConstants.WithdrawnState;
+        long eventMask = 0;
+        if (params.containsKey(EVENT_MASK)) {
+            eventMask = ((Long)params.get(EVENT_MASK));
+        }
+        eventMask |= XConstants.VisibilityChangeMask;
+        params.put(EVENT_MASK, eventMask);
+
         XA_NET_WM_STATE = XAtom.get("_NET_WM_STATE");
 
-        winAttr = new XWindowAttributesData();
 
         params.put(OVERRIDE_REDIRECT, Boolean.valueOf(isOverrideRedirect()));
 
-        SunToolkit.awtLock();
-        try {
-            windows.add(this);
-            if (wm_protocols == null) {
-                wm_protocols = XAtom.get("WM_PROTOCOLS");
-                wm_delete_window = XAtom.get("WM_DELETE_WINDOW");
-                wm_take_focus = XAtom.get("WM_TAKE_FOCUS");
-            }
-        }
-        finally {
-            SunToolkit.awtUnlock();
-        }
         cachedFocusableWindow = isFocusableWindow();
 
         Font f = target.getFont();
@@ -191,20 +177,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         Rectangle bounds = (Rectangle)(params.get(BOUNDS));
         params.put(BOUNDS, constrainBounds(bounds.x, bounds.y, bounds.width, bounds.height));
     }
-
-    private void initWMProtocols() {
-        wm_protocols.setAtomListProperty(this, getWMProtocols());
-    }
-
-    /**
-     * Returns list of protocols which should be installed on this window.
-     * Descendants can override this method to add class-specific protocols
-     */
-    protected XAtomList getWMProtocols() {
-        // No protocols on simple window
-        return new XAtomList();
-    }
-
 
     protected String getWMName() {
         String name = target.getName();
@@ -259,7 +231,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             // accessSystemTray permission allows to display TrayIcon, TrayIcon tooltip
             // and TrayIcon balloon windows without a warning window.
             if (!WindowAccessor.isTrayIconWindow((Window)target)) {
-                warningWindow = new XWarningWindow((Window)target, getWindow());
+                warningWindow = new XWarningWindow((Window)target, getWindow(), this);
             }
         }
 
@@ -539,10 +511,15 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             }
 
 
-            if (!bounds.getSize().equals(oldBounds.getSize())) {
+            boolean isResized = !bounds.getSize().equals(oldBounds.getSize());
+            boolean isMoved = !bounds.getLocation().equals(oldBounds.getLocation());
+            if (isMoved || isResized) {
+                repositionSecurityWarning();
+            }
+            if (isResized) {
                 postEventToEventQueue(new ComponentEvent(getEventSource(), ComponentEvent.COMPONENT_RESIZED));
             }
-            if (!bounds.getLocation().equals(oldBounds.getLocation())) {
+            if (isMoved) {
                 postEventToEventQueue(new ComponentEvent(getEventSource(), ComponentEvent.COMPONENT_MOVED));
             }
         } finally {
@@ -565,7 +542,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     public Insets getInsets() {
-        return new Insets(getWarningWindowHeight(), 0, 0, 0);
+        return new Insets(0, 0, 0, 0);
     }
 
     // NOTE: This method may be called by privileged threads.
@@ -780,6 +757,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      * Overridden to check if we need to update our GraphicsDevice/Config
      * Added for 4934052.
      */
+    @Override
     public void handleConfigureNotifyEvent(XEvent xev) {
         // TODO: We create an XConfigureEvent every time we override
         // handleConfigureNotify() - too many!
@@ -793,8 +771,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         // there could be a race condition in which a ComponentListener could
         // see the old screen.
         super.handleConfigureNotifyEvent(xev);
-        // for 5085647: no applet warning window visible
-        updateChildrenSizes();
+        repositionSecurityWarning();
     }
 
     final void requestXFocus(long time) {
@@ -1072,6 +1049,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         updateFocusability();
         promoteDefaultPosition();
+        if (!vis && warningWindow != null) {
+            warningWindow.setSecurityWarningVisible(false, false);
+        }
         super.setVisible(vis);
         if (!vis && !isWithdrawn()) {
             // ICCCM, 4.1.4. Changing Window State:
@@ -1101,6 +1081,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (isOverrideRedirect() && vis) {
             updateChildrenSizes();
         }
+        repositionSecurityWarning();
     }
 
     protected void suppressWmTakeFocus(boolean doSuppress) {
@@ -1118,21 +1099,64 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return 0;
     }
 
-    // The height of area used to display Applet's warning about securit
-    int getWarningWindowHeight() {
-        if (warningWindow != null) {
-            return warningWindow.getHeight();
-        } else {
-            return 0;
-        }
-    }
-
     // Called when shell changes its size and requires children windows
     // to update their sizes appropriately
     void updateChildrenSizes() {
+    }
+
+    public void repositionSecurityWarning() {
+        // NOTE: On KWin if the window/border snapping option is enabled,
+        // the Java window may be swinging while it's being moved.
+        // This doesn't make the application unusable though looks quite ugly.
+        // Probobly we need to find some hint to assign to our Security
+        // Warning window in order to exclude it from the snapping option.
+        // We are not currently aware of existance of such a property.
         if (warningWindow != null) {
-            warningWindow.reshape(0, getMenuBarHeight(), getSize().width, warningWindow.getHeight());
+            // We can't use the coordinates stored in the XBaseWindow since
+            // they are zeros for decorated frames.
+            int x = ComponentAccessor.getX(target);
+            int y = ComponentAccessor.getY(target);
+            int width = ComponentAccessor.getWidth(target);
+            int height = ComponentAccessor.getHeight(target);
+            warningWindow.reposition(x, y, width, height);
         }
+    }
+
+    @Override
+    protected void setMouseAbove(boolean above) {
+        super.setMouseAbove(above);
+        updateSecurityWarningVisibility();
+    }
+
+    public void updateSecurityWarningVisibility() {
+        if (warningWindow == null) {
+            return;
+        }
+
+        boolean show = false;
+
+        int state = getWMState();
+
+        if (!isVisible()) {
+            return; // The warning window should already be hidden.
+        }
+
+        // getWMState() always returns 0 (Withdrawn) for simple windows. Hence
+        // we ignore the state for such windows.
+        if (isVisible() && (state == XUtilConstants.NormalState || isSimpleWindow())) {
+            if (XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow() ==
+                    getTarget())
+            {
+                show = true;
+            }
+
+            if (isMouseAbove() || warningWindow.isMouseAbove())
+            {
+                show = true;
+            }
+        }
+
+        warningWindow.setSecurityWarningVisible(show);
     }
 
     boolean isOverrideRedirect() {
@@ -1184,16 +1208,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 //         if (ve.get_state() == XlibWrapper.VisibilityUnobscured) {
 //             // raiseInputMethodWindow
 //         }
-    }
-
-    public void handlePropertyNotify(XEvent xev) {
-        super.handlePropertyNotify(xev);
-        XPropertyEvent ev = xev.get_xproperty();
-        if (ev.get_atom() == XWM.XA_WM_STATE.getAtom()) {
-            // State has changed, invalidate saved value
-            stateChanged = true;
-            stateChanged(ev.get_time(), savedState, getWMState());
-        }
+        repositionSecurityWarning();
     }
 
     void handleRootPropertyNotify(XEvent xev) {
@@ -1294,6 +1309,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      * Override this methods to get notifications when top-level window state changes. The state is
      * meant in terms of ICCCM: WithdrawnState, IconicState, NormalState
      */
+    @Override
     protected void stateChanged(long time, int oldState, int newState) {
         // Fix for 6401700, 6412803
         // If this window is modal blocked, it is put into the transient_for
@@ -1307,38 +1323,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         for (ToplevelStateListener topLevelListenerTmp : toplevelStateListeners) {
             topLevelListenerTmp.stateChangedICCCM(oldState, newState);
         }
-    }
 
-
-    /*
-     * XmNiconic and Map/UnmapNotify (that XmNiconic relies on) are
-     * unreliable, since mapping changes can happen for a virtual desktop
-     * switch or MacOS style shading that became quite popular under X as
-     * well.  Yes, it probably should not be this way, as it violates
-     * ICCCM, but reality is that quite a lot of window managers abuse
-     * mapping state.
-     */
-    int getWMState() {
-        if (stateChanged) {
-            stateChanged = false;
-            WindowPropertyGetter getter =
-                new WindowPropertyGetter(window, XWM.XA_WM_STATE, 0, 1, false,
-                                         XWM.XA_WM_STATE);
-            try {
-                int status = getter.execute();
-                if (status != XConstants.Success || getter.getData() == 0) {
-                    return savedState = XUtilConstants.WithdrawnState;
-                }
-
-                if (getter.getActualType() != XWM.XA_WM_STATE.getAtom() && getter.getActualFormat() != 32) {
-                    return savedState = XUtilConstants.WithdrawnState;
-                }
-                savedState = (int)Native.getCard32(getter.getData());
-            } finally {
-                getter.dispose();
-            }
-        }
-        return savedState;
+        updateSecurityWarningVisibility();
     }
 
     boolean isWithdrawn() {
