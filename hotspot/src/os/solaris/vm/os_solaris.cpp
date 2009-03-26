@@ -2623,15 +2623,16 @@ int os::vm_allocation_granularity() {
   return page_size;
 }
 
-bool os::commit_memory(char* addr, size_t bytes) {
+bool os::commit_memory(char* addr, size_t bytes, bool exec) {
+  int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   size_t size = bytes;
   return
-     NULL != Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED,
-                                 PROT_READ | PROT_WRITE | PROT_EXEC);
+     NULL != Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED, prot);
 }
 
-bool os::commit_memory(char* addr, size_t bytes, size_t alignment_hint) {
-  if (commit_memory(addr, bytes)) {
+bool os::commit_memory(char* addr, size_t bytes, size_t alignment_hint,
+                       bool exec) {
+  if (commit_memory(addr, bytes, exec)) {
     if (UseMPSS && alignment_hint > (size_t)vm_page_size()) {
       // If the large page size has been set and the VM
       // is using large pages, use the large page size
@@ -3220,7 +3221,9 @@ bool os::Solaris::set_mpss_range(caddr_t start, size_t bytes, size_t align) {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes, char* addr) {
+char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
+  // "exec" is passed in but not used.  Creating the shared image for
+  // the code cache doesn't have an SHM_X executable permission to check.
   assert(UseLargePages && UseISM, "only for ISM large pages");
 
   size_t size = bytes;
