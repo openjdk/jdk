@@ -685,6 +685,9 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
         psl->Release();
     }
 
+    if (strret.uType == STRRET_WSTR) {
+        CoTaskMemFree(strret.pOleStr);
+    }
     if (SUCCEEDED(hres)) {
         return (jlong)pidl;
     } else {
@@ -747,7 +750,11 @@ JNIEXPORT jstring JNICALL Java_sun_awt_shell_Win32ShellFolder2_getDisplayNameOf
     if (pParent->GetDisplayNameOf(pidl, attrs, &strret) != S_OK) {
         return NULL;
     }
-    return jstringFromSTRRET(env, pidl, &strret);
+    jstring result = jstringFromSTRRET(env, pidl, &strret);
+    if (strret.uType == STRRET_WSTR) {
+        CoTaskMemFree(strret.pOleStr);
+    }
+    return result;
 }
 
 /*
