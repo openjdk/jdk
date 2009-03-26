@@ -42,6 +42,7 @@
 #include <jvm.h>
 
 #include <Region.h>
+#include "utility/rect.h"
 
 #if defined(DEBUG) || defined(INTERNAL_BUILD)
 static jmethodID lockIsHeldMID = NULL;
@@ -301,6 +302,20 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XRestackWindows
     AWT_CHECK_HAVE_LOCK();
     XRestackWindows( (Display *) jlong_to_ptr(display), (Window *) jlong_to_ptr(windows), length);
 
+}
+
+/*
+ * Class:     XlibWrapper
+ * Method:    XConfigureWindow
+ * Signature: (JJJJ)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XConfigureWindow
+(JNIEnv *env, jclass clazz, jlong display, jlong window, jlong value_mask,
+ jlong values)
+{
+    AWT_CHECK_HAVE_LOCK();
+    XConfigureWindow((Display*)jlong_to_ptr(display), (Window)window,
+            (unsigned int)value_mask, (XWindowChanges*)jlong_to_ptr(values));
 }
 
 /*
@@ -1973,3 +1988,49 @@ Java_sun_awt_X11_XlibWrapper_SetZOrder
                      (Window)jlong_to_ptr(window),
                      value_mask, &wc );
 }
+
+/*
+ * Class:     XlibWrapper
+ * Method:    SetBitmapShape
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_X11_XlibWrapper_SetBitmapShape
+(JNIEnv *env, jclass clazz, jlong display, jlong window,
+ jint width, jint height, jintArray bitmap)
+{
+    jsize len;
+    jint *values;
+    jboolean isCopy = JNI_FALSE;
+    size_t worstBufferSize = (size_t)((width / 2 + 1) * height);
+    RECT_T * pRect;
+
+    AWT_CHECK_HAVE_LOCK();
+
+    len = (*env)->GetArrayLength(env, bitmap);
+    if (len == 0 || len < width * height) {
+        return;
+    }
+
+    values = (*env)->GetIntArrayElements(env, bitmap, &isCopy);
+    if (JNU_IsNull(env, values)) {
+        return;
+    }
+
+    pRect = (RECT_T *)malloc(worstBufferSize * sizeof(RECT_T));
+
+    /* Note: the values[0] and values[1] are supposed to contain the width
+     * and height (see XIconInfo.getIntData() for details). So, we do +2.
+     */
+    int numrects = BitmapToYXBandedRectangles(32, (int)width, (int)height,
+            (unsigned char *)(values + 2), pRect);
+
+    XShapeCombineRectangles((Display *)jlong_to_ptr(display), (Window)jlong_to_ptr(window),
+            ShapeClip, 0, 0, pRect, numrects, ShapeSet, YXBanded);
+    XShapeCombineRectangles((Display *)jlong_to_ptr(display), (Window)jlong_to_ptr(window),
+            ShapeBounding, 0, 0, pRect, numrects, ShapeSet, YXBanded);
+
+    free(pRect);
+
+    (*env)->ReleaseIntArrayElements(env, bitmap, values, JNI_ABORT);
+}
+

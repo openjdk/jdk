@@ -260,8 +260,7 @@ AwtComponent::~AwtComponent()
      * the native one anymore. So we can safely destroy component's
      * handle.
      */
-    AwtToolkit::DestroyComponentHWND(m_hwnd);
-    m_hwnd = NULL;
+    DestroyHWnd();
 
     if (sm_getComponentCache == this) {
         sm_getComponentCache = NULL;
@@ -573,6 +572,17 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
     }
     env->DeleteLocalRef(target);
     env->DeleteLocalRef(bkgrd);
+}
+
+/*
+ * Destroy this window's HWND
+ */
+void AwtComponent::DestroyHWnd() {
+    if (m_hwnd != NULL) {
+        AwtToolkit::DestroyComponentHWND(m_hwnd);
+        //AwtToolkit::DestroyComponent(this);
+        m_hwnd = NULL;
+    }
 }
 
 /*
@@ -4470,7 +4480,7 @@ ret:
 void* AwtComponent::GetNativeFocusedWindow() {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     AwtComponent *comp =
-        AwtComponent::GetComponent(AwtComponent::sm_focusedWindow);
+        AwtComponent::GetComponent(AwtComponent::GetFocusedWindow());
     return (comp != NULL) ? comp->GetTargetAsGlobalRef(env) : NULL;
 }
 
@@ -4571,7 +4581,7 @@ AwtComponent::SendKeyEventToFocusOwner(jint id, jlong when,
      * if focus owner is null, but focused window isn't
      * we will send key event to focused window
      */
-    HWND hwndTarget = ((sm_focusOwner != NULL) ? sm_focusOwner : sm_focusedWindow);
+    HWND hwndTarget = ((sm_focusOwner != NULL) ? sm_focusOwner : AwtComponent::GetFocusedWindow());
 
     if (hwndTarget == GetHWnd()) {
         SendKeyEvent(id, when, raw, cooked, modifiers, keyLocation, msg);
@@ -5991,6 +6001,14 @@ void AwtComponent::PostUngrabEvent() {
         SendEvent(event);
         env->DeleteLocalRef(event);
     }
+}
+
+void AwtComponent::SetFocusedWindow(HWND window)
+{
+    HWND old = sm_focusedWindow;
+    sm_focusedWindow = window;
+
+    AwtWindow::FocusedWindowChanged(old, window);
 }
 
 /************************************************************************

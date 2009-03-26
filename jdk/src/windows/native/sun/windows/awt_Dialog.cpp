@@ -310,13 +310,18 @@ void AwtDialog::PopupOneDialog(HWND dialog, HWND blocker, BOOL isModalHook, HWND
         // no beep/flash if the mouse was clicked in the taskbar menu
         // or the dialog is currently inactive
         if (!isModalHook && !onTaskbar && (dialog == prevFGWindow)) {
-            ::MessageBeep(MB_OK);
-            // some heuristics: 3 times x 64 milliseconds
-            AwtWindow::FlashWindowEx(dialog, 3, 64, FLASHW_CAPTION);
+            AnimateModalBlocker(dialog);
         }
         ::BringWindowToTop(dialog);
         ::SetForegroundWindow(dialog);
     }
+}
+
+void AwtDialog::AnimateModalBlocker(HWND window)
+{
+    ::MessageBeep(MB_OK);
+    // some heuristics: 3 times x 64 milliseconds
+    AwtWindow::FlashWindowEx(window, 3, 64, FLASHW_CAPTION);
 }
 
 LRESULT CALLBACK AwtDialog::MouseHookProc_NonTT(int nCode,

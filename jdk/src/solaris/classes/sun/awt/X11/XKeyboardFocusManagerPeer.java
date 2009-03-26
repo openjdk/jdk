@@ -83,8 +83,25 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
 
     public static void setCurrentNativeFocusedWindow(Window win) {
         if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Setting current native focused window " + win);
+        XWindowPeer from = null, to = null;
+
         synchronized(lock) {
+            if (currentFocusedWindow != null) {
+                from = (XWindowPeer)currentFocusedWindow.getPeer();
+            }
+
             currentFocusedWindow = win;
+
+            if (currentFocusedWindow != null) {
+                to = (XWindowPeer)currentFocusedWindow.getPeer();
+            }
+        }
+
+        if (from != null) {
+            from.updateSecurityWarningVisibility();
+        }
+        if (to != null) {
+            to.updateSecurityWarningVisibility();
         }
     }
 

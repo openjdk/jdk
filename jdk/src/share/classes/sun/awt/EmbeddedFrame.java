@@ -592,5 +592,7 @@ public abstract class EmbeddedFrame extends Frame
         }
         public void updateWindow(BufferedImage backBuffer) {
         }
+        public void repositionSecurityWarning() {
+        }
      }
 } // class EmbeddedFrame

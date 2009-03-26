@@ -200,5 +200,6 @@ FILES_cpp = \
 	ShellFolder2.cpp \
 	ThemeReader.cpp \
 	ComCtl32Util.cpp \
+	DllUtil.cpp \
 	initIDs.cpp \
 	MouseInfo.cpp

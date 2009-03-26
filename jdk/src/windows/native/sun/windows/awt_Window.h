@@ -54,12 +54,17 @@ public:
     static jfieldID locationByPlatformID;
     static jfieldID screenID; /* screen number passed over from WindowPeer */
     static jfieldID autoRequestFocusID;
+    static jfieldID securityWarningWidthID;
+    static jfieldID securityWarningHeightID;
 
     // The coordinates at the peer.
     static jfieldID sysXID;
     static jfieldID sysYID;
     static jfieldID sysWID;
     static jfieldID sysHID;
+
+    static jmethodID getWarningStringMID;
+    static jmethodID calculateSecurityWarningPositionMID;
 
     AwtWindow();
     virtual ~AwtWindow();
@@ -150,6 +155,8 @@ public:
     static void SetModalBlocker(HWND window, HWND blocker);
     static void SetAndActivateModalBlocker(HWND window, HWND blocker);
 
+    static HWND GetTopmostModalBlocker(HWND window);
+
     /*
      * Windows message handler functions
      */
@@ -166,13 +173,13 @@ public:
     virtual MsgRouting WmSettingChange(UINT wFlag, LPCTSTR pszSection);
     virtual MsgRouting WmNcCalcSize(BOOL fCalcValidRects,
                                     LPNCCALCSIZE_PARAMS lpncsp, LRESULT& retVal);
-    virtual MsgRouting WmNcPaint(HRGN hrgn);
     virtual MsgRouting WmNcHitTest(UINT x, UINT y, LRESULT& retVal);
     virtual MsgRouting WmNcMouseDown(WPARAM hitTest, int x, int y, int button);
     virtual MsgRouting WmGetIcon(WPARAM iconType, LRESULT& retVal);
     virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
     virtual MsgRouting WmWindowPosChanging(LPARAM windowPos);
     virtual MsgRouting WmWindowPosChanged(LPARAM windowPos);
+    virtual MsgRouting WmTimer(UINT_PTR timerID);
 
     virtual MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
     virtual void WindowResized();
@@ -221,10 +228,21 @@ public:
     static void _SetOpacity(void* param);
     static void _SetOpaque(void* param);
     static void _UpdateWindow(void* param);
+    static void _RepositionSecurityWarning(void* param);
 
     inline static BOOL IsResizing() {
         return sm_resizing;
     }
+
+    virtual void CreateHWnd(JNIEnv *env, LPCWSTR title,
+            DWORD windowStyle, DWORD windowExStyle,
+            int x, int y, int w, int h,
+            HWND hWndParent, HMENU hMenu,
+            COLORREF colorForeground, COLORREF colorBackground,
+            jobject peer);
+    virtual void DestroyHWnd();
+
+    static void FocusedWindowChanged(HWND from, HWND to);
 
 private:
     static int ms_instanceCounter;
@@ -267,9 +285,56 @@ private:
     UINT contentWidth;
     UINT contentHeight;
 
-    void RedrawWindow();
     void SetTranslucency(BYTE opacity, BOOL opaque);
+    void UpdateWindow(int width, int height, HBITMAP hBitmap);
     void UpdateWindowImpl(int width, int height, HBITMAP hBitmap);
+    void RedrawWindow();
+
+    static UINT untrustedWindowsCounter;
+
+    WCHAR * warningString;
+
+    // The warning icon
+    HWND warningWindow;
+    // The tooltip that appears when hovering the icon
+    HWND securityTooltipWindow;
+
+    UINT warningWindowWidth;
+    UINT warningWindowHeight;
+    void InitSecurityWarningSize(JNIEnv *env);
+    HICON GetSecurityWarningIcon();
+
+    void CreateWarningWindow(JNIEnv *env);
+    void DestroyWarningWindow();
+    static LPCTSTR GetWarningWindowClassName();
+    void FillWarningWindowClassInfo(WNDCLASS *lpwc);
+    void RegisterWarningWindowClass();
+    void UnregisterWarningWindowClass();
+    static LRESULT CALLBACK WarningWindowProc(
+            HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+    static void PaintWarningWindow(HWND warningWindow);
+    static void PaintWarningWindow(HWND warningWindow, HDC hdc);
+    void RepaintWarningWindow();
+    void CalculateWarningWindowBounds(JNIEnv *env, LPRECT rect);
+
+    void AnimateSecurityWarning(bool enable);
+    UINT securityWarningAnimationStage;
+
+    enum AnimationKind {
+        akNone, akShow, akPreHide, akHide
+    };
+
+    AnimationKind securityAnimationKind;
+
+    void StartSecurityAnimation(AnimationKind kind);
+    void StopSecurityAnimation();
+
+    void RepositionSecurityWarning(JNIEnv *env);
+
+public:
+    void UpdateSecurityWarningVisibility();
+    static bool IsWarningWindow(HWND hWnd);
 
 protected:
     BOOL m_isResizable;
@@ -283,6 +348,12 @@ protected:
     //here to handle non-opaque windows.
     virtual void FillBackground(HDC hMemoryDC, SIZE &size);
     virtual void FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha);
+
+    inline BOOL IsUntrusted() {
+        return warningString != NULL;
+    }
+
+    UINT currentWmSizeState;
 
 private:
     int m_screenNum;
