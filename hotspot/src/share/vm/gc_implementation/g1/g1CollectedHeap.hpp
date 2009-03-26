@@ -865,14 +865,25 @@ public:
 
   // Iterate over all the ref-containing fields of all objects, calling
   // "cl.do_oop" on each.
-  virtual void oop_iterate(OopClosure* cl);
+  virtual void oop_iterate(OopClosure* cl) {
+    oop_iterate(cl, true);
+  }
+  void oop_iterate(OopClosure* cl, bool do_perm);
 
   // Same as above, restricted to a memory region.
-  virtual void oop_iterate(MemRegion mr, OopClosure* cl);
+  virtual void oop_iterate(MemRegion mr, OopClosure* cl) {
+    oop_iterate(mr, cl, true);
+  }
+  void oop_iterate(MemRegion mr, OopClosure* cl, bool do_perm);
 
   // Iterate over all objects, calling "cl.do_object" on each.
-  virtual void object_iterate(ObjectClosure* cl);
-  virtual void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
+  virtual void object_iterate(ObjectClosure* cl) {
+    object_iterate(cl, true);
+  }
+  virtual void safe_object_iterate(ObjectClosure* cl) {
+    object_iterate(cl, true);
+  }
+  void object_iterate(ObjectClosure* cl, bool do_perm);
 
   // Iterate over all objects allocated since the last collection, calling
   // "cl.do_object" on each.  The heap must have been initialized properly
