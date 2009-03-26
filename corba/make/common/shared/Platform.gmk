@@ -288,11 +288,22 @@ ifeq ($(PLATFORM), windows)
   TEMP_DISK=C:/temp
   # GNU Make or MKS overrides $(PROCESSOR_ARCHITECTURE) to always
   # return "x86". Use the first word of $(PROCESSOR_IDENTIFIER) instead.
+  PROC_ARCH:=$(word 1, $(PROCESSOR_IDENTIFIER))
+  PROC_ARCH:=$(subst x86,X86,$(PROC_ARCH))
+  PROC_ARCH:=$(subst x64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(subst intel64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(subst Intel64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(subst INTEL64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(subst em64t,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(subst EM64T,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(subst amd64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(subst AMD64,X64,$(PROC_ARCH))
+  PROC_ARCH:=$(subst ia64,IA64,$(PROC_ARCH))
   ifndef ARCH_DATA_MODEL
-    ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),ia64)
+    ifeq ($(PROC_ARCH),IA64)
       ARCH_DATA_MODEL=64
     else
-      ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),AMD64)
+      ifeq ($(PROC_ARCH),X64)
         ARCH_DATA_MODEL=64
       else
         ARCH_DATA_MODEL=32
@@ -313,10 +324,12 @@ ifeq ($(PLATFORM), windows)
     #      + set ARCH to ia64 or amd64, or
     REQUIRED_WINDOWS_NAME=Windows Server 2003
     REQUIRED_WINDOWS_VERSION=5 2 Service Pack 1
-    ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)), AMD64)
+    ifeq ($(PROC_ARCH),X64)
       ARCH=amd64
     else
-      ARCH=ia64
+      ifeq ($(PROC_ARCH),IA64)
+        ARCH=ia64
+      endif
     endif
     LIBARCH=$(ARCH)
     # Value of Java os.arch property
