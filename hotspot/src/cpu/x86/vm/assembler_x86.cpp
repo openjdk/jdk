@@ -1438,26 +1438,12 @@ void Assembler::lock() {
   }
 }
 
-// Serializes memory.
+// Emit mfence instruction
 void Assembler::mfence() {
-    // Memory barriers are only needed on multiprocessors
-  if (os::is_MP()) {
-    if( LP64_ONLY(true ||) VM_Version::supports_sse2() ) {
-      emit_byte( 0x0F );                // MFENCE; faster blows no regs
-      emit_byte( 0xAE );
-      emit_byte( 0xF0 );
-    } else {
-      // All usable chips support "locked" instructions which suffice
-      // as barriers, and are much faster than the alternative of
-      // using cpuid instruction. We use here a locked add [esp],0.
-      // This is conveniently otherwise a no-op except for blowing
-      // flags (which we save and restore.)
-      pushf();                // Save eflags register
-      lock();
-      addl(Address(rsp, 0), 0);// Assert the lock# signal here
-      popf();                 // Restore eflags register
-    }
-  }
+  NOT_LP64(assert(VM_Version::supports_sse2(), "unsupported");)
+  emit_byte( 0x0F );
+  emit_byte( 0xAE );
+  emit_byte( 0xF0 );
 }
 
 void Assembler::mov(Register dst, Register src) {

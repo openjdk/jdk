@@ -4288,24 +4288,6 @@ encode %{
     emit_opcode(cbuf, 0xC8 + $src2$$reg);
   %}
 
-  enc_class enc_membar_acquire %{
-    // Doug Lea believes this is not needed with current Sparcs and TSO.
-    // MacroAssembler masm(&cbuf);
-    // masm.membar();
-  %}
-
-  enc_class enc_membar_release %{
-    // Doug Lea believes this is not needed with current Sparcs and TSO.
-    // MacroAssembler masm(&cbuf);
-    // masm.membar();
-  %}
-
-  enc_class enc_membar_volatile %{
-    MacroAssembler masm(&cbuf);
-    masm.membar(Assembler::Membar_mask_bits(Assembler::StoreLoad |
-                                            Assembler::StoreStore));
-  %}
-
   // Atomically load the volatile long
   enc_class enc_loadL_volatile( memory mem, stackSlotL dst ) %{
     emit_opcode(cbuf,0xDF);
@@ -7498,9 +7480,9 @@ instruct membar_acquire() %{
   ins_cost(400);
 
   size(0);
-  format %{ "MEMBAR-acquire" %}
-  ins_encode( enc_membar_acquire );
-  ins_pipe(pipe_slow);
+  format %{ "MEMBAR-acquire ! (empty encoding)" %}
+  ins_encode();
+  ins_pipe(empty);
 %}
 
 instruct membar_acquire_lock() %{
@@ -7519,9 +7501,9 @@ instruct membar_release() %{
   ins_cost(400);
 
   size(0);
-  format %{ "MEMBAR-release" %}
-  ins_encode( enc_membar_release );
-  ins_pipe(pipe_slow);
+  format %{ "MEMBAR-release ! (empty encoding)" %}
+  ins_encode( );
+  ins_pipe(empty);
 %}
 
 instruct membar_release_lock() %{
@@ -7535,12 +7517,22 @@ instruct membar_release_lock() %{
   ins_pipe(empty);
 %}
 
-instruct membar_volatile() %{
+instruct membar_volatile(eFlagsReg cr) %{
   match(MemBarVolatile);
+  effect(KILL cr);
   ins_cost(400);
 
-  format %{ "MEMBAR-volatile" %}
-  ins_encode( enc_membar_volatile );
+  format %{ 
+    $$template
+    if (os::is_MP()) {
+      $$emit$$"LOCK ADDL [ESP + #0], 0\t! membar_volatile"
+    } else {
+      $$emit$$"MEMBAR-volatile ! (empty encoding)"
+    }
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
   ins_pipe(pipe_slow);
 %}
 
