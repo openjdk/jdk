@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,8 @@ FILES_export = \
 	sun/java2d/x11/X11Renderer.java \
 	sun/java2d/x11/X11SurfaceData.java \
         com/sun/java/swing/plaf/gtk/GTKEngine.java \
-        com/sun/java/swing/plaf/gtk/GTKStyle.java
+        com/sun/java/swing/plaf/gtk/GTKStyle.java \
+        sun/awt/ExtendedKeyCodes.java
 
 
 FILES_export2 = \

@@ -365,7 +365,7 @@ public:
     }
 
     void SendKeyEventToFocusOwner(jint id, jlong when, jint raw, jint cooked,
-                                  jint modifiers, jint keyLocation,
+                                  jint modifiers, jint keyLocation, jlong nativeCode,
                                   MSG *msg = NULL);
     /*
      * Allocate and initialize a new java.awt.event.KeyEvent, and
@@ -373,7 +373,7 @@ public:
      * from the target.
      */
     void SendKeyEvent(jint id, jlong when, jint raw, jint cooked,
-                      jint modifiers, jint keyLocation,
+                      jint modifiers, jint keyLocation, jlong nativeCode,
                       MSG *msg = NULL);
 
     /*
@@ -423,10 +423,6 @@ public:
      */
     virtual BOOL InheritsNativeMouseWheelBehavior();
 
-    /* Functions for MouseWheel support on Windows95
-     * These should only be called if running on 95
-     */
-
     /* Determines whether the component is obscured by another window */
     // Called on Toolkit thread
     static jboolean _IsObscured(void *param);
@@ -446,6 +442,7 @@ public:
     static UINT GetButtonMK(int mouseButton);
     static UINT WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers);
     static void JavaKeyToWindowsKey(UINT javaKey, UINT *windowsKey, UINT *modifiers, UINT originalWindowsKey);
+    static void UpdateDynPrimaryKeymap(UINT wkey, UINT jkeyLegacy, jint keyLocation, UINT modifiers);
 
     INLINE static void AwtComponent::JavaKeyToWindowsKey(UINT javaKey,
                                        UINT *windowsKey, UINT *modifiers)
@@ -787,6 +784,8 @@ private:
     static BOOL sm_rtl;
     static BOOL sm_rtlReadingOrder;
 
+    static BOOL sm_PrimaryDynamicTableBuilt;
+
     jobject m_InputMethod;
     BOOL    m_useNativeCompWindow;
     LPARAM  m_bitsCandType;
@@ -850,6 +849,7 @@ private:
     AwtComponent* SearchChild(UINT id);
     void RemoveChild(UINT id) ;
     static BOOL IsNavigationKey(UINT wkey);
+    static void BuildPrimaryDynamicTable();
 
     ChildListItem* m_childList;
 
