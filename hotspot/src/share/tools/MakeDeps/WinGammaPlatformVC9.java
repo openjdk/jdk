@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  *
  */
 
-//
-// Sets the default values for platform dependent flags used by the
-// runtime system.  (see globals.hpp)
-//
+import java.io.*;
+import java.util.*;
 
-define_pd_global(uintx, JVMInvokeMethodSlack,    12288);
-define_pd_global(intx, CompilerThreadStackSize,  0);
+public class WinGammaPlatformVC9 extends WinGammaPlatformVC8 {
 
-// Only used on 64 bit platforms
-define_pd_global(uintx, HeapBaseMinAddress,      4*G);
-// Only used on 64 bit Windows platforms
-define_pd_global(bool, UseVectoredExceptions, false);
+    String projectVersion() {return "9.00";};
+
+}
+
+class CompilerInterfaceVC9 extends CompilerInterfaceVC8 {
+}

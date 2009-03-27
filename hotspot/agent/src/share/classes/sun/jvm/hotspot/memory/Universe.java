@@ -53,7 +53,8 @@ public class Universe {
   // system obj array klass object
   private static sun.jvm.hotspot.types.OopField systemObjArrayKlassObjField;
 
-  private static AddressField heapBaseField;
+  private static AddressField narrowOopBaseField;
+  private static CIntegerField narrowOopShiftField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -86,7 +87,8 @@ public class Universe {
 
     systemObjArrayKlassObjField = type.getOopField("_systemObjArrayKlassObj");
 
-    heapBaseField = type.getAddressField("_heap_base");
+    narrowOopBaseField = type.getAddressField("_narrow_oop._base");
+    narrowOopShiftField = type.getCIntegerField("_narrow_oop._shift");
   }
 
   public Universe() {
@@ -100,12 +102,16 @@ public class Universe {
     }
   }
 
-  public static long getHeapBase() {
-    if (heapBaseField.getValue() == null) {
+  public static long getNarrowOopBase() {
+    if (narrowOopBaseField.getValue() == null) {
       return 0;
     } else {
-      return heapBaseField.getValue().minus(null);
+      return narrowOopBaseField.getValue().minus(null);
     }
+  }
+
+  public static int getNarrowOopShift() {
+    return (int)narrowOopShiftField.getValue();
   }
 
   /** Returns "TRUE" iff "p" points into the allocated area of the heap. */
