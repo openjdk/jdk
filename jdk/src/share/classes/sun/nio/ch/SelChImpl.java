@@ -25,6 +25,7 @@
 
 package sun.nio.ch;
 
+import java.nio.channels.Channel;
 import java.io.FileDescriptor;
 import java.io.IOException;
 
@@ -35,7 +36,7 @@ import java.io.IOException;
  * @since 1.4
  */
 
-interface SelChImpl {
+interface SelChImpl extends Channel {
 
     FileDescriptor getFD();
 
