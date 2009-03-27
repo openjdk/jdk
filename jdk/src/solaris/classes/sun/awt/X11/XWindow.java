@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,9 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     private native static void initIDs();
 
     private static Field isPostedField;
+    private static Field rawCodeField;
+    private static Field primaryLevelUnicodeField;
+    private static Field extendedKeyCodeField;
     static {
         initIDs();
     }
@@ -1037,7 +1040,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
        Parameter is a keysym basically from keysymdef.h
        XXX: how about vendor keys? Is there some with Unicode value and not in the list?
     */
-    char keysymToUnicode( long keysym, int state ) {
+    int keysymToUnicode( long keysym, int state ) {
         return XKeysym.convertKeysym( keysym, state );
     }
     int keyEventType2Id( int xEventType ) {
@@ -1046,6 +1049,13 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
     static private long xkeycodeToKeysym(XKeyEvent ev) {
         return XKeysym.getKeysym( ev );
+    }
+    private long xkeycodeToPrimaryKeysym(XKeyEvent ev) {
+        return XKeysym.xkeycode2primary_keysym( ev );
+    }
+    static private int primaryUnicode2JavaKeycode(int uni) {
+        return (uni > 0? sun.awt.ExtendedKeyCodes.getExtendedKeyCodeForChar(uni) : 0);
+        //return (uni > 0? uni + 0x01000000 : 0);
     }
     void logIncomingKeyEvent(XKeyEvent ev) {
         keyEventLog.fine("--XWindow.java:handleKeyEvent:"+ev);
@@ -1065,7 +1075,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     // un-final it if you need to override it in a subclass.
     final void handleKeyPress(XKeyEvent ev) {
         long keysym[] = new long[2];
-        char unicodeKey = 0;
+        int unicodeKey = 0;
         keysym[0] = XConstants.NoSymbol;
 
         if (keyEventLog.isLoggable(Level.FINE)) {
@@ -1110,19 +1120,36 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         if( jkc == null ) {
             jkc = new XKeysym.Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_UNDEFINED, java.awt.event.KeyEvent.KEY_LOCATION_UNKNOWN);
         }
+
+        // Take the first keysym from a keysym array associated with the XKeyevent
+        // and convert it to Unicode. Then, even if a Java keycode for the keystroke
+        // is undefined, we still have a guess of what has been engraved on a keytop.
+        int unicodeFromPrimaryKeysym = keysymToUnicode( xkeycodeToPrimaryKeysym(ev) ,0);
+
         if (keyEventLog.isLoggable(Level.FINE)) {
             keyEventLog.fine(">>>Fire Event:"+
                (ev.get_type() == XConstants.KeyPress ? "KEY_PRESSED; " : "KEY_RELEASED; ")+
                "jkeycode:decimal="+jkc.getJavaKeycode()+
-               ", hex=0x"+Integer.toHexString(jkc.getJavaKeycode())+"; "
+               ", hex=0x"+Integer.toHexString(jkc.getJavaKeycode())+"; "+
+               " legacy jkeycode: decimal="+XKeysym.getLegacyJavaKeycodeOnly(ev)+
+               ", hex=0x"+Integer.toHexString(XKeysym.getLegacyJavaKeycodeOnly(ev))+"; "
             );
         }
+
+        int jkeyToReturn = XKeysym.getLegacyJavaKeycodeOnly(ev); // someway backward compatible
+        int jkeyExtended = jkc.getJavaKeycode() == java.awt.event.KeyEvent.VK_UNDEFINED ?
+                           primaryUnicode2JavaKeycode( unicodeFromPrimaryKeysym ) :
+                             jkc.getJavaKeycode();
         postKeyEvent( java.awt.event.KeyEvent.KEY_PRESSED,
                           ev.get_time(),
-                          jkc.getJavaKeycode(),
+                          jkeyToReturn,
                           (unicodeKey == 0 ? java.awt.event.KeyEvent.CHAR_UNDEFINED : unicodeKey),
                           jkc.getKeyLocation(),
-                          ev.get_state(),ev.getPData(), XKeyEvent.getSize());
+                          ev.get_state(),ev.getPData(), XKeyEvent.getSize(), (long)(ev.get_keycode()),
+                          unicodeFromPrimaryKeysym,
+                          jkeyExtended);
+
+
         if( unicodeKey > 0 ) {
                 keyEventLog.fine("fire _TYPED on "+unicodeKey);
                 postKeyEvent( java.awt.event.KeyEvent.KEY_TYPED,
@@ -1130,7 +1157,10 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
                               java.awt.event.KeyEvent.VK_UNDEFINED,
                               unicodeKey,
                               java.awt.event.KeyEvent.KEY_LOCATION_UNKNOWN,
-                              ev.get_state(),ev.getPData(), XKeyEvent.getSize());
+                              ev.get_state(),ev.getPData(), XKeyEvent.getSize(), (long)0,
+                              unicodeFromPrimaryKeysym,
+                              java.awt.event.KeyEvent.VK_UNDEFINED);
+
         }
 
 
@@ -1148,7 +1178,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     // un-private it if you need to call it from elsewhere
     private void handleKeyRelease(XKeyEvent ev) {
         long keysym[] = new long[2];
-        char unicodeKey = 0;
+        int unicodeKey = 0;
         keysym[0] = XConstants.NoSymbol;
 
         if (keyEventLog.isLoggable(Level.FINE)) {
@@ -1166,7 +1196,9 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             keyEventLog.fine(">>>Fire Event:"+
                (ev.get_type() == XConstants.KeyPress ? "KEY_PRESSED; " : "KEY_RELEASED; ")+
                "jkeycode:decimal="+jkc.getJavaKeycode()+
-               ", hex=0x"+Integer.toHexString(jkc.getJavaKeycode())+"; "
+               ", hex=0x"+Integer.toHexString(jkc.getJavaKeycode())+"; "+
+               " legacy jkeycode: decimal="+XKeysym.getLegacyJavaKeycodeOnly(ev)+
+               ", hex=0x"+Integer.toHexString(XKeysym.getLegacyJavaKeycodeOnly(ev))+"; "
             );
         }
         // We obtain keysym from IM and derive unicodeKey from it for KeyPress only.
@@ -1177,12 +1209,24 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         // That's why we use the same procedure as if there was no IM instance: do-it-yourself unicode.
         unicodeKey = keysymToUnicode( xkeycodeToKeysym(ev), ev.get_state() );
 
+        // Take a first keysym from a keysym array associated with the XKeyevent
+        // and convert it to Unicode. Then, even if Java keycode for the keystroke
+        // is undefined, we still will have a guess of what was engraved on a keytop.
+        int unicodeFromPrimaryKeysym = keysymToUnicode( xkeycodeToPrimaryKeysym(ev) ,0);
+
+        int jkeyToReturn = XKeysym.getLegacyJavaKeycodeOnly(ev); // someway backward compatible
+        int jkeyExtended = jkc.getJavaKeycode() == java.awt.event.KeyEvent.VK_UNDEFINED ?
+                           primaryUnicode2JavaKeycode( unicodeFromPrimaryKeysym ) :
+                             jkc.getJavaKeycode();
         postKeyEvent(  java.awt.event.KeyEvent.KEY_RELEASED,
                           ev.get_time(),
-                          jkc.getJavaKeycode(),
+                          jkeyToReturn,
                           (unicodeKey == 0 ? java.awt.event.KeyEvent.CHAR_UNDEFINED : unicodeKey),
                           jkc.getKeyLocation(),
-                          ev.get_state(),ev.getPData(), XKeyEvent.getSize());
+                          ev.get_state(),ev.getPData(), XKeyEvent.getSize(), (long)(ev.get_keycode()),
+                          unicodeFromPrimaryKeysym,
+                          jkeyExtended);
+
 
     }
 
@@ -1379,16 +1423,37 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
     }
 
-    public void postKeyEvent(int id, long when, int keyCode, char keyChar,
-        int keyLocation, int state, long event, int eventSize)
+    public void postKeyEvent(int id, long when, int keyCode, int keyChar,
+        int keyLocation, int state, long event, int eventSize, long rawCode,
+        int unicodeFromPrimaryKeysym, int extendedKeyCode)
+
     {
         long jWhen = XToolkit.nowMillisUTC_offset(when);
         int modifiers = getModifiers(state, 0, keyCode);
+        if (rawCodeField == null) {
+            rawCodeField = XToolkit.getField(KeyEvent.class, "rawCode");
+        }
+        if (primaryLevelUnicodeField == null) {
+            primaryLevelUnicodeField = XToolkit.getField(KeyEvent.class, "primaryLevelUnicode");
+        }
+        if (extendedKeyCodeField == null) {
+            extendedKeyCodeField = XToolkit.getField(KeyEvent.class, "extendedKeyCode");
+        }
+
         KeyEvent ke = new KeyEvent((Component)getEventSource(), id, jWhen,
-                                   modifiers, keyCode, keyChar, keyLocation);
+                                   modifiers, keyCode, (char)keyChar, keyLocation);
         if (event != 0) {
             byte[] data = Native.toBytes(event, eventSize);
             setBData(ke, data);
+        }
+        try {
+            rawCodeField.set(ke, rawCode);
+            primaryLevelUnicodeField.set(ke, (long)unicodeFromPrimaryKeysym);
+            extendedKeyCodeField.set(ke, (long)extendedKeyCode);
+        } catch (IllegalArgumentException e) {
+            assert(false);
+        } catch (IllegalAccessException e) {
+            assert(false);
         }
         postEventToEventQueue(ke);
     }
