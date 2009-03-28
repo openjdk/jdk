@@ -55,6 +55,7 @@ class ParScanThreadState {
   friend class ParScanThreadStateSet;
  private:
   ObjToScanQueue *_work_queue;
+  GrowableArray<oop>* _overflow_stack;
 
   ParGCAllocBuffer _to_space_alloc_buffer;
 
@@ -78,6 +79,9 @@ class ParScanThreadState {
 
   Space* _to_space;
   Space* to_space() { return _to_space; }
+
+  ParNewGeneration* _young_gen;
+  ParNewGeneration* young_gen() const { return _young_gen; }
 
   Generation* _old_gen;
   Generation* old_gen() { return _old_gen; }
@@ -133,6 +137,11 @@ class ParScanThreadState {
 
   // Decrease queue size below "max_size".
   void trim_queues(int max_size);
+
+  // Private overflow stack usage
+  GrowableArray<oop>* overflow_stack() { return _overflow_stack; }
+  bool take_from_overflow_stack();
+  void push_on_overflow_stack(oop p);
 
   // Is new_obj a candidate for scan_partial_array_and_push_remainder method.
   inline bool should_be_partially_scanned(oop new_obj, oop old_obj) const;
@@ -378,13 +387,17 @@ class ParNewGeneration: public DefNewGeneration {
   NOT_PRODUCT(int _overflow_counter;)
   NOT_PRODUCT(bool should_simulate_overflow();)
 
+  // Accessor for overflow list
+  oop overflow_list() { return _overflow_list; }
+
   // Push the given (from-space) object on the global overflow list.
   void push_on_overflow_list(oop from_space_obj, ParScanThreadState* par_scan_state);
 
   // If the global overflow list is non-empty, move some tasks from it
-  // onto "work_q" (which must be empty).  No more than 1/4 of the
-  // max_elems of "work_q" are moved.
+  // onto "work_q" (which need not be empty).  No more than 1/4 of the
+  // available space on "work_q" is used.
   bool take_from_overflow_list(ParScanThreadState* par_scan_state);
+  bool take_from_overflow_list_work(ParScanThreadState* par_scan_state);
 
   // The task queues to be used by parallel GC threads.
   ObjToScanQueueSet* task_queues() {
