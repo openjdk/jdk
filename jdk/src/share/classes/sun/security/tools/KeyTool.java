@@ -3108,7 +3108,7 @@ public final class KeyTool {
     /**
      * Returns the keystore with the configured CA certificates.
      */
-    private KeyStore getCacertsKeyStore()
+    public static KeyStore getCacertsKeyStore()
         throws Exception
     {
         String sep = File.separator;
