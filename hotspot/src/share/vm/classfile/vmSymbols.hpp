@@ -50,6 +50,7 @@
   template(java_lang_Class,                           "java/lang/Class")                          \
   template(java_lang_String,                          "java/lang/String")                         \
   template(java_lang_StringValue,                     "java/lang/StringValue")                    \
+  template(java_lang_StringCache,                     "java/lang/StringValue$StringCache")        \
   template(java_lang_Thread,                          "java/lang/Thread")                         \
   template(java_lang_ThreadGroup,                     "java/lang/ThreadGroup")                    \
   template(java_lang_Cloneable,                       "java/lang/Cloneable")                      \
@@ -286,6 +287,7 @@
   template(frontCacheEnabled_name,                    "frontCacheEnabled")                        \
   template(stringCacheEnabled_name,                   "stringCacheEnabled")                       \
   template(bitCount_name,                             "bitCount")                                 \
+  template(profile_name,                              "profile")                                  \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
