@@ -25,8 +25,9 @@
 
 package com.sun.tools.javac.jvm;
 
-import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.util.Name;
+
 
 /** A JVM class file.
  *
@@ -85,6 +86,18 @@ public class ClassFile {
     public final static int MAX_CODE = 0xffff;
     public final static int MAX_LOCALS = 0xffff;
     public final static int MAX_STACK = 0xffff;
+
+    public enum Version {
+        V45_3(45, 3), // base level for all attributes
+        V49(49, 0),   // JDK 1.5: enum, generics, annotations
+        V50(50, 0),   // JDK 1.6: stackmaps
+        V51(51, 0);   // JDK 1.7
+        Version(int major, int minor) {
+            this.major = major;
+            this.minor = minor;
+        }
+        public final int major, minor;
+    }
 
 
 /************************************************************************
