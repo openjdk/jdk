@@ -438,6 +438,12 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 #endif
   assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrComp),
          "String compare is only known 'load' that does not conflict with any stores");
+  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrEquals),
+         "String equals is a 'load' that does not conflict with any stores");
+  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrIndexOf),
+         "String indexOf is a 'load' that does not conflict with any stores");
+  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_AryEq),
+         "Arrays equals is a 'load' that do not conflict with any stores");
 
   if (!C->alias_type(load_alias_idx)->is_rewritable()) {
     // It is impossible to spoil this load by putting stores before it,
