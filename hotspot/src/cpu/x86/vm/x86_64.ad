@@ -4162,33 +4162,6 @@ encode %{
     // done:
   %}
 
-  enc_class enc_membar_acquire
-  %{
-    // [jk] not needed currently, if you enable this and it really
-    // emits code don't forget to the remove the "size(0)" line in
-    // membar_acquire()
-    // MacroAssembler masm(&cbuf);
-    // masm.membar(Assembler::Membar_mask_bits(Assembler::LoadStore |
-    //                                         Assembler::LoadLoad));
-  %}
-
-  enc_class enc_membar_release
-  %{
-    // [jk] not needed currently, if you enable this and it really
-    // emits code don't forget to the remove the "size(0)" line in
-    // membar_release()
-    // MacroAssembler masm(&cbuf);
-    // masm.membar(Assembler::Membar_mask_bits(Assembler::LoadStore |
-    //                                         Assembler::StoreStore));
-  %}
-
-  enc_class enc_membar_volatile
-  %{
-    MacroAssembler masm(&cbuf);
-    masm.membar(Assembler::Membar_mask_bits(Assembler::StoreLoad |
-                                            Assembler::StoreStore));
-  %}
-
   // Safepoint Poll.  This polls the safepoint page, and causes an
   // exception if it is not readable. Unfortunately, it kills
   // RFLAGS in the process.
@@ -7458,7 +7431,7 @@ instruct membar_acquire()
   ins_cost(0);
 
   size(0);
-  format %{ "MEMBAR-acquire" %}
+  format %{ "MEMBAR-acquire ! (empty encoding)" %}
   ins_encode();
   ins_pipe(empty);
 %}
@@ -7481,7 +7454,7 @@ instruct membar_release()
   ins_cost(0);
 
   size(0);
-  format %{ "MEMBAR-release" %}
+  format %{ "MEMBAR-release ! (empty encoding)" %}
   ins_encode();
   ins_pipe(empty);
 %}
@@ -7498,13 +7471,22 @@ instruct membar_release_lock()
   ins_pipe(empty);
 %}
 
-instruct membar_volatile()
-%{
+instruct membar_volatile(rFlagsReg cr) %{
   match(MemBarVolatile);
+  effect(KILL cr);
   ins_cost(400);
 
-  format %{ "MEMBAR-volatile" %}
-  ins_encode(enc_membar_volatile);
+  format %{ 
+    $$template
+    if (os::is_MP()) {
+      $$emit$$"lock addl [rsp + #0], 0\t! membar_volatile"
+    } else {
+      $$emit$$"MEMBAR-volatile ! (empty encoding)"
+    }
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
   ins_pipe(pipe_slow);
 %}
 
