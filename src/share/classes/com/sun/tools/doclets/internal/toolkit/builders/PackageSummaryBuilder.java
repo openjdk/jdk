@@ -40,6 +40,7 @@ import java.lang.reflect.*;
  * Do not use it as an API
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  * @since 1.5
  */
 public class PackageSummaryBuilder extends AbstractBuilder {
@@ -184,7 +185,15 @@ public class PackageSummaryBuilder extends AbstractBuilder {
          * Build the summary for the classes in this package.
          */
         public void buildClassSummary() {
-                ClassDoc[] classes =
+            String classTableSummary =
+                    configuration.getText("doclet.Member_Table_Summary",
+                    configuration.getText("doclet.Class_Summary"),
+                    configuration.getText("doclet.classes"));
+            String[] classTableHeader = new String[] {
+                configuration.getText("doclet.Class"),
+                configuration.getText("doclet.Description")
+            };
+            ClassDoc[] classes =
                         packageDoc.isIncluded()
                                 ? packageDoc.ordinaryClasses()
                                 : configuration.classDocCatalog.ordinaryClasses(
@@ -192,7 +201,8 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 if (classes.length > 0) {
                         packageWriter.writeClassesSummary(
                                 classes,
-                                configuration.getText("doclet.Class_Summary"));
+                                configuration.getText("doclet.Class_Summary"),
+                                classTableSummary, classTableHeader);
                 }
         }
 
@@ -200,7 +210,15 @@ public class PackageSummaryBuilder extends AbstractBuilder {
          * Build the summary for the interfaces in this package.
          */
         public void buildInterfaceSummary() {
-                ClassDoc[] interfaces =
+            String interfaceTableSummary =
+                    configuration.getText("doclet.Member_Table_Summary",
+                    configuration.getText("doclet.Interface_Summary"),
+                    configuration.getText("doclet.interfaces"));
+            String[] interfaceTableHeader = new String[] {
+                configuration.getText("doclet.Interface"),
+                configuration.getText("doclet.Description")
+            };
+            ClassDoc[] interfaces =
                         packageDoc.isIncluded()
                                 ? packageDoc.interfaces()
                                 : configuration.classDocCatalog.interfaces(
@@ -208,7 +226,8 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 if (interfaces.length > 0) {
                         packageWriter.writeClassesSummary(
                                 interfaces,
-                                configuration.getText("doclet.Interface_Summary"));
+                                configuration.getText("doclet.Interface_Summary"),
+                                interfaceTableSummary, interfaceTableHeader);
                 }
         }
 
@@ -216,7 +235,15 @@ public class PackageSummaryBuilder extends AbstractBuilder {
          * Build the summary for the enums in this package.
          */
         public void buildAnnotationTypeSummary() {
-                ClassDoc[] annotationTypes =
+            String annotationtypeTableSummary =
+                    configuration.getText("doclet.Member_Table_Summary",
+                    configuration.getText("doclet.Annotation_Types_Summary"),
+                    configuration.getText("doclet.annotationtypes"));
+            String[] annotationtypeTableHeader = new String[] {
+                configuration.getText("doclet.AnnotationType"),
+                configuration.getText("doclet.Description")
+            };
+            ClassDoc[] annotationTypes =
                         packageDoc.isIncluded()
                                 ? packageDoc.annotationTypes()
                                 : configuration.classDocCatalog.annotationTypes(
@@ -224,7 +251,8 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 if (annotationTypes.length > 0) {
                         packageWriter.writeClassesSummary(
                                 annotationTypes,
-                                configuration.getText("doclet.Annotation_Types_Summary"));
+                                configuration.getText("doclet.Annotation_Types_Summary"),
+                                annotationtypeTableSummary, annotationtypeTableHeader);
                 }
         }
 
@@ -232,7 +260,15 @@ public class PackageSummaryBuilder extends AbstractBuilder {
          * Build the summary for the enums in this package.
          */
         public void buildEnumSummary() {
-                ClassDoc[] enums =
+            String enumTableSummary =
+                    configuration.getText("doclet.Member_Table_Summary",
+                    configuration.getText("doclet.Enum_Summary"),
+                    configuration.getText("doclet.enums"));
+            String[] enumTableHeader = new String[] {
+                configuration.getText("doclet.Enum"),
+                configuration.getText("doclet.Description")
+            };
+            ClassDoc[] enums =
                         packageDoc.isIncluded()
                                 ? packageDoc.enums()
                                 : configuration.classDocCatalog.enums(
@@ -240,7 +276,8 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 if (enums.length > 0) {
                         packageWriter.writeClassesSummary(
                                 enums,
-                                configuration.getText("doclet.Enum_Summary"));
+                                configuration.getText("doclet.Enum_Summary"),
+                                enumTableSummary, enumTableHeader);
                 }
         }
 
@@ -248,7 +285,15 @@ public class PackageSummaryBuilder extends AbstractBuilder {
          * Build the summary for the exceptions in this package.
          */
         public void buildExceptionSummary() {
-                ClassDoc[] exceptions =
+            String exceptionTableSummary =
+                    configuration.getText("doclet.Member_Table_Summary",
+                    configuration.getText("doclet.Exception_Summary"),
+                    configuration.getText("doclet.exceptions"));
+            String[] exceptionTableHeader = new String[] {
+                configuration.getText("doclet.Exception"),
+                configuration.getText("doclet.Description")
+            };
+            ClassDoc[] exceptions =
                         packageDoc.isIncluded()
                                 ? packageDoc.exceptions()
                                 : configuration.classDocCatalog.exceptions(
@@ -256,7 +301,8 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 if (exceptions.length > 0) {
                         packageWriter.writeClassesSummary(
                                 exceptions,
-                                configuration.getText("doclet.Exception_Summary"));
+                                configuration.getText("doclet.Exception_Summary"),
+                                exceptionTableSummary, exceptionTableHeader);
                 }
         }
 
@@ -264,7 +310,15 @@ public class PackageSummaryBuilder extends AbstractBuilder {
          * Build the summary for the errors in this package.
          */
         public void buildErrorSummary() {
-                ClassDoc[] errors =
+            String errorTableSummary =
+                    configuration.getText("doclet.Member_Table_Summary",
+                    configuration.getText("doclet.Error_Summary"),
+                    configuration.getText("doclet.errors"));
+            String[] errorTableHeader = new String[] {
+                configuration.getText("doclet.Error"),
+                configuration.getText("doclet.Description")
+            };
+            ClassDoc[] errors =
                         packageDoc.isIncluded()
                                 ? packageDoc.errors()
                                 : configuration.classDocCatalog.errors(
@@ -272,7 +326,8 @@ public class PackageSummaryBuilder extends AbstractBuilder {
                 if (errors.length > 0) {
                         packageWriter.writeClassesSummary(
                                 errors,
-                                configuration.getText("doclet.Error_Summary"));
+                                configuration.getText("doclet.Error_Summary"),
+                                errorTableSummary, errorTableHeader);
                 }
         }
 

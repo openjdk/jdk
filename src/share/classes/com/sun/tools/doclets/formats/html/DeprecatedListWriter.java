@@ -35,6 +35,7 @@ import java.io.*;
  *
  * @see java.util.List
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class DeprecatedListWriter extends SubWriterHolderWriter {
 
@@ -53,6 +54,28 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         "doclet.Deprecated_Methods", "doclet.Deprecated_Constructors",
         "doclet.Deprecated_Enum_Constants",
         "doclet.Deprecated_Annotation_Type_Members"
+    };
+
+    private static final String[] SUMMARY_KEYS = new String[] {
+        "doclet.deprecated_interfaces", "doclet.deprecated_classes",
+        "doclet.deprecated_enums", "doclet.deprecated_exceptions",
+        "doclet.deprecated_errors",
+        "doclet.deprecated_annotation_types",
+        "doclet.deprecated_fields",
+        "doclet.deprecated_methods", "doclet.deprecated_constructors",
+        "doclet.deprecated_enum_constants",
+        "doclet.deprecated_annotation_type_members"
+    };
+
+    private static final String[] HEADER_KEYS = new String[] {
+        "doclet.Interface", "doclet.Class",
+        "doclet.Enum", "doclet.Exceptions",
+        "doclet.Errors",
+        "doclet.AnnotationType",
+        "doclet.Field",
+        "doclet.Method", "doclet.Constructor",
+        "doclet.Enum_Constant",
+        "doclet.Annotation_Type_Member"
     };
 
     private AbstractMemberWriter[] writers;
@@ -119,11 +142,20 @@ public class DeprecatedListWriter extends SubWriterHolderWriter {
         ulEnd();
         println();
 
+        String memberTableSummary;
+        String[] memberTableHeader = new String[1];
         for (int i = 0; i < DeprecatedAPIListBuilder.NUM_TYPES; i++) {
             if (deprapi.hasDocumentation(i)) {
                 writeAnchor(deprapi, i);
+                memberTableSummary =
+                        configuration.getText("doclet.Member_Table_Summary",
+                        configuration.getText(HEADING_KEYS[i]),
+                        configuration.getText(SUMMARY_KEYS[i]));
+                memberTableHeader[0] = configuration.getText("doclet.0_and_1",
+                        configuration.getText(HEADER_KEYS[i]),
+                        configuration.getText("doclet.Description"));
                 writers[i].printDeprecatedAPI(deprapi.getList(i),
-                    HEADING_KEYS[i]);
+                    HEADING_KEYS[i], memberTableSummary, memberTableHeader);
             }
         }
         printDeprecatedFooter();
