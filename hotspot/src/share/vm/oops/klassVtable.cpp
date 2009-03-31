@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1146,6 +1146,27 @@ int klassItable::compute_itable_index(methodOop m) {
     index--;
   }
   return index;
+}
+
+
+// inverse to compute_itable_index
+methodOop klassItable::method_for_itable_index(klassOop intf, int itable_index) {
+  assert(instanceKlass::cast(intf)->is_interface(), "sanity check");
+  objArrayOop methods = instanceKlass::cast(intf)->methods();
+
+  int index = itable_index;
+  // Adjust for <clinit>, which is left out of table if first method
+  if (methods->length() > 0 && ((methodOop)methods->obj_at(0))->name() == vmSymbols::class_initializer_name()) {
+    index++;
+  }
+
+  if (itable_index < 0 || index >= methods->length())
+    return NULL;                // help caller defend against bad indexes
+
+  methodOop m = (methodOop)methods->obj_at(index);
+  assert(compute_itable_index(m) == itable_index, "correct inverse");
+
+  return m;
 }
 
 void klassVtable::verify(outputStream* st, bool forced) {
