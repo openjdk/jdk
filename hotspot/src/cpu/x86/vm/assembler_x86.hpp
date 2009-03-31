@@ -1226,6 +1226,10 @@ private:
   void orq(Register dst, Address src);
   void orq(Register dst, Register src);
 
+  // SSE4.2 string instructions
+  void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
+  void pcmpestri(XMMRegister xmm1, Address src, int imm8);
+
   void popl(Address dst);
 
 #ifdef _LP64
@@ -1259,6 +1263,10 @@ private:
 
   // Shift Right Logical Quadword Immediate
   void psrlq(XMMRegister dst, int shift);
+
+  // Logical Compare Double Quadword
+  void ptest(XMMRegister dst, XMMRegister src);
+  void ptest(XMMRegister dst, Address src);
 
   // Interleave Low Bytes
   void punpcklbw(XMMRegister dst, XMMRegister src);

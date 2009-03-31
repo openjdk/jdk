@@ -2481,13 +2481,37 @@ Node *StrCompNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
+// Do we match on this edge? No memory edges
+uint StrEqualsNode::match_edge(uint idx) const {
+  return idx == 5 || idx == 6;
+}
+
+//------------------------------Ideal------------------------------------------
+// Return a node which is more "ideal" than the current node.  Strip out
+// control copies
+Node *StrEqualsNode::Ideal(PhaseGVN *phase, bool can_reshape){
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
+}
+
+//=============================================================================
+// Do we match on this edge? No memory edges
+uint StrIndexOfNode::match_edge(uint idx) const {
+  return idx == 5 || idx == 6;
+}
+
+//------------------------------Ideal------------------------------------------
+// Return a node which is more "ideal" than the current node.  Strip out
+// control copies
+Node *StrIndexOfNode::Ideal(PhaseGVN *phase, bool can_reshape){
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *AryEqNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
-
 
 //=============================================================================
 MemBarNode::MemBarNode(Compile* C, int alias_idx, Node* precedent)

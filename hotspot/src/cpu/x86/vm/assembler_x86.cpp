@@ -2173,6 +2173,31 @@ void Assembler::orl(Register dst, Register src) {
   emit_arith(0x0B, 0xC0, dst, src);
 }
 
+void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
+  assert(VM_Version::supports_sse4_2(), "");
+
+  InstructionMark im(this);
+  emit_byte(0x66);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x3A);
+  emit_byte(0x61);
+  emit_operand(dst, src);
+  emit_byte(imm8);
+}
+
+void Assembler::pcmpestri(XMMRegister dst, XMMRegister src, int imm8) {
+  assert(VM_Version::supports_sse4_2(), "");
+
+  emit_byte(0x66);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0x3A);
+  emit_byte(0x61);
+  emit_byte(0xC0 | encode);
+  emit_byte(imm8);
+}
+
 // generic
 void Assembler::pop(Register dst) {
   int encode = prefix_and_encode(dst->encoding());
@@ -2328,6 +2353,29 @@ void Assembler::psrlq(XMMRegister dst, int shift) {
   emit_byte(0x73);
   emit_byte(0xC0 | encode);
   emit_byte(shift);
+}
+
+void Assembler::ptest(XMMRegister dst, Address src) {
+  assert(VM_Version::supports_sse4_1(), "");
+
+  InstructionMark im(this);
+  emit_byte(0x66);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x38);
+  emit_byte(0x17);
+  emit_operand(dst, src);
+}
+
+void Assembler::ptest(XMMRegister dst, XMMRegister src) {
+  assert(VM_Version::supports_sse4_1(), "");
+
+  emit_byte(0x66);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0x38);
+  emit_byte(0x17);
+  emit_byte(0xC0 | encode);
 }
 
 void Assembler::punpcklbw(XMMRegister dst, XMMRegister src) {
