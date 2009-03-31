@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,20 @@
 #
 
 #
-# Create all the build tools
+# Makefile for building the idlj tool
 #
 
-BUILDDIR = ..
+BUILDDIR = ../..
+PACKAGE = com.sun.tools.corba.se.logutil
+PRODUCT = tools
+PROGRAM = MC
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS =                   \
-  strip_properties          \
-  idlj                      \
-  logutil		    \
+BUILDTOOL_SOURCE_ROOT = $(SHARE_SRC)/classes
+BUILDTOOL_MAIN        = $(PKGDIR)/MC.java
 
-all build clean clobber::
-	$(SUBDIRS-loop)
-
-clean clobber::
-	$(RM) -r $(BUILDTOOLCLASSDIR)
-	$(RM) -r $(BUILDTOOLJARDIR)
+#
+# Build tool jar rules.
+#
+include $(BUILDDIR)/common/BuildToolJar.gmk
 
