@@ -329,11 +329,6 @@ else
 endif
 
 #
-# Binary Plug rules and macros
-#
-include $(BUILDDIR)/common/internal/BinaryPlugs.gmk
-
-#
 # Get top level sccs_get rule
 #
 include $(BUILDDIR)/common/Rules-SCCS.gmk
