@@ -93,6 +93,9 @@ ifndef OPTIMIZATION_LEVEL
     OPTIMIZATION_LEVEL = LOWER
   endif
 endif
+ifndef FASTDEBUG_OPTIMIZATION_LEVEL
+  FASTDEBUG_OPTIMIZATION_LEVEL = LOWER
+endif
 
 #
 # If -Xa is in CFLAGS_COMMON it will end up ahead of $(CC_OPT) for the
@@ -143,8 +146,8 @@ endif
 #        Performance/size of files should be about the same, maybe smaller.
 #
 ifeq ($(FASTDEBUG), true)
-  CFLAGS_DEBUG_OPTION    = -g  $(CC_OPT/LOWER)
-  CXXFLAGS_DEBUG_OPTION  = -g0 $(CXX_OPT/LOWER)
+  CFLAGS_DEBUG_OPTION    = -g  $(CC_OPT/$(FASTDEBUG_OPTIMIZATION_LEVEL))
+  CXXFLAGS_DEBUG_OPTION  = -g0 $(CXX_OPT/$(FASTDEBUG_OPTIMIZATION_LEVEL))
 endif
 
 CFLAGS_COMMON   = -L$(OBJDIR)
