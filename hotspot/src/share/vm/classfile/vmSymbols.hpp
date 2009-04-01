@@ -288,6 +288,7 @@
   template(stringCacheEnabled_name,                   "stringCacheEnabled")                       \
   template(bitCount_name,                             "bitCount")                                 \
   template(profile_name,                              "profile")                                  \
+  template(equals_name,                               "equals")                                   \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
@@ -579,7 +580,6 @@
    do_signature(copyOfRange_signature,        "([Ljava/lang/Object;IILjava/lang/Class;)[Ljava/lang/Object;")            \
                                                                                                                         \
   do_intrinsic(_equalsC,                  java_util_Arrays,       equals_name,    equalsC_signature,             F_S)   \
-   do_name(     equals_name,                                     "equals")                                              \
    do_signature(equalsC_signature,                               "([C[C)Z")                                             \
                                                                                                                         \
   do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_array_object_object_signature, F_R) \
@@ -589,6 +589,7 @@
    do_name(     compareTo_name,                                  "compareTo")                                           \
   do_intrinsic(_indexOf,                  java_lang_String,       indexOf_name, string_int_signature,            F_R)   \
    do_name(     indexOf_name,                                    "indexOf")                                             \
+  do_intrinsic(_equals,                   java_lang_String,       equals_name, object_boolean_signature,         F_R)   \
                                                                                                                         \
   do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
