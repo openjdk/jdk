@@ -114,7 +114,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      *
      * @param text Text string will not be used in this method.
      */
-    protected void printIndexHeader(String text) {
+    protected void printIndexHeader(String text, String tableSummary) {
         printTableHeader(false);
     }
 
