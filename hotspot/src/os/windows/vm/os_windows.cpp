@@ -1004,26 +1004,61 @@ const char * os::get_temp_directory()
     }
 }
 
-void os::dll_build_name(char *holder, size_t holderlen,
-                        const char* pname, const char* fname)
-{
-    // copied from libhpi
-    const size_t pnamelen = pname ? strlen(pname) : 0;
-    const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
+static bool file_exists(const char* filename) {
+  if (filename == NULL || strlen(filename) == 0) {
+    return false;
+  }
+  return GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES;
+}
 
-    /* Quietly truncates on buffer overflow. Should be an error. */
-    if (pnamelen + strlen(fname) + 10 > holderlen) {
-        *holder = '\0';
-        return;
-    }
+void os::dll_build_name(char *buffer, size_t buflen,
+                        const char* pname, const char* fname) {
+  // Copied from libhpi
+  const size_t pnamelen = pname ? strlen(pname) : 0;
+  const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
 
-    if (pnamelen == 0) {
-        sprintf(holder, "%s.dll", fname);
-    } else if (c == ':' || c == '\\') {
-        sprintf(holder, "%s%s.dll", pname, fname);
-    } else {
-        sprintf(holder, "%s\\%s.dll", pname, fname);
+  // Quietly truncates on buffer overflow. Should be an error.
+  if (pnamelen + strlen(fname) + 10 > buflen) {
+    *buffer = '\0';
+    return;
+  }
+
+  if (pnamelen == 0) {
+    jio_snprintf(buffer, buflen, "%s.dll", fname);
+  } else if (c == ':' || c == '\\') {
+    jio_snprintf(buffer, buflen, "%s%s.dll", pname, fname);
+  } else if (strchr(pname, *os::path_separator()) != NULL) {
+    int n;
+    char** pelements = split_path(pname, &n);
+    for (int i = 0 ; i < n ; i++) {
+      char* path = pelements[i];
+      // Really shouldn't be NULL, but check can't hurt
+      size_t plen = (path == NULL) ? 0 : strlen(path);
+      if (plen == 0) {
+        continue; // skip the empty path values
+      }
+      const char lastchar = path[plen - 1];
+      if (lastchar == ':' || lastchar == '\\') {
+        jio_snprintf(buffer, buflen, "%s%s.dll", path, fname);
+      } else {
+        jio_snprintf(buffer, buflen, "%s\\%s.dll", path, fname);
+      }
+      if (file_exists(buffer)) {
+        break;
+      }
     }
+    // release the storage
+    for (int i = 0 ; i < n ; i++) {
+      if (pelements[i] != NULL) {
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
+      }
+    }
+    if (pelements != NULL) {
+      FREE_C_HEAP_ARRAY(char*, pelements);
+    }
+  } else {
+    jio_snprintf(buffer, buflen, "%s\\%s.dll", pname, fname);
+  }
 }
 
 // Needs to be in os specific directory because windows requires another
