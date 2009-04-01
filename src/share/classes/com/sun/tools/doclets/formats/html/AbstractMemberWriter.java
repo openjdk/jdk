@@ -60,7 +60,11 @@ public abstract class AbstractMemberWriter {
 
     /*** abstracts ***/
 
-    public abstract void printSummaryLabel(ClassDoc cd);
+    public abstract void printSummaryLabel();
+
+    public abstract void printTableSummary();
+
+    public abstract void printSummaryTableHeader(ProgramElementDoc member);
 
     public abstract void printInheritedSummaryLabel(ClassDoc cd);
 
@@ -342,12 +346,13 @@ public abstract class AbstractMemberWriter {
      * format for listing the API. Call methods from the sub-class to complete
      * the generation.
      */
-    protected void printDeprecatedAPI(List<Doc> deprmembers, String headingKey) {
+    protected void printDeprecatedAPI(List<Doc> deprmembers, String headingKey, String tableSummary, String[] tableHeader) {
         if (deprmembers.size() > 0) {
-            writer.tableIndexSummary();
-            writer.tableHeaderStart("#CCCCFF");
-            writer.strongText(headingKey);
-            writer.tableHeaderEnd();
+            writer.tableIndexSummary(tableSummary);
+            writer.tableCaptionStart();
+            writer.printText(headingKey);
+            writer.tableCaptionEnd();
+            writer.summaryTableHeader(tableHeader, "col");
             for (int i = 0; i < deprmembers.size(); i++) {
                 ProgramElementDoc member =(ProgramElementDoc)deprmembers.get(i);
                 writer.trBgcolorStyle("white", "TableRowColor");
@@ -370,19 +375,26 @@ public abstract class AbstractMemberWriter {
     /**
      * Print use info.
      */
-    protected void printUseInfo(List<? extends ProgramElementDoc> mems, String heading) {
+    protected void printUseInfo(List<? extends ProgramElementDoc> mems, String heading, String tableSummary) {
         if (mems == null) {
             return;
         }
         List<? extends ProgramElementDoc> members = mems;
+        boolean printedUseTableHeader = false;
         if (members.size() > 0) {
-            writer.tableIndexSummary();
-            writer.tableUseInfoHeaderStart("#CCCCFF");
+            writer.tableIndexSummary(tableSummary);
+            writer.tableSubCaptionStart();
             writer.print(heading);
-            writer.tableHeaderEnd();
+            writer.tableCaptionEnd();
             for (Iterator<? extends ProgramElementDoc> it = members.iterator(); it.hasNext(); ) {
                 ProgramElementDoc pgmdoc = it.next();
                 ClassDoc cd = pgmdoc.containingClass();
+                if (!printedUseTableHeader) {
+                    // Passing ProgramElementDoc helps decides printing
+                    // interface or class header in case of nested classes.
+                    this.printSummaryTableHeader(pgmdoc);
+                    printedUseTableHeader = true;
+                }
 
                 writer.printSummaryLinkType(this, pgmdoc);
                 if (cd != null && !(pgmdoc instanceof ConstructorDoc)
