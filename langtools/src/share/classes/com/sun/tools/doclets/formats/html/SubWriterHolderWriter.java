@@ -43,6 +43,7 @@ import java.io.*;
  *
  * @author Robert Field
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
@@ -72,10 +73,11 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
     public void printSummaryHeader(AbstractMemberWriter mw, ClassDoc cd) {
         mw.printSummaryAnchor(cd);
-        tableIndexSummary();
-        tableHeaderStart("#CCCCFF");
-        mw.printSummaryLabel(cd);
-        tableHeaderEnd();
+        mw.printTableSummary();
+        tableCaptionStart();
+        mw.printSummaryLabel();
+        tableCaptionEnd();
+        mw.printSummaryTableHeader(cd);
     }
 
     public void printTableHeadingBackground(String str) {
