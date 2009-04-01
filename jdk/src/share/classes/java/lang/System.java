@@ -34,7 +34,6 @@ import java.security.AllPermission;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import sun.nio.ch.Interruptible;
-import sun.net.InetAddressCachePolicy;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 import sun.reflect.annotation.AnnotationType;
@@ -310,7 +309,6 @@ public final class System {
         }
 
         security = s;
-        InetAddressCachePolicy.setIfNotSet(InetAddressCachePolicy.FOREVER);
     }
 
     /**
@@ -1121,14 +1119,6 @@ public final class System {
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();
 
-        // The order in with the hooks are added here is important as it
-        // determines the order in which they are run.
-        // (1)Console restore hook needs to be called first.
-        // (2)Application hooks must be run before calling deleteOnExitHook.
-        Shutdown.add(sun.misc.SharedSecrets.getJavaIOAccess().consoleRestoreHook());
-        Shutdown.add(ApplicationShutdownHooks.hook());
-        Shutdown.add(sun.misc.SharedSecrets.getJavaIODeleteOnExitAccess());
-
         // Initialize any miscellenous operating system settings that need to be
         // set for the class libraries. Currently this is no-op everywhere except
         // for Windows where the process-wide error mode is set before the java.io
@@ -1173,6 +1163,9 @@ public final class System {
             }
             public void blockedOn(Thread t, Interruptible b) {
                 t.blockedOn(b);
+            }
+            public void registerShutdownHook(int slot, Runnable r) {
+                Shutdown.add(slot, r);
             }
         });
     }

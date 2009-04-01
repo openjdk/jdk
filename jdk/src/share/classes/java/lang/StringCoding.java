@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,10 @@
 
 package java.lang;
 
-import java.io.CharConversionException;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.BufferOverflowException;
-import java.nio.BufferUnderflowException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
@@ -39,11 +36,12 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import sun.misc.MessageUtils;
 import sun.nio.cs.HistoricallyNamedCharset;
+import sun.nio.cs.ArrayDecoder;
+import sun.nio.cs.ArrayEncoder;
 
 /**
  * Utility class for string encoding and decoding.
@@ -74,10 +72,8 @@ class StringCoding {
 
     // Trim the given byte array to the given length
     //
-    private static byte[] safeTrim(byte[] ba, int len, Charset cs) {
-        if (len == ba.length
-            && (System.getSecurityManager() == null
-                || cs.getClass().getClassLoader0() == null))
+    private static byte[] safeTrim(byte[] ba, int len, Charset cs, boolean isTrusted) {
+        if (len == ba.length && (isTrusted || System.getSecurityManager() == null))
             return ba;
         else
             return Arrays.copyOf(ba, len);
@@ -85,10 +81,9 @@ class StringCoding {
 
     // Trim the given char array to the given length
     //
-    private static char[] safeTrim(char[] ca, int len, Charset cs) {
-        if (len == ca.length
-            && (System.getSecurityManager() == null
-                || cs.getClass().getClassLoader0() == null))
+    private static char[] safeTrim(char[] ca, int len,
+                                   Charset cs, boolean isTrusted) {
+        if (len == ca.length && (isTrusted || System.getSecurityManager() == null))
             return ca;
         else
             return Arrays.copyOf(ca, len);
@@ -128,6 +123,7 @@ class StringCoding {
         private final String requestedCharsetName;
         private final Charset cs;
         private final CharsetDecoder cd;
+        private final boolean isTrusted;
 
         private StringDecoder(Charset cs, String rcn) {
             this.requestedCharsetName = rcn;
@@ -135,6 +131,7 @@ class StringCoding {
             this.cd = cs.newDecoder()
                 .onMalformedInput(CodingErrorAction.REPLACE)
                 .onUnmappableCharacter(CodingErrorAction.REPLACE);
+            this.isTrusted = (cs.getClass().getClassLoader0() == null);
         }
 
         String charsetName() {
@@ -152,24 +149,28 @@ class StringCoding {
             char[] ca = new char[en];
             if (len == 0)
                 return ca;
-            cd.reset();
-            ByteBuffer bb = ByteBuffer.wrap(ba, off, len);
-            CharBuffer cb = CharBuffer.wrap(ca);
-            try {
-                CoderResult cr = cd.decode(bb, cb, true);
-                if (!cr.isUnderflow())
-                    cr.throwException();
-                cr = cd.flush(cb);
-                if (!cr.isUnderflow())
-                    cr.throwException();
-            } catch (CharacterCodingException x) {
-                // Substitution is always enabled,
-                // so this shouldn't happen
-                throw new Error(x);
+            if (cd instanceof ArrayDecoder) {
+                int clen = ((ArrayDecoder)cd).decode(ba, off, len, ca);
+                return safeTrim(ca, clen, cs, isTrusted);
+            } else {
+                cd.reset();
+                ByteBuffer bb = ByteBuffer.wrap(ba, off, len);
+                CharBuffer cb = CharBuffer.wrap(ca);
+                try {
+                    CoderResult cr = cd.decode(bb, cb, true);
+                    if (!cr.isUnderflow())
+                        cr.throwException();
+                    cr = cd.flush(cb);
+                    if (!cr.isUnderflow())
+                        cr.throwException();
+                } catch (CharacterCodingException x) {
+                    // Substitution is always enabled,
+                    // so this shouldn't happen
+                    throw new Error(x);
+                }
+                return safeTrim(ca, cb.position(), cs, isTrusted);
             }
-            return safeTrim(ca, cb.position(), cs);
         }
-
     }
 
     static char[] decode(String charsetName, byte[] ba, int off, int len)
@@ -193,8 +194,57 @@ class StringCoding {
     }
 
     static char[] decode(Charset cs, byte[] ba, int off, int len) {
-        StringDecoder sd = new StringDecoder(cs, cs.name());
-        return sd.decode(Arrays.copyOfRange(ba, off, off + len), 0, len);
+        // (1)We never cache the "external" cs, the only benefit of creating
+        // an additional StringDe/Encoder object to wrap it is to share the
+        // de/encode() method. These SD/E objects are short-lifed, the young-gen
+        // gc should be able to take care of them well. But the best approash
+        // is still not to generate them if not really necessary.
+        // (2)The defensive copy of the input byte/char[] has a big performance
+        // impact, as well as the outgoing result byte/char[]. Need to do the
+        // optimization check of (sm==null && classLoader0==null) for both.
+        // (3)getClass().getClassLoader0() is expensive
+        // (4)There might be a timing gap in isTrusted setting. getClassLoader0()
+        // is only chcked (and then isTrusted gets set) when (SM==null). It is
+        // possible that the SM==null for now but then SM is NOT null later
+        // when safeTrim() is invoked...the "safe" way to do is to redundant
+        // check (... && (isTrusted || SM == null || getClassLoader0())) in trim
+        // but it then can be argued that the SM is null when the opertaion
+        // is started...
+        CharsetDecoder cd = cs.newDecoder();
+        int en = scale(len, cd.maxCharsPerByte());
+        char[] ca = new char[en];
+        if (len == 0)
+            return ca;
+        boolean isTrusted = false;
+        if (System.getSecurityManager() != null) {
+            if (!(isTrusted = (cs.getClass().getClassLoader0() == null))) {
+                ba =  Arrays.copyOfRange(ba, off, off + len);
+                off = 0;
+            }
+        }
+        if (cd instanceof ArrayDecoder) {
+            int clen = ((ArrayDecoder)cd).decode(ba, off, len, ca);
+            return safeTrim(ca, clen, cs, isTrusted);
+        } else {
+            cd.onMalformedInput(CodingErrorAction.REPLACE)
+              .onUnmappableCharacter(CodingErrorAction.REPLACE)
+              .reset();
+            ByteBuffer bb = ByteBuffer.wrap(ba, off, len);
+            CharBuffer cb = CharBuffer.wrap(ca);
+            try {
+                CoderResult cr = cd.decode(bb, cb, true);
+                if (!cr.isUnderflow())
+                    cr.throwException();
+                cr = cd.flush(cb);
+                if (!cr.isUnderflow())
+                    cr.throwException();
+            } catch (CharacterCodingException x) {
+                // Substitution is always enabled,
+                // so this shouldn't happen
+                throw new Error(x);
+            }
+            return safeTrim(ca, cb.position(), cs, isTrusted);
+        }
     }
 
     static char[] decode(byte[] ba, int off, int len) {
@@ -218,14 +268,12 @@ class StringCoding {
         }
     }
 
-
-
-
     // -- Encoding --
     private static class StringEncoder {
         private Charset cs;
         private CharsetEncoder ce;
         private final String requestedCharsetName;
+        private final boolean isTrusted;
 
         private StringEncoder(Charset cs, String rcn) {
             this.requestedCharsetName = rcn;
@@ -233,6 +281,7 @@ class StringCoding {
             this.ce = cs.newEncoder()
                 .onMalformedInput(CodingErrorAction.REPLACE)
                 .onUnmappableCharacter(CodingErrorAction.REPLACE);
+            this.isTrusted = (cs.getClass().getClassLoader0() == null);
         }
 
         String charsetName() {
@@ -250,23 +299,27 @@ class StringCoding {
             byte[] ba = new byte[en];
             if (len == 0)
                 return ba;
-
-            ce.reset();
-            ByteBuffer bb = ByteBuffer.wrap(ba);
-            CharBuffer cb = CharBuffer.wrap(ca, off, len);
-            try {
-                CoderResult cr = ce.encode(cb, bb, true);
-                if (!cr.isUnderflow())
-                    cr.throwException();
-                cr = ce.flush(bb);
-                if (!cr.isUnderflow())
-                    cr.throwException();
-            } catch (CharacterCodingException x) {
-                // Substitution is always enabled,
-                // so this shouldn't happen
-                throw new Error(x);
+            if (ce instanceof ArrayEncoder) {
+                int blen = ((ArrayEncoder)ce).encode(ca, off, len, ba);
+                return safeTrim(ba, blen, cs, isTrusted);
+            } else {
+                ce.reset();
+                ByteBuffer bb = ByteBuffer.wrap(ba);
+                CharBuffer cb = CharBuffer.wrap(ca, off, len);
+                try {
+                    CoderResult cr = ce.encode(cb, bb, true);
+                    if (!cr.isUnderflow())
+                        cr.throwException();
+                    cr = ce.flush(bb);
+                    if (!cr.isUnderflow())
+                        cr.throwException();
+                } catch (CharacterCodingException x) {
+                    // Substitution is always enabled,
+                    // so this shouldn't happen
+                    throw new Error(x);
+                }
+                return safeTrim(ba, bb.position(), cs, isTrusted);
             }
-            return safeTrim(ba, bb.position(), cs);
         }
     }
 
@@ -291,8 +344,39 @@ class StringCoding {
     }
 
     static byte[] encode(Charset cs, char[] ca, int off, int len) {
-        StringEncoder se = new StringEncoder(cs, cs.name());
-        return se.encode(Arrays.copyOfRange(ca, off, off + len), 0, len);
+        CharsetEncoder ce = cs.newEncoder();
+        int en = scale(len, ce.maxBytesPerChar());
+        byte[] ba = new byte[en];
+        if (len == 0)
+            return ba;
+        boolean isTrusted = false;
+        if (System.getSecurityManager() != null) {
+            if (!(isTrusted = (cs.getClass().getClassLoader0() == null))) {
+                ca =  Arrays.copyOfRange(ca, off, off + len);
+                off = 0;
+            }
+        }
+        if (ce instanceof ArrayEncoder) {
+            int blen = ((ArrayEncoder)ce).encode(ca, off, len, ba);
+            return safeTrim(ba, blen, cs, isTrusted);
+        } else {
+            ce.onMalformedInput(CodingErrorAction.REPLACE)
+              .onUnmappableCharacter(CodingErrorAction.REPLACE)
+              .reset();
+            ByteBuffer bb = ByteBuffer.wrap(ba);
+            CharBuffer cb = CharBuffer.wrap(ca, off, len);
+            try {
+                CoderResult cr = ce.encode(cb, bb, true);
+                if (!cr.isUnderflow())
+                    cr.throwException();
+                cr = ce.flush(bb);
+                if (!cr.isUnderflow())
+                    cr.throwException();
+            } catch (CharacterCodingException x) {
+                throw new Error(x);
+            }
+            return safeTrim(ba, bb.position(), cs, isTrusted);
+        }
     }
 
     static byte[] encode(char[] ca, int off, int len) {
