@@ -1320,7 +1320,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   /****************/                                                      \
                                                                           \
   declare_constant(oopSize)                                               \
-  declare_constant(heapOopSize)                                           \
   declare_constant(LogBytesPerWord)                                       \
   declare_constant(BytesPerLong)                                          \
                                                                           \
