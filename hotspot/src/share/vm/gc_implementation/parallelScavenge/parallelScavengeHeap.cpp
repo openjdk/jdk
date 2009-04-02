@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -825,6 +825,7 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   if (young_gen()->is_in_reserved(addr)) {
     assert(young_gen()->is_in(addr),
            "addr should be in allocated part of young gen");
+    if (Debugging)  return NULL;  // called from find() in debug.cpp
     Unimplemented();
   } else if (old_gen()->is_in_reserved(addr)) {
     assert(old_gen()->is_in(addr),
