@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,6 +301,8 @@ class klassItable : public ResourceObj {
 
   // Resolving of method to index
   static int compute_itable_index(methodOop m);
+  // ...and back again:
+  static methodOop method_for_itable_index(klassOop klass, int itable_index);
 
   // Debugging/Statistics
   static void print_statistics() PRODUCT_RETURN;

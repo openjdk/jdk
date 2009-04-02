@@ -637,7 +637,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_orderaccess_fence() {
     StubCodeMark mark(this, "StubRoutines", "orderaccess_fence");
     address start = __ pc();
-    __ mfence();
+    __ membar(Assembler::StoreLoad);
     __ ret(0);
 
     return start;
