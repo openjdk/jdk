@@ -34,10 +34,12 @@ ParScanThreadState::ParScanThreadState(Space* to_space_,
                                        Generation* old_gen_,
                                        int thread_num_,
                                        ObjToScanQueueSet* work_queue_set_,
+                                       GrowableArray<oop>**  overflow_stack_set_,
                                        size_t desired_plab_sz_,
                                        ParallelTaskTerminator& term_) :
   _to_space(to_space_), _old_gen(old_gen_), _young_gen(gen_), _thread_num(thread_num_),
   _work_queue(work_queue_set_->queue(thread_num_)), _to_space_full(false),
+  _overflow_stack(overflow_stack_set_[thread_num_]),
   _ageTable(false), // false ==> not the global age table, no perf data.
   _to_space_alloc_buffer(desired_plab_sz_),
   _to_space_closure(gen_, this), _old_gen_closure(gen_, this),
@@ -57,11 +59,6 @@ ParScanThreadState::ParScanThreadState(Space* to_space_,
   _start = os::elapsedTime();
   _old_gen_closure.set_generation(old_gen_);
   _old_gen_root_closure.set_generation(old_gen_);
-  if (UseCompressedOops) {
-    _overflow_stack = new (ResourceObj::C_HEAP) GrowableArray<oop>(512, true);
-  } else {
-    _overflow_stack = NULL;
-  }
 }
 #ifdef _MSC_VER
 #pragma warning( pop )
@@ -155,7 +152,7 @@ void ParScanThreadState::trim_queues(int max_size) {
 }
 
 bool ParScanThreadState::take_from_overflow_stack() {
-  assert(UseCompressedOops, "Else should not call");
+  assert(ParGCUseLocalOverflow, "Else should not call");
   assert(young_gen()->overflow_list() == NULL, "Error");
   ObjToScanQueue* queue = work_queue();
   GrowableArray<oop>* of_stack = overflow_stack();
@@ -183,7 +180,7 @@ bool ParScanThreadState::take_from_overflow_stack() {
 }
 
 void ParScanThreadState::push_on_overflow_stack(oop p) {
-  assert(UseCompressedOops, "Else should not call");
+  assert(ParGCUseLocalOverflow, "Else should not call");
   overflow_stack()->push(p);
   assert(young_gen()->overflow_list() == NULL, "Error");
 }
@@ -260,6 +257,7 @@ public:
                         ParNewGeneration&       gen,
                         Generation&             old_gen,
                         ObjToScanQueueSet&      queue_set,
+                        GrowableArray<oop>**    overflow_stacks_,
                         size_t                  desired_plab_sz,
                         ParallelTaskTerminator& term);
   inline ParScanThreadState& thread_sate(int i);
@@ -282,6 +280,7 @@ private:
 ParScanThreadStateSet::ParScanThreadStateSet(
   int num_threads, Space& to_space, ParNewGeneration& gen,
   Generation& old_gen, ObjToScanQueueSet& queue_set,
+  GrowableArray<oop>** overflow_stack_set_,
   size_t desired_plab_sz, ParallelTaskTerminator& term)
   : ResourceArray(sizeof(ParScanThreadState), num_threads),
     _gen(gen), _next_gen(old_gen), _term(term),
@@ -292,7 +291,7 @@ ParScanThreadStateSet::ParScanThreadStateSet(
   for (int i = 0; i < num_threads; ++i) {
     new ((ParScanThreadState*)_data + i)
         ParScanThreadState(&to_space, &gen, &old_gen, i, &queue_set,
-                           desired_plab_sz, term);
+                           overflow_stack_set_, desired_plab_sz, term);
   }
 }
 
@@ -518,6 +517,17 @@ ParNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level)
 
   for (uint i2 = 0; i2 < ParallelGCThreads; i2++)
     _task_queues->queue(i2)->initialize();
+
+  _overflow_stacks = NEW_C_HEAP_ARRAY(GrowableArray<oop>*, ParallelGCThreads);
+  guarantee(_overflow_stacks != NULL, "Overflow stack set allocation failure");
+  for (uint i = 0; i < ParallelGCThreads; i++) {
+    if (ParGCUseLocalOverflow) {
+      _overflow_stacks[i] = new (ResourceObj::C_HEAP) GrowableArray<oop>(512, true);
+      guarantee(_overflow_stacks[i] != NULL, "Overflow Stack allocation failure.");
+    } else {
+      _overflow_stacks[i] = NULL;
+    }
+  }
 
   if (UsePerfData) {
     EXCEPTION_MARK;
@@ -784,7 +794,7 @@ void ParNewGeneration::collect(bool   full,
   ParallelTaskTerminator _term(workers->total_workers(), task_queues());
   ParScanThreadStateSet thread_state_set(workers->total_workers(),
                                          *to(), *this, *_next_gen, *task_queues(),
-                                         desired_plab_sz(), _term);
+                                         _overflow_stacks, desired_plab_sz(), _term);
 
   ParNewGenTask tsk(this, _next_gen, reserved().end(), &thread_state_set);
   int n_workers = workers->total_workers();
@@ -1238,11 +1248,12 @@ bool ParNewGeneration::should_simulate_overflow() {
 #define BUSY (oop(0x1aff1aff))
 void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadState* par_scan_state) {
   assert(is_in_reserved(from_space_obj), "Should be from this generation");
-  if (UseCompressedOops) {
+  if (ParGCUseLocalOverflow) {
     // In the case of compressed oops, we use a private, not-shared
     // overflow stack.
     par_scan_state->push_on_overflow_stack(from_space_obj);
   } else {
+    assert(!UseCompressedOops, "Error");
     // if the object has been forwarded to itself, then we cannot
     // use the klass pointer for the linked list.  Instead we have
     // to allocate an oopDesc in the C-Heap and use that for the linked list.
@@ -1275,9 +1286,10 @@ void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadSt
 bool ParNewGeneration::take_from_overflow_list(ParScanThreadState* par_scan_state) {
   bool res;
 
-  if (UseCompressedOops) {
+  if (ParGCUseLocalOverflow) {
     res = par_scan_state->take_from_overflow_stack();
   } else {
+    assert(!UseCompressedOops, "Error");
     res = take_from_overflow_list_work(par_scan_state);
   }
   return res;
@@ -1305,6 +1317,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
                                  (size_t)ParGCDesiredObjsFromOverflowList);
 
   assert(par_scan_state->overflow_stack() == NULL, "Error");
+  assert(!UseCompressedOops, "Error");
   if (_overflow_list == NULL) return false;
 
   // Otherwise, there was something there; try claiming the list.
