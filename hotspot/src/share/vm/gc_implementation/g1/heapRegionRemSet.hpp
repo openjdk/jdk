@@ -188,32 +188,6 @@ private:
   // the _outgoing_region_map.
   void clear_outgoing_entries();
 
-#if MAYBE
-  // Audit the given card index.
-  void audit_card(size_t card_num, HeapRegion* hr, u2* rc_arr,
-                  HeapRegionRemSet* empty_cards, size_t* one_obj_cards);
-
-  // Assumes that "audit_stage1" has been called for "hr", to set up
-  // "shadow" and "new_rs" appropriately.  Identifies individual popular
-  // objects; returns "true" if any are found.
-  bool audit_find_pop(HeapRegion* hr, u2* rc_arr);
-
-  // Assumes that "audit_stage1" has been called for "hr", to set up
-  // "shadow" and "new_rs" appropriately.  Identifies individual popular
-  // objects, and determines the number of entries in "new_rs" if any such
-  // popular objects are ignored.  If this is sufficiently small, returns
-  // "false" to indicate that a constraint should not be introduced.
-  // Otherwise, returns "true" to indicate that we should go ahead with
-  // adding the constraint.
-  bool audit_stag(HeapRegion* hr, u2* rc_arr);
-
-
-  u2* alloc_rc_array();
-
-  SeqHeapRegionRemSet* audit_post(u2* rc_arr, size_t multi_obj_crds,
-                                  SeqHeapRegionRemSet* empty_cards);
-#endif
-
   enum ParIterState { Unclaimed, Claimed, Complete };
   ParIterState _iter_state;
 
@@ -261,16 +235,14 @@ public:
 
   /* Used in the sequential case.  Returns "true" iff this addition causes
      the size limit to be reached. */
-  bool add_reference(oop* from) {
+  void add_reference(oop* from) {
     _other_regions.add_reference(from);
-    return false;
   }
 
   /* Used in the parallel case.  Returns "true" iff this addition causes
      the size limit to be reached. */
-  bool add_reference(oop* from, int tid) {
+  void add_reference(oop* from, int tid) {
     _other_regions.add_reference(from, tid);
-    return false;
   }
 
   // Records the fact that the current region contains an outgoing
@@ -337,20 +309,6 @@ public:
     return _other_regions.contains_reference(from);
   }
   void print() const;
-
-#if MAYBE
-  // We are about to introduce a constraint, requiring the collection time
-  // of the region owning this RS to be <= "hr", and forgetting pointers
-  // from the owning region to "hr."  Before doing so, examines this rem
-  // set for pointers to "hr", possibly identifying some popular objects.,
-  // and possibly finding some cards to no longer contain pointers to "hr",
-  //
-  // These steps may prevent the the constraint from being necessary; in
-  // which case returns a set of cards now thought to contain no pointers
-  // into HR.  In the normal (I assume) case, returns NULL, indicating that
-  // we should go ahead and add the constraint.
-  virtual SeqHeapRegionRemSet* audit(HeapRegion* hr) = 0;
-#endif
 
   // Called during a stop-world phase to perform any deferred cleanups.
   // The second version may be called by parallel threads after then finish
