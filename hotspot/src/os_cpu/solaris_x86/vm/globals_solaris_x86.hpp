@@ -46,5 +46,7 @@ define_pd_global(uintx, JVMInvokeMethodSlack,    10*K);
 
 define_pd_global(intx, CompilerThreadStackSize,  0);
 
+// Only used on 64 bit platforms
+define_pd_global(uintx, HeapBaseMinAddress,      256*M);
 // Only used on 64 bit Windows platforms
 define_pd_global(bool, UseVectoredExceptions,    false);

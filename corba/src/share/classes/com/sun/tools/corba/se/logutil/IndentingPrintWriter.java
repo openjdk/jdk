@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.Writer ;
 import java.io.OutputStream ;
 import java.io.BufferedWriter ;
 import java.io.OutputStreamWriter ;
-import jsint.Pair ;
 import java.util.StringTokenizer ;
 
 public class IndentingPrintWriter extends PrintWriter {
@@ -38,22 +37,20 @@ public class IndentingPrintWriter extends PrintWriter {
     private int indentWidth = 4 ;
     private String indentString = "" ;
 
-    public void printMsg( String msg, Pair data )
+    public void printMsg( String msg, Object... data )
     {
         // System.out.println( "printMsg called with msg=" + msg + " data=" + data ) ;
         StringTokenizer st = new StringTokenizer( msg, "@", true ) ;
         StringBuffer result = new StringBuffer() ;
-        Object head = data.first ;
-        Pair tail = (Pair)data.rest ;
         String token = null ;
+        int pos = 0;
 
         while (st.hasMoreTokens()) {
             token = st.nextToken() ;
             if (token.equals("@")) {
-                if (head != null) {
-                    result.append( head ) ;
-                    head = tail.first ;
-                    tail = (Pair)tail.rest ;
+                if (pos < data.length) {
+                    result.append( data[pos] );
+                    ++pos;
                 } else {
                     throw new Error( "List too short for message" ) ;
                 }
