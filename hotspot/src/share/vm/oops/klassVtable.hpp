@@ -70,8 +70,9 @@ class klassVtable : public ResourceObj {
   // conputes vtable length (in words) and the number of miranda methods
   static void compute_vtable_size_and_num_mirandas(int &vtable_length, int &num_miranda_methods,
                                                    klassOop super, objArrayOop methods,
-                                                   AccessFlags class_flags, oop classloader,
-                                                   symbolOop classname, objArrayOop local_interfaces);
+                                                   AccessFlags class_flags, Handle classloader,
+                                                   symbolHandle classname, objArrayOop local_interfaces,
+                                                   TRAPS);
 
   // RedefineClasses() API support:
   // If any entry of this vtable points to any of old_methods,
@@ -111,14 +112,16 @@ class klassVtable : public ResourceObj {
  protected:
   friend class vtableEntry;
  private:
+  enum { VTABLE_TRANSITIVE_OVERRIDE_VERSION = 51 } ;
   void copy_vtable_to(vtableEntry* start);
   int  initialize_from_super(KlassHandle super);
   int  index_of(methodOop m, int len) const; // same as index_of, but search only up to len
   void put_method_at(methodOop m, int index);
-  static bool needs_new_vtable_entry(methodOop m, klassOop super, oop classloader, symbolOop classname, AccessFlags access_flags);
-  AccessType vtable_accessibility_at(int i);
+  static bool needs_new_vtable_entry(methodHandle m, klassOop super, Handle classloader, symbolHandle classname, AccessFlags access_flags, TRAPS);
 
-  bool update_super_vtable(instanceKlass* klass, methodHandle target_method, int super_vtable_len, bool checkconstraints, TRAPS);
+  bool update_inherited_vtable(instanceKlass* klass, methodHandle target_method, int super_vtable_len, bool checkconstraints, TRAPS);
+ instanceKlass* find_transitive_override(instanceKlass* initialsuper, methodHandle target_method, int vtable_index,
+                                         Handle target_loader, symbolHandle target_classname, Thread* THREAD);
 
   // support for miranda methods
   bool is_miranda_entry_at(int i);

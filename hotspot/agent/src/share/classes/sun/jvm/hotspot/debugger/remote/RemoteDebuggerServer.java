@@ -114,17 +114,18 @@ public class RemoteDebuggerServer extends UnicastRemoteObject
     return debugger.getJShortSize();
   }
 
-  public long getHeapBase() throws RemoteException {
-    return debugger.getHeapBase();
-  }
-
   public long getHeapOopSize() throws RemoteException {
     return debugger.getHeapOopSize();
   }
 
-  public long getLogMinObjAlignmentInBytes() throws RemoteException {
-    return debugger.getLogMinObjAlignmentInBytes();
+  public long getNarrowOopBase() throws RemoteException {
+    return debugger.getNarrowOopBase();
   }
+
+  public int  getNarrowOopShift() throws RemoteException {
+    return debugger.getNarrowOopShift();
+  }
+
   public boolean   areThreadsEqual(long addrOrId1, boolean isAddress1,
                                    long addrOrId2, boolean isAddress2) throws RemoteException {
     ThreadProxy t1 = getThreadProxy(addrOrId1, isAddress1);
