@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2615,12 +2615,12 @@ void MacroAssembler::cas_under_lock(Register top_ptr_reg, Register top_reg, Regi
   }
 }
 
-RegisterConstant MacroAssembler::delayed_value(intptr_t* delayed_value_addr,
-                                               Register tmp,
-                                               int offset) {
+RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_addr,
+                                                      Register tmp,
+                                                      int offset) {
   intptr_t value = *delayed_value_addr;
   if (value != 0)
-    return RegisterConstant(value + offset);
+    return RegisterOrConstant(value + offset);
 
   // load indirectly to solve generation ordering problem
   Address a(tmp, (address) delayed_value_addr);
@@ -2634,11 +2634,11 @@ RegisterConstant MacroAssembler::delayed_value(intptr_t* delayed_value_addr,
   if (offset != 0)
     add(tmp, offset, tmp);
 
-  return RegisterConstant(tmp);
+  return RegisterOrConstant(tmp);
 }
 
 
-void MacroAssembler::regcon_inc_ptr( RegisterConstant& dest, RegisterConstant src, Register temp ) {
+void MacroAssembler::regcon_inc_ptr( RegisterOrConstant& dest, RegisterOrConstant src, Register temp ) {
   assert(dest.register_or_noreg() != G0, "lost side effect");
   if ((src.is_constant() && src.as_constant() == 0) ||
       (src.is_register() && src.as_register() == G0)) {
@@ -2647,15 +2647,15 @@ void MacroAssembler::regcon_inc_ptr( RegisterConstant& dest, RegisterConstant sr
     add(dest.as_register(), ensure_rs2(src, temp), dest.as_register());
   } else if (src.is_constant()) {
     intptr_t res = dest.as_constant() + src.as_constant();
-    dest = RegisterConstant(res); // side effect seen by caller
+    dest = RegisterOrConstant(res); // side effect seen by caller
   } else {
     assert(temp != noreg, "cannot handle constant += register");
     add(src.as_register(), ensure_rs2(dest, temp), temp);
-    dest = RegisterConstant(temp); // side effect seen by caller
+    dest = RegisterOrConstant(temp); // side effect seen by caller
   }
 }
 
-void MacroAssembler::regcon_sll_ptr( RegisterConstant& dest, RegisterConstant src, Register temp ) {
+void MacroAssembler::regcon_sll_ptr( RegisterOrConstant& dest, RegisterOrConstant src, Register temp ) {
   assert(dest.register_or_noreg() != G0, "lost side effect");
   if (!is_simm13(src.constant_or_zero()))
     src = (src.as_constant() & 0xFF);
@@ -2666,12 +2666,12 @@ void MacroAssembler::regcon_sll_ptr( RegisterConstant& dest, RegisterConstant sr
     sll_ptr(dest.as_register(), src, dest.as_register());
   } else if (src.is_constant()) {
     intptr_t res = dest.as_constant() << src.as_constant();
-    dest = RegisterConstant(res); // side effect seen by caller
+    dest = RegisterOrConstant(res); // side effect seen by caller
   } else {
     assert(temp != noreg, "cannot handle constant <<= register");
     set(dest.as_constant(), temp);
     sll_ptr(temp, src, temp);
-    dest = RegisterConstant(temp); // side effect seen by caller
+    dest = RegisterOrConstant(temp); // side effect seen by caller
   }
 }
 
@@ -2683,7 +2683,7 @@ void MacroAssembler::regcon_sll_ptr( RegisterConstant& dest, RegisterConstant sr
 // On failure, execution transfers to the given label.
 void MacroAssembler::lookup_interface_method(Register recv_klass,
                                              Register intf_klass,
-                                             RegisterConstant itable_index,
+                                             RegisterOrConstant itable_index,
                                              Register method_result,
                                              Register scan_temp,
                                              Register sethi_temp,
@@ -2720,7 +2720,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   add(recv_klass, scan_temp, scan_temp);
 
   // Adjust recv_klass by scaled itable_index, so we can free itable_index.
-  RegisterConstant itable_offset = itable_index;
+  RegisterOrConstant itable_offset = itable_index;
   regcon_sll_ptr(itable_offset, exact_log2(itableMethodEntry::size() * wordSize));
   regcon_inc_ptr(itable_offset, itableMethodEntry::method_offset_in_bytes());
   add(recv_klass, ensure_rs2(itable_offset, sethi_temp), recv_klass);
@@ -2805,7 +2805,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
                                                    Label* L_success,
                                                    Label* L_failure,
                                                    Label* L_slow_path,
-                                        RegisterConstant super_check_offset,
+                                        RegisterOrConstant super_check_offset,
                                         Register instanceof_hack) {
   int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
                    Klass::secondary_super_cache_offset_in_bytes());
@@ -2867,7 +2867,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   if (must_load_sco) {
     // The super check offset is always positive...
     lduw(super_klass, sco_offset, temp2_reg);
-    super_check_offset = RegisterConstant(temp2_reg);
+    super_check_offset = RegisterOrConstant(temp2_reg);
   }
   ld_ptr(sub_klass, super_check_offset, temp_reg);
   cmp(super_klass, temp_reg);
@@ -4465,7 +4465,7 @@ void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_v
 }
 
 // Loading values by size and signed-ness
-void MacroAssembler::load_sized_value(Register s1, RegisterConstant s2, Register d,
+void MacroAssembler::load_sized_value(Register s1, RegisterOrConstant s2, Register d,
                                       int size_in_bytes, bool is_signed) {
   switch (size_in_bytes ^ (is_signed ? -1 : 0)) {
   case ~8:  // fall through:

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,10 +303,29 @@ class instanceKlass: public Klass {
     inner_class_next_offset = 4
   };
 
+  // method override check
+  bool is_override(methodHandle super_method, Handle targetclassloader, symbolHandle targetclassname, TRAPS);
+
   // package
   bool is_same_class_package(klassOop class2);
   bool is_same_class_package(oop classloader2, symbolOop classname2);
   static bool is_same_class_package(oop class_loader1, symbolOop class_name1, oop class_loader2, symbolOop class_name2);
+
+  // find an enclosing class (defined where original code was, in jvm.cpp!)
+  klassOop compute_enclosing_class(symbolOop& simple_name_result, TRAPS) {
+    instanceKlassHandle self(THREAD, this->as_klassOop());
+    return compute_enclosing_class_impl(self, simple_name_result, THREAD);
+  }
+  static klassOop compute_enclosing_class_impl(instanceKlassHandle self,
+                                               symbolOop& simple_name_result, TRAPS);
+
+  // tell if two classes have the same enclosing class (at package level)
+  bool is_same_package_member(klassOop class2, TRAPS) {
+    instanceKlassHandle self(THREAD, this->as_klassOop());
+    return is_same_package_member_impl(self, class2, THREAD);
+  }
+  static bool is_same_package_member_impl(instanceKlassHandle self,
+                                          klassOop class2, TRAPS);
 
   // initialization state
   bool is_loaded() const                   { return _init_state >= loaded; }

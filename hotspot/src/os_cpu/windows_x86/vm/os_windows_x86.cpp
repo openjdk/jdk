@@ -196,7 +196,6 @@ typedef jint      cmpxchg_func_t         (jint,     volatile jint*,  jint);
 typedef jlong     cmpxchg_long_func_t    (jlong,    volatile jlong*, jlong);
 typedef jint      add_func_t             (jint,     volatile jint*);
 typedef intptr_t  add_ptr_func_t         (intptr_t, volatile intptr_t*);
-typedef void      fence_func_t           ();
 
 #ifdef AMD64
 
@@ -292,27 +291,11 @@ intptr_t os::atomic_add_ptr_bootstrap(intptr_t add_value, volatile intptr_t* des
   return (*dest) += add_value;
 }
 
-void os::fence_bootstrap() {
-  // try to use the stub:
-  fence_func_t* func = CAST_TO_FN_PTR(fence_func_t*, StubRoutines::fence_entry());
-
-  if (func != NULL) {
-    os::fence_func = func;
-    (*func)();
-    return;
-  }
-  assert(Threads::number_of_threads() == 0, "for bootstrap only");
-
-  // don't have to do anything for a single thread
-}
-
-
 xchg_func_t*         os::atomic_xchg_func         = os::atomic_xchg_bootstrap;
 xchg_ptr_func_t*     os::atomic_xchg_ptr_func     = os::atomic_xchg_ptr_bootstrap;
 cmpxchg_func_t*      os::atomic_cmpxchg_func      = os::atomic_cmpxchg_bootstrap;
 add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;
 add_ptr_func_t*      os::atomic_add_ptr_func      = os::atomic_add_ptr_bootstrap;
-fence_func_t*        os::fence_func               = os::fence_bootstrap;
 
 #endif // AMD64
 

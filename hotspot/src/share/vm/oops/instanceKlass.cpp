@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1813,6 +1813,8 @@ bool instanceKlass::is_same_class_package(oop class_loader1, symbolOop class_nam
                                           oop class_loader2, symbolOop class_name2) {
   if (class_loader1 != class_loader2) {
     return false;
+  } else if (class_name1 == class_name2) {
+    return true;                // skip painful bytewise comparison
   } else {
     ResourceMark rm;
 
@@ -1857,6 +1859,75 @@ bool instanceKlass::is_same_class_package(oop class_loader1, symbolOop class_nam
       return UTF8::equal(name1, length1, name2, length2);
     }
   }
+}
+
+// Returns true iff super_method can be overridden by a method in targetclassname
+// See JSL 3rd edition 8.4.6.1
+// Assumes name-signature match
+// "this" is instanceKlass of super_method which must exist
+// note that the instanceKlass of the method in the targetclassname has not always been created yet
+bool instanceKlass::is_override(methodHandle super_method, Handle targetclassloader, symbolHandle targetclassname, TRAPS) {
+   // Private methods can not be overridden
+   if (super_method->is_private()) {
+     return false;
+   }
+   // If super method is accessible, then override
+   if ((super_method->is_protected()) ||
+       (super_method->is_public())) {
+     return true;
+   }
+   // Package-private methods are not inherited outside of package
+   assert(super_method->is_package_private(), "must be package private");
+   return(is_same_class_package(targetclassloader(), targetclassname()));
+}
+
+/* defined for now in jvm.cpp, for historical reasons *--
+klassOop instanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
+                                                     symbolOop& simple_name_result, TRAPS) {
+  ...
+}
+*/
+
+// tell if two classes have the same enclosing class (at package level)
+bool instanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
+                                                klassOop class2_oop, TRAPS) {
+  if (class2_oop == class1->as_klassOop())          return true;
+  if (!Klass::cast(class2_oop)->oop_is_instance())  return false;
+  instanceKlassHandle class2(THREAD, class2_oop);
+
+  // must be in same package before we try anything else
+  if (!class1->is_same_class_package(class2->class_loader(), class2->name()))
+    return false;
+
+  // As long as there is an outer1.getEnclosingClass,
+  // shift the search outward.
+  instanceKlassHandle outer1 = class1;
+  for (;;) {
+    // As we walk along, look for equalities between outer1 and class2.
+    // Eventually, the walks will terminate as outer1 stops
+    // at the top-level class around the original class.
+    symbolOop ignore_name;
+    klassOop next = outer1->compute_enclosing_class(ignore_name, CHECK_false);
+    if (next == NULL)  break;
+    if (next == class2())  return true;
+    outer1 = instanceKlassHandle(THREAD, next);
+  }
+
+  // Now do the same for class2.
+  instanceKlassHandle outer2 = class2;
+  for (;;) {
+    symbolOop ignore_name;
+    klassOop next = outer2->compute_enclosing_class(ignore_name, CHECK_false);
+    if (next == NULL)  break;
+    // Might as well check the new outer against all available values.
+    if (next == class1())  return true;
+    if (next == outer1())  return true;
+    outer2 = instanceKlassHandle(THREAD, next);
+  }
+
+  // If by this point we have not found an equality between the
+  // two classes, we know they are in separate package members.
+  return false;
 }
 
 
@@ -1996,9 +2067,11 @@ nmethod* instanceKlass::lookup_osr_nmethod(const methodOop m, int bci) const {
 
 // Printing
 
+#define BULLET  " - "
+
 void FieldPrinter::do_field(fieldDescriptor* fd) {
-   if (fd->is_static() == (_obj == NULL)) {
-     _st->print("   - ");
+  _st->print(BULLET);
+   if (fd->is_static() || (_obj == NULL)) {
      fd->print_on(_st);
      _st->cr();
    } else {
@@ -2019,7 +2092,7 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
         value->is_typeArray() &&
         offset          <= (juint) value->length() &&
         offset + length <= (juint) value->length()) {
-      st->print("string: ");
+      st->print(BULLET"string: ");
       Handle h_obj(obj);
       java_lang_String::print(h_obj, st);
       st->cr();
@@ -2027,22 +2100,25 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
     }
   }
 
-  st->print_cr("fields:");
+  st->print_cr(BULLET"---- fields (total size %d words):", oop_size(obj));
   FieldPrinter print_nonstatic_field(st, obj);
   do_nonstatic_fields(&print_nonstatic_field);
 
   if (as_klassOop() == SystemDictionary::class_klass()) {
+    st->print(BULLET"signature: ");
+    java_lang_Class::print_signature(obj, st);
+    st->cr();
     klassOop mirrored_klass = java_lang_Class::as_klassOop(obj);
-    st->print("   - fake entry for mirror: ");
+    st->print(BULLET"fake entry for mirror: ");
     mirrored_klass->print_value_on(st);
     st->cr();
-    st->print("   - fake entry resolved_constructor: ");
+    st->print(BULLET"fake entry resolved_constructor: ");
     methodOop ctor = java_lang_Class::resolved_constructor(obj);
     ctor->print_value_on(st);
     klassOop array_klass = java_lang_Class::array_klass(obj);
-    st->print("   - fake entry for array: ");
-    array_klass->print_value_on(st);
     st->cr();
+    st->print(BULLET"fake entry for array: ");
+    array_klass->print_value_on(st);
     st->cr();
   }
 }
@@ -2051,6 +2127,28 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
   st->print("a ");
   name()->print_value_on(st);
   obj->print_address_on(st);
+  if (as_klassOop() == SystemDictionary::string_klass()
+      && java_lang_String::value(obj) != NULL) {
+    ResourceMark rm;
+    int len = java_lang_String::length(obj);
+    int plen = (len < 24 ? len : 12);
+    char* str = java_lang_String::as_utf8_string(obj, 0, plen);
+    st->print(" = \"%s\"", str);
+    if (len > plen)
+      st->print("...[%d]", len);
+  } else if (as_klassOop() == SystemDictionary::class_klass()) {
+    klassOop k = java_lang_Class::as_klassOop(obj);
+    st->print(" = ");
+    if (k != NULL) {
+      k->print_value_on(st);
+    } else {
+      const char* tname = type2name(java_lang_Class::primitive_type(obj));
+      st->print("%s", tname ? tname : "type?");
+    }
+  } else if (java_lang_boxing_object::is_instance(obj)) {
+    st->print(" = ");
+    java_lang_boxing_object::print(obj, st);
+  }
 }
 
 #endif // ndef PRODUCT

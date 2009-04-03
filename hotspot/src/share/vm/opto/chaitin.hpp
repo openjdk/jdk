@@ -338,6 +338,8 @@ class PhaseChaitin : public PhaseRegAlloc {
 
   Block **_blks;                // Array of blocks sorted by frequency for coalescing
 
+  float _high_frequency_lrg;    // Frequency at which LRG will be spilled for debug info
+
 #ifndef PRODUCT
   bool _trace_spilling;
 #endif
@@ -359,6 +361,8 @@ public:
   void Register_Allocate();
 
   uint n2lidx( const Node *n ) const { return _names[n->_idx]; }
+
+  float high_frequency_lrg() const { return _high_frequency_lrg; }
 
 #ifndef PRODUCT
   bool trace_spilling() const { return _trace_spilling; }

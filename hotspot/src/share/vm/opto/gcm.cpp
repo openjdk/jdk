@@ -438,6 +438,12 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 #endif
   assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrComp),
          "String compare is only known 'load' that does not conflict with any stores");
+  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrEquals),
+         "String equals is a 'load' that does not conflict with any stores");
+  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_StrIndexOf),
+         "String indexOf is a 'load' that does not conflict with any stores");
+  assert(load_alias_idx || (load->is_Mach() && load->as_Mach()->ideal_Opcode() == Op_AryEq),
+         "Arrays equals is a 'load' that do not conflict with any stores");
 
   if (!C->alias_type(load_alias_idx)->is_rewritable()) {
     // It is impossible to spoil this load by putting stores before it,
@@ -1374,6 +1380,9 @@ void PhaseCFG::Estimate_Block_Frequency() {
   _root_loop->_freq = 1.0;
   _root_loop->scale_freq();
 
+  // Save outmost loop frequency for LRG frequency threshold
+  _outer_loop_freq = _root_loop->outer_loop_freq();
+
   // force paths ending at uncommon traps to be infrequent
   if (!C->do_freq_based_layout()) {
     Block_List worklist;
@@ -1898,6 +1907,7 @@ bool CFGLoop::in_loop_nest(Block* b) {
 // Do a top down traversal of loop tree (visit outer loops first.)
 void CFGLoop::scale_freq() {
   float loop_freq = _freq * trip_count();
+  _freq = loop_freq;
   for (int i = 0; i < _members.length(); i++) {
     CFGElement* s = _members.at(i);
     float block_freq = s->_freq * loop_freq;
@@ -1910,6 +1920,14 @@ void CFGLoop::scale_freq() {
     ch->scale_freq();
     ch = ch->_sibling;
   }
+}
+
+// Frequency of outer loop
+float CFGLoop::outer_loop_freq() const {
+  if (_child != NULL) {
+    return _child->_freq;
+  }
+  return _freq;
 }
 
 #ifndef PRODUCT

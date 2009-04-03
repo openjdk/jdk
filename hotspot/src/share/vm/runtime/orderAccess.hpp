@@ -300,4 +300,10 @@ class OrderAccess : AllStatic {
   // In order to force a memory access, implementations may
   // need a volatile externally visible dummy variable.
   static volatile intptr_t dummy;
+
+ private:
+  // This is a helper that invokes the StubRoutines::fence_entry()
+  // routine if it exists, It should only be used by platforms that
+  // don't another way to do the inline eassembly.
+  static void StubRoutines_fence();
 };

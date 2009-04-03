@@ -408,6 +408,11 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
       }
+      if( supports_sse4_2() && UseSSE >= 4 ) {
+        if( FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+          UseSSE42Intrinsics = true;
+        }
+      }
     }
   }
 
