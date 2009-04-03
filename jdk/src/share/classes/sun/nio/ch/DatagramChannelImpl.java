@@ -313,11 +313,9 @@ class DatagramChannelImpl
             throw new NullPointerException();
         synchronized (readLock) {
             ensureOpen();
-            // If socket is not bound then behave as if nothing received
-            // Will be fixed by 6621699
-            if (localAddress() == null) {
-                return null;
-            }
+            // Socket was not bound before attempting receive
+            if (localAddress() == null)
+                bind(null);
             int n = 0;
             ByteBuffer bb = null;
             try {

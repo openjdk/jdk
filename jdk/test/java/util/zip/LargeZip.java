@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -26,14 +28,15 @@ import java.nio.*;
 import java.util.*;
 import java.util.zip.*;
 
-public class LargeZipFile {
+public class LargeZip {
     // If true, don't delete large ZIP file created for test.
     static final boolean debug = System.getProperty("debug") != null;
 
-    static final int DATA_LEN = 1024 * 1024;
+    //static final int DATA_LEN = 1024 * 1024;
+    static final int DATA_LEN = 80 * 1024;
     static final int DATA_SIZE = 8;
 
-    static long fileSize = 3L * 1024L * 1024L * 1024L; // 3GB
+    static long fileSize = 6L * 1024L * 1024L * 1024L; // 6GB
 
     static boolean userFile = false;
 
@@ -76,7 +79,8 @@ public class LargeZipFile {
             createLargeZip();
         }
 
-        readLargeZip();
+        readLargeZip1();
+        readLargeZip2();
 
         if (!userFile && !debug) {
             check(largeFile.delete());
@@ -109,7 +113,7 @@ public class LargeZipFile {
         zos.close();
     }
 
-    static void readLargeZip() throws Throwable {
+    static void readLargeZip1() throws Throwable {
         ZipFile zipFile = new ZipFile(largeFile);
         ZipEntry entry = null;
         String entryName = null;
@@ -135,10 +139,39 @@ public class LargeZipFile {
             is.close();
             check(Arrays.equals(data, baos.toByteArray()));
         }
-        try {
-          zipFile.close();
-        } catch (IOException ioe) {/* what can you do */ }
     }
+
+
+    static void readLargeZip2() throws Throwable {
+        ZipInputStream zis = new ZipInputStream(
+            new BufferedInputStream(new FileInputStream(largeFile)));
+        ZipEntry entry = null;
+        String entryName = null;
+        int count = 0;
+        while ((entry = zis.getNextEntry()) != null) {
+            entryName = entry.getName();
+            if (entryName.equals(lastEntryName)) {
+                break;
+            }
+            count++;
+        }
+        System.out.println("Number of entries read: " + count);
+        System.out.println("Last entry read is " + entryName);
+        check(!entry.isDirectory());
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        byte buf[] = new byte[4096];
+        int len;
+        while ((len = zis.read(buf)) >= 0) {
+            baos.write(buf, 0, len);
+        }
+        baos.close();
+        check(Arrays.equals(data, baos.toByteArray()));
+        check(zis.getNextEntry() == null);
+        zis.close();
+    }
+
 
     //--------------------- Infrastructure ---------------------------
     static volatile int passed = 0, failed = 0;
