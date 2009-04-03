@@ -2668,6 +2668,8 @@ void PhaseIdealLoop::build_loop_late_post( Node *n, const PhaseIdealLoop *verify
     case Op_LoadD_unaligned:
     case Op_LoadL_unaligned:
     case Op_StrComp:            // Does a bunch of load-like effects
+    case Op_StrEquals:
+    case Op_StrIndexOf:
     case Op_AryEq:
       pinned = false;
     }

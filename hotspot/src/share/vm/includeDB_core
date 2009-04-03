@@ -3154,6 +3154,8 @@ oopsHierarchy.cpp                       thread.hpp
 oopsHierarchy.cpp                       thread_<os_family>.inline.hpp
 
 orderAccess.cpp                         orderAccess.hpp
+orderAccess.cpp                         stubRoutines.hpp
+orderAccess.cpp                         thread.hpp
 
 orderAccess.hpp                         allocation.hpp
 orderAccess.hpp                         os.hpp
