@@ -1458,10 +1458,14 @@ public class Check {
             while (e.scope != null) {
                 if (m.overrides(e.sym, origin, types, false))
                     checkOverride(tree, m, (MethodSymbol)e.sym, origin);
-                else if (e.sym.isInheritedIn(origin, types) && !m.isConstructor()) {
+                else if (e.sym.kind == MTH &&
+                        e.sym.isInheritedIn(origin, types) &&
+                        (e.sym.flags() & SYNTHETIC) == 0 &&
+                        !m.isConstructor()) {
                     Type er1 = m.erasure(types);
                     Type er2 = e.sym.erasure(types);
-                    if (types.isSameType(er1,er2)) {
+                    if (types.isSameTypes(er1.getParameterTypes(),
+                            er2.getParameterTypes())) {
                             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                                     "name.clash.same.erasure.no.override",
                                     m, m.location(),
@@ -2088,15 +2092,25 @@ public class Check {
             if (sym != e.sym &&
                 sym.kind == e.sym.kind &&
                 sym.name != names.error &&
-                (sym.kind != MTH || types.overrideEquivalent(sym.type, e.sym.type))) {
+                (sym.kind != MTH || types.hasSameArgs(types.erasure(sym.type), types.erasure(e.sym.type)))) {
                 if ((sym.flags() & VARARGS) != (e.sym.flags() & VARARGS))
                     varargsDuplicateError(pos, sym, e.sym);
+                else if (sym.kind == MTH && !types.overrideEquivalent(sym.type, e.sym.type))
+                    duplicateErasureError(pos, sym, e.sym);
                 else
                     duplicateError(pos, e.sym);
                 return false;
             }
         }
         return true;
+    }
+    //where
+    /** Report duplicate declaration error.
+     */
+    void duplicateErasureError(DiagnosticPosition pos, Symbol sym1, Symbol sym2) {
+        if (!sym1.type.isErroneous() && !sym2.type.isErroneous()) {
+            log.error(pos, "name.clash.same.erasure", sym1, sym2);
+        }
     }
 
     /** Check that single-type import is not already imported or top-level defined,
