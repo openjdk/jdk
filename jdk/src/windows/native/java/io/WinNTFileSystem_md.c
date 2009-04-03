@@ -309,12 +309,13 @@ Java_java_io_WinNTFileSystem_getLastModifiedTime(JNIEnv *env, jobject this,
                     /* No template file */
                     NULL);
     if (h != INVALID_HANDLE_VALUE) {
-        GetFileTime(h, NULL, NULL, &t);
+        if (GetFileTime(h, NULL, NULL, &t)) {
+            modTime.LowPart = (DWORD) t.dwLowDateTime;
+            modTime.HighPart = (LONG) t.dwHighDateTime;
+            rv = modTime.QuadPart / 10000;
+            rv -= 11644473600000;
+        }
         CloseHandle(h);
-        modTime.LowPart = (DWORD) t.dwLowDateTime;
-        modTime.HighPart = (LONG) t.dwHighDateTime;
-        rv = modTime.QuadPart / 10000;
-        rv -= 11644473600000;
     }
     free(pathbuf);
     return rv;

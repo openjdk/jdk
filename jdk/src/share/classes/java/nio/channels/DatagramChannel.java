@@ -261,7 +261,10 @@ public abstract class DatagramChannel
      *
      * <p> This method may be invoked at any time.  It will not have any effect
      * on read or write operations that are already in progress at the moment
-     * that it is invoked.  </p>
+     * that it is invoked. If this channel's socket is not bound then this method
+     * will first cause the socket to be bound to an address that is assigned
+     * automatically, as if invoking the {@link #bind bind} method with a
+     * parameter of {@code null}. </p>
      *
      * @param  remote
      *         The remote address to which this channel is to be connected
@@ -356,7 +359,10 @@ public abstract class DatagramChannel
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a read operation upon this channel, however, then an
      * invocation of this method will block until the first operation is
-     * complete. </p>
+     * complete. If this channel's socket is not bound then this method will
+     * first cause the socket to be bound to an address that is assigned
+     * automatically, as if invoking the {@link #bind bind} method with a
+     * parameter of {@code null}. </p>
      *
      * @param  dst
      *         The buffer into which the datagram is to be transferred
@@ -413,7 +419,10 @@ public abstract class DatagramChannel
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a write operation upon this channel, however, then an
      * invocation of this method will block until the first operation is
-     * complete. </p>
+     * complete. If this channel's socket is not bound then this method will
+     * first cause the socket to be bound to an address that is assigned
+     * automatically, as if by invoking the {@link #bind bind) method with a
+     * parameter of {@code null}. </p>
      *
      * @param  src
      *         The buffer containing the datagram to be sent
