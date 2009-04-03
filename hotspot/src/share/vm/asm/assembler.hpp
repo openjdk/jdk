@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,15 +143,15 @@ class Label VALUE_OBJ_CLASS_SPEC {
 // A union type for code which has to assemble both constant and
 // non-constant operands, when the distinction cannot be made
 // statically.
-class RegisterConstant VALUE_OBJ_CLASS_SPEC {
+class RegisterOrConstant VALUE_OBJ_CLASS_SPEC {
  private:
   Register _r;
   intptr_t _c;
 
  public:
-  RegisterConstant(): _r(noreg), _c(0) {}
-  RegisterConstant(Register r): _r(r), _c(0) {}
-  RegisterConstant(intptr_t c): _r(noreg), _c(c) {}
+  RegisterOrConstant(): _r(noreg), _c(0) {}
+  RegisterOrConstant(Register r): _r(r), _c(0) {}
+  RegisterOrConstant(intptr_t c): _r(noreg), _c(c) {}
 
   Register as_register() const { assert(is_register(),""); return _r; }
   intptr_t as_constant() const { assert(is_constant(),""); return _c; }
@@ -310,13 +310,13 @@ class AbstractAssembler : public ResourceObj  {
   // offsets in code which must be generated before the object class is loaded.
   // Field offsets are never zero, since an object's header (mark word)
   // is located at offset zero.
-  RegisterConstant delayed_value(int(*value_fn)(), Register tmp, int offset = 0) {
-    return delayed_value(delayed_value_addr(value_fn), tmp, offset);
+  RegisterOrConstant delayed_value(int(*value_fn)(), Register tmp, int offset = 0) {
+    return delayed_value_impl(delayed_value_addr(value_fn), tmp, offset);
   }
-  RegisterConstant delayed_value(address(*value_fn)(), Register tmp, int offset = 0) {
-    return delayed_value(delayed_value_addr(value_fn), tmp, offset);
+  RegisterOrConstant delayed_value(address(*value_fn)(), Register tmp, int offset = 0) {
+    return delayed_value_impl(delayed_value_addr(value_fn), tmp, offset);
   }
-  virtual RegisterConstant delayed_value(intptr_t* delayed_value_addr, Register tmp, int offset) = 0;
+  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr, Register tmp, int offset) = 0;
   // Last overloading is platform-dependent; look in assembler_<arch>.cpp.
   static intptr_t* delayed_value_addr(int(*constant_fn)());
   static intptr_t* delayed_value_addr(address(*constant_fn)());
