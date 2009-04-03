@@ -170,8 +170,6 @@ LINK_FLAGS = /manifest $(LINK_FLAGS) $(BUFFEROVERFLOWLIB)
 # Manifest Tool - used in VS2005 and later to adjust manifests stored
 # as resources inside build artifacts.
 MT=mt.exe
-# VS2005 and later restricts the use of certain libc functions without this
-CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_DEPRECATE
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2008"
@@ -183,8 +181,6 @@ LINK_FLAGS = /manifest $(LINK_FLAGS)
 # Manifest Tool - used in VS2005 and later to adjust manifests stored
 # as resources inside build artifacts.
 MT=mt.exe
-# VS2005 and later restricts the use of certain libc functions without this
-CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_DEPRECATE
 !endif
 
 # Compile for space above time.

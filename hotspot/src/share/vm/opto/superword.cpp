@@ -454,9 +454,13 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
           // or need to run igvn.optimize() again before SLP
         } else if (out->is_Phi() && out->bottom_type() == Type::MEMORY && !in_bb(out)) {
           // Ditto.  Not sure what else to check further.
-        } else if (out->Opcode() == Op_StoreCM && out->in(4) == n) {
+        } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
           // StoreCM has an input edge used as a precedence edge.
           // Maybe an issue when oop stores are vectorized.
+        } else if( out->is_MergeMem() && prev &&
+                   prev->Opcode() == Op_StoreCM && out == prev->in(MemNode::OopStore)) {
+          // Oop store is a MergeMem! This should not happen. Temporarily remove the assertion
+          // for this case because it could not be superwordized anyway.
         } else {
           assert(out == prev || prev == NULL, "no branches off of store slice");
         }
@@ -912,54 +916,175 @@ void SuperWord::schedule() {
   }
 }
 
-//------------------------------co_locate_pack---------------------------
-// Within a pack, move stores down to the last executed store,
-// and move loads up to the first executed load.
+//-------------------------------remove_and_insert-------------------
+//remove "current" from its current position in the memory graph and insert
+//it after the appropriate insertion point (lip or uip)
+void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
+                                  Node *uip, Unique_Node_List &sched_before) {
+  Node* my_mem = current->in(MemNode::Memory);
+  _igvn.hash_delete(current);
+  _igvn.hash_delete(my_mem);
+
+  //remove current_store from its current position in the memmory graph
+  for (DUIterator i = current->outs(); current->has_out(i); i++) {
+    Node* use = current->out(i);
+    if (use->is_Mem()) {
+      assert(use->in(MemNode::Memory) == current, "must be");
+      _igvn.hash_delete(use);
+      if (use == prev) { // connect prev to my_mem
+        use->set_req(MemNode::Memory, my_mem);
+      } else if (sched_before.member(use)) {
+        _igvn.hash_delete(uip);
+        use->set_req(MemNode::Memory, uip);
+      } else {
+        _igvn.hash_delete(lip);
+        use->set_req(MemNode::Memory, lip);
+      }
+      _igvn._worklist.push(use);
+      --i; //deleted this edge; rescan position
+    }
+  }
+
+  bool sched_up = sched_before.member(current);
+  Node *insert_pt =  sched_up ?  uip : lip;
+  _igvn.hash_delete(insert_pt);
+
+  // all uses of insert_pt's memory state should use current's instead
+  for (DUIterator i = insert_pt->outs(); insert_pt->has_out(i); i++) {
+    Node* use = insert_pt->out(i);
+    if (use->is_Mem()) {
+      assert(use->in(MemNode::Memory) == insert_pt, "must be");
+      _igvn.hash_delete(use);
+      use->set_req(MemNode::Memory, current);
+      _igvn._worklist.push(use);
+      --i; //deleted this edge; rescan position
+    } else if (!sched_up && use->is_Phi() && use->bottom_type() == Type::MEMORY) {
+      uint pos; //lip (lower insert point) must be the last one in the memory slice
+      _igvn.hash_delete(use);
+      for (pos=1; pos < use->req(); pos++) {
+        if (use->in(pos) == insert_pt) break;
+      }
+      use->set_req(pos, current);
+      _igvn._worklist.push(use);
+      --i;
+    }
+  }
+
+  //connect current to insert_pt
+  current->set_req(MemNode::Memory, insert_pt);
+  _igvn._worklist.push(current);
+}
+
+//------------------------------co_locate_pack----------------------------------
+// To schedule a store pack, we need to move any sandwiched memory ops either before
+// or after the pack, based upon dependence information:
+// (1) If any store in the pack depends on the sandwiched memory op, the
+//     sandwiched memory op must be scheduled BEFORE the pack;
+// (2) If a sandwiched memory op depends on any store in the pack, the
+//     sandwiched memory op must be scheduled AFTER the pack;
+// (3) If a sandwiched memory op (say, memA) depends on another sandwiched
+//     memory op (say memB), memB must be scheduled before memA. So, if memA is
+//     scheduled before the pack, memB must also be scheduled before the pack;
+// (4) If there is no dependence restriction for a sandwiched memory op, we simply
+//     schedule this store AFTER the pack
+// (5) We know there is no dependence cycle, so there in no other case;
+// (6) Finally, all memory ops in another single pack should be moved in the same direction.
+//
+// To schedule a load pack: the memory edge of every loads in the pack must be
+// the same as the memory edge of the last executed load in the pack
 void SuperWord::co_locate_pack(Node_List* pk) {
   if (pk->at(0)->is_Store()) {
-    // Push Stores down towards last executed pack member
     MemNode* first     = executed_first(pk)->as_Mem();
     MemNode* last      = executed_last(pk)->as_Mem();
-    MemNode* insert_pt = last;
+    Unique_Node_List schedule_before_pack;
+    Unique_Node_List memops;
+
     MemNode* current   = last->in(MemNode::Memory)->as_Mem();
+    MemNode* previous  = last;
     while (true) {
       assert(in_bb(current), "stay in block");
+      memops.push(previous);
+      for (DUIterator i = current->outs(); current->has_out(i); i++) {
+        Node* use = current->out(i);
+        if (use->is_Mem() && use != previous)
+          memops.push(use);
+      }
+      if(current == first) break;
+      previous = current;
+      current  = current->in(MemNode::Memory)->as_Mem();
+    }
+
+    // determine which memory operations should be scheduled before the pack
+    for (uint i = 1; i < memops.size(); i++) {
+      Node *s1 = memops.at(i);
+      if (!in_pack(s1, pk) && !schedule_before_pack.member(s1)) {
+        for (uint j = 0; j< i; j++) {
+          Node *s2 = memops.at(j);
+          if (!independent(s1, s2)) {
+            if (in_pack(s2, pk) || schedule_before_pack.member(s2)) {
+              schedule_before_pack.push(s1); //s1 must be scheduled before
+              Node_List* mem_pk = my_pack(s1);
+              if (mem_pk != NULL) {
+                for (uint ii = 0; ii < mem_pk->size(); ii++) {
+                  Node* s = mem_pk->at(ii); // follow partner
+                  if (memops.member(s) && !schedule_before_pack.member(s))
+                    schedule_before_pack.push(s);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    MemNode* lower_insert_pt = last;
+    Node*    upper_insert_pt = first->in(MemNode::Memory);
+    previous                 = last; //previous store in pk
+    current                  = last->in(MemNode::Memory)->as_Mem();
+
+    //start scheduling from "last" to "first"
+    while (true) {
+      assert(in_bb(current), "stay in block");
+      assert(in_pack(previous, pk), "previous stays in pack");
       Node* my_mem = current->in(MemNode::Memory);
+
       if (in_pack(current, pk)) {
-        // Forward users of my memory state to my input memory state
+        // Forward users of my memory state (except "previous) to my input memory state
         _igvn.hash_delete(current);
-        _igvn.hash_delete(my_mem);
         for (DUIterator i = current->outs(); current->has_out(i); i++) {
           Node* use = current->out(i);
-          if (use->is_Mem()) {
+          if (use->is_Mem() && use != previous) {
             assert(use->in(MemNode::Memory) == current, "must be");
             _igvn.hash_delete(use);
-            use->set_req(MemNode::Memory, my_mem);
+            if (schedule_before_pack.member(use)) {
+              _igvn.hash_delete(upper_insert_pt);
+              use->set_req(MemNode::Memory, upper_insert_pt);
+            } else {
+              _igvn.hash_delete(lower_insert_pt);
+              use->set_req(MemNode::Memory, lower_insert_pt);
+            }
             _igvn._worklist.push(use);
             --i; // deleted this edge; rescan position
           }
         }
-        // put current immediately before insert_pt
-        current->set_req(MemNode::Memory, insert_pt->in(MemNode::Memory));
-        _igvn.hash_delete(insert_pt);
-        insert_pt->set_req(MemNode::Memory, current);
-        _igvn._worklist.push(insert_pt);
-        _igvn._worklist.push(current);
-        insert_pt = current;
+        previous = current;
+      } else { // !in_pack(current, pk) ==> a sandwiched store
+        remove_and_insert(current, previous, lower_insert_pt, upper_insert_pt, schedule_before_pack);
       }
+
       if (current == first) break;
       current = my_mem->as_Mem();
-    }
-  } else if (pk->at(0)->is_Load()) {
-    // Pull Loads up towards first executed pack member
-    LoadNode* first = executed_first(pk)->as_Load();
-    Node* first_mem = first->in(MemNode::Memory);
-    _igvn.hash_delete(first_mem);
-    // Give each load same memory state as first
+    } // end while
+  } else if (pk->at(0)->is_Load()) { //load
+    // all use the memory state that the last executed load uses
+    LoadNode* last_load  = executed_last(pk)->as_Load();
+    Node* last_mem       = last_load->in(MemNode::Memory);
+    _igvn.hash_delete(last_mem);
+    // Give each load same memory state as last
     for (uint i = 0; i < pk->size(); i++) {
       LoadNode* ld = pk->at(i)->as_Load();
       _igvn.hash_delete(ld);
-      ld->set_req(MemNode::Memory, first_mem);
+      ld->set_req(MemNode::Memory, last_mem);
       _igvn._worklist.push(ld);
     }
   }

@@ -1827,21 +1827,51 @@ const char* os::dll_file_extension() { return ".so"; }
 
 const char* os::get_temp_directory() { return "/tmp/"; }
 
-void os::dll_build_name(
-    char* buffer, size_t buflen, const char* pname, const char* fname) {
-  // copied from libhpi
+static bool file_exists(const char* filename) {
+  struct stat statbuf;
+  if (filename == NULL || strlen(filename) == 0) {
+    return false;
+  }
+  return os::stat(filename, &statbuf) == 0;
+}
+
+void os::dll_build_name(char* buffer, size_t buflen,
+                        const char* pname, const char* fname) {
+  // Copied from libhpi
   const size_t pnamelen = pname ? strlen(pname) : 0;
 
-  /* Quietly truncate on buffer overflow.  Should be an error. */
+  // Quietly truncate on buffer overflow.  Should be an error.
   if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
       *buffer = '\0';
       return;
   }
 
   if (pnamelen == 0) {
-      sprintf(buffer, "lib%s.so", fname);
+    snprintf(buffer, buflen, "lib%s.so", fname);
+  } else if (strchr(pname, *os::path_separator()) != NULL) {
+    int n;
+    char** pelements = split_path(pname, &n);
+    for (int i = 0 ; i < n ; i++) {
+      // really shouldn't be NULL but what the heck, check can't hurt
+      if (pelements[i] == NULL || strlen(pelements[i]) == 0) {
+        continue; // skip the empty path values
+      }
+      snprintf(buffer, buflen, "%s/lib%s.so", pelements[i], fname);
+      if (file_exists(buffer)) {
+        break;
+      }
+    }
+    // release the storage
+    for (int i = 0 ; i < n ; i++) {
+      if (pelements[i] != NULL) {
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
+      }
+    }
+    if (pelements != NULL) {
+      FREE_C_HEAP_ARRAY(char*, pelements);
+    }
   } else {
-      sprintf(buffer, "%s/lib%s.so", pname, fname);
+    snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
   }
 }
 
@@ -2623,15 +2653,16 @@ int os::vm_allocation_granularity() {
   return page_size;
 }
 
-bool os::commit_memory(char* addr, size_t bytes) {
+bool os::commit_memory(char* addr, size_t bytes, bool exec) {
+  int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   size_t size = bytes;
   return
-     NULL != Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED,
-                                 PROT_READ | PROT_WRITE | PROT_EXEC);
+     NULL != Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED, prot);
 }
 
-bool os::commit_memory(char* addr, size_t bytes, size_t alignment_hint) {
-  if (commit_memory(addr, bytes)) {
+bool os::commit_memory(char* addr, size_t bytes, size_t alignment_hint,
+                       bool exec) {
+  if (commit_memory(addr, bytes, exec)) {
     if (UseMPSS && alignment_hint > (size_t)vm_page_size()) {
       // If the large page size has been set and the VM
       // is using large pages, use the large page size
@@ -3220,7 +3251,9 @@ bool os::Solaris::set_mpss_range(caddr_t start, size_t bytes, size_t align) {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes, char* addr) {
+char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
+  // "exec" is passed in but not used.  Creating the shared image for
+  // the code cache doesn't have an SHM_X executable permission to check.
   assert(UseLargePages && UseISM, "only for ISM large pages");
 
   size_t size = bytes;

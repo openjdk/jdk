@@ -46,7 +46,7 @@ inline void OrderAccess::release() {
 
 inline void OrderAccess::fence() {
 #ifdef AMD64
-  (*os::fence_func)();
+  StubRoutines_fence();
 #else
   if (os::is_MP()) {
     __asm {
