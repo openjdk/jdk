@@ -969,7 +969,7 @@ void Arguments::set_parnew_gc_flags() {
   } else {
     no_shared_spaces();
 
-    // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 correspondinly,
+    // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 respectively,
     // these settings are default for Parallel Scavenger. For ParNew+Tenured configuration
     // we set them to 1024 and 1024.
     // See CR 6362902.
@@ -985,6 +985,16 @@ void Arguments::set_parnew_gc_flags() {
     if (AlwaysTenure) {
       FLAG_SET_CMDLINE(intx, MaxTenuringThreshold, 0);
     }
+    // When using compressed oops, we use local overflow stacks,
+    // rather than using a global overflow list chained through
+    // the klass word of the object's pre-image.
+    if (UseCompressedOops && !ParGCUseLocalOverflow) {
+      if (!FLAG_IS_DEFAULT(ParGCUseLocalOverflow)) {
+        warning("Forcing +ParGCUseLocalOverflow: needed if using compressed references");
+      }
+      FLAG_SET_DEFAULT(ParGCUseLocalOverflow, true);
+    }
+    assert(ParGCUseLocalOverflow || !UseCompressedOops, "Error");
   }
 }
 
