@@ -33,8 +33,8 @@ class ParEvacuateFollowersClosure;
 // but they must be here to allow ParScanClosure::do_oop_work to be defined
 // in genOopClosures.inline.hpp.
 
-typedef OopTaskQueue    ObjToScanQueue;
-typedef OopTaskQueueSet ObjToScanQueueSet;
+typedef OopTaskQueue       ObjToScanQueue;
+typedef OopTaskQueueSet    ObjToScanQueueSet;
 
 // Enable this to get push/pop/steal stats.
 const int PAR_STATS_ENABLED = 0;
@@ -116,7 +116,9 @@ class ParScanThreadState {
 
   ParScanThreadState(Space* to_space_, ParNewGeneration* gen_,
                      Generation* old_gen_, int thread_num_,
-                     ObjToScanQueueSet* work_queue_set_, size_t desired_plab_sz_,
+                     ObjToScanQueueSet* work_queue_set_,
+                     GrowableArray<oop>** overflow_stack_set_,
+                     size_t desired_plab_sz_,
                      ParallelTaskTerminator& term_);
 
  public:
@@ -296,8 +298,11 @@ class ParNewGeneration: public DefNewGeneration {
         char pad[64 - sizeof(ObjToScanQueue)];  // prevent false sharing
   };
 
-  // The per-thread work queues, available here for stealing.
+  // The per-worker-thread work queues
   ObjToScanQueueSet* _task_queues;
+
+  // Per-worker-thread local overflow stacks
+  GrowableArray<oop>** _overflow_stacks;
 
   // Desired size of survivor space plab's
   PLABStats _plab_stats;

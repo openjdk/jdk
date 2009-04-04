@@ -1323,8 +1323,11 @@ class CommandLineFlags {
   product(intx, ParGCArrayScanChunk, 50,                                    \
           "Scan a subset and push remainder, if array is bigger than this") \
                                                                             \
+  product(bool, ParGCUseLocalOverflow, false,                               \
+          "Instead of a global overflow list, use local overflow stacks")   \
+                                                                            \
   product(bool, ParGCTrimOverflow, true,                                    \
-          "Eagerly trim the overflow lists (useful for UseCompressedOops")  \
+          "Eagerly trim the local overflow lists (when ParGCUseLocalOverflow") \
                                                                             \
   notproduct(bool, ParGCWorkQueueOverflowALot, false,                       \
           "Whether we should simulate work queue overflow in ParNew")       \
