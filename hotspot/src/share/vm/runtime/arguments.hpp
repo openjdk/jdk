@@ -475,10 +475,13 @@ class Arguments : AllStatic {
   // System properties
   static void init_system_properties();
 
-  // Proptery List manipulation
+  // Property List manipulation
   static void PropertyList_add(SystemProperty** plist, SystemProperty *element);
   static void PropertyList_add(SystemProperty** plist, const char* k, char* v);
-  static void PropertyList_unique_add(SystemProperty** plist, const char* k, char* v);
+  static void PropertyList_unique_add(SystemProperty** plist, const char* k, char* v) {
+    PropertyList_unique_add(plist, k, v, false);
+  }
+  static void PropertyList_unique_add(SystemProperty** plist, const char* k, char* v, jboolean append);
   static const char* PropertyList_get_value(SystemProperty* plist, const char* key);
   static int  PropertyList_count(SystemProperty* pl);
   static const char* PropertyList_get_key_at(SystemProperty* pl,int index);
