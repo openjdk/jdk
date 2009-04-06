@@ -32,6 +32,7 @@ import java.util.concurrent.*;
 import java.io.IOException;
 import java.io.FileDescriptor;
 import java.security.AccessController;
+import sun.net.NetHooks;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -305,6 +306,7 @@ class UnixAsynchronousSocketChannelImpl
             sm.checkConnect(isa.getAddress().getHostAddress(), isa.getPort());
 
         // check and set state
+        boolean notifyBeforeTcpConnect;
         synchronized (stateLock) {
             if (state == ST_CONNECTED)
                 throw new AlreadyConnectedException();
@@ -312,12 +314,16 @@ class UnixAsynchronousSocketChannelImpl
                 throw new ConnectionPendingException();
             state = ST_PENDING;
             pendingRemote = remote;
+            notifyBeforeTcpConnect = (localAddress == null);
         }
 
         AbstractFuture<Void,A> result = null;
         Throwable e = null;
         try {
             begin();
+            // notify hook if unbound
+            if (notifyBeforeTcpConnect)
+                NetHooks.beforeTcpConnect(fd, isa.getAddress(), isa.getPort());
             int n = Net.connect(fd, isa.getAddress(), isa.getPort());
             if (n == IOStatus.UNAVAILABLE) {
                 // connection could not be established immediately

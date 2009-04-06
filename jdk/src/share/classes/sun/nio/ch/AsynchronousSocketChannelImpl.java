@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
+import sun.net.NetHooks;
 
 /**
  * Base implementation of AsynchronousSocketChannel
@@ -387,6 +388,7 @@ abstract class AsynchronousSocketChannelImpl
                     throw new AlreadyBoundException();
                 InetSocketAddress isa = (local == null) ?
                     new InetSocketAddress(0) : Net.checkAddress(local);
+                NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
                 Net.bind(fd, isa.getAddress(), isa.getPort());
                 localAddress = Net.localAddress(fd);
             }

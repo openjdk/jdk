@@ -231,6 +231,8 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
         if (result < 0) {
             if (errno == EAGAIN)
                 return IOS_UNAVAILABLE;
+            if (errno == EOPNOTSUPP)
+                return IOS_UNSUPPORTED_CASE;
             if ((errno == EINVAL) && ((ssize_t)count >= 0))
                 return IOS_UNSUPPORTED_CASE;
             if (errno == EINTR)
