@@ -279,20 +279,22 @@ class GTKIconFactory {
 
         public void paintIcon(SynthContext context, Graphics g, int x, int y,
                               int w, int h) {
-            JToolBar toolbar = (JToolBar)context.getComponent();
-            Orientation orientation =
-                    (toolbar.getOrientation() == JToolBar.HORIZONTAL ?
-                        Orientation.HORIZONTAL : Orientation.VERTICAL);
+            if (context != null) {
+                JToolBar toolbar = (JToolBar)context.getComponent();
+                Orientation orientation =
+                        (toolbar.getOrientation() == JToolBar.HORIZONTAL ?
+                            Orientation.HORIZONTAL : Orientation.VERTICAL);
 
-            if (style == null) {
-                style = SynthLookAndFeel.getStyleFactory().getStyle(
-                        context.getComponent(), GTKRegion.HANDLE_BOX);
+                if (style == null) {
+                    style = SynthLookAndFeel.getStyleFactory().getStyle(
+                            context.getComponent(), GTKRegion.HANDLE_BOX);
+                }
+                context = new SynthContext(toolbar, GTKRegion.HANDLE_BOX,
+                        style, SynthConstants.ENABLED);
+
+                GTKPainter.INSTANCE.paintIcon(context, g,
+                        getMethod(), x, y, w, h, orientation);
             }
-            context = new SynthContext(toolbar, GTKRegion.HANDLE_BOX,
-                    style, SynthConstants.ENABLED);
-
-            GTKPainter.INSTANCE.paintIcon(context, g,
-                    getMethod(), x, y, w, h, orientation);
         }
 
         public int getIconWidth(SynthContext context) {
@@ -336,12 +338,14 @@ class GTKIconFactory {
 
         public void paintIcon(SynthContext context, Graphics g, int x, int y,
                               int w, int h) {
-            ArrowType arrowDir = ArrowType.RIGHT;
-            if (!context.getComponent().getComponentOrientation().isLeftToRight()) {
-                arrowDir = ArrowType.LEFT;
+            if (context != null) {
+                ArrowType arrowDir = ArrowType.RIGHT;
+                if (!context.getComponent().getComponentOrientation().isLeftToRight()) {
+                    arrowDir = ArrowType.LEFT;
+                }
+                GTKPainter.INSTANCE.paintIcon(context, g,
+                        getMethod(), x, y, w, h, arrowDir);
             }
-            GTKPainter.INSTANCE.paintIcon(context, g,
-                    getMethod(), x, y, w, h, arrowDir);
         }
     }
 }
