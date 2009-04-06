@@ -200,14 +200,6 @@ class Thread: public ThreadShadow {
   friend class ThreadLocalStorage;
   friend class GC_locker;
 
-  // In order for all threads to be able to use fast locking, we need to know the highest stack
-  // address of where a lock is on the stack (stacks normally grow towards lower addresses). This
-  // variable is initially set to NULL, indicating no locks are used by the thread. During the thread's
-  // execution, it will be set whenever locking can happen, i.e., when we call out to Java code or use
-  // an ObjectLocker. The value is never decreased, hence, it will over the lifetime of a thread
-  // approximate the real stackbase.
-  address _highest_lock;                         // Highest stack address where a JavaLock exist
-
   ThreadLocalAllocBuffer _tlab;                  // Thread-local eden
 
   int   _vm_operation_started_count;             // VM_Operation support
@@ -400,18 +392,14 @@ public:
   // Sweeper support
   void nmethods_do();
 
-  // Fast-locking support
-  address highest_lock() const                   { return _highest_lock; }
-  void update_highest_lock(address base)         { if (base > _highest_lock) _highest_lock = base; }
-
   // Tells if adr belong to this thread. This is used
   // for checking if a lock is owned by the running thread.
-  // Warning: the method can only be used on the running thread
-  // Fast lock support uses these methods
-  virtual bool lock_is_in_stack(address adr) const;
+
+  // Used by fast lock support
   virtual bool is_lock_owned(address adr) const;
 
   // Check if address is in the stack of the thread (not just for locks).
+  // Warning: the method can only be used on the running thread
   bool is_in_stack(address adr) const;
 
   // Sets this thread as starting thread. Returns failure if thread
