@@ -37,11 +37,6 @@ JavaCallWrapper::JavaCallWrapper(methodHandle callee_method, Handle receiver, Ja
   guarantee(!thread->is_Compiler_thread(), "cannot make java calls from the compiler");
   _result   = result;
 
-  // Make sure that that the value of the  higest_lock is at least the same as the current stackpointer,
-  // since, the Java code is highly likely to use locks.
-  // Use '(address)this' to guarantee that highest_lock address is conservative and inside our thread
-  thread->update_highest_lock((address)this);
-
   // Allocate handle block for Java code. This must be done before we change thread_state to _thread_in_Java_or_stub,
   // since it can potentially block.
   JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(thread);

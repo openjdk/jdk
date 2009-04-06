@@ -38,7 +38,6 @@ public class Thread extends VMObject {
   private static int HAS_ASYNC_EXCEPTION;
 
   private static AddressField activeHandlesField;
-  private static AddressField highestLockField;
   private static AddressField currentPendingMonitorField;
   private static AddressField currentWaitingMonitorField;
 
@@ -60,7 +59,6 @@ public class Thread extends VMObject {
 
     tlabFieldOffset    = type.getField("_tlab").getOffset();
     activeHandlesField = type.getAddressField("_active_handles");
-    highestLockField   = type.getAddressField("_highest_lock");
     currentPendingMonitorField = type.getAddressField("_current_pending_monitor");
     currentWaitingMonitorField = type.getAddressField("_current_waiting_monitor");
   }
@@ -119,10 +117,6 @@ public class Thread extends VMObject {
   public void oopsDo(AddressVisitor oopVisitor) {
     // FIXME: Empty for now; will later traverse JNI handles and
     // pending exception
-  }
-
-  public Address highestLock() {
-    return highestLockField.getValue(addr);
   }
 
   public ObjectMonitor getCurrentPendingMonitor() {
