@@ -221,13 +221,15 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
     if (is_vtable_stub) {
       // ld;ld;ld,jmp,nop
       const int basic = 5*BytesPerInstWord +
-                        // shift;add for load_klass
-                        (UseCompressedOops ? 2*BytesPerInstWord : 0);
+                        // shift;add for load_klass (only shift with zero heap based)
+                        (UseCompressedOops ?
+                         ((Universe::narrow_oop_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
       return basic + slop;
     } else {
       const int basic = (28 LP64_ONLY(+ 6)) * BytesPerInstWord +
-                        // shift;add for load_klass
-                        (UseCompressedOops ? 2*BytesPerInstWord : 0);
+                        // shift;add for load_klass (only shift with zero heap based)
+                        (UseCompressedOops ?
+                         ((Universe::narrow_oop_base() == NULL) ? BytesPerInstWord : 2*BytesPerInstWord) : 0);
       return (basic + slop);
     }
   }
