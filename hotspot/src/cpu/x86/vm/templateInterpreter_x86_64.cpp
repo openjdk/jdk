@@ -1393,12 +1393,13 @@ address AbstractInterpreterGenerator::generate_method_entry(
   case Interpreter::empty                  : entry_point = ((InterpreterGenerator*) this)->generate_empty_entry();       break;
   case Interpreter::accessor               : entry_point = ((InterpreterGenerator*) this)->generate_accessor_entry();    break;
   case Interpreter::abstract               : entry_point = ((InterpreterGenerator*) this)->generate_abstract_entry();    break;
-  case Interpreter::java_lang_math_sin     :                                                                             break;
-  case Interpreter::java_lang_math_cos     :                                                                             break;
-  case Interpreter::java_lang_math_tan     :                                                                             break;
-  case Interpreter::java_lang_math_abs     :                                                                             break;
-  case Interpreter::java_lang_math_log     :                                                                             break;
-  case Interpreter::java_lang_math_log10   :                                                                             break;
+
+  case Interpreter::java_lang_math_sin     : // fall thru
+  case Interpreter::java_lang_math_cos     : // fall thru
+  case Interpreter::java_lang_math_tan     : // fall thru
+  case Interpreter::java_lang_math_abs     : // fall thru
+  case Interpreter::java_lang_math_log     : // fall thru
+  case Interpreter::java_lang_math_log10   : // fall thru
   case Interpreter::java_lang_math_sqrt    : entry_point = ((InterpreterGenerator*) this)->generate_math_entry(kind);    break;
   default                                  : ShouldNotReachHere();                                                       break;
   }
