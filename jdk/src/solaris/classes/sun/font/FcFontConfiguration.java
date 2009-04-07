@@ -15,7 +15,7 @@
  * accompanied this code).
  *
  * You should have received a copy of the GNU General Public License version
- * along with this work; if not, write to the Free Software Foundation,
+ * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
@@ -87,6 +87,7 @@ public class FcFontConfiguration extends FontConfiguration {
             return true;
         }
 
+        setFontConfiguration();
         readFcInfo();
         if (fcCompFonts == null) {
             fcCompFonts = FontManager.loadFontConfig();
@@ -172,7 +173,7 @@ public class FcFontConfiguration extends FontConfiguration {
 
     @Override
     public FontDescriptor[] getFontDescriptors(String fontName, int style) {
-        throw new InternalError("Not implemented");
+        return new FontDescriptor[0];
     }
 
     @Override

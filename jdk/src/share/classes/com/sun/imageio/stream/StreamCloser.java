@@ -94,6 +94,10 @@ public class StreamCloser {
                                  tgn != null;
                                  tg = tgn, tgn = tg.getParent());
                             streamCloser = new Thread(tg, streamCloserRunnable);
+                            /* Set context class loader to null in order to avoid
+                             * keeping a strong reference to an application classloader.
+                             */
+                            streamCloser.setContextClassLoader(null);
                             Runtime.getRuntime().addShutdownHook(streamCloser);
                             return null;
                         }

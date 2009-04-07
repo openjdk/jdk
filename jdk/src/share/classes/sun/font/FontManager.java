@@ -1601,18 +1601,27 @@ public final class FontManager {
     /* Path may be absolute or a base file name relative to one of
      * the platform font directories
      */
-    private static String getPathName(String s) {
+    private static String getPathName(final String s) {
         File f = new File(s);
         if (f.isAbsolute()) {
             return s;
         } else if (pathDirs.length==1) {
             return pathDirs[0] + File.separator + s;
         } else {
-            for (int p=0; p<pathDirs.length; p++) {
-                f = new File(pathDirs[p] + File.separator + s);
-                if (f.exists()) {
-                    return f.getAbsolutePath();
-                }
+            String path = java.security.AccessController.doPrivileged(
+                 new java.security.PrivilegedAction<String>() {
+                     public String run() {
+                         for (int p=0; p<pathDirs.length; p++) {
+                             File f = new File(pathDirs[p] +File.separator+ s);
+                             if (f.exists()) {
+                                 return f.getAbsolutePath();
+                             }
+                         }
+                         return null;
+                     }
+                });
+            if (path != null) {
+                return path;
             }
         }
         return s; // shouldn't happen, but harmless

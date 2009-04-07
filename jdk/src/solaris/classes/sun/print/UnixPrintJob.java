@@ -362,10 +362,10 @@ public class UnixPrintJob implements CancelablePrintJob {
                  mOptions += " number-up="+nUp.getValue();
              }
 
-             if (orient == OrientationRequested.LANDSCAPE &&
+             if (orient != OrientationRequested.PORTRAIT &&
                  (flavor != null) &&
                  !flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE)) {
-                 mOptions += " landscape";
+                 mOptions += " orientation-requested="+orient.getValue();
              }
 
              if (sides != null) {
