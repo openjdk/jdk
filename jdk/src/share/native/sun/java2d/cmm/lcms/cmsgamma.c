@@ -29,7 +29,7 @@
 //
 //
 //  Little cms
-//  Copyright (C) 1998-2006 Marti Maria
+//  Copyright (C) 1998-2007 Marti Maria
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -63,9 +63,9 @@ LPGAMMATABLE LCMSEXPORT cmsReverseGamma(int nResultSamples, LPGAMMATABLE InGamma
 LPGAMMATABLE LCMSEXPORT cmsBuildParametricGamma(int nEntries, int Type, double Params[]);
 LPGAMMATABLE LCMSEXPORT cmsJoinGamma(LPGAMMATABLE InGamma, LPGAMMATABLE OutGamma);
 LPGAMMATABLE LCMSEXPORT cmsJoinGammaEx(LPGAMMATABLE InGamma, LPGAMMATABLE OutGamma, int nPoints);
-BOOL         LCMSEXPORT cmsSmoothGamma(LPGAMMATABLE Tab, double lambda);
+LCMSBOOL         LCMSEXPORT cmsSmoothGamma(LPGAMMATABLE Tab, double lambda);
 
-BOOL         cdecl _cmsSmoothEndpoints(LPWORD Table, int nPoints);
+LCMSBOOL         cdecl _cmsSmoothEndpoints(LPWORD Table, int nPoints);
 
 
 // Sampled curves
@@ -74,7 +74,7 @@ LPSAMPLEDCURVE cdecl cmsAllocSampledCurve(int nItems);
 void           cdecl cmsFreeSampledCurve(LPSAMPLEDCURVE p);
 void           cdecl cmsEndpointsOfSampledCurve(LPSAMPLEDCURVE p, double* Min, double* Max);
 void           cdecl cmsClampSampledCurve(LPSAMPLEDCURVE p, double Min, double Max);
-BOOL           cdecl cmsSmoothSampledCurve(LPSAMPLEDCURVE Tab, double SmoothingLambda);
+LCMSBOOL       cdecl cmsSmoothSampledCurve(LPSAMPLEDCURVE Tab, double SmoothingLambda);
 void           cdecl cmsRescaleSampledCurve(LPSAMPLEDCURVE p, double Min, double Max, int nPoints);
 
 LPSAMPLEDCURVE cdecl cmsJoinSampledCurves(LPSAMPLEDCURVE X, LPSAMPLEDCURVE Y, int nResultingPoints);
@@ -84,7 +84,6 @@ double LCMSEXPORT cmsEstimateGammaEx(LPWORD GammaTable, int nEntries, double The
 
 // ----------------------------------------------------------------------------------------
 
-// #define DEBUG 1
 
 #define MAX_KNOTS   4096
 typedef float vec[MAX_KNOTS+1];
@@ -144,14 +143,14 @@ LPGAMMATABLE LCMSEXPORT cmsAllocGamma(int nEntries)
        LPGAMMATABLE p;
        size_t size;
 
-       if (nEntries > 65530) {
-                cmsSignalError(LCMS_ERRC_WARNING, "Couldn't create gammatable of more than 65530 entries; 65530 assumed");
-                nEntries = 65530;
+       if (nEntries > 65530 || nEntries <= 0) {
+                cmsSignalError(LCMS_ERRC_ABORTED, "Couldn't create gammatable of more than 65530 entries");
+                return NULL;
        }
 
        size = sizeof(GAMMATABLE) + (sizeof(WORD) * (nEntries-1));
 
-       p = (LPGAMMATABLE) malloc(size);
+       p = (LPGAMMATABLE) _cmsMalloc(size);
        if (!p) return NULL;
 
        ZeroMemory(p, size);
@@ -164,7 +163,7 @@ LPGAMMATABLE LCMSEXPORT cmsAllocGamma(int nEntries)
 
 void LCMSEXPORT cmsFreeGamma(LPGAMMATABLE Gamma)
 {
-       if (Gamma) free(Gamma);
+       if (Gamma)  _cmsFree(Gamma);
 }
 
 
@@ -278,6 +277,15 @@ LPGAMMATABLE LCMSEXPORT cmsReverseGamma(int nResultSamples, LPGAMMATABLE InGamma
        LPWORD InPtr;
        LPGAMMATABLE p;
 
+       // Try to reverse it analytically whatever possible
+       if (InGamma -> Seed.Type > 0 && InGamma -> Seed.Type <= 5 &&
+            _cmsCrc32OfGammaTable(InGamma) == InGamma -> Seed.Crc32) {
+
+                return cmsBuildParametricGamma(nResultSamples, -(InGamma -> Seed.Type), InGamma ->Seed.Params);
+       }
+
+
+       // Nope, reverse the table
        p = cmsAllocGamma(nResultSamples);
        if (!p) return NULL;
 
@@ -528,7 +536,7 @@ void smooth2(vec w, vec y, vec z, float lambda, int m)
 
 // Smooths a curve sampled at regular intervals
 
-BOOL LCMSEXPORT cmsSmoothGamma(LPGAMMATABLE Tab, double lambda)
+LCMSBOOL LCMSEXPORT cmsSmoothGamma(LPGAMMATABLE Tab, double lambda)
 
 {
     vec w, y, z;
@@ -640,13 +648,13 @@ LPSAMPLEDCURVE cmsAllocSampledCurve(int nItems)
 {
     LPSAMPLEDCURVE pOut;
 
-    pOut = (LPSAMPLEDCURVE) malloc(sizeof(SAMPLEDCURVE));
+    pOut = (LPSAMPLEDCURVE) _cmsMalloc(sizeof(SAMPLEDCURVE));
     if (pOut == NULL)
             return NULL;
 
-    if((pOut->Values = (double *) malloc(nItems * sizeof(double))) == NULL)
+    if((pOut->Values = (double *) _cmsMalloc(nItems * sizeof(double))) == NULL)
     {
-        free(pOut);
+         _cmsFree(pOut);
         return NULL;
     }
 
@@ -659,8 +667,8 @@ LPSAMPLEDCURVE cmsAllocSampledCurve(int nItems)
 
 void cmsFreeSampledCurve(LPSAMPLEDCURVE p)
 {
-    free((LPVOID) p -> Values);
-    free((LPVOID) p);
+     _cmsFree((LPVOID) p -> Values);
+     _cmsFree((LPVOID) p);
 }
 
 
@@ -731,7 +739,7 @@ void cmsClampSampledCurve(LPSAMPLEDCURVE p, double Min, double Max)
 
 // Smooths a curve sampled at regular intervals
 
-BOOL cmsSmoothSampledCurve(LPSAMPLEDCURVE Tab, double lambda)
+LCMSBOOL cmsSmoothSampledCurve(LPSAMPLEDCURVE Tab, double lambda)
 {
     vec w, y, z;
     int i, nItems;
@@ -915,14 +923,11 @@ LPSAMPLEDCURVE cmsConvertGammaToSampledCurve(LPGAMMATABLE Gamma, int nPoints)
 
 // Smooth endpoints (used in Black/White compensation)
 
-BOOL _cmsSmoothEndpoints(LPWORD Table, int nEntries)
+LCMSBOOL _cmsSmoothEndpoints(LPWORD Table, int nEntries)
 {
     vec w, y, z;
     int i, Zeros, Poles;
 
-#ifdef DEBUG
-        ASAVE(Table, nEntries, "nonsmt.txt");
-#endif
 
 
     if (cmsIsLinear(Table, nEntries)) return FALSE; // Nothing to do

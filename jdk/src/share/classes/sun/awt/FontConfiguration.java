@@ -98,7 +98,7 @@ public abstract class FontConfiguration {
         if (!inited) {
             this.preferLocaleFonts = false;
             this.preferPropFonts = false;
-            fontConfig = this;      /* static initialization */
+            setFontConfiguration();
             readFontConfigFile(fontConfigFile);
             initFontConfig();
             inited = true;
@@ -1242,6 +1242,10 @@ public abstract class FontConfiguration {
     /* subclass support */
     protected static FontConfiguration getFontConfiguration() {
         return fontConfig;
+    }
+
+    protected void setFontConfiguration() {
+        fontConfig = this;      /* static initialization */
     }
 
     //////////////////////////////////////////////////////////////////////
