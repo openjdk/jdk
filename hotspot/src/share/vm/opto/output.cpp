@@ -2256,7 +2256,8 @@ void Scheduling::DoScheduling() {
     // bother scheduling them.
     Node *last = bb->_nodes[_bb_end];
     if( last->is_Catch() ||
-       (last->is_Mach() && last->as_Mach()->ideal_Opcode() == Op_Halt) ) {
+       // Exclude unreachable path case when Halt node is in a separate block.
+       (_bb_end > 1 && last->is_Mach() && last->as_Mach()->ideal_Opcode() == Op_Halt) ) {
       // There must be a prior call.  Skip it.
       while( !bb->_nodes[--_bb_end]->is_Call() ) {
         assert( bb->_nodes[_bb_end]->is_Proj(), "skipping projections after expected call" );
