@@ -27,6 +27,8 @@ import java.util.*;
 
 public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
+    String projectVersion() {return "7.10";};
+
     public void writeProjectFile(String projectFileName, String projectName,
                                  Vector allConfigs) throws IOException {
         System.out.println();
@@ -40,7 +42,7 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
             "VisualStudioProject",
             new String[] {
                 "ProjectType", "Visual C++",
-                "Version", "7.10",
+                "Version", projectVersion(),
                 "Name", projectName,
                 "ProjectGUID", "{8822CB5C-1C41-41C2-8493-9F6E1994338B}",
                 "SccProjectName", "",
@@ -417,7 +419,9 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
             new String[] {
                 "Name", "VCPreLinkEventTool",
                 "Description", BuildConfig.getFieldString(null, "PrelinkDescription"),
-                "CommandLine", cfg.expandFormat(BuildConfig.getFieldString(null, "PrelinkCommand").replace('\t', '\n'))
+                //Caution: String.replace(String,String) is available from JDK5 onwards only
+                "CommandLine", cfg.expandFormat(BuildConfig.getFieldString(null, "PrelinkCommand").replace
+                   ("\t", "&#x0D;&#x0A;"))
             }
             );
 
@@ -542,25 +546,41 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 }
 
 class CompilerInterfaceVC7 extends CompilerInterface {
-    Vector getBaseCompilerFlags(Vector defines, Vector includes, String outDir) {
-        Vector rv = new Vector();
+    void getBaseCompilerFlags_common(Vector defines, Vector includes, String outDir,Vector rv) {
 
         // advanced M$ IDE (2003) can only recognize name if it's first or
         // second attribute in the tag - go guess
         addAttr(rv, "Name", "VCCLCompilerTool");
         addAttr(rv, "AdditionalIncludeDirectories", Util.join(",", includes));
-        addAttr(rv, "PreprocessorDefinitions", Util.join(";", defines).replace("\"","&quot;"));
-        addAttr(rv, "UsePrecompiledHeader", "3");
-        addAttr(rv, "PrecompiledHeaderThrough", "incls"+Util.sep+"_precompiled.incl");
+        addAttr(rv, "PreprocessorDefinitions",
+                                Util.join(";", defines).replace("\"","&quot;"));
+        addAttr(rv, "PrecompiledHeaderThrough",
+                                "incls"+Util.sep+"_precompiled.incl");
         addAttr(rv, "PrecompiledHeaderFile", outDir+Util.sep+"vm.pch");
         addAttr(rv, "AssemblerListingLocation", outDir);
         addAttr(rv, "ObjectFile", outDir+Util.sep);
         addAttr(rv, "ProgramDataBaseFileName", outDir+Util.sep+"vm.pdb");
+        // Set /nologo optin
         addAttr(rv, "SuppressStartupBanner", "TRUE");
+        // Surpass the default /Tc or /Tp. 0 is compileAsDefault
         addAttr(rv, "CompileAs", "0");
+        // Set /W3 option. 3 is warningLevel_3
         addAttr(rv, "WarningLevel", "3");
+        // Set /WX option,
         addAttr(rv, "WarnAsError", "TRUE");
+        // Set /GS option
         addAttr(rv, "BufferSecurityCheck", "FALSE");
+        // Set /Zi option. 3 is debugEnabled
+        addAttr(rv, "DebugInformationFormat", "3");
+    }
+    Vector getBaseCompilerFlags(Vector defines, Vector includes, String outDir) {
+        Vector rv = new Vector();
+
+        getBaseCompilerFlags_common(defines,includes, outDir, rv);
+        // Set /Yu option. 3 is pchUseUsingSpecific
+        // Note: Starting VC8 pchUseUsingSpecific is 2 !!!
+        addAttr(rv, "UsePrecompiledHeader", "3");
+        // Set /EHsc- option
         addAttr(rv, "ExceptionHandling", "FALSE");
 
         return rv;
@@ -579,27 +599,39 @@ class CompilerInterfaceVC7 extends CompilerInterface {
                 "/export:jio_vsnprintf ");
         addAttr(rv, "AdditionalDependencies", "Wsock32.lib winmm.lib");
         addAttr(rv, "OutputFile", outDll);
+        // Set /INCREMENTAL option. 1 is linkIncrementalNo
         addAttr(rv, "LinkIncremental", "1");
         addAttr(rv, "SuppressStartupBanner", "TRUE");
         addAttr(rv, "ModuleDefinitionFile", outDir+Util.sep+"vm.def");
         addAttr(rv, "ProgramDatabaseFile", outDir+Util.sep+"vm.pdb");
+        // Set /SUBSYSTEM option. 2 is subSystemWindows
         addAttr(rv, "SubSystem", "2");
         addAttr(rv, "BaseAddress", "0x8000000");
         addAttr(rv, "ImportLibrary", outDir+Util.sep+"jvm.lib");
+        // Set /MACHINE option. 1 is machineX86
         addAttr(rv, "TargetMachine", "1");
 
         return rv;
     }
 
+    void  getDebugCompilerFlags_common(String opt,Vector rv) {
+
+        // Set /On option
+        addAttr(rv, "Optimization", opt);
+        // Set /FR option. 1 is brAllInfo
+        addAttr(rv, "BrowseInformation", "1");
+        addAttr(rv, "BrowseInformationFile", "$(IntDir)" + Util.sep);
+        // Set /MD option. 2 is rtMultiThreadedDLL
+        addAttr(rv, "RuntimeLibrary", "2");
+        // Set /Oy- option
+        addAttr(rv, "OmitFramePointers", "FALSE");
+
+    }
+
     Vector getDebugCompilerFlags(String opt) {
         Vector rv = new Vector();
 
-        addAttr(rv, "Optimization", opt);
-        addAttr(rv, "OptimizeForProcessor", "1");
-        addAttr(rv, "DebugInformationFormat", "3");
-        addAttr(rv, "RuntimeLibrary", "2");
-        addAttr(rv, "BrowseInformation", "1");
-        addAttr(rv, "BrowseInformationFile", "$(IntDir)" + Util.sep);
+        getDebugCompilerFlags_common(opt,rv);
 
         return rv;
     }
@@ -607,18 +639,29 @@ class CompilerInterfaceVC7 extends CompilerInterface {
     Vector getDebugLinkerFlags() {
         Vector rv = new Vector();
 
-        addAttr(rv, "GenerateDebugInformation", "TRUE");
+        addAttr(rv, "GenerateDebugInformation", "TRUE"); // == /DEBUG option
 
         return rv;
+    }
+
+    void getProductCompilerFlags_common(Vector rv) {
+        // Set /O2 option. 2 is optimizeMaxSpeed
+        addAttr(rv, "Optimization", "2");
+        // Set /Oy- option
+        addAttr(rv, "OmitFramePointers", "FALSE");
     }
 
     Vector getProductCompilerFlags() {
         Vector rv = new Vector();
 
-        addAttr(rv, "Optimization", "2");
+        getProductCompilerFlags_common(rv);
+        // Set /Ob option.  1 is expandOnlyInline
         addAttr(rv, "InlineFunctionExpansion", "1");
+        // Set /GF option.
         addAttr(rv, "StringPooling", "TRUE");
+        // Set /MD option. 2 is rtMultiThreadedDLL
         addAttr(rv, "RuntimeLibrary", "2");
+        // Set /Gy option
         addAttr(rv, "EnableFunctionLevelLinking", "TRUE");
 
         return rv;
@@ -627,7 +670,9 @@ class CompilerInterfaceVC7 extends CompilerInterface {
     Vector getProductLinkerFlags() {
         Vector rv = new Vector();
 
+        // Set /OPT:REF option. 2 is optReferences
         addAttr(rv, "OptimizeReferences", "2");
+        // Set /OPT:optFolding option. 2 is optFolding
         addAttr(rv, "EnableCOMDATFolding", "2");
 
         return rv;

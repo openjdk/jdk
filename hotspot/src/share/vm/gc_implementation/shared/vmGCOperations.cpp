@@ -121,7 +121,7 @@ void VM_GC_HeapInspection::doit() {
     // make the heap parsable (no need to retire TLABs)
     ch->ensure_parsability(false);
   }
-  HeapInspection::heap_inspection(_out);
+  HeapInspection::heap_inspection(_out, _need_prologue /* need_prologue */);
 }
 
 

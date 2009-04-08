@@ -71,7 +71,7 @@ testing.
 to figure out which test post-dominates.  The real problem is that it doesn't
 matter which one you pick.  After you pick up, the dominating-test elider in
 IGVN can remove the test and allow you to hoist up to the dominating test on
-the choosen oop bypassing the test on the not-choosen oop.  Seen in testing.
+the chosen oop bypassing the test on the not-chosen oop.  Seen in testing.
 Oops.
 
 (3) Leave the CastPP's in.  This makes the graph more accurate in some sense;
@@ -433,7 +433,7 @@ Node *ConstraintCastNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
 // If not converting int->oop, throw away cast after constant propagation
 Node *CastPPNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
   const Type *t = ccp->type(in(1));
-  if (!t->isa_oop_ptr() || in(1)->is_DecodeN()) {
+  if (!t->isa_oop_ptr() || (in(1)->is_DecodeN() && Universe::narrow_oop_use_implicit_null_checks())) {
     return NULL; // do not transform raw pointers or narrow oops
   }
   return ConstraintCastNode::Ideal_DU_postCCP(ccp);

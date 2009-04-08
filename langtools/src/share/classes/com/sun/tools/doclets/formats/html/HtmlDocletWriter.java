@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,16 @@
  */
 
 package com.sun.tools.doclets.formats.html;
-import com.sun.tools.doclets.formats.html.markup.*;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
-
-import com.sun.javadoc.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.markup.*;
+import com.sun.tools.doclets.internal.toolkit.*;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.internal.toolkit.taglets.*;
 
 /**
  * Class for the Html Format Code Generation specific to JavaDoc.
@@ -44,6 +43,7 @@ import java.util.*;
  * @since 1.2
  * @author Atul M Dambalkar
  * @author Robert Field
+ * @author Bhavesh Patel (Modified)
  */
 public class HtmlDocletWriter extends HtmlDocWriter {
 
@@ -205,7 +205,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     private void printMethodInfo(MethodDoc method) {
         ClassDoc[] intfacs = method.containingClass().interfaces();
         MethodDoc overriddenMethod = method.overriddenMethod();
-        if (intfacs.length > 0 || overriddenMethod != null) {
+        // Check whether there is any implementation or overridden info to be
+        // printed. If no overridden or implementation info needs to be
+        // printed, do not print this section.
+        if ((intfacs.length > 0 &&
+                new ImplementedMethods(method, this.configuration).build().length > 0) ||
+                overriddenMethod != null) {
+            printMemberDetailsListStartTag();
             dd();
             printTagsInfoHeader();
             MethodWriterImpl.printImplementsInfo(this, method);
@@ -216,7 +222,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             printTagsInfoFooter();
             ddEnd();
         }
-        dd();
     }
 
     protected void printTags(Doc doc) {
@@ -230,41 +235,37 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         TagletWriter.genTagOuput(configuration.tagletManager, doc,
             configuration.tagletManager.getCustomTags(doc),
                 getTagletWriterInstance(false), output);
-        if (output.toString().trim().length() > 0) {
+        String outputString = output.toString().trim();
+        // For RootDoc, ClassDoc and PackageDoc, this section is not the
+        // definition description but the start of definition list.
+        if (!outputString.isEmpty()) {
+            if (!(doc instanceof RootDoc || doc instanceof ClassDoc ||
+                    doc instanceof PackageDoc)) {
+                printMemberDetailsListStartTag();
+                dd();
+            }
             printTagsInfoHeader();
-            print(output.toString());
+            print(outputString);
             printTagsInfoFooter();
-        } else if (! (doc instanceof ConstructorDoc ||
-            doc instanceof RootDoc || doc instanceof ClassDoc)) {
-            //To be consistent with 1.4.2 output.
-            //I hate to do this but we have to pass the diff test to prove
-            //nothing has broken.
-            printTagsInfoHeader();
-            printTagsInfoFooter();
+            if (!(doc instanceof RootDoc || doc instanceof ClassDoc ||
+                    doc instanceof PackageDoc))
+                ddEnd();
         }
     }
 
     /**
-     * Check whether there are any tags to be printed.
+     * Check whether there are any tags for Serialization Overview
+     * section to be printed.
      *
-     * @param doc the Doc object to check for tags.
+     * @param field the FieldDoc object to check for tags.
      * @return true if there are tags to be printed else return false.
      */
-    protected boolean hasTagsToPrint(Doc doc) {
-        if (doc instanceof MethodDoc) {
-            ClassDoc[] intfacs = ((MethodDoc)doc).containingClass().interfaces();
-            MethodDoc overriddenMethod = ((MethodDoc)doc).overriddenMethod();
-            if ((intfacs.length > 0 &&
-                new ImplementedMethods((MethodDoc)doc, this.configuration).build().length > 0) ||
-                overriddenMethod != null) {
-                return true;
-            }
-        }
+    protected boolean hasSerializationOverviewTags(FieldDoc field) {
         TagletOutputImpl output = new TagletOutputImpl("");
-        TagletWriter.genTagOuput(configuration.tagletManager, doc,
-            configuration.tagletManager.getCustomTags(doc),
+        TagletWriter.genTagOuput(configuration.tagletManager, field,
+            configuration.tagletManager.getCustomTags(field),
                 getTagletWriterInstance(false), output);
-        return (output.toString().trim().isEmpty());
+        return (!output.toString().trim().isEmpty());
     }
 
     /**
@@ -786,6 +787,15 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
+     * Print the Html table tag for the index summary tables.
+     *
+     * @param summary the summary for the table tag summary attribute.
+     */
+    public void tableIndexSummary(String summary) {
+        table(1, "100%", 3, 0, summary);
+    }
+
+    /**
      * Same as {@link #tableIndexSummary()}.
      */
     public void tableIndexDetail() {
@@ -798,6 +808,40 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void tdIndex() {
         print("<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\">");
+    }
+
+    /**
+     * Print table caption.
+     */
+    public void tableCaptionStart() {
+        captionStyle("TableCaption");
+    }
+
+    /**
+     * Print table sub-caption.
+     */
+    public void tableSubCaptionStart() {
+        captionStyle("TableSubCaption");
+    }
+
+    /**
+     * Print table caption end tags.
+     */
+    public void tableCaptionEnd() {
+        captionEnd();
+    }
+
+    /**
+     * Print summary table header.
+     */
+    public void summaryTableHeader(String[] header, String scope) {
+        tr();
+        for ( int i=0; i < header.length; i++ ) {
+            thScopeNoWrap("TableHeader", scope);
+            print(header[i]);
+            thEnd();
+        }
+        trEnd();
     }
 
     /**

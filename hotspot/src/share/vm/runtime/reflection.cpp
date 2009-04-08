@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,10 +554,18 @@ bool Reflection::is_same_class_package(klassOop class1, klassOop class2) {
   return instanceKlass::cast(class1)->is_same_class_package(class2);
 }
 
+bool Reflection::is_same_package_member(klassOop class1, klassOop class2, TRAPS) {
+  return instanceKlass::cast(class1)->is_same_package_member(class2, THREAD);
+}
+
 
 // Checks that the 'outer' klass has declared 'inner' as being an inner klass. If not,
 // throw an incompatible class change exception
-void Reflection::check_for_inner_class(instanceKlassHandle outer, instanceKlassHandle inner, TRAPS) {
+// If inner_is_member, require the inner to be a member of the outer.
+// If !inner_is_member, require the inner to be anonymous (a non-member).
+// Caller is responsible for figuring out in advance which case must be true.
+void Reflection::check_for_inner_class(instanceKlassHandle outer, instanceKlassHandle inner,
+                                       bool inner_is_member, TRAPS) {
   const int inner_class_info_index = 0;
   const int outer_class_info_index = 1;
 
@@ -567,13 +575,20 @@ void Reflection::check_for_inner_class(instanceKlassHandle outer, instanceKlassH
      int ioff = icls->ushort_at(i + inner_class_info_index);
      int ooff = icls->ushort_at(i + outer_class_info_index);
 
-     if (ioff != 0 && ooff != 0) {
+     if (inner_is_member && ioff != 0 && ooff != 0) {
         klassOop o = cp->klass_at(ooff, CHECK);
         if (o == outer()) {
           klassOop i = cp->klass_at(ioff, CHECK);
           if (i == inner()) {
             return;
           }
+        }
+     }
+     if (!inner_is_member && ioff != 0 && ooff == 0 &&
+         cp->klass_name_at_matches(inner, ioff)) {
+        klassOop i = cp->klass_at(ioff, CHECK);
+        if (i == inner()) {
+          return;
         }
      }
   }

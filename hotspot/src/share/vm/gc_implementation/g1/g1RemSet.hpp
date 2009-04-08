@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,6 +155,7 @@ protected:
   bool _par_traversal_in_progress;
   void set_par_traversal(bool b);
   GrowableArray<oop*>** _new_refs;
+  void new_refs_iterate(OopClosure* cl);
 
 public:
   // This is called to reset dual hash tables after the gc pause
@@ -214,3 +215,27 @@ public:
   int n() { return _n; };
   HeapWord* start_first() { return _start_first; }
 };
+
+class UpdateRSOopClosure: public OopClosure {
+  HeapRegion* _from;
+  HRInto_G1RemSet* _rs;
+  int _worker_i;
+public:
+  UpdateRSOopClosure(HRInto_G1RemSet* rs, int worker_i = 0) :
+    _from(NULL), _rs(rs), _worker_i(worker_i) {
+    guarantee(_rs != NULL, "Requires an HRIntoG1RemSet");
+  }
+
+  void set_from(HeapRegion* from) {
+    assert(from != NULL, "from region must be non-NULL");
+    _from = from;
+  }
+
+  virtual void do_oop(narrowOop* p);
+  virtual void do_oop(oop* p);
+
+  // Override: this closure is idempotent.
+  //  bool idempotent() { return true; }
+  bool apply_to_weak_ref_discovered_field() { return true; }
+};
+
