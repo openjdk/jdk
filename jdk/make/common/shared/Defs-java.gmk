@@ -59,7 +59,15 @@ else
     ADD_CLIENT_VM_OPTION = true
   endif
 endif
-JAVA_JVM_FLAGS =
+
+# Options for hotspot to turn off printing of options with fastdebug version
+#   and creating the hotspot.log file.
+JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS = \
+   -XX:-PrintVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-LogVMOutput
+
+# JVM options
+JAVA_JVM_FLAGS = $(JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS)
+
 ifeq ($(ADD_CLIENT_VM_OPTION), true)
   JAVA_JVM_FLAGS += -client
 endif
@@ -129,6 +137,9 @@ JAVACFLAGS  += $(OTHER_JAVACFLAGS)
 # Needed for javah
 JAVAHFLAGS += -bootclasspath $(CLASSBINDIR)
 
+# Needed for JAVADOC and BOOT_JAVACFLAGS
+NO_PROPRIETARY_API_WARNINGS = -XDignore.symbol.file=true
+
 # Langtools
 ifdef LANGTOOLS_DIST
   JAVAC_JAR   = $(LANGTOOLS_DIST)/bootstrap/lib/javac.jar
@@ -191,6 +202,8 @@ ifeq ($(JAVAC_WARNINGS_FATAL), true)
 endif
 BOOT_JAVACFLAGS  += -encoding ascii
 BOOT_JAR_JFLAGS += $(JAR_JFLAGS)
+
+BOOT_JAVACFLAGS  += $(NO_PROPRIETARY_API_WARNINGS)
 
 BOOT_JAVA_CMD      = $(BOOTDIR)/bin/java $(JAVA_TOOLS_FLAGS)
 BOOT_JAVAC_CMD     = $(BOOTDIR)/bin/javac $(JAVAC_JVM_FLAGS) $(BOOT_JAVACFLAGS)

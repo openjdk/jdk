@@ -504,6 +504,7 @@ void SparsePRT::cleanup() {
   // Make sure that the current and next tables agree.  (Another mechanism
   // takes care of deleting now-unused tables.)
   _cur = _next;
+  set_expanded(false);
 }
 
 void SparsePRT::expand() {

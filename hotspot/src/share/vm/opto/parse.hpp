@@ -78,7 +78,7 @@ public:
   };
 
   // See if it is OK to inline.
-  // The reciever is the inline tree for the caller.
+  // The receiver is the inline tree for the caller.
   //
   // The result is a temperature indication.  If it is hot or cold,
   // inlining is immediate or undesirable.  Otherwise, the info block

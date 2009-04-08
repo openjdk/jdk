@@ -2147,18 +2147,6 @@ public class File
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     private static final long serialVersionUID = 301077366599181567L;
 
-    // Set up JavaIODeleteOnExitAccess in SharedSecrets
-    // Added here as DeleteOnExitHook is package-private and SharedSecrets cannot easily access it.
-    static {
-        sun.misc.SharedSecrets.setJavaIODeleteOnExitAccess(
-            new sun.misc.JavaIODeleteOnExitAccess() {
-                public void run() {
-                    DeleteOnExitHook.hook().run();
-                }
-            }
-        );
-    }
-
     // -- Integration with java.nio.file --
 
     private volatile transient Path filePath;

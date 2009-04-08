@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2567,7 +2567,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 break;
             case '<':   // (?<xxx)  look behind
                 ch = read();
-                if (Character.isLetter(ch)) {     // named captured group
+                if (ASCII.isLower(ch) || ASCII.isUpper(ch) || ASCII.isDigit(ch)) {
+                    // named captured group
                     String name = groupname(ch);
                     if (namedGroups().containsKey(name))
                         throw error("Named capturing group <" + name

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,8 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
         VMThread::execute(&op1);
         Universe::print_heap_at_SIGBREAK();
         if (PrintClassHistogram) {
-          VM_GC_HeapInspection op1(gclog_or_tty, true /* force full GC before heap inspection */);
+          VM_GC_HeapInspection op1(gclog_or_tty, true /* force full GC before heap inspection */,
+                                   true /* need_prologue */);
           VMThread::execute(&op1);
         }
         if (JvmtiExport::should_post_data_dump()) {
@@ -862,7 +863,6 @@ char* os::format_boot_path(const char* format_string,
 
 
 bool os::set_boot_path(char fileSep, char pathSep) {
-
     const char* home = Arguments::get_java_home();
     int home_len = (int)strlen(home);
 
@@ -890,6 +890,60 @@ bool os::set_boot_path(char fileSep, char pathSep) {
     Arguments::set_sysclasspath(sysclasspath);
 
     return true;
+}
+
+/*
+ * Splits a path, based on its separator, the number of
+ * elements is returned back in n.
+ * It is the callers responsibility to:
+ *   a> check the value of n, and n may be 0.
+ *   b> ignore any empty path elements
+ *   c> free up the data.
+ */
+char** os::split_path(const char* path, int* n) {
+  *n = 0;
+  if (path == NULL || strlen(path) == 0) {
+    return NULL;
+  }
+  const char psepchar = *os::path_separator();
+  char* inpath = (char*)NEW_C_HEAP_ARRAY(char, strlen(path) + 1);
+  if (inpath == NULL) {
+    return NULL;
+  }
+  strncpy(inpath, path, strlen(path));
+  int count = 1;
+  char* p = strchr(inpath, psepchar);
+  // Get a count of elements to allocate memory
+  while (p != NULL) {
+    count++;
+    p++;
+    p = strchr(p, psepchar);
+  }
+  char** opath = (char**) NEW_C_HEAP_ARRAY(char*, count);
+  if (opath == NULL) {
+    return NULL;
+  }
+
+  // do the actual splitting
+  p = inpath;
+  for (int i = 0 ; i < count ; i++) {
+    size_t len = strcspn(p, os::path_separator());
+    if (len > JVM_MAXPATHLEN) {
+      return NULL;
+    }
+    // allocate the string and add terminator storage
+    char* s  = (char*)NEW_C_HEAP_ARRAY(char, len + 1);
+    if (s == NULL) {
+      return NULL;
+    }
+    strncpy(s, p, len);
+    s[len] = '\0';
+    opath[i] = s;
+    p += len + 1;
+  }
+  FREE_C_HEAP_ARRAY(char, inpath);
+  *n = count;
+  return opath;
 }
 
 void os::set_memory_serialize_page(address page) {
@@ -943,7 +997,7 @@ bool os::stack_shadow_pages_available(Thread *thread, methodHandle method) {
   assert(StackRedPages > 0 && StackYellowPages > 0,"Sanity check");
   address sp = current_stack_pointer();
   // Check if we have StackShadowPages above the yellow zone.  This parameter
-  // is dependant on the depth of the maximum VM call stack possible from
+  // is dependent on the depth of the maximum VM call stack possible from
   // the handler for stack overflow.  'instanceof' in the stack overflow
   // handler or a println uses at least 8k stack of VM and native code
   // respectively.

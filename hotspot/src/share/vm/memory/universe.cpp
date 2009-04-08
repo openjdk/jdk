@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,8 @@ size_t          Universe::_heap_capacity_at_last_gc;
 size_t          Universe::_heap_used_at_last_gc = 0;
 
 CollectedHeap*  Universe::_collectedHeap = NULL;
-address         Universe::_heap_base = NULL;
+
+NarrowOopStruct Universe::_narrow_oop = { NULL, 0, true };
 
 
 void Universe::basic_type_classes_do(void f(klassOop)) {
@@ -729,6 +730,53 @@ jint universe_init() {
   return JNI_OK;
 }
 
+// Choose the heap base address and oop encoding mode
+// when compressed oops are used:
+// Unscaled  - Use 32-bits oops without encoding when
+//     NarrowOopHeapBaseMin + heap_size < 4Gb
+// ZeroBased - Use zero based compressed oops with encoding when
+//     NarrowOopHeapBaseMin + heap_size < 32Gb
+// HeapBased - Use compressed oops with heap base + encoding.
+
+// 4Gb
+static const uint64_t NarrowOopHeapMax = (uint64_t(max_juint) + 1);
+// 32Gb
+static const uint64_t OopEncodingHeapMax = NarrowOopHeapMax << LogMinObjAlignmentInBytes;
+
+char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
+#ifdef _LP64
+  if (UseCompressedOops) {
+    assert(mode == UnscaledNarrowOop  ||
+           mode == ZeroBasedNarrowOop ||
+           mode == HeapBasedNarrowOop, "mode is invalid");
+
+    const size_t total_size = heap_size + HeapBaseMinAddress;
+    if (total_size <= OopEncodingHeapMax && (mode != HeapBasedNarrowOop)) {
+      if (total_size <= NarrowOopHeapMax && (mode == UnscaledNarrowOop) &&
+          (Universe::narrow_oop_shift() == 0)) {
+        // Use 32-bits oops without encoding and
+        // place heap's top on the 4Gb boundary
+        return (char*)(NarrowOopHeapMax - heap_size);
+      } else {
+        // Can't reserve with NarrowOopShift == 0
+        Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
+        if (mode == UnscaledNarrowOop ||
+            mode == ZeroBasedNarrowOop && total_size <= NarrowOopHeapMax) {
+          // Use zero based compressed oops with encoding and
+          // place heap's top on the 32Gb boundary in case
+          // total_size > 4Gb or failed to reserve below 4Gb.
+          return (char*)(OopEncodingHeapMax - heap_size);
+        }
+      }
+    } else {
+      // Can't reserve below 32Gb.
+      Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
+    }
+  }
+#endif
+  return NULL; // also return NULL (don't care) for 32-bit VM
+}
+
 jint Universe::initialize_heap() {
 
   if (UseParallelGC) {
@@ -773,6 +821,8 @@ jint Universe::initialize_heap() {
   if (status != JNI_OK) {
     return status;
   }
+
+#ifdef _LP64
   if (UseCompressedOops) {
     // Subtract a page because something can get allocated at heap base.
     // This also makes implicit null checking work, because the
@@ -780,8 +830,49 @@ jint Universe::initialize_heap() {
     // See needs_explicit_null_check.
     // Only set the heap base for compressed oops because it indicates
     // compressed oops for pstack code.
-    Universe::_heap_base = Universe::heap()->base() - os::vm_page_size();
+    if (PrintCompressedOopsMode) {
+      tty->cr();
+      tty->print("heap address: "PTR_FORMAT, Universe::heap()->base());
+    }
+    if ((uint64_t)Universe::heap()->reserved_region().end() > OopEncodingHeapMax) {
+      // Can't reserve heap below 32Gb.
+      Universe::set_narrow_oop_base(Universe::heap()->base() - os::vm_page_size());
+      Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
+      if (PrintCompressedOopsMode) {
+        tty->print(", Compressed Oops with base: "PTR_FORMAT, Universe::narrow_oop_base());
+      }
+    } else {
+      Universe::set_narrow_oop_base(0);
+      if (PrintCompressedOopsMode) {
+        tty->print(", zero based Compressed Oops");
+      }
+#ifdef _WIN64
+      if (!Universe::narrow_oop_use_implicit_null_checks()) {
+        // Don't need guard page for implicit checks in indexed addressing
+        // mode with zero based Compressed Oops.
+        Universe::set_narrow_oop_use_implicit_null_checks(true);
+      }
+#endif //  _WIN64
+      if((uint64_t)Universe::heap()->reserved_region().end() > NarrowOopHeapMax) {
+        // Can't reserve heap below 4Gb.
+        Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
+      } else {
+        assert(Universe::narrow_oop_shift() == 0, "use unscaled narrow oop");
+        if (PrintCompressedOopsMode) {
+          tty->print(", 32-bits Oops");
+        }
+      }
+    }
+    if (PrintCompressedOopsMode) {
+      tty->cr();
+      tty->cr();
+    }
   }
+  assert(Universe::narrow_oop_base() == (Universe::heap()->base() - os::vm_page_size()) ||
+         Universe::narrow_oop_base() == NULL, "invalid value");
+  assert(Universe::narrow_oop_shift() == LogMinObjAlignmentInBytes ||
+         Universe::narrow_oop_shift() == 0, "invalid value");
+#endif
 
   // We will never reach the CATCH below since Exceptions::_throw will cause
   // the VM to exit if an exception is thrown during initialization

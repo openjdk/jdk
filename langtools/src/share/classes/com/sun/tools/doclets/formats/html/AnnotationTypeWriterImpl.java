@@ -25,10 +25,10 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
-import com.sun.javadoc.*;
 
 /**
  * Generate the Class Information Page.
@@ -165,8 +165,6 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
      * {@inheritDoc}
      */
     public void writeAnnotationTypeSignature(String modifiers) {
-        dl();
-        dt();
         preNoNewLine();
         writeAnnotationInfo(annotationType);
         print(modifiers);
@@ -178,7 +176,6 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         } else {
             strong(name);
         }
-        dlEnd();
         preEnd();
         p();
     }
@@ -334,6 +331,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
             } else {
                 strongText("doclet.Enclosing_Class");
             }
+            dtEnd();
             dd();
             printLink(new LinkInfoImpl(LinkInfoImpl.CONTEXT_CLASS, outerClass,
                 false));

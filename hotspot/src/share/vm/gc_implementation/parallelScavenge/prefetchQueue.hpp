@@ -26,7 +26,7 @@
 // PrefetchQueue is a FIFO queue of variable length (currently 8).
 //
 // We need to examine the performance penalty of variable lengths.
-// We may also want to split this into cpu dependant bits.
+// We may also want to split this into cpu dependent bits.
 //
 
 const int PREFETCH_QUEUE_SIZE  = 8;

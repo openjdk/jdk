@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::CC_LE   = TypeInt::make(-1, 0, WidenMin);
   TypeInt::CC_GE   = TypeInt::make( 0, 1, WidenMin);  // == TypeInt::BOOL
   TypeInt::BYTE    = TypeInt::make(-128,127,     WidenMin); // Bytes
+  TypeInt::UBYTE   = TypeInt::make(0, 255,       WidenMin); // Unsigned Bytes
   TypeInt::CHAR    = TypeInt::make(0,65535,      WidenMin); // Java chars
   TypeInt::SHORT   = TypeInt::make(-32768,32767, WidenMin); // Java shorts
   TypeInt::POS     = TypeInt::make(0,max_jint,   WidenMin); // Non-neg values
@@ -1022,6 +1023,7 @@ const TypeInt *TypeInt::CC_EQ;  // [0]   == ZERO
 const TypeInt *TypeInt::CC_LE;  // [-1,0]
 const TypeInt *TypeInt::CC_GE;  // [0,1] == BOOL (!)
 const TypeInt *TypeInt::BYTE;   // Bytes, -128 to 127
+const TypeInt *TypeInt::UBYTE;  // Unsigned Bytes, 0 to 255
 const TypeInt *TypeInt::CHAR;   // Java chars, 0-65535
 const TypeInt *TypeInt::SHORT;  // Java shorts, -32768-32767
 const TypeInt *TypeInt::POS;    // Positive 32-bit integers or zero
@@ -2455,7 +2457,7 @@ intptr_t TypeOopPtr::get_con() const {
     // code and dereferenced at the time the nmethod is made.  Until that time,
     // it is not reasonable to do arithmetic with the addresses of oops (we don't
     // have access to the addresses!).  This does not seem to currently happen,
-    // but this assertion here is to help prevent its occurrance.
+    // but this assertion here is to help prevent its occurence.
     tty->print_cr("Found oop constant with non-zero offset");
     ShouldNotReachHere();
   }
@@ -2761,7 +2763,7 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
       // LCA is object_klass, but if we subclass from the top we can do better
       if( above_centerline(_ptr) ) { // if( _ptr == TopPTR || _ptr == AnyNull )
         // If 'this' (InstPtr) is above the centerline and it is Object class
-        // then we can subclass in the Java class heirarchy.
+        // then we can subclass in the Java class hierarchy.
         if (klass()->equals(ciEnv::current()->Object_klass())) {
           // that is, tp's array type is a subtype of my klass
           return TypeAryPtr::make(ptr, tp->ary(), tp->klass(), tp->klass_is_exact(), offset, instance_id);
@@ -3022,7 +3024,7 @@ ciType* TypeInstPtr::java_mirror_type() const {
 
 //------------------------------xdual------------------------------------------
 // Dual: do NOT dual on klasses.  This means I do NOT understand the Java
-// inheritence mechanism.
+// inheritance mechanism.
 const Type *TypeInstPtr::xdual() const {
   return new TypeInstPtr( dual_ptr(), klass(), klass_is_exact(), const_oop(), dual_offset(), dual_instance_id()  );
 }
@@ -3176,7 +3178,7 @@ const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size) const {
   bool chg = false;
   if (lo < min_lo) { lo = min_lo; chg = true; }
   if (hi > max_hi) { hi = max_hi; chg = true; }
-  // Negative length arrays will produce weird intermediate dead fath-path code
+  // Negative length arrays will produce weird intermediate dead fast-path code
   if (lo > hi)
     return TypeInt::ZERO;
   if (!chg)
@@ -3358,7 +3360,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
       // LCA is object_klass, but if we subclass from the top we can do better
       if (above_centerline(tp->ptr())) {
         // If 'tp'  is above the centerline and it is Object class
-        // then we can subclass in the Java class heirarchy.
+        // then we can subclass in the Java class hierarchy.
         if( tp->klass()->equals(ciEnv::current()->Object_klass()) ) {
           // that is, my array type is a subtype of 'tp' klass
           return make( ptr, _ary, _klass, _klass_is_exact, offset, instance_id );

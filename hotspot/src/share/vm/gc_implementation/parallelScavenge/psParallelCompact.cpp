@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,6 +508,7 @@ ParallelCompactData::summarize_split_space(size_t src_region,
   assert(destination <= target_end, "sanity");
   assert(destination + _region_data[src_region].data_size() > target_end,
     "region should not fit into target space");
+  assert(is_region_aligned(target_end), "sanity");
 
   size_t split_region = src_region;
   HeapWord* split_destination = destination;
@@ -538,14 +539,12 @@ ParallelCompactData::summarize_split_space(size_t src_region,
     //         max(top, max(new_top, clear_top))
     //
     // where clear_top is a new field in SpaceInfo.  Would have to set clear_top
-    // to destination + partial_obj_size, where both have the values passed to
-    // this routine.
+    // to target_end.
     const RegionData* const sr = region(split_region);
     const size_t beg_idx =
       addr_to_region_idx(region_align_up(sr->destination() +
                                          sr->partial_obj_size()));
-    const size_t end_idx =
-      addr_to_region_idx(region_align_up(destination + partial_obj_size));
+    const size_t end_idx = addr_to_region_idx(target_end);
 
     if (TraceParallelOldGCSummaryPhase) {
         gclog_or_tty->print_cr("split:  clearing source_region field in ["
@@ -1982,6 +1981,8 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     heap->record_gen_tops_before_GC();
   }
 
+  heap->pre_full_gc_dump();
+
   _print_phases = PrintGCDetails && PrintParallelOldGCPhaseTimes;
 
   // Make sure data structures are sane, make the heap parsable, and do other
@@ -2203,6 +2204,8 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                            collection_exit.ticks());
     gc_task_manager()->print_task_time_stamps();
   }
+
+  heap->post_full_gc_dump();
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();

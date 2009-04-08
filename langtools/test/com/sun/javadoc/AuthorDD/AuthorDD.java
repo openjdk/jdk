@@ -91,7 +91,7 @@ public class AuthorDD
 
             // Test multiple @author tags:
 
-            { "<DT><STRONG>Author:</STRONG></DT>"+NL+"  <DD>Doug Kramer, Jamie, Neal</DD>"+NL,
+            { "<DT><STRONG>Author:</STRONG></DT>"+NL+"  <DD>Doug Kramer, Jamie, Neal</DD>",
                                   BUGID + FS + "p1" + FS + "C1.html" },
 
         };

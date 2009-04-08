@@ -38,60 +38,106 @@
 SANITY_FILES =  $(ERROR_FILE) $(WARNING_FILE) $(MESSAGE_FILE)
 
 # How to say "The Release Engineering people use this"
-THE_OFFICIAL_USES=The official $(PLATFORM) builds use
+THE_OFFICIAL_USES=The official builds on $(PLATFORM) use
 
 # How to say "You are using:"
 YOU_ARE_USING=You appear to be using
+
+# Error message
+define SanityError
+$(ECHO) "ERROR: $1\n" >> $(ERROR_FILE)
+endef
+
+# Warning message
+define SanityWarning
+$(ECHO) "WARNING: $1\n" >> $(WARNING_FILE)
+endef
+
+# Official version error message: name version required_version
+define OfficialErrorMessage
+$(call SanityError,\
+$(THE_OFFICIAL_USES) $1 $3. Your $1 $(if $2,undefined,$2) will not work.)
+endef
+
+# Official version warning message: name version required_version
+define OfficialWarningMessage
+$(call SanityWarning,\
+$(THE_OFFICIAL_USES) $1 $3. $(YOU_ARE_USING) $1 $2.)
+endef
+
 
 # Settings and rules to validate the JDK build environment.
 
 ifeq ($(PLATFORM), solaris)
   FREE_SPACE := $(shell $(DF) -b $(OUTPUTDIR) | $(TAIL) -1 | $(NAWK) '{print $$2;}')
   TEMP_FREE_SPACE := $(shell $(DF) -b $(TEMP_DISK) | $(TAIL) -1 | $(NAWK) '{print $$2;}')
+  # What kind of system we are using (Variations are Solaris and OpenSolaris)
+  OS_VERSION := $(shell uname -r)
+  OS_VARIANT_NAME := $(strip $(shell head -1 /etc/release | awk '{print $$1;}') )
+  OS_VARIANT_VERSION := $(OS_VERSION)
   REQ_PATCH_LIST = $(JDK_TOPDIR)/make/PatchList.solaris
   ifeq ($(ARCH_FAMILY), sparc)
     PATCH_POSITION = $$4
   else
     PATCH_POSITION = $$6
   endif
+  ifndef OPENJDK
+    _GCC_VER :=$(shell $(GCC) -dumpversion 2>&1 )
+    GCC_VER  :=$(call GetVersion,"$(_GCC_VER)")
+  endif
 endif
 
 ifeq ($(PLATFORM), linux)
   FREE_SPACE := $(shell $(DF) --sync -kP $(OUTPUTDIR) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
   TEMP_FREE_SPACE := $(shell $(DF) --sync -kP $(TEMP_DISK) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
-  ifeq ($(ARCH), amd64)
-    LINUX_VERSION := $(shell \
-        if [ -r "$(LINUX_VERSION_INFO)" ] ; then \
-          $(CAT) $(LINUX_VERSION_INFO) | $(TAIL) -1 | $(NAWK) '{ print $$3; }';\
-        else \
-          $(ECHO) "Unknown linux"; \
-        fi )
-  else
-    LINUX_VERSION := $(shell \
-        if [ -r "$(LINUX_VERSION_INFO)" ] ; then \
-          $(NAWK) '{ print $$4" "$$5; }' $(LINUX_VERSION_INFO) ; \
-        else \
-          $(ECHO) "Unknown linux"; \
-        fi )
-  endif
-  ifneq ($(ARCH), ia64)
-    # dummy program that outputs ALSA's version (created in target sane-alsa-versioncheck)
-    ALSA_VERSION_CHECK = $(TEMPDIR)/alsaversioncheck
-    ALSA_VERSION = `if [ -f "$(ALSA_VERSION_CHECK)" ] ; then $(ALSA_VERSION_CHECK) ; fi`
-  endif
+  # What kind of system we are using (Variation is the Linux vendor)
+  OS_VERSION := $(shell uname -r)
+  OS_VARIANT_NAME := $(shell \
+    if [ -f /etc/fedora-release ] ; then \
+      echo "Fedora"; \
+    elif [ -f /etc/redhat-release ] ; then \
+      echo "RedHat"; \
+    elif [ -f /etc/SuSE-release ] ; then \
+      echo "SuSE"; \
+    else \
+      echo "Unknown"; \
+    fi)
+  OS_VARIANT_VERSION := $(shell \
+    if [ "$(OS_VARIANT_NAME)" = "Fedora" ] ; then \
+      $(CAT) /etc/fedora-release | $(HEAD) -1 | $(NAWK) '{ print $$3; }' ; \
+    fi)
+  ALSA_INCLUDE=/usr/include/alsa/version.h
+  ALSA_LIBRARY=/usr/lib/libasound.so
+  _ALSA_VERSION := $(shell $(EGREP) SND_LIB_VERSION_STR $(ALSA_INCLUDE) | \
+           $(SED) -e 's@.*\"\(.*\)\".*@\1@' )
+  ALSA_VERSION := $(call GetVersion,$(_ALSA_VERSION))
 endif
 
 ifeq ($(PLATFORM), windows)
   FREE_SPACE := $(shell $(DF) -kP $(OUTPUTDIR) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
   TEMP_FREE_SPACE := $(shell $(DF) -kP $(TEMP_DISK) | $(TAIL) -1 | $(NAWK) '{print $$4;}')
-  # Localized systeminfo has localized labels, but not localized values.
-  _WINDOWS_VERSION := \
-    $(shell systeminfo 2> $(DEV_NULL) | grep 'Microsoft' | grep 'Windows' | \
-	 cut -d':' -f2)
-  ifeq ($(_WINDOWS_VERSION),)
-    _WINDOWS_VERSION := Windows 2000 or Unknown (no systeminfo utility)
+  # Windows 2000 is 5.0, Windows XP is 5.1, Windows 2003 is 5.2
+  #    Assume 5.0 (Windows 2000) if systeminfo does not help
+  WINDOWS_MAPPING-5.0 := Windows2000
+  WINDOWS_MAPPING-5.1 := WindowsXP
+  WINDOWS_MAPPING-5.2 := Windows2003
+  # What kind of system we are using (Variation is the common name)
+  _OS_VERSION := \
+    $(shell systeminfo 2> $(DEV_NULL) | \
+            egrep '^OS Version:' | \
+            awk '{print $$3;}' )
+  ifeq ($(_OS_VERSION),)
+    OS_VERSION = 5.0
+  else
+    OS_VERSION = $(call MajorVersion,$(_OS_VERSION)).$(call MinorVersion,$(_OS_VERSION))
   endif
-  WINDOWS_VERSION := $(strip $(_WINDOWS_VERSION))
+  OS_VARIANT_NAME := $(WINDOWS_MAPPING-$(OS_VERSION))
+  OS_VARIANT_VERSION := $(OS_VERSION)
+  ifdef USING_CYGWIN
+    # CYGWIN version
+    _CYGWIN_VER := $(SYSTEM_UNAME)
+    CYGWIN_VER  :=$(call GetVersion,$(_CYGWIN_VER))
+  endif
   DXSDK_VER := $(shell $(EGREP) DIRECT3D_VERSION $(DXSDK_INCLUDE_PATH)/d3d9.h 2>&1 | \
     $(EGREP) "\#define" | $(NAWK) '{print $$3}')
 endif
@@ -106,7 +152,6 @@ ZIP_VER    :=$(call GetVersion,"$(_ZIP_VER)")
 UNZIP_VER  :=$(call GetVersion,"$(_UNZIP_VER)")
 BOOT_VER   :=$(call GetVersion,"$(_BOOT_VER)")
 
-REQUIRED_ANT_VER := 1.6.3
 _ANT_VER:=$(shell $(ANT) -version 2>&1 )
 ANT_VER:=$(call GetVersion,"$(_ANT_VER)")
 
@@ -167,7 +212,6 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-compiler \
 	sane-link \
 	sane-cacerts \
-	sane-alsa-versioncheck \
 	sane-alsa-headers \
 	sane-ant_version \
 	sane-zip_version \
@@ -239,35 +283,29 @@ sane-arch_data_model:
 #         generate a fatal sanity error, and a warning about the official
 #         build platform just becomes clutter.
 ######################################################
-OS_CHECK :=$(call CheckVersions,$(OS_VERSION),$(REQUIRED_OS_VERSION))
+ifndef OPENJDK
+  OS_VERSION_CHECK := \
+    $(call CheckVersions,$(OS_VERSION),$(REQUIRED_OS_VERSION))
+  ifeq ($(OS_VARIANT_NAME),$(REQUIRED_OS_VARIANT_NAME))
+    OS_VARIANT_VERSION_CHECK := \
+      $(call CheckVersions,$(OS_VARIANT_VERSION),$(REQUIRED_OS_VARIANT_VERSION))
+  endif
+endif
 sane-os_version:: sane-arch_data_model sane-memory_check sane-locale sane-os_patch_level
 ifndef OPENJDK
-	@if [ "$(OS_CHECK)" = "missing" ]; then \
-	  $(ECHO) "ERROR: The $(PLATFORM) OS version is undefined (Try: uname -r). \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-	@if [ "$(OS_CHECK)" != "same" ]; then \
-	  $(ECHO) "WARNING: $(THE_OFFICIAL_USES) OS version $(REQUIRED_OS_VERSION). \n" \
-	    "        $(YOU_ARE_USING) OS version $(OS_VERSION). \n" \
-	    "" >> $(WARNING_FILE) ; \
-	fi
-  ifeq ($(PLATFORM), windows)
-	@if [ "$(findstring $(REQUIRED_WINDOWS_VERSION),$(WINDOWS_VERSION))" = "" ]; then \
-	    $(ECHO) "WARNING: $(YOU_ARE_USING) an unknown version of Windows. \n" \
-	      "        The required version is $(REQUIRED_WINDOWS_VERSION). \n" \
-	      "        $(YOU_ARE_USING) $(WINDOWS_VERSION) \n" \
-	      "" >> $(WARNING_FILE) ; \
-	fi
-  endif # windows
-  ifeq ($(PLATFORM), linux)
-	@if [ `$(ECHO) "$(LINUX_VERSION)" | $(EGREP) -c '$(REQUIRED_LINUX_VER)'` -ne 1 ]; then \
-	  $(ECHO) "WARNING: The build is being done on Linux $(LINUX_VERSION). \n" \
-	    "        $(THE_OFFICIAL_USES) Linux $(REQUIRED_LINUX_VER), \n" \
-	    "        specifically Linux $(REQUIRED_LINUX_FULLVER). \n" \
-	    "        The version found was '$(OS_VERSION)'. \n" \
-	    "" >> $(WARNING_FILE) ; \
-	fi
-  endif # linux
+  ifneq ($(OS_VARIANT_NAME),$(REQUIRED_OS_VARIANT_NAME))
+    ifeq ($(OS_VERSION_CHECK),missing)
+	@$(call OfficialErrorMessage,OS version,$(OS_VERSION),$(REQUIRED_OS_VERSION))
+    endif
+    ifneq ($(OS_VERSION_CHECK),same)
+	@$(call OfficialWarningMessage,OS version,$(OS_VERSION),$(REQUIRED_OS_VERSION))
+    endif
+	@$(call OfficialWarningMessage,OS variant,$(OS_VARIANT_NAME),$(REQUIRED_OS_VARIANT_NAME))
+  else
+    ifneq ($(OS_VARIANT_VERSION_CHECK),same)
+	@$(call OfficialWarningMessage,$(OS_VARIANT_NAME) version,$(OS_VARIANT_VERSION),$(REQUIRED_OS_VARIANT_VERSION))
+    endif
+  endif
 endif # OPENJDK
 
 ifeq ($(PLATFORM), windows)
@@ -308,16 +346,12 @@ ifeq ($(PLATFORM), windows)
   CYGWIN_CHECK :=$(call CheckVersions,$(CYGWIN_VER),$(REQUIRED_CYGWIN_VER))
 sane-cygwin:
   ifdef USING_CYGWIN
-	@if [ "$(CYGWIN_CHECK)" = "missing" ]; then \
-	  $(ECHO) "ERROR: The CYGWIN version is undefined. \n" \
-	    "      $(THE_OFFICIAL_USES) CYGWIN $(REQUIRED_CYGWIN_VER). \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-	@if [ "$(CYGWIN_CHECK)" = "older" ]; then \
-	  $(ECHO) "ERROR: The build cannot be done on CYGWIN $(CYGWIN_VER). \n" \
-	    "      Use CYGWIN $(REQUIRED_CYGWIN_VER) or higher. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
+    ifeq ($(CYGWIN_CHECK),missing)
+	@$(call OfficialErrorMessage,CYGWIN version,$(CYGWIN_VER),$(REQUIRED_CYGWIN_VER))
+    endif
+    ifeq ($(CYGWIN_CHECK),older)
+	@$(call OfficialWarningMessage,CYGWIN version,$(CYGWIN_VER),$(REQUIRED_CYGWIN_VER))
+    endif
   endif
 endif
 
@@ -345,16 +379,12 @@ ifeq ($(PLATFORM), windows)
     MKS_CHECK :=$(call CheckVersions,$(MKS_VER),$(REQUIRED_MKS_VER))
 sane-mks:
   ifndef USING_CYGWIN
-	@if [ "$(MKS_CHECK)" = "missing" ]; then \
-	  $(ECHO) "ERROR: The MKS version is undefined. \n" \
-	    "      $(THE_OFFICIAL_USES) MKS $(REQUIRED_MKS_VER). \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-	@if [ "$(MKS_CHECK)" = "older" ]; then \
-	  $(ECHO) "ERROR: The build cannot be done on MKS $(MKS_VER). \n" \
-	    "      Use MKS $(REQUIRED_MKS_VER) or higher. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
+    ifeq ($(MKS_CHECK),missing)
+	@$(call OfficialErrorMessage,MKS version,$(MKS_VER),$(REQUIRED_MKS_VER))
+    endif
+    ifeq ($(MKS_CHECK),older)
+	@$(call OfficialErrorMessage,MKS version,$(MKS_VER),$(REQUIRED_MKS_VER))
+    endif
   endif
 endif
 
@@ -472,13 +502,15 @@ endif
 ######################################################
 ifdef OPENJDK
 sane-binary-plugs:
+  ifeq ($(IMPORT_BINARY_PLUGS),true)
 	@if [ ! -d "$(BINARY_PLUGS_PATH)" ]; then \
-	  $(ECHO) "ERROR: Can't locate pre-built libraries. \n" \
+	  $(ECHO) "WARNING: Can't locate pre-built libraries. \n" \
 	    "      Please check your access to \n" \
 	    "          $(BINARY_PLUGS_PATH) \n" \
 	    "      and/or check your value of ALT_BINARY_PLUGS_PATH. \n" \
-	   "" >> $(ERROR_FILE); \
+	   "" >> $(WARNING_FILE); \
 	fi
+  endif
 endif
 
 ######################################################
@@ -834,7 +866,7 @@ ifeq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_MSVCRT_DLL_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-  ifeq ($(ARCH_DATA_MODEL), 32)
+  ifneq ($(MSVCRNN_DLL),)
 	@if [ ! -r "$(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)" ]; then \
 	  $(ECHO) "ERROR: You do not have access to $(MSVCRNN_DLL). \n" \
 	    "      Please check your access to \n" \
@@ -1284,8 +1316,8 @@ ifdef LINK_VER
 	fi
 	@if [ "$(LINK_CHECK)" != "same" ]; then \
 	  $(ECHO) "WARNING: To build Java 2 SDK $(JDK_VERSION) you need : \n" \
-	    "      $(COMPILER_VERSION) - link.exe version \"$(REQUIRED_LINK_VER)\" \n" \
-	      "      Specifically the $(COMPILER_NAME) link.exe. \n " \
+	    "      $(REQUIRED_COMPILER_VERSION) - link.exe version \"$(REQUIRED_LINK_VER)\" \n" \
+	      "      Specifically the $(REQUIRED_COMPILER_NAME) link.exe. \n " \
 	    "      $(YOU_ARE_USING) Linker version \"$(LINK_VER)\" \n" \
 	    "" >> $(WARNING_FILE) ; \
 	fi
@@ -1295,11 +1327,6 @@ endif
 # Check the compiler version(s)
 ######################################################
 CC_CHECK  :=$(call CheckVersions,$(CC_VER),$(REQUIRED_CC_VER))
-ifeq ($(PLATFORM), solaris)
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    GCC_CHECK :=$(call CheckVersions,$(GCC_VER),$(REQUIRED_GCC_VER))
-  endif
-endif
 sane-compiler: sane-link
 	@if [ "$(CC_CHECK)" = "missing" ]; then \
 	  $(ECHO) "ERROR: The Compiler version is undefined. \n" \
@@ -1307,69 +1334,36 @@ sane-compiler: sane-link
 	fi
 ifndef OPENJDK
 	@if [ "$(CC_CHECK)" != "same" ]; then \
-	      $(ECHO) "WARNING: The $(PLATFORM) compiler is not version $(COMPILER_VERSION) $(REQUIRED_CC_VER) \n" \
-	      "      Specifically the $(COMPILER_NAME) compiler. \n " \
-	      "      $(YOU_ARE_USING) compiler version: $(CC_VER) \n" \
+	      $(ECHO) "WARNING: The $(PLATFORM) compiler is not version $(REQUIRED_COMPILER_VERSION) $(REQUIRED_CC_VER) \n" \
+	      "      Specifically the $(REQUIRED_COMPILER_NAME) compiler. \n " \
+	      "      $(YOU_ARE_USING) $(COMPILER_VERSION): $(CC_VER) \n" \
 	      "      The compiler was obtained from the following location: \n" \
 	      "          $(COMPILER_PATH) \n" \
 	      "" >> $(WARNING_FILE) ; \
          fi
-  ifdef GCC_CHECK
-	  @if [ "$(GCC_CHECK)" != "same" ]; then \
-	      $(ECHO) "WARNING: The $(PLATFORM) GCC compiler must be version $(REQUIRED_GCC_VER) \n" \
-	      "      $(YOU_ARE_USING) compiler version: $(GCC_VER) \n" \
-	      "      The compiler was obtained from the following location: \n" \
-	      "          $(GCC_COMPILER_PATH) \n" \
-	      "      Please change your compiler. \n" \
-	      "" >> $(WARNING_FILE) ; \
-	  fi
-  endif
-  ifeq ($(PLATFORM), windows)
-    ifeq ($(ARCH_DATA_MODEL), 64)
-      ifneq ($(COMPILER_VERSION), VS2005)
-	@$(ECHO) "WARNING: Should be using VS2005 compiler on 64bit platform. \n" \
-	    "" >> $(WARNING_FILE)
-      endif
-    endif
-  endif
 endif
 
 ######################################################
 # Check that ALSA headers and libs are installed and 
 # that the header has the right version. We only
-# need /usr/include/alsa/*.h and /usr/lib/libasound.so
+# need /usr/include/alsa/version.h and /usr/lib/libasound.so
 ######################################################
 
-ifdef ALSA_VERSION_CHECK
-$(ALSA_VERSION_CHECK): $(ALSA_VERSION_CHECK).c
-	@$(prep-target)
-	@$(CC) -lasound -o $@ $<
-
-$(ALSA_VERSION_CHECK).c:
-	@$(prep-target)
-	@$(ECHO) "#include <alsa/asoundlib.h>\n" \
-		 "#include <stdio.h>\n" \
-		 "int main(int argc, char** argv) {\n" \
-		 "  printf(\"%s\", SND_LIB_VERSION_STR);\n" \
-		 "  return 0;\n" \
-		 "}\n" \
-                    > $@
+ifdef REQUIRED_ALSA_VERSION
+  ALSA_CHECK := $(call CheckVersions,$(ALSA_VERSION),$(REQUIRED_ALSA_VERSION))
 endif
-
-sane-alsa-versioncheck: $(ALSA_VERSION_CHECK)
-sane-alsa-headers: sane-alsa-versioncheck
-ifdef ALSA_VERSION_CHECK
-	@if [ -f "$(ALSA_VERSION_CHECK)" ]; then \
-	  if [ `$(ALSA_VERSION_CHECK) | $(EGREP) -c '$(REQUIRED_ALSA_VERSION)'` -ne 1 ] ; then \
-	    $(ECHO) "ERROR: The ALSA version must be 0.9.1 or higher. \n" \
-	      "      You have the following ALSA version installed: $(ALSA_VERSION) \n" \
+sane-alsa-headers:
+ifdef REQUIRED_ALSA_VERSION
+        if [ "$(ALSA_CHECK)" != "same" -a "$(ALSA_CHECK)" != "newer"  ] ; then \
+	    $(ECHO) "ERROR: The ALSA version must be $(REQUIRED_ALSA_VERSION) or higher. \n" \
+	      "      You have the following ALSA version installed: $${alsa_version) \n" \
 	      "      Please reinstall ALSA (drivers and lib). You can download \n" \
 	      "      the source distribution from http://www.alsa-project.org \n" \
 	      "      or go to http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
 	      "" >> $(ERROR_FILE) ; \
 	  fi \
 	else \
-	  $(ECHO) "ERROR: You seem to not have installed ALSA 0.9.1 or higher. \n" \
+	  $(ECHO) "ERROR: You seem to not have installed ALSA $(REQUIRED_ALSA_VERSION) or higher. \n" \
 	  "      Please install ALSA (drivers and lib). You can download the \n" \
 	  "      source distribution from http://www.alsa-project.org or go to \n" \
 	  "      http://www.freshrpms.net/docs/alsa/ for precompiled RPM packages. \n" \
@@ -1384,7 +1378,7 @@ $(SANITY_FILES):
 ######################################################
 # dump out the variable settings...
 ######################################################
-sane-settings:: sane-alsa-versioncheck
+sane-settings::
 	@$(ECHO)  >> $(MESSAGE_FILE)
 	@$(ECHO) $(ALL_SETTINGS)  >> $(MESSAGE_FILE)
 	@$(ECHO)  >> $(MESSAGE_FILE)
@@ -1453,8 +1447,8 @@ sane-gcc-compiler:
 ifeq ($(PLATFORM), solaris)
   ifndef OPENJDK
     @if [ -r $(GCC_COMPILER_PATH) ]; then \
-	  if [ ! "$(GCC_VER)" = 2.95.2 ]; then \
-	    $(ECHO) "ERROR: The Solaris GCC compiler version must be 2.95.2. \n" \
+	  if [ ! "$(GCC_VER)" = $(REQUIRED_GCC_VERSION) ]; then \
+	    $(ECHO) "ERROR: The Solaris GCC compiler version must be $(REQUIRED_GCC_VERSION). \n" \
 	      "      You are using the following compiler version: $(GCC_VER) \n" \
 	      "      The compiler was obtained from the following location: \n" \
 	      "          $(GCC_COMPILER_PATH) \n" \

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1354,6 +1354,13 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case slow_subtype_check_id:
       {
+        // Typical calling sequence:
+        // __ push(klass_RInfo);  // object klass or other subclass
+        // __ push(sup_k_RInfo);  // array element klass or other superclass
+        // __ call(slow_subtype_check);
+        // Note that the subclass is pushed first, and is therefore deepest.
+        // Previous versions of this code reversed the names 'sub' and 'super'.
+        // This was operationally harmless but made the code unreadable.
         enum layout {
           rax_off, SLOT2(raxH_off)
           rcx_off, SLOT2(rcxH_off)
@@ -1361,9 +1368,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           rdi_off, SLOT2(rdiH_off)
           // saved_rbp_off, SLOT2(saved_rbpH_off)
           return_off, SLOT2(returnH_off)
-          sub_off, SLOT2(subH_off)
-          super_off, SLOT2(superH_off)
-          framesize
+          sup_k_off, SLOT2(sup_kH_off)
+          klass_off, SLOT2(superH_off)
+          framesize,
+          result_off = klass_off  // deepest argument is also the return value
         };
 
         __ set_info("slow_subtype_check", dont_gc_arguments);
@@ -1373,19 +1381,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ push(rax);
 
         // This is called by pushing args and not with C abi
-        __ movptr(rsi, Address(rsp, (super_off) * VMRegImpl::stack_slot_size)); // super
-        __ movptr(rax, Address(rsp, (sub_off  ) * VMRegImpl::stack_slot_size)); // sub
-
-        __ movptr(rdi,Address(rsi,sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes()));
-        // since size is postive movl does right thing on 64bit
-        __ movl(rcx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
-        __ addptr(rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+        __ movptr(rsi, Address(rsp, (klass_off) * VMRegImpl::stack_slot_size)); // subclass
+        __ movptr(rax, Address(rsp, (sup_k_off) * VMRegImpl::stack_slot_size)); // superclass
 
         Label miss;
-        __ repne_scan();
-        __ jcc(Assembler::notEqual, miss);
-        __ movptr(Address(rsi,sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes()), rax);
-        __ movptr(Address(rsp, (super_off) * VMRegImpl::stack_slot_size), 1); // result
+        __ check_klass_subtype_slow_path(rsi, rax, rcx, rdi, NULL, &miss);
+
+        // fallthrough on success:
+        __ movptr(Address(rsp, (result_off) * VMRegImpl::stack_slot_size), 1); // result
         __ pop(rax);
         __ pop(rcx);
         __ pop(rsi);
@@ -1393,7 +1396,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ ret(0);
 
         __ bind(miss);
-        __ movptr(Address(rsp, (super_off) * VMRegImpl::stack_slot_size), NULL_WORD); // result
+        __ movptr(Address(rsp, (result_off) * VMRegImpl::stack_slot_size), NULL_WORD); // result
         __ pop(rax);
         __ pop(rcx);
         __ pop(rsi);

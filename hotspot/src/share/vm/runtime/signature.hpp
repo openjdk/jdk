@@ -266,7 +266,7 @@ class Fingerprinter: public SignatureIterator {
 class NativeSignatureIterator: public SignatureIterator {
  private:
   methodHandle _method;
-// We need seperate JNI and Java offset values because in 64 bit mode,
+// We need separate JNI and Java offset values because in 64 bit mode,
 // the argument offsets are not in sync with the Java stack.
 // For example a long takes up 1 "C" stack entry but 2 Java stack entries.
   int          _offset;                // The java stack offset
