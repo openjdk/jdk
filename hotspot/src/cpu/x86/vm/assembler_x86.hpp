@@ -1857,6 +1857,16 @@ class MacroAssembler: public Assembler {
                            Register temp_reg,
                            Label& L_success);
 
+  // method handles (JSR 292)
+  void check_method_handle_type(Register mtype_reg, Register mh_reg,
+                                Register temp_reg,
+                                Label& wrong_method_type);
+  void load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
+                                  Register temp_reg);
+  void jump_to_method_handle_entry(Register mh_reg, Register temp_reg);
+  Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
+
+
   //----
   void set_word_if_not_zero(Register reg); // sets reg to 1 if not zero, otherwise 0
 

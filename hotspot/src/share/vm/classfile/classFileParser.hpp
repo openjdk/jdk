@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   u2   _major_version;
   u2   _minor_version;
   symbolHandle _class_name;
+  KlassHandle _host_klass;
   GrowableArray<Handle>* _cp_patches; // overrides for CP entries
 
   bool _has_finalizer;
@@ -145,6 +146,11 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // Adjust the next_nonstatic_oop_offset to place the fake fields
   // before any Java fields.
   void java_lang_Class_fix_post(int* next_nonstatic_oop_offset);
+  // Adjust the field allocation counts for java.dyn.MethodHandle to add
+  // a fake address (void*) field.
+  void java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
+                                     typeArrayHandle* fields_ptr,
+                                     FieldAllocationCount *fac_ptr, TRAPS);
 
   // Format checker methods
   void classfile_parse_error(const char* msg, TRAPS);
@@ -204,6 +210,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   char* skip_over_field_name(char* name, bool slash_ok, unsigned int length);
   char* skip_over_field_signature(char* signature, bool void_ok, unsigned int length, TRAPS);
 
+  bool is_anonymous() {
+    assert(AnonymousClasses || _host_klass.is_null(), "");
+    return _host_klass.not_null();
+  }
   bool has_cp_patch_at(int index) {
     assert(AnonymousClasses, "");
     assert(index >= 0, "oob");
@@ -249,11 +259,13 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                      Handle protection_domain,
                                      symbolHandle& parsed_name,
                                      TRAPS) {
-    return parseClassFile(name, class_loader, protection_domain, NULL, parsed_name, THREAD);
+    KlassHandle no_host_klass;
+    return parseClassFile(name, class_loader, protection_domain, no_host_klass, NULL, parsed_name, THREAD);
   }
   instanceKlassHandle parseClassFile(symbolHandle name,
                                      Handle class_loader,
                                      Handle protection_domain,
+                                     KlassHandle host_klass,
                                      GrowableArray<Handle>* cp_patches,
                                      symbolHandle& parsed_name,
                                      TRAPS);

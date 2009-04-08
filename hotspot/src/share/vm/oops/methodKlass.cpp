@@ -298,7 +298,11 @@ void methodKlass::oop_print_on(oop obj, outputStream* st) {
     m->code()->print_value_on(st);
     st->cr();
   }
-  if (m->is_native()) {
+  if (m->is_method_handle_invoke()) {
+    st->print_cr(" - invoke method type: " INTPTR_FORMAT, (address) m->method_handle_type());
+    // m is classified as native, but it does not have an interesting
+    // native_function or signature handler
+  } else if (m->is_native()) {
     st->print_cr(" - native function:   " INTPTR_FORMAT, m->native_function());
     st->print_cr(" - signature handler: " INTPTR_FORMAT, m->signature_handler());
   }

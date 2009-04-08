@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ char* NativeLookup::long_jni_name(methodHandle method) {
 
 extern "C" {
   void JNICALL JVM_RegisterUnsafeMethods(JNIEnv *env, jclass unsafecls);
+  void JNICALL JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterPerfMethods(JNIEnv *env, jclass perfclass);
 }
 
@@ -96,6 +97,9 @@ static address lookup_special_native(char* jni_name) {
   }
   if (strstr(jni_name, "Java_sun_misc_Unsafe_registerNatives") != NULL) {
     return CAST_FROM_FN_PTR(address, JVM_RegisterUnsafeMethods);
+  }
+  if (strstr(jni_name, "Java_sun_dyn_MethodHandleNatives_registerNatives") != NULL) {
+    return CAST_FROM_FN_PTR(address, JVM_RegisterMethodHandleMethods);
   }
   if (strstr(jni_name, "Java_sun_misc_Perf_registerNatives") != NULL) {
     return CAST_FROM_FN_PTR(address, JVM_RegisterPerfMethods);
