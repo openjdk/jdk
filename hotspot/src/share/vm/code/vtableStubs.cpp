@@ -107,13 +107,11 @@ address VtableStubs::create_stub(bool is_vtable_stub, int vtable_index, methodOo
       s = create_itable_stub(vtable_index);
     }
     enter(is_vtable_stub, vtable_index, s);
-#ifndef PRODUCT
     if (PrintAdapterHandlers) {
       tty->print_cr("Decoding VtableStub %s[%d]@%d",
                     is_vtable_stub? "vtbl": "itbl", vtable_index, VtableStub::receiver_location());
       Disassembler::decode(s->code_begin(), s->code_end());
     }
-#endif
   }
   return s->entry_point();
 }
