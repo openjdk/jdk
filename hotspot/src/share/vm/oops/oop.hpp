@@ -263,6 +263,9 @@ class oopDesc {
   jdouble double_field_acquire(int offset) const;
   void release_double_field_put(int offset, jdouble contents);
 
+  address address_field_acquire(int offset) const;
+  void release_address_field_put(int offset, address contents);
+
   // printing functions for VM debugging
   void print_on(outputStream* st) const;         // First level print
   void print_value_on(outputStream* st) const;   // Second level print.

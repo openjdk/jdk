@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,6 +673,30 @@ int ciMethod::scale_count(int count, float prof_factor) {
   }
   return count;
 }
+
+// ------------------------------------------------------------------
+// invokedynamic support
+//
+bool ciMethod::is_method_handle_invoke() {
+  check_is_loaded();
+  bool flag = ((flags().as_int() & JVM_MH_INVOKE_BITS) == JVM_MH_INVOKE_BITS);
+#ifdef ASSERT
+  {
+    VM_ENTRY_MARK;
+    bool flag2 = get_methodOop()->is_method_handle_invoke();
+    assert(flag == flag2, "consistent");
+  }
+#endif //ASSERT
+  return flag;
+}
+
+ciInstance* ciMethod::method_handle_type() {
+  check_is_loaded();
+  VM_ENTRY_MARK;
+  oop mtype = get_methodOop()->method_handle_type();
+  return CURRENT_THREAD_ENV->get_object(mtype)->as_instance();
+}
+
 
 // ------------------------------------------------------------------
 // ciMethod::build_method_data

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,3 +217,112 @@ class DictionaryEntry : public HashtableEntry {
     tty->print_cr("pd set = #%d", count);
   }
 };
+
+// Entry in a SymbolPropertyTable, mapping a single symbolOop
+// to a managed and an unmanaged pointer.
+class SymbolPropertyEntry : public HashtableEntry {
+  friend class VMStructs;
+ private:
+  oop     _property_oop;
+  address _property_data;
+
+ public:
+  symbolOop symbol() const          { return (symbolOop) literal(); }
+
+  oop      property_oop() const     { return _property_oop; }
+  void set_property_oop(oop p)      { _property_oop = p; }
+
+  address  property_data() const    { return _property_data; }
+  void set_property_data(address p) { _property_data = p; }
+
+  SymbolPropertyEntry* next() const {
+    return (SymbolPropertyEntry*)HashtableEntry::next();
+  }
+
+  SymbolPropertyEntry** next_addr() {
+    return (SymbolPropertyEntry**)HashtableEntry::next_addr();
+  }
+
+  oop* symbol_addr()                { return literal_addr(); }
+  oop* property_oop_addr()          { return &_property_oop; }
+
+  void print_on(outputStream* st) const {
+    symbol()->print_value_on(st);
+    st->print(" -> ");
+    bool printed = false;
+    if (property_oop() != NULL) {
+      property_oop()->print_value_on(st);
+      printed = true;
+    }
+    if (property_data() != NULL) {
+      if (printed)  st->print(" and ");
+      st->print(INTPTR_FORMAT, property_data());
+      printed = true;
+    }
+    st->print_cr(printed ? "" : "(empty)");
+  }
+};
+
+// A system-internal mapping of symbols to pointers, both managed
+// and unmanaged.  Used to record the auto-generation of each method
+// MethodHandle.invoke(S)T, for all signatures (S)T.
+class SymbolPropertyTable : public Hashtable {
+  friend class VMStructs;
+private:
+  SymbolPropertyEntry* bucket(int i) {
+    return (SymbolPropertyEntry*) Hashtable::bucket(i);
+  }
+
+  // The following method is not MT-safe and must be done under lock.
+  SymbolPropertyEntry** bucket_addr(int i) {
+    return (SymbolPropertyEntry**) Hashtable::bucket_addr(i);
+  }
+
+  void add_entry(int index, SymbolPropertyEntry* new_entry) {
+    ShouldNotReachHere();
+  }
+  void set_entry(int index, SymbolPropertyEntry* new_entry) {
+    ShouldNotReachHere();
+  }
+
+  SymbolPropertyEntry* new_entry(unsigned int hash, symbolOop symbol) {
+    SymbolPropertyEntry* entry = (SymbolPropertyEntry*) Hashtable::new_entry(hash, symbol);
+    entry->set_property_oop(NULL);
+    entry->set_property_data(NULL);
+    return entry;
+  }
+
+public:
+  SymbolPropertyTable(int table_size);
+  SymbolPropertyTable(int table_size, HashtableBucket* t, int number_of_entries);
+
+  void free_entry(SymbolPropertyEntry* entry) {
+    Hashtable::free_entry(entry);
+  }
+
+  unsigned int compute_hash(symbolHandle sym) {
+    // Use the regular identity_hash.
+    return Hashtable::compute_hash(sym);
+  }
+
+  // need not be locked; no state change
+  SymbolPropertyEntry* find_entry(int index, unsigned int hash, symbolHandle name);
+
+  // must be done under SystemDictionary_lock
+  SymbolPropertyEntry* add_entry(int index, unsigned int hash, symbolHandle name);
+
+  // GC support
+  void oops_do(OopClosure* f);
+  void methods_do(void f(methodOop));
+
+  // Sharing support
+  void dump(SerializeOopClosure* soc);
+  void restore(SerializeOopClosure* soc);
+  void reorder_dictionary();
+
+#ifndef PRODUCT
+  void print();
+#endif
+  void verify();
+};
+

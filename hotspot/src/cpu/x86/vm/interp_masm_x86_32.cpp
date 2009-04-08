@@ -555,13 +555,18 @@ void InterpreterMacroAssembler::super_call_VM_leaf(address entry_point, Register
 }
 
 
-// Jump to from_interpreted entry of a call unless single stepping is possible
-// in this thread in which case we must call the i2i entry
-void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register temp) {
+void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
   lea(rsi, Address(rsp, wordSize));
   // record last_sp
   movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), rsi);
+}
+
+
+// Jump to from_interpreted entry of a call unless single stepping is possible
+// in this thread in which case we must call the i2i entry
+void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register temp) {
+  prepare_to_jump_from_interpreted();
 
   if (JvmtiExport::can_post_interpreter_events()) {
     Label run_compiled_code;

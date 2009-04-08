@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   }
   address generate_exception_handler_common(const char* name, const char* message, bool pass_oop);
   address generate_ClassCastException_handler();
+  address generate_WrongMethodType_handler();
   address generate_ArrayIndexOutOfBounds_handler(const char* name);
   address generate_continuation_for(TosState state);
   address generate_return_entry_for(TosState state, int step);
