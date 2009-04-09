@@ -1,12 +1,10 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,8 +21,7 @@
  * have any questions.
  */
 
-package sun.misc;
-
-public interface JavaIODeleteOnExitAccess extends Runnable {
-    public void run();
-}
+/**
+ * Test package 1 used to test table tags.
+ */
+package pkg1;
