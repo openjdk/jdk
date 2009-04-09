@@ -210,6 +210,8 @@ public:
                                              LPARAM lParam);
     static LRESULT CALLBACK ForegroundIdleFilter(int code, WPARAM wParam,
                                                  LPARAM lParam);
+    static LRESULT CALLBACK MouseLowLevelHook(int code, WPARAM wParam,
+            LPARAM lParam);
 
     INLINE static AwtToolkit& GetInstance() { return theInstance; }
     INLINE void SetPeer(JNIEnv *env, jobject wToolkit) {
@@ -311,6 +313,30 @@ public:
     HICON GetAwtIcon();
     HICON GetAwtIconSm();
 
+    // Calculate a wave-like value out of the integer 'value' and
+    // the specified period.
+    // The argument 'value' is an integer 0, 1, 2, ... *infinity*.
+    //
+    // Examples:
+    //    Period == 3
+    //    Generated sequence: 0 1 2 1 0 .....
+    //
+    //    Period == 4
+    //    Generated sequence: 0 1 2 3 2 1 0 .....
+    static inline UINT CalculateWave(UINT value, const UINT period) {
+        if (period < 2) {
+            return 0;
+        }
+        // -2 is necessary to avoid repeating extreme values (0 and period-1)
+        value %= period * 2 -2;
+        if (value >= period) {
+            value = period * 2 -2 - value;
+        }
+        return value;
+    }
+
+    HICON GetSecurityWarningIcon(UINT index, UINT w, UINT h);
+
     /* Turns on/off dialog modality for the system. */
     INLINE AwtDialog* SetModal(AwtDialog* frame) {
         AwtDialog* previousDialog = m_pModalDialog;
@@ -368,6 +394,7 @@ private:
     BOOL                m_mouseDown;
 
     HHOOK m_hGetMessageHook;
+    HHOOK m_hMouseLLHook;
     UINT_PTR  m_timer;
 
     class AwtCmdIDList* m_cmdIDs;
@@ -411,6 +438,24 @@ public:
  public:
     static void SetEnv(JNIEnv *env);
     static JNIEnv* GetEnv();
+
+    static BOOL GetScreenInsets(int screenNum, RECT * rect);
+
+    // If the DWM is active, this function uses
+    // DwmGetWindowAttribute()/DWMWA_EXTENDED_FRAME_BOUNDS.
+    // Otherwise, fall back to regular ::GetWindowRect().
+    // See 6711576 for more details.
+    static void GetWindowRect(HWND hWnd, LPRECT lpRect);
+
+ private:
+    // The window handle of a toplevel window last seen under the mouse cursor.
+    // See MouseLowLevelHook() for details.
+    HWND m_lastWindowUnderMouse;
+ public:
+    HWND GetWindowUnderMouse() { return m_lastWindowUnderMouse; }
+
+    void InstallMouseLowLevelHook();
+    void UninstallMouseLowLevelHook();
 };
 
 /*

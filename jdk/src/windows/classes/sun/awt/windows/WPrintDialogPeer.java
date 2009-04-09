@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,17 +143,9 @@ public class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
      */
     private static native void initIDs();
 
-    /**
-     * WPrintDialogPeer doesn't have native pData so we don't do restack on it
-     * @see java.awt.peer.ContainerPeer#restack
-     */
-    public void restack() {
-    }
-
-    /**
-     * @see java.awt.peer.ContainerPeer#isRestackSupported
-     */
-    public boolean isRestackSupported() {
-        return false;
-    }
+    // The effects are not supported for system dialogs.
+    public void applyShape(sun.java2d.pipe.Region shape) {}
+    public void setOpacity(float opacity) {}
+    public void setOpaque(boolean isOpaque) {}
+    public void updateWindow(java.awt.image.BufferedImage backBuffer) {}
 }

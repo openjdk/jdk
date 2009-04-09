@@ -76,21 +76,4 @@ public interface ContainerPeer extends ComponentPeer {
      * @see Container#validateTree()
      */
     void endLayout();
-
-    /**
-     * Restacks native windows - children of this native window - according to
-     * Java container order.
-     *
-     * @since 1.5
-     */
-    void restack();
-
-    /**
-     * Indicates availability of restacking operation in this container.
-     *
-     * @return Returns true if restack is supported, false otherwise
-     *
-     * @since 1.5
-     */
-    boolean isRestackSupported();
 }
