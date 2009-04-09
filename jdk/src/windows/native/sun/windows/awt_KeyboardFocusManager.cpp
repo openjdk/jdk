@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,30 +24,20 @@
  */
 
 #include "awt.h"
-#include "awt_KeyboardFocusManager.h"
 #include "awt_Component.h"
 #include "awt_Toolkit.h"
 #include <java_awt_KeyboardFocusManager.h>
-
-jclass AwtKeyboardFocusManager::keyboardFocusManagerCls;
-jmethodID AwtKeyboardFocusManager::shouldNativelyFocusHeavyweightMID;
-jmethodID AwtKeyboardFocusManager::heavyweightButtonDownMID;
-jmethodID AwtKeyboardFocusManager::markClearGlobalFocusOwnerMID;
-jmethodID AwtKeyboardFocusManager::removeLastFocusRequestMID;
-jfieldID  AwtKeyboardFocusManager::isProxyActive;
-jmethodID AwtKeyboardFocusManager::processSynchronousTransfer;
+#include <jni.h>
 
 static jobject getNativeFocusState(JNIEnv *env, void*(*ftn)()) {
-    jobject lFocusState = NULL;
+    jobject gFocusState = (jobject)AwtToolkit::GetInstance().SyncCall(ftn);
 
-    jobject gFocusState = reinterpret_cast<jobject>(AwtToolkit::GetInstance().
-        InvokeFunction(ftn));
     if (gFocusState != NULL) {
-        lFocusState = env->NewLocalRef(gFocusState);
+        jobject lFocusState = env->NewLocalRef(gFocusState);
         env->DeleteGlobalRef(gFocusState);
+        return lFocusState;
     }
-
-    return lFocusState;
+    return NULL;
 }
 
 extern "C" {
@@ -61,53 +51,35 @@ JNIEXPORT void JNICALL
 Java_java_awt_KeyboardFocusManager_initIDs
     (JNIEnv *env, jclass cls)
 {
+}
+
+/*
+ * Class:     sun_awt_windows_WKeyboardFocusManagerPeer
+ * Method:    setNativeFocusOwner
+ * Signature: (Lsun/awt/windows/WComponentPeer)
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WKeyboardFocusManagerPeer_setNativeFocusOwner
+    (JNIEnv *env, jclass cls, jobject compPeer)
+{
     TRY;
 
-    AwtKeyboardFocusManager::keyboardFocusManagerCls = (jclass)
-        env->NewGlobalRef(cls);
-    AwtKeyboardFocusManager::shouldNativelyFocusHeavyweightMID =
-        env->GetStaticMethodID(cls, "shouldNativelyFocusHeavyweight",
-            "(Ljava/awt/Component;Ljava/awt/Component;ZZJLsun/awt/CausedFocusEvent$Cause;)I");
-    AwtKeyboardFocusManager::heavyweightButtonDownMID =
-        env->GetStaticMethodID(cls, "heavyweightButtonDown",
-            "(Ljava/awt/Component;J)V");
-    AwtKeyboardFocusManager::markClearGlobalFocusOwnerMID =
-        env->GetStaticMethodID(cls, "markClearGlobalFocusOwner",
-                               "()Ljava/awt/Window;");
-    AwtKeyboardFocusManager::removeLastFocusRequestMID =
-        env->GetStaticMethodID(cls, "removeLastFocusRequest",
-                               "(Ljava/awt/Component;)V");
+    jobject peerGlobalRef = env->NewGlobalRef(compPeer);
 
-    AwtKeyboardFocusManager::processSynchronousTransfer =
-        env->GetStaticMethodID(cls, "processSynchronousLightweightTransfer",
-                               "(Ljava/awt/Component;Ljava/awt/Component;ZZJ)Z");
+    AwtToolkit::GetInstance().SyncCall(AwtComponent::SetNativeFocusOwner,
+                                       (void*)peerGlobalRef);
+    // peerGlobalRef is deleted in SetNativeFocusOwner
 
-    jclass keyclass = env->FindClass("java/awt/event/KeyEvent");
-    DASSERT (keyclass != NULL);
-
-    AwtKeyboardFocusManager::isProxyActive =
-        env->GetFieldID(keyclass, "isProxyActive", "Z");
-
-    env->DeleteLocalRef(keyclass);
-
-    DASSERT(AwtKeyboardFocusManager::keyboardFocusManagerCls != NULL);
-    DASSERT(AwtKeyboardFocusManager::shouldNativelyFocusHeavyweightMID !=
-            NULL);
-    DASSERT(AwtKeyboardFocusManager::heavyweightButtonDownMID != NULL);
-    DASSERT(AwtKeyboardFocusManager::markClearGlobalFocusOwnerMID != NULL);
-    DASSERT(AwtKeyboardFocusManager::removeLastFocusRequestMID != NULL);
-    DASSERT(AwtKeyboardFocusManager::processSynchronousTransfer != NULL);
     CATCH_BAD_ALLOC;
 }
 
-
 /*
- * Class:     sun_awt_KeyboardFocusManagerPeerImpl
+ * Class:     sun_awt_windows_WKeyboardFocusManagerPeer
  * Method:    getNativeFocusOwner
- * Signature: ()Ljava/awt/Component;
+ * Signature: (Lsun/awt/windows/WComponentPeer)
  */
 JNIEXPORT jobject JNICALL
-Java_sun_awt_KeyboardFocusManagerPeerImpl_getNativeFocusOwner
+Java_sun_awt_windows_WKeyboardFocusManagerPeer_getNativeFocusOwner
     (JNIEnv *env, jclass cls)
 {
     TRY;
@@ -118,12 +90,12 @@ Java_sun_awt_KeyboardFocusManagerPeerImpl_getNativeFocusOwner
 }
 
 /*
- * Class:     sun_awt_KeyboardFocusManagerPeerImpl
+ * Class:     sun_awt_windows_WKeyboardFocusManagerPeer
  * Method:    getNativeFocusedWindow
  * Signature: ()Ljava/awt/Window;
  */
 JNIEXPORT jobject JNICALL
-Java_sun_awt_KeyboardFocusManagerPeerImpl_getNativeFocusedWindow
+Java_sun_awt_windows_WKeyboardFocusManagerPeer_getNativeFocusedWindow
     (JNIEnv *env, jclass cls)
 {
     TRY;
@@ -131,22 +103,5 @@ Java_sun_awt_KeyboardFocusManagerPeerImpl_getNativeFocusedWindow
     return getNativeFocusState(env, AwtComponent::GetNativeFocusedWindow);
 
     CATCH_BAD_ALLOC_RET(NULL);
-}
-
-/*
- * Class:     sun_awt_KeyboardFocusManagerPeerImpl
- * Method:    clearNativeGlobalFocusOwner
- * Signature: (Ljava/awt/Window;)V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_KeyboardFocusManagerPeerImpl_clearNativeGlobalFocusOwner
-    (JNIEnv *env, jobject self, jobject activeWindow)
-{
-    TRY;
-
-    AwtToolkit::GetInstance().InvokeFunction
-        ((void*(*)(void))AwtComponent::ClearGlobalFocusOwner);
-
-    CATCH_BAD_ALLOC;
 }
 }

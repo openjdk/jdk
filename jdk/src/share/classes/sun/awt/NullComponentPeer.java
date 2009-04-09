@@ -278,19 +278,6 @@ public class NullComponentPeer implements LightweightPeer,
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * @see java.awt.peer.ContainerPeer#restack
-     */
-    public void restack() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * @see java.awt.peer.ContainerPeer#isRestackSupported
-     */
-    public boolean isRestackSupported() {
-        return false;
-    }
     public void layout() {
     }
 
@@ -304,5 +291,20 @@ public class NullComponentPeer implements LightweightPeer,
       * @since 1.7
       */
     public void applyShape(Region shape) {
+    }
+
+    /**
+     * Lowers this component at the bottom of the above HW peer. If the above parameter
+     * is null then the method places this component at the top of the Z-order.
+     */
+    public void setZOrder(ComponentPeer above) {
+    }
+
+    public void updateGraphicsData(GraphicsConfiguration gc) {}
+
+    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
+                        GraphicsConfiguration gc)
+    {
+        return gc;
     }
 }

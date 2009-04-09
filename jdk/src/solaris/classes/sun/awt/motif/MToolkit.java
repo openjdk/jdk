@@ -336,6 +336,10 @@ public class MToolkit extends UNIXToolkit implements Runnable {
         return null;
     }
 
+    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) {
+        return null;
+    }
+
     //public MEmbeddedFramePeer createEmbeddedFrame(MEmbeddedFrame target)
     //{
         //MEmbeddedFramePeer peer = new MEmbeddedFramePeer(target);
