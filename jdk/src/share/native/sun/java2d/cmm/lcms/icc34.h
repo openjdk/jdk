@@ -206,6 +206,11 @@ typedef __int32_t       icInt64Number[2];
 
 #if defined(__sun) || defined(__hpux) || defined (__MINGW) || defined(__MINGW32__)
 
+#if defined (__MINGW) || defined(__MINGW32__)
+#include <stdint.h>
+#endif
+
+
 typedef uint8_t   icUInt8Number;
 typedef uint16_t  icUInt16Number;
 typedef uint32_t  icUInt32Number;

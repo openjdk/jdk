@@ -35,6 +35,7 @@ import java.util.*;
  * generate overview-frame.html as well as overview-summary.html.
  *
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
 
@@ -61,7 +62,7 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
 
     protected abstract void printOverviewHeader();
 
-    protected abstract void printIndexHeader(String text);
+    protected abstract void printIndexHeader(String text, String tableSummary);
 
     protected abstract void printIndexRow(PackageDoc pkg);
 
@@ -101,7 +102,10 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * Generate the frame or non-frame package index.
      */
     protected void generateIndex() {
-        printIndexContents(packages, "doclet.Package_Summary");
+        printIndexContents(packages, "doclet.Package_Summary",
+                configuration.getText("doclet.Member_Table_Summary",
+                configuration.getText("doclet.Package_Summary"),
+                configuration.getText("doclet.packages")));
     }
 
     /**
@@ -111,10 +115,10 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * @param packages Array of packages to be documented.
      * @param text     String which will be used as the heading.
      */
-    protected void printIndexContents(PackageDoc[] packages, String text) {
+    protected void printIndexContents(PackageDoc[] packages, String text, String tableSummary) {
         if (packages.length > 0) {
             Arrays.sort(packages);
-            printIndexHeader(text);
+            printIndexHeader(text, tableSummary);
             printAllClassesPackagesLink();
             for(int i = 0; i < packages.length; i++) {
                 if (packages[i] != null) {

@@ -25,8 +25,6 @@
 
 package java.lang;
 
-import java.util.ArrayList;
-
 
 /**
  * Package-private utility class containing data structures and logic
@@ -47,8 +45,13 @@ class Shutdown {
     /* Should we run all finalizers upon exit? */
     private static boolean runFinalizersOnExit = false;
 
-    /* The set of registered, wrapped hooks, or null if there aren't any */
-    private static ArrayList<Runnable> hooks = new ArrayList<Runnable>();
+    // The system shutdown hooks are registered with a predefined slot.
+    // The list of shutdown hooks is as follows:
+    // (0) Console restore hook
+    // (1) Application hooks
+    // (2) DeleteOnExit hook
+    private static final int MAX_SYSTEM_HOOKS = 10;
+    private static final Runnable[] hooks = new Runnable[MAX_SYSTEM_HOOKS];
 
     /* The preceding static fields are protected by this lock */
     private static class Lock { };
@@ -68,32 +71,17 @@ class Shutdown {
     /* Add a new shutdown hook.  Checks the shutdown state and the hook itself,
      * but does not do any security checks.
      */
-    static void add(Runnable hook) {
+    static void add(int slot, Runnable hook) {
         synchronized (lock) {
             if (state > RUNNING)
                 throw new IllegalStateException("Shutdown in progress");
 
-            hooks.add(hook);
+            if (hooks[slot] != null)
+                throw new InternalError("Shutdown hook at slot " + slot + " already registered");
+
+            hooks[slot] = hook;
         }
     }
-
-
-    /* Remove a previously-registered hook.  Like the add method, this method
-     * does not do any security checks.
-     */
-    static boolean remove(Runnable hook) {
-        synchronized (lock) {
-            if (state > RUNNING)
-                throw new IllegalStateException("Shutdown in progress");
-            if (hook == null) throw new NullPointerException();
-            if (hooks == null) {
-                return false;
-            } else {
-                return hooks.remove(hook);
-            }
-        }
-    }
-
 
     /* Run all registered shutdown hooks
      */
@@ -103,7 +91,7 @@ class Shutdown {
          */
         for (Runnable hook : hooks) {
             try {
-                hook.run();
+                if (hook != null) hook.run();
             } catch(Throwable t) {
                 if (t instanceof ThreadDeath) {
                     ThreadDeath td = (ThreadDeath)t;

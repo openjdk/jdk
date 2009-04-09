@@ -145,6 +145,11 @@ endif
 #     2. ALT_BINARY_PLUGS_PATH overrides all locations of classes and libraries
 #     3. ALT_BUILD_BINARY_PLUGS_PATH is used to find a ALT_BINARY_PLUGS_PATH
 #     4. ALT_CLOSED_JDK_IMPORT_PATH is used to locate classes and libraries
+#   Note: If any of the ALT_ variables are modified here, it is assumed
+#         that the build should be done with IMPORT_BINARY_PLUGS=true as
+#         well.  Otherwise the default will be IMPORT_BINARY_PLUGS=false.
+#         Lastly, setting IMPORT_BINARY_PLUGS=false on the command line
+#         will override this logic, and plugs will not be imported.
 #
 
 # Always needed, defines the name of the imported/exported jarfile
@@ -155,9 +160,11 @@ ifdef OPENJDK
     CLOSED_JDK_IMPORT_PATH = $(ALT_CLOSED_JDK_IMPORT_PATH)
     BINARY_PLUGS_PATH = $(CLOSED_JDK_IMPORT_PATH)
     BINARY_PLUGS_JARFILE = $(CLOSED_JDK_IMPORT_PATH)/jre/lib/rt.jar
+    IMPORT_BINARY_PLUGS=true
   endif
   ifdef ALT_BUILD_BINARY_PLUGS_PATH
     BUILD_BINARY_PLUGS_PATH = $(ALT_BUILD_BINARY_PLUGS_PATH)
+    IMPORT_BINARY_PLUGS=true
   else
     BUILD_BINARY_PLUGS_PATH = $(SLASH_JAVA)/re/jdk/$(JDK_VERSION)/promoted/latest/openjdk/binaryplugs
   endif
@@ -166,9 +173,11 @@ ifdef OPENJDK
   ifdef ALT_BINARY_PLUGS_PATH
     BINARY_PLUGS_PATH  = $(ALT_BINARY_PLUGS_PATH)
     BINARY_PLUGS_JARFILE = $(BINARY_PLUGS_PATH)/jre/lib/$(BINARY_PLUGS_JARNAME)
+    IMPORT_BINARY_PLUGS=true
   endif
   ifdef ALT_BINARY_PLUGS_JARFILE
     BINARY_PLUGS_JARFILE = $(ALT_BINARY_PLUGS_JARFILE)
+    IMPORT_BINARY_PLUGS=true
   endif
 endif # OPENJDK
 

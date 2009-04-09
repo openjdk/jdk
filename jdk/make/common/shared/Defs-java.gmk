@@ -59,7 +59,15 @@ else
     ADD_CLIENT_VM_OPTION = true
   endif
 endif
-JAVA_JVM_FLAGS =
+
+# Options for hotspot to turn off printing of options with fastdebug version
+#   and creating the hotspot.log file.
+JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS = \
+   -XX:-PrintVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-LogVMOutput
+
+# JVM options
+JAVA_JVM_FLAGS = $(JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS)
+
 ifeq ($(ADD_CLIENT_VM_OPTION), true)
   JAVA_JVM_FLAGS += -client
 endif
