@@ -508,6 +508,7 @@ ParallelCompactData::summarize_split_space(size_t src_region,
   assert(destination <= target_end, "sanity");
   assert(destination + _region_data[src_region].data_size() > target_end,
     "region should not fit into target space");
+  assert(is_region_aligned(target_end), "sanity");
 
   size_t split_region = src_region;
   HeapWord* split_destination = destination;
@@ -538,14 +539,12 @@ ParallelCompactData::summarize_split_space(size_t src_region,
     //         max(top, max(new_top, clear_top))
     //
     // where clear_top is a new field in SpaceInfo.  Would have to set clear_top
-    // to destination + partial_obj_size, where both have the values passed to
-    // this routine.
+    // to target_end.
     const RegionData* const sr = region(split_region);
     const size_t beg_idx =
       addr_to_region_idx(region_align_up(sr->destination() +
                                          sr->partial_obj_size()));
-    const size_t end_idx =
-      addr_to_region_idx(region_align_up(destination + partial_obj_size));
+    const size_t end_idx = addr_to_region_idx(target_end);
 
     if (TraceParallelOldGCSummaryPhase) {
         gclog_or_tty->print_cr("split:  clearing source_region field in ["

@@ -473,7 +473,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
         } // End of is two-adr
 
         // Insert a copy at a debug use for a lrg which has high frequency
-        if( (b->_freq < OPTO_DEBUG_SPLIT_FREQ) && n->is_MachSafePoint() ) {
+        if( b->_freq < OPTO_DEBUG_SPLIT_FREQ || b->is_uncommon(_phc._cfg._bbs) ) {
           // Walk the debug inputs to the node and check for lrg freq
           JVMState* jvms = n->jvms();
           uint debug_start = jvms ? jvms->debug_start() : 999999;
@@ -487,7 +487,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
             LRG &lrg = lrgs(nidx);
 
             // If this lrg has a high frequency use/def
-            if( lrg._maxfreq >= OPTO_LRG_HIGH_FREQ ) {
+            if( lrg._maxfreq >= _phc.high_frequency_lrg() ) {
               // If the live range is also live out of this block (like it
               // would be for a fast/slow idiom), the normal spill mechanism
               // does an excellent job.  If it is not live out of this block

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug     6467152
- *
+ * @ignore until 6716076 is fixed
  * @summary deadlock occurs in LogManager initialization and JVM termination
  * @author  Serguei Spitsyn / Hittachi
  *

@@ -238,15 +238,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // See "sort_index" method.  -1 means is not in the array.
   int _sort_index;
 
-  // Means it has (or at least had) a very large RS, and should not be
-  // considered for membership in a collection set.
-  enum PopularityState {
-    NotPopular,
-    PopularPending,
-    Popular
-  };
-  PopularityState _popularity;
-
   // <PREDICTION>
   double _gc_efficiency;
   // </PREDICTION>
@@ -433,10 +424,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
     _next_in_special_set = r;
   }
 
-  bool is_reserved() {
-    return popular();
-  }
-
   bool is_on_free_list() {
     return _is_on_free_list;
   }
@@ -607,23 +594,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
     zero_marked_bytes();
     init_top_at_mark_start();
-  }
-
-  bool popular() { return _popularity == Popular; }
-  void set_popular(bool b) {
-    if (b) {
-      _popularity = Popular;
-    } else {
-      _popularity = NotPopular;
-    }
-  }
-  bool popular_pending() { return _popularity == PopularPending; }
-  void set_popular_pending(bool b) {
-    if (b) {
-      _popularity = PopularPending;
-    } else {
-      _popularity = NotPopular;
-    }
   }
 
   // <PREDICTION>

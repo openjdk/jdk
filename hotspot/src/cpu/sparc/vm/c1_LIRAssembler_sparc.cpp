@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2489,7 +2489,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, noreg,
                                          (need_slow_path ? &done : NULL),
                                          stub->entry(), NULL,
-                                         RegisterConstant(k->super_check_offset()));
+                                         RegisterOrConstant(k->super_check_offset()));
       } else {
         // perform the fast part of the checking logic
         __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, O7,
@@ -2550,14 +2550,14 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
         __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, O7, noreg,
                                          (need_slow_path ? &done : NULL),
                                          (need_slow_path ? &done : NULL), NULL,
-                                         RegisterConstant(k->super_check_offset()),
+                                         RegisterOrConstant(k->super_check_offset()),
                                          dst);
       } else {
         assert(dst != klass_RInfo && dst != k_RInfo, "need 3 registers");
         // perform the fast part of the checking logic
         __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, O7, dst,
                                          &done, &done, NULL,
-                                         RegisterConstant(-1),
+                                         RegisterOrConstant(-1),
                                          dst);
       }
       if (need_slow_path) {
