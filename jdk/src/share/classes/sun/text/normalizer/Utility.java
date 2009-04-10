@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
+ * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
  *                                                                             *
  * The original version of this source code and documentation is copyrighted   *
  * and owned by IBM, These materials are provided under terms of a License     *
@@ -36,9 +36,26 @@
 
 package sun.text.normalizer;
 
-// This class contains utility functions so testing not needed
-///CLOVER:OFF
 public final class Utility {
+
+    /**
+     * Convenience utility to compare two Object[]s
+     * Ought to be in System.
+     * @param len the length to compare.
+     * The start indices and start+len must be valid.
+     */
+    public final static boolean arrayRegionMatches(char[] source, int sourceStart,
+                                            char[] target, int targetStart,
+                                            int len)
+    {
+        int sourceEnd = sourceStart + len;
+        int delta = targetStart - sourceStart;
+        for (int i = sourceStart; i < sourceEnd; i++) {
+            if (source[i]!=target[i + delta])
+            return false;
+        }
+        return true;
+    }
 
     /**
      * Convert characters outside the range U+0020 to U+007F to
@@ -344,7 +361,6 @@ public final class Utility {
         return false;
     }
 
-    //// for StringPrep
     /**
     * Similar to StringBuffer.getChars, version 1.3.
     * Since JDK 1.2 implements StringBuffer.getChars differently, this method
@@ -356,7 +372,6 @@ public final class Utility {
     * @param dst char array to store the retrieved chars
     * @param dstBegin offset to the start of the destination char array to
     *                 store the retrieved chars
-    * @draft since ICU4J 2.0
     */
     public static void getChars(StringBuffer src, int srcBegin, int srcEnd,
                                 char dst[], int dstBegin)
@@ -367,23 +382,4 @@ public final class Utility {
         src.getChars(srcBegin, srcEnd, dst, dstBegin);
     }
 
-    /**
-     * Convenience utility to compare two char[]s.
-     * @param len the length to compare.
-     * The start indices and start+len must be valid.
-     */
-    public final static boolean arrayRegionMatches(char[] source, int sourceStart,
-                                            char[] target, int targetStart,
-                                            int len)
-    {
-        int sourceEnd = sourceStart + len;
-        int delta = targetStart - sourceStart;
-        for (int i = sourceStart; i < sourceEnd; i++) {
-            if (source[i] != target[i + delta])
-            return false;
-        }
-        return true;
-    }
-
 }
-///CLOVER:ON

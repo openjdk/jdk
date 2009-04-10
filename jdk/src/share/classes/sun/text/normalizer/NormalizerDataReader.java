@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
+ * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
  *                                                                             *
  * The original version of this source code and documentation is copyrighted   *
  * and owned by IBM, These materials are provided under terms of a License     *
@@ -331,7 +330,7 @@ final class NormalizerDataReader implements ICUBinary.Authenticate {
                         throws IOException{
 
          //Read the bytes that make up the normTrie
-         dataInputStream.read(normBytes);
+         dataInputStream.readFully(normBytes);
 
          //normTrieStream= new ByteArrayInputStream(normBytes);
 
@@ -346,11 +345,11 @@ final class NormalizerDataReader implements ICUBinary.Authenticate {
          }
 
          //Read the fcdTrie
-         dataInputStream.read(fcdBytes);
+         dataInputStream.readFully(fcdBytes);
 
 
          //Read the AuxTrie
-        dataInputStream.read(auxBytes);
+        dataInputStream.readFully(auxBytes);
     }
 
     public byte[] getDataFormatVersion(){

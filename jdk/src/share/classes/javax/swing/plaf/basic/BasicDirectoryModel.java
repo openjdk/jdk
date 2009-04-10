@@ -27,6 +27,7 @@ package javax.swing.plaf.basic;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.Callable;
 import javax.swing.*;
 import javax.swing.filechooser.*;
 import javax.swing.event.*;
@@ -223,113 +224,115 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
             this.fid = fid;
         }
 
-        private void invokeLater(DoChangeContents runnable) {
-            runnables.addElement(runnable);
-            SwingUtilities.invokeLater(runnable);
-        }
-
         public void run() {
             run0();
             setBusy(false, fid);
         }
 
         public void run0() {
-            FileSystemView fileSystem = filechooser.getFileSystemView();
+            DoChangeContents doChangeContents = ShellFolder.getInvoker().invoke(new Callable<DoChangeContents>() {
+                public DoChangeContents call() throws Exception {
+                    FileSystemView fileSystem = filechooser.getFileSystemView();
 
-            File[] list = fileSystem.getFiles(currentDirectory, filechooser.isFileHidingEnabled());
+                    File[] list = fileSystem.getFiles(currentDirectory, filechooser.isFileHidingEnabled());
 
-            Vector<File> acceptsList = new Vector<File>();
+                    Vector<File> acceptsList = new Vector<File>();
 
-            if (isInterrupted()) {
-                return;
-            }
+                    if (isInterrupted()) {
+                        return null;
+                    }
 
-            // run through the file list, add directories and selectable files to fileCache
-            for (File file : list) {
-                if (filechooser.accept(file)) {
-                    acceptsList.addElement(file);
-                }
-            }
+                    // run through the file list, add directories and selectable files to fileCache
+                    for (File file : list) {
+                        if (filechooser.accept(file)) {
+                            acceptsList.addElement(file);
+                        }
+                    }
 
-            if (isInterrupted()) {
-                return;
-            }
+                    if (isInterrupted()) {
+                        return null;
+                    }
 
-            // First sort alphabetically by filename
-            sort(acceptsList);
+                    // First sort alphabetically by filename
+                    sort(acceptsList);
 
-            Vector<File> newDirectories = new Vector<File>(50);
-            Vector<File> newFiles = new Vector<File>();
-            // run through list grabbing directories in chunks of ten
-            for(int i = 0; i < acceptsList.size(); i++) {
-                File f = acceptsList.elementAt(i);
-                boolean isTraversable = filechooser.isTraversable(f);
-                if (isTraversable) {
-                    newDirectories.addElement(f);
-                } else if (!isTraversable && filechooser.isFileSelectionEnabled()) {
-                    newFiles.addElement(f);
-                }
-                if(isInterrupted()) {
-                    return;
-                }
-            }
+                    Vector<File> newDirectories = new Vector<File>(50);
+                    Vector<File> newFiles = new Vector<File>();
+                    // run through list grabbing directories in chunks of ten
+                    for (int i = 0; i < acceptsList.size(); i++) {
+                        File f = acceptsList.elementAt(i);
+                        boolean isTraversable = filechooser.isTraversable(f);
+                        if (isTraversable) {
+                            newDirectories.addElement(f);
+                        } else if (!isTraversable && filechooser.isFileSelectionEnabled()) {
+                            newFiles.addElement(f);
+                        }
+                        if (isInterrupted()) {
+                            return null;
+                        }
+                    }
 
-            Vector<File> newFileCache = new Vector<File>(newDirectories);
-            newFileCache.addAll(newFiles);
+                    Vector<File> newFileCache = new Vector<File>(newDirectories);
+                    newFileCache.addAll(newFiles);
 
-            int newSize = newFileCache.size();
-            int oldSize = fileCache.size();
+                    int newSize = newFileCache.size();
+                    int oldSize = fileCache.size();
 
-            if (newSize > oldSize) {
-                //see if interval is added
-                int start = oldSize;
-                int end = newSize;
-                for (int i = 0; i < oldSize; i++) {
-                    if (!newFileCache.get(i).equals(fileCache.get(i))) {
-                        start = i;
-                        for (int j = i; j < newSize; j++) {
-                            if (newFileCache.get(j).equals(fileCache.get(i))) {
-                                end = j;
+                    if (newSize > oldSize) {
+                        //see if interval is added
+                        int start = oldSize;
+                        int end = newSize;
+                        for (int i = 0; i < oldSize; i++) {
+                            if (!newFileCache.get(i).equals(fileCache.get(i))) {
+                                start = i;
+                                for (int j = i; j < newSize; j++) {
+                                    if (newFileCache.get(j).equals(fileCache.get(i))) {
+                                        end = j;
+                                        break;
+                                    }
+                                }
                                 break;
                             }
                         }
-                        break;
+                        if (start >= 0 && end > start
+                            && newFileCache.subList(end, newSize).equals(fileCache.subList(start, oldSize))) {
+                            if (isInterrupted()) {
+                                return null;
+                            }
+                            return new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid);
+                        }
+                    } else if (newSize < oldSize) {
+                        //see if interval is removed
+                        int start = -1;
+                        int end = -1;
+                        for (int i = 0; i < newSize; i++) {
+                            if (!newFileCache.get(i).equals(fileCache.get(i))) {
+                                start = i;
+                                end = i + oldSize - newSize;
+                                break;
+                            }
+                        }
+                        if (start >= 0 && end > start
+                            && fileCache.subList(end, oldSize).equals(newFileCache.subList(start, newSize))) {
+                            if (isInterrupted()) {
+                                return null;
+                            }
+                            return new DoChangeContents(null, 0, new Vector(fileCache.subList(start, end)), start, fid);
+                        }
                     }
-                }
-                if (start >= 0 && end > start
-                    && newFileCache.subList(end, newSize).equals(fileCache.subList(start, oldSize))) {
-                    if(isInterrupted()) {
-                        return;
+                    if (!fileCache.equals(newFileCache)) {
+                        if (isInterrupted()) {
+                            cancelRunnables(runnables);
+                        }
+                        return new DoChangeContents(newFileCache, 0, fileCache, 0, fid);
                     }
-                    invokeLater(new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid));
-                    newFileCache = null;
+                    return null;
                 }
-            } else if (newSize < oldSize) {
-                //see if interval is removed
-                int start = -1;
-                int end = -1;
-                for (int i = 0; i < newSize; i++) {
-                    if (!newFileCache.get(i).equals(fileCache.get(i))) {
-                        start = i;
-                        end = i + oldSize - newSize;
-                        break;
-                    }
-                }
-                if (start >= 0 && end > start
-                    && fileCache.subList(end, oldSize).equals(newFileCache.subList(start, newSize))) {
-                    if(isInterrupted()) {
-                        return;
-                    }
-                    invokeLater(new DoChangeContents(null, 0, new Vector<File>(fileCache.subList(start, end)),
-                                                     start, fid));
-                    newFileCache = null;
-                }
-            }
-            if (newFileCache != null && !fileCache.equals(newFileCache)) {
-                if (isInterrupted()) {
-                    cancelRunnables(runnables);
-                }
-                invokeLater(new DoChangeContents(newFileCache, 0, fileCache, 0, fid));
+            });
+
+            if (doChangeContents != null) {
+                runnables.addElement(doChangeContents);
+                SwingUtilities.invokeLater(doChangeContents);
             }
         }
 
