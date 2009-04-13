@@ -225,6 +225,7 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
     public void addDropTarget(DropTarget dt) {}
     public void removeDropTarget(DropTarget dt) {}
     public void updateFocusableWindowState() {}
+    public void setZOrder(ComponentPeer above) {}
 
     /**
      * Initialize JNI field and method ids
