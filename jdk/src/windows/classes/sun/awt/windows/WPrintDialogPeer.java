@@ -27,6 +27,7 @@ package sun.awt.windows;
 
 import java.awt.*;
 import java.awt.peer.DialogPeer;
+import java.awt.peer.ComponentPeer;
 import java.awt.dnd.DropTarget;
 import java.util.Vector;
 import sun.awt.AppContext;
@@ -137,6 +138,7 @@ public class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
     void invalidate(int x, int y, int width, int height) {}
     public void addDropTarget(DropTarget dt) {}
     public void removeDropTarget(DropTarget dt) {}
+    public void setZOrder(ComponentPeer above) {}
 
     /**
      * Initialize JNI field and method ids
