@@ -425,7 +425,7 @@ public final class AccessController {
      * Performs the specified <code>PrivilegedExceptionAction</code> with
      * privileges enabled and restricted by the specified
      * <code>AccessControlContext</code>.  The action is performed with the
-     * intersection of the the permissions possessed by the caller's
+     * intersection of the permissions possessed by the caller's
      * protection domain, and those possessed by the domains represented by the
      * specified <code>AccessControlContext</code>.
      * <p>

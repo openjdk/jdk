@@ -41,14 +41,14 @@ class NoSuchFieldError extends IncompatibleClassChangeError {
     private static final long serialVersionUID = -3456430195886129035L;
 
     /**
-     * Constructs a <code>NoSuchFieldException</code> with no detail  message.
+     * Constructs a <code>NoSuchFieldError</code> with no detail message.
      */
     public NoSuchFieldError() {
         super();
     }
 
     /**
-     * Constructs a <code>NoSuchFieldException</code> with the specified
+     * Constructs a <code>NoSuchFieldError</code> with the specified
      * detail message.
      *
      * @param   s   the detail message.

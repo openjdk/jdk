@@ -208,7 +208,7 @@ public abstract class SecureDirectoryStream
      * @throws  ClosedDirectoryStreamException
      *          if the directory stream is closed
      * @throws  NoSuchFileException
-     *          if the the directory does not exist <i>(optional specific exception)</i>
+     *          if the directory does not exist <i>(optional specific exception)</i>
      * @throws  DirectoryNotEmptyException
      *          if the directory could not otherwise be deleted because it is
      *          not empty <i>(optional specific exception)</i>
