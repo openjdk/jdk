@@ -494,7 +494,7 @@ public abstract class Path
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
-     *          In the case of the the default provider, and a security manager
+     *          In the case of the default provider, and a security manager
      *          is installed, it denies {@link LinkPermission}<tt>("symbolic")</tt>
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the path of the symbolic link.
@@ -531,7 +531,7 @@ public abstract class Path
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
-     *          In the case of the the default provider, and a security manager
+     *          In the case of the default provider, and a security manager
      *          is installed, it denies {@link LinkPermission}<tt>("hard")</tt>
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to both this path and the path of the
@@ -560,7 +560,7 @@ public abstract class Path
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
-     *          In the case of the the default provider, and a security manager
+     *          In the case of the default provider, and a security manager
      *          is installed, it checks that {@code FilePermission} has been
      *          granted with the "{@code readlink}" action to read the link.
      */
@@ -615,7 +615,7 @@ public abstract class Path
      *          obtained
      *
      * @throws  SecurityException
-     *          In the case of the the default provider, and a security manager
+     *          In the case of the default provider, and a security manager
      *          is installed, the {@link #toAbsolutePath toAbsolutePath} method
      *          throws a security exception.
      */
@@ -636,7 +636,7 @@ public abstract class Path
      * @throws  IOError
      *          if an I/O error occurs
      * @throws  SecurityException
-     *          In the case of the the default provider, and a security manager
+     *          In the case of the default provider, and a security manager
      *          is installed, its {@link SecurityManager#checkPropertyAccess(String)
      *          checkPropertyAccess} method is invoked to check access to the
      *          system property {@code user.dir}
@@ -677,7 +677,7 @@ public abstract class Path
      * @throws  IOException
      *          if the file does not exist or an I/O error occurs
      * @throws  SecurityException
-     *          In the case of the the default provider, and a security manager
+     *          In the case of the default provider, and a security manager
      *          is installed, its {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file, and where
      *          this path is not absolute, its {@link SecurityManager#checkPropertyAccess(String)
