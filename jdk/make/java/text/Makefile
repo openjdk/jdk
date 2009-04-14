@@ -64,7 +64,8 @@ BIFILES = $(TEXT_CLASSDIR)/CharacterBreakIteratorData \
           $(TEXT_CLASSDIR)/SentenceBreakIteratorData
 
 ICU_FILES = $(TEXT_CLASSDIR)/unorm.icu \
-            $(TEXT_CLASSDIR)/uprops.icu
+            $(TEXT_CLASSDIR)/uprops.icu \
+            $(TEXT_CLASSDIR)/ubidi.icu
 
 # builder
 GENERATEBREAKITERATORDATA_JARFILE = \
@@ -89,12 +90,15 @@ $(BIFILES): $(GENERATEBREAKITERATORDATA_JARFILE) \
 build: $(BIFILES) $(ICU_FILES)
 
 #
-# Extra rules to copy unorm.icu and uprops.icu
+# Extra rules to copy unorm.icu, uprops.icu, and ubidi.icu
 #
 $(TEXT_CLASSDIR)/unorm.icu: $(TEXT_SRCDIR)/unorm.icu
 	$(install-file)
 
 $(TEXT_CLASSDIR)/uprops.icu: $(TEXT_SRCDIR)/uprops.icu
+	$(install-file)
+
+$(TEXT_CLASSDIR)/ubidi.icu: $(TEXT_SRCDIR)/ubidi.icu
 	$(install-file)
 
 clean clobber::
