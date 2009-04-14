@@ -72,7 +72,7 @@ public class ToLowerCase {
         // I-dot tests (Turkish and Azeri)
         test("\u0130", turkish, "i");
         test("\u0130", az, "i");
-        test("\u0130", Locale.US, "i");
+        test("\u0130", Locale.US, "i\u0307");
 
         // Remove dot_above in the sequence I + dot_above (Turkish and Azeri)
         test("I\u0307", turkish, "i");
