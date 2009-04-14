@@ -369,7 +369,8 @@ void AwtWindow::RepositionSecurityWarning(JNIEnv *env)
     ::SetWindowPos(warningWindow, HWND_NOTOPMOST,
             rect.left, rect.top,
             rect.right - rect.left, rect.bottom - rect.top,
-            SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOZORDER
+            SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOZORDER |
+            SWP_NOOWNERZORDER
             );
 }
 
@@ -854,7 +855,7 @@ void AwtWindow::StartSecurityAnimation(AnimationKind kind)
     if (securityAnimationKind == akShow) {
         ::SetWindowPos(warningWindow, HWND_NOTOPMOST, 0, 0, 0, 0,
                 SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE |
-                SWP_SHOWWINDOW);
+                SWP_SHOWWINDOW | SWP_NOOWNERZORDER);
 
         ::SetLayeredWindowAttributes(warningWindow, RGB(0, 0, 0),
                 0xFF, LWA_ALPHA);
@@ -880,7 +881,7 @@ void AwtWindow::StopSecurityAnimation()
         case akPreHide:
             ::SetWindowPos(warningWindow, HWND_NOTOPMOST, 0, 0, 0, 0,
                     SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE |
-                    SWP_HIDEWINDOW);
+                    SWP_HIDEWINDOW | SWP_NOOWNERZORDER);
             break;
         case akShow:
             RepaintWarningWindow();
