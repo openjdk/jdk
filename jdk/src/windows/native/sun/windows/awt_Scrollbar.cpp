@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "awt_Scrollbar.h"
 #include "awt_Canvas.h"
 #include "awt_Window.h"
-#include "awt_KeyboardFocusManager.h"
 
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
  */
@@ -61,7 +60,6 @@ AwtScrollbar::AwtScrollbar() {
     m_orientation = SB_HORZ;
     m_lineIncr = 0;
     m_pageIncr = 0;
-    m_ignoreFocusEvents = FALSE;
     m_prevCallback = NULL;
     m_prevCallbackPos = 0;
     ms_instanceCounter++;
@@ -221,7 +219,6 @@ AwtScrollbar::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
     return retValue;
 }
 
-
 MsgRouting
 AwtScrollbar::WmNcHitTest(UINT x, UINT y, LRESULT& retVal)
 {
@@ -265,17 +262,10 @@ AwtScrollbar::WmMouseDown(UINT flags, int x, int y, int button)
 MsgRouting
 AwtScrollbar::HandleEvent(MSG *msg, BOOL synthetic)
 {
-    if (msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK) {
-        if (IsFocusable() && AwtComponent::sm_focusOwner != GetHWnd()) {
-            JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-            jobject target = GetTarget(env);
-            env->CallStaticVoidMethod
-                (AwtKeyboardFocusManager::keyboardFocusManagerCls,
-                 AwtKeyboardFocusManager::heavyweightButtonDownMID,
-                 target, ((jlong)msg->time) & 0xFFFFFFFF);
-            env->DeleteLocalRef(target);
-            AwtSetFocus();
-        }
+    // SCROLLBAR control doesn't cause activation on mouse/key events,
+    // so we can safely (for synthetic focus) pass them to the system proc.
+
+    if (IsFocusingMouseMessage(msg)) {
         // Left button press was already routed to default window
         // procedure in the WmMouseDown above.  Propagating synthetic
         // press seems like a bad idea as internal message loop
@@ -283,54 +273,19 @@ AwtScrollbar::HandleEvent(MSG *msg, BOOL synthetic)
         delete msg;
         return mrConsume;
     }
-    else {
-        return AwtComponent::HandleEvent(msg, synthetic);
-    }
+    return AwtComponent::HandleEvent(msg, synthetic);
 }
-
 
 // Work around a windows bug descrbed in KB article Q73839.  Reset
 // focus on scrollbars to update focus indicator.  The article advises
-// to disable/enable the scrollbar, but simply resetting the focus is
-// sufficient.
+// to disable/enable the scrollbar.
 void
 AwtScrollbar::UpdateFocusIndicator()
 {
     if (IsFocusable()) {
-        m_ignoreFocusEvents = TRUE;
-        ::SetFocus(NULL);
-        AwtSetFocus();
-        m_ignoreFocusEvents = FALSE;
-    }
-}
-
-MsgRouting
-AwtScrollbar::WmKillFocus(HWND hWndGot)
-{
-    if (m_ignoreFocusEvents) {
-        // We are voluntary giving up focus and will get it back
-        // immediately.  This is necessary to force windows to update
-        // the focus indicator.
-        sm_focusOwner = NULL;
-        return mrDoDefault;
-    }
-    else {
-        return AwtComponent::WmKillFocus(hWndGot);
-    }
-}
-
-MsgRouting
-AwtScrollbar::WmSetFocus(HWND hWndLost)
-{
-    if (m_ignoreFocusEvents) {
-        // We have voluntary gave up focus and are getting it back
-        // now.  This is necessary to force windows to update the
-        // focus indicator.
-        sm_focusOwner = GetHWnd();
-        return mrDoDefault;
-    }
-    else {
-        return AwtComponent::WmSetFocus(hWndLost);
+        // todo: doesn't work
+        SendMessage((WPARAM)ESB_DISABLE_BOTH);
+        SendMessage((WPARAM)ESB_ENABLE_BOTH);
     }
 }
 

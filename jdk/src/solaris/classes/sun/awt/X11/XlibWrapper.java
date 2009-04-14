@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,6 +156,8 @@ Window w;
 
     static native void XLowerWindow(long display, long window);
     static native void XRestackWindows(long display, long windows, int length);
+    static native void XConfigureWindow(long display, long window,
+            long value_mask, long values);
     static native void XSetInputFocus(long display, long window);
     static native void XSetInputFocus2(long display, long window, long time);
     static native long XGetInputFocus(long display);
@@ -490,6 +492,21 @@ static native String XSetLocaleModifiers(String modifier_list);
 
     static native int XKeysymToKeycode(long display, long keysym);
 
+    // xkb-related
+    static native int XkbGetEffectiveGroup(long display);
+    static native long XkbKeycodeToKeysym(long display, int keycode, int group, int level);
+    static native void XkbSelectEvents(long display, long device, long bits_to_change, long values_for_bits);
+    static native void XkbSelectEventDetails(long display, long device, long event_type,
+                                              long bits_to_change, long values_for_bits);
+    static native boolean XkbQueryExtension(long display, long opcode_rtrn, long event_rtrn,
+              long error_rtrn, long major_in_out, long minor_in_out);
+    static native boolean XkbLibraryVersion(long lib_major_in_out, long lib_minor_in_out);
+    static native long XkbGetMap(long display, long which, long device_spec);
+    static native long XkbGetUpdatedMap(long display, long which, long xkb);
+    static native void XkbFreeKeyboard(long xkb, long which, boolean free_all);
+    static native boolean XkbTranslateKeyCode(long xkb, int keycode, long mods, long mods_rtrn, long keysym_rtrn);
+
+
     static native void XConvertCase(long keysym,
                                     long keysym_lowercase,
                                     long keysym_uppercase);
@@ -533,6 +550,13 @@ static native String XSetLocaleModifiers(String modifier_list);
     static native void SetRectangularShape(long display, long window,
             int lox, int loy, int hix, int hiy,
             sun.java2d.pipe.Region region);
+    /** Each int in the bitmap array is one pixel with a 32-bit color:
+     *  R, G, B, and Alpha.
+     */
+    static native void SetBitmapShape(long display, long window,
+             int width, int height, int[] bitmap);
+
+    static native void SetZOrder(long display, long window, long above);
 
 /* Global memory area used for X lib parameter passing */
 
@@ -607,6 +631,15 @@ static native String XSetLocaleModifiers(String modifier_list);
             buf.append("PWinGravity ");
         }
         return buf.toString();
+    }
+    static String getEventToString( int type ) {
+        if( (type >= 0) && (type < eventToString.length)) {
+            return eventToString[type];
+        }else if( type == XToolkit.getXKBBaseEventCode() ) {
+            //XXX TODO various xkb types
+            return "XkbEvent";
+        }
+        return eventToString[0];
     }
 
     private static boolean getBuildInternal() {

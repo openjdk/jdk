@@ -61,6 +61,7 @@ import sun.awt.HeadlessToolkit;
 import sun.awt.SunToolkit;
 import sun.awt.CausedFocusEvent;
 import sun.awt.KeyboardFocusManagerPeerProvider;
+import sun.awt.AWTAccessor;
 
 /**
  * The KeyboardFocusManager is responsible for managing the active and focused
@@ -118,6 +119,32 @@ public abstract class KeyboardFocusManager
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+        AWTAccessor.setKeyboardFocusManagerAccessor(
+            new AWTAccessor.KeyboardFocusManagerAccessor() {
+                public int shouldNativelyFocusHeavyweight(Component heavyweight,
+                                                   Component descendant,
+                                                   boolean temporary,
+                                                   boolean focusedWindowChangeAllowed,
+                                                   long time,
+                                                   CausedFocusEvent.Cause cause)
+                {
+                    return KeyboardFocusManager.shouldNativelyFocusHeavyweight(
+                        heavyweight, descendant, temporary, focusedWindowChangeAllowed, time, cause);
+                }
+                public boolean processSynchronousLightweightTransfer(Component heavyweight,
+                                                              Component descendant,
+                                                              boolean temporary,
+                                                              boolean focusedWindowChangeAllowed,
+                                                              long time)
+                {
+                    return KeyboardFocusManager.processSynchronousLightweightTransfer(
+                        heavyweight, descendant, temporary, focusedWindowChangeAllowed, time);
+                }
+                public void removeLastFocusRequest(Component heavyweight) {
+                    KeyboardFocusManager.removeLastFocusRequest(heavyweight);
+                }
+            }
+        );
     }
 
     transient KeyboardFocusManagerPeer peer;
@@ -2208,7 +2235,7 @@ public abstract class KeyboardFocusManager
                                                   boolean temporary, boolean focusedWindowChangeAllowed,
                                                   long time)
     {
-        Window parentWindow = Component.getContainingWindow(heavyweight);
+        Window parentWindow = SunToolkit.getContainingWindow(heavyweight);
         if (parentWindow == null || !parentWindow.syncLWRequests) {
             return false;
         }
@@ -2443,79 +2470,7 @@ public abstract class KeyboardFocusManager
             }
         }
     }
-    static void heavyweightButtonDown(Component heavyweight, long time) {
-        heavyweightButtonDown(heavyweight, time, false);
-    }
-    static void heavyweightButtonDown(Component heavyweight, long time, boolean acceptDuplicates) {
-        if (log.isLoggable(Level.FINE)) {
-            if (heavyweight == null) {
-                log.log(Level.FINE, "Assertion (heavyweight != null) failed");
-            }
-            if (time == 0) {
-                log.log(Level.FINE, "Assertion (time != 0) failed");
-            }
-        }
-        KeyboardFocusManager manager = getCurrentKeyboardFocusManager(SunToolkit.targetToAppContext(heavyweight));
 
-        synchronized (heavyweightRequests) {
-            HeavyweightFocusRequest hwFocusRequest = getLastHWRequest();
-            Component currentNativeFocusOwner = (hwFocusRequest == null)
-                ? manager.getNativeFocusOwner()
-                : hwFocusRequest.heavyweight;
-
-            // Behavior for all use cases:
-            // 1. Heavyweight leaf Components (e.g., Button, Checkbox, Choice,
-            //    List, TextComponent, Canvas) that respond to button down.
-            //
-            //    Native platform will generate a FOCUS_GAINED if and only if
-            //    the Component is not the focus owner (or, will not be the
-            //    focus owner when all outstanding focus requests are
-            //    processed).
-            //
-            // 2. Panel with no descendants.
-            //
-            //    Same as (1).
-            //
-            // 3. Panel with at least one heavyweight descendant.
-            //
-            //    This function should NOT be called for this case!
-            //
-            // 4. Panel with only lightweight descendants.
-            //
-            //    Native platform will generate a FOCUS_GAINED if and only if
-            //    neither the Panel, nor any of its recursive, lightweight
-            //    descendants, is the focus owner. However, we want a
-            //    requestFocus() for any lightweight descendant to win out over
-            //    the focus request for the Panel. To accomplish this, we
-            //    differ from the algorithm for shouldNativelyFocusHeavyweight
-            //    as follows:
-            //      a. If the requestFocus() for a lightweight descendant has
-            //         been fully handled by the time this function is invoked,
-            //         then 'hwFocusRequest' will be null and 'heavyweight'
-            //         will be the native focus owner. Do *not* synthesize a
-            //         focus transfer to the Panel.
-            //      b. If the requestFocus() for a lightweight descendant has
-            //         been recorded, but not handled, then 'hwFocusRequest'
-            //         will be non-null and 'hwFocusRequest.heavyweight' will
-            //         equal 'heavyweight'. Do *not* append 'heavyweight' to
-            //         hwFocusRequest.lightweightRequests.
-            //      c. If the requestFocus() for a lightweight descendant is
-            //         yet to be made, then post a new HeavyweightFocusRequest.
-            //         If no lightweight descendant ever requests focus, then
-            //         the Panel will get focus. If some descendant does, then
-            //         the descendant will get focus by either a synthetic
-            //         focus transfer, or a lightweightRequests focus transfer.
-
-            if (acceptDuplicates || heavyweight != currentNativeFocusOwner) {
-                getCurrentKeyboardFocusManager
-                    (SunToolkit.targetToAppContext(heavyweight)).
-                    enqueueKeyEvents(time, heavyweight);
-                heavyweightRequests.add
-                    (new HeavyweightFocusRequest(heavyweight, heavyweight,
-                                                 false, CausedFocusEvent.Cause.MOUSE_EVENT));
-            }
-        }
-    }
     /**
      * Returns the Window which will be active after processing this request,
      * or null if this is a duplicate request. The active Window is useful
@@ -2542,7 +2497,7 @@ public abstract class KeyboardFocusManager
                 (HeavyweightFocusRequest.CLEAR_GLOBAL_FOCUS_OWNER);
 
             Component activeWindow = ((hwFocusRequest != null)
-                ? Component.getContainingWindow(hwFocusRequest.heavyweight)
+                ? SunToolkit.getContainingWindow(hwFocusRequest.heavyweight)
                 : nativeFocusedWindow);
             while (activeWindow != null &&
                    !((activeWindow instanceof Frame) ||
@@ -3013,8 +2968,8 @@ public abstract class KeyboardFocusManager
     }
 
     private static boolean focusedWindowChanged(Component to, Component from) {
-        Window wto = Component.getContainingWindow(to);
-        Window wfrom = Component.getContainingWindow(from);
+        Window wto = SunToolkit.getContainingWindow(to);
+        Window wfrom = SunToolkit.getContainingWindow(from);
         if (wto == null && wfrom == null) {
             return true;
         }
@@ -3028,8 +2983,8 @@ public abstract class KeyboardFocusManager
     }
 
     private static boolean isTemporary(Component to, Component from) {
-        Window wto = Component.getContainingWindow(to);
-        Window wfrom = Component.getContainingWindow(from);
+        Window wto = SunToolkit.getContainingWindow(to);
+        Window wfrom = SunToolkit.getContainingWindow(from);
         if (wto == null && wfrom == null) {
             return false;
         }

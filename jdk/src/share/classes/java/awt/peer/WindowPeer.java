@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package java.awt.peer;
 
 import java.awt.*;
+
+import java.awt.image.BufferedImage;
 
 /**
  * The peer interface for {@link Window}.
@@ -92,4 +94,31 @@ public interface WindowPeer extends ContainerPeer {
      * @see Window#setIconImages(java.util.List)
      */
     void updateIconImages();
+
+    /**
+     * Sets the level of opacity for the window.
+     *
+     * @see Window#setOpacity(float)
+     */
+    void setOpacity(float opacity);
+
+    /**
+     * Enables the per-pixel alpha support for the window.
+     *
+     * @see Window#setBackground(Color)
+     */
+    void setOpaque(boolean isOpaque);
+
+    /**
+     * Updates the native part of non-opaque window using
+     * the given image with color+alpha values for each pixel.
+     *
+     * @see Window#setBackground(Color)
+     */
+    void updateWindow(BufferedImage backBuffer);
+
+    /**
+     * Instructs the peer to update the position of the security warning.
+     */
+    void repositionSecurityWarning();
 }
