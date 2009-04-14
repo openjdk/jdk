@@ -119,7 +119,7 @@ XIMStringConversionText
     length	short
     feedback	pointer
     encoding_is_wchar	Bool
-    string      pointer 
+    string      pointer
 XKeymapEvent
     type	int
     serial	long
@@ -574,7 +574,7 @@ XImage
     f.get_pixel pointer
     f.put_pixel pointer
     f.sub_image pointer
-    f.add_pixel pointer    
+    f.add_pixel pointer
 XIMValuesList
     count_values	short
     supported_values	pointer
@@ -728,7 +728,7 @@ ColorData
     awt_icmLUT pointer int
     awt_icmLUT2Colors pointer byte
     img_grays pointer byte
-    img_clr_tbl pointer byte 
+    img_clr_tbl pointer byte
     img_oda_red pointer byte
     img_oda_green pointer byte
     img_oda_blue pointer byte
@@ -750,6 +750,7 @@ AwtGraphicsConfigData
     pixelStride int
     color_data pointer ColorData
     glxInfo pointer
+    isTranslucencySupported int
 
 AwtScreenData
     numConfigs int
@@ -797,3 +798,227 @@ XEvent
    xerror struct XErrorEvent
    xkeymap struct XKeymapEvent
    pad array long 24
+
+XkbAnyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+
+XkbNewKeyboardNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    old_device  int
+    min_key_code  int
+    max_key_code  int
+    old_min_key_code  int
+    old_max_key_code  int
+    changed  int
+    req_major  byte
+    req_minor  byte
+
+XkbMapNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    changed  int
+    flags  int
+    first_type  int
+    num_types  int
+    min_key_code  int
+    max_key_code  int
+    first_key_sym  int
+    first_key_act  int
+    first_key_behavior  int
+    first_key_explicit  int
+    first_modmap_key  int
+    first_vmodmap_key  int
+    num_key_syms  int
+    num_key_acts  int
+    num_key_behaviors  int
+    num_key_explicit  int
+    num_modmap_keys  int
+    num_vmodmap_keys  int
+    vmods  int
+
+XkbStateNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    changed  int
+    group  int
+    base_group  int
+    latched_group  int
+    locked_group  int
+    mods  int
+    base_mods  int
+    latched_mods  int
+    locked_mods  int
+    compat_state  int
+    grab_mods  byte
+    compat_grab_mods  byte
+    lookup_mods  byte
+    compat_lookup_mods  byte
+    ptr_buttons  int
+    keycode  int
+    event_type  byte
+    req_major  byte
+    req_minor  byte
+
+XkbControlsNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    changed_ctrls  int
+    enabled_ctrls  int
+    enabled_ctrl_changes  int
+    num_groups  int
+    keycode  int
+    event_type  byte
+    req_major  byte
+    req_minor  byte
+
+XkbIndicatorNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    changed  int
+    state  int
+
+XkbNamesNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    changed  int
+    first_type  int
+    num_types  int
+    first_lvl  int
+    num_lvls  int
+    num_aliases  int
+    num_radio_groups  int
+    changed_vmods  int
+    changed_groups  int
+    changed_indicators  int
+    first_key  int
+    num_keys  int
+
+
+XkbCompatMapNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    changed_groups  int
+    first_si  int
+    num_si  int
+    num_total_si  int
+
+XkbBellNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    percent  int
+    pitch  int
+    duration  int
+    bell_class  int
+    bell_id  int
+    name  Atom
+    window  long
+    event_only  Bool
+
+XkbActionMessageEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    keycode  int
+    press  Bool
+    key_event_follows  Bool
+    group  int
+    mods  int
+    message array byte 7 //XkbActionMessageLength+1
+
+XkbAccessXNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    detail  int
+    keycode  int
+    sk_delay  int
+    debounce_delay  int
+
+XkbExtensionDeviceNotifyEvent
+    type  int
+    serial  ulong
+    send_event  Bool
+    display  long
+    time  ulong
+    xkb_type  int
+    device  int
+    reason  int
+    supported  int
+    unsupported  int
+    first_btn  int
+    num_btns  int
+    leds_defined  int
+    led_state  int
+    led_class  int
+    led_id  int
+
+XkbEvent
+    type  int
+    any  struct XkbAnyEvent
+    new_kbd  struct XkbNewKeyboardNotifyEvent
+    map  struct XkbMapNotifyEvent
+    state  struct XkbStateNotifyEvent
+    ctrls  struct XkbControlsNotifyEvent
+    indicators  struct XkbIndicatorNotifyEvent
+    names  struct XkbNamesNotifyEvent
+    compat  struct XkbCompatMapNotifyEvent
+    bell  struct XkbBellNotifyEvent
+    message  struct XkbActionMessageEvent
+    accessx  struct XkbAccessXNotifyEvent
+    device  struct XkbExtensionDeviceNotifyEvent
+    core  struct XEvent

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 #include "awt_Toolkit.h"
 #include "awt_TextComponent.h"
-#include "awt_KeyboardFocusManager.h"
 #include "awt_Canvas.h"
 
 #include "jni.h"
@@ -62,9 +61,9 @@ jfieldID AwtTextComponent::canAccessClipboardID;
 
 AwtTextComponent::AwtTextComponent() {
     m_synthetic = FALSE;
-    m_lStartPos       = -1;
-    m_lEndPos         = -1;
-    m_lLastPos        = -1;
+    m_lStartPos = -1;
+    m_lEndPos   = -1;
+    m_lLastPos  = -1;
     m_isLFonly        = FALSE;
     m_EOLchecked      = FALSE;
 //    javaEventsMask = 0;    // accessibility support
@@ -72,10 +71,6 @@ AwtTextComponent::AwtTextComponent() {
 
 LPCTSTR AwtTextComponent::GetClassName() {
     return TEXT("EDIT");  /* System provided edit control class */
-}
-
-BOOL AwtTextComponent::ActMouseMessage(MSG* pMsg) {
-    return FALSE;
 }
 
 /* Set a suitable font to IME against the component font. */
@@ -143,22 +138,15 @@ AwtTextComponent::WmNotify(UINT notifyCode)
     return mrDoDefault;
 }
 
+BOOL AwtTextComponent::IsFocusingMouseMessage(MSG *pMsg)
+{
+    return pMsg->message == WM_LBUTTONDOWN || pMsg->message == WM_LBUTTONDBLCLK;
+}
+
 MsgRouting
 AwtTextComponent::HandleEvent(MSG *msg, BOOL synthetic)
 {
     MsgRouting returnVal;
-
-    if (AwtComponent::sm_focusOwner != GetHWnd() && IsFocusable() &&
-        (msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK))
-    {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        jobject target = GetTarget(env);
-        env->CallStaticVoidMethod
-            (AwtKeyboardFocusManager::keyboardFocusManagerCls,
-             AwtKeyboardFocusManager::heavyweightButtonDownMID,
-             target, ((jlong)msg->time) & 0xFFFFFFFF);
-        env->DeleteLocalRef(target);
-    }
 
     /*
      * Store the 'synthetic' parameter so that the WM_PASTE security check

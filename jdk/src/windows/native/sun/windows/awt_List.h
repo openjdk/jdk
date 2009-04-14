@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,6 @@ public:
         }
     }
 
-    BOOL ActMouseMessage(MSG* pMsg);
-
     // Netscape : Change the font on the list and redraw the
     // items nicely.
     virtual void SetFont(AwtFont *pFont);
@@ -116,7 +114,6 @@ public:
     MsgRouting WmMouseDown(UINT flags, int x, int y, int button);
     MsgRouting WmMouseUp(UINT flags, int x, int y, int button);
     MsgRouting WmNotify(UINT notifyCode);
-    MsgRouting WmKeyDown(UINT vkey, UINT repCnt, UINT flags, BOOL system);
 
     /* for multifont list */
     MsgRouting OwnerDrawItem(UINT ctrlId, DRAWITEMSTRUCT& drawInfo);
@@ -127,8 +124,6 @@ public:
 
     MsgRouting WmCtlColor(HDC hDC, HWND hCtrl, UINT ctlColor,
                           HBRUSH& retBrush);
-    MsgRouting WmSetFocus(HWND hWndLostFocus);
-    MsgRouting WmKillFocus(HWND hWndGotFocus);
 
     MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
 
@@ -169,6 +164,8 @@ public:
     INLINE HWND GetDBCSEditHandle() { return GetListHandle(); }
 
     virtual BOOL InheritsNativeMouseWheelBehavior();
+
+    virtual BOOL IsFocusingMouseMessage(MSG *pMsg);
 
     // some methods called on Toolkit thread
     static jint _GetMaxWidth(void *param);

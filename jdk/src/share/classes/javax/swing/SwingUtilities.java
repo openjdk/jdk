@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1589,15 +1589,6 @@ public class SwingUtilities implements SwingConstants
      * processing the key bindings associated with JComponents.
      */
     static boolean isValidKeyEventForKeyBindings(KeyEvent e) {
-        if (e.getID() == KeyEvent.KEY_TYPED) {
-            int mod = e.getModifiers();
-            if (((mod & ActionEvent.ALT_MASK) != 0) &&
-                ((mod & ActionEvent.CTRL_MASK) == 0)) {
-                // filter out typed "alt-?" keys, but not those created
-                // with AltGr, and not control characters
-                return false;
-            }
-        }
         return true;
     }
 

@@ -182,9 +182,6 @@ Java_java_awt_Component_initIDs
       (*env)->GetMethodID(env, cls, "getLocationOnScreen_NoTreeLock",
                          "()Ljava/awt/Point;");
 
-    componentIDs.resetGCMID =
-      (*env)->GetMethodID(env, cls, "resetGC", "()V");
-
     keyclass = (*env)->FindClass(env, "java/awt/event/KeyEvent");
     DASSERT (keyclass != NULL);
 
@@ -197,9 +194,6 @@ Java_java_awt_Component_initIDs
                            "Lsun/awt/AppContext;");
 
     (*env)->DeleteLocalRef(env, keyclass);
-
-    DASSERT(componentIDs.resetGCMID);
-
 }
 
 

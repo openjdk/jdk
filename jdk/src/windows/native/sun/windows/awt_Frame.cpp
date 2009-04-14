@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@
 #include <sun_awt_windows_WEmbeddedFrame.h>
 #include <sun_awt_windows_WEmbeddedFramePeer.h>
 
-
-BOOL isAppActive = FALSE;
 
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
  */
@@ -90,8 +88,10 @@ struct BlockedThreadStruct {
  */
 
 jfieldID AwtFrame::handleID;
-jfieldID AwtFrame::stateID;
+
 jfieldID AwtFrame::undecoratedID;
+jmethodID AwtFrame::getExtendedStateMID;
+jmethodID AwtFrame::setExtendedStateMID;
 
 jmethodID AwtFrame::activateEmbeddingTopLevelMID;
 
@@ -110,6 +110,7 @@ AwtFrame::AwtFrame() {
     m_isInputMethodWindow = FALSE;
     m_isUndecorated = FALSE;
     m_proxyFocusOwner = NULL;
+    m_lastProxiedFocusOwner = NULL;
     m_actualFocusedWindow = NULL;
     m_iconic = FALSE;
     m_zoomed = FALSE;
@@ -232,7 +233,7 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
                 frame->InitPeerGraphicsConfig(env, self);
                 AwtToolkit::GetInstance().RegisterEmbedderProcessId(hwndParent);
             } else {
-                jint state = env->GetIntField(target, AwtFrame::stateID);
+                jint state = env->CallIntMethod(self, AwtFrame::getExtendedStateMID);
                 DWORD exStyle;
                 DWORD style;
 
@@ -285,7 +286,6 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
                                   ::GetSysColor(COLOR_WINDOWTEXT),
                                   ::GetSysColor(COLOR_WINDOWFRAME),
                                   self);
-
                 /*
                  * Reshape here instead of during create, so that a
                  * WM_NCCALCSIZE is sent.
@@ -319,12 +319,13 @@ LRESULT CALLBACK AwtFrame::ProxyWindowProc(HWND hwnd, UINT message,
         AwtComponent::GetComponentImpl(::GetParent(hwnd));
 
     if (!parent || parent->GetProxyFocusOwner() != hwnd ||
-        message == AwtComponent::WmAwtIsComponent)
+        message == AwtComponent::WmAwtIsComponent ||
+        message == WM_GETOBJECT)
     {
         return ComCtl32Util::GetInstance().DefWindowProc(NULL, hwnd, message, wParam, lParam);
     }
 
-    AwtComponent *p = NULL;
+    AwtComponent *focusOwner = NULL;
     // IME and input language related messages need to be sent to a window
     // which has the Java input focus
     switch (message) {
@@ -342,16 +343,37 @@ LRESULT CALLBACK AwtFrame::ProxyWindowProc(HWND hwnd, UINT message,
         case WM_IME_KEYUP:
         case WM_INPUTLANGCHANGEREQUEST:
         case WM_INPUTLANGCHANGE:
-            p = AwtComponent::GetComponent(sm_focusOwner);
-            if  (p != NULL) {
-                return p->WindowProc(message, wParam, lParam);
+        // TODO: when a Choice's list is dropped down and we're scrolling in
+        // the list WM_MOUSEWHEEL messages come to the poxy, not to the list. Why?
+        case WM_MOUSEWHEEL:
+            focusOwner = AwtComponent::GetComponent(parent->GetLastProxiedFocusOwner());
+            if  (focusOwner != NULL) {
+                return focusOwner->WindowProc(message, wParam, lParam);
             }
             break;
+        case WM_SETFOCUS:
+            if (!sm_suppressFocusAndActivation && parent->IsEmbeddedFrame()) {
+                parent->AwtSetActiveWindow();
+            }
+            return 0;
+        case WM_KILLFOCUS:
+            if (!sm_suppressFocusAndActivation && parent->IsEmbeddedFrame()) {
+                AwtWindow::SynthesizeWmActivate(FALSE, parent->GetHWnd(), NULL);
+
+            } else if (sm_restoreFocusAndActivation) {
+                if (AwtComponent::GetFocusedWindow() != NULL) {
+                    AwtWindow *focusedWindow = (AwtWindow*)GetComponent(AwtComponent::GetFocusedWindow());
+                    if (focusedWindow != NULL) {
+                        // Will just silently restore native focus & activation.
+                        focusedWindow->AwtSetActiveWindow();
+                    }
+                }
+            }
+            return 0;
         case 0x0127: // WM_CHANGEUISTATE
         case 0x0128: // WM_UPDATEUISTATE
             return 0;
     }
-
     return parent->WindowProc(message, wParam, lParam);
 
     CATCH_BAD_ALLOC_RET(0);
@@ -554,7 +576,6 @@ MsgRouting AwtFrame::WmNcMouseDown(WPARAM hitTest, int x, int y, int button) {
     if (m_grabbedWindow != NULL/* && !m_grabbedWindow->IsOneOfOwnersOf(this)*/) {
         m_grabbedWindow->Ungrab();
     }
-
     if (!IsFocusableWindow() && (button & LEFT_BUTTON)) {
         switch (hitTest) {
         case HTTOP:
@@ -585,11 +606,6 @@ MsgRouting AwtFrame::WmNcMouseDown(WPARAM hitTest, int x, int y, int button) {
     }
     return AwtWindow::WmNcMouseDown(hitTest, x, y, button);
 }
-
-MsgRouting AwtFrame::WmWindowPosChanged(LPARAM windowPos) {
-    return mrDoDefault;
-}
-
 
 // Override AwtWindow::Reshape() to handle minimized/maximized
 // frames (see 6525850, 4065534)
@@ -827,6 +843,11 @@ MsgRouting AwtFrame::WmGetMinMaxInfo(LPMINMAXINFO lpmmi)
 
 MsgRouting AwtFrame::WmSize(UINT type, int w, int h)
 {
+    currentWmSizeState = type;
+    if (currentWmSizeState == SIZE_MINIMIZED) {
+        UpdateSecurityWarningVisibility();
+    }
+
     if (m_ignoreWmSize) {
         return mrDoDefault;
     }
@@ -883,6 +904,11 @@ MsgRouting AwtFrame::WmSize(UINT type, int w, int h)
     if (changed != 0) {
         DTRACE_PRINTLN2("AwtFrame::WmSize: reporting state change %x -> %x",
                 oldState, newState);
+
+        // sync target with peer
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+        env->CallVoidMethod(GetPeer(env), AwtFrame::setExtendedStateMID, newState);
+
         // report (de)iconification to old clients
         if (changed & java_awt_Frame_ICONIFIED) {
             if (newState & java_awt_Frame_ICONIFIED) {
@@ -907,33 +933,16 @@ MsgRouting AwtFrame::WmSize(UINT type, int w, int h)
 MsgRouting AwtFrame::WmActivate(UINT nState, BOOL fMinimized, HWND opposite)
 {
     jint type;
-    BOOL doActivateFrame = TRUE;
 
     if (nState != WA_INACTIVE) {
-        if (!::IsWindow(AwtWindow::GetModalBlocker(GetHWnd()))) {
-            ::SetFocus(NULL); // The KeyboardFocusManager will set focus later
-            type = java_awt_event_WindowEvent_WINDOW_GAINED_FOCUS;
-            isAppActive = TRUE;
-            sm_focusedWindow = GetHWnd();
-
-            /*
-             * Fix for 4823903.
-             * If the window to be focused is actually not this Frame
-             * and it's visible then send it WM_ACTIVATE.
-             */
-            if (m_actualFocusedWindow != NULL) {
-                HWND hwnd = m_actualFocusedWindow->GetHWnd();
-
-                if (hwnd != NULL && ::IsWindowVisible(hwnd)) {
-
-                    ::SendMessage(hwnd, WM_ACTIVATE, MAKEWPARAM(nState, fMinimized), (LPARAM)opposite);
-                    doActivateFrame = FALSE;
-                }
-                m_actualFocusedWindow = NULL;
-            }
-        } else {
-            doActivateFrame = FALSE;
+        if (::IsWindow(AwtWindow::GetModalBlocker(GetHWnd())) ||
+            CheckActivateActualFocusedWindow(opposite))
+        {
+            return mrConsume;
         }
+        type = java_awt_event_WindowEvent_WINDOW_GAINED_FOCUS;
+        AwtComponent::SetFocusedWindow(GetHWnd());
+
     } else {
         if (!::IsWindow(AwtWindow::GetModalBlocker(opposite))) {
             // If deactivation happens because of press on grabbing
@@ -955,37 +964,63 @@ MsgRouting AwtFrame::WmActivate(UINT nState, BOOL fMinimized, HWND opposite)
                     }
                 }
             }
-
-            // If actual focused window is not this Frame
-            if (sm_focusedWindow != GetHWnd()) {
-
-                // Check that the Frame is going to be really inactive (i.e. the opposite is not its owned window)
-                if (opposite != NULL) {
-                    AwtWindow *wOpposite = (AwtWindow *)AwtComponent::GetComponent(opposite);
-
-                    if (wOpposite != NULL &&
-                        wOpposite->GetOwningFrameOrDialog() != this)
-                    {
-                        AwtWindow *window = (AwtWindow *)AwtComponent::GetComponent(sm_focusedWindow);
-
-                        // If actual focused window is one of Frame's owned windows
-                        if (window != NULL && window->GetOwningFrameOrDialog() == this) {
-                            m_actualFocusedWindow = window;
-                        }
-                    }
-                }
-            }
+            CheckRetainActualFocusedWindow(opposite);
 
             type = java_awt_event_WindowEvent_WINDOW_LOST_FOCUS;
-            isAppActive = FALSE;
-            sm_focusedWindow = NULL;
+            AwtComponent::SetFocusedWindow(NULL);
+            sm_focusOwner = NULL;
         }
     }
 
-    if (doActivateFrame) {
-        SendWindowEvent(type, opposite);
-    }
+    SendWindowEvent(type, opposite);
     return mrConsume;
+}
+
+BOOL AwtFrame::CheckActivateActualFocusedWindow(HWND deactivatedOpositeHWnd)
+{
+    if (m_actualFocusedWindow != NULL) {
+        HWND hwnd = m_actualFocusedWindow->GetHWnd();
+        if (hwnd != NULL && ::IsWindowVisible(hwnd)) {
+            SynthesizeWmActivate(TRUE, hwnd, deactivatedOpositeHWnd);
+            return TRUE;
+        }
+        m_actualFocusedWindow = NULL;
+    }
+    return FALSE;
+}
+
+void AwtFrame::CheckRetainActualFocusedWindow(HWND activatedOpositeHWnd)
+{
+    // If actual focused window is not this Frame
+    if (AwtComponent::GetFocusedWindow() != GetHWnd()) {
+        // Make sure the actual focused window is an owned window of this frame
+        AwtWindow *focusedWindow = (AwtWindow *)AwtComponent::GetComponent(AwtComponent::GetFocusedWindow());
+        if (focusedWindow != NULL && focusedWindow->GetOwningFrameOrDialog() == this) {
+
+            // Check that the opposite window is not this frame, nor an owned window of this frame
+            if (activatedOpositeHWnd != NULL) {
+                AwtWindow *oppositeWindow = (AwtWindow *)AwtComponent::GetComponent(activatedOpositeHWnd);
+                if (oppositeWindow && oppositeWindow != this &&
+                    oppositeWindow->GetOwningFrameOrDialog() != this)
+                {
+                    m_actualFocusedWindow = focusedWindow;
+                }
+            } else {
+                 m_actualFocusedWindow = focusedWindow;
+            }
+        }
+    }
+}
+
+BOOL AwtFrame::AwtSetActiveWindow(BOOL isMouseEventCause, UINT hittest)
+{
+    if (hittest == HTCLIENT) {
+        // Don't let the actualFocusedWindow to steal focus if:
+        // a) the frame is clicked in its client area;
+        // b) focus is requested to some of the frame's child.
+        m_actualFocusedWindow = NULL;
+    }
+    return AwtWindow::AwtSetActiveWindow(isMouseEventCause);
 }
 
 MsgRouting AwtFrame::WmEnterMenuLoop(BOOL isTrackPopupMenu)
@@ -1161,60 +1196,6 @@ LRESULT AwtFrame::WinThreadExecProc(ExecuteArgs * args)
     return 0L;
 }
 
-/*
- * hWndLostFocus - the opposite component
- * Returns TRUE if WM_SETFOCUS may be processed further, otherwise FALSE.
- */
-BOOL AwtFrame::activateEmbeddedFrameOnSetFocus(HWND hWndLostFocus) {
-
-    // If the EmbeddedFrame is not yet active, then this is either:
-    // - requesting focus on smth in the EmbeddedFrame, or
-    // - Alt hitting in IE while its menu is active (see 6374321).
-    // In both these cases we get WM_SETFOCUS without WM_ACTIVATE
-    // on the EmbeddedFrame.
-    if (sm_focusedWindow != GetHWnd()) {
-        HWND oppositeToplevelHWnd = AwtComponent::GetTopLevelParentForWindow(hWndLostFocus);
-
-        // As we get WM_SETFOCUS from the native system we expect
-        // the native toplevel be set to the active window.
-        HWND activeWindowHWnd = ::GetActiveWindow();
-        DASSERT(activeWindowHWnd == ::GetAncestor(GetHWnd(), GA_ROOT));
-
-        // See 6538154.
-        ::BringWindowToTop(activeWindowHWnd);
-        ::SetForegroundWindow(activeWindowHWnd);
-
-        SynthesizeWmActivate(TRUE, oppositeToplevelHWnd);
-
-        return FALSE;
-    }
-    // If the EmbeddedFrame is already active, then this is a mouse click
-    // or activation (by Alt-Tab, start etc).
-    return TRUE;
-}
-
-/*
- * hWndGotFocus - the opposite component
- * Returns TRUE if WM_KILLFOCUS may be processed further, otherwise FALSE.
- */
-BOOL AwtFrame::deactivateEmbeddedFrameOnKillFocus(HWND hWndGotFocus) {
-    HWND oppositeToplevelHWnd = AwtComponent::GetTopLevelParentForWindow(hWndGotFocus);
-
-    if (oppositeToplevelHWnd != sm_focusedWindow) {
-        SynthesizeWmActivate(FALSE, oppositeToplevelHWnd);
-    }
-    return TRUE;
-}
-
-/*
- * Execute on Toolkit only.
- */
-void AwtFrame::SynthesizeWmActivate(BOOL doActivate, HWND opposite) {
-    if (::IsWindowVisible(GetHWnd())) {
-        ::SendMessage(GetHWnd(), WM_ACTIVATE, MAKEWPARAM(doActivate ? WA_ACTIVE : WA_INACTIVE, FALSE), (LPARAM) opposite);
-    }
-}
-
 void AwtFrame::_SynthesizeWmActivate(void *param)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -1229,7 +1210,7 @@ void AwtFrame::_SynthesizeWmActivate(void *param)
     JNI_CHECK_PEER_GOTO(self, ret);
     frame = (AwtFrame *)pData;
 
-    frame->SynthesizeWmActivate(doActivate, NULL);
+    SynthesizeWmActivate(doActivate, frame->GetHWnd(), NULL);
 ret:
     env->DeleteGlobalRef(self);
 
@@ -1594,7 +1575,7 @@ void AwtFrame::_NotifyModalBlocked(void *param)
 extern "C" {
 
 /*
- * Class:     sun_awt_windows_WFramePeer
+ * Class:     java_awt_Frame
  * Method:    initIDs
  * Signature: ()V
  */
@@ -1603,11 +1584,27 @@ Java_java_awt_Frame_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
 
-    AwtFrame::stateID = env->GetFieldID(cls, "state", "I");
-    DASSERT(AwtFrame::stateID != NULL);
-
     AwtFrame::undecoratedID = env->GetFieldID(cls,"undecorated","Z");
     DASSERT(AwtFrame::undecoratedID != NULL);
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WFramePeer
+ * Method:    initIDs
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WFramePeer_initIDs(JNIEnv *env, jclass cls)
+{
+    TRY;
+
+    AwtFrame::setExtendedStateMID = env->GetMethodID(cls, "setExtendedState", "(I)V");
+    AwtFrame::getExtendedStateMID = env->GetMethodID(cls, "getExtendedState", "()I");
+
+    DASSERT(AwtFrame::setExtendedStateMID);
+    DASSERT(AwtFrame::getExtendedStateMID);
 
     CATCH_BAD_ALLOC;
 }
