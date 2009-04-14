@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1628,7 +1628,9 @@ public class JTabbedPane extends JComponent
      * <p>
      * A mnemonic must correspond to a single key on the keyboard
      * and should be specified using one of the <code>VK_XXX</code>
-     * keycodes defined in <code>java.awt.event.KeyEvent</code>.
+     * keycodes defined in <code>java.awt.event.KeyEvent</code>
+     * or one of the extended keycodes obtained through
+     * <code>java.awt.event.KeyEvent.getExtendedKeyCodeForChar</code>.
      * Mnemonics are case-insensitive, therefore a key event
      * with the corresponding keycode would cause the button to be
      * activated whether or not the Shift modifier was pressed.

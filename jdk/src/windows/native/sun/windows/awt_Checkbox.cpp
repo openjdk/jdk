@@ -26,7 +26,6 @@
 #include "awt.h"
 #include "awt_Toolkit.h"
 #include "awt_Checkbox.h"
-#include "awt_KeyboardFocusManager.h"
 #include "awt_Canvas.h"
 #include "awt_Window.h"
 
@@ -141,17 +140,6 @@ done:
     env->DeleteLocalRef(target);
 
     return checkbox;
-}
-
-BOOL AwtCheckbox::ActMouseMessage(MSG* pMsg) {
-    if (!IsFocusingMessage(pMsg->message)) {
-        return FALSE;
-    }
-
-    if (pMsg->message == WM_LBUTTONDOWN) {
-        SendMessage(BM_SETSTATE, ~SendMessage(BM_GETSTATE, 0, 0), 0);
-    }
-    return TRUE;
 }
 
 MsgRouting
@@ -329,18 +317,32 @@ MsgRouting AwtCheckbox::WmPaint(HDC)
     return mrDoDefault;
 }
 
+BOOL AwtCheckbox::IsFocusingMouseMessage(MSG *pMsg) {
+    return pMsg->message == WM_LBUTTONDOWN || pMsg->message == WM_LBUTTONUP;
+}
+
+BOOL AwtCheckbox::IsFocusingKeyMessage(MSG *pMsg) {
+    return (pMsg->message == WM_KEYDOWN || pMsg->message == WM_KEYUP) &&
+            pMsg->wParam == VK_SPACE;
+}
+
 MsgRouting AwtCheckbox::HandleEvent(MSG *msg, BOOL synthetic)
 {
-    if (IsFocusable() && AwtComponent::sm_focusOwner != GetHWnd() &&
-        (msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK))
-    {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        jobject target = GetTarget(env);
-        env->CallStaticVoidMethod
-            (AwtKeyboardFocusManager::keyboardFocusManagerCls,
-             AwtKeyboardFocusManager::heavyweightButtonDownMID,
-             target, ((jlong)msg->time) & 0xFFFFFFFF);
-        env->DeleteLocalRef(target);
+    if (IsFocusingMouseMessage(msg)) {
+        SendMessage(BM_SETSTATE, (WPARAM)(msg->message == WM_LBUTTONDOWN ? TRUE : FALSE));
+        delete msg;
+        return mrConsume;
+    }
+    if (IsFocusingKeyMessage(msg)) {
+        SendMessage(BM_SETSTATE, (WPARAM)(msg->message == WM_KEYDOWN ? TRUE : FALSE));
+        if (msg->message == WM_KEYDOWN) {
+            m_fLButtonDowned = TRUE;
+        } else if (m_fLButtonDowned == TRUE) {
+            WmNotify(BN_CLICKED);
+            m_fLButtonDowned = TRUE;
+        }
+        delete msg;
+        return mrConsume;
     }
     return AwtComponent::HandleEvent(msg, synthetic);
 }

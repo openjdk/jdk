@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "awt_Button.h"
 #include "awt_Canvas.h"
 #include "awt_Window.h"
-#include "awt_KeyboardFocusManager.h"
 
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
  */
@@ -143,19 +142,6 @@ done:
     return c;
 }
 
-BOOL AwtButton::ActMouseMessage(MSG * pMsg) {
-    if (!IsFocusingMessage(pMsg->message)) {
-        return FALSE;
-    }
-
-    if (pMsg->message == WM_LBUTTONDOWN) {
-        SendMessage(BM_SETSTATE, TRUE, 0);
-    } else if (pMsg->message == WM_LBUTTONUP) {
-        SendMessage(BM_SETSTATE, FALSE, 0);
-    }
-    return TRUE;
-}
-
 MsgRouting
 AwtButton::WmMouseDown(UINT flags, int x, int y, int button)
 {
@@ -202,23 +188,6 @@ AwtButton::NotifyListeners()
 {
     DoCallback("handleAction", "(JI)V", TimeHelper::getMessageTimeUTC(),
                (jint)AwtComponent::GetJavaModifiers());
-}
-
-/* 4531849 fix.  Previous to 1.4, mouse clicks and typing space bar on a
- * Button would notify ActionListeners via WM_COMMAND/WmNotify().  In 1.4, mouse
- * grabs are done for all presses in order to correctly send drag and release
- * events.  However, WM_COMMAND message aren't sent when the mouse is grabbed,
- * so ActionListeners for mouse clicks are sent via WmMouseUp/WmNotify().
- * For some reason, if the right mouse button is held down when left-clicking
- * on a Button, WM_COMMAND _IS_ sent.  This resulted in two ActionEvents being
- * sent in this case.  To fix the problem, we handle typing space bar similar to
- * left clicks - in WmKeyUp(), and do nothing for WM_COMMAND.  -bchristi
- */
-MsgRouting
-AwtButton::WmKeyUp(UINT wkey, UINT repCnt, UINT flags, BOOL system)
-{
-    MsgRouting mrResult = AwtComponent::WmKeyUp(wkey, repCnt, flags, system);
-    return mrResult;
 }
 
 MsgRouting
@@ -293,18 +262,26 @@ MsgRouting AwtButton::WmPaint(HDC)
     return mrDoDefault;
 }
 
+BOOL AwtButton::IsFocusingMouseMessage(MSG *pMsg) {
+    return pMsg->message == WM_LBUTTONDOWN || pMsg->message == WM_LBUTTONUP;
+}
+
+BOOL AwtButton::IsFocusingKeyMessage(MSG *pMsg) {
+    return (pMsg->message == WM_KEYDOWN || pMsg->message == WM_KEYUP) &&
+            pMsg->wParam == VK_SPACE;
+}
+
 MsgRouting AwtButton::HandleEvent(MSG *msg, BOOL synthetic)
 {
-    if (AwtComponent::sm_focusOwner != GetHWnd() &&
-        (msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK))
-    {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        jobject target = GetTarget(env);
-        env->CallStaticVoidMethod
-            (AwtKeyboardFocusManager::keyboardFocusManagerCls,
-             AwtKeyboardFocusManager::heavyweightButtonDownMID,
-             target, ((jlong)msg->time) & 0xFFFFFFFF);
-        env->DeleteLocalRef(target);
+    if (IsFocusingMouseMessage(msg)) {
+        SendMessage(BM_SETSTATE, msg->message == WM_LBUTTONDOWN ? TRUE : FALSE, 0);
+        delete msg;
+        return mrConsume;
+    }
+    if (IsFocusingKeyMessage(msg)) {
+        SendMessage(BM_SETSTATE, msg->message == WM_KEYDOWN ? TRUE : FALSE, 0);
+        delete msg;
+        return mrConsume;
     }
     return AwtComponent::HandleEvent(msg, synthetic);
 }

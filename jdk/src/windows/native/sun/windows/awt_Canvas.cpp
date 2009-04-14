@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "awt_Toolkit.h"
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsConfig.h"
-#include "awt_KeyboardFocusManager.h"
 #include "awt_Window.h"
 
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
@@ -176,27 +175,9 @@ MsgRouting AwtCanvas::WmPaint(HDC)
 
 MsgRouting AwtCanvas::HandleEvent(MSG *msg, BOOL synthetic)
 {
-    if (msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK) {
-        /*
-         * Fix for BugTraq ID 4041703: keyDown not being invoked.
-         * Give the focus to a Canvas or Panel if it doesn't have heavyweight
-         * subcomponents so that they will behave the same way as on Solaris
-         * providing a possibility of giving keyboard focus to an empty Applet.
-         * Since ScrollPane doesn't receive focus on mouse press on Solaris,
-         * HandleEvent() is overriden there to do nothing with focus.
-         */
-        if (AwtComponent::sm_focusOwner != GetHWnd() &&
-            ::GetWindow(GetHWnd(), GW_CHILD) == NULL)
-        {
-            JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-            jobject target = GetTarget(env);
-            env->CallStaticVoidMethod
-                (AwtKeyboardFocusManager::keyboardFocusManagerCls,
-                 AwtKeyboardFocusManager::heavyweightButtonDownMID,
-                 target, ((jlong)msg->time) & 0xFFFFFFFF);
-            env->DeleteLocalRef(target);
-            AwtSetFocus();
-        }
+    if (IsFocusingMouseMessage(msg)) {
+        delete msg;
+        return mrConsume;
     }
     return AwtComponent::HandleEvent(msg, synthetic);
 }
