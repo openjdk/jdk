@@ -130,39 +130,6 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
         return getInsets();
     }
 
-    /*
-     * This method is called from XWindowPeer.displayChanged, when
-     * the window this Panel is on is moved to the new screen, or
-     * display mode is changed.
-     *
-     * The notification is propagated to the child Canvas components.
-     * Top-level windows and other Panels are notified too as their
-     * peers are subclasses of XCanvasPeer.
-     */
-    public void displayChanged(int screenNum) {
-        super.displayChanged(screenNum);
-        displayChanged((Container)target, screenNum);
-    }
-
-    /*
-     * Recursively iterates through all the HW and LW children
-     * of the container and calls displayChanged() for HW peers.
-     * Iteration through children peers only is not enough as the
-     * displayChanged notification may not be propagated to HW
-     * components inside LW containers, see 4452373 for details.
-     */
-    private static void displayChanged(Container target, int screenNum) {
-        Component children[] = ((Container)target).getComponents();
-        for (Component child : children) {
-            ComponentPeer cpeer = child.getPeer();
-            if (cpeer instanceof XCanvasPeer) {
-                ((XCanvasPeer)cpeer).displayChanged(screenNum);
-            } else if (child instanceof Container) {
-                displayChanged((Container)child, screenNum);
-            }
-        }
-    }
-
     public void dispose() {
         if (embedder != null) {
             embedder.deinstall();
