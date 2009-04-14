@@ -762,6 +762,7 @@ public:
   }
   virtual int Opcode() const;
   virtual uint size_of() const; // Size is bigger
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Dig the length operand out of a array allocation site.
   Node* Ideal_length() {

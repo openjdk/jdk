@@ -40,7 +40,6 @@ public class ClassWriter implements /* imports */ ClassConstants
     protected InstanceKlass     klass;
     protected DataOutputStream  dos;
     protected ConstantPool      cpool;
-    protected boolean           is15Format;
 
     // Map between class name to index of type CONSTANT_Class
     protected Map               classToIndex = new HashMap();
@@ -73,7 +72,6 @@ public class ClassWriter implements /* imports */ ClassConstants
         klass = kls;
         dos = new DataOutputStream(os);
         cpool = klass.getConstants();
-        is15Format = is15ClassFile();
     }
 
     public void write() throws IOException {
@@ -82,7 +80,7 @@ public class ClassWriter implements /* imports */ ClassConstants
         // write magic
         dos.writeInt(0xCAFEBABE);
 
-        writeVersion(is15Format);
+        writeVersion();
         writeConstantPool();
         writeClassAccessFlags();
         writeThisClass();
@@ -96,43 +94,14 @@ public class ClassWriter implements /* imports */ ClassConstants
         dos.flush();
     }
 
-    protected boolean is15ClassFile() {
-        // if klass has generic signature, then it is 1.5  class file.
-        if (klass.getGenericSignature() != null) {
-           return true;
-        }
-
-        // if atleast one method has generic signature
-        // , then we have 1.5 class file.
-        ObjArray methods = klass.getMethods();
-        final int numMethods = (int) methods.getLength();
-        for (int m = 0; m < numMethods; m++) {
-           Method curMethod = (Method) methods.getObjAt(m);
-           if (curMethod.getGenericSignature() != null) {
-              return true;
-           }
-        }
-
-        // if atleast one field has non-zero generic signature index, then we have
-        // 1.5 class file
-        TypeArray fields = klass.getFields();
-        final int numFields = (int) fields.getLength();
-        for (int f = 0; f < numFields; f += InstanceKlass.NEXT_OFFSET) {
-           short genSigIndex = fields.getShortAt(f + InstanceKlass.GENERIC_SIGNATURE_INDEX_OFFSET);
-           if (genSigIndex != (short)0) return true;
-        }
-
-        return false;
+    protected void writeVersion() throws IOException {
+        dos.writeShort((short)klass.minorVersion());
+        dos.writeShort((short)klass.majorVersion());
     }
 
-    protected void writeVersion(boolean is15Format) throws IOException {
-        if (is15Format) {
-           dos.writeShort(MINOR_VERSION);
-           dos.writeShort(MAJOR_VERSION);
-        } else {
-           dos.writeShort(MINOR_VERSION_OLD);
-           dos.writeShort(MAJOR_VERSION_OLD);
-        }
+    protected void writeIndex(int index) throws IOException {
+        if (index == 0) throw new InternalError();
+        dos.writeShort(index);
     }
 
     protected void writeConstantPool() throws IOException {
@@ -392,8 +361,8 @@ public class ClassWriter implements /* imports */ ClassConstants
             if (DEBUG) debugMessage("\tfield name = " + nameIndex + ", signature = " + signatureIndex);
 
             short fieldAttributeCount = 0;
-            boolean isSyn = isSynthetic(accessFlags);
-            if (isSyn)
+            boolean hasSyn = hasSyntheticAttribute(accessFlags);
+            if (hasSyn)
                 fieldAttributeCount++;
 
             short initvalIndex = fields.getShortAt(index + InstanceKlass.INITVAL_INDEX_OFFSET);
@@ -407,18 +376,18 @@ public class ClassWriter implements /* imports */ ClassConstants
             dos.writeShort(fieldAttributeCount);
 
             // write synthetic, if applicable
-            if (isSyn)
+            if (hasSyn)
                 writeSynthetic();
 
             if (initvalIndex != 0) {
-                dos.writeShort(_constantValueIndex);
+                writeIndex(_constantValueIndex);
                 dos.writeInt(2);
                 dos.writeShort(initvalIndex);
                 if (DEBUG) debugMessage("\tfield init value = " + initvalIndex);
             }
 
             if (genSigIndex != 0) {
-                dos.writeShort(_signatureIndex);
+                writeIndex(_signatureIndex);
                 dos.writeInt(2);
                 dos.writeShort(genSigIndex);
                 if (DEBUG) debugMessage("\tfield generic signature index " + genSigIndex);
@@ -430,8 +399,13 @@ public class ClassWriter implements /* imports */ ClassConstants
         return (accessFlags & (short) JVM_ACC_SYNTHETIC) != 0;
     }
 
+    protected boolean hasSyntheticAttribute(short accessFlags) {
+        // Check if flags have the attribute and if the constant pool contains an entry for it.
+        return isSynthetic(accessFlags) && _syntheticIndex != 0;
+    }
+
     protected void writeSynthetic() throws IOException {
-        dos.writeShort(_syntheticIndex);
+        writeIndex(_syntheticIndex);
         dos.writeInt(0);
     }
 
@@ -459,8 +433,8 @@ public class ClassWriter implements /* imports */ ClassConstants
 
         short methodAttributeCount = 0;
 
-        final boolean isSyn = isSynthetic((short)accessFlags);
-        if (isSyn)
+        final boolean hasSyn = hasSyntheticAttribute((short)accessFlags);
+        if (hasSyn)
             methodAttributeCount++;
 
         final boolean hasCheckedExceptions = m.hasCheckedExceptions();
@@ -478,25 +452,9 @@ public class ClassWriter implements /* imports */ ClassConstants
         dos.writeShort(methodAttributeCount);
         if (DEBUG) debugMessage("\tmethod attribute count = " + methodAttributeCount);
 
-        if (isSyn) {
+        if (hasSyn) {
             if (DEBUG) debugMessage("\tmethod is synthetic");
             writeSynthetic();
-        }
-
-        if (hasCheckedExceptions) {
-            CheckedExceptionElement[] exceptions = m.getCheckedExceptions();
-            dos.writeShort(_exceptionsIndex);
-
-            int attrSize = 2 /* number_of_exceptions */ +
-                           exceptions.length * 2 /* exception_index */;
-            dos.writeInt(attrSize);
-            dos.writeShort(exceptions.length);
-            if (DEBUG) debugMessage("\tmethod has " + exceptions.length
-                                        +  " checked exception(s)");
-            for (int e = 0; e < exceptions.length; e++) {
-                 short cpIndex = (short) exceptions[e].getClassCPIndex();
-                 dos.writeShort(cpIndex);
-            }
         }
 
         if (isCodeAvailable) {
@@ -574,7 +532,7 @@ public class ClassWriter implements /* imports */ ClassConstants
 
             // start writing Code
 
-            dos.writeShort(_codeIndex);
+            writeIndex(_codeIndex);
 
             dos.writeInt(codeSize);
             if (DEBUG) debugMessage("\tcode attribute length = " + codeSize);
@@ -608,7 +566,7 @@ public class ClassWriter implements /* imports */ ClassConstants
 
             // write LineNumberTable, if available.
             if (hasLineNumberTable) {
-                dos.writeShort(_lineNumberTableIndex);
+                writeIndex(_lineNumberTableIndex);
                 dos.writeInt(lineNumberAttrLen);
                 dos.writeShort((short) lineNumberTable.length);
                 for (int l = 0; l < lineNumberTable.length; l++) {
@@ -619,7 +577,7 @@ public class ClassWriter implements /* imports */ ClassConstants
 
             // write LocalVariableTable, if available.
             if (hasLocalVariableTable) {
-                dos.writeShort((short) _localVariableTableIndex);
+                writeIndex((short) _localVariableTableIndex);
                 dos.writeInt(localVarAttrLen);
                 dos.writeShort((short) localVariableTable.length);
                 for (int l = 0; l < localVariableTable.length; l++) {
@@ -629,6 +587,22 @@ public class ClassWriter implements /* imports */ ClassConstants
                      dos.writeShort((short) localVariableTable[l].getDescriptorCPIndex());
                      dos.writeShort((short) localVariableTable[l].getSlot());
                 }
+            }
+        }
+
+        if (hasCheckedExceptions) {
+            CheckedExceptionElement[] exceptions = m.getCheckedExceptions();
+            writeIndex(_exceptionsIndex);
+
+            int attrSize = 2 /* number_of_exceptions */ +
+                           exceptions.length * 2 /* exception_index */;
+            dos.writeInt(attrSize);
+            dos.writeShort(exceptions.length);
+            if (DEBUG) debugMessage("\tmethod has " + exceptions.length
+                                        +  " checked exception(s)");
+            for (int e = 0; e < exceptions.length; e++) {
+                 short cpIndex = (short) exceptions[e].getClassCPIndex();
+                 dos.writeShort(cpIndex);
             }
         }
 
@@ -643,7 +617,7 @@ public class ClassWriter implements /* imports */ ClassConstants
     }
 
     protected void writeGenericSignature(String signature) throws IOException {
-        dos.writeShort(_signatureIndex);
+        writeIndex(_signatureIndex);
         if (DEBUG) debugMessage("signature attribute = " + _signatureIndex);
         dos.writeInt(2);
         Short index = (Short) utf8ToIndex.get(signature);
@@ -653,12 +627,12 @@ public class ClassWriter implements /* imports */ ClassConstants
 
     protected void writeClassAttributes() throws IOException {
         final long flags = klass.getAccessFlags();
-        final boolean isSyn = isSynthetic((short) flags);
+        final boolean hasSyn = hasSyntheticAttribute((short) flags);
 
         // check for source file
         short classAttributeCount = 0;
 
-        if (isSyn)
+        if (hasSyn)
             classAttributeCount++;
 
         Symbol sourceFileName = klass.getSourceFileName();
@@ -677,12 +651,12 @@ public class ClassWriter implements /* imports */ ClassConstants
         dos.writeShort(classAttributeCount);
         if (DEBUG) debugMessage("class attribute count = " + classAttributeCount);
 
-        if (isSyn)
+        if (hasSyn)
             writeSynthetic();
 
         // write SourceFile, if any
         if (sourceFileName != null) {
-            dos.writeShort(_sourceFileIndex);
+            writeIndex(_sourceFileIndex);
             if (DEBUG) debugMessage("source file attribute = " + _sourceFileIndex);
             dos.writeInt(2);
             Short index = (Short) utf8ToIndex.get(sourceFileName.asString());
@@ -697,7 +671,7 @@ public class ClassWriter implements /* imports */ ClassConstants
 
         // write inner classes, if any
         if (numInnerClasses != 0) {
-            dos.writeShort(_innerClassesIndex);
+            writeIndex(_innerClassesIndex);
             final int innerAttrLen = 2 /* number_of_inner_classes */ +
                                      numInnerClasses * (
                                                  2 /* inner_class_info_index */ +

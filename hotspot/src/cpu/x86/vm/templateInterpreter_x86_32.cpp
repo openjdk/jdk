@@ -92,6 +92,33 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
   return entry;
 }
 
+// Arguments are: required type at TOS+8, failing object (or NULL) at TOS+4.
+// pc at TOS (just for debugging)
+address TemplateInterpreterGenerator::generate_WrongMethodType_handler() {
+  address entry = __ pc();
+
+  __ pop(rbx);                  // actual failing object is at TOS
+  __ pop(rax);                  // required type is at TOS+4
+
+  __ verify_oop(rbx);
+  __ verify_oop(rax);
+
+  // Various method handle types use interpreter registers as temps.
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Expression stack must be empty before entering the VM for an exception.
+  __ empty_expression_stack();
+  __ empty_FPU_stack();
+  __ call_VM(noreg,
+             CAST_FROM_FN_PTR(address,
+                              InterpreterRuntime::throw_WrongMethodTypeException),
+             // pass required type, failing object (or NULL)
+             rax, rbx);
+  return entry;
+}
+
+
 address TemplateInterpreterGenerator::generate_exception_handler_common(const char* name, const char* message, bool pass_oop) {
   assert(!pass_oop || message == NULL, "either oop or message but not both");
   address entry = __ pc();
@@ -1370,6 +1397,7 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::empty                  : entry_point = ((InterpreterGenerator*)this)->generate_empty_entry();        break;
     case Interpreter::accessor               : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();     break;
     case Interpreter::abstract               : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();     break;
+    case Interpreter::method_handle          : entry_point = ((InterpreterGenerator*)this)->generate_method_handle_entry(); break;
 
     case Interpreter::java_lang_math_sin     : // fall thru
     case Interpreter::java_lang_math_cos     : // fall thru
@@ -1400,7 +1428,8 @@ int AbstractInterpreter::size_top_interpreter_activation(methodOop method) {
   // be sure to change this if you add/subtract anything to/from the overhead area
   const int overhead_size = -frame::interpreter_frame_initial_sp_offset;
 
-  const int method_stack = (method->max_locals() + method->max_stack()) *
+  const int extra_stack = methodOopDesc::extra_stack_entries();
+  const int method_stack = (method->max_locals() + method->max_stack() + extra_stack) *
                            Interpreter::stackElementWords();
   return overhead_size + method_stack + stub_code;
 }

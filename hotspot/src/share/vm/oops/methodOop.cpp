@@ -304,6 +304,12 @@ void methodOopDesc::cleanup_inline_caches() {
 }
 
 
+int methodOopDesc::extra_stack_words() {
+  // not an inline function, to avoid a header dependency on Interpreter
+  return extra_stack_entries() * Interpreter::stackElementSize();
+}
+
+
 void methodOopDesc::compute_size_of_parameters(Thread *thread) {
   symbolHandle h_signature(thread, signature());
   ArgumentSizeComputer asc(h_signature);
@@ -564,6 +570,11 @@ void methodOopDesc::set_signature_handler(address handler) {
 
 
 bool methodOopDesc::is_not_compilable(int comp_level) const {
+  if (is_method_handle_invoke()) {
+    // compilers must recognize this method specially, or not at all
+    return true;
+  }
+
   methodDataOop mdo = method_data();
   if (mdo != NULL
       && (uint)mdo->decompile_count() > (uint)PerMethodRecompilationCutoff) {
@@ -651,7 +662,7 @@ void methodOopDesc::link_method(methodHandle h_method, TRAPS) {
   assert(entry != NULL, "interpreter entry must be non-null");
   // Sets both _i2i_entry and _from_interpreted_entry
   set_interpreter_entry(entry);
-  if (is_native()) {
+  if (is_native() && !is_method_handle_invoke()) {
     set_native_function(
       SharedRuntime::native_method_throw_unsatisfied_link_error_entry(),
       !native_bind_event_is_interesting);
@@ -782,6 +793,100 @@ bool methodOopDesc::should_not_be_cached() const {
   // caching this method should be just fine
   return false;
 }
+
+// Constant pool structure for invoke methods:
+enum {
+  _imcp_invoke_name = 1,        // utf8: 'invoke'
+  _imcp_invoke_signature,       // utf8: (variable symbolOop)
+  _imcp_method_type_value,      // string: (variable java/dyn/MethodType, sic)
+  _imcp_limit
+};
+
+oop methodOopDesc::method_handle_type() const {
+  if (!is_method_handle_invoke()) { assert(false, "caller resp."); return NULL; }
+  oop mt = constants()->resolved_string_at(_imcp_method_type_value);
+  assert(mt->klass() == SystemDictionary::MethodType_klass(), "");
+  return mt;
+}
+
+jint* methodOopDesc::method_type_offsets_chain() {
+  static jint pchase[] = { -1, -1, -1 };
+  if (pchase[0] == -1) {
+    jint step0 = in_bytes(constants_offset());
+    jint step1 = (constantPoolOopDesc::header_size() + _imcp_method_type_value) * HeapWordSize;
+    // do this in reverse to avoid races:
+    OrderAccess::release_store(&pchase[1], step1);
+    OrderAccess::release_store(&pchase[0], step0);
+  }
+  return pchase;
+}
+
+methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
+                                               symbolHandle signature,
+                                               Handle method_type, TRAPS) {
+  methodHandle empty;
+
+  assert(holder() == SystemDictionary::MethodHandle_klass(),
+         "must be a JSR 292 magic type");
+
+  if (TraceMethodHandles) {
+    tty->print("Creating invoke method for ");
+    signature->print_value();
+    tty->cr();
+  }
+
+  constantPoolHandle cp;
+  {
+    constantPoolOop cp_oop = oopFactory::new_constantPool(_imcp_limit, IsSafeConc, CHECK_(empty));
+    cp = constantPoolHandle(THREAD, cp_oop);
+  }
+  cp->symbol_at_put(_imcp_invoke_name,       vmSymbols::invoke_name());
+  cp->symbol_at_put(_imcp_invoke_signature,  signature());
+  cp->string_at_put(_imcp_method_type_value, vmSymbols::void_signature());
+  cp->set_pool_holder(holder());
+
+  // set up the fancy stuff:
+  cp->pseudo_string_at_put(_imcp_method_type_value, method_type());
+  methodHandle m;
+  {
+    int flags_bits = (JVM_MH_INVOKE_BITS | JVM_ACC_PUBLIC | JVM_ACC_FINAL);
+    methodOop m_oop = oopFactory::new_method(0, accessFlags_from(flags_bits),
+                                             0, 0, 0, IsSafeConc, CHECK_(empty));
+    m = methodHandle(THREAD, m_oop);
+  }
+  m->set_constants(cp());
+  m->set_name_index(_imcp_invoke_name);
+  m->set_signature_index(_imcp_invoke_signature);
+  assert(m->name() == vmSymbols::invoke_name(), "");
+  assert(m->signature() == signature(), "");
+#ifdef CC_INTERP
+  ResultTypeFinder rtf(signature());
+  m->set_result_index(rtf.type());
+#endif
+  m->compute_size_of_parameters(THREAD);
+  m->set_exception_table(Universe::the_empty_int_array());
+
+  // Finally, set up its entry points.
+  assert(m->method_handle_type() == method_type(), "");
+  assert(m->can_be_statically_bound(), "");
+  m->set_vtable_index(methodOopDesc::nonvirtual_vtable_index);
+  m->link_method(m, CHECK_(empty));
+
+#ifdef ASSERT
+  // Make sure the pointer chase works.
+  address p = (address) m();
+  for (jint* pchase = method_type_offsets_chain(); (*pchase) != -1; pchase++) {
+    p = *(address*)(p + (*pchase));
+  }
+  assert((oop)p == method_type(), "pointer chase is correct");
+#endif
+
+  if (TraceMethodHandles)
+    m->print_on(tty);
+
+  return m;
+}
+
 
 
 methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_code, int new_code_length,
