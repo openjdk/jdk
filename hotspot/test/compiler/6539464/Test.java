@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,26 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
+/**
+ * @test
+ * @bug 6539464
+ * @summary Math.log() produces inconsistent results between successive runs.
+ *
+ * @run main/othervm -Xcomp -XX:CompileOnly=Test.main Test
+ */
 
-// Generation of Interpreter
-//
-  friend class AbstractInterpreterGenerator;
+public class Test {
+    static double log_value = 17197;
+    static double log_result = Math.log(log_value);
 
- private:
-
-  address generate_normal_entry(bool synchronized);
-  address generate_native_entry(bool synchronized);
-  address generate_abstract_entry(void);
-  address generate_method_handle_entry(void);
-  address generate_math_entry(AbstractInterpreter::MethodKind kind);
-  address generate_empty_entry(void);
-  address generate_accessor_entry(void);
-  void lock_method(void);
-  void generate_stack_overflow_check(void);
-
-  void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);
-  void generate_counter_overflow(Label* do_continue);
+    public static void main(String[] args) throws Exception {
+        for (int i = 0; i < 1000000; i++) {
+            double log_result2 = Math.log(log_value);
+            if (log_result2 != log_result) {
+                throw new InternalError("Math.log produces inconsistent results: " + log_result2 + " != " + log_result);
+            }
+        }
+    }
+}
