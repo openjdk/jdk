@@ -1,7 +1,7 @@
 ^build/
 ^dist/
 ^nbproject/private/
-^src/share/tools/hsdis/bin/
+^src/share/tools/hsdis/build/
 ^src/share/tools/IdealGraphVisualizer/[a-zA-Z0-9]*/build/
 ^src/share/tools/IdealGraphVisualizer/build/
 ^src/share/tools/IdealGraphVisualizer/dist/
