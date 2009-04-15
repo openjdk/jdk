@@ -572,10 +572,13 @@ class Heap$Type$Buffer$RW$
             || (end > length())
             || (start > end))
             throw new IndexOutOfBoundsException();
-        int len = end - start;
+        int pos = position();
         return new HeapCharBuffer$RW$(hb,
-                                      -1, 0, len, len,
-                                      offset + position() + start);
+                                      -1,
+                                      pos + start,
+                                      pos + end,
+                                      capacity(),
+                                      offset);
     }
 
 #end[char]
