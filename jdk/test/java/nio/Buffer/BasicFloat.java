@@ -375,6 +375,9 @@ public class BasicFloat
 
 
 
+
+
+
         // Compact
 
         relPut(b);
@@ -703,6 +706,8 @@ public class BasicFloat
         relPut(b);                       // Required by testViews
 
     }
+
+
 
 
 
