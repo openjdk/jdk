@@ -247,7 +247,7 @@ class BuildConfig {
         sysDefines.add("HOTSPOT_BUILD_USER="+System.getProperty("user.name"));
         sysDefines.add("HOTSPOT_BUILD_TARGET=\\\""+get("Build")+"\\\"");
         sysDefines.add("_JNI_IMPLEMENTATION_");
-        sysDefines.add("HOTSPOT_LIB_ARCH=\\\"i486\\\"");
+        sysDefines.add("HOTSPOT_LIB_ARCH=\\\"i386\\\"");
 
         sysDefines.addAll(defines);
 

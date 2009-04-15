@@ -33,6 +33,7 @@
 #include <libiberty.h>
 #include <bfd.h>
 #include <dis-asm.h>
+#include <inttypes.h>
 
 #ifndef bool
 #define bool int
@@ -404,12 +405,12 @@ static const bfd_arch_info_type* find_arch_info(const char* arch_name) {
 }
 
 static const char* native_arch_name() {
-  const char* res = HOTSPOT_LIB_ARCH;
+  const char* res = NULL;
+#ifdef LIBARCH_i386
+    res = "i386";
+#endif
 #ifdef LIBARCH_amd64
     res = "i386:x86-64";
-#endif
-#ifdef LIBARCH_sparc
-    res = "sparc:v8plusb";
 #endif
 #ifdef LIBARCH_sparc
     res = "sparc:v8plusb";
@@ -418,7 +419,7 @@ static const char* native_arch_name() {
     res = "sparc:v9b";
 #endif
   if (res == NULL)
-    res = "HOTSPOT_LIB_ARCH is not set in Makefile!";
+    res = "architecture not set in Makefile!";
   return res;
 }
 
