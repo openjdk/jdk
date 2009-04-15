@@ -125,7 +125,6 @@ FILES_2D_c = \
         FourByteAbgrPre.c \
 	BufferedMaskBlit.c \
 	BufferedRenderPipe.c \
-	RenderBuffer.c \
 	ShapeSpanIterator.c \
 	SpanClipRenderer.c \
 	awt_ImageRep.c \

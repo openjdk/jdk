@@ -65,7 +65,6 @@ SUNWprivate_1.1 {
 		Java_sun_awt_image_ShortComponentRaster_initIDs;
                 Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile;
                 Java_sun_java2d_pipe_BufferedRenderPipe_fillSpans;
-                Java_sun_java2d_pipe_RenderBuffer_copyFromArray;
 		Java_sun_java2d_pipe_SpanClipRenderer_eraseTile;
 		Java_sun_java2d_pipe_SpanClipRenderer_fillTile;
                 Java_sun_java2d_pipe_ShapeSpanIterator_addSegment;
