@@ -39,7 +39,7 @@ define_pd_global(uintx, JVMInvokeMethodSlack,    8*K);
 // ThreadStackSize 320 allows TaggedStackInterpreter and a couple of test cases
 // to run while keeping the number of threads that can be created high.
 define_pd_global(intx, ThreadStackSize,          320);
-define_pd_global(intx, VMThreadStackSize,        256);
+define_pd_global(intx, VMThreadStackSize,        512);
 define_pd_global(intx, SurvivorRatio,            8);
 define_pd_global(uintx, JVMInvokeMethodSlack,    10*K);
 #endif // AMD64
