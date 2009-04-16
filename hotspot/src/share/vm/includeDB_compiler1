@@ -270,6 +270,7 @@ c1_LIRGenerator_<arch>.cpp             vmreg_<arch>.inline.hpp
 
 c1_LinearScan.cpp                       bitMap.inline.hpp
 c1_LinearScan.cpp                       c1_CFGPrinter.hpp
+c1_LinearScan.cpp                       c1_CodeStubs.hpp
 c1_LinearScan.cpp                       c1_Compilation.hpp
 c1_LinearScan.cpp                       c1_FrameMap.hpp
 c1_LinearScan.cpp                       c1_IR.hpp
