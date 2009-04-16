@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,27 @@
 # have any questions.
 #
 
-#
-# Makefile for building com/sun
-#
-
-BUILDDIR = ../..
-PRODUCT = sun
-include $(BUILDDIR)/common/Defs.gmk
-
-ifndef OPENJDK
-  ORG_EXISTS := $(call DirExists,$(CLOSED_SRC)/share/classes/sun/org,,)
-  ifneq ("$(ORG_EXISTS)", "") 
-    SCRIPT_SUBDIR = script
-  endif
-endif
-
-# Omit mirror since it's built with the apt tool.
-SUBDIRS = $(SCRIPT_SUBDIR) image security crypto/provider jndi jmx \
-    java inputmethods org xml rowset net/httpserver net/ssl demo \
-    tools jarsigner tracing servicetag nio
-
-all build clean clobber::
-	$(SUBDIRS-loop)
-
+SUNWprivate_1.1 {
+	global:
+		Java_sun_nio_ch_SctpNet_socket0;
+		Java_sun_nio_ch_SctpNet_bindx;
+		Java_sun_nio_ch_SctpNet_getLocalAddresses0;
+		Java_sun_nio_ch_SctpNet_getRemoteAddresses0;
+		Java_sun_nio_ch_SctpNet_getPrimAddrOption0;
+		Java_sun_nio_ch_SctpNet_setPrimAddrOption0;
+		Java_sun_nio_ch_SctpNet_setPeerPrimAddrOption0;
+		Java_sun_nio_ch_SctpNet_getInitMsgOption0;
+		Java_sun_nio_ch_SctpNet_setInitMsgOption0;
+		Java_sun_nio_ch_SctpNet_getIntOption0;
+		Java_sun_nio_ch_SctpNet_setIntOption0;
+		Java_sun_nio_ch_SctpNet_shutdown0;
+		Java_sun_nio_ch_SctpChannelImpl_initIDs;
+		Java_sun_nio_ch_SctpChannelImpl_checkConnect;
+		Java_sun_nio_ch_SctpChannelImpl_receive0;
+		Java_sun_nio_ch_SctpChannelImpl_send0;
+		Java_sun_nio_ch_SctpServerChannelImpl_initIDs;
+		Java_sun_nio_ch_SctpServerChannelImpl_accept0;
+                JNI_OnLoad;
+	local:
+		*;
+};

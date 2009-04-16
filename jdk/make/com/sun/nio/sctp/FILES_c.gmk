@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,9 @@
 # have any questions.
 #
 
-#
-# Makefile for building com/sun
-#
-
-BUILDDIR = ../..
-PRODUCT = sun
-include $(BUILDDIR)/common/Defs.gmk
-
-ifndef OPENJDK
-  ORG_EXISTS := $(call DirExists,$(CLOSED_SRC)/share/classes/sun/org,,)
-  ifneq ("$(ORG_EXISTS)", "") 
-    SCRIPT_SUBDIR = script
-  endif
-endif
-
-# Omit mirror since it's built with the apt tool.
-SUBDIRS = $(SCRIPT_SUBDIR) image security crypto/provider jndi jmx \
-    java inputmethods org xml rowset net/httpserver net/ssl demo \
-    tools jarsigner tracing servicetag nio
-
-all build clean clobber::
-	$(SUBDIRS-loop)
-
+ifneq ($(PLATFORM),windows)
+FILES_c = \
+	SctpNet.c \
+        SctpChannelImpl.c \
+        SctpServerChannelImpl.c
+endif	

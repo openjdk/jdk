@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,16 @@
 # have any questions.
 #
 
-#
-# Makefile for building com/sun
+# 
+# Makefile for com.sun.nio packages.
 #
 
-BUILDDIR = ../..
-PRODUCT = sun
+BUILDDIR = ../../..
 include $(BUILDDIR)/common/Defs.gmk
 
-ifndef OPENJDK
-  ORG_EXISTS := $(call DirExists,$(CLOSED_SRC)/share/classes/sun/org,,)
-  ifneq ("$(ORG_EXISTS)", "") 
-    SCRIPT_SUBDIR = script
-  endif
-endif
-
-# Omit mirror since it's built with the apt tool.
-SUBDIRS = $(SCRIPT_SUBDIR) image security crypto/provider jndi jmx \
-    java inputmethods org xml rowset net/httpserver net/ssl demo \
-    tools jarsigner tracing servicetag nio
-
+SUBDIRS = sctp
 all build clean clobber::
 	$(SUBDIRS-loop)
 
+clean clobber::
+	$(RM) -r $(CLASSDESTDIR)/com/sun/nio

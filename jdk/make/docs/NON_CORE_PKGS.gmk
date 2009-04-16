@@ -86,6 +86,8 @@ TREEAPI_PKGS 	 = com.sun.source.tree \
 
 SMARTCARDIO_PKGS = javax.smartcardio
 
+SCTPAPI_PKGS     = com.sun.nio.sctp
+
 TRACING_PKGS     = com.sun.tracing         \
                    com.sun.tracing.dtrace
 
@@ -98,4 +100,6 @@ NON_CORE_PKGS    = $(DOMAPI_PKGS) \
                    $(OLD_JSSE_PKGS) \
                    $(HTTPSERVER_PKGS) \
                    $(SMARTCARDIO_PKGS) \
-                   $(TRACING_PKGS)
+                   $(TRACING_PKGS) \
+                   $(SCTPAPI_PKGS)
+
