@@ -31,6 +31,7 @@ import java.awt.Toolkit;
 import java.io.*;
 import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 /**
  * @author Michael Martak
@@ -459,6 +460,35 @@ public abstract class ShellFolder extends File {
 
     public Object getFolderColumnValue(int column) {
         return null;
+    }
+
+    private static Invoker invoker;
+
+    /**
+     * Provides the single access point to the {@link Invoker}. It is guaranteed that the value
+     * returned by this method will be always the same.
+     *
+     * @return the singleton instance of {@link Invoker}
+     */
+    public static Invoker getInvoker() {
+        if (invoker == null) {
+            invoker = shellFolderManager.createInvoker();
+        }
+        return invoker;
+    }
+
+    /**
+     * Interface allowing to invoke tasks in different environments on different platforms.
+     */
+    public static interface Invoker {
+        /**
+         * Invokes a callable task. If the {@code task} throws a checked exception,
+         * it will be wrapped into a {@link RuntimeException}
+         *
+         * @param task a task to invoke
+         * @return the result of {@code task}'s invokation
+         */
+        <T> T invoke(Callable<T> task);
     }
 
     /**

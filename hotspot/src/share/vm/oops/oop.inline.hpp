@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,10 +148,11 @@ inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 
 inline narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
   assert(!is_null(v), "oop value can never be zero");
-  address heap_base = Universe::heap_base();
-  uint64_t pd = (uint64_t)(pointer_delta((void*)v, (void*)heap_base, 1));
+  address base = Universe::narrow_oop_base();
+  int    shift = Universe::narrow_oop_shift();
+  uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
-  uint64_t result = pd >> LogMinObjAlignmentInBytes;
+  uint64_t result = pd >> shift;
   assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
   return (narrowOop)result;
 }
@@ -162,8 +163,9 @@ inline narrowOop oopDesc::encode_heap_oop(oop v) {
 
 inline oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
-  address heap_base = Universe::heap_base();
-  return (oop)(void*)((uintptr_t)heap_base + ((uintptr_t)v << LogMinObjAlignmentInBytes));
+  address base = Universe::narrow_oop_base();
+  int    shift = Universe::narrow_oop_shift();
+  return (oop)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
 }
 
 inline oop oopDesc::decode_heap_oop(narrowOop v) {

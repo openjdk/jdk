@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ class java_lang_String : AllStatic {
 
   // Conversion
   static symbolHandle as_symbol(Handle java_string, TRAPS);
+  static symbolOop as_symbol_or_null(oop java_string);
 
   // Testers
   static bool is_instance(oop obj) {
@@ -149,6 +150,9 @@ class java_lang_Class : AllStatic {
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
   // Conversion
   static klassOop as_klassOop(oop java_class);
+  static BasicType as_BasicType(oop java_class, klassOop* reference_klass = NULL);
+  static symbolOop as_signature(oop java_class, bool intern_if_not_found, TRAPS);
+  static void print_signature(oop java_class, outputStream *st);
   // Testing
   static bool is_instance(oop obj) {
     return obj != NULL && obj->klass() == SystemDictionary::class_klass();
@@ -668,6 +672,8 @@ class java_lang_boxing_object: AllStatic {
   static BasicType basic_type(oop box);
   static bool is_instance(oop box)                 { return basic_type(box) != T_ILLEGAL; }
   static bool is_instance(oop box, BasicType type) { return basic_type(box) == type; }
+  static void print(oop box, outputStream* st)     { jvalue value;  print(get_value(box, &value), &value, st); }
+  static void print(BasicType type, jvalue* value, outputStream* st);
 
   static int value_offset_in_bytes(BasicType type) {
     return ( type == T_LONG || type == T_DOUBLE ) ? long_value_offset :

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6379235
+ * @ignore until 6721694 is fixed
  * @run main/othervm -server -Xmx32m -Xms32m -Xss256m StartOOMTest
  * @summary ThreadGroup accounting mistake possible with failure of Thread.start()
  */

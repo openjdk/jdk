@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,18 @@
 package com.sun.tools.javac.api;
 
 import java.util.Locale;
+import java.util.Set;
 import javax.tools.Diagnostic;
+import com.sun.tools.javac.api.DiagnosticFormatter.*;
 
 /**
- * Provides simple functionalities for javac diagnostic formatting
+ * Provides simple functionalities for javac diagnostic formatting.
  * @param <D> type of diagnostic handled by this formatter
  */
 public interface DiagnosticFormatter<D extends Diagnostic<?>> {
 
     /**
-     * Whether the source code output for this diagnostic is to be displayed
+     * Whether the source code output for this diagnostic is to be displayed.
      *
      * @param diag diagnostic to be formatted
      * @return true if the source line this diagnostic refers to is to be displayed
@@ -42,7 +44,7 @@ public interface DiagnosticFormatter<D extends Diagnostic<?>> {
     boolean displaySource(D diag);
 
     /**
-     * Format the contents of a diagnostics
+     * Format the contents of a diagnostics.
      *
      * @param diag the diagnostic to be formatted
      * @param l locale object to be used for i18n
@@ -114,5 +116,98 @@ public interface DiagnosticFormatter<D extends Diagnostic<?>> {
          * Offset position
          */
         OFFSET
+    }
+
+    /**
+     * Get a list of all the enabled verbosity options.
+     * @return verbosity options
+     */
+    public Configuration getConfiguration();
+    //where
+
+    /**
+     * This interface provides functionalities for tuning the output of a
+     * diagnostic formatter in multiple ways.
+     */
+    interface Configuration {
+        /**
+         * Configure the set of diagnostic parts that should be displayed
+         * by the formatter.
+         * @param options options to set
+         */
+        public void setVisible(Set<DiagnosticPart> visibleParts);
+
+        /**
+         * Retrieve the set of diagnostic parts that should be displayed
+         * by the formatter.
+         * @return verbosity options
+         */
+        public Set<DiagnosticPart> getVisible();
+
+        //where
+        /**
+         * A given diagnostic message can be divided into sub-parts each of which
+         * might/might not be displayed by the formatter, according to the
+         * current configuration settings.
+         */
+        public enum DiagnosticPart {
+            /**
+             * Short description of the diagnostic - usually one line long.
+             */
+            SUMMARY,
+            /**
+             * Longer description that provides additional details w.r.t. the ones
+             * in the diagnostic's description.
+             */
+            DETAILS,
+            /**
+             * Source line the diagnostic refers to (if applicable).
+             */
+            SOURCE,
+            /**
+             * Subdiagnostics attached to a given multiline diagnostic.
+             */
+            SUBDIAGNOSTICS,
+            /**
+             * JLS paragraph this diagnostic might refer to (if applicable).
+             */
+            JLS;
+        }
+
+        /**
+         * Set a limit for multiline diagnostics.
+         * Note: Setting a limit has no effect if multiline diagnostics are either
+         * fully enabled or disabled.
+         *
+         * @param limit the kind of limit to be set
+         * @param value the limit value
+         */
+        public void setMultilineLimit(MultilineLimit limit, int value);
+
+        /**
+         * Get a multiline diagnostic limit.
+         *
+         * @param limit the kind of limit to be retrieved
+         * @return limit value or -1 if no limit is set
+         */
+        public int getMultilineLimit(MultilineLimit limit);
+        //where
+        /**
+         * A multiline limit control the verbosity of multiline diagnostics
+         * either by setting a maximum depth of nested multidiagnostics,
+         * or by limiting the amount of subdiagnostics attached to a given
+         * diagnostic (or both).
+         */
+        public enum MultilineLimit {
+            /**
+             * Controls the maximum depth of nested multiline diagnostics.
+             */
+            DEPTH,
+            /**
+             * Controls the maximum amount of subdiagnostics that are part of a
+             * given multiline diagnostic.
+             */
+            LENGTH;
+        }
     }
 }

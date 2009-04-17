@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,6 @@ CORBA_JMK_DIRECTORY=$(TOPDIR)/make/com/sun/corba/minclude/
 include $(CORBA_JMK_DIRECTORY)com_sun_corba_se_PortableActivationIDL.jmk
 include $(CORBA_JMK_DIRECTORY)com_sun_corba_se_impl_logging.jmk
 
-FILES_java += com/sun/corba/se/org/omg/CORBA/ORB.java
-
 #
 # Dirs
 #
@@ -80,11 +78,11 @@ ORBUTIL.MC      = $(SRC_DIR)/com/sun/corba/se/spi/logging/data/ORBUtil.mc
 POA.MC          = $(SRC_DIR)/com/sun/corba/se/spi/logging/data/POA.mc
 UTIL.MC         = $(SRC_DIR)/com/sun/corba/se/spi/logging/data/Util.mc
 
-MC_GENERATE_CLASS = $(SRC_DIR)/com/sun/tools/corba/se/logutil/scripts/mc.scm -main main make-class
-MC_GENERATE_LOG_RB = $(SRC_DIR)/com/sun/tools/corba/se/logutil/scripts/mc.scm -main main make-resource 
+MC_GENERATE_CLASS = make-class
+MC_GENERATE_LOG_RB = make-resource 
 
-JSCHEME_GENERATE_CLASS = $(BOOT_JAVA_CMD) jscheme.REPL $(MC_GENERATE_CLASS) 
-JSCHEME_GENERATE_LOG_RB = $(BOOT_JAVA_CMD) jscheme.REPL $(MC_GENERATE_LOG_RB) 
+JSCHEME_GENERATE_CLASS = $(BOOT_JAVA_CMD) com.sun.tools.corba.se.logutil.MC $(MC_GENERATE_CLASS) 
+JSCHEME_GENERATE_LOG_RB = $(BOOT_JAVA_CMD) com.sun.tools.corba.se.logutil.MC $(MC_GENERATE_LOG_RB) 
 
 
 #

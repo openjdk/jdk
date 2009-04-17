@@ -277,8 +277,6 @@ printHeapRegion(HeapRegion *hr) {
     gclog_or_tty->print("H: ");
   if (hr->in_collection_set())
     gclog_or_tty->print("CS: ");
-  if (hr->popular())
-    gclog_or_tty->print("pop: ");
   gclog_or_tty->print_cr("Region " PTR_FORMAT " (%s%s) "
                          "[" PTR_FORMAT ", " PTR_FORMAT"] "
                          "Used: " SIZE_FORMAT "K, garbage: " SIZE_FORMAT "K.",

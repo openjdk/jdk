@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,37 +59,6 @@ final class ProviderConfig {
     // parameters for the Provider(String) constructor,
     // use by doLoadProvider()
     private final static Class[] CL_STRING = { String.class };
-
-    // lock to use while loading a provider. it ensures that each provider
-    // is loaded only once and that we can detect recursion.
-    // NOTE that because of 4944382 we use the system classloader as lock.
-    // By using the same lock to load classes as to load providers we avoid
-    // deadlock due to lock ordering. However, this class may be initialized
-    // early in the startup when the system classloader has not yet been set
-    // up. Use a temporary lock object if that is the case.
-    // Any of this may break if the class loading implementation is changed.
-    private static volatile Object LOCK = new Object();
-
-    private static Object getLock() {
-        Object o = LOCK;
-        // check if lock is already set to the class loader
-        if (o instanceof ClassLoader) {
-            return o;
-        }
-        Object cl = AccessController.doPrivileged(
-                                new PrivilegedAction<Object>() {
-            public Object run() {
-                return ClassLoader.getSystemClassLoader();
-            }
-        });
-        // check if class loader initialized now (non-null)
-        if (cl != null) {
-            LOCK = cl;
-            o = cl;
-        }
-        return o;
-    }
-
 
     // name of the provider class
     private final String className;
@@ -194,7 +163,7 @@ final class ProviderConfig {
     /**
      * Get the provider object. Loads the provider if it is not already loaded.
      */
-    Provider getProvider() {
+    synchronized Provider getProvider() {
         // volatile variable load
         Provider p = provider;
         if (p != null) {
@@ -203,30 +172,23 @@ final class ProviderConfig {
         if (shouldLoad() == false) {
             return null;
         }
-        synchronized (getLock()) {
-            p = provider;
-            if (p != null) {
-                // loaded by another thread while we were blocked on lock
-                return p;
+        if (isLoading) {
+            // because this method is synchronized, this can only
+            // happen if there is recursion.
+            if (debug != null) {
+                debug.println("Recursion loading provider: " + this);
+                new Exception("Call trace").printStackTrace();
             }
-            if (isLoading) {
-                // because this method is synchronized, this can only
-                // happen if there is recursion.
-                if (debug != null) {
-                    debug.println("Recursion loading provider: " + this);
-                    new Exception("Call trace").printStackTrace();
-                }
-                return null;
-            }
-            try {
-                isLoading = true;
-                tries++;
-                p = doLoadProvider();
-            } finally {
-                isLoading = false;
-            }
-            provider = p;
+            return null;
         }
+        try {
+            isLoading = true;
+            tries++;
+            p = doLoadProvider();
+        } finally {
+            isLoading = false;
+        }
+        provider = p;
         return p;
     }
 

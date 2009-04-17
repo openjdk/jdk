@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2393,23 +2393,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
     // get instance klass
     load(k_RInfo, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc), k_RInfo, T_OBJECT, NULL);
-    // get super_check_offset
-    load(k_RInfo, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes(), Rtmp1, T_INT, NULL);
-    // See if we get an immediate positive hit
-    __ ld_ptr(klass_RInfo, Rtmp1, FrameMap::O7_oop_opr->as_register());
-    __ cmp(k_RInfo, O7);
-    __ br(Assembler::equal, false, Assembler::pn, done);
-    __ delayed()->nop();
-    // check for immediate negative hit
-    __ cmp(Rtmp1, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes());
-    __ br(Assembler::notEqual, false, Assembler::pn, *stub->entry());
-    __ delayed()->nop();
-    // check for self
-    __ cmp(klass_RInfo, k_RInfo);
-    __ br(Assembler::equal, false, Assembler::pn, done);
-    __ delayed()->nop();
+    // perform the fast part of the checking logic
+    __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, O7, &done, stub->entry(), NULL);
 
-    // assert(sub.is_same(FrameMap::G3_RInfo) && super.is_same(FrameMap::G1_RInfo), "incorrect call setup");
+    // call out-of-line instance of __ check_klass_subtype_slow_path(...):
+    assert(klass_RInfo == G3 && k_RInfo == G1, "incorrect call setup");
     __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
     __ delayed()->nop();
     __ cmp(G3, 0);
@@ -2493,58 +2481,30 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ delayed()->nop();
       __ bind(done);
     } else {
+      bool need_slow_path = true;
       if (k->is_loaded()) {
-        load(klass_RInfo, k->super_check_offset(), Rtmp1, T_OBJECT, NULL);
-
-        if (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() != k->super_check_offset()) {
-          // See if we get an immediate positive hit
-          __ cmp(Rtmp1, k_RInfo );
-          __ br(Assembler::notEqual, false, Assembler::pn, *stub->entry());
-          __ delayed()->nop();
-        } else {
-          // See if we get an immediate positive hit
-          assert_different_registers(Rtmp1, k_RInfo, klass_RInfo);
-          __ cmp(Rtmp1, k_RInfo );
-          __ br(Assembler::equal, false, Assembler::pn, done);
-          // check for self
-          __ delayed()->cmp(klass_RInfo, k_RInfo);
-          __ br(Assembler::equal, false, Assembler::pn, done);
-          __ delayed()->nop();
-
-          // assert(sub.is_same(FrameMap::G3_RInfo) && super.is_same(FrameMap::G1_RInfo), "incorrect call setup");
-          __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
-          __ delayed()->nop();
-          __ cmp(G3, 0);
-          __ br(Assembler::equal, false, Assembler::pn, *stub->entry());
-          __ delayed()->nop();
-        }
-        __ bind(done);
+        if (k->super_check_offset() != sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())
+          need_slow_path = false;
+        // perform the fast part of the checking logic
+        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, noreg,
+                                         (need_slow_path ? &done : NULL),
+                                         stub->entry(), NULL,
+                                         RegisterOrConstant(k->super_check_offset()));
       } else {
-        assert_different_registers(Rtmp1, klass_RInfo, k_RInfo);
-
-        load(k_RInfo, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes(), Rtmp1, T_INT, NULL);
-        // See if we get an immediate positive hit
-        load(klass_RInfo, Rtmp1, FrameMap::O7_oop_opr, T_OBJECT);
-        __ cmp(k_RInfo, O7);
-        __ br(Assembler::equal, false, Assembler::pn, done);
-        __ delayed()->nop();
-        // check for immediate negative hit
-        __ cmp(Rtmp1, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes());
-        __ br(Assembler::notEqual, false, Assembler::pn, *stub->entry());
-        // check for self
-        __ delayed()->cmp(klass_RInfo, k_RInfo);
-        __ br(Assembler::equal, false, Assembler::pn, done);
-        __ delayed()->nop();
-
-        // assert(sub.is_same(FrameMap::G3_RInfo) && super.is_same(FrameMap::G1_RInfo), "incorrect call setup");
+        // perform the fast part of the checking logic
+        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, O7,
+                                         &done, stub->entry(), NULL);
+      }
+      if (need_slow_path) {
+        // call out-of-line instance of __ check_klass_subtype_slow_path(...):
+        assert(klass_RInfo == G3 && k_RInfo == G1, "incorrect call setup");
         __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
         __ delayed()->nop();
         __ cmp(G3, 0);
         __ br(Assembler::equal, false, Assembler::pn, *stub->entry());
         __ delayed()->nop();
-        __ bind(done);
       }
-
+      __ bind(done);
     }
     __ mov(obj, dst);
   } else if (code == lir_instanceof) {
@@ -2582,58 +2542,32 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ set(0, dst);
       __ bind(done);
     } else {
+      bool need_slow_path = true;
       if (k->is_loaded()) {
-        assert_different_registers(Rtmp1, klass_RInfo, k_RInfo);
-        load(klass_RInfo, k->super_check_offset(), Rtmp1, T_OBJECT, NULL);
-
-        if (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() != k->super_check_offset()) {
-          // See if we get an immediate positive hit
-          __ cmp(Rtmp1, k_RInfo );
-          __ br(Assembler::equal, true, Assembler::pt, done);
-          __ delayed()->set(1, dst);
-          __ set(0, dst);
-          __ bind(done);
-        } else {
-          // See if we get an immediate positive hit
-          assert_different_registers(Rtmp1, k_RInfo, klass_RInfo);
-          __ cmp(Rtmp1, k_RInfo );
-          __ br(Assembler::equal, true, Assembler::pt, done);
-          __ delayed()->set(1, dst);
-          // check for self
-          __ cmp(klass_RInfo, k_RInfo);
-          __ br(Assembler::equal, true, Assembler::pt, done);
-          __ delayed()->set(1, dst);
-
-          // assert(sub.is_same(FrameMap::G3_RInfo) && super.is_same(FrameMap::G1_RInfo), "incorrect call setup");
-          __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
-          __ delayed()->nop();
-          __ mov(G3, dst);
-          __ bind(done);
-        }
+        if (k->super_check_offset() != sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())
+          need_slow_path = false;
+        // perform the fast part of the checking logic
+        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, O7, noreg,
+                                         (need_slow_path ? &done : NULL),
+                                         (need_slow_path ? &done : NULL), NULL,
+                                         RegisterOrConstant(k->super_check_offset()),
+                                         dst);
       } else {
         assert(dst != klass_RInfo && dst != k_RInfo, "need 3 registers");
-
-        load(k_RInfo, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes(), dst, T_INT, NULL);
-        // See if we get an immediate positive hit
-        load(klass_RInfo, dst, FrameMap::O7_oop_opr, T_OBJECT);
-        __ cmp(k_RInfo, O7);
-        __ br(Assembler::equal, true, Assembler::pt, done);
-        __ delayed()->set(1, dst);
-        // check for immediate negative hit
-        __ cmp(dst, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes());
-        __ br(Assembler::notEqual, true, Assembler::pt, done);
-        __ delayed()->set(0, dst);
-        // check for self
-        __ cmp(klass_RInfo, k_RInfo);
-        __ br(Assembler::equal, true, Assembler::pt, done);
-        __ delayed()->set(1, dst);
-
-        // assert(sub.is_same(FrameMap::G3_RInfo) && super.is_same(FrameMap::G1_RInfo), "incorrect call setup");
+        // perform the fast part of the checking logic
+        __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, O7, dst,
+                                         &done, &done, NULL,
+                                         RegisterOrConstant(-1),
+                                         dst);
+      }
+      if (need_slow_path) {
+        // call out-of-line instance of __ check_klass_subtype_slow_path(...):
+        assert(klass_RInfo == G3 && k_RInfo == G1, "incorrect call setup");
         __ call(Runtime1::entry_for(Runtime1::slow_subtype_check_id), relocInfo::runtime_call_type);
         __ delayed()->nop();
         __ mov(G3, dst);
-        __ bind(done);
       }
+      __ bind(done);
     }
   } else {
     ShouldNotReachHere();

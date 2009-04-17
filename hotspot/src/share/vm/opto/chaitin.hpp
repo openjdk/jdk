@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,7 +327,7 @@ class PhaseChaitin : public PhaseRegAlloc {
   // True if lidx is used before any real register is def'd in the block
   bool prompt_use( Block *b, uint lidx );
   Node *get_spillcopy_wide( Node *def, Node *use, uint uidx );
-  // Insert the spill at chosen location.  Skip over any interveneing Proj's or
+  // Insert the spill at chosen location.  Skip over any intervening Proj's or
   // Phis.  Skip over a CatchNode and projs, inserting in the fall-through block
   // instead.  Update high-pressure indices.  Create a new live range.
   void insert_proj( Block *b, uint i, Node *spill, uint maxlrg );
@@ -337,6 +337,8 @@ class PhaseChaitin : public PhaseRegAlloc {
   uint _oldphi;                 // Node index which separates pre-allocation nodes
 
   Block **_blks;                // Array of blocks sorted by frequency for coalescing
+
+  float _high_frequency_lrg;    // Frequency at which LRG will be spilled for debug info
 
 #ifndef PRODUCT
   bool _trace_spilling;
@@ -359,6 +361,8 @@ public:
   void Register_Allocate();
 
   uint n2lidx( const Node *n ) const { return _names[n->_idx]; }
+
+  float high_frequency_lrg() const { return _high_frequency_lrg; }
 
 #ifndef PRODUCT
   bool trace_spilling() const { return _trace_spilling; }
@@ -431,7 +435,7 @@ private:
   void Simplify();
 
   // Select colors by re-inserting edges into the IFG.
-  // Return TRUE if any spills occured.
+  // Return TRUE if any spills occurred.
   uint Select( );
   // Helper function for select which allows biased coloring
   OptoReg::Name choose_color( LRG &lrg, int chunk );

@@ -340,8 +340,7 @@ ifeq ($(PLATFORM), windows)
 
 FONTCONFIGS_SRC = $(PLATFORM_SRC)/classes/sun/awt/windows
 _FONTCONFIGS = \
-        fontconfig.properties \
-        fontconfig.98.properties 
+        fontconfig.properties
 
 FONTCONFIGS_SRC_PREFIX =
 

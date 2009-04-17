@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
+ * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
  *                                                                             *
  * The original version of this source code and documentation is copyrighted   *
  * and owned by IBM, These materials are provided under terms of a License     *
@@ -167,8 +166,8 @@ public class UnicodeSetIterator {
      * @param set the set to iterate over.
      * @stable ICU 2.0
      */
-    public void reset(UnicodeSet set) {
-        this.set = set;
+    public void reset(UnicodeSet uset) {
+        set = uset;
         reset();
     }
 
@@ -213,8 +212,8 @@ public class UnicodeSetIterator {
     /**
      * @internal
      */
-    protected void loadRange(int range) {
-        nextElement = set.getRangeStart(range);
-        endElement = set.getRangeEnd(range);
+    protected void loadRange(int aRange) {
+        nextElement = set.getRangeStart(aRange);
+        endElement = set.getRangeEnd(aRange);
     }
 }

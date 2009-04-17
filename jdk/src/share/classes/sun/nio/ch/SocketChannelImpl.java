@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
+import sun.net.NetHooks;
 
 
 /**
@@ -128,28 +129,28 @@ class SocketChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             if (!isOpen())
-                return null;
+                throw new ClosedChannelException();
             return localAddress;
         }
     }
 
     @Override
-    public SocketAddress getConnectedAddress() throws IOException {
+    public SocketAddress getRemoteAddress() throws IOException {
         synchronized (stateLock) {
             if (!isOpen())
-                return null;
+                throw new ClosedChannelException();
             return remoteAddress;
         }
     }
 
     @Override
-    public SocketChannel setOption(SocketOption name, Object value)
+    public <T> SocketChannel setOption(SocketOption<T> name, T value)
         throws IOException
     {
         if (name == null)
             throw new NullPointerException();
-        if (!options().contains(name))
-            throw new IllegalArgumentException("Invalid option name");
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
 
         synchronized (stateLock) {
             if (!isOpen())
@@ -175,8 +176,8 @@ class SocketChannelImpl
     {
         if (name == null)
             throw new NullPointerException();
-        if (!options().contains(name))
-            throw new IllegalArgumentException("Invalid option name");
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
 
         synchronized (stateLock) {
             if (!isOpen())
@@ -193,7 +194,7 @@ class SocketChannelImpl
         }
     }
 
-    private static class LazyInitialization {
+    private static class DefaultOptionsHolder {
         static final Set<SocketOption<?>> defaultOptions = defaultOptions();
 
         private static Set<SocketOption<?>> defaultOptions() {
@@ -212,8 +213,8 @@ class SocketChannelImpl
     }
 
     @Override
-    public final Set<SocketOption<?>> options() {
-        return LazyInitialization.defaultOptions;
+    public final Set<SocketOption<?>> supportedOptions() {
+        return DefaultOptionsHolder.defaultOptions;
     }
 
     private boolean ensureReadOpen() throws ClosedChannelException {
@@ -526,6 +527,7 @@ class SocketChannelImpl
                         throw new AlreadyBoundException();
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
+                    NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
                     Net.bind(fd, isa.getAddress(), isa.getPort());
                     localAddress = Net.localAddress(fd);
                 }
@@ -576,6 +578,12 @@ class SocketChannelImpl
                             synchronized (stateLock) {
                                 if (!isOpen()) {
                                     return false;
+                                }
+                                // notify hook only if unbound
+                                if (localAddress == null) {
+                                    NetHooks.beforeTcpConnect(fd,
+                                                           isa.getAddress(),
+                                                           isa.getPort());
                                 }
                                 readerThread = NativeThread.current();
                             }

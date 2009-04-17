@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,17 @@
 
 package java.lang;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.LockSupport;
-import sun.misc.SoftCache;
 import sun.nio.ch.Interruptible;
 import sun.security.util.SecurityConstants;
 
@@ -1640,8 +1644,17 @@ class Thread implements Runnable {
                     new RuntimePermission("enableContextClassLoaderOverride");
 
     /** cache of subclass security audit results */
-    private static final SoftCache subclassAudits = new SoftCache(10);
+    /* Replace with ConcurrentReferenceHashMap when/if it appears in a future
+     * release */
+    private static class Caches {
+        /** cache of subclass security audit results */
+        static final ConcurrentMap<WeakClassKey,Boolean> subclassAudits =
+            new ConcurrentHashMap<WeakClassKey,Boolean>();
 
+        /** queue for WeakReferences to audited subclasses */
+        static final ReferenceQueue<Class<?>> subclassAuditsQueue =
+            new ReferenceQueue<Class<?>>();
+    }
 
     /**
      * Verifies that this (possibly subclass) instance can be constructed
@@ -1652,19 +1665,15 @@ class Thread implements Runnable {
     private static boolean isCCLOverridden(Class cl) {
         if (cl == Thread.class)
             return false;
-        Boolean result = null;
-        synchronized (subclassAudits) {
-            result = (Boolean) subclassAudits.get(cl);
-            if (result == null) {
-                /*
-                 * Note: only new Boolean instances (i.e., not Boolean.TRUE or
-                 * Boolean.FALSE) must be used as cache values, otherwise cache
-                 * entry will pin associated class.
-                 */
-                result = new Boolean(auditSubclass(cl));
-                subclassAudits.put(cl, result);
-            }
+
+        processQueue(Caches.subclassAuditsQueue, Caches.subclassAudits);
+        WeakClassKey key = new WeakClassKey(cl, Caches.subclassAuditsQueue);
+        Boolean result = Caches.subclassAudits.get(key);
+        if (result == null) {
+            result = Boolean.valueOf(auditSubclass(cl));
+            Caches.subclassAudits.putIfAbsent(key, result);
         }
+
         return result.booleanValue();
     }
 
@@ -1965,6 +1974,68 @@ class Thread implements Runnable {
      */
     private void dispatchUncaughtException(Throwable e) {
         getUncaughtExceptionHandler().uncaughtException(this, e);
+    }
+
+    /**
+     * Removes from the specified map any keys that have been enqueued
+     * on the specified reference queue.
+     */
+    static void processQueue(ReferenceQueue<Class<?>> queue,
+                             ConcurrentMap<? extends
+                             WeakReference<Class<?>>, ?> map)
+    {
+        Reference<? extends Class<?>> ref;
+        while((ref = queue.poll()) != null) {
+            map.remove(ref);
+        }
+    }
+
+    /**
+     *  Weak key for Class objects.
+     **/
+    static class WeakClassKey extends WeakReference<Class<?>> {
+        /**
+         * saved value of the referent's identity hash code, to maintain
+         * a consistent hash code after the referent has been cleared
+         */
+        private final int hash;
+
+        /**
+         * Create a new WeakClassKey to the given object, registered
+         * with a queue.
+         */
+        WeakClassKey(Class<?> cl, ReferenceQueue<Class<?>> refQueue) {
+            super(cl, refQueue);
+            hash = System.identityHashCode(cl);
+        }
+
+        /**
+         * Returns the identity hash code of the original referent.
+         */
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        /**
+         * Returns true if the given object is this identical
+         * WeakClassKey instance, or, if this object's referent has not
+         * been cleared, if the given object is another WeakClassKey
+         * instance with the identical non-null referent as this one.
+         */
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this)
+                return true;
+
+            if (obj instanceof WeakClassKey) {
+                Object referent = get();
+                return (referent != null) &&
+                       (referent == ((WeakClassKey) obj).get());
+            } else {
+                return false;
+            }
+        }
     }
 
     /* Some private helper methods */

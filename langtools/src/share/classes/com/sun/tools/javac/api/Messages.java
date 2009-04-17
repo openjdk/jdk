@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public interface Messages {
     void add(String bundleName) throws MissingResourceException;
 
     /**
-     * Get a localized formatted string
+     * Get a localized formatted string.
      * @param l locale in which the text is to be localized
      * @param key locale-independent message key
      * @param args misc message arguments

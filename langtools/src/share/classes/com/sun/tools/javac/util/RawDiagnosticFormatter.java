@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,14 @@
  */
 package com.sun.tools.javac.util;
 
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Locale;
 
+import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.*;
 import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
+
 import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
 
 /**
@@ -35,18 +40,21 @@ import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
  * or not the source name and position are set. This formatter provides a standardized, localize-independent
  * implementation of a diagnostic formatter; as such, this formatter is best suited for testing purposes.
  */
-public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
+public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
     /**
      * Create a formatter based on the supplied options.
      * @param msgs
      */
-    public RawDiagnosticFormatter(Options opts) {
-        super(null, opts, false);
+    public RawDiagnosticFormatter(Options options) {
+        super(null, new SimpleConfiguration(options,
+                EnumSet.of(DiagnosticPart.SUMMARY,
+                        DiagnosticPart.DETAILS,
+                        DiagnosticPart.SUBDIAGNOSTICS)));
     }
 
     //provide common default formats
-    public String format(JCDiagnostic d, Locale l) {
+    public String formatDiagnostic(JCDiagnostic d, Locale l) {
         try {
             StringBuffer buf = new StringBuffer();
             if (d.getPosition() != Position.NOPOS) {
@@ -62,13 +70,33 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             buf.append(' ');
             buf.append(formatMessage(d, null));
             if (displaySource(d))
-                buf.append("\n" + formatSourceLine(d));
+                buf.append("\n" + formatSourceLine(d, 0));
             return buf.toString();
         }
         catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public String formatMessage(JCDiagnostic d, Locale l) {
+        StringBuilder buf = new StringBuilder();
+        Collection<String> args = formatArguments(d, l);
+        buf.append(localize(null, d.getCode(), args.toArray()));
+        if (d.isMultiline() && getConfiguration().getVisible().contains(DiagnosticPart.SUBDIAGNOSTICS)) {
+            List<String> subDiags = formatSubdiagnostics(d, null);
+            if (subDiags.nonEmpty()) {
+                String sep = "";
+                buf.append(",{");
+                for (String sub : formatSubdiagnostics(d, null)) {
+                    buf.append(sep);
+                    buf.append("(" + sub + ")");
+                    sep = ",";
+                }
+                buf.append('}');
+            }
+        }
+        return buf.toString();
     }
 
     @Override
@@ -85,23 +113,9 @@ public class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
     }
 
     @Override
-    protected String formatSubdiagnostics(JCDiagnostic d, Locale l) {
+    protected String localize(Locale l, String key, Object... args) {
         StringBuilder buf = new StringBuilder();
-        String sep = "";
-        buf.append(",{");
-        for (JCDiagnostic d2 : d.getSubdiagnostics()) {
-            buf.append(sep);
-            buf.append("(" + format(d2, l) + ")");
-            sep = ",";
-        }
-        buf.append('}');
-        return buf.toString();
-    }
-
-    @Override
-    protected String localize(Locale l, String s, Object... args) {
-        StringBuffer buf = new StringBuffer();
-        buf.append(s);
+        buf.append(key);
         String sep = ": ";
         for (Object o : args) {
             buf.append(sep);

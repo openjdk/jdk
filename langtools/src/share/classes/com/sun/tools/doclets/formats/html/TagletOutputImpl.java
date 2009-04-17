@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,4 +67,10 @@ public class TagletOutputImpl implements TagletOutput {
         return output.toString();
     }
 
+    /**
+     * Check whether the taglet output is empty.
+     */
+    public boolean isEmpty() {
+        return (toString().trim().isEmpty());
+    }
 }

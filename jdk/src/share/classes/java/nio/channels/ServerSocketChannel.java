@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketOption;
 import java.net.SocketAddress;
-import java.nio.channels.spi.*;
+import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.SelectorProvider;
 
 /**
  * A selectable channel for stream-oriented listening sockets.
@@ -195,6 +196,7 @@ public abstract class ServerSocketChannel
         throws IOException;
 
     /**
+     * @throws  UnsupportedOperationException           {@inheritDoc}
      * @throws  IllegalArgumentException                {@inheritDoc}
      * @throws  ClosedChannelException                  {@inheritDoc}
      * @throws  IOException                             {@inheritDoc}

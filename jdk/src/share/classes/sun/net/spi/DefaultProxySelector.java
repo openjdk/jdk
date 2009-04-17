@@ -78,7 +78,6 @@ public class DefaultProxySelector extends ProxySelector {
     };
 
     private static boolean hasSystemProxies = false;
-    private static Properties defprops = new Properties();
 
     static {
         final String key = "java.net.useSystemProxies";
@@ -107,6 +106,9 @@ public class DefaultProxySelector extends ProxySelector {
         RegexpPool hostsPool;
         String property;
 
+        static NonProxyInfo ftpNonProxyInfo = new NonProxyInfo("ftp.nonProxyHosts", null, null);
+        static NonProxyInfo httpNonProxyInfo = new NonProxyInfo("http.nonProxyHosts", null, null);
+
         NonProxyInfo(String p, String s, RegexpPool pool) {
             property = p;
             hostsSource = s;
@@ -114,8 +116,6 @@ public class DefaultProxySelector extends ProxySelector {
         }
     }
 
-    private static NonProxyInfo ftpNonProxyInfo = new NonProxyInfo("ftp.nonProxyHosts", null, null);
-    private static NonProxyInfo httpNonProxyInfo = new NonProxyInfo("http.nonProxyHosts", null, null);
 
     /**
      * select() method. Where all the hard work is done.
@@ -175,13 +175,13 @@ public class DefaultProxySelector extends ProxySelector {
         NonProxyInfo pinfo = null;
 
         if ("http".equalsIgnoreCase(protocol)) {
-            pinfo = httpNonProxyInfo;
+            pinfo = NonProxyInfo.httpNonProxyInfo;
         } else if ("https".equalsIgnoreCase(protocol)) {
             // HTTPS uses the same property as HTTP, for backward
             // compatibility
-            pinfo = httpNonProxyInfo;
+            pinfo = NonProxyInfo.httpNonProxyInfo;
         } else if ("ftp".equalsIgnoreCase(protocol)) {
-            pinfo = ftpNonProxyInfo;
+            pinfo = NonProxyInfo.ftpNonProxyInfo;
         }
 
         /**
@@ -334,7 +334,6 @@ public class DefaultProxySelector extends ProxySelector {
         }
     }
 
-    private static final Pattern p6 = Pattern.compile("::1|(0:){7}1|(0:){1,6}:1");
     private boolean isLoopback(String host) {
         if (host == null || host.length() == 0)
             return false;
@@ -364,6 +363,7 @@ public class DefaultProxySelector extends ProxySelector {
         }
 
         if (host.endsWith(":1")) {
+            final Pattern p6 = Pattern.compile("::1|(0:){7}1|(0:){1,6}:1");
             return p6.matcher(host).matches();
         }
         return false;

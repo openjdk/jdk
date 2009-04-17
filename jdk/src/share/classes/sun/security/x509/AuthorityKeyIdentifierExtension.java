@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ implements CertAttrSet<String> {
     public String toString() {
         String s = super.toString() + "AuthorityKeyIdentifier [\n";
         if (id != null) {
-            s += id.toString() + "\n";
+            s += id.toString();     // id already has a newline
         }
         if (names != null) {
             s += names.toString() + "\n";

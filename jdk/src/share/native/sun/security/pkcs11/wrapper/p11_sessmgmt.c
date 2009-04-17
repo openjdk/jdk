@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -97,6 +97,10 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1OpenSession
 #ifndef NO_CALLBACKS
     if (jNotify != NULL) {
         notifyEncapsulation = (NotifyEncapsulation *) malloc(sizeof(NotifyEncapsulation));
+        if (notifyEncapsulation == NULL) {
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return 0L;
+        }
         notifyEncapsulation->jApplicationData = (jApplication != NULL)
                 ? (*env)->NewGlobalRef(env, jApplication)
                 : NULL;
@@ -118,7 +122,18 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1OpenSession
     TRACE0(" ... ");
 
     rv = (*ckpFunctions->C_OpenSession)(ckSlotID, ckFlags, ckpApplication, ckNotify, &ckSessionHandle);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return 0L ; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+#ifndef NO_CALLBACKS
+        if (notifyEncapsulation != NULL) {
+            if (notifyEncapsulation->jApplicationData != NULL) {
+                (*env)->DeleteGlobalRef(env, jApplication);
+            }
+            (*env)->DeleteGlobalRef(env, jNotify);
+            free(notifyEncapsulation);
+        }
+#endif /* NO_CALLBACKS */
+        return 0L;
+    }
 
     TRACE0("got session");
     TRACE1(", SessionHandle=%u", ckSessionHandle);
@@ -163,7 +178,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1CloseSession
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     rv = (*ckpFunctions->C_CloseSession)(ckSessionHandle);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 
 #ifndef NO_CALLBACKS
     notifyEncapsulation = removeNotifyEntry(env, ckSessionHandle);
@@ -208,7 +223,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1CloseAllSessio
     ckSlotID = jLongToCKULong(jSlotID);
 
     rv = (*ckpFunctions->C_CloseAllSessions)(ckSlotID);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 
 #ifndef NO_CALLBACKS
     /* Remove all notify callback helper objects. */
@@ -250,10 +265,9 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSessionI
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     rv = (*ckpFunctions->C_GetSessionInfo)(ckSessionHandle, &ckSessionInfo);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
-
-    jSessionInfo = ckSessionInfoPtrToJSessionInfo(env, &ckSessionInfo);
-
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jSessionInfo = ckSessionInfoPtrToJSessionInfo(env, &ckSessionInfo);
+    }
     return jSessionInfo ;
 }
 #endif
@@ -274,7 +288,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetOpera
     CK_SESSION_HANDLE ckSessionHandle;
     CK_BYTE_PTR ckpState;
     CK_ULONG ckStateLength;
-    jbyteArray jState;
+    jbyteArray jState = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -283,16 +297,19 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetOpera
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     rv = (*ckpFunctions->C_GetOperationState)(ckSessionHandle, NULL_PTR, &ckStateLength);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
 
     ckpState = (CK_BYTE_PTR) malloc(ckStateLength);
+    if (ckpState == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
 
     rv = (*ckpFunctions->C_GetOperationState)(ckSessionHandle, ckpState, &ckStateLength);
-
-    jState = ckByteArrayToJByteArray(env, ckpState, ckStateLength);
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jState = ckByteArrayToJByteArray(env, ckpState, ckStateLength);
+    }
     free(ckpState);
-
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
 
     return jState ;
 }
@@ -325,6 +342,8 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SetOperationSt
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jByteArrayToCKByteArray(env, jOperationState, &ckpState, &ckStateLength);
+    if ((*env)->ExceptionCheck(env)) { return; }
+
     ckEncryptionKeyHandle = jLongToCKULong(jEncryptionKeyHandle);
     ckAuthenticationKeyHandle = jLongToCKULong(jAuthenticationKeyHandle);
 
@@ -332,7 +351,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SetOperationSt
 
     free(ckpState);
 
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
 #endif
 
@@ -362,12 +381,13 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Login
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     ckUserType = jLongToCKULong(jUserType);
     jCharArrayToCKCharArray(env, jPin, &ckpPinArray, &ckPinLength);
+    if ((*env)->ExceptionCheck(env)) { return; }
 
     rv = (*ckpFunctions->C_Login)(ckSessionHandle, ckUserType, ckpPinArray, ckPinLength);
 
     free(ckpPinArray);
 
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
 #endif
 
@@ -391,7 +411,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Logout
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     rv = (*ckpFunctions->C_Logout)(ckSessionHandle);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
 #endif
 
@@ -410,10 +430,14 @@ void putNotifyEntry(JNIEnv *env, CK_SESSION_HANDLE hSession, NotifyEncapsulation
     NotifyListNode *currentNode, *newNode;
 
     if (notifyEncapsulation == NULL) {
-        return ;
+        return;
     }
 
     newNode = (NotifyListNode *) malloc(sizeof(NotifyListNode));
+    if (newNode == NULL) {
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return;
+    }
     newNode->hSession = hSession;
     newNode->notifyEncapsulation = notifyEncapsulation;
     newNode->next = NULL;
@@ -578,9 +602,10 @@ CK_RV notifyCallback(
     jEvent = ckULongToJLong(event);
 
     ckNotifyClass = (*env)->FindClass(env, CLASS_NOTIFY);
-    assert(ckNotifyClass != 0);
+    if (ckNotifyClass == NULL) { return rv; }
     jmethod = (*env)->GetMethodID(env, ckNotifyClass, "CK_NOTIFY", "(JJLjava/lang/Object;)V");
-    assert(jmethod != 0);
+    if (jmethod == NULL) { return rv; }
+
     (*env)->CallVoidMethod(env, notifyEncapsulation->jNotifyObject, jmethod,
                          jSessionHandle, jEvent, notifyEncapsulation->jApplicationData);
 
@@ -588,10 +613,14 @@ CK_RV notifyCallback(
     pkcs11Exception = (*env)->ExceptionOccurred(env);
 
     if (pkcs11Exception != NULL) {
+        /* TBD: clear the pending exception with ExceptionClear? */
         /* The was an exception thrown, now we get the error-code from it */
         pkcs11ExceptionClass = (*env)->FindClass(env, CLASS_PKCS11EXCEPTION);
+        if (pkcs11ExceptionClass == NULL) { return rv; }
+
         jmethod = (*env)->GetMethodID(env, pkcs11ExceptionClass, "getErrorCode", "()J");
-        assert(jmethod != 0);
+        if (jmethod == NULL) { return rv; }
+
         errorCode = (*env)->CallLongMethod(env, pkcs11Exception, jmethod);
         rv = jLongToCKULong(errorCode);
     }

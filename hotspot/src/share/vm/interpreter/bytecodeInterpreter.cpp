@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2642,7 +2642,7 @@ handle_return:
         // two interpreted frames). We need to save the current arguments in C heap so that
         // the deoptimized frame when it restarts can copy the arguments to its expression
         // stack and re-execute the call. We also have to notify deoptimization that this
-        // has occured and to pick the preerved args copy them to the deoptimized frame's
+        // has occurred and to pick the preserved args copy them to the deoptimized frame's
         // java expression stack. Yuck.
         //
         THREAD->popframe_preserve_args(in_ByteSize(METHOD->size_of_parameters() * wordSize),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -969,13 +969,39 @@ netif *addif(JNIEnv *env, netif *ifs, char *if_name, int index, int family,
            // Got access to parent, so create it if necessary.
            strcpy(vname, name);
            *unit = '\0';
-        }
-        else {
+        } else {
+#if defined(__solaris__) && defined(AF_INET6)
+          struct   lifreq lifr;
+          memset((char *) &lifr, 0, sizeof(lifr));
+          strcpy(lifr.lifr_name, vname);
+
+          /* Try with an IPv6 socket in case the interface has only IPv6
+           * addresses assigned to it */
+          close(sock);
+          sock = JVM_Socket(AF_INET6, SOCK_DGRAM, 0);
+
+          if (sock < 0) {
+            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
+                                         "Socket creation failed");
+            return ifs; /* return untouched list */
+          }
+
+          if (ioctl(sock, SIOCGLIFFLAGS, (char *)&lifr) >= 0) {
+            // Got access to parent, so create it if necessary.
+            strcpy(vname, name);
+            *unit = '\0';
+          } else {
+            // failed to access parent interface do not create parent.
+            // We are a virtual interface with no parent.
+            isVirtual = 1;
+            vname[0] = 0;
+          }
+#else
           // failed to access parent interface do not create parent.
           // We are a virtual interface with no parent.
           isVirtual = 1;
-
           vname[0] = 0;
+#endif
         }
       }
       close(sock);

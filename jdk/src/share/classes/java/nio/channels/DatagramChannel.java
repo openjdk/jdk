@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ import java.net.DatagramSocket;
 import java.net.SocketOption;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.spi.*;
+import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.SelectorProvider;
 
 /**
  * A selectable channel for datagram-oriented sockets.
@@ -53,7 +54,8 @@ import java.nio.channels.spi.*;
  * be determined by invoking its {@link #isConnected isConnected} method.
  *
  * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
- * setOption} method. Datagram channels support the following options:
+ * setOption} method. A datagram channel to an Internet Protocol socket supports
+ * the following options:
  * <blockquote>
  * <table border>
  *   <tr>
@@ -211,6 +213,7 @@ public abstract class DatagramChannel
         throws IOException;
 
     /**
+     * @throws  UnsupportedOperationException           {@inheritDoc}
      * @throws  IllegalArgumentException                {@inheritDoc}
      * @throws  ClosedChannelException                  {@inheritDoc}
      * @throws  IOException                             {@inheritDoc}
@@ -219,7 +222,6 @@ public abstract class DatagramChannel
      */
     public abstract <T> DatagramChannel setOption(SocketOption<T> name, T value)
         throws IOException;
-
 
     /**
      * Retrieves a datagram socket associated with this channel.
@@ -259,7 +261,10 @@ public abstract class DatagramChannel
      *
      * <p> This method may be invoked at any time.  It will not have any effect
      * on read or write operations that are already in progress at the moment
-     * that it is invoked.  </p>
+     * that it is invoked. If this channel's socket is not bound then this method
+     * will first cause the socket to be bound to an address that is assigned
+     * automatically, as if invoking the {@link #bind bind} method with a
+     * parameter of {@code null}. </p>
      *
      * @param  remote
      *         The remote address to which this channel is to be connected
@@ -313,15 +318,17 @@ public abstract class DatagramChannel
     /**
      * Returns the remote address to which this channel's socket is connected.
      *
-     * @return  The remote address; {@code null} if the channel is not {@link
-     *          #isOpen open} or the channel's socket is not connected
+     * @return  The remote address; {@code null} if the channel's socket is not
+     *          connected
      *
+     * @throws  ClosedChannelException
+     *          If the channel is closed
      * @throws  IOException
      *          If an I/O error occurs
      *
      * @since 1.7
      */
-    public abstract SocketAddress getConnectedAddress() throws IOException;
+    public abstract SocketAddress getRemoteAddress() throws IOException;
 
     /**
      * Receives a datagram via this channel.
@@ -352,7 +359,10 @@ public abstract class DatagramChannel
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a read operation upon this channel, however, then an
      * invocation of this method will block until the first operation is
-     * complete. </p>
+     * complete. If this channel's socket is not bound then this method will
+     * first cause the socket to be bound to an address that is assigned
+     * automatically, as if invoking the {@link #bind bind} method with a
+     * parameter of {@code null}. </p>
      *
      * @param  dst
      *         The buffer into which the datagram is to be transferred
@@ -409,7 +419,10 @@ public abstract class DatagramChannel
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a write operation upon this channel, however, then an
      * invocation of this method will block until the first operation is
-     * complete. </p>
+     * complete. If this channel's socket is not bound then this method will
+     * first cause the socket to be bound to an address that is assigned
+     * automatically, as if by invoking the {@link #bind bind) method with a
+     * parameter of {@code null}. </p>
      *
      * @param  src
      *         The buffer containing the datagram to be sent
