@@ -85,6 +85,7 @@
              destdir="${build.classes.dir}"
              memoryInitialSize="${javac.memoryInitialSize}"
              memoryMaximumSize="${javac.memoryMaximumSize}"
+	     debug="${javac.debug}"
              target="${javac.target}">
          <compilerarg value="-J-Xbootclasspath/p:${bootstrap.dir}/lib/javac.jar"/>
          <compilerarg line="${javac.version.opt}"/>
