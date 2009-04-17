@@ -76,20 +76,19 @@ class DevPollArrayWrapper {
     // Base address of the native pollArray
     private long pollArrayAddress;
 
+    // Array of pollfd structs used for driver updates
+    private AllocatedNativeObject updatePollArray;
+
     // Maximum number of POLL_FD structs to update at once
-    private int MAX_UPDATE_SIZE = 10000;
+    private int MAX_UPDATE_SIZE = Math.min(OPEN_MAX, 10000);
 
     DevPollArrayWrapper() {
         int allocationSize = NUM_POLLFDS * SIZE_POLLFD;
         pollArray = new AllocatedNativeObject(allocationSize, true);
         pollArrayAddress = pollArray.address();
+        allocationSize = MAX_UPDATE_SIZE * SIZE_POLLFD;
+        updatePollArray = new AllocatedNativeObject(allocationSize, true);
         wfd = init();
-
-        for (int i=0; i<NUM_POLLFDS; i++) {
-            putDescriptor(i, 0);
-            putEventOps(i, 0);
-            putReventOps(i, 0);
-        }
     }
 
     // Machinery for remembering fd registration changes
@@ -129,19 +128,9 @@ class DevPollArrayWrapper {
         register(wfd, fd0, POLLIN);
     }
 
-    void putEventOps(int i, int event) {
-        int offset = SIZE_POLLFD * i + EVENT_OFFSET;
-        pollArray.putShort(offset, (short)event);
-    }
-
     void putReventOps(int i, int revent) {
         int offset = SIZE_POLLFD * i + REVENT_OFFSET;
         pollArray.putShort(offset, (short)revent);
-    }
-
-    void putDescriptor(int i, int fd) {
-        int offset = SIZE_POLLFD * i + FD_OFFSET;
-        pollArray.putInt(offset, fd);
     }
 
     int getEventOps(int i) {
@@ -174,9 +163,10 @@ class DevPollArrayWrapper {
     void closeDevPollFD() throws IOException {
         FileDispatcherImpl.closeIntFD(wfd);
         pollArray.free();
+        updatePollArray.free();
     }
 
-    int poll(long timeout) {
+    int poll(long timeout) throws IOException {
         updateRegistrations();
         updated = poll0(pollArrayAddress, NUM_POLLFDS, timeout, wfd);
         for (int i=0; i<updated; i++) {
@@ -189,60 +179,34 @@ class DevPollArrayWrapper {
         return updated;
     }
 
-    void updateRegistrations() {
-        // take snapshot of the updateList size to see if there are
-        // any registrations to update
-        int updateSize;
+    void updateRegistrations() throws IOException {
+        // Populate pollfd array with updated masks
         synchronized (updateList) {
-            updateSize = updateList.size();
-        }
-        if (updateSize > 0) {
-            // Construct a pollfd array with updated masks; we may overallocate
-            // by some amount because if the events are already POLLREMOVE
-            // then the second pollfd of that pair will not be needed. The
-            // number of entries is limited to a reasonable number to avoid
-            // allocating a lot of memory.
-            int maxUpdates = Math.min(updateSize * 2, MAX_UPDATE_SIZE);
-            int allocationSize =  maxUpdates * SIZE_POLLFD;
-            AllocatedNativeObject updatePollArray =
-                new AllocatedNativeObject(allocationSize, true);
+            while (updateList.size() > 0) {
+                // We have to insert a dummy node in between each
+                // real update to use POLLREMOVE on the fd first because
+                // otherwise the changes are simply OR'd together
+                int index = 0;
+                Updator u = null;
+                while ((u = updateList.poll()) != null) {
+                    // First add pollfd struct to clear out this fd
+                    putPollFD(updatePollArray, index, u.fd, POLLREMOVE);
+                    index++;
+                    // Now add pollfd to update this fd, if necessary
+                    if (u.mask != POLLREMOVE) {
+                        putPollFD(updatePollArray, index, u.fd, (short)u.mask);
+                        index++;
+                    }
 
-            try {
-                synchronized (updateList) {
-                    while (updateList.size() > 0) {
-                        // We have to insert a dummy node in between each
-                        // real update to use POLLREMOVE on the fd first because
-                        // otherwise the changes are simply OR'd together
-                        int index = 0;
-                        Updator u = null;
-                        while ((u = updateList.poll()) != null) {
-                            // First add pollfd struct to clear out this fd
-                            putPollFD(updatePollArray, index, u.fd, POLLREMOVE);
-                            index++;
-                            // Now add pollfd to update this fd, if necessary
-                            if (u.mask != POLLREMOVE) {
-                                putPollFD(updatePollArray, index, u.fd,
-                                          (short)u.mask);
-                                index++;
-                            }
-
-                            // Check against the max allocation size; these are
-                            // all we will process. Valid index ranges from 0 to
-                            // (maxUpdates - 1) and we can use up to 2 per loop
-                            if (index > maxUpdates - 2)
-                                break;
-                        }
-                        // Register the changes with /dev/poll
-                        registerMultiple(wfd, updatePollArray.address(), index);
-                     }
+                    // Check against the max update size; these are
+                    // all we will process. Valid index ranges from 0 to
+                    // (MAX_UPDATE_SIZE - 1) and we can use up to 2 per loop
+                    if (index >  MAX_UPDATE_SIZE - 2)
+                        break;
                 }
-            } finally {
-                // Free the native array
-                updatePollArray.free();
-                // BUG: If an exception was thrown then the selector now believes
-                // that the last set of changes was updated but it probably
-                // was not. This should not be a likely occurrence.
-            }
+                // Register the changes with /dev/poll
+                registerMultiple(wfd, updatePollArray.address(), index);
+             }
         }
     }
 
@@ -275,7 +239,8 @@ class DevPollArrayWrapper {
 
     private native int init();
     private native void register(int wfd, int fd, int mask);
-    private native void registerMultiple(int wfd, long address, int len);
+    private native void registerMultiple(int wfd, long address, int len)
+        throws IOException;
     private native int poll0(long pollAddress, int numfds, long timeout,
                              int wfd);
     private static native void interrupt(int fd);

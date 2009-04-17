@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
+ * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
  *                                                                             *
  * The original version of this source code and documentation is copyrighted   *
  * and owned by IBM, These materials are provided under terms of a License     *
@@ -184,15 +183,16 @@ public final class UTF16
      *            bounds.
      * @stable ICU 2.1
      */
-    public static int charAt(String source, int offset16)
-    {
-        if (offset16 < 0 || offset16 >= source.length()) {
-            throw new StringIndexOutOfBoundsException(offset16);
-        }
-
+    public static int charAt(String source, int offset16) {
         char single = source.charAt(offset16);
-        if (single < LEAD_SURROGATE_MIN_VALUE ||
-            single > TRAIL_SURROGATE_MAX_VALUE) {
+        if (single < LEAD_SURROGATE_MIN_VALUE) {
+            return single;
+        }
+        return _charAt(source, offset16, single);
+    }
+
+    private static int _charAt(String source, int offset16, char single) {
+        if (single > TRAIL_SURROGATE_MAX_VALUE) {
             return single;
         }
 
@@ -201,29 +201,23 @@ public final class UTF16
         // low, look both directions.
 
         if (single <= LEAD_SURROGATE_MAX_VALUE) {
-            ++ offset16;
+            ++offset16;
             if (source.length() != offset16) {
                 char trail = source.charAt(offset16);
-                if (trail >= TRAIL_SURROGATE_MIN_VALUE &&
-                    trail <= TRAIL_SURROGATE_MAX_VALUE) {
-                    return UCharacterProperty.getRawSupplementary(single,
-                                                                  trail);
+                if (trail >= TRAIL_SURROGATE_MIN_VALUE && trail <= TRAIL_SURROGATE_MAX_VALUE) {
+                    return UCharacterProperty.getRawSupplementary(single, trail);
+                }
+            }
+        } else {
+            --offset16;
+            if (offset16 >= 0) {
+                // single is a trail surrogate so
+                char lead = source.charAt(offset16);
+                if (lead >= LEAD_SURROGATE_MIN_VALUE && lead <= LEAD_SURROGATE_MAX_VALUE) {
+                    return UCharacterProperty.getRawSupplementary(lead, single);
                 }
             }
         }
-        else
-            {
-                -- offset16;
-                if (offset16 >= 0) {
-                    // single is a trail surrogate so
-                    char lead = source.charAt(offset16);
-                    if (lead >= LEAD_SURROGATE_MIN_VALUE &&
-                        lead <= LEAD_SURROGATE_MAX_VALUE) {
-                        return UCharacterProperty.getRawSupplementary(lead,
-                                                                      single);
-                    }
-                }
-            }
         return single; // return unmatched surrogate
     }
 

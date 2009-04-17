@@ -179,9 +179,9 @@ public class HeadlessToolkit extends Toolkit
         throw new HeadlessException();
     }
 
-    public  KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) throws HeadlessException {
-        KeyboardFocusManagerPeerImpl peer = new KeyboardFocusManagerPeerImpl(manager);
-        return peer;
+    public  KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager)
+        throws HeadlessException {
+        throw new HeadlessException();
     }
 
     public TrayIconPeer createTrayIcon(TrayIcon target)

@@ -33,6 +33,7 @@ import java.io.FileDescriptor;
 import java.io.ByteArrayOutputStream;
 
 import sun.net.ConnectionResetException;
+import sun.net.NetHooks;
 
 /**
  * Default Socket Implementation. This implementation does
@@ -304,6 +305,11 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      */
 
     synchronized void doConnect(InetAddress address, int port, int timeout) throws IOException {
+        synchronized (fdLock) {
+            if (!closePending && (socket == null || !socket.isBound())) {
+                NetHooks.beforeTcpConnect(fd, address, port);
+            }
+        }
         try {
             FileDescriptor fd = acquireFD();
             try {
@@ -339,6 +345,11 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     protected synchronized void bind(InetAddress address, int lport)
         throws IOException
     {
+       synchronized (fdLock) {
+            if (!closePending && (socket == null || !socket.isBound())) {
+                NetHooks.beforeTcpBind(fd, address, lport);
+            }
+        }
         socketBind(address, lport);
         if (socket != null)
             socket.setBound();

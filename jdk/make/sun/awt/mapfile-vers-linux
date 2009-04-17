@@ -407,6 +407,7 @@ SUNWprivate_1.1 {
 		Java_sun_awt_X11GraphicsConfig_getNumColors;
 		Java_sun_awt_X11GraphicsConfig_getXResolution;
 		Java_sun_awt_X11GraphicsConfig_getYResolution;
+                Java_sun_awt_X11GraphicsConfig_isTranslucencyCapable;
 		Java_sun_awt_X11GraphicsDevice_isDBESupported;
 		Java_sun_awt_X11GraphicsDevice_getDisplay;
 		Java_sun_awt_X11GraphicsDevice_getDoubleBufferVisuals;

@@ -29,6 +29,7 @@
 #include "awt_Win32GraphicsDevice.h"
 #include "Devices.h"
 #include "WindowsFlags.h"
+#include "DllUtil.h"
 
 BOOL DWMIsCompositionEnabled();
 
@@ -89,13 +90,8 @@ void DWMResetCompositionEnabled() {
 /**
  * Returns true if dwm composition is enabled, false if it is not applicable
  * (if the OS is not Vista) or dwm composition is disabled.
- *
- * Note: since DWM composition state changes are very rare we load/unload the
- * dll on every change.
  */
 BOOL DWMIsCompositionEnabled() {
-    typedef HRESULT (WINAPI DwmIsCompositionEnabledFunc)(BOOL*);
-
     // cheaper to check than whether it's vista or not
     if (dwmIsCompositionEnabled != DWM_COMP_UNDEFINED) {
         return (BOOL)dwmIsCompositionEnabled;
@@ -107,32 +103,22 @@ BOOL DWMIsCompositionEnabled() {
     }
 
     BOOL bRes = FALSE;
-    HMODULE hDwmApiDll = ::LoadLibrary(TEXT("dwmapi.dll"));
 
-    if (hDwmApiDll != NULL) {
-        DwmIsCompositionEnabledFunc *lpDwmIsCompEnabled =
-            (DwmIsCompositionEnabledFunc*)
-                GetProcAddress(hDwmApiDll, "DwmIsCompositionEnabled");
-        if (lpDwmIsCompEnabled != NULL) {
-            BOOL bEnabled;
-            HRESULT res = lpDwmIsCompEnabled(&bEnabled);
-            if (SUCCEEDED(res)) {
-                bRes = bEnabled;
-                J2dTraceLn1(J2D_TRACE_VERBOSE, " composition enabled: %d",bRes);
-            } else {
-                J2dTraceLn1(J2D_TRACE_ERROR,
-                            "IsDWMCompositionEnabled: error %x when detecting"\
-                            "if composition is enabled", res);
-            }
+    try {
+        BOOL bEnabled;
+        HRESULT res = DwmAPI::DwmIsCompositionEnabled(&bEnabled);
+        if (SUCCEEDED(res)) {
+            bRes = bEnabled;
+            J2dTraceLn1(J2D_TRACE_VERBOSE, " composition enabled: %d",bRes);
         } else {
-            J2dTraceLn(J2D_TRACE_ERROR,
-                       "IsDWMCompositionEnabled: no DwmIsCompositionEnabled() "\
-                       "in dwmapi.dll");
+            J2dTraceLn1(J2D_TRACE_ERROR,
+                    "IsDWMCompositionEnabled: error %x when detecting"\
+                    "if composition is enabled", res);
         }
-        ::FreeLibrary(hDwmApiDll);
-    } else {
+    } catch (const DllUtil::Exception &) {
         J2dTraceLn(J2D_TRACE_ERROR,
-                   "IsDWMCompositionEnabled: error opening dwmapi.dll");
+                "IsDWMCompositionEnabled: no DwmIsCompositionEnabled() "\
+                "in dwmapi.dll or dwmapi.dll cannot be loaded");
     }
 
     dwmIsCompositionEnabled = bRes;
