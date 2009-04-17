@@ -365,8 +365,11 @@ public class BasicChar
 
         b.position(2);
         ck(b, b.charAt(1), 'd');
-        CharBuffer c = (CharBuffer)b.subSequence(1, 4);
-        ck(b, b.subSequence(1, 4).toString().equals("def"));
+        CharBuffer c = b.subSequence(1, 4);
+        ck(c, c.capacity(), b.capacity());
+        ck(c, c.position(), b.position()+1);
+        ck(c, c.limit(), b.position()+4);
+        ck(c, b.subSequence(1, 4).toString().equals("def"));
 
         // 4938424
         b.position(4);
@@ -722,6 +725,8 @@ public class BasicChar
         ck(b, start, b.position());
         ck(b, end, b.limit());
         ck(b, s.length(), b.capacity());
+        b.position(6);
+        ck(b, b.subSequence(0,3).toString().equals("ghi"));
 
         // The index, relative to the position, must be non-negative and
         // smaller than remaining().
