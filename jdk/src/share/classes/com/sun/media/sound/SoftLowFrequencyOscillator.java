@@ -45,6 +45,13 @@ public class SoftLowFrequencyOscillator implements SoftProcess {
     private double sin_factor = 0;
     private static double PI2 = 2.0 * Math.PI;
 
+    public SoftLowFrequencyOscillator() {
+        // If sin_step is 0 then sin_stepfreq must be -INF
+        for (int i = 0; i < sin_stepfreq.length; i++) {
+            sin_stepfreq[i] = Double.NEGATIVE_INFINITY;
+        }
+    }
+
     public void reset() {
         for (int i = 0; i < used_count; i++) {
             out[i][0] = 0;
@@ -53,7 +60,8 @@ public class SoftLowFrequencyOscillator implements SoftProcess {
             freq[i][0] = 0;
             delay_counter[i] = 0;
             sin_phase[i] = 0;
-            sin_stepfreq[i] = 0;
+            // If sin_step is 0 then sin_stepfreq must be -INF
+            sin_stepfreq[i] = Double.NEGATIVE_INFINITY;
             sin_step[i] = 0;
         }
         used_count = 0;
