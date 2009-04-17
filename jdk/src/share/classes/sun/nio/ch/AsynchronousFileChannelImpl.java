@@ -113,16 +113,16 @@ abstract class AsynchronousFileChannelImpl
         }
     }
 
-    final void invalidateAllLocks() {
+    final void invalidateAllLocks() throws IOException {
         if (fileLockTable != null) {
-            try {
-                fileLockTable.removeAll( new FileLockTable.Releaser() {
-                    public void release(FileLock fl) {
-                        ((FileLockImpl)fl).invalidate();
+            for (FileLock fl: fileLockTable.removeAll()) {
+                synchronized (fl) {
+                    if (fl.isValid()) {
+                        FileLockImpl fli = (FileLockImpl)fl;
+                        implRelease(fli);
+                        fli.invalidate();
                     }
-                });
-            } catch (IOException e) {
-                throw new AssertionError(e);
+                }
             }
         }
     }
@@ -158,7 +158,21 @@ abstract class AsynchronousFileChannelImpl
     }
 
     /**
-     * Invoked by FileLockImpl to release lock acquired by this channel.
+     * Releases the given file lock.
      */
-    abstract void release(FileLockImpl fli) throws IOException;
+    protected abstract void implRelease(FileLockImpl fli) throws IOException;
+
+    /**
+     * Invoked by FileLockImpl to release the given file lock and remove it
+     * from the lock table.
+     */
+    final void release(FileLockImpl fli) throws IOException {
+        try {
+            begin();
+            implRelease(fli);
+            removeFromFileLockTable(fli);
+        } finally {
+            end();
+        }
+    }
 }
