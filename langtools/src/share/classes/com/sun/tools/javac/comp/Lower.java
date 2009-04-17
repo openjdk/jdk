@@ -2631,8 +2631,8 @@ public class Lower extends TreeTranslator {
         if (havePrimitive) {
             Type unboxedTarget = types.unboxedType(type);
             if (unboxedTarget.tag != NONE) {
-                if (!types.isSubtype(tree.type, unboxedTarget))
-                    tree.type = unboxedTarget; // e.g. Character c = 89;
+                if (!types.isSubtype(tree.type, unboxedTarget)) //e.g. Character c = 89;
+                    tree.type = unboxedTarget.constType(tree.type.constValue());
                 return (T)boxPrimitive((JCExpression)tree, type);
             } else {
                 tree = (T)boxPrimitive((JCExpression)tree);
@@ -3012,6 +3012,7 @@ public class Lower extends TreeTranslator {
                                                   vardefinit).setType(tree.var.type);
             indexDef.sym = tree.var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
+            body.endpos = TreeInfo.endPos(tree.body);
             result = translate(make.
                 ForLoop(List.of(init),
                         cond,

@@ -151,7 +151,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                         session = token.getObjSession();
                         long newKeyID = token.p11.C_CopyObject(session.id(),
                                 p11Key.keyID, extraAttrs);
-                        p11Key = (P11Key) (P11Key.secretKey(p11Key.session,
+                        p11Key = (P11Key) (P11Key.secretKey(session,
                                 newKeyID, p11Key.algorithm, p11Key.keyLength,
                                 extraAttrs));
                     } catch (PKCS11Exception p11e) {

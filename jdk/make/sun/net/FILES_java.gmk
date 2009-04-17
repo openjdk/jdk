@@ -39,6 +39,7 @@ FILES_java = \
 	sun/net/TransferProtocolClient.java \
 	sun/net/ConnectionResetException.java \
 	sun/net/NetProperties.java \
+	sun/net/NetHooks.java \
 	sun/net/util/IPAddressUtil.java \
 	sun/net/dns/ResolverConfiguration.java \
 	sun/net/dns/ResolverConfigurationImpl.java \
@@ -122,4 +123,8 @@ FILES_java = \
 
 ifeq ($(PLATFORM), windows)
     FILES_java += sun/net/www/protocol/http/NTLMAuthSequence.java 
+endif
+
+ifeq ($(PLATFORM), solaris)
+    FILES_java += sun/net/spi/SdpProvider.java
 endif

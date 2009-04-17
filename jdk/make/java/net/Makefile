@@ -108,11 +108,24 @@ CLASSES.export += java.lang.Integer java.io.FileDescriptor java.net.InetAddressI
 #
 LOCALE_SET_DEFINITION = jre
 
-properties: $(LIBDIR) $(LIBDIR)/net.properties
+MISC_FILES = $(LIBDIR) $(LIBDIR)/net.properties
 
 $(LIBDIR)/net.properties: $(SHARE_SRC)/lib/net.properties
 	@$(RM) $@
 	$(CP) $< $@
 
-build: properties
+# 
+# SDP configuration template
+#
+ifeq ($(PLATFORM), solaris)
+SDP_PATH = sdp/sdp.conf.template
+SDP_CONF = $(LIBDIR)/$(SDP_PATH)
+$(SDP_CONF): $(PLATFORM_SRC)/lib/$(SDP_PATH)
+	@$(RM) $*
+	$(install-file)
+
+MISC_FILES += $(SDP_CONF)
+endif
+
+build: $(MISC_FILES)
 

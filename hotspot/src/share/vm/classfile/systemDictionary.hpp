@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,7 @@ class ResolutionErrorTable;
 class SystemDictionary : AllStatic {
   friend class VMStructs;
   friend class CompactingPermGenGen;
+  friend class SystemDictionaryHandles;
   NOT_PRODUCT(friend class instanceKlassKlass;)
 
  public:
@@ -594,4 +595,19 @@ private:
 
   static bool _has_loadClassInternal;
   static bool _has_checkPackageAccess;
+};
+
+// Cf. vmSymbols vs. vmSymbolHandles
+class SystemDictionaryHandles : AllStatic {
+public:
+  #define WK_KLASS_HANDLE_DECLARE(name, ignore_symbol, option) \
+    static KlassHandle name() { \
+      SystemDictionary::name(); \
+      klassOop* loc = &SystemDictionary::_well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]; \
+      return KlassHandle(loc, true); \
+    }
+  WK_KLASSES_DO(WK_KLASS_HANDLE_DECLARE);
+  #undef WK_KLASS_HANDLE_DECLARE
+
+  static KlassHandle box_klass(BasicType t);
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2747,9 +2747,10 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                                       super_klass(),
                                                       methods(),
                                                       access_flags,
-                                                      class_loader(),
-                                                      class_name(),
-                                                      local_interfaces());
+                                                      class_loader,
+                                                      class_name,
+                                                      local_interfaces(),
+                                                      CHECK_(nullHandle));
 
     // Size of Java itable (in words)
     itable_size = access_flags.is_interface() ? 0 : klassItable::compute_itable_size(transitive_interfaces);
@@ -3229,7 +3230,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
       // print out the superclass.
       const char * from = Klass::cast(this_klass())->external_name();
       if (this_klass->java_super() != NULL) {
-        tty->print("RESOLVE %s %s\n", from, instanceKlass::cast(this_klass->java_super())->external_name());
+        tty->print("RESOLVE %s %s (super)\n", from, instanceKlass::cast(this_klass->java_super())->external_name());
       }
       // print out each of the interface classes referred to by this class.
       objArrayHandle local_interfaces(THREAD, this_klass->local_interfaces());
@@ -3239,7 +3240,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
           klassOop k = klassOop(local_interfaces->obj_at(i));
           instanceKlass* to_class = instanceKlass::cast(k);
           const char * to = to_class->external_name();
-          tty->print("RESOLVE %s %s\n", from, to);
+          tty->print("RESOLVE %s %s (interface)\n", from, to);
         }
       }
     }

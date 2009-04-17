@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,6 +301,10 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
   klassOop k = SystemDictionary::resolve_from_stream(class_name, class_loader,
                                                      Handle(), &st, CHECK_NULL);
 
+  if (TraceClassResolution && k != NULL) {
+    trace_class_resolution(k);
+  }
+
   cls = (jclass)JNIHandles::make_local(
     env, Klass::cast(k)->java_mirror());
   return cls;
@@ -364,6 +368,10 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
   symbolHandle sym = oopFactory::new_symbol_handle(name, CHECK_NULL);
   result = find_class_from_class_loader(env, sym, true, loader,
                                         protection_domain, true, thread);
+
+  if (TraceClassResolution && result != NULL) {
+    trace_class_resolution(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(result)));
+  }
 
   // If we were the first invocation of jni_FindClass, we enable compilation again
   // rather than just allowing invocation counter to overflow and decay.
@@ -2646,7 +2654,12 @@ static jclass lookupOne(JNIEnv* env, const char* name, TRAPS) {
   Handle protection_domain; // null protection domain
 
   symbolHandle sym = oopFactory::new_symbol_handle(name, CHECK_NULL);
-  return find_class_from_class_loader(env, sym, true, loader, protection_domain, true, CHECK_NULL);
+  jclass result =  find_class_from_class_loader(env, sym, true, loader, protection_domain, true, CHECK_NULL);
+
+  if (TraceClassResolution && result != NULL) {
+    trace_class_resolution(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(result)));
+  }
+  return result;
 }
 
 // These lookups are done with the NULL (bootstrap) ClassLoader to

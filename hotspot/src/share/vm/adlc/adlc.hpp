@@ -44,7 +44,7 @@ using namespace std;
 #error "Something is wrong with the detection of MSC_VER in the makefiles"
 #endif
 
-#if _MSC_VER >= 1400 && !defined(_WIN64)
+#if _MSC_VER >= 1400
 #define strdup _strdup
 #endif
 
@@ -79,6 +79,7 @@ typedef unsigned int uintptr_t;
 
 // Macros
 // Debugging note:  Put a breakpoint on "abort".
+#undef assert
 #define assert(cond, msg) { if (!(cond)) { fprintf(stderr, "assert fails %s %d: %s\n", __FILE__, __LINE__, msg); abort(); }}
 #define max(a, b)   (((a)>(b)) ? (a) : (b))
 

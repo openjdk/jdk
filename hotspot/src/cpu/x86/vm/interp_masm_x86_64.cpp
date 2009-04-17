@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
                                                            int bcp_offset) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert(cache != index, "must use different registers");
-  load_unsigned_word(index, Address(r13, bcp_offset));
+  load_unsigned_short(index, Address(r13, bcp_offset));
   movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // convert from field index to ConstantPoolCacheEntry index
@@ -203,7 +203,7 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                int bcp_offset) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert(cache != tmp, "must use different register");
-  load_unsigned_word(tmp, Address(r13, bcp_offset));
+  load_unsigned_short(tmp, Address(r13, bcp_offset));
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // convert from field index to ConstantPoolCacheEntry index
   // and from word offset to byte offset
@@ -232,65 +232,13 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   assert(Rsub_klass != rcx, "rcx holds 2ndary super array length");
   assert(Rsub_klass != rdi, "rdi holds 2ndary super array scan ptr");
 
-  Label not_subtype, not_subtype_pop, loop;
-
   // Profile the not-null value's klass.
-  profile_typecheck(rcx, Rsub_klass, rdi); // blows rcx, rdi
+  profile_typecheck(rcx, Rsub_klass, rdi); // blows rcx, reloads rdi
 
-  // Load the super-klass's check offset into rcx
-  movl(rcx, Address(rax, sizeof(oopDesc) +
-                    Klass::super_check_offset_offset_in_bytes()));
-  // Load from the sub-klass's super-class display list, or a 1-word
-  // cache of the secondary superclass list, or a failing value with a
-  // sentinel offset if the super-klass is an interface or
-  // exceptionally deep in the Java hierarchy and we have to scan the
-  // secondary superclass list the hard way.  See if we get an
-  // immediate positive hit
-  cmpptr(rax, Address(Rsub_klass, rcx, Address::times_1));
-  jcc(Assembler::equal,ok_is_subtype);
+  // Do the check.
+  check_klass_subtype(Rsub_klass, rax, rcx, ok_is_subtype); // blows rcx
 
-  // Check for immediate negative hit
-  cmpl(rcx, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes());
-  jcc( Assembler::notEqual, not_subtype );
-  // Check for self
-  cmpptr(Rsub_klass, rax);
-  jcc(Assembler::equal, ok_is_subtype);
-
-  // Now do a linear scan of the secondary super-klass chain.
-  movptr(rdi, Address(Rsub_klass, sizeof(oopDesc) +
-                      Klass::secondary_supers_offset_in_bytes()));
-  // rdi holds the objArrayOop of secondary supers.
-  // Load the array length
-  movl(rcx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
-  // Skip to start of data; also clear Z flag incase rcx is zero
-  addptr(rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-  // Scan rcx words at [rdi] for occurance of rax
-  // Set NZ/Z based on last compare
-
-  // this part is kind tricky, as values in supers array could be 32 or 64 bit wide
-  // and we store values in objArrays always encoded, thus we need to encode value
-  // before repne
-  if (UseCompressedOops) {
-    push(rax);
-    encode_heap_oop(rax);
-    repne_scanl();
-    // Not equal?
-    jcc(Assembler::notEqual, not_subtype_pop);
-    // restore heap oop here for movq
-    pop(rax);
-  } else {
-    repne_scan();
-    jcc(Assembler::notEqual, not_subtype);
-  }
-  // Must be equal but missed in cache.  Update cache.
-  movptr(Address(Rsub_klass, sizeof(oopDesc) +
-               Klass::secondary_super_cache_offset_in_bytes()), rax);
-  jmp(ok_is_subtype);
-
-  bind(not_subtype_pop);
-  // restore heap oop here for miss
-  if (UseCompressedOops) pop(rax);
-  bind(not_subtype);
+  // Profile the failure of the check.
   profile_typecheck_failed(rcx); // blows rcx
 }
 
@@ -1063,8 +1011,8 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
 
   // If the mdp is valid, it will point to a DataLayout header which is
   // consistent with the bcp.  The converse is highly probable also.
-  load_unsigned_word(c_rarg2,
-                     Address(c_rarg3, in_bytes(DataLayout::bci_offset())));
+  load_unsigned_short(c_rarg2,
+                      Address(c_rarg3, in_bytes(DataLayout::bci_offset())));
   addptr(c_rarg2, Address(rbx, methodOopDesc::const_offset()));
   lea(c_rarg2, Address(c_rarg2, constMethodOopDesc::codes_offset()));
   cmpptr(c_rarg2, r13);
@@ -1592,6 +1540,14 @@ void InterpreterMacroAssembler::notify_method_entry() {
     get_method(c_rarg1);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
                  r15_thread, c_rarg1);
+  }
+
+  // RedefineClasses() tracing support for obsolete method entry
+  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+    get_method(c_rarg1);
+    call_VM_leaf(
+      CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
+      r15_thread, c_rarg1);
   }
 }
 

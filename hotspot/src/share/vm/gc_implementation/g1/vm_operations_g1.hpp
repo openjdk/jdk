@@ -77,20 +77,6 @@ class VM_G1IncCollectionPause: public VM_GC_Operation {
   }
 };
 
-class VM_G1PopRegionCollectionPause: public VM_GC_Operation {
-  HeapRegion* _pop_region;
- public:
-  VM_G1PopRegionCollectionPause(int gc_count_before, HeapRegion* pop_region) :
-    VM_GC_Operation(gc_count_before),
-    _pop_region(pop_region)
-  {}
-  virtual VMOp_Type type() const { return VMOp_G1PopRegionCollectionPause; }
-  virtual void doit();
-  virtual const char* name() const {
-    return "garbage-first popular region collection pause";
-  }
-};
-
 // Concurrent GC stop-the-world operations such as initial and final mark;
 // consider sharing these with CMS's counterparts.
 class VM_CGC_Operation: public VM_Operation {

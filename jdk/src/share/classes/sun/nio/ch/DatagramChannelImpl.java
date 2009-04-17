@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,12 @@ class DatagramChannelImpl
     public DatagramChannelImpl(SelectorProvider sp, ProtocolFamily family) {
         super(sp);
         if ((family != StandardProtocolFamily.INET) &&
-            (family != StandardProtocolFamily.INET6)) {
-            throw new UnsupportedOperationException("Protocol family not supported");
+            (family != StandardProtocolFamily.INET6))
+        {
+            if (family == null)
+                throw new NullPointerException("'family' is null");
+            else
+                throw new UnsupportedOperationException("Protocol family not supported");
         }
         if (family == StandardProtocolFamily.INET6) {
             if (!Net.isIPv6Available()) {
@@ -149,28 +153,28 @@ class DatagramChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             if (!isOpen())
-                return null;
+                throw new ClosedChannelException();
             return localAddress;
         }
     }
 
     @Override
-    public SocketAddress getConnectedAddress() throws IOException {
+    public SocketAddress getRemoteAddress() throws IOException {
         synchronized (stateLock) {
             if (!isOpen())
-                return null;
+                throw new ClosedChannelException();
             return remoteAddress;
         }
     }
 
     @Override
-    public DatagramChannel setOption(SocketOption name, Object value)
+    public <T> DatagramChannel setOption(SocketOption<T> name, T value)
         throws IOException
     {
         if (name == null)
             throw new NullPointerException();
-        if (!options().contains(name))
-            throw new IllegalArgumentException("Invalid option name");
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
 
         synchronized (stateLock) {
             ensureOpen();
@@ -224,8 +228,8 @@ class DatagramChannelImpl
     {
         if (name == null)
             throw new NullPointerException();
-        if (!options().contains(name))
-            throw new IllegalArgumentException("Invalid option name");
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
 
         synchronized (stateLock) {
             ensureOpen();
@@ -273,7 +277,7 @@ class DatagramChannelImpl
         }
     }
 
-    private static class LazyInitialization {
+    private static class DefaultOptionsHolder {
         static final Set<SocketOption<?>> defaultOptions = defaultOptions();
 
         private static Set<SocketOption<?>> defaultOptions() {
@@ -291,8 +295,8 @@ class DatagramChannelImpl
     }
 
     @Override
-    public final Set<SocketOption<?>> options() {
-        return LazyInitialization.defaultOptions;
+    public final Set<SocketOption<?>> supportedOptions() {
+        return DefaultOptionsHolder.defaultOptions;
     }
 
     private void ensureOpen() throws ClosedChannelException {
@@ -309,11 +313,9 @@ class DatagramChannelImpl
             throw new NullPointerException();
         synchronized (readLock) {
             ensureOpen();
-            // If socket is not bound then behave as if nothing received
-            // Will be fixed by 6621699
-            if (localAddress() == null) {
-                return null;
-            }
+            // Socket was not bound before attempting receive
+            if (localAddress() == null)
+                bind(null);
             int n = 0;
             ByteBuffer bb = null;
             try {
@@ -864,23 +866,26 @@ class DatagramChannelImpl
     }
 
     // package-private
-    void drop(MembershipKeyImpl key)
-        throws IOException
-    {
-        assert key.getChannel() == this;
+    void drop(MembershipKeyImpl key) {
+        assert key.channel() == this;
 
         synchronized (stateLock) {
             if (!key.isValid())
                 return;
 
-            if (family == StandardProtocolFamily.INET6) {
-                MembershipKeyImpl.Type6 key6 =
-                    (MembershipKeyImpl.Type6)key;
-                Net.drop6(fd, key6.group(), key6.index(), key6.source());
-            } else {
-                MembershipKeyImpl.Type4 key4 =
-                    (MembershipKeyImpl.Type4)key;
-                Net.drop4(fd, key4.group(), key4.interfaceAddress(), key4.source());
+            try {
+                if (family == StandardProtocolFamily.INET6) {
+                    MembershipKeyImpl.Type6 key6 =
+                        (MembershipKeyImpl.Type6)key;
+                    Net.drop6(fd, key6.groupAddress(), key6.index(), key6.source());
+                } else {
+                    MembershipKeyImpl.Type4 key4 = (MembershipKeyImpl.Type4)key;
+                    Net.drop4(fd, key4.groupAddress(), key4.interfaceAddress(),
+                        key4.source());
+                }
+            } catch (IOException ioe) {
+                // should not happen
+                throw new AssertionError(ioe);
             }
 
             key.invalidate();
@@ -895,8 +900,8 @@ class DatagramChannelImpl
     void block(MembershipKeyImpl key, InetAddress source)
         throws IOException
     {
-        assert key.getChannel() == this;
-        assert key.getSourceAddress() == null;
+        assert key.channel() == this;
+        assert key.sourceAddress() == null;
 
         synchronized (stateLock) {
             if (!key.isValid())
@@ -905,19 +910,19 @@ class DatagramChannelImpl
                 throw new IllegalArgumentException("Source address is a wildcard address");
             if (source.isMulticastAddress())
                 throw new IllegalArgumentException("Source address is multicast address");
-            if (source.getClass() != key.getGroup().getClass())
+            if (source.getClass() != key.group().getClass())
                 throw new IllegalArgumentException("Source address is different type to group");
 
             int n;
             if (family == StandardProtocolFamily.INET6) {
                  MembershipKeyImpl.Type6 key6 =
                     (MembershipKeyImpl.Type6)key;
-                n = Net.block6(fd, key6.group(), key6.index(),
+                n = Net.block6(fd, key6.groupAddress(), key6.index(),
                                Net.inet6AsByteArray(source));
             } else {
                 MembershipKeyImpl.Type4 key4 =
                     (MembershipKeyImpl.Type4)key;
-                n = Net.block4(fd, key4.group(), key4.interfaceAddress(),
+                n = Net.block4(fd, key4.groupAddress(), key4.interfaceAddress(),
                                Net.inet4AsInt(source));
             }
             if (n == IOStatus.UNAVAILABLE) {
@@ -930,26 +935,29 @@ class DatagramChannelImpl
     /**
      * Unblock given source.
      */
-    void unblock(MembershipKeyImpl key, InetAddress source)
-        throws IOException
-    {
-        assert key.getChannel() == this;
-        assert key.getSourceAddress() == null;
+    void unblock(MembershipKeyImpl key, InetAddress source) {
+        assert key.channel() == this;
+        assert key.sourceAddress() == null;
 
         synchronized (stateLock) {
             if (!key.isValid())
                 throw new IllegalStateException("key is no longer valid");
 
-            if (family == StandardProtocolFamily.INET6) {
-                MembershipKeyImpl.Type6 key6 =
-                    (MembershipKeyImpl.Type6)key;
-                Net.unblock6(fd, key6.group(), key6.index(),
-                             Net.inet6AsByteArray(source));
-            } else {
-                MembershipKeyImpl.Type4 key4 =
-                    (MembershipKeyImpl.Type4)key;
-                Net.unblock4(fd, key4.group(), key4.interfaceAddress(),
-                             Net.inet4AsInt(source));
+            try {
+                if (family == StandardProtocolFamily.INET6) {
+                    MembershipKeyImpl.Type6 key6 =
+                        (MembershipKeyImpl.Type6)key;
+                    Net.unblock6(fd, key6.groupAddress(), key6.index(),
+                                 Net.inet6AsByteArray(source));
+                } else {
+                    MembershipKeyImpl.Type4 key4 =
+                        (MembershipKeyImpl.Type4)key;
+                    Net.unblock4(fd, key4.groupAddress(), key4.interfaceAddress(),
+                                 Net.inet4AsInt(source));
+                }
+            } catch (IOException ioe) {
+                // should not happen
+                throw new AssertionError(ioe);
             }
         }
     }

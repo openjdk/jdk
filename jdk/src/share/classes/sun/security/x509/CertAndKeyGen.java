@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,8 +265,8 @@ public final class CertAndKeyGen {
             // Add all mandatory attributes
             info.set(X509CertInfo.VERSION,
                      new CertificateVersion(CertificateVersion.V3));
-            info.set(X509CertInfo.SERIAL_NUMBER,
-                 new CertificateSerialNumber((int)(firstDate.getTime()/1000)));
+            info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(
+                    new java.util.Random().nextInt() & 0x7fffffff));
             AlgorithmId algID = issuer.getAlgorithmId();
             info.set(X509CertInfo.ALGORITHM_ID,
                      new CertificateAlgorithmId(algID));
@@ -275,12 +275,6 @@ public final class CertAndKeyGen {
             info.set(X509CertInfo.VALIDITY, interval);
             info.set(X509CertInfo.ISSUER,
                      new CertificateIssuerName(issuer.getSigner()));
-
-            CertificateExtensions ext = new CertificateExtensions();
-                ext.set(SubjectKeyIdentifierExtension.NAME,
-                        new SubjectKeyIdentifierExtension(
-                            new KeyIdentifier(publicKey).getIdentifier()));
-            info.set(X509CertInfo.EXTENSIONS, ext);
 
             cert = new X509CertImpl(info);
             cert.sign(privateKey, this.sigAlg);

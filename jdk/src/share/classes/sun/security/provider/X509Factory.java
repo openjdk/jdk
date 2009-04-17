@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,10 +638,15 @@ is)
         // First read all of the data that is found between
         // the "-----BEGIN" and "-----END" boundaries into a buffer.
         String temp;
-        if ((temp=readLine(br))==null || !temp.startsWith("-----BEGIN")) {
-            throw new IOException("Unsupported encoding");
-        } else {
+        while (true) {
+            temp=readLine(br);
+            if (temp == null) {
+                throw new IOException("Unsupported encoding");
+            }
             len += temp.length();
+            if (temp.startsWith("-----BEGIN")) {
+                break;
+            }
         }
         StringBuffer strBuf = new StringBuffer();
         while ((temp=readLine(br))!=null && !temp.startsWith("-----END")) {
@@ -683,22 +688,11 @@ is)
      * Determines if input is binary or Base64 encoded.
      */
     private boolean isBase64(InputStream is) throws IOException {
-        if (is.available() >= 10) {
-            is.mark(10);
+        if (is.available() >= 1) {
+            is.mark(1);
             int c1 = is.read();
-            int c2 = is.read();
-            int c3 = is.read();
-            int c4 = is.read();
-            int c5 = is.read();
-            int c6 = is.read();
-            int c7 = is.read();
-            int c8 = is.read();
-            int c9 = is.read();
-            int c10 = is.read();
             is.reset();
-            if (c1 == '-' && c2 == '-' && c3 == '-' && c4 == '-'
-                && c5 == '-' && c6 == 'B' && c7 == 'E' && c8 == 'G'
-                && c9 == 'I' && c10 == 'N') {
+            if (c1 != DerValue.tag_Sequence) {
                 return true;
             } else {
                 return false;

@@ -501,7 +501,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
     LIRItem right(x->y(), this);
 
     left.load_item();
-    // dont load constants to save register
+    // don't load constants to save register
     right.load_nonconstant();
     rlock_result(x);
     arithmetic_op_long(x->op(), x->operand(), left.result(), right.result(), NULL);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,6 +386,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             (options.get("failcomplete") != null)
             ? names.fromString(options.get("failcomplete"))
             : null;
+
+        shouldStopPolicy =
+            (options.get("shouldStopPolicy") != null)
+            ? CompileState.valueOf(options.get("shouldStopPolicy"))
+            : null;
     }
 
     /* Switches:
@@ -459,14 +464,26 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     public boolean verboseCompilePolicy;
 
+    /**
+     * Policy of how far to continue processing. null means until first
+     * error.
+     */
+    public CompileState shouldStopPolicy;
+
     /** A queue of all as yet unattributed classes.
      */
     public Todo todo;
 
+    /** Ordered list of compiler phases for each compilation unit. */
     protected enum CompileState {
-        TODO(0),
-        ATTR(1),
-        FLOW(2);
+        PARSE(1),
+        ENTER(2),
+        PROCESS(3),
+        ATTR(4),
+        FLOW(5),
+        TRANSTYPES(6),
+        LOWER(7),
+        GENERATE(8);
         CompileState(int value) {
             this.value = value;
         }
@@ -475,6 +492,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         }
         private int value;
     };
+    /** Partial map to record which compiler phases have been executed
+     * for each compilation unit. Used for ATTR and FLOW phases.
+     */
     protected class CompileStates extends HashMap<Env<AttrContext>,CompileState> {
         private static final long serialVersionUID = 1812267524140424433L;
         boolean isDone(Env<AttrContext> env, CompileState cs) {
@@ -490,6 +510,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     protected Set<JavaFileObject> inputFiles = new HashSet<JavaFileObject>();
 
+    protected boolean shouldStop(CompileState cs) {
+        if (shouldStopPolicy == null)
+            return (errorCount() > 0);
+        else
+            return cs.ordinal() > shouldStopPolicy.ordinal();
+    }
+
     /** The number of errors reported so far.
      */
     public int errorCount() {
@@ -503,18 +530,12 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             return log.nerrors;
     }
 
-    protected final <T> Queue<T> stopIfError(Queue<T> queue) {
-        if (errorCount() == 0)
-            return queue;
-        else
-            return ListBuffer.lb();
+    protected final <T> Queue<T> stopIfError(CompileState cs, Queue<T> queue) {
+        return shouldStop(cs) ? ListBuffer.<T>lb() : queue;
     }
 
-    protected final <T> List<T> stopIfError(List<T> list) {
-        if (errorCount() == 0)
-            return list;
-        else
-            return List.nil();
+    protected final <T> List<T> stopIfError(CompileState cs, List<T> list) {
+        return shouldStop(cs) ? List.<T>nil() : list;
     }
 
     /** The number of warnings reported so far.
@@ -669,7 +690,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     JavaFileObject genCode(Env<AttrContext> env, JCClassDecl cdef) throws IOException {
         try {
-            if (gen.genClass(env, cdef))
+            if (gen.genClass(env, cdef) && (errorCount() == 0))
                 return writer.writeClass(cdef.sym);
         } catch (ClassWriter.PoolOverflow ex) {
             log.error(cdef.pos(), "limit.pool");
@@ -779,8 +800,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             initProcessAnnotations(processors);
 
             // These method calls must be chained to avoid memory leaks
-            delegateCompiler = processAnnotations(enterTrees(stopIfError(parseFiles(sourceFileObjects))),
-                                                  classnames);
+            delegateCompiler =
+                processAnnotations(
+                    enterTrees(stopIfError(CompileState.PARSE, parseFiles(sourceFileObjects))),
+                    classnames);
 
             delegateCompiler.compile2();
             delegateCompiler.close();
@@ -812,7 +835,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
             case BY_FILE: {
                     Queue<Queue<Env<AttrContext>>> q = todo.groupByFile();
-                    while (!q.isEmpty() && errorCount() == 0) {
+                    while (!q.isEmpty() && !shouldStop(CompileState.ATTR)) {
                         generate(desugar(flow(attribute(q.remove()))));
                     }
                 }
@@ -850,7 +873,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * Parses a list of files.
      */
    public List<JCCompilationUnit> parseFiles(List<JavaFileObject> fileObjects) throws IOException {
-       if (errorCount() > 0)
+       if (shouldStop(CompileState.PARSE))
            return List.nil();
 
         //parse all files
@@ -961,7 +984,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     public JavaCompiler processAnnotations(List<JCCompilationUnit> roots,
                                            List<String> classnames)
         throws IOException  { // TODO: see TEMP note in JavacProcessingEnvironment
-        if (errorCount() != 0) {
+        if (shouldStop(CompileState.PROCESS)) {
             // Errors were encountered.  If todo is empty, then the
             // encountered errors were parse errors.  Otherwise, the
             // errors were found during the enter phase which should
@@ -1068,7 +1091,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         ListBuffer<Env<AttrContext>> results = lb();
         while (!envs.isEmpty())
             results.append(attribute(envs.remove()));
-        return results;
+        return stopIfError(CompileState.ATTR, results);
     }
 
     /**
@@ -1115,7 +1138,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         for (Env<AttrContext> env: envs) {
             flow(env, results);
         }
-        return stopIfError(results);
+        return stopIfError(CompileState.FLOW, results);
     }
 
     /**
@@ -1124,7 +1147,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     public Queue<Env<AttrContext>> flow(Env<AttrContext> env) {
         ListBuffer<Env<AttrContext>> results = lb();
         flow(env, results);
-        return stopIfError(results);
+        return stopIfError(CompileState.FLOW, results);
     }
 
     /**
@@ -1132,7 +1155,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     protected void flow(Env<AttrContext> env, Queue<Env<AttrContext>> results) {
         try {
-            if (errorCount() > 0)
+            if (shouldStop(CompileState.FLOW))
                 return;
 
             if (relax || compileStates.isDone(env, CompileState.FLOW)) {
@@ -1141,7 +1164,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             }
 
             if (verboseCompilePolicy)
-                log.printLines(log.noticeWriter, "[flow " + env.enclClass.sym + "]");
+                printNote("[flow " + env.enclClass.sym + "]");
             JavaFileObject prev = log.useSource(
                                                 env.enclClass.sym.sourcefile != null ?
                                                 env.enclClass.sym.sourcefile :
@@ -1152,7 +1175,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 flow.analyzeTree(env.tree, localMake);
                 compileStates.put(env, CompileState.FLOW);
 
-                if (errorCount() > 0)
+                if (shouldStop(CompileState.FLOW))
                     return;
 
                 results.add(env);
@@ -1179,7 +1202,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         ListBuffer<Pair<Env<AttrContext>, JCClassDecl>> results = lb();
         for (Env<AttrContext> env: envs)
             desugar(env, results);
-        return stopIfError(results);
+        return stopIfError(CompileState.FLOW, results);
     }
 
     /**
@@ -1189,7 +1212,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * The preparation stops as soon as an error is found.
      */
     protected void desugar(final Env<AttrContext> env, Queue<Pair<Env<AttrContext>, JCClassDecl>> results) {
-        if (errorCount() > 0)
+        if (shouldStop(CompileState.TRANSTYPES))
             return;
 
         if (implicitSourcePolicy == ImplicitSourcePolicy.NONE
@@ -1204,6 +1227,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
          */
         class ScanNested extends TreeScanner {
             Set<Env<AttrContext>> dependencies = new LinkedHashSet<Env<AttrContext>>();
+            @Override
             public void visitClassDef(JCClassDecl node) {
                 Type st = types.supertype(node.sym.type);
                 if (st.tag == TypeTags.CLASS) {
@@ -1226,11 +1250,11 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         //We need to check for error another time as more classes might
         //have been attributed and analyzed at this stage
-        if (errorCount() > 0)
+        if (shouldStop(CompileState.TRANSTYPES))
             return;
 
         if (verboseCompilePolicy)
-            log.printLines(log.noticeWriter, "[desugar " + env.enclClass.sym + "]");
+            printNote("[desugar " + env.enclClass.sym + "]");
 
         JavaFileObject prev = log.useSource(env.enclClass.sym.sourcefile != null ?
                                   env.enclClass.sym.sourcefile :
@@ -1244,6 +1268,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
             if (env.tree instanceof JCCompilationUnit) {
                 if (!(stubOutput || sourceOutput || printFlat)) {
+                    if (shouldStop(CompileState.LOWER))
+                        return;
                     List<JCTree> pdef = lower.translateTopLevelClass(env, env.tree, localMake);
                     if (pdef.head != null) {
                         assert pdef.tail.isEmpty();
@@ -1266,9 +1292,12 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 return;
             }
 
+            if (shouldStop(CompileState.TRANSTYPES))
+                return;
+
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
 
-            if (errorCount() != 0)
+            if (shouldStop(CompileState.LOWER))
                 return;
 
             if (sourceOutput) {
@@ -1285,7 +1314,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             //translate out inner classes
             List<JCTree> cdefs = lower.translateTopLevelClass(env, env.tree, localMake);
 
-            if (errorCount() != 0)
+            if (shouldStop(CompileState.LOWER))
                 return;
 
             //generate code for each class
@@ -1310,6 +1339,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     public void generate(Queue<Pair<Env<AttrContext>, JCClassDecl>> queue, Queue<JavaFileObject> results) {
+        if (shouldStop(CompileState.GENERATE))
+            return;
+
         boolean usePrintSource = (stubOutput || sourceOutput || printFlat);
 
         for (Pair<Env<AttrContext>, JCClassDecl> x: queue) {
@@ -1317,7 +1349,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             JCClassDecl cdef = x.snd;
 
             if (verboseCompilePolicy) {
-                log.printLines(log.noticeWriter, "[generate "
+                printNote("[generate "
                                + (usePrintSource ? " source" : "code")
                                + " " + cdef.sym + "]");
             }
@@ -1371,6 +1403,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         JCClassDecl removeMethodBodies(JCClassDecl cdef) {
             final boolean isInterface = (cdef.mods.flags & Flags.INTERFACE) != 0;
             class MethodBodyRemover extends TreeTranslator {
+                @Override
                 public void visitMethodDef(JCMethodDecl tree) {
                     tree.mods.flags &= ~Flags.SYNCHRONIZED;
                     for (JCVariableDecl vd : tree.params)
@@ -1378,11 +1411,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                     tree.body = null;
                     super.visitMethodDef(tree);
                 }
+                @Override
                 public void visitVarDef(JCVariableDecl tree) {
                     if (tree.init != null && tree.init.type.constValue() == null)
                         tree.init = null;
                     super.visitVarDef(tree);
                 }
+                @Override
                 public void visitClassDef(JCClassDecl tree) {
                     ListBuffer<JCTree> newdefs = lb();
                     for (List<JCTree> it = tree.defs; it.tail != null; it = it.tail) {
@@ -1469,12 +1504,16 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         }
     }
 
+    protected void printNote(String lines) {
+        Log.printLines(log.noticeWriter, lines);
+    }
+
     /** Output for "-verbose" option.
      *  @param key The key to look up the correct internationalized string.
      *  @param arg An argument for substitution into the output string.
      */
     protected void printVerbose(String key, Object arg) {
-        Log.printLines(log.noticeWriter, log.getLocalizedString("verbose." + key, arg));
+        Log.printLines(log.noticeWriter, Log.getLocalizedString("verbose." + key, arg));
     }
 
     /** Print numbers of errors and warnings.
@@ -1483,9 +1522,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         if (count != 0) {
             String text;
             if (count == 1)
-                text = log.getLocalizedString("count." + kind, String.valueOf(count));
+                text = Log.getLocalizedString("count." + kind, String.valueOf(count));
             else
-                text = log.getLocalizedString("count." + kind + ".plural", String.valueOf(count));
+                text = Log.getLocalizedString("count." + kind + ".plural", String.valueOf(count));
             Log.printLines(log.errWriter, text);
             log.errWriter.flush();
         }

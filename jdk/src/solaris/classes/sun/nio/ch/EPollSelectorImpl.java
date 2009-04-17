@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,10 +136,9 @@ class EPollSelectorImpl
             interruptTriggered = true;
         }
 
-        FileDispatcher.closeIntFD(fd0);
-        FileDispatcher.closeIntFD(fd1);
+        FileDispatcherImpl.closeIntFD(fd0);
+        FileDispatcherImpl.closeIntFD(fd1);
 
-        pollWrapper.release(fd0);
         pollWrapper.closeEPollFD();
         // it is possible
         selectedKeys = null;
@@ -162,17 +161,18 @@ class EPollSelectorImpl
     protected void implRegister(SelectionKeyImpl ski) {
         if (closed)
             throw new ClosedSelectorException();
-        int fd = IOUtil.fdVal(ski.channel.getFD());
-        fdToKey.put(Integer.valueOf(fd), ski);
-        pollWrapper.add(fd);
+        SelChImpl ch = ski.channel;
+        fdToKey.put(Integer.valueOf(ch.getFDVal()), ski);
+        pollWrapper.add(ch);
         keys.add(ski);
     }
 
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         assert (ski.getIndex() >= 0);
-        int fd = ski.channel.getFDVal();
+        SelChImpl ch = ski.channel;
+        int fd = ch.getFDVal();
         fdToKey.remove(Integer.valueOf(fd));
-        pollWrapper.release(fd);
+        pollWrapper.release(ch);
         ski.setIndex(-1);
         keys.remove(ski);
         selectedKeys.remove(ski);
@@ -185,8 +185,7 @@ class EPollSelectorImpl
     void putEventOps(SelectionKeyImpl sk, int ops) {
         if (closed)
             throw new ClosedSelectorException();
-        int fd = IOUtil.fdVal(sk.channel.getFD());
-        pollWrapper.setInterest(fd, ops);
+        pollWrapper.setInterest(sk.channel, ops);
     }
 
     public Selector wakeup() {

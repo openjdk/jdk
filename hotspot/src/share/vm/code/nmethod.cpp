@@ -380,7 +380,7 @@ address nmethod::handler_for_exception_and_pc(Handle exception, address pc) {
 void nmethod::add_handler_for_exception_and_pc(Handle exception, address pc, address handler) {
   // There are potential race conditions during exception cache updates, so we
   // must own the ExceptionCache_lock before doing ANY modifications. Because
-  // we dont lock during reads, it is possible to have several threads attempt
+  // we don't lock during reads, it is possible to have several threads attempt
   // to update the cache with the same data. We need to check for already inserted
   // copies of the current data before adding it.
 

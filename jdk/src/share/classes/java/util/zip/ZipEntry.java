@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,11 +144,13 @@ class ZipEntry implements ZipConstants, Cloneable {
      * Sets the uncompressed size of the entry data.
      * @param size the uncompressed size in bytes
      * @exception IllegalArgumentException if the specified size is less
-     *            than 0 or greater than 0xFFFFFFFF bytes
+     *            than 0, is greater than 0xFFFFFFFF when
+     *            <a href="package-summary.html#zip64">ZIP64 format</a> is not supported,
+     *            or is less than 0 when ZIP64 is supported
      * @see #getSize()
      */
     public void setSize(long size) {
-        if (size < 0 || size > 0xFFFFFFFFL) {
+        if (size < 0) {
             throw new IllegalArgumentException("invalid entry size");
         }
         this.size = size;

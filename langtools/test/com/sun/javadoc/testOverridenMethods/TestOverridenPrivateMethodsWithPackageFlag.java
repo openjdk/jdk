@@ -40,32 +40,32 @@ public class TestOverridenPrivateMethodsWithPackageFlag extends JavadocTester {
     private static final String[][] TEST = {
         //The public method should be overriden
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "Overrides:</STRONG><DD><CODE><A HREF=\"../pkg1/BaseClass.html#publicMethod"},
+         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#publicMethod"},
 
         //The public method in different package should be overriden
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "Overrides:</STRONG><DD><CODE><A HREF=\"../pkg1/BaseClass.html#publicMethod"},
+         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#publicMethod"},
 
         //The package private method should be overriden since the base and sub class are in the same
         //package.
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "Overrides:</STRONG><DD><CODE><A HREF=\"../pkg1/BaseClass.html#packagePrivateMethod"}
+         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#packagePrivateMethod"}
     };
 
     private static final String[][] NEGATED_TEST = {
 
         //The private method in should not be overriden
         {BUG_ID + FS + "pkg1" + FS + "SubClass.html",
-         "Overrides:</STRONG><DD><CODE><A HREF=\"../pkg1/BaseClass.html#privateMethod"},
+         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#privateMethod"},
 
         //The private method in different package should not be overriden
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "Overrides:</STRONG><DD><CODE><A HREF=\"../pkg1/BaseClass.html#privateMethod"},
+         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#privateMethod"},
 
         //The package private method should not be overriden since the base and sub class are in
         //different packages.
         {BUG_ID + FS + "pkg2" + FS + "SubClass.html",
-         "Overrides:</STRONG><DD><CODE><A HREF=\"../pkg1/BaseClass.html#packagePrivateMethod"},
+         "Overrides:</STRONG></DT><DD><CODE><A HREF=\"../pkg1/BaseClass.html#packagePrivateMethod"},
     };
 
     private static final String[] ARGS =

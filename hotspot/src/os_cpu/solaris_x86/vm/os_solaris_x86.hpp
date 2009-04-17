@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,16 @@
   static jint  (*atomic_cmpxchg_func)     (jint,  volatile jint*,  jint);
   static jlong (*atomic_cmpxchg_long_func)(jlong, volatile jlong*, jlong);
   static jint  (*atomic_add_func)         (jint,  volatile jint*);
-  static void  (*fence_func)              ();
 
   static jint  atomic_xchg_bootstrap        (jint,  volatile jint*);
   static jint  atomic_cmpxchg_bootstrap     (jint,  volatile jint*,  jint);
   static jlong atomic_cmpxchg_long_bootstrap(jlong, volatile jlong*, jlong);
   static jint  atomic_add_bootstrap         (jint,  volatile jint*);
-  static void  fence_bootstrap              ();
 
   static void setup_fpu();
-  static bool supports_sse();
 #endif // AMD64
+
+  static bool supports_sse();
 
   static bool is_allocatable(size_t bytes);
 

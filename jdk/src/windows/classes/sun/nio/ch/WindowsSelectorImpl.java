@@ -34,7 +34,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
@@ -72,7 +71,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
     private int threadsCount = 0;
 
     // A list of helper threads for select.
-    private final List<Thread> threads = new ArrayList<Thread>();
+    private final List<SelectThread> threads = new ArrayList<SelectThread>();
 
     //Pipe used as a wakeup object.
     private final Pipe wakeupPipe;
@@ -201,7 +200,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
                         Thread.currentThread().interrupt();
                     }
                 }
-                if (thread.index >= threads.size()) { // redundant thread
+                if (thread.isZombie()) { // redundant thread
                     return true; // will cause run() to exit.
                 } else {
                     thread.lastRun = runsCounter; // update lastRun
@@ -388,15 +387,22 @@ final class WindowsSelectorImpl extends SelectorImpl {
 
     // Represents a helper thread used for select.
     private final class SelectThread extends Thread {
-        private int index; // index of this thread
-        SubSelector subSelector;
+        private final int index; // index of this thread
+        final SubSelector subSelector;
         private long lastRun = 0; // last run number
+        private volatile boolean zombie;
         // Creates a new thread
         private SelectThread(int i) {
             this.index = i;
             this.subSelector = new SubSelector(i);
             //make sure we wait for next round of poll
             this.lastRun = startLock.runsCounter;
+        }
+        void makeZombie() {
+            zombie = true;
+        }
+        boolean isZombie() {
+            return zombie;
         }
         public void run() {
             while (true) { // poll loop
@@ -432,7 +438,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
         } else if (threadsCount < threads.size()) {
             // Some threads become redundant. Remove them from the threads List.
             for (int i = threads.size() - 1 ; i >= threadsCount; i--)
-                threads.remove(i);
+                threads.remove(i).makeZombie();
         }
     }
 
@@ -468,10 +474,9 @@ final class WindowsSelectorImpl extends SelectorImpl {
         updateCount++;
         int numKeysUpdated = 0;
         numKeysUpdated += subSelector.processSelectedKeys(updateCount);
-        Iterator it = threads.iterator();
-        while (it.hasNext())
-            numKeysUpdated += ((SelectThread)it.next()).subSelector.
-                                             processSelectedKeys(updateCount);
+        for (SelectThread t: threads) {
+            numKeysUpdated += t.subSelector.processSelectedKeys(updateCount);
+        }
         return numKeysUpdated;
     }
 
@@ -495,13 +500,13 @@ final class WindowsSelectorImpl extends SelectorImpl {
                     }
                     pollWrapper.free();
                     pollWrapper = null;
-                     selectedKeys = null;
-                     channelArray = null;
-                     threads.clear();
-                     // Call startThreads. All remaining helper threads now exit,
-                     // since threads.size() = 0;
-                     startLock.startThreads();
-                 }
+                    selectedKeys = null;
+                    channelArray = null;
+                    // Make all remaining helper threads exit
+                    for (SelectThread t: threads)
+                         t.makeZombie();
+                    startLock.startThreads();
+                }
             }
         }
     }

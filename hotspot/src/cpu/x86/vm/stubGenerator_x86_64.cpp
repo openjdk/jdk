@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -637,7 +637,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_orderaccess_fence() {
     StubCodeMark mark(this, "StubRoutines", "orderaccess_fence");
     address start = __ pc();
-    __ mfence();
+    __ membar(Assembler::StoreLoad);
     __ ret(0);
 
     return start;
@@ -2091,66 +2091,9 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_miss;
 
-    // a couple of useful fields in sub_klass:
-    int ss_offset = (klassOopDesc::header_size() * HeapWordSize +
-                     Klass::secondary_supers_offset_in_bytes());
-    int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
-                     Klass::secondary_super_cache_offset_in_bytes());
-    Address secondary_supers_addr(sub_klass, ss_offset);
-    Address super_cache_addr(     sub_klass, sc_offset);
-
-    // if the pointers are equal, we are done (e.g., String[] elements)
-    __ cmpptr(super_klass, sub_klass);
-    __ jcc(Assembler::equal, L_success);
-
-    // check the supertype display:
-    Address super_check_addr(sub_klass, super_check_offset, Address::times_1, 0);
-    __ cmpptr(super_klass, super_check_addr); // test the super type
-    __ jcc(Assembler::equal, L_success);
-
-    // if it was a primary super, we can just fail immediately
-    __ cmpl(super_check_offset, sc_offset);
-    __ jcc(Assembler::notEqual, L_miss);
-
-    // Now do a linear scan of the secondary super-klass chain.
-    // The repne_scan instruction uses fixed registers, which we must spill.
-    // (We need a couple more temps in any case.)
-    // This code is rarely used, so simplicity is a virtue here.
-    inc_counter_np(SharedRuntime::_partial_subtype_ctr);
-    {
-      __ push(rax);
-      __ push(rcx);
-      __ push(rdi);
-      assert_different_registers(sub_klass, super_klass, rax, rcx, rdi);
-
-      __ movptr(rdi, secondary_supers_addr);
-      // Load the array length.
-      __ movl(rcx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
-      // Skip to start of data.
-      __ addptr(rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-      // Scan rcx words at [rdi] for occurance of rax
-      // Set NZ/Z based on last compare
-      __ movptr(rax, super_klass);
-      if (UseCompressedOops) {
-        // Compare against compressed form.  Don't need to uncompress because
-        // looks like orig rax is restored in popq below.
-        __ encode_heap_oop(rax);
-        __ repne_scanl();
-      } else {
-        __ repne_scan();
-      }
-
-      // Unspill the temp. registers:
-      __ pop(rdi);
-      __ pop(rcx);
-      __ pop(rax);
-
-      __ jcc(Assembler::notEqual, L_miss);
-    }
-
-    // Success.  Cache the super we found and proceed in triumph.
-    __ movptr(super_cache_addr, super_klass); // note: rax is dead
-    __ jmp(L_success);
+    __ check_klass_subtype_fast_path(sub_klass, super_klass, noreg,        &L_success, &L_miss, NULL,
+                                     super_check_offset);
+    __ check_klass_subtype_slow_path(sub_klass, super_klass, noreg, noreg, &L_success, NULL);
 
     // Fall through on failure!
     __ BIND(L_miss);

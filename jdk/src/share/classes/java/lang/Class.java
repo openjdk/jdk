@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2846,14 +2846,14 @@ public final
         if (loader == null)
             return desiredAssertionStatus0(this);
 
-        synchronized(loader) {
-            // If the classloader has been initialized with
-            // the assertion directives, ask it. Otherwise,
-            // ask the VM.
-            return (loader.classAssertionStatus == null ?
-                    desiredAssertionStatus0(this) :
-                    loader.desiredAssertionStatus(getName()));
+        // If the classloader has been initialized with the assertion
+        // directives, ask it. Otherwise, ask the VM.
+        synchronized(loader.assertionLock) {
+            if (loader.classAssertionStatus != null) {
+                return loader.desiredAssertionStatus(getName());
+            }
         }
+        return desiredAssertionStatus0(this);
     }
 
     // Retrieves the desired assertion status of this class from the VM
@@ -3059,14 +3059,12 @@ public final
     }
 
 
-    private static Annotation[] EMPTY_ANNOTATIONS_ARRAY = new Annotation[0];
-
     /**
      * @since 1.5
      */
     public Annotation[] getAnnotations() {
         initAnnotationsIfNecessary();
-        return annotations.values().toArray(EMPTY_ANNOTATIONS_ARRAY);
+        return AnnotationParser.toArray(annotations);
     }
 
     /**
@@ -3074,7 +3072,7 @@ public final
      */
     public Annotation[] getDeclaredAnnotations()  {
         initAnnotationsIfNecessary();
-        return declaredAnnotations.values().toArray(EMPTY_ANNOTATIONS_ARRAY);
+        return AnnotationParser.toArray(declaredAnnotations);
     }
 
     // Annotations cache

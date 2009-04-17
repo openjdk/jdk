@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,10 @@ public class Launcher {
      * The class loader used for loading installed extensions.
      */
     static class ExtClassLoader extends URLClassLoader {
-        private File[] dirs;
+
+        static {
+            ClassLoader.registerAsParallelCapable();
+        }
 
         /**
          * create an ExtClassLoader. The ExtClassLoader is created
@@ -146,12 +149,12 @@ public class Launcher {
                         }
                     });
             } catch (java.security.PrivilegedActionException e) {
-                    throw (IOException) e.getException();
+                throw (IOException) e.getException();
             }
         }
 
         void addExtURL(URL url) {
-                super.addURL(url);
+            super.addURL(url);
         }
 
         /*
@@ -159,7 +162,6 @@ public class Launcher {
          */
         public ExtClassLoader(File[] dirs) throws IOException {
             super(getExtURLs(dirs), null, factory);
-            this.dirs = dirs;
         }
 
         private static File[] getExtDirs() {
@@ -206,20 +208,27 @@ public class Launcher {
          */
         public String findLibrary(String name) {
             name = System.mapLibraryName(name);
-            for (int i = 0; i < dirs.length; i++) {
-                // Look in architecture-specific subdirectory first
-                String arch = System.getProperty("os.arch");
-                if (arch != null) {
-                    File file = new File(new File(dirs[i], arch), name);
+            URL[] urls = super.getURLs();
+            File prevDir = null;
+            for (int i = 0; i < urls.length; i++) {
+                // Get the ext directory from the URL
+                File dir = new File(urls[i].getPath()).getParentFile();
+                if (dir != null && !dir.equals(prevDir)) {
+                    // Look in architecture-specific subdirectory first
+                    String arch = System.getProperty("os.arch");
+                    if (arch != null) {
+                        File file = new File(new File(dir, arch), name);
+                        if (file.exists()) {
+                            return file.getAbsolutePath();
+                        }
+                    }
+                    // Then check the extension directory
+                    File file = new File(dir, name);
                     if (file.exists()) {
                         return file.getAbsolutePath();
                     }
                 }
-                // Then check the extension directory
-                File file = new File(dirs[i], name);
-                if (file.exists()) {
-                    return file.getAbsolutePath();
-                }
+                prevDir = dir;
             }
             return null;
         }
@@ -247,6 +256,10 @@ public class Launcher {
      * runs in a restricted security context.
      */
     static class AppClassLoader extends URLClassLoader {
+
+        static {
+            ClassLoader.registerAsParallelCapable();
+        }
 
         public static ClassLoader getAppClassLoader(final ClassLoader extcl)
             throws IOException
@@ -281,7 +294,7 @@ public class Launcher {
         /**
          * Override loadClass so we can checkPackageAccess.
          */
-        public synchronized Class loadClass(String name, boolean resolve)
+        public Class loadClass(String name, boolean resolve)
             throws ClassNotFoundException
         {
             int i = name.lastIndexOf('.');

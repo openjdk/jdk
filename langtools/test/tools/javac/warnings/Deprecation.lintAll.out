@@ -1,3 +1,3 @@
-Deprecation.java:18:24: compiler.warn.has.been.deprecated: Deprecation, unnamed package
-Deprecation.java:55:24: compiler.warn.has.been.deprecated: Deprecation, unnamed package
+Deprecation.java:18:24: compiler.warn.has.been.deprecated: Deprecation, compiler.misc.unnamed.package
+Deprecation.java:55:24: compiler.warn.has.been.deprecated: Deprecation, compiler.misc.unnamed.package
 2 warnings

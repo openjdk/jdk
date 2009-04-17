@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,17 +93,17 @@ public class Log extends AbstractLog {
     protected DiagnosticListener<? super JavaFileObject> diagListener;
 
     /**
-     * Formatter for diagnostics
+     * Formatter for diagnostics.
      */
     private DiagnosticFormatter<JCDiagnostic> diagFormatter;
 
     /**
-     * Keys for expected diagnostics
+     * Keys for expected diagnostics.
      */
     public Set<String> expectDiagKeys;
 
     /**
-     * JavacMessages object used for localization
+     * JavacMessages object used for localization.
      */
     private JavacMessages messages;
 
@@ -204,6 +204,18 @@ public class Log extends AbstractLog {
      */
     public JavaFileObject currentSourceFile() {
         return source == null ? null : source.getFile();
+    }
+
+    /** Get the current diagnostic formatter.
+     */
+    public DiagnosticFormatter<JCDiagnostic> getDiagnosticFormatter() {
+        return diagFormatter;
+    }
+
+    /** Set the current diagnostic formatter.
+     */
+    public void setDiagnosticFormatter(DiagnosticFormatter<JCDiagnostic> diagFormatter) {
+        this.diagFormatter = diagFormatter;
     }
 
     /** Flush the logs

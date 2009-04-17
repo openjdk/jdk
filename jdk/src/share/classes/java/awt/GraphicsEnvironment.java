@@ -356,6 +356,9 @@ public abstract class GraphicsEnvironment {
      * @since 1.5
      */
     public void preferLocaleFonts() {
+        if (!(this instanceof SunGraphicsEnvironment)) {
+            return;
+        }
         sun.font.FontManager.preferLocaleFonts();
     }
 
@@ -376,6 +379,9 @@ public abstract class GraphicsEnvironment {
      * @since 1.5
      */
     public void preferProportionalFonts() {
+        if (!(this instanceof SunGraphicsEnvironment)) {
+            return;
+        }
         sun.font.FontManager.preferProportionalFonts();
     }
 

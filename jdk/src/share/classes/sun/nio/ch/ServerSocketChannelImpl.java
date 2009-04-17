@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,11 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.lang.reflect.*;
 import java.net.*;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
+import sun.net.NetHooks;
 
 
 /**
@@ -111,19 +109,19 @@ class ServerSocketChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             if (!isOpen())
-                return null;
+                throw new ClosedChannelException();
             return localAddress;
         }
     }
 
     @Override
-    public ServerSocketChannel setOption(SocketOption name, Object value)
+    public <T> ServerSocketChannel setOption(SocketOption<T> name, T value)
         throws IOException
     {
         if (name == null)
             throw new NullPointerException();
-        if (!options().contains(name))
-            throw new IllegalArgumentException("invalid option name");
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
 
         synchronized (stateLock) {
             if (!isOpen())
@@ -142,8 +140,8 @@ class ServerSocketChannelImpl
     {
         if (name == null)
             throw new NullPointerException();
-        if (!options().contains(name))
-            throw new IllegalArgumentException("invalid option name");
+        if (!supportedOptions().contains(name))
+            throw new UnsupportedOperationException("'" + name + "' not supported");
 
         synchronized (stateLock) {
             if (!isOpen())
@@ -154,7 +152,7 @@ class ServerSocketChannelImpl
         }
     }
 
-    private static class LazyInitialization {
+    private static class DefaultOptionsHolder {
         static final Set<SocketOption<?>> defaultOptions = defaultOptions();
 
         private static Set<SocketOption<?>> defaultOptions() {
@@ -166,8 +164,8 @@ class ServerSocketChannelImpl
     }
 
     @Override
-    public final Set<SocketOption<?>> options() {
-        return LazyInitialization.defaultOptions;
+    public final Set<SocketOption<?>> supportedOptions() {
+        return DefaultOptionsHolder.defaultOptions;
     }
 
     public boolean isBound() {
@@ -194,6 +192,7 @@ class ServerSocketChannelImpl
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkListen(isa.getPort());
+            NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
             Net.bind(fd, isa.getAddress(), isa.getPort());
             Net.listen(fd, backlog < 1 ? 50 : backlog);
             synchronized (stateLock) {
