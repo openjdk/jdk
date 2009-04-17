@@ -585,9 +585,16 @@ public class GifImageDecoder extends ImageDecoder {
             System.out.print("Reading a " + width + " by " + height + " " +
                       (interlace ? "" : "non-") + "interlaced image...");
         }
-
+        int initCodeSize = ExtractByte(block, 9);
+        if (initCodeSize >= 12) {
+            if (verbose) {
+                System.out.println("Invalid initial code size: " +
+                                   initCodeSize);
+            }
+            return false;
+        }
         boolean ret = parseImage(x, y, width, height,
-                                 interlace, ExtractByte(block, 9),
+                                 interlace, initCodeSize,
                                  block, rasline, model);
 
         if (!ret) {

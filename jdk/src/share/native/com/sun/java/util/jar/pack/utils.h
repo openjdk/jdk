@@ -25,12 +25,30 @@
 
 //Definitions of our util functions
 
-void* must_malloc(int size);
+void* must_malloc(size_t size);
 #ifndef USE_MTRACE
 #define mtrace(c, ptr, size)
 #else
 void mtrace(char c, void* ptr, size_t size);
 #endif
+
+// overflow management
+#define OVERFLOW ((size_t)-1)
+#define PSIZE_MAX (OVERFLOW/2)  /* normal size limit */
+
+inline size_t scale_size(size_t size, size_t scale) {
+  return (size > PSIZE_MAX / scale) ? OVERFLOW : size * scale;
+}
+
+inline size_t add_size(size_t size1, size_t size2) {
+  return ((size1 | size2 | (size1 + size2)) > PSIZE_MAX)
+    ? OVERFLOW
+    : size1 + size2;
+}
+
+inline size_t add_size(size_t size1, size_t size2, int size3) {
+  return add_size(add_size(size1, size2), size3);
+}
 
 // These may be expensive, because they have to go via Java TSD,
 // if the optional u argument is missing.

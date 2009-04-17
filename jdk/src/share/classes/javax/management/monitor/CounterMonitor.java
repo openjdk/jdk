@@ -599,7 +599,7 @@ public class CounterMonitor extends Monitor implements CounterMonitorMBean {
      */
     @Override
     public MBeanNotificationInfo[] getNotificationInfo() {
-        return notifsInfo;
+        return notifsInfo.clone();
     }
 
     /*

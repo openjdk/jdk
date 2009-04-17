@@ -302,7 +302,16 @@ final public class LdapCtx extends ComponentDirContext
 
         schemaTrees = new Hashtable(11, 0.75f);
         initEnv();
-        connect(false);
+        try {
+            connect(false);
+        } catch (NamingException e) {
+            try {
+                close();
+            } catch (Exception e2) {
+                // Nothing
+            }
+            throw e;
+        }
     }
 
     LdapCtx(LdapCtx existing, String newDN) throws NamingException {
