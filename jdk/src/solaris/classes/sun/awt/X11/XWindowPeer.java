@@ -146,6 +146,13 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
         params.put(OVERRIDE_REDIRECT, Boolean.valueOf(isOverrideRedirect()));
 
+        SunToolkit.awtLock();
+        try {
+            windows.add(this);
+        } finally {
+            SunToolkit.awtUnlock();
+        }
+
         cachedFocusableWindow = isFocusableWindow();
 
         Font f = target.getFont();
