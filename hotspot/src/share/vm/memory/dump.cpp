@@ -929,7 +929,8 @@ public:
     guarantee(SystemDictionary::constraints()->number_of_entries() == 0,
               "loader constraints are not saved");
     // Revisit and implement this if we prelink method handle call sites:
-    guarantee(SystemDictionary::invoke_method_table()->number_of_entries() == 0,
+    guarantee(SystemDictionary::invoke_method_table() == NULL ||
+              SystemDictionary::invoke_method_table()->number_of_entries() == 0,
               "invoke method table is not saved");
     GenCollectedHeap* gch = GenCollectedHeap::heap();
 
