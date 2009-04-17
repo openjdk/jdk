@@ -67,6 +67,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         dontResetControls[77] = true;  // Sound Controller 8 (GM2 default: Vibrato Depth)
         dontResetControls[78] = true;  // Sound Controller 9 (GM2 default: Vibrato Delay)
         dontResetControls[79] = true;  // Sound Controller 10 (GM2 default: Undefined)
+        dontResetControls[84] = true;  // Portamento Controller
         dontResetControls[120] = true; // All Sound Off
         dontResetControls[121] = true; // Reset All Controllers
         dontResetControls[122] = true; // Local Control On/Off
@@ -555,6 +556,18 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                         && voices[i].note == noteNumber
                         && voices[i].releaseTriggered == false) {
                     voices[i].noteOff(velocity);
+                }
+                // We must also check stolen voices
+                if (voices[i].stealer_channel == this && voices[i].stealer_noteNumber == noteNumber) {
+                    SoftVoice v = voices[i];
+                    v.stealer_releaseTriggered = false;
+                    v.stealer_channel = null;
+                    v.stealer_performer = null;
+                    v.stealer_voiceID = -1;
+                    v.stealer_noteNumber = 0;
+                    v.stealer_velocity = 0;
+                    v.stealer_extendedConnectionBlocks = null;
+                    v.stealer_channelmixer = null;
                 }
             }
 
@@ -1384,6 +1397,10 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                 if (!dontResetControls[i])
                     controlChange(i, 0);
             }
+
+            // Portamento Controller (0x54) has to reset
+            // to -1 which mean that Portamento Controller is off
+            portamento_control_note = -1;
 
             controlChange(71, 64); // Filter Resonance
             controlChange(72, 64); // Release Time
