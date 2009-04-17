@@ -543,8 +543,6 @@ public class SoftFilter {
 
     public void filter1(SoftAudioBuffer sbuffer) {
 
-        float[] buffer = sbuffer.array();
-
         if (dirty) {
             filter1calc();
             dirty = false;
@@ -559,6 +557,7 @@ public class SoftFilter {
 
         if (wet > 0 || last_wet > 0) {
 
+            float[] buffer = sbuffer.array();
             int len = buffer.length;
             float a0 = this.last_a0;
             float q = this.last_q;
@@ -577,14 +576,16 @@ public class SoftFilter {
                     q += q_delta;
                     gain += gain_delta;
                     wet += wet_delta;
-                    y1 = (1 - q * a0) * y1 - (a0) * y2 + (a0) * buffer[i];
-                    y2 = (1 - q * a0) * y2 + (a0) * y1;
+                    float ga0 = (1 - q * a0);
+                    y1 = ga0 * y1 + (a0) * (buffer[i] - y2);
+                    y2 = ga0 * y2 + (a0) * y1;
                     buffer[i] = y2 * gain * wet + buffer[i] * (1 - wet);
                 }
             } else if (a0_delta == 0 && q_delta == 0) {
+                float ga0 = (1 - q * a0);
                 for (int i = 0; i < len; i++) {
-                    y1 = (1 - q * a0) * y1 - (a0) * y2 + (a0) * buffer[i];
-                    y2 = (1 - q * a0) * y2 + (a0) * y1;
+                    y1 = ga0 * y1 + (a0) * (buffer[i] - y2);
+                    y2 = ga0 * y2 + (a0) * y1;
                     buffer[i] = y2 * gain;
                 }
             } else {
@@ -592,8 +593,9 @@ public class SoftFilter {
                     a0 += a0_delta;
                     q += q_delta;
                     gain += gain_delta;
-                    y1 = (1 - q * a0) * y1 - (a0) * y2 + (a0) * buffer[i];
-                    y2 = (1 - q * a0) * y2 + (a0) * y1;
+                    float ga0 = (1 - q * a0);
+                    y1 = ga0 * y1 + (a0) * (buffer[i] - y2);
+                    y2 = ga0 * y2 + (a0) * y1;
                     buffer[i] = y2 * gain;
                 }
             }
