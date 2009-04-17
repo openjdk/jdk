@@ -108,7 +108,9 @@ vpath %.c   $(PLATFORM_SRC)/native/$(PKGDIR)/robot_child
 #
 
 
-#CFLAGS += -g
+ifeq ($(DEBUG_BINARIES), true)
+  CFLAGS += -g
+endif
 ifeq ($(HEADLESS),true)
 CFLAGS += -DHEADLESS=$(HEADLESS)
 CPPFLAGS += -DHEADLESS=$(HEADLESS)
