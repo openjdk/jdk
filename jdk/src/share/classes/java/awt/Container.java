@@ -3977,10 +3977,8 @@ public class Container extends Component {
             Component comp = getComponent(index);
             if (!comp.isLightweight()) {
                 comp.applyCurrentShape();
-                if (comp instanceof Container && ((Container)comp).getLayout() == null) {
-                    ((Container)comp).recursiveApplyCurrentShape();
-                }
-            } else if (comp instanceof Container &&
+            }
+            if (comp instanceof Container &&
                     ((Container)comp).hasHeavyweightDescendants()) {
                 ((Container)comp).recursiveApplyCurrentShape();
             }
