@@ -67,7 +67,6 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         dontResetControls[77] = true;  // Sound Controller 8 (GM2 default: Vibrato Depth)
         dontResetControls[78] = true;  // Sound Controller 9 (GM2 default: Vibrato Delay)
         dontResetControls[79] = true;  // Sound Controller 10 (GM2 default: Undefined)
-        dontResetControls[84] = true;  // Portamento Controller
         dontResetControls[120] = true; // All Sound Off
         dontResetControls[121] = true; // Reset All Controllers
         dontResetControls[122] = true; // Local Control On/Off
@@ -94,7 +93,6 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     protected double portamento_time = 1; // keyschanges per control buffer time
     protected int[] portamento_lastnote = new int[128];
     protected int portamento_lastnote_ix = 0;
-    private int portamento_control_note = -1;
     private boolean portamento = false;
     private boolean mono = false;
     private boolean mute = false;
@@ -370,12 +368,12 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         voice.setSoloMute(solomute);
         if (releaseTriggered)
             return;
-        if (portamento_control_note != -1) {
+        if (controller[84] != 0) {
             voice.co_noteon_keynumber[0]
-                    = (tuning.getTuning(portamento_control_note) / 100.0)
+                    = (tuning.getTuning(controller[84]) / 100.0)
                     * (1f / 128f);
             voice.portamento = true;
-            portamento_control_note = -1;
+            controlChange(84, 0);
         } else if (portamento) {
             if (mono) {
                 if (portamento_lastnote[0] != -1) {
@@ -383,7 +381,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                             = (tuning.getTuning(portamento_lastnote[0]) / 100.0)
                             * (1f / 128f);
                     voice.portamento = true;
-                    portamento_control_note = -1;
+                    controlChange(84, 0);
                 }
                 portamento_lastnote[0] = noteNumber;
             } else {
@@ -450,19 +448,19 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                     }
                 }
 
-                if (portamento_control_note != -1) {
+                if (controller[84] != 0) {
                     boolean n_found = false;
                     for (int i = 0; i < voices.length; i++) {
                         if (voices[i].on && voices[i].channel == channel
                                 && voices[i].active
-                                && voices[i].note == portamento_control_note
+                                && voices[i].note == controller[84]
                                 && voices[i].releaseTriggered == false) {
                             voices[i].portamento = true;
                             voices[i].setNote(noteNumber);
                             n_found = true;
                         }
                     }
-                    portamento_control_note = -1;
+                    controlChange(84, 0);
                     if (n_found)
                         return;
                 }
@@ -1154,9 +1152,6 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                     }
                 }
                 break;
-            case 84:
-                portamento_control_note = value;
-                break;
             case 98:
                 nrpn_control = (nrpn_control & (127 << 7)) + value;
                 rpn_control = RPN_NULL_VALUE;
@@ -1397,10 +1392,6 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
                 if (!dontResetControls[i])
                     controlChange(i, 0);
             }
-
-            // Portamento Controller (0x54) has to reset
-            // to -1 which mean that Portamento Controller is off
-            portamento_control_note = -1;
 
             controlChange(71, 64); // Filter Resonance
             controlChange(72, 64); // Release Time
