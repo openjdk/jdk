@@ -31,6 +31,7 @@ import java.io.*;
 import java.net.*;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.UIManager;
 import javax.swing.border.*;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.*;
@@ -2161,6 +2162,7 @@ public class StyleSheet extends StyleContext {
          */
         public void paint(Graphics g, float x, float y, float w, float h, View v, int item) {
             View cv = v.getView(item);
+            Container host = v.getContainer();
             Object name = cv.getElement().getAttributes().getAttribute
                          (StyleConstants.NameAttribute);
             // Only draw something if the View is a list item. This won't
@@ -2171,7 +2173,7 @@ public class StyleSheet extends StyleContext {
             }
             // deside on what side draw bullets, etc.
             isLeftToRight =
-                cv.getContainer().getComponentOrientation().isLeftToRight();
+                host.getComponentOrientation().isLeftToRight();
 
             // How the list indicator is aligned is not specified, it is
             // left up to the UA. IE and NS differ on this behavior.
@@ -2200,15 +2202,15 @@ public class StyleSheet extends StyleContext {
             }
 
             // set the color of a decoration
-            if (ss != null) {
-                g.setColor(ss.getForeground(cv.getAttributes()));
-            } else {
-                g.setColor(Color.black);
-            }
+            Color c = (host.isEnabled()
+                ? (ss != null
+                    ? ss.getForeground(cv.getAttributes())
+                    : host.getForeground())
+                : UIManager.getColor("textInactiveText"));
+            g.setColor(c);
 
             if (img != null) {
-                drawIcon(g, (int) x, (int) y, (int) w, (int) h, align,
-                         v.getContainer());
+                drawIcon(g, (int) x, (int) y, (int) w, (int) h, align, host);
                 return;
             }
             CSS.Value childtype = getChildType(cv);

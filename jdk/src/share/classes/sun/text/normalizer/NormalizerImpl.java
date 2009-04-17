@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
+ * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
  *                                                                             *
  * The original version of this source code and documentation is copyrighted   *
  * and owned by IBM, These materials are provided under terms of a License     *
@@ -102,7 +101,7 @@ public final class NormalizerImpl {
     private static final long  MIN_SPECIAL    =  (long)(0xfc000000 & UNSIGNED_INT_MASK);
     private static final long  SURROGATES_TOP =  (long)(0xfff00000 & UNSIGNED_INT_MASK);
     private static final long  MIN_HANGUL     =  (long)(0xfff00000 & UNSIGNED_INT_MASK);
-    private static final long  MIN_JAMO_V     =  (long)(0xfff20000 & UNSIGNED_INT_MASK);
+//  private static final long  MIN_JAMO_V     =  (long)(0xfff20000 & UNSIGNED_INT_MASK);
     private static final long  JAMO_V_TOP     =  (long)(0xfff30000 & UNSIGNED_INT_MASK);
 
 
@@ -908,7 +907,7 @@ public final class NormalizerImpl {
                     buffer = composePart(args,prevStarter,src,srcStart,srcLimit,options,nx);
 
                     // compare the normalized version with the original
-                    if(0!=strCompare(buffer,0,args.length,src,prevStarter,(srcStart-prevStarter), false)) {
+                    if(0!=strCompare(buffer,0,args.length,src,prevStarter,srcStart, false)) {
                         result=NormalizerBase.NO; // normalization differs
                         break;
                     }
@@ -2291,7 +2290,7 @@ public final class NormalizerImpl {
     private static final int OPTIONS_NX_MASK=0x1f;
     private static final int OPTIONS_UNICODE_MASK=0xe0;
     public  static final int OPTIONS_SETS_MASK=0xff;
-    private static final int OPTIONS_UNICODE_SHIFT=5;
+//  private static final int OPTIONS_UNICODE_SHIFT=5;
     private static final UnicodeSet[] nxCache = new UnicodeSet[OPTIONS_SETS_MASK+1];
 
     /* Constants for options flags for normalization.*/

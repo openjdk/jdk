@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
+import sun.net.NetHooks;
 
 
 /**
@@ -526,6 +527,7 @@ class SocketChannelImpl
                         throw new AlreadyBoundException();
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
+                    NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
                     Net.bind(fd, isa.getAddress(), isa.getPort());
                     localAddress = Net.localAddress(fd);
                 }
@@ -576,6 +578,12 @@ class SocketChannelImpl
                             synchronized (stateLock) {
                                 if (!isOpen()) {
                                     return false;
+                                }
+                                // notify hook only if unbound
+                                if (localAddress == null) {
+                                    NetHooks.beforeTcpConnect(fd,
+                                                           isa.getAddress(),
+                                                           isa.getPort());
                                 }
                                 readerThread = NativeThread.current();
                             }

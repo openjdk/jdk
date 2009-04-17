@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4295885
+ * @bug 4295885 6824141
  * @summary rmid should be startable from inetd
  * @author Ann Wollrath
  *
@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.ProtocolFamily;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.rmi.Remote;
@@ -124,6 +125,12 @@ public class RmidViaInheritedChannel implements Callback {
             throws IOException
         {
             return provider.openDatagramChannel();
+        }
+
+        public DatagramChannel openDatagramChannel(ProtocolFamily family)
+            throws IOException
+        {
+            return provider.openDatagramChannel(family);
         }
 
         public Pipe openPipe()
