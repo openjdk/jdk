@@ -722,6 +722,10 @@ DGifSetupDecompress(GifFileType * GifFile) {
     GifFilePrivateType *Private = (GifFilePrivateType *)GifFile->Private;
 
     READ(GifFile, &CodeSize, 1);    /* Read Code size from file. */
+    if (CodeSize >= 12) {
+        /* Invalid initial code size: report failure */
+        return GIF_ERROR;
+    }
     BitsPerPixel = CodeSize;
 
     Private->Buf[0] = 0;    /* Input Buffer empty. */
@@ -964,10 +968,13 @@ DGifDecompressInput(GifFileType * GifFile,
 
     /* If code cannot fit into RunningBits bits, must raise its size. Note
      * however that codes above 4095 are used for special signaling.  */
-    if (++Private->RunningCode > Private->MaxCode1 &&
-        Private->RunningBits < LZ_BITS) {
-        Private->MaxCode1 <<= 1;
-        Private->RunningBits++;
+    if (++Private->RunningCode > Private->MaxCode1) {
+        if (Private->RunningBits < LZ_BITS) {
+            Private->MaxCode1 <<= 1;
+            Private->RunningBits++;
+        } else {
+            Private->RunningCode = Private->MaxCode1;
+        }
     }
     return GIF_OK;
 }

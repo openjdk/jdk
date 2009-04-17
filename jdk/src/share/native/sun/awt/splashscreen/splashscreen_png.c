@@ -103,7 +103,15 @@ SplashDecodePng(Splash * splash, png_rw_ptr read_func, void *io_ptr)
 
     rowbytes = png_get_rowbytes(png_ptr, info_ptr);
 
+    if (!SAFE_TO_ALLOC(rowbytes, height)) {
+        goto done;
+    }
+
     if ((image_data = (unsigned char *) malloc(rowbytes * height)) == NULL) {
+        goto done;
+    }
+
+    if (!SAFE_TO_ALLOC(height, sizeof(png_bytep))) {
         goto done;
     }
     if ((row_pointers = (png_bytepp) malloc(height * sizeof(png_bytep)))
@@ -121,13 +129,28 @@ SplashDecodePng(Splash * splash, png_rw_ptr read_func, void *io_ptr)
     splash->width = width;
     splash->height = height;
 
+    if (!SAFE_TO_ALLOC(splash->width, splash->imageFormat.depthBytes)) {
+        goto done;
+    }
     stride = splash->width * splash->imageFormat.depthBytes;
 
+    if (!SAFE_TO_ALLOC(splash->height, stride)) {
+        goto done;
+    }
     splash->frameCount = 1;
     splash->frames = (SplashImage *)
         malloc(sizeof(SplashImage) * splash->frameCount);
+
+    if (splash->frames == NULL) {
+        goto done;
+    }
+
     splash->loopCount = 1;
     splash->frames[0].bitmapBits = malloc(stride * splash->height);
+    if (splash->frames[0].bitmapBits == NULL) {
+        free(splash->frames);
+        goto done;
+    }
     splash->frames[0].delay = 0;
 
     /* FIXME: sort out the real format */

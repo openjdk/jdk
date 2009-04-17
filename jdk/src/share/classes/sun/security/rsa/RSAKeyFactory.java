@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+
+import sun.security.action.GetPropertyAction;
 
 /**
  * KeyFactory for RSA keys. Keys must be instances of PublicKey or PrivateKey
@@ -68,6 +70,24 @@ public final class RSAKeyFactory extends KeyFactorySpi {
     private final static Class<?> x509KeySpecClass  = X509EncodedKeySpec.class;
     private final static Class<?> pkcs8KeySpecClass = PKCS8EncodedKeySpec.class;
 
+    public final static int MIN_MODLEN = 512;
+    public final static int MAX_MODLEN = 16384;
+
+    /*
+     * If the modulus length is above this value, restrict the size of
+     * the exponent to something that can be reasonably computed.  We
+     * could simply hardcode the exp len to something like 64 bits, but
+     * this approach allows flexibility in case impls would like to use
+     * larger module and exponent values.
+     */
+    public final static int MAX_MODLEN_RESTRICT_EXP = 3072;
+    public final static int MAX_RESTRICTED_EXPLEN = 64;
+
+    private static final boolean restrictExpLen =
+        "true".equalsIgnoreCase(AccessController.doPrivileged(
+            new GetPropertyAction(
+                "sun.security.rsa.restrictRSAExponent", "true")));
+
     // instance used for static translateKey();
     private final static RSAKeyFactory INSTANCE = new RSAKeyFactory();
 
@@ -76,74 +96,79 @@ public final class RSAKeyFactory extends KeyFactorySpi {
     }
 
     /**
-     * Static method to convert Key into a useable instance of
-     * RSAPublicKey or RSAPrivate(Crt)Key. Check the key and convert it
-     * to a SunRsaSign key if necessary. If the key is not an RSA key
-     * or cannot be used, throw an InvalidKeyException.
-     *
-     * The difference between this method and engineTranslateKey() is that
-     * we do not convert keys of other providers that are already an
-     * instance of RSAPublicKey or RSAPrivate(Crt)Key.
+     * Static method to convert Key into an instance of RSAPublicKeyImpl
+     * or RSAPrivate(Crt)KeyImpl. If the key is not an RSA key or cannot be
+     * used, throw an InvalidKeyException.
      *
      * Used by RSASignature and RSACipher.
      */
     public static RSAKey toRSAKey(Key key) throws InvalidKeyException {
-        if (key instanceof RSAKey) {
-            RSAKey rsaKey = (RSAKey)key;
-            checkKey(rsaKey);
-            return rsaKey;
+        if ((key instanceof RSAPrivateKeyImpl) ||
+            (key instanceof RSAPrivateCrtKeyImpl) ||
+            (key instanceof RSAPublicKeyImpl)) {
+            return (RSAKey)key;
         } else {
             return (RSAKey)INSTANCE.engineTranslateKey(key);
         }
     }
 
-    /**
-     * Check that the given RSA key is valid.
+    /*
+     * Single test entry point for all of the mechanisms in the SunRsaSign
+     * provider (RSA*KeyImpls).  All of the tests are the same.
+     *
+     * For compatibility, we round up to the nearest byte here:
+     * some Key impls might pass in a value within a byte of the
+     * real value.
      */
-    private static void checkKey(RSAKey key) throws InvalidKeyException {
-        // check for subinterfaces, omit additional checks for our keys
-        if (key instanceof RSAPublicKey) {
-            if (key instanceof RSAPublicKeyImpl) {
-                return;
-            }
-        } else if (key instanceof RSAPrivateKey) {
-            if ((key instanceof RSAPrivateCrtKeyImpl)
-                    || (key instanceof RSAPrivateKeyImpl)) {
-                return;
-            }
-        } else {
-            throw new InvalidKeyException("Neither a public nor a private key");
-        }
-        // RSAKey does not extend Key, so we need to do a cast
-        String keyAlg = ((Key)key).getAlgorithm();
-        if (keyAlg.equals("RSA") == false) {
-            throw new InvalidKeyException("Not an RSA key: " + keyAlg);
-        }
-        BigInteger modulus;
-        // some providers implement RSAKey for keys where the values are
-        // not accessible (although they should). Detect those here
-        // for a more graceful failure.
-        try {
-            modulus = key.getModulus();
-            if (modulus == null) {
-                throw new InvalidKeyException("Modulus is missing");
-            }
-        } catch (RuntimeException e) {
-            throw new InvalidKeyException(e);
-        }
-        checkKeyLength(modulus);
+    static void checkRSAProviderKeyLengths(int modulusLen, BigInteger exponent)
+            throws InvalidKeyException {
+        checkKeyLengths(((modulusLen + 7) & ~7), exponent,
+            RSAKeyFactory.MIN_MODLEN, Integer.MAX_VALUE);
     }
 
     /**
-     * Check the length of the modulus of an RSA key. We only support keys
-     * at least 505 bits long.
+     * Check the length of an RSA key modulus/exponent to make sure it
+     * is not too short or long.  Some impls have their own min and
+     * max key sizes that may or may not match with a system defined value.
+     *
+     * @param modulusLen the bit length of the RSA modulus.
+     * @param exponent the RSA exponent
+     * @param minModulusLen if > 0, check to see if modulusLen is at
+     *        least this long, otherwise unused.
+     * @param maxModulusLen caller will allow this max number of bits.
+     *        Allow the smaller of the system-defined maximum and this param.
+     *
+     * @throws InvalidKeyException if any of the values are unacceptable.
      */
-    static void checkKeyLength(BigInteger modulus) throws InvalidKeyException {
-        if (modulus.bitLength() < 505) {
-            // some providers may generate slightly shorter keys
-            // accept them if the encoding is at least 64 bytes long
-            throw new InvalidKeyException
-                ("RSA keys must be at least 512 bits long");
+     public static void checkKeyLengths(int modulusLen, BigInteger exponent,
+            int minModulusLen, int maxModulusLen) throws InvalidKeyException {
+
+        if ((minModulusLen > 0) && (modulusLen < (minModulusLen))) {
+            throw new InvalidKeyException( "RSA keys must be at least " +
+                minModulusLen + " bits long");
+        }
+
+        // Even though our policy file may allow this, we don't want
+        // either value (mod/exp) to be too big.
+
+        int maxLen = Math.min(maxModulusLen, MAX_MODLEN);
+
+        // If a RSAPrivateKey/RSAPublicKey, make sure the
+        // modulus len isn't too big.
+        if (modulusLen > maxLen) {
+            throw new InvalidKeyException(
+                "RSA keys must be no longer than " + maxLen + " bits");
+        }
+
+        // If a RSAPublicKey, make sure the exponent isn't too big.
+        if (restrictExpLen && (exponent != null) &&
+                (modulusLen > MAX_MODLEN_RESTRICT_EXP) &&
+                (exponent.bitLength() > MAX_RESTRICTED_EXPLEN)) {
+            throw new InvalidKeyException(
+                "RSA exponents can be no longer than " +
+                MAX_RESTRICTED_EXPLEN + " bits " +
+                " if modulus is greater than " +
+                MAX_MODLEN_RESTRICT_EXP + " bits");
         }
     }
 

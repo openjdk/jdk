@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,7 @@ void band::readData(int expectedLength) {
       assert(!valc->isMalloc);
     }
     xvs.init(u->rp, u->rplimit, valc);
+    CHECK;
     int X = xvs.getInt();
     if (valc->S() != 0) {
       assert(valc->min <= -256);
@@ -117,6 +118,7 @@ void band::readData(int expectedLength) {
     byte XB_byte = (byte) XB;
     byte* XB_ptr = &XB_byte;
     cm.init(u->rp, u->rplimit, XB_ptr, 0, defc, length, null);
+    CHECK;
   } else {
     NOT_PRODUCT(byte* meta_rp0 = u->meta_rp);
     assert(u->meta_rp != null);
@@ -215,8 +217,19 @@ int band::getIntTotal() {
   if (length == 0)  return 0;
   if (total_memo > 0)  return total_memo-1;
   int total = getInt();
+  // overflow checks require that none of the addends are <0,
+  // and that the partial sums never overflow (wrap negative)
+  if (total < 0) {
+    abort("overflow detected");
+    return 0;
+  }
   for (int k = length-1; k > 0; k--) {
+    int prev_total = total;
     total += vs[0].getInt();
+    if (total < prev_total) {
+      abort("overflow detected");
+      return 0;
+    }
   }
   rewind();
   total_memo = total+1;

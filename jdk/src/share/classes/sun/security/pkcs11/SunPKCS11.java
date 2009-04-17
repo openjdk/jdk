@@ -120,11 +120,13 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     /**
-     * @deprecated use new SunPKCS11(String) or new SunPKCS11(InputStream) instead
+     * @deprecated use new SunPKCS11(String) or new SunPKCS11(InputStream)
+     *         instead
      */
     @Deprecated
     public SunPKCS11(String configName, InputStream configStream) {
-        super("SunPKCS11-" + Config.getConfig(configName, configStream).getName(),
+        super("SunPKCS11-" +
+            Config.getConfig(configName, configStream).getName(),
             1.7d, Config.getConfig(configName, configStream).getDescription());
         this.configName = configName;
         this.config = Config.removeConfig(configName);
@@ -153,7 +155,8 @@ public final class SunPKCS11 extends AuthProvider {
         //
         // If we are in Secmod mode and configured to use either the
         // nssKeyStore or the nssTrustAnchors module, we automatically
-        // switch to using the NSS trust attributes for trusted certs (KeyStore).
+        // switch to using the NSS trust attributes for trusted certs
+        // (KeyStore).
         //
 
         if (useSecmod) {
@@ -168,33 +171,40 @@ public final class SunPKCS11 extends AuthProvider {
                 if (secmod.isInitialized()) {
                     if (nssSecmodDirectory != null) {
                         String s = secmod.getConfigDir();
-                        if ((s != null) && (s.equals(nssSecmodDirectory) == false)) {
+                        if ((s != null) &&
+                                (s.equals(nssSecmodDirectory) == false)) {
                             throw new ProviderException("Secmod directory "
                                 + nssSecmodDirectory
-                                + " invalid, NSS already initialized with " + s);
+                                + " invalid, NSS already initialized with "
+                                + s);
                         }
                     }
                     if (nssLibraryDirectory != null) {
                         String s = secmod.getLibDir();
-                        if ((s != null) && (s.equals(nssLibraryDirectory) == false)) {
+                        if ((s != null) &&
+                                (s.equals(nssLibraryDirectory) == false)) {
                             throw new ProviderException("NSS library directory "
                                 + nssLibraryDirectory
-                                + " invalid, NSS already initialized with " + s);
+                                + " invalid, NSS already initialized with "
+                                + s);
                         }
                     }
                 } else {
                     if (nssDbMode != DbMode.NO_DB) {
                         if (nssSecmodDirectory == null) {
-                            throw new ProviderException("Secmod not initialized and "
-                                + "nssSecmodDirectory not specified");
+                            throw new ProviderException(
+                                "Secmod not initialized and "
+                                 + "nssSecmodDirectory not specified");
                         }
                     } else {
                         if (nssSecmodDirectory != null) {
-                            throw new ProviderException
-                            ("nssSecmodDirectory must not be specified in noDb mode");
+                            throw new ProviderException(
+                                "nssSecmodDirectory must not be "
+                                + "specified in noDb mode");
                         }
                     }
-                    secmod.initialize(nssDbMode, nssSecmodDirectory, nssLibraryDirectory);
+                    secmod.initialize(nssDbMode, nssSecmodDirectory,
+                        nssLibraryDirectory);
                 }
             } catch (IOException e) {
                 // XXX which exception to throw
@@ -211,7 +221,8 @@ public final class SunPKCS11 extends AuthProvider {
                 if (nssModule != null) {
                     moduleName = "fips";
                 } else {
-                    moduleName = (nssDbMode == DbMode.NO_DB) ? "crypto" : "keystore";
+                    moduleName = (nssDbMode == DbMode.NO_DB) ?
+                        "crypto" : "keystore";
                 }
             }
             if (moduleName.equals("fips")) {
@@ -253,10 +264,12 @@ public final class SunPKCS11 extends AuthProvider {
                         + ": only " + k + " external NSS modules available");
                 }
             } else {
-                throw new ProviderException("Unknown NSS module: " + moduleName);
+                throw new ProviderException(
+                    "Unknown NSS module: " + moduleName);
             }
             if (nssModule == null) {
-                throw new ProviderException("NSS module not available: " + moduleName);
+                throw new ProviderException(
+                    "NSS module not available: " + moduleName);
             }
             if (nssModule.hasInitializedProvider()) {
                 throw new ProviderException("Secmod module already configured");
@@ -296,8 +309,9 @@ public final class SunPKCS11 extends AuthProvider {
             initArgs.flags = CKF_OS_LOCKING_OK;
             PKCS11 tmpPKCS11;
             try {
-                tmpPKCS11 = PKCS11.getInstance
-                    (library, functionList, initArgs, config.getOmitInitialize());
+                tmpPKCS11 = PKCS11.getInstance(
+                    library, functionList, initArgs,
+                    config.getOmitInitialize());
             } catch (PKCS11Exception e) {
                 if (debug != null) {
                     debug.println("Multi-threaded initialization failed: " + e);
@@ -312,8 +326,8 @@ public final class SunPKCS11 extends AuthProvider {
                 } else {
                     initArgs.flags = 0;
                 }
-                tmpPKCS11 = PKCS11.getInstance
-                    (library, functionList, initArgs, config.getOmitInitialize());
+                tmpPKCS11 = PKCS11.getInstance(library,
+                    functionList, initArgs, config.getOmitInitialize());
             }
             p11 = tmpPKCS11;
 
@@ -336,8 +350,10 @@ public final class SunPKCS11 extends AuthProvider {
                     System.out.println("Slots with tokens: " + toString(slots));
                 }
                 if (slotID < 0) {
-                    if ((slotListIndex < 0) || (slotListIndex >= slots.length)) {
-                        throw new ProviderException("slotListIndex is " + slotListIndex
+                    if ((slotListIndex < 0)
+                            || (slotListIndex >= slots.length)) {
+                        throw new ProviderException("slotListIndex is "
+                            + slotListIndex
                             + " but token only has " + slots.length + " slots");
                     }
                     slotID = slots[slotListIndex];
@@ -575,12 +591,15 @@ public final class SunPKCS11 extends AuthProvider {
         d(KF, "DH",             P11DHKeyFactory,        s("DiffieHellman"),
                 m(CKM_DH_PKCS_KEY_PAIR_GEN, CKM_DH_PKCS_DERIVE));
         d(KF, "EC",             P11DHKeyFactory,
-                m(CKM_EC_KEY_PAIR_GEN, CKM_ECDH1_DERIVE, CKM_ECDSA, CKM_ECDSA_SHA1));
+                m(CKM_EC_KEY_PAIR_GEN, CKM_ECDH1_DERIVE,
+                    CKM_ECDSA, CKM_ECDSA_SHA1));
 
         // AlgorithmParameters for EC.
         // Only needed until we have an EC implementation in the SUN provider.
-        d(AGP, "EC",            "sun.security.ec.ECParameters", s("1.2.840.10045.2.1"),
-                m(CKM_EC_KEY_PAIR_GEN, CKM_ECDH1_DERIVE, CKM_ECDSA, CKM_ECDSA_SHA1));
+        d(AGP, "EC",            "sun.security.ec.ECParameters",
+                                                s("1.2.840.10045.2.1"),
+                m(CKM_EC_KEY_PAIR_GEN, CKM_ECDH1_DERIVE,
+                    CKM_ECDSA, CKM_ECDSA_SHA1));
 
         d(KA, "DH",             P11KeyAgreement,        s("DiffieHellman"),
                 m(CKM_DH_PKCS_DERIVE));
@@ -654,12 +673,16 @@ public final class SunPKCS11 extends AuthProvider {
         d(SIG, "SHA512withRSA", P11Signature,
                 m(CKM_SHA512_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
 
-        d(KG, "SunTlsRsaPremasterSecret", "sun.security.pkcs11.P11TlsRsaPremasterSecretGenerator",
+        d(KG, "SunTlsRsaPremasterSecret",
+                    "sun.security.pkcs11.P11TlsRsaPremasterSecretGenerator",
                 m(CKM_SSL3_PRE_MASTER_KEY_GEN, CKM_TLS_PRE_MASTER_KEY_GEN));
-        d(KG, "SunTlsMasterSecret", "sun.security.pkcs11.P11TlsMasterSecretGenerator",
+        d(KG, "SunTlsMasterSecret",
+                    "sun.security.pkcs11.P11TlsMasterSecretGenerator",
                 m(CKM_SSL3_MASTER_KEY_DERIVE, CKM_TLS_MASTER_KEY_DERIVE,
-                    CKM_SSL3_MASTER_KEY_DERIVE_DH, CKM_TLS_MASTER_KEY_DERIVE_DH));
-        d(KG, "SunTlsKeyMaterial", "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
+                    CKM_SSL3_MASTER_KEY_DERIVE_DH,
+                    CKM_TLS_MASTER_KEY_DERIVE_DH));
+        d(KG, "SunTlsKeyMaterial",
+                    "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
                 m(CKM_SSL3_KEY_AND_MAC_DERIVE, CKM_TLS_KEY_AND_MAC_DERIVE));
         d(KG, "SunTlsPrf", "sun.security.pkcs11.P11TlsPrfGenerator",
                 m(CKM_TLS_PRF, CKM_NSS_TLS_PRF_GENERAL));
@@ -773,6 +796,13 @@ public final class SunPKCS11 extends AuthProvider {
             System.out.println(token.tokenInfo);
         }
         long[] supportedMechanisms = p11.C_GetMechanismList(slotID);
+
+        // Create a map from the various Descriptors to the "most
+        // preferred" mechanism that was defined during the
+        // static initialization.  For example, DES/CBC/PKCS5Padding
+        // could be mapped to CKM_DES_CBC_PAD or CKM_DES_CBC.  Prefer
+        // the earliest entry.  When asked for "DES/CBC/PKCS5Padding", we
+        // return a CKM_DES_CBC_PAD.
         final Map<Descriptor,Integer> supportedAlgs =
                                         new HashMap<Descriptor,Integer>();
         for (int i = 0; i < supportedMechanisms.length; i++) {
@@ -807,6 +837,9 @@ public final class SunPKCS11 extends AuthProvider {
                     supportedAlgs.put(d, integerMech);
                     continue;
                 }
+                // See if there is something "more preferred"
+                // than what we currently have in the supportedAlgs
+                // map.
                 int intOldMech = oldMech.intValue();
                 for (int j = 0; j < d.mechanisms.length; j++) {
                     int nextMech = d.mechanisms[j];

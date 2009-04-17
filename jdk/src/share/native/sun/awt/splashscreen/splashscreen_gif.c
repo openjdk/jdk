@@ -62,6 +62,15 @@ SplashStreamGifInputFunc(GifFileType * gif, GifByteType * buf, int n)
     return rc;
 }
 
+/* These macro help to ensure that we only take part of frame that fits into
+   logical screen. */
+
+/* Ensure that p belongs to [pmin, pmax) interval. Returns fixed point (if fix is needed) */
+#define FIX_POINT(p, pmin, pmax) ( ((p) < (pmin)) ? (pmin) : (((p) > (pmax)) ? (pmax) : (p)))
+/* Ensures that line starting at point p does not exceed boundary pmax.
+   Returns fixed length (if fix is needed) */
+#define FIX_LENGTH(p, len, pmax) ( ((p) + (len)) > (pmax) ? ((pmax) - (p)) : (len))
+
 int
 SplashDecodeGif(Splash * splash, GifFileType * gif)
 {
@@ -70,6 +79,7 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
     byte_t *pBitmapBits, *pOldBitmapBits;
     int i, j;
     int imageIndex;
+    int cx, cy, cw, ch; /* clamped coordinates */
     const int interlacedOffset[] = { 0, 4, 2, 1, 0 };   /* The way Interlaced image should. */
     const int interlacedJumps[] = { 8, 8, 4, 2, 1 };    /* be read - offsets and jumps... */
 
@@ -79,14 +89,31 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
 
     SplashCleanup(splash);
 
+    if (!SAFE_TO_ALLOC(gif->SWidth, splash->imageFormat.depthBytes)) {
+        return 0;
+    }
     stride = gif->SWidth * splash->imageFormat.depthBytes;
     if (splash->byteAlignment > 1)
         stride =
             (stride + splash->byteAlignment - 1) & ~(splash->byteAlignment - 1);
 
+    if (!SAFE_TO_ALLOC(gif->SHeight, stride)) {
+        return 0;
+    }
+
+    if (!SAFE_TO_ALLOC(gif->ImageCount, sizeof(SplashImage*))) {
+        return 0;
+    }
     bufferSize = stride * gif->SHeight;
     pBitmapBits = (byte_t *) malloc(bufferSize);
+    if (!pBitmapBits) {
+        return 0;
+    }
     pOldBitmapBits = (byte_t *) malloc(bufferSize);
+    if (!pOldBitmapBits) {
+        free(pBitmapBits);
+        return 0;
+    }
     memset(pBitmapBits, 0, bufferSize);
 
     splash->width = gif->SWidth;
@@ -94,6 +121,11 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
     splash->frameCount = gif->ImageCount;
     splash->frames = (SplashImage *)
         malloc(sizeof(SplashImage) * gif->ImageCount);
+    if (!splash->frames) {
+      free(pBitmapBits);
+      free(pOldBitmapBits);
+      return 0;
+    }
     memset(splash->frames, 0, sizeof(SplashImage) * gif->ImageCount);
     splash->loopCount = 1;
 
@@ -108,6 +140,11 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
         int disposeMethod = GIF_DISPOSE_RESTORE;
         int colorCount = 0;
         rgbquad_t colorMapBuf[SPLASH_COLOR_MAP_SIZE];
+
+        cx = FIX_POINT(desc->Left, 0, gif->SWidth);
+        cy = FIX_POINT(desc->Top, 0, gif->SHeight);
+        cw = FIX_LENGTH(desc->Left, desc->Width, gif->SWidth);
+        ch = FIX_LENGTH(desc->Top, desc->Height, gif->SHeight);
 
         if (colorMap) {
             if (colorMap->ColorCount <= SPLASH_COLOR_MAP_SIZE) {
@@ -195,13 +232,22 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
             for (; pass < npass; ++pass) {
                 int jump = interlacedJumps[pass];
                 int ofs = interlacedOffset[pass];
-                int numLines = (desc->Height + jump - 1 - ofs) / jump;
+                /* Number of source lines for current pass */
+                int numPassLines = (desc->Height + jump - ofs - 1) / jump;
+                /* Number of lines that fits to dest buffer */
+                int numLines = (ch + jump - ofs - 1) / jump;
 
                 initRect(&srcRect, 0, 0, desc->Width, numLines, 1,
                     desc->Width, pSrc, &srcFormat);
-                initRect(&dstRect, desc->Left, desc->Top + ofs, desc->Width,
-                    numLines, jump, stride, pBitmapBits, &splash->imageFormat);
-                pSrc += convertRect(&srcRect, &dstRect, CVT_ALPHATEST);
+
+                if (numLines > 0) {
+                    initRect(&dstRect, cx, cy + ofs, cw,
+                             numLines , jump, stride, pBitmapBits, &splash->imageFormat);
+
+                    pSrc += convertRect(&srcRect, &dstRect, CVT_ALPHATEST);
+                }
+                // skip extra source data
+                pSrc += (numPassLines - numLines) * srcRect.stride;
             }
         }
 
@@ -209,6 +255,12 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
 
         splash->frames[imageIndex].bitmapBits =
             (rgbquad_t *) malloc(bufferSize);
+        if (!splash->frames[imageIndex].bitmapBits) {
+            free(pBitmapBits);
+            free(pOldBitmapBits);
+            /* Assuming that callee will take care of splash frames we have already allocated */
+            return 0;
+        }
         memcpy(splash->frames[imageIndex].bitmapBits, pBitmapBits, bufferSize);
 
         SplashInitFrameShape(splash, imageIndex);
@@ -224,27 +276,29 @@ SplashDecodeGif(Splash * splash, GifFileType * gif)
             {
                 ImageRect dstRect;
                 rgbquad_t fillColor = 0;                        // 0 is transparent
-                if (transparentColor < 0) {
+
+                if (transparentColor > 0) {
                     fillColor= MAKE_QUAD_GIF(
                         colorMap->Colors[gif->SBackGroundColor], 0xff);
                 }
-                initRect(&dstRect, desc->Left, desc->Top,
-                    desc->Width, desc->Height, 1, stride,
-                    pBitmapBits, &splash->imageFormat);
+                initRect(&dstRect,
+                         cx, cy, cw, ch,
+                         1, stride,
+                         pBitmapBits, &splash->imageFormat);
                 fillRect(fillColor, &dstRect);
             }
             break;
         case GIF_DISPOSE_RESTORE:
             {
-
-                int lineSize = desc->Width * splash->imageFormat.depthBytes;
-
-                for (j = 0; j < desc->Height; j++) {
-                    int lineIndex = stride * (j + desc->Top) +
-                        desc->Left * splash->imageFormat.depthBytes;
-
-                    memcpy(pBitmapBits + lineIndex, pOldBitmapBits + lineIndex,
-                        lineSize);
+                int lineSize = cw * splash->imageFormat.depthBytes;
+                if (lineSize > 0) {
+                    int lineOffset = cx * splash->imageFormat.depthBytes;
+                    int lineIndex = cy * stride + lineOffset;
+                    for (j=0; j<ch; j++) {
+                        memcpy(pBitmapBits + lineIndex, pOldBitmapBits + lineIndex,
+                               lineSize);
+                        lineIndex += stride;
+                    }
                 }
             }
             break;
