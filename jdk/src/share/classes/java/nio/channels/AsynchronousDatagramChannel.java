@@ -443,7 +443,7 @@ public abstract class AsynchronousDatagramChannel
      * at least care must be taken to ensure that the buffer is not accessed
      * while the channel remains open.
      *
-     * <p> If there is a security manager installed and the the channel is not
+     * <p> If there is a security manager installed and the channel is not
      * connected then this method verifies that the target address and port number
      * are permitted by the security manager's {@link SecurityManager#checkConnect
      * checkConnect} method.  The overhead of this security check can be avoided

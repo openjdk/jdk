@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,9 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureSpi;
 import java.security.SignatureException;
+import java.math.BigInteger;
+
+import sun.security.rsa.RSAKeyFactory;
 
 /**
  * RSA signature implementation. Supports RSA signing using PKCS#1 v1.5 padding.
@@ -124,7 +127,16 @@ abstract class RSASignature extends java.security.SignatureSpi
 
             // convert key to MSCAPI format
 
-            byte[] modulusBytes = rsaKey.getModulus().toByteArray();
+            BigInteger modulus = rsaKey.getModulus();
+            BigInteger exponent =  rsaKey.getPublicExponent();
+
+            // Check against the local and global values to make sure
+            // the sizes are ok.  Round up to the nearest byte.
+            RSAKeyFactory.checkKeyLengths(((modulus.bitLength() + 7) & ~7),
+                exponent, -1, RSAKeyPairGenerator.KEY_SIZE_MAX);
+
+            byte[] modulusBytes = modulus.toByteArray();
+            byte[] exponentBytes = exponent.toByteArray();
 
             // Adjust key length due to sign bit
             int keyBitLength = (modulusBytes[0] == 0)
@@ -132,8 +144,7 @@ abstract class RSASignature extends java.security.SignatureSpi
                 : modulusBytes.length * 8;
 
             byte[] keyBlob = generatePublicKeyBlob(
-                keyBitLength, modulusBytes,
-                rsaKey.getPublicExponent().toByteArray());
+                keyBitLength, modulusBytes, exponentBytes);
 
             publicKey = importPublicKey(keyBlob, keyBitLength);
 
@@ -166,12 +177,11 @@ abstract class RSASignature extends java.security.SignatureSpi
         }
         privateKey = (sun.security.mscapi.RSAPrivateKey) key;
 
-        // Determine byte length from bit length
-        int keySize = (privateKey.bitLength() + 7) >> 3;
-
-        if (keySize < 64)
-            throw new InvalidKeyException(
-                "RSA keys must be at least 512 bits long");
+        // Check against the local and global values to make sure
+        // the sizes are ok.  Round up to nearest byte.
+        RSAKeyFactory.checkKeyLengths(((privateKey.bitLength() + 7) & ~7),
+            null, RSAKeyPairGenerator.KEY_SIZE_MIN,
+            RSAKeyPairGenerator.KEY_SIZE_MAX);
 
         if (needsReset) {
             messageDigest.reset();
