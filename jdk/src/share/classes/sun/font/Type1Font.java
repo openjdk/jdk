@@ -39,6 +39,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.awt.Font;
@@ -75,6 +76,27 @@ import java.awt.Font;
  * of FileFont.
  */
 public class Type1Font extends FileFont {
+
+     private static class T1DisposerRecord  implements DisposerRecord {
+        String fileName = null;
+
+        T1DisposerRecord(String name) {
+            fileName = name;
+        }
+
+        public synchronized void dispose() {
+            java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction() {
+                    public Object run() {
+
+                        if (fileName != null) {
+                            (new java.io.File(fileName)).delete();
+                        }
+                        return null;
+                    }
+             });
+        }
+    }
 
     WeakReference bufferRef = new WeakReference(null);
 
@@ -125,18 +147,42 @@ public class Type1Font extends FileFont {
 
 
     /**
+     * Constructs a Type1 Font.
+     * @param platname - Platform identifier of the font. Typically file name.
+     * @param nativeNames - Native names - typically XLFDs on Unix.
+     */
+    public Type1Font(String platname, Object nativeNames)
+        throws FontFormatException {
+
+        this(platname, nativeNames, false);
+    }
+
+    /**
      * - does basic verification of the file
      * - reads the names (full, family).
      * - determines the style of the font.
      * @throws FontFormatException - if the font can't be opened
      * or fails verification,  or there's no usable cmap
      */
-    public Type1Font(String platname, Object nativeNames)
+    public Type1Font(String platname, Object nativeNames, boolean createdCopy)
         throws FontFormatException {
         super(platname, nativeNames);
         fontRank = Font2D.TYPE1_RANK;
         checkedNatives = true;
-        verify();
+        try {
+            verify();
+        } catch (Throwable t) {
+            if (createdCopy) {
+                T1DisposerRecord ref = new T1DisposerRecord(platname);
+                Disposer.addObjectRecord(bufferRef, ref);
+                bufferRef = null;
+            }
+            if (t instanceof FontFormatException) {
+                throw (FontFormatException)t;
+            } else {
+                throw new FontFormatException("Unexpected runtime exception.");
+            }
+        }
     }
 
     private synchronized ByteBuffer getBuffer() throws FontFormatException {
