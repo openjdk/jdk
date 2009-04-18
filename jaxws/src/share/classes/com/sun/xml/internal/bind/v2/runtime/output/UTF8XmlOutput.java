@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.output;
 
 import java.io.IOException;
@@ -33,6 +32,7 @@ import javax.xml.stream.XMLStreamException;
 import com.sun.xml.internal.bind.DatatypeConverterImpl;
 import com.sun.xml.internal.bind.v2.runtime.Name;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
+import com.sun.xml.internal.bind.v2.runtime.MarshallerImpl;
 
 import org.xml.sax.SAXException;
 
@@ -82,6 +82,11 @@ public class UTF8XmlOutput extends XmlOutputAbstractImpl {
     protected boolean closeStartTagPending = false;
 
     /**
+     * @see MarshallerImpl#header
+     */
+    private String header;
+
+    /**
      *
      * @param localNames
      *      local names encoded in UTF-8.
@@ -93,6 +98,10 @@ public class UTF8XmlOutput extends XmlOutputAbstractImpl {
             prefixes[i] = new Encoded();
     }
 
+    public void setHeader(String header) {
+        this.header = header;
+    }
+
     @Override
     public void startDocument(XMLSerializer serializer, boolean fragment, int[] nsUriIndex2prefixIndex, NamespaceContextImpl nsContext) throws IOException, SAXException, XMLStreamException {
         super.startDocument(serializer, fragment,nsUriIndex2prefixIndex,nsContext);
@@ -100,6 +109,10 @@ public class UTF8XmlOutput extends XmlOutputAbstractImpl {
         octetBufferIndex = 0;
         if(!fragment) {
             write(XML_DECL);
+        }
+        if(header!=null) {
+            textBuffer.set(header);
+            textBuffer.write(this);
         }
     }
 
@@ -377,13 +390,6 @@ public class UTF8XmlOutput extends XmlOutputAbstractImpl {
         octetBufferIndex = 0;
     }
 
-    public void flush() throws IOException {
-        flushBuffer();
-        out.flush();
-    }
-
-
-
     static byte[] toBytes(String s) {
         byte[] buf = new byte[s.length()];
         for( int i=s.length()-1; i>=0; i-- )
@@ -391,11 +397,23 @@ public class UTF8XmlOutput extends XmlOutputAbstractImpl {
         return buf;
     }
 
-    private static final byte[] XMLNS_EQUALS = toBytes(" xmlns=\"");
-    private static final byte[] XMLNS_COLON = toBytes(" xmlns:");
-    private static final byte[] EQUALS = toBytes("=\"");
-    private static final byte[] CLOSE_TAG = toBytes("</");
-    private static final byte[] EMPTY_TAG = toBytes("/>");
+    // per instance copy to prevent an attack where malicious OutputStream
+    // rewrites the byte array.
+    private final byte[] XMLNS_EQUALS = _XMLNS_EQUALS.clone();
+    private final byte[] XMLNS_COLON = _XMLNS_COLON.clone();
+    private final byte[] EQUALS = _EQUALS.clone();
+    private final byte[] CLOSE_TAG = _CLOSE_TAG.clone();
+    private final byte[] EMPTY_TAG = _EMPTY_TAG.clone();
+    private final byte[] XML_DECL = _XML_DECL.clone();
+
+    // masters
+    private static final byte[] _XMLNS_EQUALS = toBytes(" xmlns=\"");
+    private static final byte[] _XMLNS_COLON = toBytes(" xmlns:");
+    private static final byte[] _EQUALS = toBytes("=\"");
+    private static final byte[] _CLOSE_TAG = toBytes("</");
+    private static final byte[] _EMPTY_TAG = toBytes("/>");
+    private static final byte[] _XML_DECL = toBytes("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+
+    // no need to copy
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static final byte[] XML_DECL = toBytes("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
 }
