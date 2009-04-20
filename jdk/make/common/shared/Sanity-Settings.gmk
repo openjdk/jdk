@@ -245,6 +245,7 @@ ifdef OPENJDK
   ALL_SETTINGS+=$(call addAltSetting,FREETYPE_HEADERS_PATH)
   ALL_SETTINGS+=$(call addAltSetting,FREETYPE_LIB_PATH)
   ALL_SETTINGS+=$(call addHeading,OPENJDK Import Binary Plug Settings)
+  ALL_SETTINGS+=$(call addOptionalSetting,IMPORT_BINARY_PLUGS)
   ALL_SETTINGS+=$(call addAltSetting,BINARY_PLUGS_JARFILE)
   ALL_SETTINGS+=$(call addAltSetting,BINARY_PLUGS_PATH)
   ALL_SETTINGS+=$(call addAltSetting,BUILD_BINARY_PLUGS_PATH)

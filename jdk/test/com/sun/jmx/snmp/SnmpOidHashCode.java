@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@
  * @build   SnmpOidHashCode
  * @run     main SnmpOidHashCode
  */
-import com.sun.jmx.snmp.SnmpOid;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 public class SnmpOidHashCode {
     public static final String[] oids = {
@@ -57,16 +58,81 @@ public class SnmpOidHashCode {
         ".39."+0xFFFFFFFFL
     };
 
+    // We use an SnmpOidBuilder in order to adapt this test case to a
+    // configuration where the SNMP packages are not present in rt.jar.
+    //
+    public static final class SnmpOidBuilder {
+        public static final String SNMP_OID_CLASS_NAME =
+            "com.sun.jmx.snmp.SnmpOid";
+        private static final Class<?> SNMP_OID_CLASS;
+        private static final Constructor<?> SNMP_OID_CTOR;
+        static {
+            Class<?> snmpOidClass;
+            try {
+                snmpOidClass =
+                    Class.forName(SNMP_OID_CLASS_NAME, true, null);
+            } catch (ClassNotFoundException x) {
+                snmpOidClass = null;
+                System.err.println("WARNING: can't load "+SNMP_OID_CLASS_NAME);
+            } catch (NoClassDefFoundError x) {
+                snmpOidClass = null;
+                System.err.println("WARNING: can't load "+SNMP_OID_CLASS_NAME);
+            }
+            SNMP_OID_CLASS = snmpOidClass;
+            if (SNMP_OID_CLASS != null) {
+                try {
+                  SNMP_OID_CTOR = snmpOidClass.getConstructor(String.class);
+                } catch (Exception x) {
+                    throw new ExceptionInInitializerError(x);
+                }
+            } else {
+                SNMP_OID_CTOR = null;
+            }
+        }
+
+        public static boolean isSnmpPresent() {
+            System.out.println(SnmpOidHashCode.class.getName()+
+                    ": Testing for SNMP Packages...");
+            return SNMP_OID_CLASS != null;
+        }
+
+        public static Object newSnmpOid(String oid)
+            throws InstantiationException,
+                   IllegalAccessException,
+                   InvocationTargetException {
+            return SNMP_OID_CTOR.newInstance(oid);
+        }
+
+    }
+
+    private static Object newSnmpOid(String oid) throws Exception {
+        try {
+            return SnmpOidBuilder.newSnmpOid(oid);
+        } catch (InvocationTargetException x) {
+            final Throwable cause = x.getCause();
+            if (cause instanceof Exception) throw (Exception)cause;
+            if (cause instanceof Error) throw (Error)cause;
+            throw x;
+        }
+    }
+
     public static void main(String args[]) {
+        if (!SnmpOidBuilder.isSnmpPresent()) {
+            System.err.println("WARNING: "+
+                    SnmpOidBuilder.SNMP_OID_CLASS_NAME+" not present.");
+            System.err.println(SnmpOidHashCode.class.getName()+
+                    ": test skipped.");
+            return;
+        }
         try {
             int errCount=0;
             int collisions=0;
             for (int i=0;i<oids.length;i++) {
                 System.out.println("Testing " + oids[i]);
-                final SnmpOid o1 = new SnmpOid(oids[i]);
+                final Object o1 = newSnmpOid(oids[i]);
                 final int startCount=errCount;
                 for (int j=0;j<oids.length;j++) {
-                    final SnmpOid o2 = new SnmpOid(oids[j]);
+                    final Object o2 = newSnmpOid(oids[j]);
                     if (o1.equals(o2)) {
                         if (!(oids[i].equals(oids[j]))) {
                             System.err.println("OIDs differ but " +

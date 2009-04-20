@@ -42,5 +42,5 @@ public interface JVMDebugger extends Debugger {
                                               long jintSize,
                                               long jlongSize,
                                               long jshortSize);
-  public void putHeapConst(long heapBase, long heapOopSize, long logMinObjAlignment);
+  public void putHeapConst(long heapOopSize, long narrowOopBase, int narrowOopShift);
 }

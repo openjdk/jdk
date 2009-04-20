@@ -863,7 +863,6 @@ char* os::format_boot_path(const char* format_string,
 
 
 bool os::set_boot_path(char fileSep, char pathSep) {
-
     const char* home = Arguments::get_java_home();
     int home_len = (int)strlen(home);
 
@@ -891,6 +890,60 @@ bool os::set_boot_path(char fileSep, char pathSep) {
     Arguments::set_sysclasspath(sysclasspath);
 
     return true;
+}
+
+/*
+ * Splits a path, based on its separator, the number of
+ * elements is returned back in n.
+ * It is the callers responsibility to:
+ *   a> check the value of n, and n may be 0.
+ *   b> ignore any empty path elements
+ *   c> free up the data.
+ */
+char** os::split_path(const char* path, int* n) {
+  *n = 0;
+  if (path == NULL || strlen(path) == 0) {
+    return NULL;
+  }
+  const char psepchar = *os::path_separator();
+  char* inpath = (char*)NEW_C_HEAP_ARRAY(char, strlen(path) + 1);
+  if (inpath == NULL) {
+    return NULL;
+  }
+  strncpy(inpath, path, strlen(path));
+  int count = 1;
+  char* p = strchr(inpath, psepchar);
+  // Get a count of elements to allocate memory
+  while (p != NULL) {
+    count++;
+    p++;
+    p = strchr(p, psepchar);
+  }
+  char** opath = (char**) NEW_C_HEAP_ARRAY(char*, count);
+  if (opath == NULL) {
+    return NULL;
+  }
+
+  // do the actual splitting
+  p = inpath;
+  for (int i = 0 ; i < count ; i++) {
+    size_t len = strcspn(p, os::path_separator());
+    if (len > JVM_MAXPATHLEN) {
+      return NULL;
+    }
+    // allocate the string and add terminator storage
+    char* s  = (char*)NEW_C_HEAP_ARRAY(char, len + 1);
+    if (s == NULL) {
+      return NULL;
+    }
+    strncpy(s, p, len);
+    s[len] = '\0';
+    opath[i] = s;
+    p += len + 1;
+  }
+  FREE_C_HEAP_ARRAY(char, inpath);
+  *n = count;
+  return opath;
 }
 
 void os::set_memory_serialize_page(address page) {

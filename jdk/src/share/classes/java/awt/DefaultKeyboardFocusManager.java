@@ -479,7 +479,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 // that a Component outside of the focused Window receives a
                 // FOCUS_GAINED event. We synthesize a WINDOW_GAINED_FOCUS
                 // event in that case.
-                final Window newFocusedWindow = Component.getContainingWindow(newFocusOwner);
+                final Window newFocusedWindow = SunToolkit.getContainingWindow(newFocusOwner);
                 final Window currentFocusedWindow = getGlobalFocusedWindow();
                 if (newFocusedWindow != null &&
                     newFocusedWindow != currentFocusedWindow)

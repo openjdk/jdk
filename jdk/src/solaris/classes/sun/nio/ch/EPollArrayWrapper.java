@@ -78,8 +78,8 @@ class EPollArrayWrapper {
     // Base address of the native pollArray
     private final long pollArrayAddress;
 
-    // Set of "idle" file descriptors
-    private final HashSet<Integer> idleSet;
+    // Set of "idle" channels
+    private final HashSet<SelChImpl> idleSet;
 
     EPollArrayWrapper() {
         // creates the epoll file descriptor
@@ -96,18 +96,21 @@ class EPollArrayWrapper {
         }
 
         // create idle set
-        idleSet = new HashSet<Integer>();
+        idleSet = new HashSet<SelChImpl>();
     }
 
     // Used to update file description registrations
     private static class Updator {
+        SelChImpl channel;
         int opcode;
-        int fd;
         int events;
-        Updator(int opcode, int fd, int events) {
+        Updator(SelChImpl channel, int opcode, int events) {
+            this.channel = channel;
             this.opcode = opcode;
-            this.fd = fd;
             this.events = events;
+        }
+        Updator(SelChImpl channel, int opcode) {
+            this(channel, opcode, 0);
         }
     }
 
@@ -163,60 +166,54 @@ class EPollArrayWrapper {
     }
 
     /**
-     * Update the events for a given file descriptor.
+     * Update the events for a given channel.
      */
-    void setInterest(int fd, int mask) {
+    void setInterest(SelChImpl channel, int mask) {
         synchronized (updateList) {
-
-            // if the interest events are 0 then add to idle set, and delete
-            // from epoll if registered (or pending)
-            if (mask == 0) {
-                if (idleSet.add(fd)) {
-                    updateList.add(new Updator(EPOLL_CTL_DEL, fd, 0));
-                }
-                return;
-            }
-
-            // if file descriptor is idle then add to epoll
-            if (!idleSet.isEmpty() && idleSet.remove(fd)) {
-                updateList.add(new Updator(EPOLL_CTL_ADD, fd, mask));
-                return;
-            }
-
             // if the previous pending operation is to add this file descriptor
             // to epoll then update its event set
             if (updateList.size() > 0) {
                 Updator last = updateList.getLast();
-                if (last.fd == fd && last.opcode == EPOLL_CTL_ADD) {
+                if (last.channel == channel && last.opcode == EPOLL_CTL_ADD) {
                     last.events = mask;
                     return;
                 }
             }
 
             // update existing registration
-            updateList.add(new Updator(EPOLL_CTL_MOD, fd, mask));
+            updateList.add(new Updator(channel, EPOLL_CTL_MOD, mask));
         }
     }
 
     /**
-     * Add a new file descriptor to epoll
+     * Add a channel's file descriptor to epoll
      */
-    void add(int fd) {
+    void add(SelChImpl channel) {
         synchronized (updateList) {
-            updateList.add(new Updator(EPOLL_CTL_ADD, fd, 0));
+            updateList.add(new Updator(channel, EPOLL_CTL_ADD));
         }
     }
 
     /**
-     * Remove a file descriptor from epoll
+     * Remove a channel's file descriptor from epoll
      */
-    void release(int fd) {
+    void release(SelChImpl channel) {
         synchronized (updateList) {
-            // if file descriptor is idle then remove from idle set, otherwise
-            // delete from epoll
-            if (!idleSet.remove(fd)) {
-                updateList.add(new Updator(EPOLL_CTL_DEL, fd, 0));
+            // flush any pending updates
+            int i = 0;
+            while (i < updateList.size()) {
+                if (updateList.get(i).channel == channel) {
+                    updateList.remove(i);
+                } else {
+                    i++;
+                }
             }
+
+            // remove from the idle set (if present)
+            idleSet.remove(channel);
+
+            // remove from epoll (if registered)
+            epollCtl(epfd, EPOLL_CTL_DEL, channel.getFDVal(), 0);
         }
     }
 
@@ -248,7 +245,26 @@ class EPollArrayWrapper {
         synchronized (updateList) {
             Updator u = null;
             while ((u = updateList.poll()) != null) {
-                epollCtl(epfd, u.opcode, u.fd, u.events);
+                SelChImpl ch = u.channel;
+                if (!ch.isOpen())
+                    continue;
+
+                // if the events are 0 then file descriptor is put into "idle
+                // set" to prevent it being polled
+                if (u.events == 0) {
+                    boolean added = idleSet.add(u.channel);
+                    // if added to idle set then remove from epoll if registered
+                    if (added && (u.opcode == EPOLL_CTL_MOD))
+                        epollCtl(epfd, EPOLL_CTL_DEL, ch.getFDVal(), 0);
+                } else {
+                    // events are specified. If file descriptor was in idle set
+                    // it must be re-registered (by converting opcode to ADD)
+                    boolean idle = false;
+                    if (!idleSet.isEmpty())
+                        idle = idleSet.remove(u.channel);
+                    int opcode = (idle) ? EPOLL_CTL_ADD : u.opcode;
+                    epollCtl(epfd, opcode, ch.getFDVal(), u.events);
+                }
             }
         }
     }

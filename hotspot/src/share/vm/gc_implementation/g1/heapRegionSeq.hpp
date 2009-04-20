@@ -104,8 +104,7 @@ class HeapRegionSeq: public CHeapObj {
 
   void print();
 
-  // Prints out runs of empty regions.  If the arg is "true" reserved
-  // (popular regions are considered "empty".
-  void print_empty_runs(bool reserved_are_empty);
+  // Prints out runs of empty regions.
+  void print_empty_runs();
 
 };

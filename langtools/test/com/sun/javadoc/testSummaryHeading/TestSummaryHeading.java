@@ -46,7 +46,8 @@ public class TestSummaryHeading extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST = {
-        {BUG_ID + FS + "C.html",  "<STRONG>Method Summary</STRONG>"}
+        {BUG_ID + FS + "C.html",  "<CAPTION CLASS=\"TableCaption\">" + NL +
+                 "Method Summary</CAPTION>"}
     };
     private static final String[][] NEGATED_TEST = NO_TEST;
 

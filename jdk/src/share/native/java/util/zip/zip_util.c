@@ -313,6 +313,38 @@ findEND(jzfile *zip, void *endbuf)
 }
 
 /*
+ * Searches for the ZIP64 end of central directory (END) header. The
+ * contents of the ZIP64 END header will be read and placed in end64buf.
+ * Returns the file position of the ZIP64 END header, otherwise returns
+ * -1 if the END header was not found or an error occurred.
+ *
+ * The ZIP format specifies the "position" of each related record as
+ *   ...
+ *   [central directory]
+ *   [zip64 end of central directory record]
+ *   [zip64 end of central directory locator]
+ *   [end of central directory record]
+ *
+ * The offset of zip64 end locator can be calculated from endpos as
+ * "endpos - ZIP64_LOCHDR".
+ * The "offset" of zip64 end record is stored in zip64 end locator.
+ */
+static jlong
+findEND64(jzfile *zip, void *end64buf, jlong endpos)
+{
+    char loc64[ZIP64_LOCHDR];
+    jlong end64pos;
+    if (readFullyAt(zip->zfd, loc64, ZIP64_LOCHDR, endpos - ZIP64_LOCHDR) == -1) {
+        return -1;    // end64 locator not found
+    }
+    end64pos = ZIP64_LOCOFF(loc64);
+    if (readFullyAt(zip->zfd, end64buf, ZIP64_ENDHDR, end64pos) == -1) {
+        return -1;    // end64 record not found
+    }
+    return end64pos;
+}
+
+/*
  * Returns a hash code value for a C-style NUL-terminated string.
  */
 static unsigned int
@@ -463,7 +495,7 @@ static jlong
 readCEN(jzfile *zip, jint knownTotal)
 {
     /* Following are unsigned 32-bit */
-    jlong endpos, cenpos, cenlen;
+    jlong endpos, end64pos, cenpos, cenlen, cenoff;
     /* Following are unsigned 16-bit */
     jint total, tablelen, i, j;
     unsigned char *cenbuf = NULL;
@@ -474,6 +506,7 @@ readCEN(jzfile *zip, jint knownTotal)
     jlong offset;
 #endif
     unsigned char endbuf[ENDHDR];
+    jint endhdrlen = ENDHDR;
     jzcell *entries;
     jint *table;
 
@@ -490,13 +523,27 @@ readCEN(jzfile *zip, jint knownTotal)
 
    /* Get position and length of central directory */
     cenlen = ENDSIZ(endbuf);
+    cenoff = ENDOFF(endbuf);
+    total  = ENDTOT(endbuf);
+    if (cenlen == ZIP64_MAGICVAL || cenoff == ZIP64_MAGICVAL ||
+        total == ZIP64_MAGICCOUNT) {
+        unsigned char end64buf[ZIP64_ENDHDR];
+        if ((end64pos = findEND64(zip, end64buf, endpos)) != -1) {
+            cenlen = ZIP64_ENDSIZ(end64buf);
+            cenoff = ZIP64_ENDOFF(end64buf);
+            total = (jint)ZIP64_ENDTOT(end64buf);
+            endpos = end64pos;
+            endhdrlen = ZIP64_ENDHDR;
+        }
+    }
+
     if (cenlen > endpos)
         ZIP_FORMAT_ERROR("invalid END header (bad central directory size)");
     cenpos = endpos - cenlen;
 
     /* Get position of first local file (LOC) header, taking into
      * account that there may be a stub prefixed to the zip file. */
-    zip->locpos = cenpos - ENDOFF(endbuf);
+    zip->locpos = cenpos - cenoff;
     if (zip->locpos < 0)
         ZIP_FORMAT_ERROR("invalid END header (bad central directory offset)");
 
@@ -527,7 +574,7 @@ readCEN(jzfile *zip, jint knownTotal)
            out the page size in order to make offset to be multiples of
            page size.
         */
-        zip->mlen = cenpos - offset + cenlen + ENDHDR;
+        zip->mlen = cenpos - offset + cenlen + endhdrlen;
         zip->offset = offset;
         mappedAddr = mmap64(0, zip->mlen, PROT_READ, MAP_SHARED, zip->zfd, (off64_t) offset);
         zip->maddr = (mappedAddr == (void*) MAP_FAILED) ? NULL :
@@ -551,8 +598,13 @@ readCEN(jzfile *zip, jint knownTotal)
      * is a 2-byte field, but we (and other zip implementations)
      * support approx. 2**31 entries, we do not trust ENDTOT, but
      * treat it only as a strong hint.  When we call ourselves
-     * recursively, knownTotal will have the "true" value. */
-    total = (knownTotal != -1) ? knownTotal : ENDTOT(endbuf);
+     * recursively, knownTotal will have the "true" value.
+     *
+     * Keep this path alive even with the Zip64 END support added, just
+     * for zip files that have more than 0xffff entries but don't have
+     * the Zip64 enabled.
+     */
+    total = (knownTotal != -1) ? knownTotal : total;
     entries  = zip->entries  = calloc(total, sizeof(entries[0]));
     tablelen = zip->tablelen = ((total/2) | 1); // Odd -> fewer collisions
     table    = zip->table    = malloc(tablelen * sizeof(table[0]));
@@ -854,6 +906,7 @@ typedef enum { ACCESS_RANDOM, ACCESS_SEQUENTIAL } AccessHint;
 static jzentry *
 newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
 {
+    jlong locoff;
     jint nlen, elen, clen;
     jzentry *ze;
     char *cen;
@@ -880,18 +933,55 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
     ze->size  = CENLEN(cen);
     ze->csize = (CENHOW(cen) == STORED) ? 0 : CENSIZ(cen);
     ze->crc   = CENCRC(cen);
-    ze->pos   = -(zip->locpos + CENOFF(cen));
+    locoff    = CENOFF(cen);
+    ze->pos   = -(zip->locpos + locoff);
 
     if ((ze->name = malloc(nlen + 1)) == NULL) goto Catch;
     memcpy(ze->name, cen + CENHDR, nlen);
     ze->name[nlen] = '\0';
 
     if (elen > 0) {
+        char *extra = cen + CENHDR + nlen;
+
         /* This entry has "extra" data */
         if ((ze->extra = malloc(elen + 2)) == NULL) goto Catch;
         ze->extra[0] = (unsigned char) elen;
         ze->extra[1] = (unsigned char) (elen >> 8);
-        memcpy(ze->extra+2, cen + CENHDR + nlen, elen);
+        memcpy(ze->extra+2, extra, elen);
+        if (ze->csize == ZIP64_MAGICVAL || ze->size == ZIP64_MAGICVAL ||
+            locoff == ZIP64_MAGICVAL) {
+            jint off = 0;
+            while ((off + 4) < elen) {    // spec: HeaderID+DataSize+Data
+                jint sz = SH(extra, off + 2);
+                if (SH(extra, off) == ZIP64_EXTID) {
+                    off += 4;
+                    if (ze->size == ZIP64_MAGICVAL) {
+                        // if invalid zip64 extra fields, just skip
+                        if (sz < 8 || (off + 8) > elen)
+                            break;
+                        ze->size = LL(extra, off);
+                        sz -= 8;
+                        off += 8;
+                    }
+                    if (ze->csize == ZIP64_MAGICVAL) {
+                        if (sz < 8 || (off + 8) > elen)
+                            break;
+                        ze->csize = LL(extra, off);
+                        sz -= 8;
+                        off += 8;
+                    }
+                    if (locoff == ZIP64_MAGICVAL) {
+                        if (sz < 8 || (off + 8) > elen)
+                            break;
+                        ze->pos = -(zip->locpos +  LL(extra, off));
+                        sz -= 8;
+                        off += 8;
+                    }
+                    break;
+                }
+                off += (sz + 4);
+            }
+        }
     }
 
     if (clen > 0) {

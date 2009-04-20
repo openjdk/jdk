@@ -42,21 +42,6 @@
 
 // Local to this file.
 
-// Finds the first HeapRegion.
-// No longer used, but might be handy someday.
-
-class FindFirstRegionClosure: public HeapRegionClosure {
-  HeapRegion* _a_region;
-public:
-  FindFirstRegionClosure() : _a_region(NULL) {}
-  bool doHeapRegion(HeapRegion* r) {
-    _a_region = r;
-    return true;
-  }
-  HeapRegion* result() { return _a_region; }
-};
-
-
 class RefineCardTableEntryClosure: public CardTableEntryClosure {
   SuspendibleThreadSet* _sts;
   G1RemSet* _g1rs;
@@ -786,6 +771,12 @@ void G1CollectedHeap::abandon_cur_alloc_region() {
   }
 }
 
+void G1CollectedHeap::abandon_gc_alloc_regions() {
+  // first, make sure that the GC alloc region list is empty (it should!)
+  assert(_gc_alloc_region_list == NULL, "invariant");
+  release_gc_alloc_regions(true /* totally */);
+}
+
 class PostMCRemSetClearClosure: public HeapRegionClosure {
   ModRefBarrierSet* _mr_bs;
 public:
@@ -914,6 +905,7 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
 
     // Make sure we'll choose a new allocation region afterwards.
     abandon_cur_alloc_region();
+    abandon_gc_alloc_regions();
     assert(_cur_alloc_region == NULL, "Invariant.");
     g1_rem_set()->as_HRInto_G1RemSet()->cleanupHRRS();
     tear_down_region_lists();
@@ -954,6 +946,7 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyAfterGC:");
+      prepare_for_verify();
       Universe::verify(false);
     }
     NOT_PRODUCT(ref_processor()->verify_no_references_recorded());
@@ -1199,13 +1192,12 @@ G1CollectedHeap::free_region_if_totally_empty_work(HeapRegion* hr,
                                                    bool par) {
   assert(!hr->continuesHumongous(), "should have filtered these out");
   size_t res = 0;
-  if (!hr->popular() && hr->used() > 0 && hr->garbage_bytes() == hr->used()) {
-    if (!hr->is_young()) {
-      if (G1PolicyVerbose > 0)
-        gclog_or_tty->print_cr("Freeing empty region "PTR_FORMAT "(" SIZE_FORMAT " bytes)"
-                               " during cleanup", hr, hr->used());
-      free_region_work(hr, pre_used, cleared_h, freed_regions, list, par);
-    }
+  if (hr->used() > 0 && hr->garbage_bytes() == hr->used() &&
+      !hr->is_young()) {
+    if (G1PolicyVerbose > 0)
+      gclog_or_tty->print_cr("Freeing empty region "PTR_FORMAT "(" SIZE_FORMAT " bytes)"
+                                                                               " during cleanup", hr, hr->used());
+    free_region_work(hr, pre_used, cleared_h, freed_regions, list, par);
   }
 }
 
@@ -1306,7 +1298,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes)
 }
 
 void G1CollectedHeap::shrink(size_t shrink_bytes) {
-  release_gc_alloc_regions();
+  release_gc_alloc_regions(true /* totally */);
   tear_down_region_lists();  // We will rebuild them in a moment.
   shrink_helper(shrink_bytes);
   rebuild_region_lists();
@@ -1334,10 +1326,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _refine_cte_cl(NULL),
   _free_region_list(NULL), _free_region_list_size(0),
   _free_regions(0),
-  _popular_object_boundary(NULL),
-  _cur_pop_hr_index(0),
-  _popular_regions_to_be_evacuated(NULL),
-  _pop_obj_rc_at_copy(),
   _full_collection(false),
   _unclean_region_list(),
   _unclean_regions_coming(false),
@@ -1345,8 +1333,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _gc_time_stamp(0),
   _surviving_young_words(NULL),
   _in_cset_fast_test(NULL),
-  _in_cset_fast_test_base(NULL)
-{
+  _in_cset_fast_test_base(NULL) {
   _g1h = this; // To catch bugs.
   if (_process_strong_tasks == NULL || !_process_strong_tasks->valid()) {
     vm_exit_during_initialization("Failed necessary allocation.");
@@ -1371,9 +1358,19 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   }
 
   for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-    _gc_alloc_regions[ap]       = NULL;
-    _gc_alloc_region_counts[ap] = 0;
+    _gc_alloc_regions[ap]          = NULL;
+    _gc_alloc_region_counts[ap]    = 0;
+    _retained_gc_alloc_regions[ap] = NULL;
+    // by default, we do not retain a GC alloc region for each ap;
+    // we'll override this, when appropriate, below
+    _retain_gc_alloc_region[ap]    = false;
   }
+
+  // We will try to remember the last half-full tenured region we
+  // allocated to at the end of a collection so that we can re-use it
+  // during the next collection.
+  _retain_gc_alloc_region[GCAllocForTenured]  = true;
+
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 }
 
@@ -1405,9 +1402,34 @@ jint G1CollectedHeap::initialize() {
   // Reserve the maximum.
   PermanentGenerationSpec* pgs = collector_policy()->permanent_generation();
   // Includes the perm-gen.
+
+  const size_t total_reserved = max_byte_size + pgs->max_size();
+  char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
+
   ReservedSpace heap_rs(max_byte_size + pgs->max_size(),
                         HeapRegion::GrainBytes,
-                        false /*ism*/);
+                        false /*ism*/, addr);
+
+  if (UseCompressedOops) {
+    if (addr != NULL && !heap_rs.is_reserved()) {
+      // Failed to reserve at specified address - the requested memory
+      // region is taken already, for example, by 'java' launcher.
+      // Try again to reserver heap higher.
+      addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
+      ReservedSpace heap_rs0(total_reserved, HeapRegion::GrainBytes,
+                             false /*ism*/, addr);
+      if (addr != NULL && !heap_rs0.is_reserved()) {
+        // Failed to reserve at specified address again - give up.
+        addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
+        assert(addr == NULL, "");
+        ReservedSpace heap_rs1(total_reserved, HeapRegion::GrainBytes,
+                               false /*ism*/, addr);
+        heap_rs = heap_rs1;
+      } else {
+        heap_rs = heap_rs0;
+      }
+    }
+  }
 
   if (!heap_rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for object heap");
@@ -1478,26 +1500,11 @@ jint G1CollectedHeap::initialize() {
     _czft = new ConcurrentZFThread();
   }
 
-
-
-  // Allocate the popular regions; take them off free lists.
-  size_t pop_byte_size = G1NumPopularRegions * HeapRegion::GrainBytes;
-  expand(pop_byte_size);
-  _popular_object_boundary =
-    _g1_reserved.start() + (G1NumPopularRegions * HeapRegion::GrainWords);
-  for (int i = 0; i < G1NumPopularRegions; i++) {
-    HeapRegion* hr = newAllocRegion(HeapRegion::GrainWords);
-    //    assert(hr != NULL && hr->bottom() < _popular_object_boundary,
-    //     "Should be enough, and all should be below boundary.");
-    hr->set_popular(true);
-  }
-  assert(_cur_pop_hr_index == 0, "Start allocating at the first region.");
-
   // Initialize the from_card cache structure of HeapRegionRemSet.
   HeapRegionRemSet::init_heap(max_regions());
 
-  // Now expand into the rest of the initial heap size.
-  expand(init_byte_size - pop_byte_size);
+  // Now expand into the initial heap size.
+  expand(init_byte_size);
 
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init();
@@ -1612,8 +1619,7 @@ size_t G1CollectedHeap::recalculate_used() const {
 class SumUsedRegionsClosure: public HeapRegionClosure {
   size_t _num;
 public:
-  // _num is set to 1 to account for the popular region
-  SumUsedRegionsClosure() : _num(G1NumPopularRegions) {}
+  SumUsedRegionsClosure() : _num(0) {}
   bool doHeapRegion(HeapRegion* r) {
     if (r->continuesHumongous() || r->used() > 0 || r->is_gc_alloc_region()) {
       _num += 1;
@@ -1716,14 +1722,20 @@ public:
   }
 };
 
-void G1CollectedHeap::oop_iterate(OopClosure* cl) {
+void G1CollectedHeap::oop_iterate(OopClosure* cl, bool do_perm) {
   IterateOopClosureRegionClosure blk(_g1_committed, cl);
   _hrs->iterate(&blk);
+  if (do_perm) {
+    perm_gen()->oop_iterate(cl);
+  }
 }
 
-void G1CollectedHeap::oop_iterate(MemRegion mr, OopClosure* cl) {
+void G1CollectedHeap::oop_iterate(MemRegion mr, OopClosure* cl, bool do_perm) {
   IterateOopClosureRegionClosure blk(mr, cl);
   _hrs->iterate(&blk);
+  if (do_perm) {
+    perm_gen()->oop_iterate(cl);
+  }
 }
 
 // Iterates an ObjectClosure over all objects within a HeapRegion.
@@ -1740,9 +1752,12 @@ public:
   }
 };
 
-void G1CollectedHeap::object_iterate(ObjectClosure* cl) {
+void G1CollectedHeap::object_iterate(ObjectClosure* cl, bool do_perm) {
   IterateObjectClosureRegionClosure blk(cl);
   _hrs->iterate(&blk);
+  if (do_perm) {
+    perm_gen()->object_iterate(cl);
+  }
 }
 
 void G1CollectedHeap::object_iterate_since_last_GC(ObjectClosure* cl) {
@@ -2119,15 +2134,7 @@ public:
   bool doHeapRegion(HeapRegion* r) {
     guarantee(_par || r->claim_value() == HeapRegion::InitialClaimValue,
               "Should be unclaimed at verify points.");
-    if (r->isHumongous()) {
-      if (r->startsHumongous()) {
-        // Verify the single H object.
-        oop(r->bottom())->verify();
-        size_t word_sz = oop(r->bottom())->size();
-        guarantee(r->top() == r->bottom() + word_sz,
-                  "Only one object in a humongous region");
-      }
-    } else {
+    if (!r->continuesHumongous()) {
       VerifyObjsInRegionClosure not_dead_yet_cl(r);
       r->verify(_allow_dirty);
       r->object_iterate(&not_dead_yet_cl);
@@ -2179,6 +2186,7 @@ public:
     _g1h(g1h), _allow_dirty(allow_dirty) { }
 
   void work(int worker_i) {
+    HandleMark hm;
     VerifyRegionClosure blk(_allow_dirty, true);
     _g1h->heap_region_par_iterate_chunked(&blk, worker_i,
                                           HeapRegion::ParVerifyClaimValue);
@@ -2283,9 +2291,6 @@ void G1CollectedHeap::print_tracing_info() const {
   if (SummarizeG1ZFStats) {
     ConcurrentZFThread::print_summary_info();
   }
-  if (G1SummarizePopularity) {
-    print_popularity_summary_info();
-  }
   g1_policy()->print_yg_surv_rate_info();
 
   GCOverheadReporter::printGCOverhead();
@@ -2379,7 +2384,7 @@ G1CollectedHeap::checkConcurrentMark() {
     VerifyMarkedObjsClosure verifycl(this);
     //    MutexLockerEx x(getMarkBitMapLock(),
     //              Mutex::_no_safepoint_check_flag);
-    object_iterate(&verifycl);
+    object_iterate(&verifycl, false);
 }
 
 void G1CollectedHeap::do_sync_mark() {
@@ -2460,30 +2465,19 @@ G1CollectedHeap::cleanup_surviving_young_words() {
 // </NEW PREDICTION>
 
 void
-G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
+G1CollectedHeap::do_collection_pause_at_safepoint() {
   char verbose_str[128];
   sprintf(verbose_str, "GC pause ");
-  if (popular_region != NULL)
-    strcat(verbose_str, "(popular)");
-  else if (g1_policy()->in_young_gc_mode()) {
+  if (g1_policy()->in_young_gc_mode()) {
     if (g1_policy()->full_young_gcs())
       strcat(verbose_str, "(young)");
     else
       strcat(verbose_str, "(partial)");
   }
-  bool reset_should_initiate_conc_mark = false;
-  if (popular_region != NULL && g1_policy()->should_initiate_conc_mark()) {
-    // we currently do not allow an initial mark phase to be piggy-backed
-    // on a popular pause
-    reset_should_initiate_conc_mark = true;
-    g1_policy()->unset_should_initiate_conc_mark();
-  }
   if (g1_policy()->should_initiate_conc_mark())
     strcat(verbose_str, " (initial-mark)");
 
-  GCCauseSetter x(this, (popular_region == NULL ?
-                         GCCause::_g1_inc_collection_pause :
-                         GCCause::_g1_pop_region_collection_pause));
+  GCCauseSetter x(this, GCCause::_g1_inc_collection_pause);
 
   // if PrintGCDetails is on, we'll print long statistics information
   // in the collector policy code, so let's not print this as the output
@@ -2574,7 +2568,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
     save_marks();
 
     // We must do this before any possible evacuation that should propagate
-    // marks, including evacuation of popular objects in a popular pause.
+    // marks.
     if (mark_in_progress()) {
       double start_time_sec = os::elapsedTime();
 
@@ -2591,29 +2585,15 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
 
     assert(regions_accounted_for(), "Region leakage.");
 
-    bool abandoned = false;
-
     if (mark_in_progress())
       concurrent_mark()->newCSet();
 
     // Now choose the CS.
-    if (popular_region == NULL) {
-      g1_policy()->choose_collection_set();
-    } else {
-      // We may be evacuating a single region (for popularity).
-      g1_policy()->record_popular_pause_preamble_start();
-      popularity_pause_preamble(popular_region);
-      g1_policy()->record_popular_pause_preamble_end();
-      abandoned = (g1_policy()->collection_set() == NULL);
-      // Now we allow more regions to be added (we have to collect
-      // all popular regions).
-      if (!abandoned) {
-        g1_policy()->choose_collection_set(popular_region);
-      }
-    }
+    g1_policy()->choose_collection_set();
+
     // We may abandon a pause if we find no region that will fit in the MMU
     // pause.
-    abandoned = (g1_policy()->collection_set() == NULL);
+    bool abandoned = (g1_policy()->collection_set() == NULL);
 
     // Nothing to do if we were unable to choose a collection set.
     if (!abandoned) {
@@ -2638,13 +2618,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
       _in_cset_fast_test = NULL;
       _in_cset_fast_test_base = NULL;
 
-      if (popular_region != NULL) {
-        // We have to wait until now, because we don't want the region to
-        // be rescheduled for pop-evac during RS update.
-        popular_region->set_popular_pending(false);
-      }
-
-      release_gc_alloc_regions();
+      release_gc_alloc_regions(false /* totally */);
 
       cleanup_surviving_young_words();
 
@@ -2689,14 +2663,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
     double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
     g1_policy()->record_pause_time_ms(pause_time_ms);
     GCOverheadReporter::recordSTWEnd(end_time_sec);
-    g1_policy()->record_collection_pause_end(popular_region != NULL,
-                                             abandoned);
+    g1_policy()->record_collection_pause_end(abandoned);
 
     assert(regions_accounted_for(), "Region leakage.");
 
     if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyAfterGC:");
+      prepare_for_verify();
       Universe::verify(false);
     }
 
@@ -2723,9 +2697,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
 
   assert(verify_region_lists(), "Bad region lists.");
 
-  if (reset_should_initiate_conc_mark)
-    g1_policy()->set_should_initiate_conc_mark();
-
   if (ExitAfterGCNum > 0 && total_collections() == ExitAfterGCNum) {
     gclog_or_tty->print_cr("Stopping after GC #%d", ExitAfterGCNum);
     print_tracing_info();
@@ -2735,6 +2706,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
 
 void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
   assert(purpose >= 0 && purpose < GCAllocPurposeCount, "invalid purpose");
+  // make sure we don't call set_gc_alloc_region() multiple times on
+  // the same region
+  assert(r == NULL || !r->is_gc_alloc_region(),
+         "shouldn't already be a GC alloc region");
   HeapWord* original_top = NULL;
   if (r != NULL)
     original_top = r->top();
@@ -2824,6 +2799,12 @@ void G1CollectedHeap::forget_alloc_region_list() {
   while (_gc_alloc_region_list != NULL) {
     HeapRegion* r = _gc_alloc_region_list;
     assert(r->is_gc_alloc_region(), "Invariant.");
+    // We need HeapRegion::oops_on_card_seq_iterate_careful() to work on
+    // newly allocated data in order to be able to apply deferred updates
+    // before the GC is done for verification purposes (i.e to allow
+    // G1HRRSFlushLogBuffersOnVerify). It's safe thing to do after the
+    // collection.
+    r->ContiguousSpace::set_saved_mark();
     _gc_alloc_region_list = r->next_gc_alloc_region();
     r->set_next_gc_alloc_region(NULL);
     r->set_is_gc_alloc_region(false);
@@ -2851,23 +2832,55 @@ bool G1CollectedHeap::check_gc_alloc_regions() {
 }
 
 void G1CollectedHeap::get_gc_alloc_regions() {
+  // First, let's check that the GC alloc region list is empty (it should)
+  assert(_gc_alloc_region_list == NULL, "invariant");
+
   for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
+    assert(_gc_alloc_regions[ap] == NULL, "invariant");
+
     // Create new GC alloc regions.
-    HeapRegion* alloc_region = _gc_alloc_regions[ap];
-    // Clear this alloc region, so that in case it turns out to be
-    // unacceptable, we end up with no allocation region, rather than a bad
-    // one.
-    _gc_alloc_regions[ap] = NULL;
-    if (alloc_region == NULL || alloc_region->in_collection_set()) {
-      // Can't re-use old one.  Allocate a new one.
+    HeapRegion* alloc_region = _retained_gc_alloc_regions[ap];
+    _retained_gc_alloc_regions[ap] = NULL;
+
+    if (alloc_region != NULL) {
+      assert(_retain_gc_alloc_region[ap], "only way to retain a GC region");
+
+      // let's make sure that the GC alloc region is not tagged as such
+      // outside a GC operation
+      assert(!alloc_region->is_gc_alloc_region(), "sanity");
+
+      if (alloc_region->in_collection_set() ||
+          alloc_region->top() == alloc_region->end() ||
+          alloc_region->top() == alloc_region->bottom()) {
+        // we will discard the current GC alloc region if it's in the
+        // collection set (it can happen!), if it's already full (no
+        // point in using it), or if it's empty (this means that it
+        // was emptied during a cleanup and it should be on the free
+        // list now).
+
+        alloc_region = NULL;
+      }
+    }
+
+    if (alloc_region == NULL) {
+      // we will get a new GC alloc region
       alloc_region = newAllocRegionWithExpansion(ap, 0);
     }
+
     if (alloc_region != NULL) {
+      assert(_gc_alloc_regions[ap] == NULL, "pre-condition");
       set_gc_alloc_region(ap, alloc_region);
     }
+
+    assert(_gc_alloc_regions[ap] == NULL ||
+           _gc_alloc_regions[ap]->is_gc_alloc_region(),
+           "the GC alloc region should be tagged as such");
+    assert(_gc_alloc_regions[ap] == NULL ||
+           _gc_alloc_regions[ap] == _gc_alloc_region_list,
+           "the GC alloc region should be the same as the GC alloc list head");
   }
   // Set alternative regions for allocation purposes that have reached
-  // thier limit.
+  // their limit.
   for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
     GCAllocPurpose alt_purpose = g1_policy()->alternative_purpose(ap);
     if (_gc_alloc_regions[ap] == NULL && alt_purpose != ap) {
@@ -2877,27 +2890,55 @@ void G1CollectedHeap::get_gc_alloc_regions() {
   assert(check_gc_alloc_regions(), "alloc regions messed up");
 }
 
-void G1CollectedHeap::release_gc_alloc_regions() {
+void G1CollectedHeap::release_gc_alloc_regions(bool totally) {
   // We keep a separate list of all regions that have been alloc regions in
-  // the current collection pause.  Forget that now.
+  // the current collection pause. Forget that now. This method will
+  // untag the GC alloc regions and tear down the GC alloc region
+  // list. It's desirable that no regions are tagged as GC alloc
+  // outside GCs.
   forget_alloc_region_list();
 
   // The current alloc regions contain objs that have survived
   // collection. Make them no longer GC alloc regions.
   for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
     HeapRegion* r = _gc_alloc_regions[ap];
-    if (r != NULL && r->is_empty()) {
-      {
+    _retained_gc_alloc_regions[ap] = NULL;
+
+    if (r != NULL) {
+      // we retain nothing on _gc_alloc_regions between GCs
+      set_gc_alloc_region(ap, NULL);
+      _gc_alloc_region_counts[ap] = 0;
+
+      if (r->is_empty()) {
+        // we didn't actually allocate anything in it; let's just put
+        // it on the free list
         MutexLockerEx x(ZF_mon, Mutex::_no_safepoint_check_flag);
         r->set_zero_fill_complete();
         put_free_region_on_list_locked(r);
+      } else if (_retain_gc_alloc_region[ap] && !totally) {
+        // retain it so that we can use it at the beginning of the next GC
+        _retained_gc_alloc_regions[ap] = r;
       }
     }
-    // set_gc_alloc_region will also NULLify all aliases to the region
-    set_gc_alloc_region(ap, NULL);
-    _gc_alloc_region_counts[ap] = 0;
   }
 }
+
+#ifndef PRODUCT
+// Useful for debugging
+
+void G1CollectedHeap::print_gc_alloc_regions() {
+  gclog_or_tty->print_cr("GC alloc regions");
+  for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
+    HeapRegion* r = _gc_alloc_regions[ap];
+    if (r == NULL) {
+      gclog_or_tty->print_cr("  %2d : "PTR_FORMAT, ap, NULL);
+    } else {
+      gclog_or_tty->print_cr("  %2d : "PTR_FORMAT" "SIZE_FORMAT,
+                             ap, r->bottom(), r->used());
+    }
+  }
+}
+#endif // PRODUCT
 
 void G1CollectedHeap::init_for_evac_failure(OopsInHeapRegionClosure* cl) {
   _drain_in_progress = false;
@@ -3658,7 +3699,9 @@ protected:
   CardTableModRefBS* ctbs()                      { return _ct_bs; }
 
   void immediate_rs_update(HeapRegion* from, oop* p, int tid) {
-    _g1_rem->par_write_ref(from, p, tid);
+    if (!from->is_survivor()) {
+      _g1_rem->par_write_ref(from, p, tid);
+    }
   }
 
   void deferred_rs_update(HeapRegion* from, oop* p, int tid) {
@@ -4599,7 +4642,6 @@ G1CollectedHeap::free_region_work(HeapRegion* hr,
                                   size_t& freed_regions,
                                   UncleanRegionList* list,
                                   bool par) {
-  assert(!hr->popular(), "should not free popular regions");
   pre_used += hr->used();
   if (hr->isHumongous()) {
     assert(hr->startsHumongous(),
@@ -4683,12 +4725,6 @@ void G1CollectedHeap::cleanUpCardTable() {
 
 
 void G1CollectedHeap::do_collection_pause_if_appropriate(size_t word_size) {
-  // First do any popular regions.
-  HeapRegion* hr;
-  while ((hr = popular_region_to_evac()) != NULL) {
-    evac_popular_region(hr);
-  }
-  // Now do heuristic pauses.
   if (g1_policy()->should_do_collection_pause(word_size)) {
     do_collection_pause();
   }
@@ -5084,7 +5120,7 @@ class RegionCounter: public HeapRegionClosure {
 public:
   RegionCounter() : _n(0) {}
   bool doHeapRegion(HeapRegion* r) {
-    if (r->is_empty() && !r->popular()) {
+    if (r->is_empty()) {
       assert(!r->isHumongous(), "H regions should not be empty.");
       _n++;
     }
@@ -5228,14 +5264,8 @@ public:
       r->set_zero_fill_allocated();
     } else {
       assert(r->is_empty(), "tautology");
-      if (r->popular()) {
-        if (r->zero_fill_state() != HeapRegion::Allocated) {
-          r->ensure_zero_filled_locked();
-          r->set_zero_fill_allocated();
-        }
-      } else {
-        _n++;
-        switch (r->zero_fill_state()) {
+      _n++;
+      switch (r->zero_fill_state()) {
         case HeapRegion::NotZeroFilled:
         case HeapRegion::ZeroFilling:
           _g1->put_region_on_unclean_list_locked(r);
@@ -5246,7 +5276,6 @@ public:
         case HeapRegion::ZeroFilled:
           _g1->put_free_region_on_list_locked(r);
           break;
-        }
       }
     }
     return false;
@@ -5292,376 +5321,6 @@ void G1CollectedHeap::set_used_regions_to_need_zero_fill() {
   // This needs to go at the end of the full GC.
   UsedRegionsNeedZeroFillSetter rs;
   heap_region_iterate(&rs);
-}
-
-class CountObjClosure: public ObjectClosure {
-  size_t _n;
-public:
-  CountObjClosure() : _n(0) {}
-  void do_object(oop obj) { _n++; }
-  size_t n() { return _n; }
-};
-
-size_t G1CollectedHeap::pop_object_used_objs() {
-  size_t sum_objs = 0;
-  for (int i = 0; i < G1NumPopularRegions; i++) {
-    CountObjClosure cl;
-    _hrs->at(i)->object_iterate(&cl);
-    sum_objs += cl.n();
-  }
-  return sum_objs;
-}
-
-size_t G1CollectedHeap::pop_object_used_bytes() {
-  size_t sum_bytes = 0;
-  for (int i = 0; i < G1NumPopularRegions; i++) {
-    sum_bytes += _hrs->at(i)->used();
-  }
-  return sum_bytes;
-}
-
-
-static int nq = 0;
-
-HeapWord* G1CollectedHeap::allocate_popular_object(size_t word_size) {
-  while (_cur_pop_hr_index < G1NumPopularRegions) {
-    HeapRegion* cur_pop_region = _hrs->at(_cur_pop_hr_index);
-    HeapWord* res = cur_pop_region->allocate(word_size);
-    if (res != NULL) {
-      // We account for popular objs directly in the used summary:
-      _summary_bytes_used += (word_size * HeapWordSize);
-      return res;
-    }
-    // Otherwise, try the next region (first making sure that we remember
-    // the last "top" value as the "next_top_at_mark_start", so that
-    // objects made popular during markings aren't automatically considered
-    // live).
-    cur_pop_region->note_end_of_copying();
-    // Otherwise, try the next region.
-    _cur_pop_hr_index++;
-  }
-  // XXX: For now !!!
-  vm_exit_out_of_memory(word_size,
-                        "Not enough pop obj space (To Be Fixed)");
-  return NULL;
-}
-
-class HeapRegionList: public CHeapObj {
-  public:
-  HeapRegion* hr;
-  HeapRegionList* next;
-};
-
-void G1CollectedHeap::schedule_popular_region_evac(HeapRegion* r) {
-  // This might happen during parallel GC, so protect by this lock.
-  MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-  // We don't schedule regions whose evacuations are already pending, or
-  // are already being evacuated.
-  if (!r->popular_pending() && !r->in_collection_set()) {
-    r->set_popular_pending(true);
-    if (G1TracePopularity) {
-      gclog_or_tty->print_cr("Scheduling region "PTR_FORMAT" "
-                             "["PTR_FORMAT", "PTR_FORMAT") for pop-object evacuation.",
-                             r, r->bottom(), r->end());
-    }
-    HeapRegionList* hrl = new HeapRegionList;
-    hrl->hr = r;
-    hrl->next = _popular_regions_to_be_evacuated;
-    _popular_regions_to_be_evacuated = hrl;
-  }
-}
-
-HeapRegion* G1CollectedHeap::popular_region_to_evac() {
-  MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-  HeapRegion* res = NULL;
-  while (_popular_regions_to_be_evacuated != NULL && res == NULL) {
-    HeapRegionList* hrl = _popular_regions_to_be_evacuated;
-    _popular_regions_to_be_evacuated = hrl->next;
-    res = hrl->hr;
-    // The G1RSPopLimit may have increased, so recheck here...
-    if (res->rem_set()->occupied() < (size_t) G1RSPopLimit) {
-      // Hah: don't need to schedule.
-      if (G1TracePopularity) {
-        gclog_or_tty->print_cr("Unscheduling region "PTR_FORMAT" "
-                               "["PTR_FORMAT", "PTR_FORMAT") "
-                               "for pop-object evacuation (size %d < limit %d)",
-                               res, res->bottom(), res->end(),
-                               res->rem_set()->occupied(), G1RSPopLimit);
-      }
-      res->set_popular_pending(false);
-      res = NULL;
-    }
-    // We do not reset res->popular() here; if we did so, it would allow
-    // the region to be "rescheduled" for popularity evacuation.  Instead,
-    // this is done in the collection pause, with the world stopped.
-    // So the invariant is that the regions in the list have the popularity
-    // boolean set, but having the boolean set does not imply membership
-    // on the list (though there can at most one such pop-pending region
-    // not on the list at any time).
-    delete hrl;
-  }
-  return res;
-}
-
-void G1CollectedHeap::evac_popular_region(HeapRegion* hr) {
-  while (true) {
-    // Don't want to do a GC pause while cleanup is being completed!
-    wait_for_cleanup_complete();
-
-    // Read the GC count while holding the Heap_lock
-    int gc_count_before = SharedHeap::heap()->total_collections();
-    g1_policy()->record_stop_world_start();
-
-    {
-      MutexUnlocker mu(Heap_lock);  // give up heap lock, execute gets it back
-      VM_G1PopRegionCollectionPause op(gc_count_before, hr);
-      VMThread::execute(&op);
-
-      // If the prolog succeeded, we didn't do a GC for this.
-      if (op.prologue_succeeded()) break;
-    }
-    // Otherwise we didn't.  We should recheck the size, though, since
-    // the limit may have increased...
-    if (hr->rem_set()->occupied() < (size_t) G1RSPopLimit) {
-      hr->set_popular_pending(false);
-      break;
-    }
-  }
-}
-
-void G1CollectedHeap::atomic_inc_obj_rc(oop obj) {
-  Atomic::inc(obj_rc_addr(obj));
-}
-
-class CountRCClosure: public OopsInHeapRegionClosure {
-  G1CollectedHeap* _g1h;
-  bool _parallel;
-public:
-  CountRCClosure(G1CollectedHeap* g1h) :
-    _g1h(g1h), _parallel(ParallelGCThreads > 0)
-  {}
-  void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
-  void do_oop(oop* p) {
-    oop obj = *p;
-    assert(obj != NULL, "Precondition.");
-    if (_parallel) {
-      // We go sticky at the limit to avoid excess contention.
-      // If we want to track the actual RC's further, we'll need to keep a
-      // per-thread hash table or something for the popular objects.
-      if (_g1h->obj_rc(obj) < G1ObjPopLimit) {
-        _g1h->atomic_inc_obj_rc(obj);
-      }
-    } else {
-      _g1h->inc_obj_rc(obj);
-    }
-  }
-};
-
-class EvacPopObjClosure: public ObjectClosure {
-  G1CollectedHeap* _g1h;
-  size_t _pop_objs;
-  size_t _max_rc;
-public:
-  EvacPopObjClosure(G1CollectedHeap* g1h) :
-    _g1h(g1h), _pop_objs(0), _max_rc(0) {}
-
-  void do_object(oop obj) {
-    size_t rc = _g1h->obj_rc(obj);
-    _max_rc = MAX2(rc, _max_rc);
-    if (rc >= (size_t) G1ObjPopLimit) {
-      _g1h->_pop_obj_rc_at_copy.add((double)rc);
-      size_t word_sz = obj->size();
-      HeapWord* new_pop_loc = _g1h->allocate_popular_object(word_sz);
-      oop new_pop_obj = (oop)new_pop_loc;
-      Copy::aligned_disjoint_words((HeapWord*)obj, new_pop_loc, word_sz);
-      obj->forward_to(new_pop_obj);
-      G1ScanAndBalanceClosure scan_and_balance(_g1h);
-      new_pop_obj->oop_iterate_backwards(&scan_and_balance);
-      // preserve "next" mark bit if marking is in progress.
-      if (_g1h->mark_in_progress() && !_g1h->is_obj_ill(obj)) {
-        _g1h->concurrent_mark()->markAndGrayObjectIfNecessary(new_pop_obj);
-      }
-
-      if (G1TracePopularity) {
-        gclog_or_tty->print_cr("Found obj " PTR_FORMAT " of word size " SIZE_FORMAT
-                               " pop (%d), move to " PTR_FORMAT,
-                               (void*) obj, word_sz,
-                               _g1h->obj_rc(obj), (void*) new_pop_obj);
-      }
-      _pop_objs++;
-    }
-  }
-  size_t pop_objs() { return _pop_objs; }
-  size_t max_rc() { return _max_rc; }
-};
-
-class G1ParCountRCTask : public AbstractGangTask {
-  G1CollectedHeap* _g1h;
-  BitMap _bm;
-
-  size_t getNCards() {
-    return (_g1h->capacity() + G1BlockOffsetSharedArray::N_bytes - 1)
-      / G1BlockOffsetSharedArray::N_bytes;
-  }
-  CountRCClosure _count_rc_closure;
-public:
-  G1ParCountRCTask(G1CollectedHeap* g1h) :
-    AbstractGangTask("G1 Par RC Count task"),
-    _g1h(g1h), _bm(getNCards()), _count_rc_closure(g1h)
-  {}
-
-  void work(int i) {
-    ResourceMark rm;
-    HandleMark   hm;
-    _g1h->g1_rem_set()->oops_into_collection_set_do(&_count_rc_closure, i);
-  }
-};
-
-void G1CollectedHeap::popularity_pause_preamble(HeapRegion* popular_region) {
-  // We're evacuating a single region (for popularity).
-  if (G1TracePopularity) {
-    gclog_or_tty->print_cr("Doing pop region pause for ["PTR_FORMAT", "PTR_FORMAT")",
-                           popular_region->bottom(), popular_region->end());
-  }
-  g1_policy()->set_single_region_collection_set(popular_region);
-  size_t max_rc;
-  if (!compute_reference_counts_and_evac_popular(popular_region,
-                                                 &max_rc)) {
-    // We didn't evacuate any popular objects.
-    // We increase the RS popularity limit, to prevent this from
-    // happening in the future.
-    if (G1RSPopLimit < (1 << 30)) {
-      G1RSPopLimit *= 2;
-    }
-    // For now, interesting enough for a message:
-#if 1
-    gclog_or_tty->print_cr("In pop region pause for ["PTR_FORMAT", "PTR_FORMAT"), "
-                           "failed to find a pop object (max = %d).",
-                           popular_region->bottom(), popular_region->end(),
-                           max_rc);
-    gclog_or_tty->print_cr("Increased G1RSPopLimit to %d.", G1RSPopLimit);
-#endif // 0
-    // Also, we reset the collection set to NULL, to make the rest of
-    // the collection do nothing.
-    assert(popular_region->next_in_collection_set() == NULL,
-           "should be single-region.");
-    popular_region->set_in_collection_set(false);
-    popular_region->set_popular_pending(false);
-    g1_policy()->clear_collection_set();
-  }
-}
-
-bool G1CollectedHeap::
-compute_reference_counts_and_evac_popular(HeapRegion* popular_region,
-                                          size_t* max_rc) {
-  HeapWord* rc_region_bot;
-  HeapWord* rc_region_end;
-
-  // Set up the reference count region.
-  HeapRegion* rc_region = newAllocRegion(HeapRegion::GrainWords);
-  if (rc_region != NULL) {
-    rc_region_bot = rc_region->bottom();
-    rc_region_end = rc_region->end();
-  } else {
-    rc_region_bot = NEW_C_HEAP_ARRAY(HeapWord, HeapRegion::GrainWords);
-    if (rc_region_bot == NULL) {
-      vm_exit_out_of_memory(HeapRegion::GrainWords,
-                            "No space for RC region.");
-    }
-    rc_region_end = rc_region_bot + HeapRegion::GrainWords;
-  }
-
-  if (G1TracePopularity)
-    gclog_or_tty->print_cr("RC region is ["PTR_FORMAT", "PTR_FORMAT")",
-                           rc_region_bot, rc_region_end);
-  if (rc_region_bot > popular_region->bottom()) {
-    _rc_region_above = true;
-    _rc_region_diff =
-      pointer_delta(rc_region_bot, popular_region->bottom(), 1);
-  } else {
-    assert(rc_region_bot < popular_region->bottom(), "Can't be equal.");
-    _rc_region_above = false;
-    _rc_region_diff =
-      pointer_delta(popular_region->bottom(), rc_region_bot, 1);
-  }
-  g1_policy()->record_pop_compute_rc_start();
-  // Count external references.
-  g1_rem_set()->prepare_for_oops_into_collection_set_do();
-  if (ParallelGCThreads > 0) {
-
-    set_par_threads(workers()->total_workers());
-    G1ParCountRCTask par_count_rc_task(this);
-    workers()->run_task(&par_count_rc_task);
-    set_par_threads(0);
-
-  } else {
-    CountRCClosure count_rc_closure(this);
-    g1_rem_set()->oops_into_collection_set_do(&count_rc_closure, 0);
-  }
-  g1_rem_set()->cleanup_after_oops_into_collection_set_do();
-  g1_policy()->record_pop_compute_rc_end();
-
-  // Now evacuate popular objects.
-  g1_policy()->record_pop_evac_start();
-  EvacPopObjClosure evac_pop_obj_cl(this);
-  popular_region->object_iterate(&evac_pop_obj_cl);
-  *max_rc = evac_pop_obj_cl.max_rc();
-
-  // Make sure the last "top" value of the current popular region is copied
-  // as the "next_top_at_mark_start", so that objects made popular during
-  // markings aren't automatically considered live.
-  HeapRegion* cur_pop_region = _hrs->at(_cur_pop_hr_index);
-  cur_pop_region->note_end_of_copying();
-
-  if (rc_region != NULL) {
-    free_region(rc_region);
-  } else {
-    FREE_C_HEAP_ARRAY(HeapWord, rc_region_bot);
-  }
-  g1_policy()->record_pop_evac_end();
-
-  return evac_pop_obj_cl.pop_objs() > 0;
-}
-
-class CountPopObjInfoClosure: public HeapRegionClosure {
-  size_t _objs;
-  size_t _bytes;
-
-  class CountObjClosure: public ObjectClosure {
-    int _n;
-  public:
-    CountObjClosure() : _n(0) {}
-    void do_object(oop obj) { _n++; }
-    size_t n() { return _n; }
-  };
-
-public:
-  CountPopObjInfoClosure() : _objs(0), _bytes(0) {}
-  bool doHeapRegion(HeapRegion* r) {
-    _bytes += r->used();
-    CountObjClosure blk;
-    r->object_iterate(&blk);
-    _objs += blk.n();
-    return false;
-  }
-  size_t objs() { return _objs; }
-  size_t bytes() { return _bytes; }
-};
-
-
-void G1CollectedHeap::print_popularity_summary_info() const {
-  CountPopObjInfoClosure blk;
-  for (int i = 0; i <= _cur_pop_hr_index; i++) {
-    blk.doHeapRegion(_hrs->at(i));
-  }
-  gclog_or_tty->print_cr("\nPopular objects: %d objs, %d bytes.",
-                         blk.objs(), blk.bytes());
-  gclog_or_tty->print_cr("   RC at copy = [avg = %5.2f, max = %5.2f, sd = %5.2f].",
-                _pop_obj_rc_at_copy.avg(),
-                _pop_obj_rc_at_copy.maximum(),
-                _pop_obj_rc_at_copy.sd());
 }
 
 void G1CollectedHeap::set_refine_cte_cl_concurrency(bool concurrent) {
@@ -5737,7 +5396,6 @@ bool G1CollectedHeap::regions_accounted_for() {
 }
 
 bool G1CollectedHeap::print_region_accounting_info() {
-  gclog_or_tty->print_cr("P regions: %d.", G1NumPopularRegions);
   gclog_or_tty->print_cr("Free regions: %d (count: %d count list %d) (clean: %d unclean: %d).",
                          free_regions(),
                          count_free_regions(), count_free_regions_list(),

@@ -342,11 +342,14 @@ public class VM {
       throw new RuntimeException("Attempt to initialize VM twice");
     }
     soleInstance = new VM(db, debugger, debugger.getMachineDescription().isBigEndian());
-    debugger.putHeapConst(Universe.getHeapBase(), soleInstance.getHeapOopSize(),
-                          soleInstance.logMinObjAlignmentInBytes);
+
+    debugger.putHeapConst(soleInstance.getHeapOopSize(), Universe.getNarrowOopBase(),
+                          Universe.getNarrowOopShift());
+
     for (Iterator iter = vmInitializedObservers.iterator(); iter.hasNext(); ) {
       ((Observer) iter.next()).update(null, null);
     }
+
   }
 
   /** This is used by the debugging system */

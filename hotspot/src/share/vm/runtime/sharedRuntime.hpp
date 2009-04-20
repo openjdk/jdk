@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,9 +180,6 @@ class SharedRuntime: AllStatic {
 
   static oop retrieve_receiver( symbolHandle sig, frame caller );
 
-  static void verify_caller_frame(frame caller_frame, methodHandle callee_method) PRODUCT_RETURN;
-  static methodHandle find_callee_method_inside_interpreter(frame caller_frame, methodHandle caller_method, int bci) PRODUCT_RETURN_(return methodHandle(););
-
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
   // dtrace notifications
@@ -215,10 +212,32 @@ class SharedRuntime: AllStatic {
   static char* generate_class_cast_message(JavaThread* thr, const char* name);
 
   /**
+   * Fill in the message for a WrongMethodTypeException
+   *
+   * @param thr the current thread
+   * @param mtype (optional) expected method type (or argument class)
+   * @param mhandle (optional) actual method handle (or argument)
+   * @return the dynamically allocated exception message
+   *
+   * BCP for the frame on top of the stack must refer to an
+   * 'invokevirtual' op for a method handle, or an 'invokedyamic' op.
+   * The caller (or one of its callers) must use a ResourceMark
+   * in order to correctly free the result.
+   */
+  static char* generate_wrong_method_type_message(JavaThread* thr,
+                                                  oopDesc* mtype = NULL,
+                                                  oopDesc* mhandle = NULL);
+
+  /** Return non-null if the mtype is a klass or Class, not a MethodType. */
+  static oop wrong_method_type_is_for_single_argument(JavaThread* thr,
+                                                      oopDesc* mtype);
+
+  /**
    * Fill in the "X cannot be cast to a Y" message for ClassCastException
    *
    * @param name the name of the class of the object attempted to be cast
    * @param klass the name of the target klass attempt
+   * @param gripe the specific kind of problem being reported
    * @return the dynamically allocated exception message (must be freed
    * by the caller using a resource mark)
    *
@@ -227,7 +246,8 @@ class SharedRuntime: AllStatic {
    * The caller (or one of it's callers) must use a ResourceMark
    * in order to correctly free the result.
    */
-  static char* generate_class_cast_message(const char* name, const char* klass);
+  static char* generate_class_cast_message(const char* name, const char* klass,
+                                           const char* gripe = " cannot be cast to ");
 
   // Resolves a call site- may patch in the destination of the call into the
   // compiled code.

@@ -1004,47 +1004,62 @@ public class BasicSliderUI extends SliderUI{
         g.setColor(DefaultLookup.getColor(slider, this, "Slider.tickColor", Color.black));
 
         if ( slider.getOrientation() == JSlider.HORIZONTAL ) {
-           g.translate( 0, tickBounds.y);
+            g.translate(0, tickBounds.y);
 
-            int value = slider.getMinimum();
-            int xPos;
+            if (slider.getMinorTickSpacing() > 0) {
+                int value = slider.getMinimum();
 
-            if ( slider.getMinorTickSpacing() > 0 ) {
                 while ( value <= slider.getMaximum() ) {
-                    xPos = xPositionForValue( value );
+                    int xPos = xPositionForValue(value);
                     paintMinorTickForHorizSlider( g, tickBounds, xPos );
+
+                    // Overflow checking
+                    if (Integer.MAX_VALUE - slider.getMinorTickSpacing() < value) {
+                        break;
+                    }
+
                     value += slider.getMinorTickSpacing();
                 }
             }
 
-            if ( slider.getMajorTickSpacing() > 0 ) {
-                value = slider.getMinimum();
+            if (slider.getMajorTickSpacing() > 0) {
+                int value = slider.getMinimum();
 
                 while ( value <= slider.getMaximum() ) {
-                    xPos = xPositionForValue( value );
+                    int xPos = xPositionForValue(value);
                     paintMajorTickForHorizSlider( g, tickBounds, xPos );
+
+                    // Overflow checking
+                    if (Integer.MAX_VALUE - slider.getMajorTickSpacing() < value) {
+                        break;
+                    }
+
                     value += slider.getMajorTickSpacing();
                 }
             }
 
             g.translate( 0, -tickBounds.y);
-        }
-        else {
-           g.translate(tickBounds.x, 0);
+        } else {
+            g.translate(tickBounds.x, 0);
 
-            int value = slider.getMinimum();
-            int yPos;
-
-            if ( slider.getMinorTickSpacing() > 0 ) {
+            if (slider.getMinorTickSpacing() > 0) {
                 int offset = 0;
                 if(!BasicGraphicsUtils.isLeftToRight(slider)) {
                     offset = tickBounds.width - tickBounds.width / 2;
                     g.translate(offset, 0);
                 }
 
-                while ( value <= slider.getMaximum() ) {
-                    yPos = yPositionForValue( value );
+                int value = slider.getMinimum();
+
+                while (value <= slider.getMaximum()) {
+                    int yPos = yPositionForValue(value);
                     paintMinorTickForVertSlider( g, tickBounds, yPos );
+
+                    // Overflow checking
+                    if (Integer.MAX_VALUE - slider.getMinorTickSpacing() < value) {
+                        break;
+                    }
+
                     value += slider.getMinorTickSpacing();
                 }
 
@@ -1053,15 +1068,22 @@ public class BasicSliderUI extends SliderUI{
                 }
             }
 
-            if ( slider.getMajorTickSpacing() > 0 ) {
-                value = slider.getMinimum();
+            if (slider.getMajorTickSpacing() > 0) {
                 if(!BasicGraphicsUtils.isLeftToRight(slider)) {
                     g.translate(2, 0);
                 }
 
-                while ( value <= slider.getMaximum() ) {
-                    yPos = yPositionForValue( value );
+                int value = slider.getMinimum();
+
+                while (value <= slider.getMaximum()) {
+                    int yPos = yPositionForValue(value);
                     paintMajorTickForVertSlider( g, tickBounds, yPos );
+
+                    // Overflow checking
+                    if (Integer.MAX_VALUE - slider.getMajorTickSpacing() < value) {
+                        break;
+                    }
+
                     value += slider.getMajorTickSpacing();
                 }
 
@@ -1775,8 +1797,6 @@ public class BasicSliderUI extends SliderUI{
                 thumbMiddle = thumbLeft + halfThumbWidth;
                 slider.setValue(valueForXPosition(thumbMiddle));
                 break;
-            default:
-                return;
             }
         }
 

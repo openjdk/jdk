@@ -1004,26 +1004,61 @@ const char * os::get_temp_directory()
     }
 }
 
-void os::dll_build_name(char *holder, size_t holderlen,
-                        const char* pname, const char* fname)
-{
-    // copied from libhpi
-    const size_t pnamelen = pname ? strlen(pname) : 0;
-    const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
+static bool file_exists(const char* filename) {
+  if (filename == NULL || strlen(filename) == 0) {
+    return false;
+  }
+  return GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES;
+}
 
-    /* Quietly truncates on buffer overflow. Should be an error. */
-    if (pnamelen + strlen(fname) + 10 > holderlen) {
-        *holder = '\0';
-        return;
-    }
+void os::dll_build_name(char *buffer, size_t buflen,
+                        const char* pname, const char* fname) {
+  // Copied from libhpi
+  const size_t pnamelen = pname ? strlen(pname) : 0;
+  const char c = (pnamelen > 0) ? pname[pnamelen-1] : 0;
 
-    if (pnamelen == 0) {
-        sprintf(holder, "%s.dll", fname);
-    } else if (c == ':' || c == '\\') {
-        sprintf(holder, "%s%s.dll", pname, fname);
-    } else {
-        sprintf(holder, "%s\\%s.dll", pname, fname);
+  // Quietly truncates on buffer overflow. Should be an error.
+  if (pnamelen + strlen(fname) + 10 > buflen) {
+    *buffer = '\0';
+    return;
+  }
+
+  if (pnamelen == 0) {
+    jio_snprintf(buffer, buflen, "%s.dll", fname);
+  } else if (c == ':' || c == '\\') {
+    jio_snprintf(buffer, buflen, "%s%s.dll", pname, fname);
+  } else if (strchr(pname, *os::path_separator()) != NULL) {
+    int n;
+    char** pelements = split_path(pname, &n);
+    for (int i = 0 ; i < n ; i++) {
+      char* path = pelements[i];
+      // Really shouldn't be NULL, but check can't hurt
+      size_t plen = (path == NULL) ? 0 : strlen(path);
+      if (plen == 0) {
+        continue; // skip the empty path values
+      }
+      const char lastchar = path[plen - 1];
+      if (lastchar == ':' || lastchar == '\\') {
+        jio_snprintf(buffer, buflen, "%s%s.dll", path, fname);
+      } else {
+        jio_snprintf(buffer, buflen, "%s\\%s.dll", path, fname);
+      }
+      if (file_exists(buffer)) {
+        break;
+      }
     }
+    // release the storage
+    for (int i = 0 ; i < n ; i++) {
+      if (pelements[i] != NULL) {
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
+      }
+    }
+    if (pelements != NULL) {
+      FREE_C_HEAP_ARRAY(char*, pelements);
+    }
+  } else {
+    jio_snprintf(buffer, buflen, "%s\\%s.dll", pname, fname);
+  }
 }
 
 // Needs to be in os specific directory because windows requires another
@@ -2189,7 +2224,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           if (addr > thread->stack_yellow_zone_base() && addr < thread->stack_base() ) {
                   addr = (address)((uintptr_t)addr &
                          (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
-                  os::commit_memory( (char *)addr, thread->stack_base() - addr );
+                  os::commit_memory((char *)addr, thread->stack_base() - addr,
+                                    false );
                   return EXCEPTION_CONTINUE_EXECUTION;
           }
           else
@@ -2565,8 +2601,7 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_allocation_granularity() == 0, "reserve block size");
-  char* res = (char*)VirtualAlloc(addr, bytes, MEM_RESERVE,
-                                  PAGE_EXECUTE_READWRITE);
+  char* res = (char*)VirtualAlloc(addr, bytes, MEM_RESERVE, PAGE_READWRITE);
   assert(res == NULL || addr == NULL || addr == res,
          "Unexpected address from reserve.");
   return res;
@@ -2595,7 +2630,7 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes) {
+char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
 
   if (UseLargePagesIndividualAllocation) {
     if (TracePageSizes && Verbose) {
@@ -2615,10 +2650,10 @@ char* os::reserve_memory_special(size_t bytes) {
         "use -XX:-UseLargePagesIndividualAllocation to turn off");
       return NULL;
     }
-    p_buf = (char *) VirtualAlloc(NULL,
+    p_buf = (char *) VirtualAlloc(addr,
                                  size_of_reserve,  // size of Reserve
                                  MEM_RESERVE,
-                                 PAGE_EXECUTE_READWRITE);
+                                 PAGE_READWRITE);
     // If reservation failed, return NULL
     if (p_buf == NULL) return NULL;
 
@@ -2659,7 +2694,13 @@ char* os::reserve_memory_special(size_t bytes) {
         p_new = (char *) VirtualAlloc(next_alloc_addr,
                                     bytes_to_rq,
                                     MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES,
-                                    PAGE_EXECUTE_READWRITE);
+                                    PAGE_READWRITE);
+        if (p_new != NULL && exec) {
+          DWORD oldprot;
+          // Windows doc says to use VirtualProtect to get execute permissions
+          VirtualProtect(next_alloc_addr, bytes_to_rq,
+                         PAGE_EXECUTE_READWRITE, &oldprot);
+        }
       }
 
       if (p_new == NULL) {
@@ -2688,10 +2729,12 @@ char* os::reserve_memory_special(size_t bytes) {
   } else {
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-    char * res = (char *)VirtualAlloc(NULL,
-                                      bytes,
-                                      flag,
-                                      PAGE_EXECUTE_READWRITE);
+    char * res = (char *)VirtualAlloc(NULL, bytes, flag, PAGE_READWRITE);
+    if (res != NULL && exec) {
+      DWORD oldprot;
+      // Windows doc says to use VirtualProtect to get execute permissions
+      VirtualProtect(res, bytes, PAGE_EXECUTE_READWRITE, &oldprot);
+    }
     return res;
   }
 }
@@ -2703,7 +2746,7 @@ bool os::release_memory_special(char* base, size_t bytes) {
 void os::print_statistics() {
 }
 
-bool os::commit_memory(char* addr, size_t bytes) {
+bool os::commit_memory(char* addr, size_t bytes, bool exec) {
   if (bytes == 0) {
     // Don't bother the OS with noops.
     return true;
@@ -2712,11 +2755,19 @@ bool os::commit_memory(char* addr, size_t bytes) {
   assert(bytes % os::vm_page_size() == 0, "commit in page-sized chunks");
   // Don't attempt to print anything if the OS call fails. We're
   // probably low on resources, so the print itself may cause crashes.
-  return VirtualAlloc(addr, bytes, MEM_COMMIT, PAGE_EXECUTE_READWRITE) != NULL;
+  bool result = VirtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) != 0;
+  if (result != NULL && exec) {
+    DWORD oldprot;
+    // Windows doc says to use VirtualProtect to get execute permissions
+    return VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE, &oldprot) != 0;
+  } else {
+    return result;
+  }
 }
 
-bool os::commit_memory(char* addr, size_t size, size_t alignment_hint) {
-  return commit_memory(addr, size);
+bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
+                       bool exec) {
+  return commit_memory(addr, size, exec);
 }
 
 bool os::uncommit_memory(char* addr, size_t bytes) {
@@ -2750,7 +2801,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
 
   // Strange enough, but on Win32 one can change protection only for committed
   // memory, not a big deal anyway, as bytes less or equal than 64K
-  if (!is_committed && !commit_memory(addr, bytes)) {
+  if (!is_committed && !commit_memory(addr, bytes, prot == MEM_PROT_RWX)) {
     fatal("cannot commit protection page");
   }
   // One cannot use os::guard_memory() here, as on Win32 guard page
@@ -3248,10 +3299,10 @@ jint os::init_2(void) {
 #endif
 
   if (!UseMembar) {
-    address mem_serialize_page = (address)VirtualAlloc(NULL, os::vm_page_size(), MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    address mem_serialize_page = (address)VirtualAlloc(NULL, os::vm_page_size(), MEM_RESERVE, PAGE_READWRITE);
     guarantee( mem_serialize_page != NULL, "Reserve Failed for memory serialize page");
 
-    return_page  = (address)VirtualAlloc(mem_serialize_page, os::vm_page_size(), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    return_page  = (address)VirtualAlloc(mem_serialize_page, os::vm_page_size(), MEM_COMMIT, PAGE_READWRITE);
     guarantee( return_page != NULL, "Commit Failed for memory serialize page");
 
     os::set_memory_serialize_page( mem_serialize_page );

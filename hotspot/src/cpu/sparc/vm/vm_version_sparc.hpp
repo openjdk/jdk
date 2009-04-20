@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,38 @@
 class VM_Version: public Abstract_VM_Version {
 protected:
   enum Feature_Flag {
-    v8_instructions     = 0,
-    hardware_int_muldiv = 1,
-    hardware_fsmuld     = 2,
-    v9_instructions     = 3,
-    vis1_instructions   = 4,
-    vis2_instructions   = 5,
-    sun4v_instructions  = 6
+    v8_instructions    = 0,
+    hardware_mul32     = 1,
+    hardware_div32     = 2,
+    hardware_fsmuld    = 3,
+    hardware_popc      = 4,
+    v9_instructions    = 5,
+    vis1_instructions  = 6,
+    vis2_instructions  = 7,
+    sun4v_instructions = 8
   };
 
   enum Feature_Flag_Set {
-    unknown_m             = 0,
-    all_features_m        = -1,
+    unknown_m           = 0,
+    all_features_m      = -1,
 
-    v8_instructions_m     = 1 << v8_instructions,
-    hardware_int_muldiv_m = 1 << hardware_int_muldiv,
-    hardware_fsmuld_m     = 1 << hardware_fsmuld,
-    v9_instructions_m     = 1 << v9_instructions,
-    vis1_instructions_m   = 1 << vis1_instructions,
-    vis2_instructions_m   = 1 << vis2_instructions,
-    sun4v_m               = 1 << sun4v_instructions,
+    v8_instructions_m   = 1 << v8_instructions,
+    hardware_mul32_m    = 1 << hardware_mul32,
+    hardware_div32_m    = 1 << hardware_div32,
+    hardware_fsmuld_m   = 1 << hardware_fsmuld,
+    hardware_popc_m     = 1 << hardware_popc,
+    v9_instructions_m   = 1 << v9_instructions,
+    vis1_instructions_m = 1 << vis1_instructions,
+    vis2_instructions_m = 1 << vis2_instructions,
+    sun4v_m             = 1 << sun4v_instructions,
 
-    generic_v8_m          = v8_instructions_m | hardware_int_muldiv_m | hardware_fsmuld_m,
-    generic_v9_m          = generic_v8_m | v9_instructions_m | vis1_instructions_m,
-    ultra3_m              = generic_v9_m | vis2_instructions_m,
+    generic_v8_m        = v8_instructions_m | hardware_mul32_m | hardware_div32_m | hardware_fsmuld_m,
+    generic_v9_m        = generic_v8_m | v9_instructions_m,
+    ultra3_m            = generic_v9_m | vis1_instructions_m | vis2_instructions_m,
 
     // Temporary until we have something more accurate
-    niagara1_unique_m     = sun4v_m,
-    niagara1_m            = generic_v9_m | niagara1_unique_m
+    niagara1_unique_m   = sun4v_m,
+    niagara1_m          = generic_v9_m | niagara1_unique_m
   };
 
   static int  _features;
@@ -62,7 +66,7 @@ protected:
   static int  determine_features();
   static int  platform_features(int features);
 
-  static bool is_niagara1(int features) { return (features & niagara1_m) == niagara1_m; }
+  static bool is_niagara1(int features) { return (features & sun4v_m) != 0; }
 
   static int maximum_niagara1_processor_count() { return 32; }
   // Returns true if the platform is in the niagara line and
@@ -76,8 +80,10 @@ public:
   // Instruction support
   static bool has_v8()                  { return (_features & v8_instructions_m) != 0; }
   static bool has_v9()                  { return (_features & v9_instructions_m) != 0; }
-  static bool has_hardware_int_muldiv() { return (_features & hardware_int_muldiv_m) != 0; }
+  static bool has_hardware_mul32()      { return (_features & hardware_mul32_m) != 0; }
+  static bool has_hardware_div32()      { return (_features & hardware_div32_m) != 0; }
   static bool has_hardware_fsmuld()     { return (_features & hardware_fsmuld_m) != 0; }
+  static bool has_hardware_popc()       { return (_features & hardware_popc_m) != 0; }
   static bool has_vis1()                { return (_features & vis1_instructions_m) != 0; }
   static bool has_vis2()                { return (_features & vis2_instructions_m) != 0; }
 

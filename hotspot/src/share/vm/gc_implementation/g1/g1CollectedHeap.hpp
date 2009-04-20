@@ -29,7 +29,6 @@
 
 class HeapRegion;
 class HeapRegionSeq;
-class HeapRegionList;
 class PermanentGenerationSpec;
 class GenerationSpec;
 class OopsInHeapRegionClosure;
@@ -143,7 +142,6 @@ class G1CollectedHeap : public SharedHeap {
   friend class VM_GenCollectForPermanentAllocation;
   friend class VM_G1CollectFull;
   friend class VM_G1IncCollectionPause;
-  friend class VM_G1PopRegionCollectionPause;
   friend class VMStructs;
 
   // Closures used in implementation.
@@ -171,7 +169,6 @@ private:
     MinHeapDeltaBytes = 10 * HeapRegion::GrainBytes,      // FIXME
     NumAPIs = HeapRegion::MaxAge
   };
-
 
   // The one and only G1CollectedHeap, so static functions can find it.
   static G1CollectedHeap* _g1h;
@@ -217,11 +214,20 @@ private:
 
   // Postcondition: cur_alloc_region == NULL.
   void abandon_cur_alloc_region();
+  void abandon_gc_alloc_regions();
 
   // The to-space memory regions into which objects are being copied during
   // a GC.
   HeapRegion* _gc_alloc_regions[GCAllocPurposeCount];
   size_t _gc_alloc_region_counts[GCAllocPurposeCount];
+  // These are the regions, one per GCAllocPurpose, that are half-full
+  // at the end of a collection and that we want to reuse during the
+  // next collection.
+  HeapRegion* _retained_gc_alloc_regions[GCAllocPurposeCount];
+  // This specifies whether we will keep the last half-full region at
+  // the end of a collection so that it can be reused during the next
+  // collection (this is specified per GCAllocPurpose)
+  bool _retain_gc_alloc_region[GCAllocPurposeCount];
 
   // A list of the regions that have been set to be alloc regions in the
   // current collection.
@@ -244,10 +250,6 @@ private:
   // Outside of GC pauses, the number of bytes used in all regions other
   // than the current allocation region.
   size_t _summary_bytes_used;
-
-  // Summary information about popular objects; method to print it.
-  NumberSeq _pop_obj_rc_at_copy;
-  void print_popularity_summary_info() const;
 
   // This is used for a quick test on whether a reference points into
   // the collection set or not. Basically, we have an array, with one
@@ -439,10 +441,8 @@ protected:
   virtual void do_collection_pause();
 
   // The guts of the incremental collection pause, executed by the vm
-  // thread.  If "popular_region" is non-NULL, this pause should evacuate
-  // this single region whose remembered set has gotten large, moving
-  // any popular objects to one of the popular regions.
-  virtual void do_collection_pause_at_safepoint(HeapRegion* popular_region);
+  // thread.
+  virtual void do_collection_pause_at_safepoint();
 
   // Actually do the work of evacuating the collection set.
   virtual void evacuate_collection_set();
@@ -589,8 +589,21 @@ protected:
 
   // Ensure that the relevant gc_alloc regions are set.
   void get_gc_alloc_regions();
-  // We're done with GC alloc regions; release them, as appropriate.
-  void release_gc_alloc_regions();
+  // We're done with GC alloc regions. We are going to tear down the
+  // gc alloc list and remove the gc alloc tag from all the regions on
+  // that list. However, we will also retain the last (i.e., the one
+  // that is half-full) GC alloc region, per GCAllocPurpose, for
+  // possible reuse during the next collection, provided
+  // _retain_gc_alloc_region[] indicates that it should be the
+  // case. Said regions are kept in the _retained_gc_alloc_regions[]
+  // array. If the parameter totally is set, we will not retain any
+  // regions, irrespective of what _retain_gc_alloc_region[]
+  // indicates.
+  void release_gc_alloc_regions(bool totally);
+#ifndef PRODUCT
+  // Useful for debugging.
+  void print_gc_alloc_regions();
+#endif // !PRODUCT
 
   // ("Weak") Reference processing support
   ReferenceProcessor* _ref_processor;
@@ -604,66 +617,9 @@ protected:
 
   SubTasksDone* _process_strong_tasks;
 
-  // Allocate space to hold a popular object.  Result is guaranteed below
-  // "popular_object_boundary()".  Note: CURRENTLY halts the system if we
-  // run out of space to hold popular objects.
-  HeapWord* allocate_popular_object(size_t word_size);
-
-  // The boundary between popular and non-popular objects.
-  HeapWord* _popular_object_boundary;
-
-  HeapRegionList* _popular_regions_to_be_evacuated;
-
-  // Compute which objects in "single_region" are popular.  If any are,
-  // evacuate them to a popular region, leaving behind forwarding pointers,
-  // and select "popular_region" as the single collection set region.
-  // Otherwise, leave the collection set null.
-  void popularity_pause_preamble(HeapRegion* populer_region);
-
-  // Compute which objects in "single_region" are popular, and evacuate
-  // them to a popular region, leaving behind forwarding pointers.
-  // Returns "true" if at least one popular object is discovered and
-  // evacuated.  In any case, "*max_rc" is set to the maximum reference
-  // count of an object in the region.
-  bool compute_reference_counts_and_evac_popular(HeapRegion* populer_region,
-                                                 size_t* max_rc);
-  // Subroutines used in the above.
-  bool _rc_region_above;
-  size_t _rc_region_diff;
-  jint* obj_rc_addr(oop obj) {
-    uintptr_t obj_addr = (uintptr_t)obj;
-    if (_rc_region_above) {
-      jint* res = (jint*)(obj_addr + _rc_region_diff);
-      assert((uintptr_t)res > obj_addr, "RC region is above.");
-      return res;
-    } else {
-      jint* res = (jint*)(obj_addr - _rc_region_diff);
-      assert((uintptr_t)res < obj_addr, "RC region is below.");
-      return res;
-    }
-  }
-  jint obj_rc(oop obj) {
-    return *obj_rc_addr(obj);
-  }
-  void inc_obj_rc(oop obj) {
-    (*obj_rc_addr(obj))++;
-  }
-  void atomic_inc_obj_rc(oop obj);
-
-
-  // Number of popular objects and bytes (latter is cheaper!).
-  size_t pop_object_used_objs();
-  size_t pop_object_used_bytes();
-
-  // Index of the popular region in which allocation is currently being
-  // done.
-  int _cur_pop_hr_index;
-
   // List of regions which require zero filling.
   UncleanRegionList _unclean_region_list;
   bool _unclean_regions_coming;
-
-  bool check_age_cohort_well_formed_work(int a, HeapRegion* hr);
 
 public:
   void set_refine_cte_cl_concurrency(bool concurrent);
@@ -909,14 +865,25 @@ public:
 
   // Iterate over all the ref-containing fields of all objects, calling
   // "cl.do_oop" on each.
-  virtual void oop_iterate(OopClosure* cl);
+  virtual void oop_iterate(OopClosure* cl) {
+    oop_iterate(cl, true);
+  }
+  void oop_iterate(OopClosure* cl, bool do_perm);
 
   // Same as above, restricted to a memory region.
-  virtual void oop_iterate(MemRegion mr, OopClosure* cl);
+  virtual void oop_iterate(MemRegion mr, OopClosure* cl) {
+    oop_iterate(mr, cl, true);
+  }
+  void oop_iterate(MemRegion mr, OopClosure* cl, bool do_perm);
 
   // Iterate over all objects, calling "cl.do_object" on each.
-  virtual void object_iterate(ObjectClosure* cl);
-  virtual void safe_object_iterate(ObjectClosure* cl) { object_iterate(cl); }
+  virtual void object_iterate(ObjectClosure* cl) {
+    object_iterate(cl, true);
+  }
+  virtual void safe_object_iterate(ObjectClosure* cl) {
+    object_iterate(cl, true);
+  }
+  void object_iterate(ObjectClosure* cl, bool do_perm);
 
   // Iterate over all objects allocated since the last collection, calling
   // "cl.do_object" on each.  The heap must have been initialized properly
@@ -1044,21 +1011,6 @@ public:
   // The boundary between a "large" and "small" array of primitives, in
   // words.
   virtual size_t large_typearray_limit();
-
-  // All popular objects are guaranteed to have addresses below this
-  // boundary.
-  HeapWord* popular_object_boundary() {
-    return _popular_object_boundary;
-  }
-
-  // Declare the region as one that should be evacuated because its
-  // remembered set is too large.
-  void schedule_popular_region_evac(HeapRegion* r);
-  // If there is a popular region to evacuate it, remove it from the list
-  // and return it.
-  HeapRegion* popular_region_to_evac();
-  // Evacuate the given popular region.
-  void evac_popular_region(HeapRegion* r);
 
   // Returns "true" iff the given word_size is "very large".
   static bool isHumongous(size_t word_size) {

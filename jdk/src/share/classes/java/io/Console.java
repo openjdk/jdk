@@ -503,6 +503,21 @@ public final class Console implements Flushable
 
     // Set up JavaIOAccess in SharedSecrets
     static {
+
+        // Add a shutdown hook to restore console's echo state should
+        // it be necessary.
+        sun.misc.SharedSecrets.getJavaLangAccess()
+            .registerShutdownHook(0 /* shutdown hook invocation order */,
+                new Runnable() {
+                    public void run() {
+                        try {
+                            if (echoOff) {
+                                echo(true);
+                            }
+                        } catch (IOException x) { }
+                    }
+                });
+
         sun.misc.SharedSecrets.setJavaIOAccess(new sun.misc.JavaIOAccess() {
             public Console console() {
                 if (istty()) {
@@ -511,20 +526,6 @@ public final class Console implements Flushable
                     return cons;
                 }
                 return null;
-            }
-
-            // Add a shutdown hook to restore console's echo state should
-            // it be necessary.
-            public Runnable consoleRestoreHook() {
-                return new Runnable() {
-                    public void run() {
-                        try {
-                            if (echoOff) {
-                                echo(true);
-                            }
-                        } catch (IOException x) {}
-                    }
-                };
             }
 
             public Charset charset() {

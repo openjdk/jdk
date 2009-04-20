@@ -35,6 +35,13 @@ HAND_CURSOR  CURSOR  DISCARDABLE "hand.cur"
 AWT_ICON     ICON    DISCARDABLE "awt.ico"
 CHECK_BITMAP BITMAP  DISCARDABLE "check.bmp"
 
+// Note: the number of icons used is specified in the
+// securityWarningIconCounter constant in awt_Toolkit.cpp.
+SECURITY_WARNING_0  ICON    DISCARDABLE "security_warning_bw.ico"
+SECURITY_WARNING_1  ICON    DISCARDABLE "security_warning_int.ico"
+SECURITY_WARNING_2  ICON    DISCARDABLE "security_warning.ico"
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version

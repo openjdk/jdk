@@ -185,14 +185,8 @@
   product(intx, G1InefficientPausePct, 80,                                  \
           "Threshold of an 'inefficient' pauses (as % of cum efficiency.")  \
                                                                             \
-  product(intx, G1RSPopLimit, 32768,                                        \
-          "Limit that defines popularity.  Should go away! XXX")            \
-                                                                            \
   develop(bool, G1RSCountHisto, false,                                      \
           "If true, print a histogram of RS occupancies after each pause")  \
-                                                                            \
-  product(intx, G1ObjPopLimit, 256,                                         \
-          "Limit that defines popularity for an object.")                   \
                                                                             \
   product(bool, G1TraceFileOverwrite, false,                                \
           "Allow the trace file to be overwritten")                         \
@@ -200,16 +194,6 @@
   develop(intx, G1PrintRegionLivenessInfo, 0,                               \
           "When > 0, print the occupancies of the <n> best and worst"       \
           "regions.")                                                       \
-                                                                            \
-  develop(bool, G1TracePopularity, false,                                   \
-          "When true, provide detailed tracing of popularity.")             \
-                                                                            \
-  product(bool, G1SummarizePopularity, false,                               \
-          "When true, provide end-of-run-summarization of popularity.")     \
-                                                                            \
-  product(intx, G1NumPopularRegions, 1,                                     \
-          "Number of regions reserved to hold popular objects.  "           \
-          "Should go away later.")                                          \
                                                                             \
   develop(bool, G1PrintParCleanupStats, false,                              \
           "When true, print extra stats about parallel cleanup.")           \
@@ -295,6 +279,14 @@
                                                                             \
   product(uintx, G1FixedSurvivorSpaceSize, 0,                               \
           "If non-0 is the size of the G1 survivor space, "                 \
-          "otherwise SurvivorRatio is used to determine the size")
+          "otherwise SurvivorRatio is used to determine the size")          \
+                                                                            \
+  experimental(bool, G1EnableParallelRSetUpdating, false,                   \
+          "Enables the parallelization of remembered set updating "         \
+          "during evacuation pauses")                                       \
+                                                                            \
+  experimental(bool, G1EnableParallelRSetScanning, false,                   \
+          "Enables the parallelization of remembered set scanning "         \
+          "during evacuation pauses")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)

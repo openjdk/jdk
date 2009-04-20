@@ -107,6 +107,7 @@ class java_lang_String : AllStatic {
 
   // Conversion
   static symbolHandle as_symbol(Handle java_string, TRAPS);
+  static symbolOop as_symbol_or_null(oop java_string);
 
   // Testers
   static bool is_instance(oop obj) {
@@ -149,6 +150,15 @@ class java_lang_Class : AllStatic {
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
   // Conversion
   static klassOop as_klassOop(oop java_class);
+  static BasicType as_BasicType(oop java_class, klassOop* reference_klass = NULL);
+  static BasicType as_BasicType(oop java_class, KlassHandle* reference_klass) {
+    klassOop refk_oop = NULL;
+    BasicType result = as_BasicType(java_class, &refk_oop);
+    (*reference_klass) = KlassHandle(refk_oop);
+    return result;
+  }
+  static symbolOop as_signature(oop java_class, bool intern_if_not_found, TRAPS);
+  static void print_signature(oop java_class, outputStream *st);
   // Testing
   static bool is_instance(oop obj) {
     return obj != NULL && obj->klass() == SystemDictionary::class_klass();
@@ -668,6 +678,8 @@ class java_lang_boxing_object: AllStatic {
   static BasicType basic_type(oop box);
   static bool is_instance(oop box)                 { return basic_type(box) != T_ILLEGAL; }
   static bool is_instance(oop box, BasicType type) { return basic_type(box) == type; }
+  static void print(oop box, outputStream* st)     { jvalue value;  print(get_value(box, &value), &value, st); }
+  static void print(BasicType type, jvalue* value, outputStream* st);
 
   static int value_offset_in_bytes(BasicType type) {
     return ( type == T_LONG || type == T_DOUBLE ) ? long_value_offset :
@@ -770,6 +782,284 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
   static jlong clock();
   static void set_clock(jlong value);
 };
+
+
+// Interface to java.dyn.MethodHandle objects
+
+class MethodHandleEntry;
+
+class java_dyn_MethodHandle: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _vmentry_offset;           // assembly code trampoline for MH
+  static int _vmtarget_offset;          // class-specific target reference
+  static int _type_offset;              // the MethodType of this MH
+  static int _vmslots_offset;           // OPTIONAL hoisted type.form.vmslots
+
+  static void compute_offsets();
+
+ public:
+  // Accessors
+  static oop            type(oop mh);
+  static void       set_type(oop mh, oop mtype);
+
+  static oop            vmtarget(oop mh);
+  static void       set_vmtarget(oop mh, oop target);
+
+  static MethodHandleEntry* vmentry(oop mh);
+  static void       set_vmentry(oop mh, MethodHandleEntry* data);
+
+  static int            vmslots(oop mh);
+  static void      init_vmslots(oop mh);
+  static int    compute_vmslots(oop mh);
+
+  // Testers
+  static bool is_subclass(klassOop klass) {
+    return Klass::cast(klass)->is_subclass_of(SystemDictionary::MethodHandle_klass());
+  }
+  static bool is_instance(oop obj) {
+    return obj != NULL && is_subclass(obj->klass());
+  }
+
+  // Accessors for code generation:
+  static int type_offset_in_bytes()             { return _type_offset; }
+  static int vmtarget_offset_in_bytes()         { return _vmtarget_offset; }
+  static int vmentry_offset_in_bytes()          { return _vmentry_offset; }
+  static int vmslots_offset_in_bytes()          { return _vmslots_offset; }
+};
+
+class sun_dyn_DirectMethodHandle: public java_dyn_MethodHandle {
+  friend class JavaClasses;
+
+ private:
+  //         _vmtarget_offset;          // method   or class      or interface
+  static int _vmindex_offset;           // negative or vtable idx or itable idx
+  static void compute_offsets();
+
+ public:
+  // Accessors
+  static int            vmindex(oop mh);
+  static void       set_vmindex(oop mh, int index);
+
+  // Testers
+  static bool is_subclass(klassOop klass) {
+    return Klass::cast(klass)->is_subclass_of(SystemDictionary::DirectMethodHandle_klass());
+  }
+  static bool is_instance(oop obj) {
+    return obj != NULL && is_subclass(obj->klass());
+  }
+
+  // Accessors for code generation:
+  static int vmindex_offset_in_bytes()          { return _vmindex_offset; }
+};
+
+class sun_dyn_BoundMethodHandle: public java_dyn_MethodHandle {
+  friend class JavaClasses;
+
+ private:
+  static int _argument_offset;          // argument value bound into this MH
+  static int _vmargslot_offset;         // relevant argument slot (<= vmslots)
+  static void compute_offsets();
+
+public:
+  static oop            argument(oop mh);
+  static void       set_argument(oop mh, oop ref);
+
+  static jint           vmargslot(oop mh);
+  static void       set_vmargslot(oop mh, jint slot);
+
+  // Testers
+  static bool is_subclass(klassOop klass) {
+    return Klass::cast(klass)->is_subclass_of(SystemDictionary::BoundMethodHandle_klass());
+  }
+  static bool is_instance(oop obj) {
+    return obj != NULL && is_subclass(obj->klass());
+  }
+
+  static int argument_offset_in_bytes()         { return _argument_offset; }
+  static int vmargslot_offset_in_bytes()        { return _vmargslot_offset; }
+};
+
+class sun_dyn_AdapterMethodHandle: public sun_dyn_BoundMethodHandle {
+  friend class JavaClasses;
+
+ private:
+  static int _conversion_offset;        // type of conversion to apply
+  static void compute_offsets();
+
+ public:
+  static int            conversion(oop mh);
+  static void       set_conversion(oop mh, int conv);
+
+  // Testers
+  static bool is_subclass(klassOop klass) {
+    return Klass::cast(klass)->is_subclass_of(SystemDictionary::AdapterMethodHandle_klass());
+  }
+  static bool is_instance(oop obj) {
+    return obj != NULL && is_subclass(obj->klass());
+  }
+
+  // Relevant integer codes (keep these in synch. with MethodHandleNatives.Constants):
+  enum {
+    OP_RETYPE_ONLY   = 0x0, // no argument changes; straight retype
+    OP_CHECK_CAST    = 0x1, // ref-to-ref conversion; requires a Class argument
+    OP_PRIM_TO_PRIM  = 0x2, // converts from one primitive to another
+    OP_REF_TO_PRIM   = 0x3, // unboxes a wrapper to produce a primitive
+    OP_PRIM_TO_REF   = 0x4, // boxes a primitive into a wrapper (NYI)
+    OP_SWAP_ARGS     = 0x5, // swap arguments (vminfo is 2nd arg)
+    OP_ROT_ARGS      = 0x6, // rotate arguments (vminfo is displaced arg)
+    OP_DUP_ARGS      = 0x7, // duplicates one or more arguments (at TOS)
+    OP_DROP_ARGS     = 0x8, // remove one or more argument slots
+    OP_COLLECT_ARGS  = 0x9, // combine one or more arguments into a varargs (NYI)
+    OP_SPREAD_ARGS   = 0xA, // expand in place a varargs array (of known size)
+    OP_FLYBY         = 0xB, // operate first on reified argument list (NYI)
+    OP_RICOCHET      = 0xC, // run an adapter chain on the return value (NYI)
+    CONV_OP_LIMIT    = 0xD, // limit of CONV_OP enumeration
+
+    CONV_OP_MASK     = 0xF00, // this nybble contains the conversion op field
+    CONV_VMINFO_MASK = 0x0FF, // LSB is reserved for JVM use
+    CONV_VMINFO_SHIFT     =  0, // position of bits in CONV_VMINFO_MASK
+    CONV_OP_SHIFT         =  8, // position of bits in CONV_OP_MASK
+    CONV_DEST_TYPE_SHIFT  = 12, // byte 2 has the adapter BasicType (if needed)
+    CONV_SRC_TYPE_SHIFT   = 16, // byte 2 has the source BasicType (if needed)
+    CONV_STACK_MOVE_SHIFT = 20, // high 12 bits give signed SP change
+    CONV_STACK_MOVE_MASK  = (1 << (32 - CONV_STACK_MOVE_SHIFT)) - 1
+  };
+
+  static int conversion_offset_in_bytes()       { return _conversion_offset; }
+};
+
+
+// Interface to sun.dyn.MemberName objects
+// (These are a private interface for Java code to query the class hierarchy.)
+
+class sun_dyn_MemberName: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  // From java.dyn.MemberName:
+  //    private Class<?>   clazz;       // class in which the method is defined
+  //    private String     name;        // may be null if not yet materialized
+  //    private Object     type;        // may be null if not yet materialized
+  //    private int        flags;       // modifier bits; see reflect.Modifier
+  //    private Object     vmtarget;    // VM-specific target value
+  //    private int        vmindex;     // method index within class or interface
+  static int _clazz_offset;
+  static int _name_offset;
+  static int _type_offset;
+  static int _flags_offset;
+  static int _vmtarget_offset;
+  static int _vmindex_offset;
+
+  static void compute_offsets();
+
+ public:
+  // Accessors
+  static oop            clazz(oop mname);
+  static void       set_clazz(oop mname, oop clazz);
+
+  static oop            type(oop mname);
+  static void       set_type(oop mname, oop type);
+
+  static oop            name(oop mname);
+  static void       set_name(oop mname, oop name);
+
+  static int            flags(oop mname);
+  static void       set_flags(oop mname, int flags);
+
+  static int            modifiers(oop mname) { return (u2) flags(mname); }
+  static void       set_modifiers(oop mname, int mods)
+                                { set_flags(mname, (flags(mname) &~ (u2)-1) | (u2)mods); }
+
+  static oop            vmtarget(oop mname);
+  static void       set_vmtarget(oop mname, oop target);
+
+  static int            vmindex(oop mname);
+  static void       set_vmindex(oop mname, int index);
+
+  // Testers
+  static bool is_subclass(klassOop klass) {
+    return Klass::cast(klass)->is_subclass_of(SystemDictionary::MemberName_klass());
+  }
+  static bool is_instance(oop obj) {
+    return obj != NULL && is_subclass(obj->klass());
+  }
+
+  // Relevant integer codes (keep these in synch. with MethodHandleNatives.Constants):
+  enum {
+    MN_IS_METHOD           = 0x00010000, // method (not constructor)
+    MN_IS_CONSTRUCTOR      = 0x00020000, // constructor
+    MN_IS_FIELD            = 0x00040000, // field
+    MN_IS_TYPE             = 0x00080000, // nested type
+    MN_SEARCH_SUPERCLASSES = 0x00100000, // for MHN.getMembers
+    MN_SEARCH_INTERFACES   = 0x00200000, // for MHN.getMembers
+    VM_INDEX_UNINITIALIZED = -99
+  };
+
+  // Accessors for code generation:
+  static int clazz_offset_in_bytes()            { return _clazz_offset; }
+  static int type_offset_in_bytes()             { return _type_offset; }
+  static int name_offset_in_bytes()             { return _name_offset; }
+  static int flags_offset_in_bytes()            { return _flags_offset; }
+  static int vmtarget_offset_in_bytes()         { return _vmtarget_offset; }
+  static int vmindex_offset_in_bytes()          { return _vmindex_offset; }
+};
+
+
+// Interface to java.dyn.MethodType objects
+
+class java_dyn_MethodType: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _rtype_offset;
+  static int _ptypes_offset;
+  static int _form_offset;
+
+  static void compute_offsets();
+
+ public:
+  // Accessors
+  static oop            rtype(oop mt);
+  static objArrayOop    ptypes(oop mt);
+  static oop            form(oop mt);
+
+  static oop            ptype(oop mt, int index);
+
+  static symbolOop      as_signature(oop mt, bool intern_if_not_found, TRAPS);
+  static void           print_signature(oop mt, outputStream* st);
+
+  static bool is_instance(oop obj) {
+    return obj != NULL && obj->klass() == SystemDictionary::MethodType_klass();
+  }
+
+  // Accessors for code generation:
+  static int rtype_offset_in_bytes()            { return _rtype_offset; }
+  static int ptypes_offset_in_bytes()           { return _ptypes_offset; }
+  static int form_offset_in_bytes()             { return _form_offset; }
+};
+
+class java_dyn_MethodTypeForm: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _vmslots_offset;           // number of argument slots needed
+  static int _erasedType_offset;        // erasedType = canonical MethodType
+
+  static void compute_offsets();
+
+ public:
+  // Accessors
+  static int            vmslots(oop mtform);
+  static oop            erasedType(oop mtform);
+
+  // Accessors for code generation:
+  static int vmslots_offset_in_bytes()          { return _vmslots_offset; }
+  static int erasedType_offset_in_bytes()       { return _erasedType_offset; }
+};
+
+
 
 
 // Interface to java.security.AccessControlContext objects

@@ -35,9 +35,6 @@
   static jint      (*atomic_add_func)           (jint,      volatile jint*);
   static intptr_t  (*atomic_add_ptr_func)       (intptr_t,  volatile intptr_t*);
 
-  static void      (*fence_func)                ();
-
-
   static jint      atomic_xchg_bootstrap        (jint,      volatile jint*);
   static intptr_t  atomic_xchg_ptr_bootstrap    (intptr_t,  volatile intptr_t*);
 
@@ -53,8 +50,6 @@
 #ifdef AMD64
   static jint      atomic_add_bootstrap         (jint,      volatile jint*);
   static intptr_t  atomic_add_ptr_bootstrap     (intptr_t,  volatile intptr_t*);
-
-  static void      fence_bootstrap              ();
 #endif // AMD64
 
   static void setup_fpu();

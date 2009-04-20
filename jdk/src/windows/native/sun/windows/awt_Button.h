@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,13 @@ public:
     /* Windows message handler functions */
     MsgRouting WmMouseDown(UINT flags, int x, int y, int button);
     MsgRouting WmMouseUp(UINT flags, int x, int y, int button);
-    MsgRouting WmKeyUp(UINT vkey, UINT repCnt, UINT flags, BOOL system);
     MsgRouting OwnerDrawItem(UINT ctrlId, DRAWITEMSTRUCT& drawInfo);
     MsgRouting WmPaint(HDC hDC);
 
     MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
 
-    BOOL ActMouseMessage(MSG * pMsg);
+    BOOL IsFocusingMouseMessage(MSG *pMsg);
+    BOOL IsFocusingKeyMessage(MSG *pMsg);
 
     // called on Toolkit thread from JNI
     static void _SetLabel(void *param);

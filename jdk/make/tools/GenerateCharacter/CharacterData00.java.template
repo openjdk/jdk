@@ -144,6 +144,55 @@ class CharacterData00 extends CharacterData {
             case 0x1FBC : mapChar = 0x1FB3; break;
             case 0x1FCC : mapChar = 0x1FC3; break;
             case 0x1FFC : mapChar = 0x1FF3; break;
+
+            case 0x023A : mapChar = 0x2C65; break;
+            case 0x023E : mapChar = 0x2C66; break;
+            case 0x10A0 : mapChar = 0x2D00; break;
+            case 0x10A1 : mapChar = 0x2D01; break;
+            case 0x10A2 : mapChar = 0x2D02; break;
+            case 0x10A3 : mapChar = 0x2D03; break;
+            case 0x10A4 : mapChar = 0x2D04; break;
+            case 0x10A5 : mapChar = 0x2D05; break;
+            case 0x10A6 : mapChar = 0x2D06; break;
+            case 0x10A7 : mapChar = 0x2D07; break;
+            case 0x10A8 : mapChar = 0x2D08; break;
+            case 0x10A9 : mapChar = 0x2D09; break;
+            case 0x10AA : mapChar = 0x2D0A; break;
+            case 0x10AB : mapChar = 0x2D0B; break;
+            case 0x10AC : mapChar = 0x2D0C; break;
+            case 0x10AD : mapChar = 0x2D0D; break;
+            case 0x10AE : mapChar = 0x2D0E; break;
+            case 0x10AF : mapChar = 0x2D0F; break;
+            case 0x10B0 : mapChar = 0x2D10; break;
+            case 0x10B1 : mapChar = 0x2D11; break;
+            case 0x10B2 : mapChar = 0x2D12; break;
+            case 0x10B3 : mapChar = 0x2D13; break;
+            case 0x10B4 : mapChar = 0x2D14; break;
+            case 0x10B5 : mapChar = 0x2D15; break;
+            case 0x10B6 : mapChar = 0x2D16; break;
+            case 0x10B7 : mapChar = 0x2D17; break;
+            case 0x10B8 : mapChar = 0x2D18; break;
+            case 0x10B9 : mapChar = 0x2D19; break;
+            case 0x10BA : mapChar = 0x2D1A; break;
+            case 0x10BB : mapChar = 0x2D1B; break;
+            case 0x10BC : mapChar = 0x2D1C; break;
+            case 0x10BD : mapChar = 0x2D1D; break;
+            case 0x10BE : mapChar = 0x2D1E; break;
+            case 0x10BF : mapChar = 0x2D1F; break;
+            case 0x10C0 : mapChar = 0x2D20; break;
+            case 0x10C1 : mapChar = 0x2D21; break;
+            case 0x10C2 : mapChar = 0x2D22; break;
+            case 0x10C3 : mapChar = 0x2D23; break;
+            case 0x10C4 : mapChar = 0x2D24; break;
+            case 0x10C5 : mapChar = 0x2D25; break;
+            case 0x1E9E : mapChar = 0x00DF; break;
+            case 0x2C62 : mapChar = 0x026B; break;
+            case 0x2C63 : mapChar = 0x1D7D; break;
+            case 0x2C64 : mapChar = 0x027D; break;
+            case 0x2C6D : mapChar = 0x0251; break;
+            case 0x2C6E : mapChar = 0x0271; break;
+            case 0x2C6F : mapChar = 0x0250; break;
+            case 0xA77D : mapChar = 0x1D79; break;
               // default mapChar is already set, so no
               // need to redo it here.
               // default       : mapChar = ch;
@@ -196,6 +245,54 @@ class CharacterData00 extends CharacterData {
             case 0x1FB3 : mapChar = 0x1FBC; break;
             case 0x1FC3 : mapChar = 0x1FCC; break;
             case 0x1FF3 : mapChar = 0x1FFC; break;
+
+            case 0x0250 : mapChar = 0x2C6F; break;
+            case 0x0251 : mapChar = 0x2C6D; break;
+            case 0x026B : mapChar = 0x2C62; break;
+            case 0x0271 : mapChar = 0x2C6E; break;
+            case 0x027D : mapChar = 0x2C64; break;
+            case 0x1D79 : mapChar = 0xA77D; break;
+            case 0x1D7D : mapChar = 0x2C63; break;
+            case 0x2C65 : mapChar = 0x023A; break;
+            case 0x2C66 : mapChar = 0x023E; break;
+            case 0x2D00 : mapChar = 0x10A0; break;
+            case 0x2D01 : mapChar = 0x10A1; break;
+            case 0x2D02 : mapChar = 0x10A2; break;
+            case 0x2D03 : mapChar = 0x10A3; break;
+            case 0x2D04 : mapChar = 0x10A4; break;
+            case 0x2D05 : mapChar = 0x10A5; break;
+            case 0x2D06 : mapChar = 0x10A6; break;
+            case 0x2D07 : mapChar = 0x10A7; break;
+            case 0x2D08 : mapChar = 0x10A8; break;
+            case 0x2D09 : mapChar = 0x10A9; break;
+            case 0x2D0A : mapChar = 0x10AA; break;
+            case 0x2D0B : mapChar = 0x10AB; break;
+            case 0x2D0C : mapChar = 0x10AC; break;
+            case 0x2D0D : mapChar = 0x10AD; break;
+            case 0x2D0E : mapChar = 0x10AE; break;
+            case 0x2D0F : mapChar = 0x10AF; break;
+            case 0x2D10 : mapChar = 0x10B0; break;
+            case 0x2D11 : mapChar = 0x10B1; break;
+            case 0x2D12 : mapChar = 0x10B2; break;
+            case 0x2D13 : mapChar = 0x10B3; break;
+            case 0x2D14 : mapChar = 0x10B4; break;
+            case 0x2D15 : mapChar = 0x10B5; break;
+            case 0x2D16 : mapChar = 0x10B6; break;
+            case 0x2D17 : mapChar = 0x10B7; break;
+            case 0x2D18 : mapChar = 0x10B8; break;
+            case 0x2D19 : mapChar = 0x10B9; break;
+            case 0x2D1A : mapChar = 0x10BA; break;
+            case 0x2D1B : mapChar = 0x10BB; break;
+            case 0x2D1C : mapChar = 0x10BC; break;
+            case 0x2D1D : mapChar = 0x10BD; break;
+            case 0x2D1E : mapChar = 0x10BE; break;
+            case 0x2D1F : mapChar = 0x10BF; break;
+            case 0x2D20 : mapChar = 0x10C0; break;
+            case 0x2D21 : mapChar = 0x10C1; break;
+            case 0x2D22 : mapChar = 0x10C2; break;
+            case 0x2D23 : mapChar = 0x10C3; break;
+            case 0x2D24 : mapChar = 0x10C4; break;
+            case 0x2D25 : mapChar = 0x10C5; break;
               // ch must have a 1:M case mapping, but we
               // can't handle it here. Return ch.
               // since mapChar is already set, no need
@@ -315,6 +412,12 @@ class CharacterData00 extends CharacterData {
                 case 0x32BE: retval = 49; break;          // CIRCLED NUMBER FORTY NINE
                 case 0x32BF: retval = 50; break;          // CIRCLED NUMBER FIFTY
 
+                case 0x0D71: retval = 100; break;         // MALAYALAM NUMBER ONE HUNDRED
+                case 0x0D72: retval = 1000; break;        // MALAYALAM NUMBER ONE THOUSAND
+                case 0x2186: retval = 50; break;          // ROMAN NUMERAL FIFTY EARLY FORM
+                case 0x2187: retval = 50000; break;       // ROMAN NUMERAL FIFTY THOUSAND
+                case 0x2188: retval = 100000; break;      // ROMAN NUMERAL ONE HUNDRED THOUSAND
+
                 default:       retval = -2; break;
             }
             break;
@@ -383,6 +486,54 @@ class CharacterData00 extends CharacterData {
                     case 0x00B5 : mapChar = 0x039C; break;
                     case 0x017F : mapChar = 0x0053; break;
                     case 0x1FBE : mapChar = 0x0399; break;
+
+                    case 0x0250 : mapChar = 0x2C6F; break;
+                    case 0x0251 : mapChar = 0x2C6D; break;
+                    case 0x026B : mapChar = 0x2C62; break;
+                    case 0x0271 : mapChar = 0x2C6E; break;
+                    case 0x027D : mapChar = 0x2C64; break;
+                    case 0x1D79 : mapChar = 0xA77D; break;
+                    case 0x1D7D : mapChar = 0x2C63; break;
+                    case 0x2C65 : mapChar = 0x023A; break;
+                    case 0x2C66 : mapChar = 0x023E; break;
+                    case 0x2D00 : mapChar = 0x10A0; break;
+                    case 0x2D01 : mapChar = 0x10A1; break;
+                    case 0x2D02 : mapChar = 0x10A2; break;
+                    case 0x2D03 : mapChar = 0x10A3; break;
+                    case 0x2D04 : mapChar = 0x10A4; break;
+                    case 0x2D05 : mapChar = 0x10A5; break;
+                    case 0x2D06 : mapChar = 0x10A6; break;
+                    case 0x2D07 : mapChar = 0x10A7; break;
+                    case 0x2D08 : mapChar = 0x10A8; break;
+                    case 0x2D09 : mapChar = 0x10A9; break;
+                    case 0x2D0A : mapChar = 0x10AA; break;
+                    case 0x2D0B : mapChar = 0x10AB; break;
+                    case 0x2D0C : mapChar = 0x10AC; break;
+                    case 0x2D0D : mapChar = 0x10AD; break;
+                    case 0x2D0E : mapChar = 0x10AE; break;
+                    case 0x2D0F : mapChar = 0x10AF; break;
+                    case 0x2D10 : mapChar = 0x10B0; break;
+                    case 0x2D11 : mapChar = 0x10B1; break;
+                    case 0x2D12 : mapChar = 0x10B2; break;
+                    case 0x2D13 : mapChar = 0x10B3; break;
+                    case 0x2D14 : mapChar = 0x10B4; break;
+                    case 0x2D15 : mapChar = 0x10B5; break;
+                    case 0x2D16 : mapChar = 0x10B6; break;
+                    case 0x2D17 : mapChar = 0x10B7; break;
+                    case 0x2D18 : mapChar = 0x10B8; break;
+                    case 0x2D19 : mapChar = 0x10B9; break;
+                    case 0x2D1A : mapChar = 0x10BA; break;
+                    case 0x2D1B : mapChar = 0x10BB; break;
+                    case 0x2D1C : mapChar = 0x10BC; break;
+                    case 0x2D1D : mapChar = 0x10BD; break;
+                    case 0x2D1E : mapChar = 0x10BE; break;
+                    case 0x2D1F : mapChar = 0x10BF; break;
+                    case 0x2D20 : mapChar = 0x10C0; break;
+                    case 0x2D21 : mapChar = 0x10C1; break;
+                    case 0x2D22 : mapChar = 0x10C2; break;
+                    case 0x2D23 : mapChar = 0x10C3; break;
+                    case 0x2D24 : mapChar = 0x10C4; break;
+                    case 0x2D25 : mapChar = 0x10C5; break;
                     default       : mapChar = Character.ERROR; break;
                 }
             }

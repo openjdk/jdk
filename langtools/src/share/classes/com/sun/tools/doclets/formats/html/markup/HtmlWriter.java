@@ -37,6 +37,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @since 1.2
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class HtmlWriter extends PrintWriter {
 
@@ -67,6 +68,21 @@ public class HtmlWriter extends PrintWriter {
     protected boolean memberDetailsListPrinted;
 
     /**
+     * Header for tables displaying packages and description..
+     */
+    protected final String[] packageTableHeader;
+
+    /**
+     * Summary for use tables displaying class and package use.
+     */
+    protected final String useTableSummary;
+
+    /**
+     * Column header for class docs displaying Modifier and Type header.
+     */
+    protected final String modifierTypeHeader;
+
+    /**
      * Constructor.
      *
      * @param path The directory path to be created for this file
@@ -86,6 +102,15 @@ public class HtmlWriter extends PrintWriter {
         this.configuration = configuration;
         htmlFilename = filename;
         this.memberDetailsListPrinted = false;
+        packageTableHeader = new String[] {
+            configuration.getText("doclet.Package"),
+            configuration.getText("doclet.Description")
+        };
+        useTableSummary = configuration.getText("doclet.Use_Table_Summary",
+                configuration.getText("doclet.packages"));
+        modifierTypeHeader = configuration.getText("doclet.0_and_1",
+                configuration.getText("doclet.Modifier"),
+                configuration.getText("doclet.Type"));
     }
 
     /**
@@ -803,6 +828,26 @@ public class HtmlWriter extends PrintWriter {
     }
 
     /**
+     * Print HTML &lt;TABLE BORDER="border" WIDTH="width"
+     * CELLPADDING="cellpadding" CELLSPACING="cellspacing" SUMMARY="summary"&gt; tag.
+     *
+     * @param border       Border size.
+     * @param width        Width of the table.
+     * @param cellpadding  Cellpadding for the table cells.
+     * @param cellspacing  Cellspacing for the table cells.
+     * @param summary      Table summary.
+     */
+    public void table(int border, String width, int cellpadding,
+                      int cellspacing, String summary) {
+        println(DocletConstants.NL +
+                "<TABLE BORDER=\"" + border +
+                "\" WIDTH=\"" + width +
+                "\" CELLPADDING=\"" + cellpadding +
+                "\" CELLSPACING=\"" + cellspacing +
+                "\" SUMMARY=\"" + summary + "\">");
+    }
+
+    /**
      * Print HTML &lt;TABLE BORDER="border" CELLPADDING="cellpadding"
      * CELLSPACING="cellspacing"&gt; tag.
      *
@@ -816,6 +861,23 @@ public class HtmlWriter extends PrintWriter {
                 "\" CELLPADDING=\"" + cellpadding +
                 "\" CELLSPACING=\"" + cellspacing +
                 "\" SUMMARY=\"\">");
+    }
+
+    /**
+     * Print HTML &lt;TABLE BORDER="border" CELLPADDING="cellpadding"
+     * CELLSPACING="cellspacing" SUMMARY="summary"&gt; tag.
+     *
+     * @param border       Border size.
+     * @param cellpadding  Cellpadding for the table cells.
+     * @param cellspacing  Cellspacing for the table cells.
+     * @param summary      Table summary.
+     */
+    public void table(int border, int cellpadding, int cellspacing, String summary) {
+        println(DocletConstants.NL +
+                "<TABLE BORDER=\"" + border +
+                "\" CELLPADDING=\"" + cellpadding +
+                "\" CELLSPACING=\"" + cellspacing +
+                "\" SUMMARY=\"" + summary + "\">");
     }
 
     /**
@@ -913,6 +975,23 @@ public class HtmlWriter extends PrintWriter {
     }
 
     /**
+     * Print &lt;CAPTION CLASS="stylename"&gt; tag. Adds a newline character
+     * at the end.
+     *
+     * @param stylename style to be applied.
+     */
+    public void captionStyle(String stylename) {
+        println("<CAPTION CLASS=\"" + stylename + "\">");
+    }
+
+    /**
+     * Print &lt;/CAPTION&gt; tag. Add a newline character at the end.
+     */
+    public void captionEnd() {
+        println("</CAPTION>");
+    }
+
+    /**
      * Print &lt;TR BGCOLOR="color" CLASS="stylename"&gt; tag. Adds a newline character
      * at the end.
      *
@@ -950,6 +1029,23 @@ public class HtmlWriter extends PrintWriter {
      */
     public void thAlign(String align) {
         print("<TH ALIGN=\"" + align + "\">");
+    }
+
+    /**
+     * Print &lt;TH CLASS="stylename" SCOPE="scope" NOWRAP&gt; tag.
+     *
+     * @param stylename style to be applied.
+     * @param scope the scope attribute.
+     */
+    public void thScopeNoWrap(String stylename, String scope) {
+        print("<TH CLASS=\"" + stylename + "\" SCOPE=\"" + scope + "\" NOWRAP>");
+    }
+
+    /*
+     * Returns a header for Modifier and Type column of a table.
+     */
+    public String getModifierTypeHeader() {
+        return modifierTypeHeader;
     }
 
     /**

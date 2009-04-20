@@ -34,6 +34,7 @@ import com.sun.tools.doclets.internal.toolkit.*;
  * Writes annotation type required member documentation in HTML format.
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  */
 public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     implements AnnotationTypeRequiredMemberWriter, MemberSummaryWriter {
@@ -178,8 +179,27 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
     /**
      * {@inheritDoc}
      */
-    public void printSummaryLabel(ClassDoc cd) {
-        writer.strongText("doclet.Annotation_Type_Required_Member_Summary");
+    public void printSummaryLabel() {
+        writer.printText("doclet.Annotation_Type_Required_Member_Summary");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void printTableSummary() {
+        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+                configuration().getText("doclet.Annotation_Type_Required_Member_Summary"),
+                configuration().getText("doclet.annotation_type_required_members")));
+    }
+
+    public void printSummaryTableHeader(ProgramElementDoc member) {
+        String[] header = new String[] {
+            writer.getModifierTypeHeader(),
+            configuration().getText("doclet.0_and_1",
+                    configuration().getText("doclet.Annotation_Type_Required_Member"),
+                    configuration().getText("doclet.Description"))
+        };
+        writer.summaryTableHeader(header, "col");
     }
 
     /**
