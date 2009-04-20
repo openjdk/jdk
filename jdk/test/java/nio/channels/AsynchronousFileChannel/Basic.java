@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272 6822643
+ * @bug 4607272 6822643 6830721
  * @summary Unit test for AsynchronousFileChannel
  */
 
@@ -431,10 +431,11 @@ public class Basic {
                 throw new RuntimeException("isCancelled not consistent");
             try {
                 res.get();
-                if (!cancelled)
+                if (cancelled)
                     throw new RuntimeException("CancellationException expected");
             } catch (CancellationException x) {
-                // expected
+                if (!cancelled)
+                    throw new RuntimeException("CancellationException not expected");
             } catch (ExecutionException x) {
                 throw new RuntimeException(x);
             } catch (InterruptedException x) {
@@ -442,9 +443,11 @@ public class Basic {
             }
             try {
                 res.get(1, TimeUnit.SECONDS);
-                throw new RuntimeException("CancellationException expected");
+                if (cancelled)
+                    throw new RuntimeException("CancellationException expected");
             } catch (CancellationException x) {
-                // expected
+                if (!cancelled)
+                    throw new RuntimeException("CancellationException not expected");
             } catch (ExecutionException x) {
                 throw new RuntimeException(x);
             } catch (TimeoutException x) {
