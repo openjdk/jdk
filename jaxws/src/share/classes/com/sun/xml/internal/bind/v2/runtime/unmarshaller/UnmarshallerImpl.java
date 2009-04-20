@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import java.io.IOException;
@@ -52,6 +51,7 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 
 import com.sun.xml.internal.bind.IDResolver;
+import com.sun.xml.internal.bind.api.ClassResolver;
 import com.sun.xml.internal.bind.unmarshaller.DOMScanner;
 import com.sun.xml.internal.bind.unmarshaller.InfosetScanner;
 import com.sun.xml.internal.bind.unmarshaller.Messages;
@@ -416,6 +416,10 @@ public final class UnmarshallerImpl extends AbstractUnmarshallerImpl implements 
         }
         if(name.equals(IDResolver.class.getName())) {
             idResolver = (IDResolver)value;
+            return;
+        }
+        if(name.equals(ClassResolver.class.getName())) {
+            coordinator.classResolver = (ClassResolver)value;
             return;
         }
         super.setProperty(name, value);

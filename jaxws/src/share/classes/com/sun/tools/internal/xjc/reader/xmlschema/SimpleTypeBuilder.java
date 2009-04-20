@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
 import java.io.StringWriter;
@@ -38,13 +37,14 @@ import java.util.Set;
 import java.util.Stack;
 
 import javax.activation.MimeTypeParseException;
-import javax.xml.namespace.QName;
 
 import com.sun.codemodel.internal.JJavaName;
 import com.sun.codemodel.internal.util.JavadocEscapeWriter;
+import com.sun.tools.internal.xjc.ErrorReceiver;
 import com.sun.tools.internal.xjc.model.CBuiltinLeafInfo;
 import com.sun.tools.internal.xjc.model.CClassInfo;
 import com.sun.tools.internal.xjc.model.CClassInfoParent;
+import com.sun.tools.internal.xjc.model.CClassRef;
 import com.sun.tools.internal.xjc.model.CEnumConstant;
 import com.sun.tools.internal.xjc.model.CEnumLeafInfo;
 import com.sun.tools.internal.xjc.model.CNonElement;
@@ -328,7 +328,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
             return conv.getTypeUse(type);
         }
 
-        // look for enum customization, which is noather user specified conversion
+        // look for enum customization, which is another user specified conversion
         BIEnum en = info.get(BIEnum.class);
         if( en!=null ) {
             en.markAsAcknowledged();
@@ -346,6 +346,19 @@ public final class SimpleTypeBuilder extends BindingComponent {
                     // recover by ignoring this customization
                     return null;
                 }
+
+                // reference?
+                if(en.ref!=null) {
+                    if(!JJavaName.isFullyQualifiedClassName(en.ref)) {
+                        Ring.get(ErrorReceiver.class).error( en.getLocation(),
+                            Messages.format(Messages.ERR_INCORRECT_CLASS_NAME, en.ref) );
+                        // recover by ignoring @ref
+                        return null;
+                    }
+
+                    return new CClassRef(model, type, en, info.toCustomizationList() );
+                }
+
                 // list and union cannot be mapped to a type-safe enum,
                 // so in this stage we can safely cast it to XSRestrictionSimpleType
                 return bindToTypeSafeEnum( (XSRestrictionSimpleType)type,
@@ -386,7 +399,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
             }
         }
 
-        return getClassSelector()._bindToClass(type,false);
+        return (CNonElement)getClassSelector()._bindToClass(type,null,false);
     }
 
     /**
@@ -512,8 +525,9 @@ public final class SimpleTypeBuilder extends BindingComponent {
             }
             className = type.getName();
         }
+
         // we apply name conversion in any case
-        className = builder.getNameConverter().toClassName(className);
+        className = builder.deriveName(className,type);
 
         {// compute Javadoc
             StringWriter out = new StringWriter();
@@ -536,7 +550,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
         if(use.isCollection())
             return null;    // can't bind a list to enum constant
 
-        CNonElement baseDt = (CNonElement)use.getInfo();   // for now just ignore that case
+        CNonElement baseDt = use.getInfo();   // for now just ignore that case
 
         if(baseDt instanceof CClassInfo)
             return null;    // can't bind to an enum if the base is a class, since we don't have the value constrctor
@@ -571,18 +585,13 @@ public final class SimpleTypeBuilder extends BindingComponent {
             }
         }
 
-        QName typeName = null;
-        if(type.isGlobal())
-            typeName = new QName(type.getTargetNamespace(),type.getName());
-
-
         // use the name of the simple type as the name of the class.
         CClassInfoParent scope;
         if(type.isGlobal())
             scope = new CClassInfoParent.Package(getClassSelector().getPackage(type.getTargetNamespace()));
         else
             scope = getClassSelector().getClassScope();
-        CEnumLeafInfo xducer = new CEnumLeafInfo( model, typeName, scope,
+        CEnumLeafInfo xducer = new CEnumLeafInfo( model, BGMBuilder.getName(type), scope,
             className, baseDt, memberList, type,
             builder.getBindInfo(type).toCustomizationList(), loc );
         xducer.javadoc = javadoc;

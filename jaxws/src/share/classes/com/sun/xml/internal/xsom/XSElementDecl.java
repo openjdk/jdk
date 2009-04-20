@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom;
 
 import java.util.List;
@@ -36,10 +35,19 @@ import java.util.Set;
  */
 public interface XSElementDecl extends XSDeclaration, XSTerm
 {
+    /**
+     * Gets the type of this element declaration.
+     * @return
+     *      always non-null.
+     */
     XSType getType();
 
     boolean isNillable();
 
+    /**
+     * Gets the substitution head of this element, if any.
+     * Otherwise null.
+     */
     XSElementDecl getSubstAffiliation();
 
     /**
@@ -57,7 +65,7 @@ public interface XSElementDecl extends XSDeclaration, XSTerm
      * (plus <code>finalDefault</code>).
      *
      * @param method
-     *      Possible values are {@link XSType.EXTENSION} or
+     *      Possible values are {@link XSType#EXTENSION} or
      *      <code>XSType.RESTRICTION</code>.
      */
     boolean isSubstitutionExcluded(int method);
@@ -69,7 +77,7 @@ public interface XSElementDecl extends XSDeclaration, XSTerm
      * (plus <code>blockDefault</code>).
      *
      * @param method
-     *      Possible values are {@link XSType.EXTENSION},
+     *      Possible values are {@link XSType#EXTENSION},
      *      <code>XSType.RESTRICTION</code>, or <code>XSType.SUBSTITUTION</code>
      */
     boolean isSubstitutionDisallowed(int method);

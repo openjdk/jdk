@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import java.util.concurrent.Future;
  *  <p>For asynchronous operation invocations it provides additional methods
  *  to check the status of the request. The <code>get(...)</code> methods may
  *  throw the standard
- *  set of exceptions and their cause may be a RemoteException or a
- *  WebServiceException that represents the error that occured during the
+ *  set of exceptions and their cause may be a <code>RemoteException</code> or a
+ *  {@link WebServiceException} that represents the error that occured during the
  *  asynchronous method invocation.</p>
  *
  *  @since JAX-WS 2.0

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Map;
 
 import javax.activation.MimeType;
 import javax.xml.bind.annotation.W3CDomHandler;
@@ -186,5 +186,26 @@ public final class CReferencePropertyInfo extends CPropertyInfo implements Refer
     public boolean isCollectionNillable() {
         // in XJC, we never recognize a nillable collection pattern, so this is always false.
         return false;
+    }
+
+    public boolean isCollectionRequired() {
+        // in XJC, we never recognize a nillable collection pattern, so this is always false.
+        return false;
+    }
+
+    // reference property cannot have a type.
+    public QName getSchemaType() {
+        return null;
+    }
+
+    @Override
+    public QName collectElementNames(Map<QName, CPropertyInfo> table) {
+        for (CElement e : elements) {
+            QName n = e.getElementName();
+            if(table.containsKey(n))
+                return n;
+            table.put(n,this);
+        }
+        return null;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package com.sun.tools.internal.ws.processor.model.jaxb;
 
 import com.sun.tools.internal.ws.processor.model.AbstractType;
 import com.sun.tools.internal.ws.processor.model.java.JavaType;
-import com.sun.tools.internal.xjc.api.TypeAndAnnotation;
-import com.sun.codemodel.internal.JType;
 
 import javax.xml.namespace.QName;
 import java.util.ArrayList;

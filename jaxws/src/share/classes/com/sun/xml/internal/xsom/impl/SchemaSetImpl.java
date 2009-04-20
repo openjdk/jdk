@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom.impl;
 
+import com.sun.xml.internal.xsom.SCD;
 import com.sun.xml.internal.xsom.XSAttGroupDecl;
 import com.sun.xml.internal.xsom.XSAttributeDecl;
 import com.sun.xml.internal.xsom.XSAttributeUse;
 import com.sun.xml.internal.xsom.XSComplexType;
+import com.sun.xml.internal.xsom.XSComponent;
 import com.sun.xml.internal.xsom.XSContentType;
 import com.sun.xml.internal.xsom.XSElementDecl;
 import com.sun.xml.internal.xsom.XSFacet;
@@ -36,6 +37,7 @@ import com.sun.xml.internal.xsom.XSIdentityConstraint;
 import com.sun.xml.internal.xsom.XSListSimpleType;
 import com.sun.xml.internal.xsom.XSModelGroup;
 import com.sun.xml.internal.xsom.XSModelGroupDecl;
+import com.sun.xml.internal.xsom.XSNotation;
 import com.sun.xml.internal.xsom.XSParticle;
 import com.sun.xml.internal.xsom.XSRestrictionSimpleType;
 import com.sun.xml.internal.xsom.XSSchema;
@@ -45,6 +47,7 @@ import com.sun.xml.internal.xsom.XSType;
 import com.sun.xml.internal.xsom.XSUnionSimpleType;
 import com.sun.xml.internal.xsom.XSVariety;
 import com.sun.xml.internal.xsom.XSWildcard;
+import com.sun.xml.internal.xsom.impl.scd.Iterators;
 import com.sun.xml.internal.xsom.visitor.XSContentTypeFunction;
 import com.sun.xml.internal.xsom.visitor.XSContentTypeVisitor;
 import com.sun.xml.internal.xsom.visitor.XSFunction;
@@ -53,13 +56,14 @@ import com.sun.xml.internal.xsom.visitor.XSSimpleTypeVisitor;
 import com.sun.xml.internal.xsom.visitor.XSVisitor;
 import org.xml.sax.Locator;
 
+import javax.xml.namespace.NamespaceContext;
+import java.text.ParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Vector;
 
 public class SchemaSetImpl implements XSSchemaSet
@@ -155,107 +159,87 @@ public class SchemaSetImpl implements XSSchemaSet
         return schema.getIdentityConstraint(localName);
     }
 
-    private abstract class MultiSchemaIterator<T> implements Iterator<T> {
-        private Iterator<XSSchema> sitr = iterateSchema();
-        private Iterator<T> citr = null;
-        /** The object to be returned from the next method. */
-        private T next;
-
-        public void remove() { throw new UnsupportedOperationException(); }
-        public boolean hasNext() {
-            getNext();
-            return next!=null;
-        }
-        public T next() {
-            getNext();
-            T r = next;
-            next = null;
-            return r;
-        }
-        private void getNext() {
-            if(next!=null)  return;
-
-            if(citr!=null && citr.hasNext()) {
-                next = citr.next();
-                return;
-            }
-            // citr is empty
-            if(sitr.hasNext()) {
-                citr = nextIterator(sitr.next());
-                getNext();
-            }
-            // else
-            //      no more object
-        }
-
-        protected abstract Iterator<T> nextIterator( XSSchema s );
-    }
-
-    public Iterator iterateElementDecls() {
-        return new MultiSchemaIterator() {
-            protected Iterator nextIterator( XSSchema xs ) {
-                return xs.iterateElementDecls();
+    public Iterator<XSElementDecl> iterateElementDecls() {
+        return new Iterators.Map<XSElementDecl,XSSchema>(iterateSchema()) {
+            protected Iterator<XSElementDecl> apply(XSSchema u) {
+                return u.iterateElementDecls();
             }
         };
     }
 
-    public Iterator iterateTypes() {
-        return new MultiSchemaIterator() {
-            protected Iterator nextIterator( XSSchema xs ) {
-                return xs.iterateTypes();
+    public Iterator<XSType> iterateTypes() {
+        return new Iterators.Map<XSType,XSSchema>(iterateSchema()) {
+            protected Iterator<XSType> apply(XSSchema u) {
+                return u.iterateTypes();
             }
         };
     }
 
-    public Iterator iterateAttributeDecls() {
-        return new MultiSchemaIterator() {
-            protected Iterator nextIterator( XSSchema xs ) {
-                return xs.iterateAttributeDecls();
+    public Iterator<XSAttributeDecl> iterateAttributeDecls() {
+        return new Iterators.Map<XSAttributeDecl,XSSchema>(iterateSchema()) {
+            protected Iterator<XSAttributeDecl> apply(XSSchema u) {
+                return u.iterateAttributeDecls();
             }
         };
     }
-    public Iterator iterateAttGroupDecls() {
-        return new MultiSchemaIterator() {
-            protected Iterator nextIterator( XSSchema xs ) {
-                return xs.iterateAttGroupDecls();
+    public Iterator<XSAttGroupDecl> iterateAttGroupDecls() {
+        return new Iterators.Map<XSAttGroupDecl,XSSchema>(iterateSchema()) {
+            protected Iterator<XSAttGroupDecl> apply(XSSchema u) {
+                return u.iterateAttGroupDecls();
             }
         };
     }
-    public Iterator iterateModelGroupDecls() {
-        return new MultiSchemaIterator() {
-            protected Iterator nextIterator( XSSchema xs ) {
-                return xs.iterateModelGroupDecls();
+    public Iterator<XSModelGroupDecl> iterateModelGroupDecls() {
+        return new Iterators.Map<XSModelGroupDecl,XSSchema>(iterateSchema()) {
+            protected Iterator<XSModelGroupDecl> apply(XSSchema u) {
+                return u.iterateModelGroupDecls();
             }
         };
     }
-    public Iterator iterateSimpleTypes() {
-        return new MultiSchemaIterator() {
-            protected Iterator nextIterator( XSSchema xs ) {
-                return xs.iterateSimpleTypes();
+    public Iterator<XSSimpleType> iterateSimpleTypes() {
+        return new Iterators.Map<XSSimpleType,XSSchema>(iterateSchema()) {
+            protected Iterator<XSSimpleType> apply(XSSchema u) {
+                return u.iterateSimpleTypes();
             }
         };
     }
-    public Iterator iterateComplexTypes() {
-        return new MultiSchemaIterator() {
-            protected Iterator nextIterator( XSSchema xs ) {
-                return xs.iterateComplexTypes();
+    public Iterator<XSComplexType> iterateComplexTypes() {
+        return new Iterators.Map<XSComplexType,XSSchema>(iterateSchema()) {
+            protected Iterator<XSComplexType> apply(XSSchema u) {
+                return u.iterateComplexTypes();
             }
         };
     }
-    public Iterator iterateNotations() {
-        return new MultiSchemaIterator() {
-            protected Iterator nextIterator( XSSchema xs ) {
-                return xs.iterateNotations();
+    public Iterator<XSNotation> iterateNotations() {
+        return new Iterators.Map<XSNotation,XSSchema>(iterateSchema()) {
+            protected Iterator<XSNotation> apply(XSSchema u) {
+                return u.iterateNotations();
             }
         };
     }
 
     public Iterator<XSIdentityConstraint> iterateIdentityConstraints() {
-        return new MultiSchemaIterator() {
-            protected Iterator nextIterator( XSSchema xs ) {
-                return xs.getIdentityConstraints().values().iterator();
+        return new Iterators.Map<XSIdentityConstraint,XSSchema>(iterateSchema()) {
+            protected Iterator<XSIdentityConstraint> apply(XSSchema u) {
+                return u.getIdentityConstraints().values().iterator();
             }
         };
+    }
+
+    public Collection<XSComponent> select(String scd, NamespaceContext nsContext) {
+        try {
+            return SCD.create(scd,nsContext).select(this);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public XSComponent selectSingle(String scd, NamespaceContext nsContext) {
+        try {
+            return SCD.create(scd,nsContext).selectSingle(this);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
 
@@ -287,7 +271,7 @@ public class SchemaSetImpl implements XSSchemaSet
         public XSType getBaseType() { return anyType; }
         public XSSimpleType getSimpleBaseType() { return null; }
         public int getDerivationMethod() { return RESTRICTION; }
-        public Iterator iterateDeclaredFacets() { return emptyIterator; }
+        public Iterator<XSFacet> iterateDeclaredFacets() { return Iterators.empty(); }
         public Collection<? extends XSFacet> getDeclaredFacets() { return Collections.EMPTY_LIST; }
         public void visit( XSSimpleTypeVisitor visitor ) {visitor.restrictionSimpleType(this); }
         public void visit( XSContentTypeVisitor visitor ) {visitor.simpleType(this); }
@@ -296,6 +280,10 @@ public class SchemaSetImpl implements XSSchemaSet
         public <T> T apply( XSContentTypeFunction<T> f ) { return f.simpleType(this); }
         public <T> T apply( XSFunction<T> f ) { return f.simpleType(this); }
         public XSVariety getVariety() { return XSVariety.ATOMIC; }
+        public XSSimpleType getPrimitiveType() {return this;}
+        public boolean isPrimitive() {return true;}
+        public XSListSimpleType getBaseListType() {return null;}
+        public XSUnionSimpleType getBaseUnionType() {return null;}
         public XSFacet getFacet(String name) { return null; }
         public XSFacet getDeclaredFacet(String name) { return null; }
         public List<XSFacet> getDeclaredFacets(String name) { return Collections.EMPTY_LIST; }
@@ -314,7 +302,7 @@ public class SchemaSetImpl implements XSSchemaSet
         public XSType[] listSubstitutables() {
             return Util.listSubstitutables(this);
         }
-    };
+    }
 
     public XSComplexType getAnyType() { return anyType; }
     public final AnyType anyType = new AnyType();
@@ -328,10 +316,10 @@ public class SchemaSetImpl implements XSSchemaSet
         public boolean isAbstract() { return false; }
         public XSWildcard getAttributeWildcard() { return anyWildcard; }
         public XSAttributeUse getAttributeUse( String nsURI, String localName ) { return null; }
-        public Iterator iterateAttributeUses() { return emptyIterator; }
+        public Iterator<XSAttributeUse> iterateAttributeUses() { return Iterators.empty(); }
         public XSAttributeUse getDeclaredAttributeUse( String nsURI, String localName ) { return null; }
-        public Iterator iterateDeclaredAttributeUses() { return emptyIterator; }
-        public Iterator iterateAttGroups() { return emptyIterator; }
+        public Iterator<XSAttributeUse> iterateDeclaredAttributeUses() { return Iterators.empty(); }
+        public Iterator<XSAttGroupDecl> iterateAttGroups() { return Iterators.empty(); }
         public Collection<XSAttributeUse> getAttributeUses() { return Collections.EMPTY_LIST; }
         public Collection<? extends XSAttributeUse> getDeclaredAttributeUses() { return Collections.EMPTY_LIST; }
         public Collection<? extends XSAttGroupDecl> getAttGroups() { return Collections.EMPTY_LIST; }
@@ -374,12 +362,5 @@ public class SchemaSetImpl implements XSSchemaSet
                         XSParticle.UNBOUNDED, 0 )
                 })
                 ,null,1,1);
-    };
-
-    private static final Iterator emptyIterator = new Iterator() {
-        public boolean hasNext() { return false; }
-        public Object next() { throw new NoSuchElementException(); }
-        public void remove() { throw new UnsupportedOperationException(); }
-    };
-
+    }
 }

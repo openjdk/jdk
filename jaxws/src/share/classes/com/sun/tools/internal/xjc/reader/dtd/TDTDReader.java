@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.dtd;
 
 import java.io.IOException;
@@ -101,14 +100,13 @@ public class TDTDReader extends DTDHandlerBase
                 ErrorReceiverFilter ef = new ErrorReceiverFilter(errorReceiver);
 
                 JCodeModel cm = new JCodeModel();
-                Model model = new Model(opts,cm,NameConverter.standard,opts.classNameAllocator);
+                Model model = new Model(opts,cm,NameConverter.standard,opts.classNameAllocator,null);
 
                 Ring.add(cm);
                 Ring.add(model);
                 Ring.add(ErrorReceiver.class,ef);
 
-                TDTDReader reader = new TDTDReader( ef, opts.entityResolver,
-                    opts, bindingInfo);
+                TDTDReader reader = new TDTDReader( ef, opts, bindingInfo);
 
                 DTDParser parser = new DTDParser();
                 parser.setDtdHandler(reader);
@@ -139,18 +137,15 @@ public class TDTDReader extends DTDHandlerBase
             return null;
         }
     }
-    protected TDTDReader(ErrorReceiver errorReceiver, EntityResolver entityResolver, Options opts, InputSource _bindInfo)
+    protected TDTDReader(ErrorReceiver errorReceiver, Options opts, InputSource _bindInfo)
         throws AbortException {
-        this.entityResolver = entityResolver;
+        this.entityResolver = opts.entityResolver;
         this.errorReceiver = new ErrorReceiverFilter(errorReceiver);
-        this.opts = opts;
         bindInfo = new BindInfo(model,_bindInfo, this.errorReceiver);
         classFactory = new CodeModelClassFactory(errorReceiver);
     }
 
     private final EntityResolver entityResolver;
-
-    private final Options opts;
 
     /**
      * binding information.
@@ -160,8 +155,6 @@ public class TDTDReader extends DTDHandlerBase
      * (In that case, a dummy object will be provided.)
      */
     final BindInfo bindInfo;
-
-    private final JCodeModel codeModel = Ring.get(JCodeModel.class);
 
     final Model model = Ring.get(Model.class);
 
@@ -194,6 +187,8 @@ public class TDTDReader extends DTDHandlerBase
 
         // check XJC extensions and realize them
         model.serialVersionUID = bindInfo.getSerialVersionUID();
+        if(model.serialVersionUID!=null)
+            model.serializable=true;
         model.rootClass = bindInfo.getSuperClass();
         model.rootInterface = bindInfo.getSuperInterface();
 
@@ -217,7 +212,7 @@ public class TDTDReader extends DTDHandlerBase
 
         for( BIInterface decl : bindInfo.interfaces() ) {
             final JDefinedClass intf = classFactory.createInterface(
-                                getTargetPackage(), decl.name(), copyLocator() );
+                                bindInfo.getTargetPackage(), decl.name(), copyLocator() );
             decls.put(decl,intf);
             fromName.put(decl.name(),new InterfaceAcceptor() {
                 public void implement(JClass c) {
@@ -264,11 +259,7 @@ public class TDTDReader extends DTDHandlerBase
 
 
     JPackage getTargetPackage() {
-        // "-p" takes precedence over everything else
-        if(opts.defaultPackage!=null)
-            return codeModel._package(opts.defaultPackage);
-        else
-            return bindInfo.getTargetPackage();
+        return bindInfo.getTargetPackage();
     }
 
 
@@ -331,7 +322,7 @@ public class TDTDReader extends DTDHandlerBase
             use = builtinConversions.get(attributeType);
 
         CPropertyInfo r = new CAttributePropertyInfo(
-            propName, null,null/*TODO*/, copyLocator(), qname, use, required );
+            propName, null,null/*TODO*/, copyLocator(), qname, use, null, required );
 
         if(defaultValue!=null)
             r.defaultValue = CDefaultValue.create( use, new XmlString(defaultValue) );

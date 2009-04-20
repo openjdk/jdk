@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
 
 package com.sun.tools.internal.xjc.generator.bean;
 
+import static com.sun.tools.internal.xjc.outline.Aspect.EXPOSED;
+
 import java.io.Serializable;
 import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -65,12 +68,14 @@ import com.sun.codemodel.internal.JVar;
 import com.sun.codemodel.internal.fmt.JStaticJavaFile;
 import com.sun.tools.internal.xjc.AbortException;
 import com.sun.tools.internal.xjc.ErrorReceiver;
+import com.sun.tools.internal.xjc.api.SpecVersion;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlAnyAttributeWriter;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlEnumValueWriter;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlEnumWriter;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlJavaTypeAdapterWriter;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlMimeTypeWriter;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlRootElementWriter;
+import com.sun.tools.internal.xjc.generator.annotation.spec.XmlSeeAlsoWriter;
 import com.sun.tools.internal.xjc.generator.annotation.spec.XmlTypeWriter;
 import com.sun.tools.internal.xjc.generator.bean.field.FieldRenderer;
 import com.sun.tools.internal.xjc.model.CAdapter;
@@ -83,6 +88,7 @@ import com.sun.tools.internal.xjc.model.CEnumLeafInfo;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
 import com.sun.tools.internal.xjc.model.CTypeRef;
 import com.sun.tools.internal.xjc.model.Model;
+import com.sun.tools.internal.xjc.model.CClassRef;
 import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.ClassOutline;
 import com.sun.tools.internal.xjc.outline.EnumConstantOutline;
@@ -94,6 +100,7 @@ import com.sun.tools.internal.xjc.util.CodeModelClassFactory;
 import com.sun.xml.internal.bind.v2.model.core.PropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.SwaRefAdapter;
 import com.sun.xml.internal.xsom.XmlString;
+import com.sun.istack.internal.NotNull;
 
 /**
  * Generates fields and accessors.
@@ -169,9 +176,9 @@ public final class BeanGenerator implements Outline
 
         // build enum classes
         for( CEnumLeafInfo p : model.enums().values() )
-            enums.put( p, generateEnum(p) );
+            enums.put( p, generateEnumDef(p) );
 
-        JPackage[] packages = getUsedPackages(Aspect.EXPOSED);
+        JPackage[] packages = getUsedPackages(EXPOSED);
 
         // generates per-package code and remember the results as contexts.
         for( JPackage pkg : packages )
@@ -198,17 +205,25 @@ public final class BeanGenerator implements Outline
                 // use the specified super class
                 model.strategy._extends(cc,getClazz(superClass));
             } else {
-                // use the default one, if any
-                if( model.rootClass!=null && cc.implClass._extends().equals(OBJECT) )
-                    cc.implClass._extends(model.rootClass);
-                if( model.rootInterface!=null)
-                    cc.ref._implements(model.rootInterface);
+                CClassRef refSuperClass = cc.target.getRefBaseClass();
+                if(refSuperClass!=null) {
+                    cc.implClass._extends(refSuperClass.toType(this,EXPOSED));
+                } else {
+                    // use the default one, if any
+                    if( model.rootClass!=null && cc.implClass._extends().equals(OBJECT) )
+                        cc.implClass._extends(model.rootClass);
+                    if( model.rootInterface!=null)
+                        cc.ref._implements(model.rootInterface);
+                }
             }
         }
 
         // fill in implementation classes
         for( ClassOutlineImpl co : getClasses() )
             generateClassBody(co);
+
+        for( EnumOutline eo : enums.values() )
+            generateEnumBody(eo);
 
         // create factories for the impl-less elements
         for( CElementInfo ei : model.getAllElements())
@@ -302,7 +317,7 @@ public final class BeanGenerator implements Outline
         }
 
         public JClassContainer onPackage(JPackage pkg) {
-            return model.strategy.getPackage(pkg,Aspect.EXPOSED);
+            return model.strategy.getPackage(pkg, EXPOSED);
         }
     };
 
@@ -465,16 +480,19 @@ public final class BeanGenerator implements Outline
         // [RESULT]
         // @XmlType(name="foo", targetNamespace="bar://baz")
         XmlTypeWriter xtw = cc.implClass.annotate2(XmlTypeWriter.class);
-        QName typeName = cc.target.getTypeName();
-        if(typeName==null) {
-            xtw.name("");
-        } else {
-            xtw.name(typeName.getLocalPart());
-            final String typeNameURI = typeName.getNamespaceURI();
-            if(!typeNameURI.equals(mostUsedNamespaceURI)) // only generate if necessary
-                xtw.namespace(typeNameURI);
-        }
+        writeTypeName(cc.target.getTypeName(), xtw, mostUsedNamespaceURI);
 
+        if(model.options.target.isLaterThan(SpecVersion.V2_1)) {
+            // @XmlSeeAlso
+            Iterator<CClassInfo> subclasses = cc.target.listSubclasses();
+            if(subclasses.hasNext()) {
+                XmlSeeAlsoWriter saw = cc.implClass.annotate2(XmlSeeAlsoWriter.class);
+                while (subclasses.hasNext()) {
+                    CClassInfo s = subclasses.next();
+                    saw.value(getClazz(s).implRef);
+                }
+            }
+        }
 
         if(target.isElement()) {
             String namespaceURI = target.getElementName().getNamespaceURI();
@@ -513,6 +531,17 @@ public final class BeanGenerator implements Outline
         cc._package().objectFactoryGenerator().populate(cc);
     }
 
+    private void writeTypeName(QName typeName, XmlTypeWriter xtw, String mostUsedNamespaceURI) {
+        if(typeName ==null) {
+            xtw.name("");
+        } else {
+            xtw.name(typeName.getLocalPart());
+            final String typeNameURI = typeName.getNamespaceURI();
+            if(!typeNameURI.equals(mostUsedNamespaceURI)) // only generate if necessary
+                xtw.namespace(typeNameURI);
+        }
+    }
+
     /**
      * Generates an attribute wildcard property on a class.
      */
@@ -547,24 +576,43 @@ public final class BeanGenerator implements Outline
 
 
 
-    private EnumOutline generateEnum(CEnumLeafInfo e) {
+    /**
+     * Generates the minimum {@link JDefinedClass} skeleton
+     * without filling in its body.
+     */
+    private EnumOutline generateEnumDef(CEnumLeafInfo e) {
         JDefinedClass type;
 
+        type = getClassFactory().createClass(
+            getContainer(e.parent, EXPOSED),e.shortName,e.getLocator(), ClassType.ENUM);
+        type.javadoc().append(e.javadoc);
+
+        return new EnumOutline(e, type) {
+            @Override
+            public @NotNull Outline parent() {
+                return BeanGenerator.this;
+            }
+        };
+    }
+
+    private void generateEnumBody(EnumOutline eo) {
+        JDefinedClass type = eo.clazz;
+        CEnumLeafInfo e = eo.target;
+
+        XmlTypeWriter xtw = type.annotate2(XmlTypeWriter.class);
+        writeTypeName(e.getTypeName(), xtw,
+                eo._package().getMostUsedNamespaceURI());
+
+        JCodeModel codeModel = model.codeModel;
+
         // since constant values are never null, no point in using the boxed types.
-        JType baseExposedType = e.base.toType(this,Aspect.EXPOSED).unboxify();
+        JType baseExposedType = e.base.toType(this, EXPOSED).unboxify();
         JType baseImplType = e.base.toType(this,Aspect.IMPLEMENTATION).unboxify();
 
-
-        type = getClassFactory().createClass(
-            getContainer(e.parent,Aspect.EXPOSED),e.shortName,e.getLocator(), ClassType.ENUM);
-        type.javadoc().append(e.javadoc);
 
         XmlEnumWriter xew = type.annotate2(XmlEnumWriter.class);
         xew.value(baseExposedType);
 
-        JCodeModel codeModel = model.codeModel;
-
-        EnumOutline enumOutline = new EnumOutline(e, type) {};
 
         boolean needsValue = e.needsValueField();
 
@@ -600,7 +648,7 @@ public final class BeanGenerator implements Outline
             if( mem.javadoc!=null )
                 constRef.javadoc().append(mem.javadoc);
 
-            enumOutline.constants.add(new EnumConstantOutline(mem,constRef){});
+            eo.constants.add(new EnumConstantOutline(mem,constRef){});
         }
 
 
@@ -644,11 +692,16 @@ public final class BeanGenerator implements Outline
 
                 JInvocation ex = JExpr._new(codeModel.ref(IllegalArgumentException.class));
 
+                JExpression strForm;
                 if(baseExposedType.isPrimitive()) {
-                    m.body()._throw(ex.arg(codeModel.ref(String.class).staticInvoke("valueOf").arg($v)));
+                    strForm = codeModel.ref(String.class).staticInvoke("valueOf").arg($v);
+                } else
+                if(baseExposedType==codeModel.ref(String.class)){
+                    strForm = $v;
                 } else {
-                    m.body()._throw(ex.arg($v.invoke("toString")));
+                    strForm = $v.invoke("toString");
                 }
+                m.body()._throw(ex.arg(strForm));
             }
         } else {
             // [RESULT]
@@ -660,10 +713,7 @@ public final class BeanGenerator implements Outline
             JMethod m = type.method(JMod.PUBLIC|JMod.STATIC, type, "fromValue" );
             m.body()._return( JExpr.invoke("valueOf").arg(m.param(String.class,"v")));
         }
-
-        return enumOutline;
     }
-
 
 
 
@@ -701,7 +751,7 @@ public final class BeanGenerator implements Outline
                 // [RESULT]
                 // @XmlJavaTypeAdapter( Foo.class )
                 XmlJavaTypeAdapterWriter xjtw = field.annotate2(XmlJavaTypeAdapterWriter.class);
-                xjtw.value(adapter.adapterType.toType(this,Aspect.EXPOSED));
+                xjtw.value(adapter.adapterType.toType(this, EXPOSED));
             }
         }
 

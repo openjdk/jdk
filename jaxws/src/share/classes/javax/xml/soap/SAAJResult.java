@@ -1,8 +1,4 @@
 /*
- * $Id: SAAJResult.java,v 1.3 2006/03/09 16:09:42 vj135062 Exp $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SAAJResult.java,v 1.4 2006/03/24 13:05:43 vj135062 Exp $
+ */
+
+
 
 package javax.xml.soap;
 

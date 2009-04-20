@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.jxc.model.nav;
 
 import java.util.ArrayList;
@@ -281,24 +280,21 @@ public class APTNavigator implements Navigator<TypeMirror,TypeDeclaration,FieldD
         return method.getModifiers().contains(Modifier.VOLATILE);
     }
 
-    public boolean isOverriding(MethodDeclaration method) {
-        TypeDeclaration declaringType = method.getDeclaringType();
-        if(!(declaringType instanceof ClassDeclaration))
-            return false;   // act defensively. this might be because we are recovering from errors
-        ClassDeclaration sc = (ClassDeclaration) declaringType;
+    public boolean isOverriding(MethodDeclaration method, TypeDeclaration base) {
+        ClassDeclaration sc = (ClassDeclaration) base;
 
         Declarations declUtil = env.getDeclarationUtils();
 
-        while(sc.getSuperclass()!=null) {
-            sc = sc.getSuperclass().getDeclaration();
-
+        while(true) {
             for (MethodDeclaration m : sc.getMethods()) {
                 if(declUtil.overrides(method,m))
                     return true;
             }
-        }
 
-        return false;
+            if(sc.getSuperclass()==null)
+                return false;
+            sc = sc.getSuperclass().getDeclaration();
+        }
     }
 
     public boolean isInterface(TypeDeclaration clazz) {
@@ -307,6 +303,10 @@ public class APTNavigator implements Navigator<TypeMirror,TypeDeclaration,FieldD
 
     public boolean isTransient(FieldDeclaration f) {
         return f.getModifiers().contains(Modifier.TRANSIENT);
+    }
+
+    public boolean isInnerClass(TypeDeclaration clazz) {
+        return clazz.getDeclaringType()!=null;
     }
 
     public boolean isArray(TypeMirror t) {

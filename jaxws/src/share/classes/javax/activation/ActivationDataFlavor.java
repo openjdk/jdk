@@ -204,7 +204,10 @@ public class ActivationDataFlavor extends DataFlavor {
             if (mimeObject == null)
                 mimeObject = new MimeType(this.mimeType);
             mt = new MimeType(mimeType);
-        } catch (MimeTypeParseException e) {}
+        } catch (MimeTypeParseException e) {
+            // something didn't parse, do a crude comparison
+            return this.mimeType.equalsIgnoreCase(mimeType);
+        }
 
         return mimeObject.match(mt);
     }
