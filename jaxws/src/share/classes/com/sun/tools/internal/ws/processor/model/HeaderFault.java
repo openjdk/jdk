@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,18 @@
  */
 package com.sun.tools.internal.ws.processor.model;
 
+import com.sun.tools.internal.ws.wsdl.framework.Entity;
+
 import javax.xml.namespace.QName;
 
 public class HeaderFault extends Fault {
 
-    public HeaderFault() {}
+    public HeaderFault(Entity entity) {
+        super(entity);
+    }
 
-    public HeaderFault(String name) {
-        super(name);
+    public HeaderFault(String name, Entity entity) {
+        super(name, entity);
     }
 
     public QName getMessage() {

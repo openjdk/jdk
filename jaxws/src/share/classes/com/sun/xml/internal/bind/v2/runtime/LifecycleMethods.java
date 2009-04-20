@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.lang.reflect.Method;
 
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
 
 /**
  * This class is a simple container for caching lifecycle methods that are
@@ -39,41 +38,9 @@ import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
  * @see Loader#fireAfterUnmarshal(JaxBeanInfo, Object, UnmarshallingContext.State)
  * @see XMLSerializer#fireMarshalEvent(Object, Method)
  */
-public final class LifecycleMethods {
-    private Method beforeUnmarshal;
-    private Method afterUnmarshal;
-    private Method beforeMarshal;
-    private Method afterMarshal;
-
-    public Method getAfterMarshal() {
-        return afterMarshal;
-    }
-
-    public void setAfterMarshal(Method afterMarshal) {
-        this.afterMarshal = afterMarshal;
-    }
-
-    public Method getAfterUnmarshal() {
-        return afterUnmarshal;
-    }
-
-    public void setAfterUnmarshal(Method afterUnmarshal) {
-        this.afterUnmarshal = afterUnmarshal;
-    }
-
-    public Method getBeforeMarshal() {
-        return beforeMarshal;
-    }
-
-    public void setBeforeMarshal(Method beforeMarshal) {
-        this.beforeMarshal = beforeMarshal;
-    }
-
-    public Method getBeforeUnmarshal() {
-        return beforeUnmarshal;
-    }
-
-    public void setBeforeUnmarshal(Method beforeUnmarshal) {
-        this.beforeUnmarshal = beforeUnmarshal;
-    }
+final class LifecycleMethods {
+    Method beforeUnmarshal;
+    Method afterUnmarshal;
+    Method beforeMarshal;
+    Method afterMarshal;
 }

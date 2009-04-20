@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema.ct;
 
 import java.util.HashMap;
@@ -87,7 +86,7 @@ public final class ComplexTypeFieldBuilder extends BindingComponent {
      * For this reason, we have to record how each complex type is being
      * bound.
      */
-    protected void recordBindingMode( XSComplexType type, ComplexTypeBindingMode flag ) {
+    public void recordBindingMode( XSComplexType type, ComplexTypeBindingMode flag ) {
         // it is an error to override the flag.
         Object o = complexTypeBindingModes.put(type,flag);
         assert o==null;

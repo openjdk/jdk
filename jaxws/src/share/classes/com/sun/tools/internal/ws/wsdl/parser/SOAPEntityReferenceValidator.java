@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
 
 package com.sun.tools.internal.ws.wsdl.parser;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.xml.namespace.QName;
-
 import com.sun.tools.internal.ws.wsdl.document.schema.SchemaConstants;
 import com.sun.tools.internal.ws.wsdl.document.schema.SchemaKinds;
 import com.sun.tools.internal.ws.wsdl.document.soap.SOAPConstants;
 import com.sun.tools.internal.ws.wsdl.framework.EntityReferenceValidator;
 import com.sun.tools.internal.ws.wsdl.framework.Kind;
+
+import javax.xml.namespace.QName;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * An interface implemented by a class that is capable of validating

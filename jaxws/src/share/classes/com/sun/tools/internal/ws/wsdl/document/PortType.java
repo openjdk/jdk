@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,24 @@
 
 package com.sun.tools.internal.ws.wsdl.document;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import com.sun.tools.internal.ws.api.wsdl.TWSDLExtensible;
+import com.sun.tools.internal.ws.api.wsdl.TWSDLExtension;
+import com.sun.tools.internal.ws.wsdl.framework.*;
+import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
+import org.xml.sax.Locator;
 
 import javax.xml.namespace.QName;
-
-import com.sun.tools.internal.ws.wsdl.framework.Defining;
-import com.sun.tools.internal.ws.wsdl.framework.Entity;
-import com.sun.tools.internal.ws.wsdl.framework.EntityAction;
-import com.sun.tools.internal.ws.wsdl.framework.ExtensibilityHelper;
-import com.sun.tools.internal.ws.wsdl.framework.Extensible;
-import com.sun.tools.internal.ws.wsdl.framework.Extension;
-import com.sun.tools.internal.ws.wsdl.framework.GlobalEntity;
-import com.sun.tools.internal.ws.wsdl.framework.Kind;
-import com.sun.tools.internal.ws.wsdl.framework.ValidationException;
+import java.util.*;
 
 /**
  * Entity corresponding to the "portType" WSDL element.
  *
  * @author WS Development Team
  */
-public class PortType extends GlobalEntity implements Extensible{
+public class PortType extends GlobalEntity implements TWSDLExtensible {
 
-    public PortType(Defining defining) {
-        super(defining);
+    public PortType(Defining defining, Locator locator, ErrorReceiver errReceiver) {
+        super(defining, locator, errReceiver);
         _operations = new ArrayList();
         _operationKeys = new HashSet();
         _helper = new ExtensibilityHelper();
@@ -122,21 +113,42 @@ public class PortType extends GlobalEntity implements Extensible{
         }
     }
 
+    public String getNameValue() {
+        return getName();
+    }
+
+    public String getNamespaceURI() {
+        return getDefining().getTargetNamespaceURI();
+    }
+
+    public QName getWSDLElementName() {
+        return getElementName();
+    }
+
     /* (non-Javadoc)
-     * @see Extensible#addExtension(Extension)
-     */
-    public void addExtension(Extension e) {
+    * @see TWSDLExtensible#addExtension(ExtensionImpl)
+    */
+    public void addExtension(TWSDLExtension e) {
         _helper.addExtension(e);
 
     }
 
     /* (non-Javadoc)
-     * @see Extensible#extensions()
+     * @see TWSDLExtensible#extensions()
      */
-    public Iterator extensions() {
+    public Iterable<TWSDLExtension> extensions() {
         return _helper.extensions();
     }
 
+    public TWSDLExtensible getParent() {
+        return parent;
+    }
+
+    public void setParent(TWSDLExtensible parent) {
+        this.parent = parent;
+    }
+
+    private TWSDLExtensible parent;
     private Documentation _documentation;
     private List _operations;
     private Set _operationKeys;

@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,11 @@ import java.io.OutputStream;
  *
  * @author Kohsuke Kawaguchi
  */
-public final class ByteArrayBuffer extends OutputStream {
+public class ByteArrayBuffer extends OutputStream {
     /**
      * The buffer where data is stored.
      */
-    private byte buf[];
+    protected byte[] buf;
 
     /**
      * The number of valid bytes in the buffer.
@@ -92,7 +92,7 @@ public final class ByteArrayBuffer extends OutputStream {
      * @throws IOException
      *      if the read operation fails with an {@link IOException}.
      */
-    public void write(InputStream in) throws IOException {
+    public final void write(InputStream in) throws IOException {
         while(true) {
             int cap = buf.length-count;     // the remaining buffer space
             int sz = in.read(buf,count,cap);
@@ -105,14 +105,14 @@ public final class ByteArrayBuffer extends OutputStream {
         }
     }
 
-    public void write(int b) {
+    public final void write(int b) {
         int newcount = count + 1;
         ensureCapacity(newcount);
         buf[count] = (byte) b;
         count = newcount;
     }
 
-    public void write(byte b[], int off, int len) {
+    public final void write(byte b[], int off, int len) {
         int newcount = count + len;
         ensureCapacity(newcount);
         System.arraycopy(b, off, buf, count, len);
@@ -127,11 +127,11 @@ public final class ByteArrayBuffer extends OutputStream {
         }
     }
 
-    public void writeTo(OutputStream out) throws IOException {
+    public final void writeTo(OutputStream out) throws IOException {
         out.write(buf, 0, count);
     }
 
-    public void reset() {
+    public final void reset() {
         count = 0;
     }
 
@@ -145,30 +145,51 @@ public final class ByteArrayBuffer extends OutputStream {
      *      this method causes a buffer reallocation. Use it only when
      *      you have to.
      */
-    public byte toByteArray()[] {
+    public final byte[] toByteArray() {
         byte newbuf[] = new byte[count];
         System.arraycopy(buf, 0, newbuf, 0, count);
         return newbuf;
     }
 
-    public int size() {
+    public final int size() {
         return count;
     }
 
-    public void close() {
+    /**
+     * Gets the underlying buffer that this {@link ByteArrayBuffer} uses.
+     * It's never small than its {@link #size()}.
+     *
+     * Use with caution.
+     */
+    public final byte[] getRawData() {
+        return buf;
+    }
+
+    public void close() throws IOException {
     }
 
     /**
      * Creates a new {@link InputStream} that reads from this buffer.
      */
-    public InputStream newInputStream() {
+    public final InputStream newInputStream() {
         return new ByteArrayInputStream(buf,0,count);
     }
 
     /**
      * Creates a new {@link InputStream} that reads a part of this bfufer.
      */
-    public InputStream newInputStream(int start, int length) {
+    public final InputStream newInputStream(int start, int length) {
         return new ByteArrayInputStream(buf,start,length);
+    }
+
+    /**
+     * Decodes the contents of this buffer by the default encoding
+     * and returns it as a string.
+     *
+     * <p>
+     * Meant to aid debugging, but no more.
+     */
+    public String toString() {
+        return new String(buf, 0, count);
     }
 }

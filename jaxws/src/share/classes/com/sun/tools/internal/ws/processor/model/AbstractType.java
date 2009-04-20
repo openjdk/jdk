@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@
 
 package com.sun.tools.internal.ws.processor.model;
 
+import com.sun.tools.internal.ws.processor.model.java.JavaType;
+
+import javax.xml.namespace.QName;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import javax.xml.namespace.QName;
-
-import com.sun.tools.internal.ws.processor.model.java.JavaType;
-import com.sun.xml.internal.ws.util.NullIterator;
 
 /**
  *
@@ -123,7 +122,7 @@ public abstract class AbstractType {
 
     public Iterator getProperties() {
         if (properties == null) {
-            return NullIterator.getInstance();
+            return Collections.emptyList().iterator();
         } else {
             return properties.keySet().iterator();
         }
