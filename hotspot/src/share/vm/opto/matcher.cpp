@@ -746,6 +746,8 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
   if (nidx == Compile::AliasIdxBot && midx == Compile::AliasIdxTop) {
     switch (n->Opcode()) {
     case Op_StrComp:
+    case Op_StrEquals:
+    case Op_StrIndexOf:
     case Op_AryEq:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
@@ -1481,8 +1483,13 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
       const Type* mach_at = mach->adr_type();
       // DecodeN node consumed by an address may have different type
       // then its input. Don't compare types for such case.
-      if (m->adr_type() != mach_at && m->in(MemNode::Address)->is_AddP() &&
-          m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeN()) {
+      if (m->adr_type() != mach_at &&
+          (m->in(MemNode::Address)->is_DecodeN() ||
+           m->in(MemNode::Address)->is_AddP() &&
+           m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeN() ||
+           m->in(MemNode::Address)->is_AddP() &&
+           m->in(MemNode::Address)->in(AddPNode::Address)->is_AddP() &&
+           m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeN())) {
         mach_at = m->adr_type();
       }
       if (m->adr_type() != mach_at) {
@@ -1783,6 +1790,8 @@ void Matcher::find_shared( Node *n ) {
         mstack.push(n->in(0), Pre_Visit);     // Visit Control input
         continue;                             // while (mstack.is_nonempty())
       case Op_StrComp:
+      case Op_StrEquals:
+      case Op_StrIndexOf:
       case Op_AryEq:
         set_shared(n); // Force result into register (it will be anyways)
         break;

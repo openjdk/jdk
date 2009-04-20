@@ -674,13 +674,8 @@ public class PNGImageWriter extends ImageWriter {
     private byte[] deflate(byte[] b) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DeflaterOutputStream dos = new DeflaterOutputStream(baos);
-
-        int len = b.length;
-        for (int i = 0; i < len; i++) {
-            dos.write((int)(0xff & b[i]));
-        }
+        dos.write(b);
         dos.close();
-
         return baos.toByteArray();
     }
 
@@ -736,7 +731,7 @@ public class PNGImageWriter extends ImageWriter {
             cs.writeByte(compressionMethod);
 
             String text = (String)textIter.next();
-            cs.write(deflate(text.getBytes()));
+            cs.write(deflate(text.getBytes("ISO-8859-1")));
             cs.finish();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,10 +168,14 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
   // Abstract method?
   if (m->is_abstract()) return abstract;
 
+  // Invoker for method handles?
+  if (m->is_method_handle_invoke())  return method_handle;
+
   // Native method?
   // Note: This test must come _before_ the test for intrinsic
   //       methods. See also comments below.
   if (m->is_native()) {
+    assert(!m->is_method_handle_invoke(), "overlapping bits here, watch out");
     return m->is_synchronized() ? native_synchronized : native;
   }
 
@@ -249,6 +253,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case empty                  : tty->print("empty"                  ); break;
     case accessor               : tty->print("accessor"               ); break;
     case abstract               : tty->print("abstract"               ); break;
+    case method_handle          : tty->print("method_handle"          ); break;
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;

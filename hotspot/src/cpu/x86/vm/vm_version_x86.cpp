@@ -284,7 +284,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -297,6 +297,7 @@ void VM_Version::get_processor_features() {
                (supports_ssse3()? ", ssse3": ""),
                (supports_sse4_1() ? ", sse4.1" : ""),
                (supports_sse4_2() ? ", sse4.2" : ""),
+               (supports_popcnt() ? ", popcnt" : ""),
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow()   ? ", 3dnow"  : ""),
                (supports_3dnow2()  ? ", 3dnowext" : ""),
@@ -407,6 +408,18 @@ void VM_Version::get_processor_features() {
           UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
         }
       }
+      if( supports_sse4_2() && UseSSE >= 4 ) {
+        if( FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+          UseSSE42Intrinsics = true;
+        }
+      }
+    }
+  }
+
+  // Use population count instruction if available.
+  if (supports_popcnt()) {
+    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+      UsePopCountInstruction = true;
     }
   }
 

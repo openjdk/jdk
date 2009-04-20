@@ -547,7 +547,11 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
     int klass_load_size;
     if (UseCompressedOops) {
-      klass_load_size = 3*BytesPerInstWord; // see MacroAssembler::load_klass()
+      assert(Universe::heap() != NULL, "java heap should be initialized");
+      if (Universe::narrow_oop_base() == NULL)
+        klass_load_size = 2*BytesPerInstWord; // see MacroAssembler::load_klass()
+      else
+        klass_load_size = 3*BytesPerInstWord;
     } else {
       klass_load_size = 1*BytesPerInstWord;
     }
@@ -1601,9 +1605,11 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
 #ifdef    _LP64
   if (UseCompressedOops) {
+    assert(Universe::heap() != NULL, "java heap should be initialized");
     st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
     st->print_cr("\tSLL    R_G5,3,R_G5");
-    st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
+    if (Universe::narrow_oop_base() != NULL)
+      st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
   } else {
     st->print_cr("\tLDX    [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check");
   }
@@ -2502,7 +2508,11 @@ encode %{
       __ load_klass(O0, G3_scratch);
       int klass_load_size;
       if (UseCompressedOops) {
-        klass_load_size = 3*BytesPerInstWord;
+        assert(Universe::heap() != NULL, "java heap should be initialized");
+        if (Universe::narrow_oop_base() == NULL)
+          klass_load_size = 2*BytesPerInstWord;
+        else
+          klass_load_size = 3*BytesPerInstWord;
       } else {
         klass_load_size = 1*BytesPerInstWord;
       }
@@ -2990,6 +3000,202 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     __ mov(O7, result_reg);
 
     // Otherwise, return the difference between the first mismatched chars.
+    __ bind(Ldone);
+  %}
+
+enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegP tmp1, g4RegP tmp2, notemp_iRegI result) %{
+    Label Lword, Lword_loop, Lpost_word, Lchar, Lchar_loop, Ldone;
+    MacroAssembler _masm(&cbuf);
+
+    Register   str1_reg = reg_to_register_object($str1$$reg);
+    Register   str2_reg = reg_to_register_object($str2$$reg);
+    Register   tmp1_reg = reg_to_register_object($tmp1$$reg);
+    Register   tmp2_reg = reg_to_register_object($tmp2$$reg);
+    Register result_reg = reg_to_register_object($result$$reg);
+
+    // Get the first character position in both strings
+    //         [8] char array, [12] offset, [16] count
+    int  value_offset = java_lang_String:: value_offset_in_bytes();
+    int offset_offset = java_lang_String::offset_offset_in_bytes();
+    int  count_offset = java_lang_String:: count_offset_in_bytes();
+
+    // load str1 (jchar*) base address into tmp1_reg
+    __ load_heap_oop(Address(str1_reg, 0,  value_offset), tmp1_reg);
+    __ ld(Address(str1_reg, 0, offset_offset), result_reg);
+    __ add(tmp1_reg, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp1_reg);
+    __    ld(Address(str1_reg, 0, count_offset), str1_reg); // hoisted
+    __ sll(result_reg, exact_log2(sizeof(jchar)), result_reg);
+    __    load_heap_oop(Address(str2_reg, 0,  value_offset), tmp2_reg); // hoisted
+    __ add(result_reg, tmp1_reg, tmp1_reg);
+
+    // load str2 (jchar*) base address into tmp2_reg
+    // __ ld_ptr(Address(str2_reg, 0,  value_offset), tmp2_reg); // hoisted
+    __ ld(Address(str2_reg, 0, offset_offset), result_reg);
+    __ add(tmp2_reg, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp2_reg);
+    __    ld(Address(str2_reg, 0, count_offset), str2_reg); // hoisted
+    __ sll(result_reg, exact_log2(sizeof(jchar)), result_reg);
+    __   cmp(str1_reg, str2_reg); // hoisted
+    __ add(result_reg, tmp2_reg, tmp2_reg);
+
+    __ sll(str1_reg, exact_log2(sizeof(jchar)), str1_reg);
+    __ br(Assembler::notEqual, true, Assembler::pt, Ldone);
+    __ delayed()->mov(G0, result_reg);    // not equal
+
+    __ br_zero(Assembler::equal, true, Assembler::pn, str1_reg, Ldone);
+    __ delayed()->add(G0, 1, result_reg); //equals
+
+    __ cmp(tmp1_reg, tmp2_reg); //same string ?
+    __ brx(Assembler::equal, true, Assembler::pn, Ldone);
+    __ delayed()->add(G0, 1, result_reg);
+
+    //rename registers
+    Register limit_reg =   str1_reg;
+    Register  chr2_reg =   str2_reg;
+    Register  chr1_reg = result_reg;
+    // tmp{12} are the base pointers
+
+    //check for alignment and position the pointers to the ends
+    __ or3(tmp1_reg, tmp2_reg, chr1_reg);
+    __ andcc(chr1_reg, 0x3, chr1_reg); // notZero means at least one not 4-byte aligned
+    __ br(Assembler::notZero, false, Assembler::pn, Lchar);
+    __ delayed()->nop();
+
+    __ bind(Lword);
+    __ and3(limit_reg, 0x2, O7); //remember the remainder (either 0 or 2)
+    __ andn(limit_reg, 0x3, limit_reg);
+    __ br_zero(Assembler::zero, false, Assembler::pn, limit_reg, Lpost_word);
+    __ delayed()->nop();
+
+    __ add(tmp1_reg, limit_reg, tmp1_reg);
+    __ add(tmp2_reg, limit_reg, tmp2_reg);
+    __ neg(limit_reg);
+
+    __ lduw(tmp1_reg, limit_reg, chr1_reg);
+    __ bind(Lword_loop);
+    __ lduw(tmp2_reg, limit_reg, chr2_reg);
+    __ cmp(chr1_reg, chr2_reg);
+    __ br(Assembler::notEqual, true, Assembler::pt, Ldone);
+    __ delayed()->mov(G0, result_reg);
+    __ inccc(limit_reg, 2*sizeof(jchar));
+    // annul LDUW if branch i  s not taken to prevent access past end of string
+    __ br(Assembler::notZero, true, Assembler::pt, Lword_loop); //annul on taken
+    __ delayed()->lduw(tmp1_reg, limit_reg, chr1_reg); // hoisted
+
+    __ bind(Lpost_word);
+    __ br_zero(Assembler::zero, true, Assembler::pt, O7, Ldone);
+    __ delayed()->add(G0, 1, result_reg);
+
+    __ lduh(tmp1_reg, 0, chr1_reg);
+    __ lduh(tmp2_reg, 0, chr2_reg);
+    __ cmp (chr1_reg, chr2_reg);
+    __ br(Assembler::notEqual, true, Assembler::pt, Ldone);
+    __ delayed()->mov(G0, result_reg);
+    __ ba(false,Ldone);
+    __ delayed()->add(G0, 1, result_reg);
+
+    __ bind(Lchar);
+    __ add(tmp1_reg, limit_reg, tmp1_reg);
+    __ add(tmp2_reg, limit_reg, tmp2_reg);
+    __ neg(limit_reg); //negate count
+
+    __ lduh(tmp1_reg, limit_reg, chr1_reg);
+    __ bind(Lchar_loop);
+    __ lduh(tmp2_reg, limit_reg, chr2_reg);
+    __ cmp(chr1_reg, chr2_reg);
+    __ br(Assembler::notEqual, true, Assembler::pt, Ldone);
+    __ delayed()->mov(G0, result_reg); //not equal
+    __ inccc(limit_reg, sizeof(jchar));
+    // annul LDUH if branch is not taken to prevent access past end of string
+    __ br(Assembler::notZero, true, Assembler::pt, Lchar_loop); //annul on taken
+    __ delayed()->lduh(tmp1_reg, limit_reg, chr1_reg); // hoisted
+
+    __ add(G0, 1, result_reg);  //equal
+
+    __ bind(Ldone);
+  %}
+
+enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, g4RegP tmp2, notemp_iRegI result) %{
+    Label Lvector, Ldone, Lloop;
+    MacroAssembler _masm(&cbuf);
+
+    Register   ary1_reg = reg_to_register_object($ary1$$reg);
+    Register   ary2_reg = reg_to_register_object($ary2$$reg);
+    Register   tmp1_reg = reg_to_register_object($tmp1$$reg);
+    Register   tmp2_reg = reg_to_register_object($tmp2$$reg);
+    Register result_reg = reg_to_register_object($result$$reg);
+
+    int length_offset  = arrayOopDesc::length_offset_in_bytes();
+    int base_offset    = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+
+    // return true if the same array
+    __ cmp(ary1_reg, ary2_reg);
+    __ br(Assembler::equal, true, Assembler::pn, Ldone);
+    __ delayed()->add(G0, 1, result_reg); // equal
+
+    __ br_null(ary1_reg, true, Assembler::pn, Ldone);
+    __ delayed()->mov(G0, result_reg);    // not equal
+
+    __ br_null(ary2_reg, true, Assembler::pn, Ldone);
+    __ delayed()->mov(G0, result_reg);    // not equal
+
+    //load the lengths of arrays
+    __ ld(Address(ary1_reg, 0, length_offset), tmp1_reg);
+    __ ld(Address(ary2_reg, 0, length_offset), tmp2_reg);
+
+    // return false if the two arrays are not equal length
+    __ cmp(tmp1_reg, tmp2_reg);
+    __ br(Assembler::notEqual, true, Assembler::pn, Ldone);
+    __ delayed()->mov(G0, result_reg);     // not equal
+
+    __ br_zero(Assembler::zero, true, Assembler::pn, tmp1_reg, Ldone);
+    __ delayed()->add(G0, 1, result_reg); // zero-length arrays are equal
+
+    // load array addresses
+    __ add(ary1_reg, base_offset, ary1_reg);
+    __ add(ary2_reg, base_offset, ary2_reg);
+
+    // renaming registers
+    Register chr1_reg  =  tmp2_reg;   // for characters in ary1
+    Register chr2_reg  =  result_reg; // for characters in ary2
+    Register limit_reg =  tmp1_reg;   // length
+
+    // set byte count
+    __ sll(limit_reg, exact_log2(sizeof(jchar)), limit_reg);
+    __ andcc(limit_reg, 0x2, chr1_reg); //trailing character ?
+    __ br(Assembler::zero, false, Assembler::pt, Lvector);
+    __ delayed()->nop();
+
+    //compare the trailing char
+    __ sub(limit_reg, sizeof(jchar), limit_reg);
+    __ lduh(ary1_reg, limit_reg, chr1_reg);
+    __ lduh(ary2_reg, limit_reg, chr2_reg);
+    __ cmp(chr1_reg, chr2_reg);
+    __ br(Assembler::notEqual, true, Assembler::pt, Ldone);
+    __ delayed()->mov(G0, result_reg);     // not equal
+
+    // only one char ?
+    __ br_zero(Assembler::zero, true, Assembler::pn, limit_reg, Ldone);
+    __ delayed()->add(G0, 1, result_reg); // zero-length arrays are equal
+
+    __ bind(Lvector);
+    // Shift ary1_reg and ary2_reg to the end of the arrays, negate limit
+    __ add(ary1_reg, limit_reg, ary1_reg);
+    __ add(ary2_reg, limit_reg, ary2_reg);
+    __ neg(limit_reg, limit_reg);
+
+    __ lduw(ary1_reg, limit_reg, chr1_reg);
+    __ bind(Lloop);
+    __ lduw(ary2_reg, limit_reg, chr2_reg);
+    __ cmp(chr1_reg, chr2_reg);
+    __ br(Assembler::notEqual, false, Assembler::pt, Ldone);
+    __ delayed()->mov(G0, result_reg);     // not equal
+    __ inccc(limit_reg, 2*sizeof(jchar));
+    // annul LDUW if branch is not taken to prevent access past end of string
+    __ br(Assembler::notZero, true, Assembler::pt, Lloop); //annul on taken
+    __ delayed()->lduw(ary1_reg, limit_reg, chr1_reg); // hoisted
+
+    __ add(G0, 1, result_reg); // equals
+
     __ bind(Ldone);
   %}
 
@@ -9004,6 +9210,52 @@ instruct string_compare(o0RegP str1, o1RegP str2, g3RegP tmp1, g4RegP tmp2, note
   ins_encode( enc_String_Compare(str1, str2, tmp1, tmp2, result) );
   ins_pipe(long_memory_op);
 %}
+
+instruct string_equals(o0RegP str1, o1RegP str2, g3RegP tmp1, g4RegP tmp2, notemp_iRegI result,
+                       o7RegI tmp3, flagsReg ccr) %{
+  match(Set result (StrEquals str1 str2));
+  effect(USE_KILL str1, USE_KILL str2, KILL tmp1, KILL tmp2, KILL ccr, KILL tmp3);
+  ins_cost(300);
+  format %{ "String Equals $str1,$str2 -> $result" %}
+  ins_encode( enc_String_Equals(str1, str2, tmp1, tmp2, result) );
+  ins_pipe(long_memory_op);
+%}
+
+instruct array_equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, g4RegP tmp2, notemp_iRegI result,
+                        flagsReg ccr) %{
+  match(Set result (AryEq ary1 ary2));
+  effect(USE_KILL ary1, USE_KILL ary2, KILL tmp1, KILL tmp2, KILL ccr);
+  ins_cost(300);
+  format %{ "Array Equals $ary1,$ary2 -> $result" %}
+  ins_encode( enc_Array_Equals(ary1, ary2, tmp1, tmp2, result));
+  ins_pipe(long_memory_op);
+%}
+
+//---------- Population Count Instructions -------------------------------------
+
+instruct popCountI(iRegI dst, iRegI src) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI src));
+
+  format %{ "POPC   $src, $dst" %}
+  ins_encode %{
+    __ popc($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL(iRegI dst, iRegL src) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL src));
+
+  format %{ "POPC   $src, $dst" %}
+  ins_encode %{
+    __ popc($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 
 // ============================================================================
 //------------Bytes reverse--------------------------------------------------

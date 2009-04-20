@@ -340,6 +340,10 @@ const class TypePtr *MachNode::adr_type() const {
   if (base == NodeSentinel)  return TypePtr::BOTTOM;
 
   const Type* t = base->bottom_type();
+  if (UseCompressedOops && Universe::narrow_oop_shift() == 0) {
+    // 32-bit unscaled narrow oop can be the base of any address expression
+    t = t->make_ptr();
+  }
   if (t->isa_intptr_t() && offset != 0 && offset != Type::OffsetBot) {
     // We cannot assert that the offset does not look oop-ish here.
     // Depending on the heap layout the cardmark base could land
@@ -353,6 +357,7 @@ const class TypePtr *MachNode::adr_type() const {
 
   // be conservative if we do not recognize the type
   if (tp == NULL) {
+    assert(false, "this path may produce not optimal code");
     return TypePtr::BOTTOM;
   }
   assert(tp->base() != Type::AnyPtr, "not a bare pointer");

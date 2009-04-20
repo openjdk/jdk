@@ -44,8 +44,6 @@ public class ManifestEntryVerifier {
 
     private static final Debug debug = Debug.getInstance("jar");
 
-    private static final Provider digestProvider = Providers.getSunProvider();
-
     /** the created digest objects */
     HashMap<String, MessageDigest> createdDigests;
 
@@ -127,7 +125,7 @@ public class ManifestEntryVerifier {
                     try {
 
                         digest = MessageDigest.getInstance
-                                        (algorithm, digestProvider);
+                                        (algorithm, Providers.getSunProvider());
                         createdDigests.put(algorithm, digest);
                     } catch (NoSuchAlgorithmException nsae) {
                         // ignore

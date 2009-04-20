@@ -26,6 +26,8 @@
 package com.sun.tools.classfile;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * See JVMS3, section 4.8.3.
@@ -98,6 +100,39 @@ public class Code_attribute extends Attribute {
 
     public <R, D> R accept(Visitor<R, D> visitor, D data) {
         return visitor.visitCode(this, data);
+    }
+
+    public Iterable<Instruction> getInstructions() {
+        return new Iterable<Instruction>() {
+            public Iterator<Instruction> iterator() {
+                return new Iterator<Instruction>() {
+
+                    public boolean hasNext() {
+                        return (next != null);
+                    }
+
+                    public Instruction next() {
+                        if (next == null)
+                            throw new NoSuchElementException();
+
+                        current = next;
+                        pc += current.length();
+                        next = (pc < code.length ? new Instruction(code, pc) : null);
+                        return current;
+                    }
+
+                    public void remove() {
+                        throw new UnsupportedOperationException("Not supported.");
+                    }
+
+                    Instruction current = null;
+                    int pc = 0;
+                    Instruction next = new Instruction(code, pc);
+
+                };
+            }
+
+        };
     }
 
     public final int max_stack;

@@ -44,7 +44,6 @@ public class SharedSecrets {
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaLangAccess javaLangAccess;
     private static JavaIOAccess javaIOAccess;
-    private static JavaIODeleteOnExitAccess javaIODeleteOnExitAccess;
     private static JavaNetAccess javaNetAccess;
     private static JavaNioAccess javaNioAccess;
     private static JavaIOFileDescriptorAccess javaIOFileDescriptorAccess;
@@ -101,17 +100,6 @@ public class SharedSecrets {
             unsafe.ensureClassInitialized(Console.class);
         }
         return javaIOAccess;
-    }
-
-    public static void setJavaIODeleteOnExitAccess(JavaIODeleteOnExitAccess jida) {
-        javaIODeleteOnExitAccess = jida;
-    }
-
-    public static JavaIODeleteOnExitAccess getJavaIODeleteOnExitAccess() {
-        if (javaIODeleteOnExitAccess == null) {
-            unsafe.ensureClassInitialized(File.class);
-        }
-        return javaIODeleteOnExitAccess;
     }
 
     public static void setJavaIOFileDescriptorAccess(JavaIOFileDescriptorAccess jiofda) {

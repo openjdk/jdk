@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
+ * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
  *                                                                             *
  * The original version of this source code and documentation is copyrighted   *
  * and owned by IBM, These materials are provided under terms of a License     *
@@ -38,11 +37,8 @@
 package sun.text.normalizer;
 
 import java.text.ParsePosition;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.TreeSet;
 import java.util.Iterator;
-import java.util.Collection;
+import java.util.TreeSet;
 
 /**
  * A mutable set of Unicode characters and multicharacter strings.  Objects of this class
@@ -130,8 +126,8 @@ import java.util.Collection;
  * "[:Lu:]" and the Perl-like syntax "\p{Lu}" are recognized.  For a
  * complete list of supported property patterns, see the User's Guide
  * for UnicodeSet at
- * <a href="http://oss.software.ibm.com/icu/userguide/unicodeSet.html">
- * http://oss.software.ibm.com/icu/userguide/unicodeSet.html</a>.
+ * <a href="http://www.icu-project.org/userguide/unicodeSet.html">
+ * http://www.icu-project.org/userguide/unicodeSet.html</a>.
  * Actual determination of property data is defined by the underlying
  * Unicode database as implemented by UCharacter.
  *
@@ -271,9 +267,11 @@ import java.util.Collection;
  *     </tr>
  *   </table>
  * </blockquote>
+ * <p>To iterate over contents of UnicodeSet, use UnicodeSetIterator class.
  *
  * @author Alan Liu
  * @stable ICU 2.0
+ * @see UnicodeSetIterator
  */
 public class UnicodeSet implements UnicodeMatcher {
 
@@ -322,7 +320,7 @@ public class UnicodeSet implements UnicodeMatcher {
      * properties are all exactly alike, e.g. CJK Ideographs from
      * U+4E00 to U+9FA5.
      */
-    private static UnicodeSet INCLUSIONS = null;
+    private static UnicodeSet INCLUSIONS[] = null;
 
     //----------------------------------------------------------------
     // Public API
@@ -471,17 +469,18 @@ public class UnicodeSet implements UnicodeMatcher {
             return result;
         }
 
-        return _generatePattern(result, escapeUnprintable);
+        return _generatePattern(result, escapeUnprintable, true);
     }
 
     /**
      * Generate and append a string representation of this set to result.
      * This does not use this.pat, the cleaned up copy of the string
      * passed to applyPattern().
-     * @stable ICU 2.0
+     * @param includeStrings if false, doesn't include the strings.
+     * @stable ICU 3.8
      */
     public StringBuffer _generatePattern(StringBuffer result,
-                                         boolean escapeUnprintable) {
+                                         boolean escapeUnprintable, boolean includeStrings) {
         result.append('[');
 
         int count = getRangeCount();
@@ -524,7 +523,7 @@ public class UnicodeSet implements UnicodeMatcher {
             }
         }
 
-        if (strings.size() > 0) {
+        if (includeStrings && strings.size() > 0) {
             Iterator it = strings.iterator();
             while (it.hasNext()) {
                 result.append('{');
@@ -535,19 +534,8 @@ public class UnicodeSet implements UnicodeMatcher {
         return result.append(']');
     }
 
-    /**
-     * Adds the specified range to this set if it is not already
-     * present.  If this set already contains the specified range,
-     * the call leaves this set unchanged.  If <code>end > start</code>
-     * then an empty range is added, leaving the set unchanged.
-     *
-     * @param start first character, inclusive, of range to be added
-     * to this set.
-     * @param end last character, inclusive, of range to be added
-     * to this set.
-     * @stable ICU 2.0
-     */
-    public UnicodeSet add(int start, int end) {
+    // for internal use, after checkFrozen has been called
+    private UnicodeSet add_unchecked(int start, int end) {
         if (start < MIN_VALUE || start > MAX_VALUE) {
             throw new IllegalArgumentException("Invalid code point U+" + Utility.hex(start, 6));
         }
@@ -569,6 +557,11 @@ public class UnicodeSet implements UnicodeMatcher {
      * @stable ICU 2.0
      */
     public final UnicodeSet add(int c) {
+        return add_unchecked(c);
+    }
+
+    // for internal use only, after checkFrozen has been called
+    private final UnicodeSet add_unchecked(int c) {
         if (c < MIN_VALUE || c > MAX_VALUE) {
             throw new IllegalArgumentException("Invalid code point U+" + Utility.hex(c, 6));
         }
@@ -663,13 +656,12 @@ public class UnicodeSet implements UnicodeMatcher {
      * @stable ICU 2.0
      */
     public final UnicodeSet add(String s) {
-
         int cp = getSingleCP(s);
         if (cp < 0) {
             strings.add(s);
             pat = null;
         } else {
-            add(cp, cp);
+            add_unchecked(cp, cp);
         }
         return this;
     }
@@ -981,7 +973,6 @@ public class UnicodeSet implements UnicodeMatcher {
      */
     void applyPattern(RuleCharacterIterator chars, SymbolTable symbols,
                       StringBuffer rebuiltPat, int options) {
-
         // Syntax characters: [ ] ^ - & { }
 
         // Recognized special forms for chars, sets: c-c s-s s&s
@@ -992,7 +983,7 @@ public class UnicodeSet implements UnicodeMatcher {
             opts |= RuleCharacterIterator.SKIP_WHITESPACE;
         }
 
-        StringBuffer pat = new StringBuffer(), buf = null;
+        StringBuffer patBuf = new StringBuffer(), buf = null;
         boolean usePat = false;
         UnicodeSet scratch = null;
         Object backup = null;
@@ -1049,13 +1040,13 @@ public class UnicodeSet implements UnicodeMatcher {
                     } else {
                         // Handle opening '[' delimiter
                         mode = 1;
-                        pat.append('[');
+                        patBuf.append('[');
                         backup = chars.getPos(backup); // prepare to backup
                         c = chars.next(opts);
                         literal = chars.isEscaped();
                         if (c == '^' && !literal) {
                             invert = true;
-                            pat.append('^');
+                            patBuf.append('^');
                             backup = chars.getPos(backup); // prepare to backup
                             c = chars.next(opts);
                             literal = chars.isEscaped();
@@ -1093,13 +1084,13 @@ public class UnicodeSet implements UnicodeMatcher {
                     if (op != 0) {
                         syntaxError(chars, "Char expected after operator");
                     }
-                    add(lastChar, lastChar);
-                    _appendToPat(pat, lastChar, false);
+                    add_unchecked(lastChar, lastChar);
+                    _appendToPat(patBuf, lastChar, false);
                     lastItem = op = 0;
                 }
 
                 if (op == '-' || op == '&') {
-                    pat.append(op);
+                    patBuf.append(op);
                 }
 
                 if (nested == null) {
@@ -1108,14 +1099,14 @@ public class UnicodeSet implements UnicodeMatcher {
                 }
                 switch (setMode) {
                 case 1:
-                    nested.applyPattern(chars, symbols, pat, options);
+                    nested.applyPattern(chars, symbols, patBuf, options);
                     break;
                 case 2:
                     chars.skipIgnored(opts);
-                    nested.applyPropertyPattern(chars, pat, symbols);
+                    nested.applyPropertyPattern(chars, patBuf, symbols);
                     break;
                 case 3: // `nested' already parsed
-                    nested._toPattern(pat, false);
+                    nested._toPattern(patBuf, false);
                     break;
                 }
 
@@ -1158,17 +1149,17 @@ public class UnicodeSet implements UnicodeMatcher {
                 switch (c) {
                 case ']':
                     if (lastItem == 1) {
-                        add(lastChar, lastChar);
-                        _appendToPat(pat, lastChar, false);
+                        add_unchecked(lastChar, lastChar);
+                        _appendToPat(patBuf, lastChar, false);
                     }
                     // Treat final trailing '-' as a literal
                     if (op == '-') {
-                        add(op, op);
-                        pat.append(op);
+                        add_unchecked(op, op);
+                        patBuf.append(op);
                     } else if (op == '&') {
                         syntaxError(chars, "Trailing '&'");
                     }
-                    pat.append(']');
+                    patBuf.append(']');
                     mode = 2;
                     continue;
                 case '-':
@@ -1178,11 +1169,11 @@ public class UnicodeSet implements UnicodeMatcher {
                             continue;
                         } else {
                             // Treat final trailing '-' as a literal
-                            add(c, c);
+                            add_unchecked(c, c);
                             c = chars.next(opts);
                             literal = chars.isEscaped();
                             if (c == ']' && !literal) {
-                                pat.append("-]");
+                                patBuf.append("-]");
                                 mode = 2;
                                 continue;
                             }
@@ -1202,8 +1193,8 @@ public class UnicodeSet implements UnicodeMatcher {
                         syntaxError(chars, "Missing operand after operator");
                     }
                     if (lastItem == 1) {
-                        add(lastChar, lastChar);
-                        _appendToPat(pat, lastChar, false);
+                        add_unchecked(lastChar, lastChar);
+                        _appendToPat(patBuf, lastChar, false);
                     }
                     lastItem = 0;
                     if (buf == null) {
@@ -1228,9 +1219,9 @@ public class UnicodeSet implements UnicodeMatcher {
                     // we don't need to drop through to the further
                     // processing
                     add(buf.toString());
-                    pat.append('{');
-                    _appendToPat(pat, buf.toString(), false);
-                    pat.append('}');
+                    patBuf.append('{');
+                    _appendToPat(patBuf, buf.toString(), false);
+                    patBuf.append('}');
                     continue;
                 case SymbolTable.SYMBOL_REF:
                     //         symbols  nosymbols
@@ -1250,12 +1241,12 @@ public class UnicodeSet implements UnicodeMatcher {
                     }
                     if (anchor && op == 0) {
                         if (lastItem == 1) {
-                            add(lastChar, lastChar);
-                            _appendToPat(pat, lastChar, false);
+                            add_unchecked(lastChar, lastChar);
+                            _appendToPat(patBuf, lastChar, false);
                         }
-                        add(UnicodeMatcher.ETHER);
+                        add_unchecked(UnicodeMatcher.ETHER);
                         usePat = true;
-                        pat.append(SymbolTable.SYMBOL_REF).append(']');
+                        patBuf.append(SymbolTable.SYMBOL_REF).append(']');
                         mode = 2;
                         continue;
                     }
@@ -1281,14 +1272,14 @@ public class UnicodeSet implements UnicodeMatcher {
                         // these are most likely typos.
                         syntaxError(chars, "Invalid range");
                     }
-                    add(lastChar, c);
-                    _appendToPat(pat, lastChar, false);
-                    pat.append(op);
-                    _appendToPat(pat, c, false);
+                    add_unchecked(lastChar, c);
+                    _appendToPat(patBuf, lastChar, false);
+                    patBuf.append(op);
+                    _appendToPat(patBuf, c, false);
                     lastItem = op = 0;
                 } else {
-                    add(lastChar, lastChar);
-                    _appendToPat(pat, lastChar, false);
+                    add_unchecked(lastChar, lastChar);
+                    _appendToPat(patBuf, lastChar, false);
                     lastChar = c;
                 }
                 break;
@@ -1315,9 +1306,9 @@ public class UnicodeSet implements UnicodeMatcher {
         // Use the rebuilt pattern (pat) only if necessary.  Prefer the
         // generated pattern.
         if (usePat) {
-            rebuiltPat.append(pat.toString());
+            rebuiltPat.append(patBuf.toString());
         } else {
-            _generatePattern(rebuiltPat, false);
+            _generatePattern(rebuiltPat, false, true);
         }
     }
 
@@ -1590,7 +1581,9 @@ public class UnicodeSet implements UnicodeMatcher {
 
     private static class VersionFilter implements Filter {
         VersionInfo version;
+
         VersionFilter(VersionInfo version) { this.version = version; }
+
         public boolean contains(int ch) {
             VersionInfo v = UCharacter.getAge(ch);
             // Reference comparison ok; VersionInfo caches and reuses
@@ -1600,18 +1593,28 @@ public class UnicodeSet implements UnicodeMatcher {
         }
     }
 
-    private static synchronized UnicodeSet getInclusions() {
+    private static synchronized UnicodeSet getInclusions(int src) {
         if (INCLUSIONS == null) {
-            UCharacterProperty property = UCharacterProperty.getInstance();
-            INCLUSIONS = property.getInclusions();
+            INCLUSIONS = new UnicodeSet[UCharacterProperty.SRC_COUNT];
         }
-        return INCLUSIONS;
+        if(INCLUSIONS[src] == null) {
+            UnicodeSet incl = new UnicodeSet();
+            switch(src) {
+            case UCharacterProperty.SRC_PROPSVEC:
+                UCharacterProperty.getInstance().upropsvec_addPropertyStarts(incl);
+                break;
+            default:
+                throw new IllegalStateException("UnicodeSet.getInclusions(unknown src "+src+")");
+            }
+            INCLUSIONS[src] = incl;
+        }
+        return INCLUSIONS[src];
     }
 
     /**
      * Generic filter-based scanning code for UCD property UnicodeSets.
      */
-    private UnicodeSet applyFilter(Filter filter) {
+    private UnicodeSet applyFilter(Filter filter, int src) {
         // Walk through all Unicode characters, noting the start
         // and end of each range for which filter.contain(c) is
         // true.  Add each range to a set.
@@ -1629,7 +1632,7 @@ public class UnicodeSet implements UnicodeMatcher {
         clear();
 
         int startHasProperty = -1;
-        UnicodeSet inclusions = getInclusions();
+        UnicodeSet inclusions = getInclusions(src);
         int limitRange = inclusions.getRangeCount();
 
         for (int j=0; j<limitRange; ++j) {
@@ -1646,18 +1649,17 @@ public class UnicodeSet implements UnicodeMatcher {
                         startHasProperty = ch;
                     }
                 } else if (startHasProperty >= 0) {
-                    add(startHasProperty, ch-1);
+                    add_unchecked(startHasProperty, ch-1);
                     startHasProperty = -1;
                 }
             }
         }
         if (startHasProperty >= 0) {
-            add(startHasProperty, 0x10FFFF);
+            add_unchecked(startHasProperty, 0x10FFFF);
         }
 
         return this;
     }
-
 
     /**
      * Remove leading and trailing rule white space and compress
@@ -1686,10 +1688,6 @@ public class UnicodeSet implements UnicodeMatcher {
         return buf.toString();
     }
 
-    //----------------------------------------------------------------
-    // Property set API
-    //----------------------------------------------------------------
-
     /**
      * Modifies this set to contain those code points which have the
      * given value for the given property.  Prior contents of this
@@ -1699,22 +1697,21 @@ public class UnicodeSet implements UnicodeMatcher {
      * @param symbols if not null, then symbols are first called to see if a property
      * is available. If true, then everything else is skipped.
      * @return this set
-     * @draft ICU 3.2
-     * @deprecated This is a draft API and might change in a future release of ICU.
+     * @stable ICU 3.2
      */
     public UnicodeSet applyPropertyAlias(String propertyAlias,
                                          String valueAlias, SymbolTable symbols) {
-                if (propertyAlias.equals("Age"))
-                    {
-                        // Must munge name, since
-                        // VersionInfo.getInstance() does not do
-                        // 'loose' matching.
-                        VersionInfo version = VersionInfo.getInstance(mungeCharName(valueAlias));
-                        applyFilter(new VersionFilter(version));
-                        return this;
-                    }
-                else
-                    throw new IllegalArgumentException("Unsupported property");
+        if (valueAlias.length() > 0) {
+            if (propertyAlias.equals("Age")) {
+                // Must munge name, since
+                // VersionInfo.getInstance() does not do
+                // 'loose' matching.
+                VersionInfo version = VersionInfo.getInstance(mungeCharName(valueAlias));
+                applyFilter(new VersionFilter(version), UCharacterProperty.SRC_PROPSVEC);
+                return this;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported property: " + propertyAlias);
     }
 
     /**
@@ -1840,14 +1837,14 @@ public class UnicodeSet implements UnicodeMatcher {
      */
     private void applyPropertyPattern(RuleCharacterIterator chars,
                                       StringBuffer rebuiltPat, SymbolTable symbols) {
-        String pat = chars.lookahead();
+        String patStr = chars.lookahead();
         ParsePosition pos = new ParsePosition(0);
-        applyPropertyPattern(pat, pos, symbols);
+        applyPropertyPattern(patStr, pos, symbols);
         if (pos.getIndex() == 0) {
             syntaxError(chars, "Invalid property pattern");
         }
         chars.jumpahead(pos.getIndex());
-        rebuiltPat.append(pat.substring(0, pos.getIndex()));
+        rebuiltPat.append(patStr.substring(0, pos.getIndex()));
     }
 
     //----------------------------------------------------------------
@@ -1860,8 +1857,9 @@ public class UnicodeSet implements UnicodeMatcher {
      * which UCharacterProperty.isRuleWhiteSpace() returns true,
      * unless they are quoted or escaped.  This may be ORed together
      * with other selectors.
-     * @internal
+     * @stable ICU 3.8
      */
     public static final int IGNORE_SPACE = 1;
 
 }
+

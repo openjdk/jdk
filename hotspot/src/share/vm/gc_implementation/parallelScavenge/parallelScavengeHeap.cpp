@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,12 +104,38 @@ jint ParallelScavengeHeap::initialize() {
                   og_min_size, og_max_size,
                   yg_min_size, yg_max_size);
 
+  const size_t total_reserved = pg_max_size + og_max_size + yg_max_size;
+  char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
+
   // The main part of the heap (old gen + young gen) can often use a larger page
   // size than is needed or wanted for the perm gen.  Use the "compound
   // alignment" ReservedSpace ctor to avoid having to use the same page size for
   // all gens.
+
   ReservedHeapSpace heap_rs(pg_max_size, pg_align, og_max_size + yg_max_size,
-                            og_align);
+                            og_align, addr);
+
+  if (UseCompressedOops) {
+    if (addr != NULL && !heap_rs.is_reserved()) {
+      // Failed to reserve at specified address - the requested memory
+      // region is taken already, for example, by 'java' launcher.
+      // Try again to reserver heap higher.
+      addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
+      ReservedHeapSpace heap_rs0(pg_max_size, pg_align, og_max_size + yg_max_size,
+                                 og_align, addr);
+      if (addr != NULL && !heap_rs0.is_reserved()) {
+        // Failed to reserve at specified address again - give up.
+        addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
+        assert(addr == NULL, "");
+        ReservedHeapSpace heap_rs1(pg_max_size, pg_align, og_max_size + yg_max_size,
+                                   og_align, addr);
+        heap_rs = heap_rs1;
+      } else {
+        heap_rs = heap_rs0;
+      }
+    }
+  }
+
   os::trace_page_sizes("ps perm", pg_min_size, pg_max_size, pg_page_sz,
                        heap_rs.base(), pg_max_size);
   os::trace_page_sizes("ps main", og_min_size + yg_min_size,
@@ -799,6 +825,7 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   if (young_gen()->is_in_reserved(addr)) {
     assert(young_gen()->is_in(addr),
            "addr should be in allocated part of young gen");
+    if (Debugging)  return NULL;  // called from find() in debug.cpp
     Unimplemented();
   } else if (old_gen()->is_in_reserved(addr)) {
     assert(old_gen()->is_in(addr),

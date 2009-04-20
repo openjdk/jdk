@@ -65,7 +65,6 @@ inline void HRInto_G1RemSet::par_write_ref(HeapRegion* from, oop* p, int tid) {
   HeapRegion* to = _g1->heap_region_containing(obj);
   // The test below could be optimized by applying a bit op to to and from.
   if (to != NULL && from != NULL && from != to) {
-    bool update_delayed = false;
     // There is a tricky infinite loop if we keep pushing
     // self forwarding pointers onto our _new_refs list.
     // The _par_traversal_in_progress flag is true during the collection pause,
@@ -77,10 +76,7 @@ inline void HRInto_G1RemSet::par_write_ref(HeapRegion* from, oop* p, int tid) {
       // or processed (if an evacuation failure occurs) at the end
       // of the collection.
       // See HRInto_G1RemSet::cleanup_after_oops_into_collection_set_do().
-      update_delayed = true;
-    }
-
-    if (!to->popular() && !update_delayed) {
+    } else {
 #if G1_REM_SET_LOGGING
       gclog_or_tty->print_cr("Adding " PTR_FORMAT " (" PTR_FORMAT ") to RS"
                              " for region [" PTR_FORMAT ", " PTR_FORMAT ")",
@@ -88,9 +84,7 @@ inline void HRInto_G1RemSet::par_write_ref(HeapRegion* from, oop* p, int tid) {
                              to->bottom(), to->end());
 #endif
       assert(to->rem_set() != NULL, "Need per-region 'into' remsets.");
-      if (to->rem_set()->add_reference(p, tid)) {
-        _g1->schedule_popular_region_evac(to);
-      }
+      to->rem_set()->add_reference(p, tid);
     }
   }
 }

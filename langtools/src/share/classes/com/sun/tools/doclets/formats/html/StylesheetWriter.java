@@ -33,6 +33,7 @@ import java.io.*;
  * Writes the style sheet for the doclet output.
  *
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class StylesheetWriter extends HtmlDocletWriter {
 
@@ -115,6 +116,13 @@ public class StylesheetWriter extends HtmlDocletWriter {
         println("background-color:#FFFFFF; color:#000000}");
         print(".NavBarCell3    { font-family: Arial, Helvetica, sans-serif; ");
         println("background-color:#FFFFFF; color:#000000}");
+
+        print("/* "); printText("doclet.Style_line_12"); println(" */");
+        print(".TableCaption     { background: #CCCCFF; color:#000000; text-align: left; font-size: 150%; font-weight: bold; border-left: 2px ridge; border-right: 2px ridge; border-top: 2px ridge; padding-left: 5px; }");
+        print(" /* "); printText("doclet.Style_line_5"); println(" */");
+        print(".TableSubCaption  { background: #EEEEFF; color:#000000; text-align: left; font-weight: bold; border-left: 2px ridge; border-right: 2px ridge; border-top: 2px ridge; padding-left: 5px; }");
+        print(" /* "); printText("doclet.Style_line_6"); println(" */");
+        print(".TableHeader     { text-align: center; font-size: 80%; font-weight: bold; }");
         println("");
 
     }

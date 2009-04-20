@@ -218,6 +218,31 @@ char* GenCollectedHeap::allocate(size_t alignment,
     heap_address -= total_reserved;
   } else {
     heap_address = NULL;  // any address will do.
+    if (UseCompressedOops) {
+      heap_address = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
+      *_total_reserved = total_reserved;
+      *_n_covered_regions = n_covered_regions;
+      *heap_rs = ReservedHeapSpace(total_reserved, alignment,
+                                   UseLargePages, heap_address);
+
+      if (heap_address != NULL && !heap_rs->is_reserved()) {
+        // Failed to reserve at specified address - the requested memory
+        // region is taken already, for example, by 'java' launcher.
+        // Try again to reserver heap higher.
+        heap_address = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
+        *heap_rs = ReservedHeapSpace(total_reserved, alignment,
+                                     UseLargePages, heap_address);
+
+        if (heap_address != NULL && !heap_rs->is_reserved()) {
+          // Failed to reserve at specified address again - give up.
+          heap_address = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
+          assert(heap_address == NULL, "");
+          *heap_rs = ReservedHeapSpace(total_reserved, alignment,
+                                       UseLargePages, heap_address);
+        }
+      }
+      return heap_address;
+    }
   }
 
   *_total_reserved = total_reserved;

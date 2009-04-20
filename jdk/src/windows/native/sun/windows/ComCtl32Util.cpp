@@ -27,6 +27,7 @@
 #include "ComCtl32Util.h"
 
 ComCtl32Util::ComCtl32Util() {
+    m_bToolTipControlInitialized = FALSE;
 }
 
 ComCtl32Util::~ComCtl32Util() {
@@ -36,7 +37,8 @@ void ComCtl32Util::InitLibraries() {
     INITCOMMONCONTROLSEX iccex;
     memset(&iccex, 0, sizeof(INITCOMMONCONTROLSEX));
     iccex.dwSize = sizeof(INITCOMMONCONTROLSEX);
-    ::InitCommonControlsEx(&iccex);
+    iccex.dwICC = ICC_TAB_CLASSES;
+    m_bToolTipControlInitialized = ::InitCommonControlsEx(&iccex);
 }
 
 WNDPROC ComCtl32Util::SubclassHWND(HWND hwnd, WNDPROC _WindowProc) {

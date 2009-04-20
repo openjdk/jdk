@@ -46,6 +46,8 @@ include $(BUILDDIR)/common/Mapfile-vers.gmk
 #
 include FILES_c.gmk
 
+# We don't need snmp here.
+AUTO_JAVA_PRUNE = snmp
 AUTO_FILES_JAVA_DIRS = java/lang/management com/sun/management sun/management
 
 include Exportedfiles.gmk

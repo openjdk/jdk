@@ -29,7 +29,7 @@
 //
 //
 //  Little cms
-//  Copyright (C) 1998-2006 Marti Maria
+//  Copyright (C) 1998-2007 Marti Maria
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -256,7 +256,7 @@ void ComputeBlackPointCompensationFactors(LPcmsCIEXYZ BlackPointIn,
 // Return TRUE if both m and of are empy -- "m" being identity and "of" being 0
 
 static
-BOOL IdentityParameters(LPWMAT3 m, LPWVEC3 of)
+LCMSBOOL IdentityParameters(LPWMAT3 m, LPWVEC3 of)
 {
     WVEC3 wv0;
 
@@ -661,3 +661,6 @@ int cmsChooseCnvrt(int Absolute,
 
        return rc;
 }
+
+
+

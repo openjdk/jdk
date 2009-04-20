@@ -58,7 +58,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "<A HREF=\"../pkg/Coin.html\" title=\"enum in pkg\">Coin</A>&gt;"
             },
             //Check for enum constant section
-            {BUG_ID + FS + "pkg" + FS + "Coin.html", "<STRONG>Enum Constant Summary</STRONG>"},
+            {BUG_ID + FS + "pkg" + FS + "Coin.html", "<CAPTION CLASS=\"TableCaption\">" + NL +
+                     "Enum Constant Summary</CAPTION>"},
             //Detail for enum constant
             {BUG_ID + FS + "pkg" + FS + "Coin.html",
                 "<STRONG><A HREF=\"../pkg/Coin.html#Dime\">Dime</A></STRONG>"},
@@ -158,9 +159,11 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 "public @interface <STRONG>AnnotationType</STRONG>"},
             //Make sure member summary headings are correct.
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<STRONG>Required Element Summary</STRONG>"},
+                "<CAPTION CLASS=\"TableCaption\">" + NL +
+                "Required Element Summary</CAPTION>"},
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
-                "<STRONG>Optional Element Summary</STRONG>"},
+                "<CAPTION CLASS=\"TableCaption\">" + NL +
+                "Optional Element Summary</CAPTION>"},
             //Make sure element detail heading is correct
             {BUG_ID + FS + "pkg" + FS + "AnnotationType.html",
                 "Element Detail"},
@@ -286,39 +289,57 @@ public class TestNewLanguageFeatures extends JavadocTester {
 
             //ClassUseTest1: <T extends Foo & Foo2>
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                 "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type <A HREF=\"../../pkg2/Foo.html\" " +
+                     "title=\"class in pkg2\">Foo</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
                 "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest1.html\" title=\"class in pkg2\">ClassUseTest1&lt;T extends Foo & Foo2&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type <A HREF=\"../../pkg2/Foo.html\" " +
+                     "title=\"class in pkg2\">Foo</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
                 "<TD><CODE><STRONG>ClassUseTest1.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest1.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Fields in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Fields in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type <A HREF=\"../../pkg2/Foo.html\" " +
+                     "title=\"class in pkg2\">Foo</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo.html",
                 "<A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A>&lt;<A HREF=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</A>&gt;</CODE></FONT></TD>"
             },
 
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Fields in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> declared as <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Fields in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> declared as <A HREF=\"../../pkg2/ParamTest.html\" " +
+                     "title=\"class in pkg2\">ParamTest</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
                 "<A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A>&lt;<A HREF=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</A>&gt;</CODE></FONT></TD>"
             },
 
            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">Foo2</A></FONT></TH>"
+                    "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                    "Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                    "</A> with type parameters of type <A HREF=\"../../pkg2/Foo2.html\" " +
+                    "title=\"interface in pkg2\">Foo2</A></CAPTION>"
            },
            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
             "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest1.html\" title=\"class in pkg2\">ClassUseTest1&lt;T extends Foo & Foo2&gt;</A></STRONG></CODE>"
            },
            {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
-               "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo2.html\" title=\"interface in pkg2\">Foo2</A></FONT></TH>"
+                    "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                    "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                    "</A> with type parameters of type <A HREF=\"../../pkg2/Foo2.html\" " +
+                    "title=\"interface in pkg2\">Foo2</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo2.html",
                "<TD><CODE><STRONG>ClassUseTest1.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest1.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
@@ -326,44 +347,66 @@ public class TestNewLanguageFeatures extends JavadocTester {
 
             //ClassUseTest2: <T extends ParamTest<Foo3>>
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-              "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest.html\" " +
+                     "title=\"class in pkg2\">ParamTest</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
               "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest2.html\" title=\"class in pkg2\">ClassUseTest2&lt;T extends ParamTest&lt;<A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A>&gt;&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-              "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest.html\" " +
+                     "title=\"class in pkg2\">ParamTest</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
               "<TD><CODE><STRONG>ClassUseTest2.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest2.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-              "<TH ALIGN=\"left\" COLSPAN=\"2\">Fields in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> declared as <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Fields in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> declared as <A HREF=\"../../pkg2/ParamTest.html\" " +
+                     "title=\"class in pkg2\">ParamTest</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
               "<A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A>&lt;<A HREF=\"../../pkg2/Foo.html\" title=\"class in pkg2\">Foo</A>&gt;</CODE></FONT></TD>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
-              "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest.html\" " +
+                     "title=\"class in pkg2\">ParamTest</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest.html",
               "&lt;T extends <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A>&lt;<A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A>&gt;&gt;"
             },
 
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type <A HREF=\"../../pkg2/Foo3.html\" " +
+                     "title=\"class in pkg2\">Foo3</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
                 "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest2.html\" title=\"class in pkg2\">ClassUseTest2&lt;T extends ParamTest&lt;<A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A>&gt;&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type <A HREF=\"../../pkg2/Foo3.html\" " +
+                     "title=\"class in pkg2\">Foo3</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
                 "<TD><CODE><STRONG>ClassUseTest2.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest2.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> that return types with arguments of type <A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> that return types with arguments of type " +
+                     "<A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">" +
+                     "Foo3</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo3.html",
                 "&lt;T extends <A HREF=\"../../pkg2/ParamTest.html\" title=\"class in pkg2\">ParamTest</A>&lt;<A HREF=\"../../pkg2/Foo3.html\" title=\"class in pkg2\">Foo3</A>&gt;&gt;"
@@ -371,38 +414,61 @@ public class TestNewLanguageFeatures extends JavadocTester {
 
             //ClassUseTest3: <T extends ParamTest2<List<? extends Foo4>>>
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">ParamTest2</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type " +
+                     "<A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">" +
+                     "ParamTest2</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
                 "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html\" title=\"class in pkg2\">ClassUseTest3&lt;T extends ParamTest2&lt;java.util.List&lt;? extends Foo4&gt;&gt;&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">ParamTest2</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type " +
+                     "<A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">" +
+                     "ParamTest2</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
                 "<TD><CODE><STRONG>ClassUseTest3.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">ParamTest2</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type " +
+                     "<A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">" +
+                     "ParamTest2</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "ParamTest2.html",
                 "&lt;T extends <A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">ParamTest2</A>&lt;java.util.List&lt;? extends <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A>&gt;&gt;&gt;"
             },
 
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Classes in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type " +
+                     "<A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">" +
+                     "Foo4</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
                 "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html\" title=\"class in pkg2\">ClassUseTest3&lt;T extends ParamTest2&lt;java.util.List&lt;? extends Foo4&gt;&gt;&gt;</A></STRONG></CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type parameters of type <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type parameters of type <A HREF=\"../../pkg2/Foo4.html\" " +
+                     "title=\"class in pkg2\">Foo4</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
                 "<TD><CODE><STRONG>ClassUseTest3.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html#method(T)\">method</A></STRONG>(T&nbsp;t)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> that return types with arguments of type <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A></FONT></TH>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Methods in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> that return types with arguments of type " +
+                     "<A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">" +
+                     "Foo4</A></CAPTION>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
                 "&lt;T extends <A HREF=\"../../pkg2/ParamTest2.html\" title=\"class in pkg2\">ParamTest2</A>&lt;java.util.List&lt;? extends <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A>&gt;&gt;&gt;"
@@ -410,81 +476,147 @@ public class TestNewLanguageFeatures extends JavadocTester {
 
             //Type parameters in constructor and method args
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Method parameters in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type arguments of type <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A></FONT></TH>" + NL +
-                "</TR>" + NL +
-                "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
-                "<CODE>&nbsp;void</CODE></FONT></TD>" + NL +
-                "<TD><CODE><STRONG>ClassUseTest3.</STRONG><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html#method(java.util.Set)\">method</A></STRONG>(java.util.Set&lt;<A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A>&gt;&nbsp;p)</CODE>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Method parameters in <A HREF=\"../../pkg2/package-summary.html\">pkg2" +
+                     "</A> with type arguments of type <A HREF=\"../../pkg2/Foo4.html\" " +
+                     "title=\"class in pkg2\">Foo4</A></CAPTION>" + NL +
+                     "<TR>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Modifier and Type" +
+                     "</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Method and Description</TH>" + NL +
+                     "</TR>" + NL +
+                     "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
+                     "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
+                     "<CODE>&nbsp;void</CODE></FONT></TD>" + NL +
+                     "<TD><CODE><STRONG>ClassUseTest3.</STRONG><STRONG>" +
+                     "<A HREF=\"../../pkg2/ClassUseTest3.html#method(java.util.Set)\">" +
+                     "method</A></STRONG>(java.util.Set&lt;<A HREF=\"../../pkg2/Foo4.html\" " +
+                     "title=\"class in pkg2\">Foo4</A>&gt;&nbsp;p)</CODE>"
             },
             {BUG_ID + FS + "pkg2" + FS + "class-use" + FS + "Foo4.html",
-                "<TH ALIGN=\"left\" COLSPAN=\"2\">Constructor parameters in <A HREF=\"../../pkg2/package-summary.html\">pkg2</A> with type arguments of type <A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A></FONT></TH>" + NL +
-                "</TR>" + NL +
-                "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html#ClassUseTest3(java.util.Set)\">ClassUseTest3</A></STRONG>(java.util.Set&lt;<A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">Foo4</A>&gt;&nbsp;p)</CODE>"
+                     "<CAPTION CLASS=\"TableSubCaption\">" + NL +
+                     "Constructor parameters in <A HREF=\"../../pkg2/package-summary.html\">" +
+                     "pkg2</A> with type arguments of type <A HREF=\"../../pkg2/Foo4.html\" " +
+                     "title=\"class in pkg2\">Foo4</A></CAPTION>" + NL +
+                     "<TR>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Constructor and Description" +
+                     "</TH>" + NL + "</TR>" + NL +
+                     "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
+                     "<TD><CODE><STRONG><A HREF=\"../../pkg2/ClassUseTest3.html#ClassUseTest3" +
+                     "(java.util.Set)\">ClassUseTest3</A></STRONG>(java.util.Set&lt;" +
+                     "<A HREF=\"../../pkg2/Foo4.html\" title=\"class in pkg2\">" +
+                     "Foo4</A>&gt;&nbsp;p)</CODE>"
             },
 
             //=================================
             // Annotatation Type Usage
             //=================================
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                "<FONT SIZE=\"+2\">" + NL +
-                "Packages with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
-                "</TR>" + NL +
-                "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD><A HREF=\"../../pkg/package-summary.html\"><STRONG>pkg</STRONG></A></TD>"
+                     "Packages with annotations of type " +
+                     "<A HREF=\"../../pkg/AnnotationType.html\" " +
+                     "title=\"annotation in pkg\">AnnotationType</A></CAPTION>" + NL +
+                     "<TR>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Package" +
+                     "</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Description</TH>" + NL + "</TR>" + NL +
+                     "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
+                     "<TD><A HREF=\"../../pkg/package-summary.html\"><STRONG>pkg" +
+                     "</STRONG></A></TD>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                "Classes in <A HREF=\"../../pkg/package-summary.html\">pkg</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
-                "</TR>" + NL +
-                "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
-                "<CODE>&nbsp;class</CODE></FONT></TD>" + NL +
-                "<TD><CODE><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html\" title=\"class in pkg\">AnnotationTypeUsage</A></STRONG></CODE>"
+                     "Classes in <A HREF=\"../../pkg/package-summary.html\">pkg" +
+                     "</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" " +
+                     "title=\"annotation in pkg\">AnnotationType</A></CAPTION>" + NL +
+                     "<TR>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Modifier and Type" +
+                     "</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Class and Description</TH>" + NL +
+                     "</TR>" + NL +
+                     "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
+                     "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
+                     "<CODE>&nbsp;class</CODE></FONT></TD>" + NL +
+                     "<TD><CODE><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html\" " +
+                     "title=\"class in pkg\">AnnotationTypeUsage</A></STRONG></CODE>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                "Fields in <A HREF=\"../../pkg/package-summary.html\">pkg</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
-                "</TR>" + NL +
-                "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
-                "<CODE>&nbsp;int</CODE></FONT></TD>" + NL +
-                "<TD><CODE><STRONG>AnnotationTypeUsage.</STRONG><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#field\">field</A></STRONG></CODE>"
+                     "Fields in <A HREF=\"../../pkg/package-summary.html\">pkg" +
+                     "</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" " +
+                     "title=\"annotation in pkg\">AnnotationType</A></CAPTION>" + NL +
+                     "<TR>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Modifier and Type" +
+                     "</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Field and Description</TH>" + NL +
+                     "</TR>" + NL +
+                     "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
+                     "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
+                     "<CODE>&nbsp;int</CODE></FONT></TD>" + NL +
+                     "<TD><CODE><STRONG>AnnotationTypeUsage.</STRONG><STRONG>" +
+                     "<A HREF=\"../../pkg/AnnotationTypeUsage.html#field\">field" +
+                     "</A></STRONG></CODE>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                "Methods in <A HREF=\"../../pkg/package-summary.html\">pkg</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
-                "</TR>" + NL +
-                "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
-                "<CODE>&nbsp;void</CODE></FONT></TD>" + NL +
-                "<TD><CODE><STRONG>AnnotationTypeUsage.</STRONG><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#method()\">method</A></STRONG>()</CODE>"
+                     "Methods in <A HREF=\"../../pkg/package-summary.html\">pkg" +
+                     "</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" " +
+                     "title=\"annotation in pkg\">AnnotationType</A></CAPTION>" + NL +
+                     "<TR>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Modifier and Type" +
+                     "</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Method and Description</TH>" + NL +
+                     "</TR>" + NL +
+                     "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
+                     "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
+                     "<CODE>&nbsp;void</CODE></FONT></TD>" + NL +
+                     "<TD><CODE><STRONG>AnnotationTypeUsage.</STRONG><STRONG>" +
+                     "<A HREF=\"../../pkg/AnnotationTypeUsage.html#method()\">" +
+                     "method</A></STRONG>()</CODE>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                "Method parameters in <A HREF=\"../../pkg/package-summary.html\">pkg</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
-                "</TR>" + NL +
-                "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
-                "<CODE>&nbsp;void</CODE></FONT></TD>" + NL +
-                "<TD><CODE><STRONG>AnnotationTypeUsage.</STRONG><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#methodWithParams(int, int)\">methodWithParams</A></STRONG>(int&nbsp;documented," + NL +
-                "                 int&nbsp;undocmented)</CODE>"
+                     "Method parameters in <A HREF=\"../../pkg/package-summary.html\">pkg" +
+                     "</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" " +
+                     "title=\"annotation in pkg\">AnnotationType</A></CAPTION>" + NL +
+                     "<TR>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Modifier and Type" +
+                     "</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Method and Description</TH>" + NL +
+                     "</TR>" + NL +
+                     "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
+                     "<TD ALIGN=\"right\" VALIGN=\"top\" WIDTH=\"1%\"><FONT SIZE=\"-1\">" + NL +
+                     "<CODE>&nbsp;void</CODE></FONT></TD>" + NL +
+                     "<TD><CODE><STRONG>AnnotationTypeUsage.</STRONG><STRONG>" +
+                     "<A HREF=\"../../pkg/AnnotationTypeUsage.html#methodWithParams" +
+                     "(int, int)\">methodWithParams</A></STRONG>(int&nbsp;documented," + NL +
+                     "                 int&nbsp;undocmented)</CODE>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                "Constructors in <A HREF=\"../../pkg/package-summary.html\">pkg</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
-                "</TR>" + NL +
-                "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD><CODE><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#AnnotationTypeUsage()\">AnnotationTypeUsage</A></STRONG>()</CODE>"
+                     "Constructors in <A HREF=\"../../pkg/package-summary.html\">pkg" +
+                     "</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" " +
+                     "title=\"annotation in pkg\">AnnotationType</A></CAPTION>" + NL +
+                     "<TR>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Constructor and Description" +
+                     "</TH>" + NL + "</TR>" + NL +
+                     "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
+                     "<TD><CODE><STRONG><A HREF=\"../../pkg/" +
+                     "AnnotationTypeUsage.html#AnnotationTypeUsage()\">" +
+                     "AnnotationTypeUsage</A></STRONG>()</CODE>"
             },
 
             {BUG_ID + FS + "pkg" + FS + "class-use" + FS + "AnnotationType.html",
-                "Constructor parameters in <A HREF=\"../../pkg/package-summary.html\">pkg</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" title=\"annotation in pkg\">AnnotationType</A></FONT></TH>" + NL +
-                "</TR>" + NL +
-                "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
-                "<TD><CODE><STRONG><A HREF=\"../../pkg/AnnotationTypeUsage.html#AnnotationTypeUsage(int, int)\">AnnotationTypeUsage</A></STRONG>(int&nbsp;documented," + NL +
-                "                    int&nbsp;undocmented)</CODE>"
+                     "Constructor parameters in <A HREF=\"../../pkg/package-summary.html\">pkg" +
+                     "</A> with annotations of type <A HREF=\"../../pkg/AnnotationType.html\" " +
+                     "title=\"annotation in pkg\">AnnotationType</A></CAPTION>" + NL +
+                     "<TR>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+                     " NOWRAP>Constructor and Description" +
+                     "</TH>" + NL + "</TR>" + NL +
+                     "<TR BGCOLOR=\"white\" CLASS=\"TableRowColor\">" + NL +
+                     "<TD><CODE><STRONG><A HREF=\"../../pkg/" +
+                     "AnnotationTypeUsage.html#AnnotationTypeUsage(int, int)\">" +
+                     "AnnotationTypeUsage</A></STRONG>(int&nbsp;documented," + NL +
+                     "                    int&nbsp;undocmented)</CODE>"
             },
 
             //=================================

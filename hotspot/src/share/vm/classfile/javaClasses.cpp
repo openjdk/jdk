@@ -25,13 +25,24 @@
 # include "incls/_precompiled.incl"
 # include "incls/_javaClasses.cpp.incl"
 
+static bool find_field(instanceKlass* ik,
+                       symbolOop name_symbol, symbolOop signature_symbol,
+                       fieldDescriptor* fd,
+                       bool allow_super = false) {
+  if (allow_super)
+    return ik->find_field(name_symbol, signature_symbol, fd) != NULL;
+  else
+    return ik->find_local_field(name_symbol, signature_symbol, fd);
+}
+
 // Helpful routine for computing field offsets at run time rather than hardcoding them
 static void
 compute_offset(int &dest_offset,
-               klassOop klass_oop, symbolOop name_symbol, symbolOop signature_symbol) {
+               klassOop klass_oop, symbolOop name_symbol, symbolOop signature_symbol,
+               bool allow_super = false) {
   fieldDescriptor fd;
   instanceKlass* ik = instanceKlass::cast(klass_oop);
-  if (!ik->find_local_field(name_symbol, signature_symbol, &fd)) {
+  if (!find_field(ik, name_symbol, signature_symbol, &fd, allow_super)) {
     ResourceMark rm;
     tty->print_cr("Invalid layout of %s at %s", ik->external_name(), name_symbol->as_C_string());
     fatal("Invalid layout of preloaded class");
@@ -42,13 +53,15 @@ compute_offset(int &dest_offset,
 // Same as above but for "optional" offsets that might not be present in certain JDK versions
 static void
 compute_optional_offset(int& dest_offset,
-                        klassOop klass_oop, symbolOop name_symbol, symbolOop signature_symbol) {
+                        klassOop klass_oop, symbolOop name_symbol, symbolOop signature_symbol,
+                        bool allow_super = false) {
   fieldDescriptor fd;
   instanceKlass* ik = instanceKlass::cast(klass_oop);
-  if (ik->find_local_field(name_symbol, signature_symbol, &fd)) {
+  if (find_field(ik, name_symbol, signature_symbol, &fd, allow_super)) {
     dest_offset = fd.offset();
   }
 }
+
 
 Handle java_lang_String::basic_create(int length, bool tenured, TRAPS) {
   // Create the String object first, so there's a chance that the String
@@ -239,21 +252,19 @@ symbolHandle java_lang_String::as_symbol(Handle java_string, TRAPS) {
   typeArrayOop value  = java_lang_String::value(obj);
   int          offset = java_lang_String::offset(obj);
   int          length = java_lang_String::length(obj);
-
-  ResourceMark rm(THREAD);
-  symbolHandle result;
-
-  if (length > 0) {
-    int utf8_length = UNICODE::utf8_length(value->char_at_addr(offset), length);
-    char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
-    UNICODE::convert_to_utf8(value->char_at_addr(offset), length, chars);
-    // Allocate the symbol
-    result = oopFactory::new_symbol_handle(chars, utf8_length, CHECK_(symbolHandle()));
-  } else {
-    result = oopFactory::new_symbol_handle("", 0, CHECK_(symbolHandle()));
-  }
-  return result;
+  jchar* base = value->char_at_addr(offset);
+  symbolOop sym = SymbolTable::lookup_unicode(base, length, THREAD);
+  return symbolHandle(THREAD, sym);
 }
+
+symbolOop java_lang_String::as_symbol_or_null(oop java_string) {
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  int          length = java_lang_String::length(java_string);
+  jchar* base = value->char_at_addr(offset);
+  return SymbolTable::probe_unicode(base, length);
+}
+
 
 int java_lang_String::utf8_length(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
@@ -385,6 +396,48 @@ klassOop java_lang_Class::as_klassOop(oop java_class) {
 }
 
 
+void java_lang_Class::print_signature(oop java_class, outputStream* st) {
+  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  symbolOop name = NULL;
+  bool is_instance = false;
+  if (is_primitive(java_class)) {
+    name = vmSymbols::type_signature(primitive_type(java_class));
+  } else {
+    klassOop k = as_klassOop(java_class);
+    is_instance = Klass::cast(k)->oop_is_instance();
+    name = Klass::cast(k)->name();
+  }
+  if (name == NULL) {
+    st->print("<null>");
+    return;
+  }
+  if (is_instance)  st->print("L");
+  st->write((char*) name->base(), (int) name->utf8_length());
+  if (is_instance)  st->print(";");
+}
+
+symbolOop java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, TRAPS) {
+  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  symbolOop name = NULL;
+  if (is_primitive(java_class)) {
+    return vmSymbols::type_signature(primitive_type(java_class));
+  } else {
+    klassOop k = as_klassOop(java_class);
+    if (!Klass::cast(k)->oop_is_instance()) {
+      return Klass::cast(k)->name();
+    } else {
+      ResourceMark rm;
+      const char* sigstr = Klass::cast(k)->signature_name();
+      int         siglen = (int) strlen(sigstr);
+      if (!intern_if_not_found)
+        return SymbolTable::probe(sigstr, siglen);
+      else
+        return oopFactory::new_symbol(sigstr, siglen, THREAD);
+    }
+  }
+}
+
+
 klassOop java_lang_Class::array_klass(oop java_class) {
   klassOop k = klassOop(java_class->obj_field(array_klass_offset));
   assert(k == NULL || k->is_klass() && Klass::cast(k)->oop_is_javaArray(), "should be array klass");
@@ -412,6 +465,8 @@ void java_lang_Class::set_resolved_constructor(oop java_class, methodOop constru
 
 
 bool java_lang_Class::is_primitive(oop java_class) {
+  // should assert:
+  //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
   klassOop k = klassOop(java_class->obj_field(klass_offset));
   return k == NULL;
 }
@@ -429,6 +484,19 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
   }
   assert(Universe::java_mirror(type) == java_class, "must be consistent");
   return type;
+}
+
+BasicType java_lang_Class::as_BasicType(oop java_class, klassOop* reference_klass) {
+  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  if (is_primitive(java_class)) {
+    if (reference_klass != NULL)
+      (*reference_klass) = NULL;
+    return primitive_type(java_class);
+  } else {
+    if (reference_klass != NULL)
+      (*reference_klass) = as_klassOop(java_class);
+    return T_OBJECT;
+  }
 }
 
 
@@ -1988,6 +2056,21 @@ BasicType java_lang_boxing_object::set_value(oop box, jvalue* value) {
 }
 
 
+void java_lang_boxing_object::print(BasicType type, jvalue* value, outputStream* st) {
+  switch (type) {
+  case T_BOOLEAN:   st->print("%s", value->z ? "true" : "false");   break;
+  case T_CHAR:      st->print("%d", value->c);                      break;
+  case T_BYTE:      st->print("%d", value->b);                      break;
+  case T_SHORT:     st->print("%d", value->s);                      break;
+  case T_INT:       st->print("%d", value->i);                      break;
+  case T_LONG:      st->print(INT64_FORMAT, value->j);              break;
+  case T_FLOAT:     st->print("%f", value->f);                      break;
+  case T_DOUBLE:    st->print("%lf", value->d);                     break;
+  default:          st->print("type %d?", type);                    break;
+  }
+}
+
+
 // Support for java_lang_ref_Reference
 oop java_lang_ref_Reference::pending_list_lock() {
   instanceKlass* ik = instanceKlass::cast(SystemDictionary::reference_klass());
@@ -2037,12 +2120,323 @@ void java_lang_ref_SoftReference::set_clock(jlong value) {
 }
 
 
+// Support for java_dyn_MethodHandle
+
+int java_dyn_MethodHandle::_type_offset;
+int java_dyn_MethodHandle::_vmtarget_offset;
+int java_dyn_MethodHandle::_vmentry_offset;
+int java_dyn_MethodHandle::_vmslots_offset;
+
+int sun_dyn_MemberName::_clazz_offset;
+int sun_dyn_MemberName::_name_offset;
+int sun_dyn_MemberName::_type_offset;
+int sun_dyn_MemberName::_flags_offset;
+int sun_dyn_MemberName::_vmtarget_offset;
+int sun_dyn_MemberName::_vmindex_offset;
+
+int sun_dyn_DirectMethodHandle::_vmindex_offset;
+
+int sun_dyn_BoundMethodHandle::_argument_offset;
+int sun_dyn_BoundMethodHandle::_vmargslot_offset;
+
+int sun_dyn_AdapterMethodHandle::_conversion_offset;
+
+void java_dyn_MethodHandle::compute_offsets() {
+  klassOop k = SystemDictionary::MethodHandle_klass();
+  if (k != NULL && EnableMethodHandles) {
+    compute_offset(_type_offset,      k, vmSymbols::type_name(),      vmSymbols::java_dyn_MethodType_signature(), true);
+    compute_offset(_vmtarget_offset,  k, vmSymbols::vmtarget_name(),  vmSymbols::object_signature(), true);
+    compute_offset(_vmentry_offset,   k, vmSymbols::vmentry_name(),   vmSymbols::machine_word_signature(), true);
+
+    // Note:  MH.vmslots (if it is present) is a hoisted copy of MH.type.form.vmslots.
+    // It is optional pending experiments to keep or toss.
+    compute_optional_offset(_vmslots_offset, k, vmSymbols::vmslots_name(), vmSymbols::int_signature(), true);
+  }
+}
+
+void sun_dyn_MemberName::compute_offsets() {
+  klassOop k = SystemDictionary::MemberName_klass();
+  if (k != NULL && EnableMethodHandles) {
+    compute_offset(_clazz_offset,     k, vmSymbols::clazz_name(),     vmSymbols::class_signature());
+    compute_offset(_name_offset,      k, vmSymbols::name_name(),      vmSymbols::string_signature());
+    compute_offset(_type_offset,      k, vmSymbols::type_name(),      vmSymbols::object_signature());
+    compute_offset(_flags_offset,     k, vmSymbols::flags_name(),     vmSymbols::int_signature());
+    compute_offset(_vmtarget_offset,  k, vmSymbols::vmtarget_name(),  vmSymbols::object_signature());
+    compute_offset(_vmindex_offset,   k, vmSymbols::vmindex_name(),   vmSymbols::int_signature());
+  }
+}
+
+void sun_dyn_DirectMethodHandle::compute_offsets() {
+  klassOop k = SystemDictionary::DirectMethodHandle_klass();
+  if (k != NULL && EnableMethodHandles) {
+    compute_offset(_vmindex_offset,   k, vmSymbols::vmindex_name(),   vmSymbols::int_signature(),    true);
+  }
+}
+
+void sun_dyn_BoundMethodHandle::compute_offsets() {
+  klassOop k = SystemDictionary::BoundMethodHandle_klass();
+  if (k != NULL && EnableMethodHandles) {
+    compute_offset(_vmargslot_offset, k, vmSymbols::vmargslot_name(), vmSymbols::int_signature(),    true);
+    compute_offset(_argument_offset,  k, vmSymbols::argument_name(),  vmSymbols::object_signature(), true);
+  }
+}
+
+void sun_dyn_AdapterMethodHandle::compute_offsets() {
+  klassOop k = SystemDictionary::AdapterMethodHandle_klass();
+  if (k != NULL && EnableMethodHandles) {
+    compute_offset(_conversion_offset, k, vmSymbols::conversion_name(), vmSymbols::int_signature(), true);
+  }
+}
+
+oop java_dyn_MethodHandle::type(oop mh) {
+  return mh->obj_field(_type_offset);
+}
+
+void java_dyn_MethodHandle::set_type(oop mh, oop mtype) {
+  mh->obj_field_put(_type_offset, mtype);
+}
+
+int java_dyn_MethodHandle::vmslots(oop mh) {
+  int vmslots_offset = _vmslots_offset;
+  if (vmslots_offset != 0) {
+#ifdef ASSERT
+    int x = mh->int_field(vmslots_offset);
+    int y = compute_vmslots(mh);
+    assert(x == y, "correct hoisted value");
+#endif
+    return mh->int_field(vmslots_offset);
+  } else {
+    return compute_vmslots(mh);
+  }
+}
+
+// if MH.vmslots exists, hoist into it the value of type.form.vmslots
+void java_dyn_MethodHandle::init_vmslots(oop mh) {
+  int vmslots_offset = _vmslots_offset;
+  if (vmslots_offset != 0) {
+    mh->int_field_put(vmslots_offset, compute_vmslots(mh));
+  }
+}
+
+// fetch type.form.vmslots, which is the number of JVM stack slots
+// required to carry the arguments of this MH
+int java_dyn_MethodHandle::compute_vmslots(oop mh) {
+  oop mtype = type(mh);
+  if (mtype == NULL)  return 0;  // Java code would get NPE
+  oop form = java_dyn_MethodType::form(mtype);
+  if (form == NULL)   return 0;  // Java code would get NPE
+  return java_dyn_MethodTypeForm::vmslots(form);
+}
+
+// fetch the low-level entry point for this mh
+MethodHandleEntry* java_dyn_MethodHandle::vmentry(oop mh) {
+  return (MethodHandleEntry*) mh->address_field(_vmentry_offset);
+}
+
+void java_dyn_MethodHandle::set_vmentry(oop mh, MethodHandleEntry* me) {
+  assert(_vmentry_offset != 0, "must be present");
+
+  // This is always the final step that initializes a valid method handle:
+  mh->release_address_field_put(_vmentry_offset, (address) me);
+
+  // There should be enough memory barriers on exit from native methods
+  // to ensure that the MH is fully initialized to all threads before
+  // Java code can publish it in global data structures.
+  // But just in case, we use release_address_field_put.
+}
+
+/// MemberName accessors
+
+oop sun_dyn_MemberName::clazz(oop mname) {
+  assert(is_instance(mname), "wrong type");
+  return mname->obj_field(_clazz_offset);
+}
+
+void sun_dyn_MemberName::set_clazz(oop mname, oop clazz) {
+  assert(is_instance(mname), "wrong type");
+  mname->obj_field_put(_clazz_offset, clazz);
+}
+
+oop sun_dyn_MemberName::name(oop mname) {
+  assert(is_instance(mname), "wrong type");
+  return mname->obj_field(_name_offset);
+}
+
+void sun_dyn_MemberName::set_name(oop mname, oop name) {
+  assert(is_instance(mname), "wrong type");
+  mname->obj_field_put(_name_offset, name);
+}
+
+oop sun_dyn_MemberName::type(oop mname) {
+  assert(is_instance(mname), "wrong type");
+  return mname->obj_field(_type_offset);
+}
+
+void sun_dyn_MemberName::set_type(oop mname, oop type) {
+  assert(is_instance(mname), "wrong type");
+  mname->obj_field_put(_type_offset, type);
+}
+
+int sun_dyn_MemberName::flags(oop mname) {
+  assert(is_instance(mname), "wrong type");
+  return mname->int_field(_flags_offset);
+}
+
+void sun_dyn_MemberName::set_flags(oop mname, int flags) {
+  assert(is_instance(mname), "wrong type");
+  mname->int_field_put(_flags_offset, flags);
+}
+
+oop sun_dyn_MemberName::vmtarget(oop mname) {
+  assert(is_instance(mname), "wrong type");
+  return mname->obj_field(_vmtarget_offset);
+}
+
+void sun_dyn_MemberName::set_vmtarget(oop mname, oop ref) {
+  assert(is_instance(mname), "wrong type");
+  mname->obj_field_put(_vmtarget_offset, ref);
+}
+
+int sun_dyn_MemberName::vmindex(oop mname) {
+  assert(is_instance(mname), "wrong type");
+  return mname->int_field(_vmindex_offset);
+}
+
+void sun_dyn_MemberName::set_vmindex(oop mname, int index) {
+  assert(is_instance(mname), "wrong type");
+  mname->int_field_put(_vmindex_offset, index);
+}
+
+oop java_dyn_MethodHandle::vmtarget(oop mh) {
+  assert(is_instance(mh), "MH only");
+  return mh->obj_field(_vmtarget_offset);
+}
+
+void java_dyn_MethodHandle::set_vmtarget(oop mh, oop ref) {
+  assert(is_instance(mh), "MH only");
+  mh->obj_field_put(_vmtarget_offset, ref);
+}
+
+int sun_dyn_DirectMethodHandle::vmindex(oop mh) {
+  assert(is_instance(mh), "DMH only");
+  return mh->int_field(_vmindex_offset);
+}
+
+void sun_dyn_DirectMethodHandle::set_vmindex(oop mh, int index) {
+  assert(is_instance(mh), "DMH only");
+  mh->int_field_put(_vmindex_offset, index);
+}
+
+int sun_dyn_BoundMethodHandle::vmargslot(oop mh) {
+  assert(is_instance(mh), "BMH only");
+  return mh->int_field(_vmargslot_offset);
+}
+
+oop sun_dyn_BoundMethodHandle::argument(oop mh) {
+  assert(is_instance(mh), "BMH only");
+  return mh->obj_field(_argument_offset);
+}
+
+int sun_dyn_AdapterMethodHandle::conversion(oop mh) {
+  assert(is_instance(mh), "AMH only");
+  return mh->int_field(_conversion_offset);
+}
+
+void sun_dyn_AdapterMethodHandle::set_conversion(oop mh, int conv) {
+  assert(is_instance(mh), "AMH only");
+  mh->int_field_put(_conversion_offset, conv);
+}
+
+
+// Support for java_dyn_MethodType
+
+int java_dyn_MethodType::_rtype_offset;
+int java_dyn_MethodType::_ptypes_offset;
+int java_dyn_MethodType::_form_offset;
+
+void java_dyn_MethodType::compute_offsets() {
+  klassOop k = SystemDictionary::MethodType_klass();
+  if (k != NULL) {
+    compute_offset(_rtype_offset,  k, vmSymbols::rtype_name(),  vmSymbols::class_signature());
+    compute_offset(_ptypes_offset, k, vmSymbols::ptypes_name(), vmSymbols::class_array_signature());
+    compute_offset(_form_offset,   k, vmSymbols::form_name(),   vmSymbols::java_dyn_MethodTypeForm_signature());
+  }
+}
+
+void java_dyn_MethodType::print_signature(oop mt, outputStream* st) {
+  st->print("(");
+  objArrayOop pts = ptypes(mt);
+  for (int i = 0, limit = pts->length(); i < limit; i++) {
+    java_lang_Class::print_signature(pts->obj_at(i), st);
+  }
+  st->print(")");
+  java_lang_Class::print_signature(rtype(mt), st);
+}
+
+symbolOop java_dyn_MethodType::as_signature(oop mt, bool intern_if_not_found, TRAPS) {
+  ResourceMark rm;
+  stringStream buffer(128);
+  print_signature(mt, &buffer);
+  const char* sigstr =       buffer.base();
+  int         siglen = (int) buffer.size();
+  if (!intern_if_not_found)
+    return SymbolTable::probe(sigstr, siglen);
+  else
+    return oopFactory::new_symbol(sigstr, siglen, THREAD);
+}
+
+oop java_dyn_MethodType::rtype(oop mt) {
+  assert(is_instance(mt), "must be a MethodType");
+  return mt->obj_field(_rtype_offset);
+}
+
+objArrayOop java_dyn_MethodType::ptypes(oop mt) {
+  assert(is_instance(mt), "must be a MethodType");
+  return (objArrayOop) mt->obj_field(_ptypes_offset);
+}
+
+oop java_dyn_MethodType::form(oop mt) {
+  assert(is_instance(mt), "must be a MethodType");
+  return mt->obj_field(_form_offset);
+}
+
+oop java_dyn_MethodType::ptype(oop mt, int idx) {
+  return ptypes(mt)->obj_at(idx);
+}
+
+
+
+// Support for java_dyn_MethodTypeForm
+
+int java_dyn_MethodTypeForm::_vmslots_offset;
+int java_dyn_MethodTypeForm::_erasedType_offset;
+
+void java_dyn_MethodTypeForm::compute_offsets() {
+  klassOop k = SystemDictionary::MethodTypeForm_klass();
+  if (k != NULL) {
+    compute_optional_offset(_vmslots_offset,    k, vmSymbols::vmslots_name(),    vmSymbols::int_signature(), true);
+    compute_optional_offset(_erasedType_offset, k, vmSymbols::erasedType_name(), vmSymbols::java_dyn_MethodType_signature(), true);
+  }
+}
+
+int java_dyn_MethodTypeForm::vmslots(oop mtform) {
+  assert(mtform->klass() == SystemDictionary::MethodTypeForm_klass(), "MTForm only");
+  return mtform->int_field(_vmslots_offset);
+}
+
+oop java_dyn_MethodTypeForm::erasedType(oop mtform) {
+  assert(mtform->klass() == SystemDictionary::MethodTypeForm_klass(), "MTForm only");
+  return mtform->obj_field(_erasedType_offset);
+}
+
+
+
+
 // Support for java_security_AccessControlContext
 
 int java_security_AccessControlContext::_context_offset = 0;
 int java_security_AccessControlContext::_privilegedContext_offset = 0;
 int java_security_AccessControlContext::_isPrivileged_offset = 0;
-
 
 void java_security_AccessControlContext::compute_offsets() {
   assert(_isPrivileged_offset == 0, "offsets should be initialized only once");
@@ -2372,6 +2766,15 @@ void JavaClasses::compute_offsets() {
   java_lang_System::compute_offsets();
   java_lang_Thread::compute_offsets();
   java_lang_ThreadGroup::compute_offsets();
+  if (EnableMethodHandles) {
+    java_dyn_MethodHandle::compute_offsets();
+    sun_dyn_MemberName::compute_offsets();
+    sun_dyn_DirectMethodHandle::compute_offsets();
+    sun_dyn_BoundMethodHandle::compute_offsets();
+    sun_dyn_AdapterMethodHandle::compute_offsets();
+    java_dyn_MethodType::compute_offsets();
+    java_dyn_MethodTypeForm::compute_offsets();
+  }
   java_security_AccessControlContext::compute_offsets();
   // Initialize reflection classes. The layouts of these classes
   // changed with the new reflection implementation in JDK 1.4, and
@@ -2389,6 +2792,9 @@ void JavaClasses::compute_offsets() {
     sun_reflect_UnsafeStaticFieldAccessorImpl::compute_offsets();
   }
   sun_misc_AtomicLongCSImpl::compute_offsets();
+
+  // generated interpreter code wants to know about the offsets we just computed:
+  AbstractAssembler::update_delayed_values();
 }
 
 #ifndef PRODUCT

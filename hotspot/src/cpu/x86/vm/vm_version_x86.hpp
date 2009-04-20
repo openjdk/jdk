@@ -70,7 +70,9 @@ public:
                dca      : 1,
                sse4_1   : 1,
                sse4_2   : 1,
-                        : 11;
+                        : 2,
+               popcnt   : 1,
+                        : 8;
     } bits;
   };
 
@@ -179,7 +181,8 @@ protected:
      CPU_SSSE3  = (1 << 9),
      CPU_SSE4A  = (1 << 10),
      CPU_SSE4_1 = (1 << 11),
-     CPU_SSE4_2 = (1 << 12)
+     CPU_SSE4_2 = (1 << 12),
+     CPU_POPCNT = (1 << 13)
    } cpuFeatureFlags;
 
   // cpuid information block.  All info derived from executing cpuid with
@@ -290,6 +293,8 @@ protected:
       result |= CPU_SSE4_1;
     if (_cpuid_info.std_cpuid1_ecx.bits.sse4_2 != 0)
       result |= CPU_SSE4_2;
+    if (_cpuid_info.std_cpuid1_ecx.bits.popcnt != 0)
+      result |= CPU_POPCNT;
     return result;
   }
 
@@ -379,6 +384,7 @@ public:
   static bool supports_ssse3()    { return (_cpuFeatures & CPU_SSSE3)!= 0; }
   static bool supports_sse4_1()   { return (_cpuFeatures & CPU_SSE4_1) != 0; }
   static bool supports_sse4_2()   { return (_cpuFeatures & CPU_SSE4_2) != 0; }
+  static bool supports_popcnt()   { return (_cpuFeatures & CPU_POPCNT) != 0; }
   //
   // AMD features
   //

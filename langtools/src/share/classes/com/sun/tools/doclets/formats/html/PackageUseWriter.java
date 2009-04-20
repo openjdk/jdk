@@ -34,6 +34,7 @@ import java.util.*;
  * Generate package usage information.
  *
  * @author Robert G. Field
+ * @author Bhavesh Patel (Modified)
  */
 public class PackageUseWriter extends SubWriterHolderWriter {
 
@@ -131,11 +132,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     }
 
     protected void generatePackageList() throws IOException {
-        tableIndexSummary();
-        tableHeaderStart("#CCCCFF");
+        tableIndexSummary(useTableSummary);
+        tableCaptionStart();
         printText("doclet.ClassUse_Packages.that.use.0",
             getPackageLink(pkgdoc, Util.getPackageName(pkgdoc), false));
-        tableHeaderEnd();
+        tableCaptionEnd();
+        summaryTableHeader(packageTableHeader, "col");
         Iterator<String> it = usingPackageToUsedClasses.keySet().iterator();
         while (it.hasNext()) {
             PackageDoc pkg = configuration.root.packageNamed(it.next());
@@ -147,6 +149,11 @@ public class PackageUseWriter extends SubWriterHolderWriter {
     }
 
     protected void generateClassList() throws IOException {
+        String[] classTableHeader = new String[] {
+            configuration.getText("doclet.0_and_1",
+                    configuration.getText("doclet.Class"),
+                    configuration.getText("doclet.Description"))
+        };
         Iterator<String> itp = usingPackageToUsedClasses.keySet().iterator();
         while (itp.hasNext()) {
             String packageName = itp.next();
@@ -154,12 +161,14 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             if (usingPackage != null) {
                 anchor(usingPackage.name());
             }
-            tableIndexSummary();
-            tableHeaderStart("#CCCCFF");
+            tableIndexSummary(configuration.getText("doclet.Use_Table_Summary",
+                    configuration.getText("doclet.classes")));
+            tableCaptionStart();
             printText("doclet.ClassUse_Classes.in.0.used.by.1",
                 getPackageLink(pkgdoc, Util.getPackageName(pkgdoc), false),
                 getPackageLink(usingPackage,Util.getPackageName(usingPackage), false));
-            tableHeaderEnd();
+            tableCaptionEnd();
+            summaryTableHeader(classTableHeader, "col");
             Iterator<ClassDoc> itc =
                     usingPackageToUsedClasses.get(packageName).iterator();
             while (itc.hasNext()) {
