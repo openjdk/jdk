@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ import com.sun.corba.se.spi.legacy.connection.LegacyServerSocketEndPointInfo;
 public class ORBSingleton extends ORB
 {
     // This is used to support read_Object.
-    private static ORB fullORB;
+    private ORB fullORB;
     private static PresentationManager.StubFactoryFactory staticStubFactoryFactory =
         PresentationDefaults.getStaticStubFactoryFactory() ;
 

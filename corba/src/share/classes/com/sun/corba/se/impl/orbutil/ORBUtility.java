@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -804,25 +804,6 @@ public final class ORBUtility {
         }
 
         return result ;
-    }
-
-    public static void setDaemon(Thread thread)
-    {
-        // Catch exceptions since setDaemon can cause a
-        // security exception to be thrown under netscape
-        // in the Applet mode
-        final Thread finalThread = thread;
-        try {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                    public java.lang.Object run() {
-                        finalThread.setDaemon(true);
-                        return null;
-                    }
-                });
-        } catch (Exception e) {
-            // REVISIT: Object to get static method. Ignore it.
-            dprint(new Object(), "setDaemon: Exception: " + e);
-        }
     }
 
     public static String operationNameAndRequestId(CorbaMessageMediator m)
