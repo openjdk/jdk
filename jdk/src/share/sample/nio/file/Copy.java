@@ -52,7 +52,7 @@ public class Copy {
 
     /**
      * Copy source file to target location. If {@code prompt} is true then
-     * prompted user to overwrite target if it exists. The {@code preserve}
+     * prompt user to overwrite target if it exists. The {@code preserve}
      * parameter determines if file attributes should be copied/preserved.
      */
     static void copyFile(Path source, Path target, boolean prompt, boolean preserve) {
@@ -63,7 +63,7 @@ public class Copy {
             try {
                 source.copyTo(target, options);
             } catch (IOException x) {
-                System.err.format("Unable to create: %s: %s%n", target, x);
+                System.err.format("Unable to copy: %s: %s%n", source, x);
             }
         }
     }
@@ -124,13 +124,13 @@ public class Copy {
         public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
             // fix up modification time of directory when done
             if (exc == null && preserve) {
+                Path newdir = target.resolve(source.relativize(dir));
                 try {
                     BasicFileAttributes attrs = Attributes.readBasicFileAttributes(dir);
-                    Path newdir = target.resolve(source.relativize(dir));
                     Attributes.setLastModifiedTime(newdir,
                         attrs.lastModifiedTime(), attrs.resolution());
                 } catch (IOException x) {
-                    // ignore
+                    System.err.format("Unable to copy all attributes to: %s: %s%n", newdir, x);
                 }
             }
             return CONTINUE;
@@ -191,6 +191,7 @@ public class Copy {
         try {
             isDir = Attributes.readBasicFileAttributes(target).isDirectory();
         } catch (IOException x) {
+            // ignore (probably target does not exist)
         }
 
         // copy each source file/directory to target
@@ -201,7 +202,7 @@ public class Copy {
                 // follow links when copying files
                 EnumSet<FileVisitOption> opts = EnumSet.of(FileVisitOption.FOLLOW_LINKS);
                 TreeCopier tc = new TreeCopier(source[i], dest, prompt, preserve);
-                Files.walkFileTree(source[i], opts, -1, tc);
+                Files.walkFileTree(source[i], opts, Integer.MAX_VALUE, tc);
             } else {
                 // not recursive so source must not be a directory
                 try {
@@ -209,7 +210,9 @@ public class Copy {
                         System.err.format("%s: is a directory%n", source[i]);
                         continue;
                     }
-                } catch (IOException x) { }
+                } catch (IOException x) {
+                    // assume not directory
+                }
                 copyFile(source[i], dest, prompt, preserve);
             }
         }
