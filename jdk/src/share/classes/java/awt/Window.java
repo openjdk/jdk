@@ -3674,6 +3674,10 @@ public class Window extends Container implements Accessible {
         }); // WindowAccessor
     } // static
 
+    // a window doesn't need to be updated in the Z-order.
+    @Override
+    void updateZOrder() {}
+
 } // class Window
 
 

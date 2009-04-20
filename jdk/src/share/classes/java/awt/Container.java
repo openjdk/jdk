@@ -840,7 +840,7 @@ public class Container extends Component {
                     // Native container changed - need to reparent native widgets
                     newNativeContainer.reparentChild(comp);
                 }
-                comp.peer.setZOrder(comp.getHWPeerAboveMe());
+                comp.updateZOrder();
 
                 if (!comp.isLightweight() && isLightweight()) {
                     // If component is heavyweight and one of the containers is lightweight
