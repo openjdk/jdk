@@ -165,7 +165,6 @@ jmethodID AwtWindow::calculateSecurityWarningPositionMID;
 int AwtWindow::ms_instanceCounter = 0;
 HHOOK AwtWindow::ms_hCBTFilter;
 AwtWindow * AwtWindow::m_grabbedWindow = NULL;
-HWND AwtWindow::sm_retainingHierarchyZOrderInShow = NULL;
 BOOL AwtWindow::sm_resizing = FALSE;
 UINT AwtWindow::untrustedWindowsCounter = 0;
 
@@ -341,23 +340,6 @@ MsgRouting AwtWindow::WmNcMouseDown(WPARAM hitTest, int x, int y, int button) {
 }
 
 MsgRouting AwtWindow::WmWindowPosChanging(LPARAM windowPos) {
-    /*
-     * See 6178004.
-     * Some windows shouldn't trigger a change in z-order of
-     * any window from the hierarchy.
-     */
-    if (IsRetainingHierarchyZOrder()) {
-        if (((WINDOWPOS *)windowPos)->flags & SWP_SHOWWINDOW) {
-            sm_retainingHierarchyZOrderInShow = GetHWnd();
-        }
-    } else if (sm_retainingHierarchyZOrderInShow != NULL) {
-        HWND ancestor = ::GetAncestor(sm_retainingHierarchyZOrderInShow, GA_ROOTOWNER);
-        HWND windowAncestor = ::GetAncestor(GetHWnd(), GA_ROOTOWNER);
-
-        if (windowAncestor == ancestor) {
-            ((WINDOWPOS *)windowPos)->flags |= SWP_NOZORDER;
-        }
-    }
     return mrDoDefault;
 }
 
@@ -376,12 +358,6 @@ void AwtWindow::RepositionSecurityWarning(JNIEnv *env)
 
 MsgRouting AwtWindow::WmWindowPosChanged(LPARAM windowPos) {
     WINDOWPOS * wp = (WINDOWPOS *)windowPos;
-
-    if (IsRetainingHierarchyZOrder() && wp->flags & SWP_SHOWWINDOW) {
-        // By this time all the windows from the hierarchy are already notified about z-order change.
-        // Thus we may and we should reset the trigger in order not to affect other changes.
-        sm_retainingHierarchyZOrderInShow = NULL;
-    }
 
     // Reposition the warning window
     if (IsUntrusted() && warningWindow != NULL) {
@@ -1251,7 +1227,16 @@ void AwtWindow::Show()
         }
     }
     if (!done) {
-        ::ShowWindow(GetHWnd(), nCmdShow);
+        // transient windows shouldn't change the owner window's position in the z-order
+        if (IsRetainingHierarchyZOrder()){
+            UINT flags = SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW | SWP_NOOWNERZORDER;
+            if (nCmdShow == SW_SHOWNA) {
+                flags |= SWP_NOACTIVATE;
+            }
+            ::SetWindowPos(GetHWnd(), HWND_TOPMOST, 0, 0, 0, 0, flags);
+        } else {
+            ::ShowWindow(GetHWnd(), nCmdShow);
+        }
     }
     env->DeleteLocalRef(target);
 }
