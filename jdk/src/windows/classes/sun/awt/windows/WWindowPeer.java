@@ -335,16 +335,14 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     }
 
     private void updateShape() {
-        // Shape shape = ((Window)target).getShape();
-        Shape shape = AWTAccessor.getWindowAccessor().getShape((Window)target);
+        Shape shape = ((Window)target).getShape();
         if (shape != null) {
             applyShape(Region.getInstance(shape, null));
         }
     }
 
     private void updateOpacity() {
-        // float opacity = ((Window)target).getOpacity();
-        float opacity = AWTAccessor.getWindowAccessor().getOpacity((Window)target);
+        float opacity = ((Window)target).getOpacity();
         if (opacity < 1.0f) {
             setOpacity(opacity);
         }
@@ -610,11 +608,13 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     public void setOpaque(boolean isOpaque) {
         Window target = (Window)getTarget();
 
-        SunToolkit sunToolkit = (SunToolkit)target.getToolkit();
-        if (!sunToolkit.isWindowTranslucencySupported() ||
-            !sunToolkit.isTranslucencyCapable(target.getGraphicsConfiguration()))
-        {
-            return;
+        if (!isOpaque) {
+            SunToolkit sunToolkit = (SunToolkit)target.getToolkit();
+            if (!sunToolkit.isWindowTranslucencySupported() ||
+                !sunToolkit.isTranslucencyCapable(target.getGraphicsConfiguration()))
+            {
+                return;
+            }
         }
 
         boolean opaqueChanged = this.isOpaque != isOpaque;
@@ -648,9 +648,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             // its shape only. To restore the correct visual appearance
             // of the window (i.e. w/ the correct shape) we have to reset
             // the shape.
-            Shape shape = AWTAccessor.getWindowAccessor().getShape(target);
+            Shape shape = ((Window)target).getShape();
             if (shape != null) {
-                AWTAccessor.getWindowAccessor().setShape(target, shape);
+                ((Window)target).setShape(shape);
             }
         }
 
@@ -661,6 +661,11 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
     public void updateWindow(BufferedImage backBuffer) {
         if (isOpaque) {
+            return;
+        }
+
+        Component target = (Component)this.target;
+        if (target.getWidth() <= 0 || target.getHeight() <= 0) {
             return;
         }
 
