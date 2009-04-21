@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6830220
+ * @bug 6830220 6278014
  * @summary Test Logger subclasses
  */
 
@@ -67,6 +67,8 @@ public class LoggerSubclass {
                     equal(lastSequenceNumber.get() + 1,
                           l.getSequenceNumber());
                     equal(lastThreadID.get(),
+                          l.getThreadID());
+                    equal((int) Thread.currentThread().getId(),
                           l.getThreadID());
                 }
                 lastSequenceNumber.set(l.getSequenceNumber());
