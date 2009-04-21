@@ -980,8 +980,8 @@ void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, relocInfo::relocTyp
   // This code sequence is relocatable to any address, even on LP64.
   if ( force_far_call ) {
     __ relocate(rtype);
-    Address dest(O7, (address)entry_point);
-    __ jumpl_to(dest, O7);
+    AddressLiteral dest(entry_point);
+    __ jumpl_to(dest, O7, O7);
   }
   else
 #endif
@@ -1030,17 +1030,6 @@ void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, relocInfo::relocTyp
 // REQUIRED FUNCTIONALITY for encoding
 void emit_lo(CodeBuffer &cbuf, int val) {  }
 void emit_hi(CodeBuffer &cbuf, int val) {  }
-
-void emit_ptr(CodeBuffer &cbuf, intptr_t val, Register reg, bool ForceRelocatable) {
-  MacroAssembler _masm(&cbuf);
-  if (ForceRelocatable) {
-    Address addr(reg, (address)val);
-    __ sethi(addr, ForceRelocatable);
-    __ add(addr, reg);
-  } else {
-    __ set(val, reg);
-  }
-}
 
 
 //=============================================================================
@@ -1149,8 +1138,8 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   // If this does safepoint polling, then do it here
   if( do_polling() && ra_->C->is_method_compilation() ) {
-    Address polling_page(L0, (address)os::get_polling_page());
-    __ sethi(polling_page, false);
+    AddressLiteral polling_page(os::get_polling_page());
+    __ sethi(polling_page, L0);
     __ relocate(relocInfo::poll_return_type);
     __ ld_ptr( L0, 0, G0 );
   }
@@ -1576,8 +1565,8 @@ void emit_java_to_interp(CodeBuffer &cbuf ) {
   __ set_oop(NULL, reg_to_register_object(Matcher::inline_cache_reg_encode()));
 
   __ set_inst_mark();
-  Address a(G3, (address)-1);
-  __ JUMP(a, 0);
+  AddressLiteral addrlit(-1);
+  __ JUMP(addrlit, G3, 0);
 
   __ delayed()->nop();
 
@@ -1662,7 +1651,7 @@ uint size_deopt_handler() {
 // Emit exception handler code.
 int emit_exception_handler(CodeBuffer& cbuf) {
   Register temp_reg = G3;
-  Address exception_blob(temp_reg, OptoRuntime::exception_blob()->instructions_begin());
+  AddressLiteral exception_blob(OptoRuntime::exception_blob()->instructions_begin());
   MacroAssembler _masm(&cbuf);
 
   address base =
@@ -1671,7 +1660,7 @@ int emit_exception_handler(CodeBuffer& cbuf) {
 
   int offset = __ offset();
 
-  __ JUMP(exception_blob, 0); // sethi;jmp
+  __ JUMP(exception_blob, temp_reg, 0); // sethi;jmp
   __ delayed()->nop();
 
   assert(__ offset() - offset <= (int) size_exception_handler(), "overflow");
@@ -1685,7 +1674,7 @@ int emit_deopt_handler(CodeBuffer& cbuf) {
   // Can't use any of the current frame's registers as we may have deopted
   // at a poll and everything (including G3) can be live.
   Register temp_reg = L0;
-  Address deopt_blob(temp_reg, SharedRuntime::deopt_blob()->unpack());
+  AddressLiteral deopt_blob(SharedRuntime::deopt_blob()->unpack());
   MacroAssembler _masm(&cbuf);
 
   address base =
@@ -1694,7 +1683,7 @@ int emit_deopt_handler(CodeBuffer& cbuf) {
 
   int offset = __ offset();
   __ save_frame(0);
-  __ JUMP(deopt_blob, 0); // sethi;jmp
+  __ JUMP(deopt_blob, temp_reg, 0); // sethi;jmp
   __ delayed()->restore();
 
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
@@ -2261,9 +2250,8 @@ encode %{
     address table_base = __ address_table_constant(_index2label);
     RelocationHolder rspec = internal_word_Relocation::spec(table_base);
 
-    // Load table address
-    Address the_pc(table_reg, table_base, rspec);
-    __ load_address(the_pc);
+    // Move table address into a register.
+    __ set(table_base, table_reg, rspec);
 
     // Jump to base address + switch value
     __ ld_ptr(table_reg, switch_reg, table_reg);
@@ -2402,13 +2390,13 @@ encode %{
   // The 64 bit pointer is stored in the generated code stream
   enc_class SetPtr( immP src, iRegP rd ) %{
     Register dest = reg_to_register_object($rd$$reg);
+    MacroAssembler _masm(&cbuf);
     // [RGV] This next line should be generated from ADLC
     if ( _opnds[1]->constant_is_oop() ) {
       intptr_t val = $src$$constant;
-      MacroAssembler _masm(&cbuf);
       __ set_oop_constant((jobject)val, dest);
     } else {          // non-oop pointers, e.g. card mark base, heap top
-      emit_ptr(cbuf, $src$$constant, dest, /*ForceRelocatable=*/ false);
+      __ set($src$$constant, dest);
     }
   %}
 
@@ -2789,46 +2777,6 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     __ set64( $src$$constant, dest, temp );
   %}
 
-  enc_class LdImmF(immF src, regF dst, o7RegP tmp) %{    // Load Immediate
-    address float_address = MacroAssembler(&cbuf).float_constant($src$$constant);
-    RelocationHolder rspec = internal_word_Relocation::spec(float_address);
-#ifdef _LP64
-    Register   tmp_reg = reg_to_register_object($tmp$$reg);
-    cbuf.relocate(cbuf.code_end(), rspec, 0);
-    emit_ptr(cbuf, (intptr_t)float_address, tmp_reg, /*ForceRelocatable=*/ true);
-    emit3_simm10( cbuf, Assembler::ldst_op, $dst$$reg, Assembler::ldf_op3, $tmp$$reg, 0 );
-#else  // _LP64
-    uint *code;
-    int tmp_reg = $tmp$$reg;
-
-    cbuf.relocate(cbuf.code_end(), rspec, 0);
-    emit2_22( cbuf, Assembler::branch_op, tmp_reg, Assembler::sethi_op2, (intptr_t) float_address );
-
-    cbuf.relocate(cbuf.code_end(), rspec, 0);
-    emit3_simm10( cbuf, Assembler::ldst_op, $dst$$reg, Assembler::ldf_op3, tmp_reg, (intptr_t) float_address );
-#endif // _LP64
-  %}
-
-  enc_class LdImmD(immD src, regD dst, o7RegP tmp) %{    // Load Immediate
-    address double_address = MacroAssembler(&cbuf).double_constant($src$$constant);
-    RelocationHolder rspec = internal_word_Relocation::spec(double_address);
-#ifdef _LP64
-    Register   tmp_reg = reg_to_register_object($tmp$$reg);
-    cbuf.relocate(cbuf.code_end(), rspec, 0);
-    emit_ptr(cbuf, (intptr_t)double_address, tmp_reg, /*ForceRelocatable=*/ true);
-    emit3_simm10( cbuf, Assembler::ldst_op, $dst$$reg, Assembler::lddf_op3, $tmp$$reg, 0 );
-#else // _LP64
-    uint *code;
-    int tmp_reg = $tmp$$reg;
-
-    cbuf.relocate(cbuf.code_end(), rspec, 0);
-    emit2_22( cbuf, Assembler::branch_op, tmp_reg, Assembler::sethi_op2, (intptr_t) double_address );
-
-    cbuf.relocate(cbuf.code_end(), rspec, 0);
-    emit3_simm10( cbuf, Assembler::ldst_op, $dst$$reg, Assembler::lddf_op3, tmp_reg, (intptr_t) double_address );
-#endif // _LP64
-  %}
-
   enc_class LdReplImmI(immI src, regD dst, o7RegP tmp, int count, int width) %{
     // Load a constant replicated "count" times with width "width"
     int bit_width = $width$$constant * 8;
@@ -2840,28 +2788,13 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
         val |= elt_val;
     }
     jdouble dval = *(jdouble*)&val; // coerce to double type
-    address double_address = MacroAssembler(&cbuf).double_constant(dval);
+    MacroAssembler _masm(&cbuf);
+    address double_address = __ double_constant(dval);
     RelocationHolder rspec = internal_word_Relocation::spec(double_address);
-#ifdef _LP64
-    Register   tmp_reg = reg_to_register_object($tmp$$reg);
-    cbuf.relocate(cbuf.code_end(), rspec, 0);
-    emit_ptr(cbuf, (intptr_t)double_address, tmp_reg, /*ForceRelocatable=*/ true);
-    emit3_simm10( cbuf, Assembler::ldst_op, $dst$$reg, Assembler::lddf_op3, $tmp$$reg, 0 );
-#else // _LP64
-    uint *code;
-    int tmp_reg = $tmp$$reg;
+    AddressLiteral addrlit(double_address, rspec);
 
-    cbuf.relocate(cbuf.code_end(), rspec, 0);
-    emit2_22( cbuf, Assembler::branch_op, tmp_reg, Assembler::sethi_op2, (intptr_t) double_address );
-
-    cbuf.relocate(cbuf.code_end(), rspec, 0);
-    emit3_simm10( cbuf, Assembler::ldst_op, $dst$$reg, Assembler::lddf_op3, tmp_reg, (intptr_t) double_address );
-#endif // _LP64
-  %}
-
-
-  enc_class ShouldNotEncodeThis ( ) %{
-    ShouldNotCallThis();
+    __ sethi(addrlit, $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
   %}
 
   // Compiler ensures base is doubleword aligned and cnt is count of doublewords
@@ -2901,19 +2834,19 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     int  count_offset = java_lang_String:: count_offset_in_bytes();
 
     // load str1 (jchar*) base address into tmp1_reg
-    __ load_heap_oop(Address(str1_reg, 0,  value_offset), tmp1_reg);
-    __ ld(Address(str1_reg, 0, offset_offset), result_reg);
+    __ load_heap_oop(str1_reg, value_offset, tmp1_reg);
+    __ ld(str1_reg, offset_offset, result_reg);
     __ add(tmp1_reg, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp1_reg);
-    __    ld(Address(str1_reg, 0, count_offset), str1_reg); // hoisted
+    __   ld(str1_reg, count_offset, str1_reg); // hoisted
     __ sll(result_reg, exact_log2(sizeof(jchar)), result_reg);
-    __    load_heap_oop(Address(str2_reg, 0,  value_offset), tmp2_reg); // hoisted
+    __   load_heap_oop(str2_reg, value_offset, tmp2_reg); // hoisted
     __ add(result_reg, tmp1_reg, tmp1_reg);
 
     // load str2 (jchar*) base address into tmp2_reg
-    // __ ld_ptr(Address(str2_reg, 0,  value_offset), tmp2_reg); // hoisted
-    __ ld(Address(str2_reg, 0, offset_offset), result_reg);
+    // __ ld_ptr(str2_reg, value_offset, tmp2_reg); // hoisted
+    __ ld(str2_reg, offset_offset, result_reg);
     __ add(tmp2_reg, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp2_reg);
-    __    ld(Address(str2_reg, 0, count_offset), str2_reg); // hoisted
+    __   ld(str2_reg, count_offset, str2_reg); // hoisted
     __ sll(result_reg, exact_log2(sizeof(jchar)), result_reg);
     __   subcc(str1_reg, str2_reg, O7); // hoisted
     __ add(result_reg, tmp2_reg, tmp2_reg);
@@ -2922,8 +2855,8 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     // difference of the string lengths (stack)
 
     // discard string base pointers, after loading up the lengths
-    // __ ld(Address(str1_reg, 0, count_offset), str1_reg); // hoisted
-    // __ ld(Address(str2_reg, 0, count_offset), str2_reg); // hoisted
+    // __ ld(str1_reg, count_offset, str1_reg); // hoisted
+    // __ ld(str2_reg, count_offset, str2_reg); // hoisted
 
     // See if the lengths are different, and calculate min in str1_reg.
     // Stash diff in O7 in case we need it for a tie-breaker.
@@ -3020,19 +2953,19 @@ enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegP tmp1, g4RegP tmp2, 
     int  count_offset = java_lang_String:: count_offset_in_bytes();
 
     // load str1 (jchar*) base address into tmp1_reg
-    __ load_heap_oop(Address(str1_reg, 0,  value_offset), tmp1_reg);
-    __ ld(Address(str1_reg, 0, offset_offset), result_reg);
+    __ load_heap_oop(Address(str1_reg, value_offset), tmp1_reg);
+    __ ld(Address(str1_reg, offset_offset), result_reg);
     __ add(tmp1_reg, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp1_reg);
-    __    ld(Address(str1_reg, 0, count_offset), str1_reg); // hoisted
+    __    ld(Address(str1_reg, count_offset), str1_reg); // hoisted
     __ sll(result_reg, exact_log2(sizeof(jchar)), result_reg);
-    __    load_heap_oop(Address(str2_reg, 0,  value_offset), tmp2_reg); // hoisted
+    __    load_heap_oop(Address(str2_reg, value_offset), tmp2_reg); // hoisted
     __ add(result_reg, tmp1_reg, tmp1_reg);
 
     // load str2 (jchar*) base address into tmp2_reg
-    // __ ld_ptr(Address(str2_reg, 0,  value_offset), tmp2_reg); // hoisted
-    __ ld(Address(str2_reg, 0, offset_offset), result_reg);
+    // __ ld_ptr(Address(str2_reg, value_offset), tmp2_reg); // hoisted
+    __ ld(Address(str2_reg, offset_offset), result_reg);
     __ add(tmp2_reg, arrayOopDesc::base_offset_in_bytes(T_CHAR), tmp2_reg);
-    __    ld(Address(str2_reg, 0, count_offset), str2_reg); // hoisted
+    __    ld(Address(str2_reg, count_offset), str2_reg); // hoisted
     __ sll(result_reg, exact_log2(sizeof(jchar)), result_reg);
     __   cmp(str1_reg, str2_reg); // hoisted
     __ add(result_reg, tmp2_reg, tmp2_reg);
@@ -3139,8 +3072,8 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, g4RegP tmp2, n
     __ delayed()->mov(G0, result_reg);    // not equal
 
     //load the lengths of arrays
-    __ ld(Address(ary1_reg, 0, length_offset), tmp1_reg);
-    __ ld(Address(ary2_reg, 0, length_offset), tmp2_reg);
+    __ ld(Address(ary1_reg, length_offset), tmp1_reg);
+    __ ld(Address(ary2_reg, length_offset), tmp2_reg);
 
     // return false if the two arrays are not equal length
     __ cmp(tmp1_reg, tmp2_reg);
@@ -3202,19 +3135,20 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, g4RegP tmp2, n
   enc_class enc_rethrow() %{
     cbuf.set_inst_mark();
     Register temp_reg = G3;
-    Address rethrow_stub(temp_reg, OptoRuntime::rethrow_stub());
+    AddressLiteral rethrow_stub(OptoRuntime::rethrow_stub());
     assert(temp_reg != reg_to_register_object(R_I0_num), "temp must not break oop_reg");
     MacroAssembler _masm(&cbuf);
 #ifdef ASSERT
     __ save_frame(0);
-    Address last_rethrow_addr(L1, (address)&last_rethrow);
-    __ sethi(last_rethrow_addr);
+    AddressLiteral last_rethrow_addrlit(&last_rethrow);
+    __ sethi(last_rethrow_addrlit, L1);
+    Address addr(L1, last_rethrow_addrlit.low10());
     __ get_pc(L2);
     __ inc(L2, 3 * BytesPerInstWord);  // skip this & 2 more insns to point at jump_to
-    __ st_ptr(L2, last_rethrow_addr);
+    __ st_ptr(L2, addr);
     __ restore();
 #endif
-    __ JUMP(rethrow_stub, 0); // sethi;jmp
+    __ JUMP(rethrow_stub, temp_reg, 0); // sethi;jmp
     __ delayed()->nop();
   %}
 
@@ -5493,8 +5427,9 @@ instruct loadB(iRegI dst, memory mem) %{
 
   size(4);
   format %{ "LDSB   $mem,$dst\t! byte" %}
-  opcode(Assembler::ldsb_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ ldsb($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5505,8 +5440,9 @@ instruct loadB2L(iRegL dst, memory mem) %{
 
   size(4);
   format %{ "LDSB   $mem,$dst\t! byte -> long" %}
-  opcode(Assembler::ldsb_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ ldsb($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5517,8 +5453,9 @@ instruct loadUB(iRegI dst, memory mem) %{
 
   size(4);
   format %{ "LDUB   $mem,$dst\t! ubyte" %}
-  opcode(Assembler::ldub_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ ldub($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5529,8 +5466,9 @@ instruct loadUB2L(iRegL dst, memory mem) %{
 
   size(4);
   format %{ "LDUB   $mem,$dst\t! ubyte -> long" %}
-  opcode(Assembler::ldub_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ ldub($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5541,8 +5479,9 @@ instruct loadS(iRegI dst, memory mem) %{
 
   size(4);
   format %{ "LDSH   $mem,$dst\t! short" %}
-  opcode(Assembler::ldsh_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ ldsh($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5553,8 +5492,9 @@ instruct loadS2L(iRegL dst, memory mem) %{
 
   size(4);
   format %{ "LDSH   $mem,$dst\t! short -> long" %}
-  opcode(Assembler::ldsh_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ ldsh($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5565,8 +5505,9 @@ instruct loadUS(iRegI dst, memory mem) %{
 
   size(4);
   format %{ "LDUH   $mem,$dst\t! ushort/char" %}
-  opcode(Assembler::lduh_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ lduh($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5577,8 +5518,9 @@ instruct loadUS2L(iRegL dst, memory mem) %{
 
   size(4);
   format %{ "LDUH   $mem,$dst\t! ushort/char -> long" %}
-  opcode(Assembler::lduh_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ lduh($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mask_mem);
 %}
 
@@ -5589,8 +5531,9 @@ instruct loadI(iRegI dst, memory mem) %{
 
   size(4);
   format %{ "LDUW   $mem,$dst\t! int" %}
-  opcode(Assembler::lduw_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ lduw($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mem);
 %}
 
@@ -5601,8 +5544,9 @@ instruct loadI2L(iRegL dst, memory mem) %{
 
   size(4);
   format %{ "LDSW   $mem,$dst\t! int -> long" %}
-  opcode(Assembler::ldsw_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ ldsw($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mem);
 %}
 
@@ -5613,8 +5557,9 @@ instruct loadUI2L(iRegL dst, memory mem) %{
 
   size(4);
   format %{ "LDUW   $mem,$dst\t! uint -> long" %}
-  opcode(Assembler::lduw_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ lduw($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mem);
 %}
 
@@ -5625,8 +5570,9 @@ instruct loadL(iRegL dst, memory mem ) %{
 
   size(4);
   format %{ "LDX    $mem,$dst\t! long" %}
-  opcode(Assembler::ldx_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
+  ins_encode %{
+    __ ldx($mem$$Address, $dst$$Register);
+  %}
   ins_pipe(iload_mem);
 %}
 
@@ -5721,31 +5667,29 @@ instruct loadP(iRegP dst, memory mem) %{
 
 #ifndef _LP64
   format %{ "LDUW   $mem,$dst\t! ptr" %}
-  opcode(Assembler::lduw_op3, 0, REGP_OP);
+  ins_encode %{
+    __ lduw($mem$$Address, $dst$$Register);
+  %}
 #else
   format %{ "LDX    $mem,$dst\t! ptr" %}
-  opcode(Assembler::ldx_op3, 0, REGP_OP);
+  ins_encode %{
+    __ ldx($mem$$Address, $dst$$Register);
+  %}
 #endif
-  ins_encode( form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
 %}
 
 // Load Compressed Pointer
 instruct loadN(iRegN dst, memory mem) %{
-   match(Set dst (LoadN mem));
-   ins_cost(MEMORY_REF_COST);
-   size(4);
+  match(Set dst (LoadN mem));
+  ins_cost(MEMORY_REF_COST);
+  size(4);
 
-   format %{ "LDUW   $mem,$dst\t! compressed ptr" %}
-   ins_encode %{
-     Register index = $mem$$index$$Register;
-     if (index != G0) {
-       __ lduw($mem$$base$$Register, index, $dst$$Register);
-     } else {
-       __ lduw($mem$$base$$Register, $mem$$disp, $dst$$Register);
-     }
-   %}
-   ins_pipe(iload_mem);
+  format %{ "LDUW   $mem,$dst\t! compressed ptr" %}
+  ins_encode %{
+    __ lduw($mem$$Address, $dst$$Register);
+  %}
+  ins_pipe(iload_mem);
 %}
 
 // Load Klass Pointer
@@ -5756,12 +5700,15 @@ instruct loadKlass(iRegP dst, memory mem) %{
 
 #ifndef _LP64
   format %{ "LDUW   $mem,$dst\t! klass ptr" %}
-  opcode(Assembler::lduw_op3, 0, REGP_OP);
+  ins_encode %{
+    __ lduw($mem$$Address, $dst$$Register);
+  %}
 #else
   format %{ "LDX    $mem,$dst\t! klass ptr" %}
-  opcode(Assembler::ldx_op3, 0, REGP_OP);
+  ins_encode %{
+    __ ldx($mem$$Address, $dst$$Register);
+  %}
 #endif
-  ins_encode( form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
 %}
 
@@ -5772,16 +5719,8 @@ instruct loadNKlass(iRegN dst, memory mem) %{
   size(4);
 
   format %{ "LDUW   $mem,$dst\t! compressed klass ptr" %}
-
   ins_encode %{
-     Register base = as_Register($mem$$base);
-     Register index = as_Register($mem$$index);
-     Register dst = $dst$$Register;
-     if (index != G0) {
-       __ lduw(base, index, dst);
-     } else {
-       __ lduw(base, $mem$$disp, dst);
-     }
+    __ lduw($mem$$Address, $dst$$Register);
   %}
   ins_pipe(iload_mem);
 %}
@@ -5867,8 +5806,8 @@ instruct loadConP_poll(iRegP dst, immP_poll src) %{
   ins_cost(DEFAULT_COST);
   format %{ "SET    $src,$dst\t!ptr" %}
   ins_encode %{
-    Address polling_page(reg_to_register_object($dst$$reg), (address)os::get_polling_page());
-    __ sethi(polling_page, false );
+    AddressLiteral polling_page(os::get_polling_page());
+    __ sethi(polling_page, reg_to_register_object($dst$$reg));
   %}
   ins_pipe(loadConP_poll);
 %}
@@ -5927,14 +5866,21 @@ instruct loadConF(regF dst, immF src, o7RegP tmp) %{
   effect(KILL tmp);
 
 #ifdef _LP64
-  size(36);
+  size(8*4);
 #else
-  size(8);
+  size(2*4);
 #endif
 
   format %{ "SETHI  hi(&$src),$tmp\t!get float $src from table\n\t"
             "LDF    [$tmp+lo(&$src)],$dst" %}
-  ins_encode( LdImmF(src, dst, tmp) );
+  ins_encode %{
+    address float_address = __ float_constant($src$$constant);
+    RelocationHolder rspec = internal_word_Relocation::spec(float_address);
+    AddressLiteral addrlit(float_address, rspec);
+
+    __ sethi(addrlit, $tmp$$Register);
+    __ ldf(FloatRegisterImpl::S, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
+  %}
   ins_pipe(loadConFD);
 %}
 
@@ -5943,14 +5889,21 @@ instruct loadConD(regD dst, immD src, o7RegP tmp) %{
   effect(KILL tmp);
 
 #ifdef _LP64
-  size(36);
+  size(8*4);
 #else
-  size(8);
+  size(2*4);
 #endif
 
   format %{ "SETHI  hi(&$src),$tmp\t!get double $src from table\n\t"
             "LDDF   [$tmp+lo(&$src)],$dst" %}
-  ins_encode( LdImmD(src, dst, tmp) );
+  ins_encode %{
+    address double_address = __ double_constant($src$$constant);
+    RelocationHolder rspec = internal_word_Relocation::spec(double_address);
+    AddressLiteral addrlit(double_address, rspec);
+
+    __ sethi(addrlit, $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
+  %}
   ins_pipe(loadConFD);
 %}
 
