@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@
 
 // This file specializes the assember with interpreter-specific macros
 
-const Address InterpreterMacroAssembler::l_tmp( FP, 0,  (frame::interpreter_frame_l_scratch_fp_offset    * wordSize ) + STACK_BIAS);
-const Address InterpreterMacroAssembler::d_tmp( FP, 0,  (frame::interpreter_frame_d_scratch_fp_offset    * wordSize) + STACK_BIAS);
+const Address InterpreterMacroAssembler::l_tmp(FP, (frame::interpreter_frame_l_scratch_fp_offset * wordSize) + STACK_BIAS);
+const Address InterpreterMacroAssembler::d_tmp(FP, (frame::interpreter_frame_d_scratch_fp_offset * wordSize) + STACK_BIAS);
 
 #else // CC_INTERP
 #ifndef STATE
@@ -78,14 +78,12 @@ void InterpreterMacroAssembler::dispatch_prolog(TosState state, int bcp_incr) {
   sll(Lbyte_code, LogBytesPerWord, Lbyte_code);         // multiply by wordSize
   ld_ptr(IdispatchTables, Lbyte_code, IdispatchAddress);// get entry addr
 #else
-  ldub( Lbcp, bcp_incr, Lbyte_code);               // load next bytecode
+  ldub( Lbcp, bcp_incr, Lbyte_code);                    // load next bytecode
   // dispatch table to use
-  Address tbl(G3_scratch, (address)Interpreter::dispatch_table(state));
-
-  sethi(tbl);
-  sll(Lbyte_code, LogBytesPerWord, Lbyte_code);    // multiply by wordSize
-  add(tbl, tbl.base(), 0);
-  ld_ptr( G3_scratch, Lbyte_code, IdispatchAddress);     // get entry addr
+  AddressLiteral tbl(Interpreter::dispatch_table(state));
+  sll(Lbyte_code, LogBytesPerWord, Lbyte_code);         // multiply by wordSize
+  set(tbl, G3_scratch);                                 // compute addr of table
+  ld_ptr(G3_scratch, Lbyte_code, IdispatchAddress);     // get entry addr
 #endif
 }
 
@@ -165,8 +163,7 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register scratch_reg) 
     Label L;
 
     // Check the "pending popframe condition" flag in the current thread
-    Address popframe_condition_addr(G2_thread, 0, in_bytes(JavaThread::popframe_condition_offset()));
-    ld(popframe_condition_addr, scratch_reg);
+    ld(G2_thread, JavaThread::popframe_condition_offset(), scratch_reg);
 
     // Initiate popframe handling only if it is not already being processed.  If the flag
     // has the popframe_processing bit set, it means that this code is called *during* popframe
@@ -192,11 +189,10 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register scratch_reg) 
 
 void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
   Register thr_state = G4_scratch;
-  ld_ptr(Address(G2_thread, 0, in_bytes(JavaThread::jvmti_thread_state_offset())),
-         thr_state);
-  const Address tos_addr(thr_state, 0, in_bytes(JvmtiThreadState::earlyret_tos_offset()));
-  const Address oop_addr(thr_state, 0, in_bytes(JvmtiThreadState::earlyret_oop_offset()));
-  const Address val_addr(thr_state, 0, in_bytes(JvmtiThreadState::earlyret_value_offset()));
+  ld_ptr(G2_thread, JavaThread::jvmti_thread_state_offset(), thr_state);
+  const Address tos_addr(thr_state, JvmtiThreadState::earlyret_tos_offset());
+  const Address oop_addr(thr_state, JvmtiThreadState::earlyret_oop_offset());
+  const Address val_addr(thr_state, JvmtiThreadState::earlyret_value_offset());
   switch (state) {
   case ltos: ld_long(val_addr, Otos_l);                   break;
   case atos: ld_ptr(oop_addr, Otos_l);
@@ -222,8 +218,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register scratch_reg) 
   if (JvmtiExport::can_force_early_return()) {
     Label L;
     Register thr_state = G3_scratch;
-    ld_ptr(Address(G2_thread, 0, in_bytes(JavaThread::jvmti_thread_state_offset())),
-           thr_state);
+    ld_ptr(G2_thread, JavaThread::jvmti_thread_state_offset(), thr_state);
     tst(thr_state);
     br(zero, false, pt, L); // if (thread->jvmti_thread_state() == NULL) exit;
     delayed()->nop();
@@ -231,16 +226,14 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register scratch_reg) 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
     // is called *during* earlyret handling - we don't want to reenter.
-    ld(Address(thr_state, 0, in_bytes(JvmtiThreadState::earlyret_state_offset())),
-       G4_scratch);
+    ld(thr_state, JvmtiThreadState::earlyret_state_offset(), G4_scratch);
     cmp(G4_scratch, JvmtiThreadState::earlyret_pending);
     br(Assembler::notEqual, false, pt, L);
     delayed()->nop();
 
     // Call Interpreter::remove_activation_early_entry() to get the address of the
     // same-named entrypoint in the generated interpreter code
-    Address tos_addr(thr_state, 0, in_bytes(JvmtiThreadState::earlyret_tos_offset()));
-    ld(tos_addr, Otos_l1);
+    ld(thr_state, JvmtiThreadState::earlyret_tos_offset(), Otos_l1);
     call_VM_leaf(noreg, CAST_FROM_FN_PTR(address, Interpreter::remove_activation_early_entry), Otos_l1);
 
     // Jump to Interpreter::_remove_activation_early_entry
@@ -294,10 +287,9 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, address* tab
   } else {
 #endif
     // dispatch table to use
-    Address tbl(G3_scratch, (address)table);
-
+    AddressLiteral tbl(table);
     sll(Lbyte_code, LogBytesPerWord, Lbyte_code);       // multiply by wordSize
-    load_address(tbl);                                  // compute addr of table
+    set(tbl, G3_scratch);                               // compute addr of table
     ld_ptr(G3_scratch, Lbyte_code, G3_scratch);         // get entry addr
 #ifdef FAST_DISPATCH
   }
@@ -601,26 +593,17 @@ void InterpreterMacroAssembler::empty_expression_stack() {
 
   // Reset SP by subtracting more space from Lesp.
   Label done;
-
-  const Address max_stack   (Lmethod, 0, in_bytes(methodOopDesc::max_stack_offset()));
-  const Address access_flags(Lmethod, 0, in_bytes(methodOopDesc::access_flags_offset()));
-
   verify_oop(Lmethod);
-
-
-  assert( G4_scratch    != Gframe_size,
-          "Only you can prevent register aliasing!");
+  assert(G4_scratch != Gframe_size, "Only you can prevent register aliasing!");
 
   // A native does not need to do this, since its callee does not change SP.
-  ld(access_flags, Gframe_size);
+  ld(Lmethod, methodOopDesc::access_flags_offset(), Gframe_size);  // Load access flags.
   btst(JVM_ACC_NATIVE, Gframe_size);
   br(Assembler::notZero, false, Assembler::pt, done);
   delayed()->nop();
 
-  //
   // Compute max expression stack+register save area
-  //
-  lduh( max_stack, Gframe_size );
+  lduh(Lmethod, in_bytes(methodOopDesc::max_stack_offset()), Gframe_size);  // Load max stack.
   if (TaggedStackInterpreter) sll ( Gframe_size, 1, Gframe_size);  // max_stack * 2 for TAGS
   add( Gframe_size, frame::memory_parameter_word_sp_offset, Gframe_size );
 
@@ -721,8 +704,7 @@ void InterpreterMacroAssembler::call_from_interpreter(Register target, Register 
     verify_thread();
     Label skip_compiled_code;
 
-    const Address interp_only       (G2_thread, 0, in_bytes(JavaThread::interp_only_mode_offset()));
-
+    const Address interp_only(G2_thread, JavaThread::interp_only_mode_offset());
     ld(interp_only, scratch);
     tst(scratch);
     br(Assembler::notZero, true, Assembler::pn, skip_compiled_code);
@@ -916,8 +898,8 @@ void InterpreterMacroAssembler::throw_if_not_2( address  throw_entry_point,
                                                 Register Rscratch,
                                                 Label&   ok ) {
   assert(throw_entry_point != NULL, "entry point must be generated by now");
-  Address dest(Rscratch, throw_entry_point);
-  jump_to(dest);
+  AddressLiteral dest(throw_entry_point);
+  jump_to(dest, Rscratch);
   delayed()->nop();
   bind(ok);
 }
@@ -1035,18 +1017,18 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   Label unlocked, unlock, no_unlock;
 
   // get the value of _do_not_unlock_if_synchronized into G1_scratch
-  const Address do_not_unlock_if_synchronized(G2_thread, 0,
-    in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()));
+  const Address do_not_unlock_if_synchronized(G2_thread,
+    JavaThread::do_not_unlock_if_synchronized_offset());
   ldbool(do_not_unlock_if_synchronized, G1_scratch);
   stbool(G0, do_not_unlock_if_synchronized); // reset the flag
 
   // check if synchronized method
-  const Address access_flags(Lmethod, 0, in_bytes(methodOopDesc::access_flags_offset()));
+  const Address access_flags(Lmethod, methodOopDesc::access_flags_offset());
   interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
   push(state); // save tos
-  ld(access_flags, G3_scratch);
+  ld(access_flags, G3_scratch); // Load access flags.
   btst(JVM_ACC_SYNCHRONIZED, G3_scratch);
-  br( zero, false, pt, unlocked);
+  br(zero, false, pt, unlocked);
   delayed()->nop();
 
   // Don't unlock anything if the _do_not_unlock_if_synchronized flag
@@ -1236,8 +1218,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg, Register Object) 
     Register obj_reg = Object;
     Register mark_reg = G4_scratch;
     Register temp_reg = G1_scratch;
-    Address  lock_addr = Address(lock_reg, 0, BasicObjectLock::lock_offset_in_bytes());
-    Address  mark_addr = Address(obj_reg, 0, oopDesc::mark_offset_in_bytes());
+    Address  lock_addr(lock_reg, BasicObjectLock::lock_offset_in_bytes());
+    Address  mark_addr(obj_reg, oopDesc::mark_offset_in_bytes());
     Label    done;
 
     Label slow_case;
@@ -1315,9 +1297,8 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     Register obj_reg = G3_scratch;
     Register mark_reg = G4_scratch;
     Register displaced_header_reg = G1_scratch;
-    Address  lock_addr = Address(lock_reg, 0, BasicObjectLock::lock_offset_in_bytes());
-    Address  lockobj_addr = Address(lock_reg, 0, BasicObjectLock::obj_offset_in_bytes());
-    Address  mark_addr = Address(obj_reg, 0, oopDesc::mark_offset_in_bytes());
+    Address  lockobj_addr(lock_reg, BasicObjectLock::obj_offset_in_bytes());
+    Address  mark_addr(obj_reg, oopDesc::mark_offset_in_bytes());
     Label    done;
 
     if (UseBiasedLocking) {
@@ -1328,7 +1309,8 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     }
 
     // Test first if we are in the fast recursive case
-    ld_ptr(lock_addr, displaced_header_reg, BasicLock::displaced_header_offset_in_bytes());
+    Address lock_addr(lock_reg, BasicObjectLock::lock_offset_in_bytes() + BasicLock::displaced_header_offset_in_bytes());
+    ld_ptr(lock_addr, displaced_header_reg);
     br_null(displaced_header_reg, true, Assembler::pn, done);
     delayed()->st_ptr(G0, lockobj_addr);  // free entry
 
@@ -1384,7 +1366,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   Label zero_continue;
 
   // Test MDO to avoid the call if it is NULL.
-  ld_ptr(Lmethod, in_bytes(methodOopDesc::method_data_offset()), ImethodDataPtr);
+  ld_ptr(Lmethod, methodOopDesc::method_data_offset(), ImethodDataPtr);
   test_method_data_pointer(zero_continue);
   call_VM_leaf(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::bcp_to_di), Lmethod, Lbcp);
   set_method_data_pointer_offset(O0);
@@ -1413,7 +1395,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   // If the mdp is valid, it will point to a DataLayout header which is
   // consistent with the bcp.  The converse is highly probable also.
   lduh(ImethodDataPtr, in_bytes(DataLayout::bci_offset()), G3_scratch);
-  ld_ptr(Address(Lmethod, 0, in_bytes(methodOopDesc::const_offset())), O5);
+  ld_ptr(Lmethod, methodOopDesc::const_offset(), O5);
   add(G3_scratch, in_bytes(constMethodOopDesc::codes_offset()), G3_scratch);
   add(G3_scratch, O5, G3_scratch);
   cmp(Lbcp, G3_scratch);
@@ -1424,7 +1406,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   // %%% should use call_VM_leaf here?
   //call_VM_leaf(noreg, ..., Lmethod, Lbcp, ImethodDataPtr);
   save_frame_and_mov(sizeof(jdouble) / wordSize, Lmethod, O0, Lbcp, O1);
-  Address d_save(FP, 0, -sizeof(jdouble) + STACK_BIAS);
+  Address d_save(FP, -sizeof(jdouble) + STACK_BIAS);
   stf(FloatRegisterImpl::D, Ftos_d, d_save);
   mov(temp_reg->after_save(), O2);
   save_thread(L7_thread_cache);
@@ -1456,14 +1438,14 @@ void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocat
 #endif
 
   // Test to see if we should create a method data oop
-  Address profile_limit(Rtmp, (address)&InvocationCounter::InterpreterProfileLimit);
+  AddressLiteral profile_limit((address) &InvocationCounter::InterpreterProfileLimit);
 #ifdef _LP64
   delayed()->nop();
-  sethi(profile_limit);
+  sethi(profile_limit, Rtmp);
 #else
-  delayed()->sethi(profile_limit);
+  delayed()->sethi(profile_limit, Rtmp);
 #endif
-  ld(profile_limit, Rtmp);
+  ld(Rtmp, profile_limit.low10(), Rtmp);
   cmp(invocation_count, Rtmp);
   br(Assembler::lessUnsigned, false, Assembler::pn, profile_continue);
   delayed()->nop();
@@ -1521,7 +1503,7 @@ void InterpreterMacroAssembler::increment_mdp_data_at(int constant,
                                                       Register bumped_count,
                                                       bool decrement) {
   // Locate the counter at a fixed offset from the mdp:
-  Address counter(ImethodDataPtr, 0, constant);
+  Address counter(ImethodDataPtr, constant);
   increment_mdp_data_at(counter, bumped_count, decrement);
 }
 
@@ -1535,7 +1517,7 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register reg,
                                                       bool decrement) {
   // Add the constant to reg to get the offset.
   add(ImethodDataPtr, reg, scratch2);
-  Address counter(scratch2, 0, constant);
+  Address counter(scratch2, constant);
   increment_mdp_data_at(counter, bumped_count, decrement);
 }
 
@@ -2201,7 +2183,7 @@ int InterpreterMacroAssembler::top_most_monitor_byte_offset() {
 
 
 Address InterpreterMacroAssembler::top_most_monitor() {
-  return Address(FP, 0, top_most_monitor_byte_offset());
+  return Address(FP, top_most_monitor_byte_offset());
 }
 
 
@@ -2214,15 +2196,15 @@ void InterpreterMacroAssembler::compute_stack_base( Register Rdest ) {
 void InterpreterMacroAssembler::increment_invocation_counter( Register Rtmp, Register Rtmp2 ) {
   assert(UseCompiler, "incrementing must be useful");
 #ifdef CC_INTERP
-  Address inv_counter(G5_method, 0, in_bytes(methodOopDesc::invocation_counter_offset()
-                            + InvocationCounter::counter_offset()));
-  Address be_counter(G5_method, 0, in_bytes(methodOopDesc::backedge_counter_offset()
-                            + InvocationCounter::counter_offset()));
+  Address inv_counter(G5_method, methodOopDesc::invocation_counter_offset() +
+                                 InvocationCounter::counter_offset());
+  Address be_counter (G5_method, methodOopDesc::backedge_counter_offset() +
+                                 InvocationCounter::counter_offset());
 #else
-  Address inv_counter(Lmethod, 0, in_bytes(methodOopDesc::invocation_counter_offset()
-                            + InvocationCounter::counter_offset()));
-  Address be_counter(Lmethod, 0, in_bytes(methodOopDesc::backedge_counter_offset()
-                            + InvocationCounter::counter_offset()));
+  Address inv_counter(Lmethod, methodOopDesc::invocation_counter_offset() +
+                               InvocationCounter::counter_offset());
+  Address be_counter (Lmethod, methodOopDesc::backedge_counter_offset() +
+                               InvocationCounter::counter_offset());
 #endif /* CC_INTERP */
   int delta = InvocationCounter::count_increment;
 
@@ -2250,15 +2232,15 @@ void InterpreterMacroAssembler::increment_invocation_counter( Register Rtmp, Reg
 void InterpreterMacroAssembler::increment_backedge_counter( Register Rtmp, Register Rtmp2 ) {
   assert(UseCompiler, "incrementing must be useful");
 #ifdef CC_INTERP
-  Address be_counter(G5_method, 0, in_bytes(methodOopDesc::backedge_counter_offset()
-                            + InvocationCounter::counter_offset()));
-  Address inv_counter(G5_method, 0, in_bytes(methodOopDesc::invocation_counter_offset()
-                            +  InvocationCounter::counter_offset()));
+  Address be_counter (G5_method, methodOopDesc::backedge_counter_offset() +
+                                 InvocationCounter::counter_offset());
+  Address inv_counter(G5_method, methodOopDesc::invocation_counter_offset() +
+                                 InvocationCounter::counter_offset());
 #else
-  Address be_counter(Lmethod, 0, in_bytes(methodOopDesc::backedge_counter_offset()
-                            + InvocationCounter::counter_offset()));
-  Address inv_counter(Lmethod, 0, in_bytes(methodOopDesc::invocation_counter_offset()
-                            + InvocationCounter::counter_offset()));
+  Address be_counter (Lmethod, methodOopDesc::backedge_counter_offset() +
+                               InvocationCounter::counter_offset());
+  Address inv_counter(Lmethod, methodOopDesc::invocation_counter_offset() +
+                               InvocationCounter::counter_offset());
 #endif /* CC_INTERP */
   int delta = InvocationCounter::count_increment;
   // Load each counter in a register
@@ -2289,7 +2271,7 @@ void InterpreterMacroAssembler::test_backedge_count_for_osr( Register backedge_c
   assert_different_registers(backedge_count, Rtmp, branch_bcp);
   assert(UseOnStackReplacement,"Must UseOnStackReplacement to test_backedge_count_for_osr");
 
-  Address limit(Rtmp, address(&InvocationCounter::InterpreterBackwardBranchLimit));
+  AddressLiteral limit(&InvocationCounter::InterpreterBackwardBranchLimit);
   load_contents(limit, Rtmp);
   cmp(backedge_count, Rtmp);
   br(Assembler::lessUnsigned, false, Assembler::pt, did_not_overflow);
@@ -2435,9 +2417,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
   if (JvmtiExport::can_post_interpreter_events()) {
     Label L;
     Register temp_reg = O5;
-
-    const Address interp_only       (G2_thread, 0, in_bytes(JavaThread::interp_only_mode_offset()));
-
+    const Address interp_only(G2_thread, JavaThread::interp_only_mode_offset());
     ld(interp_only, temp_reg);
     tst(temp_reg);
     br(zero, false, pt, L);
@@ -2489,9 +2469,7 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method,
   if (mode == NotifyJVMTI && JvmtiExport::can_post_interpreter_events()) {
     Label L;
     Register temp_reg = O5;
-
-    const Address interp_only       (G2_thread, 0, in_bytes(JavaThread::interp_only_mode_offset()));
-
+    const Address interp_only(G2_thread, JavaThread::interp_only_mode_offset());
     ld(interp_only, temp_reg);
     tst(temp_reg);
     br(zero, false, pt, L);
