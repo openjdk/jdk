@@ -477,7 +477,7 @@ public class Logger {
 
         Logger logger = this;
         while (logger != null) {
-            for (Handler handler : logger.handlers) {
+            for (Handler handler : logger.getHandlers()) {
                 handler.publish(record);
             }
 
