@@ -26,6 +26,7 @@
 package sun.font;
 
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
@@ -842,8 +843,36 @@ public class FileFontStrike extends PhysicalStrike {
         return fileFont.getGlyphOutlineBounds(pScalerContext, glyphCode);
     }
 
+    private
+        WeakReference<ConcurrentHashMap<Integer,GeneralPath>> outlineMapRef;
+
     GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
-        return fileFont.getGlyphOutline(pScalerContext, glyphCode, x, y);
+
+        GeneralPath gp = null;
+        ConcurrentHashMap<Integer, GeneralPath> outlineMap = null;
+
+        if (outlineMapRef != null) {
+            outlineMap = outlineMapRef.get();
+            if (outlineMap != null) {
+                gp = (GeneralPath)outlineMap.get(glyphCode);
+            }
+        }
+
+        if (gp == null) {
+            gp = fileFont.getGlyphOutline(pScalerContext, glyphCode, 0, 0);
+            if (outlineMap == null) {
+                outlineMap = new ConcurrentHashMap<Integer, GeneralPath>();
+                outlineMapRef =
+                   new WeakReference
+                       <ConcurrentHashMap<Integer,GeneralPath>>(outlineMap);
+            }
+            outlineMap.put(glyphCode, gp);
+        }
+        gp = (GeneralPath)gp.clone(); // mutable!
+        if (x != 0f || y != 0f) {
+            gp.transform(AffineTransform.getTranslateInstance(x, y));
+        }
+        return gp;
     }
 
     GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {

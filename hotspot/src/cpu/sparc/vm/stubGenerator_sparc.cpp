@@ -817,21 +817,6 @@ class StubGenerator: public StubCodeGenerator {
   Label _atomic_add_stub;  // called from other stubs
 
 
-  // Support for void OrderAccess::fence().
-  //
-  address generate_fence() {
-    StubCodeMark mark(this, "StubRoutines", "fence");
-    address start = __ pc();
-
-    __ membar(Assembler::Membar_mask_bits(Assembler::LoadLoad  | Assembler::LoadStore |
-                                          Assembler::StoreLoad | Assembler::StoreStore));
-    __ retl(false);
-    __ delayed()->nop();
-
-    return start;
-  }
-
-
   //------------------------------------------------------------------------------------------------------------------------
   // The following routine generates a subroutine to throw an asynchronous
   // UnknownError when an unsafe access gets a fault that could not be
@@ -900,19 +885,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "partial_subtype_check");
     address start = __ pc();
-    Label loop, miss;
-
-    // Compare super with sub directly, since super is not in its own SSA.
-    // The compiler used to emit this test, but we fold it in here,
-    // to increase overall code density, with no real loss of speed.
-    { Label L;
-      __ cmp(O1, O2);
-      __ brx(Assembler::notEqual, false, Assembler::pt, L);
-      __ delayed()->nop();
-      __ retl();
-      __ delayed()->addcc(G0,0,O0); // set Z flags, zero result
-      __ bind(L);
-    }
+    Label miss;
 
 #if defined(COMPILER2) && !defined(_LP64)
     // Do not use a 'save' because it blows the 64-bit O registers.
@@ -936,56 +909,12 @@ class StubGenerator: public StubCodeGenerator {
     Register L2_super   = L2;
     Register L3_index   = L3;
 
-#ifdef _LP64
-    Register L4_ooptmp  = L4;
+    __ check_klass_subtype_slow_path(Rsub, Rsuper,
+                                     L0, L1, L2, L3,
+                                     NULL, &miss);
 
-    if (UseCompressedOops) {
-      // this must be under UseCompressedOops check, as we rely upon fact
-      // that L4 not clobbered in C2 on 32-bit platforms, where we do explicit save
-      // on stack, see several lines above
-      __ encode_heap_oop(Rsuper, L4_ooptmp);
-    }
-#endif
-
-    inc_counter_np(SharedRuntime::_partial_subtype_ctr, L0, L1);
-
-    __ ld_ptr( Rsub, sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes(), L3 );
-    __ lduw(L3,arrayOopDesc::length_offset_in_bytes(),L0_ary_len);
-    __ add(L3,arrayOopDesc::base_offset_in_bytes(T_OBJECT),L1_ary_ptr);
-    __ clr(L3_index);           // zero index
-    // Load a little early; will load 1 off the end of the array.
-    // Ok for now; revisit if we have other uses of this routine.
-    if (UseCompressedOops) {
-      __ lduw(L1_ary_ptr,0,L2_super);// Will load a little early
-    } else {
-      __ ld_ptr(L1_ary_ptr,0,L2_super);// Will load a little early
-    }
-
-    assert(heapOopSize != 0, "heapOopSize should be initialized");
-    // The scan loop
-    __ BIND(loop);
-    __ add(L1_ary_ptr, heapOopSize, L1_ary_ptr); // Bump by OOP size
-    __ cmp(L3_index,L0_ary_len);
-    __ br(Assembler::equal,false,Assembler::pn,miss);
-    __ delayed()->inc(L3_index); // Bump index
-
-    if (UseCompressedOops) {
-#ifdef  _LP64
-      __ subcc(L2_super,L4_ooptmp,Rret);   // Check for match; zero in Rret for a hit
-      __ br( Assembler::notEqual, false, Assembler::pt, loop );
-      __ delayed()->lduw(L1_ary_ptr,0,L2_super);// Will load a little early
-#else
-      ShouldNotReachHere();
-#endif
-    } else {
-      __ subcc(L2_super,Rsuper,Rret);   // Check for match; zero in Rret for a hit
-      __ brx( Assembler::notEqual, false, Assembler::pt, loop );
-      __ delayed()->ld_ptr(L1_ary_ptr,0,L2_super);// Will load a little early
-    }
-
-    // Got a hit; report success; set cache.  Cache load doesn't
-    // happen here; for speed it is directly emitted by the compiler.
-    __ st_ptr( Rsuper, Rsub, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() );
+    // Match falls through here.
+    __ addcc(G0,0,Rret);        // set Z flags, Z result
 
 #if defined(COMPILER2) && !defined(_LP64)
     __ ld_ptr(SP,(frame::register_save_words+0)*wordSize,L0);
@@ -999,7 +928,6 @@ class StubGenerator: public StubCodeGenerator {
     __ delayed()->restore();
 #endif
 
-    // Hit or miss falls through here
     __ BIND(miss);
     __ addcc(G0,1,Rret);        // set NZ flags, NZ result
 
@@ -2330,50 +2258,30 @@ class StubGenerator: public StubCodeGenerator {
                            Register super_check_offset,
                            Register super_klass,
                            Register temp,
-                           Label& L_success,
-                           Register deccc_hack = noreg) {
+                           Label& L_success) {
     assert_different_registers(sub_klass, super_check_offset, super_klass, temp);
 
     BLOCK_COMMENT("type_check:");
 
-    Label L_miss;
+    Label L_miss, L_pop_to_miss;
 
     assert_clean_int(super_check_offset, temp);
 
-    // maybe decrement caller's trip count:
-#define DELAY_SLOT delayed();   \
-    { if (deccc_hack == noreg) __ nop(); else __ deccc(deccc_hack); }
+    __ check_klass_subtype_fast_path(sub_klass, super_klass, temp, noreg,
+                                     &L_success, &L_miss, NULL,
+                                     super_check_offset);
 
-    // if the pointers are equal, we are done (e.g., String[] elements)
-    __ cmp(sub_klass, super_klass);
-    __ brx(Assembler::equal, true, Assembler::pt, L_success);
-    __ DELAY_SLOT;
-
-    // check the supertype display:
-    __ ld_ptr(sub_klass, super_check_offset, temp); // query the super type
-    __ cmp(super_klass,                      temp); // test the super type
-    __ brx(Assembler::equal, true, Assembler::pt, L_success);
-    __ DELAY_SLOT;
-
-    int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
-                     Klass::secondary_super_cache_offset_in_bytes());
-    __ cmp(super_klass, sc_offset);
-    __ brx(Assembler::notEqual, true, Assembler::pt, L_miss);
-    __ delayed()->nop();
-
+    BLOCK_COMMENT("type_check_slow_path:");
     __ save_frame(0);
-    __ mov(sub_klass->after_save(), O1);
-    // mov(super_klass->after_save(), O2); //fill delay slot
-    assert(StubRoutines::Sparc::_partial_subtype_check != NULL, "order of generation");
-    __ call(StubRoutines::Sparc::_partial_subtype_check);
-    __ delayed()->mov(super_klass->after_save(), O2);
+    __ check_klass_subtype_slow_path(sub_klass->after_save(),
+                                     super_klass->after_save(),
+                                     L0, L1, L2, L4,
+                                     NULL, &L_pop_to_miss);
+    __ ba(false, L_success);
+    __ delayed()->restore();
+
+    __ bind(L_pop_to_miss);
     __ restore();
-
-    // Upon return, the condition codes are already set.
-    __ brx(Assembler::equal, true, Assembler::pt, L_success);
-    __ DELAY_SLOT;
-
-#undef DELAY_SLOT
 
     // Fall through on failure!
     __ BIND(L_miss);
@@ -2411,7 +2319,7 @@ class StubGenerator: public StubCodeGenerator {
     gen_write_ref_array_pre_barrier(O1, O2);
 
 #ifdef ASSERT
-    // We sometimes save a frame (see partial_subtype_check below).
+    // We sometimes save a frame (see generate_type_check below).
     // If this will cause trouble, let's fail now instead of later.
     __ save_frame(0);
     __ restore();
@@ -2455,41 +2363,39 @@ class StubGenerator: public StubCodeGenerator {
     //   G3, G4, G5 --- current oop, oop.klass, oop.klass.super
     __ align(16);
 
-    __ bind(store_element);
-    // deccc(G1_remain);                // decrement the count (hoisted)
+    __ BIND(store_element);
+    __ deccc(G1_remain);                // decrement the count
     __ store_heap_oop(G3_oop, O1_to, O5_offset); // store the oop
     __ inc(O5_offset, heapOopSize);     // step to next offset
     __ brx(Assembler::zero, true, Assembler::pt, do_card_marks);
     __ delayed()->set(0, O0);           // return -1 on success
 
     // ======== loop entry is here ========
-    __ bind(load_element);
+    __ BIND(load_element);
     __ load_heap_oop(O0_from, O5_offset, G3_oop);  // load the oop
     __ br_null(G3_oop, true, Assembler::pt, store_element);
-    __ delayed()->deccc(G1_remain);     // decrement the count
+    __ delayed()->nop();
 
     __ load_klass(G3_oop, G4_klass); // query the object klass
 
     generate_type_check(G4_klass, O3_ckoff, O4_ckval, G5_super,
                         // branch to this on success:
-                        store_element,
-                        // decrement this on success:
-                        G1_remain);
+                        store_element);
     // ======== end loop ========
 
     // It was a real error; we must depend on the caller to finish the job.
     // Register G1 has number of *remaining* oops, O2 number of *total* oops.
     // Emit GC store barriers for the oops we have copied (O2 minus G1),
     // and report their number to the caller.
-    __ bind(fail);
+    __ BIND(fail);
     __ subcc(O2_count, G1_remain, O2_count);
     __ brx(Assembler::zero, false, Assembler::pt, done);
     __ delayed()->not1(O2_count, O0);   // report (-1^K) to caller
 
-    __ bind(do_card_marks);
+    __ BIND(do_card_marks);
     gen_write_ref_array_post_barrier(O1_to, O2_count, O3);   // store check on O1[0..O2]
 
-    __ bind(done);
+    __ BIND(done);
     inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr, O3, O4);
     __ retl();
     __ delayed()->nop();             // return value in 00
@@ -2940,16 +2846,16 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_cmpxchg_ptr_entry  = StubRoutines::_atomic_cmpxchg_entry;
     StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
     StubRoutines::_atomic_add_ptr_entry      = StubRoutines::_atomic_add_entry;
-    StubRoutines::_fence_entry               = generate_fence();
 #endif  // COMPILER2 !=> _LP64
-
-    StubRoutines::Sparc::_partial_subtype_check                = generate_partial_subtype_check();
   }
 
 
   void generate_all() {
     // Generates all stubs and initializes the entry points
 
+    // Generate partial_subtype_check first here since its code depends on
+    // UseZeroBaseCompressedOops which is defined after heap initialization.
+    StubRoutines::Sparc::_partial_subtype_check                = generate_partial_subtype_check();
     // These entry points require SharedInfo::stack0 to be set up in non-core builds
     StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError),  false);
     StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError),  false);

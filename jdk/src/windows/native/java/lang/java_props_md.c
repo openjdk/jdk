@@ -717,6 +717,7 @@ GetJavaProperties(JNIEnv* env)
          * Windows Vista family         6               0
          * Windows 2008                 6               0
          *       where ((&ver.wServicePackMinor) + 2) = 1
+         * Windows 7                    6               1
          *
          * This mapping will presumably be augmented as new Windows
          * versions are released.
@@ -773,13 +774,18 @@ GetJavaProperties(JNIEnv* env)
                  * and Windows Vista are identical, you must also test
                  * whether the wProductType member is VER_NT_WORKSTATION.
                  * If wProductType is VER_NT_WORKSTATION, the operating
-                 * system is Windows Vista; otherwise, it is Windows
+                 * system is Windows Vista or 7; otherwise, it is Windows
                  * Server 2008."
                  */
-                if (ver.wProductType == VER_NT_WORKSTATION)
-                    sprops.os_name = "Windows Vista";
-                else
+                if (ver.wProductType == VER_NT_WORKSTATION) {
+                    switch (ver.dwMinorVersion) {
+                    case  0: sprops.os_name = "Windows Vista";        break;
+                    case  1: sprops.os_name = "Windows 7";            break;
+                    default: sprops.os_name = "Windows NT (unknown)";
+                    }
+                } else {
                     sprops.os_name = "Windows Server 2008";
+                }
             } else {
                 sprops.os_name = "Windows NT (unknown)";
             }

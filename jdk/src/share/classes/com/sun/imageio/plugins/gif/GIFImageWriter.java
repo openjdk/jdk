@@ -55,6 +55,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import com.sun.imageio.plugins.common.LZWCompressor;
 import com.sun.imageio.plugins.common.PaletteBuilder;
+import sun.awt.image.ByteComponentRaster;
 
 public class GIFImageWriter extends ImageWriter {
     private static final boolean DEBUG = false; // XXX false for release!
@@ -905,10 +906,18 @@ public class GIFImageWriter extends ImageWriter {
         LZWCompressor compressor =
             new LZWCompressor(stream, initCodeSize, false);
 
+        /* At this moment we know that input image is indexed image.
+         * We can directly copy data iff:
+         *   - no subsampling required (periodX = 1, periodY = 0)
+         *   - we can access data directly (image is non-tiled,
+         *     i.e. image data are in single block)
+         *   - we can calculate offset in data buffer (next 3 lines)
+         */
         boolean isOptimizedCase =
             periodX == 1 && periodY == 1 &&
-            sampleModel instanceof ComponentSampleModel &&
             image.getNumXTiles() == 1 && image.getNumYTiles() == 1 &&
+            sampleModel instanceof ComponentSampleModel &&
+            image.getTile(0, 0) instanceof ByteComponentRaster &&
             image.getTile(0, 0).getDataBuffer() instanceof DataBufferByte;
 
         int numRowsWritten = 0;
@@ -921,11 +930,14 @@ public class GIFImageWriter extends ImageWriter {
             if (DEBUG) System.out.println("Writing interlaced");
 
             if (isOptimizedCase) {
-                Raster tile = image.getTile(0, 0);
+                ByteComponentRaster tile =
+                    (ByteComponentRaster)image.getTile(0, 0);
                 byte[] data = ((DataBufferByte)tile.getDataBuffer()).getData();
                 ComponentSampleModel csm =
                     (ComponentSampleModel)tile.getSampleModel();
                 int offset = csm.getOffset(sourceXOffset, sourceYOffset, 0);
+                // take into account the raster data offset
+                offset += tile.getDataOffset(0);
                 int lineStride = csm.getScanlineStride();
 
                 writeRowsOpt(data, offset, lineStride, compressor,

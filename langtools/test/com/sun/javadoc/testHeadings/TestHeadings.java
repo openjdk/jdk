@@ -47,14 +47,16 @@ public class TestHeadings extends JavadocTester {
     private static final String[][] TEST = {
         //Package summary
         {BUG_ID + FS + "pkg1" + FS + "package-summary.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "<STRONG>Class Summary</STRONG></FONT></TH>"
+            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
+            "Class</TH>" + NL + "<TH CLASS=\"TableHeader\" SCOPE=\"col\"" +
+            " NOWRAP>Description</TH>"
         },
 
         // Class documentation
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "<STRONG>Field Summary</STRONG></FONT></TH>"
+            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
+            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
+            " SCOPE=\"col\" NOWRAP>Field and Description</TH>"
         },
         {BUG_ID + FS + "pkg1" + FS + "C1.html",
             "<TH ALIGN=\"left\"><STRONG>Methods inherited from class " +            "java.lang.Object</STRONG></TH>"
@@ -62,29 +64,32 @@ public class TestHeadings extends JavadocTester {
 
         // Class use documentation
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "Packages that use <A HREF=\"../../pkg1/C1.html\" " +            "title=\"class in pkg1\">C1</A></FONT></TH>"
+            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
+            "Package</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
+            " SCOPE=\"col\" NOWRAP>Description</TH>"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
             "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
             "Uses of <A HREF=\"../../pkg1/C1.html\" " +            "title=\"class in pkg1\">C1</A> in " +            "<A HREF=\"../../pkg2/package-summary.html\">pkg2</A></FONT></TH>"
         },
         {BUG_ID + FS + "pkg1" + FS + "class-use" + FS + "C1.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"2\">Fields in " +            "<A HREF=\"../../pkg2/package-summary.html\">pkg2</A> " +            "declared as <A HREF=\"../../pkg1/C1.html\" " +            "title=\"class in pkg1\">C1</A></FONT></TH>"
+            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
+            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
+            " SCOPE=\"col\" NOWRAP>Field and Description</TH>"
         },
 
         // Deprecated
         {BUG_ID + FS + "deprecated-list.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"2\"><FONT SIZE=\"+2\">" + NL +
-            "<STRONG>Deprecated Methods</STRONG></FONT></TH>"
+            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
+            "Method and Description</TH>"
         },
 
         // Constant values
         {BUG_ID + FS + "constant-values.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"3\">pkg1.<A HREF=\"pkg1/C1.html\" " +            "title=\"class in pkg1\">C1</A></TH>"
-        },
-        {BUG_ID + FS + "constant-values.html",
-            "<TH ALIGN=\"left\" COLSPAN=\"3\">pkg1.<A HREF=\"pkg1/C1.html\" " +            "title=\"class in pkg1\">C1</A></TH>"
+            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>" +
+            "Modifier and Type</TH>" + NL + "<TH CLASS=\"TableHeader\"" +
+            " SCOPE=\"col\" NOWRAP>Constant Field</TH>" + NL +
+            "<TH CLASS=\"TableHeader\" SCOPE=\"col\" NOWRAP>Value</TH>"
         },
 
         // Serialized Form

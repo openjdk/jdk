@@ -37,6 +37,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  *
  * @author Robert Field
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     implements ConstructorWriter, MemberSummaryWriter {
@@ -211,8 +212,34 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         this.foundNonPubConstructor = foundNonPubConstructor;
     }
 
-    public void printSummaryLabel(ClassDoc cd) {
-        writer.strongText("doclet.Constructor_Summary");
+    public void printSummaryLabel() {
+        writer.printText("doclet.Constructor_Summary");
+    }
+
+    public void printTableSummary() {
+        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+                configuration().getText("doclet.Constructor_Summary"),
+                configuration().getText("doclet.constructors")));
+    }
+
+    public void printSummaryTableHeader(ProgramElementDoc member) {
+        String[] header;
+        if (foundNonPubConstructor) {
+            header = new String[] {
+                configuration().getText("doclet.Modifier"),
+                configuration().getText("doclet.0_and_1",
+                        configuration().getText("doclet.Constructor"),
+                        configuration().getText("doclet.Description"))
+            };
+        }
+        else {
+            header = new String[] {
+                configuration().getText("doclet.0_and_1",
+                        configuration().getText("doclet.Constructor"),
+                        configuration().getText("doclet.Description"))
+            };
+        }
+        writer.summaryTableHeader(header, "col");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {

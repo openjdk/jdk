@@ -219,47 +219,16 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, R
   // Resets EDI to locals.  Register sub_klass cannot be any of the above.
 void InterpreterMacroAssembler::gen_subtype_check( Register Rsub_klass, Label &ok_is_subtype ) {
   assert( Rsub_klass != rax, "rax, holds superklass" );
-  assert( Rsub_klass != rcx, "rcx holds 2ndary super array length" );
-  assert( Rsub_klass != rdi, "rdi holds 2ndary super array scan ptr" );
-  Label not_subtype, loop;
+  assert( Rsub_klass != rcx, "used as a temp" );
+  assert( Rsub_klass != rdi, "used as a temp, restored from locals" );
 
   // Profile the not-null value's klass.
-  profile_typecheck(rcx, Rsub_klass, rdi); // blows rcx, rdi
+  profile_typecheck(rcx, Rsub_klass, rdi); // blows rcx, reloads rdi
 
-  // Load the super-klass's check offset into ECX
-  movl( rcx, Address(rax, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes() ) );
-  // Load from the sub-klass's super-class display list, or a 1-word cache of
-  // the secondary superclass list, or a failing value with a sentinel offset
-  // if the super-klass is an interface or exceptionally deep in the Java
-  // hierarchy and we have to scan the secondary superclass list the hard way.
-  // See if we get an immediate positive hit
-  cmpptr( rax, Address(Rsub_klass,rcx,Address::times_1) );
-  jcc( Assembler::equal,ok_is_subtype );
+  // Do the check.
+  check_klass_subtype(Rsub_klass, rax, rcx, ok_is_subtype); // blows rcx
 
-  // Check for immediate negative hit
-  cmpl( rcx, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() );
-  jcc( Assembler::notEqual, not_subtype );
-  // Check for self
-  cmpptr( Rsub_klass, rax );
-  jcc( Assembler::equal, ok_is_subtype );
-
-  // Now do a linear scan of the secondary super-klass chain.
-  movptr( rdi, Address(Rsub_klass, sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes()) );
-  // EDI holds the objArrayOop of secondary supers.
-  movl( rcx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));// Load the array length
-  // Skip to start of data; also clear Z flag incase ECX is zero
-  addptr( rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT) );
-  // Scan ECX words at [EDI] for occurance of EAX
-  // Set NZ/Z based on last compare
-  repne_scan();
-  restore_locals();           // Restore EDI; Must not blow flags
-  // Not equal?
-  jcc( Assembler::notEqual, not_subtype );
-  // Must be equal but missed in cache.  Update cache.
-  movptr( Address(Rsub_klass, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes()), rax );
-  jmp( ok_is_subtype );
-
-  bind(not_subtype);
+  // Profile the failure of the check.
   profile_typecheck_failed(rcx); // blows rcx
 }
 
@@ -586,13 +555,18 @@ void InterpreterMacroAssembler::super_call_VM_leaf(address entry_point, Register
 }
 
 
-// Jump to from_interpreted entry of a call unless single stepping is possible
-// in this thread in which case we must call the i2i entry
-void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register temp) {
+void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
   lea(rsi, Address(rsp, wordSize));
   // record last_sp
   movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), rsi);
+}
+
+
+// Jump to from_interpreted entry of a call unless single stepping is possible
+// in this thread in which case we must call the i2i entry
+void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register temp) {
+  prepare_to_jump_from_interpreted();
 
   if (JvmtiExport::can_post_interpreter_events()) {
     Label run_compiled_code;

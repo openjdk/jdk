@@ -64,7 +64,7 @@ public interface PackageSummaryWriter {
      * @param classes the array of classes to document.
      * @param label the label for this table.
      */
-    public abstract void writeClassesSummary(ClassDoc[] classes, String label);
+    public abstract void writeClassesSummary(ClassDoc[] classes, String label, String tableSummary, String[] tableHeader);
 
     /**
      * Write the header for the summary.

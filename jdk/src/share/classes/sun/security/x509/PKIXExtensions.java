@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@ public class PKIXExtensions {
     private static final int AuthInfoAccess_data [] = { 1, 3, 6, 1, 5, 5, 7, 1, 1};
     private static final int SubjectInfoAccess_data [] = { 1, 3, 6, 1, 5, 5, 7, 1, 11};
     private static final int FreshestCRL_data [] = { 2, 5, 29, 46 };
+    private static final int OCSPNoCheck_data [] = { 1, 3, 6, 1, 5, 5, 7,
+                                                    48, 1, 5};
 
     /**
      * Identifies the particular public key used to sign the certificate.
@@ -216,6 +218,12 @@ public class PKIXExtensions {
      */
     public static final ObjectIdentifier FreshestCRL_Id;
 
+    /**
+     * Identifies the OCSP client can trust the responder for the
+     * lifetime of the responder's certificate.
+     */
+    public static final ObjectIdentifier OCSPNoCheck_Id;
+
     static {
         AuthorityKey_Id = ObjectIdentifier.newInternal(AuthorityKey_data);
         SubjectKey_Id   = ObjectIdentifier.newInternal(SubjectKey_data);
@@ -257,5 +265,6 @@ public class PKIXExtensions {
         SubjectInfoAccess_Id =
             ObjectIdentifier.newInternal(SubjectInfoAccess_data);
         FreshestCRL_Id = ObjectIdentifier.newInternal(FreshestCRL_data);
+        OCSPNoCheck_Id = ObjectIdentifier.newInternal(OCSPNoCheck_data);
     }
 }

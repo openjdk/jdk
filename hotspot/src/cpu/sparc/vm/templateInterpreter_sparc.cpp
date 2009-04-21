@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,24 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
              CAST_FROM_FN_PTR(address,
                               InterpreterRuntime::throw_ClassCastException),
              Otos_i);
+  __ should_not_reach_here();
+  return entry;
+}
+
+
+// Arguments are: required type in G5_method_type, and
+// failing object (or NULL) in G3_method_handle.
+address TemplateInterpreterGenerator::generate_WrongMethodType_handler() {
+  address entry = __ pc();
+  // expression stack must be empty before entering the VM if an exception
+  // happened
+  __ empty_expression_stack();
+  // load exception object
+  __ call_VM(Oexception,
+             CAST_FROM_FN_PTR(address,
+                              InterpreterRuntime::throw_WrongMethodTypeException),
+             G5_method_type,    // required
+             G3_method_handle); // actual
   __ should_not_reach_here();
   return entry;
 }
@@ -448,6 +466,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   const int extra_space =
     rounded_vm_local_words +                   // frame local scratch space
+    //6815692//methodOopDesc::extra_stack_words() +       // extra push slots for MH adapters
     frame::memory_parameter_word_sp_offset +   // register save area
     (native_call ? frame::interpreter_frame_extra_outgoing_argument_words : 0);
 
@@ -1447,6 +1466,7 @@ static int size_activation_helper(int callee_extra_locals, int max_stack, int mo
        round_to(callee_extra_locals * Interpreter::stackElementWords(), WordsPerLong);
   const int max_stack_words = max_stack * Interpreter::stackElementWords();
   return (round_to((max_stack_words
+                   //6815692//+ methodOopDesc::extra_stack_words()
                    + rounded_vm_local_words
                    + frame::memory_parameter_word_sp_offset), WordsPerLong)
                    // already rounded

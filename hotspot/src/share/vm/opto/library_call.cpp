@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_string_compareTo();
   bool inline_string_indexOf();
   Node* string_indexOf(Node* string_object, ciTypeArray* target_array, jint offset, jint cache_i, jint md2_i);
+  bool inline_string_equals();
   Node* pop_math_arg();
   bool runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_math_native(vmIntrinsics::ID id);
@@ -221,6 +222,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_CAS(BasicType type);
   bool inline_unsafe_ordered_store(BasicType type);
   bool inline_fp_conversions(vmIntrinsics::ID id);
+  bool inline_bitCount(vmIntrinsics::ID id);
   bool inline_reverseBytes(vmIntrinsics::ID id);
 };
 
@@ -260,6 +262,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     switch (id) {
     case vmIntrinsics::_indexOf:
     case vmIntrinsics::_compareTo:
+    case vmIntrinsics::_equals:
     case vmIntrinsics::_equalsC:
       break;  // InlineNatives does not control String.compareTo
     default:
@@ -273,6 +276,9 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
   case vmIntrinsics::_indexOf:
     if (!SpecialStringIndexOf)  return NULL;
+    break;
+  case vmIntrinsics::_equals:
+    if (!SpecialStringEquals)  return NULL;
     break;
   case vmIntrinsics::_equalsC:
     if (!SpecialArraysEquals)  return NULL;
@@ -312,6 +318,11 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!UseNewReflection)  return NULL;
     if (!InlineReflectionGetCallerClass)  return NULL;
     if (!JDK_Version::is_gte_jdk14x_version())  return NULL;
+    break;
+
+  case vmIntrinsics::_bitCount_i:
+  case vmIntrinsics::_bitCount_l:
+    if (!UsePopCountInstruction)  return NULL;
     break;
 
  default:
@@ -436,6 +447,8 @@ bool LibraryCallKit::try_to_inline() {
     return inline_string_compareTo();
   case vmIntrinsics::_indexOf:
     return inline_string_indexOf();
+  case vmIntrinsics::_equals:
+    return inline_string_equals();
 
   case vmIntrinsics::_getObject:
     return inline_unsafe_access(!is_native_ptr, !is_store, T_OBJECT, false);
@@ -617,6 +630,10 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_longBitsToDouble:
     return inline_fp_conversions(intrinsic_id());
 
+  case vmIntrinsics::_bitCount_i:
+  case vmIntrinsics::_bitCount_l:
+    return inline_bitCount(intrinsic_id());
+
   case vmIntrinsics::_reverseBytes_i:
   case vmIntrinsics::_reverseBytes_l:
     return inline_reverseBytes((vmIntrinsics::ID) intrinsic_id());
@@ -783,6 +800,8 @@ Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
 //------------------------------inline_string_compareTo------------------------
 bool LibraryCallKit::inline_string_compareTo() {
 
+  if (!Matcher::has_match_rule(Op_StrComp)) return false;
+
   const int value_offset = java_lang_String::value_offset_in_bytes();
   const int count_offset = java_lang_String::count_offset_in_bytes();
   const int offset_offset = java_lang_String::offset_offset_in_bytes();
@@ -817,6 +836,82 @@ bool LibraryCallKit::inline_string_compareTo() {
                         receiver,
                         argument));
   push(compare);
+  return true;
+}
+
+//------------------------------inline_string_equals------------------------
+bool LibraryCallKit::inline_string_equals() {
+
+  if (!Matcher::has_match_rule(Op_StrEquals)) return false;
+
+  const int value_offset = java_lang_String::value_offset_in_bytes();
+  const int count_offset = java_lang_String::count_offset_in_bytes();
+  const int offset_offset = java_lang_String::offset_offset_in_bytes();
+
+  _sp += 2;
+  Node* argument = pop();  // pop non-receiver first:  it was pushed second
+  Node* receiver = pop();
+
+  // Null check on self without removing any arguments.  The argument
+  // null check technically happens in the wrong place, which can lead to
+  // invalid stack traces when string compare is inlined into a method
+  // which handles NullPointerExceptions.
+  _sp += 2;
+  receiver = do_null_check(receiver, T_OBJECT);
+  //should not do null check for argument for String.equals(), because spec
+  //allows to specify NULL as argument.
+  _sp -= 2;
+
+  if (stopped()) {
+    return true;
+  }
+
+  // get String klass for instanceOf
+  ciInstanceKlass* klass = env()->String_klass();
+
+  // two paths (plus control) merge
+  RegionNode* region = new (C, 3) RegionNode(3);
+  Node* phi = new (C, 3) PhiNode(region, TypeInt::BOOL);
+
+  Node* inst = gen_instanceof(argument, makecon(TypeKlassPtr::make(klass)));
+  Node* cmp  = _gvn.transform(new (C, 3) CmpINode(inst, intcon(1)));
+  Node* bol  = _gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::eq));
+
+  IfNode* iff = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
+
+  Node* if_true  = _gvn.transform(new (C, 1) IfTrueNode(iff));
+  set_control(if_true);
+
+  const TypeInstPtr* string_type =
+    TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+
+  // instanceOf == true
+  Node* equals =
+    _gvn.transform(new (C, 7) StrEqualsNode(
+                        control(),
+                        memory(TypeAryPtr::CHARS),
+                        memory(string_type->add_offset(value_offset)),
+                        memory(string_type->add_offset(count_offset)),
+                        memory(string_type->add_offset(offset_offset)),
+                        receiver,
+                        argument));
+
+  phi->init_req(1, _gvn.transform(equals));
+  region->init_req(1, if_true);
+
+  //instanceOf == false, fallthrough
+  Node* if_false = _gvn.transform(new (C, 1) IfFalseNode(iff));
+  set_control(if_false);
+
+  phi->init_req(2, _gvn.transform(intcon(0)));
+  region->init_req(2, if_false);
+
+  // post merge
+  set_control(_gvn.transform(region));
+  record_for_igvn(region);
+
+  push(_gvn.transform(phi));
+
   return true;
 }
 
@@ -984,80 +1079,115 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   return result;
 }
 
-
 //------------------------------inline_string_indexOf------------------------
 bool LibraryCallKit::inline_string_indexOf() {
-
-  _sp += 2;
-  Node *argument = pop();  // pop non-receiver first:  it was pushed second
-  Node *receiver = pop();
-
-  // don't intrinsify if argument isn't a constant string.
-  if (!argument->is_Con()) {
-    return false;
-  }
-  const TypeOopPtr* str_type = _gvn.type(argument)->isa_oopptr();
-  if (str_type == NULL) {
-    return false;
-  }
-  ciInstanceKlass* klass = env()->String_klass();
-  ciObject* str_const = str_type->const_oop();
-  if (str_const == NULL || str_const->klass() != klass) {
-    return false;
-  }
-  ciInstance* str = str_const->as_instance();
-  assert(str != NULL, "must be instance");
 
   const int value_offset  = java_lang_String::value_offset_in_bytes();
   const int count_offset  = java_lang_String::count_offset_in_bytes();
   const int offset_offset = java_lang_String::offset_offset_in_bytes();
 
-  ciObject* v = str->field_value_by_offset(value_offset).as_object();
-  int       o = str->field_value_by_offset(offset_offset).as_int();
-  int       c = str->field_value_by_offset(count_offset).as_int();
-  ciTypeArray* pat = v->as_type_array(); // pattern (argument) character array
-
-  // constant strings have no offset and count == length which
-  // simplifies the resulting code somewhat so lets optimize for that.
-  if (o != 0 || c != pat->length()) {
-    return false;
-  }
-
-  // Null check on self without removing any arguments.  The argument
-  // null check technically happens in the wrong place, which can lead to
-  // invalid stack traces when string compare is inlined into a method
-  // which handles NullPointerExceptions.
   _sp += 2;
-  receiver = do_null_check(receiver, T_OBJECT);
-  // No null check on the argument is needed since it's a constant String oop.
-  _sp -= 2;
-  if (stopped()) {
-    return true;
-  }
+  Node *argument = pop();  // pop non-receiver first:  it was pushed second
+  Node *receiver = pop();
 
-  // The null string as a pattern always returns 0 (match at beginning of string)
-  if (c == 0) {
-    push(intcon(0));
-    return true;
-  }
+  Node* result;
+  if (Matcher::has_match_rule(Op_StrIndexOf) &&
+      UseSSE42Intrinsics) {
+    // Generate SSE4.2 version of indexOf
+    // We currently only have match rules that use SSE4.2
 
-  jchar lastChar = pat->char_at(o + (c - 1));
-  int cache = 0;
-  int i;
-  for (i = 0; i < c - 1; i++) {
-    assert(i < pat->length(), "out of range");
-    cache |= (1 << (pat->char_at(o + i) & (sizeof(cache) * BitsPerByte - 1)));
-  }
+    // Null check on self without removing any arguments.  The argument
+    // null check technically happens in the wrong place, which can lead to
+    // invalid stack traces when string compare is inlined into a method
+    // which handles NullPointerExceptions.
+    _sp += 2;
+    receiver = do_null_check(receiver, T_OBJECT);
+    argument = do_null_check(argument, T_OBJECT);
+    _sp -= 2;
 
-  int md2 = c;
-  for (i = 0; i < c - 1; i++) {
-    assert(i < pat->length(), "out of range");
-    if (pat->char_at(o + i) == lastChar) {
-      md2 = (c - 1) - i;
+    if (stopped()) {
+      return true;
     }
+
+    ciInstanceKlass* klass = env()->String_klass();
+    const TypeInstPtr* string_type =
+      TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+
+    result =
+      _gvn.transform(new (C, 7)
+                     StrIndexOfNode(control(),
+                                    memory(TypeAryPtr::CHARS),
+                                    memory(string_type->add_offset(value_offset)),
+                                    memory(string_type->add_offset(count_offset)),
+                                    memory(string_type->add_offset(offset_offset)),
+                                    receiver,
+                                    argument));
+  } else { //Use LibraryCallKit::string_indexOf
+    // don't intrinsify is argument isn't a constant string.
+    if (!argument->is_Con()) {
+     return false;
+    }
+    const TypeOopPtr* str_type = _gvn.type(argument)->isa_oopptr();
+    if (str_type == NULL) {
+      return false;
+    }
+    ciInstanceKlass* klass = env()->String_klass();
+    ciObject* str_const = str_type->const_oop();
+    if (str_const == NULL || str_const->klass() != klass) {
+      return false;
+    }
+    ciInstance* str = str_const->as_instance();
+    assert(str != NULL, "must be instance");
+
+    ciObject* v = str->field_value_by_offset(value_offset).as_object();
+    int       o = str->field_value_by_offset(offset_offset).as_int();
+    int       c = str->field_value_by_offset(count_offset).as_int();
+    ciTypeArray* pat = v->as_type_array(); // pattern (argument) character array
+
+    // constant strings have no offset and count == length which
+    // simplifies the resulting code somewhat so lets optimize for that.
+    if (o != 0 || c != pat->length()) {
+     return false;
+    }
+
+    // Null check on self without removing any arguments.  The argument
+    // null check technically happens in the wrong place, which can lead to
+    // invalid stack traces when string compare is inlined into a method
+    // which handles NullPointerExceptions.
+    _sp += 2;
+    receiver = do_null_check(receiver, T_OBJECT);
+    // No null check on the argument is needed since it's a constant String oop.
+    _sp -= 2;
+    if (stopped()) {
+     return true;
+    }
+
+    // The null string as a pattern always returns 0 (match at beginning of string)
+    if (c == 0) {
+      push(intcon(0));
+      return true;
+    }
+
+    // Generate default indexOf
+    jchar lastChar = pat->char_at(o + (c - 1));
+    int cache = 0;
+    int i;
+    for (i = 0; i < c - 1; i++) {
+      assert(i < pat->length(), "out of range");
+      cache |= (1 << (pat->char_at(o + i) & (sizeof(cache) * BitsPerByte - 1)));
+    }
+
+    int md2 = c;
+    for (i = 0; i < c - 1; i++) {
+      assert(i < pat->length(), "out of range");
+      if (pat->char_at(o + i) == lastChar) {
+        md2 = (c - 1) - i;
+      }
+    }
+
+    result = string_indexOf(receiver, pat, o, cache, md2);
   }
 
-  Node* result = string_indexOf(receiver, pat, o, cache, md2);
   push(result);
   return true;
 }
@@ -1712,6 +1842,27 @@ inline Node* LibraryCallKit::make_unsafe_address(Node* base, Node* offset) {
   } else {
     return basic_plus_adr(base, offset);
   }
+}
+
+//----------------------------inline_bitCount_int/long-----------------------
+// inline int Integer.bitCount(int)
+// inline int Long.bitCount(long)
+bool LibraryCallKit::inline_bitCount(vmIntrinsics::ID id) {
+  assert(id == vmIntrinsics::_bitCount_i || id == vmIntrinsics::_bitCount_l, "not bitCount");
+  if (id == vmIntrinsics::_bitCount_i && !Matcher::has_match_rule(Op_PopCountI)) return false;
+  if (id == vmIntrinsics::_bitCount_l && !Matcher::has_match_rule(Op_PopCountL)) return false;
+  _sp += arg_size();  // restore stack pointer
+  switch (id) {
+  case vmIntrinsics::_bitCount_i:
+    push(_gvn.transform(new (C, 2) PopCountINode(pop())));
+    break;
+  case vmIntrinsics::_bitCount_l:
+    push(_gvn.transform(new (C, 2) PopCountLNode(pop_pair())));
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+  return true;
 }
 
 //----------------------------inline_reverseBytes_int/long-------------------

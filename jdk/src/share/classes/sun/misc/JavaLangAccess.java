@@ -54,4 +54,7 @@ public interface JavaLangAccess {
 
     /** Set thread's blocker field. */
     void blockedOn(Thread t, Interruptible b);
+
+    /** register shutdown hook */
+    void registerShutdownHook(int slot, Runnable r);
 }

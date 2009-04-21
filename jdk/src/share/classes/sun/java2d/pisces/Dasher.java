@@ -120,7 +120,7 @@ public class Dasher extends LineSink {
 
         // Normalize so 0 <= phase < dash[0]
         int idx = 0;
-        dashOn = false;
+        dashOn = true;
         int d;
         while (phase >= (d = dash[idx])) {
             phase -= d;

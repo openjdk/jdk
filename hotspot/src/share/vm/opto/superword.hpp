@@ -341,8 +341,11 @@ class SuperWord : public ResourceObj {
   void filter_packs();
   // Adjust the memory graph for the packed operations
   void schedule();
-  // Within a pack, move stores down to the last executed store,
-  // and move loads up to the first executed load.
+  // Remove "current" from its current position in the memory graph and insert
+  // it after the appropriate insert points (lip or uip);
+  void remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip, Node *uip, Unique_Node_List &schd_before);
+  // Within a store pack, schedule stores together by moving out the sandwiched memory ops according
+  // to dependence info; and within a load pack, move loads down to the last executed load.
   void co_locate_pack(Node_List* p);
   // Convert packs into vector node operations
   void output();

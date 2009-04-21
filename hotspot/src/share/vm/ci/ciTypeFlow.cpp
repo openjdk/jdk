@@ -2237,7 +2237,6 @@ ciTypeFlow::Block* ciTypeFlow::clone_loop_head(Loop* lp, StateVector* temp_vecto
   for (SuccIter iter(tail); !iter.done(); iter.next()) {
     if (iter.succ() == head) {
       iter.set_succ(clone);
-      break;
     }
   }
   flow_block(tail, temp_vector, temp_set);

@@ -1117,10 +1117,10 @@ ObjectMonitor * ATTR ObjectSynchronizer::inflate (Thread * Self, oop object) {
 
           // Optimization: if the mark->locker stack address is associated
           // with this thread we could simply set m->_owner = Self and
-          // m->OwnerIsThread = 1.  Note that a thread can inflate an object
+          // m->OwnerIsThread = 1. Note that a thread can inflate an object
           // that it has stack-locked -- as might happen in wait() -- directly
           // with CAS.  That is, we can avoid the xchg-NULL .... ST idiom.
-          m->set_owner (mark->locker());
+          m->set_owner(mark->locker());
           m->set_object(object);
           // TODO-FIXME: assert BasicLock->dhw != 0.
 
@@ -1214,10 +1214,9 @@ void ObjectSynchronizer::fast_enter(Handle obj, BasicLock* lock, bool attempt_re
       BiasedLocking::revoke_at_safepoint(obj);
     }
     assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
-  }
+ }
 
-  THREAD->update_highest_lock((address)lock);
-  slow_enter (obj, lock, THREAD) ;
+ slow_enter (obj, lock, THREAD) ;
 }
 
 void ObjectSynchronizer::fast_exit(oop object, BasicLock* lock, TRAPS) {

@@ -502,15 +502,26 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
   }
 
   if (ParallelGCThreads > 0) {
-    // This is a temporary change to serialize the update and scanning
-    // of remembered sets. There are some race conditions when this is
-    // done in parallel and they are causing failures. When we resolve
-    // said race conditions, we'll revert back to parallel remembered
-    // set updating and scanning. See CRs 6677707 and 6677708.
-    if (worker_i == 0) {
+    // The two flags below were introduced temporarily to serialize
+    // the updating and scanning of remembered sets. There are some
+    // race conditions when these two operations are done in parallel
+    // and they are causing failures. When we resolve said race
+    // conditions, we'll revert back to parallel remembered set
+    // updating and scanning. See CRs 6677707 and 6677708.
+    if (G1EnableParallelRSetUpdating || (worker_i == 0)) {
       updateRS(worker_i);
       scanNewRefsRS(oc, worker_i);
+    } else {
+      _g1p->record_update_rs_start_time(worker_i, os::elapsedTime());
+      _g1p->record_update_rs_processed_buffers(worker_i, 0.0);
+      _g1p->record_update_rs_time(worker_i, 0.0);
+      _g1p->record_scan_new_refs_time(worker_i, 0.0);
+    }
+    if (G1EnableParallelRSetScanning || (worker_i == 0)) {
       scanRS(oc, worker_i);
+    } else {
+      _g1p->record_scan_rs_start_time(worker_i, os::elapsedTime());
+      _g1p->record_scan_rs_time(worker_i, 0.0);
     }
   } else {
     assert(worker_i == 0, "invariant");
@@ -569,9 +580,7 @@ public:
   virtual void do_oop(oop* p) {
     HeapRegion* to = _g1->heap_region_containing(*p);
     if (to->in_collection_set()) {
-      if (to->rem_set()->add_reference(p, 0)) {
-        _g1->schedule_popular_region_evac(to);
-      }
+      to->rem_set()->add_reference(p, 0);
     }
   }
 };
@@ -716,8 +725,7 @@ public:
   bool doHeapRegion(HeapRegion* r) {
     if (!r->in_collection_set() &&
         !r->continuesHumongous() &&
-        !r->is_young() &&
-        !r->is_survivor()) {
+        !r->is_young()) {
       _update_rs_oop_cl.set_from(r);
       UpdateRSObjectClosure update_rs_obj_cl(&_update_rs_oop_cl);
 
@@ -854,7 +862,7 @@ void HRInto_G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i) {
   // before all the cards on the region are dirtied. This is unlikely,
   // and it doesn't happen often, but it can happen. So, the extra
   // check below filters out those cards.
-  if (r->is_young() || r->is_survivor()) {
+  if (r->is_young()) {
     return;
   }
   // While we are processing RSet buffers during the collection, we
@@ -1014,9 +1022,8 @@ void HRInto_G1RemSet::print_summary_info() {
     gclog_or_tty->print_cr("    %d occupied cards represented.",
                            blk.occupied());
     gclog_or_tty->print_cr("    Max sz region = [" PTR_FORMAT ", " PTR_FORMAT " )"
-                           " %s, cap = " SIZE_FORMAT "K, occ = " SIZE_FORMAT "K.",
+                           ", cap = " SIZE_FORMAT "K, occ = " SIZE_FORMAT "K.",
                            blk.max_mem_sz_region()->bottom(), blk.max_mem_sz_region()->end(),
-                           (blk.max_mem_sz_region()->popular() ? "POP" : ""),
                            (blk.max_mem_sz_region()->rem_set()->mem_size() + K - 1)/K,
                            (blk.max_mem_sz_region()->rem_set()->occupied() + K - 1)/K);
     gclog_or_tty->print_cr("    Did %d coarsenings.",
@@ -1025,7 +1032,9 @@ void HRInto_G1RemSet::print_summary_info() {
   }
 }
 void HRInto_G1RemSet::prepare_for_verify() {
-  if (G1HRRSFlushLogBuffersOnVerify && VerifyBeforeGC && !_g1->full_collection()) {
+  if (G1HRRSFlushLogBuffersOnVerify &&
+      (VerifyBeforeGC || VerifyAfterGC)
+      &&  !_g1->full_collection()) {
     cleanupHRRS();
     _g1->set_refine_cte_cl_concurrency(false);
     if (SafepointSynchronize::is_at_safepoint()) {
@@ -1036,5 +1045,7 @@ void HRInto_G1RemSet::prepare_for_verify() {
     _cg1r->set_use_cache(false);
     updateRS(0);
     _cg1r->set_use_cache(cg1r_use_cache);
+
+    assert(JavaThread::dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
   }
 }

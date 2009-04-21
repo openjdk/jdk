@@ -35,6 +35,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * Writes enum constant documentation in HTML format.
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  */
 public class EnumConstantWriterImpl extends AbstractMemberWriter
     implements EnumConstantWriter, MemberSummaryWriter {
@@ -194,8 +195,23 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
         return VisibleMemberMap.ENUM_CONSTANTS;
     }
 
-    public void printSummaryLabel(ClassDoc cd) {
-        writer.strongText("doclet.Enum_Constant_Summary");
+    public void printSummaryLabel() {
+        writer.printText("doclet.Enum_Constant_Summary");
+    }
+
+    public void printTableSummary() {
+        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+                configuration().getText("doclet.Enum_Constant_Summary"),
+                configuration().getText("doclet.enum_constants")));
+    }
+
+    public void printSummaryTableHeader(ProgramElementDoc member) {
+        String[] header = new String[] {
+            configuration().getText("doclet.0_and_1",
+                    configuration().getText("doclet.Enum_Constant"),
+                    configuration().getText("doclet.Description"))
+        };
+        writer.summaryTableHeader(header, "col");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {
