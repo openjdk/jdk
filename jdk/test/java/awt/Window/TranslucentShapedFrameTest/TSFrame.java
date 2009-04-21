@@ -23,14 +23,14 @@
  * have any questions.
  */
 
-import com.sun.awt.AWTUtilities;
-import static com.sun.awt.AWTUtilities.Translucency.*;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsDevice.WindowTranslucency;
 import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
@@ -93,8 +93,8 @@ public class TSFrame {
         }
     }
     private static class NonOpaqueJFrame extends JFrame {
-        NonOpaqueJFrame(GraphicsConfiguration gc) {
-            super("NonOpaque Swing JFrame", gc);
+        NonOpaqueJFrame() {
+            super("NonOpaque Swing JFrame");
             JPanel p = new JPanel() {
                 public void paintComponent(Graphics g) {
                     super.paintComponent(g);
@@ -111,8 +111,8 @@ public class TSFrame {
     }
     private static class NonOpaqueJAppletFrame extends JFrame {
         JPanel p;
-        NonOpaqueJAppletFrame(GraphicsConfiguration gc) {
-            super("NonOpaque Swing JAppletFrame", gc);
+        NonOpaqueJAppletFrame() {
+            super("NonOpaque Swing JAppletFrame");
             JApplet ja = new JApplet() {
                 public void paint(Graphics g) {
                     super.paint(g);
@@ -135,8 +135,8 @@ public class TSFrame {
         }
     }
     private static class NonOpaqueFrame extends Frame {
-        NonOpaqueFrame(GraphicsConfiguration gc) {
-            super("NonOpaque AWT Frame", gc);
+        NonOpaqueFrame() {
+            super("NonOpaque AWT Frame");
             // uncomment to test with hw child
 //            setLayout(null);
 //            Component c = new Panel() {
@@ -166,7 +166,7 @@ public class TSFrame {
         }
     }
 
-    public static Frame createGui(GraphicsConfiguration gc,
+    public static Frame createGui(
                                   final boolean useSwing,
                                   final boolean useShape,
                                   final boolean useTransl,
@@ -176,21 +176,16 @@ public class TSFrame {
         Frame frame;
         done = false;
 
-        if (gc == null) {
-            gc = GraphicsEnvironment.getLocalGraphicsEnvironment().
-                    getDefaultScreenDevice().getDefaultConfiguration();
-        }
-
         if (useNonOpaque) {
             if (useSwing) {
-                frame = new NonOpaqueJFrame(gc);
+                frame = new NonOpaqueJFrame();
 //                frame = new NonOpaqueJAppletFrame(gc);
             } else {
-                frame = new NonOpaqueFrame(gc);
+                frame = new NonOpaqueFrame();
             }
             animateComponent(frame);
         } else if (useSwing) {
-            frame = new JFrame("Swing Frame", gc);
+            frame = new JFrame("Swing Frame");
             JComponent p = new JButton("Swing!");
             p.setPreferredSize(new Dimension(200, 100));
             frame.add("North", p);
@@ -198,7 +193,7 @@ public class TSFrame {
             animateComponent(p);
             frame.add("Center", p);
         } else {
-            frame = new Frame("AWT Frame", gc) {
+            frame = new Frame("AWT Frame") {
                 public void paint(Graphics g) {
                     g.setColor(Color.red);
                     g.fillRect(0, 0, 100, 100);
@@ -239,32 +234,30 @@ public class TSFrame {
         frame.setLocation(450, 10);
         frame.pack();
 
+        GraphicsDevice gd = frame.getGraphicsConfiguration().getDevice();
         if (useShape) {
-            if (AWTUtilities.isTranslucencySupported(PERPIXEL_TRANSPARENT)) {
+            if (gd.isWindowTranslucencySupported(WindowTranslucency.PERPIXEL_TRANSPARENT)) {
                 System.out.println("applying PERPIXEL_TRANSPARENT");
-                AWTUtilities.setWindowShape(frame,
-                    new Ellipse2D.Double(0, 0, frame.getWidth(),
-                                               frame.getHeight()/3));
+                frame.setShape(new Ellipse2D.Double(0, 0, frame.getWidth(),
+                                                    frame.getHeight()/3));
                 frame.setTitle("PERPIXEL_TRANSPARENT");
             } else {
                 System.out.println("Passed: PERPIXEL_TRANSPARENT unsupported");
             }
         }
         if (useTransl) {
-            if (AWTUtilities.isTranslucencySupported(TRANSLUCENT)) {
+            if (gd.isWindowTranslucencySupported(WindowTranslucency.TRANSLUCENT)) {
                 System.out.println("applying TRANSLUCENT");
-                AWTUtilities.setWindowOpacity(frame, factor);
+                frame.setOpacity(factor);
                 frame.setTitle("TRANSLUCENT");
             } else {
                 System.out.println("Passed: TRANSLUCENT unsupported");
             }
         }
         if (useNonOpaque) {
-            if (AWTUtilities.isTranslucencySupported(PERPIXEL_TRANSLUCENT) &&
-                AWTUtilities.isTranslucencyCapable(gc))
-            {
+            if (gd.isWindowTranslucencySupported(WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
                 System.out.println("applying PERPIXEL_TRANSLUCENT");
-                AWTUtilities.setWindowOpaque(frame, false);
+                frame.setBackground(new Color(0, 0, 0, 0));
                 frame.setTitle("PERPIXEL_TRANSLUCENT");
             } else {
                 System.out.println("Passed: PERPIXEL_TRANSLUCENT unsupported");
@@ -295,7 +288,7 @@ public class TSFrame {
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                TSFrame.createGui(null, useSwing,
+                TSFrame.createGui(useSwing,
                                   useShape,
                                   useTransl,
                                   useNonOpaque,
