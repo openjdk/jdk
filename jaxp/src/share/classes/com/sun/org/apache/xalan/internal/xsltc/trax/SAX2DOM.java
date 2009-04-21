@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: SAX2DOM.java,v 1.7 2006/01/26 07:01:40 jeffsuttor Exp $
+ * $Id: SAX2DOM.java,v 1.8.2.1 2006/12/04 18:45:41 spericas Exp $
  */
 
 
@@ -68,7 +68,7 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
     static final DocumentBuilderFactory _factory =
             DocumentBuilderFactory.newInstance();
 
-    public SAX2DOM() throws ParserConfigurationException {
+   public SAX2DOM() throws ParserConfigurationException {
         synchronized (SAX2DOM.class) {
           _document = _factory.newDocumentBuilder().newDocument();
         }
