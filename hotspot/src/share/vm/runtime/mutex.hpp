@@ -82,7 +82,7 @@ class ParkEvent ;
 // *in that order*.  If their implementations change such that these
 // assumptions are violated, a whole lot of code will break.
 
-// The default length of monitor name is choosen to be 64 to avoid false sharing.
+// The default length of monitor name is chosen to be 64 to avoid false sharing.
 static const int MONITOR_NAME_LEN = 64;
 
 class Monitor : public CHeapObj {

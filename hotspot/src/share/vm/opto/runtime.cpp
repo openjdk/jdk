@@ -1196,7 +1196,7 @@ JRT_END
 
 // The following does not work because for one thing, the
 // thread state is wrong; it expects java, but it is native.
-// Also, the invarients in a native stub are different and
+// Also, the invariants in a native stub are different and
 // I'm not sure it is safe to have a MachCalRuntimeDirectNode
 // in there.
 // So for now, we do not zap in native stubs.

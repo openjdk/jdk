@@ -95,7 +95,7 @@ Node *Parse::fetch_interpreter_state(int index,
   switch( bt ) {                // Signature is flattened
   case T_INT:     l = new (C, 3) LoadINode( 0, mem, adr, TypeRawPtr::BOTTOM ); break;
   case T_FLOAT:   l = new (C, 3) LoadFNode( 0, mem, adr, TypeRawPtr::BOTTOM ); break;
-  case T_ADDRESS:
+  case T_ADDRESS: l = new (C, 3) LoadPNode( 0, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM  ); break;
   case T_OBJECT:  l = new (C, 3) LoadPNode( 0, mem, adr, TypeRawPtr::BOTTOM, TypeInstPtr::BOTTOM ); break;
   case T_LONG:
   case T_DOUBLE: {
@@ -607,7 +607,7 @@ void Parse::do_all_blocks() {
       if (control()->is_Region() && !block->is_loop_head() && !has_irreducible && !block->is_handler()) {
         // In the absence of irreducible loops, the Region and Phis
         // associated with a merge that doesn't involve a backedge can
-        // be simplfied now since the RPO parsing order guarantees
+        // be simplified now since the RPO parsing order guarantees
         // that any path which was supposed to reach here has already
         // been parsed or must be dead.
         Node* c = control();

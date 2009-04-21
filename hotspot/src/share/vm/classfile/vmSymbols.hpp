@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@
   template(java_lang_Object,                          "java/lang/Object")                         \
   template(java_lang_Class,                           "java/lang/Class")                          \
   template(java_lang_String,                          "java/lang/String")                         \
+  template(java_lang_StringValue,                     "java/lang/StringValue")                    \
+  template(java_lang_StringCache,                     "java/lang/StringValue$StringCache")        \
   template(java_lang_Thread,                          "java/lang/Thread")                         \
   template(java_lang_ThreadGroup,                     "java/lang/ThreadGroup")                    \
   template(java_lang_Cloneable,                       "java/lang/Cloneable")                      \
@@ -284,6 +286,9 @@
   template(value_name,                                "value")                                    \
   template(frontCacheEnabled_name,                    "frontCacheEnabled")                        \
   template(stringCacheEnabled_name,                   "stringCacheEnabled")                       \
+  template(bitCount_name,                             "bitCount")                                 \
+  template(profile_name,                              "profile")                                  \
+  template(equals_name,                               "equals")                                   \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
@@ -304,6 +309,7 @@
   template(double_long_signature,                     "(D)J")                                     \
   template(double_double_signature,                   "(D)D")                                     \
   template(int_float_signature,                       "(I)F")                                     \
+  template(long_int_signature,                        "(J)I")                                     \
   template(long_long_signature,                       "(J)J")                                     \
   template(long_double_signature,                     "(J)D")                                     \
   template(byte_signature,                            "B")                                        \
@@ -376,7 +382,7 @@
   template(unknown_class_name,                        "<Unknown>")                                                \
                                                                                                                   \
   /* used to identify class loaders handling parallel class loading */                                            \
-  template(parallelCapable_name,                      "parallelLockMap;")                                         \
+  template(parallelCapable_name,                      "parallelLockMap")                                          \
                                                                                                                   \
   /* JVM monitoring and management support */                                                                     \
   template(java_lang_StackTraceElement_array,          "[Ljava/lang/StackTraceElement;")                          \
@@ -507,6 +513,10 @@
    do_name(     doubleToLongBits_name,                           "doubleToLongBits")                                    \
   do_intrinsic(_longBitsToDouble,         java_lang_Double,       longBitsToDouble_name,    long_double_signature, F_S) \
    do_name(     longBitsToDouble_name,                           "longBitsToDouble")                                    \
+                                                                                                                        \
+  do_intrinsic(_bitCount_i,               java_lang_Integer,      bitCount_name,            int_int_signature,   F_S)   \
+  do_intrinsic(_bitCount_l,               java_lang_Long,         bitCount_name,            long_int_signature,  F_S)   \
+                                                                                                                        \
   do_intrinsic(_reverseBytes_i,           java_lang_Integer,      reverseBytes_name,        int_int_signature,   F_S)   \
    do_name(     reverseBytes_name,                               "reverseBytes")                                        \
   do_intrinsic(_reverseBytes_l,           java_lang_Long,         reverseBytes_name,        long_long_signature, F_S)   \
@@ -570,7 +580,6 @@
    do_signature(copyOfRange_signature,        "([Ljava/lang/Object;IILjava/lang/Class;)[Ljava/lang/Object;")            \
                                                                                                                         \
   do_intrinsic(_equalsC,                  java_util_Arrays,       equals_name,    equalsC_signature,             F_S)   \
-   do_name(     equals_name,                                     "equals")                                              \
    do_signature(equalsC_signature,                               "([C[C)Z")                                             \
                                                                                                                         \
   do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_array_object_object_signature, F_R) \
@@ -580,6 +589,7 @@
    do_name(     compareTo_name,                                  "compareTo")                                           \
   do_intrinsic(_indexOf,                  java_lang_String,       indexOf_name, string_int_signature,            F_R)   \
    do_name(     indexOf_name,                                    "indexOf")                                             \
+  do_intrinsic(_equals,                   java_lang_String,       equals_name, object_boolean_signature,         F_R)   \
                                                                                                                         \
   do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
@@ -696,7 +706,6 @@
   do_signature(putShort_raw_signature,    "(JS)V")                                                                      \
   do_signature(getChar_raw_signature,     "(J)C")                                                                       \
   do_signature(putChar_raw_signature,     "(JC)V")                                                                      \
-  do_signature(getInt_raw_signature,      "(J)I")                                                                       \
   do_signature(putInt_raw_signature,      "(JI)V")                                                                      \
       do_alias(getLong_raw_signature,    /*(J)J*/ long_long_signature)                                                  \
       do_alias(putLong_raw_signature,    /*(JJ)V*/ long_long_void_signature)                                            \
@@ -713,7 +722,7 @@
   do_intrinsic(_getByte_raw,              sun_misc_Unsafe,        getByte_name, getByte_raw_signature,           F_RN)  \
   do_intrinsic(_getShort_raw,             sun_misc_Unsafe,        getShort_name, getShort_raw_signature,         F_RN)  \
   do_intrinsic(_getChar_raw,              sun_misc_Unsafe,        getChar_name, getChar_raw_signature,           F_RN)  \
-  do_intrinsic(_getInt_raw,               sun_misc_Unsafe,        getInt_name, getInt_raw_signature,             F_RN)  \
+  do_intrinsic(_getInt_raw,               sun_misc_Unsafe,        getInt_name, long_int_signature,               F_RN)  \
   do_intrinsic(_getLong_raw,              sun_misc_Unsafe,        getLong_name, getLong_raw_signature,           F_RN)  \
   do_intrinsic(_getFloat_raw,             sun_misc_Unsafe,        getFloat_name, getFloat_raw_signature,         F_RN)  \
   do_intrinsic(_getDouble_raw,            sun_misc_Unsafe,        getDouble_name, getDouble_raw_signature,       F_RN)  \

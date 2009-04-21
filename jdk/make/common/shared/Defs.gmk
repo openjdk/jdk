@@ -558,9 +558,24 @@ else
   COPYRIGHT_YEAR = $(shell $(DATE) '+%Y')
 endif
 
-# Get shared compiler settings
-include $(JDK_MAKE_SHARED_DIR)/Compiler.gmk
+# Windows uses Microsoft compilers by default
+ifeq ($(PLATFORM), windows)
+  override CC_VERSION = msvc
+endif
 
-# Get the REQUIRED versions
+# Solaris uses Sun Studio compilers by default
+ifeq ($(PLATFORM), solaris)
+  override CC_VERSION = sun
+endif
+
+# Linux uses GNU compilers by default
+ifeq ($(PLATFORM), linux)
+  override CC_VERSION = gcc
+endif
+
+# Get the REQUIRED versions (needs CC_VERSION set)
 include $(JDK_MAKE_SHARED_DIR)/Defs-versions.gmk
+
+# Get the compiler specific settings
+include $(JDK_MAKE_SHARED_DIR)/Compiler-$(CC_VERSION).gmk
 

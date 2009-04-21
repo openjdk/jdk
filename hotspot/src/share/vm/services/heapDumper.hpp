@@ -53,7 +53,7 @@ class HeapDumper : public StackObj {
 
  public:
   HeapDumper(bool gc_before_heap_dump) :
-    _gc_before_heap_dump(gc_before_heap_dump), _error(NULL), _print_to_tty(false)  { }
+    _gc_before_heap_dump(gc_before_heap_dump), _error(NULL), _print_to_tty(false) { }
   HeapDumper(bool gc_before_heap_dump, bool print_to_tty) :
     _gc_before_heap_dump(gc_before_heap_dump), _error(NULL), _print_to_tty(print_to_tty) { }
 

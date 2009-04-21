@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package com.sun.tools.doclets.internal.toolkit;
 
-import com.sun.javadoc.*;
 import java.io.*;
+
+import com.sun.javadoc.*;
 
 /**
  * The interface for writing serialized form output.
@@ -147,22 +148,27 @@ public interface SerializedFormWriter {
             String fieldDimensions, String fieldName);
 
         /**
-         * Write the footer.
-         *
-         * @param member the member to write the header for.
+         * Write the member footer.
          */
-        public void writeMemberFooter(FieldDoc member);
+        public void writeMemberFooter();
 
         /**
-         * Check to see if member details should be printed. If
+         * Check to see if overview details should be printed. If
          * nocomment option set or if there is no text to be printed
-         * for deprecation info, inline comment, no serial tag or inline tags,
-         * do not print member details.
+         * for deprecation info, inline comment or tags,
+         * do not print overview details.
          *
-         * @param member the member to check details for.
-         * @return true if details need to be printed
+         * @param field the field to check overview details for.
+         * @return true if overview details need to be printed
          */
-        public boolean shouldPrintMemberDetails(FieldDoc member);
+        public boolean shouldPrintOverview(FieldDoc field);
+
+        /**
+         * Write the footer.
+         *
+         * @param heading the heading that was written.
+         */
+        public void writeFooter (String heading);
     }
 
     /**
@@ -193,10 +199,8 @@ public interface SerializedFormWriter {
 
         /**
          * Write the footer.
-         *
-         * @param member the member to write the header for.
          */
-        public void writeMemberFooter(MethodDoc member);
+        public void writeMemberFooter();
 
         /**
          * Write the deprecated information for this member.

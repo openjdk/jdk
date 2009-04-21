@@ -1,0 +1,4 @@
+T6799605.java:39:9: compiler.err.cant.resolve.location.args: kindname.method, m, , T6799605<compiler.misc.type.captureof: 1, ?>, kindname.class, T6799605<X>
+T6799605.java:40:9: compiler.err.cant.resolve.location.args: kindname.method, m, , T6799605<compiler.misc.type.captureof: 1, ?>,T6799605<compiler.misc.type.captureof: 2, ?>, kindname.class, T6799605<X>
+T6799605.java:41:9: compiler.err.cant.resolve.location.args: kindname.method, m, , T6799605<compiler.misc.type.captureof: 1, ?>,T6799605<compiler.misc.type.captureof: 2, ?>,T6799605<compiler.misc.type.captureof: 3, ?>, kindname.class, T6799605<X>
+3 errors

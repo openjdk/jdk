@@ -31,7 +31,7 @@
 // The AbstractAssembler is generating code into a CodeBuffer. To make code generation faster,
 // the assembler keeps a copy of the code buffers boundaries & modifies them when
 // emitting bytes rather than using the code buffers accessor functions all the time.
-// The code buffer is updated via set_code_end(...) after emiting a whole instruction.
+// The code buffer is updated via set_code_end(...) after emitting a whole instruction.
 
 AbstractAssembler::AbstractAssembler(CodeBuffer* code) {
   if (code == NULL)  return;
@@ -239,6 +239,78 @@ void Label::patch_instructions(MacroAssembler* masm) {
   }
 }
 
+struct DelayedConstant {
+  typedef void (*value_fn_t)();
+  BasicType type;
+  intptr_t value;
+  value_fn_t value_fn;
+  // This limit of 20 is generous for initial uses.
+  // The limit needs to be large enough to store the field offsets
+  // into classes which do not have statically fixed layouts.
+  // (Initial use is for method handle object offsets.)
+  // Look for uses of "delayed_value" in the source code
+  // and make sure this number is generous enough to handle all of them.
+  enum { DC_LIMIT = 20 };
+  static DelayedConstant delayed_constants[DC_LIMIT];
+  static DelayedConstant* add(BasicType type, value_fn_t value_fn);
+  bool match(BasicType t, value_fn_t cfn) {
+    return type == t && value_fn == cfn;
+  }
+  static void update_all();
+};
+
+DelayedConstant DelayedConstant::delayed_constants[DC_LIMIT];
+// Default C structure initialization rules have the following effect here:
+// = { { (BasicType)0, (intptr_t)NULL }, ... };
+
+DelayedConstant* DelayedConstant::add(BasicType type,
+                                      DelayedConstant::value_fn_t cfn) {
+  for (int i = 0; i < DC_LIMIT; i++) {
+    DelayedConstant* dcon = &delayed_constants[i];
+    if (dcon->match(type, cfn))
+      return dcon;
+    if (dcon->value_fn == NULL) {
+      // (cmpxchg not because this is multi-threaded but because I'm paranoid)
+      if (Atomic::cmpxchg_ptr(CAST_FROM_FN_PTR(void*, cfn), &dcon->value_fn, NULL) == NULL) {
+        dcon->type = type;
+        return dcon;
+      }
+    }
+  }
+  // If this assert is hit (in pre-integration testing!) then re-evaluate
+  // the comment on the definition of DC_LIMIT.
+  guarantee(false, "too many delayed constants");
+  return NULL;
+}
+
+void DelayedConstant::update_all() {
+  for (int i = 0; i < DC_LIMIT; i++) {
+    DelayedConstant* dcon = &delayed_constants[i];
+    if (dcon->value_fn != NULL && dcon->value == 0) {
+      typedef int     (*int_fn_t)();
+      typedef address (*address_fn_t)();
+      switch (dcon->type) {
+      case T_INT:     dcon->value = (intptr_t) ((int_fn_t)    dcon->value_fn)(); break;
+      case T_ADDRESS: dcon->value = (intptr_t) ((address_fn_t)dcon->value_fn)(); break;
+      }
+    }
+  }
+}
+
+intptr_t* AbstractAssembler::delayed_value_addr(int(*value_fn)()) {
+  DelayedConstant* dcon = DelayedConstant::add(T_INT, (DelayedConstant::value_fn_t) value_fn);
+  return &dcon->value;
+}
+intptr_t* AbstractAssembler::delayed_value_addr(address(*value_fn)()) {
+  DelayedConstant* dcon = DelayedConstant::add(T_ADDRESS, (DelayedConstant::value_fn_t) value_fn);
+  return &dcon->value;
+}
+void AbstractAssembler::update_delayed_values() {
+  DelayedConstant::update_all();
+}
+
+
+
 
 void AbstractAssembler::block_comment(const char* comment) {
   if (sect() == CodeBuffer::SECT_INSTS) {
@@ -249,16 +321,19 @@ void AbstractAssembler::block_comment(const char* comment) {
 bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
   // Exception handler checks the nmethod's implicit null checks table
   // only when this method returns false.
-  if (UseCompressedOops) {
+#ifdef _LP64
+  if (UseCompressedOops && Universe::narrow_oop_base() != NULL) {
+    assert (Universe::heap() != NULL, "java heap should be initialized");
     // The first page after heap_base is unmapped and
     // the 'offset' is equal to [heap_base + offset] for
     // narrow oop implicit null checks.
-    uintptr_t heap_base = (uintptr_t)Universe::heap_base();
-    if ((uintptr_t)offset >= heap_base) {
+    uintptr_t base = (uintptr_t)Universe::narrow_oop_base();
+    if ((uintptr_t)offset >= base) {
       // Normalize offset for the next check.
-      offset = (intptr_t)(pointer_delta((void*)offset, (void*)heap_base, 1));
+      offset = (intptr_t)(pointer_delta((void*)offset, (void*)base, 1));
     }
   }
+#endif
   return offset < 0 || os::vm_page_size() <= offset;
 }
 

@@ -396,7 +396,7 @@ static imageIODataPtr initImageioData (JNIEnv *env,
     data->jpegObj = cinfo;
     cinfo->client_data = data;
 
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
     printf("new structures: data is %p, cinfo is %p\n", data, cinfo);
 #endif
 
@@ -673,7 +673,7 @@ static int setQTables(JNIEnv *env,
     j_decompress_ptr decomp;
 
     qlen = (*env)->GetArrayLength(env, qtables);
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
     printf("in setQTables, qlen = %d, write is %d\n", qlen, write);
 #endif
     for (i = 0; i < qlen; i++) {
@@ -876,7 +876,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
         return FALSE;
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
     printf("Filling input buffer, remaining skip is %ld, ",
            sb->remaining_skip);
     printf("Buffer length is %d\n", sb->bufferLength);
@@ -906,7 +906,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
             cinfo->err->error_exit((j_common_ptr) cinfo);
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
       printf("Buffer filled. ret = %d\n", ret);
 #endif
     /*
@@ -917,7 +917,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
      */
     if (ret <= 0) {
         jobject reader = data->imageIOobj;
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
       printf("YO! Early EOI! ret = %d\n", ret);
 #endif
         RELEASE_ARRAYS(env, data, src->next_input_byte);
@@ -1216,21 +1216,24 @@ read_icc_profile (JNIEnv *env, j_decompress_ptr cinfo)
 {
     jpeg_saved_marker_ptr marker;
     int num_markers = 0;
+    int num_found_markers = 0;
     int seq_no;
     JOCTET *icc_data;
+    JOCTET *dst_ptr;
     unsigned int total_length;
 #define MAX_SEQ_NO  255         // sufficient since marker numbers are bytes
-    char marker_present[MAX_SEQ_NO+1];    // 1 if marker found
-    unsigned int data_length[MAX_SEQ_NO+1]; // size of profile data in marker
-    unsigned int data_offset[MAX_SEQ_NO+1]; // offset for data in marker
+    jpeg_saved_marker_ptr icc_markers[MAX_SEQ_NO + 1];
+    int first;         // index of the first marker in the icc_markers array
+    int last;          // index of the last marker in the icc_markers array
     jbyteArray data = NULL;
 
     /* This first pass over the saved markers discovers whether there are
      * any ICC markers and verifies the consistency of the marker numbering.
      */
 
-    for (seq_no = 1; seq_no <= MAX_SEQ_NO; seq_no++)
-        marker_present[seq_no] = 0;
+    for (seq_no = 0; seq_no <= MAX_SEQ_NO; seq_no++)
+        icc_markers[seq_no] = NULL;
+
 
     for (marker = cinfo->marker_list; marker != NULL; marker = marker->next) {
         if (marker_is_icc(marker)) {
@@ -1242,37 +1245,58 @@ read_icc_profile (JNIEnv *env, j_decompress_ptr cinfo)
                 return NULL;
             }
             seq_no = GETJOCTET(marker->data[12]);
-            if (seq_no <= 0 || seq_no > num_markers) {
+
+            /* Some third-party tools produce images with profile chunk
+             * numeration started from zero. It is inconsistent with ICC
+             * spec, but seems to be recognized by majority of image
+             * processing tools, so we should be more tolerant to this
+             * departure from the spec.
+             */
+            if (seq_no < 0 || seq_no > num_markers) {
                 JNU_ThrowByName(env, "javax/imageio/IIOException",
                      "Invalid icc profile: bad sequence number");
                 return NULL;
             }
-            if (marker_present[seq_no]) {
+            if (icc_markers[seq_no] != NULL) {
                 JNU_ThrowByName(env, "javax/imageio/IIOException",
                      "Invalid icc profile: duplicate sequence numbers");
                 return NULL;
             }
-            marker_present[seq_no] = 1;
-            data_length[seq_no] = marker->data_length - ICC_OVERHEAD_LEN;
+            icc_markers[seq_no] = marker;
+            num_found_markers ++;
         }
     }
 
     if (num_markers == 0)
         return NULL;  // There is no profile
 
-    /* Check for missing markers, count total space needed,
-     * compute offset of each marker's part of the data.
-     */
+    if (num_markers != num_found_markers) {
+        JNU_ThrowByName(env, "javax/imageio/IIOException",
+                        "Invalid icc profile: invalid number of icc markers");
+        return NULL;
+    }
 
+    first = icc_markers[0] ? 0 : 1;
+    last = num_found_markers + first;
+
+    /* Check for missing markers, count total space needed.
+     */
     total_length = 0;
-    for (seq_no = 1; seq_no <= num_markers; seq_no++) {
-        if (marker_present[seq_no] == 0) {
+    for (seq_no = first; seq_no < last; seq_no++) {
+        unsigned int length;
+        if (icc_markers[seq_no] == NULL) {
             JNU_ThrowByName(env, "javax/imageio/IIOException",
                  "Invalid icc profile: missing sequence number");
             return NULL;
         }
-        data_offset[seq_no] = total_length;
-        total_length += data_length[seq_no];
+        /* check the data length correctness */
+        length = icc_markers[seq_no]->data_length;
+        if (ICC_OVERHEAD_LEN > length || length > MAX_BYTES_IN_MARKER) {
+            JNU_ThrowByName(env, "javax/imageio/IIOException",
+                 "Invalid icc profile: invalid data length");
+            return NULL;
+        }
+        total_length += (length - ICC_OVERHEAD_LEN);
     }
 
     if (total_length <= 0) {
@@ -1301,19 +1325,14 @@ read_icc_profile (JNIEnv *env, j_decompress_ptr cinfo)
     }
 
     /* and fill it in */
-    for (marker = cinfo->marker_list; marker != NULL; marker = marker->next) {
-        if (marker_is_icc(marker)) {
-            JOCTET FAR *src_ptr;
-            JOCTET *dst_ptr;
-            unsigned int length;
-            seq_no = GETJOCTET(marker->data[12]);
-            dst_ptr = icc_data + data_offset[seq_no];
-            src_ptr = marker->data + ICC_OVERHEAD_LEN;
-            length = data_length[seq_no];
-            while (length--) {
-                *dst_ptr++ = *src_ptr++;
-            }
-        }
+    dst_ptr = icc_data;
+    for (seq_no = first; seq_no < last; seq_no++) {
+        JOCTET FAR *src_ptr = icc_markers[seq_no]->data + ICC_OVERHEAD_LEN;
+        unsigned int length =
+            icc_markers[seq_no]->data_length - ICC_OVERHEAD_LEN;
+
+        memcpy(dst_ptr, src_ptr, length);
+        dst_ptr += length;
     }
 
     /* finally, unpin the array */
@@ -1530,6 +1549,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
     j_decompress_ptr cinfo;
     struct jpeg_source_mgr *src;
     sun_jpeg_error_ptr jerr;
+    jbyteArray profileData = NULL;
 
     if (data == NULL) {
         JNU_ThrowByName(env,
@@ -1557,7 +1577,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
         return retval;
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
     printf("In readImageHeader, data is %p cinfo is %p\n", data, cinfo);
     printf("clearFirst is %d\n", clearFirst);
 #endif
@@ -1584,7 +1604,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
     if (ret == JPEG_HEADER_TABLES_ONLY) {
         retval = JNI_TRUE;
         imageio_term_source(cinfo);  // Pushback remaining buffer contents
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
         printf("just read tables-only image; q table 0 at %p\n",
                cinfo->quant_tbl_ptrs[0]);
 #endif
@@ -1691,6 +1711,14 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
             }
         }
         RELEASE_ARRAYS(env, data, src->next_input_byte);
+
+        /* read icc profile data */
+        profileData = read_icc_profile(env, cinfo);
+
+        if ((*env)->ExceptionCheck(env)) {
+            return retval;
+        }
+
         (*env)->CallVoidMethod(env, this,
                                JPEGImageReader_setImageDataID,
                                cinfo->image_width,
@@ -1698,7 +1726,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
                                cinfo->jpeg_color_space,
                                cinfo->out_color_space,
                                cinfo->num_components,
-                               read_icc_profile(env, cinfo));
+                               profileData);
         if (reset) {
             jpeg_abort_decompress(cinfo);
         }
@@ -1827,7 +1855,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
 
     (*env)->ReleaseIntArrayElements(env, srcBands, body, JNI_ABORT);
 
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
     printf("---- in reader.read ----\n");
     printf("numBands is %d\n", numBands);
     printf("bands array: ");
@@ -2487,7 +2515,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeTables
 
     data->streamBuf.suspendable = FALSE;
     if (qtables != NULL) {
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
         printf("in writeTables: qtables not NULL\n");
 #endif
         setQTables(env, (j_common_ptr) cinfo, qtables, TRUE);
@@ -2763,7 +2791,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
 
     cinfo->restart_interval = restartInterval;
 
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
     printf("writer setup complete, starting compressor\n");
 #endif
 
@@ -2812,13 +2840,13 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageWriter_writeImage
             for (i = 0; i < numBands; i++) {
                 if (scale !=NULL && scale[i] != NULL) {
                     *out++ = scale[i][*(in+i)];
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
                     if (in == data->pixelBuf.buf.bp){ // Just the first pixel
                         printf("in %d -> out %d, ", *(in+i), *(out-i-1));
                     }
 #endif
 
-#ifdef DEBUG
+#ifdef DEBUG_IIO_JPEG
                     if (in == data->pixelBuf.buf.bp){ // Just the first pixel
                         printf("\n");
                     }

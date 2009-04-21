@@ -63,7 +63,8 @@ public class TestLinkOption extends JavadocTester {
             "title=\"class or interface in java.lang\">Object</A>&nbsp;p3)"
         },
         {BUG_ID + "-1" + FS + "java" + FS + "lang" + FS + "StringBuilderChild.html",
-                "public abstract class <STRONG>StringBuilderChild</STRONG><DT>extends <A HREF=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" title=\"class or interface in java.lang\">Object</A>"
+                "public abstract class <STRONG>StringBuilderChild</STRONG>" + NL +
+                "extends <A HREF=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/Object.html?is-external=true\" title=\"class or interface in java.lang\">Object</A>"
         },
 
     };

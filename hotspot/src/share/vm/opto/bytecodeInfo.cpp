@@ -232,6 +232,14 @@ const char* InlineTree::shouldNotInline(ciMethod *callee_method, ciMethod* calle
     return "disallowed by CompilerOracle";
   }
 
+  if (UseStringCache) {
+    // Do not inline StringCache::profile() method used only at the beginning.
+    if (callee_method->name() == ciSymbol::profile_name() &&
+        callee_method->holder()->name() == ciSymbol::java_lang_StringCache()) {
+      return "profiling method";
+    }
+  }
+
   return NULL;
 }
 

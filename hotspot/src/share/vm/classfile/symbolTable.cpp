@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,40 @@ symbolOop SymbolTable::lookup_only(const char* name, int len,
   return the_table()->lookup(index, name, len, hash);
 }
 
+// Suggestion: Push unicode-based lookup all the way into the hashing
+// and probing logic, so there is no need for convert_to_utf8 until
+// an actual new symbolOop is created.
+symbolOop SymbolTable::lookup_unicode(const jchar* name, int utf16_length, TRAPS) {
+  int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
+  char stack_buf[128];
+  if (utf8_length < (int) sizeof(stack_buf)) {
+    char* chars = stack_buf;
+    UNICODE::convert_to_utf8(name, utf16_length, chars);
+    return lookup(chars, utf8_length, THREAD);
+  } else {
+    ResourceMark rm(THREAD);
+    char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);;
+    UNICODE::convert_to_utf8(name, utf16_length, chars);
+    return lookup(chars, utf8_length, THREAD);
+  }
+}
+
+symbolOop SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
+                                           unsigned int& hash) {
+  int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
+  char stack_buf[128];
+  if (utf8_length < (int) sizeof(stack_buf)) {
+    char* chars = stack_buf;
+    UNICODE::convert_to_utf8(name, utf16_length, chars);
+    return lookup_only(chars, utf8_length, hash);
+  } else {
+    ResourceMark rm;
+    char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);;
+    UNICODE::convert_to_utf8(name, utf16_length, chars);
+    return lookup_only(chars, utf8_length, hash);
+  }
+}
+
 void SymbolTable::add(constantPoolHandle cp, int names_count,
                       const char** names, int* lengths, int* cp_indices,
                       unsigned int* hashValues, TRAPS) {
@@ -125,15 +159,6 @@ void SymbolTable::add(constantPoolHandle cp, int names_count,
     }
   }
 }
-
-// Needed for preloading classes in signatures when compiling.
-
-symbolOop SymbolTable::probe(const char* name, int len) {
-  unsigned int hashValue = hash_symbol(name, len);
-  int index = the_table()->hash_to_index(hashValue);
-  return the_table()->lookup(index, name, len, hashValue);
-}
-
 
 symbolOop SymbolTable::basic_add(int index, u1 *name, int len,
                                  unsigned int hashValue, TRAPS) {
@@ -156,7 +181,7 @@ symbolOop SymbolTable::basic_add(int index, u1 *name, int len,
 
   symbolOop test = lookup(index, (char*)name, len, hashValue);
   if (test != NULL) {
-    // A race occured and another thread introduced the symbol, this one
+    // A race occurred and another thread introduced the symbol, this one
     // will be dropped and collected.
     return test;
   }
@@ -193,7 +218,7 @@ bool SymbolTable::basic_add(constantPoolHandle cp, int names_count,
     int index = hash_to_index(hashValues[i]);
     symbolOop test = lookup(index, names[i], lengths[i], hashValues[i]);
     if (test != NULL) {
-      // A race occured and another thread introduced the symbol, this one
+      // A race occurred and another thread introduced the symbol, this one
       // will be dropped and collected. Use test instead.
       cp->symbol_at_put(cp_indices[i], test);
     } else {

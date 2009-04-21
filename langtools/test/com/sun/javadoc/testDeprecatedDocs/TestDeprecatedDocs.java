@@ -78,13 +78,12 @@ public class TestDeprecatedDocs extends JavadocTester {
 
         {TARGET_FILE2, "<STRONG>Deprecated.</STRONG>" + NL +
                 "<P>" + NL +
-            "<DL>" + NL +
-            "<DT><PRE><FONT SIZE=\"-1\">@Deprecated" + NL +
+            "<PRE><FONT SIZE=\"-1\">@Deprecated" + NL +
             "</FONT>public class <STRONG>DeprecatedClassByAnnotation</STRONG>"},
 
         {TARGET_FILE2, "public int <STRONG>field</STRONG></PRE>" + NL +
             "<DL>" + NL +
-            "<DD><STRONG>Deprecated.</STRONG>&nbsp;<DL>"},
+            "<DD><STRONG>Deprecated.</STRONG>&nbsp;</DD></DL>"},
 
         {TARGET_FILE2, "<FONT SIZE=\"-1\">@Deprecated" + NL +
             "</FONT>public <STRONG>DeprecatedClassByAnnotation</STRONG>()</PRE>" + NL +

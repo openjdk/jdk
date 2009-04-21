@@ -74,7 +74,7 @@ public class TestMemberInheritence extends JavadocTester {
 
          // Test overriding/implementing methods with generic parameters.
                  {BUG_ID + FS + "pkg" + FS + "BaseClass.html",
-         "<DT><STRONG>Specified by:</STRONG><DD><CODE><A HREF=\"../pkg/BaseInterface.html#getAnnotation(java.lang.Class)\">getAnnotation</A></CODE> in interface <CODE><A HREF=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">BaseInterface</A></CODE></DL>"},
+         "<DT><STRONG>Specified by:</STRONG></DT><DD><CODE><A HREF=\"../pkg/BaseInterface.html#getAnnotation(java.lang.Class)\">getAnnotation</A></CODE> in interface <CODE><A HREF=\"../pkg/BaseInterface.html\" title=\"interface in pkg\">BaseInterface</A></CODE></DD>"+NL+"</DL>"},
 
          // Test diamond inheritence member summary (6256068)
                  {BUG_ID + FS + "diamond" + FS + "Z.html",

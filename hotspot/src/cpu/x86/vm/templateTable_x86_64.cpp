@@ -307,7 +307,7 @@ void TemplateTable::bipush() {
 
 void TemplateTable::sipush() {
   transition(vtos, itos);
-  __ load_unsigned_word(rax, at_bcp(1));
+  __ load_unsigned_short(rax, at_bcp(1));
   __ bswapl(rax);
   __ sarl(rax, 16);
 }
@@ -645,10 +645,10 @@ void TemplateTable::caload() {
   // eax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ load_unsigned_word(rax,
-                        Address(rdx, rax,
-                                Address::times_2,
-                                arrayOopDesc::base_offset_in_bytes(T_CHAR)));
+  __ load_unsigned_short(rax,
+                         Address(rdx, rax,
+                                 Address::times_2,
+                                 arrayOopDesc::base_offset_in_bytes(T_CHAR)));
 }
 
 // iload followed by caload frequent pair
@@ -663,10 +663,10 @@ void TemplateTable::fast_icaload() {
   // rdx: array
   __ pop_ptr(rdx);
   index_check(rdx, rax); // kills rbx
-  __ load_unsigned_word(rax,
-                        Address(rdx, rax,
-                                Address::times_2,
-                                arrayOopDesc::base_offset_in_bytes(T_CHAR)));
+  __ load_unsigned_short(rax,
+                         Address(rdx, rax,
+                                 Address::times_2,
+                                 arrayOopDesc::base_offset_in_bytes(T_CHAR)));
 }
 
 void TemplateTable::saload() {
@@ -675,10 +675,10 @@ void TemplateTable::saload() {
   // eax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ load_signed_word(rax,
-                      Address(rdx, rax,
-                              Address::times_2,
-                              arrayOopDesc::base_offset_in_bytes(T_SHORT)));
+  __ load_signed_short(rax,
+                       Address(rdx, rax,
+                               Address::times_2,
+                               arrayOopDesc::base_offset_in_bytes(T_SHORT)));
 }
 
 void TemplateTable::iload(int n) {
@@ -1559,7 +1559,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // Handle all the JSR stuff here, then exit.
   // It's much shorter and cleaner than intermingling with the non-JSR
-  // normal-branch stuff occuring below.
+  // normal-branch stuff occurring below.
   if (is_jsr) {
     // Pre-load the next target bytecode into rbx
     __ load_unsigned_byte(rbx, Address(r13, rdx, Address::times_1, 0));
@@ -2276,7 +2276,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   __ cmpl(flags, ctos);
   __ jcc(Assembler::notEqual, notChar);
   // ctos
-  __ load_unsigned_word(rax, field);
+  __ load_unsigned_short(rax, field);
   __ push(ctos);
   // Rewrite bytecode to be faster
   if (!is_static) {
@@ -2288,7 +2288,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   __ cmpl(flags, stos);
   __ jcc(Assembler::notEqual, notShort);
   // stos
-  __ load_signed_word(rax, field);
+  __ load_signed_short(rax, field);
   __ push(stos);
   // Rewrite bytecode to be faster
   if (!is_static) {
@@ -2751,10 +2751,10 @@ void TemplateTable::fast_accessfield(TosState state) {
     __ movsbl(rax, field);
     break;
   case Bytecodes::_fast_sgetfield:
-    __ load_signed_word(rax, field);
+    __ load_signed_short(rax, field);
     break;
   case Bytecodes::_fast_cgetfield:
-    __ load_unsigned_word(rax, field);
+    __ load_unsigned_short(rax, field);
     break;
   case Bytecodes::_fast_fgetfield:
     __ movflt(xmm0, field);
@@ -3010,96 +3010,54 @@ void TemplateTable::invokeinterface(int byte_no) {
   // profile this call
   __ profile_virtual_call(rdx, r13, r14);
 
-  __ mov(r14, rdx); // Save klassOop in r14
+  Label no_such_interface, no_such_method;
 
-  // Compute start of first itableOffsetEntry (which is at the end of
-  // the vtable)
-  const int base = instanceKlass::vtable_start_offset() * wordSize;
-  // Get length of vtable
-  assert(vtableEntry::size() * wordSize == 8,
-         "adjust the scaling in the code below");
-  __ movl(r13, Address(rdx,
-                       instanceKlass::vtable_length_offset() * wordSize));
-  __ lea(rdx, Address(rdx, r13, Address::times_8, base));
+  __ lookup_interface_method(// inputs: rec. class, interface, itable index
+                             rdx, rax, rbx,
+                             // outputs: method, scan temp. reg
+                             rbx, r13,
+                             no_such_interface);
 
-  if (HeapWordsPerLong > 1) {
-    // Round up to align_object_offset boundary
-    __ round_to(rdx, BytesPerLong);
-  }
+  // rbx,: methodOop to call
+  // rcx: receiver
+  // Check for abstract method error
+  // Note: This should be done more efficiently via a throw_abstract_method_error
+  //       interpreter entry point and a conditional jump to it in case of a null
+  //       method.
+  __ testptr(rbx, rbx);
+  __ jcc(Assembler::zero, no_such_method);
 
-  Label entry, search, interface_ok;
+  // do the call
+  // rcx: receiver
+  // rbx,: methodOop
+  __ jump_from_interpreted(rbx, rdx);
+  __ should_not_reach_here();
 
-  __ jmpb(entry);
-  __ bind(search);
-  __ addptr(rdx, itableOffsetEntry::size() * wordSize);
+  // exception handling code follows...
+  // note: must restore interpreter registers to canonical
+  //       state for exception handling to work correctly!
 
-  __ bind(entry);
-
-  // Check that the entry is non-null.  A null entry means that the
-  // receiver class doesn't implement the interface, and wasn't the
-  // same as the receiver class checked when the interface was
-  // resolved.
-  __ push(rdx);
-  __ movptr(rdx, Address(rdx, itableOffsetEntry::interface_offset_in_bytes()));
-  __ testptr(rdx, rdx);
-  __ jcc(Assembler::notZero, interface_ok);
+  __ bind(no_such_method);
   // throw exception
-  __ pop(rdx); // pop saved register first.
-  __ pop(rbx); // pop return address (pushed by prepare_invoke)
-  __ restore_bcp(); // r13 must be correct for exception handler (was
-                    // destroyed)
-  __ restore_locals(); // make sure locals pointer is correct as well
-                       // (was destroyed)
+  __ pop(rbx);           // pop return address (pushed by prepare_invoke)
+  __ restore_bcp();      // r13 must be correct for exception handler   (was destroyed)
+  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+  // the call_VM checks for exception, so we should never return here.
+  __ should_not_reach_here();
+
+  __ bind(no_such_interface);
+  // throw exception
+  __ pop(rbx);           // pop return address (pushed by prepare_invoke)
+  __ restore_bcp();      // r13 must be correct for exception handler   (was destroyed)
+  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                    InterpreterRuntime::throw_IncompatibleClassChangeError));
   // the call_VM checks for exception, so we should never return here.
   __ should_not_reach_here();
-  __ bind(interface_ok);
-
-  __ pop(rdx);
-
-  __ cmpptr(rax, Address(rdx, itableOffsetEntry::interface_offset_in_bytes()));
-  __ jcc(Assembler::notEqual, search);
-
-  __ movl(rdx, Address(rdx, itableOffsetEntry::offset_offset_in_bytes()));
-
-  __ addptr(rdx, r14); // Add offset to klassOop
-  assert(itableMethodEntry::size() * wordSize == 8,
-         "adjust the scaling in the code below");
-  __ movptr(rbx, Address(rdx, rbx, Address::times_8));
-  // rbx: methodOop to call
-  // rcx: receiver
-  // Check for abstract method error
-  // Note: This should be done more efficiently via a
-  // throw_abstract_method_error interpreter entry point and a
-  // conditional jump to it in case of a null method.
-  {
-    Label L;
-    __ testptr(rbx, rbx);
-    __ jcc(Assembler::notZero, L);
-    // throw exception
-    // note: must restore interpreter registers to canonical
-    //       state for exception handling to work correctly!
-    __ pop(rbx);  // pop return address (pushed by prepare_invoke)
-    __ restore_bcp(); // r13 must be correct for exception handler
-                      // (was destroyed)
-    __ restore_locals(); // make sure locals pointer is correct as
-                         // well (was destroyed)
-    __ call_VM(noreg,
-               CAST_FROM_FN_PTR(address,
-                             InterpreterRuntime::throw_AbstractMethodError));
-    // the call_VM checks for exception, so we should never return here.
-    __ should_not_reach_here();
-    __ bind(L);
-  }
-
-  __ movptr(rcx, Address(rbx, methodOopDesc::interpreter_entry_offset()));
-
-  // do the call
-  // rcx: receiver
-  // rbx: methodOop
-  __ jump_from_interpreted(rbx, rdx);
+  return;
 }
+
 
 //-----------------------------------------------------------------------------
 // Allocation

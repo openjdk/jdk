@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ const char  *NameList::iter()    {
   else return (_iter <_cur-1 ? _names[++_iter] : NULL);
 }
 const char  *NameList::current() { return (_iter < _cur ? _names[_iter] : NULL); }
+const char  *NameList::peek(int skip) { return (_iter + skip < _cur ? _names[_iter + skip] : NULL); }
 
 // Return 'true' if current entry is signal
 bool  NameList::current_is_signal() {
@@ -248,11 +249,13 @@ Form::DataType Form::ideal_to_Reg_type(const char *name) const {
 // True if 'opType', an ideal name, loads or stores.
 Form::DataType Form::is_load_from_memory(const char *opType) const {
   if( strcmp(opType,"LoadB")==0 )  return Form::idealB;
+  if( strcmp(opType,"LoadUB")==0 )  return Form::idealB;
   if( strcmp(opType,"LoadUS")==0 )  return Form::idealC;
   if( strcmp(opType,"LoadD")==0 )  return Form::idealD;
   if( strcmp(opType,"LoadD_unaligned")==0 )  return Form::idealD;
   if( strcmp(opType,"LoadF")==0 )  return Form::idealF;
   if( strcmp(opType,"LoadI")==0 )  return Form::idealI;
+  if( strcmp(opType,"LoadUI2L")==0 )  return Form::idealI;
   if( strcmp(opType,"LoadKlass")==0 )  return Form::idealP;
   if( strcmp(opType,"LoadNKlass")==0 ) return Form::idealN;
   if( strcmp(opType,"LoadL")==0 )  return Form::idealL;
@@ -370,7 +373,7 @@ bool FormDict::operator ==(const FormDict &d) const {
 }
 
 // Print out the dictionary contents as key-value pairs
-static void dumpkey (const void* key)  { fprintf(stdout, "%s", key); }
+static void dumpkey (const void* key)  { fprintf(stdout, "%s", (char*) key); }
 static void dumpform(const void* form) { fflush(stdout); ((Form*)form)->dump(); }
 
 void FormDict::dump() {

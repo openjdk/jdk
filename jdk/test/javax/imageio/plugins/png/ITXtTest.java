@@ -123,7 +123,7 @@ public class ITXtTest {
         }
         t.keyword = e.getAttribute("keyword");
         t.isCompressed =
-            (Integer.valueOf(e.getAttribute("compressionFlag")).intValue() == 1);
+            Boolean.valueOf(e.getAttribute("compressionFlag")).booleanValue();
         t.compression =
             Integer.valueOf(e.getAttribute("compressionMethod")).intValue();
         t.language = e.getAttribute("languageTag");

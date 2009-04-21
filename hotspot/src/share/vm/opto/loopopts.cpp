@@ -97,7 +97,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
       // (Note: This tweaking with igvn only works because x is a new node.)
       _igvn.set_type(x, t);
       // If x is a TypeNode, capture any more-precise type permanently into Node
-      // othewise it will be not updated during igvn->transform since
+      // otherwise it will be not updated during igvn->transform since
       // igvn->type(x) is set to x->Value() already.
       x->raise_bottom_type(t);
       Node *y = x->Identity(&_igvn);
@@ -879,7 +879,7 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
             Node *x_ctrl = NULL;
             if( u->is_Phi() ) {
               // Replace all uses of normal nodes.  Replace Phi uses
-              // individually, so the seperate Nodes can sink down
+              // individually, so the separate Nodes can sink down
               // different paths.
               uint k = 1;
               while( u->in(k) != n ) k++;

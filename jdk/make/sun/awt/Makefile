@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -219,6 +219,7 @@ vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/image/cvutils
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/shell
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/medialib
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/debug
+vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/utility
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d/loops
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d/pipe
@@ -339,8 +340,7 @@ ifeq ($(PLATFORM), windows)
 
 FONTCONFIGS_SRC = $(PLATFORM_SRC)/classes/sun/awt/windows
 _FONTCONFIGS = \
-        fontconfig.properties \
-        fontconfig.98.properties 
+        fontconfig.properties
 
 FONTCONFIGS_SRC_PREFIX =
 

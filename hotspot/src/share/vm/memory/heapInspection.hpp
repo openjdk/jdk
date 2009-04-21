@@ -127,6 +127,6 @@ class KlassInfoHisto : public StackObj {
 
 class HeapInspection : public AllStatic {
  public:
-  static void heap_inspection(outputStream* st) KERNEL_RETURN;
+  static void heap_inspection(outputStream* st, bool need_prologue) KERNEL_RETURN;
   static void find_instances_at_safepoint(klassOop k, GrowableArray<oop>* result) KERNEL_RETURN;
 };

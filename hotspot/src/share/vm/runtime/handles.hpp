@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,14 @@ class KlassHandle: public Handle {
   KlassHandle (Thread *thread, Klass* kl)
     : Handle(thread, kl ? kl->as_klassOop() : (klassOop)NULL) {
     assert(is_null() || obj()->is_klass(), "not a klassOop");
+  }
+
+  // Direct interface, use very sparingly.
+  // Used by SystemDictionaryHandles to create handles on existing WKKs.
+  // The obj of such a klass handle may be null, because the handle is formed
+  // during system bootstrapping.
+  KlassHandle(klassOop *handle, bool dummy) : Handle((oop*)handle, dummy) {
+    assert(SharedSkipVerify || is_null() || obj() == NULL || obj()->is_klass(), "not a klassOop");
   }
 
   // General access

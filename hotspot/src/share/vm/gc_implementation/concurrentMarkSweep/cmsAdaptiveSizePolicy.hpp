@@ -393,7 +393,7 @@ class CMSAdaptiveSizePolicy : public AdaptiveSizePolicy {
    // Restarts the concurrent phases timer.
    void concurrent_phases_resume();
 
-   // Time begining and end of the marking phase for
+   // Time beginning and end of the marking phase for
    // a synchronous MS collection.  A MS collection
    // that finishes in the foreground can have started
    // in the background.  These methods capture the

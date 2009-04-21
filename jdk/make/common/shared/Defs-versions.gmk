@@ -45,6 +45,12 @@
 # REQUIRED_CC_VER
 #   The primary C compiler version expected.
 #
+# REQUIRED_COMPILER_NAME
+#   The long descriptive name of the compiler we should use
+#
+# REQUIRED_COMPILER_VERSION
+#   The one word name that identifies the compilers being used.
+#
 # REQUIRED_CYGWIN_VER
 #   Windows only: If CYGWIN is used, the minimum CYGWIN version.
 #
@@ -114,6 +120,8 @@ ifeq ($(PLATFORM), solaris)
   else
     REQUIRED_FREE_SPACE       = 1040000
   endif
+  REQUIRED_COMPILER_NAME      = Sun Studio 12
+  REQUIRED_COMPILER_VERSION   = SS12
   ifeq ($(CC_VERSION),sun)
     REQUIRED_CC_VER           = 5.9
   endif
@@ -130,6 +138,8 @@ ifeq ($(PLATFORM), linux)
   REQUIRED_OS_VARIANT_VERSION = 9
   REQUIRED_FREE_SPACE         = 1460000
   REQUIRED_ALSA_VERSION       = 0.9.1
+  REQUIRED_COMPILER_NAME      = GCC4
+  REQUIRED_COMPILER_VERSION   = GCC4
   REQUIRED_GCC_VER            = 2.95
   ifeq ($(CC_VERSION),gcc)
     REQUIRED_CC_VER           = 4.3.0
@@ -155,16 +165,22 @@ ifeq ($(PLATFORM), windows)
   REQUIRED_DXSDK_VER          = 0x0900
   ifeq ($(CC_VERSION),msvc)
     ifeq ($(ARCH_DATA_MODEL), 32)
-      REQUIRED_CC_VER         = 15.00.21022.08
-      REQUIRED_LINK_VER       = 9.00.21022.08
+      REQUIRED_COMPILER_NAME    = Visual Studio 9
+      REQUIRED_COMPILER_VERSION = VS2008
+      REQUIRED_CC_VER           = 15.00.21022.08
+      REQUIRED_LINK_VER         = 9.00.21022.08
     else
       ifeq ($(ARCH), ia64)
-        REQUIRED_CC_VER       = 13.00.9337.7
-        REQUIRED_LINK_VER     = 7.00.9337.7
+        REQUIRED_COMPILER_NAME    = Microsoft Platform SDK - November 2001 Edition
+        REQUIRED_COMPILER_VERSION = VS2003
+        REQUIRED_CC_VER           = 13.00.9337.7
+        REQUIRED_LINK_VER         = 7.00.9337.7
       endif
       ifeq ($(ARCH), amd64)
-        REQUIRED_CC_VER       = 14.00.40310.41
-        REQUIRED_LINK_VER     = 8.00.40310.39
+        REQUIRED_COMPILER_NAME    = Microsoft Windows SDK with Visual Studio 9 (6001.18000.367)
+        REQUIRED_COMPILER_VERSION = VS2008
+        REQUIRED_CC_VER           = 15.00.21022.08
+        REQUIRED_LINK_VER         = 9.00.21022.08
       endif
     endif
   endif

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ define_pd_global(intx, Tier4BackEdgeThreshold,       0);
 define_pd_global(intx, OnStackReplacePercentage,     0);
 define_pd_global(bool, ResizeTLAB,                   false);
 define_pd_global(intx, FreqInlineSize,               0);
+define_pd_global(intx, InlineSmallCode,              0);
 define_pd_global(intx, NewSizeThreadIncrease,        4*K);
 define_pd_global(intx, NewRatio,                     4);
 define_pd_global(intx, InlineClassNatives,           true);
@@ -303,11 +304,14 @@ class CommandLineFlags {
             "Use 32-bit object references in 64-bit VM. "                   \
             "lp64_product means flag is always constant in 32 bit VM")      \
                                                                             \
-  lp64_product(bool, CheckCompressedOops, trueInDebug,                      \
-            "generate checks in encoding/decoding code")                    \
+  notproduct(bool, CheckCompressedOops, true,                               \
+            "generate checks in encoding/decoding code in debug VM")        \
                                                                             \
-  product(bool, UseImplicitNullCheckForNarrowOop, true,                     \
-            "generate implicit null check in indexed addressing mode.")     \
+  product_pd(uintx, HeapBaseMinAddress,                                     \
+            "OS specific low limit for heap base address")                  \
+                                                                            \
+  diagnostic(bool, PrintCompressedOopsMode, false,                          \
+            "Print compressed oops base address and encoding mode")         \
                                                                             \
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
@@ -487,8 +491,14 @@ class CommandLineFlags {
   develop(bool, SpecialStringIndexOf, true,                                 \
           "special version of string indexOf")                              \
                                                                             \
-  product(bool, SpecialArraysEquals, false,                                 \
+  develop(bool, SpecialStringEquals, true,                                  \
+          "special version of string equals")                               \
+                                                                            \
+  develop(bool, SpecialArraysEquals, true,                                  \
           "special version of Arrays.equals(char[],char[])")                \
+                                                                            \
+  product(bool, UseSSE42Intrinsics, false,                                  \
+          "SSE4.2 versions of intrinsics")                                  \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \
@@ -661,6 +671,12 @@ class CommandLineFlags {
                                                                             \
   product(ccstrlist, OnOutOfMemoryError, "",                                \
           "Run user-defined commands on first java.lang.OutOfMemoryError")  \
+                                                                            \
+  manageable(bool, HeapDumpBeforeFullGC, false,                             \
+          "Dump heap to file before any major stop-world GC")               \
+                                                                            \
+  manageable(bool, HeapDumpAfterFullGC, false,                              \
+          "Dump heap to file after any major stop-world GC")                \
                                                                             \
   manageable(bool, HeapDumpOnOutOfMemoryError, false,                       \
           "Dump heap to file when java.lang.OutOfMemoryError is thrown")    \
@@ -1306,6 +1322,12 @@ class CommandLineFlags {
                                                                             \
   product(intx, ParGCArrayScanChunk, 50,                                    \
           "Scan a subset and push remainder, if array is bigger than this") \
+                                                                            \
+  product(bool, ParGCUseLocalOverflow, false,                               \
+          "Instead of a global overflow list, use local overflow stacks")   \
+                                                                            \
+  product(bool, ParGCTrimOverflow, true,                                    \
+          "Eagerly trim the local overflow lists (when ParGCUseLocalOverflow") \
                                                                             \
   notproduct(bool, ParGCWorkQueueOverflowALot, false,                       \
           "Whether we should simulate work queue overflow in ParNew")       \
@@ -1971,6 +1993,12 @@ class CommandLineFlags {
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \
                                                                             \
+  manageable(bool, PrintClassHistogramBeforeFullGC, false,                  \
+          "Print a class histogram before any major stop-world GC")         \
+                                                                            \
+  manageable(bool, PrintClassHistogramAfterFullGC, false,                   \
+          "Print a class histogram after any major stop-world GC")          \
+                                                                            \
   manageable(bool, PrintClassHistogram, false,                              \
           "Print a histogram of class instances")                           \
                                                                             \
@@ -2156,6 +2184,9 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, PrintIntrinsics, false,                                  \
           "prints attempted and successful inlining of intrinsics")         \
+                                                                            \
+  product(bool, UsePopCountInstruction, false,                              \
+          "Use population count instruction")                               \
                                                                             \
   diagnostic(ccstrlist, DisableIntrinsic, "",                               \
           "do not expand intrinsics whose (internal) names appear here")    \
@@ -2598,7 +2629,7 @@ class CommandLineFlags {
   develop(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
-  product(intx, InlineSmallCode, 1000,                                      \
+  product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \
           "less than this")                                                 \
                                                                             \

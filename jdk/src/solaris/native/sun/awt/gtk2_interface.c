@@ -93,6 +93,7 @@ static int gtk2_pixbuf_height = 0;
 /* Static buffer for conversion from java.lang.String to UTF-8 */
 static char convertionBuffer[CONV_BUFFER_SIZE];
 
+static gboolean new_combo = TRUE;
 const char ENV_PREFIX[] = "GTK_MODULES=";
 
 /*******************/
@@ -608,6 +609,7 @@ gboolean gtk2_load()
             dlsym(gtk2_libhandle, "gtk_combo_box_entry_new");
         if (fp_gtk_combo_box_entry_new == NULL) {
             fp_gtk_combo_box_entry_new = dl_symbol("gtk_combo_new");
+            new_combo = FALSE;
         }
 
         fp_gtk_separator_tool_item_new =
@@ -1423,17 +1425,13 @@ static GtkWidget *gtk2_get_widget(WidgetType widget_type)
             */
             GtkWidget *combo = (*fp_gtk_combo_box_entry_new)();
 
-            if (widget_type == COMBO_BOX_TEXT_FIELD)
-                (*fp_gtk_container_add)((GtkContainer *)combo, result);
-            else
-            {
+            if (new_combo && widget_type == COMBO_BOX_ARROW_BUTTON) {
                 (*fp_gtk_widget_set_parent)(result, combo);
                 ((GtkBin*)combo)->child = result;
+            } else {
+                (*fp_gtk_container_add)((GtkContainer *)combo, result);
             }
-
             (*fp_gtk_container_add)((GtkContainer *)gtk2_fixed, combo);
-            (*fp_gtk_widget_realize)(result);
-            return result;
         }
         else if (widget_type != TOOL_TIP &&
                  widget_type != INTERNAL_FRAME &&

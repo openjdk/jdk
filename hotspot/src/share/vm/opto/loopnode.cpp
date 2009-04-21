@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,7 +274,7 @@ Node *PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   //
   // Canonicalize the condition on the test.  If we can exactly determine
   // the trip-counter exit value, then set limit to that value and use
-  // a '!=' test.  Otherwise use conditon '<' for count-up loops and
+  // a '!=' test.  Otherwise use condition '<' for count-up loops and
   // '>' for count-down loops.  If the condition is inverted and we will
   // be rolling through MININT to MAXINT, then bail out.
 
@@ -290,7 +290,7 @@ Node *PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 
   // If compare points to incr, we are ok.  Otherwise the compare
   // can directly point to the phi; in this case adjust the compare so that
-  // it points to the incr by adusting the limit.
+  // it points to the incr by adjusting the limit.
   if( cmp->in(1) == phi || cmp->in(2) == phi )
     limit = gvn->transform(new (C, 3) AddINode(limit,stride));
 
@@ -471,7 +471,7 @@ Node *PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   lazy_replace( x, l );
   set_idom(l, init_control, dom_depth(x));
 
-  // Check for immediately preceeding SafePoint and remove
+  // Check for immediately preceding SafePoint and remove
   Node *sfpt2 = le->in(0);
   if( sfpt2->Opcode() == Op_SafePoint && is_deleteable_safept(sfpt2))
     lazy_replace( sfpt2, sfpt2->in(TypeFunc::Control));
@@ -1506,7 +1506,7 @@ PhaseIdealLoop::PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify
 
   // Build Dominators for elision of NULL checks & loop finding.
   // Since nodes do not have a slot for immediate dominator, make
-  // a persistant side array for that info indexed on node->_idx.
+  // a persistent side array for that info indexed on node->_idx.
   _idom_size = C->unique();
   _idom      = NEW_RESOURCE_ARRAY( Node*, _idom_size );
   _dom_depth = NEW_RESOURCE_ARRAY( uint,  _idom_size );
@@ -1529,7 +1529,7 @@ PhaseIdealLoop::PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify
 
   // Given dominators, try to find inner loops with calls that must
   // always be executed (call dominates loop tail).  These loops do
-  // not need a seperate safepoint.
+  // not need a separate safepoint.
   Node_List cisstack(a);
   _ltree_root->check_safepts(visited, cisstack);
 
@@ -2332,7 +2332,7 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
       if (done) {
         // All of n's inputs have been processed, complete post-processing.
 
-        // Compute earilest point this Node can go.
+        // Compute earliest point this Node can go.
         // CFG, Phi, pinned nodes already know their controlling input.
         if (!has_node(n)) {
           // Record earliest legal location
@@ -2668,13 +2668,15 @@ void PhaseIdealLoop::build_loop_late_post( Node *n, const PhaseIdealLoop *verify
     case Op_LoadD_unaligned:
     case Op_LoadL_unaligned:
     case Op_StrComp:            // Does a bunch of load-like effects
+    case Op_StrEquals:
+    case Op_StrIndexOf:
     case Op_AryEq:
       pinned = false;
     }
     if( pinned ) {
-      IdealLoopTree *choosen_loop = get_loop(n->is_CFG() ? n : get_ctrl(n));
-      if( !choosen_loop->_child )       // Inner loop?
-        choosen_loop->_body.push(n); // Collect inner loops
+      IdealLoopTree *chosen_loop = get_loop(n->is_CFG() ? n : get_ctrl(n));
+      if( !chosen_loop->_child )       // Inner loop?
+        chosen_loop->_body.push(n); // Collect inner loops
       return;
     }
   } else {                      // No slot zero
@@ -2746,9 +2748,9 @@ void PhaseIdealLoop::build_loop_late_post( Node *n, const PhaseIdealLoop *verify
   set_ctrl(n, least);
 
   // Collect inner loop bodies
-  IdealLoopTree *choosen_loop = get_loop(least);
-  if( !choosen_loop->_child )   // Inner loop?
-    choosen_loop->_body.push(n);// Collect inner loops
+  IdealLoopTree *chosen_loop = get_loop(least);
+  if( !chosen_loop->_child )   // Inner loop?
+    chosen_loop->_body.push(n);// Collect inner loops
 }
 
 #ifndef PRODUCT

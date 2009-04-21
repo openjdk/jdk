@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,19 @@ class LatestMethodOopCache : public CommonMethodOopCache {
 
  public:
   methodOop get_methodOop();
+};
+
+// For UseCompressedOops.
+struct NarrowOopStruct {
+  // Base address for oop-within-java-object materialization.
+  // NULL if using wide oops or zero based narrow oops.
+  address _base;
+  // Number of shift bits for encoding/decoding narrow oops.
+  // 0 if using wide oops or zero based unscaled narrow oops,
+  // LogMinObjAlignmentInBytes otherwise.
+  int     _shift;
+  // Generate code with implicit null checks for narrow oops.
+  bool    _use_implicit_null_checks;
 };
 
 
@@ -181,9 +194,9 @@ class Universe: AllStatic {
 
   // The particular choice of collected heap.
   static CollectedHeap* _collectedHeap;
-  // Base address for oop-within-java-object materialization.
-  // NULL if using wide oops.  Doubles as heap oop null value.
-  static address        _heap_base;
+
+  // For UseCompressedOops.
+  static struct NarrowOopStruct _narrow_oop;
 
   // array of dummy objects used with +FullGCAlot
   debug_only(static objArrayOop _fullgc_alot_dummy_array;)
@@ -328,8 +341,25 @@ class Universe: AllStatic {
   static CollectedHeap* heap() { return _collectedHeap; }
 
   // For UseCompressedOops
-  static address heap_base()       { return _heap_base; }
-  static address* heap_base_addr() { return &_heap_base; }
+  static address* narrow_oop_base_addr()              { return &_narrow_oop._base; }
+  static address  narrow_oop_base()                   { return  _narrow_oop._base; }
+  static int      narrow_oop_shift()                  { return  _narrow_oop._shift; }
+  static void     set_narrow_oop_base(address base)   { _narrow_oop._base  = base; }
+  static void     set_narrow_oop_shift(int shift)     { _narrow_oop._shift = shift; }
+  static bool     narrow_oop_use_implicit_null_checks()             { return  _narrow_oop._use_implicit_null_checks; }
+  static void     set_narrow_oop_use_implicit_null_checks(bool use) { _narrow_oop._use_implicit_null_checks = use; }
+  // Narrow Oop encoding mode:
+  // 0 - Use 32-bits oops without encoding when
+  //     NarrowOopHeapBaseMin + heap_size < 4Gb
+  // 1 - Use zero based compressed oops with encoding when
+  //     NarrowOopHeapBaseMin + heap_size < 32Gb
+  // 2 - Use compressed oops with heap base + encoding.
+  enum NARROW_OOP_MODE {
+    UnscaledNarrowOop  = 0,
+    ZeroBasedNarrowOop = 1,
+    HeapBasedNarrowOop = 2
+  };
+  static char* preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode);
 
   // Historic gc information
   static size_t get_heap_capacity_at_last_gc()         { return _heap_capacity_at_last_gc; }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
      */
     public Set<? extends Element> getElementsAnnotatedWith(TypeElement a) {
         Set<Element> result = Collections.emptySet();
+        Types typeUtil = processingEnv.getTypeUtils();
         if (a.getKind() != ElementKind.ANNOTATION_TYPE)
             throw new IllegalArgumentException(NOT_AN_ANNOTATION_TYPE + a);
 
@@ -122,7 +123,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
             throw new AssertionError("Bad implementation type for " + tm);
 
         ElementScanner6<Set<Element>, DeclaredType> scanner =
-            new AnnotationSetScanner(result);
+            new AnnotationSetScanner(result, typeUtil);
 
         for (Element element : rootElements)
             result = scanner.scan(element, annotationTypeElement);
@@ -135,9 +136,11 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         ElementScanner6<Set<Element>, DeclaredType> {
         // Insertion-order preserving set
         Set<Element> annotatedElements = new LinkedHashSet<Element>();
+        Types typeUtil;
 
-        AnnotationSetScanner(Set<Element> defaultSet) {
+        AnnotationSetScanner(Set<Element> defaultSet, Types typeUtil) {
             super(defaultSet);
+            this.typeUtil = typeUtil;
         }
 
         @Override
@@ -145,7 +148,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
             java.util.List<? extends AnnotationMirror> annotationMirrors =
                 processingEnv.getElementUtils().getAllAnnotationMirrors(e);
             for (AnnotationMirror annotationMirror : annotationMirrors) {
-                if (annotationMirror.getAnnotationType().equals(p))
+                if (typeUtil.isSameType(annotationMirror.getAnnotationType(), p))
                     annotatedElements.add(e);
             }
             e.accept(this, p);

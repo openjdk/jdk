@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -852,16 +852,13 @@ bool Arguments::add_property(const char* prop) {
       FreeHeap(value);
     }
     return true;
-  }
-  else if (strcmp(key, "sun.java.command") == 0) {
-
+  } else if (strcmp(key, "sun.java.command") == 0) {
     _java_command = value;
 
     // don't add this property to the properties exposed to the java application
     FreeHeap(key);
     return true;
-  }
-  else if (strcmp(key, "sun.java.launcher.pid") == 0) {
+  } else if (strcmp(key, "sun.java.launcher.pid") == 0) {
     // launcher.pid property is private and is processed
     // in process_sun_java_launcher_properties();
     // the sun.java.launcher property is passed on to the java application
@@ -870,13 +867,14 @@ bool Arguments::add_property(const char* prop) {
       FreeHeap(value);
     }
     return true;
-  }
-  else if (strcmp(key, "java.vendor.url.bug") == 0) {
+  } else if (strcmp(key, "java.vendor.url.bug") == 0) {
     // save it in _java_vendor_url_bug, so JVM fatal error handler can access
     // its value without going through the property list or making a Java call.
     _java_vendor_url_bug = value;
+  } else if (strcmp(key, "sun.boot.library.path") == 0) {
+    PropertyList_unique_add(&_system_properties, key, value, true);
+    return true;
   }
-
   // Create new property and add at the end of the list
   PropertyList_unique_add(&_system_properties, key, value);
   return true;
@@ -895,7 +893,7 @@ void Arguments::set_mode_flags(Mode mode) {
   // Ensure Agent_OnLoad has the correct initial values.
   // This may not be the final mode; mode may change later in onload phase.
   PropertyList_unique_add(&_system_properties, "java.vm.info",
-     (char*)Abstract_VM_Version::vm_info_string());
+                          (char*)Abstract_VM_Version::vm_info_string(), false);
 
   UseInterpreter             = true;
   UseCompiler                = true;
@@ -971,7 +969,7 @@ void Arguments::set_parnew_gc_flags() {
   } else {
     no_shared_spaces();
 
-    // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 correspondinly,
+    // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 respectively,
     // these settings are default for Parallel Scavenger. For ParNew+Tenured configuration
     // we set them to 1024 and 1024.
     // See CR 6362902.
@@ -987,6 +985,16 @@ void Arguments::set_parnew_gc_flags() {
     if (AlwaysTenure) {
       FLAG_SET_CMDLINE(intx, MaxTenuringThreshold, 0);
     }
+    // When using compressed oops, we use local overflow stacks,
+    // rather than using a global overflow list chained through
+    // the klass word of the object's pre-image.
+    if (UseCompressedOops && !ParGCUseLocalOverflow) {
+      if (!FLAG_IS_DEFAULT(ParGCUseLocalOverflow)) {
+        warning("Forcing +ParGCUseLocalOverflow: needed if using compressed references");
+      }
+      FLAG_SET_DEFAULT(ParGCUseLocalOverflow, true);
+    }
+    assert(ParGCUseLocalOverflow || !UseCompressedOops, "Error");
   }
 }
 
@@ -1211,7 +1219,9 @@ void Arguments::set_ergonomics_flags() {
     if (UseLargePages && UseCompressedOops) {
       // Cannot allocate guard pages for implicit checks in indexed addressing
       // mode, when large pages are specified on windows.
-      FLAG_SET_DEFAULT(UseImplicitNullCheckForNarrowOop, false);
+      // This flag could be switched ON if narrow oop base address is set to 0,
+      // see code in Universe::initialize_heap().
+      Universe::set_narrow_oop_use_implicit_null_checks(false);
     }
 #endif //  _WIN64
   } else {
@@ -1363,9 +1373,6 @@ void Arguments::set_aggressive_opts_flags() {
   }
   if (AggressiveOpts && FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
     FLAG_SET_DEFAULT(DoEscapeAnalysis, true);
-  }
-  if (AggressiveOpts && FLAG_IS_DEFAULT(SpecialArraysEquals)) {
-    FLAG_SET_DEFAULT(SpecialArraysEquals, true);
   }
   if (AggressiveOpts && FLAG_IS_DEFAULT(BiasedLockingStartupDelay)) {
     FLAG_SET_DEFAULT(BiasedLockingStartupDelay, 500);
@@ -2765,7 +2772,7 @@ void Arguments::PropertyList_add(SystemProperty** plist, const char* k, char* v)
 }
 
 // This add maintains unique property key in the list.
-void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, char* v) {
+void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, char* v, jboolean append) {
   if (plist == NULL)
     return;
 
@@ -2773,7 +2780,11 @@ void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, c
   SystemProperty* prop;
   for (prop = *plist; prop != NULL; prop = prop->next()) {
     if (strcmp(k, prop->key()) == 0) {
-      prop->set_value(v);
+      if (append) {
+        prop->append_value(v);
+      } else {
+        prop->set_value(v);
+      }
       return;
     }
   }

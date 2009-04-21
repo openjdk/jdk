@@ -232,6 +232,16 @@ public final class StrikeCache {
             if (disposer.pScalerContext != 0L) {
                 freeLongMemory(new long[0], disposer.pScalerContext);
             }
+        } else if (disposer.pScalerContext != 0L) {
+            /* Rarely a strike may have been created that never cached
+             * any glyphs. In this case we still want to free the scaler
+             * context.
+             */
+            if (FontManager.longAddresses) {
+                freeLongMemory(new long[0], disposer.pScalerContext);
+            } else {
+                freeIntMemory(new int[0], disposer.pScalerContext);
+            }
         }
     }
 

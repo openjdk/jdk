@@ -167,7 +167,7 @@ class nmethod : public CodeBlob {
   nmFlags flags;           // various flags to keep track of nmethod state
   bool _markedForDeoptimization;       // Used for stack deoptimization
   enum { alive        = 0,
-         not_entrant  = 1, // uncommon trap has happend but activations may still exist
+         not_entrant  = 1, // uncommon trap has happened but activations may still exist
          zombie       = 2,
          unloaded     = 3 };
 

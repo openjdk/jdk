@@ -478,6 +478,11 @@ JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* e
 // set external state accordingly.  Only thread-filtered events are included.
 jlong
 JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
+  if (state == NULL) {
+    // associated JavaThread is exiting
+    return (jlong)0;
+  }
+
   jlong was_any_env_enabled = state->thread_event_enable()->_event_enabled.get_bits();
   jlong any_env_enabled = 0;
 
@@ -553,6 +558,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
     {
       MutexLocker mu(Threads_lock);   //hold the Threads_lock for the iteration
       for (JavaThread *tp = Threads::first(); tp != NULL; tp = tp->next()) {
+        // state_for_while_locked() makes tp->is_exiting() check
         JvmtiThreadState::state_for_while_locked(tp);  // create the thread state if missing
       }
     }// release Threads_lock

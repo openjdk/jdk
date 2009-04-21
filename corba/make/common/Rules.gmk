@@ -191,14 +191,18 @@ $(JAVA_SOURCE_LIST) : source_list_prime resources $(FILES_class)
 # Make sure all newer sources are compiled (in a batch)
 classes : $(CLASSES_INIT) .delete.classlist .compile.classlist
 
+# Use this javac option to force it to favor the sourcepath file classes
+#   rather than any bootclasspath classes.
+JAVAC_PREFER_SOURCE = -Xprefer:source
+
 .compile.classlist : $(JAVA_SOURCE_LIST)
 	@$(MKDIR) -p $(CLASSDESTDIR)
 	@if [ `$(CAT) $(JAVA_SOURCE_LIST) | $(WC) -l` -ge 1 ] ; then \
 	  $(ECHO) "# Java sources to be compiled: (listed in file $(JAVA_SOURCE_LIST))"; \
 	  $(CAT) $(JAVA_SOURCE_LIST); \
 	  $(ECHO) "# Running javac:"; \
-	  $(ECHO) $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
-	  $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
+	  $(ECHO) $(JAVAC_CMD) $(JAVAC_PREFER_SOURCE) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
+	  $(JAVAC_CMD) $(JAVAC_PREFER_SOURCE) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
 	fi
 	@$(java-vm-cleanup)
 

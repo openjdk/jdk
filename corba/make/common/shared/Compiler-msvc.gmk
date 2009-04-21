@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -128,9 +128,19 @@ ifeq ($(PLATFORM), windows)
         endif
       endif
     endif
-    # This will cause problems if ALT_COMPILER_PATH is defined to ""
-    # which is a directive to use the PATH.
-    REBASE         = $(COMPILER_PATH)../REBASE
+    ifeq ($(CC_MAJORVER), 15)
+      # This should be: CC_VER=15.00.21022.8 LINK_VER=9.00.21022.8
+      REQUIRED_CC_VER = 15.00.21022.8
+      REQUIRED_LINK_VER = 9.00.21022.8
+      COMPILER_NAME=Windows SDK 6.1 Visual Studio 9
+      COMPILER_VERSION=VS2008
+      RC = $(MSSDK61)/bin/x64/rc
+      REBASE = $(MSSDK61/bin/x64/rebase
+    else
+      # This will cause problems if ALT_COMPILER_PATH is defined to ""
+      # which is a directive to use the PATH.
+      REBASE         = $(COMPILER_PATH)../REBASE
+    endif
     ifndef COMPILER_PATH
       COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
     endif

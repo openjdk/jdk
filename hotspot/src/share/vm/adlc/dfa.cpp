@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -870,7 +870,7 @@ void ExprDict::print_asserts(FILE *fp) {
 }
 
 // Print out the dictionary contents as key-value pairs
-static void dumpekey(const void* key)  { fprintf(stdout, "%s", key); }
+static void dumpekey(const void* key)  { fprintf(stdout, "%s", (char*) key); }
 static void dumpexpr(const void* expr) { fflush(stdout); ((Expr*)expr)->print(); }
 
 void ExprDict::dump() {
@@ -1020,7 +1020,7 @@ void ProductionState::set_cost_bounds(const char *result, const Expr *cost, bool
 }
 
 // Print out the dictionary contents as key-value pairs
-static void print_key (const void* key)              { fprintf(stdout, "%s", key); }
+static void print_key (const void* key)              { fprintf(stdout, "%s", (char*) key); }
 static void print_production(const void* production) { fflush(stdout); ((Production*)production)->print(); }
 
 void ProductionState::print() {

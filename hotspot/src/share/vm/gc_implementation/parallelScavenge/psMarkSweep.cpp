@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,6 +124,8 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     old_gen->verify_object_start_array();
     perm_gen->verify_object_start_array();
   }
+
+  heap->pre_full_gc_dump();
 
   // Filled in below to track the state of the young gen after the collection.
   bool eden_empty;
@@ -362,6 +364,8 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+
+  heap->post_full_gc_dump();
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();

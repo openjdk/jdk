@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -513,6 +513,10 @@ class CollectedHeap : public CHeapObj {
 
   // Perform any cleanup actions necessary before allowing a verification.
   virtual void prepare_for_verify() = 0;
+
+  // Generate any dumps preceding or following a full gc
+  void pre_full_gc_dump();
+  void post_full_gc_dump();
 
   virtual void print() const = 0;
   virtual void print_on(outputStream* st) const = 0;

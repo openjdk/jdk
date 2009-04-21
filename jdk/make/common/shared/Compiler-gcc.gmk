@@ -27,8 +27,6 @@
 # GCC Compiler settings
 #
 
-COMPILER_NAME=GCC
-
 ifeq ($(PLATFORM), windows)
 
   # Settings specific to Windows, pretty stale, hasn't been used
@@ -89,4 +87,8 @@ endif
 # Get gcc version
 _CC_VER :=$(shell $(CC) -dumpversion 2>&1 )
 CC_VER  :=$(call GetVersion,"$(_CC_VER)")
+
+# Name of compiler
+COMPILER_NAME = GCC$(call MajorVersion,$(CC_VER))
+COMPILER_VERSION = $(COMPILER_NAME)
 

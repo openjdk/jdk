@@ -39,13 +39,13 @@ public class TestExternalOverridenMethod extends JavadocTester {
     private static final String BUG_ID = "4857717";
     private static final String[][] TEST = {
         {BUG_ID + FS + "pkg" + FS + "XReader.html",
-            "<STRONG>Overrides:</STRONG><DD><CODE><A HREF=\"" +
+            "<STRONG>Overrides:</STRONG></DT><DD><CODE><A HREF=\"" +
             "http://java.sun.com/j2se/1.4.1/docs/api/java/io/FilterReader.html?is-external=true#read()\"" +
                 " title=\"class or interface in java.io\">read</A></CODE> in class " +
                 "<CODE><A HREF=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/FilterReader.html?is-external=true\"" +
                 " title=\"class or interface in java.io\">FilterReader</A>"},
         {BUG_ID + FS + "pkg" + FS + "XReader.html",
-            "<STRONG>Specified by:</STRONG><DD><CODE><A HREF=\"" +
+            "<STRONG>Specified by:</STRONG></DT><DD><CODE><A HREF=\"" +
             "http://java.sun.com/j2se/1.4.1/docs/api/java/io/DataInput.html?is-external=true#readInt()\"" +
             " title=\"class or interface in java.io\">readInt</A></CODE> in interface " +
             "<CODE><A HREF=\"http://java.sun.com/j2se/1.4.1/docs/api/java/io/DataInput.html?is-external=true\"" +

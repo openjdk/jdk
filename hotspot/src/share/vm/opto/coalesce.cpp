@@ -123,7 +123,7 @@ void PhaseChaitin::new_lrg( const Node *x, uint lrg ) {
 }
 
 //------------------------------clone_projs------------------------------------
-// After cloning some rematierialized instruction, clone any MachProj's that
+// After cloning some rematerialized instruction, clone any MachProj's that
 // follow it.  Example: Intel zero is XOR, kills flags.  Sparc FP constants
 // use G3 as an address temp.
 int PhaseChaitin::clone_projs( Block *b, uint idx, Node *con, Node *copy, uint &maxlrg ) {
@@ -473,7 +473,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
         } // End of is two-adr
 
         // Insert a copy at a debug use for a lrg which has high frequency
-        if( (b->_freq < OPTO_DEBUG_SPLIT_FREQ) && n->is_MachSafePoint() ) {
+        if( b->_freq < OPTO_DEBUG_SPLIT_FREQ || b->is_uncommon(_phc._cfg._bbs) ) {
           // Walk the debug inputs to the node and check for lrg freq
           JVMState* jvms = n->jvms();
           uint debug_start = jvms ? jvms->debug_start() : 999999;
@@ -487,7 +487,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
             LRG &lrg = lrgs(nidx);
 
             // If this lrg has a high frequency use/def
-            if( lrg._maxfreq >= OPTO_LRG_HIGH_FREQ ) {
+            if( lrg._maxfreq >= _phc.high_frequency_lrg() ) {
               // If the live range is also live out of this block (like it
               // would be for a fast/slow idiom), the normal spill mechanism
               // does an excellent job.  If it is not live out of this block
@@ -694,8 +694,8 @@ uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy,
           } // End of if not infinite-stack neighbor
         } // End of if actually inserted
       } // End of if live range overlaps
-    } // End of else collect intereferences for 1 node
-  } // End of while forever, scan back for intereferences
+    } // End of else collect interferences for 1 node
+  } // End of while forever, scan back for interferences
   return reg_degree;
 }
 
@@ -786,7 +786,7 @@ bool PhaseConservativeCoalesce::copy_copy( Node *dst_copy, Node *src_copy, Block
   if( rm_size == 0 ) return false;
 
   // Another early bail-out test is when we are double-coalescing and the
-  // 2 copies are seperated by some control flow.
+  // 2 copies are separated by some control flow.
   if( dst_copy != src_copy ) {
     Block *src_b = _phc._cfg._bbs[src_copy->_idx];
     Block *b2 = b;

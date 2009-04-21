@@ -238,6 +238,35 @@ JvmtiRawMonitor::~JvmtiRawMonitor() {
 }
 
 
+bool
+JvmtiRawMonitor::is_valid() {
+  int value = 0;
+
+  // This object might not be a JvmtiRawMonitor so we can't assume
+  // the _magic field is properly aligned. Get the value in a safe
+  // way and then check against JVMTI_RM_MAGIC.
+
+  switch (sizeof(_magic)) {
+  case 2:
+    value = Bytes::get_native_u2((address)&_magic);
+    break;
+
+  case 4:
+    value = Bytes::get_native_u4((address)&_magic);
+    break;
+
+  case 8:
+    value = Bytes::get_native_u8((address)&_magic);
+    break;
+
+  default:
+    guarantee(false, "_magic field is an unexpected size");
+  }
+
+  return value == JVMTI_RM_MAGIC;
+}
+
+
 //
 // class JvmtiBreakpoint
 //

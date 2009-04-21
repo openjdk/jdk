@@ -104,6 +104,9 @@ ifeq ($(COMPILER_WARNINGS_FATAL), true)
   JAVACFLAGS  += -Werror
 endif
 
+NO_PROPRIETARY_API_WARNINGS = -XDignore.symbol.file=true
+JAVACFLAGS  += $(NO_PROPRIETARY_API_WARNINGS)
+
 # Add the source level (currently all source is 1.5, should this be 1.6?)
 LANGUAGE_VERSION = -source 1.5
 JAVACFLAGS  += $(LANGUAGE_VERSION)
@@ -117,7 +120,7 @@ JAVACFLAGS  += -classpath $(BOOTDIR)/lib/tools.jar
 JAVACFLAGS  += $(OTHER_JAVACFLAGS)
 
 # Needed for javah
-JAVAHFLAGS += -bootclasspath $(CLASSBINDIR)
+JAVAHFLAGS += -classpath $(CLASSBINDIR)
 
 # Langtools
 ifdef LANGTOOLS_DIST

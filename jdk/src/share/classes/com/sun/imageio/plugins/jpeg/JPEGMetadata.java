@@ -490,7 +490,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                 }
                 break;
             case ColorSpace.TYPE_3CLR:
-                if (cs == JPEG.YCC) {
+                if (cs == JPEG.JCS.YCC) {
                     wantJFIF = false;
                     componentIDs[0] = (byte) 'Y';
                     componentIDs[1] = (byte) 'C';
@@ -955,7 +955,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
 
         // Lossless - false
         IIOMetadataNode lossless = new IIOMetadataNode("Lossless");
-        lossless.setAttribute("value", "false");
+        lossless.setAttribute("value", "FALSE");
         compression.appendChild(lossless);
 
         // NumProgressiveScans - count sos segments

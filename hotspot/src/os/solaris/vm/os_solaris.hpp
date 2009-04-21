@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,8 @@ class Solaris {
         LGRP_VIEW_OS            /* what's available to operating system */
   } lgrp_view_t;
 
+  typedef uint_t (*getisax_func_t)(uint32_t* array, uint_t n);
+
   typedef lgrp_id_t (*lgrp_home_func_t)(idtype_t idtype, id_t id);
   typedef lgrp_cookie_t (*lgrp_init_func_t)(lgrp_view_t view);
   typedef int (*lgrp_fini_func_t)(lgrp_cookie_t cookie);
@@ -86,6 +88,8 @@ class Solaris {
   typedef int (*meminfo_func_t)(const uint64_t inaddr[],   int addr_count,
                                 const uint_t  info_req[],  int info_count,
                                 uint64_t  outdata[], uint_t validity[]);
+
+  static getisax_func_t _getisax;
 
   static lgrp_home_func_t _lgrp_home;
   static lgrp_init_func_t _lgrp_init;
@@ -282,6 +286,9 @@ class Solaris {
     return _lgrp_cookie_stale != NULL ? _lgrp_cookie_stale(cookie) : -1;
   }
   static lgrp_cookie_t lgrp_cookie()                 { return _lgrp_cookie; }
+
+  static bool supports_getisax()                     { return _getisax != NULL; }
+  static uint_t getisax(uint32_t* array, uint_t n);
 
   static void set_meminfo(meminfo_func_t func)       { _meminfo = func; }
   static int meminfo (const uint64_t inaddr[],   int addr_count,

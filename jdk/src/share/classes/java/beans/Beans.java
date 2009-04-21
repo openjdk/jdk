@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,26 +27,41 @@ package java.beans;
 
 import com.sun.beans.finder.ClassFinder;
 
-import java.applet.*;
+import java.applet.Applet;
+import java.applet.AppletContext;
+import java.applet.AppletStub;
+import java.applet.AudioClip;
 
-import java.awt.*;
-
-import java.beans.AppletInitializer;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 
 import java.beans.beancontext.BeanContext;
 
-import java.io.*;
-
-import java.lang.reflect.Constructor;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.io.StreamCorruptedException;
 
 import java.net.URL;
-import java.lang.reflect.Array;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Vector;
+
+import sun.awt.AppContext;
 
 /**
  * This class provides some general purpose beans control methods.
  */
 
 public class Beans {
+    private static final Object DESIGN_TIME = new Object();
+    private static final Object GUI_AVAILABLE = new Object();
 
     /**
      * <p>
@@ -59,12 +74,12 @@ public class Beans {
      * @param     beanName    the name of the bean within the class-loader.
      *                        For example "sun.beanbox.foobah"
      *
-     * @exception java.lang.ClassNotFoundException if the class of a serialized
+     * @exception ClassNotFoundException if the class of a serialized
      *              object could not be found.
-     * @exception java.io.IOException if an I/O error occurs.
+     * @exception IOException if an I/O error occurs.
      */
 
-    public static Object instantiate(ClassLoader cls, String beanName) throws java.io.IOException, ClassNotFoundException {
+    public static Object instantiate(ClassLoader cls, String beanName) throws IOException, ClassNotFoundException {
         return Beans.instantiate(cls, beanName, null, null);
     }
 
@@ -80,12 +95,12 @@ public class Beans {
      *                        For example "sun.beanbox.foobah"
      * @param     beanContext The BeanContext in which to nest the new bean
      *
-     * @exception java.lang.ClassNotFoundException if the class of a serialized
+     * @exception ClassNotFoundException if the class of a serialized
      *              object could not be found.
-     * @exception java.io.IOException if an I/O error occurs.
+     * @exception IOException if an I/O error occurs.
      */
 
-    public static Object instantiate(ClassLoader cls, String beanName, BeanContext beanContext) throws java.io.IOException, ClassNotFoundException {
+    public static Object instantiate(ClassLoader cls, String beanName, BeanContext beanContext) throws IOException, ClassNotFoundException {
         return Beans.instantiate(cls, beanName, beanContext, null);
     }
 
@@ -135,19 +150,19 @@ public class Beans {
      * @param     beanContext The BeanContext in which to nest the new bean
      * @param     initializer The AppletInitializer for the new bean
      *
-     * @exception java.lang.ClassNotFoundException if the class of a serialized
+     * @exception ClassNotFoundException if the class of a serialized
      *              object could not be found.
-     * @exception java.io.IOException if an I/O error occurs.
+     * @exception IOException if an I/O error occurs.
      */
 
     public static Object instantiate(ClassLoader cls, String beanName, BeanContext beanContext, AppletInitializer initializer)
-                        throws java.io.IOException, ClassNotFoundException {
+                        throws IOException, ClassNotFoundException {
 
-        java.io.InputStream ins;
-        java.io.ObjectInputStream oins = null;
+        InputStream ins;
+        ObjectInputStream oins = null;
         Object result = null;
         boolean serialized = false;
-        java.io.IOException serex = null;
+        IOException serex = null;
 
         // If the given classloader is null, we check if an
         // system classloader is available and (if so)
@@ -166,8 +181,8 @@ public class Beans {
         // Try to find a serialized object with this name
         final String serName = beanName.replace('.','/').concat(".ser");
         final ClassLoader loader = cls;
-        ins = (InputStream)java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction() {
+        ins = (InputStream)AccessController.doPrivileged
+            (new PrivilegedAction() {
                 public Object run() {
                     if (loader == null)
                         return ClassLoader.getSystemResourceAsStream(serName);
@@ -185,7 +200,7 @@ public class Beans {
                 result = oins.readObject();
                 serialized = true;
                 oins.close();
-            } catch (java.io.IOException ex) {
+            } catch (IOException ex) {
                 ins.close();
                 // Drop through and try opening the class.  But remember
                 // the exception in case we can't find the class either.
@@ -264,8 +279,8 @@ public class Beans {
 
                     final ClassLoader cloader = cls;
                     objectUrl = (URL)
-                        java.security.AccessController.doPrivileged
-                        (new java.security.PrivilegedAction() {
+                        AccessController.doPrivileged
+                        (new PrivilegedAction() {
                             public Object run() {
                                 if (cloader == null)
                                     return ClassLoader.getSystemResource
@@ -377,10 +392,11 @@ public class Beans {
      * @return  True if we are running in an application construction
      *          environment.
      *
-     * @see java.beans.DesignMode
+     * @see DesignMode
      */
     public static boolean isDesignTime() {
-        return designTime;
+        Object value = AppContext.getAppContext().get(DESIGN_TIME);
+        return (value instanceof Boolean) && (Boolean) value;
     }
 
     /**
@@ -393,11 +409,12 @@ public class Beans {
      *     false in a server environment or if an application is
      *     running as part of a batch job.
      *
-     * @see java.beans.Visibility
+     * @see Visibility
      *
      */
     public static boolean isGuiAvailable() {
-        return guiAvailable;
+        Object value = AppContext.getAppContext().get(GUI_AVAILABLE);
+        return (value instanceof Boolean) ? (Boolean) value : !GraphicsEnvironment.isHeadless();
     }
 
     /**
@@ -423,7 +440,7 @@ public class Beans {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        designTime = isDesignTime;
+        AppContext.getAppContext().put(DESIGN_TIME, Boolean.valueOf(isDesignTime));
     }
 
     /**
@@ -449,14 +466,7 @@ public class Beans {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        guiAvailable = isGuiAvailable;
-    }
-
-
-    private static boolean designTime;
-    private static boolean guiAvailable;
-    static {
-        guiAvailable = !GraphicsEnvironment.isHeadless();
+        AppContext.getAppContext().put(GUI_AVAILABLE, Boolean.valueOf(isGuiAvailable));
     }
 }
 
@@ -501,7 +511,7 @@ class ObjectInputStreamWithLoader extends ObjectInputStream
 
 class BeansAppletContext implements AppletContext {
     Applet target;
-    java.util.Hashtable imageCache = new java.util.Hashtable();
+    Hashtable imageCache = new Hashtable();
 
     BeansAppletContext(Applet target) {
         this.target = target;
@@ -546,8 +556,8 @@ class BeansAppletContext implements AppletContext {
         return null;
     }
 
-    public java.util.Enumeration getApplets() {
-        java.util.Vector applets = new java.util.Vector();
+    public Enumeration getApplets() {
+        Vector applets = new Vector();
         applets.addElement(target);
         return applets.elements();
     }
@@ -573,7 +583,7 @@ class BeansAppletContext implements AppletContext {
         return null;
     }
 
-    public java.util.Iterator getStreamKeys(){
+    public Iterator getStreamKeys(){
         // We do nothing.
         return null;
     }

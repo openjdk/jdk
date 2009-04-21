@@ -35,11 +35,8 @@
 
 class AwtPanel {
 public:
-    static void* Restack(void * param);
-
     /* java.awt.Panel field ids */
     static jfieldID insets_ID;
-
 };
 
 #endif // AWT_PANEL_H

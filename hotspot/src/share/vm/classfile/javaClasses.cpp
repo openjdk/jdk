@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,21 +239,19 @@ symbolHandle java_lang_String::as_symbol(Handle java_string, TRAPS) {
   typeArrayOop value  = java_lang_String::value(obj);
   int          offset = java_lang_String::offset(obj);
   int          length = java_lang_String::length(obj);
-
-  ResourceMark rm(THREAD);
-  symbolHandle result;
-
-  if (length > 0) {
-    int utf8_length = UNICODE::utf8_length(value->char_at_addr(offset), length);
-    char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
-    UNICODE::convert_to_utf8(value->char_at_addr(offset), length, chars);
-    // Allocate the symbol
-    result = oopFactory::new_symbol_handle(chars, utf8_length, CHECK_(symbolHandle()));
-  } else {
-    result = oopFactory::new_symbol_handle("", 0, CHECK_(symbolHandle()));
-  }
-  return result;
+  jchar* base = value->char_at_addr(offset);
+  symbolOop sym = SymbolTable::lookup_unicode(base, length, THREAD);
+  return symbolHandle(THREAD, sym);
 }
+
+symbolOop java_lang_String::as_symbol_or_null(oop java_string) {
+  typeArrayOop value  = java_lang_String::value(java_string);
+  int          offset = java_lang_String::offset(java_string);
+  int          length = java_lang_String::length(java_string);
+  jchar* base = value->char_at_addr(offset);
+  return SymbolTable::probe_unicode(base, length);
+}
+
 
 int java_lang_String::utf8_length(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
@@ -385,6 +383,48 @@ klassOop java_lang_Class::as_klassOop(oop java_class) {
 }
 
 
+void java_lang_Class::print_signature(oop java_class, outputStream* st) {
+  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  symbolOop name = NULL;
+  bool is_instance = false;
+  if (is_primitive(java_class)) {
+    name = vmSymbols::type_signature(primitive_type(java_class));
+  } else {
+    klassOop k = as_klassOop(java_class);
+    is_instance = Klass::cast(k)->oop_is_instance();
+    name = Klass::cast(k)->name();
+  }
+  if (name == NULL) {
+    st->print("<null>");
+    return;
+  }
+  if (is_instance)  st->print("L");
+  st->write((char*) name->base(), (int) name->utf8_length());
+  if (is_instance)  st->print(";");
+}
+
+symbolOop java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, TRAPS) {
+  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  symbolOop name = NULL;
+  if (is_primitive(java_class)) {
+    return vmSymbols::type_signature(primitive_type(java_class));
+  } else {
+    klassOop k = as_klassOop(java_class);
+    if (!Klass::cast(k)->oop_is_instance()) {
+      return Klass::cast(k)->name();
+    } else {
+      ResourceMark rm;
+      const char* sigstr = Klass::cast(k)->signature_name();
+      int         siglen = (int) strlen(sigstr);
+      if (!intern_if_not_found)
+        return SymbolTable::probe(sigstr, siglen);
+      else
+        return oopFactory::new_symbol(sigstr, siglen, THREAD);
+    }
+  }
+}
+
+
 klassOop java_lang_Class::array_klass(oop java_class) {
   klassOop k = klassOop(java_class->obj_field(array_klass_offset));
   assert(k == NULL || k->is_klass() && Klass::cast(k)->oop_is_javaArray(), "should be array klass");
@@ -412,6 +452,8 @@ void java_lang_Class::set_resolved_constructor(oop java_class, methodOop constru
 
 
 bool java_lang_Class::is_primitive(oop java_class) {
+  // should assert:
+  //assert(java_lang_Class::is_instance(java_class), "must be a Class object");
   klassOop k = klassOop(java_class->obj_field(klass_offset));
   return k == NULL;
 }
@@ -429,6 +471,19 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
   }
   assert(Universe::java_mirror(type) == java_class, "must be consistent");
   return type;
+}
+
+BasicType java_lang_Class::as_BasicType(oop java_class, klassOop* reference_klass) {
+  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  if (is_primitive(java_class)) {
+    if (reference_klass != NULL)
+      (*reference_klass) = NULL;
+    return primitive_type(java_class);
+  } else {
+    if (reference_klass != NULL)
+      (*reference_klass) = as_klassOop(java_class);
+    return T_OBJECT;
+  }
 }
 
 
@@ -1985,6 +2040,21 @@ BasicType java_lang_boxing_object::set_value(oop box, jvalue* value) {
     return T_ILLEGAL;
   } // end switch
   return type;
+}
+
+
+void java_lang_boxing_object::print(BasicType type, jvalue* value, outputStream* st) {
+  switch (type) {
+  case T_BOOLEAN:   st->print("%s", value->z ? "true" : "false");   break;
+  case T_CHAR:      st->print("%d", value->c);                      break;
+  case T_BYTE:      st->print("%d", value->b);                      break;
+  case T_SHORT:     st->print("%d", value->s);                      break;
+  case T_INT:       st->print("%d", value->i);                      break;
+  case T_LONG:      st->print(INT64_FORMAT, value->j);              break;
+  case T_FLOAT:     st->print("%f", value->f);                      break;
+  case T_DOUBLE:    st->print("%lf", value->d);                     break;
+  default:          st->print("type %d?", type);                    break;
+  }
 }
 
 

@@ -23,7 +23,7 @@
 // have any questions.
 //
 
-#include "afxres.h"
+#include "windows.h"
 
 // Need 2 defines so macro argument to XSTR will get expanded before quoting.
 #define XSTR(x) STR(x)
@@ -34,6 +34,13 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 HAND_CURSOR  CURSOR  DISCARDABLE "hand.cur"
 AWT_ICON     ICON    DISCARDABLE "awt.ico"
 CHECK_BITMAP BITMAP  DISCARDABLE "check.bmp"
+
+// Note: the number of icons used is specified in the
+// securityWarningIconCounter constant in awt_Toolkit.cpp.
+SECURITY_WARNING_0  ICON    DISCARDABLE "security_warning_bw.ico"
+SECURITY_WARNING_1  ICON    DISCARDABLE "security_warning_int.ico"
+SECURITY_WARNING_2  ICON    DISCARDABLE "security_warning.ico"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

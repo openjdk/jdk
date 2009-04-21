@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1350,7 +1350,7 @@ static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *
   }
 
   // Register the new node but do not transform it.  Cannot transform until the
-  // entire Region/Phi conglerate has been hacked as a single huge transform.
+  // entire Region/Phi conglomerate has been hacked as a single huge transform.
   igvn->register_new_node_with_optimizer( newn );
   // Now I can point to the new node.
   n->add_req(newn);
@@ -1381,7 +1381,7 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   Node *val = phi->in(i);       // Constant to split for
   uint hit = 0;                 // Number of times it occurs
 
-  for( ; i < phi->req(); i++ ){ // Count occurances of constant
+  for( ; i < phi->req(); i++ ){ // Count occurrences of constant
     Node *n = phi->in(i);
     if( !n ) return NULL;
     if( phase->type(n) == Type::TOP ) return NULL;
@@ -1423,7 +1423,7 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
 
 //=============================================================================
 //------------------------------simple_data_loop_check-------------------------
-//  Try to determing if the phi node in a simple safe/unsafe data loop.
+//  Try to determining if the phi node in a simple safe/unsafe data loop.
 //  Returns:
 // enum LoopSafety { Safe = 0, Unsafe, UnsafeLoop };
 // Safe       - safe case when the phi and it's inputs reference only safe data
@@ -1687,7 +1687,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               progress = phase->C->top();
               break;
             }
-            // If tranformed to a MergeMem, get the desired slice
+            // If transformed to a MergeMem, get the desired slice
             // Otherwise the returned node represents memory for every slice
             Node *new_mem = (m->is_MergeMem()) ?
                              m->as_MergeMem()->memory_at(alias_idx) : m;
@@ -1962,7 +1962,7 @@ const Type *CatchNode::Value( PhaseTransform *phase ) const {
         f[CatchProjNode::fall_through_index] = Type::TOP;
       } else if( call->req() > TypeFunc::Parms ) {
         const Type *arg0 = phase->type( call->in(TypeFunc::Parms) );
-        // Check for null reciever to virtual or interface calls
+        // Check for null receiver to virtual or interface calls
         if( call->is_CallDynamicJava() &&
             arg0->higher_equal(TypePtr::NULL_PTR) ) {
           f[CatchProjNode::fall_through_index] = Type::TOP;
@@ -1995,7 +1995,7 @@ Node *CatchProjNode::Identity( PhaseTransform *phase ) {
   // also remove any exception table entry.  Thus we must know the call
   // feeding the Catch will not really throw an exception.  This is ok for
   // the main fall-thru control (happens when we know a call can never throw
-  // an exception) or for "rethrow", because a further optimnization will
+  // an exception) or for "rethrow", because a further optimization will
   // yank the rethrow (happens when we inline a function that can throw an
   // exception and the caller has no handler).  Not legal, e.g., for passing
   // a NULL receiver to a v-call, or passing bad types to a slow-check-cast.

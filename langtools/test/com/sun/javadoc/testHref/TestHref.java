@@ -67,7 +67,7 @@ public class TestHref extends JavadocTester {
         },
         //@see test.
         {BUG_ID + FS + "pkg" + FS + "C2.html",
-            "See Also:</STRONG><DD><A HREF=\"../pkg/C1.html#method(int, int, java.util.ArrayList)\">"
+            "See Also:</STRONG></DT><DD><A HREF=\"../pkg/C1.html#method(int, int, java.util.ArrayList)\">"
         },
 
         //Header does not link to the page itself.

@@ -91,15 +91,17 @@ PtrQueueSet::PtrQueueSet(bool notify_when_complete) :
   _n_completed_buffers(0),
   _process_completed_threshold(0), _process_completed(false),
   _buf_free_list(NULL), _buf_free_list_sz(0)
-{}
+{
+  _fl_owner = this;
+}
 
 void** PtrQueueSet::allocate_buffer() {
   assert(_sz > 0, "Didn't set a buffer size.");
-  MutexLockerEx x(_fl_lock, Mutex::_no_safepoint_check_flag);
-  if (_buf_free_list != NULL) {
-    void** res = _buf_free_list;
-    _buf_free_list = (void**)_buf_free_list[0];
-    _buf_free_list_sz--;
+  MutexLockerEx x(_fl_owner->_fl_lock, Mutex::_no_safepoint_check_flag);
+  if (_fl_owner->_buf_free_list != NULL) {
+    void** res = _fl_owner->_buf_free_list;
+    _fl_owner->_buf_free_list = (void**)_fl_owner->_buf_free_list[0];
+    _fl_owner->_buf_free_list_sz--;
     // Just override the next pointer with NULL, just in case we scan this part
     // of the buffer.
     res[0] = NULL;
@@ -111,10 +113,10 @@ void** PtrQueueSet::allocate_buffer() {
 
 void PtrQueueSet::deallocate_buffer(void** buf) {
   assert(_sz > 0, "Didn't set a buffer size.");
-  MutexLockerEx x(_fl_lock, Mutex::_no_safepoint_check_flag);
-  buf[0] = (void*)_buf_free_list;
-  _buf_free_list = buf;
-  _buf_free_list_sz++;
+  MutexLockerEx x(_fl_owner->_fl_lock, Mutex::_no_safepoint_check_flag);
+  buf[0] = (void*)_fl_owner->_buf_free_list;
+  _fl_owner->_buf_free_list = buf;
+  _fl_owner->_buf_free_list_sz++;
 }
 
 void PtrQueueSet::reduce_free_list() {
@@ -206,4 +208,59 @@ void PtrQueueSet::set_buffer_size(size_t sz) {
 
 void PtrQueueSet::set_process_completed_threshold(size_t sz) {
   _process_completed_threshold = sz;
+}
+
+// Merge lists of buffers. Notify waiting threads if the length of the list
+// exceeds threshold. The source queue is emptied as a result. The queues
+// must share the monitor.
+void PtrQueueSet::merge_bufferlists(PtrQueueSet *src) {
+  assert(_cbl_mon == src->_cbl_mon, "Should share the same lock");
+  MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
+  if (_completed_buffers_tail == NULL) {
+    assert(_completed_buffers_head == NULL, "Well-formedness");
+    _completed_buffers_head = src->_completed_buffers_head;
+    _completed_buffers_tail = src->_completed_buffers_tail;
+  } else {
+    assert(_completed_buffers_head != NULL, "Well formedness");
+    if (src->_completed_buffers_head != NULL) {
+      _completed_buffers_tail->next = src->_completed_buffers_head;
+      _completed_buffers_tail = src->_completed_buffers_tail;
+    }
+  }
+  _n_completed_buffers += src->_n_completed_buffers;
+
+  src->_n_completed_buffers = 0;
+  src->_completed_buffers_head = NULL;
+  src->_completed_buffers_tail = NULL;
+
+  assert(_completed_buffers_head == NULL && _completed_buffers_tail == NULL ||
+         _completed_buffers_head != NULL && _completed_buffers_tail != NULL,
+         "Sanity");
+
+  if (!_process_completed &&
+      _n_completed_buffers >= _process_completed_threshold) {
+    _process_completed = true;
+    if (_notify_when_complete)
+      _cbl_mon->notify_all();
+  }
+}
+
+// Merge free lists of the two queues. The free list of the source
+// queue is emptied as a result. The queues must share the same
+// mutex that guards free lists.
+void PtrQueueSet::merge_freelists(PtrQueueSet* src) {
+  assert(_fl_lock == src->_fl_lock, "Should share the same lock");
+  MutexLockerEx x(_fl_lock, Mutex::_no_safepoint_check_flag);
+  if (_buf_free_list != NULL) {
+    void **p = _buf_free_list;
+    while (*p != NULL) {
+      p = (void**)*p;
+    }
+    *p = src->_buf_free_list;
+  } else {
+    _buf_free_list = src->_buf_free_list;
+  }
+  _buf_free_list_sz += src->_buf_free_list_sz;
+  src->_buf_free_list = NULL;
+  src->_buf_free_list_sz = 0;
 }

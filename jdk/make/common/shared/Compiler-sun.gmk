@@ -27,11 +27,8 @@
 # Sun Studio Compiler settings
 #
 
-COMPILER_NAME=Sun Studio
-
 # Sun Studio Compiler settings specific to Solaris
 ifeq ($(PLATFORM), solaris)
-  COMPILER_VERSION=SS12
   CC             = $(COMPILER_PATH)cc
   CPP            = $(COMPILER_PATH)cc -E
   CXX            = $(COMPILER_PATH)CC
@@ -44,7 +41,6 @@ endif
 # Sun Studio Compiler settings specific to Linux
 ifeq ($(PLATFORM), linux)
   # This has not been tested
-  COMPILER_VERSION=SS12
   CC             = $(COMPILER_PATH)cc
   CPP            = $(COMPILER_PATH)cc -E
   CXX            = $(COMPILER_PATH)CC
@@ -65,7 +61,19 @@ endif
 # Get compiler version
 _CC_VER :=$(shell $(CC) -V 2>&1 | $(HEAD) -n 1)
 CC_VER  :=$(call GetVersion,"$(_CC_VER)")
-  
+
+# Name of compilers being used
+COMPILER_VERSION-5.7  = SS10
+COMPILER_NAME-5.7     = Sun Studio 10
+COMPILER_VERSION-5.8  = SS11
+COMPILER_NAME-5.8     = Sun Studio 11
+COMPILER_VERSION-5.9  = SS12
+COMPILER_NAME-5.9     = Sun Studio 12
+COMPILER_VERSION-5.10 = SS13
+COMPILER_NAME-5.10    = Sun Studio 13
+COMPILER_VERSION      = $(COMPILER_VERSION-$(CC_VER))
+COMPILER_NAME         = $(COMPILER_NAME-$(CC_VER))
+
 # Arch specific settings (determines type of .o files and instruction set)
 #  Starting in SS12 (5.9), the arch options changed.
 #  The assembler /usr/ccs/bin/as wants older SS11 (5.8) style options.

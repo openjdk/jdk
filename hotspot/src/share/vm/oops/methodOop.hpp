@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,7 @@ class methodOopDesc : public oopDesc {
   void set_compiled_invocation_count(int count)  { _compiled_invocation_count = count; }
 #endif // not PRODUCT
 
-  // Clear (non-shared space) pointers which could not be relevent
+  // Clear (non-shared space) pointers which could not be relevant
   // if this (shared) method were mapped into another JVM.
   void remove_unshareable_info();
 

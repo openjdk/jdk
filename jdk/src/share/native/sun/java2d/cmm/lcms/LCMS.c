@@ -30,6 +30,41 @@
 #include "Disposer.h"
 #include "lcms.h"
 
+
+#define ALIGNLONG(x) (((x)+3) & ~(3))         // Aligns to DWORD boundary
+
+#ifdef USE_BIG_ENDIAN
+#define AdjustEndianess32(a)
+#else
+
+static
+void AdjustEndianess32(LPBYTE pByte)
+{
+    BYTE temp1;
+    BYTE temp2;
+
+    temp1 = *pByte++;
+    temp2 = *pByte++;
+    *(pByte-1) = *pByte;
+    *pByte++ = temp2;
+    *(pByte-3) = *pByte;
+    *pByte = temp1;
+}
+
+#endif
+
+// Transports to properly encoded values - note that icc profiles does use
+// big endian notation.
+
+static
+icInt32Number TransportValue32(icInt32Number Value)
+{
+    icInt32Number Temp = Value;
+
+    AdjustEndianess32((LPBYTE) &Temp);
+    return Temp;
+}
+
 #define SigMake(a,b,c,d) \
                     ( ( ((int) ((unsigned char) (a))) << 24) | \
                       ( ((int) ((unsigned char) (b))) << 16) | \
@@ -181,6 +216,8 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_loadProfile
     dataSize = (*env)->GetArrayLength (env, data);
 
     sProf.pf = cmsOpenProfileFromMem((LPVOID)dataArray, (DWORD) dataSize);
+
+    (*env)->ReleaseByteArrayElements (env, data, dataArray, 0);
 
     if (sProf.pf == NULL) {
         JNU_ThrowIllegalArgumentException(env, "Invalid profile data");
@@ -337,6 +374,10 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagData
     return;
 }
 
+// Modify data for a tag in a profile
+LCMSBOOL LCMSEXPORT _cmsModifyTagData(cmsHPROFILE hProfile,
+                                 icTagSignature sig, void *data, size_t size);
+
 /*
  * Class:     sun_java2d_cmm_lcms_LCMS
  * Method:    setTagData
@@ -345,7 +386,23 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_getTagData
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_setTagData
   (JNIEnv *env, jobject obj, jlong id, jint tagSig, jbyteArray data)
 {
-    fprintf(stderr, "setTagData operation is not implemented");
+    cmsHPROFILE profile;
+    storeID_t sProf;
+    jbyte* dataArray;
+    int tagSize;
+
+    if (tagSig == SigHead) {
+        J2dRlsTraceLn(J2D_TRACE_ERROR, "LCMS_setTagData on icSigHead not "
+                      "permitted");
+        return;
+    }
+
+    sProf.j = id;
+    profile = (cmsHPROFILE) sProf.pf;
+    dataArray = (*env)->GetByteArrayElements(env, data, 0);
+    tagSize =(*env)->GetArrayLength(env, data);
+    _cmsModifyTagData(profile, (icTagSignature) tagSig, dataArray, tagSize);
+    (*env)->ReleaseByteArrayElements(env, data, dataArray, 0);
 }
 
 void* getILData (JNIEnv *env, jobject img, jint* pDataType,
@@ -506,4 +563,175 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_initLCMS
     IL_nextRowOffset_fID = (*env)->GetFieldID (env, IL, "nextRowOffset", "I");
 
     PF_ID_fID = (*env)->GetFieldID (env, Pf, "ID", "J");
+}
+
+LCMSBOOL _cmsModifyTagData(cmsHPROFILE hProfile, icTagSignature sig,
+                       void *data, size_t size)
+{
+    LCMSBOOL isNew;
+    int i, idx, delta, count;
+    LPBYTE padChars[3] = {0, 0, 0};
+    LPBYTE beforeBuf, afterBuf, ptr;
+    size_t beforeSize, afterSize;
+    icUInt32Number profileSize, temp;
+    LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
+
+    isNew = FALSE;
+    idx = _cmsSearchTag(Icc, sig, FALSE);
+    if (idx < 0) {
+        isNew = TRUE;
+        idx = Icc->TagCount++;
+        if (Icc->TagCount >= MAX_TABLE_TAG) {
+            J2dRlsTraceLn1(J2D_TRACE_ERROR, "_cmsModifyTagData: Too many tags "
+                           "(%d)\n", Icc->TagCount);
+            Icc->TagCount = MAX_TABLE_TAG-1;
+            return FALSE;
+        }
+    }
+
+    /* Read in size from header */
+    Icc->Seek(Icc, 0);
+    Icc->Read(&profileSize, sizeof(icUInt32Number), 1, Icc);
+    AdjustEndianess32((LPBYTE) &profileSize);
+
+    /* Compute the change in profile size */
+    if (isNew) {
+        delta = sizeof(icTag) + ALIGNLONG(size);
+    } else {
+        delta = ALIGNLONG(size) - ALIGNLONG(Icc->TagSizes[idx]);
+    }
+    /* Add tag to internal structures */
+    ptr = malloc(size);
+    if (ptr == NULL) {
+        if(isNew) {
+            Icc->TagCount--;
+        }
+        J2dRlsTraceLn(J2D_TRACE_ERROR, "_cmsModifyTagData: ptr == NULL");
+        return FALSE;
+    }
+
+    if (!Icc->Grow(Icc, delta)) {
+        free(ptr);
+        if(isNew) {
+            Icc->TagCount--;
+        }
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "_cmsModifyTagData: Icc->Grow() == FALSE");
+        return FALSE;
+    }
+
+    /* Compute size of tag data before/after the modified tag */
+    beforeSize = ((isNew)?profileSize:Icc->TagOffsets[idx]) -
+                 Icc->TagOffsets[0];
+    if (Icc->TagCount == (idx + 1)) {
+        afterSize = 0;
+    } else {
+        afterSize = profileSize - Icc->TagOffsets[idx+1];
+    }
+    /* Make copies of the data before/after the modified tag */
+    if (beforeSize > 0) {
+        beforeBuf = malloc(beforeSize);
+        if (!beforeBuf) {
+            if(isNew) {
+                Icc->TagCount--;
+            }
+            free(ptr);
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "_cmsModifyTagData: beforeBuf == NULL");
+            return FALSE;
+        }
+        Icc->Seek(Icc, Icc->TagOffsets[0]);
+        Icc->Read(beforeBuf, beforeSize, 1, Icc);
+    }
+
+    if (afterSize > 0) {
+        afterBuf = malloc(afterSize);
+        if (!afterBuf) {
+            free(ptr);
+            if(isNew) {
+                Icc->TagCount--;
+            }
+            if (beforeSize > 0) {
+                free(beforeBuf);
+            }
+            J2dRlsTraceLn(J2D_TRACE_ERROR,
+                          "_cmsModifyTagData: afterBuf == NULL");
+            return FALSE;
+        }
+        Icc->Seek(Icc, Icc->TagOffsets[idx+1]);
+        Icc->Read(afterBuf, afterSize, 1, Icc);
+    }
+
+    CopyMemory(ptr, data, size);
+    Icc->TagSizes[idx] = size;
+    Icc->TagNames[idx] = sig;
+    if (Icc->TagPtrs[idx]) {
+        free(Icc->TagPtrs[idx]);
+    }
+    Icc->TagPtrs[idx] = ptr;
+    if (isNew) {
+        Icc->TagOffsets[idx] = profileSize;
+    }
+
+
+    /* Update the profile size in the header */
+    profileSize += delta;
+    Icc->Seek(Icc, 0);
+    temp = TransportValue32(profileSize);
+    Icc->Write(Icc, sizeof(icUInt32Number), &temp);
+
+
+    /* Adjust tag offsets: if the tag is new, we must account
+       for the new tag table entry; otherwise, only those tags after
+       the modified tag are changed (by delta) */
+    if (isNew) {
+        for (i = 0; i < Icc->TagCount; ++i) {
+            Icc->TagOffsets[i] += sizeof(icTag);
+        }
+    } else {
+        for (i = idx+1; i < Icc->TagCount; ++i) {
+            Icc->TagOffsets[i] += delta;
+        }
+    }
+
+    /* Write out a new tag table */
+    count = 0;
+    for (i = 0; i < Icc->TagCount; ++i) {
+        if (Icc->TagNames[i] != 0) {
+            ++count;
+        }
+    }
+    Icc->Seek(Icc, sizeof(icHeader));
+    temp = TransportValue32(count);
+    Icc->Write(Icc, sizeof(icUInt32Number), &temp);
+
+    for (i = 0; i < Icc->TagCount; ++i) {
+        if (Icc->TagNames[i] != 0) {
+            icTag tag;
+            tag.sig = TransportValue32(Icc->TagNames[i]);
+            tag.offset = TransportValue32((icInt32Number) Icc->TagOffsets[i]);
+            tag.size = TransportValue32((icInt32Number) Icc->TagSizes[i]);
+            Icc->Write(Icc, sizeof(icTag), &tag);
+        }
+    }
+
+    /* Write unchanged data before the modified tag */
+    if (beforeSize > 0) {
+        Icc->Write(Icc, beforeSize, beforeBuf);
+        free(beforeBuf);
+    }
+
+    /* Write modified tag data */
+    Icc->Write(Icc, size, data);
+    if (size % 4) {
+        Icc->Write(Icc, 4 - (size % 4), padChars);
+    }
+
+    /* Write unchanged data after the modified tag */
+    if (afterSize > 0) {
+        Icc->Write(Icc, afterSize, afterBuf);
+        free(afterBuf);
+    }
+
+    return TRUE;
 }

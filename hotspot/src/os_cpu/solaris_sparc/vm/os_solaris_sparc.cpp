@@ -532,7 +532,7 @@ int JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid, int abort_
     if (oldAct.sa_sigaction != signalHandler) {
       void* sighand = oldAct.sa_sigaction ? CAST_FROM_FN_PTR(void*, oldAct.sa_sigaction)
                                           : CAST_FROM_FN_PTR(void*, oldAct.sa_handler);
-      warning("Unexpected Signal %d occured under user-defined signal handler " INTPTR_FORMAT, sig, (intptr_t)sighand);
+      warning("Unexpected Signal %d occurred under user-defined signal handler " INTPTR_FORMAT, sig, (intptr_t)sighand);
     }
   }
 
@@ -619,7 +619,6 @@ typedef jint  xchg_func_t        (jint,  volatile jint*);
 typedef jint  cmpxchg_func_t     (jint,  volatile jint*,  jint);
 typedef jlong cmpxchg_long_func_t(jlong, volatile jlong*, jlong);
 typedef jint  add_func_t         (jint,  volatile jint*);
-typedef void  fence_func_t       ();
 
 jint os::atomic_xchg_bootstrap(jint exchange_value, volatile jint* dest) {
   // try to use the stub:
@@ -681,25 +680,10 @@ jint os::atomic_add_bootstrap(jint add_value, volatile jint* dest) {
   return (*dest) += add_value;
 }
 
-void os::fence_bootstrap() {
-  // try to use the stub:
-  fence_func_t* func = CAST_TO_FN_PTR(fence_func_t*, StubRoutines::fence_entry());
-
-  if (func != NULL) {
-    os::fence_func = func;
-    (*func)();
-    return;
-  }
-  assert(Threads::number_of_threads() == 0, "for bootstrap only");
-
-  // don't have to do anything for a single thread
-}
-
 xchg_func_t*         os::atomic_xchg_func         = os::atomic_xchg_bootstrap;
 cmpxchg_func_t*      os::atomic_cmpxchg_func      = os::atomic_cmpxchg_bootstrap;
 cmpxchg_long_func_t* os::atomic_cmpxchg_long_func = os::atomic_cmpxchg_long_bootstrap;
 add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;
-fence_func_t*        os::fence_func               = os::fence_bootstrap;
 
 #endif // !_LP64 && !COMPILER2
 

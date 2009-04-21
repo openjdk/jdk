@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,11 +65,7 @@ void oopDesc::print_value_on(outputStream* st) const {
 
 void oopDesc::print_address_on(outputStream* st) const {
   if (PrintOopAddress) {
-    st->print("{");
-    if (PrintOopAddress) {
-      st->print(INTPTR_FORMAT, this);
-    }
-    st->print("}");
+    st->print("{"INTPTR_FORMAT"}", this);
   }
 }
 

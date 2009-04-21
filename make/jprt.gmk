@@ -1,5 +1,5 @@
 #
-# Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2006-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ DEFAULT_BUILD_FLAVOR=product
 JPRT_ARCHIVE_BUNDLE=$(ABS_OUTPUTDIR)/$(DEFAULT_BUILD_FLAVOR)-bundle.zip
 JPRT_ARCHIVE_INSTALL_BUNDLE=$(ABS_OUTPUTDIR)/$(DEFAULT_BUILD_FLAVOR)-install-bundle.zip
 
-jprt_build_product:  all_product_build
+jprt_build_product:  sanity all_product_build
 	( $(CD) $(OUTPUTDIR)/j2sdk-image && \
 	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
 ifdef HAVE_JPRT_SAVE_BUNDLES

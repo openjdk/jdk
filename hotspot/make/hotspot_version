@@ -1,5 +1,5 @@
 # 
-# Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2006-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
 #
 
 # Don't put quotes (fail windows build).
-HOTSPOT_VM_COPYRIGHT=Copyright 2008
+HOTSPOT_VM_COPYRIGHT=Copyright 2009
 
 HS_MAJOR_VER=15
 HS_MINOR_VER=0
-HS_BUILD_NUMBER=02
+HS_BUILD_NUMBER=05
 
 JDK_MAJOR_VER=1
 JDK_MINOR_VER=7

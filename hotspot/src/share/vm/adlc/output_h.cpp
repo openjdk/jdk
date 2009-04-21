@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,7 +574,7 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
   // Generate the user-defined portion of the format
   if( inst._format ) {
     // If there are replacement variables,
-    // Generate index values needed for determing the operand position
+    // Generate index values needed for determining the operand position
     if( inst._format->_rep_vars.count() )
       inst.index_temps(fp, globals);
 
@@ -1832,7 +1832,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         break;
       case Form::idealP:
       case Form::idealN:
-        fprintf(fp,"    return  opnd_array(1)->type();\n",result);
+        fprintf(fp,"    return  opnd_array(1)->type();\n");
         break;
       case Form::idealD:
         fprintf(fp,"    return  TypeD::make(opnd_array(1)->constantD());\n");

@@ -46,7 +46,7 @@ bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
   // be splitting live ranges for callee save registers to such
   // an extent that in large methods the chains can be very long
   // (50+). The conservative answer is to return true if we don't
-  // know as this prevents optimizations from occuring.
+  // know as this prevents optimizations from occurring.
 
   const int limit = 60;
   int i;
@@ -286,7 +286,7 @@ bool PhaseChaitin::eliminate_copy_of_constant(Node* val, Node* n,
     //
     // n will be replaced with the old value but n might have
     // kills projections associated with it so remove them now so that
-    // yank_if_dead will be able to elminate the copy once the uses
+    // yank_if_dead will be able to eliminate the copy once the uses
     // have been transferred to the old[value].
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* use = n->fast_out(i);
