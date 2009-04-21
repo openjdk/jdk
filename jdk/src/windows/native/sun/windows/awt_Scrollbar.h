@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,10 +69,6 @@ public:
     virtual MsgRouting WmHScroll(UINT scrollCode, UINT pos, HWND hScrollBar);
     virtual MsgRouting WmVScroll(UINT scrollCode, UINT pos, HWND hScrollBar);
 
-    // Work around KB Q73839 bug.
-    virtual MsgRouting WmSetFocus(HWND hWndLost);
-    virtual MsgRouting WmKillFocus(HWND hWndGot);
-
     // Prevent KB Q102552 race.
     virtual MsgRouting WmMouseDown(UINT flags, int x, int y, int button);
     virtual MsgRouting WmNcHitTest(UINT x, UINT y, LRESULT& retVal);
@@ -91,7 +87,6 @@ private:
     int           m_pageIncr;
 
     // Work around KB Q73839 bug.
-    BOOL m_ignoreFocusEvents;
     void UpdateFocusIndicator();
 
     // Don't do redundant callbacks.

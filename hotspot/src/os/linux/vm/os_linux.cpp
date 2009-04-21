@@ -1518,21 +1518,51 @@ const char* os::dll_file_extension() { return ".so"; }
 
 const char* os::get_temp_directory() { return "/tmp/"; }
 
-void os::dll_build_name(
-    char* buffer, size_t buflen, const char* pname, const char* fname) {
-  // copied from libhpi
+static bool file_exists(const char* filename) {
+  struct stat statbuf;
+  if (filename == NULL || strlen(filename) == 0) {
+    return false;
+  }
+  return os::stat(filename, &statbuf) == 0;
+}
+
+void os::dll_build_name(char* buffer, size_t buflen,
+                        const char* pname, const char* fname) {
+  // Copied from libhpi
   const size_t pnamelen = pname ? strlen(pname) : 0;
 
-  /* Quietly truncate on buffer overflow.  Should be an error. */
+  // Quietly truncate on buffer overflow.  Should be an error.
   if (pnamelen + strlen(fname) + 10 > (size_t) buflen) {
       *buffer = '\0';
       return;
   }
 
   if (pnamelen == 0) {
-      sprintf(buffer, "lib%s.so", fname);
+    snprintf(buffer, buflen, "lib%s.so", fname);
+  } else if (strchr(pname, *os::path_separator()) != NULL) {
+    int n;
+    char** pelements = split_path(pname, &n);
+    for (int i = 0 ; i < n ; i++) {
+      // Really shouldn't be NULL, but check can't hurt
+      if (pelements[i] == NULL || strlen(pelements[i]) == 0) {
+        continue; // skip the empty path values
+      }
+      snprintf(buffer, buflen, "%s/lib%s.so", pelements[i], fname);
+      if (file_exists(buffer)) {
+        break;
+      }
+    }
+    // release the storage
+    for (int i = 0 ; i < n ; i++) {
+      if (pelements[i] != NULL) {
+        FREE_C_HEAP_ARRAY(char, pelements[i]);
+      }
+    }
+    if (pelements != NULL) {
+      FREE_C_HEAP_ARRAY(char*, pelements);
+    }
   } else {
-      sprintf(buffer, "%s/lib%s.so", pname, fname);
+    snprintf(buffer, buflen, "%s/lib%s.so", pname, fname);
   }
 }
 
@@ -2269,15 +2299,16 @@ void linux_wrap_code(char* base, size_t size) {
 //       All it does is to check if there are enough free pages
 //       left at the time of mmap(). This could be a potential
 //       problem.
-bool os::commit_memory(char* addr, size_t size) {
-  uintptr_t res = (uintptr_t) ::mmap(addr, size,
-                                   PROT_READ|PROT_WRITE|PROT_EXEC,
+bool os::commit_memory(char* addr, size_t size, bool exec) {
+  int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
+  uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                    MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
   return res != (uintptr_t) MAP_FAILED;
 }
 
-bool os::commit_memory(char* addr, size_t size, size_t alignment_hint) {
-  return commit_memory(addr, size);
+bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
+                       bool exec) {
+  return commit_memory(addr, size, exec);
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
@@ -2417,8 +2448,7 @@ os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
 unsigned long* os::Linux::_numa_all_nodes;
 
 bool os::uncommit_memory(char* addr, size_t size) {
-  return ::mmap(addr, size,
-                PROT_READ|PROT_WRITE|PROT_EXEC,
+  return ::mmap(addr, size, PROT_NONE,
                 MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0)
     != MAP_FAILED;
 }
@@ -2441,7 +2471,9 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool fixed) {
     flags |= MAP_FIXED;
   }
 
-  addr = (char*)::mmap(requested_addr, bytes, PROT_READ|PROT_WRITE|PROT_EXEC,
+  // Map uncommitted pages PROT_READ and PROT_WRITE, change access
+  // to PROT_EXEC if executable when we commit the page.
+  addr = (char*)::mmap(requested_addr, bytes, PROT_READ|PROT_WRITE,
                        flags, -1, 0);
 
   if (addr != MAP_FAILED) {
@@ -2582,7 +2614,9 @@ bool os::large_page_init() {
 #define SHM_HUGETLB 04000
 #endif
 
-char* os::reserve_memory_special(size_t bytes) {
+char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
+  // "exec" is passed in but not used.  Creating the shared image for
+  // the code cache doesn't have an SHM_X executable permission to check.
   assert(UseLargePages, "only for large pages");
 
   key_t key = IPC_PRIVATE;

@@ -34,6 +34,7 @@ import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -898,6 +899,16 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 }
                 setComparator(i, c);
             }
+        }
+
+        @Override
+        public void sort() {
+            ShellFolder.getInvoker().invoke(new Callable<Void>() {
+                public Void call() throws Exception {
+                    DetailsTableRowSorter.super.sort();
+                    return null;
+                }
+            });
         }
 
         public void modelStructureChanged() {

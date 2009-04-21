@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ void VM_Version::initialize() {
   if (is_niagara1()) {
     // Indirect branch is the same cost as direct
     if (FLAG_IS_DEFAULT(UseInlineCaches)) {
-      UseInlineCaches         = false;
+      FLAG_SET_DEFAULT(UseInlineCaches, false);
     }
 #ifdef _LP64
     // Single issue niagara1 is slower for CompressedOops
@@ -72,33 +72,50 @@ void VM_Version::initialize() {
         FLAG_SET_ERGO(bool, UseCompressedOops, false);
       }
     }
+    // 32-bit oops don't make sense for the 64-bit VM on sparc
+    // since the 32-bit VM has the same registers and smaller objects.
+    Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
 #endif // _LP64
 #ifdef COMPILER2
     // Indirect branch is the same cost as direct
     if (FLAG_IS_DEFAULT(UseJumpTables)) {
-      UseJumpTables           = true;
+      FLAG_SET_DEFAULT(UseJumpTables, true);
     }
     // Single-issue, so entry and loop tops are
     // aligned on a single instruction boundary
     if (FLAG_IS_DEFAULT(InteriorEntryAlignment)) {
-      InteriorEntryAlignment  = 4;
+      FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
     }
     if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
-      OptoLoopAlignment       = 4;
+      FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
+    }
+    if (is_niagara1_plus() && FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+      // Use smaller prefetch distance on N2
+      FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
     }
 #endif
   }
 
+  // Use hardware population count instruction if available.
+  if (has_hardware_popc()) {
+    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+      FLAG_SET_DEFAULT(UsePopCountInstruction, true);
+    }
+  }
+
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_v8() ? ", has_v8" : ""),
                (has_v9() ? ", has_v9" : ""),
+               (has_hardware_popc() ? ", popc" : ""),
                (has_vis1() ? ", has_vis1" : ""),
                (has_vis2() ? ", has_vis2" : ""),
                (is_ultra3() ? ", is_ultra3" : ""),
                (is_sun4v() ? ", is_sun4v" : ""),
                (is_niagara1() ? ", is_niagara1" : ""),
-               (!has_hardware_int_muldiv() ? ", no-muldiv" : ""),
+               (is_niagara1_plus() ? ", is_niagara1_plus" : ""),
+               (!has_hardware_mul32() ? ", no-mul32" : ""),
+               (!has_hardware_div32() ? ", no-div32" : ""),
                (!has_hardware_fsmuld() ? ", no-fsmuld" : ""));
 
   // buf is started with ", " or is empty

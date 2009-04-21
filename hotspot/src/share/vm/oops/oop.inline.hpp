@@ -148,10 +148,11 @@ inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 
 inline narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
   assert(!is_null(v), "oop value can never be zero");
-  address heap_base = Universe::heap_base();
-  uint64_t pd = (uint64_t)(pointer_delta((void*)v, (void*)heap_base, 1));
+  address base = Universe::narrow_oop_base();
+  int    shift = Universe::narrow_oop_shift();
+  uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
-  uint64_t result = pd >> LogMinObjAlignmentInBytes;
+  uint64_t result = pd >> shift;
   assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
   return (narrowOop)result;
 }
@@ -162,8 +163,9 @@ inline narrowOop oopDesc::encode_heap_oop(oop v) {
 
 inline oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
-  address heap_base = Universe::heap_base();
-  return (oop)(void*)((uintptr_t)heap_base + ((uintptr_t)v << LogMinObjAlignmentInBytes));
+  address base = Universe::narrow_oop_base();
+  int    shift = Universe::narrow_oop_shift();
+  return (oop)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
 }
 
 inline oop oopDesc::decode_heap_oop(narrowOop v) {
@@ -346,6 +348,9 @@ inline void oopDesc::release_float_field_put(int offset, jfloat contents)   { Or
 
 inline jdouble oopDesc::double_field_acquire(int offset) const              { return OrderAccess::load_acquire(double_field_addr(offset));     }
 inline void oopDesc::release_double_field_put(int offset, jdouble contents) { OrderAccess::release_store(double_field_addr(offset), contents); }
+
+inline address oopDesc::address_field_acquire(int offset) const             { return (address) OrderAccess::load_ptr_acquire(address_field_addr(offset)); }
+inline void oopDesc::release_address_field_put(int offset, address contents) { OrderAccess::release_store_ptr(address_field_addr(offset), contents); }
 
 inline int oopDesc::size_given_klass(Klass* klass)  {
   int lh = klass->layout_helper();

@@ -2691,7 +2691,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ mov(rdi, rax);
 
    Label noException;
-  __ cmpl(r12, Deoptimization::Unpack_exception);   // Was exception pending?
+  __ cmpl(r14, Deoptimization::Unpack_exception);   // Was exception pending?
   __ jcc(Assembler::notEqual, noException);
   __ movptr(rax, Address(r15_thread, JavaThread::exception_oop_offset()));
   // QQQ this is useless it was NULL above

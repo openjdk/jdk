@@ -38,6 +38,7 @@ import java.util.*;
  * class-kind will update the frame with the clicked class-kind page.
  *
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class PackageWriterImpl extends HtmlDocletWriter
     implements PackageSummaryWriter {
@@ -107,14 +108,15 @@ public class PackageWriterImpl extends HtmlDocletWriter
     /**
      * {@inheritDoc}
      */
-    public void writeClassesSummary(ClassDoc[] classes, String label) {
+    public void writeClassesSummary(ClassDoc[] classes, String label, String tableSummary, String[] tableHeader) {
         if(classes.length > 0) {
             Arrays.sort(classes);
-            tableIndexSummary();
+            tableIndexSummary(tableSummary);
             boolean printedHeading = false;
             for (int i = 0; i < classes.length; i++) {
                 if (!printedHeading) {
-                    printFirstRow(label);
+                    printTableCaption(label);
+                    printFirstRow(tableHeader);
                     printedHeading = true;
                 }
                 if (!Util.isCoreClass(classes[i]) ||
@@ -149,14 +151,23 @@ public class PackageWriterImpl extends HtmlDocletWriter
     }
 
     /**
+     * Print the table caption for the class-listing.
+     *
+     * @param label label for the Class kind listing.
+     */
+    protected void printTableCaption(String label) {
+        tableCaptionStart();
+        print(label);
+        tableCaptionEnd();
+    }
+
+    /**
      * Print the table heading for the class-listing.
      *
-     * @param label Label for the Class kind listing.
+     * @param tableHeader table header string for the Class listing.
      */
-    protected void printFirstRow(String label) {
-        tableHeaderStart("#CCCCFF");
-        strong(label);
-        tableHeaderEnd();
+    protected void printFirstRow(String[] tableHeader) {
+        summaryTableHeader(tableHeader, "col");
     }
 
     /**

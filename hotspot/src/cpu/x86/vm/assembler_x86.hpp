@@ -212,7 +212,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
            "inconsistent address");
   }
 
-  Address(Register base, RegisterConstant index, ScaleFactor scale = times_1, int disp = 0)
+  Address(Register base, RegisterOrConstant index, ScaleFactor scale = times_1, int disp = 0)
     : _base (base),
       _index(index.register_or_noreg()),
       _scale(scale),
@@ -256,7 +256,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
            "inconsistent address");
   }
 
-  Address(Register base, RegisterConstant index, ScaleFactor scale, ByteSize disp)
+  Address(Register base, RegisterOrConstant index, ScaleFactor scale, ByteSize disp)
     : _base (base),
       _index(index.register_or_noreg()),
       _scale(scale),
@@ -578,20 +578,25 @@ private:
 
   // These are all easily abused and hence protected
 
-  void mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec, int format = 0);
-
   // 32BIT ONLY SECTION
 #ifndef _LP64
   // Make these disappear in 64bit mode since they would never be correct
   void cmp_literal32(Register src1, int32_t imm32, RelocationHolder const& rspec);   // 32BIT ONLY
   void cmp_literal32(Address src1, int32_t imm32, RelocationHolder const& rspec);    // 32BIT ONLY
 
+  void mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec);    // 32BIT ONLY
   void mov_literal32(Address dst, int32_t imm32, RelocationHolder const& rspec);     // 32BIT ONLY
 
   void push_literal32(int32_t imm32, RelocationHolder const& rspec);                 // 32BIT ONLY
 #else
   // 64BIT ONLY SECTION
   void mov_literal64(Register dst, intptr_t imm64, RelocationHolder const& rspec);   // 64BIT ONLY
+
+  void cmp_narrow_oop(Register src1, int32_t imm32, RelocationHolder const& rspec);
+  void cmp_narrow_oop(Address src1, int32_t imm32, RelocationHolder const& rspec);
+
+  void mov_narrow_oop(Register dst, int32_t imm32, RelocationHolder const& rspec);
+  void mov_narrow_oop(Address dst, int32_t imm32, RelocationHolder const& rspec);
 #endif // _LP64
 
   // These are unique in that we are ensured by the caller that the 32bit
@@ -1063,15 +1068,23 @@ private:
     LoadLoad   = 1 << 0
   };
 
-  // Serializes memory.
+  // Serializes memory and blows flags
   void membar(Membar_mask_bits order_constraint) {
-    // We only have to handle StoreLoad and LoadLoad
-    if (order_constraint & StoreLoad) {
-      // MFENCE subsumes LFENCE
-      mfence();
-    } /* [jk] not needed currently: else if (order_constraint & LoadLoad) {
-         lfence();
-    } */
+    if (os::is_MP()) {
+      // We only have to handle StoreLoad
+      if (order_constraint & StoreLoad) {
+        // All usable chips support "locked" instructions which suffice
+        // as barriers, and are much faster than the alternative of
+        // using cpuid instruction. We use here a locked add [esp],0.
+        // This is conveniently otherwise a no-op except for blowing
+        // flags.
+        // Any change to this code may need to revisit other places in
+        // the code where this idiom is used, in particular the
+        // orderAccess code.
+        lock();
+        addl(Address(rsp, 0), 0);// Assert the lock# signal here
+      }
+    }
   }
 
   void mfence();
@@ -1213,10 +1226,22 @@ private:
   void orq(Register dst, Address src);
   void orq(Register dst, Register src);
 
+  // SSE4.2 string instructions
+  void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
+  void pcmpestri(XMMRegister xmm1, Address src, int imm8);
+
   void popl(Address dst);
 
 #ifdef _LP64
   void popq(Address dst);
+#endif
+
+  void popcntl(Register dst, Address src);
+  void popcntl(Register dst, Register src);
+
+#ifdef _LP64
+  void popcntq(Register dst, Address src);
+  void popcntq(Register dst, Register src);
 #endif
 
   // Prefetches (SSE, SSE2, 3DNOW only)
@@ -1238,6 +1263,10 @@ private:
 
   // Shift Right Logical Quadword Immediate
   void psrlq(XMMRegister dst, int shift);
+
+  // Logical Compare Double Quadword
+  void ptest(XMMRegister dst, XMMRegister src);
+  void ptest(XMMRegister dst, Address src);
 
   // Interleave Low Bytes
   void punpcklbw(XMMRegister dst, XMMRegister src);
@@ -1647,6 +1676,9 @@ class MacroAssembler: public Assembler {
   void decode_heap_oop_not_null(Register dst, Register src);
 
   void set_narrow_oop(Register dst, jobject obj);
+  void set_narrow_oop(Address dst, jobject obj);
+  void cmp_narrow_oop(Register dst, jobject obj);
+  void cmp_narrow_oop(Address dst, jobject obj);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
@@ -1786,10 +1818,54 @@ class MacroAssembler: public Assembler {
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
-                               RegisterConstant itable_index,
+                               RegisterOrConstant itable_index,
                                Register method_result,
                                Register scan_temp,
                                Label& no_such_interface);
+
+  // Test sub_klass against super_klass, with fast and slow paths.
+
+  // The fast path produces a tri-state answer: yes / no / maybe-slow.
+  // One of the three labels can be NULL, meaning take the fall-through.
+  // If super_check_offset is -1, the value is loaded up from super_klass.
+  // No registers are killed, except temp_reg.
+  void check_klass_subtype_fast_path(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     Label* L_slow_path,
+                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+
+  // The rest of the type check; must be wired to a corresponding fast path.
+  // It does not repeat the fast path logic, so don't use it standalone.
+  // The temp_reg and temp2_reg can be noreg, if no temps are available.
+  // Updates the sub's secondary super cache as necessary.
+  // If set_cond_codes, condition codes will be Z on success, NZ on failure.
+  void check_klass_subtype_slow_path(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Register temp2_reg,
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  // Simplified, combined version, good for typical uses.
+  // Falls through on failure.
+  void check_klass_subtype(Register sub_klass,
+                           Register super_klass,
+                           Register temp_reg,
+                           Label& L_success);
+
+  // method handles (JSR 292)
+  void check_method_handle_type(Register mtype_reg, Register mh_reg,
+                                Register temp_reg,
+                                Label& wrong_method_type);
+  void load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
+                                  Register temp_reg);
+  void jump_to_method_handle_entry(Register mh_reg, Register temp_reg);
+  Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
+
 
   //----
   void set_word_if_not_zero(Register reg); // sets reg to 1 if not zero, otherwise 0
@@ -1833,9 +1909,9 @@ class MacroAssembler: public Assembler {
   // stack overflow + shadow pages.  Also, clobbers tmp
   void bang_stack_size(Register size, Register tmp);
 
-  virtual RegisterConstant delayed_value(intptr_t* delayed_value_addr,
-                                         Register tmp,
-                                         int offset);
+  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
+                                                Register tmp,
+                                                int offset);
 
   // Support for serializing memory accesses between threads
   void serialize_memory(Register thread, Register tmp);

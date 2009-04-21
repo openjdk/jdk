@@ -3389,6 +3389,11 @@ public class RegExTest {
               "gname",
               "yyy");
 
+        check(Pattern.compile("x+(?<8gname>y+)z+"),
+              "xxxyyyzzz",
+              "8gname",
+              "yyy");
+
         //backref
         Pattern pattern = Pattern.compile("(a*)bc\\1");
         check(pattern, "zzzaabcazzz", true);  // found "abca"

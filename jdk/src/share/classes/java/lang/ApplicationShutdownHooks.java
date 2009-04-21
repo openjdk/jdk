@@ -34,18 +34,18 @@ import java.util.*;
  * @see java.lang.Runtime#removeShutdownHook
  */
 
-class ApplicationShutdownHooks implements Runnable {
-    private static ApplicationShutdownHooks instance = null;
+class ApplicationShutdownHooks {
+    static {
+        Shutdown.add(1 /* shutdown hook invocation order */,
+            new Runnable() {
+                public void run() {
+                    runHooks();
+                }
+            });
+    }
 
     /* The set of registered hooks */
     private static IdentityHashMap<Thread, Thread> hooks = new IdentityHashMap<Thread, Thread>();
-
-    static synchronized ApplicationShutdownHooks hook() {
-        if (instance == null)
-            instance = new ApplicationShutdownHooks();
-
-        return instance;
-    }
 
     private ApplicationShutdownHooks() {}
 
@@ -82,7 +82,7 @@ class ApplicationShutdownHooks implements Runnable {
      * to run in. Hooks are run concurrently and this method waits for
      * them to finish.
      */
-    public void run() {
+    static void runHooks() {
         Collection<Thread> threads;
         synchronized(ApplicationShutdownHooks.class) {
             threads = hooks.keySet();

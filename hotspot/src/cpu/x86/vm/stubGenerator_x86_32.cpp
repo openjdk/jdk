@@ -1310,81 +1310,51 @@ class StubGenerator: public StubCodeGenerator {
                            Address& super_check_offset_addr,
                            Address& super_klass_addr,
                            Register temp,
-                           Label* L_success_ptr, Label* L_failure_ptr) {
+                           Label* L_success, Label* L_failure) {
     BLOCK_COMMENT("type_check:");
 
     Label L_fallthrough;
-    bool fall_through_on_success = (L_success_ptr == NULL);
-    if (fall_through_on_success) {
-      L_success_ptr = &L_fallthrough;
-    } else {
-      L_failure_ptr = &L_fallthrough;
-    }
-    Label& L_success = *L_success_ptr;
-    Label& L_failure = *L_failure_ptr;
+#define LOCAL_JCC(assembler_con, label_ptr)                             \
+    if (label_ptr != NULL)  __ jcc(assembler_con, *(label_ptr));        \
+    else                    __ jcc(assembler_con, L_fallthrough) /*omit semi*/
 
+    // The following is a strange variation of the fast path which requires
+    // one less register, because needed values are on the argument stack.
+    // __ check_klass_subtype_fast_path(sub_klass, *super_klass*, temp,
+    //                                  L_success, L_failure, NULL);
     assert_different_registers(sub_klass, temp);
 
-    // a couple of useful fields in sub_klass:
-    int ss_offset = (klassOopDesc::header_size() * HeapWordSize +
-                     Klass::secondary_supers_offset_in_bytes());
     int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
                      Klass::secondary_super_cache_offset_in_bytes());
-    Address secondary_supers_addr(sub_klass, ss_offset);
-    Address super_cache_addr(     sub_klass, sc_offset);
 
     // if the pointers are equal, we are done (e.g., String[] elements)
     __ cmpptr(sub_klass, super_klass_addr);
-    __ jcc(Assembler::equal, L_success);
+    LOCAL_JCC(Assembler::equal, L_success);
 
     // check the supertype display:
     __ movl2ptr(temp, super_check_offset_addr);
     Address super_check_addr(sub_klass, temp, Address::times_1, 0);
     __ movptr(temp, super_check_addr); // load displayed supertype
     __ cmpptr(temp, super_klass_addr); // test the super type
-    __ jcc(Assembler::equal, L_success);
+    LOCAL_JCC(Assembler::equal, L_success);
 
     // if it was a primary super, we can just fail immediately
     __ cmpl(super_check_offset_addr, sc_offset);
-    __ jcc(Assembler::notEqual, L_failure);
+    LOCAL_JCC(Assembler::notEqual, L_failure);
 
-    // Now do a linear scan of the secondary super-klass chain.
-    // This code is rarely used, so simplicity is a virtue here.
-    inc_counter_np(SharedRuntime::_partial_subtype_ctr);
-    {
-      // The repne_scan instruction uses fixed registers, which we must spill.
-      // (We need a couple more temps in any case.)
-      __ push(rax);
-      __ push(rcx);
-      __ push(rdi);
-      assert_different_registers(sub_klass, rax, rcx, rdi);
+    // The repne_scan instruction uses fixed registers, which will get spilled.
+    // We happen to know this works best when super_klass is in rax.
+    Register super_klass = temp;
+    __ movptr(super_klass, super_klass_addr);
+    __ check_klass_subtype_slow_path(sub_klass, super_klass, noreg, noreg,
+                                     L_success, L_failure);
 
-      __ movptr(rdi, secondary_supers_addr);
-      // Load the array length.
-      __ movl(rcx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
-      // Skip to start of data.
-      __ addptr(rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-      // Scan rcx words at [edi] for occurance of rax,
-      // Set NZ/Z based on last compare
-      __ movptr(rax, super_klass_addr);
-      __ repne_scan();
-
-      // Unspill the temp. registers:
-      __ pop(rdi);
-      __ pop(rcx);
-      __ pop(rax);
-    }
-    __ jcc(Assembler::notEqual, L_failure);
-
-    // Success.  Cache the super we found and proceed in triumph.
-    __ movptr(temp, super_klass_addr); // note: rax, is dead
-    __ movptr(super_cache_addr, temp);
-
-    if (!fall_through_on_success)
-      __ jmp(L_success);
-
-    // Fall through on failure!
     __ bind(L_fallthrough);
+
+    if (L_success == NULL) { BLOCK_COMMENT("L_success:"); }
+    if (L_failure == NULL) { BLOCK_COMMENT("L_failure:"); }
+
+#undef LOCAL_JCC
   }
 
   //
@@ -2249,6 +2219,16 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    // generic method handle stubs
+    if (EnableMethodHandles && SystemDictionary::MethodHandle_klass() != NULL) {
+      for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
+           ek < MethodHandles::_EK_LIMIT;
+           ek = MethodHandles::EntryKind(1 + (int)ek)) {
+        StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
+        MethodHandles::generate_method_handle_stub(_masm, ek);
+      }
+    }
   }
 
 

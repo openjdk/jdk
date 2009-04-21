@@ -69,7 +69,8 @@ public:
 
     MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
 
-    BOOL ActMouseMessage(MSG* pMsg);
+    BOOL IsFocusingMouseMessage(MSG *pMsg);
+    BOOL IsFocusingKeyMessage(MSG *pMsg);
 
     // called on Toolkit thread from JNI
     static void _SetLabel(void *param);

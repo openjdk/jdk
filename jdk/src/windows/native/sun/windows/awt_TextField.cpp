@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "awt_Toolkit.h"
 #include "awt_TextField.h"
 #include "awt_TextComponent.h"
-#include "awt_KeyboardFocusManager.h"
 #include "awt_Canvas.h"
 
 /* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
@@ -150,135 +149,130 @@ AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
      * By consuming WM_MOUSEMOVE messages we also don't give
      * the RichEdit control a chance to recognize a drag gesture
      * and initiate its own drag-n-drop operation.
+     *
+     * The workaround also allows us to implement synthetic focus mechanism.
      */
-    /**
-     * In non-focusable mode we don't pass mouse messages to native window thus making user unable
-     * to select the text. Below is the code from awt_TextArea.cpp which implements selection
-     * functionality. For safety this code is only being executed in non-focusable mode.
-     */
-    if (!IsFocusable()) {
-        if (msg->message == WM_LBUTTONDOWN || msg->message == WM_LBUTTONDBLCLK) {
+    if (IsFocusingMouseMessage(msg)) {
+        CHARRANGE cr;
+
+        LONG lCurPos = EditGetCharFromPos(msg->pt);
+
+        EditGetSel(cr);
+        /*
+         * NOTE: Plain EDIT control always clears selection on mouse
+         * button press. We are clearing the current selection only if
+         * the mouse pointer is not over the selected region.
+         * In this case we sacrifice backward compatibility
+         * to allow dnd of the current selection.
+         */
+        if (msg->message == WM_LBUTTONDBLCLK) {
+            SetStartSelectionPos(static_cast<LONG>(SendMessage(
+                EM_FINDWORDBREAK, WB_MOVEWORDLEFT, lCurPos)));
+            SetEndSelectionPos(static_cast<LONG>(SendMessage(
+                EM_FINDWORDBREAK, WB_MOVEWORDRIGHT, lCurPos)));
+        } else {
+            SetStartSelectionPos(lCurPos);
+            SetEndSelectionPos(lCurPos);
+        }
+        cr.cpMin = GetStartSelectionPos();
+        cr.cpMax = GetEndSelectionPos();
+        EditSetSel(cr);
+
+        delete msg;
+        return mrConsume;
+    } else if (msg->message == WM_LBUTTONUP) {
+
+        /*
+         * If the left mouse button is pressed on the selected region
+         * we don't clear the current selection. We clear it on button
+         * release instead. This is to allow dnd of the current selection.
+         */
+        if (GetStartSelectionPos() == -1 && GetEndSelectionPos() == -1) {
             CHARRANGE cr;
 
             LONG lCurPos = EditGetCharFromPos(msg->pt);
 
-            EditGetSel(cr);
-            /*
-             * NOTE: Plain EDIT control always clears selection on mouse
-             * button press. We are clearing the current selection only if
-             * the mouse pointer is not over the selected region.
-             * In this case we sacrifice backward compatibility
-             * to allow dnd of the current selection.
-             */
-            if (msg->message == WM_LBUTTONDBLCLK) {
-                SetStartSelectionPos(static_cast<LONG>(SendMessage(
-                    EM_FINDWORDBREAK, WB_MOVEWORDLEFT, lCurPos)));
-                SetEndSelectionPos(static_cast<LONG>(SendMessage(
-                    EM_FINDWORDBREAK, WB_MOVEWORDRIGHT, lCurPos)));
-            } else {
-                SetStartSelectionPos(lCurPos);
-                SetEndSelectionPos(lCurPos);
-            }
-            cr.cpMin = GetStartSelectionPos();
-            cr.cpMax = GetEndSelectionPos();
+            cr.cpMin = lCurPos;
+            cr.cpMax = lCurPos;
             EditSetSel(cr);
-
-            delete msg;
-            return mrConsume;
-        } else if (msg->message == WM_LBUTTONUP) {
-
-            /*
-             * If the left mouse button is pressed on the selected region
-             * we don't clear the current selection. We clear it on button
-             * release instead. This is to allow dnd of the current selection.
-             */
-            if (GetStartSelectionPos() == -1 && GetEndSelectionPos() == -1) {
-                CHARRANGE cr;
-
-                LONG lCurPos = EditGetCharFromPos(msg->pt);
-
-                cr.cpMin = lCurPos;
-                cr.cpMax = lCurPos;
-                EditSetSel(cr);
-            }
-
-            /*
-             * Cleanup the state variables when left mouse button is released.
-             * These state variables are designed to reflect the selection state
-             * while the left mouse button is pressed and be set to -1 otherwise.
-             */
-            SetStartSelectionPos(-1);
-            SetEndSelectionPos(-1);
-            SetLastSelectionPos(-1);
-
-            delete msg;
-            return mrConsume;
-        } else if (msg->message == WM_MOUSEMOVE && (msg->wParam & MK_LBUTTON)) {
-
-            /*
-             * We consume WM_MOUSEMOVE while the left mouse button is pressed,
-             * so we have to simulate autoscrolling when mouse is moved outside
-             * of the client area.
-             */
-            POINT p;
-            RECT r;
-            BOOL bScrollLeft = FALSE;
-            BOOL bScrollRight = FALSE;
-            BOOL bScrollUp = FALSE;
-            BOOL bScrollDown = FALSE;
-
-            p.x = msg->pt.x;
-            p.y = msg->pt.y;
-            VERIFY(::GetClientRect(GetHWnd(), &r));
-
-            if (p.x < 0) {
-                bScrollLeft = TRUE;
-                p.x = 0;
-            } else if (p.x > r.right) {
-                bScrollRight = TRUE;
-                p.x = r.right - 1;
-            }
-            LONG lCurPos = EditGetCharFromPos(p);
-
-            if (GetStartSelectionPos() != -1 &&
-                GetEndSelectionPos() != -1 &&
-                lCurPos != GetLastSelectionPos()) {
-
-                CHARRANGE cr;
-
-                SetLastSelectionPos(lCurPos);
-
-                cr.cpMin = GetStartSelectionPos();
-                cr.cpMax = GetLastSelectionPos();
-
-                EditSetSel(cr);
-            }
-
-            if (bScrollLeft == TRUE || bScrollRight == TRUE) {
-                SCROLLINFO si;
-                memset(&si, 0, sizeof(si));
-                si.cbSize = sizeof(si);
-                si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
-
-                VERIFY(::GetScrollInfo(GetHWnd(), SB_HORZ, &si));
-                if (bScrollLeft == TRUE) {
-                    si.nPos = si.nPos - si.nPage / 2;
-                    si.nPos = max(si.nMin, si.nPos);
-                } else if (bScrollRight == TRUE) {
-                    si.nPos = si.nPos + si.nPage / 2;
-                    si.nPos = min(si.nPos, si.nMax);
-                }
-                /*
-                 * Okay to use 16-bit position since RichEdit control adjusts
-                 * its scrollbars so that their range is always 16-bit.
-                 */
-                DASSERT(abs(si.nPos) < 0x8000);
-                SendMessage(WM_HSCROLL,
-                            MAKEWPARAM(SB_THUMBPOSITION, LOWORD(si.nPos)));
-            }
-            delete msg;
-            return mrConsume;
         }
+
+        /*
+         * Cleanup the state variables when left mouse button is released.
+         * These state variables are designed to reflect the selection state
+         * while the left mouse button is pressed and be set to -1 otherwise.
+         */
+        SetStartSelectionPos(-1);
+        SetEndSelectionPos(-1);
+        SetLastSelectionPos(-1);
+
+        delete msg;
+        return mrConsume;
+    } else if (msg->message == WM_MOUSEMOVE && (msg->wParam & MK_LBUTTON)) {
+
+        /*
+         * We consume WM_MOUSEMOVE while the left mouse button is pressed,
+         * so we have to simulate autoscrolling when mouse is moved outside
+         * of the client area.
+         */
+        POINT p;
+        RECT r;
+        BOOL bScrollLeft = FALSE;
+        BOOL bScrollRight = FALSE;
+        BOOL bScrollUp = FALSE;
+        BOOL bScrollDown = FALSE;
+
+        p.x = msg->pt.x;
+        p.y = msg->pt.y;
+        VERIFY(::GetClientRect(GetHWnd(), &r));
+
+        if (p.x < 0) {
+            bScrollLeft = TRUE;
+            p.x = 0;
+        } else if (p.x > r.right) {
+            bScrollRight = TRUE;
+            p.x = r.right - 1;
+        }
+        LONG lCurPos = EditGetCharFromPos(p);
+
+        if (GetStartSelectionPos() != -1 &&
+            GetEndSelectionPos() != -1 &&
+            lCurPos != GetLastSelectionPos()) {
+
+            CHARRANGE cr;
+
+            SetLastSelectionPos(lCurPos);
+
+            cr.cpMin = GetStartSelectionPos();
+            cr.cpMax = GetLastSelectionPos();
+
+            EditSetSel(cr);
+        }
+
+        if (bScrollLeft == TRUE || bScrollRight == TRUE) {
+            SCROLLINFO si;
+            memset(&si, 0, sizeof(si));
+            si.cbSize = sizeof(si);
+            si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
+
+            VERIFY(::GetScrollInfo(GetHWnd(), SB_HORZ, &si));
+            if (bScrollLeft == TRUE) {
+                si.nPos = si.nPos - si.nPage / 2;
+                si.nPos = max(si.nMin, si.nPos);
+            } else if (bScrollRight == TRUE) {
+                si.nPos = si.nPos + si.nPage / 2;
+                si.nPos = min(si.nPos, si.nMax);
+            }
+            /*
+             * Okay to use 16-bit position since RichEdit control adjusts
+             * its scrollbars so that their range is always 16-bit.
+             */
+            DASSERT(abs(si.nPos) < 0x8000);
+            SendMessage(WM_HSCROLL,
+                        MAKEWPARAM(SB_THUMBPOSITION, LOWORD(si.nPos)));
+        }
+        delete msg;
+        return mrConsume;
     }
     /*
      * Store the 'synthetic' parameter so that the WM_PASTE security check

@@ -128,7 +128,6 @@ Thread::Thread() {
   debug_only(_allow_allocation_count = 0;)
   NOT_PRODUCT(_allow_safepoint_count = 0;)
   CHECK_UNHANDLED_OOPS_ONLY(_gc_locked_out_count = 0;)
-  _highest_lock = NULL;
   _jvmti_env_iteration_count = 0;
   _vm_operation_started_count = 0;
   _vm_operation_completed_count = 0;
@@ -790,19 +789,6 @@ void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
 }
 #endif
 
-bool Thread::lock_is_in_stack(address adr) const {
-  assert(Thread::current() == this, "lock_is_in_stack can only be called from current thread");
-  // High limit: highest_lock is set during thread execution
-  // Low  limit: address of the local variable dummy, rounded to 4K boundary.
-  // (The rounding helps finding threads in unsafe mode, even if the particular stack
-  // frame has been popped already.  Correct as long as stacks are at least 4K long and aligned.)
-  address end = os::current_stack_pointer();
-  if (_highest_lock >= adr && adr >= end) return true;
-
-  return false;
-}
-
-
 bool Thread::is_in_stack(address adr) const {
   assert(Thread::current() == this, "is_in_stack can only be called from current thread");
   address end = os::current_stack_pointer();
@@ -818,8 +804,7 @@ bool Thread::is_in_stack(address adr) const {
 // should be revisited, and they should be removed if possible.
 
 bool Thread::is_lock_owned(address adr) const {
-  if (lock_is_in_stack(adr) ) return true;
-  return false;
+  return (_stack_base >= adr && adr >= (_stack_base - _stack_size));
 }
 
 bool Thread::set_as_starting_thread() {
@@ -1664,7 +1649,7 @@ JavaThread* JavaThread::active() {
 }
 
 bool JavaThread::is_lock_owned(address adr) const {
-  if (lock_is_in_stack(adr)) return true;
+  if (Thread::is_lock_owned(adr)) return true;
 
   for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {
     if (chunk->contains(adr)) return true;
@@ -2443,7 +2428,7 @@ void JavaThread::print_on(outputStream *st) const {
   if (thread_oop != NULL && java_lang_Thread::is_daemon(thread_oop))  st->print("daemon ");
   Thread::print_on(st);
   // print guess for valid stack memory region (assume 4K pages); helps lock debugging
-  st->print_cr("[" INTPTR_FORMAT ".." INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12), highest_lock());
+  st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
   if (thread_oop != NULL && JDK_Version::is_gte_jdk15x_version()) {
     st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
   }
@@ -3007,17 +2992,19 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       }
 
       if (UseStringCache) {
-        // Forcibly initialize java/lang/String and mutate the private
+        // Forcibly initialize java/lang/StringValue and mutate the private
         // static final "stringCacheEnabled" field before we start creating instances
-        klassOop k_o = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_String(), Handle(), Handle(), CHECK_0);
-        KlassHandle k = KlassHandle(THREAD, k_o);
-        guarantee(k.not_null(), "Must find java/lang/String");
-        instanceKlassHandle ik = instanceKlassHandle(THREAD, k());
-        ik->initialize(CHECK_0);
-        fieldDescriptor fd;
-        // Possible we might not find this field; if so, don't break
-        if (ik->find_local_field(vmSymbols::stringCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
-          k()->bool_field_put(fd.offset(), true);
+        klassOop k_o = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_StringValue(), Handle(), Handle(), CHECK_0);
+        // Possible that StringValue isn't present: if so, silently don't break
+        if (k_o != NULL) {
+          KlassHandle k = KlassHandle(THREAD, k_o);
+          instanceKlassHandle ik = instanceKlassHandle(THREAD, k());
+          ik->initialize(CHECK_0);
+          fieldDescriptor fd;
+          // Possible we might not find this field: if so, silently don't break
+          if (ik->find_local_field(vmSymbols::stringCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
+            k()->bool_field_put(fd.offset(), true);
+          }
         }
       }
     }
@@ -3731,25 +3718,13 @@ JavaThread *Threads::owning_thread_from_monitor_owner(address owner, bool doLock
   // heavyweight monitors, then the owner is the stack address of the
   // Lock Word in the owning Java thread's stack.
   //
-  // We can't use Thread::is_lock_owned() or Thread::lock_is_in_stack() because
-  // those routines rely on the "current" stack pointer. That would be our
-  // stack pointer which is not relevant to the question. Instead we use the
-  // highest lock ever entered by the thread and find the thread that is
-  // higher than and closest to our target stack address.
-  //
-  address    least_diff = 0;
-  bool       least_diff_initialized = false;
   JavaThread* the_owner = NULL;
   {
     MutexLockerEx ml(doLock ? Threads_lock : NULL);
     ALL_JAVA_THREADS(q) {
-      address addr = q->highest_lock();
-      if (addr == NULL || addr < owner) continue;  // thread has entered no monitors or is too low
-      address diff = (address)(addr - owner);
-      if (!least_diff_initialized || diff < least_diff) {
-        least_diff_initialized = true;
-        least_diff = diff;
+      if (q->is_lock_owned(owner)) {
         the_owner = q;
+        break;
       }
     }
   }

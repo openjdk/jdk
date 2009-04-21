@@ -41,7 +41,7 @@ endif
 # Omit mirror since it's built with the apt tool.
 SUBDIRS = $(SCRIPT_SUBDIR) image security crypto/provider jndi jmx \
     java inputmethods org xml rowset net/httpserver net/ssl demo \
-    tools jarsigner tracing servicetag
+    tools jarsigner tracing servicetag nio
 
 all build clean clobber::
 	$(SUBDIRS-loop)

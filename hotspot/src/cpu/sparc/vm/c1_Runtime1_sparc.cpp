@@ -714,38 +714,19 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         //      sub  : G3, argument, destroyed
         //      super: G1, argument, not changed
         //      raddr: O7, blown by call
-        Label loop, miss;
+        Label miss;
 
         __ save_frame(0);               // Blow no registers!
 
-        __ ld_ptr( G3, sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes(), L3 );
-        __ lduw(L3,arrayOopDesc::length_offset_in_bytes(),L0); // length in l0
-        __ add(L3,arrayOopDesc::base_offset_in_bytes(T_OBJECT),L1); // ptr into array
-        __ clr(L4);                     // Index
-        // Load a little early; will load 1 off the end of the array.
-        // Ok for now; revisit if we have other uses of this routine.
-        __ ld_ptr(L1,0,L2);             // Will load a little early
-
-        // The scan loop
-        __ bind(loop);
-        __ add(L1,wordSize,L1); // Bump by OOP size
-        __ cmp(L4,L0);
-        __ br(Assembler::equal,false,Assembler::pn,miss);
-        __ delayed()->inc(L4);  // Bump index
-        __ subcc(L2,G1,L3);             // Check for match; zero in L3 for a hit
-        __ brx( Assembler::notEqual, false, Assembler::pt, loop );
-        __ delayed()->ld_ptr(L1,0,L2); // Will load a little early
-
-        // Got a hit; report success; set cache
-        __ st_ptr( G1, G3, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() );
+        __ check_klass_subtype_slow_path(G3, G1, L0, L1, L2, L4, NULL, &miss);
 
         __ mov(1, G3);
-        __ ret();                       // Result in G5 is ok; flags set
+        __ ret();                       // Result in G5 is 'true'
         __ delayed()->restore();        // free copy or add can go here
 
         __ bind(miss);
         __ mov(0, G3);
-        __ ret();                       // Result in G5 is ok; flags set
+        __ ret();                       // Result in G5 is 'false'
         __ delayed()->restore();        // free copy or add can go here
       }
 

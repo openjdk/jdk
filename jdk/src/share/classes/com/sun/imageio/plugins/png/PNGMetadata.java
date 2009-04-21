@@ -211,8 +211,8 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     public int sRGB_renderingIntent;
 
     // tEXt chunk
-    public ArrayList tEXt_keyword = new ArrayList(); // 1-79 char Strings
-    public ArrayList tEXt_text = new ArrayList(); // Strings
+    public ArrayList<String> tEXt_keyword = new ArrayList<String>(); // 1-79 characters
+    public ArrayList<String> tEXt_text = new ArrayList<String>();
 
     // tIME chunk
     public boolean tIME_present;
@@ -235,13 +235,13 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     public int tRNS_blue;
 
     // zTXt chunk
-    public ArrayList zTXt_keyword = new ArrayList(); // Strings
-    public ArrayList zTXt_compressionMethod = new ArrayList(); // Integers
-    public ArrayList zTXt_text = new ArrayList(); // Strings
+    public ArrayList<String> zTXt_keyword = new ArrayList<String>();
+    public ArrayList<Integer> zTXt_compressionMethod = new ArrayList<Integer>();
+    public ArrayList<String> zTXt_text = new ArrayList<String>();
 
     // Unknown chunks
-    public ArrayList unknownChunkType = new ArrayList(); // Strings
-    public ArrayList unknownChunkData = new ArrayList(); // byte arrays
+    public ArrayList<String> unknownChunkType = new ArrayList<String>();
+    public ArrayList<byte[]> unknownChunkData = new ArrayList<byte[]>();
 
     public PNGMetadata() {
         super(true,
@@ -426,21 +426,14 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         return false;
     }
 
-    private ArrayList cloneBytesArrayList(ArrayList in) {
+    private ArrayList<byte[]> cloneBytesArrayList(ArrayList<byte[]> in) {
         if (in == null) {
             return null;
         } else {
-            ArrayList list = new ArrayList(in.size());
-            Iterator iter = in.iterator();
-            while (iter.hasNext()) {
-                Object o = iter.next();
-                if (o == null) {
-                    list.add(null);
-                } else {
-                    list.add(((byte[])o).clone());
-                }
+            ArrayList<byte[]> list = new ArrayList<byte[]>(in.size());
+            for (byte[] b: in) {
+                list.add((b == null) ? null : (byte[])b.clone());
             }
-
             return list;
         }
     }
@@ -600,7 +593,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                 IIOMetadataNode iTXt_node = new IIOMetadataNode("iTXtEntry");
                 iTXt_node.setAttribute("keyword", iTXt_keyword.get(i));
                 iTXt_node.setAttribute("compressionFlag",
-                        iTXt_compressionFlag.get(i) ? "1" : "0");
+                        iTXt_compressionFlag.get(i) ? "TRUE" : "FALSE");
                 iTXt_node.setAttribute("compressionMethod",
                         iTXt_compressionMethod.get(i).toString());
                 iTXt_node.setAttribute("languageTag",
@@ -832,7 +825,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         }
 
         node = new IIOMetadataNode("BlackIsZero");
-        node.setAttribute("value", "true");
+        node.setAttribute("value", "TRUE");
         chroma_node.appendChild(node);
 
         if (PLTE_present) {
@@ -894,7 +887,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         compression_node.appendChild(node);
 
         node = new IIOMetadataNode("Lossless");
-        node.setAttribute("value", "true");
+        node.setAttribute("value", "TRUE");
         compression_node.appendChild(node);
 
         node = new IIOMetadataNode("NumProgressiveScans");
@@ -1040,7 +1033,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             node.setAttribute("language",
                               iTXt_languageTag.get(i));
             if (iTXt_compressionFlag.get(i)) {
-                node.setAttribute("compression", "deflate");
+                node.setAttribute("compression", "zip");
             } else {
                 node.setAttribute("compression", "none");
             }
@@ -1052,7 +1045,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             node = new IIOMetadataNode("TextEntry");
             node.setAttribute("keyword", (String)zTXt_keyword.get(i));
             node.setAttribute("value", (String)zTXt_text.get(i));
-            node.setAttribute("compression", "deflate");
+            node.setAttribute("compression", "zip");
 
             text_node.appendChild(node);
         }
@@ -1162,12 +1155,13 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             }
         }
         String value = attr.getNodeValue();
-        if (value.equals("true")) {
+        // Allow lower case booleans for backward compatibility, #5082756
+        if (value.equals("TRUE") || value.equals("true")) {
             return true;
-        } else if (value.equals("false")) {
+        } else if (value.equals("FALSE") || value.equals("false")) {
             return false;
         } else {
-            fatal(node, "Attribute " + name + " must be 'true' or 'false'!");
+            fatal(node, "Attribute " + name + " must be 'TRUE' or 'FALSE'!");
             return false;
         }
     }
@@ -1421,26 +1415,30 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                     }
 
                     String keyword = getAttribute(iTXt_node, "keyword");
-                    iTXt_keyword.add(keyword);
+                    if (isValidKeyword(keyword)) {
+                        iTXt_keyword.add(keyword);
 
-                    boolean compressionFlag =
-                        getBooleanAttribute(iTXt_node, "compressionFlag");
-                    iTXt_compressionFlag.add(Boolean.valueOf(compressionFlag));
+                        boolean compressionFlag =
+                            getBooleanAttribute(iTXt_node, "compressionFlag");
+                        iTXt_compressionFlag.add(Boolean.valueOf(compressionFlag));
 
-                    String compressionMethod =
-                        getAttribute(iTXt_node, "compressionMethod");
-                    iTXt_compressionMethod.add(Integer.valueOf(compressionMethod));
+                        String compressionMethod =
+                            getAttribute(iTXt_node, "compressionMethod");
+                        iTXt_compressionMethod.add(Integer.valueOf(compressionMethod));
 
-                    String languageTag =
-                        getAttribute(iTXt_node, "languageTag");
-                    iTXt_languageTag.add(languageTag);
+                        String languageTag =
+                            getAttribute(iTXt_node, "languageTag");
+                        iTXt_languageTag.add(languageTag);
 
-                    String translatedKeyword =
-                        getAttribute(iTXt_node, "translatedKeyword");
-                    iTXt_translatedKeyword.add(translatedKeyword);
+                        String translatedKeyword =
+                            getAttribute(iTXt_node, "translatedKeyword");
+                        iTXt_translatedKeyword.add(translatedKeyword);
 
-                    String text = getAttribute(iTXt_node, "text");
-                    iTXt_text.add(text);
+                        String text = getAttribute(iTXt_node, "text");
+                        iTXt_text.add(text);
+
+                    }
+                    // silently skip invalid text entry
 
                     iTXt_node = iTXt_node.getNextSibling();
                 }
@@ -1692,11 +1690,45 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         }
     }
 
-    private boolean isISOLatin(String s) {
+    /*
+     * Accrding to PNG spec, keywords are restricted to 1 to 79 bytes
+     * in length. Keywords shall contain only printable Latin-1 characters
+     * and spaces; To reduce the chances for human misreading of a keyword,
+     * leading spaces, trailing spaces, and consecutive spaces are not
+     * permitted in keywords.
+     *
+     * See: http://www.w3.org/TR/PNG/#11keywords
+     */
+    private boolean isValidKeyword(String s) {
+        int len = s.length();
+        if (len < 1 || len >= 80) {
+            return false;
+        }
+        if (s.startsWith(" ") || s.endsWith(" ") || s.contains("  ")) {
+            return false;
+        }
+        return isISOLatin(s, false);
+    }
+
+    /*
+     * According to PNG spec, keyword shall contain only printable
+     * Latin-1 [ISO-8859-1] characters and spaces; that is, only
+     * character codes 32-126 and 161-255 decimal are allowed.
+     * For Latin-1 value fields the 0x10 (linefeed) control
+     * character is aloowed too.
+     *
+     * See: http://www.w3.org/TR/PNG/#11keywords
+     */
+    private boolean isISOLatin(String s, boolean isLineFeedAllowed) {
         int len = s.length();
         for (int i = 0; i < len; i++) {
-            if (s.charAt(i) > 255) {
-                return false;
+            char c = s.charAt(i);
+            if (c < 32 || c > 255 || (c > 126 && c < 161)) {
+                // not printable. Check whether this is an allowed
+                // control char
+                if (!isLineFeedAllowed || c != 0x10) {
+                    return false;
+                }
             }
         }
         return true;
@@ -1929,19 +1961,22 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                 while (child != null) {
                     String childName = child.getNodeName();
                     if (childName.equals("TextEntry")) {
-                        String keyword = getAttribute(child, "keyword");
+                        String keyword =
+                            getAttribute(child, "keyword", "", false);
                         String value = getAttribute(child, "value");
-                        String encoding = getAttribute(child, "encoding");
-                        String language = getAttribute(child, "language");
+                        String language =
+                            getAttribute(child, "language", "", false);
                         String compression =
-                            getAttribute(child, "compression");
+                            getAttribute(child, "compression", "none", false);
 
-                        if (isISOLatin(value)) {
+                        if (!isValidKeyword(keyword)) {
+                            // Just ignore this node, PNG requires keywords
+                        } else if (isISOLatin(value, true)) {
                             if (compression.equals("zip")) {
                                 // Use a zTXt node
                                 zTXt_keyword.add(keyword);
                                 zTXt_text.add(value);
-                                zTXt_compressionMethod.add(new Integer(0));
+                                zTXt_compressionMethod.add(Integer.valueOf(0));
                             } else {
                                 // Use a tEXt node
                                 tEXt_keyword.add(keyword);
@@ -1998,14 +2033,14 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         sBIT_present = false;
         sPLT_present = false;
         sRGB_present = false;
-        tEXt_keyword = new ArrayList();
-        tEXt_text = new ArrayList();
+        tEXt_keyword = new ArrayList<String>();
+        tEXt_text = new ArrayList<String>();
         tIME_present = false;
         tRNS_present = false;
-        zTXt_keyword = new ArrayList();
-        zTXt_compressionMethod = new ArrayList();
-        zTXt_text = new ArrayList();
-        unknownChunkType = new ArrayList();
-        unknownChunkData = new ArrayList();
+        zTXt_keyword = new ArrayList<String>();
+        zTXt_compressionMethod = new ArrayList<Integer>();
+        zTXt_text = new ArrayList<String>();
+        unknownChunkType = new ArrayList<String>();
+        unknownChunkData = new ArrayList<byte[]>();
     }
 }

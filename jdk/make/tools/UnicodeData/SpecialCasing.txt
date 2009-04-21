@@ -1,12 +1,17 @@
-# SpecialCasing-4.0.0.txt
-# Date: 2003-03-14, 20:22:04 GMT [MD]
+# SpecialCasing-5.1.0.txt
+# Date: 2008-03-03, 21:58:10 GMT [MD]
+#
+# Unicode Character Database
+# Copyright (c) 1991-2008 Unicode, Inc.
+# For terms of use, see http://www.unicode.org/terms_of_use.html
+# For documentation, see UCD.html
 #
 # Special Casing Properties
 #
 # This file is a supplement to the UnicodeData file.
 # It contains additional information about the casing of Unicode characters.
 # (For compatibility, the UnicodeData.txt file only contains case mappings for
-# characters where they are 1-1, and does not have locale-specific mappings.)
+# characters where they are 1-1, and independent of context and language.
 # For more information, see the discussion of Case Mappings in the Unicode Standard.
 #
 # All code points not listed in this file that do not have a simple case mappings
@@ -18,31 +23,31 @@
 #
 # <code>; <lower> ; <title> ; <upper> ; (<condition_list> ;)? # <comment>
 #
-# <code>, <lower>, <title>, and <upper> provide character values in hex. If there is more than
-# one character, they are separated by spaces. Other than as used to separate elements,
-# spaces are to be ignored.
+# <code>, <lower>, <title>, and <upper> provide character values in hex. If there is more
+# than one character, they are separated by spaces. Other than as used to separate 
+# elements, spaces are to be ignored.
 #
-# The <condition_list> is optional. Where present, it consists of one or more locales or contexts,
-# separated by spaces. In these conditions:
+# The <condition_list> is optional. Where present, it consists of one or more language IDs
+# or contexts, separated by spaces. In these conditions:
 # - A condition list overrides the normal behavior if all of the listed conditions are true.
 # - The context is always the context of the characters in the original string,
 #   NOT in the resulting string.
 # - Case distinctions in the condition list are not significant.
 # - Conditions preceded by "Not_" represent the negation of the condition.
+# The condition list is not represented in the UCD as a formal property.
 #
-# A locale is defined as:
-# <locale> := <ISO_639_code> ( "_" <ISO_3166_code> ( "_" <variant> )? )?
-# <ISO_3166_code> := 2-letter ISO country code,
-# <ISO_639_code> :=  2-letter ISO language code
+# A language ID is defined by BCP 47, with '-' and '_' treated equivalently.
 #
-# A context is one of the following, as defined in the Unicode Standard:
-#   Final_Sigma, After_Soft_Dotted, More_Above, Before_Dot, Not_Before_Dot, After_I
+# A context for a character C is defined by Section 3.13 Default Case 
+# Operations, of The Unicode Standard, Version 5.0.
+# (This is identical to the context defined by Unicode 4.1.0,
+#  as specified in http://www.unicode.org/versions/Unicode4.1.0/)
 #
 # Parsers of this file must be prepared to deal with future additions to this format:
 #  * Additional contexts
 #  * Additional fields
 # ================================================================================
-
+# @missing 0000..10FFFF; <slc>; <stc>; <suc>
 # ================================================================================
 # Unconditional mappings
 # ================================================================================
@@ -170,7 +175,7 @@ FB17; FB17; 0544 056D; 0544 053D; # ARMENIAN SMALL LIGATURE MEN XEH
 1FF3; 1FF3; 1FFC; 03A9 0399; # GREEK SMALL LETTER OMEGA WITH YPOGEGRAMMENI
 1FFC; 1FF3; 1FFC; 03A9 0399; # GREEK CAPITAL LETTER OMEGA WITH PROSGEGRAMMENI
 
-# Some characters with YPOGEGRAMMENI are also have no corresponding titlecases
+# Some characters with YPOGEGRAMMENI also have no corresponding titlecases
 
 1FB2; 1FB2; 1FBA 0345; 1FBA 0399; # GREEK SMALL LETTER ALPHA WITH VARIA AND YPOGEGRAMMENI
 1FB4; 1FB4; 0386 0345; 0386 0399; # GREEK SMALL LETTER ALPHA WITH OXIA AND YPOGEGRAMMENI
@@ -184,7 +189,14 @@ FB17; FB17; 0544 056D; 0544 053D; # ARMENIAN SMALL LIGATURE MEN XEH
 1FF7; 1FF7; 03A9 0342 0345; 03A9 0342 0399; # GREEK SMALL LETTER OMEGA WITH PERISPOMENI AND YPOGEGRAMMENI
 
 # ================================================================================
-# Conditional mappings
+# Conditional Mappings
+# The remainder of this file provides conditional casing data used to produce 
+# full case mappings.
+# ================================================================================
+# Language-Insensitive Mappings
+# These are characters whose full case mappings do not depend on language, but do
+# depend on context (which characters come before or after). For more information
+# see the header of this file and the Unicode Standard.
 # ================================================================================
 
 # Special case for final form of sigma
@@ -203,7 +215,10 @@ FB17; FB17; 0544 056D; 0544 053D; # ARMENIAN SMALL LIGATURE MEN XEH
 # 03C2; 03C3; 03A3; 03A3; Not_Final_Sigma; # GREEK SMALL LETTER FINAL SIGMA
 
 # ================================================================================
-# Locale-sensitive mappings
+# Language-Sensitive Mappings
+# These are characters whose full case mappings depend on language and perhaps also
+# context (which characters come before or after). For more information
+# see the header of this file and the Unicode Standard.
 # ================================================================================
 
 # Lithuanian
@@ -254,3 +269,6 @@ FB17; FB17; 0544 056D; 0544 053D; # ARMENIAN SMALL LIGATURE MEN XEH
 # Note: the following case is already in the UnicodeData file.
 
 # 0131; 0131; 0049; 0049; tr; # LATIN SMALL LETTER DOTLESS I
+
+# EOF
+

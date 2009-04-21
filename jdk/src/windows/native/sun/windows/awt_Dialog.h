@@ -76,7 +76,7 @@ public:
      * Thus we don't have to perform any transitive (a blocker of a blocker) checks.
      */
     INLINE virtual BOOL IsFocusedWindowModalBlocker() {
-        return (sm_focusedWindow != NULL) && (GetModalBlocker(sm_focusedWindow) == GetHWnd());
+        return (AwtComponent::GetFocusedWindow() != NULL) && (GetModalBlocker(AwtComponent::GetFocusedWindow()) == GetHWnd());
     }
 
     // finds and activates some window after the modal dialog is hidden
@@ -113,6 +113,9 @@ private:
      */
     static void ModalPerformActivation(HWND hWnd);
 
+    static void PopupAllDialogs(HWND dialog, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar);
+    static void PopupOneDialog(HWND dialog, HWND blocker, BOOL isModalHook, HWND prevFGWindow, BOOL onTaskbar);
+
 public:
 
     // WH_CBT hook procedure used in modality, prevents modal
@@ -129,6 +132,8 @@ public:
     // example on browser's thread when running in Java Plugin
     static LRESULT CALLBACK MouseHookProc_NonTT(int code,
                                                 WPARAM wParam, LPARAM lParam);
+
+    static void AnimateModalBlocker(HWND window);
 };
 
 #endif /* AWT_DIALOG_H */

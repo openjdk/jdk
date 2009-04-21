@@ -67,126 +67,13 @@ public class ImageTypeSpecifier {
      * <code>BufferedImage</code> types.
      */
     private static ImageTypeSpecifier[] BISpecifier;
-
+    private static ColorSpace sRGB;
     // Initialize the standard specifiers
     static {
-        ColorSpace sRGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        sRGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
         BISpecifier =
             new ImageTypeSpecifier[BufferedImage.TYPE_BYTE_INDEXED + 1];
-
-        BISpecifier[BufferedImage.TYPE_CUSTOM] = null;
-
-        BISpecifier[BufferedImage.TYPE_INT_RGB] =
-            createPacked(sRGB,
-                         0x00ff0000,
-                         0x0000ff00,
-                         0x000000ff,
-                         0x0,
-                         DataBuffer.TYPE_INT,
-                         false);
-
-        BISpecifier[BufferedImage.TYPE_INT_ARGB] =
-            createPacked(sRGB,
-                         0x00ff0000,
-                         0x0000ff00,
-                         0x000000ff,
-                         0xff000000,
-                         DataBuffer.TYPE_INT,
-                         false);
-
-        BISpecifier[BufferedImage.TYPE_INT_ARGB_PRE] =
-            createPacked(sRGB,
-                         0x00ff0000,
-                         0x0000ff00,
-                         0x000000ff,
-                         0xff000000,
-                         DataBuffer.TYPE_INT,
-                         true);
-
-        BISpecifier[BufferedImage.TYPE_INT_BGR] =
-            createPacked(sRGB,
-                         0x000000ff,
-                         0x0000ff00,
-                         0x00ff0000,
-                         0x0,
-                         DataBuffer.TYPE_INT,
-                         false);
-
-        int[] bOffsRGB = { 2, 1, 0 };
-        BISpecifier[BufferedImage.TYPE_3BYTE_BGR] =
-            createInterleaved(sRGB,
-                              bOffsRGB,
-                              DataBuffer.TYPE_BYTE,
-                              false,
-                              false);
-
-        int[] bOffsABGR = { 3, 2, 1, 0 };
-        BISpecifier[BufferedImage.TYPE_4BYTE_ABGR] =
-            createInterleaved(sRGB,
-                              bOffsABGR,
-                              DataBuffer.TYPE_BYTE,
-                              true,
-                              false);
-
-        BISpecifier[BufferedImage.TYPE_4BYTE_ABGR_PRE] =
-            createInterleaved(sRGB,
-                              bOffsABGR,
-                              DataBuffer.TYPE_BYTE,
-                              true,
-                              true);
-
-        BISpecifier[BufferedImage.TYPE_USHORT_565_RGB] =
-            createPacked(sRGB,
-                         0xF800,
-                         0x07E0,
-                         0x001F,
-                         0x0,
-                         DataBuffer.TYPE_USHORT,
-                         false);
-
-        BISpecifier[BufferedImage.TYPE_USHORT_555_RGB] =
-            createPacked(sRGB,
-                         0x7C00,
-                         0x03E0,
-                         0x001F,
-                         0x0,
-                         DataBuffer.TYPE_USHORT,
-                         false);
-
-        BISpecifier[BufferedImage.TYPE_BYTE_GRAY] =
-            createGrayscale(8,
-                            DataBuffer.TYPE_BYTE,
-                            false);
-
-        BISpecifier[BufferedImage.TYPE_USHORT_GRAY] =
-            createGrayscale(16,
-                            DataBuffer.TYPE_USHORT,
-                            false);
-
-        BISpecifier[BufferedImage.TYPE_BYTE_BINARY] =
-            createGrayscale(1,
-                            DataBuffer.TYPE_BYTE,
-                            false);
-
-        BufferedImage bi =
-            new BufferedImage(1, 1, BufferedImage.TYPE_BYTE_INDEXED);
-        IndexColorModel icm = (IndexColorModel)bi.getColorModel();
-        int mapSize = icm.getMapSize();
-        byte[] redLUT = new byte[mapSize];
-        byte[] greenLUT = new byte[mapSize];
-        byte[] blueLUT = new byte[mapSize];
-        byte[] alphaLUT = new byte[mapSize];
-
-        icm.getReds(redLUT);
-        icm.getGreens(greenLUT);
-        icm.getBlues(blueLUT);
-        icm.getAlphas(alphaLUT);
-
-        BISpecifier[BufferedImage.TYPE_BYTE_INDEXED] =
-            createIndexed(redLUT, greenLUT, blueLUT, alphaLUT,
-                          8,
-                          DataBuffer.TYPE_BYTE);
     }
 
     /**
@@ -1011,7 +898,7 @@ public class ImageTypeSpecifier {
         ImageTypeSpecifier createFromBufferedImageType(int bufferedImageType) {
         if (bufferedImageType >= BufferedImage.TYPE_INT_RGB &&
             bufferedImageType <= BufferedImage.TYPE_BYTE_INDEXED) {
-            return BISpecifier[bufferedImageType];
+            return getSpecifier(bufferedImageType);
         } else if (bufferedImageType == BufferedImage.TYPE_CUSTOM) {
             throw new IllegalArgumentException("Cannot create from TYPE_CUSTOM!");
         } else {
@@ -1041,7 +928,7 @@ public class ImageTypeSpecifier {
         if (image instanceof BufferedImage) {
             int bufferedImageType = ((BufferedImage)image).getType();
             if (bufferedImageType != BufferedImage.TYPE_CUSTOM) {
-                return BISpecifier[bufferedImageType];
+                return getSpecifier(bufferedImageType);
             }
         }
 
@@ -1225,4 +1112,130 @@ public class ImageTypeSpecifier {
     public int hashCode() {
         return (9 * colorModel.hashCode()) + (14 * sampleModel.hashCode());
     }
+
+    private static ImageTypeSpecifier getSpecifier(int type) {
+        if (BISpecifier[type] == null) {
+            BISpecifier[type] = createSpecifier(type);
+        }
+        return BISpecifier[type];
+    }
+
+    private static ImageTypeSpecifier createSpecifier(int type) {
+        switch(type) {
+          case BufferedImage.TYPE_INT_RGB:
+              return createPacked(sRGB,
+                                  0x00ff0000,
+                                  0x0000ff00,
+                                  0x000000ff,
+                                  0x0,
+                                  DataBuffer.TYPE_INT,
+                                  false);
+
+          case BufferedImage.TYPE_INT_ARGB:
+              return createPacked(sRGB,
+                                  0x00ff0000,
+                                  0x0000ff00,
+                                  0x000000ff,
+                                  0xff000000,
+                                  DataBuffer.TYPE_INT,
+                                  false);
+
+          case BufferedImage.TYPE_INT_ARGB_PRE:
+              return createPacked(sRGB,
+                                  0x00ff0000,
+                                  0x0000ff00,
+                                  0x000000ff,
+                                  0xff000000,
+                                  DataBuffer.TYPE_INT,
+                                  true);
+
+          case BufferedImage.TYPE_INT_BGR:
+              return createPacked(sRGB,
+                                  0x000000ff,
+                                  0x0000ff00,
+                                  0x00ff0000,
+                                  0x0,
+                                  DataBuffer.TYPE_INT,
+                                  false);
+
+          case BufferedImage.TYPE_3BYTE_BGR:
+              return createInterleaved(sRGB,
+                                       new int[] { 2, 1, 0 },
+                                       DataBuffer.TYPE_BYTE,
+                                       false,
+                                       false);
+
+          case BufferedImage.TYPE_4BYTE_ABGR:
+              return createInterleaved(sRGB,
+                                       new int[] { 3, 2, 1, 0 },
+                                       DataBuffer.TYPE_BYTE,
+                                       true,
+                                       false);
+
+          case BufferedImage.TYPE_4BYTE_ABGR_PRE:
+              return createInterleaved(sRGB,
+                                       new int[] { 3, 2, 1, 0 },
+                                       DataBuffer.TYPE_BYTE,
+                                       true,
+                                       true);
+
+          case BufferedImage.TYPE_USHORT_565_RGB:
+              return createPacked(sRGB,
+                                  0xF800,
+                                  0x07E0,
+                                  0x001F,
+                                  0x0,
+                                  DataBuffer.TYPE_USHORT,
+                                  false);
+
+          case BufferedImage.TYPE_USHORT_555_RGB:
+              return createPacked(sRGB,
+                                  0x7C00,
+                                  0x03E0,
+                                  0x001F,
+                                  0x0,
+                                  DataBuffer.TYPE_USHORT,
+                                  false);
+
+          case BufferedImage.TYPE_BYTE_GRAY:
+            return createGrayscale(8,
+                                   DataBuffer.TYPE_BYTE,
+                                   false);
+
+          case BufferedImage.TYPE_USHORT_GRAY:
+            return createGrayscale(16,
+                                   DataBuffer.TYPE_USHORT,
+                                   false);
+
+          case BufferedImage.TYPE_BYTE_BINARY:
+              return createGrayscale(1,
+                                     DataBuffer.TYPE_BYTE,
+                                     false);
+
+          case BufferedImage.TYPE_BYTE_INDEXED:
+          {
+
+              BufferedImage bi =
+                  new BufferedImage(1, 1, BufferedImage.TYPE_BYTE_INDEXED);
+              IndexColorModel icm = (IndexColorModel)bi.getColorModel();
+              int mapSize = icm.getMapSize();
+              byte[] redLUT = new byte[mapSize];
+              byte[] greenLUT = new byte[mapSize];
+              byte[] blueLUT = new byte[mapSize];
+              byte[] alphaLUT = new byte[mapSize];
+
+              icm.getReds(redLUT);
+              icm.getGreens(greenLUT);
+              icm.getBlues(blueLUT);
+              icm.getAlphas(alphaLUT);
+
+              return createIndexed(redLUT, greenLUT, blueLUT, alphaLUT,
+                                   8,
+                                   DataBuffer.TYPE_BYTE);
+          }
+          default:
+              throw new IllegalArgumentException("Invalid BufferedImage type!");
+        }
+    }
+
 }

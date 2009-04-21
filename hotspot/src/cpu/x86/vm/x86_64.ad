@@ -326,7 +326,6 @@ reg_class ptr_no_rax_reg(RDX, RDX_H,
                          R9,  R9_H,
                          R10, R10_H,
                          R11, R11_H,
-                         R12, R12_H,
                          R13, R13_H,
                          R14, R14_H);
 
@@ -340,7 +339,6 @@ reg_class ptr_no_rbp_reg(RDX, RDX_H,
                          R9,  R9_H,
                          R10, R10_H,
                          R11, R11_H,
-                         R12, R12_H,
                          R13, R13_H,
                          R14, R14_H);
 
@@ -354,7 +352,6 @@ reg_class ptr_no_rax_rbx_reg(RDX, RDX_H,
                              R9,  R9_H,
                              R10, R10_H,
                              R11, R11_H,
-                             R12, R12_H,
                              R13, R13_H,
                              R14, R14_H);
 
@@ -443,9 +440,6 @@ reg_class long_rcx_reg(RCX, RCX_H);
 
 // Singleton class for RDX long register
 reg_class long_rdx_reg(RDX, RDX_H);
-
-// Singleton class for R12 long register
-reg_class long_r12_reg(R12, R12_H);
 
 // Class for all int registers (except RSP)
 reg_class int_reg(RAX,
@@ -1842,7 +1836,9 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   if (UseCompressedOops) {
     st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes() #%d]\t", oopDesc::klass_offset_in_bytes());
-    st->print_cr("leaq    rscratch1, [r12_heapbase, r, Address::times_8, 0]");
+    if (Universe::narrow_oop_shift() != 0) {
+      st->print_cr("leaq    rscratch1, [r12_heapbase, r, Address::times_8, 0]");
+    }
     st->print_cr("cmpq    rax, rscratch1\t # Inline cache check");
   } else {
     st->print_cr("cmpq    rax, [j_rarg0 + oopDesc::klass_offset_in_bytes() #%d]\t"
@@ -1891,7 +1887,11 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 {
   if (UseCompressedOops) {
-    return OptoBreakpoint ? 19 : 20;
+    if (Universe::narrow_oop_shift() == 0) {
+      return OptoBreakpoint ? 15 : 16;
+    } else {
+      return OptoBreakpoint ? 19 : 20;
+    }
   } else {
     return OptoBreakpoint ? 11 : 12;
   }
@@ -2575,45 +2575,13 @@ encode %{
     Register Rrax = as_Register(RAX_enc); // super class
     Register Rrcx = as_Register(RCX_enc); // killed
     Register Rrsi = as_Register(RSI_enc); // sub class
-    Label hit, miss, cmiss;
+    Label miss;
+    const bool set_cond_codes = true;
 
     MacroAssembler _masm(&cbuf);
-    // Compare super with sub directly, since super is not in its own SSA.
-    // The compiler used to emit this test, but we fold it in here,
-    // to allow platform-specific tweaking on sparc.
-    __ cmpptr(Rrax, Rrsi);
-    __ jcc(Assembler::equal, hit);
-#ifndef PRODUCT
-    __ lea(Rrcx, ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
-    __ incrementl(Address(Rrcx, 0));
-#endif //PRODUCT
-    __ movptr(Rrdi, Address(Rrsi, 
-                          sizeof(oopDesc) + 
-                          Klass::secondary_supers_offset_in_bytes()));
-    __ movl(Rrcx, Address(Rrdi, arrayOopDesc::length_offset_in_bytes()));
-    __ addptr(Rrdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-    if (UseCompressedOops) {
-      __ encode_heap_oop(Rrax);
-      __ repne_scanl();
-      __ jcc(Assembler::notEqual, cmiss);
-      __ decode_heap_oop(Rrax);
-      __ movptr(Address(Rrsi,
-                      sizeof(oopDesc) +
-                      Klass::secondary_super_cache_offset_in_bytes()),
-              Rrax);
-      __ jmp(hit);
-      __ bind(cmiss);
-      __ decode_heap_oop(Rrax);
-      __ jmp(miss);
-    } else {
-      __ repne_scan();
-      __ jcc(Assembler::notEqual, miss);
-      __ movptr(Address(Rrsi,
-                      sizeof(oopDesc) +
-                      Klass::secondary_super_cache_offset_in_bytes()),
-              Rrax);
-    }
-    __ bind(hit);
+    __ check_klass_subtype_slow_path(Rrsi, Rrax, Rrcx, Rrdi,
+                                     NULL, &miss,
+                                     /*set_cond_codes:*/ true);
     if ($primary) {
       __ xorptr(Rrdi, Rrdi);
     }
@@ -3726,12 +3694,15 @@ encode %{
     }
   %}
 
-  enc_class enc_String_Compare()
-  %{
+  enc_class enc_String_Compare(rdi_RegP str1, rsi_RegP str2, regD tmp1, regD tmp2,
+                        rax_RegI tmp3, rbx_RegI tmp4, rcx_RegI result) %{
     Label RCX_GOOD_LABEL, LENGTH_DIFF_LABEL,
           POP_LABEL, DONE_LABEL, CONT_LABEL,
           WHILE_HEAD_LABEL;
     MacroAssembler masm(&cbuf);
+
+    XMMRegister tmp1Reg   = as_XMMRegister($tmp1$$reg);
+    XMMRegister tmp2Reg   = as_XMMRegister($tmp2$$reg);
 
     // Get the first character position in both strings
     //         [8] char array, [12] offset, [16] count
@@ -3750,6 +3721,7 @@ encode %{
     // Compute the minimum of the string lengths(rsi) and the
     // difference of the string lengths (stack)
 
+    // do the conditional move stuff
     masm.movl(rdi, Address(rdi, count_offset));
     masm.movl(rsi, Address(rsi, count_offset));
     masm.movl(rcx, rdi);
@@ -3777,7 +3749,7 @@ encode %{
       Label LSkip2;
       // Check if the strings start at same location
       masm.cmpptr(rbx, rax);
-      masm.jcc(Assembler::notEqual, LSkip2);
+      masm.jccb(Assembler::notEqual, LSkip2);
 
       // Check if the length difference is zero (from stack)
       masm.cmpl(Address(rsp, 0), 0x0);
@@ -3787,9 +3759,52 @@ encode %{
       masm.bind(LSkip2);
     }
 
+    // Advance to next character
+    masm.addptr(rax, 2);
+    masm.addptr(rbx, 2);
+
+    if (UseSSE42Intrinsics) {
+      // With SSE4.2, use double quad vector compare
+      Label COMPARE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_TAIL;
+      // Setup to compare 16-byte vectors
+      masm.movl(rdi, rsi);
+      masm.andl(rsi, 0xfffffff8); // rsi holds the vector count
+      masm.andl(rdi, 0x00000007); // rdi holds the tail count
+      masm.testl(rsi, rsi);
+      masm.jccb(Assembler::zero, COMPARE_TAIL);
+
+      masm.lea(rax, Address(rax, rsi, Address::times_2));
+      masm.lea(rbx, Address(rbx, rsi, Address::times_2));
+      masm.negptr(rsi);
+
+      masm.bind(COMPARE_VECTORS);
+      masm.movdqu(tmp1Reg, Address(rax, rsi, Address::times_2));
+      masm.movdqu(tmp2Reg, Address(rbx, rsi, Address::times_2));
+      masm.pxor(tmp1Reg, tmp2Reg);
+      masm.ptest(tmp1Reg, tmp1Reg);
+      masm.jccb(Assembler::notZero, VECTOR_NOT_EQUAL);
+      masm.addptr(rsi, 8);
+      masm.jcc(Assembler::notZero, COMPARE_VECTORS);
+      masm.jmpb(COMPARE_TAIL);
+
+      // Mismatched characters in the vectors
+      masm.bind(VECTOR_NOT_EQUAL);
+      masm.lea(rax, Address(rax, rsi, Address::times_2));
+      masm.lea(rbx, Address(rbx, rsi, Address::times_2));
+      masm.movl(rdi, 8);
+
+      // Compare tail (< 8 chars), or rescan last vectors to
+      // find 1st mismatched characters
+      masm.bind(COMPARE_TAIL);
+      masm.testl(rdi, rdi);
+      masm.jccb(Assembler::zero, LENGTH_DIFF_LABEL);
+      masm.movl(rsi, rdi);
+      // Fallthru to tail compare
+    }
+
     // Shift RAX and RBX to the end of the arrays, negate min
-    masm.lea(rax, Address(rax, rsi, Address::times_2, 2));
-    masm.lea(rbx, Address(rbx, rsi, Address::times_2, 2));
+    masm.lea(rax, Address(rax, rsi, Address::times_2, 0));
+    masm.lea(rbx, Address(rbx, rsi, Address::times_2, 0));
     masm.negptr(rsi);
 
     // Compare the rest of the characters
@@ -3797,93 +3812,329 @@ encode %{
     masm.load_unsigned_short(rcx, Address(rbx, rsi, Address::times_2, 0));
     masm.load_unsigned_short(rdi, Address(rax, rsi, Address::times_2, 0));
     masm.subl(rcx, rdi);
-    masm.jcc(Assembler::notZero, POP_LABEL);
+    masm.jccb(Assembler::notZero, POP_LABEL);
     masm.increment(rsi);
     masm.jcc(Assembler::notZero, WHILE_HEAD_LABEL);
 
     // Strings are equal up to min length.  Return the length difference.
     masm.bind(LENGTH_DIFF_LABEL);
     masm.pop(rcx);
-    masm.jmp(DONE_LABEL);
+    masm.jmpb(DONE_LABEL);
 
     // Discard the stored length difference
     masm.bind(POP_LABEL);
     masm.addptr(rsp, 8);
-       
+
     // That's it
     masm.bind(DONE_LABEL);
   %}
 
-  enc_class enc_Array_Equals(rdi_RegP ary1, rsi_RegP ary2, rax_RegI tmp1, rbx_RegI tmp2, rcx_RegI result) %{
-    Label TRUE_LABEL, FALSE_LABEL, DONE_LABEL, COMPARE_LOOP_HDR, COMPARE_LOOP;
+ enc_class enc_String_IndexOf(rsi_RegP str1, rdi_RegP str2, regD tmp1, rax_RegI tmp2,
+                        rcx_RegI tmp3, rdx_RegI tmp4, rbx_RegI result) %{
+    // SSE4.2 version
+    Label LOAD_SUBSTR, PREP_FOR_SCAN, SCAN_TO_SUBSTR,
+          SCAN_SUBSTR, RET_NEG_ONE, RET_NOT_FOUND, CLEANUP, DONE;
     MacroAssembler masm(&cbuf);
 
-    Register ary1Reg   = as_Register($ary1$$reg);
-    Register ary2Reg   = as_Register($ary2$$reg);
-    Register tmp1Reg   = as_Register($tmp1$$reg);
-    Register tmp2Reg   = as_Register($tmp2$$reg);
-    Register resultReg = as_Register($result$$reg);
+    XMMRegister tmp1Reg   = as_XMMRegister($tmp1$$reg);
+
+    // Get the first character position in both strings
+    //         [8] char array, [12] offset, [16] count
+    int value_offset  = java_lang_String::value_offset_in_bytes();
+    int offset_offset = java_lang_String::offset_offset_in_bytes();
+    int count_offset  = java_lang_String::count_offset_in_bytes();
+    int base_offset   = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+
+    // Get counts for string and substr
+    masm.movl(rdx, Address(rsi, count_offset));
+    masm.movl(rax, Address(rdi, count_offset));
+    // Check for substr count > string count
+    masm.cmpl(rax, rdx);
+    masm.jcc(Assembler::greater, RET_NEG_ONE);
+
+    // Start the indexOf operation
+    // Get start addr of string
+    masm.load_heap_oop(rbx, Address(rsi, value_offset));
+    masm.movl(rcx, Address(rsi, offset_offset));
+    masm.lea(rsi, Address(rbx, rcx, Address::times_2, base_offset));
+    masm.push(rsi);
+
+    // Get start addr of substr
+    masm.load_heap_oop(rbx, Address(rdi, value_offset));
+    masm.movl(rcx, Address(rdi, offset_offset));
+    masm.lea(rdi, Address(rbx, rcx, Address::times_2, base_offset));
+    masm.push(rdi);
+    masm.push(rax);
+    masm.jmpb(PREP_FOR_SCAN);
+
+    // Substr count saved at sp
+    // Substr saved at sp+8
+    // String saved at sp+16
+
+    // Prep to load substr for scan
+    masm.bind(LOAD_SUBSTR);
+    masm.movptr(rdi, Address(rsp, 8));
+    masm.movl(rax, Address(rsp, 0));
+
+    // Load substr
+    masm.bind(PREP_FOR_SCAN);
+    masm.movdqu(tmp1Reg, Address(rdi, 0));
+    masm.addq(rdx, 8);    // prime the loop
+    masm.subptr(rsi, 16);
+
+    // Scan string for substr in 16-byte vectors
+    masm.bind(SCAN_TO_SUBSTR);
+    masm.subq(rdx, 8);
+    masm.addptr(rsi, 16);
+    masm.pcmpestri(tmp1Reg, Address(rsi, 0), 0x0d);
+    masm.jcc(Assembler::above, SCAN_TO_SUBSTR);
+    masm.jccb(Assembler::aboveEqual, RET_NOT_FOUND);
+
+    // Fallthru: found a potential substr
+
+    //Make sure string is still long enough
+    masm.subl(rdx, rcx);
+    masm.cmpl(rdx, rax);
+    masm.jccb(Assembler::negative, RET_NOT_FOUND);
+    // Compute start addr of substr
+    masm.lea(rsi, Address(rsi, rcx, Address::times_2));
+    masm.movptr(rbx, rsi);
+
+    // Compare potential substr
+    masm.addq(rdx, 8);        // prime the loop
+    masm.addq(rax, 8);
+    masm.subptr(rsi, 16);
+    masm.subptr(rdi, 16);
+
+    // Scan 16-byte vectors of string and substr
+    masm.bind(SCAN_SUBSTR);
+    masm.subq(rax, 8);
+    masm.subq(rdx, 8);
+    masm.addptr(rsi, 16);
+    masm.addptr(rdi, 16);
+    masm.movdqu(tmp1Reg, Address(rdi, 0));
+    masm.pcmpestri(tmp1Reg, Address(rsi, 0), 0x0d);
+    masm.jcc(Assembler::noOverflow, LOAD_SUBSTR);   // OF == 0
+    masm.jcc(Assembler::positive, SCAN_SUBSTR);     // SF == 0
+
+    // Compute substr offset
+    masm.movptr(rsi, Address(rsp, 16));
+    masm.subptr(rbx, rsi);
+    masm.shrl(rbx, 1);
+    masm.jmpb(CLEANUP);
+
+    masm.bind(RET_NEG_ONE);
+    masm.movl(rbx, -1);
+    masm.jmpb(DONE);
+
+    masm.bind(RET_NOT_FOUND);
+    masm.movl(rbx, -1);
+
+    masm.bind(CLEANUP);
+    masm.addptr(rsp, 24);
+
+    masm.bind(DONE);
+  %}
+
+  enc_class enc_String_Equals(rdi_RegP str1, rsi_RegP str2, regD tmp1, regD tmp2,
+                              rbx_RegI tmp3, rcx_RegI tmp2, rax_RegI result) %{
+    Label RET_TRUE, RET_FALSE, DONE, COMPARE_VECTORS, COMPARE_CHAR;
+    MacroAssembler masm(&cbuf);
+
+    XMMRegister tmp1Reg   = as_XMMRegister($tmp1$$reg);
+    XMMRegister tmp2Reg   = as_XMMRegister($tmp2$$reg);
+
+    int value_offset  = java_lang_String::value_offset_in_bytes();
+    int offset_offset = java_lang_String::offset_offset_in_bytes();
+    int count_offset  = java_lang_String::count_offset_in_bytes();
+    int base_offset   = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+
+    // does source == target string?
+    masm.cmpptr(rdi, rsi);
+    masm.jcc(Assembler::equal, RET_TRUE);
+
+    // get and compare counts
+    masm.movl(rcx, Address(rdi, count_offset));
+    masm.movl(rax, Address(rsi, count_offset));
+    masm.cmpl(rcx, rax);
+    masm.jcc(Assembler::notEqual, RET_FALSE);
+    masm.testl(rax, rax);
+    masm.jcc(Assembler::zero, RET_TRUE);
+
+    // get source string offset and value
+    masm.load_heap_oop(rbx, Address(rsi, value_offset));
+    masm.movl(rax, Address(rsi, offset_offset));
+    masm.lea(rsi, Address(rbx, rax, Address::times_2, base_offset));
+
+    // get compare string offset and value
+    masm.load_heap_oop(rbx, Address(rdi, value_offset));
+    masm.movl(rax, Address(rdi, offset_offset));
+    masm.lea(rdi, Address(rbx, rax, Address::times_2, base_offset));
+
+    // Set byte count
+    masm.shll(rcx, 1);
+    masm.movl(rax, rcx);
+
+    if (UseSSE42Intrinsics) {
+      // With SSE4.2, use double quad vector compare
+      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+      // Compare 16-byte vectors
+      masm.andl(rcx, 0xfffffff0);  // vector count (in bytes)
+      masm.andl(rax, 0x0000000e);  // tail count (in bytes)
+      masm.testl(rcx, rcx);
+      masm.jccb(Assembler::zero, COMPARE_TAIL);
+      masm.lea(rdi, Address(rdi, rcx, Address::times_1));
+      masm.lea(rsi, Address(rsi, rcx, Address::times_1));
+      masm.negptr(rcx);
+
+      masm.bind(COMPARE_WIDE_VECTORS);
+      masm.movdqu(tmp1Reg, Address(rdi, rcx, Address::times_1));
+      masm.movdqu(tmp2Reg, Address(rsi, rcx, Address::times_1));
+      masm.pxor(tmp1Reg, tmp2Reg);
+      masm.ptest(tmp1Reg, tmp1Reg);
+      masm.jccb(Assembler::notZero, RET_FALSE);
+      masm.addptr(rcx, 16);
+      masm.jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+      masm.bind(COMPARE_TAIL);
+      masm.movl(rcx, rax);
+      // Fallthru to tail compare
+    }
+
+    // Compare 4-byte vectors
+    masm.andl(rcx, 0xfffffffc);  // vector count (in bytes)
+    masm.andl(rax, 0x00000002);  // tail char (in bytes)
+    masm.testl(rcx, rcx);
+    masm.jccb(Assembler::zero, COMPARE_CHAR);
+    masm.lea(rdi, Address(rdi, rcx, Address::times_1));
+    masm.lea(rsi, Address(rsi, rcx, Address::times_1));
+    masm.negptr(rcx);
+
+    masm.bind(COMPARE_VECTORS);
+    masm.movl(rbx, Address(rdi, rcx, Address::times_1));
+    masm.cmpl(rbx, Address(rsi, rcx, Address::times_1));
+    masm.jccb(Assembler::notEqual, RET_FALSE);
+    masm.addptr(rcx, 4);
+    masm.jcc(Assembler::notZero, COMPARE_VECTORS);
+
+    // Compare trailing char (final 2 bytes), if any
+    masm.bind(COMPARE_CHAR);
+    masm.testl(rax, rax);
+    masm.jccb(Assembler::zero, RET_TRUE);
+    masm.load_unsigned_short(rbx, Address(rdi, 0));
+    masm.load_unsigned_short(rcx, Address(rsi, 0));
+    masm.cmpl(rbx, rcx);
+    masm.jccb(Assembler::notEqual, RET_FALSE);
+
+    masm.bind(RET_TRUE);
+    masm.movl(rax, 1);   // return true
+    masm.jmpb(DONE);
+
+    masm.bind(RET_FALSE);
+    masm.xorl(rax, rax); // return false
+
+    masm.bind(DONE);
+  %}
+
+  enc_class enc_Array_Equals(rdi_RegP ary1, rsi_RegP ary2, regD tmp1, regD tmp2,
+                             rax_RegI tmp3, rbx_RegI tmp4, rcx_RegI result) %{
+    Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_VECTORS, COMPARE_CHAR;
+    MacroAssembler masm(&cbuf);
+
+    XMMRegister tmp1Reg   = as_XMMRegister($tmp1$$reg);
+    XMMRegister tmp2Reg   = as_XMMRegister($tmp2$$reg);
+    Register ary1Reg      = as_Register($ary1$$reg);
+    Register ary2Reg      = as_Register($ary2$$reg);
+    Register tmp3Reg      = as_Register($tmp3$$reg);
+    Register tmp4Reg      = as_Register($tmp4$$reg);
+    Register resultReg    = as_Register($result$$reg);
 
     int length_offset  = arrayOopDesc::length_offset_in_bytes();
     int base_offset    = arrayOopDesc::base_offset_in_bytes(T_CHAR);
 
     // Check the input args
-    masm.cmpq(ary1Reg, ary2Reg);                        
+    masm.cmpq(ary1Reg, ary2Reg);
     masm.jcc(Assembler::equal, TRUE_LABEL);
-    masm.testq(ary1Reg, ary1Reg);                       
+    masm.testq(ary1Reg, ary1Reg);
     masm.jcc(Assembler::zero, FALSE_LABEL);
-    masm.testq(ary2Reg, ary2Reg);                       
+    masm.testq(ary2Reg, ary2Reg);
     masm.jcc(Assembler::zero, FALSE_LABEL);
 
     // Check the lengths
-    masm.movl(tmp2Reg, Address(ary1Reg, length_offset));
+    masm.movl(tmp4Reg, Address(ary1Reg, length_offset));
     masm.movl(resultReg, Address(ary2Reg, length_offset));
-    masm.cmpl(tmp2Reg, resultReg);
+    masm.cmpl(tmp4Reg, resultReg);
     masm.jcc(Assembler::notEqual, FALSE_LABEL);
     masm.testl(resultReg, resultReg);
     masm.jcc(Assembler::zero, TRUE_LABEL);
 
-    // Get the number of 4 byte vectors to compare
-    masm.shrl(resultReg, 1);
+    //load array address
+    masm.lea(ary1Reg, Address(ary1Reg, base_offset));
+    masm.lea(ary2Reg, Address(ary2Reg, base_offset));
 
-    // Check for odd-length arrays
-    masm.andl(tmp2Reg, 1);
-    masm.testl(tmp2Reg, tmp2Reg);
-    masm.jcc(Assembler::zero, COMPARE_LOOP_HDR);
+    //set byte count
+    masm.shll(tmp4Reg, 1);
+    masm.movl(resultReg,tmp4Reg);
 
-    // Compare 2-byte "tail" at end of arrays
-    masm.load_unsigned_short(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
-    masm.load_unsigned_short(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
-    masm.cmpl(tmp1Reg, tmp2Reg);
-    masm.jcc(Assembler::notEqual, FALSE_LABEL);
+    if (UseSSE42Intrinsics){
+      // With SSE4.2, use double quad vector compare
+      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+      // Compare 16-byte vectors
+      masm.andl(tmp4Reg, 0xfffffff0);    // vector count (in bytes)
+      masm.andl(resultReg, 0x0000000e);  // tail count (in bytes)
+      masm.testl(tmp4Reg, tmp4Reg);
+      masm.jccb(Assembler::zero, COMPARE_TAIL);
+      masm.lea(ary1Reg, Address(ary1Reg, tmp4Reg, Address::times_1));
+      masm.lea(ary2Reg, Address(ary2Reg, tmp4Reg, Address::times_1));
+      masm.negptr(tmp4Reg);
+
+      masm.bind(COMPARE_WIDE_VECTORS);
+      masm.movdqu(tmp1Reg, Address(ary1Reg, tmp4Reg, Address::times_1));
+      masm.movdqu(tmp2Reg, Address(ary2Reg, tmp4Reg, Address::times_1));
+      masm.pxor(tmp1Reg, tmp2Reg);
+      masm.ptest(tmp1Reg, tmp1Reg);
+
+      masm.jccb(Assembler::notZero, FALSE_LABEL);
+      masm.addptr(tmp4Reg, 16);
+      masm.jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
+      masm.bind(COMPARE_TAIL);
+      masm.movl(tmp4Reg, resultReg);
+      // Fallthru to tail compare
+    }
+
+   // Compare 4-byte vectors
+    masm.andl(tmp4Reg, 0xfffffffc);    // vector count (in bytes)
+    masm.andl(resultReg, 0x00000002);  // tail char (in bytes)
+    masm.testl(tmp4Reg, tmp4Reg); //if tmp2 == 0, only compare char
+    masm.jccb(Assembler::zero, COMPARE_CHAR);
+    masm.lea(ary1Reg, Address(ary1Reg, tmp4Reg, Address::times_1));
+    masm.lea(ary2Reg, Address(ary2Reg, tmp4Reg, Address::times_1));
+    masm.negptr(tmp4Reg);
+
+    masm.bind(COMPARE_VECTORS);
+    masm.movl(tmp3Reg, Address(ary1Reg, tmp4Reg, Address::times_1));
+    masm.cmpl(tmp3Reg, Address(ary2Reg, tmp4Reg, Address::times_1));
+    masm.jccb(Assembler::notEqual, FALSE_LABEL);
+    masm.addptr(tmp4Reg, 4);
+    masm.jcc(Assembler::notZero, COMPARE_VECTORS);
+
+    // Compare trailing char (final 2 bytes), if any
+    masm.bind(COMPARE_CHAR);
     masm.testl(resultReg, resultReg);
-    masm.jcc(Assembler::zero, TRUE_LABEL);
-
-    // Setup compare loop
-    masm.bind(COMPARE_LOOP_HDR);
-    // Shift tmp1Reg and tmp2Reg to the last 4-byte boundary of the arrays
-    masm.leaq(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
-    masm.leaq(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
-    masm.negq(resultReg);
-
-    // 4-byte-wide compare loop
-    masm.bind(COMPARE_LOOP);
-    masm.movl(ary1Reg, Address(tmp1Reg, resultReg, Address::times_4, 0));
-    masm.movl(ary2Reg, Address(tmp2Reg, resultReg, Address::times_4, 0));
-    masm.cmpl(ary1Reg, ary2Reg);
-    masm.jcc(Assembler::notEqual, FALSE_LABEL);
-    masm.incrementq(resultReg);
-    masm.jcc(Assembler::notZero, COMPARE_LOOP);
+    masm.jccb(Assembler::zero, TRUE_LABEL);
+    masm.load_unsigned_short(tmp3Reg, Address(ary1Reg, 0));
+    masm.load_unsigned_short(tmp4Reg, Address(ary2Reg, 0));
+    masm.cmpl(tmp3Reg, tmp4Reg);
+    masm.jccb(Assembler::notEqual, FALSE_LABEL);
 
     masm.bind(TRUE_LABEL);
     masm.movl(resultReg, 1);   // return true
-    masm.jmp(DONE_LABEL);
+    masm.jmpb(DONE);
 
     masm.bind(FALSE_LABEL);
     masm.xorl(resultReg, resultReg); // return false
 
     // That's it
-    masm.bind(DONE_LABEL);
+    masm.bind(DONE);
   %}
 
   enc_class enc_rethrow()
@@ -4192,33 +4443,6 @@ encode %{
     emit_opcode(cbuf, 0x58 | (dstenc & 7));
 
     // done:
-  %}
-
-  enc_class enc_membar_acquire
-  %{
-    // [jk] not needed currently, if you enable this and it really
-    // emits code don't forget to the remove the "size(0)" line in
-    // membar_acquire()
-    // MacroAssembler masm(&cbuf);
-    // masm.membar(Assembler::Membar_mask_bits(Assembler::LoadStore |
-    //                                         Assembler::LoadLoad));
-  %}
-
-  enc_class enc_membar_release
-  %{
-    // [jk] not needed currently, if you enable this and it really
-    // emits code don't forget to the remove the "size(0)" line in
-    // membar_release()
-    // MacroAssembler masm(&cbuf);
-    // masm.membar(Assembler::Membar_mask_bits(Assembler::LoadStore |
-    //                                         Assembler::StoreStore));
-  %}
-
-  enc_class enc_membar_volatile
-  %{
-    MacroAssembler masm(&cbuf);
-    masm.membar(Assembler::Membar_mask_bits(Assembler::StoreLoad |
-                                            Assembler::StoreStore));
   %}
 
   // Safepoint Poll.  This polls the safepoint page, and causes an
@@ -4906,15 +5130,6 @@ operand rRegP()
   interface(REG_INTER);
 %}
 
-
-operand r12RegL() %{
-  constraint(ALLOC_IN_RC(long_r12_reg));
-  match(RegL);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 operand rRegN() %{
   constraint(ALLOC_IN_RC(int_reg));
   match(RegN);
@@ -5155,7 +5370,7 @@ operand regF()
 %}
 
 // Double register operands
-operand regD()
+operand regD() 
 %{
   constraint(ALLOC_IN_RC(double_reg));
   match(RegD);
@@ -5289,21 +5504,6 @@ operand indIndexScaleOffset(any_RegP reg, immL32 off, rRegL lreg, immI2 scale)
   %}
 %}
 
-// Indirect Narrow Oop Plus Offset Operand
-operand indNarrowOopOffset(rRegN src, immL32 off) %{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (DecodeN src) off);
-
-  op_cost(10);
-  format %{"[R12 + $src << 3 + $off] (compressed oop addressing)" %}
-  interface(MEMORY_INTER) %{
-    base(0xc); // R12
-    index($src);
-    scale(0x3);
-    disp($off);
-  %}
-%}
-
 // Indirect Memory Times Scale Plus Positive Index Register Plus Offset Operand
 operand indPosIndexScaleOffset(any_RegP reg, immL32 off, rRegI idx, immI2 scale)
 %{
@@ -5320,6 +5520,158 @@ operand indPosIndexScaleOffset(any_RegP reg, immL32 off, rRegI idx, immI2 scale)
     disp($off);
   %}
 %}
+
+// Indirect Narrow Oop Plus Offset Operand
+// Note: x86 architecture doesn't support "scale * index + offset" without a base
+// we can't free r12 even with Universe::narrow_oop_base() == NULL.
+operand indCompressedOopOffset(rRegN reg, immL32 off) %{
+  predicate(UseCompressedOops && (Universe::narrow_oop_shift() != 0));
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+
+  op_cost(10);
+  format %{"[R12 + $reg << 3 + $off] (compressed oop addressing)" %}
+  interface(MEMORY_INTER) %{
+    base(0xc); // R12
+    index($reg);
+    scale(0x3);
+    disp($off);
+  %}
+%}
+
+// Indirect Memory Operand
+operand indirectNarrow(rRegN reg)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(DecodeN reg);
+
+  format %{ "[$reg]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x4);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+// Indirect Memory Plus Short Offset Operand
+operand indOffset8Narrow(rRegN reg, immL8 off)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+
+  format %{ "[$reg + $off (8-bit)]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x4);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+// Indirect Memory Plus Long Offset Operand
+operand indOffset32Narrow(rRegN reg, immL32 off)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) off);
+
+  format %{ "[$reg + $off (32-bit)]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x4);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+// Indirect Memory Plus Index Register Plus Offset Operand
+operand indIndexOffsetNarrow(rRegN reg, rRegL lreg, immL32 off)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (AddP (DecodeN reg) lreg) off);
+
+  op_cost(10);
+  format %{"[$reg + $off + $lreg]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+// Indirect Memory Plus Index Register Plus Offset Operand
+operand indIndexNarrow(rRegN reg, rRegL lreg)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) lreg);
+
+  op_cost(10);
+  format %{"[$reg + $lreg]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+// Indirect Memory Times Scale Plus Index Register
+operand indIndexScaleNarrow(rRegN reg, rRegL lreg, immI2 scale)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) (LShiftL lreg scale));
+
+  op_cost(10);
+  format %{"[$reg + $lreg << $scale]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale($scale);
+    disp(0x0);
+  %}
+%}
+
+// Indirect Memory Times Scale Plus Index Register Plus Offset Operand
+operand indIndexScaleOffsetNarrow(rRegN reg, immL32 off, rRegL lreg, immI2 scale)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (AddP (DecodeN reg) (LShiftL lreg scale)) off);
+
+  op_cost(10);
+  format %{"[$reg + $off + $lreg << $scale]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($lreg);
+    scale($scale);
+    disp($off);
+  %}
+%}
+
+// Indirect Memory Times Scale Plus Positive Index Register Plus Offset Operand
+operand indPosIndexScaleOffsetNarrow(rRegN reg, immL32 off, rRegI idx, immI2 scale)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  predicate(Universe::narrow_oop_shift() == 0 && n->in(2)->in(3)->in(1)->as_Type()->type()->is_long()->_lo >= 0);
+  match(AddP (AddP (DecodeN reg) (LShiftL (ConvI2L idx) scale)) off);
+
+  op_cost(10);
+  format %{"[$reg + $off + $idx << $scale]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($idx);
+    scale($scale);
+    disp($off);
+  %}
+%}
+
 
 //----------Special Memory Operands--------------------------------------------
 // Stack Slot Operand - This operand is used for loading and storing temporary
@@ -5488,7 +5840,10 @@ operand cmpOpUCF2() %{
 
 opclass memory(indirect, indOffset8, indOffset32, indIndexOffset, indIndex,
                indIndexScale, indIndexScaleOffset, indPosIndexScaleOffset,
-               indNarrowOopOffset);
+               indCompressedOopOffset,
+               indirectNarrow, indOffset8Narrow, indOffset32Narrow,
+               indIndexOffsetNarrow, indIndexNarrow, indIndexScaleNarrow,
+               indIndexScaleOffsetNarrow, indPosIndexScaleOffsetNarrow);
 
 //----------PIPELINE-----------------------------------------------------------
 // Rules which define the behavior of the target architectures pipeline.
@@ -6234,9 +6589,7 @@ instruct loadN(rRegN dst, memory mem)
    ins_cost(125); // XXX
    format %{ "movl    $dst, $mem\t# compressed ptr" %}
    ins_encode %{
-     Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
-     Register dst = as_Register($dst$$reg);
-     __ movl(dst, addr);
+     __ movl($dst$$Register, $mem$$Address);
    %}
    ins_pipe(ialu_reg_mem); // XXX
 %}
@@ -6262,9 +6615,7 @@ instruct loadNKlass(rRegN dst, memory mem)
   ins_cost(125); // XXX
   format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
-    Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
-    Register dst = as_Register($dst$$reg);
-    __ movl(dst, addr);
+    __ movl($dst$$Register, $mem$$Address);
   %}
   ins_pipe(ialu_reg_mem); // XXX
 %}
@@ -6418,6 +6769,102 @@ instruct leaPIdxScaleOff(rRegP dst, indIndexScaleOffset mem)
   ins_pipe(ialu_reg_reg_fat);
 %}
 
+instruct leaPPosIdxScaleOff(rRegP dst, indPosIndexScaleOffset mem)
+%{
+  match(Set dst mem);
+
+  ins_cost(110);
+  format %{ "leaq    $dst, $mem\t# ptr posidxscaleoff" %}
+  opcode(0x8D);
+  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+// Load Effective Address which uses Narrow (32-bits) oop
+instruct leaPCompressedOopOffset(rRegP dst, indCompressedOopOffset mem)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_shift() != 0));
+  match(Set dst mem);
+
+  ins_cost(110);
+  format %{ "leaq    $dst, $mem\t# ptr compressedoopoff32" %}
+  opcode(0x8D);
+  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaP8Narrow(rRegP dst, indOffset8Narrow mem)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  match(Set dst mem);
+
+  ins_cost(110); // XXX
+  format %{ "leaq    $dst, $mem\t# ptr off8narrow" %}
+  opcode(0x8D);
+  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaP32Narrow(rRegP dst, indOffset32Narrow mem)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  match(Set dst mem);
+
+  ins_cost(110);
+  format %{ "leaq    $dst, $mem\t# ptr off32narrow" %}
+  opcode(0x8D);
+  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaPIdxOffNarrow(rRegP dst, indIndexOffsetNarrow mem)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  match(Set dst mem);
+
+  ins_cost(110);
+  format %{ "leaq    $dst, $mem\t# ptr idxoffnarrow" %}
+  opcode(0x8D);
+  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaPIdxScaleNarrow(rRegP dst, indIndexScaleNarrow mem)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  match(Set dst mem);
+
+  ins_cost(110);
+  format %{ "leaq    $dst, $mem\t# ptr idxscalenarrow" %}
+  opcode(0x8D);
+  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaPIdxScaleOffNarrow(rRegP dst, indIndexScaleOffsetNarrow mem)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  match(Set dst mem);
+
+  ins_cost(110);
+  format %{ "leaq    $dst, $mem\t# ptr idxscaleoffnarrow" %}
+  opcode(0x8D);
+  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaPPosIdxScaleOffNarrow(rRegP dst, indPosIndexScaleOffsetNarrow mem)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  match(Set dst mem);
+
+  ins_cost(110);
+  format %{ "leaq    $dst, $mem\t# ptr posidxscaleoffnarrow" %}
+  opcode(0x8D);
+  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
 instruct loadConI(rRegI dst, immI src)
 %{
   match(Set dst src);
@@ -6528,8 +6975,7 @@ instruct loadConN0(rRegN dst, immN0 src, rFlagsReg cr) %{
   effect(KILL cr);
   format %{ "xorq    $dst, $src\t# compressed NULL ptr" %}
   ins_encode %{
-    Register dst = $dst$$Register;
-    __ xorq(dst, dst);
+    __ xorq($dst$$Register, $dst$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -6541,11 +6987,10 @@ instruct loadConN(rRegN dst, immN src) %{
   format %{ "movl    $dst, $src\t# compressed ptr" %}
   ins_encode %{
     address con = (address)$src$$constant;
-    Register dst = $dst$$Register;
     if (con == NULL) {
       ShouldNotReachHere();
     } else {
-      __ set_narrow_oop(dst, (jobject)$src$$constant);
+      __ set_narrow_oop($dst$$Register, (jobject)$src$$constant);
     }
   %}
   ins_pipe(ialu_reg_fat); // XXX
@@ -6794,12 +7239,25 @@ instruct storeP(memory mem, any_RegP src)
   ins_pipe(ialu_mem_reg);
 %}
 
+instruct storeImmP0(memory mem, immP0 zero)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  match(Set mem (StoreP mem zero));
+
+  ins_cost(125); // XXX
+  format %{ "movq    $mem, R12\t# ptr (R12_heapbase==0)" %}
+  ins_encode %{
+    __ movq($mem$$Address, r12);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 // Store NULL Pointer, mark word, or other simple pointer constant.
 instruct storeImmP(memory mem, immP31 src)
 %{
   match(Set mem (StoreP mem src));
 
-  ins_cost(125); // XXX
+  ins_cost(150); // XXX
   format %{ "movq    $mem, $src\t# ptr" %}
   opcode(0xC7); /* C7 /0 */
   ins_encode(REX_mem_wide(mem), OpcP, RM_opc_mem(0x00, mem), Con32(src));
@@ -6814,14 +7272,55 @@ instruct storeN(memory mem, rRegN src)
   ins_cost(125); // XXX
   format %{ "movl    $mem, $src\t# compressed ptr" %}
   ins_encode %{
-    Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
-    Register src = as_Register($src$$reg);
-    __ movl(addr, src);
+    __ movl($mem$$Address, $src$$Register);
   %}
   ins_pipe(ialu_mem_reg);
 %}
 
+instruct storeImmN0(memory mem, immN0 zero)
+%{
+  predicate(Universe::narrow_oop_base() == NULL);
+  match(Set mem (StoreN mem zero));
+
+  ins_cost(125); // XXX
+  format %{ "movl    $mem, R12\t# compressed ptr (R12_heapbase==0)" %}
+  ins_encode %{
+    __ movl($mem$$Address, r12);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
+instruct storeImmN(memory mem, immN src)
+%{
+  match(Set mem (StoreN mem src));
+
+  ins_cost(150); // XXX
+  format %{ "movl    $mem, $src\t# compressed ptr" %}
+  ins_encode %{
+    address con = (address)$src$$constant;
+    if (con == NULL) {
+      __ movl($mem$$Address, (int32_t)0);
+    } else {
+      __ set_narrow_oop($mem$$Address, (jobject)$src$$constant);
+    }
+  %}
+  ins_pipe(ialu_mem_imm);
+%}
+
 // Store Integer Immediate
+instruct storeImmI0(memory mem, immI0 zero)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  match(Set mem (StoreI mem zero));
+
+  ins_cost(125); // XXX
+  format %{ "movl    $mem, R12\t# int (R12_heapbase==0)" %}
+  ins_encode %{
+    __ movl($mem$$Address, r12);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct storeImmI(memory mem, immI src)
 %{
   match(Set mem (StoreI mem src));
@@ -6834,6 +7333,19 @@ instruct storeImmI(memory mem, immI src)
 %}
 
 // Store Long Immediate
+instruct storeImmL0(memory mem, immL0 zero)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  match(Set mem (StoreL mem zero));
+
+  ins_cost(125); // XXX
+  format %{ "movq    $mem, R12\t# long (R12_heapbase==0)" %}
+  ins_encode %{
+    __ movq($mem$$Address, r12);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct storeImmL(memory mem, immL32 src)
 %{
   match(Set mem (StoreL mem src));
@@ -6846,6 +7358,19 @@ instruct storeImmL(memory mem, immL32 src)
 %}
 
 // Store Short/Char Immediate
+instruct storeImmC0(memory mem, immI0 zero)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  match(Set mem (StoreC mem zero));
+
+  ins_cost(125); // XXX
+  format %{ "movw    $mem, R12\t# short/char (R12_heapbase==0)" %}
+  ins_encode %{
+    __ movw($mem$$Address, r12);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct storeImmI16(memory mem, immI16 src)
 %{
   predicate(UseStoreImmI16);
@@ -6859,6 +7384,19 @@ instruct storeImmI16(memory mem, immI16 src)
 %}
 
 // Store Byte Immediate
+instruct storeImmB0(memory mem, immI0 zero)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  match(Set mem (StoreB mem zero));
+
+  ins_cost(125); // XXX
+  format %{ "movb    $mem, R12\t# short/char (R12_heapbase==0)" %}
+  ins_encode %{
+    __ movb($mem$$Address, r12);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct storeImmB(memory mem, immI8 src)
 %{
   match(Set mem (StoreB mem src));
@@ -6898,6 +7436,19 @@ instruct storeA2I(memory mem, regD src) %{
 %}
 
 // Store CMS card-mark Immediate
+instruct storeImmCM0_reg(memory mem, immI0 zero)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  match(Set mem (StoreCM mem zero));
+
+  ins_cost(125); // XXX
+  format %{ "movb    $mem, R12\t# CMS card-mark byte 0 (R12_heapbase==0)" %}
+  ins_encode %{
+    __ movb($mem$$Address, r12);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct storeImmCM0(memory mem, immI0 src)
 %{
   match(Set mem (StoreCM mem src));
@@ -6931,6 +7482,19 @@ instruct storeF(memory mem, regF src)
 %}
 
 // Store immediate Float value (it is faster than store from XMM register)
+instruct storeF0(memory mem, immF0 zero)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  match(Set mem (StoreF mem zero));
+
+  ins_cost(25); // XXX
+  format %{ "movl    $mem, R12\t# float 0. (R12_heapbase==0)" %}
+  ins_encode %{
+    __ movl($mem$$Address, r12);
+  %}
+  ins_pipe(ialu_mem_reg);
+%}
+
 instruct storeF_imm(memory mem, immF src)
 %{
   match(Set mem (StoreF mem src));
@@ -6957,6 +7521,7 @@ instruct storeD(memory mem, regD src)
 // Store immediate double 0.0 (it is faster than store from XMM register)
 instruct storeD0_imm(memory mem, immD0 src)
 %{
+  predicate(!UseCompressedOops || (Universe::narrow_oop_base() != NULL));
   match(Set mem (StoreD mem src));
 
   ins_cost(50);
@@ -6964,6 +7529,19 @@ instruct storeD0_imm(memory mem, immD0 src)
   opcode(0xC7); /* C7 /0 */
   ins_encode(REX_mem_wide(mem), OpcP, RM_opc_mem(0x00, mem), Con32F_as_bits(src));
   ins_pipe(ialu_mem_imm);
+%}
+
+instruct storeD0(memory mem, immD0 zero)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  match(Set mem (StoreD mem zero));
+
+  ins_cost(25); // XXX
+  format %{ "movq    $mem, R12\t# double 0. (R12_heapbase==0)" %}
+  ins_encode %{
+    __ movq($mem$$Address, r12);
+  %}
+  ins_pipe(ialu_mem_reg);
 %}
 
 instruct storeSSI(stackSlotI dst, rRegI src)
@@ -7077,6 +7655,56 @@ instruct storeL_reversed(memory dst, rRegL src) %{
   ins_pipe( ialu_mem_reg );
 %}
 
+
+//---------- Population Count Instructions -------------------------------------
+
+instruct popCountI(rRegI dst, rRegI src) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI src));
+
+  format %{ "popcnt  $dst, $src" %}
+  ins_encode %{
+    __ popcntl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct popCountI_mem(rRegI dst, memory mem) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI (LoadI mem)));
+
+  format %{ "popcnt  $dst, $mem" %}
+  ins_encode %{
+    __ popcntl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL(rRegI dst, rRegL src) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL src));
+
+  format %{ "popcnt  $dst, $src" %}
+  ins_encode %{
+    __ popcntq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL_mem(rRegI dst, memory mem) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL (LoadL mem)));
+
+  format %{ "popcnt  $dst, $mem" %}
+  ins_encode %{
+    __ popcntq($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+
 //----------MemBar Instructions-----------------------------------------------
 // Memory barrier flavors
 
@@ -7086,7 +7714,7 @@ instruct membar_acquire()
   ins_cost(0);
 
   size(0);
-  format %{ "MEMBAR-acquire" %}
+  format %{ "MEMBAR-acquire ! (empty encoding)" %}
   ins_encode();
   ins_pipe(empty);
 %}
@@ -7109,7 +7737,7 @@ instruct membar_release()
   ins_cost(0);
 
   size(0);
-  format %{ "MEMBAR-release" %}
+  format %{ "MEMBAR-release ! (empty encoding)" %}
   ins_encode();
   ins_pipe(empty);
 %}
@@ -7126,13 +7754,22 @@ instruct membar_release_lock()
   ins_pipe(empty);
 %}
 
-instruct membar_volatile()
-%{
+instruct membar_volatile(rFlagsReg cr) %{
   match(MemBarVolatile);
+  effect(KILL cr);
   ins_cost(400);
 
-  format %{ "MEMBAR-volatile" %}
-  ins_encode(enc_membar_volatile);
+  format %{ 
+    $$template
+    if (os::is_MP()) {
+      $$emit$$"lock addl [rsp + #0], 0\t! membar_volatile"
+    } else {
+      $$emit$$"MEMBAR-volatile ! (empty encoding)"
+    }
+  %}
+  ins_encode %{
+    __ membar(Assembler::StoreLoad);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -7192,9 +7829,7 @@ instruct encodeHeapOop_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
   effect(KILL cr);
   format %{ "encode_heap_oop_not_null $dst,$src" %}
   ins_encode %{
-    Register s = $src$$Register;
-    Register d = $dst$$Register;
-    __ encode_heap_oop_not_null(d, s);
+    __ encode_heap_oop_not_null($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg_long);
 %}
@@ -7224,7 +7859,11 @@ instruct decodeHeapOop_not_null(rRegP dst, rRegN src) %{
   ins_encode %{
     Register s = $src$$Register;
     Register d = $dst$$Register;
-    __ decode_heap_oop_not_null(d, s);
+    if (s != d) {
+      __ decode_heap_oop_not_null(d, s);
+    } else {
+      __ decode_heap_oop_not_null(d);
+    }
   %}
   ins_pipe(ialu_reg_long);
 %}
@@ -11184,27 +11823,52 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dummy,
   ins_pipe(pipe_slow);
 %}
 
-instruct string_compare(rdi_RegP str1, rsi_RegP str2, rax_RegI tmp1,
-                        rbx_RegI tmp2, rcx_RegI result, rFlagsReg cr)
+instruct string_compare(rdi_RegP str1, rsi_RegP str2, regD tmp1, regD tmp2,
+                        rax_RegI tmp3, rbx_RegI tmp4, rcx_RegI result, rFlagsReg cr)
 %{
   match(Set result (StrComp str1 str2));
-  effect(USE_KILL str1, USE_KILL str2, KILL tmp1, KILL tmp2, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, KILL tmp3, KILL tmp4, KILL cr);
   //ins_cost(300);
 
   format %{ "String Compare $str1, $str2 -> $result    // XXX KILL RAX, RBX" %}
-  ins_encode( enc_String_Compare() );
+  ins_encode( enc_String_Compare(str1, str2, tmp1, tmp2, tmp3, tmp4, result) );
+  ins_pipe( pipe_slow );
+%}
+
+instruct string_indexof(rsi_RegP str1, rdi_RegP str2, regD tmp1, rax_RegI tmp2,
+                        rcx_RegI tmp3, rdx_RegI tmp4, rbx_RegI result, rFlagsReg cr)
+%{
+  predicate(UseSSE42Intrinsics);
+  match(Set result (StrIndexOf str1 str2));
+  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, KILL tmp2, KILL tmp3, KILL tmp4, KILL cr);
+
+  format %{ "String IndexOf $str1,$str2 -> $result   // KILL RAX, RCX, RDX" %}
+  ins_encode( enc_String_IndexOf(str1, str2, tmp1, tmp2, tmp3, tmp4, result) );
+  ins_pipe( pipe_slow );
+%}
+
+// fast string equals
+instruct string_equals(rdi_RegP str1, rsi_RegP str2, regD tmp1, regD tmp2, rbx_RegI tmp3,
+                       rcx_RegI tmp4, rax_RegI result, rFlagsReg cr)
+%{
+  match(Set result (StrEquals str1 str2));
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, KILL tmp3, KILL tmp4, KILL cr);
+
+  format %{ "String Equals $str1,$str2 -> $result    // KILL RBX, RCX" %}
+  ins_encode( enc_String_Equals(str1, str2, tmp1, tmp2, tmp3, tmp4, result) );
   ins_pipe( pipe_slow );
 %}
 
 // fast array equals
-instruct array_equals(rdi_RegP ary1, rsi_RegP ary2, rax_RegI tmp1, 
-                      rbx_RegI tmp2, rcx_RegI result, rFlagsReg cr) %{
+instruct array_equals(rdi_RegP ary1, rsi_RegP ary2, regD tmp1, regD tmp2, rax_RegI tmp3,
+                      rbx_RegI tmp4, rcx_RegI result, rFlagsReg cr)
+%{
   match(Set result (AryEq ary1 ary2));
-  effect(USE_KILL ary1, USE_KILL ary2, KILL tmp1, KILL tmp2, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
   //ins_cost(300);
 
-  format %{ "Array Equals $ary1,$ary2 -> $result    // KILL RAX, RBX" %}
-  ins_encode( enc_Array_Equals(ary1, ary2, tmp1, tmp2, result) );
+  format %{ "Array Equals $ary1,$ary2 -> $result   // KILL RAX, RBX" %}
+  ins_encode( enc_Array_Equals(ary1, ary2, tmp1, tmp2, tmp3, tmp4, result) );
   ins_pipe( pipe_slow );
 %}
 
@@ -11389,8 +12053,9 @@ instruct testP_reg(rFlagsReg cr, rRegP src, immP0 zero)
 
 // This will generate a signed flags result. This should be OK since
 // any compare to a zero should be eq/neq.
-instruct testP_reg_mem(rFlagsReg cr, memory op, immP0 zero)
+instruct testP_mem(rFlagsReg cr, memory op, immP0 zero)
 %{
+  predicate(!UseCompressedOops || (Universe::narrow_oop_base() != NULL));
   match(Set cr (CmpP (LoadP op) zero));
 
   ins_cost(500); // XXX
@@ -11401,13 +12066,24 @@ instruct testP_reg_mem(rFlagsReg cr, memory op, immP0 zero)
   ins_pipe(ialu_cr_reg_imm);
 %}
 
+instruct testP_mem_reg0(rFlagsReg cr, memory mem, immP0 zero)
+%{
+  predicate(UseCompressedOops && (Universe::narrow_oop_base() == NULL));
+  match(Set cr (CmpP (LoadP mem) zero));
+
+  format %{ "cmpq    R12, $mem\t# ptr (R12_heapbase==0)" %}
+  ins_encode %{
+    __ cmpq(r12, $mem$$Address);
+  %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
 
 instruct compN_rReg(rFlagsRegU cr, rRegN op1, rRegN op2)
 %{
   match(Set cr (CmpN op1 op2));
 
   format %{ "cmpl    $op1, $op2\t# compressed ptr" %}
-  ins_encode %{ __ cmpl(as_Register($op1$$reg), as_Register($op2$$reg)); %}
+  ins_encode %{ __ cmpl($op1$$Register, $op2$$Register); %}
   ins_pipe(ialu_cr_reg_reg);
 %}
 
@@ -11415,11 +12091,30 @@ instruct compN_rReg_mem(rFlagsRegU cr, rRegN src, memory mem)
 %{
   match(Set cr (CmpN src (LoadN mem)));
 
-  ins_cost(500); // XXX
-  format %{ "cmpl    $src, mem\t# compressed ptr" %}
+  format %{ "cmpl    $src, $mem\t# compressed ptr" %}
   ins_encode %{
-    Address adr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
-    __ cmpl(as_Register($src$$reg), adr);
+    __ cmpl($src$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct compN_rReg_imm(rFlagsRegU cr, rRegN op1, immN op2) %{
+  match(Set cr (CmpN op1 op2));
+
+  format %{ "cmpl    $op1, $op2\t# compressed ptr" %}
+  ins_encode %{
+    __ cmp_narrow_oop($op1$$Register, (jobject)$op2$$constant);
+  %}
+  ins_pipe(ialu_cr_reg_imm);
+%}
+
+instruct compN_mem_imm(rFlagsRegU cr, memory mem, immN src)
+%{
+  match(Set cr (CmpN src (LoadN mem)));
+
+  format %{ "cmpl    $mem, $src\t# compressed ptr" %}
+  ins_encode %{
+    __ cmp_narrow_oop($mem$$Address, (jobject)$src$$constant);
   %}
   ins_pipe(ialu_cr_reg_mem);
 %}
@@ -11432,15 +12127,27 @@ instruct testN_reg(rFlagsReg cr, rRegN src, immN0 zero) %{
   ins_pipe(ialu_cr_reg_imm);
 %}
 
-instruct testN_reg_mem(rFlagsReg cr, memory mem, immN0 zero)
+instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 %{
+  predicate(Universe::narrow_oop_base() != NULL);
   match(Set cr (CmpN (LoadN mem) zero));
 
   ins_cost(500); // XXX
   format %{ "testl   $mem, 0xffffffff\t# compressed ptr" %}
   ins_encode %{
-    Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
-    __ cmpl(addr, (int)0xFFFFFFFF);
+    __ cmpl($mem$$Address, (int)0xFFFFFFFF);
+  %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct testN_mem_reg0(rFlagsReg cr, memory mem, immN0 zero)
+%{
+  predicate(Universe::narrow_oop_base() == NULL);
+  match(Set cr (CmpN (LoadN mem) zero));
+
+  format %{ "cmpl    R12, $mem\t# compressed ptr (R12_heapbase==0)" %}
+  ins_encode %{
+    __ cmpl(r12, $mem$$Address);
   %}
   ins_pipe(ialu_cr_reg_mem);
 %}
@@ -11472,7 +12179,6 @@ instruct compL_rReg_mem(rFlagsReg cr, rRegL op1, memory op2)
 %{
   match(Set cr (CmpL op1 (LoadL op2)));
 
-  ins_cost(500); // XXX
   format %{ "cmpq    $op1, $op2" %}
   opcode(0x3B); /* Opcode 3B /r */
   ins_encode(REX_reg_mem_wide(op1, op2), OpcP, reg_mem(op1, op2));
@@ -11733,15 +12439,12 @@ instruct partialSubtypeCheck(rdi_RegP result,
   effect(KILL rcx, KILL cr);
 
   ins_cost(1100);  // slightly larger than the next version
-  format %{ "cmpq    rax, rsi\n\t"
-            "jeq,s   hit\n\t"
-            "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
+  format %{ "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
             "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
             "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while rcx--\n\t"
             "jne,s   miss\t\t# Missed: rdi not-zero\n\t"
             "movq    [$sub + (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())], $super\t# Hit: update cache\n\t"
-    "hit:\n\t"
             "xorq    $result, $result\t\t Hit: rdi zero\n\t"
     "miss:\t" %}
 
@@ -11756,13 +12459,10 @@ instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
                                      rdi_RegP result)
 %{
   match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
-  predicate(!UseCompressedOops); // decoding oop kills condition codes
   effect(KILL rcx, KILL result);
 
   ins_cost(1000);
-  format %{ "cmpq    rax, rsi\n\t"
-            "jeq,s   miss\t# Actually a hit; we are done.\n\t"
-            "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
+  format %{ "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
             "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
             "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while cx-- != 0\n\t"

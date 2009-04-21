@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,15 +65,16 @@ import java.io.ObjectInputStream;
  * <p>
  * For key pressed and key released events, the getKeyCode method returns
  * the event's keyCode.  For key typed events, the getKeyCode method
- * always returns VK_UNDEFINED.
+ * always returns {@code VK_UNDEFINED}. The {@code getExtendedKeyCode} method
+ * may also be used with many international keyboard layouts.
  *
  * <p>
  * <em>"Key pressed" and "key released" events</em> are lower-level and depend
  * on the platform and keyboard layout. They are generated whenever a key is
  * pressed or released, and are the only way to find out about keys that don't
  * generate character input (e.g., action keys, modifier keys, etc.). The key
- * being pressed or released is indicated by the getKeyCode method, which returns
- * a virtual key code.
+ * being pressed or released is indicated by the {@code getKeyCode} and {@code getExtendedKeyCode}
+ * methods, which return a virtual key code.
  *
  * <p>
  * <em>Virtual key codes</em> are used to report which keyboard key has
@@ -111,6 +112,11 @@ import java.io.ObjectInputStream;
  * platform and keyboard layout. For example, the key that generates VK_Q
  * when using a U.S. keyboard layout will generate VK_A when using a French
  * keyboard layout.
+ * <li>The key that generates {@code VK_Q} when using a U.S. keyboard layout also
+ * generates a unique code for Russian or Hebrew layout. There is no a
+ * {@code VK_} constant for these and many other codes in various layouts. These codes
+ * may be obtained by using {@code getExtendedKeyCode} and are used whenever
+ * a {@code VK_} constant is used.
  * <li>Not all characters have a keycode associated with them.  For example,
  * there is no keycode for the question mark because there is no keyboard
  * for which it appears on the primary layer.
@@ -891,6 +897,12 @@ public class KeyEvent extends InputEvent {
      */
     int keyLocation;
 
+    //set from native code.
+    private transient long rawCode = 0;
+    private transient long primaryLevelUnicode = 0;
+    private transient long scancode = 0; // for MS Windows only
+    private transient long extendedKeyCode = 0;
+
     /*
      * JDK 1.1 serialVersionUID
      */
@@ -1315,6 +1327,9 @@ public class KeyEvent extends InputEvent {
             return numpad + "-" + c;
         }
 
+        if ((keyCode & 0x01000000) != 0) {
+            return String.valueOf((char)(keyCode ^ 0x01000000 ));
+        }
         String unknown = Toolkit.getProperty("AWT.unknown", "Unknown");
         return unknown + " keyCode: 0x" + Integer.toString(keyCode, 16);
     }
@@ -1551,8 +1566,43 @@ public class KeyEvent extends InputEvent {
             str.append("KEY_LOCATION_UNKNOWN");
             break;
         }
+        str.append(",rawCode=").append(rawCode);
+        str.append(",primaryLevelUnicode=").append(primaryLevelUnicode);
+        str.append(",scancode=").append(scancode);
+        str.append(",extendedKeyCode=0x").append(Long.toHexString(extendedKeyCode));
 
         return str.toString();
+    }
+    /**
+     * Returns an extended key code for the event.
+     * The extended key code is a unique id assigned to  a key on the keyboard
+     * just like {@code keyCode}. However, unlike {@code keyCode}, this value depends on the
+     * current keyboard layout. For instance, pressing the left topmost letter key
+     * in a common English layout produces the same value as {@code keyCode}, {@code VK_Q}.
+     * Pressing the same key in a regular Russian layout gives another code, unique for the
+     * letter "Cyrillic I short".
+     *
+     * @since 1.7
+     *
+     */
+    public  int getExtendedKeyCode() {
+        return (int)extendedKeyCode;
+    }
+    /**
+     * Returns an extended key code for a unicode character.
+     *
+     * @return for a unicode character with a corresponding {@code VK_} constant -- this
+     *   {@code VK_} constant; for a character appearing on the primary
+     *   level of a known keyboard layout -- a unique integer.
+     *   If a character does not appear on the primary level of a known keyboard,
+     *   {@code VK_UNDEFINED} is returned.
+     *
+     * @since 1.7
+     *
+     */
+    public static int getExtendedKeyCodeForChar(int c) {
+        // Return a keycode (if any) associated with a character.
+        return sun.awt.ExtendedKeyCodes.getExtendedKeyCodeForChar(c);
     }
 
     /**

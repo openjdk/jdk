@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
+ * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
  *                                                                             *
  * The original version of this source code and documentation is copyrighted   *
  * and owned by IBM, These materials are provided under terms of a License     *
@@ -108,15 +107,14 @@ package sun.text.normalizer;
  * @since release 2.1, Jan 17 2002
  */
 public class TrieIterator implements RangeValueIterator
-
 {
+
     // public constructor ---------------------------------------------
 
     /**
     * TrieEnumeration constructor
     * @param trie to be used
     * @exception IllegalArgumentException throw when argument is null.
-    * @draft 2.1
     */
     public TrieIterator(Trie trie)
     {
@@ -141,7 +139,6 @@ public class TrieIterator implements RangeValueIterator
     * @return true if we are not at the end of the iteration, false otherwise.
     * @exception NoSuchElementException - if no more elements exist.
     * @see com.ibm.icu.util.RangeValueIterator.Element
-    * @draft 2.1
     */
     public final boolean next(Element element)
     {
@@ -158,7 +155,6 @@ public class TrieIterator implements RangeValueIterator
 
     /**
     * Resets the iterator to the beginning of the iteration
-    * @draft 2.1
     */
     public final void reset()
     {
@@ -186,7 +182,6 @@ public class TrieIterator implements RangeValueIterator
     * The default function is to return the value as it is.
     * @param value a value from the trie
     * @return extracted value
-    * @draft 2.1
     */
     protected int extract(int value)
     {
@@ -278,7 +273,6 @@ public class TrieIterator implements RangeValueIterator
     * Note, if there are no more iterations, it will never get to here.
     * Blocked out by next().
     * @param element return result object
-    * @draft 2.1
     */
     private final void calculateNextSupplementaryElement(Element element)
     {
@@ -516,10 +510,6 @@ public class TrieIterator implements RangeValueIterator
     */
     private static final int TRAIL_SURROGATE_MIN_VALUE_ = 0xDC00;
     /**
-    * Trail surrogate maximum value
-    */
-    private static final int TRAIL_SURROGATE_MAX_VALUE_ = 0xDFFF;
-    /**
     * Number of trail surrogate
     */
     private static final int TRAIL_SURROGATE_COUNT_ = 0x400;
@@ -538,11 +528,6 @@ public class TrieIterator implements RangeValueIterator
     private static final int DATA_BLOCK_LENGTH_ =
                                               1 << Trie.INDEX_STAGE_1_SHIFT_;
     /**
-    * Number of codepoints in a stage 2 block
-    */
-    private static final int DATA_BLOCK_SUPPLEMENTARY_LENGTH_ =
-                                                     DATA_BLOCK_LENGTH_ << 10;
-    /**
     * Trie instance
     */
     private Trie m_trie_;
@@ -560,10 +545,4 @@ public class TrieIterator implements RangeValueIterator
     private int m_nextBlock_;
     private int m_nextBlockIndex_;
     private int m_nextTrailIndexOffset_;
-    /**
-    * This is the return result element
-    */
-    private int m_start_;
-    private int m_limit_;
-    private int m_value_;
 }

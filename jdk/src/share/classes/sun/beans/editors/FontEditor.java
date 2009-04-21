@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.*;
 import java.beans.*;
 
 public class FontEditor extends Panel implements java.beans.PropertyEditor {
+    private static final long serialVersionUID = 6732704486002715933L;
 
     public FontEditor() {
         setLayout(null);

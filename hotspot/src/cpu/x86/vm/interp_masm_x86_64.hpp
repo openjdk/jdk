@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,6 +176,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void dispatch_via (TosState state, address* table);
 
   // jump to an invoked target
+  void prepare_to_jump_from_interpreted();
   void jump_from_interpreted(Register method, Register temp);
 
 

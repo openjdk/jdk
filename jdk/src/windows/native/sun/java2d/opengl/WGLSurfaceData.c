@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,17 +625,15 @@ JNIEXPORT jboolean JNICALL
     j2d_glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
     // the pixels read from the surface are already premultiplied
-    // REMIND: commented until translucent window support is integrated
-//    hBitmap = BitmapUtil_CreateBitmapFromARGBPre(w, h, scanStride,
-//                                                 (int*)pDst);
+    hBitmap = BitmapUtil_CreateBitmapFromARGBPre(w, h, scanStride,
+                                                 (int*)pDst);
     free(pDst);
 
     if (hBitmap == NULL) {
         return JNI_FALSE;
     }
 
-    // REMIND: commented until translucent window support is integrated
-    // AwtWindow_UpdateWindow(env, peer, w, h, hBitmap);
+    AwtWindow_UpdateWindow(env, peer, w, h, hBitmap);
 
     // hBitmap is released in UpdateWindow
 

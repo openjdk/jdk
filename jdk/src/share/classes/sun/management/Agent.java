@@ -31,9 +31,9 @@ import java.io.FileInputStream;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.Properties;
-import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.MissingResourceException;
 import java.lang.management.ManagementFactory;
@@ -41,7 +41,6 @@ import java.lang.reflect.Method;
 
 import javax.management.remote.JMXConnectorServer;
 
-import sun.management.snmp.AdaptorBootstrap;
 import sun.management.jmxremote.ConnectorBootstrap;
 import static sun.management.AgentConfigurationError.*;
 import sun.misc.VMSupport;
@@ -68,6 +67,9 @@ public class Agent {
         "com.sun.management.enableThreadContentionMonitoring";
     private static final String LOCAL_CONNECTOR_ADDRESS_PROP =
         "com.sun.management.jmxremote.localConnectorAddress";
+
+    private static final String SNMP_ADAPTOR_BOOTSTRAP_CLASS_NAME =
+            "sun.management.snmp.AdaptorBootstrap";
 
     // invoked by -javaagent or -Dcom.sun.management.agent.class
     public static void premain(String args) throws Exception {
@@ -128,7 +130,7 @@ public class Agent {
 
         try {
             if (snmpPort != null) {
-                AdaptorBootstrap.initialize(snmpPort, props);
+                loadSnmpAgent(snmpPort, props);
             }
 
             /*
@@ -202,6 +204,36 @@ public class Agent {
             mgmtProps = loadManagementProperties();
         }
         return mgmtProps;
+    }
+
+    private static void loadSnmpAgent(String snmpPort, Properties props) {
+        try {
+            // invoke the following through reflection:
+            //     AdaptorBootstrap.initialize(snmpPort, props);
+            final Class<?> adaptorClass =
+                Class.forName(SNMP_ADAPTOR_BOOTSTRAP_CLASS_NAME,true,null);
+            final Method initializeMethod =
+                    adaptorClass.getMethod("initialize",
+                        String.class, Properties.class);
+            initializeMethod.invoke(null,snmpPort,props);
+        } catch (ClassNotFoundException x) {
+            // The SNMP packages are not present: throws an exception.
+            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT,x);
+        } catch (NoSuchMethodException x) {
+            // should not happen...
+            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT,x);
+        } catch (InvocationTargetException x) {
+            final Throwable cause = x.getCause();
+            if (cause instanceof RuntimeException)
+                throw (RuntimeException) cause;
+            else if (cause instanceof Error)
+                throw (Error) cause;
+            // should not happen...
+            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT,cause);
+        } catch (IllegalAccessException x) {
+            // should not happen...
+            throw new UnsupportedOperationException("Unsupported management property: " + SNMP_PORT,x);
+        }
     }
 
     // read config file and initialize the properties

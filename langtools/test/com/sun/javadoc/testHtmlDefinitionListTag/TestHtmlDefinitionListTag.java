@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 6786690
+ * @bug 6786690 6820360
  * @summary This test verifies the nesting of definition list tags.
  * @author Bhavesh Patel
  * @library ../lib/
@@ -36,7 +36,7 @@
 
 public class TestHtmlDefinitionListTag extends JavadocTester {
 
-    private static final String BUG_ID = "6786690";
+    private static final String BUG_ID = "6786690-6820360";
 
     // Test common to all runs of javadoc. The class signature should print
     // properly enclosed definition list tags and the Annotation Type
@@ -55,6 +55,9 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     // serialized form should have properly nested definition list tags
     // enclosing comments, tags and deprecated information.
     private static final String[][] TEST_CMNT_DEPR = {
+        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<DL>" + NL +
+                 "<DT><STRONG>Since:</STRONG></DT>" + NL +
+                 "  <DD>JDK1.0</DD></DL>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL +
                  "<DT><STRONG>Since:</STRONG></DT>" + NL +
                  "  <DD>JDK1.0</DD>" + NL + "<DT><STRONG>See Also:</STRONG></DT><DD>" +
@@ -193,6 +196,9 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     // should display properly nested definition list tags for comments, tags
     // and deprecated information.
     private static final String[][] TEST_NODEPR = {
+        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<DL>" + NL +
+                 "<DT><STRONG>Since:</STRONG></DT>" + NL +
+                 "  <DD>JDK1.0</DD></DL>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL +
                  "<DT><STRONG>Since:</STRONG></DT>" + NL +
                  "  <DD>JDK1.0</DD>" + NL + "<DT><STRONG>See Also:</STRONG></DT><DD>" +
@@ -302,6 +308,8 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
     // Test for valid HTML generation which should not comprise of empty
     // definition list tags.
     private static final String[][] NEGATED_TEST = {
+        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<DL></DL>"},
+        {BUG_ID + FS + "pkg1" + FS + "package-summary.html", "<DL>" + NL + "</DL>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL></DL>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.html", "<DL>" + NL + "</DL>"},
         {BUG_ID + FS + "pkg1" + FS + "C1.ModalExclusionType.html", "<DL></DL>"},

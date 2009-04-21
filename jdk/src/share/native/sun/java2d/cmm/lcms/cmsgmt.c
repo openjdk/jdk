@@ -29,7 +29,7 @@
 //
 //
 //  Little cms
-//  Copyright (C) 1998-2006 Marti Maria
+//  Copyright (C) 1998-2007 Marti Maria
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -66,7 +66,7 @@ to use highlights, then it will be lost.
 */
 
 
-BOOL _cmsEndPointsBySpace(icColorSpaceSignature Space, WORD **White, WORD **Black,
+LCMSBOOL _cmsEndPointsBySpace(icColorSpaceSignature Space, WORD **White, WORD **Black,
                             int *nOutputs)
 {
        // Only most common spaces
@@ -376,7 +376,6 @@ double LCMSEXPORT cmsCIE2000DeltaE(LPcmsCIELab Lab1, LPcmsCIELab Lab2,
     double bs = Lab2 ->b;
     double Cs = sqrt( Sqr(as) + Sqr(bs) );
 
-
     double G = 0.5 * ( 1 - sqrt(pow((C + Cs) / 2 , 7.0) / (pow((C + Cs) / 2, 7.0) + pow(25.0, 7.0) ) ));
 
     double a_p = (1 + G ) * a1;
@@ -390,15 +389,21 @@ double LCMSEXPORT cmsCIE2000DeltaE(LPcmsCIELab Lab1, LPcmsCIELab Lab2,
     double C_ps = sqrt(Sqr(a_ps) + Sqr(b_ps));
     double h_ps = atan2deg(a_ps, b_ps);
 
-
-
     double meanC_p =(C_p + C_ps) / 2;
 
-    double meanh_p = fabs(h_ps-h_p) <= 180 ? (h_ps + h_p)/2 : (h_ps+h_p-360)/2;
+    double hps_plus_hp  = h_ps + h_p;
+    double hps_minus_hp = h_ps - h_p;
 
-    double delta_h = fabs(h_p - h_ps) <= 180 ? fabs(h_p - h_ps) : 360 - fabs(h_p - h_ps);
-    double delta_L = fabs(L1 - Ls);
-    double delta_C = fabs(C_p - C_ps);
+    double meanh_p = fabs(hps_minus_hp) <= 180.000001 ? (hps_plus_hp)/2 :
+                            (hps_plus_hp) < 360 ? (hps_plus_hp + 360)/2 :
+                                                 (hps_plus_hp - 360)/2;
+
+    double delta_h = (hps_minus_hp) <= -180.000001 ?  (hps_minus_hp + 360) :
+                            (hps_minus_hp) > 180 ? (hps_minus_hp - 360) :
+                                                    (hps_minus_hp);
+    double delta_L = (Ls - L1);
+    double delta_C = (C_ps - C_p );
+
 
     double delta_H =2 * sqrt(C_ps*C_p) * sin(RADIANES(delta_h) / 2);
 
@@ -1065,7 +1070,7 @@ void SlopeLimiting(WORD Table[], int nEntries)
 // Check for monotonicity.
 
 static
-BOOL IsMonotonic(LPGAMMATABLE t)
+LCMSBOOL IsMonotonic(LPGAMMATABLE t)
 {
     int n = t -> nEntries;
     int i, last;
@@ -1088,7 +1093,7 @@ BOOL IsMonotonic(LPGAMMATABLE t)
 // Check for endpoints
 
 static
-BOOL HasProperEndpoints(LPGAMMATABLE t)
+LCMSBOOL HasProperEndpoints(LPGAMMATABLE t)
 {
     if (t ->GammaTable[0] != 0) return FALSE;
     if (t ->GammaTable[t ->nEntries-1] != 0xFFFF) return FALSE;
@@ -1109,7 +1114,7 @@ void _cmsComputePrelinearizationTablesFromXFORM(cmsHTRANSFORM h[], int nTransfor
     unsigned int t, i, v;
     int j;
     WORD In[MAXCHANNELS], Out[MAXCHANNELS];
-    BOOL lIsSuitable;
+    LCMSBOOL lIsSuitable;
     _LPcmsTRANSFORM InputXForm   = (_LPcmsTRANSFORM) h[0];
     _LPcmsTRANSFORM OutputXForm  = (_LPcmsTRANSFORM) h[nTransforms-1];
 
@@ -1126,10 +1131,10 @@ void _cmsComputePrelinearizationTablesFromXFORM(cmsHTRANSFORM h[], int nTransfor
     }
 
 
-    // Do nothing on all but RGB to RGB transforms
+    // Do nothing on all but Gray/RGB to Gray/RGB transforms
 
-    if ((InputXForm ->EntryColorSpace != icSigRgbData) ||
-        (OutputXForm->ExitColorSpace  != icSigRgbData)) return;
+    if (((InputXForm ->EntryColorSpace != icSigRgbData) && (InputXForm ->EntryColorSpace != icSigGrayData)) ||
+        ((OutputXForm->ExitColorSpace  != icSigRgbData) && (OutputXForm->ExitColorSpace  != icSigGrayData))) return;
 
 
     for (t = 0; t < Grid -> InputChan; t++)
@@ -1169,10 +1174,13 @@ void _cmsComputePrelinearizationTablesFromXFORM(cmsHTRANSFORM h[], int nTransfor
         if (!HasProperEndpoints(Trans[t]))
                     lIsSuitable = FALSE;
 
+        /*
         // Exclude if transfer function is not smooth enough
         // to be modelled as a gamma function, or the gamma is reversed
+
         if (cmsEstimateGamma(Trans[t]) < 1.0)
                     lIsSuitable = FALSE;
+        */
 
     }
 

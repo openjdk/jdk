@@ -27,6 +27,7 @@
 
 jclass find_class_from_class_loader(JNIEnv* env, symbolHandle name, jboolean init, Handle loader, Handle protection_domain, jboolean throwError, TRAPS);
 
+void trace_class_resolution(klassOop to_class);
 
 /*
  * Support for Serialization and RMI. Currently used by HotSpot only.

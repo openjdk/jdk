@@ -232,65 +232,13 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
   assert(Rsub_klass != rcx, "rcx holds 2ndary super array length");
   assert(Rsub_klass != rdi, "rdi holds 2ndary super array scan ptr");
 
-  Label not_subtype, not_subtype_pop, loop;
-
   // Profile the not-null value's klass.
-  profile_typecheck(rcx, Rsub_klass, rdi); // blows rcx, rdi
+  profile_typecheck(rcx, Rsub_klass, rdi); // blows rcx, reloads rdi
 
-  // Load the super-klass's check offset into rcx
-  movl(rcx, Address(rax, sizeof(oopDesc) +
-                    Klass::super_check_offset_offset_in_bytes()));
-  // Load from the sub-klass's super-class display list, or a 1-word
-  // cache of the secondary superclass list, or a failing value with a
-  // sentinel offset if the super-klass is an interface or
-  // exceptionally deep in the Java hierarchy and we have to scan the
-  // secondary superclass list the hard way.  See if we get an
-  // immediate positive hit
-  cmpptr(rax, Address(Rsub_klass, rcx, Address::times_1));
-  jcc(Assembler::equal,ok_is_subtype);
+  // Do the check.
+  check_klass_subtype(Rsub_klass, rax, rcx, ok_is_subtype); // blows rcx
 
-  // Check for immediate negative hit
-  cmpl(rcx, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes());
-  jcc( Assembler::notEqual, not_subtype );
-  // Check for self
-  cmpptr(Rsub_klass, rax);
-  jcc(Assembler::equal, ok_is_subtype);
-
-  // Now do a linear scan of the secondary super-klass chain.
-  movptr(rdi, Address(Rsub_klass, sizeof(oopDesc) +
-                      Klass::secondary_supers_offset_in_bytes()));
-  // rdi holds the objArrayOop of secondary supers.
-  // Load the array length
-  movl(rcx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
-  // Skip to start of data; also clear Z flag incase rcx is zero
-  addptr(rdi, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-  // Scan rcx words at [rdi] for occurance of rax
-  // Set NZ/Z based on last compare
-
-  // this part is kind tricky, as values in supers array could be 32 or 64 bit wide
-  // and we store values in objArrays always encoded, thus we need to encode value
-  // before repne
-  if (UseCompressedOops) {
-    push(rax);
-    encode_heap_oop(rax);
-    repne_scanl();
-    // Not equal?
-    jcc(Assembler::notEqual, not_subtype_pop);
-    // restore heap oop here for movq
-    pop(rax);
-  } else {
-    repne_scan();
-    jcc(Assembler::notEqual, not_subtype);
-  }
-  // Must be equal but missed in cache.  Update cache.
-  movptr(Address(Rsub_klass, sizeof(oopDesc) +
-               Klass::secondary_super_cache_offset_in_bytes()), rax);
-  jmp(ok_is_subtype);
-
-  bind(not_subtype_pop);
-  // restore heap oop here for miss
-  if (UseCompressedOops) pop(rax);
-  bind(not_subtype);
+  // Profile the failure of the check.
   profile_typecheck_failed(rcx); // blows rcx
 }
 
@@ -603,13 +551,18 @@ void InterpreterMacroAssembler::super_call_VM_leaf(address entry_point,
   MacroAssembler::call_VM_leaf_base(entry_point, 3);
 }
 
-// Jump to from_interpreted entry of a call unless single stepping is possible
-// in this thread in which case we must call the i2i entry
-void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register temp) {
+void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
   lea(r13, Address(rsp, wordSize));
   // record last_sp
   movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), r13);
+}
+
+
+// Jump to from_interpreted entry of a call unless single stepping is possible
+// in this thread in which case we must call the i2i entry
+void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register temp) {
+  prepare_to_jump_from_interpreted();
 
   if (JvmtiExport::can_post_interpreter_events()) {
     Label run_compiled_code;
