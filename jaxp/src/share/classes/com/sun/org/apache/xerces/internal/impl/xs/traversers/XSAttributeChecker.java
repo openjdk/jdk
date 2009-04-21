@@ -1214,25 +1214,36 @@ public class XSAttributeChecker {
             int max = ((XInt)attrValues[ATTIDX_MAXOCCURS]).intValue();
             if (max != SchemaSymbols.OCCURRENCE_UNBOUNDED) {
 
-                // The maxOccurs restriction no longer applies to elements
-                // and wildcards. These are now validated using a constant
-                // space algorithm. The restriction still applies to model
-                // groups such as xs:sequence.
+                // maxOccurLimit is only check in secure mode
+                if (fSchemaHandler.fSecureProcessing != null) {
+                    String localName = element.getLocalName();
 
-                String localName = element.getLocalName();
-                if (fSchemaHandler.fSecureProcessing != null &&
-                        !localName.equals("element") && !localName.equals("any")) {
+                // The maxOccurs restriction no longer applies to elements
+                    // and wildcards in a sequence in which they are the only
+                    // particle. These are now validated using a constant
+                    // space algorithm. The restriction still applies to all
+                    // other cases.
+
+                    // Determine if constant-space algorithm can be applied
+                    final boolean optimize =
+                            (localName.equals("element") || localName.equals("any")) &&
+                            (element.getNextSibling() == null) &&
+                            (element.getPreviousSibling() == null) &&
+                            (element.getParentNode().getLocalName().equals("sequence"));
+
+                    if (!optimize) {
                     //Revisit :: IMO this is not right place to check
                     // maxOccurNodeLimit.
                     int maxOccurNodeLimit = fSchemaHandler.fSecureProcessing.getMaxOccurNodeLimit();
                     if (max > maxOccurNodeLimit) {
-                        reportSchemaError("maxOccurLimit", new Object[] {new Integer(maxOccurNodeLimit)}, element);
+                        reportSchemaFatalError("maxOccurLimit", new Object[] {new Integer(maxOccurNodeLimit)}, element);
 
                         // reset max values in case processing continues on error
                         attrValues[ATTIDX_MAXOCCURS] = fXIntPool.getXInt(maxOccurNodeLimit);
                                                 //new Integer(maxOccurNodeLimit);
                         max = maxOccurNodeLimit;
                     }
+                }
                 }
 
                 if (min > max) {
@@ -1605,6 +1616,10 @@ public class XSAttributeChecker {
         }
 
         return retValue;
+    }
+
+    void reportSchemaFatalError (String key, Object[] args, Element ele) {
+        fSchemaHandler.reportSchemaFatalError(key, args, ele);
     }
 
     void reportSchemaError (String key, Object[] args, Element ele) {
