@@ -6,11 +6,9 @@ runtime, it will probably work with other versions of that compiler.
 
 Included in this project is a generated file, make.depend, which lists
 all interdependencies of the source files.  This file is generated *on
-Solaris* with the following commands:
+Solaris or Linux* with the following command:
 
-	% sccs edit make.depend
 	% gnumake -f Depend.mak
-	% sccs delget make.depend
 
 This step only needs to be run when new files are added to the project,
 or include statements are changed.

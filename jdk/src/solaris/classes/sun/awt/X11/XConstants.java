@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -684,4 +684,19 @@ final public class XConstants {
 
     public static final int LSBFirst = 0 ;
     public static final int MSBFirst = 1 ;
+
+    /* XKB support */
+    public static final int  XkbUseCoreKbd = 0x0100 ;
+    public static final int  XkbNewKeyboardNotify = 0;
+    public static final int  XkbMapNotify = 1;
+    public static final int  XkbStateNotify = 2;
+    public static final long XkbNewKeyboardNotifyMask = (1L << 0);
+    public static final long XkbMapNotifyMask = (1L << 1);
+    public static final long XkbStateNotifyMask = (1L << 2);
+    public static final long XkbGroupStateMask  = (1L << 4);
+    public static final long XkbKeyTypesMask = (1L<<0);
+    public static final long XkbKeySymsMask = (1L<<1);
+    public static final long XkbModifierMapMask = (1L<<2);
+    public static final long XkbVirtualModsMask = (1L<<6); //server map
+
 }

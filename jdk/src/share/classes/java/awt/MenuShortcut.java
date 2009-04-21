@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,21 @@ import java.awt.event.KeyEvent;
  * For example, a menu shortcut for Ctrl-a (assuming that Control is
  * the accelerator key) would be created with code like the following:
  * <p>
- * MenuShortcut ms = new MenuShortcut(KeyEvent.VK_A, false);
+ * <code>MenuShortcut ms = new MenuShortcut(KeyEvent.VK_A, false);</code>
+ * <p> or alternatively
+ * <p>
+ * <code>MenuShortcut ms = new MenuShortcut(KeyEvent.getExtendedKeyCodeForChar('A'), false);</code>
+ * <p>
+ * Menu shortcuts may also be constructed for a wider set of keycodes
+ * using the <code>java.awt.event.KeyEvent.getExtendedKeyCodeForChar</code> call.
+ * For example, a menu shortcut for "Ctrl+cyrillic ef" is created by
+ * <p>
+ * <code>MenuShortcut ms = new MenuShortcut(KeyEvent.getExtendedKeyCodeForChar('\u0444'), false);</code>
+ * <p>
+ * Note that shortcuts created with a keycode or an extended keycode defined as a constant in <code>KeyEvent</code>
+ * work regardless of the current keyboard layout. However, a shortcut made of
+ * an extended keycode not listed in <code>KeyEvent</code>
+ * only work if the current keyboard layout produces a corresponding letter.
  * <p>
  * The accelerator key is platform-dependent and may be obtained
  * via {@link Toolkit#getMenuShortcutKeyMask}.

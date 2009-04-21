@@ -43,6 +43,8 @@ public:
     virtual LPCTSTR GetClassName();
     static AwtChoice* Create(jobject peer, jobject hParent);
 
+    virtual void Dispose();
+
     virtual void Reshape(int x, int y, int w, int h);
     void ResetDropDownHeight();
     int GetDropDownHeight();
@@ -75,9 +77,6 @@ public:
     virtual void SetDragCapture(UINT flags);
     virtual void ReleaseDragCapture(UINT flags);
 
-    BOOL ActMouseMessage(MSG * pMsg);
-    INLINE BOOL AwtChoice::IsChoiceOpened() {return SendMessage(CB_GETDROPPEDSTATE, 0, 0);}
-
     static BOOL mouseCapture;
     static BOOL skipNextMouseUp;
 
@@ -87,11 +86,16 @@ public:
     static void _AddItems(void *param);
     static void _Remove(void *param);
     static void _RemoveAll(void *param);
+    static void _CloseList(void *param);
 
 private:
     int GetFieldHeight();
     int GetTotalHeight();
-    MsgRouting killFocusRouting;
+    static BOOL sm_isMouseMoveInList;
+    HWND m_hList;
+    WNDPROC m_listDefWindowProc;
+    static LRESULT CALLBACK ListWindowProc(HWND hwnd, UINT message,
+                                           WPARAM wParam, LPARAM lParam);
 };
 
 #endif /* AWT_CHOICE_H */

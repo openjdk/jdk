@@ -1,5 +1,5 @@
 #
-# Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ FILES_export2 = \
         sun/awt/datatransfer/DataTransferer.java \
 	sun/awt/datatransfer/SunClipboard.java \
 	sun/awt/dnd/SunDragSourceContextPeer.java \
-        sun/awt/windows/WToolkitThreadBlockedHandler.java 
+        sun/awt/windows/WToolkitThreadBlockedHandler.java
 
 FILES_export3 = \
         java/awt/CheckboxMenuItem.java \
@@ -214,6 +214,7 @@ FILES_export3 = \
 	sun/awt/windows/WBufferStrategy.java \
 	sun/awt/windows/WTrayIconPeer.java \
 	sun/awt/image/ImagingLib.java \
+	sun/awt/ExtendedKeyCodes.java \
         sun/java2d/pipe/hw/AccelSurface.java \
         sun/java2d/pipe/hw/AccelDeviceEventNotifier.java \
         sun/java2d/pipe/hw/ContextCapabilities.java \

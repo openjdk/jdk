@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,5 +330,13 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
             }
         }
         // the rest of the flip actions are not supported
+    }
+
+    /*
+    @Override
+    */
+    public boolean isTranslucencyCapable() {
+        //XXX: worth checking if 8-bit? Anyway, it doesn't hurt.
+        return true;
     }
 }

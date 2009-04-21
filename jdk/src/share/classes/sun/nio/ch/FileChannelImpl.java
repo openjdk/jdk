@@ -128,9 +128,10 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         synchronized (positionLock) {
             int n = 0;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -151,9 +152,10 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         synchronized (positionLock) {
             long n = 0;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -183,9 +185,10 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         synchronized (positionLock) {
             int n = 0;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -206,9 +209,10 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         synchronized (positionLock) {
             long n = 0;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -239,9 +243,10 @@ public class FileChannelImpl
         ensureOpen();
         synchronized (positionLock) {
             long p = -1;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -262,9 +267,10 @@ public class FileChannelImpl
             throw new IllegalArgumentException();
         synchronized (positionLock) {
             long p = -1;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return null;
                 do {
@@ -283,9 +289,10 @@ public class FileChannelImpl
         ensureOpen();
         synchronized (positionLock) {
             long s = -1;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return -1;
                 do {
@@ -311,9 +318,10 @@ public class FileChannelImpl
         synchronized (positionLock) {
             int rv = -1;
             long p = -1;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return null;
 
@@ -350,9 +358,10 @@ public class FileChannelImpl
     public void force(boolean metaData) throws IOException {
         ensureOpen();
         int rv = -1;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return;
             do {
@@ -406,9 +415,10 @@ public class FileChannelImpl
             return IOStatus.UNSUPPORTED;
 
         long n = -1;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return -1;
             do {
@@ -612,9 +622,10 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         ensureOpen();
         int n = 0;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return -1;
             do {
@@ -637,9 +648,10 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         ensureOpen();
         int n = 0;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return -1;
             do {
@@ -731,9 +743,10 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
 
         long addr = -1;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return null;
             if (size() < position + size) { // Extend file size
@@ -900,9 +913,10 @@ public class FileChannelImpl
         FileLockTable flt = fileLockTable();
         flt.add(fli);
         boolean i = true;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return null;
             int result = nd.lock(fd, true, position, size, shared);

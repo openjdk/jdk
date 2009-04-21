@@ -184,6 +184,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
             fl = new FocusEvent(currentOwner, FocusEvent.FOCUS_LOST, false, lightweightChild);
         }
 
+        // TODO: do we need to wrap in sequenced?
         if (fl != null) {
             postEvent(XComponentPeer.wrapInSequenced(fl));
         }
@@ -203,9 +204,9 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
                                             temporary, false, time, cause);
 
         switch (result) {
-          case XComponentPeer.SNFH_FAILURE:
+          case XKeyboardFocusManagerPeer.SNFH_FAILURE:
               return false;
-          case XComponentPeer.SNFH_SUCCESS_PROCEED:
+          case XKeyboardFocusManagerPeer.SNFH_SUCCESS_PROCEED:
               // Currently we just generate focus events like we deal with lightweight instead of calling
               // XSetInputFocus on native window
 
@@ -235,9 +236,11 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
               // NOTE: We simulate heavyweight behavior of Motif - component receives focus right
               // after request, not after event. Normally, we should better listen for event
               // by listeners.
+
+              // TODO: consider replacing with XKeyboardFocusManagerPeer.deliverFocus
               return simulateMotifRequestFocus(lightweightChild, temporary, focusedWindowChangeAllowed, time);
               // Motif compatibility code
-          case XComponentPeer.SNFH_SUCCESS_HANDLED:
+          case XKeyboardFocusManagerPeer.SNFH_SUCCESS_HANDLED:
               // Either lightweight or excessive requiest - all events are generated.
               return true;
         }
@@ -379,4 +382,9 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
 
     public void applyShape(Region shape) {
     }
+
+    public void setZOrder(ComponentPeer above) {
+    }
+
+    public void updateGraphicsData(GraphicsConfiguration gc) {}
 }
