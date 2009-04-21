@@ -31,7 +31,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
+import java.util.concurrent.*;
+
 import sun.security.action.LoadLibraryAction;
 
 import static sun.awt.shell.Win32ShellFolder2.*;
@@ -408,4 +411,102 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             return name1.compareTo(name2);
         }
     }
+
+    @Override
+    protected Invoker createInvoker() {
+        return new ComInvoker();
+    }
+
+    private static class ComInvoker extends ThreadPoolExecutor implements ThreadFactory, ShellFolder.Invoker {
+        private static Thread comThread;
+
+        private ComInvoker() {
+            super(1, 1, 0, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>());
+            allowCoreThreadTimeOut(false);
+            setThreadFactory(this);
+            final Runnable shutdownHook = new Runnable() {
+                public void run() {
+                    AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                        public Void run() {
+                            shutdownNow();
+                            return null;
+                        }
+                    });
+                }
+            };
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
+                    Runtime.getRuntime().addShutdownHook(
+                        new Thread(shutdownHook)
+                    );
+                    return null;
+                }
+            });
+        }
+
+        public synchronized Thread newThread(final Runnable task) {
+            final Runnable comRun = new Runnable() {
+                public void run() {
+                    try {
+                        initializeCom();
+                        task.run();
+                    } finally {
+                        uninitializeCom();
+                    }
+                }
+            };
+            comThread =
+                AccessController.doPrivileged(
+                    new PrivilegedAction<Thread>() {
+                        public Thread run() {
+                            /* The thread must be a member of a thread group
+                             * which will not get GCed before VM exit.
+                             * Make its parent the top-level thread group.
+                             */
+                            ThreadGroup tg = Thread.currentThread().getThreadGroup();
+                            for (ThreadGroup tgn = tg;
+                                 tgn != null;
+                                 tg = tgn, tgn = tg.getParent());
+                            Thread thread = new Thread(tg, comRun, "Swing-Shell");
+                            thread.setDaemon(true);
+                            return thread;
+                        }
+                    }
+                );
+            return comThread;
+        }
+
+        public <T> T invoke(Callable<T> task) {
+            try {
+                T result;
+                if (Thread.currentThread() == comThread) {
+                    // if it's already called from the COM
+                    // thread, we don't need to delegate the task
+                    result = task.call();
+                } else {
+                    Future<T> future = submit(task);
+                    try {
+                        result = future.get();
+                    } catch (InterruptedException e) {
+                        result = null;
+                        future.cancel(true);
+                    }
+                }
+                return result;
+            } catch (Exception e) {
+                Throwable cause = (e instanceof ExecutionException) ? e.getCause() : e;
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException) cause;
+                }
+                if (cause instanceof Error) {
+                    throw (Error) cause;
+                }
+                throw new RuntimeException(cause);
+            }
+        }
+    }
+
+    static native void initializeCom();
+
+    static native void uninitializeCom();
 }

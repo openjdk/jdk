@@ -73,7 +73,7 @@ elapsedTimer   Phase::_t_buildOopMaps;
 
 //------------------------------Phase------------------------------------------
 Phase::Phase( PhaseNumber pnum ) : _pnum(pnum), C( pnum == Compiler ? NULL : Compile::current()) {
-  // Poll for requests from shutdown mechanism to quiesce comiler (4448539, 4448544).
+  // Poll for requests from shutdown mechanism to quiesce compiler (4448539, 4448544).
   // This is an effective place to poll, since the compiler is full of phases.
   // In particular, every inlining site uses a recursively created Parse phase.
   CompileBroker::maybe_block();

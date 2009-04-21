@@ -349,7 +349,7 @@ class SlowSignatureHandler
 
     if (_num_args < Argument::n_float_register_parameters_c-1) {
       *_reg_args++ = from_obj;
-      *_fp_identifiers |= (0x01 << (_num_args*2)); // mark as float
+      *_fp_identifiers |= (intptr_t)(0x01 << (_num_args*2)); // mark as float
       _num_args++;
     } else {
       *_to++ = from_obj;
@@ -364,7 +364,7 @@ class SlowSignatureHandler
 
     if (_num_args < Argument::n_float_register_parameters_c-1) {
       *_reg_args++ = from_obj;
-      *_fp_identifiers |= (0x3 << (_num_args*2)); // mark as double
+      *_fp_identifiers |= (intptr_t)(0x3 << (_num_args*2)); // mark as double
       _num_args++;
     } else {
       *_to++ = from_obj;

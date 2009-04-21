@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1534,6 +1534,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
          thread, rax);
   }
 
+  // RedefineClasses() tracing support for obsolete method entry
+  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+    __ movoop(rax, JNIHandles::make_local(method()));
+    __ call_VM_leaf(
+         CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
+         thread, rax);
+  }
 
   // These are register definitions we need for locking/unlocking
   const Register swap_reg = rax;  // Must use rax, for cmpxchg instruction

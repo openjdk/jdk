@@ -49,8 +49,8 @@
 //    0x00000400 |       1024 - previous class weak reference mgmt during
 //                              add previous ops (GC)
 //    0x00000800 |       2048 - previous class breakpoint mgmt
-//    0x00001000 |       4096 - unused
-//    0x00002000 |       8192 - unused
+//    0x00001000 |       4096 - detect calls to obsolete methods
+//    0x00002000 |       8192 - fail a guarantee() in addition to detection
 //    0x00004000 |      16384 - unused
 //    0x00008000 |      32768 - old/new method matching/add/delete
 //    0x00010000 |      65536 - impl details: CP size info

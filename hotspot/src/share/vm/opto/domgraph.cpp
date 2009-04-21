@@ -183,7 +183,7 @@ class Block_Stack {
       if (pre_order == 1)
         t->_parent = NULL;          // first block doesn't have parent
       else {
-        // Save parent (currernt top block on stack) in DFS
+        // Save parent (current top block on stack) in DFS
         t->_parent = &_tarjan[_stack_top->block->_pre_order];
       }
       // Now put this block on stack

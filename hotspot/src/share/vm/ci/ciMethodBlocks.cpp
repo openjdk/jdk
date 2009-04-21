@@ -284,6 +284,11 @@ ciMethodBlocks::ciMethodBlocks(Arena *arena, ciMethod *meth): _method(meth),
       //
       int ex_start = handler->start();
       int ex_end = handler->limit();
+      // ensure a block at the start of exception range and start of following code
+      (void) make_block_at(ex_start);
+      if (ex_end < _code_size)
+        (void) make_block_at(ex_end);
+
       if (eb->is_handler()) {
         // Extend old handler exception range to cover additional range.
         int old_ex_start = eb->ex_start_bci();
@@ -295,10 +300,6 @@ ciMethodBlocks::ciMethodBlocks(Arena *arena, ciMethod *meth): _method(meth),
         eb->clear_exception_handler(); // Reset exception information
       }
       eb->set_exception_range(ex_start, ex_end);
-      // ensure a block at the start of exception range and start of following code
-      (void) make_block_at(ex_start);
-      if (ex_end < _code_size)
-        (void) make_block_at(ex_end);
     }
   }
 

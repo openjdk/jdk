@@ -349,7 +349,7 @@ public:
   ~JvmtiRawMonitor();
   int            magic()   { return _magic;  }
   const char *get_name()   { return _name; }
-  bool        is_valid()   { return _magic == JVMTI_RM_MAGIC;  }
+  bool        is_valid();
 };
 
 // Onload pending raw monitors

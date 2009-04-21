@@ -25,18 +25,19 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import java.io.*;
+import java.util.*;
+
+import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
-import com.sun.javadoc.*;
-import java.util.*;
-import java.io.*;
 
 /**
  * Writes constructor documentation.
  *
  * @author Robert Field
  * @author Atul M Dambalkar
+ * @author Bhavesh Patel (Modified)
  */
 public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
     implements ConstructorWriter, MemberSummaryWriter {
@@ -149,7 +150,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         writeParameters(constructor);
         writeExceptions(constructor);
         writer.preEnd();
-        writer.dl();
+        assert !writer.getMemberDetailsListPrinted();
     }
 
     /**
@@ -158,12 +159,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * @param constructor the constructor being documented.
      */
     public void writeDeprecated(ConstructorDoc constructor) {
-        String output = ((TagletOutputImpl)
-            (new DeprecatedTaglet()).getTagletOutput(constructor,
-            writer.getTagletWriterInstance(false))).toString();
-        if (output != null && output.trim().length() > 0) {
-            writer.print(output);
-        }
+        printDeprecated(constructor);
     }
 
     /**
@@ -172,10 +168,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * @param constructor the constructor being documented.
      */
     public void writeComments(ConstructorDoc constructor) {
-        if (constructor.inlineTags().length > 0) {
-            writer.dd();
-            writer.printInlineComment(constructor);
-        }
+        printComment(constructor);
     }
 
     /**
@@ -191,7 +184,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * Write the constructor footer.
      */
     public void writeConstructorFooter() {
-        writer.dlEnd();
+        printMemberFooter();
     }
 
     /**
@@ -219,8 +212,34 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         this.foundNonPubConstructor = foundNonPubConstructor;
     }
 
-    public void printSummaryLabel(ClassDoc cd) {
-        writer.strongText("doclet.Constructor_Summary");
+    public void printSummaryLabel() {
+        writer.printText("doclet.Constructor_Summary");
+    }
+
+    public void printTableSummary() {
+        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+                configuration().getText("doclet.Constructor_Summary"),
+                configuration().getText("doclet.constructors")));
+    }
+
+    public void printSummaryTableHeader(ProgramElementDoc member) {
+        String[] header;
+        if (foundNonPubConstructor) {
+            header = new String[] {
+                configuration().getText("doclet.Modifier"),
+                configuration().getText("doclet.0_and_1",
+                        configuration().getText("doclet.Constructor"),
+                        configuration().getText("doclet.Description"))
+            };
+        }
+        else {
+            header = new String[] {
+                configuration().getText("doclet.0_and_1",
+                        configuration().getText("doclet.Constructor"),
+                        configuration().getText("doclet.Description"))
+            };
+        }
+        writer.summaryTableHeader(header, "col");
     }
 
     public void printSummaryAnchor(ClassDoc cd) {

@@ -650,7 +650,7 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     __ cmpl(rdx, stos);
     __ jcc(Assembler::notEqual, notShort);
     // stos
-    __ load_signed_word(rax, field_address);
+    __ load_signed_short(rax, field_address);
     __ jmp(xreturn_path);
 
     __ bind(notShort);
@@ -662,7 +662,7 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     __ bind(okay);
 #endif
     // ctos
-    __ load_unsigned_word(rax, field_address);
+    __ load_unsigned_short(rax, field_address);
 
     __ bind(xreturn_path);
 
@@ -702,7 +702,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   const Address access_flags      (rbx, methodOopDesc::access_flags_offset());
 
   // get parameter size (always needed)
-  __ load_unsigned_word(rcx, size_of_parameters);
+  __ load_unsigned_short(rcx, size_of_parameters);
 
   // native calls don't need the stack size check since they have no
   // expression stack and the arguments are already on the stack and
@@ -819,14 +819,14 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // allocate space for parameters
   __ get_method(method);
   __ verify_oop(method);
-  __ load_unsigned_word(t,
-                        Address(method,
-                                methodOopDesc::size_of_parameters_offset()));
+  __ load_unsigned_short(t,
+                         Address(method,
+                                 methodOopDesc::size_of_parameters_offset()));
   __ shll(t, Interpreter::logStackElementSize());
 
   __ subptr(rsp, t);
   __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
-  __ andptr(rsp, -16); // must be 16 byte boundry (see amd64 ABI)
+  __ andptr(rsp, -16); // must be 16 byte boundary (see amd64 ABI)
 
   // get signature handler
   {
@@ -1165,13 +1165,13 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   const Address access_flags(rbx, methodOopDesc::access_flags_offset());
 
   // get parameter size (always needed)
-  __ load_unsigned_word(rcx, size_of_parameters);
+  __ load_unsigned_short(rcx, size_of_parameters);
 
   // rbx: methodOop
   // rcx: size of parameters
   // r13: sender_sp (could differ from sp+wordSize if we were called via c2i )
 
-  __ load_unsigned_word(rdx, size_of_locals); // get size of locals in words
+  __ load_unsigned_short(rdx, size_of_locals); // get size of locals in words
   __ subl(rdx, rcx); // rdx = no. of additional locals
 
   // YYY
@@ -1583,7 +1583,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // Compute size of arguments for saving when returning to
     // deoptimized caller
     __ get_method(rax);
-    __ load_unsigned_word(rax, Address(rax, in_bytes(methodOopDesc::
+    __ load_unsigned_short(rax, Address(rax, in_bytes(methodOopDesc::
                                                 size_of_parameters_offset())));
     __ shll(rax, Interpreter::logStackElementSize());
     __ restore_locals(); // XXX do we need this?

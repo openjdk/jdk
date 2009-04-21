@@ -1,5 +1,5 @@
 //
-// Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ arguments.cpp                           management.hpp
 arguments.cpp                           oop.inline.hpp
 arguments.cpp                           os_<os_family>.inline.hpp
 arguments.cpp                           universe.inline.hpp
-arguments.cpp                           vm_version_<arch_model>.hpp
+arguments.cpp                           vm_version_<arch>.hpp
 
 arguments.hpp                           java.hpp
 arguments.hpp                           perfData.hpp
@@ -241,7 +241,7 @@ assembler.hpp                           oopRecorder.hpp
 assembler.hpp                           register_<arch>.hpp
 assembler.hpp                           relocInfo.hpp
 assembler.hpp                           top.hpp
-assembler.hpp                           vm_version_<arch_model>.hpp
+assembler.hpp                           vm_version_<arch>.hpp
 
 assembler.inline.hpp                    assembler.hpp
 assembler.inline.hpp                    codeBuffer.hpp
@@ -280,7 +280,7 @@ atomic.hpp                              allocation.hpp
 
 atomic_<os_arch>.inline.hpp             atomic.hpp
 atomic_<os_arch>.inline.hpp             os.hpp
-atomic_<os_arch>.inline.hpp             vm_version_<arch_model>.hpp
+atomic_<os_arch>.inline.hpp             vm_version_<arch>.hpp
 
 // attachListener is jck optional, put cpp deps in includeDB_features
 
@@ -474,6 +474,7 @@ cardTableModRefBS.cpp                   java.hpp
 cardTableModRefBS.cpp                   mutexLocker.hpp
 cardTableModRefBS.cpp                   sharedHeap.hpp
 cardTableModRefBS.cpp                   space.hpp
+cardTableModRefBS.cpp                   space.inline.hpp
 cardTableModRefBS.cpp                   universe.hpp
 cardTableModRefBS.cpp                   virtualspace.hpp
 
@@ -2094,6 +2095,7 @@ interp_masm_<arch_model>.cpp            interp_masm_<arch_model>.hpp
 interp_masm_<arch_model>.cpp            interpreterRuntime.hpp
 interp_masm_<arch_model>.cpp            interpreter.hpp
 interp_masm_<arch_model>.cpp            jvmtiExport.hpp
+interp_masm_<arch_model>.cpp            jvmtiRedefineClassesTrace.hpp
 interp_masm_<arch_model>.cpp            jvmtiThreadState.hpp
 interp_masm_<arch_model>.cpp            markOop.hpp
 interp_masm_<arch_model>.cpp            methodDataOop.hpp
@@ -2176,7 +2178,7 @@ interpreterRuntime.cpp                  templateTable.hpp
 interpreterRuntime.cpp                  threadCritical.hpp
 interpreterRuntime.cpp                  universe.inline.hpp
 interpreterRuntime.cpp                  vmSymbols.hpp
-interpreterRuntime.cpp                  vm_version_<arch_model>.hpp
+interpreterRuntime.cpp                  vm_version_<arch>.hpp
 
 interpreterRuntime.hpp                  bytecode.hpp
 interpreterRuntime.hpp                  frame.inline.hpp
@@ -2279,7 +2281,7 @@ java.cpp                                timer.hpp
 java.cpp                                universe.hpp
 java.cpp                                vmError.hpp
 java.cpp                                vm_operations.hpp
-java.cpp                                vm_version_<arch_model>.hpp
+java.cpp                                vm_version_<arch>.hpp
 java.cpp                                vtune.hpp
 
 java.hpp                                os.hpp
@@ -3152,6 +3154,8 @@ oopsHierarchy.cpp                       thread.hpp
 oopsHierarchy.cpp                       thread_<os_family>.inline.hpp
 
 orderAccess.cpp                         orderAccess.hpp
+orderAccess.cpp                         stubRoutines.hpp
+orderAccess.cpp                         thread.hpp
 
 orderAccess.hpp                         allocation.hpp
 orderAccess.hpp                         os.hpp
@@ -3485,7 +3489,7 @@ register.hpp                            top.hpp
 register_<arch>.cpp                     register_<arch>.hpp
 
 register_<arch>.hpp                     register.hpp
-register_<arch>.hpp                     vm_version_<arch_model>.hpp
+register_<arch>.hpp                     vm_version_<arch>.hpp
 
 registerMap.hpp                         globalDefinitions.hpp
 registerMap.hpp                         register_<arch>.hpp
@@ -3670,6 +3674,7 @@ sharedRuntime.cpp                       interpreterRuntime.hpp
 sharedRuntime.cpp                       interpreter.hpp
 sharedRuntime.cpp                       javaCalls.hpp
 sharedRuntime.cpp                       jvmtiExport.hpp
+sharedRuntime.cpp                       jvmtiRedefineClassesTrace.hpp
 sharedRuntime.cpp                       nativeInst_<arch>.hpp
 sharedRuntime.cpp                       nativeLookup.hpp
 sharedRuntime.cpp                       oop.inline.hpp
@@ -3699,6 +3704,7 @@ sharedRuntime_<arch_model>.cpp          compiledICHolderOop.hpp
 sharedRuntime_<arch_model>.cpp          debugInfoRec.hpp
 sharedRuntime_<arch_model>.cpp          icBuffer.hpp
 sharedRuntime_<arch_model>.cpp          interpreter.hpp
+sharedRuntime_<arch_model>.cpp          jvmtiRedefineClassesTrace.hpp
 sharedRuntime_<arch_model>.cpp          sharedRuntime.hpp
 sharedRuntime_<arch_model>.cpp          vframeArray.hpp
 sharedRuntime_<arch_model>.cpp          vmreg_<arch>.inline.hpp
@@ -3835,7 +3841,7 @@ statSampler.cpp                         resourceArea.hpp
 statSampler.cpp                         statSampler.hpp
 statSampler.cpp                         systemDictionary.hpp
 statSampler.cpp                         vmSymbols.hpp
-statSampler.cpp                         vm_version_<arch_model>.hpp
+statSampler.cpp                         vm_version_<arch>.hpp
 
 statSampler.hpp                         perfData.hpp
 statSampler.hpp                         task.hpp
@@ -4579,22 +4585,23 @@ vm_operations.hpp                       top.hpp
 vm_version.cpp                          arguments.hpp
 vm_version.cpp                          oop.inline.hpp
 vm_version.cpp                          universe.hpp
-vm_version.cpp                          vm_version_<arch_model>.hpp
+vm_version.cpp                          vm_version_<arch>.hpp
 
 vm_version.hpp                          allocation.hpp
 vm_version.hpp                          ostream.hpp
 
-vm_version_<arch_model>.cpp             assembler_<arch>.inline.hpp
-vm_version_<arch_model>.cpp             java.hpp
-vm_version_<arch_model>.cpp             os_<os_family>.inline.hpp
-vm_version_<arch_model>.cpp             resourceArea.hpp
-vm_version_<arch_model>.cpp             stubCodeGenerator.hpp
-vm_version_<arch_model>.cpp             vm_version_<arch_model>.hpp
+vm_version_<arch>.cpp                   assembler_<arch>.inline.hpp
+vm_version_<arch>.cpp                   java.hpp
+vm_version_<arch>.cpp                   os_<os_family>.inline.hpp
+vm_version_<arch>.cpp                   resourceArea.hpp
+vm_version_<arch>.cpp                   stubCodeGenerator.hpp
+vm_version_<arch>.cpp                   vm_version_<arch>.hpp
 
-vm_version_<arch_model>.hpp             globals_extension.hpp
-vm_version_<arch_model>.hpp             vm_version.hpp
+vm_version_<arch>.hpp                   globals_extension.hpp
+vm_version_<arch>.hpp                   vm_version.hpp
 
-vm_version_<os_arch>.cpp                vm_version_<arch_model>.hpp
+vm_version_<os_arch>.cpp                os.hpp
+vm_version_<os_arch>.cpp                vm_version_<arch>.hpp
 
 vmreg.cpp                               assembler.hpp
 vmreg.cpp                               vmreg.hpp

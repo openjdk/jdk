@@ -22,7 +22,7 @@
  *
  */
 
-// This file contains the platform-independant parts
+// This file contains the platform-independent parts
 // of the template interpreter and the template interpreter generator.
 
 #ifndef CC_INTERP

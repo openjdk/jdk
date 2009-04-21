@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,13 +662,13 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     __ bind(notByte);
     __ cmpl(rdx, stos);
     __ jcc(Assembler::notEqual, notShort);
-    __ load_signed_word(rax, field_address);
+    __ load_signed_short(rax, field_address);
     __ jmp(xreturn_path);
 
     __ bind(notShort);
     __ cmpl(rdx, ctos);
     __ jcc(Assembler::notEqual, notChar);
-    __ load_unsigned_word(rax, field_address);
+    __ load_unsigned_short(rax, field_address);
     __ jmp(xreturn_path);
 
     __ bind(notChar);
@@ -723,7 +723,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   const Address access_flags      (rbx, methodOopDesc::access_flags_offset());
 
   // get parameter size (always needed)
-  __ load_unsigned_word(rcx, size_of_parameters);
+  __ load_unsigned_short(rcx, size_of_parameters);
 
   // native calls don't need the stack size check since they have no expression stack
   // and the arguments are already on the stack and we only add a handful of words
@@ -838,7 +838,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // allocate space for parameters
   __ get_method(method);
   __ verify_oop(method);
-  __ load_unsigned_word(t, Address(method, methodOopDesc::size_of_parameters_offset()));
+  __ load_unsigned_short(t, Address(method, methodOopDesc::size_of_parameters_offset()));
   __ shlptr(t, Interpreter::logStackElementSize());
   __ addptr(t, 2*wordSize);     // allocate two more slots for JNIEnv and possible mirror
   __ subptr(rsp, t);
@@ -1155,14 +1155,14 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   const Address access_flags      (rbx, methodOopDesc::access_flags_offset());
 
   // get parameter size (always needed)
-  __ load_unsigned_word(rcx, size_of_parameters);
+  __ load_unsigned_short(rcx, size_of_parameters);
 
   // rbx,: methodOop
   // rcx: size of parameters
 
   // rsi: sender_sp (could differ from sp+wordSize if we were called via c2i )
 
-  __ load_unsigned_word(rdx, size_of_locals);       // get size of locals in words
+  __ load_unsigned_short(rdx, size_of_locals);       // get size of locals in words
   __ subl(rdx, rcx);                                // rdx = no. of additional locals
 
   // see if we've got enough room on the stack for locals plus overhead.
@@ -1558,7 +1558,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // Compute size of arguments for saving when returning to deoptimized caller
     __ get_method(rax);
     __ verify_oop(rax);
-    __ load_unsigned_word(rax, Address(rax, in_bytes(methodOopDesc::size_of_parameters_offset())));
+    __ load_unsigned_short(rax, Address(rax, in_bytes(methodOopDesc::size_of_parameters_offset())));
     __ shlptr(rax, Interpreter::logStackElementSize());
     __ restore_locals();
     __ subptr(rdi, rax);

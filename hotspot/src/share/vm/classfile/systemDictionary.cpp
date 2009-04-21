@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1964,6 +1964,13 @@ BasicType SystemDictionary::box_klass_type(klassOop k) {
   return T_OBJECT;
 }
 
+KlassHandle SystemDictionaryHandles::box_klass(BasicType t) {
+  if (t >= T_BOOLEAN && t <= T_VOID)
+    return KlassHandle(&SystemDictionary::_box_klasses[t], true);
+  else
+    return KlassHandle();
+}
+
 // Constraints on class loaders. The details of the algorithm can be
 // found in the OOPSLA'98 paper "Dynamic Class Loading in the Java
 // Virtual Machine" by Sheng Liang and Gilad Bracha.  The basic idea is
@@ -2174,11 +2181,56 @@ symbolOop SystemDictionary::find_resolution_error(constantPoolHandle pool, int w
 }
 
 
+// Signature constraints ensure that callers and callees agree about
+// the meaning of type names in their signatures.  This routine is the
+// intake for constraints.  It collects them from several places:
+//
+//  * LinkResolver::resolve_method (if check_access is true) requires
+//    that the resolving class (the caller) and the defining class of
+//    the resolved method (the callee) agree on each type in the
+//    method's signature.
+//
+//  * LinkResolver::resolve_interface_method performs exactly the same
+//    checks.
+//
+//  * LinkResolver::resolve_field requires that the constant pool
+//    attempting to link to a field agree with the field's defining
+//    class about the type of the field signature.
+//
+//  * klassVtable::initialize_vtable requires that, when a class
+//    overrides a vtable entry allocated by a superclass, that the
+//    overriding method (i.e., the callee) agree with the superclass
+//    on each type in the method's signature.
+//
+//  * klassItable::initialize_itable requires that, when a class fills
+//    in its itables, for each non-abstract method installed in an
+//    itable, the method (i.e., the callee) agree with the interface
+//    on each type in the method's signature.
+//
+// All those methods have a boolean (check_access, checkconstraints)
+// which turns off the checks.  This is used from specialized contexts
+// such as bootstrapping, dumping, and debugging.
+//
+// No direct constraint is placed between the class and its
+// supertypes.  Constraints are only placed along linked relations
+// between callers and callees.  When a method overrides or implements
+// an abstract method in a supertype (superclass or interface), the
+// constraints are placed as if the supertype were the caller to the
+// overriding method.  (This works well, since callers to the
+// supertype have already established agreement between themselves and
+// the supertype.)  As a result of all this, a class can disagree with
+// its supertype about the meaning of a type name, as long as that
+// class neither calls a relevant method of the supertype, nor is
+// called (perhaps via an override) from the supertype.
+//
+//
+// SystemDictionary::check_signature_loaders(sig, l1, l2)
+//
 // Make sure all class components (including arrays) in the given
 // signature will be resolved to the same class in both loaders.
 // Returns the name of the type that failed a loader constraint check, or
 // NULL if no constraint failed. The returned C string needs cleaning up
-// with a ResourceMark in the caller
+// with a ResourceMark in the caller.  No exception except OOME is thrown.
 char* SystemDictionary::check_signature_loaders(symbolHandle signature,
                                                Handle loader1, Handle loader2,
                                                bool is_method, TRAPS)  {

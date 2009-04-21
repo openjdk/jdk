@@ -1601,18 +1601,27 @@ public final class FontManager {
     /* Path may be absolute or a base file name relative to one of
      * the platform font directories
      */
-    private static String getPathName(String s) {
+    private static String getPathName(final String s) {
         File f = new File(s);
         if (f.isAbsolute()) {
             return s;
         } else if (pathDirs.length==1) {
             return pathDirs[0] + File.separator + s;
         } else {
-            for (int p=0; p<pathDirs.length; p++) {
-                f = new File(pathDirs[p] + File.separator + s);
-                if (f.exists()) {
-                    return f.getAbsolutePath();
-                }
+            String path = java.security.AccessController.doPrivileged(
+                 new java.security.PrivilegedAction<String>() {
+                     public String run() {
+                         for (int p=0; p<pathDirs.length; p++) {
+                             File f = new File(pathDirs[p] +File.separator+ s);
+                             if (f.exists()) {
+                                 return f.getAbsolutePath();
+                             }
+                         }
+                         return null;
+                     }
+                });
+            if (path != null) {
+                return path;
             }
         }
         return s; // shouldn't happen, but harmless
@@ -2348,19 +2357,21 @@ public final class FontManager {
     static Vector<File> tmpFontFiles = null;
 
     public static Font2D createFont2D(File fontFile, int fontFormat,
-                                      boolean isCopy)
+                                      boolean isCopy,
+                                      CreatedFontTracker tracker)
         throws FontFormatException {
 
         String fontFilePath = fontFile.getPath();
         FileFont font2D = null;
         final File fFile = fontFile;
+        final CreatedFontTracker _tracker = tracker;
         try {
             switch (fontFormat) {
             case Font.TRUETYPE_FONT:
                 font2D = new TrueTypeFont(fontFilePath, null, 0, true);
                 break;
             case Font.TYPE1_FONT:
-                font2D = new Type1Font(fontFilePath, null);
+                font2D = new Type1Font(fontFilePath, null, isCopy);
                 break;
             default:
                 throw new FontFormatException("Unrecognised Font Format");
@@ -2370,6 +2381,9 @@ public final class FontManager {
                 java.security.AccessController.doPrivileged(
                      new java.security.PrivilegedAction() {
                           public Object run() {
+                              if (_tracker != null) {
+                                  _tracker.subBytes((int)fFile.length());
+                              }
                               fFile.delete();
                               return null;
                           }
@@ -2378,7 +2392,7 @@ public final class FontManager {
             throw(e);
         }
         if (isCopy) {
-            font2D.setFileToRemove(fontFile);
+            font2D.setFileToRemove(fontFile, tracker);
             synchronized (FontManager.class) {
 
                 if (tmpFontFiles == null) {

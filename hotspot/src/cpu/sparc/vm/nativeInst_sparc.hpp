@@ -243,7 +243,7 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
 
   // Regenerate the instruction sequence that performs the 64 bit
   // sethi.  This only does the sethi.  The disp field (bottom 10 bits)
-  // must be handled seperately.
+  // must be handled separately.
   static void set_data64_sethi(address instaddr, intptr_t x);
 
   // combine the fields of a sethi/simm13 pair (simm13 = or, add, jmpl, ld/st)

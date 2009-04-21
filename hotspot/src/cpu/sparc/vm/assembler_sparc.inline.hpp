@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,49 @@ inline void Assembler::ld(  Register s1, Register s2, Register d) { lduw( s1, s2
 inline void Assembler::ld(  Register s1, int simm13a, Register d) { lduw( s1, simm13a, d); }
 #endif
 
+inline void Assembler::ldub(  Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  ldsb(s1, s2.as_register(), d);
+  else                   ldsb(s1, s2.as_constant(), d);
+}
+inline void Assembler::ldsb(  Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  ldsb(s1, s2.as_register(), d);
+  else                   ldsb(s1, s2.as_constant(), d);
+}
+inline void Assembler::lduh(  Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  ldsh(s1, s2.as_register(), d);
+  else                   ldsh(s1, s2.as_constant(), d);
+}
+inline void Assembler::ldsh(  Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  ldsh(s1, s2.as_register(), d);
+  else                   ldsh(s1, s2.as_constant(), d);
+}
+inline void Assembler::lduw(  Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  ldsw(s1, s2.as_register(), d);
+  else                   ldsw(s1, s2.as_constant(), d);
+}
+inline void Assembler::ldsw(  Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  ldsw(s1, s2.as_register(), d);
+  else                   ldsw(s1, s2.as_constant(), d);
+}
+inline void Assembler::ldx(   Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  ldx(s1, s2.as_register(), d);
+  else                   ldx(s1, s2.as_constant(), d);
+}
+inline void Assembler::ld(    Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  ld(s1, s2.as_register(), d);
+  else                   ld(s1, s2.as_constant(), d);
+}
+inline void Assembler::ldd(   Register s1, RegisterOrConstant s2, Register d) {
+  if (s2.is_register())  ldd(s1, s2.as_register(), d);
+  else                   ldd(s1, s2.as_constant(), d);
+}
+
+// form effective addresses this way:
+inline void Assembler::add(   Register s1, RegisterOrConstant s2, Register d, int offset) {
+  if (s2.is_register())  add(s1, s2.as_register(), d);
+  else                 { add(s1, s2.as_constant() + offset, d); offset = 0; }
+  if (offset != 0)       add(d,  offset,                    d);
+}
 
 inline void Assembler::ld(   const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); ld(   a.base(), a.disp() + offset, d ); }
 inline void Assembler::ldsb( const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); ldsb( a.base(), a.disp() + offset, d ); }
@@ -200,6 +243,27 @@ inline void Assembler::std(  Register d, Register s1, int simm13a) { v9_dep(); a
 inline void Assembler::st(  Register d, Register s1, Register s2) { stw(d, s1, s2); }
 inline void Assembler::st(  Register d, Register s1, int simm13a) { stw(d, s1, simm13a); }
 
+inline void Assembler::stb(  Register d, Register s1, RegisterOrConstant s2) {
+  if (s2.is_register())  stb(d, s1, s2.as_register());
+  else                   stb(d, s1, s2.as_constant());
+}
+inline void Assembler::sth(  Register d, Register s1, RegisterOrConstant s2) {
+  if (s2.is_register())  sth(d, s1, s2.as_register());
+  else                   sth(d, s1, s2.as_constant());
+}
+inline void Assembler::stx(  Register d, Register s1, RegisterOrConstant s2) {
+  if (s2.is_register())  stx(d, s1, s2.as_register());
+  else                   stx(d, s1, s2.as_constant());
+}
+inline void Assembler::std( Register d, Register s1, RegisterOrConstant s2) {
+  if (s2.is_register())  std(d, s1, s2.as_register());
+  else                   std(d, s1, s2.as_constant());
+}
+inline void Assembler::st(  Register d, Register s1, RegisterOrConstant s2) {
+  if (s2.is_register())  st(d, s1, s2.as_register());
+  else                   st(d, s1, s2.as_constant());
+}
+
 inline void Assembler::stb( Register d, const Address& a, int offset) { relocate(a.rspec(offset)); stb( d, a.base(), a.disp() + offset); }
 inline void Assembler::sth( Register d, const Address& a, int offset) { relocate(a.rspec(offset)); sth( d, a.base(), a.disp() + offset); }
 inline void Assembler::stw( Register d, const Address& a, int offset) { relocate(a.rspec(offset)); stw( d, a.base(), a.disp() + offset); }
@@ -244,6 +308,14 @@ inline void MacroAssembler::ld_ptr( Register s1, int simm13a, Register d ) {
 #endif
 }
 
+inline void MacroAssembler::ld_ptr( Register s1, RegisterOrConstant s2, Register d ) {
+#ifdef _LP64
+  Assembler::ldx( s1, s2, d);
+#else
+  Assembler::ld(  s1, s2, d);
+#endif
+}
+
 inline void MacroAssembler::ld_ptr( const Address& a, Register d, int offset ) {
 #ifdef _LP64
   Assembler::ldx(  a, d, offset );
@@ -265,6 +337,14 @@ inline void MacroAssembler::st_ptr( Register d, Register s1, int simm13a ) {
   Assembler::stx( d, s1, simm13a);
 #else
   Assembler::st( d, s1, simm13a);
+#endif
+}
+
+inline void MacroAssembler::st_ptr( Register d, Register s1, RegisterOrConstant s2 ) {
+#ifdef _LP64
+  Assembler::stx( d, s1, s2);
+#else
+  Assembler::st( d, s1, s2);
 #endif
 }
 
@@ -293,6 +373,14 @@ inline void MacroAssembler::ld_long( Register s1, int simm13a, Register d ) {
 #endif
 }
 
+inline void MacroAssembler::ld_long( Register s1, RegisterOrConstant s2, Register d ) {
+#ifdef _LP64
+  Assembler::ldx(s1, s2, d);
+#else
+  Assembler::ldd(s1, s2, d);
+#endif
+}
+
 inline void MacroAssembler::ld_long( const Address& a, Register d, int offset ) {
 #ifdef _LP64
   Assembler::ldx(a, d, offset );
@@ -314,6 +402,14 @@ inline void MacroAssembler::st_long( Register d, Register s1, int simm13a ) {
   Assembler::stx(d, s1, simm13a);
 #else
   Assembler::std(d, s1, simm13a);
+#endif
+}
+
+inline void MacroAssembler::st_long( Register d, Register s1, RegisterOrConstant s2 ) {
+#ifdef _LP64
+  Assembler::stx(d, s1, s2);
+#else
+  Assembler::std(d, s1, s2);
 #endif
 }
 
@@ -357,6 +453,11 @@ inline void MacroAssembler::srl_ptr( Register s1, int imm6a,   Register d ) {
 #else
   Assembler::srl(s1, imm6a, d);
 #endif
+}
+
+inline void MacroAssembler::sll_ptr( Register s1, RegisterOrConstant s2, Register d ) {
+  if (s2.is_register())  sll_ptr(s1, s2.as_register(), d);
+  else                   sll_ptr(s1, s2.as_constant(), d);
 }
 
 // Use the right branch for the platform

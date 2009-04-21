@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,10 +91,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _all_mod_union_times_ms(new NumberSeq()),
 
-  _non_pop_summary(new NonPopSummary()),
-  _pop_summary(new PopSummary()),
-  _non_pop_abandoned_summary(new NonPopAbandonedSummary()),
-  _pop_abandoned_summary(new PopAbandonedSummary()),
+  _summary(new Summary()),
+  _abandoned_summary(new AbandonedSummary()),
 
   _cur_clear_ct_time_ms(0.0),
 
@@ -108,9 +106,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _cur_aux_start_times_ms(new double[_aux_num]),
   _cur_aux_times_ms(new double[_aux_num]),
   _cur_aux_times_set(new bool[_aux_num]),
-
-  _pop_compute_rc_start(0.0),
-  _pop_evac_start(0.0),
 
   _concurrent_mark_init_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
   _concurrent_mark_remark_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
@@ -223,16 +218,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _par_last_obj_copy_times_ms = new double[_parallel_gc_threads];
 
   _par_last_termination_times_ms = new double[_parallel_gc_threads];
-
-  // we store the data from the first pass during popularity pauses
-  _pop_par_last_update_rs_start_times_ms = new double[_parallel_gc_threads];
-  _pop_par_last_update_rs_times_ms = new double[_parallel_gc_threads];
-  _pop_par_last_update_rs_processed_buffers = new double[_parallel_gc_threads];
-
-  _pop_par_last_scan_rs_start_times_ms = new double[_parallel_gc_threads];
-  _pop_par_last_scan_rs_times_ms = new double[_parallel_gc_threads];
-
-  _pop_par_last_closure_app_times_ms = new double[_parallel_gc_threads];
 
   // start conservatively
   _expensive_region_limit_ms = 0.5 * (double) G1MaxPauseTimeMS;
@@ -1014,7 +999,7 @@ void G1CollectorPolicy::record_full_collection_end() {
 
   _all_full_gc_times_ms->add(full_gc_time_ms);
 
-  update_recent_gc_times(end_sec, full_gc_time_sec);
+  update_recent_gc_times(end_sec, full_gc_time_ms);
 
   _g1->clear_full_collection();
 
@@ -1047,23 +1032,6 @@ void G1CollectorPolicy::record_full_collection_end() {
   calculate_young_list_target_config();
  }
 
-void G1CollectorPolicy::record_pop_compute_rc_start() {
-  _pop_compute_rc_start = os::elapsedTime();
-}
-void G1CollectorPolicy::record_pop_compute_rc_end() {
-  double ms = (os::elapsedTime() - _pop_compute_rc_start)*1000.0;
-  _cur_popular_compute_rc_time_ms = ms;
-  _pop_compute_rc_start = 0.0;
-}
-void G1CollectorPolicy::record_pop_evac_start() {
-  _pop_evac_start = os::elapsedTime();
-}
-void G1CollectorPolicy::record_pop_evac_end() {
-  double ms = (os::elapsedTime() - _pop_evac_start)*1000.0;
-  _cur_popular_evac_time_ms = ms;
-  _pop_evac_start = 0.0;
-}
-
 void G1CollectorPolicy::record_before_bytes(size_t bytes) {
   _bytes_in_to_space_before_gc += bytes;
 }
@@ -1087,6 +1055,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
 
   assert(_g1->used_regions() == _g1->recalculate_used_regions(),
          "sanity");
+  assert(_g1->used() == _g1->recalculate_used(), "sanity");
 
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
   _all_stop_world_times_ms->add(s_w_t_ms);
@@ -1119,13 +1088,6 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     _par_last_scan_new_refs_times_ms[i] = -666.0;
     _par_last_obj_copy_times_ms[i] = -666.0;
     _par_last_termination_times_ms[i] = -666.0;
-
-    _pop_par_last_update_rs_start_times_ms[i] = -666.0;
-    _pop_par_last_update_rs_times_ms[i] = -666.0;
-    _pop_par_last_update_rs_processed_buffers[i] = -666.0;
-    _pop_par_last_scan_rs_start_times_ms[i] = -666.0;
-    _pop_par_last_scan_rs_times_ms[i] = -666.0;
-    _pop_par_last_closure_app_times_ms[i] = -666.0;
   }
 #endif
 
@@ -1182,25 +1144,6 @@ void G1CollectorPolicy::tag_scan_only(size_t short_lived_scan_only_length) {
   }
 
   guarantee( false, "we should never reach here" );
-}
-
-void G1CollectorPolicy::record_popular_pause_preamble_start() {
-  _cur_popular_preamble_start_ms = os::elapsedTime() * 1000.0;
-}
-
-void G1CollectorPolicy::record_popular_pause_preamble_end() {
-  _cur_popular_preamble_time_ms =
-    (os::elapsedTime() * 1000.0) - _cur_popular_preamble_start_ms;
-
-  // copy the recorded statistics of the first pass to temporary arrays
-  for (int i = 0; i < _parallel_gc_threads; ++i) {
-    _pop_par_last_update_rs_start_times_ms[i] = _par_last_update_rs_start_times_ms[i];
-    _pop_par_last_update_rs_times_ms[i] = _par_last_update_rs_times_ms[i];
-    _pop_par_last_update_rs_processed_buffers[i] = _par_last_update_rs_processed_buffers[i];
-    _pop_par_last_scan_rs_start_times_ms[i] = _par_last_scan_rs_start_times_ms[i];
-    _pop_par_last_scan_rs_times_ms[i] = _par_last_scan_rs_times_ms[i];
-    _pop_par_last_closure_app_times_ms[i] = _par_last_obj_copy_times_ms[i];
-  }
 }
 
 void G1CollectorPolicy::record_mark_closure_time(double mark_closure_time_ms) {
@@ -1464,8 +1407,7 @@ double G1CollectorPolicy::max_sum (double* data1,
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1CollectorPolicy::record_collection_pause_end(bool popular,
-                                                    bool abandoned) {
+void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
   double end_time_sec = os::elapsedTime();
   double elapsed_ms = _last_pause_time_ms;
   bool parallel = ParallelGCThreads > 0;
@@ -1475,6 +1417,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
   size_t cur_used_bytes = _g1->used();
   assert(cur_used_bytes == _g1->recalculate_used(), "It should!");
   bool last_pause_included_initial_mark = false;
+  bool update_stats = !abandoned && !_g1->evacuation_failed();
 
 #ifndef PRODUCT
   if (G1YoungSurvRateVerbose) {
@@ -1535,7 +1478,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
 
   _n_pauses++;
 
-  if (!abandoned) {
+  if (update_stats) {
     _recent_CH_strong_roots_times_ms->add(_cur_CH_strong_roots_dur_ms);
     _recent_G1_strong_roots_times_ms->add(_cur_G1_strong_roots_dur_ms);
     _recent_evac_times_ms->add(evac_ms);
@@ -1585,42 +1528,10 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
   }
 
   PauseSummary* summary;
-  if (!abandoned && !popular)
-    summary = _non_pop_summary;
-  else if (!abandoned && popular)
-    summary = _pop_summary;
-  else if (abandoned && !popular)
-    summary = _non_pop_abandoned_summary;
-  else if (abandoned && popular)
-    summary = _pop_abandoned_summary;
-  else
-    guarantee(false, "should not get here!");
-
-  double pop_update_rs_time;
-  double pop_update_rs_processed_buffers;
-  double pop_scan_rs_time;
-  double pop_closure_app_time;
-  double pop_other_time;
-
-  if (popular) {
-    PopPreambleSummary* preamble_summary = summary->pop_preamble_summary();
-    guarantee(preamble_summary != NULL, "should not be null!");
-
-    pop_update_rs_time = avg_value(_pop_par_last_update_rs_times_ms);
-    pop_update_rs_processed_buffers =
-      sum_of_values(_pop_par_last_update_rs_processed_buffers);
-    pop_scan_rs_time = avg_value(_pop_par_last_scan_rs_times_ms);
-    pop_closure_app_time = avg_value(_pop_par_last_closure_app_times_ms);
-    pop_other_time = _cur_popular_preamble_time_ms -
-      (pop_update_rs_time + pop_scan_rs_time + pop_closure_app_time +
-       _cur_popular_evac_time_ms);
-
-    preamble_summary->record_pop_preamble_time_ms(_cur_popular_preamble_time_ms);
-    preamble_summary->record_pop_update_rs_time_ms(pop_update_rs_time);
-    preamble_summary->record_pop_scan_rs_time_ms(pop_scan_rs_time);
-    preamble_summary->record_pop_closure_app_time_ms(pop_closure_app_time);
-    preamble_summary->record_pop_evacuation_time_ms(_cur_popular_evac_time_ms);
-    preamble_summary->record_pop_other_time_ms(pop_other_time);
+  if (abandoned) {
+    summary = _abandoned_summary;
+  } else {
+    summary = _summary;
   }
 
   double ext_root_scan_time = avg_value(_par_last_ext_root_scan_times_ms);
@@ -1635,8 +1546,10 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
   double obj_copy_time = avg_value(_par_last_obj_copy_times_ms);
   double termination_time = avg_value(_par_last_termination_times_ms);
 
-  double parallel_other_time;
-  if (!abandoned) {
+  double parallel_other_time = _cur_collection_par_time_ms -
+    (update_rs_time + ext_root_scan_time + mark_stack_scan_time +
+     scan_only_time + scan_rs_time + obj_copy_time + termination_time);
+  if (update_stats) {
     MainBodySummary* body_summary = summary->main_body_summary();
     guarantee(body_summary != NULL, "should not be null!");
 
@@ -1654,9 +1567,6 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
       body_summary->record_parallel_time_ms(_cur_collection_par_time_ms);
       body_summary->record_clear_ct_time_ms(_cur_clear_ct_time_ms);
       body_summary->record_termination_time_ms(termination_time);
-      parallel_other_time = _cur_collection_par_time_ms -
-        (update_rs_time + ext_root_scan_time + mark_stack_scan_time +
-         scan_only_time + scan_rs_time + obj_copy_time + termination_time);
       body_summary->record_parallel_other_time_ms(parallel_other_time);
     }
     body_summary->record_mark_closure_time_ms(_mark_closure_time_ms);
@@ -1693,8 +1603,6 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
   }
 
   double other_time_ms = elapsed_ms;
-  if (popular)
-    other_time_ms -= _cur_popular_preamble_time_ms;
 
   if (!abandoned) {
     if (_satb_drain_time_set)
@@ -1711,41 +1619,24 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
 
   if (PrintGCDetails) {
     gclog_or_tty->print_cr("%s%s, %1.8lf secs]",
-                           (popular && !abandoned) ? " (popular)" :
-                           (!popular && abandoned) ? " (abandoned)" :
-                           (popular && abandoned) ? " (popular/abandoned)" : "",
+                           abandoned ? " (abandoned)" : "",
                            (last_pause_included_initial_mark) ? " (initial-mark)" : "",
                            elapsed_ms / 1000.0);
 
     if (!abandoned) {
-      if (_satb_drain_time_set)
+      if (_satb_drain_time_set) {
         print_stats(1, "SATB Drain Time", _cur_satb_drain_time_ms);
-      if (_last_satb_drain_processed_buffers >= 0)
+      }
+      if (_last_satb_drain_processed_buffers >= 0) {
         print_stats(2, "Processed Buffers", _last_satb_drain_processed_buffers);
-    }
-    if (popular)
-      print_stats(1, "Popularity Preamble", _cur_popular_preamble_time_ms);
-    if (parallel) {
-      if (popular) {
-        print_par_stats(2, "Update RS (Start)", _pop_par_last_update_rs_start_times_ms, false);
-        print_par_stats(2, "Update RS", _pop_par_last_update_rs_times_ms);
+      }
+      if (parallel) {
+        print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
+        print_par_stats(2, "Update RS (Start)", _par_last_update_rs_start_times_ms, false);
+        print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
         if (G1RSBarrierUseQueue)
           print_par_buffers(3, "Processed Buffers",
-                            _pop_par_last_update_rs_processed_buffers, true);
-        print_par_stats(2, "Scan RS", _pop_par_last_scan_rs_times_ms);
-        print_par_stats(2, "Closure app", _pop_par_last_closure_app_times_ms);
-        print_stats(2, "Evacuation", _cur_popular_evac_time_ms);
-        print_stats(2, "Other", pop_other_time);
-      }
-      if (!abandoned) {
-        print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
-        if (!popular) {
-          print_par_stats(2, "Update RS (Start)", _par_last_update_rs_start_times_ms, false);
-          print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
-          if (G1RSBarrierUseQueue)
-            print_par_buffers(3, "Processed Buffers",
-                              _par_last_update_rs_processed_buffers, true);
-        }
+                            _par_last_update_rs_processed_buffers, true);
         print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
         print_par_stats(2, "Mark Stack Scanning", _par_last_mark_stack_scan_times_ms);
         print_par_stats(2, "Scan-Only Scanning", _par_last_scan_only_times_ms);
@@ -1756,25 +1647,11 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
         print_par_stats(2, "Termination", _par_last_termination_times_ms);
         print_stats(2, "Other", parallel_other_time);
         print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
-      }
-    } else {
-      if (popular) {
-        print_stats(2, "Update RS", pop_update_rs_time);
+      } else {
+        print_stats(1, "Update RS", update_rs_time);
         if (G1RSBarrierUseQueue)
-          print_stats(3, "Processed Buffers",
-                      (int)pop_update_rs_processed_buffers);
-        print_stats(2, "Scan RS", pop_scan_rs_time);
-        print_stats(2, "Closure App", pop_closure_app_time);
-        print_stats(2, "Evacuation", _cur_popular_evac_time_ms);
-        print_stats(2, "Other", pop_other_time);
-      }
-      if (!abandoned) {
-        if (!popular) {
-          print_stats(1, "Update RS", update_rs_time);
-          if (G1RSBarrierUseQueue)
-            print_stats(2, "Processed Buffers",
-                        (int)update_rs_processed_buffers);
-        }
+          print_stats(2, "Processed Buffers",
+                      (int)update_rs_processed_buffers);
         print_stats(1, "Ext Root Scanning", ext_root_scan_time);
         print_stats(1, "Mark Stack Scanning", mark_stack_scan_time);
         print_stats(1, "Scan-Only Scanning", scan_only_time);
@@ -1801,8 +1678,10 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
     gclog_or_tty->print_cr("]");
 
   _all_pause_times_ms->add(elapsed_ms);
-  summary->record_total_time_ms(elapsed_ms);
-  summary->record_other_time_ms(other_time_ms);
+  if (update_stats) {
+    summary->record_total_time_ms(elapsed_ms);
+    summary->record_other_time_ms(other_time_ms);
+  }
   for (int i = 0; i < _aux_num; ++i)
     if (_cur_aux_times_set[i])
       _all_aux_times_ms[i].add(_cur_aux_times_ms[i]);
@@ -1852,7 +1731,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool popular,
 
   // <NEW PREDICTION>
 
-  if (!popular && !abandoned) {
+  if (update_stats) {
     double pause_time_ms = elapsed_ms;
 
     size_t diff = 0;
@@ -2451,36 +2330,8 @@ void G1CollectorPolicy::check_other_times(int level,
 void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
   bool parallel = ParallelGCThreads > 0;
   MainBodySummary*    body_summary = summary->main_body_summary();
-  PopPreambleSummary* preamble_summary = summary->pop_preamble_summary();
-
   if (summary->get_total_seq()->num() > 0) {
-    print_summary_sd(0,
-                     (preamble_summary == NULL) ? "Non-Popular Pauses" :
-                     "Popular Pauses",
-                     summary->get_total_seq());
-    if (preamble_summary != NULL) {
-      print_summary(1, "Popularity Preamble",
-                    preamble_summary->get_pop_preamble_seq());
-      print_summary(2, "Update RS", preamble_summary->get_pop_update_rs_seq());
-      print_summary(2, "Scan RS", preamble_summary->get_pop_scan_rs_seq());
-      print_summary(2, "Closure App",
-                    preamble_summary->get_pop_closure_app_seq());
-      print_summary(2, "Evacuation",
-                    preamble_summary->get_pop_evacuation_seq());
-      print_summary(2, "Other", preamble_summary->get_pop_other_seq());
-      {
-        NumberSeq* other_parts[] = {
-          preamble_summary->get_pop_update_rs_seq(),
-          preamble_summary->get_pop_scan_rs_seq(),
-          preamble_summary->get_pop_closure_app_seq(),
-          preamble_summary->get_pop_evacuation_seq()
-        };
-        NumberSeq calc_other_times_ms(preamble_summary->get_pop_preamble_seq(),
-                                      4, other_parts);
-        check_other_times(2, preamble_summary->get_pop_other_seq(),
-                          &calc_other_times_ms);
-      }
-    }
+    print_summary_sd(0, "Evacuation Pauses", summary->get_total_seq());
     if (body_summary != NULL) {
       print_summary(1, "SATB Drain", body_summary->get_satb_drain_seq());
       if (parallel) {
@@ -2534,19 +2385,15 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
           // parallel
           NumberSeq* other_parts[] = {
             body_summary->get_satb_drain_seq(),
-            (preamble_summary == NULL) ? NULL :
-              preamble_summary->get_pop_preamble_seq(),
             body_summary->get_parallel_seq(),
             body_summary->get_clear_ct_seq()
           };
-          calc_other_times_ms = NumberSeq (summary->get_total_seq(),
-                                          4, other_parts);
+          calc_other_times_ms = NumberSeq(summary->get_total_seq(),
+                                          3, other_parts);
         } else {
           // serial
           NumberSeq* other_parts[] = {
             body_summary->get_satb_drain_seq(),
-            (preamble_summary == NULL) ? NULL :
-              preamble_summary->get_pop_preamble_seq(),
             body_summary->get_update_rs_seq(),
             body_summary->get_ext_root_scan_seq(),
             body_summary->get_mark_stack_scan_seq(),
@@ -2555,16 +2402,11 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
             body_summary->get_obj_copy_seq()
           };
           calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                          8, other_parts);
+                                          7, other_parts);
         }
       } else {
         // abandoned
-        NumberSeq* other_parts[] = {
-          (preamble_summary == NULL) ? NULL :
-            preamble_summary->get_pop_preamble_seq()
-        };
-        calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                        1, other_parts);
+        calc_other_times_ms = NumberSeq();
       }
       check_other_times(1,  summary->get_other_seq(), &calc_other_times_ms);
     }
@@ -2576,18 +2418,12 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
 }
 
 void
-G1CollectorPolicy::print_abandoned_summary(PauseSummary* non_pop_summary,
-                                           PauseSummary* pop_summary) const {
+G1CollectorPolicy::print_abandoned_summary(PauseSummary* summary) const {
   bool printed = false;
-  if (non_pop_summary->get_total_seq()->num() > 0) {
+  if (summary->get_total_seq()->num() > 0) {
     printed = true;
-    print_summary(non_pop_summary);
+    print_summary(summary);
   }
-  if (pop_summary->get_total_seq()->num() > 0) {
-    printed = true;
-    print_summary(pop_summary);
-  }
-
   if (!printed) {
     print_indent(0);
     gclog_or_tty->print_cr("none");
@@ -2605,15 +2441,11 @@ void G1CollectorPolicy::print_tracing_info() const {
     gclog_or_tty->print_cr("   Partial Young GC Pauses: %8d", _partial_young_pause_num);
     gclog_or_tty->print_cr("");
 
-    gclog_or_tty->print_cr("NON-POPULAR PAUSES");
-    print_summary(_non_pop_summary);
-
-    gclog_or_tty->print_cr("POPULAR PAUSES");
-    print_summary(_pop_summary);
+    gclog_or_tty->print_cr("EVACUATION PAUSES");
+    print_summary(_summary);
 
     gclog_or_tty->print_cr("ABANDONED PAUSES");
-    print_abandoned_summary(_non_pop_abandoned_summary,
-                            _pop_abandoned_summary);
+    print_abandoned_summary(_abandoned_summary);
 
     gclog_or_tty->print_cr("MISC");
     print_summary_sd(0, "Stop World", _all_stop_world_times_ms);
@@ -2699,14 +2531,6 @@ void G1CollectorPolicy::update_conc_refine_data() {
   _conc_refine_enabled++;
 }
 
-void G1CollectorPolicy::set_single_region_collection_set(HeapRegion* hr) {
-  assert(collection_set() == NULL, "Must be no current CS.");
-  _collection_set_size = 0;
-  _collection_set_bytes_used_before = 0;
-  add_to_collection_set(hr);
-  count_CS_bytes_used();
-}
-
 bool
 G1CollectorPolicy::should_add_next_region_to_young_list() {
   assert(in_young_gc_mode(), "should be in young GC mode");
@@ -2783,15 +2607,6 @@ void G1CollectorPolicy::calculate_survivors_policy()
         HeapRegion::GrainWords * _max_survivor_regions);
   }
 }
-
-
-void
-G1CollectorPolicy_BestRegionsFirst::
-set_single_region_collection_set(HeapRegion* hr) {
-  G1CollectorPolicy::set_single_region_collection_set(hr);
-  _collectionSetChooser->removeRegion(hr);
-}
-
 
 bool
 G1CollectorPolicy_BestRegionsFirst::should_do_collection_pause(size_t
@@ -3058,19 +2873,13 @@ add_to_collection_set(HeapRegion* hr) {
 
 void
 G1CollectorPolicy_BestRegionsFirst::
-choose_collection_set(HeapRegion* pop_region) {
+choose_collection_set() {
   double non_young_start_time_sec;
   start_recording_regions();
 
-  if (pop_region != NULL) {
-    _target_pause_time_ms = (double) G1MaxPauseTimeMS;
-  } else {
-    guarantee(_target_pause_time_ms > -1.0,
-              "_target_pause_time_ms should have been set!");
-  }
-
-  // pop region is either null (and so is CS), or else it *is* the CS.
-  assert(_collection_set == pop_region, "Precondition");
+  guarantee(_target_pause_time_ms > -1.0,
+            "_target_pause_time_ms should have been set!");
+  assert(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);
   double predicted_pause_time_ms = base_time_ms;
@@ -3097,15 +2906,13 @@ choose_collection_set(HeapRegion* pop_region) {
   size_t expansion_bytes =
     _g1->expansion_regions() * HeapRegion::GrainBytes;
 
-  if (pop_region == NULL) {
-    _collection_set_bytes_used_before = 0;
-    _collection_set_size = 0;
-  }
+  _collection_set_bytes_used_before = 0;
+  _collection_set_size = 0;
 
   // Adjust for expansion and slop.
   max_live_bytes = max_live_bytes + expansion_bytes;
 
-  assert(pop_region != NULL || _g1->regions_accounted_for(), "Region leakage!");
+  assert(_g1->regions_accounted_for(), "Region leakage!");
 
   HeapRegion* hr;
   if (in_young_gc_mode()) {
@@ -3132,14 +2939,9 @@ choose_collection_set(HeapRegion* pop_region) {
       double predicted_time_ms = predict_region_elapsed_time_ms(hr, true);
       time_remaining_ms -= predicted_time_ms;
       predicted_pause_time_ms += predicted_time_ms;
-      if (hr == pop_region) {
-        // The popular region was young.  Skip over it.
-        assert(hr->in_collection_set(), "It's the pop region.");
-      } else {
-        assert(!hr->in_collection_set(), "It's not the pop region.");
-        add_to_collection_set(hr);
-        record_cset_region(hr, true);
-      }
+      assert(!hr->in_collection_set(), "invariant");
+      add_to_collection_set(hr);
+      record_cset_region(hr, true);
       max_live_bytes -= MIN2(hr->max_live_bytes(), max_live_bytes);
       if (G1PolicyVerbose > 0) {
         gclog_or_tty->print_cr("  Added [" PTR_FORMAT ", " PTR_FORMAT") to CS.",
@@ -3162,10 +2964,6 @@ choose_collection_set(HeapRegion* pop_region) {
       // don't bother adding more regions...
       goto choose_collection_set_end;
     }
-  } else if (pop_region != NULL) {
-    // We're not in young mode, and we chose a popular region; don't choose
-    // any more.
-    return;
   }
 
   if (!in_young_gc_mode() || !full_young_gcs()) {
@@ -3175,7 +2973,7 @@ choose_collection_set(HeapRegion* pop_region) {
     do {
       hr = _collectionSetChooser->getNextMarkedRegion(time_remaining_ms,
                                                       avg_prediction);
-      if (hr != NULL && !hr->popular()) {
+      if (hr != NULL) {
         double predicted_time_ms = predict_region_elapsed_time_ms(hr, false);
         time_remaining_ms -= predicted_time_ms;
         predicted_pause_time_ms += predicted_time_ms;
@@ -3222,8 +3020,8 @@ expand_if_possible(size_t numRegions) {
 }
 
 void G1CollectorPolicy_BestRegionsFirst::
-record_collection_pause_end(bool popular, bool abandoned) {
-  G1CollectorPolicy::record_collection_pause_end(popular, abandoned);
+record_collection_pause_end(bool abandoned) {
+  G1CollectorPolicy::record_collection_pause_end(abandoned);
   assert(assertMarkedBytesDataOK(), "Marked regions not OK at pause end.");
 }
 

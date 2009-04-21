@@ -104,7 +104,6 @@ public:
         HeapRegion* to   = _g1h->heap_region_containing(*p);
         if (from != NULL && to != NULL &&
             from != to &&
-            !to->popular() &&
             !to->isHumongous()) {
           jbyte cv_obj = *_bs->byte_for_const(_containing_obj);
           jbyte cv_field = *_bs->byte_for_const(p);
@@ -285,8 +284,6 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
   }
   zero_marked_bytes();
   set_sort_index(-1);
-  if ((uintptr_t)bottom() >= (uintptr_t)g1h->popular_object_boundary())
-    set_popular(false);
 
   _offsets.resize(HeapRegion::GrainWords);
   init_top_at_mark_start();
@@ -371,7 +368,6 @@ HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
     _next_in_special_set(NULL), _orig_end(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
-    _popularity(NotPopular),
     _young_type(NotYoung), _next_young_region(NULL),
     _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
     _rem_set(NULL), _zfs(NotZeroFilled)

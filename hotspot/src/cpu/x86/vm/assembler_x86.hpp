@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,6 +153,21 @@ class Address VALUE_OBJ_CLASS_SPEC {
     times_8  =  3,
     times_ptr = LP64_ONLY(times_8) NOT_LP64(times_4)
   };
+  static ScaleFactor times(int size) {
+    assert(size >= 1 && size <= 8 && is_power_of_2(size), "bad scale size");
+    if (size == 8)  return times_8;
+    if (size == 4)  return times_4;
+    if (size == 2)  return times_2;
+    return times_1;
+  }
+  static int scale_size(ScaleFactor scale) {
+    assert(scale != no_scale, "");
+    assert(((1 << (int)times_1) == 1 &&
+            (1 << (int)times_2) == 2 &&
+            (1 << (int)times_4) == 4 &&
+            (1 << (int)times_8) == 8), "");
+    return (1 << (int)scale);
+  }
 
  private:
   Register         _base;
@@ -197,6 +212,22 @@ class Address VALUE_OBJ_CLASS_SPEC {
            "inconsistent address");
   }
 
+  Address(Register base, RegisterOrConstant index, ScaleFactor scale = times_1, int disp = 0)
+    : _base (base),
+      _index(index.register_or_noreg()),
+      _scale(scale),
+      _disp (disp + (index.constant_or_zero() * scale_size(scale))) {
+    if (!index.is_register())  scale = Address::no_scale;
+    assert(!_index->is_valid() == (scale == Address::no_scale),
+           "inconsistent address");
+  }
+
+  Address plus_disp(int disp) const {
+    Address a = (*this);
+    a._disp += disp;
+    return a;
+  }
+
   // The following two overloads are used in connection with the
   // ByteSize type (see sizes.hpp).  They simplify the use of
   // ByteSize'd arguments in assembly code. Note that their equivalent
@@ -224,6 +255,17 @@ class Address VALUE_OBJ_CLASS_SPEC {
     assert(!index->is_valid() == (scale == Address::no_scale),
            "inconsistent address");
   }
+
+  Address(Register base, RegisterOrConstant index, ScaleFactor scale, ByteSize disp)
+    : _base (base),
+      _index(index.register_or_noreg()),
+      _scale(scale),
+      _disp (in_bytes(disp) + (index.constant_or_zero() * scale_size(scale))) {
+    if (!index.is_register())  scale = Address::no_scale;
+    assert(!_index->is_valid() == (scale == Address::no_scale),
+           "inconsistent address");
+  }
+
 #endif // ASSERT
 
   // accessors
@@ -236,10 +278,9 @@ class Address VALUE_OBJ_CLASS_SPEC {
   // Convert the raw encoding form into the form expected by the constructor for
   // Address.  An index of 4 (rsp) corresponds to having no index, so convert
   // that to noreg for the Address constructor.
-  static Address make_raw(int base, int index, int scale, int disp);
+  static Address make_raw(int base, int index, int scale, int disp, bool disp_is_oop);
 
   static Address make_array(ArrayAddress);
-
 
  private:
   bool base_needs_rex() const {
@@ -537,20 +578,25 @@ private:
 
   // These are all easily abused and hence protected
 
-  void mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec, int format = 0);
-
   // 32BIT ONLY SECTION
 #ifndef _LP64
   // Make these disappear in 64bit mode since they would never be correct
   void cmp_literal32(Register src1, int32_t imm32, RelocationHolder const& rspec);   // 32BIT ONLY
   void cmp_literal32(Address src1, int32_t imm32, RelocationHolder const& rspec);    // 32BIT ONLY
 
+  void mov_literal32(Register dst, int32_t imm32, RelocationHolder const& rspec);    // 32BIT ONLY
   void mov_literal32(Address dst, int32_t imm32, RelocationHolder const& rspec);     // 32BIT ONLY
 
   void push_literal32(int32_t imm32, RelocationHolder const& rspec);                 // 32BIT ONLY
 #else
   // 64BIT ONLY SECTION
   void mov_literal64(Register dst, intptr_t imm64, RelocationHolder const& rspec);   // 64BIT ONLY
+
+  void cmp_narrow_oop(Register src1, int32_t imm32, RelocationHolder const& rspec);
+  void cmp_narrow_oop(Address src1, int32_t imm32, RelocationHolder const& rspec);
+
+  void mov_narrow_oop(Register dst, int32_t imm32, RelocationHolder const& rspec);
+  void mov_narrow_oop(Address dst, int32_t imm32, RelocationHolder const& rspec);
 #endif // _LP64
 
   // These are unique in that we are ensured by the caller that the 32bit
@@ -1022,15 +1068,23 @@ private:
     LoadLoad   = 1 << 0
   };
 
-  // Serializes memory.
+  // Serializes memory and blows flags
   void membar(Membar_mask_bits order_constraint) {
-    // We only have to handle StoreLoad and LoadLoad
-    if (order_constraint & StoreLoad) {
-      // MFENCE subsumes LFENCE
-      mfence();
-    } /* [jk] not needed currently: else if (order_constraint & LoadLoad) {
-         lfence();
-    } */
+    if (os::is_MP()) {
+      // We only have to handle StoreLoad
+      if (order_constraint & StoreLoad) {
+        // All usable chips support "locked" instructions which suffice
+        // as barriers, and are much faster than the alternative of
+        // using cpuid instruction. We use here a locked add [esp],0.
+        // This is conveniently otherwise a no-op except for blowing
+        // flags.
+        // Any change to this code may need to revisit other places in
+        // the code where this idiom is used, in particular the
+        // orderAccess code.
+        lock();
+        addl(Address(rsp, 0), 0);// Assert the lock# signal here
+      }
+    }
   }
 
   void mfence();
@@ -1097,6 +1151,9 @@ private:
   void movsbl(Register dst, Register src);
 
 #ifdef _LP64
+  void movsbq(Register dst, Address src);
+  void movsbq(Register dst, Register src);
+
   // Move signed 32bit immediate to 64bit extending sign
   void movslq(Address dst, int32_t imm64);
   void movslq(Register dst, int32_t imm64);
@@ -1109,6 +1166,11 @@ private:
   void movswl(Register dst, Address src);
   void movswl(Register dst, Register src);
 
+#ifdef _LP64
+  void movswq(Register dst, Address src);
+  void movswq(Register dst, Register src);
+#endif
+
   void movw(Address dst, int imm16);
   void movw(Register dst, Address src);
   void movw(Address dst, Register src);
@@ -1116,8 +1178,18 @@ private:
   void movzbl(Register dst, Address src);
   void movzbl(Register dst, Register src);
 
+#ifdef _LP64
+  void movzbq(Register dst, Address src);
+  void movzbq(Register dst, Register src);
+#endif
+
   void movzwl(Register dst, Address src);
   void movzwl(Register dst, Register src);
+
+#ifdef _LP64
+  void movzwq(Register dst, Address src);
+  void movzwq(Register dst, Register src);
+#endif
 
   void mull(Address src);
   void mull(Register src);
@@ -1154,10 +1226,22 @@ private:
   void orq(Register dst, Address src);
   void orq(Register dst, Register src);
 
+  // SSE4.2 string instructions
+  void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
+  void pcmpestri(XMMRegister xmm1, Address src, int imm8);
+
   void popl(Address dst);
 
 #ifdef _LP64
   void popq(Address dst);
+#endif
+
+  void popcntl(Register dst, Address src);
+  void popcntl(Register dst, Register src);
+
+#ifdef _LP64
+  void popcntq(Register dst, Address src);
+  void popcntq(Register dst, Register src);
 #endif
 
   // Prefetches (SSE, SSE2, 3DNOW only)
@@ -1179,6 +1263,10 @@ private:
 
   // Shift Right Logical Quadword Immediate
   void psrlq(XMMRegister dst, int shift);
+
+  // Logical Compare Double Quadword
+  void ptest(XMMRegister dst, XMMRegister src);
+  void ptest(XMMRegister dst, Address src);
 
   // Interleave Low Bytes
   void punpcklbw(XMMRegister dst, XMMRegister src);
@@ -1393,16 +1481,19 @@ class MacroAssembler: public Assembler {
 
   // The following 4 methods return the offset of the appropriate move instruction
 
-  // Support for fast byte/word loading with zero extension (depending on particular CPU)
+  // Support for fast byte/short loading with zero extension (depending on particular CPU)
   int load_unsigned_byte(Register dst, Address src);
-  int load_unsigned_word(Register dst, Address src);
+  int load_unsigned_short(Register dst, Address src);
 
-  // Support for fast byte/word loading with sign extension (depending on particular CPU)
+  // Support for fast byte/short loading with sign extension (depending on particular CPU)
   int load_signed_byte(Register dst, Address src);
-  int load_signed_word(Register dst, Address src);
+  int load_signed_short(Register dst, Address src);
 
   // Support for sign-extension (hi:lo = extend_sign(lo))
   void extend_sign(Register hi, Register lo);
+
+  // Loading values by size and signed-ness
+  void load_sized_value(Register dst, Address src, int size_in_bytes, bool is_signed);
 
   // Support for inc/dec with optimal instruction selection depending on value
 
@@ -1585,6 +1676,9 @@ class MacroAssembler: public Assembler {
   void decode_heap_oop_not_null(Register dst, Register src);
 
   void set_narrow_oop(Register dst, jobject obj);
+  void set_narrow_oop(Address dst, jobject obj);
+  void cmp_narrow_oop(Register dst, jobject obj);
+  void cmp_narrow_oop(Address dst, jobject obj);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
@@ -1721,6 +1815,48 @@ class MacroAssembler: public Assembler {
   );
   void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
 
+  // interface method calling
+  void lookup_interface_method(Register recv_klass,
+                               Register intf_klass,
+                               RegisterOrConstant itable_index,
+                               Register method_result,
+                               Register scan_temp,
+                               Label& no_such_interface);
+
+  // Test sub_klass against super_klass, with fast and slow paths.
+
+  // The fast path produces a tri-state answer: yes / no / maybe-slow.
+  // One of the three labels can be NULL, meaning take the fall-through.
+  // If super_check_offset is -1, the value is loaded up from super_klass.
+  // No registers are killed, except temp_reg.
+  void check_klass_subtype_fast_path(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     Label* L_slow_path,
+                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+
+  // The rest of the type check; must be wired to a corresponding fast path.
+  // It does not repeat the fast path logic, so don't use it standalone.
+  // The temp_reg and temp2_reg can be noreg, if no temps are available.
+  // Updates the sub's secondary super cache as necessary.
+  // If set_cond_codes, condition codes will be Z on success, NZ on failure.
+  void check_klass_subtype_slow_path(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Register temp2_reg,
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  // Simplified, combined version, good for typical uses.
+  // Falls through on failure.
+  void check_klass_subtype(Register sub_klass,
+                           Register super_klass,
+                           Register temp_reg,
+                           Label& L_success);
+
   //----
   void set_word_if_not_zero(Register reg); // sets reg to 1 if not zero, otherwise 0
 
@@ -1762,6 +1898,10 @@ class MacroAssembler: public Assembler {
   // Writes to stack successive pages until offset reached to check for
   // stack overflow + shadow pages.  Also, clobbers tmp
   void bang_stack_size(Register size, Register tmp);
+
+  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
+                                                Register tmp,
+                                                int offset);
 
   // Support for serializing memory accesses between threads
   void serialize_memory(Register thread, Register tmp);

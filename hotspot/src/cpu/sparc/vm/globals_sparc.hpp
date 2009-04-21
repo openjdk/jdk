@@ -46,6 +46,7 @@ define_pd_global(uintx, TLABSize,              0);
 define_pd_global(uintx, NewSize, ScaleForWordSize((2048 * K) + (2 * (64 * K))));
 define_pd_global(intx,  SurvivorRatio,         8);
 define_pd_global(intx,  InlineFrequencyCount,  50);  // we can use more inlining on the SPARC
+define_pd_global(intx,  InlineSmallCode,       1500);
 #ifdef _LP64
 // Stack slots are 2X larger in LP64 than in the 32 bit VM.
 define_pd_global(intx,  ThreadStackSize,       1024);

@@ -29,7 +29,7 @@
 //
 //
 //  Little cms
-//  Copyright (C) 1998-2006 Marti Maria
+//  Copyright (C) 1998-2007 Marti Maria
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -149,6 +149,7 @@ void AdjustEndianessArray16(LPWORD p, size_t num_words)
 
 #endif
 
+
 // Transports to properly encoded values - note that icc profiles does use
 // big endian notation.
 
@@ -216,7 +217,8 @@ icTagTypeSignature ReadBase(LPLCMSICCPROFILE Icc)
 {
     icTagBase Base;
 
-    Icc -> Read(&Base, sizeof(icTagBase), 1, Icc);
+    if (Icc -> Read(&Base, sizeof(icTagBase), 1, Icc) != 1)
+                return (icTagTypeSignature) 0;
     AdjustEndianess32((LPBYTE) &Base.sig);
 
     return Base.sig;
@@ -288,13 +290,15 @@ void EvalCHRM(LPcmsCIEXYZ Dest, LPMAT3 Chrm, LPcmsCIEXYZ Src)
 // Read profile header and validate it
 
 static
-LPLCMSICCPROFILE ReadHeader(LPLCMSICCPROFILE Icc, BOOL lIsFromMemory)
+LPLCMSICCPROFILE ReadHeader(LPLCMSICCPROFILE Icc, LCMSBOOL lIsFromMemory)
 {
      icTag Tag;
      icHeader Header;
      icInt32Number TagCount, i;
+     icUInt32Number extent;
 
-     Icc -> Read(&Header, sizeof(icHeader), 1, Icc);
+       if (Icc -> Read(&Header, sizeof(icHeader), 1, Icc) != 1)
+                      goto ErrorCleanup;
 
        // Convert endian
 
@@ -306,13 +310,12 @@ LPLCMSICCPROFILE ReadHeader(LPLCMSICCPROFILE Icc, BOOL lIsFromMemory)
        AdjustEndianess32((LPBYTE) &Header.pcs);
        AdjustEndianess32((LPBYTE) &Header.magic);
        AdjustEndianess32((LPBYTE) &Header.flags);
-           AdjustEndianess32((LPBYTE) &Header.attributes[0]);
+       AdjustEndianess32((LPBYTE) &Header.attributes[0]);
        AdjustEndianess32((LPBYTE) &Header.renderingIntent);
 
        // Validate it
 
        if (Header.magic != icMagicNumber) goto ErrorCleanup;
-
 
        if (Icc ->Read(&TagCount, sizeof(icInt32Number), 1, Icc) != 1)
                      goto ErrorCleanup;
@@ -324,7 +327,7 @@ LPLCMSICCPROFILE ReadHeader(LPLCMSICCPROFILE Icc, BOOL lIsFromMemory)
        Icc -> PCS             = Header.pcs;
        Icc -> RenderingIntent = (icRenderingIntent) Header.renderingIntent;
        Icc -> flags           = Header.flags;
-           Icc -> attributes      = Header.attributes[0];
+       Icc -> attributes      = Header.attributes[0];
        Icc -> Illuminant.X    = Convert15Fixed16(Header.illuminant.X);
        Icc -> Illuminant.Y    = Convert15Fixed16(Header.illuminant.Y);
        Icc -> Illuminant.Z    = Convert15Fixed16(Header.illuminant.Z);
@@ -348,7 +351,7 @@ LPLCMSICCPROFILE ReadHeader(LPLCMSICCPROFILE Icc, BOOL lIsFromMemory)
 
        // Read tag directory
 
-       if (TagCount > MAX_TABLE_TAG) {
+       if (TagCount > MAX_TABLE_TAG || TagCount < 0) {
 
            cmsSignalError(LCMS_ERRC_ABORTED, "Too many tags (%d)", TagCount);
            goto ErrorCleanup;
@@ -357,11 +360,17 @@ LPLCMSICCPROFILE ReadHeader(LPLCMSICCPROFILE Icc, BOOL lIsFromMemory)
        Icc -> TagCount = TagCount;
        for (i=0; i < TagCount; i++) {
 
-              Icc ->Read(&Tag, sizeof(icTag), 1, Icc);
+              if (Icc ->Read(&Tag, sizeof(icTag), 1, Icc) != 1)
+                  goto ErrorCleanup;
 
               AdjustEndianess32((LPBYTE) &Tag.offset);
               AdjustEndianess32((LPBYTE) &Tag.size);
               AdjustEndianess32((LPBYTE) &Tag.sig);            // Signature
+
+              // Perform some sanity check. Offset + size should fall inside file.
+              extent = Tag.offset + Tag.size;
+              if (extent > Header.size || extent < Tag.offset)
+                  goto ErrorCleanup;
 
               Icc -> TagNames[i]   = Tag.sig;
               Icc -> TagOffsets[i] = Tag.offset;
@@ -381,12 +390,9 @@ ErrorCleanup:
              cmsSignalError(LCMS_ERRC_ABORTED, "Corrupted profile: '%s'", Icc->PhysicalFile);
 
 
-       free(Icc);
+        _cmsFree(Icc);
        return NULL;
 }
-
-
-
 
 static
 unsigned int uipow(unsigned int a, unsigned int b) {
@@ -497,7 +503,7 @@ void FixLUT8bothSides(LPLUT Lut, size_t nTabSize)
 // The infamous LUT 8
 
 static
-void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
+LCMSBOOL ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
 {
     icLut8 LUT8;
     LPBYTE Temp;
@@ -506,7 +512,7 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
     unsigned int AllLinear;
     LPWORD PtrW;
 
-       Icc ->Read(&LUT8, sizeof(icLut8) - SIZEOF_UINT8_ALIGNED, 1, Icc);
+       if (Icc ->Read(&LUT8, sizeof(icLut8) - SIZEOF_UINT8_ALIGNED, 1, Icc) != 1) return FALSE;
 
        NewLUT -> wFlags        = LUT_HASTL1|LUT_HASTL2|LUT_HAS3DGRID;
        NewLUT -> cLutPoints    = LUT8.clutPoints;
@@ -515,6 +521,10 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
        NewLUT -> InputEntries  = 256;
        NewLUT -> OutputEntries = 256;
 
+       // Do some checking
+       if (!_cmsValidateLUT(NewLUT)) {
+          return FALSE;
+       }
 
        AdjustEndianess32((LPBYTE) &LUT8.e00);
        AdjustEndianess32((LPBYTE) &LUT8.e01);
@@ -550,13 +560,24 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
 
        // Copy input tables
 
-       Temp = (LPBYTE) malloc(256);
+       Temp = (LPBYTE) _cmsMalloc(256);
+       if (Temp == NULL) return FALSE;
+
        AllLinear = 0;
        for (i=0; i < NewLUT -> InputChan; i++) {
 
-              PtrW = (LPWORD) malloc(sizeof(WORD) * 256);
+              PtrW = (LPWORD) _cmsMalloc(sizeof(WORD) * 256);
+              if (PtrW == NULL) {
+                   _cmsFree(Temp);
+                  return FALSE;
+                  }
+
               NewLUT -> L1[i] = PtrW;
-              Icc ->Read(Temp, 1, 256, Icc);
+              if (Icc ->Read(Temp, 1, 256, Icc) != 256) {
+                   _cmsFree(Temp);
+                  return FALSE;
+                  }
+
               for (j=0; j < 256; j++)
                      PtrW[j] = TO16_TAB(Temp[j]);
                      AllLinear += cmsIsLinear(NewLUT -> L1[i], NewLUT -> InputEntries);
@@ -569,7 +590,7 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
               NewLUT -> wFlags &= ~LUT_HASTL1;
        }
 
-       free(Temp);
+        _cmsFree(Temp);
 
        // Copy 3D CLUT
 
@@ -578,9 +599,20 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
 
        if (nTabSize > 0) {
 
-            PtrW = (LPWORD) malloc(sizeof(WORD) * nTabSize);
-            Temp = (LPBYTE) malloc(nTabSize);
-            Icc ->Read(Temp, 1, nTabSize, Icc);
+            PtrW = (LPWORD) _cmsCalloc(sizeof(WORD), nTabSize);
+            if (PtrW == NULL) return FALSE;
+
+            Temp = (LPBYTE) _cmsMalloc(nTabSize);
+            if (Temp == NULL) {
+                 _cmsFree(PtrW);
+                return FALSE;
+                }
+
+            if (Icc ->Read(Temp, 1, nTabSize, Icc) != nTabSize) {
+                 _cmsFree(Temp);
+                _cmsFree(PtrW);
+                return FALSE;
+                }
 
             NewLUT -> T = PtrW;
             NewLUT -> Tsize = (unsigned int) (nTabSize * sizeof(WORD));
@@ -589,25 +621,37 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
 
                      *PtrW++ = TO16_TAB(Temp[i]);
             }
-            free(Temp);
+            _cmsFree(Temp);
        }
        else {
            NewLUT ->T = NULL;
            NewLUT ->Tsize = 0;
-           NewLUT -> wFlags &= ~LUT_HAS3DGRID;
+           NewLUT ->wFlags &= ~LUT_HAS3DGRID;
        }
-
 
 
        // Copy output tables
 
-       Temp = (LPBYTE) malloc(256);
+       Temp = (LPBYTE) _cmsMalloc(256);
+       if (Temp == NULL) {
+           return FALSE;
+           }
+
        AllLinear = 0;
        for (i=0; i < NewLUT -> OutputChan; i++) {
 
-              PtrW = (LPWORD) malloc(sizeof(WORD) * 256);
+              PtrW = (LPWORD) _cmsMalloc(sizeof(WORD) * 256);
+              if (PtrW == NULL) {
+                  _cmsFree(Temp);
+                  return FALSE;
+                  }
+
               NewLUT -> L2[i] = PtrW;
-              Icc ->Read(Temp, 1, 256, Icc);
+              if (Icc ->Read(Temp, 1, 256, Icc) != 256) {
+                  _cmsFree(Temp);
+                  return FALSE;
+                  }
+
               for (j=0; j < 256; j++)
                      PtrW[j] = TO16_TAB(Temp[j]);
                      AllLinear += cmsIsLinear(NewLUT -> L2[i], 256);
@@ -621,7 +665,7 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
        }
 
 
-       free(Temp);
+       _cmsFree(Temp);
 
        cmsCalcL16Params(NewLUT -> InputEntries,  &NewLUT -> In16params);
        cmsCalcL16Params(NewLUT -> OutputEntries, &NewLUT -> Out16params);
@@ -646,6 +690,15 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
            // some profiles does claim to do that. Poor lcms will try
            // to detect such condition and fix up "on the fly".
 
+           switch (sig) {
+
+            case icSigBToA0Tag:
+            case icSigBToA1Tag:
+            case icSigBToA2Tag:
+            case icSigGamutTag:
+            case icSigPreview0Tag:
+            case icSigPreview1Tag:
+            case icSigPreview2Tag:
            {
                LPWORD WhiteLab, ExpectedWhite;
                WORD WhiteFixed[MAXCHANNELS], WhiteUnfixed[MAXCHANNELS];
@@ -685,9 +738,13 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
                }
 
            }
+           break;
 
+        default:;
+        }
        }
 
+       return TRUE;
 }
 
 
@@ -696,7 +753,7 @@ void ReadLUT8(LPLCMSICCPROFILE Icc, LPLUT NewLUT, icTagSignature sig)
 // Case LUT 16
 
 static
-void ReadLUT16(LPLCMSICCPROFILE Icc, LPLUT NewLUT)
+LCMSBOOL ReadLUT16(LPLCMSICCPROFILE Icc, LPLUT NewLUT)
 {
     icLut16 LUT16;
     size_t nTabSize;
@@ -705,7 +762,8 @@ void ReadLUT16(LPLCMSICCPROFILE Icc, LPLUT NewLUT)
     LPWORD PtrW;
 
 
-       Icc ->Read(&LUT16, sizeof(icLut16)- SIZEOF_UINT16_ALIGNED, 1, Icc);
+       if (Icc ->Read(&LUT16, sizeof(icLut16)- SIZEOF_UINT16_ALIGNED, 1, Icc) != 1)
+            return FALSE;
 
        NewLUT -> wFlags        = LUT_HASTL1 | LUT_HASTL2 | LUT_HAS3DGRID;
        NewLUT -> cLutPoints    = LUT16.clutPoints;
@@ -718,6 +776,9 @@ void ReadLUT16(LPLCMSICCPROFILE Icc, LPLUT NewLUT)
        NewLUT -> InputEntries  = LUT16.inputEnt;
        NewLUT -> OutputEntries = LUT16.outputEnt;
 
+       if (!_cmsValidateLUT(NewLUT)) {
+         return FALSE;
+       }
 
        // Matrix handling
 
@@ -754,9 +815,14 @@ void ReadLUT16(LPLCMSICCPROFILE Icc, LPLUT NewLUT)
        AllLinear = 0;
        for (i=0; i < NewLUT -> InputChan; i++) {
 
-              PtrW = (LPWORD) malloc(sizeof(WORD) * NewLUT -> InputEntries);
+              PtrW = (LPWORD) _cmsMalloc(sizeof(WORD) * NewLUT -> InputEntries);
+              if (PtrW == NULL) return FALSE;
+
               NewLUT -> L1[i] = PtrW;
-              Icc ->Read(PtrW, sizeof(WORD), NewLUT -> InputEntries, Icc);
+              if (Icc ->Read(PtrW, sizeof(WORD), NewLUT -> InputEntries, Icc) != NewLUT -> InputEntries) {
+                  return FALSE;
+                  }
+
               AdjustEndianessArray16(PtrW, NewLUT -> InputEntries);
               AllLinear += cmsIsLinear(NewLUT -> L1[i], NewLUT -> InputEntries);
               }
@@ -775,12 +841,17 @@ void ReadLUT16(LPLCMSICCPROFILE Icc, LPLUT NewLUT)
                                                 NewLUT->InputChan));
        if (nTabSize > 0) {
 
-           PtrW = (LPWORD) malloc(sizeof(WORD) * nTabSize);
+           PtrW = (LPWORD) _cmsCalloc(sizeof(WORD), nTabSize);
+           if (PtrW == NULL)
+               return FALSE;
 
            NewLUT -> T = PtrW;
            NewLUT -> Tsize = (unsigned int) (nTabSize * sizeof(WORD));
 
-           Icc -> Read(PtrW, sizeof(WORD), nTabSize, Icc);
+           if (Icc -> Read(PtrW, sizeof(WORD), nTabSize, Icc) != nTabSize) {
+               return FALSE;
+           }
+
            AdjustEndianessArray16(NewLUT -> T, nTabSize);
        }
        else {
@@ -794,9 +865,16 @@ void ReadLUT16(LPLCMSICCPROFILE Icc, LPLUT NewLUT)
        AllLinear = 0;
        for (i=0; i < NewLUT -> OutputChan; i++) {
 
-              PtrW = (LPWORD) malloc(sizeof(WORD) * NewLUT -> OutputEntries);
+              PtrW = (LPWORD) _cmsMalloc(sizeof(WORD) * NewLUT -> OutputEntries);
+              if (PtrW == NULL) {
+                  return FALSE;
+                  }
+
               NewLUT -> L2[i] = PtrW;
-              Icc ->Read(PtrW, sizeof(WORD), NewLUT -> OutputEntries, Icc);
+              if (Icc ->Read(PtrW, sizeof(WORD), NewLUT -> OutputEntries, Icc) != NewLUT -> OutputEntries) {
+                  return FALSE;
+                  }
+
               AdjustEndianessArray16(PtrW, NewLUT -> OutputEntries);
               AllLinear += cmsIsLinear(NewLUT -> L2[i], NewLUT -> OutputEntries);
               }
@@ -814,6 +892,8 @@ void ReadLUT16(LPLCMSICCPROFILE Icc, LPLUT NewLUT)
        cmsCalcCLUT16Params(NewLUT -> cLutPoints,  NewLUT -> InputChan,
                                                   NewLUT -> OutputChan,
                                                   &NewLUT -> CLut16params);
+
+       return TRUE;
 }
 
 
@@ -830,16 +910,14 @@ LPGAMMATABLE ReadCurve(LPLCMSICCPROFILE  Icc)
 
 
        BaseType = ReadBase(Icc);
-
        switch (BaseType) {
 
 
-       case 0x9478ee00L:    // Monaco 2 profiler is BROKEN!
+       case ((icTagTypeSignature) 0x9478ee00):    // Monaco 2 profiler is BROKEN!
        case icSigCurveType:
 
-           Icc ->Read(&Count, sizeof(icUInt32Number), 1, Icc);
+           if (Icc ->Read(&Count, sizeof(icUInt32Number), 1, Icc) != 1) return NULL;
            AdjustEndianess32((LPBYTE) &Count);
-
 
            switch (Count) {
 
@@ -855,7 +933,7 @@ LPGAMMATABLE ReadCurve(LPLCMSICCPROFILE  Icc)
                     {
                      WORD SingleGammaFixed;
 
-                     Icc ->Read(&SingleGammaFixed, sizeof(WORD), 1, Icc);
+                     if (Icc ->Read(&SingleGammaFixed, sizeof(WORD), 1, Icc) != 1) return NULL;
                      AdjustEndianess16((LPBYTE) &SingleGammaFixed);
                      return cmsBuildGamma(4096, Convert8Fixed8(SingleGammaFixed));
                      }
@@ -865,10 +943,9 @@ LPGAMMATABLE ReadCurve(LPLCMSICCPROFILE  Icc)
                      NewGamma = cmsAllocGamma(Count);
                      if (!NewGamma) return NULL;
 
-                     Icc ->Read(NewGamma -> GammaTable, sizeof(WORD), Count, Icc);
-
+                     if (Icc ->Read(NewGamma -> GammaTable, sizeof(WORD), Count, Icc) != Count)
+                         return NULL;
                      AdjustEndianessArray16(NewGamma -> GammaTable, Count);
-
                      return NewGamma;
                     }
               }
@@ -885,11 +962,11 @@ LPGAMMATABLE ReadCurve(LPLCMSICCPROFILE  Icc)
            icUInt16Number   Type;
            int i;
 
-           Icc -> Read(&Type, sizeof(icUInt16Number), 1, Icc);
-           Icc -> Read(&Reserved, sizeof(icUInt16Number), 1, Icc);
+           if (Icc -> Read(&Type, sizeof(icUInt16Number), 1, Icc) != 1) return NULL;
+           if (Icc -> Read(&Reserved, sizeof(icUInt16Number), 1, Icc) != 1) return NULL;
 
            AdjustEndianess16((LPBYTE) &Type);
-           if (Type > 5) {
+           if (Type > 4) {
 
                 cmsSignalError(LCMS_ERRC_ABORTED, "Unknown parametric curve type '%d' found.", Type);
                 return NULL;
@@ -900,7 +977,7 @@ LPGAMMATABLE ReadCurve(LPLCMSICCPROFILE  Icc)
 
           for (i=0; i < n; i++) {
                 Num = 0;
-                Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc);
+                if (Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc) != 1) return NULL;
                 Params[i] = Convert15Fixed16(Num);
           }
 
@@ -938,7 +1015,7 @@ LPGAMMATABLE ReadCurveReversed(LPLCMSICCPROFILE Icc)
        case 0x9478ee00L:    // Monaco 2 profiler is BROKEN!
        case icSigCurveType:
 
-           Icc -> Read(&Count, sizeof(icUInt32Number), 1, Icc);
+           if (Icc -> Read(&Count, sizeof(icUInt32Number), 1, Icc) != 1) return NULL;
            AdjustEndianess32((LPBYTE) &Count);
 
 
@@ -948,6 +1025,7 @@ LPGAMMATABLE ReadCurveReversed(LPLCMSICCPROFILE Icc)
 
                      NewGamma = cmsAllocGamma(2);
                      if (!NewGamma) return NULL;
+
                      NewGamma -> GammaTable[0] = 0;
                      NewGamma -> GammaTable[1] = 0xFFFF;
                      return NewGamma;
@@ -955,7 +1033,7 @@ LPGAMMATABLE ReadCurveReversed(LPLCMSICCPROFILE Icc)
            case 1:  {
                      WORD SingleGammaFixed;
 
-                     Icc -> Read(&SingleGammaFixed, sizeof(WORD), 1, Icc);
+                     if (Icc -> Read(&SingleGammaFixed, sizeof(WORD), 1, Icc) != 1) return NULL;
                      AdjustEndianess16((LPBYTE) &SingleGammaFixed);
                      return cmsBuildGamma(4096, 1./Convert8Fixed8(SingleGammaFixed));
                      }
@@ -965,7 +1043,8 @@ LPGAMMATABLE ReadCurveReversed(LPLCMSICCPROFILE Icc)
                      NewGamma = cmsAllocGamma(Count);
                      if (!NewGamma) return NULL;
 
-                     Icc -> Read(NewGamma -> GammaTable, sizeof(WORD), Count, Icc);
+                     if (Icc -> Read(NewGamma -> GammaTable, sizeof(WORD), Count, Icc) != Count)
+                         return NULL;
 
                      AdjustEndianessArray16(NewGamma -> GammaTable, Count);
 
@@ -992,11 +1071,11 @@ LPGAMMATABLE ReadCurveReversed(LPLCMSICCPROFILE Icc)
            int i;
 
 
-           Icc -> Read(&Type, sizeof(icUInt16Number), 1, Icc);
-           Icc -> Read(&Reserved, sizeof(icUInt16Number), 1, Icc);
+           if (Icc -> Read(&Type, sizeof(icUInt16Number), 1, Icc) != 1) return NULL;
+           if (Icc -> Read(&Reserved, sizeof(icUInt16Number), 1, Icc) != 1) return NULL;
 
            AdjustEndianess16((LPBYTE) &Type);
-           if (Type > 5) {
+           if (Type > 4) {
 
                 cmsSignalError(LCMS_ERRC_ABORTED, "Unknown parametric curve type '%d' found.", Type);
                 return NULL;
@@ -1006,7 +1085,7 @@ LPGAMMATABLE ReadCurveReversed(LPLCMSICCPROFILE Icc)
           n = ParamsByType[Type];
 
           for (i=0; i < n; i++) {
-                Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc);
+                if (Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc) != 1) return NULL;
                 Params[i] = Convert15Fixed16(Num);
           }
 
@@ -1028,7 +1107,7 @@ LPGAMMATABLE ReadCurveReversed(LPLCMSICCPROFILE Icc)
 // V4 stuff. Read matrix for LutAtoB and LutBtoA
 
 static
-BOOL ReadMatrixOffset(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT, DWORD dwFlags)
+LCMSBOOL ReadMatrixOffset(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT, DWORD dwFlags)
 {
 
     icS15Fixed16Number All[12];
@@ -1038,7 +1117,8 @@ BOOL ReadMatrixOffset(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT, DWORD d
 
     if (Icc -> Seek(Icc, Offset)) return FALSE;
 
-    Icc ->Read(All, sizeof(icS15Fixed16Number), 12, Icc);
+    if (Icc ->Read(All, sizeof(icS15Fixed16Number), 12, Icc) != 12)
+        return FALSE;
 
     for (i=0; i < 12;  i++)
               AdjustEndianess32((LPBYTE) &All[i]);
@@ -1067,17 +1147,26 @@ BOOL ReadMatrixOffset(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT, DWORD d
 //  V4 stuff. Read CLUT part for LutAtoB and LutBtoA
 
 static
-BOOL ReadCLUT(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT)
+LCMSBOOL ReadCLUT(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT)
 {
-
+    unsigned int j;
     icCLutStruct CLUT;
 
     if (Icc -> Seek(Icc, Offset)) return FALSE;
-    Icc ->Read(&CLUT, sizeof(icCLutStruct), 1, Icc);
+    if (Icc ->Read(&CLUT, sizeof(icCLutStruct), 1, Icc) != 1) return FALSE;
 
 
-    cmsAlloc3DGrid(NewLUT, CLUT.gridPoints[0], NewLUT ->InputChan,
-                                               NewLUT ->OutputChan);
+    for (j=1; j < NewLUT ->InputChan; j++) {
+        if (CLUT.gridPoints[0] != CLUT.gridPoints[j]) {
+            cmsSignalError(LCMS_ERRC_ABORTED, "CLUT with different granulatity is currently unsupported.");
+            return FALSE;
+        }
+
+
+    }
+
+    if (cmsAlloc3DGrid(NewLUT, CLUT.gridPoints[0], NewLUT ->InputChan,
+                                               NewLUT ->OutputChan) == NULL) return FALSE;
 
     // Precission can be 1 or 2 bytes
 
@@ -1087,7 +1176,7 @@ BOOL ReadCLUT(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT)
         unsigned int i;
 
         for (i=0; i < NewLUT->Tsize / sizeof(WORD); i++) {
-                Icc ->Read(&v, sizeof(BYTE), 1, Icc);
+                if (Icc ->Read(&v, sizeof(BYTE), 1, Icc) != 1) return FALSE;
                 NewLUT->T[i] = TO16_TAB(v);
         }
 
@@ -1095,10 +1184,10 @@ BOOL ReadCLUT(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT)
     else
         if (CLUT.prec == 2) {
 
-         Icc ->Read(NewLUT ->T, sizeof(WORD),
-                    NewLUT->Tsize / sizeof(WORD), Icc);
+         size_t n = NewLUT->Tsize / sizeof(WORD);
 
-        AdjustEndianessArray16(NewLUT ->T, NewLUT->Tsize / sizeof(WORD));
+         if (Icc ->Read(NewLUT ->T, sizeof(WORD), n, Icc) != n) return FALSE;
+         AdjustEndianessArray16(NewLUT ->T, NewLUT->Tsize / sizeof(WORD));
     }
     else {
         cmsSignalError(LCMS_ERRC_ABORTED, "Unknow precission of '%d'", CLUT.prec);
@@ -1106,6 +1195,22 @@ BOOL ReadCLUT(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT)
     }
 
     return TRUE;
+}
+
+
+static
+void ResampleCurves(LPGAMMATABLE Curves[], int nCurves)
+{
+    int i;
+    LPSAMPLEDCURVE sc;
+
+    for (i=0; i < nCurves; i++) {
+        sc = cmsConvertGammaToSampledCurve(Curves[i], 4096);
+        cmsFreeGamma(Curves[i]);
+        Curves[i] = cmsConvertSampledCurveToGamma(sc, 0xFFFF);
+        cmsFreeSampledCurve(sc);
+    }
+
 }
 
 
@@ -1121,7 +1226,7 @@ void SkipAlignment(LPLCMSICCPROFILE Icc)
 
 // Read a set of curves from specific offset
 static
-BOOL ReadSetOfCurves(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT, int nLocation)
+LCMSBOOL ReadSetOfCurves(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT, int nLocation)
 {
     LPGAMMATABLE Curves[MAXCHANNELS];
     unsigned int i, nCurves;
@@ -1134,19 +1239,40 @@ BOOL ReadSetOfCurves(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT, int nLoc
     else
         nCurves = NewLUT ->OutputChan;
 
+    ZeroMemory(Curves, sizeof(Curves));
     for (i=0; i < nCurves; i++) {
 
         Curves[i] = ReadCurve(Icc);
+        if (Curves[i] == NULL) goto Error;
         SkipAlignment(Icc);
+    }
 
+    // March-26'08: some V4 profiles may have different sampling
+    // rates, in this case resample all curves to maximum
+
+    for (i=1; i < nCurves; i++) {
+        if (Curves[i]->nEntries != Curves[0]->nEntries) {
+            ResampleCurves(Curves, nCurves);
+        break;
+        }
     }
 
     NewLUT = cmsAllocLinearTable(NewLUT, Curves, nLocation);
+    if (NewLUT == NULL) goto Error;
 
     for (i=0; i < nCurves; i++)
         cmsFreeGamma(Curves[i]);
 
     return TRUE;
+
+Error:
+
+    for (i=0; i < nCurves; i++)
+        if (Curves[i])
+            cmsFreeGamma(Curves[i]);
+
+    return FALSE;
+
 
 }
 
@@ -1160,21 +1286,27 @@ BOOL ReadSetOfCurves(LPLCMSICCPROFILE Icc, size_t Offset, LPLUT NewLUT, int nLoc
 //   L2 = B curves
 
 static
-BOOL ReadLUT_A2B(LPLCMSICCPROFILE Icc, LPLUT NewLUT, size_t BaseOffset, icTagSignature sig)
+LCMSBOOL ReadLUT_A2B(LPLCMSICCPROFILE Icc, LPLUT NewLUT, size_t BaseOffset, icTagSignature sig)
 {
     icLutAtoB LUT16;
 
-       Icc ->Read(&LUT16, sizeof(icLutAtoB), 1, Icc);
+       if (Icc ->Read(&LUT16, sizeof(icLutAtoB), 1, Icc) != 1) return FALSE;
 
        NewLUT -> InputChan     = LUT16.inputChan;
        NewLUT -> OutputChan    = LUT16.outputChan;
+
+       // Validate the NewLUT here to avoid excessive number of channels
+       // (leading to stack-based buffer overflow in ReadSetOfCurves).
+       // Needs revalidation after table size is filled in.
+       if (!_cmsValidateLUT(NewLUT)) {
+           return FALSE;
+       }
 
        AdjustEndianess32((LPBYTE) &LUT16.offsetB);
        AdjustEndianess32((LPBYTE) &LUT16.offsetMat);
        AdjustEndianess32((LPBYTE) &LUT16.offsetM);
        AdjustEndianess32((LPBYTE) &LUT16.offsetC);
        AdjustEndianess32((LPBYTE) &LUT16.offsetA);
-
 
        if (LUT16.offsetB != 0)
                 ReadSetOfCurves(Icc, BaseOffset + LUT16.offsetB, NewLUT, 2);
@@ -1220,14 +1352,21 @@ BOOL ReadLUT_A2B(LPLCMSICCPROFILE Icc, LPLUT NewLUT, size_t BaseOffset, icTagSig
 // V4 stuff. LutBtoA type
 
 static
-BOOL ReadLUT_B2A(LPLCMSICCPROFILE Icc, LPLUT NewLUT,  size_t BaseOffset, icTagSignature sig)
+LCMSBOOL ReadLUT_B2A(LPLCMSICCPROFILE Icc, LPLUT NewLUT,  size_t BaseOffset, icTagSignature sig)
 {
   icLutBtoA LUT16;
 
-       Icc ->Read(&LUT16, sizeof(icLutBtoA), 1, Icc);
+       if (Icc ->Read(&LUT16, sizeof(icLutBtoA), 1, Icc) != 1) return FALSE;
 
        NewLUT -> InputChan     = LUT16.inputChan;
        NewLUT -> OutputChan    = LUT16.outputChan;
+
+       // Validate the NewLUT here to avoid excessive number of channels
+       // (leading to stack-based buffer overflow in ReadSetOfCurves).
+       // Needs revalidation after table size is filled in.
+       if (!_cmsValidateLUT(NewLUT)) {
+           return FALSE;
+       }
 
        AdjustEndianess32((LPBYTE) &LUT16.offsetB);
        AdjustEndianess32((LPBYTE) &LUT16.offsetMat);
@@ -1241,7 +1380,6 @@ BOOL ReadLUT_B2A(LPLCMSICCPROFILE Icc, LPLUT NewLUT,  size_t BaseOffset, icTagSi
 
        if (LUT16.offsetMat != 0)
             ReadMatrixOffset(Icc, BaseOffset + LUT16.offsetMat, NewLUT, LUT_HASMATRIX3);
-
 
        if (LUT16.offsetM != 0)
                 ReadSetOfCurves(Icc, BaseOffset + LUT16.offsetM, NewLUT, 3);
@@ -1294,7 +1432,7 @@ LPLUT LCMSEXPORT cmsReadICCLut(cmsHPROFILE hProfile, icTagSignature sig)
 
 
     // If is in memory, the LUT is already there, so throw a copy
-    if (!Icc -> stream) {
+    if (Icc -> TagPtrs[n]) {
 
         return cmsDupLUT((LPLUT) Icc ->TagPtrs[n]);
     }
@@ -1308,8 +1446,8 @@ LPLUT LCMSEXPORT cmsReadICCLut(cmsHPROFILE hProfile, icTagSignature sig)
 
 
     NewLUT = cmsAllocLUT();
-    if (!NewLUT)
-    {
+    if (!NewLUT) {
+
        cmsSignalError(LCMS_ERRC_ABORTED, "cmsAllocLUT() failed");
        return NULL;
     }
@@ -1317,11 +1455,29 @@ LPLUT LCMSEXPORT cmsReadICCLut(cmsHPROFILE hProfile, icTagSignature sig)
 
     switch (BaseType) {
 
-    case icSigLut8Type:    ReadLUT8(Icc, NewLUT, sig); break;
-    case icSigLut16Type:   ReadLUT16(Icc, NewLUT);     break;
+    case icSigLut8Type:    if (!ReadLUT8(Icc, NewLUT, sig)) {
+                                cmsFreeLUT(NewLUT);
+                                return NULL;
+                           }
+                           break;
 
-    case icSiglutAtoBType: ReadLUT_A2B(Icc, NewLUT, offset, sig); break;
-    case icSiglutBtoAType: ReadLUT_B2A(Icc, NewLUT, offset, sig); break;
+    case icSigLut16Type:   if (!ReadLUT16(Icc, NewLUT)) {
+                                cmsFreeLUT(NewLUT);
+                                return NULL;
+                           }
+                           break;
+
+    case icSiglutAtoBType: if (!ReadLUT_A2B(Icc, NewLUT, offset, sig)) {
+                                cmsFreeLUT(NewLUT);
+                                return NULL;
+                           }
+                           break;
+
+    case icSiglutBtoAType: if (!ReadLUT_B2A(Icc, NewLUT, offset, sig)) {
+                                cmsFreeLUT(NewLUT);
+                                return NULL;
+                           }
+                           break;
 
     default:  cmsSignalError(LCMS_ERRC_ABORTED, "Bad tag signature %lx found.", BaseType);
               cmsFreeLUT(NewLUT);
@@ -1335,16 +1491,23 @@ LPLUT LCMSEXPORT cmsReadICCLut(cmsHPROFILE hProfile, icTagSignature sig)
 
 // Sets the language & country preferences. Used only in ICC 4.0 profiles
 
-void LCMSEXPORT cmsSetLanguage(int LanguageCode, int CountryCode)
+void LCMSEXPORT cmsSetLanguage(const char LanguageCode[4], const char CountryCode[4])
 {
-    GlobalLanguageCode = LanguageCode;
-    GlobalCountryCode  = CountryCode;
+
+    int LanguageCodeInt = *(int *) LanguageCode;
+    int CountryCodeInt  = *(int *) CountryCode;
+
+    AdjustEndianess32((LPBYTE) &LanguageCodeInt);
+    AdjustEndianess32((LPBYTE) &CountryCodeInt);
+
+    GlobalLanguageCode = LanguageCodeInt;
+    GlobalCountryCode  = CountryCodeInt;
 }
 
 
 
 // Some tags (e.g, 'pseq') can have text tags embedded. This function
-// handles such special case.
+// handles such special case. Returns -1 on error, or the number of bytes left on success.
 
 static
 int ReadEmbeddedTextTag(LPLCMSICCPROFILE Icc, size_t size, char* Name, size_t size_max)
@@ -1353,7 +1516,6 @@ int ReadEmbeddedTextTag(LPLCMSICCPROFILE Icc, size_t size, char* Name, size_t si
 
 
     BaseType = ReadBase(Icc);
-
     size -= sizeof(icTagBase);
 
     switch (BaseType) {
@@ -1365,50 +1527,54 @@ int ReadEmbeddedTextTag(LPLCMSICCPROFILE Icc, size_t size, char* Name, size_t si
            icUInt16Number  ScriptCodeCode, Dummy;
            icUInt8Number   ScriptCodeCount;
 
-           Icc ->Read(&AsciiCount, sizeof(icUInt32Number), 1, Icc);
+           if (Icc ->Read(&AsciiCount, sizeof(icUInt32Number), 1, Icc) != 1) return -1;
 
-                   if (size < sizeof(icUInt32Number)) return (int) size;
+           if (size < sizeof(icUInt32Number)) return (int) size;
            size -= sizeof(icUInt32Number);
 
            AdjustEndianess32((LPBYTE) &AsciiCount);
            Icc ->Read(Name, 1,
                 (AsciiCount >= size_max) ? (size_max-1) : AsciiCount, Icc);
 
-                   if (size < AsciiCount) return (int) size;
+           if (size < AsciiCount) return (int) size;
            size -= AsciiCount;
 
            // Skip Unicode code
 
-           Icc ->Read(&UnicodeCode,  sizeof(icUInt32Number), 1, Icc);
-                   if (size < sizeof(icUInt32Number)) return (int) size;
+           if (Icc ->Read(&UnicodeCode,  sizeof(icUInt32Number), 1, Icc) != 1) return -1;
+           if (size < sizeof(icUInt32Number)) return (int) size;
            size -= sizeof(icUInt32Number);
 
-           Icc ->Read(&UnicodeCount, sizeof(icUInt32Number), 1, Icc);
-                   if (size < sizeof(icUInt32Number)) return (int) size;
+           if (Icc ->Read(&UnicodeCount, sizeof(icUInt32Number), 1, Icc) != 1) return -1;
+           if (size < sizeof(icUInt32Number)) return (int) size;
            size -= sizeof(icUInt32Number);
 
            AdjustEndianess32((LPBYTE) &UnicodeCount);
 
            if (UnicodeCount > size) return (int) size;
 
-           for (i=0; i < UnicodeCount; i++)
-                Icc ->Read(&Dummy, sizeof(icUInt16Number), 1, Icc);
-
-           size -= UnicodeCount * sizeof(icUInt16Number);
+           for (i=0; i < UnicodeCount; i++) {
+                size_t nread = Icc ->Read(&Dummy, sizeof(icUInt16Number), 1, Icc);
+                if (nread != 1) return (int) size;
+                size -= sizeof(icUInt16Number);
+           }
 
           // Skip ScriptCode code
 
-           Icc ->Read(&ScriptCodeCode,  sizeof(icUInt16Number), 1, Icc);
+           if (Icc ->Read(&ScriptCodeCode,  sizeof(icUInt16Number), 1, Icc) != 1) return -1;
            size -= sizeof(icUInt16Number);
-           Icc ->Read(&ScriptCodeCount, sizeof(icUInt8Number), 1, Icc);
+           if (Icc ->Read(&ScriptCodeCount, sizeof(icUInt8Number), 1, Icc) != 1) return -1;
            size -= sizeof(icUInt8Number);
+
+           // Should remain 67 bytes as filler
 
            if (size < 67) return (int) size;
 
-           for (i=0; i < 67; i++)
-                Icc ->Read(&Dummy, sizeof(icUInt8Number), 1, Icc);
-
-           size -= 67;
+           for (i=0; i < 67; i++) {
+                size_t nread = Icc ->Read(&Dummy, sizeof(icUInt8Number), 1, Icc);
+                if (nread != 1) return (int) size;
+                size --;
+               }
            }
            break;
 
@@ -1425,7 +1591,7 @@ int ReadEmbeddedTextTag(LPLCMSICCPROFILE Icc, size_t size, char* Name, size_t si
              size = size_max - 1;
          }
 
-         Icc -> Read(Name, 1, size, Icc);
+         if (Icc -> Read(Name, 1, size, Icc) != size) return -1;
 
          for (i=0; i < Missing; i++)
              Icc -> Read(&Dummy, 1, 1, Icc);
@@ -1445,9 +1611,9 @@ int ReadEmbeddedTextTag(LPLCMSICCPROFILE Icc, size_t size, char* Name, size_t si
         wchar_t*       wchar  = L"";
 
 
-            Icc ->Read(&Count, sizeof(icUInt32Number), 1, Icc);
+            if (Icc ->Read(&Count, sizeof(icUInt32Number), 1, Icc) != 1) return -1;
             AdjustEndianess32((LPBYTE) &Count);
-            Icc ->Read(&RecLen, sizeof(icUInt32Number), 1, Icc);
+            if (Icc ->Read(&RecLen, sizeof(icUInt32Number), 1, Icc) != 1) return -1;
             AdjustEndianess32((LPBYTE) &RecLen);
 
             if (RecLen != 12) {
@@ -1458,15 +1624,15 @@ int ReadEmbeddedTextTag(LPLCMSICCPROFILE Icc, size_t size, char* Name, size_t si
 
             for (i=0; i < Count; i++) {
 
-                Icc ->Read(&Language, sizeof(icUInt16Number), 1, Icc);
+                if (Icc ->Read(&Language, sizeof(icUInt16Number), 1, Icc) != 1) return -1;
                 AdjustEndianess16((LPBYTE) &Language);
-                Icc ->Read(&Country, sizeof(icUInt16Number), 1, Icc);
+                if (Icc ->Read(&Country, sizeof(icUInt16Number), 1, Icc) != 1) return -1;
                 AdjustEndianess16((LPBYTE) &Country);
 
-                Icc ->Read(&ThisLen, sizeof(icUInt32Number), 1, Icc);
+                if (Icc ->Read(&ThisLen, sizeof(icUInt32Number), 1, Icc) != 1) return -1;
                 AdjustEndianess32((LPBYTE) &ThisLen);
 
-                Icc ->Read(&ThisOffset, sizeof(icUInt32Number), 1, Icc);
+                if (Icc ->Read(&ThisOffset, sizeof(icUInt32Number), 1, Icc) != 1) return -1;
                 AdjustEndianess32((LPBYTE) &ThisOffset);
 
                 if (Language == GlobalLanguageCode || Offset == 0) {
@@ -1492,14 +1658,18 @@ int ReadEmbeddedTextTag(LPLCMSICCPROFILE Icc, size_t size, char* Name, size_t si
             for (i=0; i < Offset; i++) {
 
                     char Discard;
-
-                    Icc ->Read(&Discard, 1, 1, Icc);
+                    if (Icc ->Read(&Discard, 1, 1, Icc) != 1) return -1;
             }
 
-            wchar = (wchar_t*) malloc(Len+2);
+
+            // Bound len
+            if (Len < 0) Len = 0;
+            if (Len > 20*1024) Len = 20 * 1024;
+
+            wchar = (wchar_t*) _cmsMalloc(Len*sizeof(wchar_t)+2);
             if (!wchar) return -1;
 
-            Icc ->Read(wchar, 1, Len, Icc);
+            if (Icc ->Read(wchar, 1, Len, Icc) != Len) return -1;
             AdjustEndianessArray16((LPWORD) wchar, Len / 2);
 
             wchar[Len / 2] = L'\0';
@@ -1509,7 +1679,7 @@ int ReadEmbeddedTextTag(LPLCMSICCPROFILE Icc, size_t size, char* Name, size_t si
                 Name[0] = 0;    // Error
             }
 
-            free((void*) wchar);
+            _cmsFree((void*) wchar);
             }
             break;
 
@@ -1522,8 +1692,7 @@ int ReadEmbeddedTextTag(LPLCMSICCPROFILE Icc, size_t size, char* Name, size_t si
 }
 
 
-// Take an ASCII item. Takes at most LCMS_DESC_MAX
-
+// Take an ASCII item. Takes at most size_max bytes
 
 int LCMSEXPORT cmsReadICCTextEx(cmsHPROFILE hProfile, icTagSignature sig, char *Name, size_t size_max)
 {
@@ -1535,19 +1704,27 @@ int LCMSEXPORT cmsReadICCTextEx(cmsHPROFILE hProfile, icTagSignature sig, char *
     if (n < 0)
         return -1;
 
-    if (!Icc -> stream) {
+     size   = Icc -> TagSizes[n];
 
-        CopyMemory(Name, Icc -> TagPtrs[n], Icc -> TagSizes[n]);
+    if (Icc -> TagPtrs[n]) {
+
+        if (size > size_max)
+            size = size_max;
+
+        CopyMemory(Name, Icc -> TagPtrs[n], size);
+
         return (int) Icc -> TagSizes[n];
     }
 
     offset = Icc -> TagOffsets[n];
-    size   = Icc -> TagSizes[n];
+
 
     if (Icc -> Seek(Icc, offset))
             return -1;
 
-    return ReadEmbeddedTextTag(Icc, size, Name, size_max);
+    if (ReadEmbeddedTextTag(Icc, size, Name, size_max) < 0) return -1;
+
+        return size;
 }
 
 // Keep compatibility with older versions
@@ -1561,7 +1738,7 @@ int LCMSEXPORT cmsReadICCText(cmsHPROFILE hProfile, icTagSignature sig, char *Te
 // Take an XYZ item
 
 static
-int ReadICCXYZ(cmsHPROFILE hProfile, icTagSignature sig, LPcmsCIEXYZ Value, BOOL lIsFatal)
+int ReadICCXYZ(cmsHPROFILE hProfile, icTagSignature sig, LPcmsCIEXYZ Value, LCMSBOOL lIsFatal)
 {
     LPLCMSICCPROFILE    Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
     icTagTypeSignature  BaseType;
@@ -1573,7 +1750,7 @@ int ReadICCXYZ(cmsHPROFILE hProfile, icTagSignature sig, LPcmsCIEXYZ Value, BOOL
     if (n < 0)
             return -1;
 
-    if (!Icc -> stream) {
+    if (Icc -> TagPtrs[n]) {
 
          CopyMemory(Value, Icc -> TagPtrs[n], Icc -> TagSizes[n]);
          return (int) Icc -> TagSizes[n];
@@ -1628,7 +1805,7 @@ int ReadICCXYZArray(cmsHPROFILE hProfile, icTagSignature sig, LPMAT3 v)
     if (n < 0)
             return -1; // Not found
 
-    if (!Icc -> stream) {
+    if (Icc -> TagPtrs[n]) {
 
             CopyMemory(v, Icc -> TagPtrs[n], Icc -> TagSizes[n]);
             return (int) Icc -> TagSizes[n];
@@ -1677,7 +1854,7 @@ int ReadICCXYZArray(cmsHPROFILE hProfile, icTagSignature sig, LPMAT3 v)
 
 // Primaries are to be in xyY notation
 
-BOOL LCMSEXPORT cmsTakeColorants(LPcmsCIEXYZTRIPLE Dest, cmsHPROFILE hProfile)
+LCMSBOOL LCMSEXPORT cmsTakeColorants(LPcmsCIEXYZTRIPLE Dest, cmsHPROFILE hProfile)
 {
        if (ReadICCXYZ(hProfile, icSigRedColorantTag, &Dest -> Red, TRUE) < 0) return FALSE;
        if (ReadICCXYZ(hProfile, icSigGreenColorantTag, &Dest -> Green, TRUE) < 0) return FALSE;
@@ -1687,7 +1864,7 @@ BOOL LCMSEXPORT cmsTakeColorants(LPcmsCIEXYZTRIPLE Dest, cmsHPROFILE hProfile)
 }
 
 
-BOOL cmsReadICCMatrixRGB2XYZ(LPMAT3 r, cmsHPROFILE hProfile)
+LCMSBOOL cmsReadICCMatrixRGB2XYZ(LPMAT3 r, cmsHPROFILE hProfile)
 {
        cmsCIEXYZTRIPLE Primaries;
 
@@ -1704,7 +1881,7 @@ BOOL cmsReadICCMatrixRGB2XYZ(LPMAT3 r, cmsHPROFILE hProfile)
 
 // Always return a suitable matrix
 
-BOOL cmsReadChromaticAdaptationMatrix(LPMAT3 r, cmsHPROFILE hProfile)
+LCMSBOOL cmsReadChromaticAdaptationMatrix(LPMAT3 r, cmsHPROFILE hProfile)
 {
 
     if (ReadICCXYZArray(hProfile, icSigChromaticAdaptationTag, r) < 0) {
@@ -1741,7 +1918,7 @@ LPGAMMATABLE LCMSEXPORT cmsReadICCGamma(cmsHPROFILE hProfile, icTagSignature sig
        if (n < 0)
            return NULL;
 
-       if (!Icc -> stream) {
+       if (Icc -> TagPtrs[n]) {
 
             return cmsDupGamma((LPGAMMATABLE) Icc -> TagPtrs[n]);
        }
@@ -1769,7 +1946,7 @@ LPGAMMATABLE LCMSEXPORT cmsReadICCGammaReversed(cmsHPROFILE hProfile, icTagSigna
        if (n < 0)
             return NULL;
 
-       if (!Icc -> stream) {
+       if (Icc -> TagPtrs[n]) {
 
             return cmsReverseGamma(256, (LPGAMMATABLE) Icc -> TagPtrs[n]);
        }
@@ -1785,7 +1962,7 @@ LPGAMMATABLE LCMSEXPORT cmsReadICCGammaReversed(cmsHPROFILE hProfile, icTagSigna
 // Check Named color header
 
 static
-BOOL CheckHeader(LPcmsNAMEDCOLORLIST v, icNamedColor2* nc2)
+LCMSBOOL CheckHeader(LPcmsNAMEDCOLORLIST v, icNamedColor2* nc2)
 {
     if (v ->Prefix[0] == 0 && v ->Suffix[0] == 0 && v ->ColorantCount == 0) return TRUE;
 
@@ -1809,13 +1986,13 @@ int cmsReadICCnamedColorList(cmsHTRANSFORM xform, cmsHPROFILE hProfile, icTagSig
        if (n < 0)
             return 0;
 
-       if (!Icc -> stream) {
+       if (Icc -> TagPtrs[n]) {
 
             // This replaces actual named color list.
             size_t size   = Icc -> TagSizes[n];
 
             if (v ->NamedColorList) cmsFreeNamedColorList(v ->NamedColorList);
-            v -> NamedColorList = (LPcmsNAMEDCOLORLIST) malloc(size);
+            v -> NamedColorList = (LPcmsNAMEDCOLORLIST) _cmsMalloc(size);
             CopyMemory(v -> NamedColorList, Icc ->TagPtrs[n], size);
             return v ->NamedColorList->nColors;
        }
@@ -1844,7 +2021,7 @@ int cmsReadICCnamedColorList(cmsHTRANSFORM xform, cmsHPROFILE hProfile, icTagSig
                 icNamedColor2 nc2;
                 unsigned int i, j;
 
-                Icc -> Read(&nc2, sizeof(icNamedColor2) - SIZEOF_UINT8_ALIGNED, 1, Icc);
+                if (Icc -> Read(&nc2, sizeof(icNamedColor2) - SIZEOF_UINT8_ALIGNED, 1, Icc) != 1) return 0;
                 AdjustEndianess32((LPBYTE) &nc2.vendorFlag);
                 AdjustEndianess32((LPBYTE) &nc2.count);
                 AdjustEndianess32((LPBYTE) &nc2.nDeviceCoords);
@@ -1852,6 +2029,11 @@ int cmsReadICCnamedColorList(cmsHTRANSFORM xform, cmsHPROFILE hProfile, icTagSig
                 if (!CheckHeader(v->NamedColorList, &nc2)) {
                      cmsSignalError(LCMS_ERRC_WARNING, "prefix/suffix/device for named color profiles mismatch.");
                      return 0;
+                }
+
+                if (nc2.nDeviceCoords > MAXCHANNELS) {
+                          cmsSignalError(LCMS_ERRC_WARNING, "Too many device coordinates.");
+                          return 0;
                 }
 
                 strncpy(v ->NamedColorList->Prefix, (const char*) nc2.prefix, 32);
@@ -1900,7 +2082,8 @@ int cmsReadICCnamedColorList(cmsHTRANSFORM xform, cmsHPROFILE hProfile, icTagSig
 
 LPcmsNAMEDCOLORLIST LCMSEXPORT cmsReadColorantTable(cmsHPROFILE hProfile, icTagSignature sig)
 {
-    icInt32Number n, Count, i;
+    icInt32Number n;
+    icUInt32Number Count, i;
     size_t offset;
     icTagTypeSignature  BaseType;
     LPLCMSICCPROFILE   Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
@@ -1910,10 +2093,12 @@ LPcmsNAMEDCOLORLIST LCMSEXPORT cmsReadColorantTable(cmsHPROFILE hProfile, icTagS
     if (n < 0)
             return NULL; // Not found
 
-    if (!Icc -> stream) {
+    if (Icc -> TagPtrs[n]) {
 
             size_t size   = Icc -> TagSizes[n];
-            void* v = malloc(size);
+            void* v = _cmsMalloc(size);
+
+            if (v == NULL) return NULL;
             CopyMemory(v, Icc -> TagPtrs[n], size);
             return (LPcmsNAMEDCOLORLIST) v;
     }
@@ -1932,12 +2117,16 @@ LPcmsNAMEDCOLORLIST LCMSEXPORT cmsReadColorantTable(cmsHPROFILE hProfile, icTagS
     }
 
 
-    Icc ->Read(&Count, sizeof(icUInt32Number), 1, Icc);
+    if (Icc ->Read(&Count, sizeof(icUInt32Number), 1, Icc) != 1) return NULL;
     AdjustEndianess32((LPBYTE) &Count);
+
+    if (Count > MAXCHANNELS) {
+        cmsSignalError(LCMS_ERRC_ABORTED, "Too many colorants '%lx'", Count);
+        return NULL;
+    }
 
     List = cmsAllocNamedColorList(Count);
     for (i=0; i < Count; i++) {
-
 
         if (!Icc ->Read(List->List[i].Name, 1, 32 , Icc)) goto Error;
         if (!Icc ->Read(List->List[i].PCS, sizeof(icUInt16Number), 3, Icc)) goto Error;
@@ -1965,7 +2154,7 @@ const char* LCMSEXPORT cmsTakeManufacturer(cmsHPROFILE hProfile)
 
        if (cmsIsTag(hProfile, icSigDeviceMfgDescTag)) {
 
-            cmsReadICCText(hProfile, icSigDeviceMfgDescTag, Manufacturer);
+            cmsReadICCTextEx(hProfile, icSigDeviceMfgDescTag, Manufacturer, LCMS_DESC_MAX);
        }
 
     return Manufacturer;
@@ -1982,7 +2171,7 @@ const char* LCMSEXPORT cmsTakeModel(cmsHPROFILE hProfile)
 
        if (cmsIsTag(hProfile, icSigDeviceModelDescTag)) {
 
-            cmsReadICCText(hProfile, icSigDeviceModelDescTag, Model);
+            cmsReadICCTextEx(hProfile, icSigDeviceModelDescTag, Model, LCMS_DESC_MAX);
        }
 
     return Model;
@@ -1995,10 +2184,9 @@ const char* LCMSEXPORT cmsTakeCopyright(cmsHPROFILE hProfile)
     static char Copyright[LCMS_DESC_MAX] = "";
 
        Copyright[0] = 0;
-
        if (cmsIsTag(hProfile, icSigCopyrightTag)) {
 
-            cmsReadICCText(hProfile, icSigCopyrightTag, Copyright);
+            cmsReadICCTextEx(hProfile, icSigCopyrightTag, Copyright, LCMS_DESC_MAX);
        }
 
     return Copyright;
@@ -2009,7 +2197,7 @@ const char* LCMSEXPORT cmsTakeCopyright(cmsHPROFILE hProfile)
 
 const char*  LCMSEXPORT cmsTakeProductName(cmsHPROFILE hProfile)
 {
-    static char Name[2048];
+    static char Name[LCMS_DESC_MAX*2+4];
     char Manufacturer[LCMS_DESC_MAX], Model[LCMS_DESC_MAX];
 
     Name[0] = '\0';
@@ -2017,19 +2205,19 @@ const char*  LCMSEXPORT cmsTakeProductName(cmsHPROFILE hProfile)
 
     if (cmsIsTag(hProfile, icSigDeviceMfgDescTag)) {
 
-        cmsReadICCText(hProfile, icSigDeviceMfgDescTag, Manufacturer);
+        cmsReadICCTextEx(hProfile, icSigDeviceMfgDescTag, Manufacturer, LCMS_DESC_MAX);
     }
 
     if (cmsIsTag(hProfile, icSigDeviceModelDescTag)) {
 
-        cmsReadICCText(hProfile, icSigDeviceModelDescTag, Model);
+        cmsReadICCTextEx(hProfile, icSigDeviceModelDescTag, Model, LCMS_DESC_MAX);
     }
 
     if (!Manufacturer[0] && !Model[0]) {
 
         if (cmsIsTag(hProfile, icSigProfileDescriptionTag)) {
 
-            cmsReadICCText(hProfile, icSigProfileDescriptionTag, Name);
+            cmsReadICCTextEx(hProfile, icSigProfileDescriptionTag, Name, LCMS_DESC_MAX);
             return Name;
         }
         else return "{no name}";
@@ -2129,7 +2317,7 @@ const char*  LCMSEXPORT cmsTakeProductInfo(cmsHPROFILE hProfile)
 
 // Extract the target data as a big string. Does not signal if tag is not present.
 
-BOOL LCMSEXPORT cmsTakeCharTargetData(cmsHPROFILE hProfile, char** Data, size_t* len)
+LCMSBOOL LCMSEXPORT cmsTakeCharTargetData(cmsHPROFILE hProfile, char** Data, size_t* len)
 {
     LPLCMSICCPROFILE  Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
     int n;
@@ -2142,7 +2330,11 @@ BOOL LCMSEXPORT cmsTakeCharTargetData(cmsHPROFILE hProfile, char** Data, size_t*
 
 
     *len =  Icc -> TagSizes[n];
-    *Data = (char*) malloc(*len + 1);  // Plus zero marker
+
+    // Make sure that is reasonable (600K)
+    if (*len > 600*1024) *len = 600*1024;
+
+    *Data = (char*) _cmsMalloc(*len + 1);  // Plus zero marker
 
     if (!*Data) {
 
@@ -2162,7 +2354,7 @@ BOOL LCMSEXPORT cmsTakeCharTargetData(cmsHPROFILE hProfile, char** Data, size_t*
 
 
 
-BOOL LCMSEXPORT cmsTakeCalibrationDateTime(struct tm *Dest, cmsHPROFILE hProfile)
+LCMSBOOL LCMSEXPORT cmsTakeCalibrationDateTime(struct tm *Dest, cmsHPROFILE hProfile)
 {
     LPLCMSICCPROFILE  Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
     int n;
@@ -2170,8 +2362,8 @@ BOOL LCMSEXPORT cmsTakeCalibrationDateTime(struct tm *Dest, cmsHPROFILE hProfile
     n = _cmsSearchTag(Icc, icSigCalibrationDateTimeTag, FALSE);
     if (n < 0) return FALSE;
 
-    if (!Icc ->stream)
-    {
+    if (Icc ->TagPtrs[n]) {
+
         CopyMemory(Dest, Icc ->TagPtrs[n],  sizeof(struct tm));
     }
     else
@@ -2212,9 +2404,10 @@ LPcmsSEQ LCMSEXPORT cmsReadProfileSequenceDescription(cmsHPROFILE hProfile)
     size   = Icc -> TagSizes[n];
     if (size < 12)  return NULL;
 
-    if (!Icc -> stream) {
+    if (Icc -> TagPtrs[n]) {
 
-            OutSeq = (LPcmsSEQ) malloc(size);
+            OutSeq = (LPcmsSEQ) _cmsMalloc(size);
+            if (OutSeq == NULL) return NULL;
             CopyMemory(OutSeq, Icc ->TagPtrs[n], size);
             return OutSeq;
     }
@@ -2231,8 +2424,13 @@ LPcmsSEQ LCMSEXPORT cmsReadProfileSequenceDescription(cmsHPROFILE hProfile)
     Icc ->Read(&Count, sizeof(icUInt32Number), 1, Icc);
     AdjustEndianess32((LPBYTE) &Count);
 
+    if (Count > 1000) {
+         return NULL;
+    }
+
     size = sizeof(int) + Count * sizeof(cmsPSEQDESC);
-    OutSeq = (LPcmsSEQ) malloc(size);
+    OutSeq = (LPcmsSEQ) _cmsMalloc(size);
+    if (OutSeq == NULL) return NULL;
 
     OutSeq ->n = Count;
 
@@ -2268,181 +2466,11 @@ LPcmsSEQ LCMSEXPORT cmsReadProfileSequenceDescription(cmsHPROFILE hProfile)
 void LCMSEXPORT cmsFreeProfileSequenceDescription(LPcmsSEQ pseq)
 {
     if (pseq)
-        free(pseq);
+        _cmsFree(pseq);
 }
 
 
 
-// Extended gamut -- an HP extension
-
-
-LPcmsGAMUTEX LCMSEXPORT cmsReadExtendedGamut(cmsHPROFILE hProfile, int index)
-{
-    LPLCMSICCPROFILE  Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
-    size_t size, offset;
-    icUInt32Number off_samp, off_desc, off_vc;
-    int n;
-    icTagTypeSignature     BaseType;
-    icColorSpaceSignature  CoordSig;
-    icUInt16Number         Method, Usage;
-    icUInt32Number         GamutCount, SamplesCount;
-    LPcmsGAMUTEX gex;
-    size_t                 Offsets[256];
-    size_t                 i, Actual, Loc;
-    icS15Fixed16Number     Num;
-    icUInt16Number         Surround;
-
-
-    n = _cmsSearchTag(Icc, icSigHPGamutDescTag, FALSE);
-    if (n < 0) return NULL;
-
-    if (!Icc ->stream) return NULL;     // In memory is not supported
-
-    // Read the header
-
-    offset = Icc -> TagOffsets[n];
-
-    if (Icc -> Seek(Icc, offset))
-            return NULL;
-
-    // Here is the beginning of tag
-    Actual   = Icc ->Tell(Icc);
-
-
-    BaseType = ReadBase(Icc);
-
-    if (BaseType != icSigHPGamutDescType) {
-            cmsSignalError(LCMS_ERRC_ABORTED, "Bad tag signature '%lx' found.", BaseType);
-            return NULL;
-    }
-
-
-    // Read the gamut descriptors count
-    Icc ->Read(&GamutCount, sizeof(icUInt32Number), 1, Icc);
-    AdjustEndianess32((LPBYTE) &GamutCount);
-
-
-    if (GamutCount >= 256) {
-            cmsSignalError(LCMS_ERRC_ABORTED, "Too many gamut structures '%d'.", GamutCount);
-            return NULL;
-    }
-
-    // Read the directory
-
-    for (i=0; i < GamutCount; i++) {
-
-        Icc ->Read(&Offsets[i], sizeof(icUInt32Number), 1, Icc);
-        AdjustEndianess32((LPBYTE) &Offsets[i]);
-    }
-
-
-    // Is there such element?
-    if (index >= (int) GamutCount) return NULL;
-    Loc = Actual + Offsets[index];
-
-
-    // Go to specified index
-    if (Icc -> Seek(Icc, Loc))
-            return NULL;
-
-
-    // Read all members
-    Icc ->Read(&CoordSig, sizeof(icColorSpaceSignature), 1, Icc);
-    AdjustEndianess32((LPBYTE) &CoordSig);
-
-    Icc ->Read(&Method, sizeof(icUInt16Number), 1, Icc);
-    AdjustEndianess16((LPBYTE) &Method);
-
-    Icc ->Read(&Usage, sizeof(icUInt16Number), 1, Icc);
-    AdjustEndianess16((LPBYTE) &Usage);
-
-    Icc ->Read(&SamplesCount, sizeof(icUInt32Number), 1, Icc);
-    AdjustEndianess32((LPBYTE) &SamplesCount);
-
-    Icc ->Read(&off_samp, sizeof(icUInt32Number), 1, Icc);
-    AdjustEndianess32((LPBYTE) &off_samp);
-
-    Icc ->Read(&off_desc, sizeof(icUInt32Number), 1, Icc);
-    AdjustEndianess32((LPBYTE) &off_desc);
-
-    Icc ->Read(&off_vc, sizeof(icUInt32Number), 1, Icc);
-    AdjustEndianess32((LPBYTE) &off_vc);
-
-
-    size = sizeof(cmsGAMUTEX) + (SamplesCount - 1) * sizeof(double);
-
-    gex = (LPcmsGAMUTEX) malloc(size);
-        if (gex == NULL) return NULL;
-
-
-    gex ->CoordSig = CoordSig;
-    gex ->Method   = Method;
-    gex ->Usage    = Usage;
-        gex ->Count    = SamplesCount;
-
-
-    // Read data
-    if (Icc -> Seek(Icc, Loc + off_samp))
-            return NULL;
-
-    for (i=0; i < SamplesCount; i++) {
-                Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc);
-                gex ->Data[i] = Convert15Fixed16(Num);
-    }
-
-
-    // Read mluc
-    if (Icc -> Seek(Icc, Loc + off_desc)) {
-
-                        free(gex);
-            return NULL;
-        }
-
-    ReadEmbeddedTextTag(Icc, 256, gex ->Description, LCMS_DESC_MAX);
-
-
-    // Read viewing conditions
-    if (Icc -> Seek(Icc, Loc + off_vc)) {
-                        free(gex);
-            return NULL;
-        }
-
-
-    Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc);
-    gex ->Vc.whitePoint.X = Convert15Fixed16(Num);
-
-    Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc);
-    gex ->Vc.whitePoint.Y = Convert15Fixed16(Num);
-
-    Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc);
-    gex ->Vc.whitePoint.Z = Convert15Fixed16(Num);
-
-    Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc);
-    gex ->Vc.La = Convert15Fixed16(Num);
-
-    Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc);
-    gex ->Vc.Yb = Convert15Fixed16(Num);
-
-    Icc -> Read(&Num, sizeof(icS15Fixed16Number), 1, Icc);
-    gex ->Vc.D_value = Convert15Fixed16(Num);
-
-    Icc -> Read(&Surround, sizeof(icUInt16Number), 1, Icc);
-    AdjustEndianess16((LPBYTE) &Surround);
-    gex ->Vc.surround = Surround;
-
-
-    // All OK
-    return gex;
-
-}
-
-
-
-void LCMSEXPORT cmsFreeExtendedGamut(LPcmsGAMUTEX gex)
-{
-    if (gex)
-        free(gex);
-}
 
 
 // Read a few tags that are hardly required
@@ -2564,6 +2592,7 @@ cmsHPROFILE LCMSEXPORT cmsOpenProfileFromFile(const char *lpFileName, const char
            NewIcc = (LPLCMSICCPROFILE) (LPSTR) hEmpty;
            NewIcc -> IsWrite = TRUE;
            strncpy(NewIcc ->PhysicalFile, lpFileName, MAX_PATH-1);
+           NewIcc ->PhysicalFile[MAX_PATH-1] = 0;
 
            // Save LUT as 8 bit
 
@@ -2609,13 +2638,13 @@ cmsHPROFILE LCMSEXPORT cmsOpenProfileFromMem(LPVOID MemPtr, DWORD dwSize)
 
 
 
-BOOL LCMSEXPORT cmsCloseProfile(cmsHPROFILE hProfile)
+LCMSBOOL LCMSEXPORT cmsCloseProfile(cmsHPROFILE hProfile)
 {
        LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
-       BOOL rc = TRUE;
+       LCMSBOOL rc = TRUE;
+       icInt32Number i;
 
        if (!Icc) return FALSE;
-
 
        // Was open in write mode?
        if (Icc ->IsWrite) {
@@ -2624,21 +2653,15 @@ BOOL LCMSEXPORT cmsCloseProfile(cmsHPROFILE hProfile)
            rc = _cmsSaveProfile(hProfile, Icc ->PhysicalFile);
        }
 
-
-       if (Icc -> stream == NULL) {     // Was a memory (i.e. not serialized) profile?
-
-
-              icInt32Number i;          // Yes, free tags
-
-              for (i=0; i < Icc -> TagCount; i++) {
+       for (i=0; i < Icc -> TagCount; i++) {
 
                   if (Icc -> TagPtrs[i])
                             free(Icc -> TagPtrs[i]);
-              }
-
        }
-       else   Icc -> Close(Icc);    // No, close the stream
 
+       if (Icc -> stream != NULL) {     // Was a memory (i.e. not serialized) profile?
+                 Icc -> Close(Icc);     // No, close the stream
+       }
 
        free(Icc);   // Free placeholder memory
 
@@ -2652,11 +2675,11 @@ BOOL LCMSEXPORT cmsCloseProfile(cmsHPROFILE hProfile)
 
 
 static
-BOOL SaveWordsTable(int nEntries, LPWORD Tab, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveWordsTable(int nEntries, LPWORD Tab, LPLCMSICCPROFILE Icc)
 {
    size_t nTabSize = sizeof(WORD) * nEntries;
-   LPWORD PtrW = (LPWORD) malloc(nTabSize);
-   BOOL rc;
+   LPWORD PtrW = (LPWORD) _cmsMalloc(nTabSize);
+   LCMSBOOL rc;
 
    if (!PtrW) return FALSE;
    CopyMemory(PtrW, Tab, nTabSize);
@@ -2672,7 +2695,7 @@ BOOL SaveWordsTable(int nEntries, LPWORD Tab, LPLCMSICCPROFILE Icc)
 // Saves profile header
 
 static
-BOOL SaveHeader(LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveHeader(LPLCMSICCPROFILE Icc)
 {
   icHeader Header;
   time_t now = time(NULL);
@@ -2727,7 +2750,7 @@ BOOL SaveHeader(LPLCMSICCPROFILE Icc)
 // Setup base marker
 
 static
-BOOL SetupBase(icTagTypeSignature sig, LPLCMSICCPROFILE Icc)
+LCMSBOOL SetupBase(icTagTypeSignature sig, LPLCMSICCPROFILE Icc)
 {
     icTagBase  Base;
 
@@ -2737,10 +2760,10 @@ BOOL SetupBase(icTagTypeSignature sig, LPLCMSICCPROFILE Icc)
 }
 
 
-// Store an XYZ tag
+// Store a XYZ tag
 
 static
-BOOL SaveXYZNumber(LPcmsCIEXYZ Value, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveXYZNumber(LPcmsCIEXYZ Value, LPLCMSICCPROFILE Icc)
 {
 
     icXYZNumber XYZ;
@@ -2756,72 +2779,97 @@ BOOL SaveXYZNumber(LPcmsCIEXYZ Value, LPLCMSICCPROFILE Icc)
 }
 
 
+// Store a XYZ array.
+
+static
+LCMSBOOL SaveXYZArray(int n, LPcmsCIEXYZ Value, LPLCMSICCPROFILE Icc)
+{
+    int i;
+    icXYZNumber XYZ;
+
+    if (!SetupBase(icSigS15Fixed16ArrayType, Icc)) return FALSE;
+
+    for (i=0; i < n; i++) {
+
+        XYZ.X = TransportValue32(DOUBLE_TO_FIXED(Value -> X));
+        XYZ.Y = TransportValue32(DOUBLE_TO_FIXED(Value -> Y));
+        XYZ.Z = TransportValue32(DOUBLE_TO_FIXED(Value -> Z));
+
+        if (!Icc -> Write(Icc, sizeof(icXYZNumber), &XYZ)) return FALSE;
+
+        Value++;
+    }
+
+    return TRUE;
+}
+
+
 
 // Save a gamma structure as a table
 
 static
-BOOL SaveGammaTable(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveGammaTable(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
 {
-        icInt32Number Count;
+    icInt32Number Count;
 
-                if (!SetupBase(icSigCurveType, Icc)) return FALSE;
+        if (!SetupBase(icSigCurveType, Icc)) return FALSE;
 
-                Count = TransportValue32(Gamma->nEntries);
+        Count = TransportValue32(Gamma->nEntries);
 
-                if (!Icc ->Write(Icc, sizeof(icInt32Number), &Count)) return FALSE;
+        if (!Icc ->Write(Icc, sizeof(icInt32Number), &Count)) return FALSE;
 
-                return SaveWordsTable(Gamma->nEntries, Gamma ->GammaTable, Icc);
+        return SaveWordsTable(Gamma->nEntries, Gamma ->GammaTable, Icc);
 }
 
 
 // Save a gamma structure as a one-value
 
 static
-BOOL SaveGammaOneValue(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveGammaOneValue(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
 {
-        icInt32Number Count;
-        Fixed32 GammaFixed32;
-        WORD    GammaFixed8;
+    icInt32Number Count;
+    Fixed32 GammaFixed32;
+    WORD    GammaFixed8;
 
-                if (!SetupBase(icSigCurveType, Icc)) return FALSE;
+        if (!SetupBase(icSigCurveType, Icc)) return FALSE;
 
-                Count = TransportValue32(1);
-                if (!Icc ->Write(Icc, sizeof(icInt32Number), &Count)) return FALSE;
+        Count = TransportValue32(1);
+        if (!Icc ->Write(Icc, sizeof(icInt32Number), &Count)) return FALSE;
 
-                GammaFixed32 = DOUBLE_TO_FIXED(Gamma ->Seed.Params[0]);
-                GammaFixed8  = (WORD) ((GammaFixed32 >> 8) & 0xFFFF);
-                GammaFixed8  = TransportValue16(GammaFixed8);
+        GammaFixed32 = DOUBLE_TO_FIXED(Gamma ->Seed.Params[0]);
+        GammaFixed8  = (WORD) ((GammaFixed32 >> 8) & 0xFFFF);
+        GammaFixed8  = TransportValue16(GammaFixed8);
 
-                return Icc ->Write(Icc, sizeof(icInt16Number), &GammaFixed8);
+        return Icc ->Write(Icc, sizeof(icInt16Number), &GammaFixed8);
 }
 
 // Save a gamma structure as a parametric gamma
 
 static
-BOOL SaveGammaParametric(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveGammaParametric(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
 {
-        icUInt16Number Type, Reserved;
-        int i, nParams;
-        int ParamsByType[] = { 1, 3, 4, 5, 7 };
+    icUInt16Number Type, Reserved;
+    int i, nParams;
+    int ParamsByType[] = { 1, 3, 4, 5, 7 };
 
-        if (!SetupBase(icSigParametricCurveType, Icc)) return FALSE;
+    if (!SetupBase(icSigParametricCurveType, Icc)) return FALSE;
 
-        nParams = ParamsByType[Gamma -> Seed.Type];
+    nParams = ParamsByType[Gamma -> Seed.Type];
 
-        Type      = (icUInt16Number) TransportValue16((WORD) Gamma -> Seed. Type);
-        Reserved  = (icUInt16Number) TransportValue16((WORD) 0);
+    Type      = (icUInt16Number) TransportValue16((WORD) Gamma -> Seed. Type);
+    Reserved  = (icUInt16Number) TransportValue16((WORD) 0);
 
-        Icc -> Write(Icc, sizeof(icInt16Number),  &Type);
-        Icc -> Write(Icc, sizeof(icUInt16Number), &Reserved);
+    Icc -> Write(Icc, sizeof(icInt16Number),  &Type);
+    Icc -> Write(Icc, sizeof(icUInt16Number), &Reserved);
 
-        for (i=0; i < nParams; i++) {
+    for (i=0; i < nParams; i++) {
 
-                icInt32Number val = TransportValue32(DOUBLE_TO_FIXED(Gamma -> Seed.Params[i]));
-                Icc ->Write(Icc, sizeof(icInt32Number), &val);
-        }
+        icInt32Number val = TransportValue32(DOUBLE_TO_FIXED(Gamma -> Seed.Params[i]));
+        Icc ->Write(Icc, sizeof(icInt32Number), &val);
+    }
 
 
-        return TRUE;
+    return TRUE;
 
 }
 
@@ -2829,29 +2877,29 @@ BOOL SaveGammaParametric(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
 // Save a gamma table
 
 static
-BOOL SaveGamma(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveGamma(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
 {
-                // Is the gamma curve type supported by ICC format?
+        // Is the gamma curve type supported by ICC format?
 
-                if (Gamma -> Seed.Type < 0 || Gamma -> Seed.Type > 5 ||
+        if (Gamma -> Seed.Type < 0 || Gamma -> Seed.Type > 5 ||
 
-                        // has been modified by user?
+            // has been modified by user?
 
-                        _cmsCrc32OfGammaTable(Gamma) != Gamma -> Seed.Crc32) {
+            _cmsCrc32OfGammaTable(Gamma) != Gamma -> Seed.Crc32) {
 
-                        return SaveGammaTable(Gamma, Icc);
-                }
+            return SaveGammaTable(Gamma, Icc);
+        }
 
-                if (Gamma -> Seed.Type == 1) return SaveGammaOneValue(Gamma, Icc);
+        if (Gamma -> Seed.Type == 1) return SaveGammaOneValue(Gamma, Icc);
 
-                // Only v4 profiles are allowed to hold parametric curves
+        // Only v4 profiles are allowed to hold parametric curves
 
-                if (cmsGetProfileICCversion((cmsHPROFILE) Icc) >= 0x4000000)
-                                return SaveGammaParametric(Gamma, Icc);
+        if (cmsGetProfileICCversion((cmsHPROFILE) Icc) >= 0x4000000)
+                return SaveGammaParametric(Gamma, Icc);
 
-                // Defaults to save as table
+        // Defaults to save as table
 
-                return SaveGammaTable(Gamma, Icc);
+        return SaveGammaTable(Gamma, Icc);
 
 }
 
@@ -2861,7 +2909,7 @@ BOOL SaveGamma(LPGAMMATABLE Gamma, LPLCMSICCPROFILE Icc)
 // Save an DESC Tag
 
 static
-BOOL SaveDescription(const char *Text, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveDescription(const char *Text, LPLCMSICCPROFILE Icc)
 {
 
     icUInt32Number len, Count, TotalSize, AlignedSize;
@@ -2893,6 +2941,11 @@ BOOL SaveDescription(const char *Text, LPLCMSICCPROFILE Icc)
     if (!Icc ->Write(Icc, len, (LPVOID)Text)) return FALSE;
     AlignedSize -= len;
 
+    if (AlignedSize < 0)
+            AlignedSize = 0;
+    if (AlignedSize > 255)
+            AlignedSize = 255;
+
     ZeroMemory(Filler, AlignedSize);
     if (!Icc ->Write(Icc, AlignedSize, Filler)) return FALSE;
 
@@ -2902,7 +2955,7 @@ BOOL SaveDescription(const char *Text, LPLCMSICCPROFILE Icc)
 // Save an ASCII Tag
 
 static
-BOOL SaveText(const char *Text, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveText(const char *Text, LPLCMSICCPROFILE Icc)
 {
     size_t len = strlen(Text) + 1;
 
@@ -2915,7 +2968,7 @@ BOOL SaveText(const char *Text, LPLCMSICCPROFILE Icc)
 // Save one of these new chromaticity values
 
 static
-BOOL SaveOneChromaticity(double x, double y, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveOneChromaticity(double x, double y, LPLCMSICCPROFILE Icc)
 {
        Fixed32 xf, yf;
 
@@ -2932,7 +2985,7 @@ BOOL SaveOneChromaticity(double x, double y, LPLCMSICCPROFILE Icc)
 // New tag added in Addendum II of old spec.
 
 static
-BOOL SaveChromaticities(LPcmsCIExyYTRIPLE chrm, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveChromaticities(LPcmsCIExyYTRIPLE chrm, LPLCMSICCPROFILE Icc)
 {
        WORD nChans, Table;
 
@@ -2952,7 +3005,7 @@ BOOL SaveChromaticities(LPcmsCIExyYTRIPLE chrm, LPLCMSICCPROFILE Icc)
 
 
 static
-BOOL SaveSequenceDescriptionTag(LPcmsSEQ seq, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveSequenceDescriptionTag(LPcmsSEQ seq, LPLCMSICCPROFILE Icc)
 {
     icUInt32Number nSeqs;
     icDescStruct   DescStruct;
@@ -2989,7 +3042,7 @@ BOOL SaveSequenceDescriptionTag(LPcmsSEQ seq, LPLCMSICCPROFILE Icc)
 // Saves a timestamp tag
 
 static
-BOOL SaveDateTimeNumber(const struct tm *DateTime, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveDateTimeNumber(const struct tm *DateTime, LPLCMSICCPROFILE Icc)
 {
     icDateTimeNumber Dest;
 
@@ -3003,14 +3056,14 @@ BOOL SaveDateTimeNumber(const struct tm *DateTime, LPLCMSICCPROFILE Icc)
 
 // Saves a named color list into a named color profile
 static
-BOOL SaveNamedColorList(LPcmsNAMEDCOLORLIST NamedColorList, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveNamedColorList(LPcmsNAMEDCOLORLIST NamedColorList, LPLCMSICCPROFILE Icc)
 {
 
     icUInt32Number      vendorFlag;     // Bottom 16 bits for IC use
     icUInt32Number      count;          // Count of named colors
     icUInt32Number      nDeviceCoords;  // Num of device coordinates
-    icInt8Number        prefix[32];     // Prefix for each color name
-    icInt8Number        suffix[32];     // Suffix for each color name
+    char                prefix[32];     // Prefix for each color name
+    char                suffix[32];     // Suffix for each color name
     int i;
 
     if (!SetupBase(icSigNamedColor2Type, Icc)) return FALSE;
@@ -3019,8 +3072,10 @@ BOOL SaveNamedColorList(LPcmsNAMEDCOLORLIST NamedColorList, LPLCMSICCPROFILE Icc
     count         = TransportValue32(NamedColorList ->nColors);
     nDeviceCoords = TransportValue32(NamedColorList ->ColorantCount);
 
-    strncpy(prefix, (const char*) NamedColorList->Prefix, 32);
-    strncpy(suffix, (const char*) NamedColorList->Suffix, 32);
+    strncpy(prefix, (const char*) NamedColorList->Prefix, 31);
+    strncpy(suffix, (const char*) NamedColorList->Suffix, 31);
+
+    suffix[31] = prefix[31] = 0;
 
     if (!Icc ->Write(Icc, sizeof(icUInt32Number), &vendorFlag)) return FALSE;
     if (!Icc ->Write(Icc, sizeof(icUInt32Number), &count)) return FALSE;
@@ -3030,15 +3085,17 @@ BOOL SaveNamedColorList(LPcmsNAMEDCOLORLIST NamedColorList, LPLCMSICCPROFILE Icc
 
     for (i=0; i < NamedColorList ->nColors; i++) {
 
-          icUInt16Number PCS[3];
-          icUInt16Number Colorant[MAXCHANNELS];
-          icInt8Number root[32];
+          icUInt16Number  PCS[3];
+          icUInt16Number  Colorant[MAXCHANNELS];
+          char            root[32];
           LPcmsNAMEDCOLOR Color;
           int j;
 
                     Color = NamedColorList ->List + i;
 
-                    strncpy((char*) root, Color ->Name, 32);
+                    strncpy(root, Color ->Name, 32);
+                    Color ->Name[32] = 0;
+
                     if (!Icc ->Write(Icc, 32 , root)) return FALSE;
 
                     for (j=0; j < 3; j++)
@@ -3062,7 +3119,7 @@ BOOL SaveNamedColorList(LPcmsNAMEDCOLORLIST NamedColorList, LPLCMSICCPROFILE Icc
 // Saves a colorant table. It is using the named color structure for simplicity sake
 
 static
-BOOL SaveColorantTable(LPcmsNAMEDCOLORLIST NamedColorList, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveColorantTable(LPcmsNAMEDCOLORLIST NamedColorList, LPLCMSICCPROFILE Icc)
 {
      icUInt32Number count;  // Count of named colors
      int i;
@@ -3076,13 +3133,15 @@ BOOL SaveColorantTable(LPcmsNAMEDCOLORLIST NamedColorList, LPLCMSICCPROFILE Icc)
      for (i=0; i < NamedColorList ->nColors; i++) {
 
       icUInt16Number PCS[3];
-      icInt8Number root[32];
+      icInt8Number root[33];
       LPcmsNAMEDCOLOR Color;
       int j;
 
             Color = NamedColorList ->List + i;
 
             strncpy((char*) root, Color ->Name, 32);
+            root[32] = 0;
+
             if (!Icc ->Write(Icc, 32 , root)) return FALSE;
 
             for (j=0; j < 3; j++)
@@ -3099,7 +3158,7 @@ BOOL SaveColorantTable(LPcmsNAMEDCOLORLIST NamedColorList, LPLCMSICCPROFILE Icc)
 // Does serialization of LUT16 and writes it.
 
 static
-BOOL SaveLUT(const LUT* NewLUT, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveLUT(const LUT* NewLUT, LPLCMSICCPROFILE Icc)
 {
        icLut16 LUT16;
        unsigned int i;
@@ -3189,7 +3248,7 @@ BOOL SaveLUT(const LUT* NewLUT, LPLCMSICCPROFILE Icc)
 // Does serialization of LUT8 and writes it
 
 static
-BOOL SaveLUT8(const LUT* NewLUT, LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveLUT8(const LUT* NewLUT, LPLCMSICCPROFILE Icc)
 {
        icLut8 LUT8;
        unsigned int i, j;
@@ -3323,7 +3382,7 @@ void LCMSEXPORT _cmsSetLUTdepth(cmsHPROFILE hProfile, int depth)
 // Saves Tag directory
 
 static
-BOOL SaveTagDirectory(LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveTagDirectory(LPLCMSICCPROFILE Icc)
 {
        icInt32Number i;
        icTag Tag;
@@ -3356,7 +3415,7 @@ BOOL SaveTagDirectory(LPLCMSICCPROFILE Icc)
 // Dump tag contents
 
 static
-BOOL SaveTags(LPLCMSICCPROFILE Icc)
+LCMSBOOL SaveTags(LPLCMSICCPROFILE Icc, LPLCMSICCPROFILE FileOrig)
 {
 
     LPBYTE Data;
@@ -3384,8 +3443,31 @@ BOOL SaveTags(LPLCMSICCPROFILE Icc)
 
        Icc -> TagOffsets[i] = Begin = Icc ->UsedSpace;
        Data = (LPBYTE) Icc -> TagPtrs[i];
-       if (!Data)
+       if (!Data) {
+
+           // Reach here if we are copying a tag from a disk-based ICC profile which has not been modified by user.
+           // In this case a blind copy of the block data is performed
+
+           if (Icc -> TagOffsets[i]) {
+
+                    size_t TagSize   = FileOrig -> TagSizes[i];
+                    size_t TagOffset = FileOrig -> TagOffsets[i];
+                    void* Mem;
+
+                    if (FileOrig ->Seek(FileOrig, TagOffset)) return FALSE;
+
+                    Mem = _cmsMalloc(TagSize);
+
+                    if (FileOrig ->Read(Mem, TagSize, 1, FileOrig) != 1) return FALSE;
+                    if (!Icc ->Write(Icc, TagSize, Mem)) return FALSE;
+
+                    Icc -> TagSizes[i] = (Icc ->UsedSpace - Begin);
+                    free(Mem);
+           }
+
               continue;
+       }
+
 
        switch (Icc -> TagNames[i]) {
 
@@ -3464,6 +3546,10 @@ BOOL SaveTags(LPLCMSICCPROFILE Icc)
              break;
 
 
+       case icSigChromaticAdaptationTag:
+              if (!SaveXYZArray(3, (LPcmsCIEXYZ) Data, Icc)) return FALSE;
+              break;
+
        default:
               return FALSE;
        }
@@ -3480,9 +3566,9 @@ BOOL SaveTags(LPLCMSICCPROFILE Icc)
 
 // Add tags to profile structure
 
-BOOL LCMSEXPORT cmsAddTag(cmsHPROFILE hProfile, icTagSignature sig, const void* Tag)
+LCMSBOOL LCMSEXPORT cmsAddTag(cmsHPROFILE hProfile, icTagSignature sig, const void* Tag)
 {
-   BOOL rc;
+   LCMSBOOL rc;
 
    switch (sig) {
 
@@ -3543,6 +3629,11 @@ BOOL LCMSEXPORT cmsAddTag(cmsHPROFILE hProfile, icTagSignature sig, const void* 
               rc = _cmsAddColorantTableTag(hProfile, sig, (LPcmsNAMEDCOLORLIST) Tag);
               break;
 
+
+       case icSigChromaticAdaptationTag:
+              rc = _cmsAddChromaticAdaptationTag(hProfile, sig, (const cmsCIEXYZ*) Tag);
+              break;
+
        default:
             cmsSignalError(LCMS_ERRC_ABORTED, "cmsAddTag: Tag '%x' is unsupported", sig);
             return FALSE;
@@ -3568,11 +3659,11 @@ BOOL LCMSEXPORT cmsAddTag(cmsHPROFILE hProfile, icTagSignature sig, const void* 
 
 // Low-level save to disk. It closes the profile on exit
 
-BOOL LCMSEXPORT _cmsSaveProfile(cmsHPROFILE hProfile, const char* FileName)
+LCMSBOOL LCMSEXPORT _cmsSaveProfile(cmsHPROFILE hProfile, const char* FileName)
 {
        LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
        LCMSICCPROFILE Keep;
-       BOOL rc;
+       LCMSBOOL rc;
 
         CopyMemory(&Keep, Icc, sizeof(LCMSICCPROFILE));
        _cmsSetSaveToDisk(Icc, NULL);
@@ -3581,7 +3672,7 @@ BOOL LCMSEXPORT _cmsSaveProfile(cmsHPROFILE hProfile, const char* FileName)
 
        if (!SaveHeader(Icc)) return FALSE;
        if (!SaveTagDirectory(Icc)) return FALSE;
-       if (!SaveTags(Icc)) return FALSE;
+       if (!SaveTags(Icc, &Keep)) return FALSE;
 
 
        _cmsSetSaveToDisk(Icc, FileName);
@@ -3591,7 +3682,7 @@ BOOL LCMSEXPORT _cmsSaveProfile(cmsHPROFILE hProfile, const char* FileName)
 
        if (!SaveHeader(Icc)) goto CleanUp;
        if (!SaveTagDirectory(Icc)) goto CleanUp;
-       if (!SaveTags(Icc)) goto CleanUp;
+       if (!SaveTags(Icc, &Keep)) goto CleanUp;
 
        rc = (Icc ->Close(Icc) == 0);
        CopyMemory(Icc, &Keep, sizeof(LCMSICCPROFILE));
@@ -3608,7 +3699,7 @@ BOOL LCMSEXPORT _cmsSaveProfile(cmsHPROFILE hProfile, const char* FileName)
 
 
 // Low-level save from open stream
-BOOL LCMSEXPORT _cmsSaveProfileToMem(cmsHPROFILE hProfile, void *MemPtr,
+LCMSBOOL LCMSEXPORT _cmsSaveProfileToMem(cmsHPROFILE hProfile, void *MemPtr,
                                                            size_t* BytesNeeded)
 {
     LPLCMSICCPROFILE Icc = (LPLCMSICCPROFILE) (LPSTR) hProfile;
@@ -3623,20 +3714,20 @@ BOOL LCMSEXPORT _cmsSaveProfileToMem(cmsHPROFILE hProfile, void *MemPtr,
 
     if (!SaveHeader(Icc)) return FALSE;
     if (!SaveTagDirectory(Icc)) return FALSE;
-    if (!SaveTags(Icc)) return FALSE;
+    if (!SaveTags(Icc, &Keep)) return FALSE;
 
     if (!MemPtr) {
 
         // update BytesSaved so caller knows how many bytes are needed for MemPtr
         *BytesNeeded = Icc ->UsedSpace;
-                CopyMemory(Icc, &Keep, sizeof(LCMSICCPROFILE));
+        CopyMemory(Icc, &Keep, sizeof(LCMSICCPROFILE));
         return TRUE;
     }
 
     if (*BytesNeeded < Icc ->UsedSpace) {
 
         // need at least UsedSpace in MemPtr to continue
-                CopyMemory(Icc, &Keep, sizeof(LCMSICCPROFILE));
+        CopyMemory(Icc, &Keep, sizeof(LCMSICCPROFILE));
         return FALSE;
     }
 
@@ -3646,7 +3737,7 @@ BOOL LCMSEXPORT _cmsSaveProfileToMem(cmsHPROFILE hProfile, void *MemPtr,
     // Pass #2 does save to file into supplied stream
     if (!SaveHeader(Icc)) goto CleanUp;
     if (!SaveTagDirectory(Icc)) goto CleanUp;
-    if (!SaveTags(Icc)) goto CleanUp;
+    if (!SaveTags(Icc, &Keep)) goto CleanUp;
 
     // update BytesSaved so caller knows how many bytes put into stream
     *BytesNeeded = Icc ->UsedSpace;
@@ -3661,3 +3752,4 @@ CleanUp:
     CopyMemory(Icc, &Keep, sizeof(LCMSICCPROFILE));
     return FALSE;
 }
+

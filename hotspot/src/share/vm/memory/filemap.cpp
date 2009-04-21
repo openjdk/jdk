@@ -35,14 +35,14 @@
 extern address JVM_FunctionAtStart();
 extern address JVM_FunctionAtEnd();
 
-// Complain and stop. All error conditions occuring during the writing of
+// Complain and stop. All error conditions occurring during the writing of
 // an archive file should stop the process.  Unrecoverable errors during
 // the reading of the archive file should stop the process.
 
 static void fail(const char *msg, va_list ap) {
   // This occurs very early during initialization: tty is not initialized.
   jio_fprintf(defaultStream::error_stream(),
-              "An error has occured while processing the"
+              "An error has occurred while processing the"
               " shared archive file.\n");
   jio_vfprintf(defaultStream::error_stream(), msg, ap);
   jio_fprintf(defaultStream::error_stream(), "\n");

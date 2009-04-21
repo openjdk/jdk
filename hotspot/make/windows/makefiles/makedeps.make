@@ -48,6 +48,8 @@ MakeDepsSources=\
         $(WorkSpace)\src\share\tools\MakeDeps\WinGammaPlatform.java \
         $(WorkSpace)\src\share\tools\MakeDeps\WinGammaPlatformVC6.java \
         $(WorkSpace)\src\share\tools\MakeDeps\WinGammaPlatformVC7.java \
+        $(WorkSpace)\src\share\tools\MakeDeps\WinGammaPlatformVC8.java \
+        $(WorkSpace)\src\share\tools\MakeDeps\WinGammaPlatformVC9.java \
         $(WorkSpace)\src\share\tools\MakeDeps\Util.java \
         $(WorkSpace)\src\share\tools\MakeDeps\BuildConfig.java \
         $(WorkSpace)\src\share\tools\MakeDeps\ArgsParser.java
@@ -121,7 +123,7 @@ MakeDepsIDEOptions=\
         -additionalFile includeDB_gc_shared \
         -additionalFile includeDB_gc_serial \
         -additionalGeneratedFile $(HOTSPOTBUILDSPACE)\%f\%b vm.def \
-        -prelink  "" "Generating vm.def..." "cd $(HOTSPOTBUILDSPACE)\%f\%b	$(HOTSPOTMKSHOME)\sh $(HOTSPOTWORKSPACE)\make\windows\build_vm_def.sh" \
+        -prelink  "" "Generating vm.def..." "cd $(HOTSPOTBUILDSPACE)\%f\%b	set HOTSPOTMKSHOME=$(HOTSPOTMKSHOME)	$(HOTSPOTMKSHOME)\sh $(HOTSPOTWORKSPACE)\make\windows\build_vm_def.sh $(LINK_VER)" \
        $(MakeDepsIncludesPRIVATE)
 
 # Add in build-specific options

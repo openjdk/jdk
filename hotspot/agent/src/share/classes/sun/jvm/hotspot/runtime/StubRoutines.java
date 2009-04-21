@@ -46,11 +46,17 @@ public class StubRoutines {
     Type type = db.lookupType("StubRoutines");
 
     callStubReturnAddressField = type.getAddressField("_call_stub_return_address");
-    // Only some platforms have specif return from compiled to call_stub
+    // Only some platforms have specific return from compiled to call_stub
     try {
-      callStubCompiledReturnAddressField = type.getAddressField("_call_stub_compiled_return");
+      type = db.lookupType("StubRoutines::x86");
+      if (type != null) {
+        callStubCompiledReturnAddressField = type.getAddressField("_call_stub_compiled_return");
+      }
     } catch (RuntimeException re) {
       callStubCompiledReturnAddressField = null;
+    }
+    if (callStubCompiledReturnAddressField == null && VM.getVM().getCPU().equals("x86")) {
+      throw new InternalError("Missing definition for _call_stub_compiled_return");
     }
   }
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ jdk-clobber::
 	  $(MAKE) $(JDK_CLOBBER_TARGETS) $(JDK_BUILD_ARGUMENTS) ; )
 
 jdk-sanity::
-	@( $(CD) $(JDK_TOPDIR)/make && \
+	( $(CD) $(JDK_TOPDIR)/make && \
 	  $(MAKE) sanity HOTSPOT_IMPORT_CHECK=false $(JDK_BUILD_ARGUMENTS) ; )
 
 compare-images: compare-image

@@ -38,9 +38,13 @@
 #define CENSIG 0x02014b50L          /* "PK\001\002" */
 #define ENDSIG 0x06054b50L          /* "PK\005\006" */
 
+#define ZIP64_ENDSIG 0x06064b50L    /* "PK\006\006" */
+#define ZIP64_LOCSIG 0x07064b50L    /* "PK\006\007" */
+
 /*
  * Header sizes including signatures
  */
+
 #ifdef USE_MMAP
 #define SIGSIZ  4
 #endif
@@ -49,12 +53,22 @@
 #define CENHDR 46
 #define ENDHDR 22
 
+#define ZIP64_ENDHDR 56       // ZIP64 end header size
+#define ZIP64_LOCHDR 20       // ZIP64 end loc header size
+#define ZIP64_EXTHDR 24       // EXT header size
+#define ZIP64_EXTID   1       // Extra field Zip64 header ID
+
+#define ZIP64_MAGICVAL 0xffffffffLL
+#define ZIP64_MAGICCOUNT 0xffff
+
+
 /*
  * Header field access macros
  */
 #define CH(b, n) (((unsigned char *)(b))[n])
 #define SH(b, n) (CH(b, n) | (CH(b, n+1) << 8))
-#define LG(b, n) (SH(b, n) | (SH(b, n+2) << 16))
+#define LG(b, n) ((SH(b, n) | (SH(b, n+2) << 16)) &0xffffffffUL)
+#define LL(b, n) (((jlong)LG(b, n)) | (((jlong)LG(b, n+4)) << 32))
 #define GETSIG(b) LG(b, 0)
 
 /*
@@ -106,6 +120,26 @@
 #define ENDCOM(b) SH(b, 20)         /* size of zip file comment */
 
 /*
+ * Macros for getting Zip64 end of central directory header fields
+ */
+#define ZIP64_ENDLEN(b) LL(b, 4)      /* size of zip64 end of central dir */
+#define ZIP64_ENDVEM(b) SH(b, 12)     /* version made by */
+#define ZIP64_ENDVER(b) SH(b, 14)     /* version needed to extract */
+#define ZIP64_ENDNMD(b) LG(b, 16)     /* number of this disk */
+#define ZIP64_ENDDSK(b) LG(b, 20)     /* disk number of start */
+#define ZIP64_ENDTOD(b) LL(b, 24)     /* total number of entries on this disk */
+#define ZIP64_ENDTOT(b) LL(b, 32)     /* total number of entries */
+#define ZIP64_ENDSIZ(b) LL(b, 40)     /* central directory size in bytes */
+#define ZIP64_ENDOFF(b) LL(b, 48)     /* offset of first CEN header */
+
+/*
+ * Macros for getting Zip64 end of central directory locator fields
+ */
+#define ZIP64_LOCDSK(b) LG(b, 4)      /* disk number start */
+#define ZIP64_LOCOFF(b) LL(b, 8)      /* offset of zip64 end */
+#define ZIP64_LOCTOT(b) LG(b, 16)     /* total number of disks */
+
+/*
  * Supported compression methods
  */
 #define STORED      0
@@ -134,6 +168,7 @@ typedef struct jzentry {  /* Zip file entry */
     char *comment;        /* optional zip file comment */
     jbyte *extra;         /* optional extra data */
     jlong pos;            /* position of LOC header or entry data */
+    jint flag;            /* general purpose flag */
 } jzentry;
 
 /*
@@ -145,7 +180,7 @@ typedef struct jzentry {  /* Zip file entry */
  */
 typedef struct jzcell {
     unsigned int hash;    /* 32 bit hashcode on name */
-    unsigned int cenpos;  /* Offset of central directory file header */
+    jlong cenpos;         /* Offset of central directory file header */
     unsigned int next;    /* hash chain: index into jzfile->entries */
 } jzcell;
 

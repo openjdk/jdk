@@ -99,6 +99,9 @@ JvmtiEnv::SetThreadLocalStorage(JavaThread* java_thread, const void* data) {
     }
     // otherwise, create the state
     state = JvmtiThreadState::state_for(java_thread);
+    if (state == NULL) {
+      return JVMTI_ERROR_THREAD_NOT_ALIVE;
+    }
   }
   state->env_thread_state(this)->set_agent_thread_local_storage_data((void*)data);
   return JVMTI_ERROR_NONE;
@@ -1308,6 +1311,9 @@ JvmtiEnv::GetFrameCount(JavaThread* java_thread, jint* count_ptr) {
 
   // retrieve or create JvmtiThreadState.
   JvmtiThreadState* state = JvmtiThreadState::state_for(java_thread);
+  if (state == NULL) {
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
   uint32_t debug_bits = 0;
   if (is_thread_fully_suspended(java_thread, true, &debug_bits)) {
     err = get_frame_count(state, count_ptr);
@@ -1328,6 +1334,12 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
   JavaThread* current_thread  = JavaThread::current();
   HandleMark hm(current_thread);
   uint32_t debug_bits = 0;
+
+  // retrieve or create the state
+  JvmtiThreadState* state = JvmtiThreadState::state_for(java_thread);
+  if (state == NULL) {
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
 
   // Check if java_thread is fully suspended
   if (!is_thread_fully_suspended(java_thread, true /* wait for suspend completion */, &debug_bits)) {
@@ -1399,9 +1411,6 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     // It's fine to update the thread state here because no JVMTI events
     // shall be posted for this PopFrame.
 
-    // retreive or create the state
-    JvmtiThreadState* state = JvmtiThreadState::state_for(java_thread);
-
     state->update_for_pop_top_frame();
     java_thread->set_popframe_condition(JavaThread::popframe_pending_bit);
     // Set pending step flag for this popframe and it is cleared when next
@@ -1445,6 +1454,11 @@ JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
   ResourceMark rm;
   uint32_t debug_bits = 0;
 
+  JvmtiThreadState *state = JvmtiThreadState::state_for(java_thread);
+  if (state == NULL) {
+    return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+
   if (!JvmtiEnv::is_thread_fully_suspended(java_thread, true, &debug_bits)) {
       return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
   }
@@ -1464,7 +1478,6 @@ JvmtiEnv::NotifyFramePop(JavaThread* java_thread, jint depth) {
 
   assert(vf->frame_pointer() != NULL, "frame pointer mustn't be NULL");
 
-  JvmtiThreadState *state = JvmtiThreadState::state_for(java_thread);
   int frame_number = state->count_frames() - depth;
   state->env_thread_state(this)->set_frame_pop(frame_number);
 

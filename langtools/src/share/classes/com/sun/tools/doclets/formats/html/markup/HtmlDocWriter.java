@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,6 +242,31 @@ public abstract class HtmlDocWriter extends HtmlWriter {
             return pkgName;
         }
         return "";
+    }
+
+    /**
+     * Keep track of member details list. Print the definition list start tag
+     * if it is not printed yet.
+     */
+    public void printMemberDetailsListStartTag () {
+        if (!getMemberDetailsListPrinted()) {
+            dl();
+            memberDetailsListPrinted = true;
+        }
+    }
+
+    /**
+     * Print the definition list end tag if the list start tag was printed.
+     */
+    public void printMemberDetailsListEndTag () {
+        if (getMemberDetailsListPrinted()) {
+            dlEnd();
+            memberDetailsListPrinted = false;
+        }
+    }
+
+    public boolean getMemberDetailsListPrinted() {
+        return memberDetailsListPrinted;
     }
 
     /**

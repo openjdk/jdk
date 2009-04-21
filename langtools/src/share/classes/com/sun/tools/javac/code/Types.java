@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package com.sun.tools.javac.code;
 
 import java.util.*;
+
+import com.sun.tools.javac.api.Messages;
 
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
@@ -1010,8 +1012,8 @@ public class Types {
                                 && !disjointTypes(aHigh.allparams(), lowSub.allparams())
                                 && !disjointTypes(aLow.allparams(), highSub.allparams())
                                 && !disjointTypes(aLow.allparams(), lowSub.allparams())) {
-                                if (upcast ? giveWarning(a, highSub) || giveWarning(a, lowSub)
-                                           : giveWarning(highSub, a) || giveWarning(lowSub, a))
+                                if (upcast ? giveWarning(a, b) :
+                                    giveWarning(b, a))
                                     warnStack.head.warnUnchecked();
                                 return true;
                             }
@@ -2019,7 +2021,7 @@ public class Types {
                 return t;
             else
                 return visit(t);
-        }
+            }
 
         List<Type> subst(List<Type> ts) {
             if (from.tail == null)
@@ -2279,225 +2281,21 @@ public class Types {
     }
     // </editor-fold>
 
-    // <editor-fold defaultstate="collapsed" desc="printType">
     /**
-     * Visitor for generating a string representation of a given type
+     * Helper method for generating a string representation of a given type
      * accordingly to a given locale
      */
     public String toString(Type t, Locale locale) {
-        return typePrinter.visit(t, locale);
+        return Printer.createStandardPrinter(messages).visit(t, locale);
     }
-    // where
-    private TypePrinter typePrinter = new TypePrinter();
 
-    public class TypePrinter extends DefaultTypeVisitor<String, Locale> {
-
-        public String visit(List<Type> ts, Locale locale) {
-            ListBuffer<String> sbuf = lb();
-            for (Type t : ts) {
-                sbuf.append(visit(t, locale));
-            }
-            return sbuf.toList().toString();
-        }
-
-        @Override
-        public String visitCapturedType(CapturedType t, Locale locale) {
-            return messages.getLocalizedString("compiler.misc.type.captureof",
-                        (t.hashCode() & 0xFFFFFFFFL) % Type.CapturedType.PRIME,
-                        visit(t.wildcard, locale));
-        }
-
-        @Override
-        public String visitForAll(ForAll t, Locale locale) {
-            return "<" + visit(t.tvars, locale) + ">" + visit(t.qtype, locale);
-        }
-
-        @Override
-        public String visitUndetVar(UndetVar t, Locale locale) {
-            if (t.inst != null) {
-                return visit(t.inst, locale);
-            } else {
-                return visit(t.qtype, locale) + "?";
-            }
-        }
-
-        @Override
-        public String visitArrayType(ArrayType t, Locale locale) {
-            return visit(t.elemtype, locale) + "[]";
-        }
-
-        @Override
-        public String visitClassType(ClassType t, Locale locale) {
-            StringBuffer buf = new StringBuffer();
-            if (t.getEnclosingType().tag == CLASS && t.tsym.owner.kind == Kinds.TYP) {
-                buf.append(visit(t.getEnclosingType(), locale));
-                buf.append(".");
-                buf.append(className(t, false, locale));
-            } else {
-                buf.append(className(t, true, locale));
-            }
-            if (t.getTypeArguments().nonEmpty()) {
-                buf.append('<');
-                buf.append(visit(t.getTypeArguments(), locale));
-                buf.append(">");
-            }
-            return buf.toString();
-        }
-
-        @Override
-        public String visitMethodType(MethodType t, Locale locale) {
-            return "(" + printMethodArgs(t.argtypes, false, locale) + ")" + visit(t.restype, locale);
-        }
-
-        @Override
-        public String visitPackageType(PackageType t, Locale locale) {
-            return t.tsym.getQualifiedName().toString();
-        }
-
-        @Override
-        public String visitWildcardType(WildcardType t, Locale locale) {
-            StringBuffer s = new StringBuffer();
-            s.append(t.kind);
-            if (t.kind != UNBOUND) {
-                s.append(visit(t.type, locale));
-            }
-            return s.toString();
-        }
-
-
-        public String visitType(Type t, Locale locale) {
-            String s = (t.tsym == null || t.tsym.name == null)
-                    ? messages.getLocalizedString("compiler.misc.type.none")
-                    : t.tsym.name.toString();
-            return s;
-        }
-
-        protected String className(ClassType t, boolean longform, Locale locale) {
-            Symbol sym = t.tsym;
-            if (sym.name.length() == 0 && (sym.flags() & COMPOUND) != 0) {
-                StringBuffer s = new StringBuffer(visit(supertype(t), locale));
-                for (List<Type> is = interfaces(t); is.nonEmpty(); is = is.tail) {
-                    s.append("&");
-                    s.append(visit(is.head, locale));
-                }
-                return s.toString();
-            } else if (sym.name.length() == 0) {
-                String s;
-                ClassType norm = (ClassType) t.tsym.type;
-                if (norm == null) {
-                    s = getLocalizedString(locale, "compiler.misc.anonymous.class", (Object) null);
-                } else if (interfaces(norm).nonEmpty()) {
-                    s = getLocalizedString(locale, "compiler.misc.anonymous.class",
-                            visit(interfaces(norm).head, locale));
-                } else {
-                    s = getLocalizedString(locale, "compiler.misc.anonymous.class",
-                            visit(supertype(norm), locale));
-                }
-                return s;
-            } else if (longform) {
-                return sym.getQualifiedName().toString();
-            } else {
-                return sym.name.toString();
-            }
-        }
-
-        protected String printMethodArgs(List<Type> args, boolean varArgs, Locale locale) {
-            if (!varArgs) {
-                return visit(args, locale);
-            } else {
-                StringBuffer buf = new StringBuffer();
-                while (args.tail.nonEmpty()) {
-                    buf.append(visit(args.head, locale));
-                    args = args.tail;
-                    buf.append(',');
-                }
-                if (args.head.tag == ARRAY) {
-                    buf.append(visit(((ArrayType) args.head).elemtype, locale));
-                    buf.append("...");
-                } else {
-                    buf.append(visit(args.head, locale));
-                }
-                return buf.toString();
-            }
-        }
-
-        protected String getLocalizedString(Locale locale, String key, Object... args) {
-            return messages.getLocalizedString(key, args);
-        }
-    };
-    // </editor-fold>
-
-    // <editor-fold defaultstate="collapsed" desc="printSymbol">
     /**
-     * Visitor for generating a string representation of a given symbol
+     * Helper method for generating a string representation of a given type
      * accordingly to a given locale
      */
     public String toString(Symbol t, Locale locale) {
-        return symbolPrinter.visit(t, locale);
+        return Printer.createStandardPrinter(messages).visit(t, locale);
     }
-    // where
-    private SymbolPrinter symbolPrinter = new SymbolPrinter();
-
-    public class SymbolPrinter extends DefaultSymbolVisitor<String, Locale> {
-
-        @Override
-        public String visitClassSymbol(ClassSymbol sym, Locale locale) {
-            return sym.name.isEmpty()
-                    ? getLocalizedString(locale, "compiler.misc.anonymous.class", sym.flatname)
-                    : sym.fullname.toString();
-        }
-
-        @Override
-        public String visitMethodSymbol(MethodSymbol s, Locale locale) {
-            if ((s.flags() & BLOCK) != 0) {
-                return s.owner.name.toString();
-            } else {
-                String ms = (s.name == names.init)
-                        ? s.owner.name.toString()
-                        : s.name.toString();
-                if (s.type != null) {
-                    if (s.type.tag == FORALL) {
-                        ms = "<" + typePrinter.visit(s.type.getTypeArguments(), locale) + ">" + ms;
-                    }
-                    ms += "(" + typePrinter.printMethodArgs(
-                            s.type.getParameterTypes(),
-                            (s.flags() & VARARGS) != 0,
-                            locale) + ")";
-                }
-                return ms;
-            }
-        }
-
-        @Override
-        public String visitOperatorSymbol(OperatorSymbol s, Locale locale) {
-            return visitMethodSymbol(s, locale);
-        }
-
-        @Override
-        public String visitPackageSymbol(PackageSymbol s, Locale locale) {
-            return s.name.isEmpty()
-                    ? getLocalizedString(locale, "compiler.misc.unnamed.package")
-                    : s.fullname.toString();
-        }
-
-        @Override
-        public String visitSymbol(Symbol s, Locale locale) {
-            return s.name.toString();
-        }
-
-        public String visit(List<Symbol> ts, Locale locale) {
-            ListBuffer<String> sbuf = lb();
-            for (Symbol t : ts) {
-                sbuf.append(visit(t, locale));
-            }
-            return sbuf.toList().toString();
-        }
-
-        protected String getLocalizedString(Locale locale, String key, Object... args) {
-            return messages.getLocalizedString(key, args);
-        }
-    };
-    // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="toString">
     /**
@@ -3128,7 +2926,7 @@ public class Types {
             return t;
     }
     // where
-        private List<Type> freshTypeVariables(List<Type> types) {
+        public List<Type> freshTypeVariables(List<Type> types) {
             ListBuffer<Type> result = lb();
             for (Type t : types) {
                 if (t.tag == WILDCARD) {
@@ -3224,9 +3022,11 @@ public class Types {
     }
 
     private boolean giveWarning(Type from, Type to) {
-        // To and from are (possibly different) parameterizations
-        // of the same class or interface
-        return to.isParameterized() && !containsType(to.allparams(), from.allparams());
+        Type subFrom = asSub(from, to.tsym);
+        return to.isParameterized() &&
+                (!(isUnbounded(to) ||
+                isSubtype(from, to) ||
+                ((subFrom != null) && isSameType(subFrom, to))));
     }
 
     private List<Type> superClosure(Type t, Type s) {

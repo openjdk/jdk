@@ -25,9 +25,9 @@
 
 package com.sun.tools.doclets.formats.html;
 
+import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
-import com.sun.javadoc.*;
 
 /**
  * Generate serialized form for Serializable/Externalizable methods.
@@ -66,14 +66,12 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
         writeSignature(member);
     }
 
-    public void writeMemberFooter(MethodDoc member) {
-        writer.dlEnd();
+    public void writeMemberFooter() {
+        printMemberFooter();
     }
 
     public void writeDeprecatedMemberInfo(MethodDoc member) {
-        print(((TagletOutputImpl)
-            (new DeprecatedTaglet()).getTagletOutput(member,
-            writer.getTagletWriterInstance(false))).toString());
+        printDeprecated(member);
     }
 
     public void writeMemberDescription(MethodDoc member) {
@@ -81,23 +79,27 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
     }
 
     public void writeMemberTags(MethodDoc member) {
-        writer.dd();
-        writer.dl();
         TagletOutputImpl output = new TagletOutputImpl("");
         TagletManager tagletManager =
             ConfigurationImpl.getInstance().tagletManager;
         TagletWriter.genTagOuput(tagletManager, member,
             tagletManager.getSerializedFormTags(),
             writer.getTagletWriterInstance(false), output);
-        print(output.toString());
+        String outputString = output.toString().trim();
+        if (!outputString.isEmpty()) {
+            writer.printMemberDetailsListStartTag();
+            writer.dd();
+            writer.dl();
+            print(outputString);
+            writer.dlEnd();
+            writer.ddEnd();
+        }
         MethodDoc method = member;
         if (method.name().compareTo("writeExternal") == 0
                 && method.tags("serialData").length == 0) {
             serialWarning(member.position(), "doclet.MissingSerialDataTag",
                 method.containingClass().qualifiedName(), method.name());
         }
-        writer.ddEnd();
-        writer.dlEnd();
     }
 
     protected void printTypeLinkNoDimension(Type type) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,9 @@ public interface Action extends ActionListener {
      * one of the <code>KeyEvent</code> key codes.  The value is
      * commonly used to specify a mnemonic.  For example:
      * <code>myAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_A)</code>
-     * sets the mnemonic of <code>myAction</code> to 'a'.
+     * sets the mnemonic of <code>myAction</code> to 'a', while
+     * <code>myAction.putValue(Action.MNEMONIC_KEY, KeyEvent.getExtendedKeyCodeForChar('\u0444'))</code>
+     * sets the mnemonic of <code>myAction</code> to Cyrillic letter "Ef".
      *
      * @since 1.3
      */

@@ -35,7 +35,7 @@
 // by constant into a multiply/shift/add series. Return false if calculations
 // fail.
 //
-// Borrowed almost verbatum from Hacker's Delight by Henry S. Warren, Jr. with
+// Borrowed almost verbatim from Hacker's Delight by Henry S. Warren, Jr. with
 // minor type name and parameter changes.
 static bool magic_int_divide_constants(jint d, jint &M, jint &s) {
   int32_t p;
@@ -202,7 +202,7 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
 // by constant into a multiply/shift/add series. Return false if calculations
 // fail.
 //
-// Borrowed almost verbatum from Hacker's Delight by Henry S. Warren, Jr. with
+// Borrowed almost verbatim from Hacker's Delight by Henry S. Warren, Jr. with
 // minor type name and parameter changes.  Adjusted to 64 bit word width.
 static bool magic_long_divide_constants(jlong d, jlong &M, jint &s) {
   int64_t p;
@@ -1069,7 +1069,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   int log2_con = -1;
 
-  // If this is a power of two, they maybe we can mask it
+  // If this is a power of two, then maybe we can mask it
   if( is_power_of_2_long(pos_con) ) {
     log2_con = log2_long(pos_con);
 

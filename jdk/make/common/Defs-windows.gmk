@@ -70,7 +70,6 @@ PLATFORM_INCLUDE      = $(INCLUDEDIR)/$(PLATFORM_INCLUDE_NAME)
 #     not to be REBASEd, see deploy/make/common/Release.gmk.
 #     msvcrt.dll, msvcrnn.dll [msvcr71 or msvcr80 or msvcr90] : Microsoft runtimes
 MS_RUNTIME_LIBRARIES = msvcrt.dll
-MSVCRNN_DLL =
 ifeq ($(ARCH_DATA_MODEL), 32)
   ifeq ($(COMPILER_VERSION), VS2003)
     MSVCRNN_DLL = msvcr71.dll
@@ -89,6 +88,13 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   endif
 endif
 
+ifeq ($(ARCH_DATA_MODEL), 64)
+  ifeq ($(COMPILER_VERSION), VS2008)
+    MSVCRNN_DLL = msvcr90.dll
+    MSVCPNN_DLL = msvcp90.dll
+    MS_RUNTIME_LIBRARIES += $(MSVCRNN_DLL)
+  endif
+endif
 
 EXTRA_LFLAGS += /LIBPATH:$(DXSDK_LIB_PATH)
 
@@ -104,6 +110,9 @@ ifndef OPTIMIZATION_LEVEL
   else
     OPTIMIZATION_LEVEL = LOWER
   endif
+endif
+ifndef FASTDEBUG_OPTIMIZATION_LEVEL
+  FASTDEBUG_OPTIMIZATION_LEVEL = LOWER
 endif
 
 ifeq ($(CC_VERSION),msvc)
@@ -345,16 +354,11 @@ COMPILER_WARNINGS_TO_IGNORE = 4800
 CFLAGS_COMMON += $(COMPILER_WARNINGS_TO_IGNORE:%=-wd%)
 
 #
-# Add warnings and extra on 64bit issues
-#
-ifeq ($(ARCH_DATA_MODEL), 64)
-  CFLAGS_COMMON += -Wp64 
-endif
-
-#
 # Treat compiler warnings as errors, if requested
 #
 CFLAGS_COMMON += -W$(COMPILER_WARNING_LEVEL)
+# Turn off security warnings about using the standard C library function strcpy
+CFLAGS_COMMON += -D _CRT_SECURE_NO_DEPRECATE
 ifeq ($(COMPILER_WARNINGS_FATAL),true)
   CFLAGS_COMMON += -WX
 endif

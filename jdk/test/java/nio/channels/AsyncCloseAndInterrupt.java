@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4460583 4470470 4840199 6419424 6710579 6596323
+ * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135
  * @summary Comprehensive test of asynchronous closing and interruption
  * @author Mark Reinhold
  */

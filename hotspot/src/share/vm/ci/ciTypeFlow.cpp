@@ -541,7 +541,7 @@ void ciTypeFlow::StateVector::do_aaload(ciBytecodeStream* str) {
     // is report a value that will meet correctly with any downstream
     // reference types on paths that will truly be executed.  This null type
     // meets with any reference type to yield that same reference type.
-    // (The compiler will generate an unconditonal exception here.)
+    // (The compiler will generate an unconditional exception here.)
     push(null_type());
     return;
   }
@@ -2237,7 +2237,6 @@ ciTypeFlow::Block* ciTypeFlow::clone_loop_head(Loop* lp, StateVector* temp_vecto
   for (SuccIter iter(tail); !iter.done(); iter.next()) {
     if (iter.succ() == head) {
       iter.set_succ(clone);
-      break;
     }
   }
   flow_block(tail, temp_vector, temp_set);

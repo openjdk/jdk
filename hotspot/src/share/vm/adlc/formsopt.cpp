@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,13 +273,13 @@ int RegClass::regs_in_word( int wordnum, bool stack_also ) {
   for(_regDefs.reset(); (name = _regDefs.iter()) != NULL;) {
     int rnum = ((RegDef*)_regDef[name])->register_num();
     if( (rnum >> 5) == wordnum )
-      word |= (1L<<(rnum&31));
+      word |= (1 << (rnum & 31));
   }
   if( stack_also ) {
     // Now also collect stack bits
     for( int i = 0; i < 32; i++ )
       if( wordnum*32+i >= RegisterForm::_reg_ctr )
-        word |= (1L<<i);
+        word |= (1 << i);
   }
 
   return word;
@@ -592,10 +592,10 @@ void  PeepMatch::add_instruction(int parent, int position, const char *name,
                                  int input) {
   if( position > _max_position ) _max_position = position;
 
-  _parent.addName((char *)parent);
-  _position.addName((char *)position);
+  _parent.addName((char*) (intptr_t) parent);
+  _position.addName((char*) (intptr_t) position);
   _instrs.addName(name);
-  _input.addName((char *)input);
+  _input.addName((char*) (intptr_t) input);
 }
 
 // Access info about instructions in the peep-match rule
@@ -603,7 +603,7 @@ int   PeepMatch::max_position() {
   return _max_position;
 }
 
-const char *PeepMatch::instruction_name(intptr_t position) {
+const char *PeepMatch::instruction_name(int position) {
   return _instrs.name(position);
 }
 
@@ -615,11 +615,11 @@ void  PeepMatch::reset() {
   _input.reset();
 }
 
-void  PeepMatch::next_instruction( intptr_t &parent, intptr_t &position, const char * &name, intptr_t &input ){
-  parent   = (intptr_t)_parent.iter();
-  position = (intptr_t)_position.iter();
+void  PeepMatch::next_instruction(int &parent, int &position, const char* &name, int &input) {
+  parent   = (int) (intptr_t) _parent.iter();
+  position = (int) (intptr_t) _position.iter();
   name     = _instrs.iter();
-  input    = (intptr_t)_input.iter();
+  input    = (int) (intptr_t) _input.iter();
 }
 
 // 'true' if current position in iteration is a placeholder, not matched.
@@ -637,15 +637,15 @@ void PeepMatch::output(FILE *fp) {        // Write info to output files
 }
 
 //------------------------------PeepConstraint---------------------------------
-PeepConstraint::PeepConstraint(intptr_t  left_inst,  char *left_op, char *relation,
-                               intptr_t  right_inst, char *right_op)
+PeepConstraint::PeepConstraint(int left_inst,  char* left_op, char* relation,
+                               int right_inst, char* right_op)
   : _left_inst(left_inst), _left_op(left_op), _relation(relation),
     _right_inst(right_inst), _right_op(right_op), _next(NULL) {}
 PeepConstraint::~PeepConstraint() {
 }
 
 // Check if constraints use instruction at position
-bool PeepConstraint::constrains_instruction(intptr_t position) {
+bool PeepConstraint::constrains_instruction(int position) {
   // Check local instruction constraints
   if( _left_inst  == position ) return true;
   if( _right_inst == position ) return true;
@@ -692,7 +692,7 @@ void  PeepReplace::add_instruction(char *root) {
 }
 void  PeepReplace::add_operand( int inst_num, char *inst_operand ) {
   _instruction.add_signal();
-  _operand_inst_num.addName((char*)inst_num);
+  _operand_inst_num.addName((char*) (intptr_t) inst_num);
   _operand_op_name.addName(inst_operand);
 }
 
@@ -702,15 +702,15 @@ void  PeepReplace::reset() {
   _operand_inst_num.reset();
   _operand_op_name.reset();
 }
-void  PeepReplace::next_instruction(const char * &inst){
+void  PeepReplace::next_instruction(const char* &inst){
   inst                     = _instruction.iter();
-  intptr_t   inst_num      = (intptr_t)_operand_inst_num.iter();
-  const char *inst_operand = _operand_op_name.iter();
+  int         inst_num     = (int) (intptr_t) _operand_inst_num.iter();
+  const char* inst_operand = _operand_op_name.iter();
 }
-void  PeepReplace::next_operand( intptr_t &inst_num, const char * &inst_operand ) {
-  const char *inst   = _instruction.iter();
-  inst_num           = (intptr_t)_operand_inst_num.iter();
-  inst_operand       = _operand_op_name.iter();
+void  PeepReplace::next_operand(int &inst_num, const char* &inst_operand) {
+  const char* inst = _instruction.iter();
+  inst_num         = (int) (intptr_t) _operand_inst_num.iter();
+  inst_operand     = _operand_op_name.iter();
 }
 
 

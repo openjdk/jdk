@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,6 +354,48 @@ makeDefaultConfig(JNIEnv *env, int screen) {
     return NULL;
 }
 
+/* Note: until we include the <X11/extensions/Xrender.h> explicitly
+ * we have to define a couple of things ourselves.
+ */
+typedef unsigned long   PictFormat;
+#define PictTypeIndexed             0
+#define PictTypeDirect              1
+
+typedef struct {
+    short   red;
+    short   redMask;
+    short   green;
+    short   greenMask;
+    short   blue;
+    short   blueMask;
+    short   alpha;
+    short   alphaMask;
+} XRenderDirectFormat;
+
+typedef struct {
+    PictFormat      id;
+    int         type;
+    int         depth;
+    XRenderDirectFormat direct;
+    Colormap        colormap;
+} XRenderPictFormat;
+
+#define PictFormatID        (1 << 0)
+#define PictFormatType      (1 << 1)
+#define PictFormatDepth     (1 << 2)
+#define PictFormatRed       (1 << 3)
+#define PictFormatRedMask   (1 << 4)
+#define PictFormatGreen     (1 << 5)
+#define PictFormatGreenMask (1 << 6)
+#define PictFormatBlue      (1 << 7)
+#define PictFormatBlueMask  (1 << 8)
+#define PictFormatAlpha     (1 << 9)
+#define PictFormatAlphaMask (1 << 10)
+#define PictFormatColormap  (1 << 11)
+
+typedef XRenderPictFormat *
+XRenderFindVisualFormatFunc (Display *dpy, _Xconst Visual *visual);
+
 static void
 getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 
@@ -367,6 +409,9 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
     int ind;
     char errmsg[128];
     int xinawareScreen;
+    void* xrenderLibHandle = NULL;
+    XRenderFindVisualFormatFunc *XRenderFindVisualFormat = NULL;
+    int major_opcode, first_event, first_error;
 
     if (usingXinerama) {
         xinawareScreen = 0;
@@ -449,6 +494,26 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
     graphicsConfigs[0] = defaultConfig;
     nConfig = 1; /* reserve index 0 for default config */
 
+    // Only use the RENDER extension if it is available on the X server
+    if (XQueryExtension(awt_display, "RENDER",
+                        &major_opcode, &first_event, &first_error))
+    {
+        xrenderLibHandle = dlopen("libXrender.so.1", RTLD_LAZY | RTLD_GLOBAL);
+
+#ifndef __linux__ /* SOLARIS */
+        if (xrenderLibHandle == NULL) {
+            xrenderLibHandle = dlopen("/usr/sfw/lib/libXrender.so.1",
+                                      RTLD_LAZY | RTLD_GLOBAL);
+        }
+#endif
+
+        if (xrenderLibHandle != NULL) {
+            XRenderFindVisualFormat =
+                (XRenderFindVisualFormatFunc*)dlsym(xrenderLibHandle,
+                                                    "XRenderFindVisualFormat");
+        }
+    }
+
     for (i = 0; i < nTrue; i++) {
         if (XVisualIDFromVisual(pVITrue[i].visual) ==
             XVisualIDFromVisual(defaultConfig->awt_visInfo.visual) ||
@@ -462,6 +527,21 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         graphicsConfigs [ind]->awt_depth = pVITrue [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVITrue [i],
                 sizeof (XVisualInfo));
+       if (XRenderFindVisualFormat != NULL) {
+            XRenderPictFormat *format = XRenderFindVisualFormat (awt_display,
+                    pVITrue [i].visual);
+            if (format &&
+                format->type == PictTypeDirect &&
+                format->direct.alphaMask)
+            {
+                graphicsConfigs [ind]->isTranslucencySupported = 1;
+            }
+        }
+    }
+
+    if (xrenderLibHandle != NULL) {
+        dlclose(xrenderLibHandle);
+        xrenderLibHandle = NULL;
     }
 
     for (i = 0; i < n8p; i++) {
@@ -1503,6 +1583,26 @@ Java_sun_awt_X11GraphicsConfig_swapBuffers
     XdbeEndIdiom(awt_display);
 
     AWT_FLUSH_UNLOCK();
+}
+
+/*
+ * Class:     sun_awt_X11GraphicsConfig
+ * Method:    isTranslucencyCapable
+ * Signature: (J)V
+ */
+JNIEXPORT jboolean JNICALL
+Java_sun_awt_X11GraphicsConfig_isTranslucencyCapable
+    (JNIEnv *env, jobject this, jlong configData)
+{
+#ifdef HEADLESS
+    return JNI_FALSE;
+#else
+    AwtGraphicsConfigDataPtr aData = (AwtGraphicsConfigDataPtr)jlong_to_ptr(configData);
+    if (aData == NULL) {
+        return JNI_FALSE;
+    }
+    return (jboolean)aData->isTranslucencySupported;
+#endif
 }
 
 /*

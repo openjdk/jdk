@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,13 +107,14 @@ void fieldDescriptor::print_on(outputStream* st) const {
 void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   print_on(st);
   BasicType ft = field_type();
-  jint as_int;
+  jint as_int = 0;
   switch (ft) {
     case T_BYTE:
       as_int = (jint)obj->byte_field(offset());
       st->print(" %d", obj->byte_field(offset()));
       break;
     case T_CHAR:
+      as_int = (jint)obj->char_field(offset());
       {
         jchar c = obj->char_field(offset());
         as_int = c;
@@ -128,6 +129,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       st->print(" %f", obj->float_field(offset()));
       break;
     case T_INT:
+      as_int = obj->int_field(offset());
       st->print(" %d", obj->int_field(offset()));
       break;
     case T_LONG:
@@ -144,12 +146,12 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       break;
     case T_ARRAY:
       st->print(" ");
-      as_int = obj->int_field(offset());
+      NOT_LP64(as_int = obj->int_field(offset()));
       obj->obj_field(offset())->print_value_on(st);
       break;
     case T_OBJECT:
       st->print(" ");
-      as_int = obj->int_field(offset());
+      NOT_LP64(as_int = obj->int_field(offset()));
       obj->obj_field(offset())->print_value_on(st);
       break;
     default:
@@ -158,9 +160,9 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   }
   // Print a hint as to the underlying integer representation. This can be wrong for
   // pointers on an LP64 machine
-  if (ft == T_LONG || ft == T_DOUBLE) {
+  if (ft == T_LONG || ft == T_DOUBLE LP64_ONLY(|| !is_java_primitive(ft)) ) {
     st->print(" (%x %x)", obj->int_field(offset()), obj->int_field(offset()+sizeof(jint)));
-  } else {
+  } else if (as_int < 0 || as_int > 9) {
     st->print(" (%x)", as_int);
   }
 }

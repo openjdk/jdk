@@ -365,7 +365,7 @@ public class Database {
 
     // HACK ALERT. The compilation of ad_<arch> files is very slow.
     // We want to start compiling them as early as possible. The compilation
-    // order on unix is dependant on the order we emit files here.
+    // order on unix is dependent on the order we emit files here.
     // By sorting the output before emitting it, we expect
     // that ad_<arch> will be compiled early.
     boolean shouldSortObjFiles = true;

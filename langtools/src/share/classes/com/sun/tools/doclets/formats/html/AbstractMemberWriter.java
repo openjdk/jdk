@@ -25,12 +25,12 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.taglets.*;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 import com.sun.javadoc.*;
-import java.util.*;
-import java.lang.reflect.Modifier;
+import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.internal.toolkit.taglets.*;
 
 /**
  * The base class for member writers.
@@ -38,6 +38,7 @@ import java.lang.reflect.Modifier;
  * @author Robert Field
  * @author Atul M Dambalkar
  * @author Jamie Ho (Re-write)
+ * @author Bhavesh Patel (Modified)
  */
 public abstract class AbstractMemberWriter {
 
@@ -59,7 +60,11 @@ public abstract class AbstractMemberWriter {
 
     /*** abstracts ***/
 
-    public abstract void printSummaryLabel(ClassDoc cd);
+    public abstract void printSummaryLabel();
+
+    public abstract void printTableSummary();
+
+    public abstract void printSummaryTableHeader(ProgramElementDoc member);
 
     public abstract void printInheritedSummaryLabel(ClassDoc cd);
 
@@ -232,10 +237,26 @@ public abstract class AbstractMemberWriter {
         }
     }
 
+    /**
+     * Print the deprecated output for the given member.
+     *
+     * @param member the member being documented.
+     */
+    protected void printDeprecated(ProgramElementDoc member) {
+        String output = (new DeprecatedTaglet()).getTagletOutput(member,
+            writer.getTagletWriterInstance(false)).toString().trim();
+        if (!output.isEmpty()) {
+            writer.printMemberDetailsListStartTag();
+            writer.print(output);
+        }
+    }
+
     protected void printComment(ProgramElementDoc member) {
         if (member.inlineTags().length > 0) {
+            writer.printMemberDetailsListStartTag();
             writer.dd();
             writer.printInlineComment(member);
+            writer.ddEnd();
         }
     }
 
@@ -264,6 +285,14 @@ public abstract class AbstractMemberWriter {
     protected void printCommentAndTags(ProgramElementDoc member) {
         printComment(member);
         writer.printTags(member);
+    }
+
+    /**
+     * Write the member footer.
+     */
+    protected void printMemberFooter() {
+        writer.printMemberDetailsListEndTag();
+        assert !writer.getMemberDetailsListPrinted();
     }
 
     /**
@@ -317,12 +346,13 @@ public abstract class AbstractMemberWriter {
      * format for listing the API. Call methods from the sub-class to complete
      * the generation.
      */
-    protected void printDeprecatedAPI(List<Doc> deprmembers, String headingKey) {
+    protected void printDeprecatedAPI(List<Doc> deprmembers, String headingKey, String tableSummary, String[] tableHeader) {
         if (deprmembers.size() > 0) {
-            writer.tableIndexSummary();
-            writer.tableHeaderStart("#CCCCFF");
-            writer.strongText(headingKey);
-            writer.tableHeaderEnd();
+            writer.tableIndexSummary(tableSummary);
+            writer.tableCaptionStart();
+            writer.printText(headingKey);
+            writer.tableCaptionEnd();
+            writer.summaryTableHeader(tableHeader, "col");
             for (int i = 0; i < deprmembers.size(); i++) {
                 ProgramElementDoc member =(ProgramElementDoc)deprmembers.get(i);
                 writer.trBgcolorStyle("white", "TableRowColor");
@@ -345,19 +375,26 @@ public abstract class AbstractMemberWriter {
     /**
      * Print use info.
      */
-    protected void printUseInfo(List<? extends ProgramElementDoc> mems, String heading) {
+    protected void printUseInfo(List<? extends ProgramElementDoc> mems, String heading, String tableSummary) {
         if (mems == null) {
             return;
         }
         List<? extends ProgramElementDoc> members = mems;
+        boolean printedUseTableHeader = false;
         if (members.size() > 0) {
-            writer.tableIndexSummary();
-            writer.tableUseInfoHeaderStart("#CCCCFF");
+            writer.tableIndexSummary(tableSummary);
+            writer.tableSubCaptionStart();
             writer.print(heading);
-            writer.tableHeaderEnd();
+            writer.tableCaptionEnd();
             for (Iterator<? extends ProgramElementDoc> it = members.iterator(); it.hasNext(); ) {
                 ProgramElementDoc pgmdoc = it.next();
                 ClassDoc cd = pgmdoc.containingClass();
+                if (!printedUseTableHeader) {
+                    // Passing ProgramElementDoc helps decides printing
+                    // interface or class header in case of nested classes.
+                    this.printSummaryTableHeader(pgmdoc);
+                    printedUseTableHeader = true;
+                }
 
                 writer.printSummaryLinkType(this, pgmdoc);
                 if (cd != null && !(pgmdoc instanceof ConstructorDoc)

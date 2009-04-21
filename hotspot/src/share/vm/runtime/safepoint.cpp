@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,7 +369,7 @@ void SafepointSynchronize::end() {
 
     // Start suspended threads
     for(JavaThread *current = Threads::first(); current; current = current->next()) {
-      // A problem occuring on Solaris is when attempting to restart threads
+      // A problem occurring on Solaris is when attempting to restart threads
       // the first #cpus - 1 go well, but then the VMThread is preempted when we get
       // to the next one (since it has been running the longest).  We then have
       // to wait for a cpu to become available before we can continue restarting

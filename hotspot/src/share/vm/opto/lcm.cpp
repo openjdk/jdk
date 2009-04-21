@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,8 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
       if( mach->in(2) != val ) continue;
       break;                    // Found a memory op?
     case Op_StrComp:
+    case Op_StrEquals:
+    case Op_StrIndexOf:
     case Op_AryEq:
       // Not a legit memory op for implicit null check regardless of
       // embedded loads
@@ -158,7 +160,14 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
           continue;             // Give up if offset is beyond page size
         // cannot reason about it; is probably not implicit null exception
       } else {
-        const TypePtr* tptr = base->bottom_type()->is_ptr();
+        const TypePtr* tptr;
+        if (UseCompressedOops && Universe::narrow_oop_shift() == 0) {
+          // 32-bits narrow oop can be the base of address expressions
+          tptr = base->bottom_type()->make_ptr();
+        } else {
+          // only regular oops are expected here
+          tptr = base->bottom_type()->is_ptr();
+        }
         // Give up if offset is not a compile-time constant
         if( offset == Type::OffsetBot || tptr->_offset == Type::OffsetBot )
           continue;

@@ -119,7 +119,7 @@ void IdealLoopTree::compute_profile_trip_cnt( PhaseIdealLoop *phase ) {
 
 //---------------------is_invariant_addition-----------------------------
 // Return nonzero index of invariant operand for an Add or Sub
-// of (nonconstant) invariant and variant values. Helper for reassoicate_invariants.
+// of (nonconstant) invariant and variant values. Helper for reassociate_invariants.
 int IdealLoopTree::is_invariant_addition(Node* n, PhaseIdealLoop *phase) {
   int op = n->Opcode();
   if (op == Op_AddI || op == Op_SubI) {
@@ -520,7 +520,7 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
 //------------------------------policy_align-----------------------------------
 // Return TRUE or FALSE if the loop should be cache-line aligned.  Gather the
 // expression that does the alignment.  Note that only one array base can be
-// aligned in a loop (unless the VM guarentees mutual alignment).  Note that
+// aligned in a loop (unless the VM guarantees mutual alignment).  Note that
 // if we vectorize short memory ops into longer memory ops, we may want to
 // increase alignment.
 bool IdealLoopTree::policy_align( PhaseIdealLoop *phase ) const {

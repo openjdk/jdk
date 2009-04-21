@@ -129,7 +129,7 @@ ifeq ($(PLATFORM), windows)
   ifeq ($(_OS_VERSION),)
     OS_VERSION = 5.0
   else
-    OS_VERSION = $(_OS_VERSION)
+    OS_VERSION = $(call MajorVersion,$(_OS_VERSION)).$(call MinorVersion,$(_OS_VERSION))
   endif
   OS_VARIANT_NAME := $(WINDOWS_MAPPING-$(OS_VERSION))
   OS_VARIANT_VERSION := $(OS_VERSION)
@@ -502,13 +502,15 @@ endif
 ######################################################
 ifdef OPENJDK
 sane-binary-plugs:
+  ifeq ($(IMPORT_BINARY_PLUGS),true)
 	@if [ ! -d "$(BINARY_PLUGS_PATH)" ]; then \
-	  $(ECHO) "ERROR: Can't locate pre-built libraries. \n" \
+	  $(ECHO) "WARNING: Can't locate pre-built libraries. \n" \
 	    "      Please check your access to \n" \
 	    "          $(BINARY_PLUGS_PATH) \n" \
 	    "      and/or check your value of ALT_BINARY_PLUGS_PATH. \n" \
-	   "" >> $(ERROR_FILE); \
+	   "" >> $(WARNING_FILE); \
 	fi
+  endif
 endif
 
 ######################################################
@@ -864,7 +866,7 @@ ifeq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_MSVCRT_DLL_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
-  ifeq ($(ARCH_DATA_MODEL), 32)
+  ifneq ($(MSVCRNN_DLL),)
 	@if [ ! -r "$(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)" ]; then \
 	  $(ECHO) "ERROR: You do not have access to $(MSVCRNN_DLL). \n" \
 	    "      Please check your access to \n" \
@@ -1314,8 +1316,8 @@ ifdef LINK_VER
 	fi
 	@if [ "$(LINK_CHECK)" != "same" ]; then \
 	  $(ECHO) "WARNING: To build Java 2 SDK $(JDK_VERSION) you need : \n" \
-	    "      $(COMPILER_VERSION) - link.exe version \"$(REQUIRED_LINK_VER)\" \n" \
-	      "      Specifically the $(COMPILER_NAME) link.exe. \n " \
+	    "      $(REQUIRED_COMPILER_VERSION) - link.exe version \"$(REQUIRED_LINK_VER)\" \n" \
+	      "      Specifically the $(REQUIRED_COMPILER_NAME) link.exe. \n " \
 	    "      $(YOU_ARE_USING) Linker version \"$(LINK_VER)\" \n" \
 	    "" >> $(WARNING_FILE) ; \
 	fi
@@ -1332,21 +1334,13 @@ sane-compiler: sane-link
 	fi
 ifndef OPENJDK
 	@if [ "$(CC_CHECK)" != "same" ]; then \
-	      $(ECHO) "WARNING: The $(PLATFORM) compiler is not version $(COMPILER_VERSION) $(REQUIRED_CC_VER) \n" \
-	      "      Specifically the $(COMPILER_NAME) compiler. \n " \
-	      "      $(YOU_ARE_USING) compiler version: $(CC_VER) \n" \
+	      $(ECHO) "WARNING: The $(PLATFORM) compiler is not version $(REQUIRED_COMPILER_VERSION) $(REQUIRED_CC_VER) \n" \
+	      "      Specifically the $(REQUIRED_COMPILER_NAME) compiler. \n " \
+	      "      $(YOU_ARE_USING) $(COMPILER_VERSION): $(CC_VER) \n" \
 	      "      The compiler was obtained from the following location: \n" \
 	      "          $(COMPILER_PATH) \n" \
 	      "" >> $(WARNING_FILE) ; \
          fi
-  ifeq ($(PLATFORM), windows)
-    ifeq ($(ARCH_DATA_MODEL), 64)
-      ifneq ($(COMPILER_VERSION), VS2005)
-	@$(ECHO) "WARNING: Should be using VS2005 compiler on 64bit platform. \n" \
-	    "" >> $(WARNING_FILE)
-      endif
-    endif
-  endif
 endif
 
 ######################################################

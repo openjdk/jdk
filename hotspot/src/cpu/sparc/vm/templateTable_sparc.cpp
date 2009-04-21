@@ -1545,7 +1545,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // Handle all the JSR stuff here, then exit.
   // It's much shorter and cleaner than intermingling with the
-  // non-JSR normal-branch stuff occuring below.
+  // non-JSR normal-branch stuff occurring below.
   if( is_jsr ) {
     // compute return address as bci in Otos_i
     __ ld_ptr(Address(Lmethod, 0, in_bytes(methodOopDesc::const_offset())), G3_scratch);
@@ -3079,7 +3079,7 @@ void TemplateTable::invokeinterface(int byte_no) {
     Label ok;
 
     // Check that entry is non-null.  Null entries are probably a bytecode
-    // problem.  If the interface isn't implemented by the reciever class,
+    // problem.  If the interface isn't implemented by the receiver class,
     // the VM should throw IncompatibleClassChangeError.  linkResolver checks
     // this too but that's only if the entry isn't already resolved, so we
     // need to check again.

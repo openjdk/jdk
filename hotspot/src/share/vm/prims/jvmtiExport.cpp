@@ -1872,6 +1872,9 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
 {
   // register the stub with the current dynamic code event collector
   JvmtiThreadState* state = JvmtiThreadState::state_for(JavaThread::current());
+  // state can only be NULL if the current thread is exiting which
+  // should not happen since we're trying to post an event
+  guarantee(state != NULL, "attempt to register stub via an exiting thread");
   JvmtiDynamicCodeEventCollector* collector = state->get_dynamic_code_event_collector();
   guarantee(collector != NULL, "attempt to register stub without event collector");
   collector->register_stub(name, code_begin, code_end);
@@ -2253,6 +2256,9 @@ void JvmtiExport::cms_ref_processing_epilogue() {
 void JvmtiEventCollector::setup_jvmti_thread_state() {
   // set this event collector to be the current one.
   JvmtiThreadState* state = JvmtiThreadState::state_for(JavaThread::current());
+  // state can only be NULL if the current thread is exiting which
+  // should not happen since we're trying to configure for event collection
+  guarantee(state != NULL, "exiting thread called setup_jvmti_thread_state");
   if (is_vm_object_alloc_event()) {
     _prev = state->get_vm_object_alloc_event_collector();
     state->set_vm_object_alloc_event_collector((JvmtiVMObjectAllocEventCollector *)this);

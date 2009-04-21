@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,9 +574,13 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
   // TEMPORARY
   // if( is_simple_chain_rule(globals) )  return false;
 
-  // String-compare uses many memorys edges, but writes none
+  // String.(compareTo/equals/indexOf) and Arrays.equals use many memorys edges,
+  // but writes none
   if( _matrule && _matrule->_rChild &&
-      strcmp(_matrule->_rChild->_opType,"StrComp")==0 )
+      ( strcmp(_matrule->_rChild->_opType,"StrComp"    )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
+        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ))
     return true;
 
   // Check if instruction has a USE of a memory operand class, but no defs
@@ -815,8 +819,10 @@ uint InstructForm::oper_input_base(FormDict &globals) {
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
 
   if( _matrule->_rChild &&
-          strcmp(_matrule->_rChild->_opType,"StrComp")==0 ) {
-        // String compare takes 1 control and 4 memory edges.
+      ( strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 )) {
+        // String.(compareTo/equals/indexOf) take 1 control and 4 memory edges.
     return 5;
   }
 
@@ -844,8 +850,12 @@ void InstructForm::build_components() {
   for (_parameters.reset(); (name = _parameters.iter()) != NULL;) {
     OperandForm *opForm = (OperandForm*)_localNames[name];
 
-    const Form *form = _effects[name];
-    Effect     *e    = form ? form->is_effect() : NULL;
+    Effect* e = NULL;
+    {
+      const Form* form = _effects[name];
+      e = form ? form->is_effect() : NULL;
+    }
+
     if (e != NULL) {
       has_temp |= e->is(Component::TEMP);
 
@@ -858,19 +868,7 @@ void InstructForm::build_components() {
         OperandForm* kill = (OperandForm*)_localNames[kill_name];
         globalAD->syntax_err(_linenum, "%s: %s %s must be at the end of the argument list\n",
                              _ident, kill->_ident, kill_name);
-      } else if (e->isa(Component::KILL)) {
-        kill_name = name;
-      }
-
-      // TEMPs are real uses and need to be among the first parameters
-      // listed, otherwise the numbering of operands and inputs gets
-      // screwy, so enforce this restriction during parse.
-      if (kill_name != NULL &&
-          e->isa(Component::TEMP) && !e->isa(Component::DEF)) {
-        OperandForm* kill = (OperandForm*)_localNames[kill_name];
-        globalAD->syntax_err(_linenum, "%s: %s %s must follow %s %s in the argument list\n",
-                             _ident, kill->_ident, kill_name, opForm->_ident, name);
-      } else if (e->isa(Component::KILL)) {
+      } else if (e->isa(Component::KILL) && !e->isa(Component::USE)) {
         kill_name = name;
       }
     }
@@ -1122,7 +1120,7 @@ bool InstructForm::cisc_spills_to(ArchDesc &AD, InstructForm *instr) {
   const char *op_name            = NULL;
   const char *reg_type           = NULL;
   FormDict   &globals            = AD.globalNames();
-  cisc_spill_operand = _matrule->cisc_spill_match(globals, AD.get_registers(), instr->_matrule, op_name, reg_type);
+  cisc_spill_operand = _matrule->matchrule_cisc_spill_match(globals, AD.get_registers(), instr->_matrule, op_name, reg_type);
   if( (cisc_spill_operand != Not_cisc_spillable) && (op_name != NULL) && equivalent_predicates(this, instr) ) {
     cisc_spill_operand = operand_position(op_name, Component::USE);
     int def_oper  = operand_position(op_name, Component::DEF);
@@ -1217,13 +1215,17 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
 // Seach through operands to determine parameters unique positions.
 void InstructForm::set_unique_opnds() {
   uint* uniq_idx = NULL;
-  uint  nopnds = num_opnds();
+  int  nopnds = num_opnds();
   uint  num_uniq = nopnds;
-  uint i;
+  int i;
+  _uniq_idx_length = 0;
   if ( nopnds > 0 ) {
-    // Allocate index array with reserve.
-    uniq_idx = (uint*) malloc(sizeof(uint)*(nopnds + 2));
-    for( i = 0; i < nopnds+2; i++ ) {
+    // Allocate index array.  Worst case we're mapping from each
+    // component back to an index and any DEF always goes at 0 so the
+    // length of the array has to be the number of components + 1.
+    _uniq_idx_length = _components.count() + 1;
+    uniq_idx = (uint*) malloc(sizeof(uint)*(_uniq_idx_length));
+    for( i = 0; i < _uniq_idx_length; i++ ) {
       uniq_idx[i] = i;
     }
   }
@@ -1238,8 +1240,8 @@ void InstructForm::set_unique_opnds() {
     _parameters.reset();
     while( (name = _parameters.iter()) != NULL ) {
       count = 0;
-      uint position = 0;
-      uint uniq_position = 0;
+      int position = 0;
+      int uniq_position = 0;
       _components.reset();
       Component *comp = NULL;
       if( sets_result() ) {
@@ -1255,6 +1257,7 @@ void InstructForm::set_unique_opnds() {
         }
         if( strcmp(name, comp->_name)==0 ) {
           if( ++count > 1 ) {
+            assert(position < _uniq_idx_length, "out of bounds");
             uniq_idx[position] = uniq_position;
             has_dupl_use = true;
           } else {
@@ -1284,7 +1287,7 @@ void InstructForm::set_unique_opnds() {
   _num_uniq = num_uniq;
 }
 
-// Generate index values needed for determing the operand position
+// Generate index values needed for determining the operand position
 void InstructForm::index_temps(FILE *fp, FormDict &globals, const char *prefix, const char *receiver) {
   uint  idx = 0;                  // position of operand in match rule
   int   cur_num_opnds = num_opnds();
@@ -2200,8 +2203,8 @@ int OperandForm::operand_position(const char *name, int usedef) {
 // Return zero-based position in component list, only counting constants;
 // Return -1 if not in list.
 int OperandForm::constant_position(FormDict &globals, const Component *last) {
-  // Iterate through components and count constants preceeding 'constant'
-  uint  position = 0;
+  // Iterate through components and count constants preceding 'constant'
+  int position = 0;
   Component *comp;
   _components.reset();
   while( (comp = _components.iter()) != NULL  && (comp != last) ) {
@@ -2238,7 +2241,7 @@ int OperandForm::constant_position(FormDict &globals, const char *name) {
 // Return zero-based position in component list, only counting constants;
 // Return -1 if not in list.
 int OperandForm::register_position(FormDict &globals, const char *reg_name) {
-  // Iterate through components and count registers preceeding 'last'
+  // Iterate through components and count registers preceding 'last'
   uint  position = 0;
   Component *comp;
   _components.reset();
@@ -2304,7 +2307,7 @@ void OperandForm::disp_is_oop(FILE *fp, FormDict &globals) {
   if ( op->is_base_constant(globals) == Form::idealP ) {
     // Find the constant's index:  _c0, _c1, _c2, ... , _cN
     uint idx  = op->constant_position( globals, rep_var);
-    fprintf(fp,"  virtual bool disp_is_oop() const {", _ident);
+    fprintf(fp,"  virtual bool disp_is_oop() const {");
     fprintf(fp,  "  return _c%d->isa_oop_ptr();", idx);
     fprintf(fp, " }\n");
   }
@@ -3042,9 +3045,9 @@ bool  MatchNode::find_type(const char *type, int &position) const {
 
 // Recursive call collecting info on top-level operands, not transitive.
 // Implementation does not modify state of internal structures.
-void MatchNode::append_components(FormDict &locals, ComponentList &components,
-                                  bool deflag) const {
-  int   usedef = deflag ? Component::DEF : Component::USE;
+void MatchNode::append_components(FormDict& locals, ComponentList& components,
+                                  bool def_flag) const {
+  int usedef = def_flag ? Component::DEF : Component::USE;
   FormDict &globals = _AD.globalNames();
 
   assert (_name != NULL, "MatchNode::build_components encountered empty node\n");
@@ -3062,10 +3065,10 @@ void MatchNode::append_components(FormDict &locals, ComponentList &components,
     return;
   }
   // Promote results of "Set" to DEF
-  bool def_flag = (!strcmp(_opType, "Set")) ? true : false;
-  if (_lChild) _lChild->append_components(locals, components, def_flag);
-  def_flag = false;   // only applies to component immediately following 'Set'
-  if (_rChild) _rChild->append_components(locals, components, def_flag);
+  bool tmpdef_flag = (!strcmp(_opType, "Set")) ? true : false;
+  if (_lChild) _lChild->append_components(locals, components, tmpdef_flag);
+  tmpdef_flag = false;   // only applies to component immediately following 'Set'
+  if (_rChild) _rChild->append_components(locals, components, tmpdef_flag);
 }
 
 // Find the n'th base-operand in the match node,
@@ -3313,8 +3316,8 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
     "StoreI","StoreL","StoreP","StoreN","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
-    "LoadI" ,"LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
-    "LoadB" ,"LoadUS" ,"LoadS" ,"Load"   ,
+    "LoadI", "LoadUI2L", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
+    "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load"   ,
     "Store4I","Store2I","Store2L","Store2D","Store4F","Store2F","Store16B",
     "Store8B","Store4B","Store8C","Store4C","Store2C",
     "Load4I" ,"Load2I" ,"Load2L" ,"Load2D" ,"Load4F" ,"Load2F" ,"Load16B" ,
@@ -3411,9 +3414,9 @@ bool static root_ops_match(FormDict &globals, const char *op1, const char *op2) 
   return (form1 == form2);
 }
 
-//-------------------------cisc_spill_match------------------------------------
+//-------------------------cisc_spill_match_node-------------------------------
 // Recursively check two MatchRules for legal conversion via cisc-spilling
-int  MatchNode::cisc_spill_match(FormDict &globals, RegisterForm *registers, MatchNode *mRule2, const char * &operand, const char * &reg_type) {
+int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, MatchNode* mRule2, const char* &operand, const char* &reg_type) {
   int cisc_spillable  = Maybe_cisc_spillable;
   int left_spillable  = Maybe_cisc_spillable;
   int right_spillable = Maybe_cisc_spillable;
@@ -3434,10 +3437,16 @@ int  MatchNode::cisc_spill_match(FormDict &globals, RegisterForm *registers, Mat
     const InstructForm *form2_inst = form2 ? form2->is_instruction() : NULL;
     const char *name_left  = mRule2->_lChild ? mRule2->_lChild->_opType : NULL;
     const char *name_right = mRule2->_rChild ? mRule2->_rChild->_opType : NULL;
+    DataType data_type = Form::none;
+    if (form->is_operand()) {
+      // Make sure the loadX matches the type of the reg
+      data_type = form->ideal_to_Reg_type(form->is_operand()->ideal_type(globals));
+    }
     // Detect reg vs (loadX memory)
     if( form->is_cisc_reg(globals)
         && form2_inst
-        && (is_load_from_memory(mRule2->_opType) != Form::none) // reg vs. (load memory)
+        && data_type != Form::none
+        && (is_load_from_memory(mRule2->_opType) == data_type) // reg vs. (load memory)
         && (name_left != NULL)       // NOT (load)
         && (name_right == NULL) ) {  // NOT (load memory foo)
       const Form *form2_left = name_left ? globals[name_left] : NULL;
@@ -3487,13 +3496,13 @@ int  MatchNode::cisc_spill_match(FormDict &globals, RegisterForm *registers, Mat
   return cisc_spillable;
 }
 
-//---------------------------cisc_spill_match----------------------------------
+//---------------------------cisc_spill_match_rule------------------------------
 // Recursively check two MatchRules for legal conversion via cisc-spilling
 // This method handles the root of Match tree,
 // general recursive checks done in MatchNode
-int  MatchRule::cisc_spill_match(FormDict &globals, RegisterForm *registers,
-                                 MatchRule *mRule2, const char * &operand,
-                                 const char * &reg_type) {
+int  MatchRule::matchrule_cisc_spill_match(FormDict& globals, RegisterForm* registers,
+                                           MatchRule* mRule2, const char* &operand,
+                                           const char* &reg_type) {
   int cisc_spillable  = Maybe_cisc_spillable;
   int left_spillable  = Maybe_cisc_spillable;
   int right_spillable = Maybe_cisc_spillable;
@@ -3531,7 +3540,7 @@ int  MatchRule::cisc_spill_match(FormDict &globals, RegisterForm *registers,
 //----------------------------- equivalent ------------------------------------
 // Recursively check to see if two match rules are equivalent.
 // This rule handles the root.
-bool MatchRule::equivalent(FormDict &globals, MatchRule *mRule2) {
+bool MatchRule::equivalent(FormDict &globals, MatchNode *mRule2) {
   // Check that each sets a result
   if (sets_result() != mRule2->sets_result()) {
     return false;
@@ -3647,7 +3656,7 @@ void MatchNode::swap_commutative_op(bool atroot, int id) {
 
 //-------------------------- swap_commutative_op ------------------------------
 // Recursively swap specified commutative operation with subtree operands.
-void MatchRule::swap_commutative_op(const char* instr_ident, int count, int& match_rules_cnt) {
+void MatchRule::matchrule_swap_commutative_op(const char* instr_ident, int count, int& match_rules_cnt) {
   assert(match_rules_cnt < 100," too many match rule clones");
   // Clone
   MatchRule* clone = new MatchRule(_AD, this);
@@ -3660,8 +3669,8 @@ void MatchRule::swap_commutative_op(const char* instr_ident, int count, int& mat
   clone->_next = this->_next;
   this-> _next = clone;
   if( (--count) > 0 ) {
-    this-> swap_commutative_op(instr_ident, count, match_rules_cnt);
-    clone->swap_commutative_op(instr_ident, count, match_rules_cnt);
+    this-> matchrule_swap_commutative_op(instr_ident, count, match_rules_cnt);
+    clone->matchrule_swap_commutative_op(instr_ident, count, match_rules_cnt);
   }
 }
 
@@ -3693,7 +3702,7 @@ MatchRule::~MatchRule() {
 
 // Recursive call collecting info on top-level operands, not transitive.
 // Implementation does not modify state of internal structures.
-void MatchRule::append_components(FormDict &locals, ComponentList &components) const {
+void MatchRule::append_components(FormDict& locals, ComponentList& components, bool def_flag) const {
   assert (_name != NULL, "MatchNode::build_components encountered empty node\n");
 
   MatchNode::append_components(locals, components,

@@ -25,15 +25,16 @@
 
 package com.sun.tools.doclets.formats.html;
 
-import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.javadoc.*;
-
 import java.io.*;
+
+import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.*;
 
 /**
  * Writes annotation type optional member documentation in HTML format.
  *
  * @author Jamie Ho
+ * @author Bhavesh Patel (Modified)
  */
 public class AnnotationTypeOptionalMemberWriterImpl extends
         AnnotationTypeRequiredMemberWriterImpl
@@ -63,14 +64,20 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
      * {@inheritDoc}
      */
     public void writeDefaultValueInfo(MemberDoc member) {
-        writer.dl();
-        writer.dt();
-        writer.strong(ConfigurationImpl.getInstance().
-            getText("doclet.Default"));
-        writer.dd();
-        writer.print(((AnnotationTypeElementDoc) member).defaultValue());
-        writer.ddEnd();
-        writer.dlEnd();
+        if (((AnnotationTypeElementDoc) member).defaultValue() != null) {
+            writer.printMemberDetailsListStartTag();
+            writer.dd();
+            writer.dl();
+            writer.dt();
+            writer.strong(ConfigurationImpl.getInstance().
+                getText("doclet.Default"));
+            writer.dtEnd();
+            writer.dd();
+            writer.print(((AnnotationTypeElementDoc) member).defaultValue());
+            writer.ddEnd();
+            writer.dlEnd();
+            writer.ddEnd();
+        }
     }
 
     /**
@@ -83,8 +90,27 @@ public class AnnotationTypeOptionalMemberWriterImpl extends
     /**
      * {@inheritDoc}
      */
-    public void printSummaryLabel(ClassDoc cd) {
-        writer.strongText("doclet.Annotation_Type_Optional_Member_Summary");
+    public void printSummaryLabel() {
+        writer.printText("doclet.Annotation_Type_Optional_Member_Summary");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void printTableSummary() {
+        writer.tableIndexSummary(configuration().getText("doclet.Member_Table_Summary",
+                configuration().getText("doclet.Annotation_Type_Optional_Member_Summary"),
+                configuration().getText("doclet.annotation_type_optional_members")));
+    }
+
+    public void printSummaryTableHeader(ProgramElementDoc member) {
+        String[] header = new String[] {
+            writer.getModifierTypeHeader(),
+            configuration().getText("doclet.0_and_1",
+                    configuration().getText("doclet.Annotation_Type_Optional_Member"),
+                    configuration().getText("doclet.Description"))
+        };
+        writer.summaryTableHeader(header, "col");
     }
 
     /**

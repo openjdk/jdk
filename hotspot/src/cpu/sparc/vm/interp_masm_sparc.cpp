@@ -866,65 +866,18 @@ void InterpreterMacroAssembler::gen_subtype_check(Register Rsub_klass,
                                                   Register Rtmp2,
                                                   Register Rtmp3,
                                                   Label &ok_is_subtype ) {
-  Label not_subtype, loop;
+  Label not_subtype;
 
   // Profile the not-null value's klass.
   profile_typecheck(Rsub_klass, Rtmp1);
 
-  // Load the super-klass's check offset into Rtmp1
-  ld( Rsuper_klass, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes(), Rtmp1 );
-  // Load from the sub-klass's super-class display list, or a 1-word cache of
-  // the secondary superclass list, or a failing value with a sentinel offset
-  // if the super-klass is an interface or exceptionally deep in the Java
-  // hierarchy and we have to scan the secondary superclass list the hard way.
-  ld_ptr( Rsub_klass, Rtmp1, Rtmp2 );
-  // See if we get an immediate positive hit
-  cmp( Rtmp2, Rsuper_klass );
-  brx( Assembler::equal, false, Assembler::pt, ok_is_subtype );
-  // In the delay slot, check for immediate negative hit
-  delayed()->cmp( Rtmp1, sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() );
-  br( Assembler::notEqual, false, Assembler::pt, not_subtype );
-  // In the delay slot, check for self
-  delayed()->cmp( Rsub_klass, Rsuper_klass );
-  brx( Assembler::equal, false, Assembler::pt, ok_is_subtype );
+  check_klass_subtype_fast_path(Rsub_klass, Rsuper_klass,
+                                Rtmp1, Rtmp2,
+                                &ok_is_subtype, &not_subtype, NULL);
 
-  // Now do a linear scan of the secondary super-klass chain.
-  delayed()->ld_ptr( Rsub_klass, sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes(), Rtmp2 );
-
-  // compress superclass
-  if (UseCompressedOops) encode_heap_oop(Rsuper_klass);
-
-  // Rtmp2 holds the objArrayOop of secondary supers.
-  ld( Rtmp2, arrayOopDesc::length_offset_in_bytes(), Rtmp1 );// Load the array length
-  // Check for empty secondary super list
-  tst(Rtmp1);
-
-  // Top of search loop
-  bind( loop );
-  br( Assembler::equal, false, Assembler::pn, not_subtype );
-  delayed()->nop();
-
-  // load next super to check
-  if (UseCompressedOops) {
-    lduw( Rtmp2, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Rtmp3);
-    // Bump array pointer forward one oop
-    add( Rtmp2, 4, Rtmp2 );
-  } else {
-    ld_ptr( Rtmp2, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Rtmp3);
-    // Bump array pointer forward one oop
-    add( Rtmp2, wordSize, Rtmp2);
-  }
-  // Look for Rsuper_klass on Rsub_klass's secondary super-class-overflow list
-  cmp( Rtmp3, Rsuper_klass );
-  // A miss means we are NOT a subtype and need to keep looping
-  brx( Assembler::notEqual, false, Assembler::pt, loop );
-  delayed()->deccc( Rtmp1 );    // dec trip counter in delay slot
-  // Falling out the bottom means we found a hit; we ARE a subtype
-  if (UseCompressedOops) decode_heap_oop(Rsuper_klass);
-  br( Assembler::always, false, Assembler::pt, ok_is_subtype );
-  // Update the cache
-  delayed()->st_ptr( Rsuper_klass, Rsub_klass,
-                     sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes() );
+  check_klass_subtype_slow_path(Rsub_klass, Rsuper_klass,
+                                Rtmp1, Rtmp2, Rtmp3, /*hack:*/ noreg,
+                                &ok_is_subtype, NULL);
 
   bind(not_subtype);
   profile_typecheck_failed(Rtmp1);
@@ -2465,7 +2418,10 @@ void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
 //   InterpreterRuntime::post_method_entry();
 // }
 // if (DTraceMethodProbes) {
-//   SharedRuntime::dtrace_method_entry(method, reciever);
+//   SharedRuntime::dtrace_method_entry(method, receiver);
+// }
+// if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+//   SharedRuntime::rc_trace_method_entry(method, receiver);
 // }
 
 void InterpreterMacroAssembler::notify_method_entry() {
@@ -2495,6 +2451,13 @@ void InterpreterMacroAssembler::notify_method_entry() {
     SkipIfEqual skip_if(this, temp_reg, &DTraceMethodProbes, zero);
     call_VM_leaf(noreg,
       CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
+      G2_thread, Lmethod);
+  }
+
+  // RedefineClasses() tracing support for obsolete method entry
+  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+    call_VM_leaf(noreg,
+      CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
       G2_thread, Lmethod);
   }
 }

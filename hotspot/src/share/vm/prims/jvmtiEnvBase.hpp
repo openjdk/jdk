@@ -120,7 +120,7 @@ class JvmtiEnvBase : public CHeapObj {
 
  public:
 
-  bool is_valid()                                  { return _magic == JVMTI_MAGIC; }
+  bool is_valid();
 
   bool is_retransformable()                        { return _is_retransformable; }
 

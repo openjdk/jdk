@@ -33,8 +33,6 @@ import java.nio.BufferPoolMXBean;
 import java.nio.channels.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
-import java.lang.reflect.Field;
 import java.security.AccessController;
 import javax.management.ObjectName;
 import javax.management.MalformedObjectNameException;
@@ -95,14 +93,16 @@ public class FileChannelImpl
     // -- Standard channel operations --
 
     protected void implCloseChannel() throws IOException {
-        // Invalidate and release any locks that we still hold
+        // Release and invalidate any locks that we still hold
         if (fileLockTable != null) {
-            fileLockTable.removeAll( new FileLockTable.Releaser() {
-                public void release(FileLock fl) throws IOException {
-                    ((FileLockImpl)fl).invalidate();
-                    nd.release(fd, fl.position(), fl.size());
+            for (FileLock fl: fileLockTable.removeAll()) {
+                synchronized (fl) {
+                    if (fl.isValid()) {
+                        nd.release(fd, fl.position(), fl.size());
+                        ((FileLockImpl)fl).invalidate();
+                    }
                 }
-            });
+            }
         }
 
         nd.preClose(fd);
@@ -128,9 +128,10 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         synchronized (positionLock) {
             int n = 0;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -151,9 +152,10 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         synchronized (positionLock) {
             long n = 0;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -183,9 +185,10 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         synchronized (positionLock) {
             int n = 0;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -206,9 +209,10 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         synchronized (positionLock) {
             long n = 0;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -239,9 +243,10 @@ public class FileChannelImpl
         ensureOpen();
         synchronized (positionLock) {
             long p = -1;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return 0;
                 do {
@@ -262,9 +267,10 @@ public class FileChannelImpl
             throw new IllegalArgumentException();
         synchronized (positionLock) {
             long p = -1;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return null;
                 do {
@@ -283,9 +289,10 @@ public class FileChannelImpl
         ensureOpen();
         synchronized (positionLock) {
             long s = -1;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return -1;
                 do {
@@ -311,9 +318,10 @@ public class FileChannelImpl
         synchronized (positionLock) {
             int rv = -1;
             long p = -1;
-            int ti = threads.add();
+            int ti = -1;
             try {
                 begin();
+                ti = threads.add();
                 if (!isOpen())
                     return null;
 
@@ -350,9 +358,10 @@ public class FileChannelImpl
     public void force(boolean metaData) throws IOException {
         ensureOpen();
         int rv = -1;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return;
             do {
@@ -406,9 +415,10 @@ public class FileChannelImpl
             return IOStatus.UNSUPPORTED;
 
         long n = -1;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return -1;
             do {
@@ -612,9 +622,10 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
         ensureOpen();
         int n = 0;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return -1;
             do {
@@ -637,9 +648,10 @@ public class FileChannelImpl
             throw new NonWritableChannelException();
         ensureOpen();
         int n = 0;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return -1;
             do {
@@ -731,9 +743,10 @@ public class FileChannelImpl
             throw new NonReadableChannelException();
 
         long addr = -1;
-        int ti = threads.add();
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return null;
             if (size() < position + size) { // Extend file size
@@ -899,31 +912,33 @@ public class FileChannelImpl
         FileLockImpl fli = new FileLockImpl(this, position, size, shared);
         FileLockTable flt = fileLockTable();
         flt.add(fli);
-        boolean i = true;
-        int ti = threads.add();
+        boolean completed = false;
+        int ti = -1;
         try {
             begin();
+            ti = threads.add();
             if (!isOpen())
                 return null;
-            int result = nd.lock(fd, true, position, size, shared);
-            if (result == FileDispatcher.RET_EX_LOCK) {
-                assert shared;
-                FileLockImpl fli2 = new FileLockImpl(this, position, size,
-                                                     false);
-                flt.replace(fli, fli2);
-                return fli2;
+            int n;
+            do {
+                n = nd.lock(fd, true, position, size, shared);
+            } while ((n == FileDispatcher.INTERRUPTED) && isOpen());
+            if (isOpen()) {
+                if (n == FileDispatcher.RET_EX_LOCK) {
+                    assert shared;
+                    FileLockImpl fli2 = new FileLockImpl(this, position, size,
+                                                         false);
+                    flt.replace(fli, fli2);
+                    fli = fli2;
+                }
+                completed = true;
             }
-            if (result == FileDispatcher.INTERRUPTED || result == FileDispatcher.NO_LOCK) {
-                flt.remove(fli);
-                i = false;
-            }
-        } catch (IOException e) {
-            flt.remove(fli);
-            throw e;
         } finally {
+            if (!completed)
+                flt.remove(fli);
             threads.remove(ti);
             try {
-                end(i);
+                end(completed);
             } catch (ClosedByInterruptException e) {
                 throw new FileLockInterruptionException();
             }
@@ -971,7 +986,6 @@ public class FileChannelImpl
     }
 
     void release(FileLockImpl fli) throws IOException {
-        ensureOpen();
         int ti = threads.add();
         try {
             ensureOpen();
@@ -991,7 +1005,7 @@ public class FileChannelImpl
      */
     private static class SimpleFileLockTable extends FileLockTable {
         // synchronize on list for access
-        private List<FileLock> lockList = new ArrayList<FileLock>(2);
+        private final List<FileLock> lockList = new ArrayList<FileLock>(2);
 
         public SimpleFileLockTable() {
         }
@@ -1020,14 +1034,11 @@ public class FileChannelImpl
             }
         }
 
-        public void removeAll(Releaser releaser) throws IOException {
+        public List<FileLock> removeAll() {
             synchronized(lockList) {
-                Iterator<FileLock> i = lockList.iterator();
-                while (i.hasNext()) {
-                    FileLock fl = i.next();
-                    releaser.release(fl);
-                    i.remove();
-                }
+                List<FileLock> result = new ArrayList<FileLock>(lockList);
+                lockList.clear();
+                return result;
             }
         }
 
