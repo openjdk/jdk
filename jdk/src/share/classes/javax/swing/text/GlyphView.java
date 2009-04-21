@@ -30,6 +30,7 @@ import javax.swing.event.*;
 import java.util.BitSet;
 import java.util.Locale;
 
+import javax.swing.UIManager;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -382,11 +383,10 @@ public class GlyphView extends View implements TabableView, Cloneable {
         Color bg = getBackground();
         Color fg = getForeground();
 
-        if (c instanceof JTextComponent) {
-            JTextComponent tc = (JTextComponent) c;
-            if  (!tc.isEnabled()) {
-                fg = tc.getDisabledTextColor();
-            }
+        if (c != null && ! c.isEnabled()) {
+            fg = (c instanceof JTextComponent ?
+                ((JTextComponent)c).getDisabledTextColor() :
+                UIManager.getColor("textInactiveText"));
         }
         if (bg != null) {
             g.setColor(bg);

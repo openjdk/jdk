@@ -92,11 +92,11 @@ FILES_java = \
             sun/text/normalizer/SymbolTable.java \
             sun/text/normalizer/Trie.java \
             sun/text/normalizer/TrieIterator.java \
+            sun/text/normalizer/UBiDiProps.java \
             sun/text/normalizer/UCharacter.java \
             sun/text/normalizer/UCharacterIterator.java \
             sun/text/normalizer/UCharacterProperty.java \
             sun/text/normalizer/UCharacterPropertyReader.java \
-            sun/text/normalizer/UProperty.java \
             sun/text/normalizer/UTF16.java \
             sun/text/normalizer/UnicodeMatcher.java \
             sun/text/normalizer/UnicodeSet.java \

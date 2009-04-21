@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,27 +32,43 @@ import java.util.jar.*;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.SocketTimeoutException;
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
 import java.security.*;
 import java.lang.reflect.Constructor;
 
 import com.sun.jarsigner.ContentSigner;
 import com.sun.jarsigner.ContentSignerParameters;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
+import java.util.Map.Entry;
 import sun.security.x509.*;
 import sun.security.util.*;
 import sun.misc.BASE64Encoder;
 
+
 /**
  * <p>The jarsigner utility.
+ *
+ * The exit codes for the main method are:
+ *
+ * 0: success
+ * 1: any error that the jar cannot be signed or verified, including:
+ *      keystore loading error
+ *      TSP communciation error
+ *      jarsigner command line error...
+ * otherwise: error codes from -strict
  *
  * @author Roland Schemers
  * @author Jan Luehe
@@ -84,8 +100,6 @@ public class JarSigner {
 
     // Attention:
     // This is the entry that get launched by the security tool jarsigner.
-    // It's marked as exported private per AppServer Team's request.
-    // See http://ccc.sfbay/6428446
     public static void main(String args[]) throws Exception {
         JarSigner js = new JarSigner();
         js.run(args);
@@ -93,31 +107,32 @@ public class JarSigner {
 
     static final String VERSION = "1.0";
 
-    static final int IN_KEYSTORE = 0x01;
+    static final int IN_KEYSTORE = 0x01;        // signer is in keystore
     static final int IN_SCOPE = 0x02;
+    static final int NOT_ALIAS = 0x04;          // alias list is NOT empty and
+                                                // signer is not in alias list
+    static final int SIGNED_BY_ALIAS = 0x08;    // signer is in alias list
 
-    // signer's certificate chain (when composing)
-    X509Certificate[] certChain;
-
-    /*
-     * private key
-     */
-    PrivateKey privateKey;
-    KeyStore store;
+    X509Certificate[] certChain;    // signer's cert chain (when composing)
+    PrivateKey privateKey;          // private key
+    KeyStore store;                 // the keystore specified by -keystore
+                                    // or the default keystore, never null
 
     IdentityScope scope;
 
     String keystore; // key store file
     boolean nullStream = false; // null keystore input stream (NONE)
     boolean token = false; // token-based keystore
-    String jarfile;  // jar file to sign
+    String jarfile;  // jar file to sign or verify
     String alias;    // alias to sign jar with
+    List<String> ckaliases = new ArrayList<String>(); // aliases in -verify
     char[] storepass; // keystore password
     boolean protectedPath; // protected authentication path
     String storetype; // keystore type
     String providerName; // provider name
     Vector<String> providers = null; // list of providers
-    HashMap<String,String> providerArgs = new HashMap<String, String>(); // arguments for provider constructors
+    // arguments for provider constructors
+    HashMap<String,String> providerArgs = new HashMap<String, String>();
     char[] keypass; // private key password
     String sigfile; // name of .SF file
     String sigalg; // name of signature algorithm
@@ -125,12 +140,14 @@ public class JarSigner {
     String signedjar; // output filename
     String tsaUrl; // location of the Timestamping Authority
     String tsaAlias; // alias for the Timestamping Authority's certificate
+    String altCertChain; // file to read alternative cert chain from
     boolean verify = false; // verify the jar
-    boolean verbose = false; // verbose output when signing/verifying
+    String verbose = null; // verbose output when signing/verifying
     boolean showcerts = false; // show certs when verifying
     boolean debug = false; // debug
     boolean signManifest = true; // "sign" the whole manifest
     boolean externalSF = true; // leave the .SF out of the PKCS7 block
+    boolean strict = false;  // treat warnings as error
 
     // read zip entry raw bytes
     private ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
@@ -139,13 +156,21 @@ public class JarSigner {
     private String altSignerClass = null;
     private String altSignerClasspath = null;
     private ZipFile zipFile = null;
+
     private boolean hasExpiredCert = false;
     private boolean hasExpiringCert = false;
     private boolean notYetValidCert = false;
-
+    private boolean chainNotValidated = false;
+    private boolean notSignedByAlias = false;
+    private boolean aliasNotInStore = false;
+    private boolean hasUnsignedEntry = false;
     private boolean badKeyUsage = false;
     private boolean badExtendedKeyUsage = false;
     private boolean badNetscapeCertType = false;
+
+    CertificateFactory certificateFactory;
+    CertPathValidator validator;
+    PKIXParameters pkixParameters;
 
     public void run(String args[]) {
         try {
@@ -183,14 +208,6 @@ public class JarSigner {
                     Security.addProvider((Provider)obj);
                 }
             }
-
-            hasExpiredCert = false;
-            hasExpiringCert = false;
-            notYetValidCert = false;
-
-            badKeyUsage = false;
-            badExtendedKeyUsage = false;
-            badNetscapeCertType = false;
 
             if (verify) {
                 try {
@@ -238,6 +255,29 @@ public class JarSigner {
                 storepass = null;
             }
         }
+
+        if (strict) {
+            int exitCode = 0;
+            if (hasExpiringCert) {
+                exitCode |= 2;
+            }
+            if (chainNotValidated) {
+                // hasExpiredCert and notYetValidCert included in this case
+                exitCode |= 4;
+            }
+            if (badKeyUsage || badExtendedKeyUsage || badNetscapeCertType) {
+                exitCode |= 8;
+            }
+            if (hasUnsignedEntry) {
+                exitCode |= 16;
+            }
+            if (notSignedByAlias || aliasNotInStore) {
+                exitCode |= 32;
+            }
+            if (exitCode != 0) {
+                System.exit(exitCode);
+            }
+        }
     }
 
     /*
@@ -247,25 +287,26 @@ public class JarSigner {
         /* parse flags */
         int n = 0;
 
-        for (n=0; (n < args.length) && args[n].startsWith("-"); n++) {
+        if (args.length == 0) fullusage();
+        for (n=0; n < args.length; n++) {
 
             String flags = args[n];
 
             if (collator.compare(flags, "-keystore") == 0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 keystore = args[n];
             } else if (collator.compare(flags, "-storepass") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 storepass = args[n].toCharArray();
             } else if (collator.compare(flags, "-storetype") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 storetype = args[n];
             } else if (collator.compare(flags, "-providerName") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 providerName = args[n];
             } else if ((collator.compare(flags, "-provider") == 0) ||
                         (collator.compare(flags, "-providerClass") == 0)) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 if (providers == null) {
                     providers = new Vector<String>(3);
                 }
@@ -274,35 +315,38 @@ public class JarSigner {
                 if (args.length > (n+1)) {
                     flags = args[n+1];
                     if (collator.compare(flags, "-providerArg") == 0) {
-                        if (args.length == (n+2)) usage();
+                        if (args.length == (n+2)) usageNoArg();
                         providerArgs.put(args[n], args[n+2]);
                         n += 2;
                     }
                 }
             } else if (collator.compare(flags, "-protected") ==0) {
                 protectedPath = true;
+            } else if (collator.compare(flags, "-certchain") ==0) {
+                if (++n == args.length) usageNoArg();
+                altCertChain = args[n];
             } else if (collator.compare(flags, "-debug") ==0) {
                 debug = true;
             } else if (collator.compare(flags, "-keypass") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 keypass = args[n].toCharArray();
             } else if (collator.compare(flags, "-sigfile") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 sigfile = args[n];
             } else if (collator.compare(flags, "-signedjar") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 signedjar = args[n];
             } else if (collator.compare(flags, "-tsa") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 tsaUrl = args[n];
             } else if (collator.compare(flags, "-tsacert") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 tsaAlias = args[n];
             } else if (collator.compare(flags, "-altsigner") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 altSignerClass = args[n];
             } else if (collator.compare(flags, "-altsignerpath") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 altSignerClasspath = args[n];
             } else if (collator.compare(flags, "-sectionsonly") ==0) {
                 signManifest = false;
@@ -311,30 +355,56 @@ public class JarSigner {
             } else if (collator.compare(flags, "-verify") ==0) {
                 verify = true;
             } else if (collator.compare(flags, "-verbose") ==0) {
-                verbose = true;
+                verbose = "all";
+            } else if (collator.compare(flags, "-verbose:all") ==0) {
+                verbose = "all";
+            } else if (collator.compare(flags, "-verbose:summary") ==0) {
+                verbose = "summary";
+            } else if (collator.compare(flags, "-verbose:grouped") ==0) {
+                verbose = "grouped";
             } else if (collator.compare(flags, "-sigalg") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 sigalg = args[n];
             } else if (collator.compare(flags, "-digestalg") ==0) {
-                if (++n == args.length) usage();
+                if (++n == args.length) usageNoArg();
                 digestalg = args[n];
             } else if (collator.compare(flags, "-certs") ==0) {
                 showcerts = true;
+            } else if (collator.compare(flags, "-strict") ==0) {
+                strict = true;
             } else if (collator.compare(flags, "-h") == 0 ||
                         collator.compare(flags, "-help") == 0) {
-                usage();
+                fullusage();
             } else {
-                System.err.println(rb.getString("Illegal option: ") + flags);
-                usage();
+                if (!flags.startsWith("-")) {
+                    if (jarfile == null) {
+                        jarfile = flags;
+                    } else {
+                        alias = flags;
+                        ckaliases.add(alias);
+                    }
+                } else {
+                    System.err.println(
+                            rb.getString("Illegal option: ") + flags);
+                    usage();
+                }
             }
         }
 
-        if (n == args.length) usage();
-        jarfile = args[n++];
+        // -certs must always be specified with -verbose
+        if (verbose == null) showcerts = false;
 
-        if (!verify) {
-            if (n == args.length) usage();
-            alias = args[n++];
+        if (jarfile == null) {
+            System.err.println(rb.getString("Please specify jarfile name"));
+            usage();
+        }
+        if (!verify && alias == null) {
+            System.err.println(rb.getString("Please specify alias name"));
+            usage();
+        }
+        if (!verify && ckaliases.size() > 1) {
+            System.err.println(rb.getString("Only one alias can be specified"));
+            usage();
         }
 
         if (storetype == null) {
@@ -357,7 +427,6 @@ public class JarSigner {
         if (token && !nullStream) {
             System.err.println(MessageFormat.format(rb.getString
                 ("-keystore must be NONE if -storetype is {0}"), storetype));
-            System.err.println();
             usage();
         }
 
@@ -365,7 +434,6 @@ public class JarSigner {
             System.err.println(MessageFormat.format(rb.getString
                 ("-keypass can not be specified " +
                 "if -storetype is {0}"), storetype));
-            System.err.println();
             usage();
         }
 
@@ -374,7 +442,6 @@ public class JarSigner {
                 System.err.println(rb.getString
                         ("If -protected is specified, " +
                         "then -storepass and -keypass must not be specified"));
-                System.err.println();
                 usage();
             }
         }
@@ -383,17 +450,27 @@ public class JarSigner {
                 System.err.println(rb.getString
                         ("If keystore is not password protected, " +
                         "then -storepass and -keypass must not be specified"));
-                System.err.println();
                 usage();
             }
         }
     }
 
+    void usageNoArg() {
+        System.out.println(rb.getString("Option lacks argument"));
+        usage();
+    }
+
     void usage() {
+        System.out.println();
+        System.out.println(rb.getString("Please type jarsigner -help for usage"));
+        System.exit(1);
+    }
+
+    void fullusage() {
         System.out.println(rb.getString
                 ("Usage: jarsigner [options] jar-file alias"));
         System.out.println(rb.getString
-                ("       jarsigner -verify [options] jar-file"));
+                ("       jarsigner -verify [options] jar-file [alias...]"));
         System.out.println();
         System.out.println(rb.getString
                 ("[-keystore <url>]           keystore location"));
@@ -406,6 +483,9 @@ public class JarSigner {
         System.out.println();
         System.out.println(rb.getString
                 ("[-keypass <password>]       password for private key (if different)"));
+        System.out.println();
+        System.out.println(rb.getString
+                ("[-certchain <file>]         name of alternative certchain file"));
         System.out.println();
         System.out.println(rb.getString
                 ("[-sigfile <file>]           name of .SF/.DSA file"));
@@ -423,7 +503,9 @@ public class JarSigner {
                 ("[-verify]                   verify a signed JAR file"));
         System.out.println();
         System.out.println(rb.getString
-                ("[-verbose]                  verbose output when signing/verifying"));
+                ("[-verbose[:suboptions]]     verbose output when signing/verifying."));
+        System.out.println(rb.getString
+                ("                            suboptions can be all, grouped or summary"));
         System.out.println();
         System.out.println(rb.getString
                 ("[-certs]                    display certificates when verbose and verifying"));
@@ -457,15 +539,17 @@ public class JarSigner {
         System.out.println(rb.getString
                 ("  [-providerArg <arg>]] ... master class file and constructor argument"));
         System.out.println();
+        System.out.println(rb.getString
+                ("[-strict]                   treat warnings as errors"));
+        System.out.println();
 
-        System.exit(1);
+        System.exit(0);
     }
 
     void verifyJar(String jarName)
         throws Exception
     {
-        boolean anySigned = false;
-        boolean hasUnsignedEntry = false;
+        boolean anySigned = false;  // if there exists entry inside jar signed
         JarFile jf = null;
 
         try {
@@ -494,11 +578,18 @@ public class JarSigner {
 
             Manifest man = jf.getManifest();
 
+            // The map to record display info, only used when -verbose provided
+            //      key: signer info string
+            //      value: the list of files with common key
+            Map<String,List<String>> output =
+                    new LinkedHashMap<String,List<String>>();
+
             if (man != null) {
-                if (verbose) System.out.println();
+                if (verbose != null) System.out.println();
                 Enumeration<JarEntry> e = entriesVec.elements();
 
                 long now = System.currentTimeMillis();
+                String tab = rb.getString("      ");
 
                 while (e.hasMoreElements()) {
                     JarEntry je = e.nextElement();
@@ -509,77 +600,118 @@ public class JarSigner {
                     hasUnsignedEntry |= !je.isDirectory() && !isSigned
                                         && !signatureRelated(name);
 
-                    if (verbose) {
-                        int inStoreOrScope = inKeyStore(signers);
-                        boolean inStore = (inStoreOrScope & IN_KEYSTORE) != 0;
-                        boolean inScope = (inStoreOrScope & IN_SCOPE) != 0;
+                    int inStoreOrScope = inKeyStore(signers);
+
+                    boolean inStore = (inStoreOrScope & IN_KEYSTORE) != 0;
+                    boolean inScope = (inStoreOrScope & IN_SCOPE) != 0;
+
+                    notSignedByAlias |= (inStoreOrScope & NOT_ALIAS) != 0;
+                    aliasNotInStore |= isSigned && (!inStore && !inScope);
+
+                    // Only used when -verbose provided
+                    StringBuffer sb = null;
+                    if (verbose != null) {
+                        sb = new StringBuffer();
                         boolean inManifest =
                             ((man.getAttributes(name) != null) ||
                              (man.getAttributes("./"+name) != null) ||
                              (man.getAttributes("/"+name) != null));
-                        System.out.print(
+                        sb.append(
                           (isSigned ? rb.getString("s") : rb.getString(" ")) +
                           (inManifest ? rb.getString("m") : rb.getString(" ")) +
                           (inStore ? rb.getString("k") : rb.getString(" ")) +
                           (inScope ? rb.getString("i") : rb.getString(" ")) +
-                          rb.getString("  "));
-                        StringBuffer sb = new StringBuffer();
+                          ((inStoreOrScope & NOT_ALIAS) != 0 ?"X":" ") +
+                          rb.getString(" "));
+                        sb.append("|");
+                    }
+
+                    // When -certs provided, display info has extra empty
+                    // lines at the beginning and end.
+                    if (isSigned) {
+                        if (showcerts) sb.append('\n');
+                        for (CodeSigner signer: signers) {
+                            // signerInfo() must be called even if -verbose
+                            // not provided. The method updates various
+                            // warning flags.
+                            String si = signerInfo(signer, tab, now);
+                            if (showcerts) {
+                                sb.append(si);
+                                sb.append('\n');
+                            }
+                        }
+                    } else if (showcerts && !verbose.equals("all")) {
+                        // Print no info for unsigned entries when -verbose:all,
+                        // to be consistent with old behavior.
+                        if (signatureRelated(name)) {
+                            sb.append("\n" + tab + rb.getString(
+                                    "(Signature related entries)") + "\n\n");
+                        } else {
+                            sb.append("\n" + tab + rb.getString(
+                                    "(Unsigned entries)") + "\n\n");
+                        }
+                    }
+
+                    if (verbose != null) {
+                        String label = sb.toString();
+                        if (signatureRelated(name)) {
+                            // Entries inside META-INF and other unsigned
+                            // entries are grouped separately.
+                            label = "-" + label.substring(1);
+                        }
+
+                        // The label finally contains 2 parts separated by '|':
+                        // The legend displayed before the entry names, and
+                        // the cert info (if -certs specfied).
+
+                        if (!output.containsKey(label)) {
+                            output.put(label, new ArrayList<String>());
+                        }
+
+                        StringBuffer fb = new StringBuffer();
                         String s = Long.toString(je.getSize());
                         for (int i = 6 - s.length(); i > 0; --i) {
-                            sb.append(' ');
+                            fb.append(' ');
                         }
-                        sb.append(s).append(' ').
-                                    append(new Date(je.getTime()).toString());
-                        sb.append(' ').append(je.getName());
-                        System.out.println(sb.toString());
+                        fb.append(s).append(' ').
+                                append(new Date(je.getTime()).toString());
+                        fb.append(' ').append(name);
 
-                        if (signers != null && showcerts) {
-                            String tab = rb.getString("      ");
-                            for (int i = 0; i < signers.length; i++) {
-                                System.out.println();
-                                List<? extends Certificate> certs =
-                                    signers[i].getSignerCertPath()
-                                        .getCertificates();
-                                // display the signature timestamp, if present
-                                Timestamp timestamp = signers[i].getTimestamp();
-                                if (timestamp != null) {
-                                    System.out.println(
-                                        printTimestamp(tab, timestamp));
-                                }
-                                // display the certificate(s)
-                                for (Certificate c : certs) {
-                                    System.out.println(
-                                        printCert(tab, c, true, now));
-                                }
-                            }
-                            System.out.println();
-                        }
-
+                        output.get(label).add(fb.toString());
                     }
-                    if (isSigned) {
-                        for (int i = 0; i < signers.length; i++) {
-                            Certificate cert =
-                                signers[i].getSignerCertPath()
-                                    .getCertificates().get(0);
-                            if (cert instanceof X509Certificate) {
-                                checkCertUsage((X509Certificate)cert, null);
-                                if (!showcerts) {
-                                    long notAfter = ((X509Certificate)cert)
-                                        .getNotAfter().getTime();
-
-                                    if (notAfter < now) {
-                                        hasExpiredCert = true;
-                                    } else if (notAfter < now + SIX_MONTHS) {
-                                        hasExpiringCert = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
                 }
             }
-            if (verbose) {
+            if (verbose != null) {
+                for (Entry<String,List<String>> s: output.entrySet()) {
+                    List<String> files = s.getValue();
+                    String key = s.getKey();
+                    if (key.charAt(0) == '-') { // the signature-related group
+                        key = ' ' + key.substring(1);
+                    }
+                    int pipe = key.indexOf('|');
+                    if (verbose.equals("all")) {
+                        for (String f: files) {
+                            System.out.println(key.substring(0, pipe) + f);
+                            System.out.printf(key.substring(pipe+1));
+                        }
+                    } else {
+                        if (verbose.equals("grouped")) {
+                            for (String f: files) {
+                                System.out.println(key.substring(0, pipe) + f);
+                            }
+                        } else if (verbose.equals("summary")) {
+                            System.out.print(key.substring(0, pipe));
+                            if (files.size() > 1) {
+                                System.out.println(files.get(0) + " " +
+                                        String.format(rb.getString(
+                                        "(and %d more)"), files.size()-1));
+                            } else {
+                                System.out.println(files.get(0));
+                            }
+                        }
+                        System.out.printf(key.substring(pipe+1));
+                    }
+                }
                 System.out.println();
                 System.out.println(rb.getString(
                     "  s = signature was verified "));
@@ -589,9 +721,12 @@ public class JarSigner {
                     "  k = at least one certificate was found in keystore"));
                 System.out.println(rb.getString(
                     "  i = at least one certificate was found in identity scope"));
+                if (ckaliases.size() > 0) {
+                    System.out.println((
+                        "  X = not signed by specified alias(es)"));
+                }
                 System.out.println();
             }
-
             if (man == null)
                 System.out.println(rb.getString("no manifest."));
 
@@ -602,7 +737,8 @@ public class JarSigner {
                 System.out.println(rb.getString("jar verified."));
                 if (hasUnsignedEntry || hasExpiredCert || hasExpiringCert ||
                     badKeyUsage || badExtendedKeyUsage || badNetscapeCertType ||
-                    notYetValidCert) {
+                    notYetValidCert || chainNotValidated ||
+                    aliasNotInStore || notSignedByAlias) {
 
                     System.out.println();
                     System.out.println(rb.getString("Warning: "));
@@ -638,14 +774,27 @@ public class JarSigner {
                             "This jar contains entries whose signer certificate is not yet valid. "));
                     }
 
-                    if (! (verbose && showcerts)) {
+                    if (chainNotValidated) {
+                        System.out.println(
+                                rb.getString("This jar contains entries whose certificate chain is not validated."));
+                    }
+
+                    if (notSignedByAlias) {
+                        System.out.println(
+                                rb.getString("This jar contains signed entries which is not signed by the specified alias(es)."));
+                    }
+
+                    if (aliasNotInStore) {
+                        System.out.println(rb.getString("This jar contains signed entries that's not signed by alias in this keystore."));
+                    }
+                    if (! (verbose != null && showcerts)) {
                         System.out.println();
                         System.out.println(rb.getString(
                             "Re-run with the -verbose and -certs options for more details."));
                     }
                 }
             }
-            System.exit(0);
+            return;
         } catch (Exception e) {
             System.out.println(rb.getString("jarsigner: ") + e);
             if (debug) {
@@ -660,15 +809,6 @@ public class JarSigner {
         System.exit(1);
     }
 
-    /*
-     * Display some details about a certificate:
-     *
-     * <cert-type> [", " <subject-DN>] [" (" <keystore-entry-alias> ")"]
-     */
-    String printCert(Certificate c) {
-        return printCert("", c, false, 0);
-    }
-
     private static MessageFormat validityTimeForm = null;
     private static MessageFormat notYetTimeForm = null;
     private static MessageFormat expiredTimeForm = null;
@@ -679,6 +819,8 @@ public class JarSigner {
      *
      * [<tab>] <cert-type> [", " <subject-DN>] [" (" <keystore-entry-alias> ")"]
      * [<validity-period> | <expiry-warning>]
+     *
+     * Note: no newline character at the end
      */
     String printCert(String tab, Certificate c, boolean checkValidityPeriod,
         long now) {
@@ -788,54 +930,75 @@ public class JarSigner {
             .append(signTimeForm.format(source)).append("]").toString();
     }
 
+    private Map<CodeSigner,Integer> cacheForInKS =
+            new IdentityHashMap<CodeSigner,Integer>();
+
+    private int inKeyStoreForOneSigner(CodeSigner signer) {
+        if (cacheForInKS.containsKey(signer)) {
+            return cacheForInKS.get(signer);
+        }
+
+        boolean found = false;
+        int result = 0;
+        List<? extends Certificate> certs = signer.getSignerCertPath().getCertificates();
+        for (Certificate c : certs) {
+            String alias = storeHash.get(c);
+            if (alias != null) {
+                if (alias.startsWith("(")) {
+                    result |= IN_KEYSTORE;
+                } else if (alias.startsWith("[")) {
+                    result |= IN_SCOPE;
+                }
+                if (ckaliases.contains(alias.substring(1, alias.length() - 1))) {
+                    result |= SIGNED_BY_ALIAS;
+                }
+            } else {
+                if (store != null) {
+                    try {
+                        alias = store.getCertificateAlias(c);
+                    } catch (KeyStoreException kse) {
+                        // never happens, because keystore has been loaded
+                    }
+                    if (alias != null) {
+                        storeHash.put(c, "(" + alias + ")");
+                        found = true;
+                        result |= IN_KEYSTORE;
+                    }
+                }
+                if (!found && (scope != null)) {
+                    Identity id = scope.getIdentity(c.getPublicKey());
+                    if (id != null) {
+                        result |= IN_SCOPE;
+                        storeHash.put(c, "[" + id.getName() + "]");
+                    }
+                }
+                if (ckaliases.contains(alias)) {
+                    result |= SIGNED_BY_ALIAS;
+                }
+            }
+        }
+        cacheForInKS.put(signer, result);
+        return result;
+    }
+
     Hashtable<Certificate, String> storeHash =
                                 new Hashtable<Certificate, String>();
 
     int inKeyStore(CodeSigner[] signers) {
-        int result = 0;
 
         if (signers == null)
             return 0;
 
-        boolean found = false;
+        int output = 0;
 
-        for (int i = 0; i < signers.length; i++) {
-            found = false;
-            List<? extends Certificate> certs =
-                signers[i].getSignerCertPath().getCertificates();
-
-            for (Certificate c : certs) {
-                String alias = storeHash.get(c);
-
-                if (alias != null) {
-                    if (alias.startsWith("("))
-                            result |= IN_KEYSTORE;
-                    else if (alias.startsWith("["))
-                            result |= IN_SCOPE;
-                } else {
-                    if (store != null) {
-                        try {
-                            alias = store.getCertificateAlias(c);
-                        } catch (KeyStoreException kse) {
-                            // never happens, because keystore has been loaded
-                        }
-                        if (alias != null) {
-                            storeHash.put(c, "("+alias+")");
-                            found = true;
-                            result |= IN_KEYSTORE;
-                        }
-                    }
-                    if (!found && (scope != null)) {
-                        Identity id = scope.getIdentity(c.getPublicKey());
-                        if (id != null) {
-                            result |= IN_SCOPE;
-                            storeHash.put(c, "["+id.getName()+"]");
-                        }
-                    }
-                }
-            }
+        for (CodeSigner signer: signers) {
+            int result = inKeyStoreForOneSigner(signer);
+            output |= result;
         }
-        return result;
+        if (ckaliases.size() > 0 && (output & SIGNED_BY_ALIAS) == 0) {
+            output |= NOT_ALIAS;
+        }
+        return output;
     }
 
     void signJar(String jarName, String alias, String[] args)
@@ -1025,7 +1188,7 @@ public class JarSigner {
                 // manifest file has new length
                 mfFile = new ZipEntry(JarFile.MANIFEST_NAME);
             }
-            if (verbose) {
+            if (verbose != null) {
                 if (mfCreated) {
                     System.out.println(rb.getString("   adding: ") +
                                         mfFile.getName());
@@ -1076,7 +1239,7 @@ public class JarSigner {
             // signature file
             zos.putNextEntry(sfFile);
             sf.write(zos);
-            if (verbose) {
+            if (verbose != null) {
                 if (zipFile.getEntry(sfFilename) != null) {
                     System.out.println(rb.getString(" updating: ") +
                                 sfFilename);
@@ -1086,7 +1249,7 @@ public class JarSigner {
                 }
             }
 
-            if (verbose) {
+            if (verbose != null) {
                 if (tsaUrl != null || tsaCert != null) {
                     System.out.println(
                         rb.getString("requesting a signature timestamp"));
@@ -1101,8 +1264,8 @@ public class JarSigner {
                         System.out.println(rb.getString("TSA location: ") +
                             certUrl);
                     }
-                    System.out.println(
-                        rb.getString("TSA certificate: ") + printCert(tsaCert));
+                    System.out.println(rb.getString("TSA certificate: ") +
+                        printCert("", tsaCert, false, 0));
                 }
                 if (signingMechanism != null) {
                     System.out.println(
@@ -1113,7 +1276,7 @@ public class JarSigner {
             // signature block file
             zos.putNextEntry(bkFile);
             block.write(zos);
-            if (verbose) {
+            if (verbose != null) {
                 if (zipFile.getEntry(bkFilename) != null) {
                     System.out.println(rb.getString(" updating: ") +
                         bkFilename);
@@ -1140,7 +1303,7 @@ public class JarSigner {
                 ZipEntry ze = enum_.nextElement();
 
                 if (!ze.getName().startsWith(META_INF)) {
-                    if (verbose) {
+                    if (verbose != null) {
                         if (manifest.getAttributes(ze.getName()) != null)
                           System.out.println(rb.getString("  signing: ") +
                                 ze.getName());
@@ -1194,7 +1357,8 @@ public class JarSigner {
             }
 
             if (hasExpiredCert || hasExpiringCert || notYetValidCert
-                    || badKeyUsage || badExtendedKeyUsage || badNetscapeCertType) {
+                    || badKeyUsage || badExtendedKeyUsage
+                    || badNetscapeCertType || chainNotValidated) {
                 System.out.println();
 
                 System.out.println(rb.getString("Warning: "));
@@ -1222,6 +1386,11 @@ public class JarSigner {
                 } else if (notYetValidCert) {
                     System.out.println(
                         rb.getString("The signer certificate is not yet valid."));
+                }
+
+                if (chainNotValidated) {
+                    System.out.println(
+                            rb.getString("The signer's certificate chain is not validated."));
                 }
             }
 
@@ -1272,6 +1441,40 @@ public class JarSigner {
         }
 
         return false;
+    }
+
+    Map<CodeSigner,String> cacheForSignerInfo = new IdentityHashMap<CodeSigner,String>();
+
+    /**
+     * Returns a string of singer info, with a newline at the end
+     */
+    private String signerInfo(CodeSigner signer, String tab, long now) {
+        if (cacheForSignerInfo.containsKey(signer)) {
+            return cacheForSignerInfo.get(signer);
+        }
+        StringBuffer s = new StringBuffer();
+        List<? extends Certificate> certs = signer.getSignerCertPath().getCertificates();
+        // display the signature timestamp, if present
+        Timestamp timestamp = signer.getTimestamp();
+        if (timestamp != null) {
+            s.append(printTimestamp(tab, timestamp));
+        }
+        // display the certificate(s)
+        for (Certificate c : certs) {
+            s.append(printCert(tab, c, true, now));
+            s.append('\n');
+        }
+        try {
+            CertPath cp = certificateFactory.generateCertPath(certs);
+            validator.validate(cp, pkixParameters);
+        } catch (Exception e) {
+            chainNotValidated = true;
+            s.append(tab + rb.getString("[CertPath not validated: ") +
+                    e.getLocalizedMessage() + "]\n");   // TODO
+        }
+        String result = s.toString();
+        cacheForSignerInfo.put(signer, result);
+        return result;
     }
 
     private void writeEntry(ZipFile zf, ZipOutputStream os, ZipEntry ze)
@@ -1360,6 +1563,48 @@ public class JarSigner {
                     }
                 }
             }
+            Set<TrustAnchor> tas = new HashSet<TrustAnchor>();
+            try {
+                KeyStore caks = KeyTool.getCacertsKeyStore();
+                if (caks != null) {
+                    Enumeration<String> aliases = caks.aliases();
+                    while (aliases.hasMoreElements()) {
+                        String a = aliases.nextElement();
+                        try {
+                            tas.add(new TrustAnchor((X509Certificate)caks.getCertificate(a), null));
+                        } catch (Exception e2) {
+                            // ignore, when a SecretkeyEntry does not include a cert
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore, if cacerts cannot be loaded
+            }
+            if (store != null) {
+                Enumeration<String> aliases = store.aliases();
+                while (aliases.hasMoreElements()) {
+                    String a = aliases.nextElement();
+                    try {
+                        X509Certificate c = (X509Certificate)store.getCertificate(a);
+                        // Only add TrustedCertificateEntry and self-signed
+                        // PrivateKeyEntry
+                        if (store.isCertificateEntry(a) ||
+                                c.getSubjectDN().equals(c.getIssuerDN())) {
+                            tas.add(new TrustAnchor(c, null));
+                        }
+                    } catch (Exception e2) {
+                        // ignore, when a SecretkeyEntry does not include a cert
+                    }
+                }
+            }
+            certificateFactory = CertificateFactory.getInstance("X.509");
+            validator = CertPathValidator.getInstance("PKIX");
+            try {
+                pkixParameters = new PKIXParameters(tas);
+                pkixParameters.setRevocationEnabled(false);
+            } catch (InvalidAlgorithmParameterException ex) {
+                // Only if tas is empty
+            }
         } catch (IOException ioe) {
             throw new RuntimeException(rb.getString("keystore load: ") +
                                         ioe.getMessage());
@@ -1408,7 +1653,8 @@ public class JarSigner {
     void checkCertUsage(X509Certificate userCert, boolean[] bad) {
 
         // Can act as a signer?
-        // 1. if KeyUsage, then [0] should be true
+        // 1. if KeyUsage, then [0:digitalSignature] or
+        //    [1:nonRepudiation] should be true
         // 2. if ExtendedKeyUsage, then should contains ANY or CODE_SIGNING
         // 3. if NetscapeCertType, then should contains OBJECT_SIGNING
         // 1,2,3 must be true
@@ -1419,10 +1665,10 @@ public class JarSigner {
 
         boolean[] keyUsage = userCert.getKeyUsage();
         if (keyUsage != null) {
-            if (keyUsage.length < 1 || !keyUsage[0]) {
+            keyUsage = Arrays.copyOf(keyUsage, 9);
+            if (!keyUsage[0] && !keyUsage[1]) {
                 if (bad != null) {
                     bad[0] = true;
-                } else {
                     badKeyUsage = true;
                 }
             }
@@ -1435,7 +1681,6 @@ public class JarSigner {
                         && !xKeyUsage.contains("1.3.6.1.5.5.7.3.3")) {  // codeSigning
                     if (bad != null) {
                         bad[1] = true;
-                    } else {
                         badExtendedKeyUsage = true;
                     }
                 }
@@ -1462,7 +1707,6 @@ public class JarSigner {
                 if (!val) {
                     if (bad != null) {
                         bad[2] = true;
-                    } else {
                         badNetscapeCertType = true;
                     }
                 }
@@ -1477,19 +1721,36 @@ public class JarSigner {
         Key key = null;
 
         try {
-
             java.security.cert.Certificate[] cs = null;
-
-            try {
-                cs = store.getCertificateChain(alias);
-            } catch (KeyStoreException kse) {
-                // this never happens, because keystore has been loaded
+            if (altCertChain != null) {
+                try {
+                    cs = CertificateFactory.getInstance("X.509").
+                            generateCertificates(new FileInputStream(altCertChain)).
+                            toArray(new Certificate[0]);
+                } catch (CertificateException ex) {
+                    error(rb.getString("Cannot restore certchain from file specified"));
+                } catch (FileNotFoundException ex) {
+                    error(rb.getString("File specified by -certchain does not exist"));
+                }
+            } else {
+                try {
+                    cs = store.getCertificateChain(alias);
+                } catch (KeyStoreException kse) {
+                    // this never happens, because keystore has been loaded
+                }
             }
-            if (cs == null) {
-                MessageFormat form = new MessageFormat(rb.getString
-                    ("Certificate chain not found for: alias.  alias must reference a valid KeyStore key entry containing a private key and corresponding public key certificate chain."));
-                Object[] source = {alias, alias};
-                error(form.format(source));
+            if (cs == null || cs.length == 0) {
+                if (altCertChain != null) {
+                    error(rb.getString
+                            ("Certificate chain not found in the file specified."));
+                } else {
+                    MessageFormat form = new MessageFormat(rb.getString
+                        ("Certificate chain not found for: alias.  alias must" +
+                        " reference a valid KeyStore key entry containing a" +
+                        " private key and corresponding public key certificate chain."));
+                    Object[] source = {alias, alias};
+                    error(form.format(source));
+                }
             }
 
             certChain = new X509Certificate[cs.length];
@@ -1501,56 +1762,15 @@ public class JarSigner {
                 certChain[i] = (X509Certificate)cs[i];
             }
 
-            // order the cert chain if necessary (put user cert first,
-            // root-cert last in the chain)
-            X509Certificate userCert
-                = (X509Certificate)store.getCertificate(alias);
+            // We don't meant to print anything, the next call
+            // checks validity and keyUsage etc
+            printCert("", certChain[0], true, 0);
 
-            // check validity of signer certificate
             try {
-                userCert.checkValidity();
-
-                if (userCert.getNotAfter().getTime() <
-                    System.currentTimeMillis() + SIX_MONTHS) {
-
-                    hasExpiringCert = true;
-                }
-            } catch (CertificateExpiredException cee) {
-                hasExpiredCert = true;
-
-            } catch (CertificateNotYetValidException cnyve) {
-                notYetValidCert = true;
-            }
-
-            checkCertUsage(userCert, null);
-
-            if (!userCert.equals(certChain[0])) {
-                // need to order ...
-                X509Certificate[] certChainTmp
-                    = new X509Certificate[certChain.length];
-                certChainTmp[0] = userCert;
-                Principal issuer = userCert.getIssuerDN();
-                for (int i=1; i<certChain.length; i++) {
-                    int j;
-                    // look for the cert whose subject corresponds to the
-                    // given issuer
-                    for (j=0; j<certChainTmp.length; j++) {
-                        if (certChainTmp[j] == null)
-                            continue;
-                        Principal subject = certChainTmp[j].getSubjectDN();
-                        if (issuer.equals(subject)) {
-                            certChain[i] = certChainTmp[j];
-                            issuer = certChainTmp[j].getIssuerDN();
-                            certChainTmp[j] = null;
-                            break;
-                        }
-                    }
-                    if (j == certChainTmp.length) {
-                        error(rb.getString("incomplete certificate chain"));
-                    }
-
-                }
-                certChain = certChainTmp; // ordered
+                CertPath cp = certificateFactory.generateCertPath(Arrays.asList(certChain));
+                validator.validate(cp, pkixParameters);
+            } catch (Exception e) {
+                chainNotValidated = true;
             }
 
             try {

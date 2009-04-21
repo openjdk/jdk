@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6261402
+ * @bug 6261402 6824141
  * @summary If rmid has an inherited channel that is not a server
  * socket (such as it if was started using rsh/rcmd), then it should
  * function normally.
@@ -37,6 +37,7 @@
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.ProtocolFamily;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.Pipe;
@@ -135,6 +136,12 @@ public class InheritedChannelNotServerSocket {
 
         public DatagramChannel openDatagramChannel() throws IOException {
             return provider.openDatagramChannel();
+        }
+
+        public DatagramChannel openDatagramChannel(ProtocolFamily family)
+            throws IOException
+        {
+            return provider.openDatagramChannel(family);
         }
 
         public Pipe openPipe() throws IOException {
