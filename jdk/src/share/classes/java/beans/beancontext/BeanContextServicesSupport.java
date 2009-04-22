@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import java.util.Locale;
 
 public class      BeanContextServicesSupport extends BeanContextSupport
        implements BeanContextServices {
+    private static final long serialVersionUID = -8494482757288719206L;
 
     /**
      * <p>
@@ -594,6 +595,7 @@ public class      BeanContextServicesSupport extends BeanContextSupport
          */
 
         protected static class BCSSServiceProvider implements Serializable {
+            private static final long serialVersionUID = 861278251667444782L;
 
             BCSSServiceProvider(Class sc, BeanContextServiceProvider bcsp) {
                 super();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,8 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         // the OGL pipeline can render directly to the screen and interfere
         // with layered windows, which is why we don't allow accelerated
         // surfaces in this case
-        if (!peer.isAccelCapable())
-        // REMIND: commented until toplevel translucency is implemented
-//            || !SunToolkit.isContainingTopLevelOpaque((Component)peer.getTarget()))
+        if (!peer.isAccelCapable() ||
+            !SunToolkit.isContainingTopLevelOpaque((Component)peer.getTarget()))
         {
             return null;
         }
@@ -93,9 +92,8 @@ public abstract class WGLSurfaceData extends OGLSurfaceData {
         // the OGL pipeline can render directly to the screen and interfere
         // with layered windows, which is why we don't allow accelerated
         // surfaces in this case
-        if (!peer.isAccelCapable())
-        // REMIND: commented until toplevel translucency is implemented
-//            || !SunToolkit.isContainingTopLevelOpaque((Component)peer.getTarget()))
+        if (!peer.isAccelCapable() ||
+            !SunToolkit.isContainingTopLevelOpaque((Component)peer.getTarget()))
         {
             return null;
         }

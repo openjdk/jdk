@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -613,17 +613,15 @@ JNICALL Java_sun_java2d_d3d_D3DSurfaceData_updateWindowAccelImpl
 
     res = pTmpSurface->LockRect(&lockedRect, NULL, D3DLOCK_NOSYSLOCK);
     if (SUCCEEDED(res)) {
-        // REMIND: commented until translucent window support is integrated
-//        hBitmap =
-//            BitmapUtil::CreateBitmapFromARGBPre(w, h,
-//                                                lockedRect.Pitch,
-//                                                (int*)lockedRect.pBits);
+        hBitmap =
+            BitmapUtil::CreateBitmapFromARGBPre(w, h,
+                                                lockedRect.Pitch,
+                                                (int*)lockedRect.pBits);
         pTmpSurface->UnlockRect();
     }
     RETURN_STATUS_IF_NULL(hBitmap, JNI_FALSE);
 
-    // REMIND: commented until translucent window support is integrated
-//    window->UpdateWindow(env, NULL, w, h, hBitmap);
+    window->UpdateWindow(env, NULL, w, h, hBitmap);
 
     // hBitmap is released in UpdateWindow
 

@@ -25,9 +25,7 @@
 package javax.swing.text.html;
 
 import java.awt.*;
-import java.awt.event.*;
 import java.awt.image.ImageObserver;
-import java.io.*;
 import java.net.*;
 import java.util.Dictionary;
 import javax.swing.*;
@@ -97,6 +95,7 @@ public class ImageView extends View {
 
     private AttributeSet attr;
     private Image image;
+    private Image disabledImage;
     private int width;
     private int height;
     /** Bitmask containing some of the above bitmask values. Because the
@@ -191,6 +190,17 @@ public class ImageView extends View {
     public Image getImage() {
         sync();
         return image;
+    }
+
+    private Image getImage(boolean enabled) {
+        Image img = getImage();
+        if (! enabled) {
+            if (disabledImage == null) {
+                disabledImage = GrayFilter.createDisabledImage(img);
+            }
+            img = disabledImage;
+        }
+        return img;
     }
 
     /**
@@ -338,8 +348,6 @@ public class ImageView extends View {
 
         Rectangle rect = (a instanceof Rectangle) ? (Rectangle)a :
                          a.getBounds();
-
-        Image image = getImage();
         Rectangle clip = g.getClipBounds();
 
         fBounds.setBounds(rect);
@@ -350,29 +358,29 @@ public class ImageView extends View {
                        rect.width - leftInset - rightInset,
                        rect.height - topInset - bottomInset);
         }
-        if (image != null) {
-            if (!hasPixels(image)) {
-                // No pixels yet, use the default
-                Icon icon = (image == null) ? getNoImageIcon() :
-                                               getLoadingImageIcon();
 
+        Container host = getContainer();
+        Image img = getImage(host == null || host.isEnabled());
+        if (img != null) {
+            if (! hasPixels(img)) {
+                // No pixels yet, use the default
+                Icon icon = getLoadingImageIcon();
                 if (icon != null) {
-                    icon.paintIcon(getContainer(), g, rect.x + leftInset,
-                                   rect.y + topInset);
+                    icon.paintIcon(host, g,
+                            rect.x + leftInset, rect.y + topInset);
                 }
             }
             else {
                 // Draw the image
-                g.drawImage(image, rect.x + leftInset, rect.y + topInset,
+                g.drawImage(img, rect.x + leftInset, rect.y + topInset,
                             width, height, imageObserver);
             }
         }
         else {
             Icon icon = getNoImageIcon();
-
             if (icon != null) {
-                icon.paintIcon(getContainer(), g, rect.x + leftInset,
-                               rect.y + topInset);
+                icon.paintIcon(host, g,
+                        rect.x + leftInset, rect.y + topInset);
             }
             View view = getAltView();
             // Paint the view representing the alt text, if its non-null
@@ -855,7 +863,9 @@ public class ImageView extends View {
         // it will pick up the new height/width, if necessary.
         public boolean imageUpdate(Image img, int flags, int x, int y,
                                    int newWidth, int newHeight ) {
-            if (image == null || image != img || getParent() == null) {
+            if (img != image && img != disabledImage ||
+                image == null || getParent() == null) {
+
                 return false;
             }
 
@@ -873,6 +883,8 @@ public class ImageView extends View {
                         if ((state & HEIGHT_FLAG) != HEIGHT_FLAG) {
                             height = DEFAULT_HEIGHT;
                         }
+                    } else {
+                        disabledImage = null;
                     }
                     if ((state & LOADING_FLAG) == LOADING_FLAG) {
                         // No need to resize or repaint, still in the process
@@ -885,37 +897,36 @@ public class ImageView extends View {
                 return false;
             }
 
-            // Resize image if necessary:
-            short changed = 0;
-            if ((flags & ImageObserver.HEIGHT) != 0 && !getElement().
-                  getAttributes().isDefined(HTML.Attribute.HEIGHT)) {
-                changed |= 1;
-            }
-            if ((flags & ImageObserver.WIDTH) != 0 && !getElement().
-                  getAttributes().isDefined(HTML.Attribute.WIDTH)) {
-                changed |= 2;
-            }
+            if (image == img) {
+                // Resize image if necessary:
+                short changed = 0;
+                if ((flags & ImageObserver.HEIGHT) != 0 && !getElement().
+                      getAttributes().isDefined(HTML.Attribute.HEIGHT)) {
+                    changed |= 1;
+                }
+                if ((flags & ImageObserver.WIDTH) != 0 && !getElement().
+                      getAttributes().isDefined(HTML.Attribute.WIDTH)) {
+                    changed |= 2;
+                }
 
-            synchronized(ImageView.this) {
-                if (image != img) {
-                    return false;
+                synchronized(ImageView.this) {
+                    if ((changed & 1) == 1 && (state & WIDTH_FLAG) == 0) {
+                        width = newWidth;
+                    }
+                    if ((changed & 2) == 2 && (state & HEIGHT_FLAG) == 0) {
+                        height = newHeight;
+                    }
+                    if ((state & LOADING_FLAG) == LOADING_FLAG) {
+                        // No need to resize or repaint, still in the process of
+                        // loading.
+                        return true;
+                    }
                 }
-                if ((changed & 1) == 1 && (state & WIDTH_FLAG) == 0) {
-                    width = newWidth;
-                }
-                if ((changed & 2) == 2 && (state & HEIGHT_FLAG) == 0) {
-                    height = newHeight;
-                }
-                if ((state & LOADING_FLAG) == LOADING_FLAG) {
-                    // No need to resize or repaint, still in the process of
-                    // loading.
+                if (changed != 0) {
+                    // May need to resize myself, asynchronously:
+                    safePreferenceChanged();
                     return true;
                 }
-            }
-            if (changed != 0) {
-                // May need to resize myself, asynchronously:
-                safePreferenceChanged();
-                return true;
             }
 
             // Repaint when done or when new pixels arrive:
