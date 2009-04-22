@@ -150,7 +150,8 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
 }
 
 
-address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step) {
+address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, bool unbox) {
+  assert(!unbox, "NYI");//6815692//
   address compiled_entry = __ pc();
   Label cont;
 

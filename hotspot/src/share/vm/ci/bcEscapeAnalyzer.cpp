@@ -833,6 +833,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
       case Bytecodes::_invokevirtual:
       case Bytecodes::_invokespecial:
       case Bytecodes::_invokestatic:
+      case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
         { bool will_link;
           ciMethod* target = s.get_method(will_link);
@@ -847,9 +848,6 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
             state.lpush();
           }
         }
-        break;
-      case Bytecodes::_xxxunusedxxx:
-        ShouldNotReachHere();
         break;
       case Bytecodes::_new:
         state.apush(allocated_obj);
