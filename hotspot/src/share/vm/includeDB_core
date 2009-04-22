@@ -4102,6 +4102,7 @@ templateTable.hpp                       interp_masm_<arch_model>.hpp
 templateTable_<arch_model>.cpp          interpreterRuntime.hpp
 templateTable_<arch_model>.cpp          interpreter.hpp
 templateTable_<arch_model>.cpp          methodDataOop.hpp
+templateTable_<arch_model>.cpp          methodHandles.hpp
 templateTable_<arch_model>.cpp          objArrayKlass.hpp
 templateTable_<arch_model>.cpp          oop.inline.hpp
 templateTable_<arch_model>.cpp          sharedRuntime.hpp

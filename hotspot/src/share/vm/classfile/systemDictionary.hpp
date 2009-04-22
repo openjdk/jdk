@@ -142,6 +142,12 @@ class SymbolPropertyTable;
   template(MethodType_klass,             java_dyn_MethodType,            Opt) \
   template(MethodTypeForm_klass,         java_dyn_MethodTypeForm,        Opt) \
   template(WrongMethodTypeException_klass, java_dyn_WrongMethodTypeException, Opt) \
+  template(Linkage_klass,                java_dyn_Linkage,               Opt) \
+  template(CallSite_klass,               java_dyn_CallSite,              Opt) \
+  template(CallSiteImpl_klass,           sun_dyn_CallSiteImpl,     Opt) \
+  template(Dynamic_klass,                java_dyn_Dynamic,               Opt) \
+  /* Note: MethodHandle must be first, and Dynamic last in group */           \
+                                                                              \
   template(vector_klass,                 java_util_Vector,               Pre) \
   template(hashtable_klass,              java_util_Hashtable,            Pre) \
   template(stringBuffer_klass,           java_lang_StringBuffer,         Pre) \
@@ -466,6 +472,21 @@ public:
                                               Handle class_loader,
                                               Handle protection_domain,
                                               TRAPS);
+  // ask Java to create a dynamic call site, while linking an invokedynamic op
+  static Handle    make_dynamic_call_site(KlassHandle caller,
+                                          int caller_method_idnum,
+                                          int caller_bci,
+                                          symbolHandle name,
+                                          methodHandle mh_invoke,
+                                          TRAPS);
+
+  // coordinate with Java about bootstrap methods
+  static Handle    find_bootstrap_method(KlassHandle caller,
+                                         // This argument is non-null only when a
+                                         // classfile attribute has been found:
+                                         KlassHandle search_bootstrap_klass,
+                                         TRAPS);
+
   // Utility for printing loader "name" as part of tracing constraints
   static const char* loader_name(oop loader) {
     return ((loader) == NULL ? "<bootloader>" :

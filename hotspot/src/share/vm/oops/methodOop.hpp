@@ -534,7 +534,10 @@ class methodOopDesc : public oopDesc {
   oop method_handle_type() const;
   static jint* method_type_offsets_chain();  // series of pointer-offsets, terminated by -1
   // presize interpreter frames for extra interpreter stack entries, if needed
-  static int extra_stack_entries() { return EnableMethodHandles ? (int)MethodHandlePushLimit : 0; }
+  // method handles want to be able to push a few extra values (e.g., a bound receiver), and
+  // invokedynamic sometimes needs to push a bootstrap method, call site, and arglist,
+  // all without checking for a stack overflow
+  static int extra_stack_entries() { return (EnableMethodHandles ? (int)MethodHandlePushLimit : 0) + (EnableInvokeDynamic ? 3 : 0); }
   static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize()
   // RedefineClasses() support:
   bool is_old() const                               { return access_flags().is_old(); }

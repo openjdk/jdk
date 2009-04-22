@@ -681,6 +681,133 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
 IRT_END
 
 
+// First time execution:  Resolve symbols, create a permanent CallSiteImpl object.
+IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
+  ResourceMark rm(thread);
+
+  assert(EnableInvokeDynamic, "");
+
+  const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
+
+  methodHandle caller_method(thread, method(thread));
+
+  // first determine if there is a bootstrap method
+  {
+    KlassHandle caller_klass(thread, caller_method->method_holder());
+    Handle bootm = SystemDictionary::find_bootstrap_method(caller_klass, KlassHandle(), CHECK);
+    if (bootm.is_null()) {
+      // If there is no bootstrap method, throw IncompatibleClassChangeError.
+      // This is a valid generic error type for resolution (JLS 12.3.3).
+      char buf[200];
+      jio_snprintf(buf, sizeof(buf), "Class %s has not declared a bootstrap method for invokedynamic",
+                   (Klass::cast(caller_klass()))->external_name());
+      THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+    }
+  }
+
+  constantPoolHandle pool(thread, caller_method->constants());
+  pool->set_invokedynamic();    // mark header to flag active call sites
+
+  int raw_index = four_byte_index(thread);
+  assert(constantPoolCacheOopDesc::is_secondary_index(raw_index), "invokedynamic indexes marked specially");
+
+  // there are two CPC entries that are of interest:
+  int site_index = constantPoolCacheOopDesc::decode_secondary_index(raw_index);
+  int main_index = pool->cache()->entry_at(site_index)->main_entry_index();
+  // and there is one CP entry, a NameAndType:
+  int nt_index = pool->map_instruction_operand_to_index(raw_index);
+
+  // first resolve the signature to a MH.invoke methodOop
+  if (!pool->cache()->entry_at(main_index)->is_resolved(bytecode)) {
+    JvmtiHideSingleStepping jhss(thread);
+    CallInfo info;
+    LinkResolver::resolve_invoke(info, Handle(), pool,
+                                 raw_index, bytecode, CHECK);
+    // The main entry corresponds to a JVM_CONSTANT_NameAndType, and serves
+    // as a common reference point for all invokedynamic call sites with
+    // that exact call descriptor.  We will link it in the CP cache exactly
+    // as if it were an invokevirtual of MethodHandle.invoke.
+    pool->cache()->entry_at(main_index)->set_method(
+      bytecode,
+      info.resolved_method(),
+      info.vtable_index());
+    assert(pool->cache()->entry_at(main_index)->is_vfinal(), "f2 must be a methodOop");
+  }
+
+  // The method (f2 entry) of the main entry is the MH.invoke for the
+  // invokedynamic target call signature.
+  intptr_t f2_value = pool->cache()->entry_at(main_index)->f2();
+  methodHandle mh_invdyn(THREAD, (methodOop) f2_value);
+  assert(mh_invdyn.not_null() && mh_invdyn->is_method() && mh_invdyn->is_method_handle_invoke(),
+         "correct result from LinkResolver::resolve_invokedynamic");
+
+  symbolHandle call_site_name(THREAD, pool->nt_name_ref_at(nt_index));
+  Handle call_site
+    = SystemDictionary::make_dynamic_call_site(caller_method->method_holder(),
+                                               caller_method->method_idnum(),
+                                               caller_method->bci_from(bcp(thread)),
+                                               call_site_name,
+                                               mh_invdyn,
+                                               CHECK);
+
+  // In the secondary entry, the f1 field is the call site, and the f2 (index)
+  // field is some data about the invoke site.
+  int extra_data = 0;
+  pool->cache()->entry_at(site_index)->set_dynamic_call(call_site(), extra_data);
+}
+IRT_END
+
+
+// Called on first time execution, and also whenever the CallSite.target is null.
+// FIXME:  Do more of this in Java code.
+IRT_ENTRY(void, InterpreterRuntime::bootstrap_invokedynamic(JavaThread* thread, oopDesc* call_site)) {
+  methodHandle   mh_invdyn(thread, (methodOop) sun_dyn_CallSiteImpl::vmmethod(call_site));
+  Handle         mh_type(thread,   mh_invdyn->method_handle_type());
+  objArrayHandle mh_ptypes(thread, java_dyn_MethodType::ptypes(mh_type()));
+
+  // squish the arguments down to a single array
+  int nargs = mh_ptypes->length();
+  objArrayHandle arg_array;
+  {
+    objArrayOop aaoop = oopFactory::new_objArray(SystemDictionary::object_klass(), nargs, CHECK);
+    arg_array = objArrayHandle(thread, aaoop);
+  }
+  frame fr = thread->last_frame();
+  assert(fr.interpreter_frame_bcp() != NULL, "sanity");
+  int tos_offset = 0;
+  for (int i = nargs; --i >= 0; ) {
+    intptr_t* slot_addr = fr.interpreter_frame_tos_at(tos_offset++);
+    oop ptype = mh_ptypes->obj_at(i);
+    oop arg = NULL;
+    if (!java_lang_Class::is_primitive(ptype)) {
+      arg = *(oop*) slot_addr;
+    } else {
+      BasicType bt = java_lang_Class::primitive_type(ptype);
+      assert(frame::interpreter_frame_expression_stack_direction() < 0, "else reconsider this code");
+      jvalue value;
+      Interpreter::get_jvalue_in_slot(slot_addr, bt, &value);
+      tos_offset += type2size[bt]-1;
+      arg = java_lang_boxing_object::create(bt, &value, CHECK);
+      // FIXME:  These boxing objects are not canonicalized under
+      // the Java autoboxing rules.  They should be...
+      // The best approach would be to push the arglist creation into Java.
+      // The JVM should use a lower-level interface to communicate argument lists.
+    }
+    arg_array->obj_at_put(i, arg);
+  }
+
+  // now find the bootstrap method
+  oop bootstrap_mh_oop = instanceKlass::cast(fr.interpreter_frame_method()->method_holder())->bootstrap_method();
+  assert(bootstrap_mh_oop != NULL, "resolve_invokedynamic ensures a BSM");
+
+  // return the bootstrap method and argument array via vm_result/_2
+  thread->set_vm_result(bootstrap_mh_oop);
+  thread->set_vm_result_2(arg_array());
+}
+IRT_END
+
+
+
 //------------------------------------------------------------------------------------------------------------------------
 // Miscellaneous
 
