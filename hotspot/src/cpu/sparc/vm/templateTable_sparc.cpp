@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ Assembler::Condition ccNot(TemplateTable::Condition cc) {
 
 Address TemplateTable::at_bcp(int offset) {
   assert(_desc->uses_bcp(), "inconsistent uses_bcp information");
-  return Address( Lbcp, 0, offset);
+  return Address(Lbcp, offset);
 }
 
 
@@ -217,9 +217,9 @@ void TemplateTable::fconst(int value) {
    case 1:  p = &one;   break;
    case 2:  p = &two;   break;
   }
-  Address a(G3_scratch, (address)p);
-  __ sethi(a);
-  __ ldf(FloatRegisterImpl::S, a, Ftos_f);
+  AddressLiteral a(p);
+  __ sethi(a, G3_scratch);
+  __ ldf(FloatRegisterImpl::S, G3_scratch, a.low10(), Ftos_f);
 }
 
 
@@ -232,9 +232,9 @@ void TemplateTable::dconst(int value) {
    case 0:  p = &zero;  break;
    case 1:  p = &one;   break;
   }
-  Address a(G3_scratch, (address)p);
-  __ sethi(a);
-  __ ldf(FloatRegisterImpl::D, a, Ftos_d);
+  AddressLiteral a(p);
+  __ sethi(a, G3_scratch);
+  __ ldf(FloatRegisterImpl::D, G3_scratch, a.low10(), Ftos_d);
 }
 
 
@@ -1548,7 +1548,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   // non-JSR normal-branch stuff occurring below.
   if( is_jsr ) {
     // compute return address as bci in Otos_i
-    __ ld_ptr(Address(Lmethod, 0, in_bytes(methodOopDesc::const_offset())), G3_scratch);
+    __ ld_ptr(Lmethod, methodOopDesc::const_offset(), G3_scratch);
     __ sub(Lbcp, G3_scratch, G3_scratch);
     __ sub(G3_scratch, in_bytes(constMethodOopDesc::codes_offset()) - (is_wide ? 5 : 3), Otos_i);
 
@@ -1665,7 +1665,7 @@ void TemplateTable::ret() {
 
   __ profile_ret(vtos, Otos_i, G4_scratch);
 
-  __ ld_ptr(Address(Lmethod, 0, in_bytes(methodOopDesc::const_offset())), G3_scratch);
+  __ ld_ptr(Lmethod, methodOopDesc::const_offset(), G3_scratch);
   __ add(G3_scratch, Otos_i, G3_scratch);
   __ add(G3_scratch, in_bytes(constMethodOopDesc::codes_offset()), Lbcp);
   __ dispatch_next(vtos);
@@ -1680,7 +1680,7 @@ void TemplateTable::wide_ret() {
 
   __ profile_ret(vtos, Otos_i, G4_scratch);
 
-  __ ld_ptr(Address(Lmethod, 0, in_bytes(methodOopDesc::const_offset())), G3_scratch);
+  __ ld_ptr(Lmethod, methodOopDesc::const_offset(), G3_scratch);
   __ add(G3_scratch, Otos_i, G3_scratch);
   __ add(G3_scratch, in_bytes(constMethodOopDesc::codes_offset()), Lbcp);
   __ dispatch_next(vtos);
@@ -1968,8 +1968,8 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
   Label resolved;
 
   __ get_cache_and_index_at_bcp(Rcache, index, 1);
-  __ ld_ptr(Address(Rcache, 0, in_bytes(constantPoolCacheOopDesc::base_offset() +
-                                        ConstantPoolCacheEntry::indices_offset())), Lbyte_code);
+  __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
+                    ConstantPoolCacheEntry::indices_offset(), Lbyte_code);
 
   __ srl(  Lbyte_code, shift_count, Lbyte_code );
   __ and3( Lbyte_code,        0xFF, Lbyte_code );
@@ -2029,11 +2029,11 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
     resolve_cache_and_index(byte_no, Rcache, Rscratch);
   }
 
-  __ ld_ptr(Address(Rcache, 0, method_offset), Rmethod);
+  __ ld_ptr(Rcache, method_offset, Rmethod);
   if (Ritable_index != noreg) {
-    __ ld_ptr(Address(Rcache, 0, index_offset), Ritable_index);
+    __ ld_ptr(Rcache, index_offset, Ritable_index);
   }
-  __ ld_ptr(Address(Rcache, 0, flags_offset),  Rflags);
+  __ ld_ptr(Rcache, flags_offset, Rflags);
 }
 
 // The Rcache register must be set before call
@@ -2047,13 +2047,10 @@ void TemplateTable::load_field_cp_cache_entry(Register Robj,
 
   ByteSize cp_base_offset = constantPoolCacheOopDesc::base_offset();
 
-  __ ld_ptr(Address(Rcache, 0, in_bytes(cp_base_offset +
-                             ConstantPoolCacheEntry::flags_offset())), Rflags);
-  __ ld_ptr(Address(Rcache, 0, in_bytes(cp_base_offset +
-                             ConstantPoolCacheEntry::f2_offset())), Roffset);
+  __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::flags_offset(), Rflags);
+  __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::f2_offset(), Roffset);
   if (is_static) {
-    __ ld_ptr(Address(Rcache, 0, in_bytes(cp_base_offset +
-                             ConstantPoolCacheEntry::f1_offset())), Robj);
+    __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::f1_offset(), Robj);
   }
 }
 
@@ -2070,9 +2067,7 @@ void TemplateTable::jvmti_post_field_access(Register Rcache,
     // the time to call into the VM.
     Label Label1;
     assert_different_registers(Rcache, index, G1_scratch);
-    Address get_field_access_count_addr(G1_scratch,
-                                        (address)JvmtiExport::get_field_access_count_addr(),
-                                        relocInfo::none);
+    AddressLiteral get_field_access_count_addr(JvmtiExport::get_field_access_count_addr());
     __ load_contents(get_field_access_count_addr, G1_scratch);
     __ tst(G1_scratch);
     __ br(Assembler::zero, false, Assembler::pt, Label1);
@@ -2293,7 +2288,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   __ get_cache_and_index_at_bcp(Rcache, index, 1);
   jvmti_post_field_access(Rcache, index, /*is_static*/false, /*has_tos*/true);
 
-  __ ld_ptr(Address(Rcache, 0, in_bytes(cp_base_offset + ConstantPoolCacheEntry::f2_offset())), Roffset);
+  __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::f2_offset(), Roffset);
 
   __ null_check(Otos_i);
   __ verify_oop(Otos_i);
@@ -2304,7 +2299,7 @@ void TemplateTable::fast_accessfield(TosState state) {
     Assembler::Membar_mask_bits(Assembler::LoadLoad | Assembler::LoadStore);
   if (__ membar_has_effect(membar_bits)) {
     // Get volatile flag
-    __ ld_ptr(Address(Rcache, 0, in_bytes(cp_base_offset + ConstantPoolCacheEntry::f2_offset())), Rflags);
+    __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::f2_offset(), Rflags);
     __ set((1 << ConstantPoolCacheEntry::volatileField), Lscratch);
   }
 
@@ -2355,7 +2350,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     // Check to see if a field modification watch has been set before we take
     // the time to call into the VM.
     Label done;
-    Address get_field_modification_count_addr(G4_scratch, (address)JvmtiExport::get_field_modification_count_addr(), relocInfo::none);
+    AddressLiteral get_field_modification_count_addr(JvmtiExport::get_field_modification_count_addr());
     __ load_contents(get_field_modification_count_addr, G4_scratch);
     __ tst(G4_scratch);
     __ br(Assembler::zero, false, Assembler::pt, done);
@@ -2408,9 +2403,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register index, bool i
     // the time to call into the VM.
     Label Label1;
     assert_different_registers(Rcache, index, G1_scratch);
-    Address get_field_modification_count_addr(G1_scratch,
-                                              (address)JvmtiExport::get_field_modification_count_addr(),
-                                              relocInfo::none);
+    AddressLiteral get_field_modification_count_addr(JvmtiExport::get_field_modification_count_addr());
     __ load_contents(get_field_modification_count_addr, G1_scratch);
     __ tst(G1_scratch);
     __ br(Assembler::zero, false, Assembler::pt, Label1);
@@ -2433,7 +2426,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register index, bool i
       // the type to determine where the object is.
 
       Label two_word, valsizeknown;
-      __ ld_ptr(Address(G1_scratch, 0, in_bytes(cp_base_offset + ConstantPoolCacheEntry::flags_offset())), Rflags);
+      __ ld_ptr(G1_scratch, cp_base_offset + ConstantPoolCacheEntry::flags_offset(), Rflags);
       __ mov(Lesp, G4_scratch);
       __ srl(Rflags, ConstantPoolCacheEntry::tosBits, Rflags);
       // Make sure we don't need to mask Rflags for tosBits after the above shift
@@ -2689,8 +2682,7 @@ void TemplateTable::fast_storefield(TosState state) {
 
   Label notVolatile, checkVolatile, exit;
   if (__ membar_has_effect(read_bits) || __ membar_has_effect(write_bits)) {
-    __ ld_ptr(Address(Rcache, 0, in_bytes(cp_base_offset +
-                             ConstantPoolCacheEntry::flags_offset())), Rflags);
+    __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::flags_offset(), Rflags);
     __ set((1 << ConstantPoolCacheEntry::volatileField), Lscratch);
     __ and3(Rflags, Lscratch, Lscratch);
     if (__ membar_has_effect(read_bits)) {
@@ -2702,8 +2694,7 @@ void TemplateTable::fast_storefield(TosState state) {
     }
   }
 
-  __ ld_ptr(Address(Rcache, 0, in_bytes(cp_base_offset +
-                             ConstantPoolCacheEntry::f2_offset())), Roffset);
+  __ ld_ptr(Rcache, cp_base_offset + ConstantPoolCacheEntry::f2_offset(), Roffset);
   pop_and_check_object(Rclass);
 
   switch (bytecode()) {
@@ -2755,7 +2746,7 @@ void TemplateTable::fast_xaccess(TosState state) {
 
   // access constant pool cache  (is resolved)
   __ get_cache_and_index_at_bcp(Rcache, G4_scratch, 2);
-  __ ld_ptr(Address(Rcache, 0, in_bytes(constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::f2_offset())), Roffset);
+  __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::f2_offset(), Roffset);
   __ add(Lbcp, 1, Lbcp);       // needed to report exception at the correct bcp
 
   __ verify_oop(Rreceiver);
@@ -2775,7 +2766,7 @@ void TemplateTable::fast_xaccess(TosState state) {
   if (__ membar_has_effect(membar_bits)) {
 
     // Get is_volatile value in Rflags and check if membar is needed
-    __ ld_ptr(Address(Rcache, 0, in_bytes(constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::flags_offset())), Rflags);
+    __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::flags_offset(), Rflags);
 
     // Test volatile
     Label notVolatile;
@@ -2853,8 +2844,8 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ verify_oop(O0);
 
   // get return address
-  Address table(Rtemp, (address)Interpreter::return_3_addrs_by_index_table());
-  __ load_address(table);
+  AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
+  __ set(table, Rtemp);
   __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
   // Make sure we don't need to mask Rret for tosBits after the above shift
   ConstantPoolCacheEntry::verify_tosBits();
@@ -2886,7 +2877,7 @@ void TemplateTable::invokevfinal_helper(Register Rscratch, Register Rret) {
   __ verify_oop(G5_method);
 
   // Load receiver from stack slot
-  __ lduh(Address(G5_method, 0, in_bytes(methodOopDesc::size_of_parameters_offset())), G4_scratch);
+  __ lduh(G5_method, in_bytes(methodOopDesc::size_of_parameters_offset()), G4_scratch);
   __ load_receiver(G4_scratch, O0);
 
   // receiver NULL check
@@ -2895,8 +2886,8 @@ void TemplateTable::invokevfinal_helper(Register Rscratch, Register Rret) {
   __ profile_final_call(O4);
 
   // get return address
-  Address table(Rtemp, (address)Interpreter::return_3_addrs_by_index_table());
-  __ load_address(table);
+  AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
+  __ set(table, Rtemp);
   __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
   // Make sure we don't need to mask Rret for tosBits after the above shift
   ConstantPoolCacheEntry::verify_tosBits();
@@ -2920,7 +2911,7 @@ void TemplateTable::invokespecial(int byte_no) {
 
   __ verify_oop(G5_method);
 
-  __ lduh(Address(G5_method, 0, in_bytes(methodOopDesc::size_of_parameters_offset())), G4_scratch);
+  __ lduh(G5_method, in_bytes(methodOopDesc::size_of_parameters_offset()), G4_scratch);
   __ load_receiver(G4_scratch, O0);
 
   // receiver NULL check
@@ -2929,8 +2920,8 @@ void TemplateTable::invokespecial(int byte_no) {
   __ profile_call(O4);
 
   // get return address
-  Address table(Rtemp, (address)Interpreter::return_3_addrs_by_index_table());
-  __ load_address(table);
+  AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
+  __ set(table, Rtemp);
   __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
   // Make sure we don't need to mask Rret for tosBits after the above shift
   ConstantPoolCacheEntry::verify_tosBits();
@@ -2956,8 +2947,8 @@ void TemplateTable::invokestatic(int byte_no) {
   __ profile_call(O4);
 
   // get return address
-  Address table(Rtemp, (address)Interpreter::return_3_addrs_by_index_table());
-  __ load_address(table);
+  AddressLiteral table(Interpreter::return_3_addrs_by_index_table());
+  __ set(table, Rtemp);
   __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
   // Make sure we don't need to mask Rret for tosBits after the above shift
   ConstantPoolCacheEntry::verify_tosBits();
@@ -3021,8 +3012,8 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ mov(Rflags, Rret);
 
   // get return address
-  Address table(Rscratch, (address)Interpreter::return_5_addrs_by_index_table());
-  __ load_address(table);
+  AddressLiteral table(Interpreter::return_5_addrs_by_index_table());
+  __ set(table, Rscratch);
   __ srl(Rret, ConstantPoolCacheEntry::tosBits, Rret);          // get return type
   // Make sure we don't need to mask Rret for tosBits after the above shift
   ConstantPoolCacheEntry::verify_tosBits();
@@ -3059,7 +3050,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   Label search;
   Register Rtemp = Rflags;
 
-  __ ld(Address(RklassOop, 0, instanceKlass::vtable_length_offset() * wordSize), Rtemp);
+  __ ld(RklassOop, instanceKlass::vtable_length_offset() * wordSize, Rtemp);
   if (align_object_offset(1) > 1) {
     __ round_to(Rtemp, align_object_offset(1));
   }
@@ -3642,9 +3633,9 @@ void TemplateTable::wide() {
   transition(vtos, vtos);
   __ ldub(Lbcp, 1, G3_scratch);// get next bc
   __ sll(G3_scratch, LogBytesPerWord, G3_scratch);
-  Address ep(G4_scratch, (address)Interpreter::_wentry_point);
-  __ load_address(ep);
-  __ ld_ptr(ep.base(), G3_scratch, G3_scratch);
+  AddressLiteral ep(Interpreter::_wentry_point);
+  __ set(ep, G4_scratch);
+  __ ld_ptr(G4_scratch, G3_scratch, G3_scratch);
   __ jmp(G3_scratch, G0);
   __ delayed()->nop();
   // Note: the Lbcp increment step is part of the individual wide bytecode implementations
