@@ -87,8 +87,8 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   }
   // throw exception
   assert(Interpreter::throw_exception_entry() != NULL, "generate it first");
-  Address thrower(G3_scratch, Interpreter::throw_exception_entry());
-  __ jump_to (thrower);
+  AddressLiteral thrower(Interpreter::throw_exception_entry());
+  __ jump_to(thrower, G3_scratch);
   __ delayed()->nop();
   return entry;
 }
@@ -187,8 +187,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register cache = G3_scratch;
   const Register size  = G1_scratch;
   __ get_cache_and_index_at_bcp(cache, G1_scratch, 1);
-  __ ld_ptr(Address(cache, 0, in_bytes(constantPoolCacheOopDesc::base_offset()) +
-                    in_bytes(ConstantPoolCacheEntry::flags_offset())), size);
+  __ ld_ptr(cache, constantPoolCacheOopDesc::base_offset() +
+                   ConstantPoolCacheEntry::flags_offset(), size);
   __ and3(size, 0xFF, size);                   // argument size in words
   __ sll(size, Interpreter::logStackElementSize(), size); // each argument size in bytes
   __ add(Lesp, size, Lesp);                    // pop arguments
@@ -202,9 +202,8 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   address entry = __ pc();
   __ get_constant_pool_cache(LcpoolCache); // load LcpoolCache
   { Label L;
-    Address exception_addr (G2_thread, 0, in_bytes(Thread::pending_exception_offset()));
-
-    __ ld_ptr(exception_addr, Gtemp);
+    Address exception_addr(G2_thread, Thread::pending_exception_offset());
+    __ ld_ptr(exception_addr, Gtemp);  // Load pending exception.
     __ tst(Gtemp);
     __ brx(Assembler::equal, false, Assembler::pt, L);
     __ delayed()->nop();
@@ -283,7 +282,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
   // Update standard invocation counters
   __ increment_invocation_counter(O0, G3_scratch);
   if (ProfileInterpreter) {  // %%% Merge this into methodDataOop
-    Address interpreter_invocation_counter(Lmethod, 0, in_bytes(methodOopDesc::interpreter_invocation_counter_offset()));
+    Address interpreter_invocation_counter(Lmethod, methodOopDesc::interpreter_invocation_counter_offset());
     __ ld(interpreter_invocation_counter, G3_scratch);
     __ inc(G3_scratch);
     __ st(G3_scratch, interpreter_invocation_counter);
@@ -291,9 +290,9 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
 
   if (ProfileInterpreter && profile_method != NULL) {
     // Test to see if we should create a method data oop
-    Address profile_limit(G3_scratch, (address)&InvocationCounter::InterpreterProfileLimit);
-    __ sethi(profile_limit);
-    __ ld(profile_limit, G3_scratch);
+    AddressLiteral profile_limit(&InvocationCounter::InterpreterProfileLimit);
+    __ sethi(profile_limit, G3_scratch);
+    __ ld(G3_scratch, profile_limit.low10(), G3_scratch);
     __ cmp(O0, G3_scratch);
     __ br(Assembler::lessUnsigned, false, Assembler::pn, *profile_method_continue);
     __ delayed()->nop();
@@ -302,9 +301,9 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
     __ test_method_data_pointer(*profile_method);
   }
 
-  Address invocation_limit(G3_scratch, (address)&InvocationCounter::InterpreterInvocationLimit);
-  __ sethi(invocation_limit);
-  __ ld(invocation_limit, G3_scratch);
+  AddressLiteral invocation_limit(&InvocationCounter::InterpreterInvocationLimit);
+  __ sethi(invocation_limit, G3_scratch);
+  __ ld(G3_scratch, invocation_limit.low10(), G3_scratch);
   __ cmp(O0, G3_scratch);
   __ br(Assembler::greaterEqualUnsigned, false, Assembler::pn, *overflow);
   __ delayed()->nop();
@@ -315,8 +314,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
 // ebx - methodOop
 //
 void InterpreterGenerator::lock_method(void) {
-  const Address access_flags      (Lmethod, 0, in_bytes(methodOopDesc::access_flags_offset()));
-  __ ld(access_flags, O0);
+  __ ld(Lmethod, in_bytes(methodOopDesc::access_flags_offset()), O0);  // Load access flags.
 
 #ifdef ASSERT
  { Label ok;
@@ -360,8 +358,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
                                                          Register Rscratch,
                                                          Register Rscratch2) {
   const int page_size = os::vm_page_size();
-  Address saved_exception_pc(G2_thread, 0,
-                             in_bytes(JavaThread::saved_exception_pc_offset()));
+  Address saved_exception_pc(G2_thread, JavaThread::saved_exception_pc_offset());
   Label after_frame_check;
 
   assert_different_registers(Rframe_size, Rscratch, Rscratch2);
@@ -373,7 +370,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
   __ delayed()->nop();
 
   // get the stack base, and in debug, verify it is non-zero
-  __ ld_ptr( G2_thread, in_bytes(Thread::stack_base_offset()), Rscratch );
+  __ ld_ptr( G2_thread, Thread::stack_base_offset(), Rscratch );
 #ifdef ASSERT
   Label base_not_zero;
   __ cmp( Rscratch, G0 );
@@ -385,7 +382,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
 
   // get the stack size, and in debug, verify it is non-zero
   assert( sizeof(size_t) == sizeof(intptr_t), "wrong load size" );
-  __ ld_ptr( G2_thread, in_bytes(Thread::stack_size_offset()), Rscratch2 );
+  __ ld_ptr( G2_thread, Thread::stack_size_offset(), Rscratch2 );
 #ifdef ASSERT
   Label size_not_zero;
   __ cmp( Rscratch2, G0 );
@@ -460,9 +457,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // (gri - 2/25/2000)
 
 
-  const Address size_of_parameters(G5_method, 0, in_bytes(methodOopDesc::size_of_parameters_offset()));
-  const Address size_of_locals    (G5_method, 0, in_bytes(methodOopDesc::size_of_locals_offset()));
-  const Address max_stack         (G5_method, 0, in_bytes(methodOopDesc::max_stack_offset()));
+  const Address size_of_parameters(G5_method, methodOopDesc::size_of_parameters_offset());
+  const Address size_of_locals    (G5_method, methodOopDesc::size_of_locals_offset());
+  const Address max_stack         (G5_method, methodOopDesc::max_stack_offset());
   int rounded_vm_local_words = round_to( frame::interpreter_frame_vm_local_words, WordsPerLong );
 
   const int extra_space =
@@ -539,8 +536,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   if (native_call) {
     __ mov(G0, Lbcp);
   } else {
-    __ ld_ptr(Address(G5_method, 0, in_bytes(methodOopDesc::const_offset())), Lbcp );
-    __ add(Address(Lbcp, 0, in_bytes(constMethodOopDesc::codes_offset())), Lbcp );
+    __ ld_ptr(G5_method, methodOopDesc::const_offset(), Lbcp);
+    __ add(Lbcp, in_bytes(constMethodOopDesc::codes_offset()), Lbcp);
   }
   __ mov( G5_method, Lmethod);                 // set Lmethod
   __ get_constant_pool_cache( LcpoolCache );   // set LcpoolCache
@@ -578,8 +575,8 @@ address InterpreterGenerator::generate_empty_entry(void) {
   // do nothing for empty methods (do not even increment invocation counter)
   if ( UseFastEmptyMethods) {
     // If we need a safepoint check, generate full interpreter entry.
-    Address sync_state(G3_scratch, SafepointSynchronize::address_of_state());
-    __ load_contents(sync_state, G3_scratch);
+    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
+    __ set(sync_state, G3_scratch);
     __ cmp(G3_scratch, SafepointSynchronize::_not_synchronized);
     __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
     __ delayed()->nop();
@@ -617,7 +614,7 @@ address InterpreterGenerator::generate_accessor_entry(void) {
   if ( UseFastAccessorMethods && !UseCompressedOops ) {
     // Check if we need to reach a safepoint and generate full interpreter
     // frame if so.
-    Address sync_state(G3_scratch, SafepointSynchronize::address_of_state());
+    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
     __ load_contents(sync_state, G3_scratch);
     __ cmp(G3_scratch, SafepointSynchronize::_not_synchronized);
     __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
@@ -632,8 +629,8 @@ address InterpreterGenerator::generate_accessor_entry(void) {
 
     // read first instruction word and extract bytecode @ 1 and index @ 2
     // get first 4 bytes of the bytecodes (big endian!)
-    __ ld_ptr(Address(G5_method, 0, in_bytes(methodOopDesc::const_offset())), G1_scratch);
-    __ ld(Address(G1_scratch, 0, in_bytes(constMethodOopDesc::codes_offset())), G1_scratch);
+    __ ld_ptr(G5_method, methodOopDesc::const_offset(), G1_scratch);
+    __ ld(G1_scratch, constMethodOopDesc::codes_offset(), G1_scratch);
 
     // move index @ 2 far left then to the right most two bytes.
     __ sll(G1_scratch, 2*BitsPerByte, G1_scratch);
@@ -641,7 +638,7 @@ address InterpreterGenerator::generate_accessor_entry(void) {
                       ConstantPoolCacheEntry::size()) * BytesPerWord), G1_scratch);
 
     // get constant pool cache
-    __ ld_ptr(G5_method, in_bytes(methodOopDesc::constants_offset()), G3_scratch);
+    __ ld_ptr(G5_method, methodOopDesc::constants_offset(), G3_scratch);
     __ ld_ptr(G3_scratch, constantPoolOopDesc::cache_offset_in_bytes(), G3_scratch);
 
     // get specific constant pool cache entry
@@ -650,7 +647,7 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     // Check the constant Pool cache entry to see if it has been resolved.
     // If not, need the slow path.
     ByteSize cp_base_offset = constantPoolCacheOopDesc::base_offset();
-    __ ld_ptr(G3_scratch, in_bytes(cp_base_offset + ConstantPoolCacheEntry::indices_offset()), G1_scratch);
+    __ ld_ptr(G3_scratch, cp_base_offset + ConstantPoolCacheEntry::indices_offset(), G1_scratch);
     __ srl(G1_scratch, 2*BitsPerByte, G1_scratch);
     __ and3(G1_scratch, 0xFF, G1_scratch);
     __ cmp(G1_scratch, Bytecodes::_getfield);
@@ -658,8 +655,8 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     __ delayed()->nop();
 
     // Get the type and return field offset from the constant pool cache
-    __ ld_ptr(G3_scratch, in_bytes(cp_base_offset + ConstantPoolCacheEntry::flags_offset()), G1_scratch);
-    __ ld_ptr(G3_scratch, in_bytes(cp_base_offset + ConstantPoolCacheEntry::f2_offset()), G3_scratch);
+    __ ld_ptr(G3_scratch, cp_base_offset + ConstantPoolCacheEntry::flags_offset(), G1_scratch);
+    __ ld_ptr(G3_scratch, cp_base_offset + ConstantPoolCacheEntry::f2_offset(), G3_scratch);
 
     Label xreturn_path;
     // Need to differentiate between igetfield, agetfield, bgetfield etc.
@@ -718,7 +715,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // make sure registers are different!
   assert_different_registers(G2_thread, G5_method, Gargs, Gtmp1, Gtmp2);
 
-  const Address Laccess_flags     (Lmethod, 0, in_bytes(methodOopDesc::access_flags_offset()));
+  const Address Laccess_flags(Lmethod, methodOopDesc::access_flags_offset());
 
   __ verify_oop(G5_method);
 
@@ -728,7 +725,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // make sure method is native & not abstract
   // rethink these assertions - they can be simplified and shared (gri 2/25/2000)
 #ifdef ASSERT
-  __ ld(G5_method, in_bytes(methodOopDesc::access_flags_offset()), Gtmp1);
+  __ ld(G5_method, methodOopDesc::access_flags_offset(), Gtmp1);
   {
     Label L;
     __ btst(JVM_ACC_NATIVE, Gtmp1);
@@ -755,10 +752,10 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // this slot will be set later, we initialize it to null here just in
   // case we get a GC before the actual value is stored later
-  __ st_ptr(G0, Address(FP, 0, (frame::interpreter_frame_oop_temp_offset*wordSize) + STACK_BIAS));
+  __ st_ptr(G0, FP, (frame::interpreter_frame_oop_temp_offset * wordSize) + STACK_BIAS);
 
-  const Address do_not_unlock_if_synchronized(G2_thread, 0,
-      in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()));
+  const Address do_not_unlock_if_synchronized(G2_thread,
+    JavaThread::do_not_unlock_if_synchronized_offset());
   // Since at this point in the method invocation the exception handler
   // would try to exit the monitor of synchronized methods which hasn't
   // been entered yet, we set the thread local variable
@@ -825,12 +822,13 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // get signature handler
   { Label L;
-    __ ld_ptr(Address(Lmethod, 0, in_bytes(methodOopDesc::signature_handler_offset())), G3_scratch);
+    Address signature_handler(Lmethod, methodOopDesc::signature_handler_offset());
+    __ ld_ptr(signature_handler, G3_scratch);
     __ tst(G3_scratch);
     __ brx(Assembler::notZero, false, Assembler::pt, L);
     __ delayed()->nop();
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::prepare_native_call), Lmethod);
-    __ ld_ptr(Address(Lmethod, 0, in_bytes(methodOopDesc::signature_handler_offset())), G3_scratch);
+    __ ld_ptr(signature_handler, G3_scratch);
     __ bind(L);
   }
 
@@ -843,10 +841,9 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // Flush the method pointer to the register save area
   __ st_ptr(Lmethod, SP, (Lmethod->sp_offset_in_saved_window() * wordSize) + STACK_BIAS);
   __ mov(Llocals, O1);
-  // calculate where the mirror handle body is allocated in the interpreter frame:
 
-  Address mirror(FP, 0, (frame::interpreter_frame_oop_temp_offset*wordSize) + STACK_BIAS);
-  __ add(mirror, O2);
+  // calculate where the mirror handle body is allocated in the interpreter frame:
+  __ add(FP, (frame::interpreter_frame_oop_temp_offset * wordSize) + STACK_BIAS, O2);
 
   // Calculate current frame size
   __ sub(SP, FP, O3);         // Calculate negative of current frame size
@@ -883,14 +880,13 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ld(Laccess_flags, O0);
     __ btst(JVM_ACC_STATIC, O0);
     __ br( Assembler::zero, false, Assembler::pt, not_static);
-    __ delayed()->
-      // get native function entry point(O0 is a good temp until the very end)
-       ld_ptr(Address(Lmethod, 0, in_bytes(methodOopDesc::native_function_offset())), O0);
+    // get native function entry point(O0 is a good temp until the very end)
+    __ delayed()->ld_ptr(Lmethod, in_bytes(methodOopDesc::native_function_offset()), O0);
     // for static methods insert the mirror argument
     const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
 
-    __ ld_ptr(Address(Lmethod, 0, in_bytes(methodOopDesc:: constants_offset())), O1);
-    __ ld_ptr(Address(O1, 0, constantPoolOopDesc::pool_holder_offset_in_bytes()), O1);
+    __ ld_ptr(Lmethod, methodOopDesc:: constants_offset(), O1);
+    __ ld_ptr(O1, constantPoolOopDesc::pool_holder_offset_in_bytes(), O1);
     __ ld_ptr(O1, mirror_offset, O1);
 #ifdef ASSERT
     if (!PrintSignatureHandlers)  // do not dirty the output with this
@@ -945,15 +941,13 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   __ flush_windows();
 
   // mark windows as flushed
-  Address flags(G2_thread,
-                0,
-                in_bytes(JavaThread::frame_anchor_offset()) + in_bytes(JavaFrameAnchor::flags_offset()));
+  Address flags(G2_thread, JavaThread::frame_anchor_offset() + JavaFrameAnchor::flags_offset());
   __ set(JavaFrameAnchor::flushed, G3_scratch);
   __ st(G3_scratch, flags);
 
   // Transition from _thread_in_Java to _thread_in_native. We are already safepoint ready.
 
-  Address thread_state(G2_thread, 0, in_bytes(JavaThread::thread_state_offset()));
+  Address thread_state(G2_thread, JavaThread::thread_state_offset());
 #ifdef ASSERT
   { Label L;
     __ ld(thread_state, G3_scratch);
@@ -983,7 +977,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // Block, if necessary, before resuming in _thread_in_Java state.
   // In order for GC to work, don't clear the last_Java_sp until after blocking.
   { Label no_block;
-    Address sync_state(G3_scratch, SafepointSynchronize::address_of_state());
+    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
 
     // Switch thread to "native transition" state before reading the synchronization state.
     // This additional state is necessary because reading and testing the synchronization
@@ -1010,10 +1004,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ cmp(G3_scratch, SafepointSynchronize::_not_synchronized);
 
     Label L;
-    Address suspend_state(G2_thread, 0, in_bytes(JavaThread::suspend_flags_offset()));
     __ br(Assembler::notEqual, false, Assembler::pn, L);
-    __ delayed()->
-      ld(suspend_state, G3_scratch);
+    __ delayed()->ld(G2_thread, JavaThread::suspend_flags_offset(), G3_scratch);
     __ cmp(G3_scratch, 0);
     __ br(Assembler::equal, false, Assembler::pt, no_block);
     __ delayed()->nop();
@@ -1055,7 +1047,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   __ st(G3_scratch, thread_state);
 
   // reset handle block
-  __ ld_ptr(G2_thread, in_bytes(JavaThread::active_handles_offset()), G3_scratch);
+  __ ld_ptr(G2_thread, JavaThread::active_handles_offset(), G3_scratch);
   __ st_ptr(G0, G3_scratch, JNIHandleBlock::top_offset_in_bytes());
 
   // If we have an oop result store it where it will be safe for any further gc
@@ -1084,8 +1076,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // handle exceptions (exception handling will handle unlocking!)
   { Label L;
-    Address exception_addr (G2_thread, 0, in_bytes(Thread::pending_exception_offset()));
-
+    Address exception_addr(G2_thread, Thread::pending_exception_offset());
     __ ld_ptr(exception_addr, Gtemp);
     __ tst(Gtemp);
     __ brx(Assembler::equal, false, Assembler::pt, L);
@@ -1171,11 +1162,11 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // make sure registers are different!
   assert_different_registers(G2_thread, G5_method, Gargs, Gtmp1, Gtmp2);
 
-  const Address size_of_parameters(G5_method, 0, in_bytes(methodOopDesc::size_of_parameters_offset()));
-  const Address size_of_locals    (G5_method, 0, in_bytes(methodOopDesc::size_of_locals_offset()));
+  const Address size_of_parameters(G5_method, methodOopDesc::size_of_parameters_offset());
+  const Address size_of_locals    (G5_method, methodOopDesc::size_of_locals_offset());
   // Seems like G5_method is live at the point this is used. So we could make this look consistent
   // and use in the asserts.
-  const Address access_flags      (Lmethod, 0, in_bytes(methodOopDesc::access_flags_offset()));
+  const Address access_flags      (Lmethod,   methodOopDesc::access_flags_offset());
 
   __ verify_oop(G5_method);
 
@@ -1185,7 +1176,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // make sure method is not native & not abstract
   // rethink these assertions - they can be simplified and shared (gri 2/25/2000)
 #ifdef ASSERT
-  __ ld(G5_method, in_bytes(methodOopDesc::access_flags_offset()), Gtmp1);
+  __ ld(G5_method, methodOopDesc::access_flags_offset(), Gtmp1);
   {
     Label L;
     __ btst(JVM_ACC_NATIVE, Gtmp1);
@@ -1240,8 +1231,8 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ brx( Assembler::lessEqualUnsigned, true, Assembler::pt, clear_loop );
   __ delayed()->st_ptr( init_value, O2, 0 );
 
-  const Address do_not_unlock_if_synchronized(G2_thread, 0,
-        in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()));
+  const Address do_not_unlock_if_synchronized(G2_thread,
+    JavaThread::do_not_unlock_if_synchronized_offset());
   // Since at this point in the method invocation the exception handler
   // would try to exit the monitor of synchronized methods which hasn't
   // been entered yet, we set the thread local variable
@@ -1717,7 +1708,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   //
 
   Interpreter::_remove_activation_preserving_args_entry = __ pc();
-  Address popframe_condition_addr (G2_thread, 0, in_bytes(JavaThread::popframe_condition_offset()));
+  Address popframe_condition_addr(G2_thread, JavaThread::popframe_condition_offset());
   // Set the popframe_processing bit in popframe_condition indicating that we are
   // currently handling popframe, so that call_VMs that may happen later do not trigger new
   // popframe handling cycles.
@@ -1759,7 +1750,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, Deoptimization::popframe_preserve_args), G2_thread, Gtmp1, Gtmp2);
     // Inform deoptimization that it is responsible for restoring these arguments
     __ set(JavaThread::popframe_force_deopt_reexecution_bit, Gtmp1);
-    Address popframe_condition_addr(G2_thread, 0, in_bytes(JavaThread::popframe_condition_offset()));
+    Address popframe_condition_addr(G2_thread, JavaThread::popframe_condition_offset());
     __ st(Gtmp1, popframe_condition_addr);
 
     // Return from the current method
@@ -1808,7 +1799,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ verify_oop(Oexception);
 
     const int return_reg_adjustment = frame::pc_return_offset;
-  Address issuing_pc_addr(I7, 0, return_reg_adjustment);
+  Address issuing_pc_addr(I7, return_reg_adjustment);
 
   // We are done with this activation frame; find out where to go next.
   // The continuation point will be an exception handler, which expects
@@ -1854,8 +1845,8 @@ address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state
   __ empty_expression_stack();
   __ load_earlyret_value(state);
 
-  __ ld_ptr(Address(G2_thread, 0, in_bytes(JavaThread::jvmti_thread_state_offset())), G3_scratch);
-  Address cond_addr(G3_scratch, 0, in_bytes(JvmtiThreadState::earlyret_state_offset()));
+  __ ld_ptr(G2_thread, JavaThread::jvmti_thread_state_offset(), G3_scratch);
+  Address cond_addr(G3_scratch, JvmtiThreadState::earlyret_state_offset());
 
   // Clear the earlyret state
   __ stw(G0 /* JvmtiThreadState::earlyret_inactive */, cond_addr);
@@ -1922,43 +1913,33 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 // helpers for generate_and_dispatch
 
 void TemplateInterpreterGenerator::count_bytecode() {
-  Address c(G3_scratch, (address)&BytecodeCounter::_counter_value);
-  __ load_contents(c, G4_scratch);
-  __ inc(G4_scratch);
-  __ st(G4_scratch, c);
+  __ inc_counter(&BytecodeCounter::_counter_value, G3_scratch, G4_scratch);
 }
 
 
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
-  Address bucket( G3_scratch, (address) &BytecodeHistogram::_counters[t->bytecode()] );
-  __ load_contents(bucket, G4_scratch);
-  __ inc(G4_scratch);
-  __ st(G4_scratch, bucket);
+  __ inc_counter(&BytecodeHistogram::_counters[t->bytecode()], G3_scratch, G4_scratch);
 }
 
 
 void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
-  address index_addr      = (address)&BytecodePairHistogram::_index;
-  Address index(G3_scratch, index_addr);
-
-  address counters_addr   = (address)&BytecodePairHistogram::_counters;
-  Address counters(G3_scratch, counters_addr);
+  AddressLiteral index   (&BytecodePairHistogram::_index);
+  AddressLiteral counters((address) &BytecodePairHistogram::_counters);
 
   // get index, shift out old bytecode, bring in new bytecode, and store it
   // _index = (_index >> log2_number_of_codes) |
   //          (bytecode << log2_number_of_codes);
 
-
-  __ load_contents( index,      G4_scratch );
+  __ load_contents(index, G4_scratch);
   __ srl( G4_scratch, BytecodePairHistogram::log2_number_of_codes, G4_scratch );
   __ set( ((int)t->bytecode()) << BytecodePairHistogram::log2_number_of_codes,  G3_scratch );
   __ or3( G3_scratch,  G4_scratch, G4_scratch );
-  __ store_contents( G4_scratch, index );
+  __ store_contents(G4_scratch, index, G3_scratch);
 
   // bump bucket contents
   // _counters[_index] ++;
 
-  __ load_address( counters );  // loads into G3_scratch
+  __ set(counters, G3_scratch);                       // loads into G3_scratch
   __ sll( G4_scratch, LogBytesPerWord, G4_scratch );  // Index is word address
   __ add (G3_scratch, G4_scratch, G3_scratch);        // Add in index
   __ ld (G3_scratch, 0, G4_scratch);
@@ -1979,9 +1960,9 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
 
 
 void TemplateInterpreterGenerator::stop_interpreter_at() {
-  Address counter(G3_scratch , (address)&BytecodeCounter::_counter_value);
-  __ load_contents    (counter, G3_scratch );
-  Address stop_at(G4_scratch, (address)&StopInterpreterAt);
+  AddressLiteral counter(&BytecodeCounter::_counter_value);
+  __ load_contents(counter, G3_scratch);
+  AddressLiteral stop_at(&StopInterpreterAt);
   __ load_ptr_contents(stop_at, G4_scratch);
   __ cmp(G3_scratch, G4_scratch);
   __ breakpoint_trap(Assembler::equal);
