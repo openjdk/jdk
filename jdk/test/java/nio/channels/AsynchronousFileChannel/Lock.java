@@ -23,7 +23,7 @@
 
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6814948
  * @summary Unit test for AsynchronousFileChannel#lock method
  */
 
