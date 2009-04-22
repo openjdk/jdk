@@ -196,10 +196,12 @@ class ByteBufferAs$Type$Buffer$RW$$BO$                  // package-private
 
         if ((start < 0) || (end > len) || (start > end))
             throw new IndexOutOfBoundsException();
-        int sublen = end - start;
-        int off = offset + ((pos + start) << $LG_BYTES_PER_VALUE$);
-        assert (off >= 0);
-        return new ByteBufferAsCharBuffer$RW$$BO$(bb, -1, 0, sublen, sublen, off);
+        return new ByteBufferAsCharBuffer$RW$$BO$(bb,
+                                                  -1,
+                                                  pos + start,
+                                                  pos + end,
+                                                  capacity(),
+                                                  offset);
     }
 
 #end[char]

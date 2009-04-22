@@ -25,6 +25,8 @@
 
 package java.util.logging;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.io.*;
 
 /**
@@ -64,9 +66,24 @@ import java.io.*;
  */
 
 public class LogRecord implements java.io.Serializable {
-    private static long globalSequenceNumber;
-    private static int nextThreadId=10;
-    private static ThreadLocal<Integer> threadIds = new ThreadLocal<Integer>();
+    private static final AtomicLong globalSequenceNumber
+        = new AtomicLong(0);
+
+    /**
+     * The default value of threadID will be the current thread's
+     * thread id, for ease of correlation, unless it is greater than
+     * MIN_SEQUENTIAL_THREAD_ID, in which case we try harder to keep
+     * our promise to keep threadIDs unique by avoiding collisions due
+     * to 32-bit wraparound.  Unfortunately, LogRecord.getThreadID()
+     * returns int, while Thread.getId() returns long.
+     */
+    private static final int MIN_SEQUENTIAL_THREAD_ID = Integer.MAX_VALUE / 2;
+
+    private static final AtomicInteger nextThreadId
+        = new AtomicInteger(MIN_SEQUENTIAL_THREAD_ID);
+
+    private static final ThreadLocal<Integer> threadIds
+        = new ThreadLocal<Integer>();
 
     /**
      * @serial Logging message level
@@ -123,6 +140,23 @@ public class LogRecord implements java.io.Serializable {
     private transient ResourceBundle resourceBundle;
 
     /**
+     * Returns the default value for a new LogRecord's threadID.
+     */
+    private int defaultThreadID() {
+        long tid = Thread.currentThread().getId();
+        if (tid < MIN_SEQUENTIAL_THREAD_ID) {
+            return (int) tid;
+        } else {
+            Integer id = threadIds.get();
+            if (id == null) {
+                id = nextThreadId.getAndIncrement();
+                threadIds.set(id);
+            }
+            return id;
+        }
+    }
+
+    /**
      * Construct a LogRecord with the given level and message values.
      * <p>
      * The sequence property will be initialized with a new unique value.
@@ -144,15 +178,8 @@ public class LogRecord implements java.io.Serializable {
         this.level = level;
         message = msg;
         // Assign a thread ID and a unique sequence number.
-        synchronized (LogRecord.class) {
-            sequenceNumber = globalSequenceNumber++;
-            Integer id = threadIds.get();
-            if (id == null) {
-                id = new Integer(nextThreadId++);
-                threadIds.set(id);
-            }
-            threadID = id.intValue();
-        }
+        sequenceNumber = globalSequenceNumber.getAndIncrement();
+        threadID = defaultThreadID();
         millis = System.currentTimeMillis();
         needToInferCaller = true;
    }
