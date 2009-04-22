@@ -1105,6 +1105,13 @@ public final class System {
         props = new Properties();
         initProperties(props);
         sun.misc.Version.init();
+
+        // Gets and removes system properties that configure the Integer
+        // cache used to support the object identity semantics of autoboxing.
+        // At this time, the size of the cache may be controlled by the
+        // -XX:AutoBoxCacheMax=<size> option.
+        Integer.getAndRemoveCacheProperties();
+
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);

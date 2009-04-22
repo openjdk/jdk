@@ -39,7 +39,10 @@ public:
     /* java.awt.KeyEvent field ids */
     static jfieldID keyCodeID;
     static jfieldID keyCharID;
-
+    static jfieldID rawCodeID;
+    static jfieldID primaryLevelUnicodeID;
+    static jfieldID scancodeID;
+    static jfieldID extendedKeyCodeID;
 };
 
 #endif // AWT_KEYEVENT_H

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,4 +434,20 @@ public abstract class GraphicsConfiguration {
         }
         return defaultImageCaps;
     }
+
+    /**
+     * Returns whether this GraphicsConfiguration supports
+     * the {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
+     * PERPIXEL_TRANSLUCENT} kind of translucency.
+     *
+     * @param gc GraphicsConfiguration
+     * @throws NullPointerException if the gc argument is null
+     * @return whether the given GraphicsConfiguration supports
+     *         the translucency effects.
+     * @see Window#setBackground(Color)
+     */
+    /*public */boolean isTranslucencyCapable() {
+        // Overridden in subclasses
+        return false;
     }
+}

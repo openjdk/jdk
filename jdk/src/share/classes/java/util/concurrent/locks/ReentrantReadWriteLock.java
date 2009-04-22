@@ -276,7 +276,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
          * Maintained as a ThreadLocal; cached in cachedHoldCounter
          */
         static final class HoldCounter {
-            int count;
+            int count = 0;
             // Use id, not reference, to avoid garbage retention
             final long tid = Thread.currentThread().getId();
         }
@@ -293,8 +293,9 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
         }
 
         /**
-         * The number of read locks held by current thread.
+         * The number of reentrant read locks held by current thread.
          * Initialized only in constructor and readObject.
+         * Removed whenever a thread's read hold count drops to 0.
          */
         private transient ThreadLocalHoldCounter readHolds;
 
@@ -304,17 +305,35 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
          * where the next thread to release is the last one to
          * acquire. This is non-volatile since it is just used
          * as a heuristic, and would be great for threads to cache.
+         *
+         * <p>Can outlive the Thread for which it is caching the read
+         * hold count, but avoids garbage retention by not retaining a
+         * reference to the Thread.
+         *
+         * <p>Accessed via a benign data race; relies on the memory
+         * model's final field and out-of-thin-air guarantees.
          */
         private transient HoldCounter cachedHoldCounter;
 
         /**
          * firstReader is the first thread to have acquired the read lock.
          * firstReaderHoldCount is firstReader's hold count.
-         * This allows tracking of read holds for uncontended read
+         *
+         * <p>More precisely, firstReader is the unique thread that last
+         * changed the shared count from 0 to 1, and has not released the
+         * read lock since then; null if there is no such thread.
+         *
+         * <p>Cannot cause garbage retention unless the thread terminated
+         * without relinquishing its read locks, since tryReleaseShared
+         * sets it to null.
+         *
+         * <p>Accessed via a benign data race; relies on the memory
+         * model's out-of-thin-air guarantees for references.
+         *
+         * <p>This allows tracking of read holds for uncontended read
          * locks to be very cheap.
          */
-        private final static long INVALID_THREAD_ID = -1;
-        private transient long firstReader = INVALID_THREAD_ID;
+        private transient Thread firstReader = null;
         private transient int firstReaderHoldCount;
 
         Sync() {
@@ -393,16 +412,16 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
         }
 
         protected final boolean tryReleaseShared(int unused) {
-            long tid = Thread.currentThread().getId();
-            if (firstReader == tid) {
+            Thread current = Thread.currentThread();
+            if (firstReader == current) {
                 // assert firstReaderHoldCount > 0;
                 if (firstReaderHoldCount == 1)
-                    firstReader = INVALID_THREAD_ID;
+                    firstReader = null;
                 else
                     firstReaderHoldCount--;
             } else {
                 HoldCounter rh = cachedHoldCounter;
-                if (rh == null || rh.tid != tid)
+                if (rh == null || rh.tid != current.getId())
                     rh = readHolds.get();
                 int count = rh.count;
                 if (count <= 1) {
@@ -416,6 +435,9 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
                 int c = getState();
                 int nextc = c - SHARED_UNIT;
                 if (compareAndSetState(c, nextc))
+                    // Releasing the read lock has no effect on readers,
+                    // but it may allow waiting writers to proceed if
+                    // both read and write locks are now free.
                     return nextc == 0;
             }
         }
@@ -450,15 +472,14 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
             if (!readerShouldBlock() &&
                 r < MAX_COUNT &&
                 compareAndSetState(c, c + SHARED_UNIT)) {
-                long tid = current.getId();
                 if (r == 0) {
-                    firstReader = tid;
+                    firstReader = current;
                     firstReaderHoldCount = 1;
-                } else if (firstReader == tid) {
+                } else if (firstReader == current) {
                     firstReaderHoldCount++;
                 } else {
                     HoldCounter rh = cachedHoldCounter;
-                    if (rh == null || rh.tid != tid)
+                    if (rh == null || rh.tid != current.getId())
                         cachedHoldCounter = rh = readHolds.get();
                     else if (rh.count == 0)
                         readHolds.set(rh);
@@ -485,19 +506,17 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
                 int c = getState();
                 if (exclusiveCount(c) != 0) {
                     if (getExclusiveOwnerThread() != current)
-                        //if (removeNeeded) readHolds.remove();
                         return -1;
                     // else we hold the exclusive lock; blocking here
                     // would cause deadlock.
                 } else if (readerShouldBlock()) {
                     // Make sure we're not acquiring read lock reentrantly
-                    long tid = current.getId();
-                    if (firstReader == tid) {
+                    if (firstReader == current) {
                         // assert firstReaderHoldCount > 0;
                     } else {
                         if (rh == null) {
                             rh = cachedHoldCounter;
-                            if (rh == null || rh.tid != tid) {
+                            if (rh == null || rh.tid != current.getId()) {
                                 rh = readHolds.get();
                                 if (rh.count == 0)
                                     readHolds.remove();
@@ -510,25 +529,20 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
                 if (sharedCount(c) == MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
                 if (compareAndSetState(c, c + SHARED_UNIT)) {
-                    long tid = current.getId();
                     if (sharedCount(c) == 0) {
-                        firstReader = tid;
+                        firstReader = current;
                         firstReaderHoldCount = 1;
-                    } else if (firstReader == tid) {
+                    } else if (firstReader == current) {
                         firstReaderHoldCount++;
                     } else {
-                        if (rh == null) {
+                        if (rh == null)
                             rh = cachedHoldCounter;
-                            if (rh != null && rh.tid == tid) {
-                                if (rh.count == 0)
-                                    readHolds.set(rh);
-                            } else {
-                                rh = readHolds.get();
-                            }
-                        } else if (rh.count == 0)
+                        if (rh == null || rh.tid != current.getId())
+                            rh = readHolds.get();
+                        else if (rh.count == 0)
                             readHolds.set(rh);
-                        cachedHoldCounter = rh; // cache for release
                         rh.count++;
+                        cachedHoldCounter = rh; // cache for release
                     }
                     return 1;
                 }
@@ -572,15 +586,14 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
                 if (r == MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
                 if (compareAndSetState(c, c + SHARED_UNIT)) {
-                    long tid = current.getId();
                     if (r == 0) {
-                        firstReader = tid;
+                        firstReader = current;
                         firstReaderHoldCount = 1;
-                    } else if (firstReader == tid) {
+                    } else if (firstReader == current) {
                         firstReaderHoldCount++;
                     } else {
                         HoldCounter rh = cachedHoldCounter;
-                        if (rh == null || rh.tid != tid)
+                        if (rh == null || rh.tid != current.getId())
                             cachedHoldCounter = rh = readHolds.get();
                         else if (rh.count == 0)
                             readHolds.set(rh);
@@ -626,12 +639,12 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
             if (getReadLockCount() == 0)
                 return 0;
 
-            long tid = Thread.currentThread().getId();
-            if (firstReader == tid)
+            Thread current = Thread.currentThread();
+            if (firstReader == current)
                 return firstReaderHoldCount;
 
             HoldCounter rh = cachedHoldCounter;
-            if (rh != null && rh.tid == tid)
+            if (rh != null && rh.tid == current.getId())
                 return rh.count;
 
             int count = readHolds.get().count;
@@ -647,7 +660,6 @@ public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializab
             throws java.io.IOException, ClassNotFoundException {
             s.defaultReadObject();
             readHolds = new ThreadLocalHoldCounter();
-            firstReader = INVALID_THREAD_ID;
             setState(0); // reset to unlocked state
         }
 

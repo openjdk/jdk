@@ -233,7 +233,7 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         tabContext.getStyle().getGraphicsUtils(tabContext).layoutText(
                 tabContext, metrics, title, icon, SwingUtilities.CENTER,
                 SwingUtilities.CENTER, SwingUtilities.LEADING,
-                SwingUtilities.TRAILING, calcRect,
+                SwingUtilities.CENTER, calcRect,
                 iconRect, textRect, textIconGap);
         return textRect.y + metrics.getAscent() + getBaselineOffset();
     }
@@ -426,7 +426,7 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
 
         ss.getStyle().getGraphicsUtils(ss).layoutText(ss, metrics, title,
                          icon, SwingUtilities.CENTER, SwingUtilities.CENTER,
-                         SwingUtilities.LEADING, SwingUtilities.TRAILING,
+                         SwingUtilities.LEADING, SwingUtilities.CENTER,
                          tabRect, iconRect, textRect, textIconGap);
 
         tabPane.putClientProperty("html", null);

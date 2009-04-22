@@ -739,7 +739,17 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         this.filter = filter;
     }
 
-    public void show() {
+
+    public void dispose() {
+        FileDialog fd = (FileDialog)fileDialog;
+        if (fd != null) {
+            fd.removeAll();
+        }
+        super.dispose();
+    }
+
+    // 03/02/2005 b5097243 Pressing 'ESC' on a file dlg does not dispose the dlg on Xtoolkit
+    public void setVisible(boolean b){
         if (fileDialog == null) {
             init((FileDialog)target);
         }
@@ -754,34 +764,20 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
             setFile(savedFile);
         }
 
-        super.show();
-        selectionField.requestFocusInWindow();
-    }
-
-    public void dispose() {
-        FileDialog fd = (FileDialog)fileDialog;
-        if (fd != null) {
-            fd.removeAll();
-        }
-        super.dispose();
-    }
-
-    // 03/02/2005 b5097243 Pressing 'ESC' on a file dlg does not dispose the dlg on Xtoolkit
-    public void setVisible(boolean b){
         super.setVisible(b);
         if (b == true){
             // See 6240074 for more information
             XChoicePeer choicePeer = (XChoicePeer)pathChoice.getPeer();
             choicePeer.addXChoicePeerListener(this);
-
             KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(this);
         }else{
             // See 6240074 for more information
             XChoicePeer choicePeer = (XChoicePeer)pathChoice.getPeer();
             choicePeer.removeXChoicePeerListener();
-
             KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(this);
         }
+
+        selectionField.requestFocusInWindow();
     }
 
     /*

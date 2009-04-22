@@ -22,27 +22,110 @@
  */
 
 /* @test
- * @bug 4512723
- * @summary Unit test for datagram-socket-channel adaptors
+ * @bug 4512723 6621689
+ * @summary Test that connect/send/receive with unbound DatagramChannel causes
+ *     the channel's socket to be bound to a local address
  */
 
 import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
+import java.io.IOException;
 
-class NotBound {
-    public static void main(String[] args) throws Exception {
-        test1(false);
-        test1(true);
+public class NotBound {
+
+    static void checkBound(DatagramChannel dc) throws IOException {
+        if (dc.getLocalAddress() == null)
+            throw new RuntimeException("Not bound??");
     }
 
-    static void test1(boolean blocking) throws Exception {
-        ByteBuffer bb = ByteBuffer.allocateDirect(256);
-        DatagramChannel dc1 = DatagramChannel.open();
-        dc1.configureBlocking(false);
-        SocketAddress isa = dc1.receive(bb);
-        if (isa != null)
-            throw new Exception("Unbound dc returned non-null");
-        dc1.close();
+    // starts a thread to send a datagram to the given channel once the channel
+    // is bound to a local address
+    static void wakeupWhenBound(final DatagramChannel dc) {
+        Runnable wakeupTask = new Runnable() {
+            public void run() {
+                try {
+                    // poll for local address
+                    InetSocketAddress local;
+                    do {
+                        Thread.sleep(50);
+                        local = (InetSocketAddress)dc.getLocalAddress();
+                    } while (local == null);
+
+                    // send message to channel to wakeup receiver
+                    DatagramChannel sender = DatagramChannel.open();
+                    try {
+                        ByteBuffer bb = ByteBuffer.wrap("hello".getBytes());
+                        InetAddress lh = InetAddress.getLocalHost();
+                        SocketAddress target =
+                            new InetSocketAddress(lh, local.getPort());
+                        sender.send(bb, target);
+                    } finally {
+                        sender.close();
+                    }
+
+                } catch (Exception x) {
+                    x.printStackTrace();
+                }
+            }};
+        new Thread(wakeupTask).start();
+    }
+
+    public static void main(String[] args) throws IOException {
+        DatagramChannel dc;
+
+        // connect
+        dc = DatagramChannel.open();
+        try {
+            DatagramChannel peer = DatagramChannel.open()
+                .bind(new InetSocketAddress(0));
+            int peerPort = ((InetSocketAddress)(peer.getLocalAddress())).getPort();
+            try {
+                dc.connect(new InetSocketAddress(InetAddress.getLocalHost(), peerPort));
+                checkBound(dc);
+            } finally {
+                peer.close();
+            }
+        } finally {
+            dc.close();
+        }
+
+        // send
+        dc = DatagramChannel.open();
+        try {
+            ByteBuffer bb = ByteBuffer.wrap("ignore this".getBytes());
+            SocketAddress target =
+                new InetSocketAddress(InetAddress.getLocalHost(), 5000);
+            dc.send(bb, target);
+            checkBound(dc);
+        } finally {
+            dc.close();
+        }
+
+        // receive (blocking)
+        dc = DatagramChannel.open();
+        try {
+            ByteBuffer bb = ByteBuffer.allocateDirect(128);
+            wakeupWhenBound(dc);
+            SocketAddress sender = dc.receive(bb);
+            if (sender == null)
+                throw new RuntimeException("Sender should not be null");
+            checkBound(dc);
+        } finally {
+            dc.close();
+        }
+
+        // receive (non-blocking)
+        dc = DatagramChannel.open();
+        try {
+            dc.configureBlocking(false);
+            ByteBuffer bb = ByteBuffer.allocateDirect(128);
+            SocketAddress sender = dc.receive(bb);
+            if (sender != null)
+                throw new RuntimeException("Sender should be null");
+            checkBound(dc);
+        } finally {
+            dc.close();
+        }
     }
 }
