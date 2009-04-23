@@ -718,7 +718,7 @@ void HeapRegion::verify(bool allow_dirty) const {
       vl_cl.failures()) {
     g1->concurrent_mark()->print_prev_bitmap_reachable();
   }
-  guarantee(!vl_cl.failures(), "should not have had any failures");
+  guarantee(!vl_cl.failures(), "region verification failed");
   guarantee(p == top(), "end of last object must match end of space");
 }
 
