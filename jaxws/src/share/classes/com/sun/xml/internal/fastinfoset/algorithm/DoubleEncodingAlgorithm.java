@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,6 @@
  * have any questions.
  *
  * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
- *
- * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- *
  */
 
 
@@ -73,7 +45,7 @@ public class DoubleEncodingAlgorithm extends IEEE754FloatingPointEncodingAlgorit
     public final int getPrimtiveLengthFromOctetLength(int octetLength) throws EncodingAlgorithmException {
         if (octetLength % DOUBLE_SIZE != 0) {
             throw new EncodingAlgorithmException(CommonResourceBundle.getInstance().
-                    getString("message.lengthIsNotMultipleOfDouble", new Object[]{new Integer(DOUBLE_SIZE)}));
+                    getString("message.lengthIsNotMultipleOfDouble", new Object[]{Integer.valueOf(DOUBLE_SIZE)}));
         }
 
         return octetLength / DOUBLE_SIZE;
@@ -113,7 +85,7 @@ public class DoubleEncodingAlgorithm extends IEEE754FloatingPointEncodingAlgorit
                 new WordListener() {
             public void word(int start, int end) {
                 String fStringValue = cb.subSequence(start, end).toString();
-                doubleList.add(Float.valueOf(fStringValue));
+                doubleList.add(Double.valueOf(fStringValue));
             }
         }
         );
@@ -168,17 +140,17 @@ public class DoubleEncodingAlgorithm extends IEEE754FloatingPointEncodingAlgorit
                 }
             }
 
-            final int bits =
-                    ((b[0] & 0xFF) << 56) |
-                    ((b[1] & 0xFF) << 48) |
-                    ((b[2] & 0xFF) << 40) |
-                    ((b[3] & 0xFF) << 32) |
+            final long bits =
+                    ((long)(b[0] & 0xFF) << 56) |
+                    ((long)(b[1] & 0xFF) << 48) |
+                    ((long)(b[2] & 0xFF) << 40) |
+                    ((long)(b[3] & 0xFF) << 32) |
                     ((b[4] & 0xFF) << 24) |
                     ((b[5] & 0xFF) << 16) |
                     ((b[6] & 0xFF) << 8) |
                     (b[7] & 0xFF);
 
-            doubleList.add(new Double(Double.longBitsToDouble(bits)));
+            doubleList.add(Double.valueOf(Double.longBitsToDouble(bits)));
         }
 
         return generateArrayFromList(doubleList);

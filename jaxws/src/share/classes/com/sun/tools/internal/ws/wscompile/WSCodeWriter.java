@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,11 @@
  */
 package com.sun.tools.internal.ws.wscompile;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.sun.codemodel.internal.JPackage;
 import com.sun.codemodel.internal.writer.FileCodeWriter;
-import com.sun.tools.internal.ws.processor.util.GeneratedFileInfo;
-import com.sun.tools.internal.ws.processor.util.ProcessorEnvironment;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * {@link FileCodeWriter} implementation that notifies
@@ -40,21 +38,17 @@ import com.sun.tools.internal.ws.processor.util.ProcessorEnvironment;
  *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
 public class WSCodeWriter extends FileCodeWriter {
-    private final ProcessorEnvironment env;
+    private final Options options;
 
-    public WSCodeWriter( File outDir, ProcessorEnvironment _env ) throws IOException {
+    public WSCodeWriter( File outDir, Options options) throws IOException {
         super(outDir);
-        this.env = _env;
+        this.options = options;
     }
 
     protected File getFile(JPackage pkg, String fileName ) throws IOException {
         File f = super.getFile(pkg, fileName);
 
-        // notify JAX-WS RI
-        GeneratedFileInfo fi = new GeneratedFileInfo();
-        fi.setType("JAXB"/*GeneratorConstants.FILE_TYPE_VALUETYPE*/);
-        fi.setFile(f);
-        env.addGeneratedFile(fi);
+        options.addGeneratedFile(f);
         // we can't really tell the file type, for we don't know
         // what this file is used for. Fortunately,
         // FILE_TYPE doesn't seem to be used, so it doesn't really

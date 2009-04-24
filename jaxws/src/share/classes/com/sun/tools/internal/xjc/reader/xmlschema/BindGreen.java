@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
 import java.util.Iterator;
@@ -57,14 +56,14 @@ public final class BindGreen extends ColorBinder {
         // inline
         Iterator itr = cont.iterateDeclaredAttributeUses();
         while(itr.hasNext())
-            builder.ying((XSAttributeUse)itr.next());
+            builder.ying((XSAttributeUse)itr.next(),cont);
         itr = cont.iterateAttGroups();
         while(itr.hasNext())
-            builder.ying((XSAttGroupDecl)itr.next());
+            builder.ying((XSAttGroupDecl)itr.next(),cont);
 
         XSWildcard w = cont.getAttributeWildcard();
         if(w!=null)
-            builder.ying(w);
+            builder.ying(w,cont);
     }
 
     public void complexType(XSComplexType ct) {

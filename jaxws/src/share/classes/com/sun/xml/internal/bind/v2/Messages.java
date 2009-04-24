@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ enum Messages {
     UNSUPPORTED_PROPERTY,   // 1 arg
     BROKEN_CONTEXTPATH,     // 1 arg
     NO_DEFAULT_CONSTRUCTOR_IN_INNER_CLASS, // 1 arg
+    INVALID_TYPE_IN_MAP, // 0args
     ;
 
     private static final ResourceBundle rb = ResourceBundle.getBundle(Messages.class.getName());

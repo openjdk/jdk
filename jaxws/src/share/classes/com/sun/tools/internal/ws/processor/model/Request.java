@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,18 @@
 
 package com.sun.tools.internal.ws.processor.model;
 
+import com.sun.tools.internal.ws.wsdl.framework.Entity;
+import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
+
 /**
  *
  * @author WS Development Team
  */
 public class Request extends Message {
 
-    public Request() {}
+    public Request(com.sun.tools.internal.ws.wsdl.document.Message entity, ErrorReceiver receiver) {
+        super(entity, receiver);
+    }
 
     public void accept(ModelVisitor visitor) throws Exception {
         visitor.visit(this);

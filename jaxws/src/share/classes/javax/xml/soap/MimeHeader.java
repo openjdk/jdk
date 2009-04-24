@@ -1,10 +1,4 @@
 /*
- * $Id: MimeHeader.java,v 1.2 2004/04/02 01:24:17 ofung Exp $
- * $Revision: 1.2 $
- * $Date: 2004/04/02 01:24:17 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: MimeHeader.java,v 1.3 2005/04/05 20:49:48 mk125090 Exp $
+ * $Revision: 1.3 $
+ * $Date: 2005/04/05 20:49:48 $
+ */
+
+
 package javax.xml.soap;
 
 

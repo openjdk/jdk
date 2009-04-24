@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,9 @@
 package com.sun.xml.internal.ws.streaming;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-
-import com.sun.xml.internal.ws.util.xml.XmlUtil;
-
-import com.sun.xml.internal.ws.encoding.soap.streaming.SOAPNamespaceConstants;
-import com.sun.xml.internal.ws.encoding.soap.SOAPConstants;
-
 import static javax.xml.stream.XMLStreamConstants.*;
-import java.util.Map;
-import java.util.HashMap;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 /**
  * <p> XMLStreamReaderUtil provides some utility methods intended to be used
@@ -53,8 +44,7 @@ public class XMLStreamReaderUtil {
     public static void close(XMLStreamReader reader) {
         try {
             reader.close();
-        }
-        catch (XMLStreamException e) {
+        } catch (XMLStreamException e) {
             throw wrapException(e);
         }
     }
@@ -164,14 +154,14 @@ public class XMLStreamReaderUtil {
     */
     public static QName getElementQName(XMLStreamReader reader) {
         try {
-            String text = reader.getElementText();
-            String prefix = text.substring(0, text.indexOf(':'));
-            String namespaceURI = reader.getNamespaceURI(prefix);
+            String text = reader.getElementText().trim();
+            String prefix = text.substring(0,text.indexOf(':'));
+            String namespaceURI = reader.getNamespaceContext().getNamespaceURI(prefix);
             if (namespaceURI == null) {
                 namespaceURI = "";
             }
             String localPart = text.substring(
-                text.indexOf(':') + 1,  text.length());
+                    text.indexOf(':') + 1, text.length());
             return new QName(namespaceURI, localPart);
         } catch (XMLStreamException e) {
             throw wrapException(e);
@@ -183,8 +173,8 @@ public class XMLStreamReaderUtil {
      * be called multiple times to get the same list of attributes.
      */
     public static Attributes getAttributes(XMLStreamReader reader) {
-        return (reader.getEventType() == reader.START_ELEMENT ||
-                reader.getEventType() == reader.ATTRIBUTE) ?
+        return (reader.getEventType() == START_ELEMENT ||
+                reader.getEventType() == ATTRIBUTE) ?
                 new AttributesImpl(reader) : null;
     }
 
@@ -193,18 +183,21 @@ public class XMLStreamReaderUtil {
         if (state != expectedState) {
             throw new XMLStreamReaderException(
                 "xmlreader.unexpectedState",
-                new Object[] {
-                    getStateName(expectedState), getStateName(state) });
+                getStateName(expectedState), getStateName(state));
+        }
+    }
+
+    public static void verifyTag(XMLStreamReader reader, String namespaceURI, String localName) {
+        if (!localName.equals(reader.getLocalName()) || !namespaceURI.equals(reader.getNamespaceURI())) {
+            throw new XMLStreamReaderException(
+                "xmlreader.unexpectedState.tag",
+                    "{" + namespaceURI + "}" + localName,
+                    "{" + reader.getNamespaceURI() + "}" + reader.getLocalName());
         }
     }
 
     public static void verifyTag(XMLStreamReader reader, QName name) {
-        if (!name.equals(reader.getName())) {
-            throw new XMLStreamReaderException(
-                "xmlreader.unexpectedState.tag",
-                    name,
-                    reader.getName());
-        }
+        verifyTag(reader, name.getNamespaceURI(), name.getLocalPart());
     }
 
     public static String getStateName(XMLStreamReader reader) {
@@ -320,12 +313,11 @@ public class XMLStreamReaderUtil {
 
                 // this is the normal case
                 int index = 0;
-                String namespacePrefix = null;
                 int namespaceCount = reader.getNamespaceCount();
                 int attributeCount = reader.getAttributeCount();
                 atInfos = new AttributeInfo[namespaceCount + attributeCount];
                 for (int i=0; i<namespaceCount; i++) {
-                    namespacePrefix = reader.getNamespacePrefix(i);
+                    String namespacePrefix = reader.getNamespacePrefix(i);
 
                     // will be null if default prefix. QName can't take null
                     if (namespacePrefix == null) {

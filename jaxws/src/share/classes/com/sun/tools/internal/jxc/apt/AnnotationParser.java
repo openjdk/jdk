@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.jxc.apt;
 
 import java.io.File;
@@ -88,7 +87,7 @@ final class AnnotationParser implements AnnotationProcessor  {
                 // -Aconfig=foo.config:bar.config where : is the pathSeparatorChar
                 StringTokenizer st = new StringTokenizer(value,File.pathSeparator);
                 if(!st.hasMoreTokens()) {
-                    errorListener.error(null,Messages.NO_FILE_SPECIFIED.format());
+                    errorListener.error(null,Messages.OPERAND_MISSING.format(Const.CONFIG_FILE_OPTION));
                     continue;
                 }
 

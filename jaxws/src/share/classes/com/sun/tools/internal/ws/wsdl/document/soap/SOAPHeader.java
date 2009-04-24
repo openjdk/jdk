@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,23 @@
 
 package com.sun.tools.internal.ws.wsdl.document.soap;
 
+import com.sun.tools.internal.ws.wsdl.framework.*;
+import org.xml.sax.Locator;
+
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.xml.namespace.QName;
-
-import com.sun.tools.internal.ws.wsdl.framework.Entity;
-import com.sun.tools.internal.ws.wsdl.framework.EntityAction;
-import com.sun.tools.internal.ws.wsdl.framework.Extension;
-import com.sun.tools.internal.ws.wsdl.framework.ExtensionVisitor;
-import com.sun.tools.internal.ws.wsdl.framework.QNameAction;
 
 /**
  * A SOAP header extension.
  *
  * @author WS Development Team
  */
-public class SOAPHeader extends Extension {
+public class SOAPHeader extends ExtensionImpl {
 
-    public SOAPHeader() {
+    public SOAPHeader(Locator locator) {
+        super(locator);
         _faults = new ArrayList();
     }
 
