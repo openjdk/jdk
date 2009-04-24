@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema.bindinfo;
 
 import java.util.Collection;
@@ -52,7 +51,9 @@ public interface BIDeclaration {
      *
      * <p>
      * This method can be only called from {@link BindInfo},
-     * and only once.
+     * and only once. This is a good opportunity to do some
+     * follow-up initialization after JAXB unmarshalling
+     * populated {@link BIDeclaration}.
      */
     void setParent( BindInfo parent );
 

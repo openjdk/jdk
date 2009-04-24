@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * @(#)MimeMultipart.java     1.31 03/01/29
+ */
+
+
 
 package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
 
@@ -210,7 +215,6 @@ public  class BMMimeMultipart extends MimeMultipart {
         } catch (IOException ioex) {
             throw new MessagingException("IO Error", ioex);
         } catch (Exception ex) {
-            ex.printStackTrace();
             throw new MessagingException("Error", ex);
         }
 
@@ -496,16 +500,34 @@ public  class BMMimeMultipart extends MimeMultipart {
                     // so if s == 1 : it must be an LF
                     // if s == 2 : it must be a CR LF
                     if (s <= 2) {
-                        String crlf = new String(prevBuffer, 0, s);
-                        if (!"\n".equals(crlf) && !"\r\n".equals(crlf)) {
-                            throw new Exception(
-                                "Boundary characters encountered in part Body " +
-                                "without a preceeding CRLF");
-                        } else {
-                            if (sin != null) {
-                                posVector[0] = endPos;
+                        //it could be "some-char\n" so write some-char
+                        if (s == 2) {
+                            if (prevBuffer[1] == '\n') {
+                                if (prevBuffer[0] != '\r' && prevBuffer[0] != '\n') {
+                                    out.write(prevBuffer,0,1);
+                                }
+                                if (sin != null) {
+                                    posVector[0] = endPos;
+                                }
+
+                            } else {
+                                throw new Exception(
+                                        "Boundary characters encountered in part Body " +
+                                        "without a preceeding CRLF");
+                            }
+
+                        } else if (s==1) {
+                            if (prevBuffer[0] != '\n') {
+                                throw new Exception(
+                                        "Boundary characters encountered in part Body " +
+                                        "without a preceeding CRLF");
+                            }else {
+                                if (sin != null) {
+                                    posVector[0] = endPos;
+                                }
                             }
                         }
+
                     } else if (s > 2) {
                         if ((prevBuffer[s-2] == '\r') && (prevBuffer[s-1] == '\n')) {
                             if (sin != null) {
@@ -530,7 +552,7 @@ public  class BMMimeMultipart extends MimeMultipart {
                 // found the boundary, skip *LWSP-char and CRLF
                 if (!skipLWSPAndCRLF(is)) {
                     //throw new Exception(
-                     //   "Boundary does not terminate with CRLF");
+                    //   "Boundary does not terminate with CRLF");
                 }
                 return true;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom;
 
 import org.xml.sax.Locator;
@@ -45,6 +44,16 @@ public interface XSAnnotation
      * @return may return null
      */
     Object getAnnotation();
+
+    /**
+     * Sets the value to be returned by {@link #getAnnotation()}.
+     *
+     * @param o
+     *      can be null.
+     * @return
+     *      old value that was replaced by the <tt>o</tt>.
+     */
+    Object setAnnotation(Object o);
 
     /**
      * Returns a location information of the annotation.

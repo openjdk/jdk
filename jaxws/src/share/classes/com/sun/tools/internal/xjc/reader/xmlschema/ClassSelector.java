@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
 import java.io.StringWriter;
@@ -44,6 +43,8 @@ import com.sun.tools.internal.xjc.model.CElement;
 import com.sun.tools.internal.xjc.model.CElementInfo;
 import com.sun.tools.internal.xjc.model.CTypeInfo;
 import com.sun.tools.internal.xjc.model.TypeUse;
+import com.sun.tools.internal.xjc.model.CClass;
+import com.sun.tools.internal.xjc.model.CNonElement;
 import com.sun.tools.internal.xjc.reader.Ring;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIProperty;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BISchemaBinding;
@@ -63,12 +64,12 @@ import com.sun.xml.internal.xsom.util.ComponentNameFunction;
 import org.xml.sax.Locator;
 
 /**
- * Manages association between XSComponents and generated
- * content interfaces.
+ * Manages association between {@link XSComponent}s and generated
+ * {@link CTypeInfo}s.
  *
  * <p>
- * All the content interfaces are created, registered, and
- * maintained in this class.
+ * This class determines which component is mapped to (or is not mapped to)
+ * what types.
  *
  * @author
  *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
@@ -229,11 +230,11 @@ public final class ClassSelector extends BindingComponent {
     /**
      * Checks if the given component is bound to a class.
      */
-    public final CElement isBound( XSElementDecl x ) {
+    public final CElement isBound( XSElementDecl x, XSComponent referer ) {
         CElementInfo r = boundElements.get(x);
         if(r!=null)
             return r;
-        return bindToType(x);
+        return bindToType(x,referer);
     }
 
     /**
@@ -241,11 +242,8 @@ public final class ClassSelector extends BindingComponent {
      * If so, build that type and return that object.
      * If it is not being mapped to a type item, return null.
      */
-    public CTypeInfo bindToType( XSComponent sc ) {
-//        TypeToken t = domBinder.bind(sc);
-//        if(t!=null)     return t;
-//        else            return _bindToClass(sc,false);
-        return _bindToClass(sc,false);
+    public CTypeInfo bindToType( XSComponent sc, XSComponent referer ) {
+        return _bindToClass(sc,referer,false);
     }
 
     //
@@ -254,38 +252,40 @@ public final class ClassSelector extends BindingComponent {
     // and making the bindToType invocation more type safe.
     //
 
-    public CElement bindToType( XSElementDecl e ) {
-        return (CElement)_bindToClass(e,false);
+    public CElement bindToType( XSElementDecl e, XSComponent referer ) {
+        return (CElement)_bindToClass(e,referer,false);
     }
 
-    public CClassInfo bindToType( XSComplexType t ) {
-        return bindToType(t,false);
-    }
-
-    public CClassInfo bindToType( XSComplexType t, boolean cannotBeDelayed ) {
+    public CClass bindToType( XSComplexType t, XSComponent referer, boolean cannotBeDelayed ) {
         // this assumption that a complex type always binds to a ClassInfo
         // does not hold for xs:anyType --- our current approach of handling
         // this idiosynchracy is to make sure that xs:anyType doesn't use
         // this codepath.
-        return (CClassInfo)_bindToClass(t,cannotBeDelayed);
+        return (CClass)_bindToClass(t,referer,cannotBeDelayed);
     }
 
-    public TypeUse bindToType( XSType t ) {
+    public TypeUse bindToType( XSType t, XSComponent referer ) {
         if(t instanceof XSSimpleType) {
             return Ring.get(SimpleTypeBuilder.class).build((XSSimpleType)t);
         } else
-            return _bindToClass(t,false);
+            return (CNonElement)_bindToClass(t,referer,false);
     }
 
     /**
+     * The real meat of the "bindToType" code.
+     *
      * @param cannotBeDelayed
      *      if the binding of the body of the class cannot be defered
      *      and needs to be done immediately. If the flag is false,
      *      the binding of the body will be done later, to avoid
      *      cyclic binding problem.
+     * @param referer
+     *      The component that refers to <tt>sc</tt>. This can be null,
+     *      if figuring out the referer is too hard, in which case
+     *      the error message might be less user friendly.
      */
     // TODO: consider getting rid of "cannotBeDelayed"
-    CTypeInfo _bindToClass( @NotNull XSComponent sc, boolean cannotBeDelayed ) {
+    CTypeInfo _bindToClass( @NotNull XSComponent sc, XSComponent referer, boolean cannotBeDelayed ) {
         // check if this class is already built.
         if(!bindMap.containsKey(sc)) {
             // craete a bind task
@@ -308,6 +308,23 @@ public final class ClassSelector extends BindingComponent {
 
             if(bean==null)
                 return null;
+
+            // can this namespace generate a class?
+            if (bean instanceof CClassInfo) {
+                XSSchema os = sc.getOwnerSchema();
+                BISchemaBinding sb = builder.getBindInfo(os).get(BISchemaBinding.class);
+                if(sb!=null && !sb.map) {
+                    // nope
+                    getErrorReporter().error(sc.getLocator(),
+                        Messages.ERR_REFERENCE_TO_NONEXPORTED_CLASS, sc.apply( new ComponentNameFunction() ) );
+                    getErrorReporter().error(sb.getLocation(),
+                        Messages.ERR_REFERENCE_TO_NONEXPORTED_CLASS_MAP_FALSE, os.getTargetNamespace() );
+                    if(referer!=null)
+                        getErrorReporter().error(referer.getLocator(),
+                            Messages.ERR_REFERENCE_TO_NONEXPORTED_CLASS_REFERER, referer.apply( new ComponentNameFunction() ) );
+                }
+            }
+
 
             queueBuild( sc, bean );
         }
@@ -425,6 +442,7 @@ public final class ClassSelector extends BindingComponent {
 
         BISchemaBinding sb =
             builder.getBindInfo(s).get(BISchemaBinding.class);
+        if(sb!=null)    sb.markAsAcknowledged();
 
         String name = null;
 

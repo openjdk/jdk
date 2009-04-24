@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.outline;
 
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import java.util.List;
 
 import com.sun.codemodel.internal.JDefinedClass;
 import com.sun.tools.internal.xjc.model.CEnumLeafInfo;
+import com.sun.istack.internal.NotNull;
 
 /**
  * Outline object that provides per-{@link CEnumLeafInfo} information
@@ -55,6 +55,19 @@ public abstract class EnumOutline {
      * Constants.
      */
     public final List<EnumConstantOutline> constants = new ArrayList<EnumConstantOutline>();
+
+    /**
+     * {@link PackageOutline} that contains this class.
+     */
+    public @NotNull
+    PackageOutline _package() {
+        return parent().getPackageContext(clazz._package());
+    }
+
+    /**
+     * A {@link Outline} that encloses all the class outlines.
+     */
+    public abstract @NotNull Outline parent();
 
     protected EnumOutline(CEnumLeafInfo target, JDefinedClass clazz) {
         this.target = target;

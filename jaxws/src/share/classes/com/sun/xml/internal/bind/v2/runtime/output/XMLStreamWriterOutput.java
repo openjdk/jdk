@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.output;
 
 import java.io.IOException;
@@ -31,6 +30,7 @@ import java.lang.reflect.Constructor;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.MarshallerImpl;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallerImpl;
@@ -39,6 +39,11 @@ import org.xml.sax.SAXException;
 
 /**
  * {@link XmlOutput} that writes to StAX {@link XMLStreamWriter}.
+ * <p>
+ * TODO:
+ * Finding the optimized FI implementations is a bit hacky and not very
+ * extensible. Can we use the service provider mechnism in general for
+ * concrete implementations of XmlOutputAbstractImpl.
  *
  * @author Kohsuke Kawaguchi
  */
@@ -48,15 +53,16 @@ public class XMLStreamWriterOutput extends XmlOutputAbstractImpl {
      * Creates a new {@link XmlOutput} from a {@link XMLStreamWriter}.
      * This method recognizes an FI StAX writer.
      */
-    public static XmlOutput create(XMLStreamWriter out) {
+    public static XmlOutput create(XMLStreamWriter out, JAXBContextImpl context) {
         // try optimized path
-        if(out.getClass()==FI_STAX_WRITER_CLASS) {
+        final Class writerClass = out.getClass();
+        if (writerClass==FI_STAX_WRITER_CLASS) {
             try {
-                return FI_OUTPUT_CTOR.newInstance(out);
+                return FI_OUTPUT_CTOR.newInstance(out, context);
             } catch (Exception e) {
             }
         }
-        if(STAXEX_WRITER_CLASS!=null && STAXEX_WRITER_CLASS.isAssignableFrom(out.getClass())) {
+        if (STAXEX_WRITER_CLASS!=null && STAXEX_WRITER_CLASS.isAssignableFrom(writerClass)) {
             try {
                 return STAXEX_OUTPUT_CTOR.newInstance(out);
             } catch (Exception e) {
@@ -70,7 +76,7 @@ public class XMLStreamWriterOutput extends XmlOutputAbstractImpl {
 
     private final XMLStreamWriter out;
 
-    private final char[] buf = new char[256];
+    protected final char[] buf = new char[256];
 
     protected XMLStreamWriterOutput(XMLStreamWriter out) {
         this.out = out;
@@ -154,7 +160,15 @@ public class XMLStreamWriterOutput extends XmlOutputAbstractImpl {
 
     private static Class initFIStAXWriterClass() {
         try {
-            return MarshallerImpl.class.getClassLoader().loadClass("com.sun.xml.internal.fastinfoset.stax.StAXDocumentSerializer");
+            Class llfisw = MarshallerImpl.class.getClassLoader().
+                    loadClass("com.sun.xml.internal.org.jvnet.fastinfoset.stax.LowLevelFastInfosetStreamWriter");
+            Class sds = MarshallerImpl.class.getClassLoader().
+                    loadClass("com.sun.xml.internal.fastinfoset.stax.StAXDocumentSerializer");
+            // Check if StAXDocumentSerializer implements LowLevelFastInfosetStreamWriter
+            if (llfisw.isAssignableFrom(sds))
+                return sds;
+            else
+                return null;
         } catch (Throwable e) {
             return null;
         }
@@ -162,8 +176,11 @@ public class XMLStreamWriterOutput extends XmlOutputAbstractImpl {
 
     private static Constructor<? extends XmlOutput> initFastInfosetOutputClass() {
         try {
+            if (FI_STAX_WRITER_CLASS == null)
+                return null;
+
             Class c = UnmarshallerImpl.class.getClassLoader().loadClass("com.sun.xml.internal.bind.v2.runtime.output.FastInfosetStreamWriterOutput");
-            return c.getConstructor(FI_STAX_WRITER_CLASS);
+            return c.getConstructor(FI_STAX_WRITER_CLASS, JAXBContextImpl.class);
         } catch (Throwable e) {
             return null;
         }
@@ -177,7 +194,7 @@ public class XMLStreamWriterOutput extends XmlOutputAbstractImpl {
 
     private static Class initStAXExWriterClass() {
         try {
-            return MarshallerImpl.class.getClassLoader().loadClass("org.jvnet.staxex.XMLStreamWriterEx");
+            return MarshallerImpl.class.getClassLoader().loadClass("com.sun.xml.internal.org.jvnet.staxex.XMLStreamWriterEx");
         } catch (Throwable e) {
             return null;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import java.util.Collection;
@@ -33,24 +32,23 @@ import java.util.Set;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.namespace.QName;
 
 import com.sun.codemodel.internal.JPackage;
 import com.sun.codemodel.internal.JType;
+import com.sun.istack.internal.Nullable;
+import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMode.NOT_REPEATED;
+import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMode.REPEATED_VALUE;
 import com.sun.tools.internal.xjc.model.nav.NClass;
 import com.sun.tools.internal.xjc.model.nav.NType;
 import com.sun.tools.internal.xjc.model.nav.NavigatorImpl;
 import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
 import com.sun.xml.internal.bind.v2.model.core.ElementInfo;
-import com.sun.xml.internal.xsom.XSComponent;
+import com.sun.xml.internal.xsom.XSElementDecl;
 import com.sun.xml.internal.xsom.XmlString;
 
 import org.xml.sax.Locator;
-
-import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMode.REPEATED_VALUE;
-import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMode.NOT_REPEATED;
 
 /**
  * {@link ElementInfo} implementation for the compile-time model.
@@ -61,8 +59,8 @@ import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMo
  *
  * @author Kohsuke Kawaguchi
  */
-public final class CElementInfo extends AbstractCTypeInfoImpl
-    implements ElementInfo<NType,NClass>, CElement, CTypeInfo, NType, CClassInfoParent {
+public final class CElementInfo extends AbstractCElement
+    implements ElementInfo<NType,NClass>, NType, CClassInfoParent {
 
     private final QName tagName;
 
@@ -87,14 +85,6 @@ public final class CElementInfo extends AbstractCTypeInfoImpl
      */
     public final CClassInfoParent parent;
 
-    /**
-     * The location in the source file where this class was declared.
-     */
-    @XmlTransient
-    private final Locator location;
-
-    private boolean isAbstract;
-
     private CElementInfo substitutionHead;
 
     /**
@@ -113,15 +103,14 @@ public final class CElementInfo extends AbstractCTypeInfoImpl
      * Creates an element in the given parent.
      *
      * <p>
-     * When using this construction, {@link #initContentType(TypeUse, XSComponent, XmlString)}
+     * When using this construction, {@link #initContentType(TypeUse, XSElementDecl, XmlString)}
      * must not be invoked.
      */
-    public CElementInfo(Model model,QName tagName, CClassInfoParent parent, TypeUse contentType, XmlString defaultValue, XSComponent source, CCustomizations customizations, Locator location ) {
-        super(model,source,customizations);
+    public CElementInfo(Model model,QName tagName, CClassInfoParent parent, TypeUse contentType, XmlString defaultValue, XSElementDecl source, CCustomizations customizations, Locator location ) {
+        super(model,source,location,customizations);
         this.tagName = tagName;
         this.model = model;
         this.parent = parent;
-        this.location = location;
         if(contentType!=null)
             initContentType(contentType, source, defaultValue);
 
@@ -133,7 +122,7 @@ public final class CElementInfo extends AbstractCTypeInfoImpl
      *
      * <p>
      * When using this construction, the caller must use
-     * {@link #initContentType(TypeUse, XSComponent, XmlString)} to fill in the content type
+     * {@link #initContentType(TypeUse, XSElementDecl, XmlString)} to fill in the content type
      * later.
      *
      * This is to avoid a circular model construction dependency between buidling a type
@@ -145,16 +134,16 @@ public final class CElementInfo extends AbstractCTypeInfoImpl
         this.className = className;
     }
 
-    public void initContentType(TypeUse contentType, XSComponent source, XmlString defaultValue) {
+    public void initContentType(TypeUse contentType, @Nullable XSElementDecl source, XmlString defaultValue) {
         assert this.property==null; // must not be called twice
 
         this.property = new CElementPropertyInfo("Value",
                 contentType.isCollection()?REPEATED_VALUE:NOT_REPEATED,
                 contentType.idUse(),
                 contentType.getExpectedMimeType(),
-                source,null,location,true);
+                source,null,getLocator(),true);
         this.property.setAdapter(contentType.getAdapterUse());
-        property.getTypes().add(new CTypeRef((CNonElement)contentType.getInfo(),tagName,true,defaultValue));
+        property.getTypes().add(new CTypeRef(contentType.getInfo(),tagName,CTypeRef.getSimpleTypeName(source), true,defaultValue));
         this.type = NavigatorImpl.createParameterizedType(
             NavigatorImpl.theInstance.ref(JAXBElement.class),
             getContentInMemoryType() );
@@ -230,14 +219,6 @@ public final class CElementInfo extends AbstractCTypeInfoImpl
         return b.toString();
     }
 
-    public void setAbstract() {
-        isAbstract = true;
-    }
-
-    public boolean isAbstract() {
-        return isAbstract;
-    }
-
     public CElementInfo getSubstitutionHead() {
         return substitutionHead;
     }
@@ -292,9 +273,5 @@ public final class CElementInfo extends AbstractCTypeInfoImpl
      */
     public boolean hasClass() {
         return className!=null;
-    }
-
-    public Locator getLocator() {
-        return location;
     }
 }
