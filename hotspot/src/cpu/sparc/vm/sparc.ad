@@ -2794,7 +2794,9 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     AddressLiteral addrlit(double_address, rspec);
 
     __ sethi(addrlit, $tmp$$Register);
-    __ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
+    __ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), as_DoubleFloatRegister($dst$$reg), rspec);
   %}
 
   // Compiler ensures base is doubleword aligned and cnt is count of doublewords
@@ -5902,7 +5904,9 @@ instruct loadConD(regD dst, immD src, o7RegP tmp) %{
     AddressLiteral addrlit(double_address, rspec);
 
     __ sethi(addrlit, $tmp$$Register);
-    __ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), $dst$$FloatRegister, rspec);
+    __ ldf(FloatRegisterImpl::D, $tmp$$Register, addrlit.low10(), as_DoubleFloatRegister($dst$$reg), rspec);
   %}
   ins_pipe(loadConFD);
 %}
