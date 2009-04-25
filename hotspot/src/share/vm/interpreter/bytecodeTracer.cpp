@@ -48,12 +48,15 @@ class BytecodePrinter: public BytecodeClosure {
 
   int       get_index()              { return *(address)_next_pc++; }
   int       get_big_index()          { int i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
+  int       get_giant_index()        { int i=Bytes::get_native_u4(_next_pc); _next_pc+=4; return i; }
   int       get_index_special()      { return (is_wide()) ? get_big_index() : get_index(); }
   methodOop method()                 { return _current_method; }
   bool      is_wide()                { return _is_wide; }
 
 
+  bool      check_index(int i, bool in_cp_cache, int& cp_index, outputStream* st = tty);
   void      print_constant(int i, outputStream* st = tty);
+  void      print_field_or_method(int i, outputStream* st = tty);
   void      print_attributes(Bytecodes::Code code, int bci, outputStream* st = tty);
   void      bytecode_epilog(int bci, outputStream* st = tty);
 
@@ -182,7 +185,71 @@ void print_oop(oop value, outputStream* st) {
   }
 }
 
+bool BytecodePrinter::check_index(int i, bool in_cp_cache, int& cp_index, outputStream* st) {
+  constantPoolOop constants = method()->constants();
+  int ilimit = constants->length(), climit = 0;
+
+  constantPoolCacheOop cache = NULL;
+  if (in_cp_cache) {
+    cache = constants->cache();
+    if (cache != NULL) {
+      //climit = cache->length();  // %%% private!
+      size_t size = cache->size() * HeapWordSize;
+      size -= sizeof(constantPoolCacheOopDesc);
+      size /= sizeof(ConstantPoolCacheEntry);
+      climit = (int) size;
+    }
+  }
+
+  if (in_cp_cache && constantPoolCacheOopDesc::is_secondary_index(i)) {
+    i = constantPoolCacheOopDesc::decode_secondary_index(i);
+    st->print(" secondary cache[%d] of", i);
+    if (i >= 0 && i < climit) {
+      if (!cache->entry_at(i)->is_secondary_entry()) {
+        st->print_cr(" not secondary entry?", i);
+        return false;
+      }
+      i = cache->entry_at(i)->main_entry_index();
+      goto check_cache_index;
+    } else {
+      st->print_cr(" not in cache[*]?", i);
+      return false;
+    }
+  }
+
+  if (cache != NULL) {
+    i = Bytes::swap_u2(i);
+    if (WizardMode)  st->print(" (swap=%d)", i);
+    goto check_cache_index;
+  }
+
+ check_cp_index:
+  if (i >= 0 && i < ilimit) {
+    if (WizardMode)  st->print(" cp[%d]", i);
+    cp_index = i;
+    return true;
+  }
+
+  st->print_cr(" CP[%d] not in CP", i);
+  return false;
+
+ check_cache_index:
+  if (i >= 0 && i < climit) {
+    if (cache->entry_at(i)->is_secondary_entry()) {
+      st->print_cr(" secondary entry?");
+      return false;
+    }
+    i = cache->entry_at(i)->constant_pool_index();
+    goto check_cp_index;
+  }
+  st->print_cr(" not in CP[*]?", i);
+  return false;
+}
+
 void BytecodePrinter::print_constant(int i, outputStream* st) {
+  int orig_i = i;
+  if (!check_index(orig_i, false, i, st))  return;
+
   constantPoolOop constants = method()->constants();
   constantTag tag = constants->tag_at(i);
 
@@ -203,13 +270,36 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
     st->print_cr(" %s", constants->resolved_klass_at(i)->klass_part()->external_name());
   } else if (tag.is_unresolved_klass()) {
     st->print_cr(" <unresolved klass at %d>", i);
-  } else ShouldNotReachHere();
+  } else {
+    st->print_cr(" bad tag=%d at %d", tag.value(), i);
+  }
+}
+
+void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
+  int orig_i = i;
+  if (!check_index(orig_i, true, i, st))  return;
+
+  constantPoolOop constants = method()->constants();
+  constantTag tag = constants->tag_at(i);
+
+  switch (tag.value()) {
+  case JVM_CONSTANT_InterfaceMethodref:
+  case JVM_CONSTANT_Methodref:
+  case JVM_CONSTANT_Fieldref:
+    break;
+  default:
+    st->print_cr(" bad tag=%d at %d", tag.value(), i);
+    return;
+  }
+
+  symbolOop name = constants->name_ref_at(orig_i);
+  symbolOop signature = constants->signature_ref_at(orig_i);
+  st->print_cr(" %d <%s> <%s> ", i, name->as_C_string(), signature->as_C_string());
 }
 
 
 void BytecodePrinter::print_attributes(Bytecodes::Code code, int bci, outputStream* st) {
   // Show attributes of pre-rewritten codes
-  code = Bytecodes::java_code(code);
   // If the code doesn't have any fields there's nothing to print.
   // note this is ==1 because the tableswitch and lookupswitch are
   // zero size (for some reason) and we want to print stuff out for them.
@@ -354,34 +444,26 @@ void BytecodePrinter::print_attributes(Bytecodes::Code code, int bci, outputStre
     case Bytecodes::_putstatic:
     case Bytecodes::_getstatic:
     case Bytecodes::_putfield:
-    case Bytecodes::_getfield: {
-        int i = get_big_index();
-        constantPoolOop constants = method()->constants();
-        symbolOop field = constants->name_ref_at(i);
-        st->print_cr(" %d <%s>", i, field->as_C_string());
-      }
+    case Bytecodes::_getfield:
+      print_field_or_method(get_big_index(), st);
       break;
 
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
-      { int i = get_big_index();
-        constantPoolOop constants = method()->constants();
-        symbolOop name = constants->name_ref_at(i);
-        symbolOop signature = constants->signature_ref_at(i);
-        st->print_cr(" %d <%s> <%s> ", i, name->as_C_string(), signature->as_C_string());
-      }
+      print_field_or_method(get_big_index(), st);
       break;
 
     case Bytecodes::_invokeinterface:
       { int i = get_big_index();
         int n = get_index();
-        get_index();
-        constantPoolOop constants = method()->constants();
-        symbolOop name = constants->name_ref_at(i);
-        symbolOop signature = constants->signature_ref_at(i);
-        st->print_cr(" %d <%s> <%s> %d", i, name->as_C_string(), signature->as_C_string(), n);
+        get_index();            // ignore zero byte
+        print_field_or_method(i, st);
       }
+      break;
+
+    case Bytecodes::_invokedynamic:
+      print_field_or_method(get_giant_index(), st);
       break;
 
     case Bytecodes::_new:
