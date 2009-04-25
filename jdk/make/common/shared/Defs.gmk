@@ -515,6 +515,15 @@ endif
 #   NOTE: ISA_DIR is usually empty, on Solaris it might be /sparcv9 or /amd64
 BINDIR      = $(OUTPUTDIR)/bin$(ISA_DIR)
   
+# JIBX_LIBS_PATH: path to JIBX libraries, needed for NimbusLookAndFeel
+ifdef ALT_JIBX_LIBS_PATH
+  JIBX_LIBS_PATH:=$(call FullPath,$(ALT_JIBX_LIBS_PATH))
+  JIBX_LIBS_PATH:=$(call AltCheckSpaces,JIBX_LIBS_PATH)
+  JIBX_LIBS_PATH:=$(call AltCheckValue,JIBX_LIBS_PATH)
+else
+  JIBX_LIBS_PATH=$(JDK_DEVTOOLS_DIR)/share/jibx/lib
+endif
+
 # MOZILLA_HEADERS_PATH: path to mozilla header files for plugin
 ifdef ALT_MOZILLA_HEADERS_PATH
   MOZILLA_HEADERS_PATH :=$(call FullPath,$(ALT_MOZILLA_HEADERS_PATH))
@@ -529,7 +538,7 @@ ifneq ($(PLATFORM), windows)
 JDK_CUPS_HEADERS_PATH=$(JDK_DEVTOOLS_DIR)/share/cups/include
   ifdef ALT_CUPS_HEADERS_PATH
      CUPS_HEADERS_PATH:=$(call FullPath,$(ALT_CUPS_HEADERS_PATH))
-     CUP_HEADERS_PATH:=$(call AltCheckValue,CUPS_HEADERS_PATH)
+     CUPS_HEADERS_PATH:=$(call AltCheckValue,CUPS_HEADERS_PATH)
   else 
     CUPS_HEADERS_PATH:= \
       $(shell if [ -d "$(JDK_CUPS_HEADERS_PATH)" ]; then \
