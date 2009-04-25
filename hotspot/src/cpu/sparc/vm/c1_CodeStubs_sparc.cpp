@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,10 +277,11 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   if (_id == load_klass_id) {
     // produce a copy of the load klass instruction for use by the being initialized case
+#ifdef ASSERT
     address start = __ pc();
-    Address addr = Address(_obj, address(NULL), oop_Relocation::spec(_oop_index));
-    __ sethi(addr, true);
-    __ add(addr, _obj, 0);
+#endif
+    AddressLiteral addrlit(NULL, oop_Relocation::spec(_oop_index));
+    __ patchable_set(addrlit, _obj);
 
 #ifdef ASSERT
     for (int i = 0; i < _bytes_to_copy; i++) {

@@ -156,13 +156,22 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 }
 
 
-address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step) {
+address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, bool unbox) {
+  TosState incoming_state = state;
+  if (EnableInvokeDynamic) {
+    if (unbox) {
+      incoming_state = atos;
+    }
+  } else {
+    assert(!unbox, "old behavior");
+  }
+
   Label interpreter_entry;
   address compiled_entry = __ pc();
 
 #ifdef COMPILER2
   // The FPU stack is clean if UseSSE >= 2 but must be cleaned in other cases
-  if ((state == ftos && UseSSE < 1) || (state == dtos && UseSSE < 2)) {
+  if ((incoming_state == ftos && UseSSE < 1) || (incoming_state == dtos && UseSSE < 2)) {
     for (int i = 1; i < 8; i++) {
         __ ffree(i);
     }
@@ -170,7 +179,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ empty_FPU_stack();
   }
 #endif
-  if ((state == ftos && UseSSE < 1) || (state == dtos && UseSSE < 2)) {
+  if ((incoming_state == ftos && UseSSE < 1) || (incoming_state == dtos && UseSSE < 2)) {
     __ MacroAssembler::verify_FPU(1, "generate_return_entry_for compiled");
   } else {
     __ MacroAssembler::verify_FPU(0, "generate_return_entry_for compiled");
@@ -186,12 +195,12 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   // In SSE mode, interpreter returns FP results in xmm0 but they need
   // to end up back on the FPU so it can operate on them.
-  if (state == ftos && UseSSE >= 1) {
+  if (incoming_state == ftos && UseSSE >= 1) {
     __ subptr(rsp, wordSize);
     __ movflt(Address(rsp, 0), xmm0);
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, wordSize);
-  } else if (state == dtos && UseSSE >= 2) {
+  } else if (incoming_state == dtos && UseSSE >= 2) {
     __ subptr(rsp, 2*wordSize);
     __ movdbl(Address(rsp, 0), xmm0);
     __ fld_d(Address(rsp, 0));
@@ -207,13 +216,102 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   __ restore_bcp();
   __ restore_locals();
-  __ get_cache_and_index_at_bcp(rbx, rcx, 1);
+
+  Label L_fail;
+
+  if (unbox && state != atos) {
+    // cast and unbox
+    BasicType type = as_BasicType(state);
+    if (type == T_BYTE)  type = T_BOOLEAN; // FIXME
+    KlassHandle boxk = SystemDictionaryHandles::box_klass(type);
+    __ mov32(rbx, ExternalAddress((address) boxk.raw_value()));
+    __ testl(rax, rax);
+    Label L_got_value, L_get_value;
+    // convert nulls to zeroes (avoid NPEs here)
+    if (!(type == T_FLOAT || type == T_DOUBLE)) {
+      // if rax already contains zero bits, forge ahead
+      __ jcc(Assembler::zero, L_got_value);
+    } else {
+      __ jcc(Assembler::notZero, L_get_value);
+      __ fldz();
+      __ jmp(L_got_value);
+    }
+    __ bind(L_get_value);
+    __ cmp32(rbx, Address(rax, oopDesc::klass_offset_in_bytes()));
+    __ jcc(Assembler::notEqual, L_fail);
+    int offset = java_lang_boxing_object::value_offset_in_bytes(type);
+    // Cf. TemplateTable::getfield_or_static
+    switch (type) {
+      case T_BYTE:     // fall through:
+      case T_BOOLEAN:  __ load_signed_byte(rax, Address(rax, offset));    break;
+      case T_CHAR:     __ load_unsigned_short(rax, Address(rax, offset)); break;
+      case T_SHORT:    __ load_signed_short(rax, Address(rax, offset));   break;
+      case T_INT:      __ movl(rax, Address(rax, offset));                break;
+      case T_FLOAT:    __ fld_s(Address(rax, offset));                    break;
+      case T_DOUBLE:   __ fld_d(Address(rax, offset));                    break;
+      // Access to java.lang.Double.value does not need to be atomic:
+      case T_LONG:   { __ movl(rdx, Address(rax, offset + 4));
+                       __ movl(rax, Address(rax, offset + 0));  }         break;
+      default: ShouldNotReachHere();
+    }
+    __ bind(L_got_value);
+  }
+
+  Label L_got_cache, L_giant_index;
+  if (EnableInvokeDynamic) {
+    __ cmpb(Address(rsi, 0), Bytecodes::_invokedynamic);
+    __ jcc(Assembler::equal, L_giant_index);
+  }
+  __ get_cache_and_index_at_bcp(rbx, rcx, 1, false);
+  __ bind(L_got_cache);
+  if (unbox && state == atos) {
+    // insert a casting conversion, to keep verifier sane
+    Label L_ok, L_ok_pops;
+    __ testl(rax, rax);
+    __ jcc(Assembler::zero, L_ok);
+    __ push(rax);               // save the object to check
+    __ push(rbx);               // save CP cache reference
+    __ movl(rdx, Address(rax, oopDesc::klass_offset_in_bytes()));
+    __ movl(rbx, Address(rbx, rcx,
+                      Address::times_4, constantPoolCacheOopDesc::base_offset() +
+                      ConstantPoolCacheEntry::f1_offset()));
+    __ movl(rbx, Address(rbx, __ delayed_value(sun_dyn_CallSiteImpl::type_offset_in_bytes, rcx)));
+    __ movl(rbx, Address(rbx, __ delayed_value(java_dyn_MethodType::rtype_offset_in_bytes, rcx)));
+    __ movl(rax, Address(rbx, __ delayed_value(java_lang_Class::klass_offset_in_bytes, rcx)));
+    __ check_klass_subtype(rdx, rax, rbx, L_ok_pops);
+    __ pop(rcx);                // pop and discard CP cache
+    __ mov(rbx, rax);           // target supertype into rbx for L_fail
+    __ pop(rax);                // failed object into rax for L_fail
+    __ jmp(L_fail);
+
+    __ bind(L_ok_pops);
+    // restore pushed temp regs:
+    __ pop(rbx);
+    __ pop(rax);
+    __ bind(L_ok);
+  }
   __ movl(rbx, Address(rbx, rcx,
                     Address::times_ptr, constantPoolCacheOopDesc::base_offset() +
                     ConstantPoolCacheEntry::flags_offset()));
   __ andptr(rbx, 0xFF);
   __ lea(rsp, Address(rsp, rbx, Interpreter::stackElementScale()));
   __ dispatch_next(state, step);
+
+  // out of the main line of code...
+  if (EnableInvokeDynamic) {
+    __ bind(L_giant_index);
+    __ get_cache_and_index_at_bcp(rbx, rcx, 1, true);
+    __ jmp(L_got_cache);
+
+    if (unbox) {
+      __ bind(L_fail);
+      __ push(rbx);             // missed klass (required)
+      __ push(rax);             // bad object (actual)
+      __ movptr(rdx, ExternalAddress((address) &Interpreter::_throw_WrongMethodType_entry));
+      __ call(rdx);
+    }
+  }
+
   return entry;
 }
 

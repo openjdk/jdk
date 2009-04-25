@@ -301,17 +301,19 @@ int ciBytecodeStream::get_field_signature_index() {
 // If this is a method invocation bytecode, get the constant pool
 // index of the invoked method.
 int ciBytecodeStream::get_method_index() {
+#ifdef ASSERT
   switch (cur_bc()) {
   case Bytecodes::_invokeinterface:
-    return Bytes::get_Java_u2(_pc-4);
   case Bytecodes::_invokevirtual:
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokestatic:
-    return get_index_big();
+  case Bytecodes::_invokedynamic:
+    break;
   default:
     ShouldNotReachHere();
-    return 0;
   }
+#endif
+  return get_index_int();
 }
 
 // ------------------------------------------------------------------
@@ -337,6 +339,9 @@ ciMethod* ciBytecodeStream::get_method(bool& will_link) {
 // for checking linkability when retrieving the associated method.
 ciKlass* ciBytecodeStream::get_declared_method_holder() {
   bool ignore;
+  // report as Dynamic for invokedynamic, which is syntactically classless
+  if (cur_bc() == Bytecodes::_invokedynamic)
+    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbol::java_dyn_Dynamic(), false);
   return CURRENT_ENV->get_klass_by_index(_holder, get_method_holder_index(), ignore);
 }
 
