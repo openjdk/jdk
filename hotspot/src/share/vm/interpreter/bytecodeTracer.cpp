@@ -300,6 +300,7 @@ void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
 
 void BytecodePrinter::print_attributes(Bytecodes::Code code, int bci, outputStream* st) {
   // Show attributes of pre-rewritten codes
+  code = Bytecodes::java_code(code);
   // If the code doesn't have any fields there's nothing to print.
   // note this is ==1 because the tableswitch and lookupswitch are
   // zero size (for some reason) and we want to print stuff out for them.
