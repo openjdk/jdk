@@ -43,7 +43,9 @@ BUILDTOOL_MAIN        = $(PKGDIR)/Generator.java
 MAIN_CLASS_FILE = $(BUILDTOOLCLASSDIR)/$(BUILDTOOL_MAIN:%.java=%.class)
 SOURCE_FILES    = $(shell $(FIND) $(BUILDTOOL_SOURCE_ROOT) -name '*.java' -print)
 
-TEMPLATE_FILES  = $(SHARE_SRC)/classes/javax/swing/plaf/nimbus/*.template
+TEMPLATE_FILES  = $(SHARE_SRC)/classes/javax/swing/plaf/nimbus/Defaults.template \
+                  $(SHARE_SRC)/classes/javax/swing/plaf/nimbus/PainterImpl.template \
+                  $(SHARE_SRC)/classes/javax/swing/plaf/nimbus/StateImpl.template
 TEMPLATE_DEST   = $(BUILDTOOLCLASSDIR)/org/jdesktop/synthdesigner/generator/resources
 
 JIBX_FILES      = $(BUILDTOOL_SOURCE_ROOT)/org/jdesktop/swingx/designer/Designer.jibx.xml \
