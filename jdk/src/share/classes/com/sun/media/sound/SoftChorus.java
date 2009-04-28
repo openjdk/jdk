@@ -38,11 +38,11 @@ public class SoftChorus implements SoftAudioProcessor {
 
         private float[] delaybuffer;
         private int rovepos = 0;
-        private volatile float gain = 1;
-        private volatile float rgain = 0;
-        private volatile float delay = 0;
+        private float gain = 1;
+        private float rgain = 0;
+        private float delay = 0;
         private float lastdelay = 0;
-        private volatile float feedback = 0;
+        private float feedback = 0;
 
         public VariableDelay(int maxbuffersize) {
             delaybuffer = new float[maxbuffersize];
@@ -115,10 +115,8 @@ public class SoftChorus implements SoftAudioProcessor {
 
     private static class LFODelay {
 
-        private volatile double c_cos_delta;
-        private volatile double c_sin_delta;
-        private double c_cos = 1;
-        private double c_sin = 0;
+        private double phase = 1;
+        private double phase_step = 0;
         private double depth = 0;
         private VariableDelay vdelay;
         private double samplerate;
@@ -139,13 +137,11 @@ public class SoftChorus implements SoftAudioProcessor {
 
         public void setRate(double rate) {
             double g = (Math.PI * 2) * (rate / controlrate);
-            c_cos_delta = Math.cos(g);
-            c_sin_delta = Math.sin(g);
+            phase_step = g;
         }
 
         public void setPhase(double phase) {
-            c_cos = Math.cos(phase);
-            c_sin = Math.sin(phase);
+            this.phase = phase;
         }
 
         public void setFeedBack(float feedback) {
@@ -161,16 +157,16 @@ public class SoftChorus implements SoftAudioProcessor {
         }
 
         public void processMix(float[] in, float[] out, float[] rout) {
-            c_cos = c_cos * c_cos_delta - c_sin * c_sin_delta;
-            c_sin = c_cos * c_sin_delta + c_sin * c_cos_delta;
-            vdelay.setDelay((float) (depth * 0.5 * (c_cos + 2)));
+            phase += phase_step;
+            while(phase > (Math.PI * 2)) phase -= (Math.PI * 2);
+            vdelay.setDelay((float) (depth * 0.5 * (Math.cos(phase) + 2)));
             vdelay.processMix(in, out, rout);
         }
 
         public void processReplace(float[] in, float[] out, float[] rout) {
-            c_cos = c_cos * c_cos_delta - c_sin * c_sin_delta;
-            c_sin = c_cos * c_sin_delta + c_sin * c_cos_delta;
-            vdelay.setDelay((float) (depth * 0.5 * (c_cos + 2)));
+            phase += phase_step;
+            while(phase > (Math.PI * 2)) phase -= (Math.PI * 2);
+            vdelay.setDelay((float) (depth * 0.5 * (Math.cos(phase) + 2)));
             vdelay.processReplace(in, out, rout);
 
         }
