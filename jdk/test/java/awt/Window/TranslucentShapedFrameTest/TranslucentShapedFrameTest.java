@@ -34,11 +34,11 @@
  * @run main/manual/othervm -Dsun.java2d.noddraw=true TranslucentShapedFrameTest
  * @run main/manual/othervm -Dsun.java2d.opengl=True TranslucentShapedFrameTest
  */
-import com.sun.awt.AWTUtilities;
-import static com.sun.awt.AWTUtilities.Translucency.*;
+import java.awt.Color;
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
+import java.awt.GraphicsDevice.WindowTranslucency;
 import java.awt.GraphicsEnvironment;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
@@ -130,7 +130,7 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
 
         jLabel2.setText("Instructions:");
 
-        passedBtn.setBackground(new java.awt.Color(129, 255, 100));
+        passedBtn.setBackground(new Color(129, 255, 100));
         passedBtn.setText("Passed");
         passedBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -138,7 +138,7 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
             }
         });
 
-        failedBtn.setBackground(java.awt.Color.red);
+        failedBtn.setBackground(Color.red);
         failedBtn.setText("Failed");
         failedBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -234,7 +234,7 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
     private void nonOpaqueChbActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nonOpaqueChbActionPerformed
         if (testFrame != null) {
             // REMIND: this path in the test doesn't work well (test bug)
-//            AWTUtilities.setWindowOpaque(testFrame, !nonOpaqueChb.isSelected());
+            testFrame.setBackground(new Color(0, 0, 0, nonOpaqueChb.isSelected() ? 0 : 255));
         }
     }//GEN-LAST:event_nonOpaqueChbActionPerformed
 
@@ -246,7 +246,7 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
                                          testFrame.getWidth(),
                                          testFrame.getHeight());
             }
-            AWTUtilities.setWindowShape(testFrame, s);
+            testFrame.setShape(s);
         }
     }//GEN-LAST:event_shapedCbActionPerformed
 
@@ -254,7 +254,7 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
         JSlider source = (JSlider)evt.getSource();
             int transl = transparencySld.getValue();
             if (testFrame != null) {
-                AWTUtilities.setWindowOpacity(testFrame, (float)transl/100f);
+                testFrame.setOpacity((float)transl/100f);
             }
     }//GEN-LAST:event_transparencySldStateChanged
 
@@ -276,7 +276,7 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
     private void createFrameBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createFrameBtnActionPerformed
         disposeFrameBtnActionPerformed(evt);
         int transl = transparencySld.getValue();
-        testFrame = TSFrame.createGui(gcToUse,
+        testFrame = TSFrame.createGui(
                 useSwingCb.isSelected(), shapedCb.isSelected(),
                 (transl < 100), nonOpaqueChb.isSelected(),
                 (float)transl/100f);
@@ -308,36 +308,16 @@ public class TranslucentShapedFrameTest extends javax.swing.JFrame {
     }
 
     private void checkEffects() {
-        if (!AWTUtilities.isTranslucencySupported(PERPIXEL_TRANSPARENT)) {
+        GraphicsDevice gd = getGraphicsConfiguration().getDevice();
+        if (!gd.isWindowTranslucencySupported(WindowTranslucency.PERPIXEL_TRANSPARENT)) {
             shapedCb.setEnabled(false);
         }
-
-        if (!AWTUtilities.isTranslucencySupported(TRANSLUCENT)) {
+        if (!gd.isWindowTranslucencySupported(WindowTranslucency.TRANSLUCENT)) {
             transparencySld.setEnabled(false);
         }
-
-        GraphicsConfiguration gc = null;
-        if (AWTUtilities.isTranslucencySupported(PERPIXEL_TRANSLUCENT)) {
-            gc = findGraphicsConfig();
-            if (gc == null) {
-                nonOpaqueChb.setEnabled(false);
-            }
+        if (!gd.isWindowTranslucencySupported(WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
+            nonOpaqueChb.setEnabled(false);
         }
-
-        gcToUse = gc;
-    }
-
-    private GraphicsConfiguration findGraphicsConfig() {
-        GraphicsDevice gd =
-            GraphicsEnvironment.getLocalGraphicsEnvironment().
-                getDefaultScreenDevice();
-        GraphicsConfiguration gcs[] = gd.getConfigurations();
-        for (GraphicsConfiguration gc : gcs) {
-            if (AWTUtilities.isTranslucencyCapable(gc)) {
-                return gc;
-            }
-        }
-        return null;
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
