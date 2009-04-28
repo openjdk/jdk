@@ -34,6 +34,7 @@ import java.awt.Color;
 import java.awt.Rectangle;
 
 import java.io.Serializable;
+import sun.swing.DefaultLookup;
 
 
 /**
@@ -79,8 +80,9 @@ public class DefaultListCellRenderer extends JLabel
     * <code>getListCellRendererComponent</code> method and set the border
     * of the returned component directly.
     */
-    protected static Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
     private static final Border SAFE_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
+    private static final Border DEFAULT_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
+    protected static Border noFocusBorder = DEFAULT_NO_FOCUS_BORDER;
 
     /**
      * Constructs a default renderer object for an item
@@ -90,14 +92,21 @@ public class DefaultListCellRenderer extends JLabel
         super();
         setOpaque(true);
         setBorder(getNoFocusBorder());
+        setName("List.cellRenderer");
     }
 
-
-    private static Border getNoFocusBorder() {
+    private Border getNoFocusBorder() {
+        Border border = DefaultLookup.getBorder(this, ui, "List.cellNoFocusBorder");
         if (System.getSecurityManager() != null) {
+            if (border != null) return border;
             return SAFE_NO_FOCUS_BORDER;
         } else {
-            return UIManager.getBorder("List.noFocusBorder");
+            if (border != null &&
+                    (noFocusBorder == null ||
+                    noFocusBorder == DEFAULT_NO_FOCUS_BORDER)) {
+                return border;
+            }
+            return noFocusBorder;
         }
     }
 
@@ -118,8 +127,8 @@ public class DefaultListCellRenderer extends JLabel
                 && !dropLocation.isInsert()
                 && dropLocation.getIndex() == index) {
 
-            bg = UIManager.getColor("List.dropCellBackground");
-            fg = UIManager.getColor("List.dropCellForeground");
+            bg = DefaultLookup.getColor(this, ui, "List.dropCellBackground");
+            fg = DefaultLookup.getColor(this, ui, "List.dropCellForeground");
 
             isSelected = true;
         }
@@ -148,10 +157,10 @@ public class DefaultListCellRenderer extends JLabel
         Border border = null;
         if (cellHasFocus) {
             if (isSelected) {
-                border = UIManager.getBorder("List.focusSelectedCellHighlightBorder");
+                border = DefaultLookup.getBorder(this, ui, "List.focusSelectedCellHighlightBorder");
             }
             if (border == null) {
-                border = UIManager.getBorder("List.focusCellHighlightBorder");
+                border = DefaultLookup.getBorder(this, ui, "List.focusCellHighlightBorder");
             }
         } else {
             border = getNoFocusBorder();
@@ -160,7 +169,6 @@ public class DefaultListCellRenderer extends JLabel
 
         return this;
     }
-
 
     /**
      * Overridden for performance reasons.
@@ -172,6 +180,7 @@ public class DefaultListCellRenderer extends JLabel
      *         and differs from the JList's background;
      *         <code>false</code> otherwise
      */
+    @Override
     public boolean isOpaque() {
         Color back = getBackground();
         Component p = getParent();
@@ -190,6 +199,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void validate() {}
 
    /**
@@ -199,6 +209,7 @@ public class DefaultListCellRenderer extends JLabel
     *
     * @since 1.5
     */
+    @Override
     public void invalidate() {}
 
    /**
@@ -208,6 +219,7 @@ public class DefaultListCellRenderer extends JLabel
     *
     * @since 1.5
     */
+    @Override
     public void repaint() {}
 
    /**
@@ -215,12 +227,14 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void revalidate() {}
    /**
     * Overridden for performance reasons.
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void repaint(long tm, int x, int y, int width, int height) {}
 
    /**
@@ -228,6 +242,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void repaint(Rectangle r) {}
 
    /**
@@ -235,6 +250,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
         // Strings get interned...
         if (propertyName == "text"
@@ -251,6 +267,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void firePropertyChange(String propertyName, byte oldValue, byte newValue) {}
 
    /**
@@ -258,6 +275,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void firePropertyChange(String propertyName, char oldValue, char newValue) {}
 
    /**
@@ -265,6 +283,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void firePropertyChange(String propertyName, short oldValue, short newValue) {}
 
    /**
@@ -272,6 +291,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void firePropertyChange(String propertyName, int oldValue, int newValue) {}
 
    /**
@@ -279,6 +299,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void firePropertyChange(String propertyName, long oldValue, long newValue) {}
 
    /**
@@ -286,6 +307,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
 
    /**
@@ -293,6 +315,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
 
    /**
@@ -300,6 +323,7 @@ public class DefaultListCellRenderer extends JLabel
     * See the <a href="#override">Implementation Note</a>
     * for more information.
     */
+    @Override
     public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {}
 
     /**
@@ -321,5 +345,4 @@ public class DefaultListCellRenderer extends JLabel
         implements javax.swing.plaf.UIResource
     {
     }
-
 }

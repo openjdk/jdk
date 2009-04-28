@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 1998-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Sun designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Sun in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ CA 95054 USA or visit www.sun.com if you need additional information or
+ have any questions.
+-->
+
+<!DOCTYPE binding SYSTEM "http://jibx.sourceforge.net">
+<binding>
+    <!-- == PAINTS =========================================================================================== -->
+    <mapping class="java.awt.Color"
+             marshaller="org.jdesktop.swingx.designer.jibxhelpers.ColorMapper"
+             unmarshaller="org.jdesktop.swingx.designer.jibxhelpers.ColorMapper"/>
+    <mapping name="matte" class="org.jdesktop.swingx.designer.paint.Matte" post-set="postSet">
+        <value name="red" field="red" style="attribute"/>
+        <value name="green" field="green" style="attribute"/>
+        <value name="blue" field="blue" style="attribute"/>
+        <value name="alpha" field="alpha" style="attribute"/>
+        <value name="uiDefaultParentName" field="uiDefaultParentName" style="attribute" usage="optional"/>
+        <value name="componentPropertyName" field="componentPropertyName" style="attribute" usage="optional"/>
+        <value name="hueOffset" field="hueOffset" style="attribute"/>
+        <value name="saturationOffset" field="saturationOffset" style="attribute"/>
+        <value name="brightnessOffset" field="brightnessOffset" style="attribute"/>
+        <value name="alphaOffset" field="alphaOffset" style="attribute"/>
+        <value name="uiResource" field="uiResource" style="attribute" usage="optional" default="true"/>
+    </mapping>
+    <mapping class="org.jdesktop.swingx.designer.paint.AbstractGradient" abstract="true">
+        <value name="cycleMethod" field="cycleMethod" style="attribute"/>
+        <collection field="stops" set-method="setStops" pre-set="clear" create-type="java.util.ArrayList">
+            <structure name="stop" type="org.jdesktop.swingx.designer.paint.GradientStop">
+                <value name="position" field="position" style="attribute"/>
+                <value name="midpoint" field="midpoint" style="attribute"/>
+                <structure field="color" set-method="setColor"/>
+            </structure>
+        </collection>
+    </mapping>
+    <mapping name="gradient" class="org.jdesktop.swingx.designer.paint.Gradient"
+             extends="org.jdesktop.swingx.designer.paint.AbstractGradient">
+        <structure map-as="org.jdesktop.swingx.designer.paint.AbstractGradient"/>
+    </mapping>
+    <mapping name="radialGradient" class="org.jdesktop.swingx.designer.paint.RadialGradient"
+             extends="org.jdesktop.swingx.designer.paint.AbstractGradient">
+        <structure map-as="org.jdesktop.swingx.designer.paint.AbstractGradient"/>
+    </mapping>
+    <!-- == SHAPES =========================================================================================== -->
+    <mapping class="org.jdesktop.swingx.designer.SimpleShape" abstract="true">
+        <!--protected AffineTransform transform = new AffineTransform();-->
+    </mapping>
+    <mapping class="org.jdesktop.swingx.designer.PaintedShape" abstract="true"
+             extends="org.jdesktop.swingx.designer.SimpleShape">
+        <structure map-as="org.jdesktop.swingx.designer.SimpleShape"/>
+        <structure field="paint"/>
+        <structure name="paintPoints">
+            <value name="x1" get-method="getPaintX1" set-method="setPaintX1" style="attribute"/>
+            <value name="y1" get-method="getPaintY1" set-method="setPaintY1" style="attribute"/>
+            <value name="x2" get-method="getPaintX2" set-method="setPaintX2" style="attribute"/>
+            <value name="y2" get-method="getPaintY2" set-method="setPaintY2" style="attribute"/>
+        </structure>
+    </mapping>
+    <mapping name="rectangle" class="org.jdesktop.swingx.designer.RectangleShape"
+             extends="org.jdesktop.swingx.designer.PaintedShape">
+        <structure map-as="org.jdesktop.swingx.designer.PaintedShape"/>
+        <value name="x1" get-method="getX1" set-method="setX1" style="attribute"/>
+        <value name="x2" get-method="getX2" set-method="setX2" style="attribute"/>
+        <value name="y1" get-method="getY1" set-method="setY1" style="attribute"/>
+        <value name="y2" get-method="getY2" set-method="setY2" style="attribute"/>
+        <value name="rounding" get-method="getRounding" set-method="setRounding" style="attribute"/>
+    </mapping>
+    <mapping name="ellipse" class="org.jdesktop.swingx.designer.EllipseShape"
+             extends="org.jdesktop.swingx.designer.PaintedShape">
+        <structure map-as="org.jdesktop.swingx.designer.PaintedShape"/>
+        <value name="x1" get-method="getX1" set-method="setX1" style="attribute"/>
+        <value name="x2" get-method="getX2" set-method="setX2" style="attribute"/>
+        <value name="y1" get-method="getY1" set-method="setY1" style="attribute"/>
+        <value name="y2" get-method="getY2" set-method="setY2" style="attribute"/>
+    </mapping>
+    <mapping name="path" class="org.jdesktop.swingx.designer.PathShape"
+             extends="org.jdesktop.swingx.designer.PaintedShape">
+        <structure map-as="org.jdesktop.swingx.designer.PaintedShape"/>
+        <collection name="points" get-method="getBezierControlPoints"
+                    set-method="setControlPoints" create-type="java.util.ArrayList">
+            <structure name="point" type="org.jdesktop.swingx.designer.BezierControlPoint">
+                <value name="x" get-method="getX" set-method="setX" style="attribute"/>
+                <value name="y" get-method="getY" set-method="setY" style="attribute"/>
+                <value name="cp1x" get-method="getCp1X" set-method="setCp1X" style="attribute"/>
+                <value name="cp1y" get-method="getCp1Y" set-method="setCp1Y" style="attribute"/>
+                <value name="cp2x" get-method="getCp2X" set-method="setCp2X" style="attribute"/>
+                <value name="cp2y" get-method="getCp2Y" set-method="setCp2Y" style="attribute"/>
+            </structure>
+        </collection>
+    </mapping>
+    <!-- == EFFECTS =========================================================================================== -->
+    <mapping class="org.jdesktop.swingx.designer.effects.ShadowEffect" abstract="true">
+        <structure field="color"/>
+        <value name="blendingMode" field="blendingMode" style="attribute"/>
+        <value name="opacity" field="opacity" style="attribute"/>
+        <value name="angle" field="angle" style="attribute"/>
+        <value name="distance" field="distance" style="attribute"/>
+        <value name="spread" field="spread" style="attribute"/>
+        <value name="size" field="size" style="attribute"/>
+    </mapping>
+    <mapping name="dropShadow" class="org.jdesktop.swingx.designer.effects.DropShadowEffect"
+             extends="org.jdesktop.swingx.designer.effects.ShadowEffect">
+        <structure map-as="org.jdesktop.swingx.designer.effects.ShadowEffect"/>
+    </mapping>
+    <mapping name="innerShadow" class="org.jdesktop.swingx.designer.effects.InnerShadowEffect"
+             extends="org.jdesktop.swingx.designer.effects.ShadowEffect">
+        <structure map-as="org.jdesktop.swingx.designer.effects.ShadowEffect"/>
+    </mapping>
+    <mapping name="innerGlow" class="org.jdesktop.swingx.designer.effects.InnerGlowEffect"
+             extends="org.jdesktop.swingx.designer.effects.ShadowEffect">
+        <structure map-as="org.jdesktop.swingx.designer.effects.ShadowEffect"/>
+    </mapping>
+    <mapping name="outerGlow" class="org.jdesktop.swingx.designer.effects.OuterGlowEffect"
+             extends="org.jdesktop.swingx.designer.effects.ShadowEffect">
+        <structure map-as="org.jdesktop.swingx.designer.effects.ShadowEffect"/>
+    </mapping>
+    <!-- == TEMPLATE LAYER ================================================================================== -->
+    <mapping name="templateLayer" class="org.jdesktop.swingx.designer.TemplateLayer"
+             extends="org.jdesktop.swingx.designer.Layer" post-set="postInit">
+        <structure map-as="org.jdesktop.swingx.designer.Layer"/>
+        <value name="fileName" field="fileName" style="attribute"/>
+    </mapping>
+    <!-- == LAYER =========================================================================================== -->
+    <mapping name="layer" class="org.jdesktop.swingx.designer.Layer"
+             extends="org.jdesktop.swingx.designer.SimpleShape" post-set="postInit">
+        <structure map-as="org.jdesktop.swingx.designer.SimpleShape"/>
+        <value name="name" field="name" style="attribute"/>
+        <value name="type" field="type" style="attribute" default="standard"/>
+        <value name="opacity" field="opacity"/>
+        <value name="fillOpacity" field="fillOpacity"/>
+        <value name="blendingMode" field="blendingMode"/>
+        <value name="locked" field="locked"/>
+        <value name="visible" field="visible"/>
+        <structure name="shapes">
+            <collection field="shapes" create-type="java.util.ArrayList"/>
+        </structure>
+        <structure name="effects">
+            <collection field="effects" create-type="java.util.ArrayList"/>
+        </structure>
+    </mapping>
+    <!-- == CANVAS =========================================================================================== -->
+    <mapping name="canvas" class="org.jdesktop.swingx.designer.Canvas" pre-set="preSet" post-set="setupLayers">
+        <structure name="size" get-method="getSize" set-method="setSize"
+                   marshaller="org.jdesktop.swingx.designer.jibxhelpers.DimensionMapper"
+                   unmarshaller="org.jdesktop.swingx.designer.jibxhelpers.DimensionMapper"/>
+        <value name="nextLayerNameIndex" field="nextLayerNameIndex"/>
+        <structure name="stretchingInsets" field="stretchingInsets"
+                   marshaller="org.jdesktop.swingx.designer.jibxhelpers.InsetsMapper"
+                   unmarshaller="org.jdesktop.swingx.designer.jibxhelpers.InsetsMapper"/>
+        <collection field="layers" create-type="java.util.ArrayList"/>
+    </mapping>
+</binding>
