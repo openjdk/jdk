@@ -30,9 +30,12 @@ import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.DescriptorException;
+import com.sun.tools.classfile.Instruction;
+import com.sun.tools.classfile.Instruction.TypeKind;
 import com.sun.tools.classfile.Method;
+import com.sun.tools.classfile.Opcode;
 
-import static com.sun.tools.classfile.OpCodes.*;
+//import static com.sun.tools.classfile.OpCodes.*;
 
 /*
  *  Write the contents of a Code attribute.
@@ -87,218 +90,92 @@ class CodeWriter extends BasicWriter {
     }
 
     public void writeInstrs(Code_attribute attr) {
-        try {
-            for (int pc = 0; pc < attr.code_length;) {
-                print("   " + pc + ":\t");
-                pc += writeInstr(attr, pc);
-                println();
+        for (Instruction instr: attr.getInstructions()) {
+            try {
+                writeInstr(instr);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                println(report("error at or after byte " + instr.getPC()));
+                break;
             }
-        } catch (Code_attribute.InvalidIndex e) {
-            println(report(e));
         }
     }
 
-    public int writeInstr(Code_attribute attr, int pc)
-            throws Code_attribute.InvalidIndex {
-        String lP = "";
-        int opcode = attr.getUnsignedByte(pc);
-        int opcode2;
-        String mnem;
-        switch (opcode) {
-            case opc_nonpriv:
-            case opc_priv: {
-                opcode2 = attr.getUnsignedByte(pc + 1);
-                mnem = opcName((opcode << 8) + opcode2);
-                if (mnem == null) {
-                    mnem = opcName(opcode) + " " + opcode2;
-                }
-                print(mnem);
-                return 2;
-            }
-            case opc_wide: {
-                opcode2 = attr.getUnsignedByte(pc + 1);
-                mnem = opcName((opcode << 8) + opcode2);
-                if (mnem == null) {
-                    print("bytecode " + opcode);
-                    return 1;
-                }
-                print(mnem + " " + attr.getUnsignedShort(pc + 2));
-                if (opcode2 == opc_iinc) {
-                    print(", " + attr.getShort(pc + 4));
-                    return 6;
-                }
-                return 4;
-            }
-        }
-        mnem = opcName(opcode);
-        if (mnem == null) {
-            print("bytecode " + opcode);
-            return 1;
-        }
-        if (opcode > opc_jsr_w) {
-            print("bytecode " + opcode);
-            return 1;
-        }
-        print(opcName(opcode));
-        switch (opcode) {
-            case opc_aload:
-            case opc_astore:
-            case opc_fload:
-            case opc_fstore:
-            case opc_iload:
-            case opc_istore:
-            case opc_lload:
-            case opc_lstore:
-            case opc_dload:
-            case opc_dstore:
-            case opc_ret:
-                print("\t" + attr.getUnsignedByte(pc + 1));
-                return 2;
-            case opc_iinc:
-                print("\t" + attr.getUnsignedByte(pc + 1) + ", " + attr.getByte(pc + 2));
-                return 3;
-            case opc_tableswitch:
-                {
-                    int tb = align(pc + 1);
-                    int default_skip = attr.getInt(tb);
-                    int low = attr.getInt(tb + 4);
-                    int high = attr.getInt(tb + 8);
-                    int count = high - low;
-                    print("{ //" + low + " to " + high);
-                    for (int i = 0; i <= count; i++) {
-                        print("\n\t\t" + (i + low) + ": " + lP + (pc + attr.getInt(tb + 12 + 4 * i)) + ";");
-                    }
-                    print("\n\t\tdefault: " + lP + (default_skip + pc) + " }");
-                    return tb - pc + 16 + count * 4;
-                }
-            case opc_lookupswitch:
-                {
-                    int tb = align(pc + 1);
-                    int default_skip = attr.getInt(tb);
-                    int npairs = attr.getInt(tb + 4);
-                    print("{ //" + npairs);
-                    for (int i = 1; i <= npairs; i++) {
-                        print("\n\t\t" + attr.getInt(tb + i * 8) + ": " + lP + (pc + attr.getInt(tb + 4 + i * 8)) + ";");
-                    }
-                    print("\n\t\tdefault: " + lP + (default_skip + pc) + " }");
-                    return tb - pc + (npairs + 1) * 8;
-                }
-            case opc_newarray:
-                int type = attr.getUnsignedByte(pc + 1);
-                switch (type) {
-                    case T_BOOLEAN:
-                        print(" boolean");
-                        break;
-                    case T_BYTE:
-                        print(" byte");
-                        break;
-                    case T_CHAR:
-                        print(" char");
-                        break;
-                    case T_SHORT:
-                        print(" short");
-                        break;
-                    case T_INT:
-                        print(" int");
-                        break;
-                    case T_LONG:
-                        print(" long");
-                        break;
-                    case T_FLOAT:
-                        print(" float");
-                        break;
-                    case T_DOUBLE:
-                        print(" double");
-                        break;
-                    case T_CLASS:
-                        print(" class");
-                        break;
-                    default:
-                        print(" BOGUS TYPE:" + type);
-                }
-                return 2;
-            case opc_anewarray:
-                {
-                    int index = attr.getUnsignedShort(pc + 1);
-                    print("\t#" + index + "; //");
-                    printConstant(index);
-                    return 3;
-                }
-            case opc_sipush:
-                print("\t" + attr.getShort(pc + 1));
-                return 3;
-            case opc_bipush:
-                print("\t" + attr.getByte(pc + 1));
-                return 2;
-            case opc_ldc:
-                {
-                    int index = attr.getUnsignedByte(pc + 1);
-                    print("\t#" + index + "; //");
-                    printConstant(index);
-                    return 2;
-                }
-            case opc_ldc_w:
-            case opc_ldc2_w:
-            case opc_instanceof:
-            case opc_checkcast:
-            case opc_new:
-            case opc_putstatic:
-            case opc_getstatic:
-            case opc_putfield:
-            case opc_getfield:
-            case opc_invokevirtual:
-            case opc_invokespecial:
-            case opc_invokestatic:
-                {
-                    int index = attr.getUnsignedShort(pc + 1);
-                    print("\t#" + index + "; //");
-                    printConstant(index);
-                    return 3;
-                }
-            case opc_invokeinterface:
-                {
-                    int index = attr.getUnsignedShort(pc + 1);
-                    int nargs = attr.getUnsignedByte(pc + 3);
-                    print("\t#" + index + ",  " + nargs + "; //");
-                    printConstant(index);
-                    return 5;
-                }
-            case opc_multianewarray:
-                {
-                    int index = attr.getUnsignedShort(pc + 1);
-                    int dimensions = attr.getUnsignedByte(pc + 3);
-                    print("\t#" + index + ",  " + dimensions + "; //");
-                    printConstant(index);
-                    return 4;
-                }
-            case opc_jsr:
-            case opc_goto:
-            case opc_ifeq:
-            case opc_ifge:
-            case opc_ifgt:
-            case opc_ifle:
-            case opc_iflt:
-            case opc_ifne:
-            case opc_if_icmpeq:
-            case opc_if_icmpne:
-            case opc_if_icmpge:
-            case opc_if_icmpgt:
-            case opc_if_icmple:
-            case opc_if_icmplt:
-            case opc_if_acmpeq:
-            case opc_if_acmpne:
-            case opc_ifnull:
-            case opc_ifnonnull:
-                print("\t" + lP + (pc + attr.getShort(pc + 1)));
-                return 3;
-            case opc_jsr_w:
-            case opc_goto_w:
-                print("\t" + lP + (pc + attr.getInt(pc + 1)));
-                return 5;
-            default:
-                return 1;
-        }
+    public void writeInstr(Instruction instr) {
+        print("   " + instr.getPC() + ":\t");
+        print(instr.getMnemonic());
+        instr.accept(instructionPrinter, null);
+        println();
     }
+    // where
+    Instruction.KindVisitor<Void,Void> instructionPrinter =
+            new Instruction.KindVisitor<Void,Void>() {
+
+        public Void visitNoOperands(Instruction instr, Void p) {
+            return null;
+        }
+
+        public Void visitArrayType(Instruction instr, TypeKind kind, Void p) {
+            print(" " + kind.name);
+            return null;
+        }
+
+        public Void visitBranch(Instruction instr, int offset, Void p) {
+            print("\t" + (instr.getPC() + offset));
+            return null;
+        }
+
+        public Void visitConstantPoolRef(Instruction instr, int index, Void p) {
+            print("\t#" + index + "; //");
+            printConstant(index);
+            return null;
+        }
+
+        public Void visitConstantPoolRefAndValue(Instruction instr, int index, int value, Void p) {
+            print("\t#" + index + ",  " + value + "; //");
+            printConstant(index);
+            return null;
+        }
+
+        public Void visitLocal(Instruction instr, int index, Void p) {
+            print("\t" + index);
+            return null;
+        }
+
+        public Void visitLocalAndValue(Instruction instr, int index, int value, Void p) {
+            print("\t" + index + ", " + value);
+            return null;
+        }
+
+        public Void visitLookupSwitch(Instruction instr, int default_, int npairs, int[] matches, int[] offsets) {
+            int pc = instr.getPC();
+            print("{ //" + npairs);
+            for (int i = 0; i < npairs; i++) {
+                print("\n\t\t" + matches[i] + ": " + (pc + offsets[i]) + ";");
+            }
+            print("\n\t\tdefault: " + (pc + default_) + " }");
+            return null;
+        }
+
+        public Void visitTableSwitch(Instruction instr, int default_, int low, int high, int[] offsets) {
+            int pc = instr.getPC();
+            print("{ //" + low + " to " + high);
+            for (int i = 0; i < offsets.length; i++) {
+                print("\n\t\t" + (low + i) + ": " + (pc + offsets[i]) + ";");
+            }
+            print("\n\t\tdefault: " + (pc + default_) + " }");
+            return null;
+        }
+
+        public Void visitValue(Instruction instr, int value, Void p) {
+            print("\t" + value);
+            return null;
+        }
+
+        public Void visitUnknown(Instruction instr, Void p) {
+            return null;
+        }
+    };
+
 
     public void writeExceptionTable(Code_attribute attr) {
         if (attr.exception_table_langth > 0) {

@@ -31,6 +31,7 @@ import java.net.*;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.*;
+import sun.net.NetHooks;
 
 
 /**
@@ -191,6 +192,7 @@ class ServerSocketChannelImpl
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkListen(isa.getPort());
+            NetHooks.beforeTcpBind(fd, isa.getAddress(), isa.getPort());
             Net.bind(fd, isa.getAddress(), isa.getPort());
             Net.listen(fd, backlog < 1 ? 50 : backlog);
             synchronized (stateLock) {

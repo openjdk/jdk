@@ -225,6 +225,34 @@ JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolder2_initIDs
     FID_folderType = env->GetFieldID(cls, "folderType", "Ljava/lang/String;");
 }
 
+
+/*
+* Class:     sun_awt_shell_Win32ShellFolderManager2
+* Method:    initializeCom
+* Signature: ()V
+*/
+JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolderManager2_initializeCom
+        (JNIEnv* env, jclass cls)
+{
+    HRESULT hr = ::CoInitialize(NULL);
+    if (FAILED(hr)) {
+        char c[64];
+        sprintf(c, "Could not initialize COM: HRESULT=0x%08X", hr);
+        JNU_ThrowInternalError(env, c);
+    }
+}
+
+/*
+* Class:     sun_awt_shell_Win32ShellFolderManager2
+* Method:    uninitializeCom
+* Signature: ()V
+*/
+JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolderManager2_uninitializeCom
+        (JNIEnv* env, jclass cls)
+{
+    ::CoUninitialize();
+}
+
 static IShellIcon* getIShellIcon(IShellFolder* pIShellFolder) {
     // http://msdn.microsoft.com/library/en-us/shellcc/platform/Shell/programmersguide/shell_int/shell_int_programming/std_ifaces.asp
     HRESULT hres;
@@ -237,29 +265,6 @@ static IShellIcon* getIShellIcon(IShellFolder* pIShellFolder) {
         }
     }
     return (IShellIcon*)NULL;
-}
-
-// Fixed 6263669
-//
-// CoInitialize wrapper
-// call CoInitialize to initialize COM in STA mode and check result
-// RPC_E_CHANGED_MODE means COM has already been initialized in MTA mode,
-// so don't set the flag to call CoUninitialize later
-
-BOOL CoInit(BOOL& doCoUninit) { // returns TRUE if initialized successfully
-    switch(::CoInitialize(NULL)) {
-    case S_OK:
-    case S_FALSE:
-        doCoUninit = TRUE;
-        return TRUE;
-        break;
-    case RPC_E_CHANGED_MODE:
-        doCoUninit = FALSE;
-        return TRUE;
-        break;
-    default:
-        return FALSE;
-    }
 }
 
 
@@ -507,10 +512,10 @@ JNIEXPORT jint JNICALL Java_sun_awt_shell_Win32ShellFolder2_getAttributes0
 
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
- * Method:    getFileSystemPath
+ * Method:    getFileSystemPath0
  * Signature: (I)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileSystemPath__I
+JNIEXPORT jstring JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileSystemPath0
     (JNIEnv* env, jclass cls, jint csidl)
 {
     LPITEMIDLIST relPIDL;
@@ -611,18 +616,6 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_bindToObject
     if (SUCCEEDED (hr)) {
         return (jlong)pFolder;
     }
-    if (IS_WINVISTA) {
-        BOOL doCoUninit;
-        if (CoInit(doCoUninit)) {
-            hr = pParent->BindToObject(pidl, NULL, IID_IShellFolder, (void**)&pFolder);
-            if (doCoUninit) {
-                ::CoUninitialize();
-            }
-            if (SUCCEEDED (hr)) {
-                return (jlong)pFolder;
-            }
-        }
-    }
     return 0;
 }
 
@@ -650,7 +643,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
         return NULL;
     }
 
-    pParent->GetDisplayNameOf(pidl, SHGDN_NORMAL | SHGDN_FORPARSING, &strret);
+    hres = pParent->GetDisplayNameOf(pidl, SHGDN_NORMAL | SHGDN_FORPARSING, &strret);
+    if (FAILED(hres)) {
+        return NULL;
+    }
 
     switch (strret.uType) {
       case STRRET_CSTR :
@@ -669,10 +665,6 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
         break;
     }
 
-    BOOL doCoUninit;
-    if (!CoInit(doCoUninit)) {
-        return 0;
-    }
     IShellLinkW* psl;
     hres = ::CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID *)&psl);
     if (SUCCEEDED(hres)) {
@@ -692,10 +684,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
         }
         psl->Release();
     }
-    if (doCoUninit) {
-        ::CoUninitialize();
-    }
 
+    if (strret.uType == STRRET_WSTR) {
+        CoTaskMemFree(strret.pOleStr);
+    }
     if (SUCCEEDED(hres)) {
         return (jlong)pidl;
     } else {
@@ -741,7 +733,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_parseDisplayName0
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
  * Method:    getDisplayNameOf
- * Signature: (JJ)Ljava/lang/String;
+ * Signature: (JJI)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_sun_awt_shell_Win32ShellFolder2_getDisplayNameOf
     (JNIEnv* env, jclass cls, jlong parentIShellFolder, jlong relativePIDL, jint attrs)
@@ -758,7 +750,11 @@ JNIEXPORT jstring JNICALL Java_sun_awt_shell_Win32ShellFolder2_getDisplayNameOf
     if (pParent->GetDisplayNameOf(pidl, attrs, &strret) != S_OK) {
         return NULL;
     }
-    return jstringFromSTRRET(env, pidl, &strret);
+    jstring result = jstringFromSTRRET(env, pidl, &strret);
+    if (strret.uType == STRRET_WSTR) {
+        CoTaskMemFree(strret.pOleStr);
+    }
+    return result;
 }
 
 /*
@@ -833,10 +829,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconIndex
     }
 
     INT index = -1;
-    BOOL doCoUninit;
-    if (!CoInit(doCoUninit)) {
-        return (jint)index;
-    }
 
     HRESULT hres;
     // http://msdn.microsoft.com/library/en-us/shellcc/platform/Shell/programmersguide/shell_int/shell_int_programming/std_ifaces.asp
@@ -844,9 +836,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconIndex
         hres = pIShellIcon->GetIconOf(pidl, GIL_FORSHELL, &index);
     }
 
-    if (doCoUninit) {
-        ::CoUninitialize();
-    }
     return (jint)index;
 }
 
@@ -866,10 +855,6 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
     }
 
     HICON hIcon = NULL;
-    BOOL doCoUninit;
-    if (!CoInit(doCoUninit)) {
-        return (jlong)hIcon;
-    }
 
     HRESULT hres;
     IExtractIconW* pIcon;
@@ -893,9 +878,6 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
             }
         }
         pIcon->Release();
-    }
-    if (doCoUninit) {
-        ::CoUninitialize();
     }
     return (jlong)hIcon;
 }
@@ -994,14 +976,10 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserB
     HINSTANCE libComCtl32;
     HINSTANCE libShell32;
 
-
     libShell32 = LoadLibrary(TEXT("shell32.dll"));
     if (libShell32 != NULL) {
-        long osVersion = GetVersion();
-        BOOL isVista = (!(osVersion & 0x80000000) && (LOBYTE(LOWORD(osVersion)) >= 6));
-
         hBitmap = (HBITMAP)LoadImage(libShell32,
-                    isVista ? TEXT("IDB_TB_SH_DEF_16") : MAKEINTRESOURCE(216),
+                    IS_WINVISTA ? TEXT("IDB_TB_SH_DEF_16") : MAKEINTRESOURCE(216),
                     IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
     }
     if (hBitmap == NULL) {
@@ -1095,46 +1073,6 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconResource
 }
 
 
-// Helper functions for workaround COM initialization:
-
-static HRESULT GetDetailsOfFolder(
-        IShellFolder2 *folder,
-        LPCITEMIDLIST pidl,
-        UINT column,
-        SHELLDETAILS *psd)
-{
-    HRESULT hr = folder->GetDetailsOf(pidl, column, psd);
-    if (IS_WINVISTA && FAILED (hr)) {
-        BOOL doCoUninit;
-        if (CoInit(doCoUninit)) {
-            hr = folder->GetDetailsOf(pidl, column, psd);
-            if (doCoUninit) {
-                ::CoUninitialize();
-            }
-        }
-    }
-    return hr;
-}
-
-static HRESULT GetDetailsOf(
-        IShellDetails *details,
-        LPCITEMIDLIST pidl,
-        UINT column,
-        SHELLDETAILS *psd)
-{
-    HRESULT hr = details->GetDetailsOf(pidl, column, psd);
-    if (IS_WINVISTA && FAILED (hr)) {
-        BOOL doCoUninit;
-        if (CoInit(doCoUninit)) {
-            hr = details->GetDetailsOf(pidl, column, psd);
-            if (doCoUninit) {
-                ::CoUninitialize();
-            }
-        }
-    }
-    return hr;
-}
-
 /*
  * Helper function for creating Java column info object
  */
@@ -1187,7 +1125,7 @@ JNIEXPORT jobjectArray JNICALL
         int colNum = -1;
         hr = S_OK;
         do{
-            hr = GetDetailsOfFolder(pIShellFolder2, NULL, ++colNum, &sd);
+            hr = pIShellFolder2->GetDetailsOf(NULL, ++colNum, &sd);
         } while (SUCCEEDED (hr));
 
         jobjectArray columns =
@@ -1202,7 +1140,7 @@ JNIEXPORT jobjectArray JNICALL
         colNum = 0;
         hr = S_OK;
         while (SUCCEEDED (hr)) {
-            hr = GetDetailsOfFolder(pIShellFolder2, NULL, colNum, &sd);
+            hr = pIShellFolder2->GetDetailsOf(NULL, colNum, &sd);
 
             if (SUCCEEDED (hr)) {
                 hr = pIShellFolder2->GetDefaultColumnState(colNum, &csFlags);
@@ -1232,7 +1170,7 @@ JNIEXPORT jobjectArray JNICALL
         int colNum = -1;
         hr = S_OK;
         do{
-            hr = GetDetailsOf(pIShellDetails, NULL, ++colNum, &sd);
+            hr = pIShellDetails->GetDetailsOf(NULL, ++colNum, &sd);
         } while (SUCCEEDED (hr));
 
         jobjectArray columns =
@@ -1246,7 +1184,7 @@ JNIEXPORT jobjectArray JNICALL
         colNum = 0;
         hr = S_OK;
         while (SUCCEEDED (hr)) {
-            hr = GetDetailsOf(pIShellDetails, NULL, colNum, &sd);
+            hr = pIShellDetails->GetDetailsOf(NULL, colNum, &sd);
             if (SUCCEEDED (hr)) {
                 jobject column = CreateColumnInfo(env,
                                     &columnClass, &columnConstructor,
@@ -1288,7 +1226,7 @@ JNIEXPORT jobject JNICALL
     if(SUCCEEDED (hr)) {
         // The folder exposes IShellFolder2 interface
         IShellFolder2 *pIShellFolder2 = (IShellFolder2*) pIUnknown;
-        hr = GetDetailsOfFolder(pIShellFolder2, pidl, (UINT)columnIdx, &sd);
+        hr = pIShellFolder2->GetDetailsOf(pidl, (UINT)columnIdx, &sd);
         pIShellFolder2->Release();
         if (SUCCEEDED (hr)) {
             STRRET strRet = sd.str;
@@ -1300,7 +1238,7 @@ JNIEXPORT jobject JNICALL
     if(SUCCEEDED (hr)) {
         // The folder exposes IShellDetails interface
         IShellDetails *pIShellDetails = (IShellDetails*) pIUnknown;
-        hr = GetDetailsOf(pIShellDetails, pidl, (UINT)columnIdx, &sd);
+        hr = pIShellDetails->GetDetailsOf(pidl, (UINT)columnIdx, &sd);
         pIShellDetails->Release();
         if (SUCCEEDED (hr)) {
             STRRET strRet = sd.str;

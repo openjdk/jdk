@@ -71,8 +71,14 @@ public class IconifiedFrameFocusChangeTest extends Applet {
         testFrame.setVisible(true);
         Util.waitForIdle(robot);
 
+        robot.delay(1000); // additional delay is required
+
         if (!testButton.hasFocus()) {
-            throw new TestErrorException("wrong initial focus");
+            testButton.requestFocus();
+            Util.waitForIdle(robot);
+            if (!testButton.hasFocus()) {
+                throw new TestErrorException("couldn't focus " + testButton);
+            }
         }
 
         /*

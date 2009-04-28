@@ -349,6 +349,9 @@ inline void oopDesc::release_float_field_put(int offset, jfloat contents)   { Or
 inline jdouble oopDesc::double_field_acquire(int offset) const              { return OrderAccess::load_acquire(double_field_addr(offset));     }
 inline void oopDesc::release_double_field_put(int offset, jdouble contents) { OrderAccess::release_store(double_field_addr(offset), contents); }
 
+inline address oopDesc::address_field_acquire(int offset) const             { return (address) OrderAccess::load_ptr_acquire(address_field_addr(offset)); }
+inline void oopDesc::release_address_field_put(int offset, address contents) { OrderAccess::release_store_ptr(address_field_addr(offset), contents); }
+
 inline int oopDesc::size_given_klass(Klass* klass)  {
   int lh = klass->layout_helper();
   int s  = lh >> LogHeapWordSize;  // deliver size scaled by wordSize

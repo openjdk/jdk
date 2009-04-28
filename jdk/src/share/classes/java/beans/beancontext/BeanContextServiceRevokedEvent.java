@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.beans.beancontext.BeanContextServices;
  * </p>
  */
 public class BeanContextServiceRevokedEvent extends BeanContextEvent {
+    private static final long serialVersionUID = -1295543154724961754L;
 
     /**
      * Construct a <code>BeanContextServiceEvent</code>.

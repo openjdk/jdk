@@ -218,6 +218,26 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   // Don't bother trying to transform a dead node
   if( ctl && ctl->is_top() )  return NodeSentinel;
 
+  PhaseIterGVN *igvn = phase->is_IterGVN();
+  // Wait if control on the worklist.
+  if (ctl && can_reshape && igvn != NULL) {
+    Node* bol = NULL;
+    Node* cmp = NULL;
+    if (ctl->in(0)->is_If()) {
+      assert(ctl->is_IfTrue() || ctl->is_IfFalse(), "sanity");
+      bol = ctl->in(0)->in(1);
+      if (bol->is_Bool())
+        cmp = ctl->in(0)->in(1)->in(1);
+    }
+    if (igvn->_worklist.member(ctl) ||
+        (bol != NULL && igvn->_worklist.member(bol)) ||
+        (cmp != NULL && igvn->_worklist.member(cmp)) ) {
+      // This control path may be dead.
+      // Delay this memory node transformation until the control is processed.
+      phase->is_IterGVN()->_worklist.push(this);
+      return NodeSentinel; // caller will return NULL
+    }
+  }
   // Ignore if memory is dead, or self-loop
   Node *mem = in(MemNode::Memory);
   if( phase->type( mem ) == Type::TOP ) return NodeSentinel; // caller will return NULL
@@ -227,13 +247,21 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   const Type *t_adr = phase->type( address );
   if( t_adr == Type::TOP )              return NodeSentinel; // caller will return NULL
 
-  PhaseIterGVN *igvn = phase->is_IterGVN();
-  if( can_reshape && igvn != NULL && igvn->_worklist.member(address) ) {
+  if( can_reshape && igvn != NULL &&
+      (igvn->_worklist.member(address) || phase->type(address) != adr_type()) ) {
     // The address's base and type may change when the address is processed.
     // Delay this mem node transformation until the address is processed.
     phase->is_IterGVN()->_worklist.push(this);
     return NodeSentinel; // caller will return NULL
   }
+
+#ifdef ASSERT
+  Node* base = NULL;
+  if (address->is_AddP())
+    base = address->in(AddPNode::Base);
+  assert(base == NULL || t_adr->isa_rawptr() ||
+        !phase->type(base)->higher_equal(TypePtr::NULL_PTR), "NULL+offs not RAW address?");
+#endif
 
   // Avoid independent memory operations
   Node* old_mem = mem;
@@ -1307,22 +1335,20 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     set_req(MemNode::Control,ctrl);
   }
 
-  // Check for useless control edge in some common special cases
-  if (in(MemNode::Control) != NULL) {
-    intptr_t ignore = 0;
-    Node*    base   = AddPNode::Ideal_base_and_offset(address, phase, ignore);
-    if (base != NULL
+  intptr_t ignore = 0;
+  Node*    base   = AddPNode::Ideal_base_and_offset(address, phase, ignore);
+  if (base != NULL
+      && phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw) {
+    // Check for useless control edge in some common special cases
+    if (in(MemNode::Control) != NULL
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
-        && phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw
         && all_controls_dominate(base, phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, NULL);
     }
-  }
 
-  if (EliminateAutoBox && can_reshape && in(Address)->is_AddP()) {
-    Node* base = in(Address)->in(AddPNode::Base);
-    if (base != NULL) {
+    if (EliminateAutoBox && can_reshape) {
+      assert(!phase->type(base)->higher_equal(TypePtr::NULL_PTR), "the autobox pointer should be non-null");
       Compile::AliasType* atp = phase->C->alias_type(adr_type());
       if (is_autobox_object(atp)) {
         Node* result = eliminate_autobox(phase);
@@ -1455,10 +1481,11 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
           jt = _type;
         }
 
-        if (EliminateAutoBox) {
+        if (EliminateAutoBox && adr->is_AddP()) {
           // The pointers in the autobox arrays are always non-null
-          Node* base = in(Address)->in(AddPNode::Base);
-          if (base != NULL) {
+          Node* base = adr->in(AddPNode::Base);
+          if (base != NULL &&
+              !phase->type(base)->higher_equal(TypePtr::NULL_PTR)) {
             Compile::AliasType* atp = phase->C->alias_type(base->adr_type());
             if (is_autobox_cache(atp)) {
               return jt->join(TypePtr::NOTNULL)->is_ptr();

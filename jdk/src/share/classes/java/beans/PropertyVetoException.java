@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-1998 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package java.beans;
 
 public
 class PropertyVetoException extends Exception {
-
+    private static final long serialVersionUID = 129596057694162164L;
 
     /**
      * Constructs a <code>PropertyVetoException</code> with a

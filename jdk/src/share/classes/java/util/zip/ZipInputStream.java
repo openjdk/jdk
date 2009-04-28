@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
 import java.io.PushbackInputStream;
+import java.nio.charset.Charset;
+import static java.util.zip.ZipConstants64.*;
 
 /**
  * This class implements an input stream filter for reading files in the
@@ -53,6 +55,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
     // one entry
     private boolean entryEOF = false;
 
+    private ZipCoder zc;
+
     /**
      * Check to make sure that this stream has not been closed
      */
@@ -64,14 +68,39 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
 
     /**
      * Creates a new ZIP input stream.
+     *
+     * <p>The UTF-8 {@link java.nio.charset.Charset charset} is used to
+     * decode the entry names.
+     *
      * @param in the actual input stream
      */
     public ZipInputStream(InputStream in) {
+        this(in, Charset.forName("UTF-8"));
+    }
+
+    /**
+     * Creates a new ZIP input stream.
+     *
+     * @param in the actual input stream
+     *
+     * @param charset
+     *        The {@link java.nio.charset.Charset {@code charset}} to be
+     *        used to decode the ZIP entry name (ignored if the
+     *        <a href="package-summary.html#lang_encoding"> language
+     *        encoding bit</a> of the ZIP entry's general purpose bit
+     *        flag is set).
+     *
+     * @since 1.7
+     */
+    public ZipInputStream(InputStream in, Charset charset) {
         super(new PushbackInputStream(in, 512), new Inflater(true), 512);
         usesDefaultInflater = true;
         if(in == null) {
             throw new NullPointerException("in is null");
         }
+        if (charset == null)
+            throw new NullPointerException("charset is null");
+        this.zc = ZipCoder.get(charset);
     }
 
     /**
@@ -140,8 +169,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * @param len the maximum number of bytes read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @exception  NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
+     * @exception  NullPointerException if <code>b</code> is <code>null</code>.
+     * @exception  IndexOutOfBoundsException if <code>off</code> is negative,
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>b.length - off</code>
      * @exception ZipException if a ZIP file error has occurred
@@ -251,6 +280,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
         if (get32(tmpbuf, 0) != LOCSIG) {
             return null;
         }
+        // get flag first, we need check EFS.
+        flag = get16(tmpbuf, LOCFLG);
         // get the entry name and create the ZipEntry first
         int len = get16(tmpbuf, LOCNAM);
         int blen = b.length;
@@ -261,9 +292,11 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
             b = new byte[blen];
         }
         readFully(b, 0, len);
-        ZipEntry e = createZipEntry(getUTF8String(b, 0, len));
+        // Force to use UTF-8 if the EFS bit is ON, even the cs is NOT UTF-8
+        ZipEntry e = createZipEntry(((flag & EFS) != 0)
+                                    ? zc.toStringUTF8(b, len)
+                                    : zc.toString(b, len));
         // now get the remaining fields for the entry
-        flag = get16(tmpbuf, LOCFLG);
         if ((flag & 1) == 1) {
             throw new ZipException("encrypted ZIP entry not supported");
         }
@@ -285,73 +318,31 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
             byte[] bb = new byte[len];
             readFully(bb, 0, len);
             e.setExtra(bb);
+            // extra fields are in "HeaderID(2)DataSize(2)Data... format
+            if (e.csize == ZIP64_MAGICVAL || e.size == ZIP64_MAGICVAL) {
+                int off = 0;
+                while (off + 4 < len) {
+                    int sz = get16(bb, off + 2);
+                    if (get16(bb, off) == ZIP64_EXTID) {
+                        off += 4;
+                        // LOC extra zip64 entry MUST include BOTH original and
+                        // compressed file size fields
+                        if (sz < 16 || (off + sz) > len ) {
+                            // Invalid zip64 extra fields, simply skip. Even it's
+                            // rare, it's possible the entry size happens to be
+                            // the magic value and it "accidnetly" has some bytes
+                            // in extra match the id.
+                            return e;
+                        }
+                        e.size = get64(bb, off);
+                        e.csize = get64(bb, off + 8);
+                        break;
+                    }
+                    off += (sz + 4);
+                }
+            }
         }
         return e;
-    }
-
-    /*
-     * Fetches a UTF8-encoded String from the specified byte array.
-     */
-    private static String getUTF8String(byte[] b, int off, int len) {
-        // First, count the number of characters in the sequence
-        int count = 0;
-        int max = off + len;
-        int i = off;
-        while (i < max) {
-            int c = b[i++] & 0xff;
-            switch (c >> 4) {
-            case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-                // 0xxxxxxx
-                count++;
-                break;
-            case 12: case 13:
-                // 110xxxxx 10xxxxxx
-                if ((b[i++] & 0xc0) != 0x80) {
-                    throw new IllegalArgumentException();
-                }
-                count++;
-                break;
-            case 14:
-                // 1110xxxx 10xxxxxx 10xxxxxx
-                if (((b[i++] & 0xc0) != 0x80) ||
-                    ((b[i++] & 0xc0) != 0x80)) {
-                    throw new IllegalArgumentException();
-                }
-                count++;
-                break;
-            default:
-                // 10xxxxxx, 1111xxxx
-                throw new IllegalArgumentException();
-            }
-        }
-        if (i != max) {
-            throw new IllegalArgumentException();
-        }
-        // Now decode the characters...
-        char[] cs = new char[count];
-        i = 0;
-        while (off < max) {
-            int c = b[off++] & 0xff;
-            switch (c >> 4) {
-            case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-                // 0xxxxxxx
-                cs[i++] = (char)c;
-                break;
-            case 12: case 13:
-                // 110xxxxx 10xxxxxx
-                cs[i++] = (char)(((c & 0x1f) << 6) | (b[off++] & 0x3f));
-                break;
-            case 14:
-                // 1110xxxx 10xxxxxx 10xxxxxx
-                int t = (b[off++] & 0x3f) << 6;
-                cs[i++] = (char)(((c & 0x0f) << 12) | t | (b[off++] & 0x3f));
-                break;
-            default:
-                // 10xxxxxx, 1111xxxx
-                throw new IllegalArgumentException();
-            }
-        }
-        return new String(cs, 0, count);
     }
 
     /**
@@ -375,18 +366,36 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
         }
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
-            readFully(tmpbuf, 0, EXTHDR);
-            long sig = get32(tmpbuf, 0);
-            if (sig != EXTSIG) { // no EXTSIG present
-                e.crc = sig;
-                e.csize = get32(tmpbuf, EXTSIZ - EXTCRC);
-                e.size = get32(tmpbuf, EXTLEN - EXTCRC);
-                ((PushbackInputStream)in).unread(
-                                           tmpbuf, EXTHDR - EXTCRC - 1, EXTCRC);
+            if (inf.getBytesWritten() > ZIP64_MAGICVAL ||
+                inf.getBytesRead() > ZIP64_MAGICVAL) {
+                // ZIP64 format
+                readFully(tmpbuf, 0, ZIP64_EXTHDR);
+                long sig = get32(tmpbuf, 0);
+                if (sig != EXTSIG) { // no EXTSIG present
+                    e.crc = sig;
+                    e.csize = get64(tmpbuf, ZIP64_EXTSIZ - ZIP64_EXTCRC);
+                    e.size = get64(tmpbuf, ZIP64_EXTLEN - ZIP64_EXTCRC);
+                    ((PushbackInputStream)in).unread(
+                        tmpbuf, ZIP64_EXTHDR - ZIP64_EXTCRC - 1, ZIP64_EXTCRC);
+                } else {
+                    e.crc = get32(tmpbuf, ZIP64_EXTCRC);
+                    e.csize = get64(tmpbuf, ZIP64_EXTSIZ);
+                    e.size = get64(tmpbuf, ZIP64_EXTLEN);
+                }
             } else {
-                e.crc = get32(tmpbuf, EXTCRC);
-                e.csize = get32(tmpbuf, EXTSIZ);
-                e.size = get32(tmpbuf, EXTLEN);
+                readFully(tmpbuf, 0, EXTHDR);
+                long sig = get32(tmpbuf, 0);
+                if (sig != EXTSIG) { // no EXTSIG present
+                    e.crc = sig;
+                    e.csize = get32(tmpbuf, EXTSIZ - EXTCRC);
+                    e.size = get32(tmpbuf, EXTLEN - EXTCRC);
+                    ((PushbackInputStream)in).unread(
+                                               tmpbuf, EXTHDR - EXTCRC - 1, EXTCRC);
+                } else {
+                    e.crc = get32(tmpbuf, EXTCRC);
+                    e.csize = get32(tmpbuf, EXTSIZ);
+                    e.size = get32(tmpbuf, EXTLEN);
+                }
             }
         }
         if (e.size != inf.getBytesWritten()) {
@@ -433,6 +442,14 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     private static final long get32(byte b[], int off) {
-        return get16(b, off) | ((long)get16(b, off+2) << 16);
+        return (get16(b, off) | ((long)get16(b, off+2) << 16)) & 0xffffffffL;
+    }
+
+    /*
+     * Fetches signed 64-bit value from byte array at specified offset.
+     * The bytes are assumed to be in Intel (little-endian) byte order.
+     */
+    private static final long get64(byte b[], int off) {
+        return get32(b, off) | (get32(b, off+4) << 32);
     }
 }

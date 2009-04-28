@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,10 @@ import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.peer.*;
 import java.awt.event.WindowEvent;
 import java.awt.event.KeyEvent;
-import java.awt.im.spi.InputMethodDescriptor;
 import java.awt.image.*;
-import java.awt.geom.AffineTransform;
 import java.awt.TrayIcon;
 import java.awt.SystemTray;
-import java.io.*;
 import java.net.URL;
-import java.net.JarURLConnection;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -49,7 +45,6 @@ import java.util.logging.Logger;
 import sun.misc.SoftCache;
 import sun.font.FontDesignMetrics;
 import sun.awt.im.InputContext;
-import sun.awt.im.SimpleInputMethodWindow;
 import sun.awt.image.*;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetBooleanAction;
@@ -225,10 +220,8 @@ public abstract class SunToolkit extends Toolkit
     public abstract RobotPeer createRobot(Robot target, GraphicsDevice screen)
         throws AWTException;
 
-    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) throws HeadlessException {
-        KeyboardFocusManagerPeerImpl peer = new KeyboardFocusManagerPeerImpl(manager);
-        return peer;
-    }
+    public abstract KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager)
+        throws HeadlessException;
 
     /**
      * The AWT lock is typically only used on Unix platforms to synchronize
@@ -824,16 +817,31 @@ public abstract class SunToolkit extends Toolkit
     }
 
     /**
-     * Disables erasing of background on the canvas before painting
-     * if this is supported by the current toolkit.
-     *
-     * @throws IllegalStateException if the canvas is not displayable
-     * @see java.awt.Component#isDisplayable
+     * Disables erasing of background on the canvas before painting if
+     * this is supported by the current toolkit. It is recommended to
+     * call this method early, before the Canvas becomes displayable,
+     * because some Toolkit implementations do not support changing
+     * this property once the Canvas becomes displayable.
      */
     public void disableBackgroundErase(Canvas canvas) {
-        if (!canvas.isDisplayable()) {
-            throw new IllegalStateException("Canvas must have a valid peer");
-        }
+        disableBackgroundEraseImpl(canvas);
+    }
+
+    /**
+     * Disables the native erasing of the background on the given
+     * component before painting if this is supported by the current
+     * toolkit. This only has an effect for certain components such as
+     * Canvas, Panel and Window. It is recommended to call this method
+     * early, before the Component becomes displayable, because some
+     * Toolkit implementations do not support changing this property
+     * once the Component becomes displayable.
+     */
+    public void disableBackgroundErase(Component component) {
+        disableBackgroundEraseImpl(component);
+    }
+
+    private void disableBackgroundEraseImpl(Component component) {
+        AWTAccessor.getComponentAccessor().setBackgroundEraseDisabled(component, true);
     }
 
     /**
@@ -1972,6 +1980,18 @@ public abstract class SunToolkit extends Toolkit
         AWTAutoShutdown.getInstance().dumpPeers(aLog);
     }
 
+    /**
+     * Returns the <code>Window</code> ancestor of the component <code>comp</code>.
+     * @return Window ancestor of the component or component by itself if it is Window;
+     *         null, if component is not a part of window hierarchy
+     */
+    public static Window getContainingWindow(Component comp) {
+        while (comp != null && !(comp instanceof Window)) {
+            comp = comp.getParent();
+        }
+        return (Window)comp;
+    }
+
     private static Boolean sunAwtDisableMixing = null;
 
     /**
@@ -1995,6 +2015,73 @@ public abstract class SunToolkit extends Toolkit
     public boolean isNativeGTKAvailable() {
         return false;
     }
+
+    // Cosntant alpha
+    public boolean isWindowOpacitySupported() {
+        return false;
+    }
+
+    // Shaping
+    public boolean isWindowShapingSupported() {
+        return false;
+    }
+
+    // Per-pixel alpha
+    public boolean isWindowTranslucencySupported() {
+        return false;
+    }
+
+    public boolean isTranslucencyCapable(GraphicsConfiguration gc) {
+        return false;
+    }
+
+    /**
+     * Returns whether or not a containing top level window for the passed
+     * component is
+     * {@link com.sun.awt.AWTUtilities.Translucency#PERPIXEL_TRANSLUCENT PERPIXEL_TRANSLUCENT}.
+     *
+     * @param c a Component which toplevel's to check
+     * @return {@code true}  if the passed component is not null and has a
+     * containing toplevel window which is opaque (so per-pixel translucency
+     * is not enabled), {@code false} otherwise
+     * @see com.sun.awt.AWTUtilities.Translucency#PERPIXEL_TRANSLUCENT
+     * @see com.sun.awt.AWTUtilities#isWindowOpaque(Window)
+     */
+    public static boolean isContainingTopLevelOpaque(Component c) {
+        Window w = getContainingWindow(c);
+        // return w != null && (w).isOpaque();
+        return w != null && com.sun.awt.AWTUtilities.isWindowOpaque(w);
+    }
+
+    /**
+     * Returns whether or not a containing top level window for the passed
+     * component is
+     * {@link com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT TRANSLUCENT}.
+     *
+     * @param c a Component which toplevel's to check
+     * @return {@code true} if the passed component is not null and has a
+     * containing toplevel window which has opacity less than
+     * 1.0f (which means that it is translucent), {@code false} otherwise
+     * @see com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT
+     * @see com.sun.awt.AWTUtilities#getWindowOpacity(Window)
+     */
+    public static boolean isContainingTopLevelTranslucent(Component c) {
+        Window w = getContainingWindow(c);
+        // return w != null && (w).getOpacity() < 1.0f;
+        return w != null && com.sun.awt.AWTUtilities.getWindowOpacity((Window)w) < 1.0f;
+    }
+
+    /**
+     * Returns whether the native system requires using the peer.updateWindow()
+     * method to update the contents of a non-opaque window, or if usual
+     * painting procedures are sufficient. The default return value covers
+     * the X11 systems. On MS Windows this method is overriden in WToolkit
+     * to return true.
+     */
+    public boolean needUpdateWindow() {
+        return false;
+    }
+
 } // class SunToolkit
 
 
