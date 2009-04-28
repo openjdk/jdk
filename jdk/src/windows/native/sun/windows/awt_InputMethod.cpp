@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ Java_sun_awt_windows_WInputMethod_handleNativeIMEEvent(JNIEnv *env, jobject self
                             java_awt_event_KeyEvent_CHAR_UNDEFINED,
                             unicodeChar,
                             modifiers,
-                            java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN,
+                            java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN, (jlong)0,
                             &msg);
         } else {
             MSG* pCopiedMsg = new MSG;

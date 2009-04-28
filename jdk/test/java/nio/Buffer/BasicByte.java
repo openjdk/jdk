@@ -375,6 +375,9 @@ public class BasicByte
 
 
 
+
+
+
         // Compact
 
         relPut(b);
@@ -703,6 +706,8 @@ public class BasicByte
         relPut(b);                       // Required by testViews
 
     }
+
+
 
 
 

@@ -27,6 +27,10 @@ package sun.awt.windows;
 import java.awt.*;
 import java.awt.peer.*;
 import java.awt.event.ItemEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.awt.event.WindowAdapter;
+import sun.awt.SunToolkit;
 
 class WChoicePeer extends WComponentPeer implements ChoicePeer {
 
@@ -70,6 +74,8 @@ class WChoicePeer extends WComponentPeer implements ChoicePeer {
 
     public synchronized native void reshape(int x, int y, int width, int height);
 
+    private WindowListener windowListener;
+
     // Toolkit & peer internals
 
     WChoicePeer(Choice target) {
@@ -91,7 +97,36 @@ class WChoicePeer extends WComponentPeer implements ChoicePeer {
                 select(opt.getSelectedIndex());
             }
         }
+
+        Window parentWindow = SunToolkit.getContainingWindow((Component)target);
+        if (parentWindow != null) {
+            WWindowPeer wpeer = (WWindowPeer)parentWindow.getPeer();
+            if (wpeer != null) {
+                windowListener = new WindowAdapter() {
+                        public void windowIconified(WindowEvent e) {
+                            closeList();
+                        }
+                        public void windowClosing(WindowEvent e) {
+                            closeList();
+                        }
+                    };
+                wpeer.addWindowListener(windowListener);
+            }
+        }
         super.initialize();
+    }
+
+    protected void disposeImpl() {
+        // TODO: we should somehow reset the listener when the choice
+        // is moved to another toplevel without destroying its peer.
+        Window parentWindow = SunToolkit.getContainingWindow((Component)target);
+        if (parentWindow != null) {
+            WWindowPeer wpeer = (WWindowPeer)parentWindow.getPeer();
+            if (wpeer != null) {
+                wpeer.removeWindowListener(windowListener);
+            }
+        }
+        super.disposeImpl();
     }
 
     // native callbacks
@@ -121,4 +156,5 @@ class WChoicePeer extends WComponentPeer implements ChoicePeer {
             return getMinimumSize();
     }
 
+    native void closeList();
 }

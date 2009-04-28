@@ -36,6 +36,7 @@ import java.io.ObjectInputStream;
 import java.io.IOException;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 import java.lang.ref.WeakReference;
 import javax.accessibility.*;
 
@@ -738,11 +739,15 @@ public class Frame extends Window implements MenuContainer {
      * @since   1.4
      * @see java.awt.Window#addWindowStateListener
      */
-    public synchronized void setExtendedState(int state) {
+    public void setExtendedState(int state) {
         if ( !isFrameStateSupported( state ) ) {
             return;
         }
-        this.state = state;
+        synchronized (getObjectLock()) {
+            this.state = state;
+        }
+        // peer.setState must be called outside of object lock
+        // synchronization block to avoid possible deadlock
         FramePeer peer = (FramePeer)this.peer;
         if (peer != null) {
             peer.setState(state);
@@ -804,12 +809,27 @@ public class Frame extends Window implements MenuContainer {
      * @see     #setExtendedState(int)
      * @since 1.4
      */
-    public synchronized int getExtendedState() {
-        FramePeer peer = (FramePeer)this.peer;
-        if (peer != null) {
-            state = peer.getState();
+    public int getExtendedState() {
+        synchronized (getObjectLock()) {
+            return state;
         }
-        return state;
+    }
+
+    static {
+        AWTAccessor.setFrameAccessor(
+            new AWTAccessor.FrameAccessor() {
+                public void setExtendedState(Frame frame, int state) {
+                    synchronized(frame.getObjectLock()) {
+                        frame.state = state;
+                    }
+                }
+                public int getExtendedState(Frame frame) {
+                    synchronized(frame.getObjectLock()) {
+                        return frame.state;
+                    }
+                }
+            }
+        );
     }
 
     /**
@@ -967,7 +987,7 @@ public class Frame extends Window implements MenuContainer {
         if (resizable) {
             str += ",resizable";
         }
-        getExtendedState();     // sync with peer
+        int state = getExtendedState();
         if (state == NORMAL) {
             str += ",normal";
         }

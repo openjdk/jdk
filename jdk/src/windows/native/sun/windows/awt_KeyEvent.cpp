@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,10 @@
 
 jfieldID AwtKeyEvent::keyCodeID;
 jfieldID AwtKeyEvent::keyCharID;
+jfieldID AwtKeyEvent::rawCodeID;
+jfieldID AwtKeyEvent::primaryLevelUnicodeID;
+jfieldID AwtKeyEvent::scancodeID;
+jfieldID AwtKeyEvent::extendedKeyCodeID;
 
 /************************************************************************
  * AwtKeyEvent native methods
@@ -45,9 +49,18 @@ Java_java_awt_event_KeyEvent_initIDs(JNIEnv *env, jclass cls) {
 
     AwtKeyEvent::keyCodeID = env->GetFieldID(cls, "keyCode", "I");
     AwtKeyEvent::keyCharID = env->GetFieldID(cls, "keyChar", "C");
+    AwtKeyEvent::rawCodeID = env->GetFieldID(cls, "rawCode", "J");
+    AwtKeyEvent::primaryLevelUnicodeID = env->GetFieldID(cls, "primaryLevelUnicode", "J");
+    AwtKeyEvent::scancodeID = env->GetFieldID(cls, "scancode", "J");
+    AwtKeyEvent::extendedKeyCodeID = env->GetFieldID(cls, "extendedKeyCode", "J");
+
 
     DASSERT(AwtKeyEvent::keyCodeID != NULL);
     DASSERT(AwtKeyEvent::keyCharID != NULL);
+    DASSERT(AwtKeyEvent::rawCodeID != NULL);
+    DASSERT(AwtKeyEvent::primaryLevelUnicodeID != NULL);
+    DASSERT(AwtKeyEvent::scancodeID != NULL);
+    DASSERT(AwtKeyEvent::extendedKeyCodeID != NULL);
 
     CATCH_BAD_ALLOC;
 }

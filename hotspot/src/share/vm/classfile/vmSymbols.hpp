@@ -216,7 +216,26 @@
   template(sun_reflect_UnsafeStaticFieldAccessorImpl, "sun/reflect/UnsafeStaticFieldAccessorImpl")\
   template(base_name,                                 "base")                                     \
                                                                                                   \
-  /* common method names */                                                                       \
+  /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
+  template(java_dyn_MethodHandle,                     "java/dyn/MethodHandle")                    \
+  template(java_dyn_MethodType,                       "java/dyn/MethodType")                      \
+  template(java_dyn_WrongMethodTypeException,         "java/dyn/WrongMethodTypeException")        \
+  template(java_dyn_MethodType_signature,             "Ljava/dyn/MethodType;")                    \
+  template(java_dyn_MethodHandle_signature,           "Ljava/dyn/MethodHandle;")                  \
+  /* internal classes known only to the JVM: */                                                   \
+  template(java_dyn_MethodTypeForm,                   "java/dyn/MethodTypeForm")                  \
+  template(java_dyn_MethodTypeForm_signature,         "Ljava/dyn/MethodTypeForm;")                \
+  template(sun_dyn_MemberName,                        "sun/dyn/MemberName")                       \
+  template(sun_dyn_MethodHandleImpl,                  "sun/dyn/MethodHandleImpl")                 \
+  template(sun_dyn_AdapterMethodHandle,               "sun/dyn/AdapterMethodHandle")              \
+  template(sun_dyn_BoundMethodHandle,                 "sun/dyn/BoundMethodHandle")                \
+  template(sun_dyn_DirectMethodHandle,                "sun/dyn/DirectMethodHandle")               \
+  template(makeImpl_name,                             "makeImpl") /*MethodType::makeImpl*/        \
+  template(makeImpl_signature,    "(Ljava/lang/Class;[Ljava/lang/Class;ZZ)Ljava/dyn/MethodType;") \
+  NOT_LP64(  do_alias(machine_word_signature,         int_signature)  )                           \
+  LP64_ONLY( do_alias(machine_word_signature,         long_signature) )                           \
+                                                                                                  \
+  /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
   template(class_initializer_name,                    "<clinit>")                                 \
   template(println_name,                              "println")                                  \
@@ -289,6 +308,21 @@
   template(bitCount_name,                             "bitCount")                                 \
   template(profile_name,                              "profile")                                  \
   template(equals_name,                               "equals")                                   \
+  template(toString_name,                             "toString")                                 \
+  template(values_name,                               "values")                                   \
+  template(receiver_name,                             "receiver")                                 \
+  template(vmtarget_name,                             "vmtarget")                                 \
+  template(vmentry_name,                              "vmentry")                                  \
+  template(vmslots_name,                              "vmslots")                                  \
+  template(vmindex_name,                              "vmindex")                                  \
+  template(vmargslot_name,                            "vmargslot")                                \
+  template(flags_name,                                "flags")                                    \
+  template(argument_name,                             "argument")                                 \
+  template(conversion_name,                           "conversion")                               \
+  template(rtype_name,                                "rtype")                                    \
+  template(ptypes_name,                               "ptypes")                                   \
+  template(form_name,                                 "form")                                     \
+  template(erasedType_name,                           "erasedType")                               \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
@@ -353,6 +387,7 @@
   template(void_classloader_signature,                "()Ljava/lang/ClassLoader;")                                \
   template(void_object_signature,                     "()Ljava/lang/Object;")                                     \
   template(void_class_signature,                      "()Ljava/lang/Class;")                                      \
+  template(void_string_signature,                     "()Ljava/lang/String;")                                      \
   template(object_array_object_object_signature,      "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")\
   template(exception_void_signature,                  "(Ljava/lang/Exception;)V")                                 \
   template(protectiondomain_signature,                "[Ljava/security/ProtectionDomain;")                        \

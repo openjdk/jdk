@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,26 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+package com.sun.nio.sctp;
 
-#ifndef AWT_KEYBOARDFOCUSMANAGER_H
-#define AWT_KEYBOARDFOCUSMANAGER_H
+/**
+ * Notification emitted when a peers shutdowns an the association.
+ *
+ * <P> When a peer sends a <i>SHUTDOWN</i>, the SCTP stack delivers this
+ * notification to inform the application that it should cease sending data.
+ *
+ * @since 1.7
+ */
+public abstract class ShutdownNotification implements Notification {
+    /**
+     * Initializes a new instance of this class.
+     */
+    protected ShutdownNotification() {}
 
-#include <jni.h>
-
-class AwtKeyboardFocusManager {
-public:
-
-    static jclass keyboardFocusManagerCls;
-    static jmethodID shouldNativelyFocusHeavyweightMID;
-    static jmethodID heavyweightButtonDownMID;
-    static jmethodID markClearGlobalFocusOwnerMID;
-    static jmethodID removeLastFocusRequestMID;
-    static jfieldID isProxyActive;
-    static jmethodID processSynchronousTransfer;
-};
-
-#endif // AWT_KEYBOARDFOCUSMANAGER_H
+    /**
+     * Returns the association that this notification is applicable to.
+     *
+     * @return  The association that received the shutdown
+     */
+    public abstract Association association();
+}

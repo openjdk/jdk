@@ -31,6 +31,7 @@ PlaceholderTable* SystemDictionary::_placeholders = NULL;
 Dictionary*       SystemDictionary::_shared_dictionary = NULL;
 LoaderConstraintTable* SystemDictionary::_loader_constraints = NULL;
 ResolutionErrorTable* SystemDictionary::_resolution_errors = NULL;
+SymbolPropertyTable* SystemDictionary::_invoke_method_table = NULL;
 
 
 int         SystemDictionary::_number_of_modifications = 0;
@@ -966,6 +967,8 @@ klassOop SystemDictionary::parse_stream(symbolHandle class_name,
   instanceKlassHandle k = ClassFileParser(st).parseClassFile(class_name,
                                                              class_loader,
                                                              protection_domain,
+                                                             host_klass,
+                                                             cp_patches,
                                                              parsed_name,
                                                              THREAD);
 
@@ -1691,6 +1694,10 @@ void SystemDictionary::always_strong_classes_do(OopClosure* blk) {
   // represent classes we're actively loading.
   placeholders_do(blk);
 
+  // Visit extra methods
+  if (invoke_method_table() != NULL)
+    invoke_method_table()->oops_do(blk);
+
   // Loader constraints. We must keep the symbolOop used in the name alive.
   constraints()->always_strong_classes_do(blk);
 
@@ -1725,6 +1732,10 @@ void SystemDictionary::oops_do(OopClosure* f) {
 
   // Adjust dictionary
   dictionary()->oops_do(f);
+
+  // Visit extra methods
+  if (invoke_method_table() != NULL)
+    invoke_method_table()->oops_do(f);
 
   // Partially loaded classes
   placeholders()->oops_do(f);
@@ -1798,6 +1809,8 @@ void SystemDictionary::placeholders_do(void f(symbolOop, oop)) {
 
 void SystemDictionary::methods_do(void f(methodOop)) {
   dictionary()->methods_do(f);
+  if (invoke_method_table() != NULL)
+    invoke_method_table()->methods_do(f);
 }
 
 // ----------------------------------------------------------------------------
@@ -1830,6 +1843,7 @@ void SystemDictionary::initialize(TRAPS) {
   _number_of_modifications = 0;
   _loader_constraints = new LoaderConstraintTable(_loader_constraint_size);
   _resolution_errors = new ResolutionErrorTable(_resolution_error_size);
+  // _invoke_method_table is allocated lazily in find_method_handle_invoke()
 
   // Allocate private object used as system class loader lock
   _system_loader_lock_obj = oopFactory::new_system_objArray(0, CHECK);
@@ -1891,6 +1905,9 @@ void SystemDictionary::initialize_wk_klasses_until(WKID limit_id, WKID &start_id
       wk_klass_name_limits[0] = s;
     }
   }
+
+  // move the starting value forward to the limit:
+  start_id = limit_id;
 }
 
 
@@ -1923,6 +1940,17 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   instanceKlass::cast(WK_KLASS(weak_reference_klass))->set_reference_type(REF_WEAK);
   instanceKlass::cast(WK_KLASS(final_reference_klass))->set_reference_type(REF_FINAL);
   instanceKlass::cast(WK_KLASS(phantom_reference_klass))->set_reference_type(REF_PHANTOM);
+
+  WKID meth_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
+  WKID meth_group_end   = WK_KLASS_ENUM_NAME(WrongMethodTypeException_klass);
+  initialize_wk_klasses_until(meth_group_start, scan, CHECK);
+  if (EnableMethodHandles) {
+    initialize_wk_klasses_through(meth_group_start, scan, CHECK);
+  }
+  if (_well_known_klasses[meth_group_start] == NULL) {
+    // Skip the rest of the method handle classes, if MethodHandle is not loaded.
+    scan = WKID(meth_group_end+1);
+  }
 
   initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
 
@@ -2251,6 +2279,91 @@ char* SystemDictionary::check_signature_loaders(symbolHandle signature,
     sig_strm.next();
   }
   return NULL;
+}
+
+
+methodOop SystemDictionary::find_method_handle_invoke(symbolHandle signature,
+                                                      Handle class_loader,
+                                                      Handle protection_domain,
+                                                      TRAPS) {
+  if (!EnableMethodHandles)  return NULL;
+  assert(class_loader.is_null() && protection_domain.is_null(),
+         "cannot load specialized versions of MethodHandle.invoke");
+  if (invoke_method_table() == NULL) {
+    // create this side table lazily
+    _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
+  }
+  unsigned int hash  = invoke_method_table()->compute_hash(signature);
+  int          index = invoke_method_table()->hash_to_index(hash);
+  SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature);
+  if (spe == NULL || spe->property_oop() == NULL) {
+    // Must create lots of stuff here, but outside of the SystemDictionary lock.
+    Handle mt = compute_method_handle_type(signature(),
+                                           class_loader, protection_domain,
+                                           CHECK_NULL);
+    KlassHandle  mh_klass = SystemDictionaryHandles::MethodHandle_klass();
+    methodHandle m = methodOopDesc::make_invoke_method(mh_klass, signature,
+                                                       mt, CHECK_NULL);
+    // Now grab the lock.  We might have to throw away the new method,
+    // if a racing thread has managed to install one at the same time.
+    {
+      MutexLocker ml(SystemDictionary_lock, Thread::current());
+      spe = invoke_method_table()->find_entry(index, hash, signature);
+      if (spe == NULL)
+        spe = invoke_method_table()->add_entry(index, hash, signature);
+      if (spe->property_oop() == NULL)
+        spe->set_property_oop(m());
+    }
+  }
+  methodOop m = (methodOop) spe->property_oop();
+  assert(m->is_method(), "");
+  return m;
+}
+
+// Ask Java code to find or construct a java.dyn.MethodType for the given
+// signature, as interpreted relative to the given class loader.
+// Because of class loader constraints, all method handle usage must be
+// consistent with this loader.
+Handle SystemDictionary::compute_method_handle_type(symbolHandle signature,
+                                                    Handle class_loader,
+                                                    Handle protection_domain,
+                                                    TRAPS) {
+  Handle empty;
+  int npts = ArgumentCount(signature()).size();
+  objArrayHandle pts = oopFactory::new_objArray(SystemDictionary::class_klass(), npts, CHECK_(empty));
+  int arg = 0;
+  Handle rt;                            // the return type from the signature
+  for (SignatureStream ss(signature()); !ss.is_done(); ss.next()) {
+    oop mirror;
+    if (!ss.is_object()) {
+      mirror = Universe::java_mirror(ss.type());
+    } else {
+      symbolOop    name_oop = ss.as_symbol(CHECK_(empty));
+      symbolHandle name(THREAD, name_oop);
+      klassOop klass = resolve_or_fail(name,
+                                       class_loader, protection_domain,
+                                       true, CHECK_(empty));
+      mirror = Klass::cast(klass)->java_mirror();
+    }
+    if (ss.at_return_type())
+      rt = Handle(THREAD, mirror);
+    else
+      pts->obj_at_put(arg++, mirror);
+  }
+  assert(arg == npts, "");
+
+  // call MethodType java.dyn.MethodType::makeImpl(Class rt, Class[] pts, false, true)
+  bool varargs = false, trusted = true;
+  JavaCallArguments args(Handle(THREAD, rt()));
+  args.push_oop(pts());
+  args.push_int(false);
+  args.push_int(trusted);
+  JavaValue result(T_OBJECT);
+  JavaCalls::call_static(&result,
+                         SystemDictionary::MethodType_klass(),
+                         vmSymbols::makeImpl_name(), vmSymbols::makeImpl_signature(),
+                         &args, CHECK_(empty));
+  return Handle(THREAD, (oop) result.get_jobject());
 }
 
 

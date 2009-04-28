@@ -73,7 +73,6 @@ public class ComponentAccessor
     private static Field fieldPacked;
     private static Field fieldIgnoreRepaint;
     private static Field fieldPeer;
-    private static Method methodResetGC;
     private static Field fieldVisible;
     private static Method methodIsEnabledImpl;
     private static Method methodGetCursorNoClientCode;
@@ -123,9 +122,6 @@ public class ComponentAccessor
 
                         fieldPeer = componentClass.getDeclaredField("peer");
                         fieldPeer.setAccessible(true);
-
-                        methodResetGC = componentClass.getDeclaredMethod("resetGC", (Class[]) null);
-                        methodResetGC.setAccessible(true);
 
                         fieldVisible = componentClass.getDeclaredField("visible");
                         fieldVisible.setAccessible(true);
@@ -423,18 +419,6 @@ public class ComponentAccessor
         }
 
         return false;
-    }
-
-    public static void resetGC(Component c) {
-        try {
-            methodResetGC.invoke(c, (Object[]) null);
-        }
-        catch (IllegalAccessException e) {
-            log.log(Level.FINE, "Unable to access the Component object", e);
-        }
-        catch (InvocationTargetException e) {
-            log.log(Level.FINE, "Unable to invoke on the Component object", e);
-        }
     }
 
     public static boolean getVisible(Component c) {

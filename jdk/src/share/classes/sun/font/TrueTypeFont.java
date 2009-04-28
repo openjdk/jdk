@@ -175,8 +175,17 @@ public class TrueTypeFont extends FileFont {
         super(platname, nativeNames);
         useJavaRasterizer = javaRasterizer;
         fontRank = Font2D.TTF_RANK;
-        verify();
-        init(fIndex);
+        try {
+            verify();
+            init(fIndex);
+        } catch (Throwable t) {
+            close();
+            if (t instanceof FontFormatException) {
+                throw (FontFormatException)t;
+            } else {
+                throw new FontFormatException("Unexpected runtime exception.");
+            }
+        }
         Disposer.addObjectRecord(this, disposerRecord);
     }
 

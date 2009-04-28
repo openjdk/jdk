@@ -1,5 +1,5 @@
 #
-# Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,8 @@ FILES_c = \
         OGLVertexCache.c \
         WGLGraphicsConfig.c \
         WGLSurfaceData.c \
-        AccelGlyphCache.c
+        AccelGlyphCache.c \
+        rect.c
 
 FILES_cpp = \
 	CmdIDList.cpp \
@@ -198,5 +199,6 @@ FILES_cpp = \
 	ShellFolder2.cpp \
 	ThemeReader.cpp \
 	ComCtl32Util.cpp \
+	DllUtil.cpp \
 	initIDs.cpp \
 	MouseInfo.cpp

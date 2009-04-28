@@ -27,6 +27,7 @@ package sun.awt.shell;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.concurrent.Callable;
 
 /**
  * @author Michael Martak
@@ -96,9 +97,23 @@ class ShellFolderManager {
     }
 
     public boolean isFileSystemRoot(File dir) {
-        if (dir instanceof ShellFolder && !((ShellFolder)dir).isFileSystem()) {
+        if (dir instanceof ShellFolder && !((ShellFolder) dir).isFileSystem()) {
             return false;
         }
         return (dir.getParentFile() == null);
+    }
+
+    protected ShellFolder.Invoker createInvoker() {
+        return new DirectInvoker();
+    }
+
+    private static class DirectInvoker implements ShellFolder.Invoker {
+        public <T> T invoke(Callable<T> task) {
+            try {
+                return task.call();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
