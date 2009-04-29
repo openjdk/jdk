@@ -56,7 +56,7 @@ public class TranslucentJAppletTest {
         frame.add(applet);
         frame.setBounds(100, 100, 200, 200);
         frame.setUndecorated(true);
-        com.sun.awt.AWTUtilities.setWindowOpaque(frame, false);
+        frame.setBackground(new Color(0, 0, 0, 0));
         frame.setVisible(true);
     }
 
