@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,28 @@
 
 /*
  * @test
- * @bug 6731826
- * @summary  There should be no RuntimeException.
- * @run main TestRaceCond
- */
+ * @bug 4510477 6520186
+ * @summary No crash with HP OfficeJet 600 installed.
+ * @run main LookupServices
+*/
 
-import javax.print.PrintService;
-import javax.print.PrintServiceLookup;
+import javax.print.attribute.*;
+import javax.print.*;
 
+public class LookupServices {
+    public static void main (String [] args) {
 
-public class TestRaceCond {
+        DocFlavor flavor = DocFlavor.INPUT_STREAM.GIF;
+        HashPrintRequestAttributeSet prSet = null;
 
-    public static void main(String argv[]) {
-        trial();
-    }
-
-    static void trial() {
-        PrintService pserv1 = PrintServiceLookup.lookupDefaultPrintService();
-        PrintService[] pservs = PrintServiceLookup.lookupPrintServices(null, null);
-        PrintService pserv2 = PrintServiceLookup.lookupDefaultPrintService();
-
-        if ((pserv1 == null) || (pserv2==null)) {
+        PrintService[] serv = PrintServiceLookup.lookupPrintServices(flavor, null);
+        System.out.println("default "+PrintServiceLookup.lookupDefaultPrintService());
+        if (serv.length==0) {
+            System.out.println("no PrintService supports GIF");
             return;
         }
 
-        if (pserv1.hashCode() != pserv2.hashCode()) {
-            throw new RuntimeException("Different hashCodes for equal print "
-                            + "services: " + pserv1.hashCode() + " "
-                            + pserv2.hashCode());
-        }
+        System.out.println("Selected print service: "+ serv[0]);
     }
-}
 
+}
