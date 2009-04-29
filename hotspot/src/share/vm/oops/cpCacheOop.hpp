@@ -89,6 +89,7 @@
 // _f1      = method for all but virtual calls, unused by virtual calls
 //            (note: for interface calls, which are essentially virtual,
 //             contains klassOop for the corresponding interface.
+//            for invokedynamic, f1 contains the CallSite object for the invocation
 // _f2      = method/vtable index for virtual calls only, unused by all other
 //            calls.  The vf flag indicates this is a method pointer not an
 //            index.
@@ -108,6 +109,8 @@
 
 class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
+  friend class constantPoolCacheKlass;
+
  private:
   volatile intx     _indices;  // constant pool index & rewrite bytecodes
   volatile oop      _f1;       // entry specific oop field
@@ -175,6 +178,11 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     int index                                    // Method index into interface
   );
 
+  void set_dynamic_call(
+    Handle call_site,                            // Resolved java.dyn.CallSite (f1)
+    int extra_data                               // (f2)
+  );
+
   void set_parameter_size(int value) {
     assert(parameter_size() == 0 || parameter_size() == value,
            "size must not change");
@@ -216,7 +224,11 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   }
 
   // Accessors
-  int constant_pool_index() const                { return _indices & 0xFFFF; }
+  bool is_secondary_entry() const                { return (_indices & 0xFFFF) == 0; }
+  int constant_pool_index() const                { assert((_indices & 0xFFFF) != 0, "must be main entry");
+                                                   return (_indices & 0xFFFF); }
+  int main_entry_index() const                   { assert((_indices & 0xFFFF) == 0, "must be secondary entry");
+                                                   return ((uintx)_indices >> 16); }
   Bytecodes::Code bytecode_1() const             { return Bytecodes::cast((_indices >> 16) & 0xFF); }
   Bytecodes::Code bytecode_2() const             { return Bytecodes::cast((_indices >> 24) & 0xFF); }
   volatile oop  f1() const                       { return _f1; }
@@ -314,10 +326,30 @@ class constantPoolCacheOopDesc: public oopDesc {
   // Initialization
   void initialize(intArray& inverse_index_map);
 
+  // Secondary indexes.
+  // They must look completely different from normal indexes.
+  // The main reason is that byte swapping is sometimes done on normal indexes.
+  // Also, it is helpful for debugging to tell the two apart.
+  static bool is_secondary_index(int i) { return (i < 0); }
+  static int  decode_secondary_index(int i) { assert(is_secondary_index(i),  ""); return ~i; }
+  static int  encode_secondary_index(int i) { assert(!is_secondary_index(i), ""); return ~i; }
+
   // Accessors
   void set_constant_pool(constantPoolOop pool)   { oop_store_without_check((oop*)&_constant_pool, (oop)pool); }
   constantPoolOop constant_pool() const          { return _constant_pool; }
   ConstantPoolCacheEntry* entry_at(int i) const  { assert(0 <= i && i < length(), "index out of bounds"); return base() + i; }
+  ConstantPoolCacheEntry* main_entry_at(int i) const {
+    ConstantPoolCacheEntry* e;
+    if (is_secondary_index(i)) {
+      // run through an extra level of indirection:
+      i = decode_secondary_index(i);
+      e = entry_at(i);
+      i = e->main_entry_index();
+    }
+    e = entry_at(i);
+    assert(!e->is_secondary_entry(), "only one level of indirection");
+    return e;
+  }
 
   // GC support
   // If the _length field has not been set, the size of the

@@ -2156,6 +2156,7 @@ void Parse::do_one_bytecode() {
     break;
 
   case Bytecodes::_invokestatic:
+  case Bytecodes::_invokedynamic:
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokevirtual:
   case Bytecodes::_invokeinterface:

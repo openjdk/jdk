@@ -65,14 +65,6 @@ class ThisRelativeObj VALUE_OBJ_CLASS_SPEC {
 // The base class for different kinds of bytecode abstractions.
 // Provides the primitive operations to manipulate code relative
 // to an objects 'this' pointer.
-//
-// Note: Even though it seems that the fast_index & set_fast_index
-//       functions are machine specific, they're not. They only use
-//       the natural way to store a 16bit index on a given machine,
-//       independent of the particular byte ordering. Since all other
-//       places in the system that refer to these indices use the
-//       same method (the natural byte ordering on the platform)
-//       this will always work and be machine-independent).
 
 class Bytecode: public ThisRelativeObj {
  protected:
@@ -83,24 +75,40 @@ class Bytecode: public ThisRelativeObj {
   // Attributes
   address bcp() const                            { return addr_at(0); }
   address next_bcp() const                       { return addr_at(0) + Bytecodes::length_at(bcp()); }
+  int instruction_size() const                   { return Bytecodes::length_at(bcp()); }
 
   Bytecodes::Code code() const                   { return Bytecodes::code_at(addr_at(0)); }
   Bytecodes::Code java_code() const              { return Bytecodes::java_code(code()); }
   bool must_rewrite() const                      { return Bytecodes::can_rewrite(code()) && check_must_rewrite(); }
   bool is_active_breakpoint() const              { return Bytecodes::is_active_breakpoint_at(bcp()); }
 
-  int     one_byte_index() const                 { return byte_at(1); }
-  int     two_byte_index() const                 { return (byte_at(1) << 8) + byte_at(2); }
+  int     one_byte_index() const                 { assert_index_size(1); return byte_at(1); }
+  int     two_byte_index() const                 { assert_index_size(2); return (byte_at(1) << 8) + byte_at(2); }
+
   int     offset() const                         { return (two_byte_index() << 16) >> 16; }
   address destination() const                    { return bcp() + offset(); }
-  int     fast_index() const                     { return Bytes::get_native_u2(addr_at(1)); }
 
   // Attribute modification
   void    set_code(Bytecodes::Code code);
-  void    set_fast_index(int i);
 
   // Creation
   inline friend Bytecode* Bytecode_at(address bcp);
+
+ private:
+  void assert_index_size(int required_size) const {
+#ifdef ASSERT
+    int isize = instruction_size() - 1;
+    if (isize == 2 && code() == Bytecodes::_iinc)
+      isize = 1;
+    else if (isize <= 2)
+      ;                         // no change
+    else if (code() == Bytecodes::_invokedynamic)
+      isize = 4;
+    else
+      isize = 2;
+    assert(isize = required_size, "wrong index size");
+#endif
+  }
 };
 
 inline Bytecode* Bytecode_at(address bcp) {
@@ -195,6 +203,9 @@ class Bytecode_invoke: public ResourceObj {
   bool is_invokevirtual() const                  { return adjusted_invoke_code() == Bytecodes::_invokevirtual; }
   bool is_invokestatic() const                   { return adjusted_invoke_code() == Bytecodes::_invokestatic; }
   bool is_invokespecial() const                  { return adjusted_invoke_code() == Bytecodes::_invokespecial; }
+  bool is_invokedynamic() const                  { return adjusted_invoke_code() == Bytecodes::_invokedynamic; }
+
+  bool has_giant_index() const                   { return is_invokedynamic(); }
 
   bool is_valid() const                          { return is_invokeinterface() ||
                                                           is_invokevirtual()   ||

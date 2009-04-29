@@ -2956,9 +2956,11 @@ void LinearScan::do_linear_scan() {
 
   NOT_PRODUCT(print_intervals("After Register Allocation"));
   NOT_PRODUCT(print_lir(2, "LIR after register allocation:"));
-  DEBUG_ONLY(verify());
 
   sort_intervals_after_allocation();
+
+  DEBUG_ONLY(verify());
+
   eliminate_spill_moves();
   assign_reg_num();
   CHECK_BAILOUT();
@@ -3147,6 +3149,16 @@ void LinearScan::verify_intervals() {
 
 
 void LinearScan::verify_no_oops_in_fixed_intervals() {
+  Interval* fixed_intervals;
+  Interval* other_intervals;
+  create_unhandled_lists(&fixed_intervals, &other_intervals, is_precolored_cpu_interval, NULL);
+
+  // to ensure a walking until the last instruction id, add a dummy interval
+  // with a high operation id
+  other_intervals = new Interval(any_reg);
+  other_intervals->add_range(max_jint - 2, max_jint - 1);
+  IntervalWalker* iw = new IntervalWalker(this, fixed_intervals, other_intervals);
+
   LIR_OpVisitState visitor;
   for (int i = 0; i < block_count(); i++) {
     BlockBegin* block = block_at(i);
@@ -3158,6 +3170,54 @@ void LinearScan::verify_no_oops_in_fixed_intervals() {
       int op_id = op->id();
 
       visitor.visit(op);
+
+      if (visitor.info_count() > 0) {
+        iw->walk_before(op->id());
+        bool check_live = true;
+        if (op->code() == lir_move) {
+          LIR_Op1* move = (LIR_Op1*)op;
+          check_live = (move->patch_code() == lir_patch_none);
+        }
+        LIR_OpBranch* branch = op->as_OpBranch();
+        if (branch != NULL && branch->stub() != NULL && branch->stub()->is_exception_throw_stub()) {
+          // Don't bother checking the stub in this case since the
+          // exception stub will never return to normal control flow.
+          check_live = false;
+        }
+
+        // Make sure none of the fixed registers is live across an
+        // oopmap since we can't handle that correctly.
+        if (check_live) {
+          for (Interval* interval = iw->active_first(fixedKind);
+               interval != Interval::end();
+               interval = interval->next()) {
+            if (interval->current_to() > op->id() + 1) {
+              // This interval is live out of this op so make sure
+              // that this interval represents some value that's
+              // referenced by this op either as an input or output.
+              bool ok = false;
+              for_each_visitor_mode(mode) {
+                int n = visitor.opr_count(mode);
+                for (int k = 0; k < n; k++) {
+                  LIR_Opr opr = visitor.opr_at(mode, k);
+                  if (opr->is_fixed_cpu()) {
+                    if (interval_at(reg_num(opr)) == interval) {
+                      ok = true;
+                      break;
+                    }
+                    int hi = reg_numHi(opr);
+                    if (hi != -1 && interval_at(hi) == interval) {
+                      ok = true;
+                      break;
+                    }
+                  }
+                }
+              }
+              assert(ok, "fixed intervals should never be live across an oopmap point");
+            }
+          }
+        }
+      }
 
       // oop-maps at calls do not contain registers, so check is not needed
       if (!visitor.has_call()) {

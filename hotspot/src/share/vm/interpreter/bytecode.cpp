@@ -34,12 +34,6 @@ void Bytecode::set_code(Bytecodes::Code code) {
 }
 
 
-void Bytecode::set_fast_index(int i) {
-  assert(0 <= i && i < 0x10000, "illegal index value");
-  Bytes::put_native_u2(addr_at(1), (jushort)i);
-}
-
-
 bool Bytecode::check_must_rewrite() const {
   assert(Bytecodes::can_rewrite(code()), "post-check only");
 
@@ -118,7 +112,12 @@ methodHandle Bytecode_invoke::static_target(TRAPS) {
 
 
 int Bytecode_invoke::index() const {
-  return Bytes::get_Java_u2(bcp() + 1);
+  // Note:  Rewriter::rewrite changes the Java_u2 of an invokedynamic to a native_u4,
+  // at the same time it allocates per-call-site CP cache entries.
+  if (has_giant_index())
+    return Bytes::get_native_u4(bcp() + 1);
+  else
+    return Bytes::get_Java_u2(bcp() + 1);
 }
 
 
