@@ -160,12 +160,6 @@ HeapWord* walk_mem_region_loop(ClosureType* cl, G1CollectedHeap* g1h,
     if (!g1h->is_obj_dead(cur_oop, hr)) {
       // Bottom lies entirely below top, so we can call the
       // non-memRegion version of oop_iterate below.
-#ifndef PRODUCT
-      if (G1VerifyMarkingInEvac) {
-        VerifyLiveClosure vl_cl(g1h);
-        cur_oop->oop_iterate(&vl_cl);
-      }
-#endif
       cur_oop->oop_iterate(cl);
     }
     cur = next_obj;
@@ -197,12 +191,6 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
   // or it was allocated after marking finished, then we add it. Otherwise
   // we can safely ignore the object.
   if (!g1h->is_obj_dead(oop(bottom), _hr)) {
-#ifndef PRODUCT
-    if (G1VerifyMarkingInEvac) {
-      VerifyLiveClosure vl_cl(g1h);
-      oop(bottom)->oop_iterate(&vl_cl, mr);
-    }
-#endif
     oop_size = oop(bottom)->oop_iterate(cl2, mr);
   } else {
     oop_size = oop(bottom)->size();
@@ -232,12 +220,6 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
 
     // Last object. Need to do dead-obj filtering here too.
     if (!g1h->is_obj_dead(oop(bottom), _hr)) {
-#ifndef PRODUCT
-      if (G1VerifyMarkingInEvac) {
-        VerifyLiveClosure vl_cl(g1h);
-        oop(bottom)->oop_iterate(&vl_cl, mr);
-      }
-#endif
       oop(bottom)->oop_iterate(cl2, mr);
     }
   }
@@ -713,7 +695,7 @@ void HeapRegion::verify(bool allow_dirty) const {
     G1CollectedHeap::heap()->print();
     gclog_or_tty->print_cr("");
   }
-  if (G1VerifyConcMark &&
+  if (VerifyDuringGC &&
       G1VerifyConcMarkPrintReachable &&
       vl_cl.failures()) {
     g1->concurrent_mark()->print_prev_bitmap_reachable();
