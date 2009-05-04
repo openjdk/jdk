@@ -71,7 +71,7 @@
   develop(intx, G1MarkingVerboseLevel, 0,                                   \
           "Level (0-4) of verboseness of the marking code")                 \
                                                                             \
-  develop(bool, G1VerifyConcMarkPrintReachable, true,                       \
+  develop(bool, G1VerifyConcMarkPrintReachable, false,                      \
           "If conc mark verification fails, print reachable objects")       \
                                                                             \
   develop(bool, G1TraceMarkStackOverflow, false,                            \
