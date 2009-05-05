@@ -524,7 +524,7 @@ void AwtWindow::CreateWarningWindow(JNIEnv *env)
 
     RegisterWarningWindowClass();
     warningWindow = ::CreateWindowEx(
-            WS_EX_NOACTIVATE | WS_EX_LAYERED,
+            WS_EX_NOACTIVATE,
             GetWarningWindowClassName(),
             warningString,
             WS_POPUP,
@@ -536,7 +536,7 @@ void AwtWindow::CreateWarningWindow(JNIEnv *env)
             NULL // lParam
             );
     if (warningWindow == NULL) {
-        //XXX: actually this is bad... We didn't manage to create the widow.
+        //XXX: actually this is bad... We didn't manage to create the window.
         return;
     }
 
@@ -836,6 +836,19 @@ void AwtWindow::RepaintWarningWindow()
     ::ReleaseDC(warningWindow, hdc);
 }
 
+void AwtWindow::SetLayered(HWND window, bool layered)
+{
+    const LONG ex_style = ::GetWindowLong(window, GWL_EXSTYLE);
+    ::SetWindowLong(window, GWL_EXSTYLE, layered ?
+            ex_style | WS_EX_LAYERED : ex_style & ~WS_EX_LAYERED);
+}
+
+bool AwtWindow::IsLayered(HWND window)
+{
+    const LONG ex_style = ::GetWindowLong(window, GWL_EXSTYLE);
+    return ex_style & WS_EX_LAYERED;
+}
+
 void AwtWindow::StartSecurityAnimation(AnimationKind kind)
 {
     if (!IsUntrusted()) {
@@ -858,8 +871,14 @@ void AwtWindow::StartSecurityAnimation(AnimationKind kind)
 
         ::SetLayeredWindowAttributes(warningWindow, RGB(0, 0, 0),
                 0xFF, LWA_ALPHA);
+        AwtWindow::SetLayered(warningWindow, false);
         ::RedrawWindow(warningWindow, NULL, NULL,
                 RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+    } else if (securityAnimationKind == akPreHide) {
+        // Pre-hiding means fading-out. We have to make the window layered.
+        // Note: Some VNC clients do not support layered windows, hence
+        // we dynamically turn it on and off. See 6805231.
+        AwtWindow::SetLayered(warningWindow, true);
     }
 }
 
@@ -2528,8 +2547,6 @@ void AwtWindow::SetTranslucency(BYTE opacity, BOOL opaque)
 
     HWND hwnd = GetHWnd();
 
-    LONG ex_style = ::GetWindowLong(hwnd, GWL_EXSTYLE);
-
     if (opaque != old_opaque) {
         ::EnterCriticalSection(&contentBitmapCS);
         if (hContentBitmap != NULL) {
@@ -2541,21 +2558,22 @@ void AwtWindow::SetTranslucency(BYTE opacity, BOOL opaque)
 
     if (opaque && opacity == 0xff) {
         // Turn off all the effects
-        ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style & ~WS_EX_LAYERED);
+        AwtWindow::SetLayered(hwnd, false);
+
         // Ask the window to repaint itself and all the children
         RedrawWindow();
     } else {
         // We're going to enable some effects
-        if (!(ex_style & WS_EX_LAYERED)) {
-            ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED);
+        if (!AwtWindow::IsLayered(hwnd)) {
+            AwtWindow::SetLayered(hwnd, true);
         } else {
             if ((opaque && opacity < 0xff) ^ (old_opaque && old_opacity < 0xff)) {
                 // _One_ of the modes uses the SetLayeredWindowAttributes.
                 // Need to reset the style in this case.
                 // If both modes are simple (i.e. just changing the opacity level),
                 // no need to reset the style.
-                ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style & ~WS_EX_LAYERED);
-                ::SetWindowLong(hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED);
+                AwtWindow::SetLayered(hwnd, false);
+                AwtWindow::SetLayered(hwnd, true);
             }
         }
 
