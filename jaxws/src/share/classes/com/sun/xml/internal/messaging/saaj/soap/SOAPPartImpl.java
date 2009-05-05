@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: SOAPPartImpl.java,v 1.1.1.1 2006/01/27 13:10:55 kumarjayanti Exp $
- * $Revision: 1.1.1.1 $
- * $Date: 2006/01/27 13:10:55 $
+ *
+ *
+ *
  */
 
 
@@ -59,7 +59,7 @@ import javax.xml.transform.sax.SAXSource;
  * @author Anil Vijendran (anil@sun.com)
  */
 public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 
