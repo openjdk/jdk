@@ -707,31 +707,6 @@ void AwtWindow::CalculateWarningWindowBounds(JNIEnv *env, LPRECT rect)
 
     env->DeleteLocalRef(point2D);
 
-    //Make sure the warning is not far from the window bounds
-    x = max(x, windowBounds.left - (int)warningWindowWidth - 2);
-    x = min(x, windowBounds.right + (int)warningWindowWidth + 2);
-
-    y = max(y, windowBounds.top - (int)warningWindowHeight - 2);
-    y = min(y, windowBounds.bottom + (int)warningWindowHeight + 2);
-
-    // Now make sure the warning window is visible on the screen
-    HMONITOR hmon = MonitorFromWindow(GetHWnd(), MONITOR_DEFAULTTOPRIMARY);
-    DASSERT(hmon != NULL);
-
-    RECT monitorBounds;
-    RECT monitorInsets;
-
-    MonitorBounds(hmon, &monitorBounds);
-    if (!AwtToolkit::GetScreenInsets(m_screenNum, &monitorInsets)) {
-        ::ZeroMemory(&monitorInsets, sizeof(monitorInsets));
-    }
-
-    x = max(x, monitorBounds.left + monitorInsets.left);
-    x = min(x, monitorBounds.right - monitorInsets.right - (int)warningWindowWidth);
-
-    y = max(y, monitorBounds.top + monitorInsets.top);
-    y = min(y, monitorBounds.bottom - monitorInsets.bottom - (int)warningWindowHeight);
-
     rect->left = x;
     rect->top = y;
     rect->right = rect->left + warningWindowWidth;
