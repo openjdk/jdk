@@ -107,7 +107,7 @@ endif
 
 ifeq ($(DEBUG_CLASSFILES), true)
   ANT_OPTIONS += -Djavac.debug=true
-  ANT_OPTIONS += -Djavac.debuglevel=source,lines,vars
+  ANT_OPTIONS += -Ddebug.classfiles=true
 endif
 
 # Note: jdk/make/common/Defs.gmk uses LANGUAGE_VERSION (-source NN)
