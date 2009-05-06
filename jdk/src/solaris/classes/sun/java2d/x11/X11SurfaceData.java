@@ -81,13 +81,6 @@ public abstract class X11SurfaceData extends SurfaceData {
         DESC_INT_BGR_X11        = "Integer BGR Pixmap";
     public static final String
         DESC_INT_RGB_X11        = "Integer RGB Pixmap";
-
-    public static final String
-        DESC_4BYTE_ABGR_PRE_X11 = "4 byte ABGR Pixmap with pre-multplied alpha";
-    public static final String
-        DESC_INT_ARGB_PRE_X11   = "Integer ARGB Pixmap with pre-multiplied " +
-                                  "alpha";
-
     public static final String
         DESC_BYTE_IND_OPQ_X11   = "Byte Indexed Opaque Pixmap";
 
@@ -139,11 +132,6 @@ public abstract class X11SurfaceData extends SurfaceData {
         SurfaceType.IntBgr.deriveSubType(DESC_INT_BGR_X11);
     public static final SurfaceType IntRgbX11 =
         SurfaceType.IntRgb.deriveSubType(DESC_INT_RGB_X11);
-
-    public static final SurfaceType FourByteAbgrPreX11 =
-        SurfaceType.FourByteAbgrPre.deriveSubType(DESC_4BYTE_ABGR_PRE_X11);
-    public static final SurfaceType IntArgbPreX11 =
-        SurfaceType.IntArgbPre.deriveSubType(DESC_INT_ARGB_PRE_X11);
 
     public static final SurfaceType ThreeByteRgbX11 =
         SurfaceType.ThreeByteRgb.deriveSubType(DESC_3BYTE_RGB_X11);
@@ -425,7 +413,7 @@ public abstract class X11SurfaceData extends SurfaceData {
                                                   int transparency)
     {
         return new X11PixmapSurfaceData(gc, width, height, image,
-                                        getSurfaceType(gc, transparency, true),
+                                        getSurfaceType(gc, transparency),
                                         cm, drawable, transparency);
     }
 
@@ -510,13 +498,6 @@ public abstract class X11SurfaceData extends SurfaceData {
     public static SurfaceType getSurfaceType(X11GraphicsConfig gc,
                                              int transparency)
     {
-        return getSurfaceType(gc, transparency, false);
-    }
-
-    public static SurfaceType getSurfaceType(X11GraphicsConfig gc,
-                                             int transparency,
-                                             boolean pixmapSurface)
-    {
         boolean transparent = (transparency == Transparency.BITMASK);
         SurfaceType sType;
         ColorModel cm = gc.getColorModel();
@@ -543,21 +524,11 @@ public abstract class X11SurfaceData extends SurfaceData {
             // Fall through for 32 bit case
         case 32:
             if (cm instanceof DirectColorModel) {
-                if (((SunToolkit)java.awt.Toolkit.getDefaultToolkit()
-                     ).isTranslucencyCapable(gc) && !pixmapSurface)
-                {
-                    sType = X11SurfaceData.IntArgbPreX11;
+                if (((DirectColorModel)cm).getRedMask() == 0xff0000) {
+                    sType = transparent ? X11SurfaceData.IntRgbX11_BM : X11SurfaceData.IntRgbX11;
                 } else {
-                    if (((DirectColorModel)cm).getRedMask() == 0xff0000) {
-                        sType = transparent ? X11SurfaceData.IntRgbX11_BM :
-                                              X11SurfaceData.IntRgbX11;
-                    } else {
-                        sType = transparent ? X11SurfaceData.IntBgrX11_BM :
-                                              X11SurfaceData.IntBgrX11;
-                    }
+                    sType = transparent ? X11SurfaceData.IntBgrX11_BM : X11SurfaceData.IntBgrX11;
                 }
-            } else if (cm instanceof ComponentColorModel) {
-                   sType = X11SurfaceData.FourByteAbgrPreX11;
             } else {
 
                 throw new sun.java2d.InvalidPipeException("Unsupported bit " +

@@ -70,10 +70,6 @@ public class X11PMBlitBgLoops extends BlitBg {
                                  X11SurfaceData.UShort565RgbX11),
             new X11PMBlitBgLoops(X11SurfaceData.UShortIndexedX11_BM,
                                  X11SurfaceData.UShortIndexedX11),
-            new X11PMBlitBgLoops(X11SurfaceData.IntRgbX11_BM,
-                                 X11SurfaceData.IntArgbPreX11),
-            new X11PMBlitBgLoops(X11SurfaceData.IntBgrX11_BM,
-                                 X11SurfaceData.FourByteAbgrPreX11),
         };
         GraphicsPrimitiveMgr.register(primitives);
     }
