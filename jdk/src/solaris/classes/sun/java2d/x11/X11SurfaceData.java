@@ -530,6 +530,7 @@ public abstract class X11SurfaceData extends SurfaceData {
                     sType = transparent ? X11SurfaceData.IntBgrX11_BM : X11SurfaceData.IntBgrX11;
                 }
             } else {
+
                 throw new sun.java2d.InvalidPipeException("Unsupported bit " +
                                                           "depth/cm combo: " +
                                                           cm.getPixelSize()  +
