@@ -1712,6 +1712,23 @@ static FloatRegister reg_to_DoubleFloatRegister_object(int register_encoding) {
   return as_DoubleFloatRegister(register_encoding);
 }
 
+const bool Matcher::match_rule_supported(int opcode) {
+  if (!has_match_rule(opcode))
+    return false;
+
+  switch (opcode) {
+  case Op_CountLeadingZerosI:
+  case Op_CountLeadingZerosL:
+  case Op_CountTrailingZerosI:
+  case Op_CountTrailingZerosL:
+    if (!UsePopCountInstruction)
+      return false;
+    break;
+  }
+
+  return true;  // Per default match rules are supported.
+}
+
 int Matcher::regnum_to_fpu_offset(int regnum) {
   return regnum - 32; // The FP registers are in the second chunk
 }
@@ -9187,6 +9204,145 @@ instruct array_equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, g4RegP tmp2, notemp
   ins_encode( enc_Array_Equals(ary1, ary2, tmp1, tmp2, result));
   ins_pipe(long_memory_op);
 %}
+
+
+//---------- Zeros Count Instructions ------------------------------------------
+
+instruct countLeadingZerosI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
+  predicate(UsePopCountInstruction);  // See Matcher::match_rule_supported
+  match(Set dst (CountLeadingZerosI src));
+  effect(TEMP dst, TEMP tmp, KILL cr);
+
+  // x |= (x >> 1);
+  // x |= (x >> 2);
+  // x |= (x >> 4);
+  // x |= (x >> 8);
+  // x |= (x >> 16);
+  // return (WORDBITS - popc(x));
+  format %{ "SRL     $src,1,$dst\t! count leading zeros (int)\n\t"
+            "OR      $src,$tmp,$dst\n\t"
+            "SRL     $dst,2,$tmp\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
+            "SRL     $dst,4,$tmp\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
+            "SRL     $dst,8,$tmp\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
+            "SRL     $dst,16,$tmp\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
+            "POPC    $dst,$dst\n\t"
+            "MOV     32,$tmp\n\t"
+            "SUB     $tmp,$dst,$dst" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    Register Rtmp = $tmp$$Register;
+    __ srl(Rsrc, 1, Rtmp);
+    __ or3(Rsrc, Rtmp, Rdst);
+    __ srl(Rdst, 2, Rtmp);
+    __ or3(Rdst, Rtmp, Rdst);
+    __ srl(Rdst, 4, Rtmp);
+    __ or3(Rdst, Rtmp, Rdst);
+    __ srl(Rdst, 8, Rtmp);
+    __ or3(Rdst, Rtmp, Rdst);
+    __ srl(Rdst, 16, Rtmp);
+    __ or3(Rdst, Rtmp, Rdst);
+    __ popc(Rdst, Rdst);
+    __ mov(BitsPerInt, Rtmp);
+    __ sub(Rtmp, Rdst, Rdst);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosL(iRegI dst, iRegL src, iRegL tmp, flagsReg cr) %{
+  predicate(UsePopCountInstruction);  // See Matcher::match_rule_supported
+  match(Set dst (CountLeadingZerosL src));
+  effect(TEMP dst, TEMP tmp, KILL cr);
+
+  // x |= (x >> 1);
+  // x |= (x >> 2);
+  // x |= (x >> 4);
+  // x |= (x >> 8);
+  // x |= (x >> 16);
+  // x |= (x >> 32);
+  // return (WORDBITS - popc(x));
+  format %{ "SRLX    $src,1,$dst\t! count leading zeros (long)\n\t"
+            "OR      $src,$tmp,$dst\n\t"
+            "SRLX    $dst,2,$tmp\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
+            "SRLX    $dst,4,$tmp\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
+            "SRLX    $dst,8,$tmp\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
+            "SRLX    $dst,16,$tmp\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
+            "SRLX    $dst,32,$tmp\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
+            "POPC    $dst,$dst\n\t"
+            "MOV     64,$tmp\n\t"
+            "SUB     $tmp,$dst,$dst" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    Register Rtmp = $tmp$$Register;
+    __ srlx(Rsrc, 1, Rtmp);
+    __ or3(Rsrc, Rtmp, Rdst);
+    __ srlx(Rdst, 2, Rtmp);
+    __ or3(Rdst, Rtmp, Rdst);
+    __ srlx(Rdst, 4, Rtmp);
+    __ or3(Rdst, Rtmp, Rdst);
+    __ srlx(Rdst, 8, Rtmp);
+    __ or3(Rdst, Rtmp, Rdst);
+    __ srlx(Rdst, 16, Rtmp);
+    __ or3(Rdst, Rtmp, Rdst);
+    __ srlx(Rdst, 32, Rtmp);
+    __ or3(Rdst, Rtmp, Rdst);
+    __ popc(Rdst, Rdst);
+    __ mov(BitsPerLong, Rtmp);
+    __ sub(Rtmp, Rdst, Rdst);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosI(iRegI dst, iRegI src, flagsReg cr) %{
+  predicate(UsePopCountInstruction);  // See Matcher::match_rule_supported
+  match(Set dst (CountTrailingZerosI src));
+  effect(TEMP dst, KILL cr);
+
+  // return popc(~x & (x - 1));
+  format %{ "SUB     $src,1,$dst\t! count trailing zeros (int)\n\t"
+            "ANDN    $dst,$src,$dst\n\t"
+            "SRL     $dst,R_G0,$dst\n\t"
+            "POPC    $dst,$dst" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    __ sub(Rsrc, 1, Rdst);
+    __ andn(Rdst, Rsrc, Rdst);
+    __ srl(Rdst, G0, Rdst);
+    __ popc(Rdst, Rdst);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosL(iRegI dst, iRegL src, flagsReg cr) %{
+  predicate(UsePopCountInstruction);  // See Matcher::match_rule_supported
+  match(Set dst (CountTrailingZerosL src));
+  effect(TEMP dst, KILL cr);
+
+  // return popc(~x & (x - 1));
+  format %{ "SUB     $src,1,$dst\t! count trailing zeros (long)\n\t"
+            "ANDN    $dst,$src,$dst\n\t"
+            "POPC    $dst,$dst" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    __ sub(Rsrc, 1, Rdst);
+    __ andn(Rdst, Rsrc, Rdst);
+    __ popc(Rdst, Rdst);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 
 //---------- Population Count Instructions -------------------------------------
 
