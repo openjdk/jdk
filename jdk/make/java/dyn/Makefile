@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,22 @@
 # have any questions.
 #
 
-#
-# Makefile for building all of java
-#
+BUILDDIR = ../..
 
-PRODUCT=java
-BUILDDIR=..
+PACKAGE = java.dyn
+PRODUCT = java
 include $(BUILDDIR)/common/Defs.gmk
 
-#
-# The order of subdirs here is important
-#
-SUBDIRS += hpi version jvm redist verify fdlibm java sun_nio jli main zip
+AUTO_FILES_JAVA_DIRS = java/dyn sun/dyn
 
-# Others
-#    Note: java_crw_demo java_hprof_demo are demos but must be delivered built in sdk
-SUBDIRS += security npt java_crw_demo java_hprof_demo \
-	    math awt util text applet net nio dyn \
-	    sql rmi jar beans logging management instrument
+# The sources built here use new language syntax to generate
+# method handle calls.  Let's be sure we are using that format.
+#LANGUAGE_VERSION = -source 7
+#CLASS_VERSION = -target 7
 
+# Actually, it will be less disruptive to compile with the same
+# -target option as the rest of the system, and just turn on
+# the specific compiler option we need here:
+OTHER_JAVACFLAGS = -XDinvokedynamic
 
-ifeq ($(PLATFORM), solaris)
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    SUBDIRS += jexec
-  endif
-endif # PLATFORM
-
-ifeq ($(PLATFORM), linux)
-  SUBDIRS += jexec
-endif # PLATFORM
-
-all build clean clobber::
-	$(SUBDIRS-loop)
-
+include $(BUILDDIR)/common/Classes.gmk
