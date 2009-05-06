@@ -886,27 +886,6 @@ awt_allocate_colors(AwtGraphicsConfigDataPtr awt_data)
 #define blue(v)         (((v) >>  0) & 0xFF)
 
 #ifndef HEADLESS
-
-jobject getColorSpace(JNIEnv* env, jint csID) {
-    jclass clazz;
-    jobject cspaceL;
-    jmethodID mid;
-
-    clazz = (*env)->FindClass(env,"java/awt/color/ColorSpace");
-    mid = (*env)->GetStaticMethodID(env, clazz, "getInstance",
-                                    "(I)Ljava/awt/color/ColorSpace;");
-    if (mid == NULL) {
-        return NULL;
-    }
-
-    /* SECURITY: This is safe, because static methods cannot
-     *           be overridden, and this method does not invoke
-     *           client code
-     */
-
-    return (*env)->CallStaticObjectMethod(env, clazz, mid, csID);
-}
-
 jobject awtJNI_GetColorModel(JNIEnv *env, AwtGraphicsConfigDataPtr aData)
 {
     jobject awt_colormodel = NULL;
@@ -920,60 +899,20 @@ jobject awtJNI_GetColorModel(JNIEnv *env, AwtGraphicsConfigDataPtr aData)
         (aData->awt_depth >= 15))
     {
         clazz = (*env)->FindClass(env,"java/awt/image/DirectColorModel");
-        if (!aData->isTranslucencySupported) {
 
-            mid = (*env)->GetMethodID(env,clazz,"<init>","(IIIII)V");
+        mid = (*env)->GetMethodID(env,clazz,"<init>","(IIIII)V");
 
-            if (mid == NULL) {
-                (*env)->PopLocalFrame(env, 0);
-                return NULL;
-            }
-            awt_colormodel = (*env)->NewObject(env,clazz, mid,
-                    aData->awt_visInfo.depth,
-                    aData->awt_visInfo.red_mask,
-                    aData->awt_visInfo.green_mask,
-                    aData->awt_visInfo.blue_mask,
-                    0);
-        } else {
-            clazz = (*env)->FindClass(env,"sun/awt/X11GraphicsConfig");
-            if (clazz == NULL) {
-                (*env)->PopLocalFrame(env, 0);
-                return NULL;
-            }
-
-            if (aData->renderPictFormat.direct.red == 16) {
-                mid = (*env)->GetStaticMethodID( env,clazz,"createDCM32",
-                        "(IIIIZ)Ljava/awt/image/DirectColorModel;");
-
-                if (mid == NULL) {
-                    (*env)->PopLocalFrame(env, 0);
-                    return NULL;
-                }
-
-                awt_colormodel = (*env)->CallStaticObjectMethod(
-                        env,clazz, mid,
-                        aData->renderPictFormat.direct.redMask
-                            << aData->renderPictFormat.direct.red,
-                        aData->renderPictFormat.direct.greenMask
-                            << aData->renderPictFormat.direct.green,
-                        aData->renderPictFormat.direct.blueMask
-                            << aData->renderPictFormat.direct.blue,
-                        aData->renderPictFormat.direct.alphaMask
-                            << aData->renderPictFormat.direct.alpha,
-                        JNI_TRUE);
-            } else {
-                mid = (*env)->GetStaticMethodID( env,clazz,"createABGRCCM",
-                        "()Ljava/awt/image/ComponentColorModel;");
-
-                if (mid == NULL) {
-                    (*env)->PopLocalFrame(env, 0);
-                    return NULL;
-                }
-
-                awt_colormodel = (*env)->CallStaticObjectMethod(
-                        env,clazz, mid);
-            }
+        if (mid == NULL) {
+            (*env)->PopLocalFrame(env, 0);
+            return NULL;
         }
+
+        awt_colormodel = (*env)->NewObject(env,clazz, mid,
+                                           aData->awt_visInfo.depth,
+                                           aData->awt_visInfo.red_mask,
+                                           aData->awt_visInfo.green_mask,
+                                           aData->awt_visInfo.blue_mask,
+                                           0);
 
         if(awt_colormodel == NULL)
         {
@@ -984,13 +923,25 @@ jobject awtJNI_GetColorModel(JNIEnv *env, AwtGraphicsConfigDataPtr aData)
     }
     else if (aData->awt_visInfo.class == StaticGray &&
              aData->awt_num_colors == 256) {
+        jclass clazz1;
         jobject cspace = NULL;
         jint bits[1];
         jintArray bitsArray;
         jboolean falseboolean = JNI_FALSE;
 
-        cspace = getColorSpace(env, java_awt_color_ColorSpace_CS_GRAY);
-
+        clazz1 = (*env)->FindClass(env,"java/awt/color/ColorSpace");
+        mid = (*env)->GetStaticMethodID(env, clazz1, "getInstance",
+              "(I)Ljava/awt/color/ColorSpace;");
+        if (mid == NULL) {
+            (*env)->PopLocalFrame(env, 0);
+            return NULL;
+        }
+        /* SECURITY: This is safe, because static methods cannot
+         *           be overridden, and this method does not invoke
+         *           client code
+         */
+        cspace = (*env)->CallStaticObjectMethod(env, clazz1, mid,
+            java_awt_color_ColorSpace_CS_GRAY);
         if (cspace == NULL) {
             (*env)->PopLocalFrame(env, 0);
             return NULL;

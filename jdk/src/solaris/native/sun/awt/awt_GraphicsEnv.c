@@ -354,6 +354,48 @@ makeDefaultConfig(JNIEnv *env, int screen) {
     return NULL;
 }
 
+/* Note: until we include the <X11/extensions/Xrender.h> explicitly
+ * we have to define a couple of things ourselves.
+ */
+typedef unsigned long   PictFormat;
+#define PictTypeIndexed             0
+#define PictTypeDirect              1
+
+typedef struct {
+    short   red;
+    short   redMask;
+    short   green;
+    short   greenMask;
+    short   blue;
+    short   blueMask;
+    short   alpha;
+    short   alphaMask;
+} XRenderDirectFormat;
+
+typedef struct {
+    PictFormat      id;
+    int         type;
+    int         depth;
+    XRenderDirectFormat direct;
+    Colormap        colormap;
+} XRenderPictFormat;
+
+#define PictFormatID        (1 << 0)
+#define PictFormatType      (1 << 1)
+#define PictFormatDepth     (1 << 2)
+#define PictFormatRed       (1 << 3)
+#define PictFormatRedMask   (1 << 4)
+#define PictFormatGreen     (1 << 5)
+#define PictFormatGreenMask (1 << 6)
+#define PictFormatBlue      (1 << 7)
+#define PictFormatBlueMask  (1 << 8)
+#define PictFormatAlpha     (1 << 9)
+#define PictFormatAlphaMask (1 << 10)
+#define PictFormatColormap  (1 << 11)
+
+typedef XRenderPictFormat *
+XRenderFindVisualFormatFunc (Display *dpy, _Xconst Visual *visual);
+
 static void
 getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 
@@ -493,8 +535,6 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
                 format->direct.alphaMask)
             {
                 graphicsConfigs [ind]->isTranslucencySupported = 1;
-                memcpy(&graphicsConfigs [ind]->renderPictFormat, format,
-                        sizeof(*format));
             }
         }
     }
