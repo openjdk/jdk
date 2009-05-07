@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.io.IOException;
@@ -76,7 +75,7 @@ final class BridgeImpl<T> extends InternalBridge<T> {
 
     public void marshal(Marshaller _m, T t, XMLStreamWriter output) throws JAXBException {
         MarshallerImpl m = (MarshallerImpl)_m;
-        m.write(tagName,bi,t,XMLStreamWriterOutput.create(output),new StAXPostInitAction(output,m.serializer));
+        m.write(tagName,bi,t,XMLStreamWriterOutput.create(output,context),new StAXPostInitAction(output,m.serializer));
     }
 
     public void marshal(Marshaller _m, T t, OutputStream output, NamespaceContext nsContext) throws JAXBException {

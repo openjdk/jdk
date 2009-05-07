@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
-
 package com.sun.xml.internal.bind.v2.model.annotation;
 
 
@@ -31,7 +29,7 @@ class Init {
 
 
     static Quick[] getAll() {
-        return new Quick[] {new XmlAttributeQuick(null, null), new XmlElementRefQuick(null, null), new XmlElementQuick(null, null), new XmlElementRefsQuick(null, null), new XmlElementDeclQuick(null, null), new XmlRootElementQuick(null, null), new XmlTransientQuick(null, null), new XmlEnumQuick(null, null), new XmlSchemaQuick(null, null), new XmlValueQuick(null, null), new XmlTypeQuick(null, null)};
+        return new Quick[] {new XmlTypeQuick(null, null), new XmlSchemaQuick(null, null), new XmlElementRefsQuick(null, null), new XmlValueQuick(null, null), new XmlElementDeclQuick(null, null), new XmlElementRefQuick(null, null), new XmlTransientQuick(null, null), new XmlElementQuick(null, null), new XmlAttributeQuick(null, null), new XmlRootElementQuick(null, null), new XmlEnumQuick(null, null)};
     }
 
 }

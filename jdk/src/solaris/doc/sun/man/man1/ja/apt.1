@@ -1,176 +1,126 @@
-'\" t
-.\" Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\" ` 
-.TH apt 1 "2006 ǯ 9 �� 4 ��" "Java SE 6" "�桼�������ޥ��"
-.SH "̾��"
-apt \- ��������ġ���
-.\"
-.SH "����"
-.B apt 
-.BI [\-classpath " classpath"]
-.BI [\-sourcepath " sourcepath"]
-.BI [\-d " directory"]
-.BI [\-s " directory"]
-.BI [\-factorypath " path"]
-.BI [\-factory " class"]
-.B [\-print]
-.B [\-nocompile]
-.B [\-Akey[=val] ...]
-.BI [javac option]
-.BI sourcefiles
-.BI [@files]
-.SH "�ѥ�᡼��" 
-���ץ�����Ǥ�դν���ǻ��ѤǤ��ޤ�������Υ��ץ�����Ŭ�Ѥ����
-�ѥ�᡼���ˤĤ��Ƥϡ���ҤΡ֥��ץ����פ򻲾Ȥ��Ƥ���������
-.if t .TP 20
-.if n .TP 15
-.I sourcefiles
-��������� 0 �İʾ�Υ������ե����롣
-.if t .TP 20
-.if n .TP 15
-.I @files
-�������ե�����ޤ��Ϥ���¾�Υ��ץ�����ꥹ�Ȥ��� 1 �İʾ�Υե����롣
-.SH "��ǽ����"
-��������ġ���
-.B apt 
-�ˤϡ��ץ�����������������뤿��ΰ�Ϣ��
-��������ե쥯����� API �ȥ���ե饹�ȥ饯���㥵�ݡ��Ȥ��ޤޤ�Ƥ��ޤ���
-.B apt 
-�Υ�ե쥯����� API �Ǥϡ��ץ�����๽¤�Υӥ塼����
-�ӥ�ɻ��Υ������١������ɤ߼�����ѤȤ����Ѱդ���Ƥ��ޤ���
-�����Υ�ե쥯����� API �ϡ����η����ɲø�ˡ�
-Java(TM) �ץ�����ߥ󥰸���η������ƥ��
-�狼��䤹����ǥ벽�Ǥ���褦���߷פ���ޤ�����
-�Ϥ���ˡ�
-.B apt 
-������ץ����å���¹Ԥ��ޤ�����������ץ����å��Ǥϡ�
-�����Υ����������ɤ���Ӥ���¾�Υե�������������ޤ���
-���ˡ����ꥸ�ʥ�Υ������ե���������������������ե������ξ���򥳥�ѥ��뤷��
-��ȯ���ưפˤ��ޤ����ġ�������ä��뤿��Υ�ե쥯����� API ��
-����¾�� API �ϡ�
-.B com.sun.mirror 
-�Υ��֥ѥå������Ǥ���
+." Copyright  Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH apt 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
 .LP
-.B apt 
-�ˤ��ġ���������ˡ�ȳ�ȯ���ˤĤ��Ƥξܺ٤ϡ�
-http://java.sun.com/javase/6/docs/technotes/guides/apt/GettingStarted.html
-�Ρ�Getting Started with apt�פ򻲾Ȥ��Ƥ���������
+.SH "NAME"
 .LP
+.LP
+\f2apt\fP \- 注釈処理ツール
+.LP
+.SH "形式"
+.LP
+.LP
+\f2apt [\-classpath \fP\f2classpath\fP] [\-sourcepath \f2sourcepath\fP] [\-d \f2directory\fP] [\-s \f2directory\fP] [\-factorypath \f2path\fP] [\-factory \f2class\fP] [\-print] [\-nocompile] [\-A\f2key\fP[\f2=val\fP] ...][\f2javac option\fP] sourcefiles [@files]
+.LP
+.SH "パラメータ"
+.LP
+.LP
+オプションは順不同です。特定のオプションに適用されるパラメータについては、下記の「オプション」を参照してください。
+.LP
+.RS 3
 .TP 3
-��: 
-\f2apt\fP\f2 �ε�ǽ\fP��ɸ��������������ե饹�ȥ饯������Ȥ߹��ޤ�ޤ���������ɸ��Υ���ե饹�ȥ饯����ϡ����Ǥ� \f2javac\fP �ġ��� [
+sourcefiles 
+ゼロ、1 つ、または複数の処理対象のソースファイル 
+.TP 3
+@files 
+ソースファイルまたは他のオプションを一覧表示する 1 つまたは複数のファイル 
+.RE
+
+.LP
+.SH "説明"
+.LP
+.LP
+注釈処理ツール \f2apt\fP は、新しいリフレクト API とサポートインフラストラクチャーから構成され、プログラム注釈を処理します。\f2apt\fP リフレクト API は、 構築時のソースベースで、プログラム構造に関する読み取り専用ビューを提供します。これらのリフレクト API は、総称を追加した後に、Java(TM) プログラミング言語の型システムを正しくモデル化するように設計されています。最初に、\f2apt\fP は、新しいソースコードと他のファイルを作成する注釈プロセッサを実行します。次に、\f2apt\fP は、元のソースファイルと生成したソースファイルの両方をコンパイルするため、開発が楽になります。ツールとのインタフェースに使用されるリフレクト API などの API は、\f2com.sun.mirror\fP のサブパッケージです。
+.LP
+.LP
+ツールの機能に関する詳細と、\f2apt\fP を使用した開発方法については、
 .na
-\f2Solaris �� Linux\fP �ξ��: 
+\f4「\fP\f4apt\fP\f3 入門」\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/tools/solaris/javac.html] [
-.na
-\f2Windows\fP �ξ��: 
-.fi
-http://java.sun.com/javase/6/docs/technotes/tools/windows/javac.html] �ΰ����Ȥʤꡢ���٤Ƥ� Java ����ѥ���ǻ��ѤǤ���褦��ɸ�ಽ����Ƥ��ޤ������ο���������ե饹�ȥ饯����ϡ�Java �ץ�åȥե�����ΰ����Ȥʤä������ǥ��������� API �˰�¸���Ƥ��ޤ�������������ץ����å��γ�ȯ�ϡ����ο����� API �� \f2javac\fP �ġ���˴�Ť��ƹԤ����Ȥ򤪴��ᤷ�ޤ���
+http://java.sun.com/javase/6/docs/technotes/guides/apt/GettingStarted.htmlを参照してください。
 .LP
-.SH "���ץ����"
-.SS apt ��ͭ�Υ��ץ����
-.if t .TP 20
-.if n .TP 15
-.BI \-s " dir"
-�ץ����å����������륽�����ե����뤬���֤����ǥ��쥯�ȥ�롼�Ȥ�
-���ꤷ�ޤ����ե�����ϥѥå������Υ͡��ॹ�ڡ����˽��äơ�
-���֥ǥ��쥯�ȥ�����֤���ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-nocompile
-�������ե�����򥯥饹�ե�����˥���ѥ��뤷�ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-print
-���ꤷ�����Υƥ�����ɽ������Ϥ��ޤ���
-��������䥳��ѥ���ϼ¹Ԥ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-A[key[=val]]
-����ץ����å����Ϥ���륪�ץ����
-.B apt 
-�ϡ������Υ��ץ�����ľ�ܲ�ᤷ�ޤ��󤬡����̤Υץ����å�
-�ˤ�äƻ��Ѳ�ǽ�ˤʤ�ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-factorypath " path" 
-����ץ����å��ե����ȥ�򸡺����������ꤷ�ޤ���
-���Υ��ץ�������Ѥ����硢�ե����ȥ�θ�����
-���饹�ѥ��ϻ��Ѥ���ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-factory " classname"
-���Ѥ�������ץ����å��ե����ȥ��̾����
-�ǥե���Ȥθ��н����ϥХ��ѥ�����ޤ���
-.SS javac �ȶ�ͭ����륪�ץ����
-.if t .TP 20
-.if n .TP 15
-.BI \-d " dir"
-�ץ����å������ 
-.B javac 
-�������������饹�ե���������֤��������ꤷ�ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-cp " path " \fL�ޤ���\fP \fL\-classpath " path"
-�桼�����饹�ե����뤪�������ץ����å��ե����ȥ�򸡺��������
-���ꤷ�ޤ���
-.B \-factorypath 
-����ꤷ����硢�ե����ȥ�θ����˥��饹�ѥ��ϻ��Ѥ���ޤ���
+.RS 3
+.TP 3
+注: 
+\f2apt\fP の機能は、\f2javac(1)\fP ツールの一部となった注釈処理インフラストラクチャーに組み込まれ、すべての Java コンパイラで使用できるように標準化されました。この新しいインフラストラクチャーは、言語モデルおよび Java プラットフォームの一部となった注釈処理 API に依存します。注釈プロセッサの開発は、新しい API および \f2javac\fP ツールに基づいて行うようお勧めします。 
+.RE
+
 .LP
-javac �Υ��ץ����ˤĤ��Ƥϡ�
-.BR javac(1) 
-�Υޥ˥奢��ڡ����򻲾Ȥ��Ƥ���������
-.SH ���ջ���
+.SH "オプション"
 .LP
-\f2apt\fP �ε�ǽ�ϡ�\f2javac\fP ���󶡤���褦�ˤʤä�ɸ��������������ե饹�ȥ饯������Ȥ߹��ޤ�ޤ�����\f2apt\fP �Ȥ��δ�Ϣ API �Υ��ݡ��Ȥϡ�JDK �ξ���Υ�꡼�����Ǥ��ڤ����ǽ��������ޤ���
+.SS 
+apt 固有のオプション
 .LP
-.SH "��Ϣ����"
+.RS 3
+.TP 3
+\-s dir 
+プロセッサの生成するソースファイルを置くディレクトリルートを指定します。 ファイルは、パッケージの名前空間に基づいてサブディレクトリに置かれます。 
+.TP 3
+\-nocompile 
+ソースファイルをクラスファイルにコンパイルしません。 
+.TP 3
+\-print 
+指定したタイプのテキスト表現を出力します。 注釈処理またはコンパイルは行いません。 
+.TP 3
+\-A[key[=val]] 
+注釈プロセッサへ渡すオプションです。 このオプションは、\f2apt\fP が直接解釈するのではなく、それぞれのプロセッサによって使用できるように変えられます。 
+.TP 3
+\-factorypath path 
+注釈プロセッサファクトリを検索する場所を指定します。 このオプションを使用する場合、クラスパスのファクトリは検索されません。 
+.TP 3
+\-factory classname 
+使用する注釈プロセッサファクトリの名前です。 デフォルトの検出プロセスを省略します。 
+.RE
+
+.LP
+.SS 
+javac と共用するオプション
+.LP
+.RS 3
+.TP 3
+\-d dir 
+プロセッサと javac 生成のクラスファイルを置く場所を指定します。 
+.TP 3
+\-cp path or \-classpath path 
+ユーザークラスファイルと注釈プロセッサファクトリを検索する場所を指定します。\f2\-factorypath\fP が指定されている場合、クラスパスのファクトリは検索されません。 
+.RE
+
+.LP
+.LP
+\f2javac\fP オプションの詳細については、javac(1) のマニュアルページを参照してください。
+.LP
+.SH "注"
+.LP
+.LP
+\f2apt\fP の機能は、\f2javac\fP により提供される標準注釈処理インフラストラクチャーに組み込まれました。今後の JDK リリースでは、\f2apt\fP および関連する API のサポートが中止する可能性があります。
+.LP
+.SH "関連項目"
 .LP
 .RS 3
 .TP 2
-*
-javac: [
-.na
-\f2Solaris �� Linux\fP �ξ��: 
-.fi
-http://java.sun.com/javase/6/docs/technotes/tools/solaris/javac.html] 
-[ \f2Windows\fP �ξ��: 
-.fi
-http://java.sun.com/javase/6/docs/technotes/tools/windows/javac.html] 
-.TP 2
-*
-java: [
-.na
-\f2Solaris\fP �ξ��: 
-.fi
-http://java.sun.com/javase/6/docs/technotes/tools/solaris/java.html] [
-.na
-\f2Linux\fP �ξ��: 
-.fi
-http://java.sun.com/javase/6/docs/technotes/tools/linux/java.html] 
-[ \f2Windows\fP �ξ��: 
-.fi
-http://java.sun.com/javase/6/docs/technotes/tools/windows/java.html] 
+o
+javac(1), java(1) 
 .RE
 
 .LP

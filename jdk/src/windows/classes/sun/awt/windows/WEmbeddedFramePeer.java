@@ -68,12 +68,6 @@ public class WEmbeddedFramePeer extends WFramePeer {
     public native void synthesizeWmActivate(boolean doActivate);
 
     @Override
-    Rectangle constrainBounds(int x, int y, int width, int height) {
-        // We don't constrain the bounds of the EmbeddedFrames
-        return new Rectangle(x, y, width, height);
-    }
-
-    @Override
     public boolean isAccelCapable() {
         // REMIND: Temp workaround for issues with using HW acceleration
         // in the browser on Vista when DWM is enabled

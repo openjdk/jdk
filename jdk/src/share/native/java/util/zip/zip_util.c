@@ -512,7 +512,6 @@ readCEN(jzfile *zip, jint knownTotal)
 
     /* Clear previous zip error */
     zip->msg = NULL;
-
     /* Get position of END header */
     if ((endpos = findEND(zip, endbuf)) == -1)
         return -1; /* no END header or system error */
@@ -520,7 +519,6 @@ readCEN(jzfile *zip, jint knownTotal)
     if (endpos == 0) return 0;  /* only END header present */
 
     freeCEN(zip);
-
    /* Get position and length of central directory */
     cenlen = ENDSIZ(endbuf);
     cenoff = ENDOFF(endbuf);
@@ -935,6 +933,7 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
     ze->crc   = CENCRC(cen);
     locoff    = CENOFF(cen);
     ze->pos   = -(zip->locpos + locoff);
+    ze->flag  = CENFLG(cen);
 
     if ((ze->name = malloc(nlen + 1)) == NULL) goto Catch;
     memcpy(ze->name, cen + CENHDR, nlen);

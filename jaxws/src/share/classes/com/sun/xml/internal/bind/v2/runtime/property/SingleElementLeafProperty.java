@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
@@ -67,9 +66,9 @@ final class SingleElementLeafProperty<BeanT> extends PropertyImpl<BeanT> {
         assert tagName!=null;
         nillable = ref.isNillable();
         defaultValue = ref.getDefaultValue();
-        this.acc = prop.getAccessor().optimize();
+        this.acc = prop.getAccessor().optimize(context);
 
-        xacc = TransducedAccessor.get(ref);
+        xacc = TransducedAccessor.get(context,ref);
         assert xacc!=null;
     }
 
@@ -97,7 +96,7 @@ final class SingleElementLeafProperty<BeanT> extends PropertyImpl<BeanT> {
         Loader l = new LeafPropertyLoader(xacc);
         if(defaultValue!=null)
             l = new DefaultValueLoaderDecorator(l,defaultValue);
-        if(nillable)
+        if(nillable || chain.context.allNillable)
             l = new XsiNilLoader.Single(l,acc);
         handlers.put(tagName,new ChildLoader(l,null));
     }

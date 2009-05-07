@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPConnection.java,v 1.11 2004/04/02 01:24:17 ofung Exp $
- * $Revision: 1.11 $
- * $Date: 2004/04/02 01:24:17 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPConnection.java,v 1.12 2005/04/05 21:03:23 mk125090 Exp $
+ * $Revision: 1.12 $
+ * $Date: 2005/04/05 21:03:23 $
+ */
+
+
 package javax.xml.soap;
 
 

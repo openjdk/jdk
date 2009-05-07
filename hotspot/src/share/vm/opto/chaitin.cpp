@@ -1423,17 +1423,33 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
   // pointers derived from NULL!  These are always along paths that
   // can't happen at run-time but the optimizer cannot deduce it so
   // we have to handle it gracefully.
+  assert(!derived->bottom_type()->isa_narrowoop() ||
+          derived->bottom_type()->make_ptr()->is_ptr()->_offset == 0, "sanity");
   const TypePtr *tj = derived->bottom_type()->isa_ptr();
   // If its an OOP with a non-zero offset, then it is derived.
-  if( tj->_offset == 0 ) {
+  if( tj == NULL || tj->_offset == 0 ) {
     derived_base_map[derived->_idx] = derived;
     return derived;
   }
   // Derived is NULL+offset?  Base is NULL!
   if( derived->is_Con() ) {
-    Node *base = new (C, 1) ConPNode( TypePtr::NULL_PTR );
-    uint no_lidx = 0;  // an unmatched constant in debug info has no LRG
-    _names.extend(base->_idx, no_lidx);
+    Node *base = _matcher.mach_null();
+    assert(base != NULL, "sanity");
+    if (base->in(0) == NULL) {
+      // Initialize it once and make it shared:
+      // set control to _root and place it into Start block
+      // (where top() node is placed).
+      base->init_req(0, _cfg._root);
+      Block *startb = _cfg._bbs[C->top()->_idx];
+      startb->_nodes.insert(startb->find_node(C->top()), base );
+      _cfg._bbs.map( base->_idx, startb );
+      assert (n2lidx(base) == 0, "should not have LRG yet");
+    }
+    if (n2lidx(base) == 0) {
+      new_lrg(base, maxlrg++);
+    }
+    assert(base->in(0) == _cfg._root &&
+           _cfg._bbs[base->_idx] == _cfg._bbs[C->top()->_idx], "base NULL should be shared");
     derived_base_map[derived->_idx] = base;
     return base;
   }
@@ -1460,9 +1476,13 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
   }
 
   // Now we see we need a base-Phi here to merge the bases
-  base = new (C, derived->req()) PhiNode( derived->in(0), base->bottom_type() );
-  for( i = 1; i < derived->req(); i++ )
+  const Type *t = base->bottom_type();
+  base = new (C, derived->req()) PhiNode( derived->in(0), t );
+  for( i = 1; i < derived->req(); i++ ) {
     base->init_req(i, find_base_for_derived(derived_base_map, derived->in(i), maxlrg));
+    t = t->meet(base->in(i)->bottom_type());
+  }
+  base->as_Phi()->set_type(t);
 
   // Search the current block for an existing base-Phi
   Block *b = _cfg._bbs[derived->_idx];
@@ -1560,6 +1580,8 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges( ResourceArea *a ) {
           // This works because we are still in SSA during this call.
           Node *derived = lrgs(neighbor)._def;
           const TypePtr *tj = derived->bottom_type()->isa_ptr();
+          assert(!derived->bottom_type()->isa_narrowoop() ||
+                  derived->bottom_type()->make_ptr()->is_ptr()->_offset == 0, "sanity");
           // If its an OOP with a non-zero offset, then it is derived.
           if( tj && tj->_offset != 0 && tj->isa_oop_ptr() ) {
             Node *base = find_base_for_derived( derived_base_map, derived, maxlrg );

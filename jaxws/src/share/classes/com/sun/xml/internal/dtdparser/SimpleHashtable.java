@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import java.util.Enumeration;
  * it makes a significant difference when normalizing attributes,
  * which is done for each start-element construct.
  *
+ * @version $Revision: 1.1 $
  */
 final class SimpleHashtable implements Enumeration {
     // entries ...

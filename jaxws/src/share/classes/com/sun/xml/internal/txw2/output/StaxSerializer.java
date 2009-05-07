@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.txw2.output;
 
 import com.sun.xml.internal.txw2.TxwException;
@@ -41,6 +42,12 @@ public class StaxSerializer implements XmlSerializer {
     private final XMLStreamWriter out;
 
     public StaxSerializer(XMLStreamWriter writer) {
+        this(writer,true);
+    }
+
+    public StaxSerializer(XMLStreamWriter writer, boolean indenting) {
+        if(indenting)
+            writer = new IndentingXMLStreamWriter(writer);
         this.out = writer;
     }
 

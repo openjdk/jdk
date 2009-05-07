@@ -61,22 +61,11 @@ abstract class FileLockTable {
     public abstract void remove(FileLock fl);
 
     /**
-     * An implementation of this interface releases a given file lock.
-     * Used with removeAll.
-     */
-    public abstract interface Releaser {
-        void release(FileLock fl) throws IOException;
-    }
-
-    /**
      * Removes all file locks from the table.
-     * <p>
-     * The Releaser#release method is invoked for each file lock before
-     * it is removed.
      *
-     * @throws IOException if the release method throws IOException
+     * @return  The list of file locks removed
      */
-    public abstract void removeAll(Releaser r) throws IOException;
+    public abstract List<FileLock> removeAll();
 
     /**
      * Replaces an existing file lock in the table.
@@ -195,7 +184,7 @@ class SharedFileLockTable extends FileLockTable {
                 FileLockReference ref = list.get(index);
                 FileLock lock = ref.get();
                 if (lock == fl) {
-                    assert (lock != null) && (lock.channel() == channel);
+                    assert (lock != null) && (lock.acquiredBy() == channel);
                     ref.clear();
                     list.remove(index);
                     break;
@@ -206,7 +195,8 @@ class SharedFileLockTable extends FileLockTable {
     }
 
     @Override
-    public void removeAll(Releaser releaser) throws IOException {
+    public List<FileLock> removeAll() {
+        List<FileLock> result = new ArrayList<FileLock>();
         List<FileLockReference> list = lockMap.get(fileKey);
         if (list != null) {
             synchronized (list) {
@@ -216,13 +206,13 @@ class SharedFileLockTable extends FileLockTable {
                     FileLock lock = ref.get();
 
                     // remove locks obtained by this channel
-                    if (lock != null && lock.channel() == channel) {
-                        // invoke the releaser to invalidate/release the lock
-                        releaser.release(lock);
-
+                    if (lock != null && lock.acquiredBy() == channel) {
                         // remove the lock from the list
                         ref.clear();
                         list.remove(index);
+
+                        // add to result
+                        result.add(lock);
                     } else {
                         index++;
                     }
@@ -232,6 +222,7 @@ class SharedFileLockTable extends FileLockTable {
                 removeKeyIfEmpty(fileKey, list);
             }
         }
+        return result;
     }
 
     @Override

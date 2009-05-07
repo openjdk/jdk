@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader;
 
 import java.util.HashSet;
@@ -30,32 +29,15 @@ import java.util.List;
 import java.util.Set;
 
 import javax.activation.MimeType;
-import javax.xml.namespace.QName;
 
-import com.sun.tools.internal.xjc.model.CClassInfo;
-import com.sun.tools.internal.xjc.model.CCustomizations;
-import com.sun.tools.internal.xjc.model.CElementInfo;
 import com.sun.tools.internal.xjc.model.CElementPropertyInfo;
 import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMode.*;
-import com.sun.tools.internal.xjc.model.CNonElement;
 import com.sun.tools.internal.xjc.model.CReferencePropertyInfo;
 import com.sun.tools.internal.xjc.model.CTypeRef;
-import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.model.Multiplicity;
-import com.sun.tools.internal.xjc.model.TypeUse;
 import com.sun.tools.internal.xjc.model.nav.NType;
-import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
-import com.sun.tools.internal.xjc.reader.xmlschema.ClassSelector;
-import com.sun.tools.internal.xjc.reader.xmlschema.SimpleTypeBuilder;
-import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIGlobalBinding;
 import com.sun.xml.internal.bind.v2.model.core.Element;
 import com.sun.xml.internal.bind.v2.model.core.ID;
-import com.sun.xml.internal.xsom.XSComponent;
-import com.sun.xml.internal.xsom.XSElementDecl;
-import com.sun.xml.internal.xsom.XSType;
-import com.sun.xml.internal.xsom.XmlString;
-
-import org.xml.sax.Locator;
 
 /**
  * Set of {@link Ref}.
@@ -239,110 +221,5 @@ public final class RawTypeSet {
          * this method is used to determine if the property has an associated expected MIME type or not.
          */
         protected MimeType getExpectedMimeType() { return null; }
-    }
-
-    /**
-     * References to a type. Could be global or local.
-     */
-    public static final class XmlTypeRef extends Ref {
-        public final QName elementName;
-        public final TypeUse target;
-        public final Locator locator;
-        public final XSComponent source;
-        public final CCustomizations custs;
-        public final boolean nillable;
-        public final XmlString defaultValue;
-
-        public XmlTypeRef(QName elementName, TypeUse target, boolean nillable, XmlString defaultValue, XSComponent source, CCustomizations custs, Locator loc) {
-            assert elementName!=null;
-            assert target!=null;
-
-            this.elementName = elementName;
-            this.target = target;
-            this.source = source;
-            this.custs = custs;
-            this.nillable = nillable;
-            this.defaultValue = defaultValue;
-            this.locator = loc;
-        }
-
-        public XmlTypeRef(QName elementName, XSType target, boolean nillable, XmlString defaultValue) {
-            this(elementName,Ring.get(ClassSelector.class).bindToType(target), nillable, defaultValue, target,
-                    Ring.get(BGMBuilder.class).getBindInfo(target).toCustomizationList(),
-                    target.getLocator());
-        }
-
-        public XmlTypeRef(XSElementDecl decl) {
-            this(new QName(decl.getTargetNamespace(),decl.getName()),bindToType(decl),
-                    decl.isNillable(), decl.getDefaultValue(), decl,
-                    Ring.get(BGMBuilder.class).getBindInfo(decl).toCustomizationList(),
-                    decl.getLocator());
-        }
-
-        protected CTypeRef toTypeRef(CElementPropertyInfo ep) {
-            if(ep!=null && target.getAdapterUse()!=null)
-                ep.setAdapter(target.getAdapterUse());
-            return new CTypeRef((CNonElement)target.getInfo(),elementName,nillable,defaultValue);
-        }
-
-        /**
-         * The whole type set can be later bound to a reference property,
-         * in which case we need to generate additional code to wrap this
-         * type reference into an element class.
-         *
-         * This method generates such an element class and returns it.
-         */
-        protected void toElementRef(CReferencePropertyInfo prop) {
-            CClassInfo scope = Ring.get(ClassSelector.class).getCurrentBean();
-            Model model = Ring.get(Model.class);
-
-            if(target instanceof CClassInfo && Ring.get(BIGlobalBinding.class).isSimpleMode()) {
-                CClassInfo bean = new CClassInfo(model,scope,
-                                model.getNameConverter().toClassName(elementName.getLocalPart()),
-                                locator,null,elementName,source,custs);
-                bean.setBaseClass((CClassInfo)target);
-                prop.getElements().add(bean);
-            } else {
-                CElementInfo e = new CElementInfo(model,elementName,scope,target,defaultValue,source,custs,locator);
-                prop.getElements().add(e);
-            }
-        }
-
-        protected Mode canBeType(RawTypeSet parent) {
-            // if we have an adapter or IDness, which requires special
-            // annotation, and there's more than one element,
-            // we have no place to put the special annotation, so we need JAXBElement.
-            if(parent.refs.size()>1 || !parent.mul.isAtMostOnce()) {
-                if(target.getAdapterUse()!=null || target.idUse()!=ID.NONE)
-                    return Mode.MUST_BE_REFERENCE;
-            }
-
-            // nillable and optional at the same time. needs an element wrapper to distinguish those
-            // two states. But this is not a hard requirement.
-            if(nillable && parent.mul.isOptional())
-                return Mode.CAN_BE_TYPEREF;
-
-            return Mode.SHOULD_BE_TYPEREF;
-        }
-
-        protected boolean isListOfValues() {
-            return target.isCollection();
-        }
-
-        protected ID id() {
-            return target.idUse();
-        }
-
-        protected MimeType getExpectedMimeType() {
-            return target.getExpectedMimeType();
-        }
-    }
-
-    private static TypeUse bindToType(XSElementDecl decl) {
-        SimpleTypeBuilder stb = Ring.get(SimpleTypeBuilder.class);
-        stb.refererStack.push(decl);
-        TypeUse r = Ring.get(ClassSelector.class).bindToType(decl.getType());
-        stb.refererStack.pop();
-        return r;
     }
 }

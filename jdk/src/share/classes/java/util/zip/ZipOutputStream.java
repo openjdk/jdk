@@ -27,6 +27,7 @@ package java.util.zip;
 
 import java.io.OutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Vector;
 import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
@@ -44,19 +45,9 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     private static class XEntry {
         public final ZipEntry entry;
         public final long offset;
-        public final int flag;
         public XEntry(ZipEntry entry, long offset) {
             this.entry = entry;
             this.offset = offset;
-            this.flag = (entry.method == DEFLATED &&
-                         (entry.size  == -1 ||
-                          entry.csize == -1 ||
-                          entry.crc   == -1))
-                // store size, compressed size, and crc-32 in data descriptor
-                // immediately following the compressed entry data
-                ? 8
-                // store size, compressed size, and crc-32 in LOC header
-                : 0;
         }
     }
 
@@ -66,11 +57,13 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     private CRC32 crc = new CRC32();
     private long written = 0;
     private long locoff = 0;
-    private String comment;
+    private byte[] comment;
     private int method = DEFLATED;
     private boolean finished;
 
     private boolean closed = false;
+
+    private final ZipCoder zc;
 
     private static int version(ZipEntry e) throws ZipException {
         switch (e.method) {
@@ -100,10 +93,31 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
 
     /**
      * Creates a new ZIP output stream.
+     *
+     * <p>The UTF-8 {@link java.nio.charset.Charset charset} is used
+     * to encode the entry names and comments.
+     *
      * @param out the actual output stream
      */
     public ZipOutputStream(OutputStream out) {
+        this(out, Charset.forName("UTF-8"));
+    }
+
+    /**
+     * Creates a new ZIP output stream.
+     *
+     * @param out the actual output stream
+     *
+     * @param charset the {@linkplain java.nio.charset.Charset charset}
+     *                to be used to encode the entry names and comments
+     *
+     * @since 1.7
+     */
+    public ZipOutputStream(OutputStream out, Charset charset) {
         super(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true));
+        if (charset == null)
+            throw new NullPointerException("charset is null");
+        this.zc = ZipCoder.get(charset);
         usesDefaultDeflater = true;
     }
 
@@ -114,11 +128,11 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      *            ZIP file comment is greater than 0xFFFF bytes
      */
     public void setComment(String comment) {
-        if (comment != null && comment.length() > 0xffff/3
-                                           && getUTF8Length(comment) > 0xffff) {
-            throw new IllegalArgumentException("ZIP file comment too long.");
+        if (comment != null) {
+            this.comment = zc.getBytes(comment);
+            if (this.comment.length > 0xffff)
+                throw new IllegalArgumentException("ZIP file comment too long.");
         }
-        this.comment = comment;
     }
 
     /**
@@ -167,8 +181,15 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         if (e.method == -1) {
             e.method = method;  // use default method
         }
+        // store size, compressed size, and crc-32 in LOC header
+        e.flag = 0;
         switch (e.method) {
         case DEFLATED:
+            // store size, compressed size, and crc-32 in data descriptor
+            // immediately following the compressed entry data
+            if (e.size  == -1 || e.csize == -1 || e.crc   == -1)
+                e.flag = 8;
+
             break;
         case STORED:
             // compressed size, uncompressed size, and crc-32 must all be
@@ -192,6 +213,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         if (! names.add(e.name)) {
             throw new ZipException("duplicate entry: " + e.name);
         }
+        if (zc.isUTF8())
+            e.flag |= EFS;
         current = new XEntry(e, written);
         xentries.add(current);
         writeLOC(current);
@@ -213,7 +236,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
                 while (!def.finished()) {
                     deflate();
                 }
-                if ((current.flag & 8) == 0) {
+                if ((e.flag & 8) == 0) {
                     // verify size, compressed size, and crc-32 settings
                     if (e.size != def.getBytesRead()) {
                         throw new ZipException(
@@ -343,11 +366,11 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      */
     private void writeLOC(XEntry xentry) throws IOException {
         ZipEntry e = xentry.entry;
-        int flag = xentry.flag;
+        int flag = e.flag;
         int elen = (e.extra != null) ? e.extra.length : 0;
         boolean hasZip64 = false;
 
-        writeInt(LOCSIG);           // LOC header signature
+        writeInt(LOCSIG);               // LOC header signature
 
         if ((flag & 8) == 8) {
             writeShort(version(e));     // version needed to extract
@@ -380,7 +403,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
                 writeInt(e.size);   // uncompressed size
             }
         }
-        byte[] nameBytes = getUTF8Bytes(e.name);
+        byte[] nameBytes = zc.getBytes(e.name);
         writeShort(nameBytes.length);
         writeShort(elen);
         writeBytes(nameBytes, 0, nameBytes.length);
@@ -417,7 +440,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
      */
     private void writeCEN(XEntry xentry) throws IOException {
         ZipEntry e  = xentry.entry;
-        int flag = xentry.flag;
+        int flag = e.flag;
         int version = version(e);
 
         long csize = e.csize;
@@ -454,7 +477,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         writeInt(e.crc);            // crc-32
         writeInt(csize);            // compressed size
         writeInt(size);             // uncompressed size
-        byte[] nameBytes = getUTF8Bytes(e.name);
+        byte[] nameBytes = zc.getBytes(e.name);
         writeShort(nameBytes.length);
         if (hasZip64) {
             // + headid(2) + datasize(2)
@@ -464,8 +487,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         }
         byte[] commentBytes;
         if (e.comment != null) {
-            commentBytes = getUTF8Bytes(e.comment);
-            writeShort(commentBytes.length);
+            commentBytes = zc.getBytes(e.comment);
+            writeShort(Math.min(commentBytes.length, 0xffff));
         } else {
             commentBytes = null;
             writeShort(0);
@@ -489,7 +512,7 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
             writeBytes(e.extra, 0, e.extra.length);
         }
         if (commentBytes != null) {
-            writeBytes(commentBytes, 0, commentBytes.length);
+            writeBytes(commentBytes, 0, Math.min(commentBytes.length, 0xffff));
         }
     }
 
@@ -541,9 +564,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
         writeInt(xlen);                   // length of central directory
         writeInt(xoff);                   // offset of central directory
         if (comment != null) {            // zip file comment
-            byte[] b = getUTF8Bytes(comment);
-            writeShort(b.length);
-            writeBytes(b, 0, b.length);
+            writeShort(comment.length);
+            writeBytes(comment, 0, comment.length);
         } else {
             writeShort(0);
         }
@@ -593,61 +615,5 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     private void writeBytes(byte[] b, int off, int len) throws IOException {
         super.out.write(b, off, len);
         written += len;
-    }
-
-    /*
-     * Returns the length of String's UTF8 encoding.
-     */
-    static int getUTF8Length(String s) {
-        int count = 0;
-        for (int i = 0; i < s.length(); i++) {
-            char ch = s.charAt(i);
-            if (ch <= 0x7f) {
-                count++;
-            } else if (ch <= 0x7ff) {
-                count += 2;
-            } else {
-                count += 3;
-            }
-        }
-        return count;
-    }
-
-    /*
-     * Returns an array of bytes representing the UTF8 encoding
-     * of the specified String.
-     */
-    private static byte[] getUTF8Bytes(String s) {
-        char[] c = s.toCharArray();
-        int len = c.length;
-        // Count the number of encoded bytes...
-        int count = 0;
-        for (int i = 0; i < len; i++) {
-            int ch = c[i];
-            if (ch <= 0x7f) {
-                count++;
-            } else if (ch <= 0x7ff) {
-                count += 2;
-            } else {
-                count += 3;
-            }
-        }
-        // Now return the encoded bytes...
-        byte[] b = new byte[count];
-        int off = 0;
-        for (int i = 0; i < len; i++) {
-            int ch = c[i];
-            if (ch <= 0x7f) {
-                b[off++] = (byte)ch;
-            } else if (ch <= 0x7ff) {
-                b[off++] = (byte)((ch >> 6) | 0xc0);
-                b[off++] = (byte)((ch & 0x3f) | 0x80);
-            } else {
-                b[off++] = (byte)((ch >> 12) | 0xe0);
-                b[off++] = (byte)(((ch >> 6) & 0x3f) | 0x80);
-                b[off++] = (byte)((ch & 0x3f) | 0x80);
-            }
-        }
-        return b;
     }
 }

@@ -1,9 +1,5 @@
 /*
- * $Id: SOAPDocumentImpl.java,v 1.15 2006/01/27 12:49:29 vj135062 Exp $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ *
+ */
+
+
 
 /**
 *
@@ -44,7 +45,7 @@ import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
 
 public class SOAPDocumentImpl extends DocumentImpl implements SOAPDocument {
 
-    protected static Logger log =
+    protected static final  Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 

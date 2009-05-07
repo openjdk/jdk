@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,18 @@
 
 package com.sun.tools.internal.ws.wsdl.parser;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Iterator;
-
-import javax.xml.namespace.QName;
-
+import com.sun.tools.internal.ws.wsdl.framework.ParseException;
+import com.sun.xml.internal.ws.util.xml.XmlUtil;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
-import com.sun.tools.internal.ws.wsdl.framework.ParseException;
-import com.sun.xml.internal.ws.util.xml.XmlUtil;
+import javax.xml.namespace.QName;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Iterator;
 
 /**2
  * Defines various utility methods.
@@ -76,9 +74,7 @@ public class Util {
     }
 
     public static void verifyTagNS(Element element, QName name) {
-        if (!element.getLocalName().equals(name.getLocalPart())
-            || (element.getNamespaceURI() != null
-                && !element.getNamespaceURI().equals(name.getNamespaceURI())))
+        if (!isTagName(element, name))
             fail(
                 "parsing.invalidTagNS",
                 new Object[] {
@@ -86,6 +82,13 @@ public class Util {
                     element.getNamespaceURI(),
                     name.getLocalPart(),
                     name.getNamespaceURI()});
+    }
+
+    public static boolean isTagName(Element element, QName name){
+        return (element.getLocalName().equals(name.getLocalPart())
+            && (element.getNamespaceURI() != null
+                && element.getNamespaceURI().equals(name.getNamespaceURI())));
+
     }
 
     public static void verifyTagNSRootElement(Element element, QName name) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,14 @@ public final class JInvocation extends JExpressionImpl implements JStatement {
     private JGenerable object;
 
     /**
-     * Name of the method to be invoked
+     * Name of the method to be invoked.
+     * Either this field is set, or {@link #method}, or {@link #type} (in which case it's a
+     * constructor invocation.)
+     * This allows {@link JMethod#name(String) the name of the method to be changed later}.
      */
     private String name;
+
+    private JMethod method;
 
     private boolean isConstructor = false;
 
@@ -72,6 +77,10 @@ public final class JInvocation extends JExpressionImpl implements JStatement {
         this( (JGenerable)object, name );
     }
 
+    JInvocation(JExpression object, JMethod method) {
+        this( (JGenerable)object, method );
+    }
+
     /**
      * Invokes a static method on a class.
      */
@@ -79,12 +88,20 @@ public final class JInvocation extends JExpressionImpl implements JStatement {
         this( (JGenerable)type, name );
     }
 
+    JInvocation(JClass type, JMethod method) {
+        this( (JGenerable)type, method );
+    }
+
     private JInvocation(JGenerable object, String name) {
         this.object = object;
         if (name.indexOf('.') >= 0)
-            throw new IllegalArgumentException("JClass name contains '.': "
-                                               + name);
+            throw new IllegalArgumentException("method name contains '.': " + name);
         this.name = name;
+    }
+
+    private JInvocation(JGenerable object, JMethod method) {
+        this.object = object;
+        this.method =method;
     }
 
     /**
@@ -131,10 +148,15 @@ public final class JInvocation extends JExpressionImpl implements JStatement {
         } else {
             if (isConstructor)
                 f.p("new").g(type).p('(');
-            else if (object != null)
-                f.g(object).p('.').p(name).p('(');
-            else
-                f.id(name).p('(');
+            else {
+                String name = this.name;
+                if(name==null)  name=this.method.name();
+
+                if (object != null)
+                    f.g(object).p('.').p(name).p('(');
+                else
+                    f.id(name).p('(');
+            }
         }
 
         f.g(args);

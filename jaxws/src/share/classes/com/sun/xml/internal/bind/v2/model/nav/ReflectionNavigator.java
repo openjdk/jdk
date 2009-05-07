@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.nav;
 
 import java.lang.reflect.Array;
@@ -53,7 +52,10 @@ public final class ReflectionNavigator implements Navigator<Type,Class,Field,Met
     ReflectionNavigator() {}
 
     public Class getSuperClass(Class clazz) {
-        return clazz.getSuperclass();
+        if(clazz==Object.class) return null;
+        Class sc = clazz.getSuperclass();
+        if(sc==null)    sc=Object.class;        // error recovery
+        return sc;
     }
 
     private static final TypeVisitor<Type,Class> baseClassFinder = new TypeVisitor<Type,Class>() {
@@ -509,7 +511,7 @@ public final class ReflectionNavigator implements Navigator<Type,Class,Field,Met
         return method.isBridge();
     }
 
-    public boolean isOverriding(Method method) {
+    public boolean isOverriding(Method method, Class base) {
         // this isn't actually correct,
         // as the JLS considers
         // class Derived extends Base<Integer> {
@@ -520,19 +522,18 @@ public final class ReflectionNavigator implements Navigator<Type,Class,Field,Met
         // }
         // to be overrided. Handling this correctly needs a careful implementation
 
-        Class<?> s = method.getDeclaringClass().getSuperclass();
         String name = method.getName();
         Class[] params = method.getParameterTypes();
 
-        while(s!=null) {
+        while(base!=null) {
             try {
-                if(s.getDeclaredMethod(name,params)!=null)
+                if(base.getDeclaredMethod(name,params)!=null)
                     return true;
             } catch (NoSuchMethodException e) {
-                ; // recursively go into the base class
+                // recursively go into the base class
             }
 
-            s = s.getSuperclass();
+            base = base.getSuperclass();
         }
 
         return false;
@@ -544,6 +545,10 @@ public final class ReflectionNavigator implements Navigator<Type,Class,Field,Met
 
     public boolean isTransient(Field f) {
         return Modifier.isTransient(f.getModifiers());
+    }
+
+    public boolean isInnerClass(Class clazz) {
+        return clazz.getEnclosingClass()!=null;
     }
 
 
