@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,7 +321,7 @@ public abstract class JClass extends JType
 
     /** Generates a static method invocation. */
     public final JInvocation staticInvoke(JMethod method) {
-        return staticInvoke(method.name());
+        return new JInvocation(this,method);
     }
 
     /** Generates a static method invocation. */

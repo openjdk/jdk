@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package com.sun.tools.internal.ws.processor.model;
 /**
  * @author Vivek Pandey
  *
- * Async Operation type
+ * Async WSDLOperation type
  */
 public final class AsyncOperationType {
 

@@ -414,7 +414,7 @@ Java_sun_nio_ch_FileDispatcherImpl_release0(JNIEnv *env, jobject this,
     o.Offset = lowPos;
     o.OffsetHigh = highPos;
     result = UnlockFileEx(h, 0, lowNumBytes, highNumBytes, &o);
-    if (result == 0) {
+    if (result == 0 && GetLastError() != ERROR_NOT_LOCKED) {
         JNU_ThrowIOExceptionWithLastError(env, "Release failed");
     }
 }

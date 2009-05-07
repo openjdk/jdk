@@ -332,9 +332,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
         // the rest of the flip actions are not supported
     }
 
-    /*
     @Override
-    */
     public boolean isTranslucencyCapable() {
         //XXX: worth checking if 8-bit? Anyway, it doesn't hurt.
         return true;

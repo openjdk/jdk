@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPHeader.java,v 1.5.2.12 2004/11/17 13:59:28 vj135062 Exp $
- * $Revision: 1.5.2.12 $
- * $Date: 2004/11/17 13:59:28 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPHeader.java,v 1.14 2005/04/05 22:46:27 mk125090 Exp $
+ * $Revision: 1.14 $
+ * $Date: 2005/04/05 22:46:27 $
+ */
+
+
 package javax.xml.soap;
 
 import java.util.Iterator;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,13 @@ public class JConditional implements JStatement {
     public JBlock _else() {
         if (_else == null) _else = new JBlock();
         return _else;
+    }
+
+    /**
+     * Creates <tt>... else if(...) ...</tt> code.
+     */
+    public JConditional _elseif(JExpression boolExp) {
+        return _else()._if(boolExp);
     }
 
     public void state(JFormatter f) {

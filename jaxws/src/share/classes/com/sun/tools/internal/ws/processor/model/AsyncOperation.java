@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
  */
 package com.sun.tools.internal.ws.processor.model;
 
-import javax.xml.namespace.QName;
-
-import com.sun.tools.internal.ws.processor.model.jaxb.JAXBType;
-import com.sun.tools.internal.ws.processor.model.jaxb.JAXBTypeAndAnnotation;
-import com.sun.tools.internal.ws.processor.model.java.JavaType;
-import com.sun.tools.internal.ws.processor.model.java.JavaSimpleType;
 import com.sun.codemodel.internal.JClass;
 import com.sun.codemodel.internal.JCodeModel;
+import com.sun.tools.internal.ws.processor.model.java.JavaSimpleType;
+import com.sun.tools.internal.ws.processor.model.java.JavaType;
+import com.sun.tools.internal.ws.processor.model.jaxb.JAXBTypeAndAnnotation;
+import com.sun.tools.internal.ws.wsdl.framework.Entity;
+
+import javax.xml.namespace.QName;
 
 
 /**
@@ -44,24 +44,24 @@ public class AsyncOperation extends Operation {
     /**
      *
      */
-    public AsyncOperation() {
-        super();
+    public AsyncOperation(Entity entity) {
+        super(entity);
         // TODO Auto-generated constructor stub
     }
 
     /**
      * @param operation
      */
-    public AsyncOperation(Operation operation) {
-        super(operation);
+    public AsyncOperation(Operation operation, Entity entity) {
+        super(operation, entity);
         this.operation = operation;
     }
 
     /**
      * @param name
      */
-    public AsyncOperation(QName name) {
-        super(name);
+    public AsyncOperation(QName name, Entity entity) {
+        super(name, entity);
         // TODO Auto-generated constructor stub
     }
 

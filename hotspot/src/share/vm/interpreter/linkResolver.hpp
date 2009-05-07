@@ -167,6 +167,7 @@ class LinkResolver: AllStatic {
   static void resolve_invokespecial  (CallInfo& result,              constantPoolHandle pool, int index, TRAPS);
   static void resolve_invokevirtual  (CallInfo& result, Handle recv, constantPoolHandle pool, int index, TRAPS);
   static void resolve_invokeinterface(CallInfo& result, Handle recv, constantPoolHandle pool, int index, TRAPS);
+  static void resolve_invokedynamic  (CallInfo& result,              constantPoolHandle pool, int index, TRAPS);
 
   static void resolve_invoke         (CallInfo& result, Handle recv, constantPoolHandle pool, int index, Bytecodes::Code byte, TRAPS);
 };

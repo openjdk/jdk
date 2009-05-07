@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 
@@ -61,9 +60,9 @@ public final class ValueProperty<BeanT> extends PropertyImpl<BeanT> {
     private final Accessor<BeanT,?> acc;
 
 
-    public ValueProperty(JAXBContextImpl grammar, RuntimeValuePropertyInfo prop) {
-        super(grammar,prop);
-        xacc = TransducedAccessor.get(prop);
+    public ValueProperty(JAXBContextImpl context, RuntimeValuePropertyInfo prop) {
+        super(context,prop);
+        xacc = TransducedAccessor.get(context,prop);
         acc = prop.getAccessor();   // we only use this for binder, so don't waste memory by optimizing
     }
 

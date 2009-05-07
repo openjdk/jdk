@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.dtd;
 
 import java.util.ArrayList;
@@ -35,7 +34,7 @@ import javax.xml.namespace.QName;
 import com.sun.tools.internal.xjc.model.CBuiltinLeafInfo;
 import com.sun.tools.internal.xjc.model.CClassInfo;
 import com.sun.tools.internal.xjc.model.CElementPropertyInfo;
-import com.sun.tools.internal.xjc.model.CNonElement;
+import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMode.*;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
 import com.sun.tools.internal.xjc.model.CReferencePropertyInfo;
 import com.sun.tools.internal.xjc.model.CTypeRef;
@@ -48,10 +47,6 @@ import com.sun.xml.internal.bind.v2.model.core.WildcardMode;
 import com.sun.xml.internal.dtdparser.DTDEventListener;
 
 import org.xml.sax.Locator;
-
-import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMode.NOT_REPEATED;
-import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMode.REPEATED_VALUE;
-import static com.sun.tools.internal.xjc.model.CElementPropertyInfo.CollectionMode.REPEATED_ELEMENT;
 
 /**
  * DTD Element.
@@ -238,7 +233,7 @@ final class Element extends Term implements Comparable<Element> {
 
             if(ci!=null) {
                 // if this element is mapped to a class, just put one property
-                CValuePropertyInfo p = new CValuePropertyInfo("value", null,null/*TODO*/,locator,getConversion());
+                CValuePropertyInfo p = new CValuePropertyInfo("value", null,null/*TODO*/,locator,getConversion(),null);
                 ci.addProperty(p);
             }
             return;
@@ -288,7 +283,7 @@ final class Element extends Term implements Comparable<Element> {
                 for( Element e : b.elements ) {
                     CClassInfo child = owner.getOrCreateElement(e.name).getClassInfo();
                     assert child!=null; // we are requiring them to be classes.
-                    p.getTypes().add(new CTypeRef(child,new QName("",e.name),false,null));
+                    p.getTypes().add(new CTypeRef(child,new QName("",e.name),null,false,null));
                 }
             } else {
                 // single property
@@ -306,7 +301,7 @@ final class Element extends Term implements Comparable<Element> {
                 p = new CElementPropertyInfo(propName,
                     refType.isCollection()?REPEATED_VALUE:NOT_REPEATED, ID.NONE, null, null,null/*TODO*/, locator, !b.isOptional );
 
-                p.getTypes().add(new CTypeRef((CNonElement)refType.getInfo(),new QName("",name),false,null));
+                p.getTypes().add(new CTypeRef(refType.getInfo(),new QName("",name),null,false,null));
             }
             ci.addProperty(p);
         }
