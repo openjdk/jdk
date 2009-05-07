@@ -335,16 +335,14 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     }
 
     private void updateShape() {
-        // Shape shape = ((Window)target).getShape();
-        Shape shape = AWTAccessor.getWindowAccessor().getShape((Window)target);
+        Shape shape = ((Window)target).getShape();
         if (shape != null) {
             applyShape(Region.getInstance(shape, null));
         }
     }
 
     private void updateOpacity() {
-        // float opacity = ((Window)target).getOpacity();
-        float opacity = AWTAccessor.getWindowAccessor().getOpacity((Window)target);
+        float opacity = ((Window)target).getOpacity();
         if (opacity < 1.0f) {
             setOpacity(opacity);
         }
@@ -546,81 +544,16 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      private volatile int sysW = 0;
      private volatile int sysH = 0;
 
-     Rectangle constrainBounds(int x, int y, int width, int height) {
-         GraphicsConfiguration gc = this.winGraphicsConfig;
-
-         // We don't restrict the setBounds() operation if the code is trusted.
-         if (!hasWarningWindow() || gc == null) {
-             return new Rectangle(x, y, width, height);
-         }
-
-         int newX = x;
-         int newY = y;
-         int newW = width;
-         int newH = height;
-
-         Rectangle sB = gc.getBounds();
-         Insets sIn = Toolkit.getDefaultToolkit().getScreenInsets(gc);
-
-         int screenW = sB.width - sIn.left - sIn.right;
-         int screenH = sB.height - sIn.top - sIn.bottom;
-
-         // If it's undecorated or is not currently visible
-         if (!AWTAccessor.getComponentAccessor().isVisible_NoClientCode(
-                     (Component)target) || isTargetUndecorated())
-         {
-             // Now check each point is within the visible part of the screen
-             int screenX = sB.x + sIn.left;
-             int screenY = sB.y + sIn.top;
-
-             // First make sure the size is within the visible part of the screen
-             if (newW > screenW) {
-                 newW = screenW;
-             }
-             if (newH > screenH) {
-                 newH = screenH;
-             }
-
-             // Tweak the location if needed
-             if (newX < screenX) {
-                 newX = screenX;
-             } else if (newX + newW > screenX + screenW) {
-                 newX = screenX + screenW - newW;
-             }
-             if (newY < screenY) {
-                 newY = screenY;
-             } else if (newY + newH > screenY + screenH) {
-                 newY = screenY + screenH - newH;
-             }
-         } else {
-             int maxW = Math.max(screenW, sysW);
-             int maxH = Math.max(screenH, sysH);
-
-             // Make sure the size is withing the visible part of the screen
-             // OR less that the current size of the window.
-             if (newW > maxW) {
-                 newW = maxW;
-             }
-             if (newH > maxH) {
-                 newH = maxH;
-             }
-         }
-
-         return new Rectangle(newX, newY, newW, newH);
-     }
-
      public native void repositionSecurityWarning();
 
      @Override
      public void setBounds(int x, int y, int width, int height, int op) {
-         Rectangle newBounds = constrainBounds(x, y, width, height);
+         sysX = x;
+         sysY = y;
+         sysW = width;
+         sysH = height;
 
-         sysX = newBounds.x;
-         sysY = newBounds.y;
-         sysW = newBounds.width;
-         sysH = newBounds.height;
-
-         super.setBounds(newBounds.x, newBounds.y, newBounds.width, newBounds.height, op);
+         super.setBounds(x, y, width, height, op);
      }
 
     @Override
@@ -675,11 +608,13 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     public void setOpaque(boolean isOpaque) {
         Window target = (Window)getTarget();
 
-        SunToolkit sunToolkit = (SunToolkit)target.getToolkit();
-        if (!sunToolkit.isWindowTranslucencySupported() ||
-            !sunToolkit.isTranslucencyCapable(target.getGraphicsConfiguration()))
-        {
-            return;
+        if (!isOpaque) {
+            SunToolkit sunToolkit = (SunToolkit)target.getToolkit();
+            if (!sunToolkit.isWindowTranslucencySupported() ||
+                !sunToolkit.isTranslucencyCapable(target.getGraphicsConfiguration()))
+            {
+                return;
+            }
         }
 
         boolean opaqueChanged = this.isOpaque != isOpaque;
@@ -713,9 +648,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             // its shape only. To restore the correct visual appearance
             // of the window (i.e. w/ the correct shape) we have to reset
             // the shape.
-            Shape shape = AWTAccessor.getWindowAccessor().getShape(target);
+            Shape shape = ((Window)target).getShape();
             if (shape != null) {
-                AWTAccessor.getWindowAccessor().setShape(target, shape);
+                ((Window)target).setShape(shape);
             }
         }
 
@@ -726,6 +661,11 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
     public void updateWindow(BufferedImage backBuffer) {
         if (isOpaque) {
+            return;
+        }
+
+        Component target = (Component)this.target;
+        if (target.getWidth() <= 0 || target.getHeight() <= 0) {
             return;
         }
 

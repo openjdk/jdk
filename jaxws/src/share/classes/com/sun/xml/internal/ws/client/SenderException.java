@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class SenderException extends JAXWSExceptionBase {
         super("sender.nestedError", arg);
     }
 
-    public String getResourceBundleName() {
+    public String getDefaultResourceBundleName() {
         return "com.sun.xml.internal.ws.resources.sender";
     }
 }

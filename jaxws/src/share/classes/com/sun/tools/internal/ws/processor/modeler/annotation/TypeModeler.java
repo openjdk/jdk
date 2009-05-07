@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,12 @@
  */
 package com.sun.tools.internal.ws.processor.modeler.annotation;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import com.sun.mirror.apt.*;
+import com.sun.mirror.apt.AnnotationProcessorEnvironment;
 import com.sun.mirror.declaration.*;
 import com.sun.mirror.type.*;
-import com.sun.mirror.util.*;
-
-import com.sun.tools.internal.ws.processor.modeler.annotation.*;
 import com.sun.xml.internal.ws.util.StringUtils;
+
+import java.util.*;
 
 
 /**
@@ -46,37 +39,9 @@ import com.sun.xml.internal.ws.util.StringUtils;
 public class TypeModeler implements WebServiceConstants {
 
     public static TypeDeclaration getDeclaration(TypeMirror typeMirror) {
-        TypeDeclaration retDecl = null;
         if (typeMirror instanceof DeclaredType)
             return ((DeclaredType)typeMirror).getDeclaration();
         return null;
-    }
-
-    public static TypeDeclaration getTypeDeclaration(TypeMirror type) {
-        TypeDeclaration typeDecl = null;
-        if (type instanceof ClassType)
-            typeDecl = ((ClassType)type).getDeclaration();
-        else
-            typeDecl = ((InterfaceType)type).getDeclaration();
-        return typeDecl;
-    }
-
-    public static Collection<InterfaceType> getSuperinterfaces(TypeMirror type) {
-        Collection<InterfaceType> interfaces = null;
-        if (type instanceof ClassType)
-            interfaces = ((ClassType)type).getSuperinterfaces();
-        else
-            interfaces = ((InterfaceType)type).getSuperinterfaces();
-        return interfaces;
-    }
-
-    public static Collection<InterfaceType> getSuperinterfaces(TypeDeclaration type) {
-        Collection<InterfaceType> interfaces = null;
-        if (type instanceof ClassDeclaration)
-            interfaces = ((ClassDeclaration)type).getSuperinterfaces();
-        else
-            interfaces = ((InterfaceDeclaration)type).getSuperinterfaces();
-        return interfaces;
     }
 
     public static TypeDeclaration getDeclaringClassMethod(
@@ -99,7 +64,7 @@ public class TypeModeler implements WebServiceConstants {
                 retClass = getDeclaringClassMethod(superClass, methodName, args);
         }
         if (retClass == null) {
-            for (InterfaceType interfaceType : getSuperinterfaces(theClass))
+            for (InterfaceType interfaceType : theClass.getSuperinterfaces())
                 retClass =
                     getDeclaringClassMethod(interfaceType, methodName, args);
         }
@@ -143,8 +108,8 @@ public class TypeModeler implements WebServiceConstants {
 
     public static TypeMirror getHolderValueType(
         TypeMirror type,
-        TypeDeclaration defHolder,
-        AnnotationProcessorEnvironment env) {
+        TypeDeclaration defHolder
+    ) {
 
         TypeDeclaration typeDecl = getDeclaration(type);
         if (typeDecl == null)
@@ -216,21 +181,21 @@ public class TypeModeler implements WebServiceConstants {
         return false;
     }
 
-    public static Map<String,TypeMirror> getExceptionProperties(TypeMirror type) {
+    public static Map<String,MethodDeclaration> getExceptionProperties(TypeMirror type) {
         return getExceptionProperties(getDeclaration(type));
     }
 
-    public static Map<String,TypeMirror> getExceptionProperties(TypeDeclaration type) {
-        Map<String, TypeMirror> members = new HashMap<String, TypeMirror>();
+    public static Map<String,MethodDeclaration> getExceptionProperties(TypeDeclaration type) {
+        Map<String,MethodDeclaration> members = new HashMap<String,MethodDeclaration>();
         collectExceptionProperties(type, members);
         return members;
     }
 
-    public static void collectExceptionProperties(TypeMirror type, Map<String,TypeMirror> members) {
+    public static void collectExceptionProperties(TypeMirror type, Map<String,MethodDeclaration> members) {
         collectExceptionProperties(getDeclaration(type), members);
     }
 
-    public static void collectExceptionProperties(TypeDeclaration type, Map<String,TypeMirror> members) {
+    public static void collectExceptionProperties(TypeDeclaration type, Map<String,MethodDeclaration> members) {
 //        System.out.println("type: "+type.toString());
         Collection<? extends MethodDeclaration> methods;
         methods = type.getMethods();
@@ -256,13 +221,13 @@ public class TypeModeler implements WebServiceConstants {
                            ((PrimitiveType)resultType).getKind() == PrimitiveType.Kind.BOOLEAN)) {
                     // Simple getter
 //                    System.out.println("exception property: "+ StringUtils.decapitalize(name.substring(3)));
-                members.put(StringUtils.decapitalize(name.substring(3)), resultType);
+                members.put(StringUtils.decapitalize(name.substring(3)), method);
             } else if (resultType instanceof PrimitiveType &&
                            ((PrimitiveType)resultType).getKind() == PrimitiveType.Kind.BOOLEAN &&
                            name.startsWith(IS_PREFIX)) {
                     // Boolean getter
 //                    System.out.println("exception property: "+ StringUtils.decapitalize(name.substring(2)));
-                    members.put(StringUtils.decapitalize(name.substring(2)), resultType);
+                    members.put(StringUtils.decapitalize(name.substring(2)), method);
                 }
             }
         }
@@ -270,7 +235,7 @@ public class TypeModeler implements WebServiceConstants {
         if (type instanceof ClassDeclaration && ((ClassDeclaration)type).getSuperclass() != null)  {
             collectExceptionProperties(((ClassDeclaration)type).getSuperclass(), members);
         }
-        for (InterfaceType intfType : getSuperinterfaces(type)) {
+        for (InterfaceType intfType : type.getSuperinterfaces()) {
             collectExceptionProperties(intfType, members);
         }
     }

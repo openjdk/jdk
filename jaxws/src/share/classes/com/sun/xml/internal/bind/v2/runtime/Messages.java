@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.text.MessageFormat;
@@ -52,6 +51,9 @@ enum Messages {
     SUBSTITUTED_BY_ANONYMOUS_TYPE, // 3 arg
     CYCLE_IN_MARSHALLER, // 1 arg
     UNABLE_TO_DISCOVER_EVENTHANDLER, // 1 arg
+    ELEMENT_NEEDED_BUT_FOUND_DOCUMENT, // 1 arg
+    UNKNOWN_CLASS, // 1 arg
+    FAILED_TO_GENERATE_SCHEMA, // 0 args
     ;
 
     private static final ResourceBundle rb = ResourceBundle.getBundle(Messages.class.getName());

@@ -60,6 +60,7 @@ package javax.xml.bind;
  * </blockquote>
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
+ * @version $Revision: 1.2 $
  * @see Unmarshaller
  * @see Validator
  * @see Marshaller

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.io.IOException;
@@ -46,7 +45,7 @@ import org.xml.sax.helpers.DefaultHandler;
 final class ContentHandlerAdaptor extends DefaultHandler {
 
     /** Stores newly declared prefix-URI mapping. */
-    private final FinalArrayList prefixMap = new FinalArrayList();
+    private final FinalArrayList<String> prefixMap = new FinalArrayList<String>();
 
     /** Events will be sent to this object. */
     private final XMLSerializer serializer;
@@ -67,6 +66,15 @@ final class ContentHandlerAdaptor extends DefaultHandler {
         prefixMap.add(uri);
     }
 
+    private boolean containsPrefixMapping(String prefix, String uri) {
+        for( int i=0; i<prefixMap.size(); i+=2 ) {
+            if(prefixMap.get(i).equals(prefix)
+            && prefixMap.get(i+1).equals(uri))
+                return true;
+        }
+        return false;
+    }
+
     public void startElement(String namespaceURI, String localName, String qName, Attributes atts)
         throws SAXException {
         try {
@@ -74,8 +82,24 @@ final class ContentHandlerAdaptor extends DefaultHandler {
 
             int len = atts.getLength();
 
-            serializer.startElement(namespaceURI,localName,getPrefix(qName),null);
+            String p = getPrefix(qName);
+
+            // is this prefix going to be declared on this element?
+            if(containsPrefixMapping(p,namespaceURI))
+                serializer.startElementForce(namespaceURI,localName,p,null);
+            else
+                serializer.startElement(namespaceURI,localName, p,null);
+
             // declare namespace events
+            for( int i=0; i<prefixMap.size(); i+=2 ) {
+                // forcibly set this binding, instead of using declareNsUri.
+                // this guarantees that namespaces used in DOM will show up
+                // as-is in the marshalled output (instead of reassigned to something else,
+                // which may happen if you'd use declareNsUri.)
+                serializer.getNamespaceContext().force(
+                    prefixMap.get(i+1), prefixMap.get(i) );
+            }
+            // make sure namespaces needed by attributes are bound
             for( int i=0; i<len; i++ ) {
                 String qname = atts.getQName(i);
                 if(qname.startsWith("xmlns"))
@@ -84,13 +108,6 @@ final class ContentHandlerAdaptor extends DefaultHandler {
 
                 serializer.getNamespaceContext().declareNamespace(
                     atts.getURI(i), prefix, true );
-            }
-            for( int i=0; i<prefixMap.size(); i+=2 ) {
-                String prefix = (String)prefixMap.get(i);
-                serializer.getNamespaceContext().declareNamespace(
-                    (String)prefixMap.get(i+1),
-                    prefix,
-                    prefix.length()!=0 );
             }
 
             serializer.endNamespaceDecls(null);

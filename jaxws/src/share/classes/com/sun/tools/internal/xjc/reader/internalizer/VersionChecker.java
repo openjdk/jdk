@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.internalizer;
+
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Arrays;
 
 import com.sun.tools.internal.xjc.reader.Const;
 
@@ -118,7 +121,7 @@ public class VersionChecker extends XMLFilterImpl {
         }
 
         // if present, the value must be either 1.0 or 2.0
-        if( version!=null && !version.equals("1.0") && !version.equals("2.0") ) {
+        if( version!=null && !VERSIONS.contains(version) ) {
             SAXParseException e = new SAXParseException(
                 Messages.format(Messages.ERR_INCORRECT_VERSION),rootTagStart);
             getErrorHandler().error(e);
@@ -129,5 +132,7 @@ public class VersionChecker extends XMLFilterImpl {
         super.setDocumentLocator(locator);
         this.locator = locator;
     }
+
+    private static final Set<String> VERSIONS = new HashSet<String>(Arrays.asList("1.0","2.0","2.1"));
 
 }

@@ -123,8 +123,10 @@ public class MediaSize extends Size2DSyntax implements Attribute {
         if (x > y) {
             throw new IllegalArgumentException("X dimension > Y dimension");
         }
-        mediaName = media;
-        mediaMap.put(mediaName, this);
+        if (media != null && mediaMap.get(media) == null) {
+            mediaName = media;
+            mediaMap.put(mediaName, this);
+        }
         sizeVector.add(this);
     }
 
@@ -147,8 +149,10 @@ public class MediaSize extends Size2DSyntax implements Attribute {
         if (x > y) {
             throw new IllegalArgumentException("X dimension > Y dimension");
         }
-        mediaName = media;
-        mediaMap.put(mediaName, this);
+        if (media != null && mediaMap.get(media) == null) {
+            mediaName = media;
+            mediaMap.put(mediaName, this);
+        }
         sizeVector.add(this);
     }
 

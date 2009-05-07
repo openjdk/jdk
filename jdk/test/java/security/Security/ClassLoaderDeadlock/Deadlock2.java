@@ -56,7 +56,7 @@ public class Deadlock2 {
                         e.printStackTrace();
                     }
                 }
-            }
+            };
 
         Thread thread1 = new Thread(readObjectRunnable, "Read Object");
         Thread thread2 = new Thread(xmlRunnable, "XML");
