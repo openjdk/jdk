@@ -3629,6 +3629,8 @@ public class Window extends Container implements Accessible {
                 y + h + 2);
 
         // Now make sure the warning window is visible on the screen
+        GraphicsConfiguration graphicsConfig =
+            getGraphicsConfiguration_NoClientCode();
         Rectangle screenBounds = graphicsConfig.getBounds();
         Insets screenInsets =
             Toolkit.getDefaultToolkit().getScreenInsets(graphicsConfig);
