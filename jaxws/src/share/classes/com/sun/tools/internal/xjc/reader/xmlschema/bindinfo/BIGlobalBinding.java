@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema.bindinfo;
 
 import java.util.Collections;
@@ -131,6 +130,10 @@ public final class BIGlobalBinding extends AbstractDeclarationImpl {
 
     public boolean isSimpleMode() {
         return simpleMode!=null;
+    }
+
+    public boolean isRestrictionFreshType() {
+        return treatRestrictionLikeNewType !=null;
     }
 
     public EnumMemberMode getEnumMemberMode() {
@@ -271,6 +274,12 @@ public final class BIGlobalBinding extends AbstractDeclarationImpl {
     String simpleMode = null;
 
     /**
+     * Handles complex type restriction as if it were a new type.
+     */
+    @XmlElement(name="treatRestrictionLikeNewType",namespace=Const.XJC_EXTENSION_URI)
+    String treatRestrictionLikeNewType = null;
+
+    /**
      * True to generate a class for elements by default.
      */
     @XmlAttribute
@@ -278,6 +287,11 @@ public final class BIGlobalBinding extends AbstractDeclarationImpl {
 
     @XmlElement(namespace=Const.XJC_EXTENSION_URI)
     Boolean generateElementProperty = null;
+
+    @XmlAttribute(name="generateElementProperty")     // for JAXB unmarshaller
+    private void setGenerateElementPropertyStd(boolean value) {
+        generateElementProperty = value;
+    }
 
     @XmlAttribute
     boolean choiceContentProperty = false;

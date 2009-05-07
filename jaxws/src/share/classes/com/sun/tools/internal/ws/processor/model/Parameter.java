@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,37 @@
 
 package com.sun.tools.internal.ws.processor.model;
 
+import com.sun.tools.internal.ws.processor.model.java.JavaParameter;
+import com.sun.tools.internal.ws.wsdl.framework.Entity;
+import com.sun.tools.internal.ws.wsdl.document.MessagePart;
+
+import javax.jws.WebParam.Mode;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.sun.tools.internal.ws.processor.model.java.JavaParameter;
-import com.sun.xml.internal.ws.model.Mode;
 
 /**
  *
  * @author WS Development Team
  */
 public class Parameter extends ModelObject {
+    private final String entityName;
 
-    public Parameter() {}
-
-    public Parameter(String name) {
+    public Parameter(String name, Entity entity) {
+        super(entity);
         this.name = name;
+        if(entity instanceof com.sun.tools.internal.ws.wsdl.document.Message){
+            this.entityName = ((com.sun.tools.internal.ws.wsdl.document.Message)entity).getName();
+        }else if(entity instanceof MessagePart){
+            this.entityName = ((MessagePart)entity).getName();
+        }else{
+            this.entityName = name;
+        }
+
+    }
+
+
+    public String getEntityName() {
+        return entityName;
     }
 
     public String getName() {

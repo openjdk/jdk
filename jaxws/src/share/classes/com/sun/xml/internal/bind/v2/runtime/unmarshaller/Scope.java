@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import com.sun.xml.internal.bind.api.AccessorException;
@@ -107,8 +106,30 @@ public final class Scope<BeanT,PropT,ItemT,PackT> {
         } catch (AccessorException e) {
             Loader.handleGenericException(e,true);
             // recover from this error by ignoring future items.
-            this.lister = Lister.ERROR;
-            this.acc = Accessor.ERROR;
+            this.lister = Lister.getErrorInstance();
+            this.acc = Accessor.getErrorInstance();
+        }
+    }
+
+    /**
+     * Starts the packing scope, without adding any item.
+     *
+     * This allows us to return an empty pack, thereby allowing the user
+     * to distinguish empty array vs null array.
+     */
+    public void start( Accessor<BeanT,PropT> acc, Lister<BeanT,PropT,ItemT,PackT> lister) throws SAXException{
+        try {
+            if(!hasStarted()) {
+                this.bean = (BeanT)context.getCurrentState().target;
+                this.acc = acc;
+                this.lister = lister;
+                this.pack = lister.startPacking(bean,acc);
+            }
+        } catch (AccessorException e) {
+            Loader.handleGenericException(e,true);
+            // recover from this error by ignoring future items.
+            this.lister = Lister.getErrorInstance();
+            this.acc = Accessor.getErrorInstance();
         }
     }
 }

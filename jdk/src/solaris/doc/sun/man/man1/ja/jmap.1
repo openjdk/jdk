@@ -1,71 +1,103 @@
-'\" t
-.\" Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\" ` 
-.TH jmap 1 "2006 ǯ 9 �� 4 ��" "Java SE 6" "�桼�������ޥ��"
-.SH ̾��
-jmap \- ����ޥå�
-.\"
-.SH ����
-.B jmap 
-.BI [ option ] " pid" 
+." Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH jmap 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
+.LP
+.SH "名前"
+jmap \- メモリーマップ
+.LP
+.RS 3
+.TP 2
+o
+形式 
+.TP 2
+o
+パラメータ 
+.TP 2
+o
+説明 
+.TP 2
+o
+オプション 
+.TP 2
+o
+関連項目 
+.RE
+
+.LP
+.SH "形式"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+\fP\f3jmap\fP [ option ] pid
+.fl
+\f3jmap\fP [ option ] executable core
+.fl
+\f3jmap\fP [ option ] [server\-id@]remote\-hostname\-or\-IP
+.fl
+.fi
+
+.LP
+.SH "パラメータ"
+.LP
+
+.LP
+.RS 3
+.TP 3
+option 
+各オプションは互いに排他的です。オプションを使用する場合、コマンド名の直後に記述します。 
+.TP 3
+pid 
+印刷するメモリーマップのプロセス ID。プロセスは Java プロセスである必要があります。マシン上で実行している Java プロセスの一覧を取得するには、jps(1) を使用します。 
 .br
-.B jmap
-.BI [ option ] " executable core" 
+.TP 3
+executable 
+コアダンプの作成元の Java 実行可能ファイルです。 
 .br
-.B jmap
-.BI [ option ] " [server-id@]remote-hostname-or-IP"
-.SH �ѥ�᡼��
-.if t .TP 20
-.if n .TP 15
-.BI option
-���ץ�������ߤ���¾Ū�Ǥ������ץ�������Ѥ�����ϡ����ޥ��̾��ľ��˻��ꤹ��ɬ�פ�����ޤ���
-.if t .TP 20
-.if n .TP 15
-.I pid
-����ޥåפ�ɽ������ץ����� ID���ץ������� Java �ץ������Ǥʤ���Фʤ�ޤ��󡣥ޥ����Ǽ¹Ԥ��Ƥ��� Java �ץ������Υꥹ�Ȥ��������ˤϡ�
-.B jps 
-����Ѥ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.I executable
-��������פ��������줿 Java �¹Բ�ǽ�ե����롣
-.if t .TP 20
-.if n .TP 15
-.I core
-����ޥåפ�ɽ�����륳���ե����롣
-.if t .TP 20
-.if n .TP 15
-.I remote-hostname-or-IP
-��⡼�ȥǥХå������� (
-.B jsadebugd
-�򻲾�) �Υۥ���̾�ޤ��� IP ���ɥ쥹��
-.if t .TP 20
-.if n .TP 15
-.I server-id
-Ʊ����⡼�ȥۥ��Ⱦ��ʣ���ΥǥХå������Ф��¹Ԥ��Ƥ����硢���ץ����ΰ�� ID��
-.SH ��ǽ����
-.B jmap
-�ϡ����ꤵ�줿�ץ������ޤ��ϥ����ե�����ޤ��ϥ�⡼�ȥǥХå������ФΡ���ͭ���֥������ȥ���ޥåפޤ��ϥҡ��ץ���ξܺ٤�ɽ�����ޤ���
-���ꤵ�줿�ץ������� 64 �ӥå� VM ��Ǽ¹Ԥ���Ƥ����硢\f2\-J\-d64\fP ���ץ�������ꤷ�ʤ���Фʤ�ʤ���礬����ޤ���������򼨤��ޤ���
+.TP 3
+core 
+印刷するメモリーマップのコアファイル。 
+.br
+.TP 3
+remote\-hostname\-or\-IP 
+リモートデバッグサーバー (jsadebugd(1) を参照) のホスト名または IP アドレスです。 
+.br
+.TP 3
+server\-id 
+複数のデバッグサーバーが同一のリモートホストで実行している場合の、オプション固有の ID です。
+.br
+.RE
+
+.LP
+.SH " 説明"
+.LP
+
+.LP
+.LP
+\f3jmap\fP は、指定されたプロセスやコアファイルまたはリモートデバッグサーバーの、共用オブジェクトメモリーマップまたはヒープメモリーの詳細を印刷します。指定されたプロセスが 64 ビット VM 上で実行されている場合、\f2\-J\-d64\fP オプションを指定しなければならない場合があります。 次に例を示します。
 .LP
 .RS 3
 
@@ -80,82 +112,87 @@ jmap \-J\-d64 \-heap pid
 .RE
 
 .LP
-�� - ���Υ桼�ƥ���ƥ��ϥ��ݡ��Ȥ���Ƥ��ʤ����ᡢJDK �ξ���ΥС������Ǥϻ��ѤǤ��ʤ���ǽ��������ޤ���
+\f3注 \- このユーティリティーはサポート対象外であり、将来の JDK のバージョンでは利用できなくなる可能性があります。\fP
 .br
 
 .LP
-Windows �ץ�åȥե������ǻ��Ѳ�ǽ��ͣ��� jmap �����ϡ����ΤȤ���Ǥ���
+Windows プラットフォーム上で使用可能な唯一の jmap 形式は、次のとおりです。 
 .RS 3
 
 .LP
 jmap \-dump:<\f2dump\-options\fP> pid
 .RE
-����� 
+および 
 .RS 3
 
 .LP
 jmap \-histo[:live] pid
 .RE
-.SH ���ץ����
-.if t .TP 20
-.if n .TP 15
-.BI " <no option>"
-���ץ���󤬻��Ѥ���ʤ��ä���硢
-.B jmap 
-�϶�ͭ���֥������ȥޥåԥ󥰤�ɽ�����ޤ����������å� VM ���ɤ߹��ޤ줿�ƶ�ͭ���֥������ȤˤĤ��ơ����ϥ��ɥ쥹���ޥåԥ󥰤Υ�����������Ӷ�ͭ���֥������ȥե�����Υե�ѥ���ɽ������ޤ�������ϡ�Solaris ��
-.B pmap 
-�桼�ƥ���ƥ���Ʊ�ͤǤ���
+.SH "オプション"
+.LP
+
+.LP
+.RS 3
+.TP 3
+<オプションなし> 
+オプションを使用しない場合、\f3jmap\fP は共用オブジェクトマッピングを印刷します。ターゲット VM にロードされた共用オブジェクトごとに、開始アドレス、マッピングのサイズ、および共用オブジェクトファイルのフルパスが印刷されます。これは、Solaris \f3pmap\fP ユーティリティーと類似しています。 
+.br
 .TP 3
 \-dump:[live,]format=b,file=<filename> 
-Java �ҡ��פ� hprof �Х��ʥ������ filename �˥���פ��ޤ���\f2live\fP ���֥��ץ����Ͼ�ά��ǽ�Ǥ������줬���ꤵ�줿��硢�ҡ��������¸��Υ��֥������ȤΤߤ�����פ���ޤ����ҡ��ץ���פ򻲾Ȥ���ˤϡ��������줿�ե������ jhat (Java Heap Analysis Tool) ��Ȥä��ɤ߼��ޤ���
+Java ヒープを hprof バイナリ形式で filename にダンプします。\f2live\fP サブオプションは省略可能です。これが指定された場合、ヒープ内で生存中のオブジェクトのみがダンプされます。ヒープダンプを参照するには、生成されたファイルを jhat(1) (Java Heap Analysis Tool) を使って読み取ります。 
+.br
 .TP 3
 \-finalizerinfo 
-�ե����ʥ饤�����ԤäƤ��륪�֥������Ȥ˴ؤ���������Ϥ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.B \-heap
-�ҡ��פΥ��ޥ��ɽ�����ޤ������Ѥ��줿 GC ���르�ꥺ�ࡢ�ҡ��׹�����������������ϤΥҡ��׻���Ψ��ɽ������ޤ���
-.if t .TP 20
-.if n .TP 15
-.B \-histo[:live] 
-�ҡ��פΥҥ��ȥ�����ɽ�����ޤ����� Java ���饹�ˤĤ��ơ����֥������ȿ������ꥵ�����ʥХ��ȿ��ˡ�����Ӵ����������饹̾��ɽ������ޤ���VM �������饹̾�����ˤ� '*' ��ɽ������ޤ���\f2live\fP ���֥��ץ���󤬻��ꤵ�줿��硢��¸��Υ��֥������ȤΤߤ�������Ȥ���ޤ���
-.if t .TP 20
-.if n .TP 15
-.B \-permstat
-Java �ҡ��פα�³Ū�����Υ��饹���������Ϥ����פ�ɽ�����ޤ����ƥ��饹�������ˤĤ��ơ�̾������ư�������ɥ쥹���ƥ��饹��������������ɤ߹��ޤ줿���饹�Υ�������ɽ������ޤ���
-����ˡ�intern ���줿ʸ����ο��ȥ���������Ϥ���ޤ���
+ファイナライズを待っているオブジェクトに関する情報を出力します。 
+.br
+.TP 3
+\-heap 
+ヒープサマリーを印刷します。使用される GC アルゴリズム、ヒープ構成、および世代ごとのヒープ使用率が印刷されます。 
+.br
+.TP 3
+\-histo[:live] 
+ヒープのヒストグラムを印刷します。Java クラスごとに、オブジェクトの数、バイト単位でのメモリーサイズ、および完全修飾クラス名が印刷されます。VM 内部クラス名は、「*」の接頭辞を付けて印刷されます。\f2live\fP サブオプションが指定された場合、生存中のオブジェクトのみがカウントされます。 
+.br
+.TP 3
+\-permstat 
+Permanent 世代の Java ヒープの、クラスローダー関連の統計データを印刷します。クラスローダーごとに、その名前、状態、アドレス、親クラスローダー、およびクラスローダーがロードしたクラスの数とサイズが印刷されます。さらに、intern された文字列の数とサイズも出力されます。 
+.br
 .TP 3
 \-F 
-���� (Force)��pid ���������ʤ����ˡ�jmap \-dump �ޤ��� jmap \-histo ���ץ����ȤȤ�˻��Ѥ��ޤ������Υ⡼�ɤǤϡ�\f2live\fP ���֥��ץ����ϥ��ݡ��Ȥ���ޤ���
-.if t .TP 20
-.if n .TP 15
-.B \-h
-�إ�ץ�å�������ɽ�����ޤ���
-.if t .TP 20
-.if n .TP 15
-.B \-help
-�إ�ץ�å�������ɽ�����ޤ���
+強制 (Force)。pid が応答しない場合に、jmap \-dump または jmap \-histo オプションとともに使用します。このモードでは、\f2live\fP サブオプションはサポートされません。 
+.br
+.TP 3
+\-h 
+ヘルプメッセージを印刷します。
+.br
+.br
+.TP 3
+\-help 
+ヘルプメッセージを印刷します。
+.br
 .br
 .TP 3
 \-J<flag> 
-jmap ���¹Ԥ���Ƥ��� Java ���ۥޥ���� <flag> ���Ϥ��ޤ���
+jmap が実行されている Java 仮想マシンに <flag> を渡します。 
+.br
+.RE
 
 .LP
-.SH ��Ϣ����
+.SH "関連項目"
 .LP
 .RS 3
 .TP 2
-*
+o
 pmap (1) 
 .TP 2
-*
-jhat 
+o
+jhat(1) 
 .TP 2
-*
-jps 
+o
+jps(1) 
 .TP 2
-*
-jsadebugd 
+o
+jsadebugd(1) 
 .RE
 
 .LP

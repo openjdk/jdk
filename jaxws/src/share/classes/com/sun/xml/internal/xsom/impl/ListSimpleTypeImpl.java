@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSFacet;
@@ -63,6 +62,10 @@ public class ListSimpleTypeImpl extends SimpleTypeImpl implements XSListSimpleTy
     public XSFacet getFacet( String name ) { return null; }
 
     public XSVariety getVariety() { return XSVariety.LIST; }
+
+    public XSSimpleType getPrimitiveType() { return null; }
+
+    public XSListSimpleType getBaseListType() {return this;}
 
     public boolean isList() { return true; }
     public XSListSimpleType asList() { return this; }

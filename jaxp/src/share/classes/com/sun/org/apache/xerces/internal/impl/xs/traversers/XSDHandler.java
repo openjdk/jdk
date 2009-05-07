@@ -2523,25 +2523,26 @@ public class XSDHandler {
         return false;
     }
 
+    void reportSchemaFatalError(String key, Object[] args, Element ele) {
+        reportSchemaErr(key, args, ele, XMLErrorReporter.SEVERITY_FATAL_ERROR);
+    }
+
     void reportSchemaError(String key, Object[] args, Element ele) {
-        if (element2Locator(ele, xl)) {
-            fErrorReporter.reportError(xl, XSMessageFormatter.SCHEMA_DOMAIN,
-                    key, args, XMLErrorReporter.SEVERITY_ERROR);
-        }
-        else {
-            fErrorReporter.reportError(XSMessageFormatter.SCHEMA_DOMAIN,
-                    key, args, XMLErrorReporter.SEVERITY_ERROR);
-        }
+        reportSchemaErr(key, args, ele, XMLErrorReporter.SEVERITY_ERROR);
     }
 
     void reportSchemaWarning(String key, Object[] args, Element ele) {
+        reportSchemaErr(key, args, ele, XMLErrorReporter.SEVERITY_WARNING);
+    }
+
+    void reportSchemaErr(String key, Object[] args, Element ele, short type) {
         if (element2Locator(ele, xl)) {
             fErrorReporter.reportError(xl, XSMessageFormatter.SCHEMA_DOMAIN,
-                    key, args, XMLErrorReporter.SEVERITY_WARNING);
+                    key, args, type);
         }
         else {
             fErrorReporter.reportError(XSMessageFormatter.SCHEMA_DOMAIN,
-                    key, args, XMLErrorReporter.SEVERITY_WARNING);
+                    key, args, type);
         }
     }
 

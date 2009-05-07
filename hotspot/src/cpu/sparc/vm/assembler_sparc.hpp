@@ -274,21 +274,90 @@ REGISTER_DECLARATION(Register, Oissuing_pc , O1); // where the exception is comi
 
 class Address VALUE_OBJ_CLASS_SPEC {
  private:
-  Register              _base;
-#ifdef _LP64
-  int                   _hi32;          // bits 63::32
-  int                   _low32;         // bits 31::0
-#endif
-  int                   _hi;
-  int                   _disp;
-  RelocationHolder      _rspec;
+  Register           _base;           // Base register.
+  RegisterOrConstant _index_or_disp;  // Index register or constant displacement.
+  RelocationHolder   _rspec;
 
-  RelocationHolder rspec_from_rtype(relocInfo::relocType rt, address a = NULL) {
-    switch (rt) {
+ public:
+  Address() : _base(noreg), _index_or_disp(noreg) {}
+
+  Address(Register base, RegisterOrConstant index_or_disp)
+    : _base(base),
+      _index_or_disp(index_or_disp) {
+  }
+
+  Address(Register base, Register index)
+    : _base(base),
+      _index_or_disp(index) {
+  }
+
+  Address(Register base, int disp)
+    : _base(base),
+      _index_or_disp(disp) {
+  }
+
+#ifdef ASSERT
+  // ByteSize is only a class when ASSERT is defined, otherwise it's an int.
+  Address(Register base, ByteSize disp)
+    : _base(base),
+      _index_or_disp(in_bytes(disp)) {
+  }
+#endif
+
+  // accessors
+  Register base()      const { return _base; }
+  Register index()     const { return _index_or_disp.as_register(); }
+  int      disp()      const { return _index_or_disp.as_constant(); }
+
+  bool     has_index() const { return _index_or_disp.is_register(); }
+  bool     has_disp()  const { return _index_or_disp.is_constant(); }
+
+  const relocInfo::relocType rtype() { return _rspec.type(); }
+  const RelocationHolder&    rspec() { return _rspec; }
+
+  RelocationHolder rspec(int offset) const {
+    return offset == 0 ? _rspec : _rspec.plus(offset);
+  }
+
+  inline bool is_simm13(int offset = 0);  // check disp+offset for overflow
+
+  Address plus_disp(int plusdisp) const {     // bump disp by a small amount
+    assert(_index_or_disp.is_constant(), "must have a displacement");
+    Address a(base(), disp() + plusdisp);
+    return a;
+  }
+
+  Address after_save() const {
+    Address a = (*this);
+    a._base = a._base->after_save();
+    return a;
+  }
+
+  Address after_restore() const {
+    Address a = (*this);
+    a._base = a._base->after_restore();
+    return a;
+  }
+
+  // Convert the raw encoding form into the form expected by the
+  // constructor for Address.
+  static Address make_raw(int base, int index, int scale, int disp, bool disp_is_oop);
+
+  friend class Assembler;
+};
+
+
+class AddressLiteral VALUE_OBJ_CLASS_SPEC {
+ private:
+  address          _address;
+  RelocationHolder _rspec;
+
+  RelocationHolder rspec_from_rtype(relocInfo::relocType rtype, address addr) {
+    switch (rtype) {
     case relocInfo::external_word_type:
-      return external_word_Relocation::spec(a);
+      return external_word_Relocation::spec(addr);
     case relocInfo::internal_word_type:
-      return internal_word_Relocation::spec(a);
+      return internal_word_Relocation::spec(addr);
 #ifdef _LP64
     case relocInfo::opt_virtual_call_type:
       return opt_virtual_call_Relocation::spec();
@@ -305,127 +374,86 @@ class Address VALUE_OBJ_CLASS_SPEC {
     }
   }
 
+ protected:
+  // creation
+  AddressLiteral() : _address(NULL), _rspec(NULL) {}
+
  public:
-  Address(Register b, address a, relocInfo::relocType rt = relocInfo::none)
-    : _rspec(rspec_from_rtype(rt, a))
-  {
-    _base  = b;
+  AddressLiteral(address addr, RelocationHolder const& rspec)
+    : _address(addr),
+      _rspec(rspec) {}
+
+  // Some constructors to avoid casting at the call site.
+  AddressLiteral(jobject obj, RelocationHolder const& rspec)
+    : _address((address) obj),
+      _rspec(rspec) {}
+
+  AddressLiteral(intptr_t value, RelocationHolder const& rspec)
+    : _address((address) value),
+      _rspec(rspec) {}
+
+  AddressLiteral(address addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+    _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
+  // Some constructors to avoid casting at the call site.
+  AddressLiteral(address* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+    _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
+  AddressLiteral(bool* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
+  AddressLiteral(const bool* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
+  AddressLiteral(signed char* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
+  AddressLiteral(int* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
+  AddressLiteral(intptr_t addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
 #ifdef _LP64
-    _hi32  = (intptr_t)a >> 32;    // top 32 bits in 64 bit word
-    _low32 = (intptr_t)a & ~0;     // low 32 bits in 64 bit word
+  // 32-bit complains about a multiple declaration for int*.
+  AddressLiteral(intptr_t* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 #endif
-    _hi    = (intptr_t)a & ~0x3ff; // top    22 bits in low word
-    _disp  = (intptr_t)a &  0x3ff; // bottom 10 bits
-  }
 
-  Address(Register b, address a, RelocationHolder const& rspec)
-    : _rspec(rspec)
-  {
-    _base  = b;
-#ifdef _LP64
-    _hi32  = (intptr_t)a >> 32;    // top 32 bits in 64 bit word
-    _low32 = (intptr_t)a & ~0;     // low 32 bits in 64 bit word
-#endif
-    _hi    = (intptr_t)a & ~0x3ff; // top    22 bits
-    _disp  = (intptr_t)a &  0x3ff; // bottom 10 bits
-  }
+  AddressLiteral(oop addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 
-  Address(Register b, intptr_t h, intptr_t d, RelocationHolder const& rspec = RelocationHolder())
-    : _rspec(rspec)
-  {
-    _base  = b;
-#ifdef _LP64
-// [RGV] Put in Assert to force me to check usage of this constructor
-     assert( h == 0, "Check usage of this constructor" );
-    _hi32  = h;
-    _low32 = d;
-    _hi    = h;
-    _disp  = d;
-#else
-    _hi    = h;
-    _disp  = d;
-#endif
-  }
+  AddressLiteral(float* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 
-  Address()
-    : _rspec(RelocationHolder())
-  {
-    _base  = G0;
-#ifdef _LP64
-    _hi32  = 0;
-    _low32 = 0;
-#endif
-    _hi    = 0;
-    _disp  = 0;
-  }
+  AddressLiteral(double* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 
-  // fancier constructors
+  intptr_t value() const { return (intptr_t) _address; }
+  int      low10() const;
 
-  enum addr_type {
-    extra_in_argument,  // in the In registers
-    extra_out_argument  // in the Outs
-  };
+  const relocInfo::relocType rtype() const { return _rspec.type(); }
+  const RelocationHolder&    rspec() const { return _rspec; }
 
-  Address( addr_type, int );
-
-  // accessors
-
-  Register               base() const { return _base; }
-#ifdef _LP64
-  int                   hi32()  const { return _hi32; }
-  int                   low32() const { return _low32; }
-#endif
-  int                      hi() const { return _hi;  }
-  int                    disp() const { return _disp; }
-#ifdef _LP64
-  intptr_t              value() const { return ((intptr_t)_hi32 << 32) |
-                                                (intptr_t)(uint32_t)_low32; }
-#else
-  int                   value() const { return _hi | _disp; }
-#endif
-  const relocInfo::relocType  rtype() { return _rspec.type(); }
-  const RelocationHolder&     rspec() { return _rspec; }
-
-  RelocationHolder      rspec(int offset) const {
+  RelocationHolder rspec(int offset) const {
     return offset == 0 ? _rspec : _rspec.plus(offset);
   }
-
-  inline bool is_simm13(int offset = 0);  // check disp+offset for overflow
-
-  Address plus_disp(int disp) const {     // bump disp by a small amount
-    Address a = (*this);
-    a._disp += disp;
-    return a;
-  }
-
-  Address split_disp() const {            // deal with disp overflow
-    Address a = (*this);
-    int hi_disp = _disp & ~0x3ff;
-    if (hi_disp != 0) {
-      a._disp -= hi_disp;
-      a._hi   += hi_disp;
-    }
-    return a;
-  }
-
-  Address after_save() const {
-    Address a = (*this);
-    a._base = a._base->after_save();
-    return a;
-  }
-
-  Address after_restore() const {
-    Address a = (*this);
-    a._base = a._base->after_restore();
-    return a;
-  }
-
-  friend class Assembler;
 };
 
 
 inline Address RegisterImpl::address_in_saved_window() const {
-   return (Address(SP, 0, (sp_offset_in_saved_window() * wordSize) + STACK_BIAS));
+   return (Address(SP, (sp_offset_in_saved_window() * wordSize) + STACK_BIAS));
 }
 
 
@@ -495,11 +523,7 @@ class Argument VALUE_OBJ_CLASS_SPEC {
   // When applied to a register-based argument, give the corresponding address
   // into the 6-word area "into which callee may store register arguments"
   // (This is a different place than the corresponding register-save area location.)
-  Address address_in_frame() const {
-    return Address( is_in()   ? Address::extra_in_argument
-                              : Address::extra_out_argument,
-                    _number );
-  }
+  Address address_in_frame() const;
 
   // debugging
   const char* name() const;
@@ -521,6 +545,7 @@ class Assembler : public AbstractAssembler  {
 
 
   friend class AbstractAssembler;
+  friend class AddressLiteral;
 
   // code patchers need various routines like inv_wdisp()
   friend class NativeInstruction;
@@ -1093,11 +1118,11 @@ public:
 
   // pp 135 (addc was addx in v8)
 
-  inline void add(    Register s1, Register s2, Register d );
-  inline void add(    Register s1, int simm13a, Register d, relocInfo::relocType rtype = relocInfo::none);
-  inline void add(    Register s1, int simm13a, Register d, RelocationHolder const& rspec);
-  inline void add(    Register s1, RegisterOrConstant s2, Register d, int offset = 0);
-  inline void add(    const Address&  a,                  Register d, int offset = 0);
+  inline void add(Register s1, Register s2, Register d );
+  inline void add(Register s1, int simm13a, Register d, relocInfo::relocType rtype = relocInfo::none);
+  inline void add(Register s1, int simm13a, Register d, RelocationHolder const& rspec);
+  inline void add(Register s1, RegisterOrConstant s2, Register d, int offset = 0);
+  inline void add(const Address& a, Register d, int offset = 0) { add( a.base(), a.disp() + offset, d, a.rspec(offset)); }
 
   void addcc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
   void addcc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
@@ -1252,14 +1277,12 @@ public:
   void jmpl( Register s1, Register s2, Register d );
   void jmpl( Register s1, int simm13a, Register d, RelocationHolder const& rspec = RelocationHolder() );
 
-  inline void jmpl( Address& a, Register d, int offset = 0);
-
   // 171
 
-  inline void ldf(    FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d );
-  inline void ldf(    FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d );
+  inline void ldf(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d);
+  inline void ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d, RelocationHolder const& rspec = RelocationHolder());
 
-  inline void ldf(    FloatRegisterImpl::Width w, const Address& a, FloatRegister d, int offset = 0);
+  inline void ldf(FloatRegisterImpl::Width w, const Address& a, FloatRegister d, int offset = 0);
 
 
   inline void ldfsr(  Register s1, Register s2 );
@@ -1303,15 +1326,20 @@ public:
   inline void ldd(   Register s1, Register s2, Register d );
   inline void ldd(   Register s1, int simm13a, Register d);
 
-  inline void ldsb( const Address& a, Register d, int offset = 0 );
-  inline void ldsh( const Address& a, Register d, int offset = 0 );
-  inline void ldsw( const Address& a, Register d, int offset = 0 );
-  inline void ldub( const Address& a, Register d, int offset = 0 );
-  inline void lduh( const Address& a, Register d, int offset = 0 );
-  inline void lduw( const Address& a, Register d, int offset = 0 );
-  inline void ldx(  const Address& a, Register d, int offset = 0 );
-  inline void ld(   const Address& a, Register d, int offset = 0 );
-  inline void ldd(  const Address& a, Register d, int offset = 0 );
+#ifdef ASSERT
+  // ByteSize is only a class when ASSERT is defined, otherwise it's an int.
+  inline void ld(    Register s1, ByteSize simm13a, Register d);
+#endif
+
+  inline void ldsb(const Address& a, Register d, int offset = 0);
+  inline void ldsh(const Address& a, Register d, int offset = 0);
+  inline void ldsw(const Address& a, Register d, int offset = 0);
+  inline void ldub(const Address& a, Register d, int offset = 0);
+  inline void lduh(const Address& a, Register d, int offset = 0);
+  inline void lduw(const Address& a, Register d, int offset = 0);
+  inline void ldx( const Address& a, Register d, int offset = 0);
+  inline void ld(  const Address& a, Register d, int offset = 0);
+  inline void ldd( const Address& a, Register d, int offset = 0);
 
   inline void ldub(  Register s1, RegisterOrConstant s2, Register d );
   inline void ldsb(  Register s1, RegisterOrConstant s2, Register d );
@@ -1536,6 +1564,11 @@ public:
   inline void std(  Register d, Register s1, Register s2 );
   inline void std(  Register d, Register s1, int simm13a);
 
+#ifdef ASSERT
+  // ByteSize is only a class when ASSERT is defined, otherwise it's an int.
+  inline void st(   Register d, Register s1, ByteSize simm13a);
+#endif
+
   inline void stb(  Register d, const Address& a, int offset = 0 );
   inline void sth(  Register d, const Address& a, int offset = 0 );
   inline void stw(  Register d, const Address& a, int offset = 0 );
@@ -1684,8 +1717,8 @@ class RegistersForDebugging : public StackObj {
 
 #define JMP2(r1, r2) jmp(r1, r2, __FILE__, __LINE__)
 #define JMP(r1, off) jmp(r1, off, __FILE__, __LINE__)
-#define JUMP(a, off)     jump(a, off, __FILE__, __LINE__)
-#define JUMPL(a, d, off) jumpl(a, d, off, __FILE__, __LINE__)
+#define JUMP(a, temp, off)     jump(a, temp, off, __FILE__, __LINE__)
+#define JUMPL(a, temp, d, off) jumpl(a, temp, d, off, __FILE__, __LINE__)
 
 
 class MacroAssembler: public Assembler {
@@ -1830,17 +1863,26 @@ class MacroAssembler: public Assembler {
 #endif
 
   // sethi Macro handles optimizations and relocations
-  void sethi( Address& a, bool ForceRelocatable = false );
-  void sethi( intptr_t imm22a, Register d, bool ForceRelocatable = false, RelocationHolder const& rspec = RelocationHolder());
+private:
+  void internal_sethi(const AddressLiteral& addrlit, Register d, bool ForceRelocatable);
+public:
+  void sethi(const AddressLiteral& addrlit, Register d);
+  void patchable_sethi(const AddressLiteral& addrlit, Register d);
 
   // compute the size of a sethi/set
   static int  size_of_sethi( address a, bool worst_case = false );
   static int  worst_case_size_of_set();
 
   // set may be either setsw or setuw (high 32 bits may be zero or sign)
-  void set(    intptr_t value, Register d, RelocationHolder const& rspec = RelocationHolder() );
-  void setsw(  int value, Register d, RelocationHolder const& rspec = RelocationHolder() );
-  void set64(  jlong value, Register d, Register tmp);
+private:
+  void internal_set(const AddressLiteral& al, Register d, bool ForceRelocatable);
+public:
+  void set(const AddressLiteral& addrlit, Register d);
+  void set(intptr_t value, Register d);
+  void set(address addr, Register d, RelocationHolder const& rspec);
+  void patchable_set(const AddressLiteral& addrlit, Register d);
+  void patchable_set(intptr_t value, Register d);
+  void set64(jlong value, Register d, Register tmp);
 
   // sign-extend 32 to 64
   inline void signx( Register s, Register d ) { sra( s, G0, d); }
@@ -1930,24 +1972,22 @@ class MacroAssembler: public Assembler {
   inline void mov( int simm13a, Register d) { or3( G0, simm13a, d); }
 
   // address pseudos: make these names unlike instruction names to avoid confusion
-  inline void split_disp(    Address& a, Register temp );
   inline intptr_t load_pc_address( Register reg, int bytes_to_skip );
-  inline void load_address(  Address& a, int offset = 0 );
-  inline void load_contents( Address& a, Register d, int offset = 0 );
-  inline void load_ptr_contents( Address& a, Register d, int offset = 0 );
-  inline void store_contents( Register s, Address& a, int offset = 0 );
-  inline void store_ptr_contents( Register s, Address& a, int offset = 0 );
-  inline void jumpl_to( Address& a, Register d, int offset = 0 );
-  inline void jump_to(  Address& a,             int offset = 0 );
-  inline void jump_indirect_to(  Address& a, Register temp, int ld_offset = 0, int jmp_offset = 0 );
+  inline void load_contents(AddressLiteral& addrlit, Register d, int offset = 0);
+  inline void load_ptr_contents(AddressLiteral& addrlit, Register d, int offset = 0);
+  inline void store_contents(Register s, AddressLiteral& addrlit, Register temp, int offset = 0);
+  inline void store_ptr_contents(Register s, AddressLiteral& addrlit, Register temp, int offset = 0);
+  inline void jumpl_to(AddressLiteral& addrlit, Register temp, Register d, int offset = 0);
+  inline void jump_to(AddressLiteral& addrlit, Register temp, int offset = 0);
+  inline void jump_indirect_to(Address& a, Register temp, int ld_offset = 0, int jmp_offset = 0);
 
   // ring buffer traceable jumps
 
   void jmp2( Register r1, Register r2, const char* file, int line );
   void jmp ( Register r1, int offset,  const char* file, int line );
 
-  void jumpl( Address& a, Register d, int offset, const char* file, int line );
-  void jump ( Address& a,             int offset, const char* file, int line );
+  void jumpl(AddressLiteral& addrlit, Register temp, Register d, int offset, const char* file, int line);
+  void jump (AddressLiteral& addrlit, Register temp,             int offset, const char* file, int line);
 
 
   // argument pseudos:
@@ -1972,29 +2012,31 @@ class MacroAssembler: public Assembler {
   // Functions for isolating 64 bit loads for LP64
   // ld_ptr will perform ld for 32 bit VM's and ldx for 64 bit VM's
   // st_ptr will perform st for 32 bit VM's and stx for 64 bit VM's
-  inline void ld_ptr(   Register s1, Register s2, Register d );
-  inline void ld_ptr(   Register s1, int simm13a, Register d);
-  inline void ld_ptr(   Register s1, RegisterOrConstant s2, Register d );
-  inline void ld_ptr(  const Address& a, Register d, int offset = 0 );
-  inline void st_ptr(  Register d, Register s1, Register s2 );
-  inline void st_ptr(  Register d, Register s1, int simm13a);
-  inline void st_ptr(  Register d, Register s1, RegisterOrConstant s2 );
-  inline void st_ptr(  Register d, const Address& a, int offset = 0 );
+  inline void ld_ptr(Register s1, Register s2, Register d);
+  inline void ld_ptr(Register s1, int simm13a, Register d);
+  inline void ld_ptr(Register s1, RegisterOrConstant s2, Register d);
+  inline void ld_ptr(const Address& a, Register d, int offset = 0);
+  inline void st_ptr(Register d, Register s1, Register s2);
+  inline void st_ptr(Register d, Register s1, int simm13a);
+  inline void st_ptr(Register d, Register s1, RegisterOrConstant s2);
+  inline void st_ptr(Register d, const Address& a, int offset = 0);
+
+#ifdef ASSERT
+  // ByteSize is only a class when ASSERT is defined, otherwise it's an int.
+  inline void ld_ptr(Register s1, ByteSize simm13a, Register d);
+  inline void st_ptr(Register d, Register s1, ByteSize simm13a);
+#endif
 
   // ld_long will perform ld for 32 bit VM's and ldx for 64 bit VM's
   // st_long will perform st for 32 bit VM's and stx for 64 bit VM's
-  inline void ld_long( Register s1, Register s2, Register d );
-  inline void ld_long( Register s1, int simm13a, Register d );
-  inline void ld_long( Register s1, RegisterOrConstant s2, Register d );
-  inline void ld_long( const Address& a, Register d, int offset = 0 );
-  inline void st_long( Register d, Register s1, Register s2 );
-  inline void st_long( Register d, Register s1, int simm13a );
-  inline void st_long( Register d, Register s1, RegisterOrConstant s2 );
-  inline void st_long( Register d, const Address& a, int offset = 0 );
-
-  // Loading values by size and signed-ness
-  void load_sized_value(Register s1, RegisterOrConstant s2, Register d,
-                        int size_in_bytes, bool is_signed);
+  inline void ld_long(Register s1, Register s2, Register d);
+  inline void ld_long(Register s1, int simm13a, Register d);
+  inline void ld_long(Register s1, RegisterOrConstant s2, Register d);
+  inline void ld_long(const Address& a, Register d, int offset = 0);
+  inline void st_long(Register d, Register s1, Register s2);
+  inline void st_long(Register d, Register s1, int simm13a);
+  inline void st_long(Register d, Register s1, RegisterOrConstant s2);
+  inline void st_long(Register d, const Address& a, int offset = 0);
 
   // Helpers for address formation.
   // They update the dest in place, whether it is a register or constant.
@@ -2049,8 +2091,8 @@ class MacroAssembler: public Assembler {
   // These are idioms to flag the need for care with accessing bools but on
   // this platform we assume byte size
 
-  inline void stbool( Register d, const Address& a, int offset = 0 ) { stb(d, a, offset); }
-  inline void ldbool( const Address& a, Register d, int offset = 0 ) { ldsb( a, d, offset ); }
+  inline void stbool(Register d, const Address& a) { stb(d, a); }
+  inline void ldbool(const Address& a, Register d) { ldsb(a, d); }
   inline void tstbool( Register s ) { tst(s); }
   inline void movbool( bool boolconst, Register d) { mov( (int) boolconst, d); }
 
@@ -2060,7 +2102,7 @@ class MacroAssembler: public Assembler {
   void store_klass_gap(Register s, Register dst_oop);
 
    // oop manipulations
-  void load_heap_oop(const Address& s, Register d, int offset = 0);
+  void load_heap_oop(const Address& s, Register d);
   void load_heap_oop(Register s1, Register s2, Register d);
   void load_heap_oop(Register s1, int simm13a, Register d);
   void store_heap_oop(Register d, Register s1, Register s2);
@@ -2190,11 +2232,11 @@ class MacroAssembler: public Assembler {
   void print_CPU_state();
 
   // oops in code
-  Address allocate_oop_address( jobject obj, Register d ); // allocate_index
-  Address constant_oop_address( jobject obj, Register d ); // find_index
-  inline void set_oop         ( jobject obj, Register d ); // uses allocate_oop_address
-  inline void set_oop_constant( jobject obj, Register d ); // uses constant_oop_address
-  inline void set_oop         ( Address obj_addr );        // same as load_address
+  AddressLiteral allocate_oop_address(jobject obj);                          // allocate_index
+  AddressLiteral constant_oop_address(jobject obj);                          // find_index
+  inline void    set_oop             (jobject obj, Register d);              // uses allocate_oop_address
+  inline void    set_oop_constant    (jobject obj, Register d);              // uses constant_oop_address
+  inline void    set_oop             (AddressLiteral& obj_addr, Register d); // same as load_address
 
   void set_narrow_oop( jobject obj, Register d );
 
@@ -2410,7 +2452,8 @@ class MacroAssembler: public Assembler {
   // Conditionally (non-atomically) increments passed counter address, preserving condition codes.
   void cond_inc(Condition cond, address counter_addr, Register Rtemp1, Register Rtemp2);
   // Unconditional increment.
-  void inc_counter(address counter_addr, Register Rtemp1, Register Rtemp2);
+  void inc_counter(address counter_addr, Register Rtmp1, Register Rtmp2);
+  void inc_counter(int*    counter_addr, Register Rtmp1, Register Rtmp2);
 
 #undef VIRTUAL
 

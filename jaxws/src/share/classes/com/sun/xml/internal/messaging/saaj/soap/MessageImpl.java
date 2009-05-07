@@ -1,11 +1,5 @@
 /*
- * $Id: MessageImpl.java,v 1.3 2006/08/04 09:24:24 ashutoshshahi Exp $
- * $Revision: 1.3 $
- * $Date: 2006/08/04 09:24:24 $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ *
+ *
+ *
+ */
+
+
 package com.sun.xml.internal.messaging.saaj.soap;
 
 import java.io.*;
@@ -68,7 +69,7 @@ public abstract class MessageImpl
     public static final String CONTENT_ID             = "Content-ID";
     public static final String CONTENT_LOCATION       = "Content-Location";
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 
@@ -1253,11 +1254,19 @@ public abstract class MessageImpl
     }
 
     public SOAPBody getSOAPBody() throws SOAPException {
-        return getSOAPPart().getEnvelope().getBody();
+        SOAPBody body = getSOAPPart().getEnvelope().getBody();
+        /*if (body == null) {
+             throw new SOAPException("No SOAP Body was found in the SOAP Message");
+        }*/
+        return body;
     }
 
     public SOAPHeader getSOAPHeader() throws SOAPException {
-        return getSOAPPart().getEnvelope().getHeader();
+        SOAPHeader hdr = getSOAPPart().getEnvelope().getHeader();
+        /*if (hdr == null) {
+            throw new SOAPException("No SOAP Header was found in the SOAP Message");
+        }*/
+        return hdr;
     }
 
     private void initializeAllAttachments ()

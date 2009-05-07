@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,21 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.xml.bind.annotation.XmlAttachmentRef;
 import javax.xml.bind.annotation.XmlRegistry;
+import javax.xml.bind.annotation.XmlSchema;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.namespace.QName;
 
+import com.sun.xml.internal.bind.util.Which;
 import com.sun.xml.internal.bind.v2.model.annotation.AnnotationReader;
+import com.sun.xml.internal.bind.v2.model.annotation.ClassLocatable;
 import com.sun.xml.internal.bind.v2.model.annotation.Locatable;
 import com.sun.xml.internal.bind.v2.model.core.ClassInfo;
 import com.sun.xml.internal.bind.v2.model.core.ErrorHandler;
@@ -90,10 +95,14 @@ public class ModelBuilder<T,C,F,M> {
      */
     public final String defaultNsUri;
 
+
     /**
      * Packages whose registries are already added.
      */
-    /*package*/ final Map<String,RegistryInfoImpl> registries = new HashMap<String,RegistryInfoImpl>();
+    /*package*/ final Map<String,RegistryInfoImpl<T,C,F,M>> registries
+            = new HashMap<String,RegistryInfoImpl<T,C,F,M>>();
+
+    private final Map<C,C> subclassReplacements;
 
     /**
      * @see #setErrorHandler
@@ -101,20 +110,28 @@ public class ModelBuilder<T,C,F,M> {
     private ErrorHandler errorHandler;
     private boolean hadError;
 
+    /**
+     * Set to true if the model includes {@link XmlAttachmentRef}. JAX-WS
+     * needs to know this information.
+     */
+    public boolean hasSwaRef;
+
     private final ErrorHandler proxyErrorHandler = new ErrorHandler() {
         public void error(IllegalAnnotationException e) {
             reportError(e);
         }
     };
 
-
     public ModelBuilder(
-        AnnotationReader<T,C,F,M> reader,
-        Navigator<T,C,F,M> navigator,
-        String defaultNamespaceRemap ) {
+            AnnotationReader<T, C, F, M> reader,
+            Navigator<T, C, F, M> navigator,
+            Map<C, C> subclassReplacements,
+            String defaultNamespaceRemap
+    ) {
 
         this.reader = reader;
         this.nav = navigator;
+        this.subclassReplacements = subclassReplacements;
         if(defaultNamespaceRemap==null)
             defaultNamespaceRemap = "";
         this.defaultNsUri = defaultNamespaceRemap;
@@ -122,8 +139,33 @@ public class ModelBuilder<T,C,F,M> {
         typeInfoSet = createTypeInfoSet();
     }
 
+    /**
+     * Makes sure that we are running with 2.1 JAXB API,
+     * and report an error if not.
+     */
+    static {
+        try {
+            XmlSchema s = null;
+            s.location();
+        } catch (NullPointerException e) {
+            // as epxected
+        } catch (NoSuchMethodError e) {
+            // this is not a 2.1 API. Where is it being loaded from?
+            Messages res;
+            if(XmlSchema.class.getClassLoader()==null)
+                res = Messages.INCOMPATIBLE_API_VERSION_MUSTANG;
+            else
+                res = Messages.INCOMPATIBLE_API_VERSION;
+
+            throw new LinkageError( res.format(
+                Which.which(XmlSchema.class),
+                Which.which(ModelBuilder.class)
+            ));
+        }
+    }
+
     protected TypeInfoSetImpl<T,C,F,M> createTypeInfoSet() {
-        return new TypeInfoSetImpl(nav,reader,BuiltinLeafInfoImpl.createLeaves(nav));
+        return new TypeInfoSetImpl<T,C,F,M>(nav,reader,BuiltinLeafInfoImpl.createLeaves(nav));
     }
 
     /**
@@ -135,6 +177,15 @@ public class ModelBuilder<T,C,F,M> {
      * {@link String} or {@link Enum}-derived ones)
      */
     public NonElement<T,C> getClassInfo( C clazz, Locatable upstream ) {
+        return getClassInfo(clazz,false,upstream);
+    }
+
+    /**
+     * For limited cases where the caller needs to search for a super class.
+     * This is necessary because we don't want {@link #subclassReplacements}
+     * to kick in for the super class search, which will cause infinite recursion.
+     */
+    public NonElement<T,C> getClassInfo( C clazz, boolean searchForSuperClass, Locatable upstream ) {
         assert clazz!=null;
         NonElement<T,C> r = typeInfoSet.getClassInfo(clazz);
         if(r!=null)
@@ -144,32 +195,53 @@ public class ModelBuilder<T,C,F,M> {
             EnumLeafInfoImpl<T,C,F,M> li = createEnumLeafInfo(clazz,upstream);
             typeInfoSet.add(li);
             r = li;
+            addTypeName(r);
         } else {
-            ClassInfoImpl<T,C,F,M> ci = createClassInfo(clazz,upstream);
-            typeInfoSet.add(ci);
+            boolean isReplaced = subclassReplacements.containsKey(clazz);
+            if(isReplaced && !searchForSuperClass) {
+                // handle it as if the replacement was specified
+                r = getClassInfo(subclassReplacements.get(clazz),upstream);
+            } else
+            if(reader.hasClassAnnotation(clazz,XmlTransient.class) || isReplaced) {
+                // handle it as if the base class was specified
+                r = getClassInfo( nav.getSuperClass(clazz), searchForSuperClass,
+                        new ClassLocatable<C>(upstream,clazz,nav) );
+            } else {
+                ClassInfoImpl<T,C,F,M> ci = createClassInfo(clazz,upstream);
+                typeInfoSet.add(ci);
 
-            // compute the closure by eagerly expanding references
-            for( PropertyInfo<T,C> p : ci.getProperties() ) {
-                if(p.kind()== PropertyKind.REFERENCE) {
-                    // make sure that we have a registry for this package
-                    String pkg = nav.getPackageName(ci.getClazz());
-                    if(!registries.containsKey(pkg)) {
-                        // insert the package's object factory
-                        C c = nav.findClass(pkg + ".ObjectFactory",ci.getClazz());
-                        if(c!=null)
-                            addRegistry(c,(Locatable)p);
+                // compute the closure by eagerly expanding references
+                for( PropertyInfo<T,C> p : ci.getProperties() ) {
+                    if(p.kind()== PropertyKind.REFERENCE) {
+                        // make sure that we have a registry for this package
+                        String pkg = nav.getPackageName(ci.getClazz());
+                        if(!registries.containsKey(pkg)) {
+                            // insert the package's object factory
+                            C c = nav.findClass(pkg + ".ObjectFactory",ci.getClazz());
+                            if(c!=null)
+                                addRegistry(c,(Locatable)p);
+                        }
                     }
+
+                    for( TypeInfo<T,C> t : p.ref() )
+                        ; // just compute a reference should be suffice
                 }
+                ci.getBaseClass(); // same as above.
 
-                for( TypeInfo<T,C> t : p.ref() )
-                    ; // just compute a reference should be suffice
+                r = ci;
+                addTypeName(r);
             }
-            ci.getBaseClass();
-
-            r = ci;
         }
 
-        addTypeName(r);
+
+        // more reference closure expansion. @XmlSeeAlso
+        XmlSeeAlso sa = reader.getClassAnnotation(XmlSeeAlso.class, clazz, upstream);
+        if(sa!=null) {
+            for( T t : reader.getClassArrayValue(sa,"value") ) {
+                getTypeInfo(t,(Locatable)sa);
+            }
+        }
+
 
         return r;
     }
@@ -234,8 +306,7 @@ public class ModelBuilder<T,C,F,M> {
         return new EnumLeafInfoImpl<T,C,F,M>(this,upstream,clazz,nav.use(clazz));
     }
 
-    protected ClassInfoImpl<T,C,F,M> createClassInfo(
-            C clazz, Locatable upstream ) {
+    protected ClassInfoImpl<T,C,F,M> createClassInfo(C clazz, Locatable upstream ) {
         return new ClassInfoImpl<T,C,F,M>(this,upstream,clazz);
     }
 
@@ -254,8 +325,7 @@ public class ModelBuilder<T,C,F,M> {
      * in it.
      */
     public RegistryInfo<T,C> addRegistry(C registryClass, Locatable upstream ) {
-        RegistryInfoImpl<T,C,F,M> r = new RegistryInfoImpl<T,C,F,M>(this,upstream,registryClass);
-        return r;
+        return new RegistryInfoImpl<T,C,F,M>(this,upstream,registryClass);
     }
 
     /**
@@ -323,5 +393,9 @@ public class ModelBuilder<T,C,F,M> {
         hadError = true;
         if(errorHandler!=null)
             errorHandler.error(e);
+    }
+
+    public boolean isReplaced(C sc) {
+        return subclassReplacements.containsKey(sc);
     }
 }

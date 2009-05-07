@@ -1,11 +1,5 @@
 /*
- * $Id: NameImpl.java,v 1.48 2006/01/27 12:49:38 vj135062 Exp $
- * $Revision: 1.48 $
- * $Date: 2006/01/27 12:49:38 $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ *
+ *
+ *
+ */
+
+
 package com.sun.xml.internal.messaging.saaj.soap.name;
 
 import java.util.logging.Level;
@@ -62,7 +63,7 @@ public class NameImpl implements Name {
     protected String prefix = "";
     private String qualifiedName = null;
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.NAMING_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.name.LocalStrings");
 

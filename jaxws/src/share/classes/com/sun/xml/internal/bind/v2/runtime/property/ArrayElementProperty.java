@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
@@ -190,7 +189,7 @@ abstract class ArrayElementProperty<BeanT,ListT,ItemT> extends ArrayERProperty<B
             Name tagName = chain.context.nameBuilder.createElementName(typeRef.getTagName());
             Loader item = createItemUnmarshaller(chain,typeRef);
 
-            if(typeRef.isNillable())
+            if(typeRef.isNillable() || chain.context.allNillable)
                 item = new XsiNilLoader.Array(item);
             if(typeRef.getDefaultValue()!=null)
                 item = new DefaultValueLoaderDecorator(item,typeRef.getDefaultValue());
