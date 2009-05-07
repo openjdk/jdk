@@ -73,6 +73,8 @@ public class Names {
     public final Name java_io_Serializable;
     public final Name serialVersionUID;
     public final Name java_lang_Enum;
+    public final Name java_dyn_MethodHandle;
+    public final Name java_dyn_InvokeDynamic;
     public final Name package_info;
     public final Name ConstantValue;
     public final Name LineNumberTable;
@@ -111,6 +113,7 @@ public class Names {
     public final Name value;
     public final Name getMessage;
     public final Name getClass;
+    public final Name invoke;
     public final Name TYPE;
     public final Name FIELD;
     public final Name METHOD;
@@ -175,6 +178,8 @@ public class Names {
         java_lang_Cloneable = fromString("java.lang.Cloneable");
         java_io_Serializable = fromString("java.io.Serializable");
         java_lang_Enum = fromString("java.lang.Enum");
+        java_dyn_MethodHandle = fromString("java.dyn.MethodHandle");
+        java_dyn_InvokeDynamic = fromString("java.dyn.InvokeDynamic");
         package_info = fromString("package-info");
         serialVersionUID = fromString("serialVersionUID");
         ConstantValue = fromString("ConstantValue");
@@ -216,6 +221,7 @@ public class Names {
         value = fromString("value");
         getMessage = fromString("getMessage");
         getClass = fromString("getClass");
+        invoke = fromString("invoke");
 
         TYPE = fromString("TYPE");
         FIELD = fromString("FIELD");

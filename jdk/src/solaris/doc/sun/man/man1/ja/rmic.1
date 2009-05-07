@@ -1,368 +1,270 @@
-'\" t
-.\" Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\" 
-.TH rmic 1 "2004 ǯ 6 �� 22 ��"
-.SH "̾��"
-rmic \- Java RMI �����֥���ѥ���
-.\" 
-.\"  This document was created by saving an HTML file as text
-.\"  from the JavaSoft web site:
-.\" 
-.\" http://java.sun.com/products/jdk/1.2/docs/tooldocs/tools.html
-.\" 
-.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
-.\"  man pages can change without notice, it may be helpful to diff
-.\"  files to identify changes other than new functionality. 
-.\" 
-.SH "����"
-.B rmic 
-[
-.BI options 
-] 
-.I package-qualified-class-names
-.SH "��ǽ����"
-.IX "Java RMI stub compiler" "" "Java RMI stub compiler \(em \fLrmic\fP"
-.IX "rmic" "" "\fLrmic\fP \(em Java RMI stub compiler"
-.B rmic 
-����ѥ���ϡ���⡼�ȥ��֥��������ѤΥ����֤����
-������ȥ󥯥饹�ե����� (JRMP �ץ��ȥ���) �ȥ�����
-����� Tie ���饹�ե����� (IIOP �ץ��ȥ���) ���������ޤ���
-�����Υ��饹�ե�����ϡ���⡼�ȥ��֥�������
-�������饹�Ǥ��롢����ѥ��뤵�줿 Java �ץ�����ߥ󥰸���
-���饹������������ޤ�����⡼�ȼ������饹�ϡ�
-���󥿥ե����� \f3java.rmi.Remote\f1 
-��������륯�饹�Ǥ���
-.B rmic 
-���ޥ�ɤǻ��ꤵ��륯�饹�ϡ�
-.BR javac (1) 
-���ޥ�ɤ�����˥���ѥ��뤵�졢
-�����˥ѥå������������줿���饹��
-�ʤ���Фʤ�ޤ���
-���˼�����Ǥϡ�
-.B HelloImpl
-�Ȥ������饹�ե�������Ф���
-.B rmic
-��¹Ԥ��Ƥ��ޤ���
+." Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH rmic 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
 .LP
-.RS
+.SH "名前"
+rmic \- Java RMI コンパイラ
+.LP
+.RS 3
+
+.LP
+.LP
+\f3rmic\fP によって、JRMP または IIOP プロトコルを使用するリモートオブジェクトのスタブ、スケルトン、および Tie クラスが生成されます。また、OMG IDL も生成されます。
+.LP
+.RE
+.SH "形式"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+rmic [ \fP\f3options\fP\f3 ] \fP\f4package\-qualified\-class\-name(s)\fP\f3
+.fl
+\fP
+.fi
+
+.LP
+.SH "説明"
+.LP
+
+.LP
+.LP
+\f3rmic\fP コンパイラによって、リモートオブジェクトの、スタブ、スケルトンクラスファイル (JRMP プロトコル)、およびスタブと Tie クラスファイルの組み合わせ (IIOP プロトコル) が生成されます。リモートオブジェクトの実装クラスであるこれらのクラスファイルは、Java プログラミング言語のクラスをコンパイルしたときに生成されます。リモート実装クラスは、\f2java.rmi.Remote\fP インタフェースを実装するクラスです。\f3rmic\fP コマンドでのクラス名は、そのクラスが \f3javac\fP コマンドでコンパイルが成功していて、かつ完全なパッケージ名が指定されている必要があります。たとえば、クラスファイル名 \f2HelloImpl\fP で \f3rmic\fP を実行するには、次のようにします。
+.LP
+.nf
+\f3
+.fl
 rmic hello.HelloImpl
-.RE
-.LP
-.B HelloImpl_Stub.class 
-�ե������ (���饹�Υѥå��������Ф��ƻ��ꤵ�줿)  
-.B hello
-���֥ǥ��쥯�ȥ�˺������ޤ���
-.LP
-JRMP �ץ��ȥ��륵����¦����ƥ��ƥ��Ǥ���
-��⡼�ȥ��֥������ȤΥ�����ȥ�ˤϡ�
-��⡼�ȥ��֥������ȼ����θƤӽФ���
-�ǥ����ѥå�����᥽�åɤ�����ޤ���
-.LP
-��⡼�ȥ��֥������Ȥ� Tie �ϡ�������ȥ�˻���
-������¦����ƥ��ƥ��Ǥ�����IIOP �ץ��ȥ���
-����Ѥ��ƥ��饤����Ȥ��̿����ޤ��� 
-.LP
-�����֤ϡ���⡼�ȥ��֥������ȤΥץ������ǡ�
-�ºݤΥ�⡼�ȥ��֥������ȼ�����¸�ߤ��륵���Фˡ�
-��⡼�ȥ��֥������Ȥ��Ф���᥽�åɸƤӽФ���ž�����ޤ���
-���饤����ȤΥ�⡼�ȥ��֥������Ȥؤλ��Ȥϡ�
-�ºݤˤϥ������륹���֤ؤλ��ȤǤ���
-.LP
-�ǥե���ȤǤϡ�
-.B rmic 
-�� \-v1.2 ���ץ����
-���ꤵ�줿����Ʊ�ͤ� 1.2 JRMP �����֥ץ��ȥ����
-���Ѥ��륹���֥��饹���������ޤ� (1.5 �������
-��꡼���Ǥϡ�\-vcompat ���ץ���󤬥ǥե����)��
-IIOP �ץ��ȥ����ѤΥ����֥��饹����� Tie ���饹��
-��������ˤϡ�\-iiop ���ץ�������Ѥ��ޤ���
-.LP
-�����֤ϡ���⡼�ȥ��󥿥ե������Τߤ��������
-��⡼�ȥ��֥������Ȥˤ�äƤ����������������
-���󥿥ե������ϼ������ޤ��󡣥����֤ϥ�⡼��
-���֥������ȤȤޤä���Ʊ����⡼�ȥ��󥿥ե�������
-���åȤ�������뤿�ᡢ���饤����Ȥϥ��㥹�Ȥ����
-�������å��� Java ������Ȥ߹��߱黻�Ҥ���ѤǤ��ޤ���
-IIOP �ξ��ϡ�
-.B PortableRemoteObject.narrow 
-�᥽�åɤ�
-���Ѥ���ɬ�פ�����ޤ���
-.SH ���ץ����
-.if t .TP 20
-.if n .TP 15
-.BI \-bootclasspath " path"
-�֡��ȥ��ȥ�åץ��饹�ե�����ΰ��֤򥪡��С��饤�ɤ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.BI \-classpath " path"
-.B rmic
-�����饹��õ���Τ��Ѥ���ѥ���
-.I path
-�ǻ��ꤷ�ޤ������λ����ͤϡ��ǥե���Ȥ����
-.B CLASSPATH
-�Ķ��ѿ��������ͤ򥪡��С��饤�ɤ��ޤ���
-ʣ���Υǥ��쥯�ȥ����ꤹ����ϥ�����Ƕ��ڤ�ޤ���
-�������ä�
-.I path
-���̾�η����ϼ��Τ褦�ˤʤ�ޤ���
-.sp 1n
-.ti +5n
-.BI .:< your_path >
-.sp 1n
-�ʲ�����򼨤��ޤ���
-.sp 1n
-.ti +5n
-.B .:/usr/local/java/classes
-.if t .TP 20
-.if n .TP 15
-.BI \-d " directory"
-���饹���ؤΥ롼�ȥǥ��쥯�ȥ����ꤷ�ޤ���
-���Υ��ץ�������Ѥ��ơ������֡�������ȥ󡢤���� Tie �ե�����ν�����ǥ��쥯�ȥ�����Ǥ��ޤ���
-���Ȥ��С����Υ��ޥ�ɤ����Ϥ��ޤ���
-.LP
-.RS 5
-rmic \-d /java/classes foo.MyClass
-.RE
-.LP
-������Ǥϡ�MyClass �����������������֤����
-������ȥ󥯥饹��ǥ��쥯�ȥ� /java/classes/foo 
-�����֤��ޤ���\-d ���ץ���󤬻��ꤵ��Ƥ��ʤ���硢
-�ǥե���Ȥ�ư��ϡ�\-d .�פ����ꤵ�줿����Ʊ�ͤǤ���
-�������åȥ��饹�Υѥå��������ؤϡ�
-���ߤΥǥ��쥯�ȥ�˺������졢������/Tie/������ȥ�
-�ե�����Ϥ��γ���������֤���ޤ���
-(�����ΰ����ΥС������� 
-.B rmic 
-�Ǥϡ�
-\-d �����ꤵ��ʤ��ä���硢�ѥå��������ؤϺ������줺��
-���٤Ƥν��ϥե�����
-�ϡ����ߤΥǥ��쥯�ȥ����ľ�����֤���ޤ�����) 
-.if t .TP 20
-.if n .TP 15
-.BI \-extdirs " path"
-���󥹥ȡ��뤵��Ƥ����ĥ��ǽ�ΰ��֤��񤭤��ޤ���
-.if t .TP 20
-.if n .TP 15
-.B \-g
-���������ѿ���ޤࡢ���٤ƤΥǥХå������
-������ͭ���ˤ��ޤ����ǥե���ȤǤϡ�
-���ֹ����Τߤ���������ޤ��� 
-.if t .TP 20
-.if n .TP 15
-.B \-idl
-.B rmic
-�ˤ�äơ����ꤷ�����饹����ӻ��Ȥ��줿���饹��
-.SM OMG IDL
-����������ޤ���
-.SM IDL
-�Ǥϡ��ץ�����ߥ󥰸���˰�¸�����ˡ������������ǥ��֥������Ȥ� 
-.SM API
-�����Ǥ��ޤ���
-.SM IDL
-�ϡ�
-.SM CORBA
-�Х���ǥ��󥰤��󶡤���Ǥ�դθ��� (Java��C++ �ʤ�) ����Ѥ��ơ��᥽�åɤ���ӥǡ�����
-�񤭹��ߤ���ӸƤӽФ���Ԥ��Ȥ��λ��ͤȤ��ƻȤ��ޤ���
-.B \-idl
-���ץ����ϡ���碌�ưʲ��Υ��ץ��������Ǥ��ޤ���
-.RS
-.TP 5
-.BR \-always " �ޤ��� " \-alwaysgenerate
-��¸�Υ����֡�Tie������� \s-1IDL\s0 �����ϥ��饹��꿷�����Ȥ��Ǥ⡢����Ū��������ľ���ޤ��� 
-.PD 0
-.TP
-.B \-factory
-�������줿 IDL �� factory ������ɤ�Ȥ��ޤ���
-.TP
-.B \-idlModule fromJavaPackage[.class] toIDLModule
-.B IDLEntity
-�ѥå������Υޥåԥ󥰤���ꤷ�ޤ���������򼨤��ޤ���
-.sp 1n
-.in +5n
-.ft 3
-.nf
-\-idlModule foo.bar
-my::real::idlmod.
+.fl
+\fP
 .fi
-.ft 1
-.in
-.sp 1n
-.TP
-.B \-idlFile fromJavaPackage[.class] toIDLFile
-.B IDLEntity
-�ե�����Υޥåԥ󥰤���ꤷ�ޤ���������򼨤��ޤ���
-.sp 1n
-.ti +5n
-.B \-idlFile test.pkg.X TEST16.idl
-.RE
-.PD
-.if t .TP 20
-.if n .TP 15
-.B \-iiop
-.B rmic
-�ϡ�
-.SM JRMP
-�Υ����֤ȥ�����ȥ󥯥饹������ˡ�
-.SM IIOP
-�Υ����֤� Tie ���饹���������ޤ��������֥��饹�ϡ���⡼�ȥ��֥������Ȥ�
-��������ץ������ǡ����饤����Ȥ������Ф˸ƤӽФ�����������Ȥ���
-�Ȥ��ޤ����ƥ�⡼�ȥ��󥿥ե������ˤϥ����֥��饹��ɬ�פǤ��������֥��饹
-�ˤ�äƥ�⡼�ȥ��󥿥ե���������������ޤ������饤����Ȥǥ�⡼�ȥ��֥�������
-�򻲾Ȥ���ȡ��ºݤˤϥ����֤򻲾Ȥ��뤳�Ȥˤʤ�ޤ���Tie ���饹�ϡ�
-������¦�Ǽ��������ƤӽФ�������������θƤӽФ���Ŭ�ڤʼ������饹�˥ǥ����ѥå�
-����Ȥ��˻Ȥ��ޤ����Ƽ������饹�ˤϡ�Tie ���饹��ɬ�פǤ��� 
-.sp 1n
-.B \-iiop
-����ꤷ��
-.B rmic
-��ư����ȡ�����̿̾����˽�򤷤������֤� Tie ����������ޤ��� 
-.sp 1n
-.in +5n
-.ft 3
+
+.LP
+.LP
+\f2HelloImpl_Stub.class\fP ファイルが、クラスのパッケージ名が付いた \f2hello\fP サブディレクトリに作成されます。
+.LP
+.LP
+リモートオブジェクトの「スケルトン」は JRMP プロトコルサーバー側のエンティティーで、実際のリモートオブジェクト実装を呼び出すメソッドを含みます。
+.LP
+.LP
+リモートオブジェクトの「Tie」は、スケルトンと同様にサーバー側のエンティティーですが、IIOP プロトコルを使ってクライアントと通信します。
+.LP
+.LP
+「スタブ」とは、リモートオブジェクトのクライアント側での代理です。 スタブは、リモートオブジェクトのメソッド呼び出しを、実物のリモートオブジェクトが常駐するサーバーと通信する役割を持ちます。したがって、クライアントのリモートオブジェクトへの参照は、実際はローカルスタブへの参照となります。
+.LP
+.LP
+デフォルトで \f3rmic\fP では、1.2 JRMP スタブプロトコルバージョンだけを使用するスタブクラスを生成します。 これは、\f2\-v1.2\fP オプションを指定した場合と同じ動作です。(5.0 以前では \f2\-vcompat\fP オプションがデフォルトであったことに注意。) IIOP プロトコル用のスタブおよび Tie クラスを生成するには \f2\-iiop\fP オプションを使用します。
+.LP
+.LP
+スタブはリモートインタフェースだけを実装し、リモートオブジェクトが実装する局所インタフェースは実装していません。JRMP スタブはリモートオブジェクト自体が実装するリモートインタフェースと同じものを実装しているので、クライアントは、キャストや型チェックに Java プログラミング言語に組み込まれた演算子を使用することができます。IIOP の場合は、\f2PortableRemoteObject.narrow\fP メソッドを使わなければなりません。
+.LP
+.SH "オプション"
+.LP
+
+.LP
+.RS 3
+.TP 3
+\-bootclasspath path 
+ブートストラップクラスファイルの位置をオーバーライドします。 
+.TP 3
+\-classpath path 
+\f3rmic\fP がクラスを探すためのパスを指定します。このオプションは、デフォルトや CLASSPATH 環境変数設定を上書きします。ディレクトリはコロンで分割します。したがって、\f2path\fP の一般形式は次のようになります。 
+.RS 3
+
+.LP
 .nf
-_<implementationName>_stub.class
-.sp 1n
-_<interfaceName>_tie.class
-.ft 1
+\f3
+.fl
+.:<your_path>
+.fl
+\fP
 .fi
-.in
-.sp 1n
-.B \-iiop
-���ץ����ϡ���碌�ưʲ��Υ��ץ��������Ǥ��ޤ���
-.sp 1n
-.ne 1
-.bp
-.RS
-.PD 0
-.TP 5
-.BR \-always " �ޤ��� " \-alwaysgenerate
-��¸�Υ����֡�Tie������� \s-1IDL\s0 �����ϥ��饹��꿷�����Ȥ��Ǥ⡢����Ū
-��������ľ���ޤ��� 
-.TP
-.B \-nolocalstubs
-Ʊ���ץ������Υ��饤����Ȥȥ����Ф��Ф��ƺ�Ŭ�����줿�����֤�������ޤ���
-.TP
-.B \-noValueMethods
-.B \-idl
-���ץ����ȤȤ�˻��Ѥ���ɬ�פ�����ޤ���ȯ�Ԥ��줿
-.SM IDL\s0
-�ˡ�valuetype �᥽�åɤ���ӽ�����Ҥ��ɲä��ޤ��󡣤��Υ᥽�åɤ���ӽ������
-�ϡ�valuetype �Υ��ץ����Ǥ���
-.B \-idl
-���ץ�����Ȥ��Ȥ��ϡ�
-.B \-noValueMethods
-���ץ�������ꤷ�ʤ��¤���������ޤ��� 
-.TP
-.B \-poa 
+.RE
+例を示します。 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+.:/usr/local/java/classes
+.fl
+\fP
+.fi
+.RE
+.TP 3
+\-d directory 
+生成されたクラス階層の出力先ディレクトリのルートを指定します。このオプションを使えば、スタブ、スケルトン、および Tie ファイルを格納するディレクトリを指定できます。たとえば、次のようにして使います。 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+% rmic \-d /java/classes foo.MyClass
+.fl
+\fP
+.fi
+.RE
+\f2MyClass\fP から取得したスタブとスケルトンクラスを \f2/java/classes/foo\fP ディレクトリに置きます。\f2\-d\fP オプションが指定されていない場合は、\f2「\-d\ .」\fPが指定されていると見なされます。ターゲットクラスのパッケージ階層が現在のディレクトリに作成され、スタブ、Tie、およびスケルトンファイルがそのディレクトリに格納されます。(以前のバージョンの \f3rmic\fP では、\f2\-d\fP が指定されていない場合は、パッケージ階層は作成されず、出力ファイルはすべて現在のディレクトリに直接格納されていた)。
 .br
-�Ѿ���
-.BR org.omg.CORBA_2_3.portable.ObjectImpl ����
-.BR org.omg.PortableServer.Servant\. ���ѹ����ޤ���
-.RS
+\  
+.TP 3
+\-extdirs path 
+インストール型拡張機能の位置をオーバーライドします。 
+.TP 3
+\-g 
+局所変数を含むすべてのデバッグ情報を生成します。デフォルトでは、行番号情報だけが生成されます。 
 .LP
-Portable Object Adapter (POA) ��
-.BR PortableServer
-�⥸�塼��ϡ��ͥ��ƥ��� �� servant ����������ޤ���
-Java �ץ�����ߥ󥰸���Ǥϡ�servant ���ϡ�Java �� 
-.BR org.omg.PortableServer.Servant
-���饹�˥ޥåפ���ޤ�������Ϥ��٤Ƥ� POA �����Х�ȼ����δ��쥯�饹�Ȥ���
-��ǽ�������ץꥱ�������ȯ�Ԥ��ƤӽФ���¿���Υ᥽�åɤ��󶡤��ޤ����ޤ���
-POA ���Τ��ɤ߽Ф����ꡢ�����Х��ư������椹�뤿��˥桼������񤭤���
-��Ǥ���᥽�åɤ��󶡤��ޤ���CORBA V 2.3.1 �Ρ�OMG IDL to Java Language Mapping Specfication (ptc/00-01-08.pdf)�פ˴�Ť��Ƥ��ޤ���
+.TP 3
+\-idl 
+\f2rmic\fP によって、指定したクラスおよび参照されたクラスの OMG IDL が生成されます。IDL では、プログラミング言語に依存せずに、宣言するだけでオブジェクトの API を指定することができます。IDL は、メソッドおよびデータの仕様として使用します。 CORBA バインディングを提供する任意の言語で、メソッドおよびデータの作成および呼び出しを行うことができます。これらの言語には、Java および C++ が含まれています。詳細は、
+.na
+\f2Java Language to IDL Mapping\fP @
+.fi
+http://www.omg.org/technology/documents/formal/java_language_mapping_to_omg_idl.htm (OMG) を参照してください。 
+.LP
+\f2\-idl\fP オプションを使うときは、ほかのオプションも指定できます。  
+.RS 3
+.TP 3
+\-always または \-alwaysgenerate 
+既存のスタブ、Tie、および IDL が入力クラスより新しいときでも、強制的に生成し直します。 
+.TP 3
+\-factory 
+生成された IDL で factory キーワードを使います。 
+.TP 3
+\-idlModule\  fromJavaPackage[.class]\  toIDLModule 
+IDLEntity パッケージのマップを指定します。例を示します。 \f2\-idlModule foo.bar my::real::idlmod\fP 
+.TP 3
+\-idlFile\  fromJavaPackage[.class]\  toIDLFile 
+IDLEntity ファイルのマップを指定します。例を示します。 \f2\-idlFile test.pkg.X TEST16.idl\fP\  
 .RE
-.PD
+.LP
+.TP 3
+\-iiop 
+\f2rmic\fP によって、JRMP のスタブとスケルトンクラスの代わりに、IIOP のスタブと Tie クラスが生成されます。スタブクラスは、リモートオブジェクトのローカルプロキシで、クライアントからサーバーに呼び出しを送信するときに使われます。各リモートインタフェースにはスタブクラスが必要です。 スタブクラスによってリモートインタフェースが実装されます。クライアントでリモートオブジェクトを参照するときは、実際にはスタブを参照することになります。タイクラスは、サーバー側で着呼を処理し、その呼び出しを適切な実装クラスにディスパッチするときに使われます。各実装クラスには、タイクラスが必要です。 
+.LP
+\f2\-iiop\fP を使って \f2rmic\fP を呼び出すと、次の命名規約に準拠したスタブと Tie が生成されます。 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+_<implementationName>_stub.class
+.fl
+\fP
+.br
+\f3
+.fl
+_<interfaceName>_tie.class
+.fl
+\fP
+.fi
 .RE
-.TP 20
-.if t .TP 20
-.if n .TP 15
-.B \-J
-Ǥ�դ� java ���ץ�����
-ʻ�Ѥ�����硢
-\-J �θ�Υ��ץ���� (
-.B \-J 
-�ȥ��ץ����δ֤϶���ʸ���򤤤�ʤ�) 
-�� java ���󥿥ץ꥿��
-�Ϥ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.B \-keepgenerated
-�����֡�������ȥ󤪤�� tie ���饹�Ѥ��������줿 .java �������ե�������ݻ�����.class �ե������Ʊ���ǥ��쥯�ȥ�˽񤭹��ߤޤ���
-.if t .TP 20
-.if n .TP 15
-.B \-nowarn
-�ٹ�򥪥դˤ��ޤ������Υ��ץ�������Ѥ�����硢����ѥ���Ϸٹ����Ϥ��ޤ���
-.if t .TP 20
-.if n .TP 15
-.B \-vcompat
-1.1 �� 1.2 ��ξ���� JRMP �����֥ץ��ȥ���
-�С������ȸߴ��������륹���֤����
-������ȥ󥯥饹���������ޤ� (1.5 �������
-��꡼���Ǥϡ����Υ��ץ����ϥǥե����)�� 
-�������줿�����֥��饹�ϡ�JDK 1.1 �β��ۥޥ����
-�ɤ߹��ޤ���硢1.1 �Υ����֥ץ��ȥ���С�������
-���Ѥ���1.2 �ʹߤβ��ۥޥ�����ɤ߹��ޤ����ϡ�
-1.2 �Υ����֥ץ��ȥ���С���������Ѥ��ޤ���
-�������줿������ȥ󥯥饹�ϡ�1.1 �� 1.2 ��ξ����
-�����֥ץ��ȥ���С������򥵥ݡ��Ȥ��ޤ���
-�������줿���饹�ϡ�ξ�������⡼�ɤ򥵥ݡ���
-���뤿�ᡢ���Ū���������礭���ʤ�ޤ��� 
-.if t .TP 20
-.if n .TP 15
-.B \-verbose
-����ѥ���ȥ�󥫤˾ܺپ������Ϥ����ޤ�������Ū�ˤϡ�
-����ѥ��뤵��륯�饹�ե����롢����ӥ����ɤ����
-���饹�ե�����˴ؤ�����󤬽��Ϥ���ޤ���
-.TP 15
-.B  \-v1.1
-JDK 1.1 �Υ����֥ץ��ȥ���С������
-���ѤΥ����֤���ӥ�����ȥ��������ޤ���
-���Υ��ץ����ϡ�JDK 1.1 ���� 
-.B rmic 
-�ˤ�ä��������졢���åץ��졼�ɤǤ��ʤ� 
-(�����ưŪ���饹�����ǥ��󥰤�����
-����Ƥ��ʤ�) ��¸����Ū���������줿
-�����֥��饹��ľ�󲽸ߴ����Τ��륹����
-���饹������������ˤΤ߻��Ѥ��ޤ��� 
-.if t .TP 20
-.if n .TP 15
-.B  \-v1.2
-(�ǥե����) 1.2 JRMP �Υ����֥ץ��ȥ���
-�С���������ѤΥ����֥��饹���������ޤ���
-������ȥ󥯥饹�� 1.2 �Υ����֥ץ��ȥ���
-�С������ǻ��Ѥ���ʤ����ᡢ���Υ��ץ����
-�Ǥϥ�����ȥ󥯥饹����������ޤ���
-�������줿�����֥��饹�� JDK 1.1 �β��ۥޥ����
-�ɤ߹��ޤ줿���ϡ���ǽ���ޤ���
-.SH �Ķ��ѿ�
-.if t .TP 20
-.if n .TP 15
-.B CLASSPATH
-�桼��������饹�ؤΥѥ��򥷥��ƥ�����Τ��뤿��˻��Ѥ��ޤ���
-�ǥ��쥯�ȥ�ϥ������
-���ڤ�ޤ����ʲ�����򼨤��ޤ��� 
-.sp 1n
-.ti +5n
-.B .:/usr/local/java/classes
-.SH ��Ϣ����
-.BR java (1),
-.BR javac (1),
-.BR CLASSPATH
+.LP
+\f2\-iiop\fP オプションを使うときは、ほかのオプションも指定できます。  
+.RS 3
+.TP 3
+\-always または \-alwaysgenerate 
+既存のスタブ、Tie、および IDL が入力クラスより新しいときでも、強制的に生成し直します。 
+.TP 3
+\-nolocalstubs 
+同じプロセスのクライアントとサーバーに対して最適化されたスタブを作成しません。 
+.TP 3
+\-noValueMethods 
+\f2\-idl\fP オプションとともに使われなければなりません。発行された IDL に、\f2valuetype\fP メソッドおよび初期化子を追加しません。このメソッドおよび初期化子は、\f2valuetype\fP の場合はオプションです。 \f2\-idl\fP オプションを使うときは、 \f2\-noValueMethods\fP オプションを指定しない限り生成されます。 
+.TP 3
+\-poa 
+継承が \f2org.omg.CORBA_2_3.portable.ObjectImpl\fP から \f2org.omg.PortableServer.Servant\fP に変わります。 
+.LP
+.na
+\f2Portable Object Adapter\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/idl/POA.html (POA) の \f2PortableServer\fP モジュールは、ネイティブの \f2Servant\fP 型を定義します。Java プログラミング言語では、\f2Servant\fP 型は、Java の \f2org.omg.PortableServer.Servant\fP クラスにマッピングされています。これはあらゆる POA サーバント実装の基底クラスとなり多数のメソッドを提供します。 これらのメソッドはアプリケーションプログラマが呼び出すだけではなく、POA 自身からも呼び出され、場合によってはサーバントの動作を制御するためにユーザーがオーバーライドすることもあります。OMG IDL to Java Language Mapping Specification、CORBA V 2.3.1 ptc/00\-01\-08.pdf に準拠しています。  
+.RE
+.TP 3
+\-J 
+\f2\-J\fP の後ろに続くオプションを \f2java\fP インタプリタに引き渡します。 \f2java\fP オプションと組み合わせて使います (\f2\-J\fP と \f2java\fP オプションの間にスペースは入れない)。 
+.TP 3
+\-keep または \-keepgenerated 
+スタブ、スケルトン、または Tie クラスのための \f2.java\fP ソースファイルを \f2.class\fP ファイルと同じディレクトリに残します。 
+.TP 3
+\-nowarn 
+警告をオフにします。このオプションを指定すると、コンパイラは警告を表示しません。 
+.LP
+.TP 3
+\-vcompat 
+1.1 と 1.2 の両方の JRMP スタブプロトコルバージョンと互換性のあるスタブおよびスケルトンクラスを作成します。(5.0 以前のリリースではこのオプションはデフォルト。)生成されたスタブクラスは、JDK 1.1 仮想マシンにロードされると 1.1 スタブプロトコルバージョンを使用し、JDK 1.2 以降の仮想マシンにロードされると 1.2 スタブプロトコルバージョンを使用します。生成されたスケルトンクラスでは、1.1 と 1.2 の両方のスタブプロトコルバージョンをサポートします。生成されたクラスは両方の操作モードをサポートするために、サイズが大きくなります。 
+.TP 3
+\-verbose 
+コンパイラやリンカーが、コンパイルされているクラスやロードされているクラスファイルについてのメッセージを表示するようにします。 
+.LP
+.TP 3
+\-v1.1 
+1.1 JRMP スタブプロトコルバージョンのみのスタブおよびスケルトンクラスを生成します。このオプションが使用できるのは、JDK 1.1 から \f3rmic\fP ツールで生成され、アップグレードできない (さらにダイナミッククラスローディングを使用していない) 、既存の静的配備されたスタブクラスに対し、直列化互換性のあるスタブクラスを生成場合だけです。 
+.LP
+.TP 3
+\-v1.2 
+(デフォルト) 1.2 JRMP スタブプロトコルバージョンのみのスタブクラスを生成します。スケルトンクラスは 1.2 スタブプロトコルバージョンで使用できないため、このオプションではスケルトンクラスは生成されません。生成されたスタブクラスは、JDK 1.1 仮想マシンにロードされても動作しません。 
+.RE
+
+.LP
+.SH "環境変数"
+.LP
+
+.LP
+.RS 3
+.TP 3
+CLASSPATH 
+ユーザー定義クラスへのパスをシステムに指定します。ディレクトリはコロンで分割します。次に例を示します。 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+.:/usr/local/java/classes
+.fl
+\fP
+.fi
+.RE
+.RE
+
+.LP
+.SH "関連項目"
+.LP
+
+.LP
+.LP
+java(1)、javac(1)、
+.na
+\f2CLASSPATH\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/tools/index.html#classpath
+.LP
+
+.LP
+ 

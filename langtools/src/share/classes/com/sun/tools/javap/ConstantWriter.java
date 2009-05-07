@@ -339,12 +339,39 @@ public class ConstantWriter extends BasicWriter {
             cp = name.codePointAt(k);
             if ((cc == '/' && !Character.isJavaIdentifierStart(cp))
                     || (cp != '/' && !Character.isJavaIdentifierPart(cp))) {
-                return "\"" + name + "\"";
+                return "\"" + addEscapes(name) + "\"";
             }
             cc = cp;
         }
 
         return name;
+    }
+
+    /* If name requires escapes, put them in, so it can be a string body. */
+    private static String addEscapes(String name) {
+        String esc = "\\\"\n\t";
+        String rep = "\\\"nt";
+        StringBuilder buf = null;
+        int nextk = 0;
+        int len = name.length();
+        for (int k = 0; k < len; k++) {
+            char cp = name.charAt(k);
+            int n = esc.indexOf(cp);
+            if (n >= 0) {
+                if (buf == null)
+                    buf = new StringBuilder(len * 2);
+                if (nextk < k)
+                    buf.append(name, nextk, k);
+                buf.append('\\');
+                buf.append(rep.charAt(n));
+                nextk = k+1;
+            }
+        }
+        if (buf == null)
+            return name;
+        if (nextk < len)
+            buf.append(name, nextk, len);
+        return buf.toString();
     }
 
     private ClassWriter classWriter;

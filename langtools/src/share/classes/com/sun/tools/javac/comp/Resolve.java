@@ -67,6 +67,7 @@ public class Resolve {
     JCDiagnostic.Factory diags;
     public final boolean boxingEnabled; // = source.allowBoxing();
     public final boolean varargsEnabled; // = source.allowVarargs();
+    public final boolean allowInvokedynamic; // = options.get("invokedynamic");
     private final boolean debugResolve;
 
     public static Resolve instance(Context context) {
@@ -104,6 +105,7 @@ public class Resolve {
         varargsEnabled = source.allowVarargs();
         Options options = Options.instance(context);
         debugResolve = options.get("debugresolve") != null;
+        allowInvokedynamic = options.get("invokedynamic") != null;
     }
 
     /** error symbols, which are returned when resolution fails
@@ -881,6 +883,79 @@ public class Resolve {
         return bestSoFar;
     }
 
+    /** Find or create an implicit method of exactly the given type (after erasure).
+     *  Searches in a side table, not the main scope of the site.
+     *  This emulates the lookup process required by JSR 292 in JVM.
+     *  @param env       The current environment.
+     *  @param site      The original type from where the selection
+     *                   takes place.
+     *  @param name      The method's name.
+     *  @param argtypes  The method's value arguments.
+     *  @param typeargtypes The method's type arguments
+     */
+    Symbol findImplicitMethod(Env<AttrContext> env,
+                              Type site,
+                              Name name,
+                              List<Type> argtypes,
+                              List<Type> typeargtypes) {
+        assert allowInvokedynamic;
+        assert site == syms.invokeDynamicType || (site == syms.methodHandleType && name == names.invoke);
+        ClassSymbol c = (ClassSymbol) site.tsym;
+        Scope implicit = c.members().next;
+        if (implicit == null) {
+            c.members().next = implicit = new Scope(c);
+        }
+        Type restype;
+        if (typeargtypes.isEmpty()) {
+            restype = syms.objectType;
+        } else {
+            restype = typeargtypes.head;
+            if (!typeargtypes.tail.isEmpty())
+                return methodNotFound;
+        }
+        List<Type> paramtypes = Type.map(argtypes, implicitArgType);
+        MethodType mtype = new MethodType(paramtypes,
+                                          restype,
+                                          List.<Type>nil(),
+                                          syms.methodClass);
+        int flags = PUBLIC | ABSTRACT;
+        if (site == syms.invokeDynamicType)  flags |= STATIC;
+        Symbol m = null;
+        for (Scope.Entry e = implicit.lookup(name);
+             e.scope != null;
+             e = e.next()) {
+            Symbol sym = e.sym;
+            assert sym.kind == MTH;
+            if (types.isSameType(mtype, sym.type)
+                && (sym.flags() & STATIC) == (flags & STATIC)) {
+                m = sym;
+                break;
+            }
+        }
+        if (m == null) {
+            // create the desired method
+            m = new MethodSymbol(flags, name, mtype, c);
+            implicit.enter(m);
+        }
+        assert argumentsAcceptable(argtypes, types.memberType(site, m).getParameterTypes(),
+                                   false, false, Warner.noWarnings);
+        assert null != instantiate(env, site, m, argtypes, typeargtypes, false, false, Warner.noWarnings);
+        return m;
+    }
+    //where
+        Mapping implicitArgType = new Mapping ("implicitArgType") {
+                public Type apply(Type t) { return implicitArgType(t); }
+            };
+        Type implicitArgType(Type argType) {
+            argType = types.erasure(argType);
+            if (argType.tag == BOT)
+                // nulls type as the marker type Null (which has no instances)
+                // TO DO: figure out how to access java.lang.Null safely, else throw nice error
+                //argType = types.boxedClass(syms.botType).type;
+                argType = types.boxedClass(syms.voidType).type;  // REMOVE
+            return argType;
+        }
+
     /** Load toplevel or member class with given fully qualified name and
      *  verify that it is accessible.
      *  @param env       The current environment.
@@ -1264,6 +1339,14 @@ public class Resolve {
                     env.info.varArgs = steps.head.isVarargsRequired(), false);
             methodResolutionCache.put(steps.head, sym);
             steps = steps.tail;
+        }
+        if (sym.kind >= AMBIGUOUS &&
+            allowInvokedynamic &&
+            (site == syms.invokeDynamicType ||
+             site == syms.methodHandleType && name == names.invoke)) {
+            // lookup failed; supply an exactly-typed implicit method
+            sym = findImplicitMethod(env, site, name, argtypes, typeargtypes);
+            env.info.varArgs = false;
         }
         if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
             MethodResolutionPhase errPhase =
