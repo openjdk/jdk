@@ -1980,6 +1980,13 @@ static void emit_float_constant(CodeBuffer& cbuf, float x) {
 }
 
 
+const bool Matcher::match_rule_supported(int opcode) {
+  if (!has_match_rule(opcode))
+    return false;
+
+  return true;  // Per default match rules are supported.
+}
+
 int Matcher::regnum_to_fpu_offset(int regnum)
 {
   return regnum - 32; // The FP registers are in the second chunk
@@ -7653,6 +7660,121 @@ instruct storeL_reversed(memory dst, rRegL src) %{
   opcode(0x0F, 0xC8, 0x89); /* Opcode 0F C8 89 */
   ins_encode( REX_reg_wide(src), OpcP, opc2_reg(src), REX_reg_mem_wide(src, dst), OpcT, reg_mem(src, dst) );
   ins_pipe( ialu_mem_reg );
+%}
+
+
+//---------- Zeros Count Instructions ------------------------------------------
+
+instruct countLeadingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
+  predicate(UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosI src));
+  effect(KILL cr);
+
+  format %{ "lzcntl  $dst, $src\t# count leading zeros (int)" %}
+  ins_encode %{
+    __ lzcntl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosI_bsr(rRegI dst, rRegI src, rFlagsReg cr) %{
+  predicate(!UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosI src));
+  effect(KILL cr);
+
+  format %{ "bsrl    $dst, $src\t# count leading zeros (int)\n\t"
+            "jnz     skip\n\t"
+            "movl    $dst, -1\n"
+      "skip:\n\t"
+            "negl    $dst\n\t"
+            "addl    $dst, 31" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    Label skip;
+    __ bsrl(Rdst, Rsrc);
+    __ jccb(Assembler::notZero, skip);
+    __ movl(Rdst, -1);
+    __ bind(skip);
+    __ negl(Rdst);
+    __ addl(Rdst, BitsPerInt - 1);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
+  predicate(UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosL src));
+  effect(KILL cr);
+
+  format %{ "lzcntq  $dst, $src\t# count leading zeros (long)" %}
+  ins_encode %{
+    __ lzcntq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosL_bsr(rRegI dst, rRegL src, rFlagsReg cr) %{
+  predicate(!UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosL src));
+  effect(KILL cr);
+
+  format %{ "bsrq    $dst, $src\t# count leading zeros (long)\n\t"
+            "jnz     skip\n\t"
+            "movl    $dst, -1\n"
+      "skip:\n\t"
+            "negl    $dst\n\t"
+            "addl    $dst, 63" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    Label skip;
+    __ bsrq(Rdst, Rsrc);
+    __ jccb(Assembler::notZero, skip);
+    __ movl(Rdst, -1);
+    __ bind(skip);
+    __ negl(Rdst);
+    __ addl(Rdst, BitsPerLong - 1);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
+  match(Set dst (CountTrailingZerosI src));
+  effect(KILL cr);
+
+  format %{ "bsfl    $dst, $src\t# count trailing zeros (int)\n\t"
+            "jnz     done\n\t"
+            "movl    $dst, 32\n"
+      "done:" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Label done;
+    __ bsfl(Rdst, $src$$Register);
+    __ jccb(Assembler::notZero, done);
+    __ movl(Rdst, BitsPerInt);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
+  match(Set dst (CountTrailingZerosL src));
+  effect(KILL cr);
+
+  format %{ "bsfq    $dst, $src\t# count trailing zeros (long)\n\t"
+            "jnz     done\n\t"
+            "movl    $dst, 64\n"
+      "done:" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Label done;
+    __ bsfq(Rdst, $src$$Register);
+    __ jccb(Assembler::notZero, done);
+    __ movl(Rdst, BitsPerLong);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg);
 %}
 
 
