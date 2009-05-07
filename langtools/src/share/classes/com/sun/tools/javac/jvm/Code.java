@@ -456,6 +456,19 @@ public class Code {
         state.push(mtype.getReturnType());
     }
 
+    /** Emit an invokedynamic instruction.
+     */
+    public void emitInvokedynamic(int desc, Type mtype) {
+        // N.B. this format is under consideration by the JSR 292 EG
+        int argsize = width(mtype.getParameterTypes());
+        emitop(invokedynamic);
+        if (!alive) return;
+        emit2(desc);
+        emit2(0);
+        state.pop(argsize);
+        state.push(mtype.getReturnType());
+    }
+
     /** Emit an opcode with no operand field.
      */
     public void emitop0(int op) {
@@ -2156,7 +2169,7 @@ public class Code {
             mnem[invokespecial] = "invokespecial";
             mnem[invokestatic] = "invokestatic";
             mnem[invokeinterface] = "invokeinterface";
-            // mnem[___unused___] = "___unused___";
+            mnem[invokedynamic] = "invokedynamic";
             mnem[new_] = "new_";
             mnem[newarray] = "newarray";
             mnem[anewarray] = "anewarray";

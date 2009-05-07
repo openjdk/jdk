@@ -207,6 +207,12 @@ public class Check {
      *  @param found      The type that was found.
      */
     Type typeTagError(DiagnosticPosition pos, Object required, Object found) {
+        // this error used to be raised by the parser,
+        // but has been delayed to this point:
+        if (found instanceof Type && ((Type)found).tag == VOID) {
+            log.error(pos, "illegal.start.of.type");
+            return syms.errType;
+        }
         log.error(pos, "type.found.req", found, required);
         return types.createErrorType(found instanceof Type ? (Type)found : syms.errType);
     }
@@ -545,6 +551,20 @@ public class Check {
                                 diags.fragment("type.req.ref"),
                                 t);
         }
+    }
+
+    /** Check that each type is a reference type, i.e. a class, interface or array type
+     *  or a type variable.
+     *  @param trees         Original trees, used for error reporting.
+     *  @param types         The types to be checked.
+     */
+    List<Type> checkRefTypes(List<JCExpression> trees, List<Type> types) {
+        List<JCExpression> tl = trees;
+        for (List<Type> l = types; l.nonEmpty(); l = l.tail) {
+            l.head = checkRefType(tl.head.pos(), l.head);
+            tl = tl.tail;
+        }
+        return types;
     }
 
     /** Check that type is a null or reference type.
