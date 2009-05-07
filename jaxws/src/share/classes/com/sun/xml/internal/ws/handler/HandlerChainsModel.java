@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package com.sun.xml.internal.ws.handler;
 
+import com.sun.xml.internal.ws.api.BindingID;
+import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil;
+import com.sun.xml.internal.ws.transport.http.DeploymentDescriptorParser;
 import com.sun.xml.internal.ws.util.HandlerAnnotationInfo;
 import com.sun.xml.internal.ws.util.JAXWSUtils;
 import com.sun.xml.internal.ws.util.UtilException;
@@ -36,10 +39,12 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.ws.handler.Handler;
 import javax.xml.ws.handler.PortInfo;
-import javax.xml.ws.http.HTTPBinding;
-import javax.xml.ws.soap.SOAPBinding;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 
@@ -47,26 +52,26 @@ public class HandlerChainsModel {
     private static final Logger logger = Logger.getLogger(
             com.sun.xml.internal.ws.util.Constants.LoggingDomain + ".util");
 
-    protected Class annotatedClass;
-    protected List<HandlerChainType> handlerChains;
-    protected String id;
+    private Class annotatedClass;
+    private List<HandlerChainType> handlerChains;
+    private String id;
     /** Creates a new instance of HandlerChains */
-    public HandlerChainsModel(Class annotatedClass) {
+    private HandlerChainsModel(Class annotatedClass) {
         this.annotatedClass = annotatedClass;
     }
 
-    public List<HandlerChainType> getHandlerChain() {
+    private List<HandlerChainType> getHandlerChain() {
         if (handlerChains == null) {
             handlerChains = new ArrayList<HandlerChainType>();
         }
         return handlerChains;
     }
 
-    public java.lang.String getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(java.lang.String value) {
+    public void setId(String value) {
         this.id = value;
     }
     /**
@@ -108,7 +113,7 @@ public class HandlerChainsModel {
                 XMLStreamReaderUtil.nextContent(reader);
                 if (reader.getName().equals(QNAME_HANDLER_NAME)) {
                     String handlerName =
-                            XMLStreamReaderUtil.getElementText(reader);
+                            XMLStreamReaderUtil.getElementText(reader).trim();
                     handler.setHandlerName(handlerName);
                     XMLStreamReaderUtil.nextContent(reader);
                 }
@@ -116,7 +121,7 @@ public class HandlerChainsModel {
                 // handler class
                 ensureProperName(reader, QNAME_HANDLER_CLASS);
                 String handlerClass =
-                        XMLStreamReaderUtil.getElementText(reader);
+                        XMLStreamReaderUtil.getElementText(reader).trim();
                 handler.setHandlerClass(handlerClass);
                 XMLStreamReaderUtil.nextContent(reader);
 
@@ -156,17 +161,21 @@ public class HandlerChainsModel {
     /**
      * <p>This method is called internally by HandlerAnnotationProcessor,
      * and by
-     * {@link com.sun.xml.internal.ws.transport.http.servlet.RuntimeEndpointInfoParser}
+     * {@link com.sun.xml.internal.ws.transport.http.DeploymentDescriptorParser}
      * directly when it reaches the handler chains element in the
      * descriptor file it is parsing.
-     *
+     * @param reader should be on <handler-chains> element
      * @return A HandlerAnnotationInfo object that stores the
      * handlers and roles.
      */
+
+
+
     public static HandlerAnnotationInfo parseHandlerFile(XMLStreamReader reader,
             ClassLoader classLoader, QName serviceName, QName portName,
-            String bindingId) {
+            WSBinding wsbinding) {
         ensureProperName(reader,QNAME_HANDLER_CHAINS);
+        String bindingId = wsbinding.getBindingId().toString();
         HandlerAnnotationInfo info = new HandlerAnnotationInfo();
 
         XMLStreamReaderUtil.nextElementContent(reader);
@@ -201,11 +210,12 @@ public class HandlerChainsModel {
                 List<String> bindingList = new ArrayList<String>();
                 while(stk.hasMoreTokens()) {
                     String tokenOrURI = stk.nextToken();
-                    String binding = tokenBindingMap.get(tokenOrURI);
-                    if(binding == null) {
-                        //Unknown binding or Unknown token, Put it as it is
-                        binding = tokenOrURI;
-                    }
+                    /*
+                    Convert short-form tokens to API's binding ids
+                    Unknown token, Put it as it is
+                    */
+                    tokenOrURI = DeploymentDescriptorParser.getBindingIdForToken(tokenOrURI);
+                    String binding = BindingID.parse(tokenOrURI).toString();
                     bindingList.add(binding);
                 }
                 if(bindingList.contains(bindingId)){
@@ -234,7 +244,7 @@ public class HandlerChainsModel {
 
             // process all <handler> elements
             while (reader.getName().equals(QNAME_HANDLER)) {
-                Handler handler = null;
+                Handler handler;
 
                 XMLStreamReaderUtil.nextContent(reader);
                 if (reader.getName().equals(QNAME_HANDLER_NAME)) {
@@ -245,7 +255,7 @@ public class HandlerChainsModel {
                 ensureProperName(reader, QNAME_HANDLER_CLASS);
                 try {
                     handler = (Handler) loadClass(classLoader,
-                            XMLStreamReaderUtil.getElementText(reader)).newInstance();
+                            XMLStreamReaderUtil.getElementText(reader).trim()).newInstance();
                 } catch (InstantiationException ie){
                     throw new RuntimeException(ie);
                 } catch (IllegalAccessException e) {
@@ -339,7 +349,7 @@ public class HandlerChainsModel {
 
     }
 
-    static Class loadClass(ClassLoader loader, String name) {
+    private static Class loadClass(ClassLoader loader, String name) {
         try {
             return Class.forName(name, true, loader);
         } catch (ClassNotFoundException e) {
@@ -349,7 +359,7 @@ public class HandlerChainsModel {
         }
     }
 
-    static void callHandlerPostConstruct(Object handlerClass) {
+    private static void callHandlerPostConstruct(Object handlerClass) {
         // call @PostConstruct method on handler if present
         for (Method method : handlerClass.getClass().getMethods()) {
             if (method.getAnnotation(PostConstruct.class) == null) {
@@ -364,20 +374,20 @@ public class HandlerChainsModel {
         }
     }
 
-    static void skipChain(XMLStreamReader reader) {
+    private static void skipChain(XMLStreamReader reader) {
         while (XMLStreamReaderUtil.nextContent(reader) !=
                 XMLStreamConstants.END_ELEMENT ||
                 !reader.getName().equals(QNAME_HANDLER_CHAIN)) {}
         XMLStreamReaderUtil.nextElementContent(reader);
     }
 
-    static void skipTextElement(XMLStreamReader reader) {
+    private static void skipTextElement(XMLStreamReader reader) {
         XMLStreamReaderUtil.nextContent(reader);
         XMLStreamReaderUtil.nextElementContent(reader);
         XMLStreamReaderUtil.nextElementContent(reader);
     }
 
-    static void skipInitParamElement(XMLStreamReader reader) {
+    private static void skipInitParamElement(XMLStreamReader reader) {
         int state;
         do {
             state = XMLStreamReaderUtil.nextContent(reader);
@@ -386,7 +396,7 @@ public class HandlerChainsModel {
         XMLStreamReaderUtil.nextElementContent(reader);
     }
 
-    static void ensureProperName(XMLStreamReader reader,
+    private static void ensureProperName(XMLStreamReader reader,
             QName expectedName) {
 
         if (!reader.getName().equals(expectedName)) {
@@ -402,13 +412,12 @@ public class HandlerChainsModel {
         }
     }
 
-    static void failWithLocalName(String key,
+    private static void failWithLocalName(String key,
             XMLStreamReader reader, String arg) {
         throw new UtilException(key,
-                new Object[] {
             Integer.toString(reader.getLocation().getLineNumber()),
             reader.getLocalName(),
-            arg });
+            arg );
     }
 
     public static final String PROTOCOL_SOAP11_TOKEN = "##SOAP11_HTTP";
@@ -443,28 +452,18 @@ public class HandlerChainsModel {
             new QName(NS_109, "soap-header");
     public static final QName QNAME_HANDLER_ROLE =
             new QName(NS_109, "soap-role");
-    protected static final Map<String,String> tokenBindingMap;
-    //Populate the token map
-    static {
-        tokenBindingMap = new HashMap<String,String>();
-        tokenBindingMap.put("##SOAP11_HTTP",SOAPBinding.SOAP11HTTP_BINDING);
-        tokenBindingMap.put("##SOAP11_HTTP_MTOM",SOAPBinding.SOAP11HTTP_MTOM_BINDING);
-        tokenBindingMap.put("##SOAP12_HTTP",SOAPBinding.SOAP12HTTP_BINDING);
-        tokenBindingMap.put("##SOAP12_HTTP_MTOM",SOAPBinding.SOAP12HTTP_MTOM_BINDING);
-        tokenBindingMap.put("##XML_HTTP",HTTPBinding.HTTP_BINDING);
-    }
 
     static class HandlerChainType {
         //constraints
-        protected QName serviceNamePattern;
-        protected QName portNamePattern;
-        protected List<String> protocolBindings;
+        QName serviceNamePattern;
+        QName portNamePattern;
+        List<String> protocolBindings;
 
         // This flag is set if one of the above constraint is set on handler chain
-        protected boolean constraintSet = false;
+        boolean constraintSet = false;
 
-        protected List<HandlerType> handlers;
-        protected String id;
+        List<HandlerType> handlers;
+        String id;
 
 
         /** Creates a new instance of HandlerChain */
@@ -494,12 +493,13 @@ public class HandlerChainsModel {
             return this.protocolBindings;
         }
 
-        public void addProtocolBinding(String tokenorURI){
-            String binding = tokenBindingMap.get(tokenorURI);
-            if(binding == null) {
-                //Unknown binding or Unknown token, Put it as it is
-                binding = tokenorURI;
-            }
+        public void addProtocolBinding(String tokenOrURI){
+            /*
+            Convert short-form tokens to API's binding ids
+            Unknown token, Put it as it is
+            */
+            tokenOrURI = DeploymentDescriptorParser.getBindingIdForToken(tokenOrURI);
+            String binding = BindingID.parse(tokenOrURI).toString();
             protocolBindings.add(binding);
             constraintSet = true;
         }
@@ -524,11 +524,11 @@ public class HandlerChainsModel {
     }
 
     static class HandlerType {
-        protected String handlerName;
-        protected String handlerClass;
-        protected List<String> soapRoles;
+        String handlerName;
+        String handlerClass;
+        List<String> soapRoles;
 
-        protected java.lang.String id;
+        java.lang.String id;
 
         /** Creates a new instance of HandlerComponent */
         public HandlerType() {

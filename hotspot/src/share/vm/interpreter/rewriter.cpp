@@ -25,39 +25,50 @@
 # include "incls/_precompiled.incl"
 # include "incls/_rewriter.cpp.incl"
 
-
-// Computes an index_map (new_index -> original_index) for contant pool entries
+// Computes a CPC map (new_index -> original_index) for constant pool entries
 // that are referred to by the interpreter at runtime via the constant pool cache.
-void Rewriter::compute_index_maps(constantPoolHandle pool, intArray*& index_map, intStack*& inverse_index_map) {
-  const int length  = pool->length();
-  index_map         = new intArray(length, -1);
-  // Choose an initial value large enough that we don't get frequent
-  // calls to grow().
-  inverse_index_map = new intStack(length / 2);
+// Also computes a CP map (original_index -> new_index).
+// Marks entries in CP which require additional processing.
+void Rewriter::compute_index_maps() {
+  const int length  = _pool->length();
+  init_cp_map(length);
   for (int i = 0; i < length; i++) {
-    switch (pool->tag_at(i).value()) {
+    int tag = _pool->tag_at(i).value();
+    switch (tag) {
+      case JVM_CONSTANT_InterfaceMethodref:
       case JVM_CONSTANT_Fieldref          : // fall through
       case JVM_CONSTANT_Methodref         : // fall through
-      case JVM_CONSTANT_InterfaceMethodref: {
-        index_map->at_put(i, inverse_index_map->length());
-        inverse_index_map->append(i);
-      }
+        add_cp_cache_entry(i);
+        break;
     }
   }
+
+  guarantee((int)_cp_cache_map.length()-1 <= (int)((u2)-1),
+            "all cp cache indexes fit in a u2");
 }
 
 
-// Creates a constant pool cache given an inverse_index_map
+int Rewriter::add_extra_cp_cache_entry(int main_entry) {
+  // Hack: We put it on the map as an encoded value.
+  // The only place that consumes this is ConstantPoolCacheEntry::set_initial_state
+  int encoded = constantPoolCacheOopDesc::encode_secondary_index(main_entry);
+  int plain_secondary_index = _cp_cache_map.append(encoded);
+  return constantPoolCacheOopDesc::encode_secondary_index(plain_secondary_index);
+}
+
+
+
+// Creates a constant pool cache given a CPC map
 // This creates the constant pool cache initially in a state
 // that is unsafe for concurrent GC processing but sets it to
 // a safe mode before the constant pool cache is returned.
-constantPoolCacheHandle Rewriter::new_constant_pool_cache(intArray& inverse_index_map, TRAPS) {
-  const int length = inverse_index_map.length();
-  constantPoolCacheOop cache = oopFactory::new_constantPoolCache(length,
-                                             methodOopDesc::IsUnsafeConc,
-                                             CHECK_(constantPoolCacheHandle()));
-  cache->initialize(inverse_index_map);
-  return constantPoolCacheHandle(THREAD, cache);
+void Rewriter::make_constant_pool_cache(TRAPS) {
+  const int length = _cp_cache_map.length();
+  constantPoolCacheOop cache =
+      oopFactory::new_constantPoolCache(length, methodOopDesc::IsUnsafeConc, CHECK);
+  cache->initialize(_cp_cache_map);
+  _pool->set_cache(cache);
+  cache->set_constant_pool(_pool());
 }
 
 
@@ -101,8 +112,38 @@ void Rewriter::rewrite_Object_init(methodHandle method, TRAPS) {
 }
 
 
+// Rewrite a classfile-order CP index into a native-order CPC index.
+int Rewriter::rewrite_member_reference(address bcp, int offset) {
+  address p = bcp + offset;
+  int  cp_index    = Bytes::get_Java_u2(p);
+  int  cache_index = cp_entry_to_cp_cache(cp_index);
+  Bytes::put_native_u2(p, cache_index);
+  return cp_index;
+}
+
+
+void Rewriter::rewrite_invokedynamic(address bcp, int offset, int delete_me) {
+  address p = bcp + offset;
+  assert(p[-1] == Bytecodes::_invokedynamic, "");
+  int cp_index = Bytes::get_Java_u2(p);
+  int cpc  = maybe_add_cp_cache_entry(cp_index);  // add lazily
+  int cpc2 = add_extra_cp_cache_entry(cpc);
+
+  // Replace the trailing four bytes with a CPC index for the dynamic
+  // call site.  Unlike other CPC entries, there is one per bytecode,
+  // not just one per distinct CP entry.  In other words, the
+  // CPC-to-CP relation is many-to-one for invokedynamic entries.
+  // This means we must use a larger index size than u2 to address
+  // all these entries.  That is the main reason invokedynamic
+  // must have a five-byte instruction format.  (Of course, other JVM
+  // implementations can use the bytes for other purposes.)
+  Bytes::put_native_u4(p, cpc2);
+  // Note: We use native_u4 format exclusively for 4-byte indexes.
+}
+
+
 // Rewrites a method given the index_map information
-methodHandle Rewriter::rewrite_method(methodHandle method, intArray& index_map, TRAPS) {
+void Rewriter::scan_method(methodOop method) {
 
   int nof_jsrs = 0;
   bool has_monitor_bytecodes = false;
@@ -121,6 +162,7 @@ methodHandle Rewriter::rewrite_method(methodHandle method, intArray& index_map, 
     int bc_length;
     for (int bci = 0; bci < code_length; bci += bc_length) {
       address bcp = code_base + bci;
+      int prefix_length = 0;
       c = (Bytecodes::Code)(*bcp);
 
       // Since we have the code, see if we can get the length
@@ -135,6 +177,7 @@ methodHandle Rewriter::rewrite_method(methodHandle method, intArray& index_map, 
         // by 'wide'. We don't currently examine any of the bytecodes
         // modified by wide, but in case we do in the future...
         if (c == Bytecodes::_wide) {
+          prefix_length = 1;
           c = (Bytecodes::Code)bcp[1];
         }
       }
@@ -159,12 +202,13 @@ methodHandle Rewriter::rewrite_method(methodHandle method, intArray& index_map, 
         case Bytecodes::_putfield       : // fall through
         case Bytecodes::_invokevirtual  : // fall through
         case Bytecodes::_invokespecial  : // fall through
-        case Bytecodes::_invokestatic   : // fall through
-        case Bytecodes::_invokeinterface: {
-          address p = bcp + 1;
-          Bytes::put_native_u2(p, index_map[Bytes::get_Java_u2(p)]);
+        case Bytecodes::_invokestatic   :
+        case Bytecodes::_invokeinterface:
+          rewrite_member_reference(bcp, prefix_length+1);
           break;
-        }
+        case Bytecodes::_invokedynamic:
+          rewrite_invokedynamic(bcp, prefix_length+1, int(sizeof"@@@@DELETE ME"));
+          break;
         case Bytecodes::_jsr            : // fall through
         case Bytecodes::_jsr_w          : nof_jsrs++;                   break;
         case Bytecodes::_monitorenter   : // fall through
@@ -182,53 +226,56 @@ methodHandle Rewriter::rewrite_method(methodHandle method, intArray& index_map, 
   // have to be rewritten, so we run the oopMapGenerator on the method
   if (nof_jsrs > 0) {
     method->set_has_jsrs();
-    ResolveOopMapConflicts romc(method);
-    methodHandle original_method = method;
-    method = romc.do_potential_rewrite(CHECK_(methodHandle()));
-    if (method() != original_method()) {
-      // Insert invalid bytecode into original methodOop and set
-      // interpreter entrypoint, so that a executing this method
-      // will manifest itself in an easy recognizable form.
-      address bcp = original_method->bcp_from(0);
-      *bcp = (u1)Bytecodes::_shouldnotreachhere;
-      int kind = Interpreter::method_kind(original_method);
-      original_method->set_interpreter_kind(kind);
-    }
+    // Second pass will revisit this method.
+    assert(method->has_jsrs(), "");
+  }
+}
 
-    // Update monitor matching info.
-    if (romc.monitor_safe()) {
-      method->set_guaranteed_monitor_matching();
-    }
+// After constant pool is created, revisit methods containing jsrs.
+methodHandle Rewriter::rewrite_jsrs(methodHandle method, TRAPS) {
+  ResolveOopMapConflicts romc(method);
+  methodHandle original_method = method;
+  method = romc.do_potential_rewrite(CHECK_(methodHandle()));
+  if (method() != original_method()) {
+    // Insert invalid bytecode into original methodOop and set
+    // interpreter entrypoint, so that a executing this method
+    // will manifest itself in an easy recognizable form.
+    address bcp = original_method->bcp_from(0);
+    *bcp = (u1)Bytecodes::_shouldnotreachhere;
+    int kind = Interpreter::method_kind(original_method);
+    original_method->set_interpreter_kind(kind);
   }
 
-  // Setup method entrypoints for compiler and interpreter
-  method->link_method(method, CHECK_(methodHandle()));
+  // Update monitor matching info.
+  if (romc.monitor_safe()) {
+    method->set_guaranteed_monitor_matching();
+  }
 
   return method;
 }
 
 
 void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
-  // gather starting points
   ResourceMark rm(THREAD);
-  constantPoolHandle pool (THREAD, klass->constants());
-  objArrayHandle methods  (THREAD, klass->methods());
-  assert(pool->cache() == NULL, "constant pool cache must not be set yet");
+  Rewriter     rw(klass, CHECK);
+  // (That's all, folks.)
+}
+
+Rewriter::Rewriter(instanceKlassHandle klass, TRAPS)
+  : _klass(klass),
+    // gather starting points
+    _pool(   THREAD, klass->constants()),
+    _methods(THREAD, klass->methods())
+{
+  assert(_pool->cache() == NULL, "constant pool cache must not be set yet");
 
   // determine index maps for methodOop rewriting
-  intArray* index_map         = NULL;
-  intStack* inverse_index_map = NULL;
-  compute_index_maps(pool, index_map, inverse_index_map);
+  compute_index_maps();
 
-  // allocate constant pool cache
-  constantPoolCacheHandle cache = new_constant_pool_cache(*inverse_index_map, CHECK);
-  pool->set_cache(cache());
-  cache->set_constant_pool(pool());
-
-  if (RegisterFinalizersAtInit && klass->name() == vmSymbols::java_lang_Object()) {
-    int i = methods->length();
+  if (RegisterFinalizersAtInit && _klass->name() == vmSymbols::java_lang_Object()) {
+    int i = _methods->length();
     while (i-- > 0) {
-      methodOop method = (methodOop)methods->obj_at(i);
+      methodOop method = (methodOop)_methods->obj_at(i);
       if (method->intrinsic_id() == vmIntrinsics::_Object_init) {
         // rewrite the return bytecodes of Object.<init> to register the
         // object for finalization if needed.
@@ -239,13 +286,27 @@ void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
     }
   }
 
-  // rewrite methods
-  { int i = methods->length();
-    while (i-- > 0) {
-      methodHandle m(THREAD, (methodOop)methods->obj_at(i));
-      m = rewrite_method(m, *index_map, CHECK);
+  // rewrite methods, in two passes
+  int i, len = _methods->length();
+
+  for (i = len; --i >= 0; ) {
+    methodOop method = (methodOop)_methods->obj_at(i);
+    scan_method(method);
+  }
+
+  // allocate constant pool cache, now that we've seen all the bytecodes
+  make_constant_pool_cache(CHECK);
+
+  for (i = len; --i >= 0; ) {
+    methodHandle m(THREAD, (methodOop)_methods->obj_at(i));
+
+    if (m->has_jsrs()) {
+      m = rewrite_jsrs(m, CHECK);
       // Method might have gotten rewritten.
-      methods->obj_at_put(i, m());
+      _methods->obj_at_put(i, m());
     }
+
+    // Set up method entry points for compiler and interpreter.
+    m->link_method(m, CHECK);
   }
 }

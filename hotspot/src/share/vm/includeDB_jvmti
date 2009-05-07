@@ -28,6 +28,7 @@ jvmtiClassFileReconstituter.cpp         bytecodeStream.hpp
 jvmtiClassFileReconstituter.cpp         bytes_<arch>.hpp
 jvmtiClassFileReconstituter.cpp         jvmtiClassFileReconstituter.hpp
 jvmtiClassFileReconstituter.cpp         symbolTable.hpp
+jvmtiClassFileReconstituter.cpp         signature.hpp
 
 jvmtiClassFileReconstituter.hpp         jvmtiEnv.hpp
 

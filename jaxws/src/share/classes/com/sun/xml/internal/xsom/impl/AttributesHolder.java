@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSAttGroupDecl;
 import com.sun.xml.internal.xsom.XSAttributeUse;
 import com.sun.xml.internal.xsom.impl.parser.SchemaDocumentImpl;
+import com.sun.xml.internal.xsom.impl.scd.Iterators;
+import com.sun.xml.internal.xsom.impl.Ref.AttGroup;
 import org.xml.sax.Locator;
 
 import java.util.AbstractSet;
@@ -39,11 +40,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.LinkedHashMap;
 
 public abstract class AttributesHolder extends DeclarationImpl {
 
     protected AttributesHolder( SchemaDocumentImpl _parent, AnnotationImpl _annon,
-        Locator loc, ForeignAttributesImpl _fa, String _name, boolean _anonymous ) {
+                                Locator loc, ForeignAttributesImpl _fa, String _name, boolean _anonymous ) {
 
         super(_parent,_annon,loc,_fa,_parent.getTargetNamespace(),_name,_anonymous);
     }
@@ -53,10 +55,10 @@ public abstract class AttributesHolder extends DeclarationImpl {
 
     /**
      * Local attribute use.
-     * It has to be {@link TreeMap} or otherwise we cannot guarantee
-     * the order of iteration.
+     * Use linked hash map to guarantee the iteration order, and make it close to
+     * what was in the schema document.
      */
-    protected final Map<UName,AttributeUseImpl> attributes = new TreeMap<UName,AttributeUseImpl>(UName.comparator);
+    protected final Map<UName,AttributeUseImpl> attributes = new LinkedHashMap<UName,AttributeUseImpl>();
     public void addAttributeUse( UName name, AttributeUseImpl a ) {
         attributes.put( name, a );
     }
@@ -100,13 +102,10 @@ public abstract class AttributesHolder extends DeclarationImpl {
     // Iterates all AttGroups which are directly referenced from this component
     // this does not iterate att groups referenced from the base type
     public Iterator<XSAttGroupDecl> iterateAttGroups() {
-        return new Iterator<XSAttGroupDecl>() {
-            private final Iterator<Ref.AttGroup> itr = attGroups.iterator();
-            public boolean hasNext() { return itr.hasNext(); }
-            public XSAttGroupDecl next() {
-                return itr.next().get();
+        return new Iterators.Adapter<XSAttGroupDecl,Ref.AttGroup>(attGroups.iterator()) {
+            protected XSAttGroupDecl filter(AttGroup u) {
+                return u.get();
             }
-            public void remove() { itr.remove(); }
         };
     }
 

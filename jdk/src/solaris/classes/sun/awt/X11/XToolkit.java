@@ -568,6 +568,17 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     {
         XEvent ev = new XEvent();
         while(true) {
+            // Fix for 6829923: we should gracefully handle toolkit thread interruption
+            if (Thread.currentThread().isInterrupted()) {
+                // We expect interruption from the AppContext.dispose() method only.
+                // If the thread is interrupted from another place, let's skip it
+                // for compatibility reasons. Probably some time later we'll remove
+                // the check for AppContext.isDisposed() and will unconditionally
+                // break the loop here.
+                if (AppContext.getAppContext().isDisposed()) {
+                    break;
+                }
+            }
             awtLock();
             try {
                 if (loop == SECONDARY_LOOP) {
