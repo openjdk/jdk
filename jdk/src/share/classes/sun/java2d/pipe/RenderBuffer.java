@@ -63,7 +63,7 @@ public class RenderBuffer {
      * (This value can be adjusted if the cost of JNI downcalls is reduced
      * in a future release.)
      */
-    private static final int COPY_FROM_ARRAY_THRESHOLD = 28;
+    private static final int COPY_FROM_ARRAY_THRESHOLD = 6;
 
     protected final Unsafe unsafe;
     protected final long baseAddress;
@@ -91,20 +91,6 @@ public class RenderBuffer {
     public final long getAddress() {
         return baseAddress;
     }
-
-    /**
-     * Copies length bytes from the Java-level srcArray to the native
-     * memory located at dstAddr.  Note that this method performs no bounds
-     * checking.  Verification that the copy will not result in memory
-     * corruption should be done by the caller prior to invocation.
-     *
-     * @param srcArray the source array
-     * @param srcPos the starting position of the source array (in bytes)
-     * @param dstAddr pointer to the destination block of native memory
-     * @param length the number of bytes to copy from source to destination
-     */
-    private static native void copyFromArray(Object srcArray, long srcPos,
-                                             long dstAddr, long length);
 
     /**
      * The behavior (and names) of the following methods are nearly
@@ -147,9 +133,9 @@ public class RenderBuffer {
 
     public RenderBuffer put(byte[] x, int offset, int length) {
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_BYTE;
+            long offsetInBytes = offset * SIZEOF_BYTE + Unsafe.ARRAY_BYTE_BASE_OFFSET;
             long lengthInBytes = length * SIZEOF_BYTE;
-            copyFromArray(x, offsetInBytes, curAddress, lengthInBytes);
+            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;
@@ -178,9 +164,9 @@ public class RenderBuffer {
     public RenderBuffer put(short[] x, int offset, int length) {
         // assert (position() % SIZEOF_SHORT == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_SHORT;
+            long offsetInBytes = offset * SIZEOF_SHORT + Unsafe.ARRAY_SHORT_BASE_OFFSET;
             long lengthInBytes = length * SIZEOF_SHORT;
-            copyFromArray(x, offsetInBytes, curAddress, lengthInBytes);
+            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;
@@ -215,9 +201,9 @@ public class RenderBuffer {
     public RenderBuffer put(int[] x, int offset, int length) {
         // assert (position() % SIZEOF_INT == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_INT;
+            long offsetInBytes = offset * SIZEOF_INT + Unsafe.ARRAY_INT_BASE_OFFSET;
             long lengthInBytes = length * SIZEOF_INT;
-            copyFromArray(x, offsetInBytes, curAddress, lengthInBytes);
+            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;
@@ -246,9 +232,9 @@ public class RenderBuffer {
     public RenderBuffer put(float[] x, int offset, int length) {
         // assert (position() % SIZEOF_FLOAT == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_FLOAT;
+            long offsetInBytes = offset * SIZEOF_FLOAT + Unsafe.ARRAY_FLOAT_BASE_OFFSET;
             long lengthInBytes = length * SIZEOF_FLOAT;
-            copyFromArray(x, offsetInBytes, curAddress, lengthInBytes);
+            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;
@@ -277,9 +263,9 @@ public class RenderBuffer {
     public RenderBuffer put(long[] x, int offset, int length) {
         // assert (position() % SIZEOF_LONG == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_LONG;
+            long offsetInBytes = offset * SIZEOF_LONG + Unsafe.ARRAY_LONG_BASE_OFFSET;
             long lengthInBytes = length * SIZEOF_LONG;
-            copyFromArray(x, offsetInBytes, curAddress, lengthInBytes);
+            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;

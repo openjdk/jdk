@@ -1034,7 +1034,13 @@ public class JavacParser implements Parser {
                     return illegal(pos);
                 }
             } else {
-                return illegal();
+                // Support the corner case of myMethodHandle.<void>invoke() by passing
+                // a void type (like other primitive types) to the next phase.
+                // The error will be reported in Attr.attribTypes or Attr.visitApply.
+                JCPrimitiveTypeTree ti = to(F.at(pos).TypeIdent(TypeTags.VOID));
+                S.nextToken();
+                return ti;
+                //return illegal();
             }
             break;
         default:
