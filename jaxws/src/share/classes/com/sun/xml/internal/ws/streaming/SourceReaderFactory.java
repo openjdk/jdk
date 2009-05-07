@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,22 @@
 
 package com.sun.xml.internal.ws.streaming;
 
-import com.sun.xml.internal.ws.util.FastInfosetReflection;
+import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
+import com.sun.xml.internal.ws.util.FastInfosetUtil;
 import com.sun.xml.internal.ws.util.xml.XmlUtil;
 
-import java.io.Reader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.stream.XMLStreamReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.lang.reflect.Method;
+import java.net.URL;
 
 /**
  * @author Santiago.PericasGeertsen@sun.com
@@ -46,20 +48,33 @@ import javax.xml.stream.XMLStreamReader;
 public class SourceReaderFactory {
 
     /**
-     * Thread variable used to store DOMStreamReader for current thread.
+     * FI FastInfosetSource class.
      */
-    static ThreadLocal<DOMStreamReader> domStreamReader =
-        new ThreadLocal<DOMStreamReader>();
+    static Class fastInfosetSourceClass;
 
-    public static XMLStreamReader createSourceReader(Source source,
-        boolean rejectDTDs)
-    {
+    /**
+     * FI <code>StAXDocumentSerializer.setEncoding()</code> method via reflection.
+     */
+    static Method fastInfosetSource_getInputStream;
+
+    static {
+        // Use reflection to avoid static dependency with FI jar
+        try {
+            fastInfosetSourceClass =
+                Class.forName("com.sun.xml.internal.org.jvnet.fastinfoset.FastInfosetSource");
+            fastInfosetSource_getInputStream =
+                fastInfosetSourceClass.getMethod("getInputStream");
+        }
+        catch (Exception e) {
+            fastInfosetSourceClass = null;
+        }
+    }
+
+    public static XMLStreamReader createSourceReader(Source source, boolean rejectDTDs) {
         return createSourceReader(source, rejectDTDs, null);
     }
 
-    public static XMLStreamReader createSourceReader(Source source,
-        boolean rejectDTDs, String charsetName)
-    {
+    public static XMLStreamReader createSourceReader(Source source, boolean rejectDTDs, String charsetName) {
         try {
             if (source instanceof StreamSource) {
                 StreamSource streamSource = (StreamSource) source;
@@ -68,35 +83,32 @@ public class SourceReaderFactory {
                 if (is != null) {
                     // Wrap input stream in Reader if charset is specified
                     if (charsetName != null) {
-                        return XMLStreamReaderFactory.createXMLStreamReader(
-                            new InputStreamReader(is, charsetName), rejectDTDs);
+                        return XMLStreamReaderFactory.create(
+                            source.getSystemId(), new InputStreamReader(is, charsetName), rejectDTDs);
                     }
                     else {
-                        return XMLStreamReaderFactory.createXMLStreamReader(is,
-                            rejectDTDs);
+                        return XMLStreamReaderFactory.create(
+                            source.getSystemId(), is, rejectDTDs);
                     }
                 }
                 else {
                     Reader reader = streamSource.getReader();
                     if (reader != null) {
-                        return XMLStreamReaderFactory.createXMLStreamReader(reader,
-                            rejectDTDs);
+                        return XMLStreamReaderFactory.create(
+                            source.getSystemId(), reader, rejectDTDs);
                     }
                     else {
-                        throw new XMLReaderException("sourceReader.invalidSource",
-                            new Object[] { source.getClass().getName() });
+                        return XMLStreamReaderFactory.create(
+                            source.getSystemId(), new URL(source.getSystemId()).openStream(), rejectDTDs );
                     }
                 }
             }
-            else if (FastInfosetReflection.isFastInfosetSource(source)) {
-                return XMLStreamReaderFactory.createFIStreamReader((InputStream)
-                    FastInfosetReflection.FastInfosetSource_getInputStream(source));
+            else if (source.getClass() == fastInfosetSourceClass) {
+                return FastInfosetUtil.createFIStreamReader((InputStream)
+                    fastInfosetSource_getInputStream.invoke(source));
             }
             else if (source instanceof DOMSource) {
-                DOMStreamReader dsr = domStreamReader.get();
-                if (dsr == null) {
-                    domStreamReader.set(dsr = new DOMStreamReader());
-                }
+                DOMStreamReader dsr =  new DOMStreamReader();
                 dsr.setCurrentNode(((DOMSource) source).getNode());
                 return dsr;
             }
@@ -111,7 +123,7 @@ public class SourceReaderFactory {
             }
             else {
                 throw new XMLReaderException("sourceReader.invalidSource",
-                    new Object[] { source.getClass().getName() });
+                        source.getClass().getName());
             }
         }
         catch (Exception e) {

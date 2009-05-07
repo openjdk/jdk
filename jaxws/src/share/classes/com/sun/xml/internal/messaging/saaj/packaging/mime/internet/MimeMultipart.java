@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * @(#)MimeMultipart.java     1.31 03/01/29
+ */
+
+
 
 package com.sun.xml.internal.messaging.saaj.packaging.mime.internet;
 
@@ -61,6 +66,7 @@ import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
  * constructor.  For example, to create a "multipart/alternative" object,
  * use <code>new MimeMultipart("alternative")</code>.
  *
+ * @version 1.31, 03/01/29
  * @author  John Mani
  * @author  Bill Shannon
  * @author  Max Spivak

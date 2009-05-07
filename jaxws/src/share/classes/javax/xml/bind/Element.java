@@ -35,6 +35,7 @@ package javax.xml.bind;
  * and 5.7.1 "Bind to Java Element Interface" of the specification.
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
+ * @version $Revision: 1.2 $
  * @since JAXB1.0
  */
 

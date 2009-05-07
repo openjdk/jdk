@@ -205,6 +205,9 @@ public class BasicSliderUI extends SliderUI{
         focusColor = UIManager.getColor("Slider.focus");
 
         focusInsets = (Insets)UIManager.get( "Slider.focusInsets" );
+        // use default if missing so that BasicSliderUI can be used in other
+        // LAFs like Nimbus
+        if (focusInsets == null) focusInsets = new InsetsUIResource(2,2,2,2);
     }
 
     protected TrackListener createTrackListener(JSlider slider) {

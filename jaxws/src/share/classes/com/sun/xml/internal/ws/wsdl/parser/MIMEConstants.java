@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package com.sun.xml.internal.ws.wsdl.parser;
 import javax.xml.namespace.QName;
 
 
-public interface MIMEConstants {
+interface MIMEConstants {
     // namespace URIs
     public static String NS_WSDL_MIME = "http://schemas.xmlsoap.org/wsdl/mime/";
 

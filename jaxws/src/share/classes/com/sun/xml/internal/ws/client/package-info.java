@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,132 +24,17 @@
  */
 
 /**
- *  <h1>JAX-WS 2.0 Client Runtime</h1>
+ *  <h1>JAX-WS 2.0.1 Client Runtime</h1>
  * <P>This document describes the architecture of client side
- * JAX-WS 2.0 runtime.
+ * JAX-WS 2.0.1 runtime.
  *
- * <h3>JAX-WS 2.0 Server Client Sequence Diagram</h3>
- * {@SequenceDiagram
- *    pobject(U,"user");
- *   object(A,"EndpointIFInvocationHandler");
- *   object(B,"DelegateBase");
- *   object(C,"MessageDispatcher");
- *   object(D,"Encoder/Decoder");
- *   object(F,"WSConnection");
- *   step();
- *
- *   message(U,A,"invoke Web Service");
- *   active(A);
- *   message(A,A,"invoke");
- *   active(A);
- *   step();
- *   inactive(A);
- *#    step();
- *
- *   message(A,A,"implementSEIMethod");
- *   active(A);
- *   step();
- *   inactive(A);
- *
- *   message(A,B,"send");
- *   active(B);
- *
- *   message(B,B,"getContactInfo");
- *   active(B);
- *   step();
- *   inactive(B);
- *
- *   message(B,B,"getMessageDispatcher");
- *   active(B);
- *   step();
- *  inactive(B);
- *
- *   message(B,C,"send");
- *   active(C);
- *#    step();
- *#    inactive(B);
- *
- *#    message(C,C,"doSend");
- *#    active(C);
- *#    step();
- *#    inactive(C);
- *
- *#    active(C);
- *   message(C,D,"toInternalMessage");
- *   active(D);
- *   step();
- *   inactive(D);
- *
- *   message(C,D,"toSOAPMessage");
- *   active(D);
- *   step();
- *   inactive(D);
- *
- *   message(C,C,"invokeHandlers");
- *   active(C);
- *   step();
- *   inactive(C);
- *
- *   message(C,F,"setHeaders");
- *   active(F);
- *   step();
- *   inactive(F);
- *
- *   message(C,F,"getOutput");
- *   active(F);
- *   step();
- *   inactive(F);
- *
- *   message(C,F,"writeTo");
- *   active(F);
- *   step();
- *   inactive(F);
- *
- *#    message(C,C,"receive");
- *#    active(C);
- *#    step();
- *#    inactive(C);
- *
- *   message(C,F,"readSOAPMessage");
- *   active(F);
- *   step();
- *   inactive(F);
- *
- *   message(C,C,"mustUnderstand");
- *   active(C);
- *   step();
- *   inactive(C);
- *
- *  message(C,C,"invokeHandlers");
- *  active(C);
- *  step();
- *  inactive(C);
- *
- *  message(C,D,"toInternalMessage");
- *  active(D);
- *  step();
- *  inactive(D);
- *
- *#    message(C,C,"doSendAsync");
- *#    active(C);
- *#    step();
- *#    inactive(C);
- *
- *#    message(C,C,"sendAsyncReceive");
- *#    active(C);
- *#    step();
- *#    inactive(C);
- *
- *   rmessage(C,B,"response");
- *   inactive(C);
- *
- *   rmessage(B,A,"response");
- *   inactive(B);
- *
- *   rmessage(A,U,"response");
- *   complete(A);
- * }
- *
+ * <h3>JAX-WS 2.0.1 Client Sequence Diagram</h3>
+ * <img src='../../../../../jaxws/basic-client.seq.png'>
+  * <h3>JAX-WS 2.0.1 Asynchronous Invocation Sequence Diagram</h3>
+ * <img src='../../../../../jaxws/client-async.seq.png'>
+  * <h3>JAX-WS 2.0.1 Dispatch Invocation Sequence Diagram</h3>
+ * <img src='../../../../../jaxws/dispatch.seq.png'>
+
  * <H3>Message Flow</H3>
  * {@link com.sun.xml.internal.ws.client.WebService} provides client view of a Web service.
  * WebService.getPort returns an instance of {@link com.sun.xml.internal.ws.client.EndpointIFInvocationHandler}
@@ -166,7 +51,7 @@
  * {@link javax.xml.ws.BindingProvider} and sets it on the MessageInfo. After the
  * Delegate obtains a specific ContactInfo it uses that ContactInfo to obtain a
  * protocol-specific {@link com.sun.pept.protocol.MessageDispatcher}. There will be
- * two types of client-side MessageDispatchers for JAX-WS 2.0 FCS,
+ * two types of client-side MessageDispatchers for JAX-WS 2.0.1,
  * {@link com.sun.xml.internal.ws.protocol.soap.client.SOAPMessageDispatcher} and
  * {@link com.sun.xml.internal.ws.protocol.xml.client.XMLMessageDispatcher}. The Delegate
  * then invokes {@link com.sun.pept.protocol.MessageDispatcher#send}. The
@@ -177,12 +62,12 @@
  * The MessageDispatcher uses ContactInfo to obtain
  * a {@link com.sun.xml.internal.ws.encoding.soap.client.SOAPXMLEncoder} which converts
  * the MessageInfo to {@link com.sun.xml.internal.ws.encoding.soap.internal.InternalMessage}.
- * There will be two types of client-side SOAPXMLEncoder for JAX-WS 2.0 FCS,
+ * There will be two types of client-side SOAPXMLEncoder for JAX-WS 2.0.1,
  * SOAPXMEncoder for SOAP 1.1 and {@link com.sun.xml.internal.ws.encoding.soap.client.SOAP12XMLEncoder}
  * for SOAP 1.2. The MessageDispatcher invokes configured handlers and use the
- * encoder to convert the InternalMessage to a {@link javax.xml.soap.SOAPMessage}.
+ * codec to convert the InternalMessage to a {@link javax.xml.soap.SOAPMessage}.
  * The metadata from the MessageInfo is classified into {@link javax.xml.soap.MimeHeaders}
- * of this SOAPMessage and context information for {@link com.sun.xml.internal.ws.spi.runtime.WSConnection}.
+ * of this SOAPMessage and context information for {@link com.sun.xml.internal.ws.api.server.WSConnection}.
  * The SOAPMessge is then written to the output stream of the WSConnection
  * obtained from MessageInfo.
  *<P></P>
@@ -192,7 +77,7 @@
  * of any handlers. The MessageDispatcher uses ContactInfo to obtain a
  * {@link com.sun.xml.internal.ws.encoding.soap.client.SOAPXMLDecoder} which converts the SOAPMessage
  * to InternalMessage and then InternalMessage to MessageInfo. There will be two types of
- * client-side SOAPXMLDecoder for JAX-WS 2.0 FCS, SOAPXMLDencoder for SOAP 1.1 and
+ * client-side SOAPXMLDecoder for JAX-WS 2.0.1, SOAPXMLDencoder for SOAP 1.1 and
  * {@link com.sun.xml.internal.ws.encoding.soap.client.SOAP12XMLDecoder} for SOAP 1.2. The
  * response is returned back to the client code via Delegate.
  *
@@ -264,7 +149,6 @@ package com.sun.xml.internal.ws.client;
 
 import com.sun.xml.internal.bind.api.BridgeContext;
 
-import javax.xml.ws.Binding;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.stream.XMLStreamReader;

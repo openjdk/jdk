@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.annotation;
 
 import java.lang.annotation.Annotation;
@@ -71,6 +70,10 @@ public class LocatableAnnotation implements InvocationHandler, Locatable, Locati
                     new LocatableAnnotation(annotation,parentSourcePos));
         } catch (ClassNotFoundException e) {
             // annotation not loadable
+            return annotation;
+        } catch (IllegalArgumentException e) {
+            // Proxy.newProxyInstance throws this if it cannot resolve this annotation
+            // in this classloader
             return annotation;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.annotation;
 
 import com.sun.xml.internal.bind.v2.runtime.Location;
@@ -33,7 +32,7 @@ import com.sun.xml.internal.bind.v2.runtime.Location;
  * <p>
  * {@link Locatable} forms a tree structure, where each {@link Locatable}
  * points back to the upstream {@link Locatable}.
- * For example, image {@link Locatable} X that points to a particular annotation,
+ * For example, imagine {@link Locatable} X that points to a particular annotation,
  * whose upstream is {@link Locatable} Y, which points to a particular method
  * (on which the annotation is put), whose upstream is {@link Locatable} Z,
  * which points to a particular class (in which the method is defined),

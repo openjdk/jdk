@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind;
 
 import java.math.BigDecimal;
@@ -53,6 +52,7 @@ import com.sun.xml.internal.bind.v2.TODO;
  * This class is responsible for whitespace normalization.
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li></ul>
+ * @version $Revision: 1.9 $
  * @since JAXB1.0
  */
 public final class DatatypeConverterImpl implements DatatypeConverterInterface {
@@ -535,28 +535,48 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
     }
 
     /**
-     * computes the length of binary data.
+     * computes the length of binary data speculatively.
      *
-     * This function also performs format check.
-     * @return    -1        if format is illegal.
+     * <p>
+     * Our requirement is to create byte[] of the exact length to store the binary data.
+     * If we do this in a straight-forward way, it takes two passes over the data.
+     * Experiments show that this is a non-trivial overhead (35% or so is spent on
+     * the first pass in calculating the length.)
      *
+     * <p>
+     * So the approach here is that we compute the length speculatively, without looking
+     * at the whole contents. The obtained speculative value is never less than the
+     * actual length of the binary data, but it may be bigger. So if the speculation
+     * goes wrong, we'll pay the cost of reallocation and buffer copying.
+     *
+     * <p>
+     * If the base64 text is tightly packed with no indentation nor illegal char
+     * (like what most web services produce), then the speculation of this method
+     * will be correct, so we get the performance benefit.
      */
-    private static int calcLength( String text ) {
+    private static int guessLength( String text ) {
         final int len = text.length();
-        int base64count=0;
-        int i;
 
-        for( i=0; i<len; i++ ) {
-            char ch = text.charAt(i);
-            if( ch=='=' )    // decodeMap['=']!=-1, so we have to check this first.
-                break;
-            if( ch>=128 )
-                return -1;      // incorrect character
-            if( decodeMap[ch]!=-1 )
-                base64count++;
+        // compute the tail '=' chars
+        int j=len-1;
+        for(; j>=0; j-- ) {
+            byte code = decodeMap[text.charAt(j)];
+            if(code==PADDING)
+                continue;
+            if(code==-1)
+                // most likely this base64 text is indented. go with the upper bound
+                return text.length()/4*3;
+            break;
         }
 
-        return (base64count/4)*3+Math.max(0,(base64count%4)-1);
+        j++;    // text.charAt(j) is now at some base64 char, so +1 to make it the size
+        int padSize = len-j;
+        if(padSize >2) // something is wrong with base64. be safe and go with the upper bound
+            return text.length()/4*3;
+
+        // so far this base64 looks like it's unindented tightly packed base64.
+        // take a chance and create an array with the expected size
+        return text.length()/4*3-padSize;
     }
 
     /**
@@ -569,9 +589,8 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
      *      because JIT can inline a lot of string access (with data of 1K chars, it was twice as fast)
      */
     public static byte[] _parseBase64Binary(String text) {
-        final int outlen = calcLength(text);
-        if( outlen==-1 )    return null;
-        final byte[] out = new byte[outlen];
+        final int buflen = guessLength(text);
+        final byte[] out = new byte[buflen];
         int o=0;
 
         final int len = text.length();
@@ -584,6 +603,7 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
         for( i=0; i<len; i++ ) {
             char ch = text.charAt(i);
             byte v = decodeMap[ch];
+
             if( v!=-1 )
                 quadruplet[q++] = v;
 
@@ -598,7 +618,13 @@ public final class DatatypeConverterImpl implements DatatypeConverterInterface {
             }
         }
 
-        return out;
+        if(buflen==o) // speculation worked out to be OK
+            return out;
+
+        // we overestimated, so need to create a new buffer
+        byte[] nb = new byte[o];
+        System.arraycopy(out,0,nb,0,o);
+        return nb;
     }
 
     private static final char[] encodeMap = initEncodeMap();

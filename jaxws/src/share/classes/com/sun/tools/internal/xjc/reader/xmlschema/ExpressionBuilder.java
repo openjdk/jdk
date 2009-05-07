@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
 import java.util.HashMap;
@@ -72,6 +71,7 @@ public final class ExpressionBuilder implements XSTermFunction<Expression> {
     public Expression wildcard(XSWildcard wc) {
         if(wildcard==null)
             wildcard = new GWildcardElement();
+        wildcard.merge(wc);
         wildcard.particles.add(current);
         return wildcard;
     }
@@ -104,7 +104,7 @@ public final class ExpressionBuilder implements XSTermFunction<Expression> {
     }
 
     public Element elementDecl(XSElementDecl decl) {
-        QName n = new QName(decl.getTargetNamespace(),decl.getName());
+        QName n = BGMBuilder.getName(decl);
 
         GElementImpl e = decls.get(n);
         if(e==null)

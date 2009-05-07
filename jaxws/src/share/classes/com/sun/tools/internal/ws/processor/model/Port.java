@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,27 @@
 
 package com.sun.tools.internal.ws.processor.model;
 
+import com.sun.tools.internal.ws.processor.model.java.JavaInterface;
+import com.sun.tools.internal.ws.wsdl.document.soap.SOAPStyle;
+import com.sun.tools.internal.ws.wsdl.framework.Entity;
+
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.namespace.QName;
-
-import com.sun.tools.internal.ws.processor.config.HandlerChainInfo;
-import com.sun.tools.internal.ws.processor.model.java.JavaInterface;
-import com.sun.tools.internal.ws.wsdl.document.soap.SOAPUse;
-import com.sun.xml.internal.ws.encoding.soap.SOAPVersion;
-import com.sun.tools.internal.ws.wsdl.document.soap.SOAPStyle;
-import com.sun.tools.internal.ws.wsdl.document.soap.SOAPUse;
-
 /**
- *
  * @author WS Development Team
  */
 public class Port extends ModelObject {
 
-    public Port() {}
+    public Port(Entity entity) {
+        super(entity);
+    }
 
-    public Port(QName name) {
+    public Port(QName name, Entity entity) {
+        super(entity);
         _name = name;
     }
 
@@ -68,15 +66,15 @@ public class Port extends ModelObject {
         if (operationsByName.size() != _operations.size()) {
             initializeOperationsByName();
         }
-        return (Operation)operationsByName.get(name);
+        return operationsByName.get(name);
     }
 
     private void initializeOperationsByName() {
-        operationsByName = new HashMap();
+        operationsByName = new HashMap<String, Operation>();
         if (_operations != null) {
             for (Operation operation : _operations) {
                 if (operation.getUniqueName() != null &&
-                    operationsByName.containsKey(operation.getUniqueName())) {
+                        operationsByName.containsKey(operation.getUniqueName())) {
 
                     throw new ModelException("model.uniqueness");
                 }
@@ -111,36 +109,6 @@ public class Port extends ModelObject {
         _address = s;
     }
 
-    public HandlerChainInfo getClientHandlerChainInfo() {
-        if (_clientHandlerChainInfo == null) {
-            _clientHandlerChainInfo  = new HandlerChainInfo();
-        }
-        return _clientHandlerChainInfo;
-    }
-
-    public void setClientHandlerChainInfo(HandlerChainInfo i) {
-        _clientHandlerChainInfo = i;
-    }
-
-    public HandlerChainInfo getServerHandlerChainInfo() {
-        if (_serverHandlerChainInfo == null) {
-            _serverHandlerChainInfo  = new HandlerChainInfo();
-        }
-        return _serverHandlerChainInfo;
-    }
-
-    public void setServerHandlerChainInfo(HandlerChainInfo i) {
-        _serverHandlerChainInfo = i;
-    }
-
-    public SOAPVersion getSOAPVersion() {
-        return _soapVersion;
-    }
-
-    public void setSOAPVersion(SOAPVersion soapVersion) {
-        _soapVersion = soapVersion;
-    }
-
     public String getServiceImplName() {
         return _serviceImplName;
     }
@@ -165,16 +133,17 @@ public class Port extends ModelObject {
     }
 
     /**
-    * XYZ_Service.getABC() method name
-    * @return Returns the portGetterName.
-    */
+     * XYZ_Service.getABC() method name
+     *
+     * @return Returns the portGetterName.
+     */
     public String getPortGetter() {
         return portGetter;
     }
 
     /**
-    * @param portGetterName The portGetterName to set.
-    */
+     * @param portGetterName The portGetterName to set.
+     */
     public void setPortGetter(String portGetterName) {
         this.portGetter = portGetterName;
     }
@@ -200,12 +169,9 @@ public class Port extends ModelObject {
 
     private String portGetter;
     private QName _name;
-    private List<Operation> _operations = new ArrayList();
+    private List<Operation> _operations = new ArrayList<Operation>();
     private JavaInterface _javaInterface;
     private String _address;
     private String _serviceImplName;
-    private Map operationsByName = new HashMap();
-    private HandlerChainInfo _clientHandlerChainInfo;
-    private HandlerChainInfo _serverHandlerChainInfo;
-    private SOAPVersion _soapVersion = SOAPVersion.SOAP_11;
+    private Map<String, Operation> operationsByName = new HashMap<String, Operation>();
 }

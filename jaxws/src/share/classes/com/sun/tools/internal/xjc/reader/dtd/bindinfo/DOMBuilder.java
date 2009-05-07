@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.dtd.bindinfo;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -48,6 +47,6 @@ final class DOMBuilder extends SAX2DOMEx {
 
     public void startElement(String namespace, String localName, String qName, Attributes attrs) {
         super.startElement(namespace, localName, qName, attrs);
-        DOM4JLocator.setLocationInfo(getCurrentElement(),locator);
+        DOMLocator.setLocationInfo(getCurrentElement(),locator);
     }
 }
