@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,8 @@
 
 package com.sun.xml.internal.ws.util;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
 
 /**
@@ -42,248 +36,40 @@ import org.w3c.dom.Node;
  */
 public class FastInfosetReflection {
     /**
-     *
-     */
-    public static ClassLoader fiClassLoader;
-
-    /**
      * FI StAXDocumentParser constructor using reflection.
      */
-    public static Constructor fiStAXDocumentParser_new;
+    public static final Constructor fiStAXDocumentParser_new;
 
     /**
      * FI <code>StAXDocumentParser.setInputStream()</code> method via reflection.
      */
-    public static Method fiStAXDocumentParser_setInputStream;
+    public static final Method fiStAXDocumentParser_setInputStream;
 
     /**
      * FI <code>StAXDocumentParser.setStringInterning()</code> method via reflection.
      */
-    public static Method fiStAXDocumentParser_setStringInterning;
-
-    /**
-     * FI StAXDocumentSerializer constructor using reflection.
-     */
-    public static Constructor fiStAXDocumentSerializer_new;
-
-    /**
-     * FI <code>StAXDocumentSerializer.setOutputStream()</code> method via reflection.
-     */
-    public static Method fiStAXDocumentSerializer_setOutputStream;
-
-    /**
-     * FI <code>StAXDocumentSerializer.setEncoding()</code> method via reflection.
-     */
-    public static Method fiStAXDocumentSerializer_setEncoding;
-
-    /**
-     * FI DOMDocumentParser constructor using reflection.
-     */
-    public static Constructor fiDOMDocumentParser_new;
-
-    /**
-     * FI <code>DOMDocumentParser.parse()</code> method via reflection.
-     */
-    public static Method fiDOMDocumentParser_parse;
-
-    /**
-     * FI DOMDocumentSerializer constructor using reflection.
-     */
-    public static Constructor fiDOMDocumentSerializer_new;
-
-    /**
-     * FI <code>FastInfosetSource.serialize(Document)</code> method via reflection.
-     */
-    public static Method fiDOMDocumentSerializer_serialize;
-
-    /**
-     * FI <code>FastInfosetSource.setOutputStream(OutputStream)</code> method via reflection.
-     */
-    public static Method fiDOMDocumentSerializer_setOutputStream;
-
-    /**
-     * FI FastInfosetSource class.
-     */
-    public static Class fiFastInfosetSource;
-
-    /**
-     * FI FastInfosetSource constructor using reflection.
-     */
-    public static Constructor fiFastInfosetSource_new;
-
-    /**
-     * FI <code>FastInfosetSource.getInputStream()</code> method via reflection.
-     */
-    public static Method fiFastInfosetSource_getInputStream;
-
-    /**
-     * FI <code>FastInfosetSource.setInputSTream()</code> method via reflection.
-     */
-    public static Method fiFastInfosetSource_setInputStream;
-
-    /**
-     * FI FastInfosetResult class using reflection.
-     */
-    public static Class fiFastInfosetResult;
-
-    /**
-     * FI FastInfosetResult constructor using reflection.
-     */
-    public static Constructor fiFastInfosetResult_new;
-
-    /**
-     * FI <code>FastInfosetResult.getOutputSTream()</code> method via reflection.
-     */
-    public static Method fiFastInfosetResult_getOutputStream;
+    public static final Method fiStAXDocumentParser_setStringInterning;
 
     static {
+        Constructor tmp_new = null;
+        Method tmp_setInputStream = null;
+        Method tmp_setStringInterning = null;
+
         // Use reflection to avoid static dependency with FI jar
         try {
-            Class clazz = null;
-            clazz = Class.forName("com.sun.xml.internal.fastinfoset.stax.StAXDocumentParser");
-            fiStAXDocumentParser_new = clazz.getConstructor();
-            fiStAXDocumentParser_setInputStream =
+            Class clazz = Class.forName("com.sun.xml.internal.fastinfoset.stax.StAXDocumentParser");
+            tmp_new = clazz.getConstructor();
+            tmp_setInputStream =
                 clazz.getMethod("setInputStream", java.io.InputStream.class);
-            fiStAXDocumentParser_setStringInterning =
+            tmp_setStringInterning =
                 clazz.getMethod("setStringInterning", boolean.class);
-
-            clazz =
-                Class.forName("com.sun.xml.internal.fastinfoset.stax.StAXDocumentSerializer");
-            fiStAXDocumentSerializer_new = clazz.getConstructor();
-            fiStAXDocumentSerializer_setOutputStream =
-                clazz.getMethod("setOutputStream", java.io.OutputStream.class);
-            fiStAXDocumentSerializer_setEncoding =
-                clazz.getMethod("setEncoding", String.class);
-
-            clazz =
-                Class.forName("com.sun.xml.internal.fastinfoset.dom.DOMDocumentParser");
-            fiDOMDocumentParser_new = clazz.getConstructor();
-            fiDOMDocumentParser_parse = clazz.getMethod("parse",
-                new Class[] { org.w3c.dom.Document.class, java.io.InputStream.class });
-
-            clazz = Class.forName("com.sun.xml.internal.fastinfoset.dom.DOMDocumentSerializer");
-            fiDOMDocumentSerializer_new = clazz.getConstructor();
-            fiDOMDocumentSerializer_serialize = clazz.getMethod("serialize",
-                new Class[] { org.w3c.dom.Node.class });
-            fiDOMDocumentSerializer_setOutputStream = clazz.getMethod("setOutputStream",
-                new Class[] { java.io.OutputStream.class });
-
-            fiFastInfosetSource = clazz = Class.forName("com.sun.xml.internal.org.jvnet.fastinfoset.FastInfosetSource");
-            fiFastInfosetSource_new = clazz.getConstructor(
-                new Class[] { java.io.InputStream.class });
-            fiFastInfosetSource_getInputStream = clazz.getMethod("getInputStream");
-            fiFastInfosetSource_setInputStream = clazz.getMethod("setInputStream",
-                new Class[] { java.io.InputStream.class });
-
-            fiFastInfosetResult = clazz = Class.forName("com.sun.xml.internal.org.jvnet.fastinfoset.FastInfosetResult");
-            fiFastInfosetResult_new = clazz.getConstructor(
-                new Class[] { java.io.OutputStream.class });
-            fiFastInfosetResult_getOutputStream = clazz.getMethod("getOutputStream");
         }
         catch (Exception e) {
             // falls through
         }
+        fiStAXDocumentParser_new = tmp_new;
+        fiStAXDocumentParser_setInputStream = tmp_setInputStream;
+        fiStAXDocumentParser_setStringInterning = tmp_setStringInterning;
     }
 
-    // -- DOMDocumentParser ----------------------------------------------
-
-    public static Object DOMDocumentParser_new() throws Exception {
-        if (fiDOMDocumentParser_new == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        return fiDOMDocumentParser_new.newInstance();
-    }
-
-    public static void DOMDocumentParser_parse(Object parser,
-        Document d, InputStream s) throws Exception
-    {
-        if (fiDOMDocumentParser_parse == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        fiDOMDocumentParser_parse.invoke(parser, d, s);
-    }
-
-    // -- DOMDocumentSerializer-------------------------------------------
-
-    public static Object DOMDocumentSerializer_new() throws Exception {
-        if (fiDOMDocumentSerializer_new == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        return fiDOMDocumentSerializer_new.newInstance();
-    }
-
-    public static void DOMDocumentSerializer_serialize(Object serializer, Node node)
-        throws Exception
-    {
-        if (fiDOMDocumentSerializer_serialize == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        fiDOMDocumentSerializer_serialize.invoke(serializer, node);
-    }
-
-    public static void DOMDocumentSerializer_setOutputStream(Object serializer,
-        OutputStream os) throws Exception
-    {
-        if (fiDOMDocumentSerializer_setOutputStream == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        fiDOMDocumentSerializer_setOutputStream.invoke(serializer, os);
-    }
-
-    // -- FastInfosetSource ----------------------------------------------
-
-    public static boolean isFastInfosetSource(Source source) {
-        return source.getClass() == fiFastInfosetSource;
-    }
-
-    public static Source FastInfosetSource_new(InputStream is)
-        throws Exception
-    {
-        if (fiFastInfosetSource_new == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        return (Source) fiFastInfosetSource_new.newInstance(is);
-    }
-
-    public static InputStream FastInfosetSource_getInputStream(Source source)
-        throws Exception
-    {
-        if (fiFastInfosetSource_getInputStream == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        return (InputStream) fiFastInfosetSource_getInputStream.invoke(source);
-    }
-
-    public static void FastInfosetSource_setInputStream(Source source,
-        InputStream is) throws Exception
-    {
-        if (fiFastInfosetSource_setInputStream == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        fiFastInfosetSource_setInputStream.invoke(source, is);
-    }
-
-    // -- FastInfosetResult ----------------------------------------------
-
-    public static boolean isFastInfosetResult(Result result) {
-        return result.getClass() == fiFastInfosetResult;
-    }
-
-    public static Result FastInfosetResult_new(OutputStream os)
-        throws Exception
-    {
-        if (fiFastInfosetResult_new == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        return (Result) fiFastInfosetResult_new.newInstance(os);
-    }
-
-    public static OutputStream FastInfosetResult_getOutputStream(Result result)
-        throws Exception
-    {
-        if (fiFastInfosetResult_getOutputStream == null) {
-            throw new RuntimeException("Unable to locate Fast Infoset implementation");
-        }
-        return (OutputStream) fiFastInfosetResult_getOutputStream.invoke(result);
-    }
 }

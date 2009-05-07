@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc;
 
 import java.io.FileOutputStream;
@@ -35,6 +34,7 @@ import java.util.Iterator;
 import com.sun.codemodel.internal.CodeWriter;
 import com.sun.codemodel.internal.JCodeModel;
 import com.sun.codemodel.internal.writer.ZipCodeWriter;
+import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.tools.internal.xjc.generator.bean.BeanGenerator;
 import com.sun.tools.internal.xjc.model.Model;
@@ -199,7 +199,7 @@ public class Driver {
      *      All non-zero values indicate an error. The error message
      *      will be sent to the specified PrintStream.
      */
-    public static int run(String[] args, XJCListener listener) throws BadCommandLineException {
+    public static int run(String[] args, @NotNull final XJCListener listener) throws BadCommandLineException {
 
         // recognize those special options before we start parsing options.
         for (String arg : args) {
@@ -248,6 +248,11 @@ public class Driver {
                 public void warning(SAXParseException exception) {
                     if(!opt.quiet)
                         super.warning(exception);
+                }
+                @Override
+                public void pollAbort() throws AbortException {
+                    if(listener.isCanceled())
+                        throw new AbortException();
                 }
             };
 
@@ -422,7 +427,7 @@ public class Driver {
         public boolean noNS = false;
 
         /** Parse XJC-specific options. */
-        protected int parseArgument(String[] args, int i) throws BadCommandLineException {
+        public int parseArgument(String[] args, int i) throws BadCommandLineException {
             if (args[i].equals("-noNS")) {
                 noNS = true;
                 return 1;
@@ -471,7 +476,7 @@ public class Driver {
      *      If the parsing of options have started, set a partly populated
      *      {@link Options} object.
      */
-    protected static void usage( @Nullable Options opts, boolean privateUsage ) {
+    public static void usage( @Nullable Options opts, boolean privateUsage ) {
         if( privateUsage ) {
             System.out.println(Messages.format(Messages.DRIVER_PRIVATE_USAGE));
         } else {

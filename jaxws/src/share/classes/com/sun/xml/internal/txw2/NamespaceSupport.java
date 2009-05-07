@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 // NamespaceSupport.java - generic Namespace support for SAX.
 // http://www.saxproject.org
 // Written by David Megginson
@@ -91,6 +92,7 @@ import java.util.Vector;
  *
  * @since SAX 2.0
  * @author David Megginson
+ * @version 2.0.1 (sax2r2)
  */
 final class NamespaceSupport
 {

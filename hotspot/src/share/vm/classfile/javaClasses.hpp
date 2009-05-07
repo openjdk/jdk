@@ -1060,6 +1060,33 @@ class java_dyn_MethodTypeForm: AllStatic {
 };
 
 
+// Interface to sun.dyn.CallSiteImpl objects
+
+class sun_dyn_CallSiteImpl: AllStatic {
+  friend class JavaClasses;
+
+private:
+  static int _type_offset;
+  static int _target_offset;
+  static int _vmmethod_offset;
+
+  static void compute_offsets();
+
+public:
+  // Accessors
+  static oop            type(oop site);
+
+  static oop            target(oop site);
+  static void       set_target(oop site, oop target);
+
+  static oop            vmmethod(oop site);
+  static void       set_vmmethod(oop site, oop ref);
+
+  // Accessors for code generation:
+  static int target_offset_in_bytes()           { return _target_offset; }
+  static int type_offset_in_bytes()             { return _type_offset; }
+  static int vmmethod_offset_in_bytes()         { return _vmmethod_offset; }
+};
 
 
 // Interface to java.security.AccessControlContext objects

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import java.util.Vector;
  * @author David Brownell
  * @author Janet Koenig
  * @author Kohsuke KAWAGUCHI
+ * @version $Id: DTDParser.java,v 1.1 2005/05/15 04:24:19 kohsuke Exp $
  */
 public class DTDParser {
     public final static String TYPE_CDATA = "CDATA";

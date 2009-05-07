@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,10 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   Label label1, label2;
 
-  address cnt_addr = SafepointSynchronize::safepoint_counter_addr();
-  Address ca(O3, cnt_addr);
-  __ sethi (ca);
-  __ ld (ca, G4);
+  AddressLiteral cnt_addrlit(SafepointSynchronize::safepoint_counter_addr());
+  __ sethi (cnt_addrlit, O3);
+  Address cnt_addr(O3, cnt_addrlit.low10());
+  __ ld (cnt_addr, G4);
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
@@ -77,7 +77,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     default:        ShouldNotReachHere();
   }
 
-  __ ld (ca, O5);
+  __ ld (cnt_addr, O5);
   __ cmp (O5, G4);
   __ br (Assembler::notEqual, false, Assembler::pn, label2);
   __ delayed()->mov (O7, G1);
@@ -136,10 +136,10 @@ address JNI_FastGetField::generate_fast_get_long_field() {
 
   Label label1, label2;
 
-  address cnt_addr = SafepointSynchronize::safepoint_counter_addr();
-  Address ca(G3, cnt_addr);
-  __ sethi (ca);
-  __ ld (ca, G4);
+  AddressLiteral cnt_addrlit(SafepointSynchronize::safepoint_counter_addr());
+  __ sethi (cnt_addrlit, G3);
+  Address cnt_addr(G3, cnt_addrlit.low10());
+  __ ld (cnt_addr, G4);
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
@@ -159,7 +159,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
   __ ldx (O5, 0, O3);
 #endif
 
-  __ ld (ca, G1);
+  __ ld (cnt_addr, G1);
   __ cmp (G1, G4);
   __ br (Assembler::notEqual, false, Assembler::pn, label2);
   __ delayed()->mov (O7, G1);
@@ -208,10 +208,10 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
 
   Label label1, label2;
 
-  address cnt_addr = SafepointSynchronize::safepoint_counter_addr();
-  Address ca(O3, cnt_addr);
-  __ sethi (ca);
-  __ ld (ca, G4);
+  AddressLiteral cnt_addrlit(SafepointSynchronize::safepoint_counter_addr());
+  __ sethi (cnt_addrlit, O3);
+  Address cnt_addr(O3, cnt_addrlit.low10());
+  __ ld (cnt_addr, G4);
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
@@ -225,7 +225,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
     default:       ShouldNotReachHere();
   }
 
-  __ ld (ca, O5);
+  __ ld (cnt_addr, O5);
   __ cmp (O5, G4);
   __ br (Assembler::notEqual, false, Assembler::pn, label2);
   __ delayed()->mov (O7, G1);
