@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,181 +25,152 @@
 
 package com.sun.xml.internal.ws.binding;
 
-import com.sun.xml.internal.ws.binding.http.HTTPBindingImpl;
-import com.sun.xml.internal.ws.binding.soap.SOAPBindingImpl;
-import com.sun.xml.internal.ws.handler.HandlerChainCaller;
-import com.sun.xml.internal.ws.modeler.RuntimeModeler;
-import com.sun.xml.internal.ws.spi.runtime.SystemHandlerDelegate;
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
+import com.sun.xml.internal.ws.api.BindingID;
+import com.sun.xml.internal.ws.api.SOAPVersion;
+import com.sun.xml.internal.ws.api.WSBinding;
+import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
+import com.sun.xml.internal.ws.api.pipe.Codec;
+import com.sun.xml.internal.ws.client.HandlerConfiguration;
+import com.sun.xml.internal.ws.developer.MemberSubmissionAddressingFeature;
 
-import javax.xml.ws.Binding;
+import javax.xml.ws.WebServiceFeature;
+import javax.xml.ws.soap.AddressingFeature;
 import javax.xml.ws.handler.Handler;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import javax.xml.ws.http.HTTPBinding;
-import javax.xml.ws.soap.SOAPBinding;
-import javax.xml.namespace.QName;
 
 /**
  * Instances are created by the service, which then
- * sets the handler chain on the binding impl. The handler
- * caller class actually creates and manages the handlers.
+ * sets the handler chain on the binding impl.
  *
- * <p>Also used on the server side, where non-api calls such as
- * getHandlerChainCaller cannot be used. So the binding impl
- * now stores the handler list rather than deferring to the
- * handler chain caller.
+ * <p>
+ * This class is made abstract as we don't see a situation when
+ * a BindingImpl has much meaning without binding id.
+ * IOW, for a specific binding there will be a class
+ * extending BindingImpl, for example SOAPBindingImpl.
  *
- * <p>This class is made abstract as we dont see a situation when a BindingImpl has much meaning without binding id.
- * IOw, for a specific binding there will be a class extending BindingImpl, for example SOAPBindingImpl.
- *
- * <p>The spi Binding interface extends Binding.
+ * <p>
+ * The spi Binding interface extends Binding.
  *
  * @author WS Development Team
  */
-public abstract class BindingImpl implements
-    com.sun.xml.internal.ws.spi.runtime.Binding {
+public abstract class BindingImpl implements WSBinding {
+    private HandlerConfiguration handlerConfig;
+    private final BindingID bindingId;
+    // Features that are set(enabled/disabled) on the binding
+    protected final WebServiceFeatureList features = new WebServiceFeatureList();
 
-    // caller ignored on server side
-    protected HandlerChainCaller chainCaller;
-
-    private SystemHandlerDelegate systemHandlerDelegate;
-    private List<Handler> handlers;
-    private String bindingId;
-    protected QName serviceName;
-
-   // called by DispatchImpl
-    public BindingImpl(String bindingId, QName serviceName) {
+    protected BindingImpl(BindingID bindingId) {
         this.bindingId = bindingId;
-        this.serviceName = serviceName;
+        setHandlerConfig(createHandlerConfig(Collections.<Handler>emptyList()));
     }
 
-    public BindingImpl(List<Handler> handlerChain, String bindingId, QName serviceName) {
-        handlers = handlerChain;
-        this.bindingId = bindingId;
-        this.serviceName = serviceName;
+    public
+    @NotNull
+    List<Handler> getHandlerChain() {
+        return handlerConfig.getHandlerChain();
+    }
+
+    public HandlerConfiguration getHandlerConfig() {
+        return handlerConfig;
     }
 
 
     /**
-     * Return a copy of the list. If there is a handler chain caller,
-     * this is the proper list. Otherwise, return a copy of 'handlers'
-     * or null if list is null. The RuntimeEndpointInfo.init() method
-     * relies on this list being null if there were no handlers
-     * in the deployment descriptor file.
-     *
-     * @return The list of handlers. This can be null if there are
-     * no handlers. The list may have a different order depending on
-     * whether or not the handlers have been called yet, since the
-     * logical and protocol handlers will be sorted before calling them.
-     *
-     * @see com.sun.xml.internal.ws.server.RuntimeEndpointInfo#init
-     */
-    public List<Handler> getHandlerChain() {
-        if (chainCaller != null) {
-            return new ArrayList(chainCaller.getHandlerChain());
-        }
-        if (handlers == null) {
-            return null;
-        }
-        return new ArrayList(handlers);
-    }
-
-    public boolean hasHandlers() {
-        if (handlers == null || handlers.size() == 0) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Sets the handlers on the binding. If the handler chain
-     * caller already exists, then the handlers will be set on
-     * the caller and the handler chain held by the binding will
-     * be the sorted list.
+     * Sets the handlers on the binding and then
+     * sorts the handlers in to logical and protocol handlers.
+     * Creates a new HandlerConfiguration object and sets it on the BindingImpl.
      */
     public void setHandlerChain(List<Handler> chain) {
-        if (chainCaller != null) {
-            chainCaller = new HandlerChainCaller(chain);
-            handlers = chainCaller.getHandlerChain();
-        } else {
-            handlers = chain;
-        }
+        setHandlerConfig(createHandlerConfig(chain));
     }
 
     /**
-     * Creates the handler chain caller if needed and returns
-     * it. Once the handler chain caller exists, this class
-     * defers getHandlers() calls to it to get the new sorted
-     * list of handlers.
+     * This is called when ever Binding.setHandlerChain() or SOAPBinding.setRoles()
+     * is called.
+     * This sorts out the Handlers into Logical and SOAP Handlers and
+     * sets the HandlerConfiguration.
      */
-    public HandlerChainCaller getHandlerChainCaller() {
-        if (chainCaller == null) {
-            chainCaller = new HandlerChainCaller(handlers);
-        }
-        return chainCaller;
+    protected void setHandlerConfig(HandlerConfiguration handlerConfig) {
+        this.handlerConfig = handlerConfig;
     }
 
-    public String getBindingId(){
+    protected abstract HandlerConfiguration createHandlerConfig(List<Handler> handlerChain);
+
+    public
+    @NotNull
+    BindingID getBindingId() {
         return bindingId;
     }
 
-    public String getActualBindingId() {
-        return bindingId;
+    public final SOAPVersion getSOAPVersion() {
+        return bindingId.getSOAPVersion();
     }
 
-    public void setServiceName(QName serviceName){
-        this.serviceName = serviceName;
+    public AddressingVersion getAddressingVersion() {
+        AddressingVersion addressingVersion;
+        if (features.isEnabled(AddressingFeature.class))
+            addressingVersion = AddressingVersion.W3C;
+        else if (features.isEnabled(MemberSubmissionAddressingFeature.class))
+            addressingVersion = AddressingVersion.MEMBER;
+        else
+            addressingVersion = null;
+        return addressingVersion;
     }
 
-    public SystemHandlerDelegate getSystemHandlerDelegate() {
-        return systemHandlerDelegate;
+    public final
+    @NotNull
+    Codec createCodec() {
+        return bindingId.createEncoder(this);
     }
 
-    public void setSystemHandlerDelegate(SystemHandlerDelegate delegate) {
-        systemHandlerDelegate = delegate;
-    }
-
-    public static com.sun.xml.internal.ws.spi.runtime.Binding getBinding(String bindingId,
-                                                                Class implementorClass, QName serviceName, boolean tokensOK) {
-
-        if (bindingId == null) {
-            // Gets bindingId from @BindingType annotation
-            bindingId = RuntimeModeler.getBindingId(implementorClass);
-            if (bindingId == null) {            // Default one
-                bindingId = SOAPBinding.SOAP11HTTP_BINDING;
-            }
-        }
-        if (tokensOK) {
-            if (bindingId.equals("##SOAP11_HTTP")) {
-                bindingId = SOAPBinding.SOAP11HTTP_BINDING;
-            } else if (bindingId.equals("##SOAP11_HTTP_MTOM")) {
-                bindingId = SOAPBinding.SOAP11HTTP_MTOM_BINDING;
-            } else if (bindingId.equals("##SOAP12_HTTP")) {
-                bindingId = SOAPBinding.SOAP12HTTP_BINDING;
-            } else if (bindingId.equals("##SOAP12_HTTP_MTOM")) {
-                bindingId = SOAPBinding.SOAP12HTTP_MTOM_BINDING;
-            } else if (bindingId.equals("##XML_HTTP")) {
-                bindingId = HTTPBinding.HTTP_BINDING;
-            }
-        }
-        if (bindingId.equals(SOAPBinding.SOAP11HTTP_BINDING)
-            || bindingId.equals(SOAPBinding.SOAP11HTTP_MTOM_BINDING)
-            || bindingId.equals(SOAPBinding.SOAP12HTTP_BINDING)
-            || bindingId.equals(SOAPBinding.SOAP12HTTP_MTOM_BINDING)
-            || bindingId.equals(SOAPBindingImpl.X_SOAP12HTTP_BINDING)) {
-            return new SOAPBindingImpl(bindingId, serviceName);
-        } else if (bindingId.equals(HTTPBinding.HTTP_BINDING)) {
+    public static BindingImpl create(@NotNull BindingID bindingId) {
+        if (bindingId.equals(BindingID.XML_HTTP))
             return new HTTPBindingImpl();
-        } else {
-            throw new IllegalArgumentException("Wrong bindingId "+bindingId);
+        else
+            return new SOAPBindingImpl(bindingId);
+    }
+
+    public static BindingImpl create(@NotNull BindingID bindingId, WebServiceFeature[] features) {
+        if (bindingId.equals(BindingID.XML_HTTP))
+            return new HTTPBindingImpl();
+        else
+            return new SOAPBindingImpl(bindingId, features);
+    }
+
+    public static WSBinding getDefaultBinding() {
+        return new SOAPBindingImpl(BindingID.SOAP11_HTTP);
+    }
+
+    public String getBindingID() {
+        return bindingId.toString();
+    }
+
+    public @Nullable <F extends WebServiceFeature> F getFeature(@NotNull Class<F> featureType){
+        return features.get(featureType);
+    }
+
+    public boolean isFeatureEnabled(@NotNull Class<? extends WebServiceFeature> feature){
+        return features.isEnabled(feature);
+    }
+
+    @NotNull
+    public WebServiceFeatureList getFeatures() {
+        return features;
+    }
+
+
+    public void setFeatures(WebServiceFeature... newFeatures) {
+        if (newFeatures != null) {
+            for (WebServiceFeature f : newFeatures) {
+                features.add(f);
+            }
         }
     }
 
-    public static Binding getDefaultBinding() {
-        return new SOAPBindingImpl(SOAPBinding.SOAP11HTTP_BINDING);
-    }
-
-    public static Binding getDefaultBinding(QName serviceName) {
-        return new SOAPBindingImpl(SOAPBinding.SOAP11HTTP_BINDING, serviceName);
+    public void addFeature(@NotNull WebServiceFeature newFeature) {
+        features.add(newFeature);
     }
 }

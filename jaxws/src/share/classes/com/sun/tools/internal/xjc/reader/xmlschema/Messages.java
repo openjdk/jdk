@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
@@ -137,4 +136,11 @@ public class Messages
         "ERR_MULTIPLE_GLOBAL_BINDINGS";
     public static final String ERR_MULTIPLE_GLOBAL_BINDINGS_OTHER =
         "ERR_MULTIPLE_GLOBAL_BINDINGS_OTHER";
+
+    public static final String ERR_REFERENCE_TO_NONEXPORTED_CLASS =
+        "ERR_REFERENCE_TO_NONEXPORTED_CLASS";
+    public static final String ERR_REFERENCE_TO_NONEXPORTED_CLASS_MAP_FALSE =
+        "ERR_REFERENCE_TO_NONEXPORTED_CLASS_MAP_FALSE";
+    public static final String ERR_REFERENCE_TO_NONEXPORTED_CLASS_REFERER =
+        "ERR_REFERENCE_TO_NONEXPORTED_CLASS_REFERER";
 }

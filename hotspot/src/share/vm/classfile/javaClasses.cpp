@@ -2430,6 +2430,41 @@ oop java_dyn_MethodTypeForm::erasedType(oop mtform) {
 }
 
 
+// Support for sun_dyn_CallSiteImpl
+
+int sun_dyn_CallSiteImpl::_type_offset;
+int sun_dyn_CallSiteImpl::_target_offset;
+int sun_dyn_CallSiteImpl::_vmmethod_offset;
+
+void sun_dyn_CallSiteImpl::compute_offsets() {
+  if (!EnableInvokeDynamic)  return;
+  klassOop k = SystemDictionary::CallSiteImpl_klass();
+  if (k != NULL) {
+    compute_offset(_type_offset,   k, vmSymbols::type_name(),   vmSymbols::java_dyn_MethodType_signature(), true);
+    compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_dyn_MethodHandle_signature(), true);
+    compute_offset(_vmmethod_offset, k, vmSymbols::vmmethod_name(), vmSymbols::object_signature(), true);
+  }
+}
+
+oop sun_dyn_CallSiteImpl::type(oop site) {
+  return site->obj_field(_type_offset);
+}
+
+oop sun_dyn_CallSiteImpl::target(oop site) {
+  return site->obj_field(_target_offset);
+}
+
+void sun_dyn_CallSiteImpl::set_target(oop site, oop target) {
+  site->obj_field_put(_target_offset, target);
+}
+
+oop sun_dyn_CallSiteImpl::vmmethod(oop site) {
+  return site->obj_field(_vmmethod_offset);
+}
+
+void sun_dyn_CallSiteImpl::set_vmmethod(oop site, oop ref) {
+  site->obj_field_put(_vmmethod_offset, ref);
+}
 
 
 // Support for java_security_AccessControlContext
@@ -2774,6 +2809,9 @@ void JavaClasses::compute_offsets() {
     sun_dyn_AdapterMethodHandle::compute_offsets();
     java_dyn_MethodType::compute_offsets();
     java_dyn_MethodTypeForm::compute_offsets();
+  }
+  if (EnableInvokeDynamic) {
+    sun_dyn_CallSiteImpl::compute_offsets();
   }
   java_security_AccessControlContext::compute_offsets();
   // Initialize reflection classes. The layouts of these classes

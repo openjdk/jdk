@@ -48,16 +48,18 @@ public class SoftMainMixer {
 
     public final static int CHANNEL_LEFT = 0;
     public final static int CHANNEL_RIGHT = 1;
-    public final static int CHANNEL_EFFECT1 = 2;
-    public final static int CHANNEL_EFFECT2 = 3;
-    public final static int CHANNEL_EFFECT3 = 4;
-    public final static int CHANNEL_EFFECT4 = 5;
+    public final static int CHANNEL_MONO = 2;
+    public final static int CHANNEL_EFFECT1 = 3;
+    public final static int CHANNEL_EFFECT2 = 4;
+    public final static int CHANNEL_EFFECT3 = 5;
+    public final static int CHANNEL_EFFECT4 = 6;
     public final static int CHANNEL_LEFT_DRY = 10;
     public final static int CHANNEL_RIGHT_DRY = 11;
     public final static int CHANNEL_SCRATCH1 = 12;
     public final static int CHANNEL_SCRATCH2 = 13;
     public final static int CHANNEL_CHANNELMIXER_LEFT = 14;
     public final static int CHANNEL_CHANNELMIXER_RIGHT = 15;
+    public final static int CHANNEL_CHANNELMIXER_MONO = 16;
     protected boolean active_sensing_on = false;
     private long msec_last_activity = -1;
     private boolean pusher_silent = false;
@@ -485,8 +487,10 @@ public class SoftMainMixer {
             // to channelmixer left,right input/output
             SoftAudioBuffer leftbak = buffers[CHANNEL_LEFT];
             SoftAudioBuffer rightbak = buffers[CHANNEL_RIGHT];
+            SoftAudioBuffer monobak = buffers[CHANNEL_MONO];
             buffers[CHANNEL_LEFT] = buffers[CHANNEL_CHANNELMIXER_LEFT];
-            buffers[CHANNEL_RIGHT] = buffers[CHANNEL_CHANNELMIXER_LEFT];
+            buffers[CHANNEL_RIGHT] = buffers[CHANNEL_CHANNELMIXER_RIGHT];
+            buffers[CHANNEL_MONO] = buffers[CHANNEL_CHANNELMIXER_MONO];
 
             int bufferlen = buffers[CHANNEL_LEFT].getSize();
 
@@ -503,6 +507,7 @@ public class SoftMainMixer {
             for (ModelChannelMixer cmixer : act_registeredMixers) {
                 for (int i = 0; i < cbuffer.length; i++)
                     Arrays.fill(cbuffer[i], 0);
+                buffers[CHANNEL_MONO].clear();
                 boolean hasactivevoices = false;
                 for (int i = 0; i < voicestatus.length; i++)
                     if (voicestatus[i].active)
@@ -514,6 +519,26 @@ public class SoftMainMixer {
                     synchronized (control_mutex) {
                         registeredMixers.remove(cmixer);
                         cur_registeredMixers = null;
+                    }
+                }
+
+                if(!buffers[CHANNEL_MONO].isSilent())
+                {
+                    float[] mono = buffers[CHANNEL_MONO].array();
+                    float[] left = buffers[CHANNEL_LEFT].array();
+                    if (nrofchannels != 1) {
+                        float[] right = buffers[CHANNEL_RIGHT].array();
+                        for (int i = 0; i < bufferlen; i++) {
+                            float v = mono[i];
+                            left[i] += v;
+                            right[i] += v;
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < bufferlen; i++) {
+                            left[i] += mono[i];
+                        }
                     }
                 }
 
@@ -539,6 +564,7 @@ public class SoftMainMixer {
 
             buffers[CHANNEL_LEFT] = leftbak;
             buffers[CHANNEL_RIGHT] = rightbak;
+            buffers[CHANNEL_MONO] = monobak;
 
         }
 
@@ -546,6 +572,27 @@ public class SoftMainMixer {
             if (voicestatus[i].active)
                 if (voicestatus[i].channelmixer == null)
                     voicestatus[i].processAudioLogic(buffers);
+
+        if(!buffers[CHANNEL_MONO].isSilent())
+        {
+            float[] mono = buffers[CHANNEL_MONO].array();
+            float[] left = buffers[CHANNEL_LEFT].array();
+            int bufferlen = buffers[CHANNEL_LEFT].getSize();
+            if (nrofchannels != 1) {
+                float[] right = buffers[CHANNEL_RIGHT].array();
+                for (int i = 0; i < bufferlen; i++) {
+                    float v = mono[i];
+                    left[i] += v;
+                    right[i] += v;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < bufferlen; i++) {
+                    left[i] += mono[i];
+                }
+            }
+        }
 
         // Run effects
         if (synth.chorus_on)
@@ -665,7 +712,7 @@ public class SoftMainMixer {
                                 / synth.getControlRate());
 
         control_mutex = synth.control_mutex;
-        buffers = new SoftAudioBuffer[16];
+        buffers = new SoftAudioBuffer[17];
         for (int i = 0; i < buffers.length; i++) {
             buffers[i] = new SoftAudioBuffer(buffersize, synth.getFormat());
         }

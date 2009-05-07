@@ -184,6 +184,7 @@ public class StringMonitor extends Monitor implements StringMonitorMBean {
      * @return The derived gauge of the specified object.
      *
      */
+    @Override
     public synchronized String getDerivedGauge(ObjectName object) {
         return (String) super.getDerivedGauge(object);
     }
@@ -199,6 +200,7 @@ public class StringMonitor extends Monitor implements StringMonitorMBean {
      * @return The derived gauge timestamp of the specified object.
      *
      */
+    @Override
     public synchronized long getDerivedGaugeTimeStamp(ObjectName object) {
         return super.getDerivedGaugeTimeStamp(object);
     }
@@ -341,8 +343,9 @@ public class StringMonitor extends Monitor implements StringMonitorMBean {
      * the Java class of the notification and the notification types sent by
      * the string monitor.
      */
+    @Override
     public MBeanNotificationInfo[] getNotificationInfo() {
-        return notifsInfo;
+        return notifsInfo.clone();
     }
 
     /*
