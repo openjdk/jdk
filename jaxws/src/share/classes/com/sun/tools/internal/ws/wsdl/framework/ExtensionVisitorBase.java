@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.tools.internal.ws.wsdl.framework;
 
+import com.sun.tools.internal.ws.api.wsdl.TWSDLExtension;
+
 /**
  * A base class for extension visitors.
  *
@@ -34,8 +36,8 @@ public class ExtensionVisitorBase implements ExtensionVisitor {
     public ExtensionVisitorBase() {
     }
 
-    public void preVisit(Extension extension) throws Exception {
+    public void preVisit(TWSDLExtension extension) throws Exception {
     }
-    public void postVisit(Extension extension) throws Exception {
+    public void postVisit(TWSDLExtension extension) throws Exception {
     }
 }

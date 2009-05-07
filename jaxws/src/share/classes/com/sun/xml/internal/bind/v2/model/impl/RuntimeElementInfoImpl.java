@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.lang.reflect.Field;
@@ -42,6 +41,7 @@ import com.sun.xml.internal.bind.v2.model.runtime.RuntimeElementPropertyInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeNonElement;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeTypeRef;
+import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationException;
 import com.sun.xml.internal.bind.v2.runtime.Transducer;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
@@ -121,7 +121,7 @@ final class RuntimeElementInfoImpl extends ElementInfoImpl<Type,Class,Field,Meth
     }
 
     public Class<? extends JAXBElement> getType() {
-        return JAXBElement.class;
+        return Navigator.REFLECTION.erasure(super.getType());
     }
 
     public RuntimeClassInfo getScope() {

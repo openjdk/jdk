@@ -44,7 +44,10 @@ class MultipleEndFrame extends Frame {
     public MultipleEndFrame() {
         super("MultipleEnd");
         setVisible(true);
-        PrintJob pj  = getToolkit().getPrintJob(this, "MuiltipleEnd", null);
+
+        JobAttributes job = new JobAttributes();
+        job.setDialog(JobAttributes.DialogType.NONE);
+        PrintJob pj  = getToolkit().getPrintJob(this, "MultipleEnd", job, null);
         if (pj != null) {
             pj.end();
             pj.end();

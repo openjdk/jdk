@@ -189,20 +189,33 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, i
 }
 
 
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset) {
+void InterpreterMacroAssembler::get_cache_index_at_bcp(Register reg, int bcp_offset, bool giant_index) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
+  if (!giant_index) {
+    load_unsigned_short(reg, Address(rsi, bcp_offset));
+  } else {
+    assert(EnableInvokeDynamic, "giant index used only for EnableInvokeDynamic");
+    movl(reg, Address(rsi, bcp_offset));
+    assert(constantPoolCacheOopDesc::decode_secondary_index(~123) == 123, "else change next line");
+    notl(reg);  // convert to plain index
+  }
+}
+
+
+void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register index,
+                                                           int bcp_offset, bool giant_index) {
   assert(cache != index, "must use different registers");
-  load_unsigned_short(index, Address(rsi, bcp_offset));
+  get_cache_index_at_bcp(index, bcp_offset, giant_index);
   movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   assert(sizeof(ConstantPoolCacheEntry) == 4*wordSize, "adjust code below");
   shlptr(index, 2); // convert from field index to ConstantPoolCacheEntry index
 }
 
 
-void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset) {
-  assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
+void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, Register tmp,
+                                                               int bcp_offset, bool giant_index) {
   assert(cache != tmp, "must use different register");
-  load_unsigned_short(tmp, Address(rsi, bcp_offset));
+  get_cache_index_at_bcp(tmp, bcp_offset, giant_index);
   assert(sizeof(ConstantPoolCacheEntry) == 4*wordSize, "adjust code below");
                                // convert from field index to ConstantPoolCacheEntry index
                                // and from word offset to byte offset
@@ -1214,7 +1227,9 @@ void InterpreterMacroAssembler::profile_final_call(Register mdp) {
 }
 
 
-void InterpreterMacroAssembler::profile_virtual_call(Register receiver, Register mdp, Register reg2) {
+void InterpreterMacroAssembler::profile_virtual_call(Register receiver, Register mdp,
+                                                     Register reg2,
+                                                     bool receiver_can_be_null) {
   if (ProfileInterpreter) {
     Label profile_continue;
 
@@ -1224,8 +1239,15 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver, Register
     // We are making a call.  Increment the count.
     increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
 
+    Label skip_receiver_profile;
+    if (receiver_can_be_null) {
+      testptr(receiver, receiver);
+      jcc(Assembler::zero, skip_receiver_profile);
+    }
+
     // Record the receiver type.
     record_klass_in_profile(receiver, mdp, reg2);
+    bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(mdp,

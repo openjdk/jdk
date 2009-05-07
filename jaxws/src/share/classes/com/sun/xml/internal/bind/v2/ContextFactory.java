@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2;
 
 import java.io.BufferedReader;
@@ -35,14 +34,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 
 import com.sun.istack.internal.FinalArrayList;
+import com.sun.xml.internal.bind.Util;
 import com.sun.xml.internal.bind.api.JAXBRIContext;
 import com.sun.xml.internal.bind.api.TypeReference;
+import com.sun.xml.internal.bind.v2.model.annotation.RuntimeAnnotationReader;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
+import com.sun.xml.internal.bind.v2.util.TypeCast;
 
 /**
  * This class is responsible for producing RI JAXBContext objects.  In
@@ -72,12 +75,35 @@ public class ContextFactory {
         if(c14nSupport==null)
             c14nSupport = false;
 
+        Boolean allNillable = getPropertyValue(properties,JAXBRIContext.TREAT_EVERYTHING_NILLABLE,Boolean.class);
+        if(allNillable==null)
+            allNillable = false;
+
+        Boolean xmlAccessorFactorySupport = getPropertyValue(properties,
+           JAXBRIContext.XMLACCESSORFACTORY_SUPPORT,Boolean.class);
+        if(xmlAccessorFactorySupport==null){
+            xmlAccessorFactorySupport = false;
+            Util.getClassLogger().log(Level.FINE, "Property " +
+                JAXBRIContext.XMLACCESSORFACTORY_SUPPORT +
+                "is not active.  Using JAXB's implementation");
+        }
+
+        RuntimeAnnotationReader ar = getPropertyValue(properties,JAXBRIContext.ANNOTATION_READER,RuntimeAnnotationReader.class);
+
+        Map<Class,Class> subclassReplacements;
+        try {
+            subclassReplacements = TypeCast.checkedCast(
+                getPropertyValue(properties, JAXBRIContext.SUBCLASS_REPLACEMENTS, Map.class), Class.class, Class.class);
+        } catch (ClassCastException e) {
+            throw new JAXBException(Messages.INVALID_TYPE_IN_MAP.format(),e);
+        }
 
         if(!properties.isEmpty()) {
             throw new JAXBException(Messages.UNSUPPORTED_PROPERTY.format(properties.keySet().iterator().next()));
         }
 
-        return createContext(classes,Collections.<TypeReference>emptyList(),defaultNsUri,c14nSupport);
+        return createContext(classes,Collections.<TypeReference>emptyList(),
+                subclassReplacements,defaultNsUri,c14nSupport,ar,xmlAccessorFactorySupport,allNillable);
     }
 
     /**
@@ -94,11 +120,12 @@ public class ContextFactory {
             return type.cast(o);
     }
 
-    /**
-     * Used from the JAXB RI runtime API, invoked via reflection.
-     */
-    public static JAXBContext createContext( Class[] classes, Collection<TypeReference> typeRefs, String defaultNsUri, boolean c14nSupport ) throws JAXBException {
-        return new JAXBContextImpl(classes,typeRefs,defaultNsUri,c14nSupport);
+    public static JAXBRIContext createContext( Class[] classes,
+            Collection<TypeReference> typeRefs, Map<Class,Class> subclassReplacements,
+            String defaultNsUri, boolean c14nSupport, RuntimeAnnotationReader ar,
+            boolean xmlAccessorFactorySupport, boolean allNillable) throws JAXBException {
+        return new JAXBContextImpl(classes,typeRefs,subclassReplacements,defaultNsUri,
+                c14nSupport,ar, xmlAccessorFactorySupport,allNillable);
     }
 
     /**

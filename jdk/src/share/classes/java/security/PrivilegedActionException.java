@@ -87,7 +87,7 @@ public class PrivilegedActionException extends Exception {
     }
 
     /**
-     * Returns the the cause of this exception (the exception thrown by
+     * Returns the cause of this exception (the exception thrown by
      * the privileged computation that resulted in this
      * <code>PrivilegedActionException</code>).
      *

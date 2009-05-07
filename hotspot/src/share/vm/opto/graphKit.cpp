@@ -947,6 +947,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_invokevirtual:
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokestatic:
+  case Bytecodes::_invokedynamic:
   case Bytecodes::_invokeinterface:
     {
       bool is_static = (depth == 0);
@@ -2979,6 +2980,7 @@ Node* GraphKit::new_instance(Node* klass_node,
 // See comments on new_instance for the meaning of the other arguments.
 Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
                           Node* length,         // number of array elements
+                          int   nargs,          // number of arguments to push back for uncommon trap
                           bool raw_mem_only,    // affect only raw memory
                           Node* *return_size_val) {
   jint  layout_con = Klass::_lh_neutral_value;
@@ -2994,6 +2996,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     Node* cmp_lh = _gvn.transform( new(C, 3) CmpINode(layout_val, intcon(layout_con)) );
     Node* bol_lh = _gvn.transform( new(C, 2) BoolNode(cmp_lh, BoolTest::eq) );
     { BuildCutout unless(this, bol_lh, PROB_MAX);
+      _sp += nargs;
       uncommon_trap(Deoptimization::Reason_class_check,
                     Deoptimization::Action_maybe_recompile);
     }

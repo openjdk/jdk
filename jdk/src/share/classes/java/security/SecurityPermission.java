@@ -118,7 +118,7 @@ import java.util.StringTokenizer;
  *   <td>setProperty.{key}</td>
  *   <td>Setting of the security property with the specified key</td>
  *   <td>This could include setting a security provider or defining
- * the location of the the system-wide security policy.  Malicious
+ * the location of the system-wide security policy.  Malicious
  * code that has permission to set a new security provider may
  * set a rogue provider that steals confidential information such
  * as cryptographic private keys. In addition, malicious code with

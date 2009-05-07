@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 
@@ -51,7 +50,7 @@ abstract class ArrayProperty<BeanT,ListT,ItemT> extends PropertyImpl<BeanT> {
         lister = Lister.create(
             Navigator.REFLECTION.erasure(prop.getRawType()),prop.id(),prop.getAdapter());
         assert lister!=null;
-        acc = prop.getAccessor().optimize();
+        acc = prop.getAccessor().optimize(context);
         assert acc!=null;
     }
 

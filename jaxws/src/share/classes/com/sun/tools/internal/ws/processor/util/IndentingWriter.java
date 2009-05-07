@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 
 package com.sun.tools.internal.ws.processor.util;
 
+import com.sun.tools.internal.ws.processor.generator.GeneratorException;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
-
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.text.MessageFormat;
-import com.sun.tools.internal.ws.processor.generator.GeneratorException;
 
 /**
  *

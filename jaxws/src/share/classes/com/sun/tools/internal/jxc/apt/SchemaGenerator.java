@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.jxc.apt;
 
 import java.io.File;
@@ -67,11 +66,17 @@ public class SchemaGenerator implements AnnotationProcessorFactory {
      */
     private final Map<String,File> schemaLocations = new HashMap<String, File>();
 
+    private File episodeFile;
+
     public SchemaGenerator() {
     }
 
     public SchemaGenerator( Map<String,File> m ) {
         schemaLocations.putAll(m);
+    }
+
+    public void setEpisodeFile(File episodeFile) {
+        this.episodeFile = episodeFile;
     }
 
     public Collection<String> supportedOptions() {
@@ -113,14 +118,20 @@ public class SchemaGenerator implements AnnotationProcessorFactory {
                                     // use the default
                                     file = new File(suggestedFileName);
                                     out = env.getFiler().createBinaryFile(Filer.Location.CLASS_TREE,"",file);
+                                    file = file.getAbsoluteFile();
                                 }
 
                                 StreamResult ss = new StreamResult(out);
                                 env.getMessager().printNotice("Writing "+file);
-                                ss.setSystemId(file.getPath());
+                                ss.setSystemId(file.toURL().toExternalForm());
                                 return ss;
                             }
                         }, errorListener);
+
+                    if(episodeFile!=null) {
+                        env.getMessager().printNotice("Writing "+episodeFile);
+                        model.generateEpisodeFile(new StreamResult(episodeFile));
+                    }
                 } catch (IOException e) {
                     errorListener.error(e.getMessage(),e);
                 }

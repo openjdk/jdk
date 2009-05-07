@@ -143,7 +143,7 @@ public class JAXBElement<T> implements Serializable {
      * <p>Set the content model and attributes of this xml element.</p>
      *
      * <p>When this property is set to <tt>null</tt>, <tt>isNil()</tt> must by <tt>true</tt>.
-     *    Details of constraint are described at {@link #isNil()}.</p>
+     *    Details of constraint are described at {@link #isNil()}.</pp>
      *
      * @see #isTypeSubstituted()
      */

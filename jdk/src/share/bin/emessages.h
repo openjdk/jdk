@@ -50,6 +50,12 @@
 #define JAR_ERROR2      "Error: Unable to access jarfile %s"
 #define JAR_ERROR3      "Error: Invalid or corrupt jarfile %s"
 
+#define CLS_ERROR1      "Error: Could not find the main class %s.\n" JNI_ERROR
+#define CLS_ERROR2      "Error: Failed to load Main Class: %s\n%s"
+#define CLS_ERROR3      "Error: No main method found in specified class.\n" GEN_ERROR
+#define CLS_ERROR4      "Error: Main method not public\n" GEN_ERROR
+#define CLS_ERROR5      "Error: main-class: attribute exceeds system limits of %d bytes\n" GEN_ERROR
+
 #define CFG_WARN1       "Warning: %s VM not supported; %s VM will be used"
 #define CFG_WARN2       "Warning: No leading - on line %d of `%s'"
 #define CFG_WARN3       "Warning: Missing VM type on line %d of `%s'"
