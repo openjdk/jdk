@@ -952,6 +952,21 @@ void Assembler::andpd(XMMRegister dst, Address src) {
   emit_operand(dst, src);
 }
 
+void Assembler::bsfl(Register dst, Register src) {
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBC);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::bsrl(Register dst, Register src) {
+  assert(!VM_Version::supports_lzcnt(), "encoding is treated as LZCNT");
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBD);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::bswapl(Register reg) { // bswap
   int encode = prefix_and_encode(reg->encoding());
   emit_byte(0x0F);
@@ -1436,6 +1451,15 @@ void Assembler::lock() {
   } else {
      emit_byte(0xF0);
   }
+}
+
+void Assembler::lzcntl(Register dst, Register src) {
+  assert(VM_Version::supports_lzcnt(), "encoding is treated as BSR");
+  emit_byte(0xF3);
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBD);
+  emit_byte(0xC0 | encode);
 }
 
 // Emit mfence instruction
@@ -3688,6 +3712,21 @@ void Assembler::andq(Register dst, Register src) {
   emit_arith(0x23, 0xC0, dst, src);
 }
 
+void Assembler::bsfq(Register dst, Register src) {
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBC);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::bsrq(Register dst, Register src) {
+  assert(!VM_Version::supports_lzcnt(), "encoding is treated as LZCNT");
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBD);
+  emit_byte(0xC0 | encode);
+}
+
 void Assembler::bswapq(Register reg) {
   int encode = prefixq_and_encode(reg->encoding());
   emit_byte(0x0F);
@@ -3939,6 +3978,15 @@ void Assembler::cmp_narrow_oop(Address src1, int32_t imm32, RelocationHolder con
   emit_byte(0x81);
   emit_operand(rax, src1, 4);
   emit_data((int)imm32, rspec, narrow_oop_operand);
+}
+
+void Assembler::lzcntq(Register dst, Register src) {
+  assert(VM_Version::supports_lzcnt(), "encoding is treated as BSR");
+  emit_byte(0xF3);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xBD);
+  emit_byte(0xC0 | encode);
 }
 
 void Assembler::movdq(XMMRegister dst, Register src) {
