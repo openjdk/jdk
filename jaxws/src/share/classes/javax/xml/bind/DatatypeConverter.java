@@ -85,6 +85,7 @@ import javax.xml.namespace.NamespaceContext;
  * </p>
  *
  * @author <ul><li>Sekhar Vajjhala, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Ryan Shoemaker,Sun Microsystems Inc.</li></ul>
+ * @version $Revision$
  * @see DatatypeConverterInterface
  * @see ParseConversionEvent
  * @see PrintConversionEvent
@@ -94,7 +95,7 @@ import javax.xml.namespace.NamespaceContext;
 final public class DatatypeConverter {
 
     // delegate to this instance of DatatypeConverter
-    private static DatatypeConverterInterface theConverter = null;
+    private static DatatypeConverterInterface theConverter = new DatatypeConverterImpl();
 
     private DatatypeConverter() {
         // private constructor

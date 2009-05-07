@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,9 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
+ *
+ * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
  */
-
-
 package com.sun.xml.internal.fastinfoset.tools;
 
 import com.sun.xml.internal.fastinfoset.dom.DOMDocumentSerializer;
@@ -38,15 +38,22 @@ public class XML_DOM_FI extends TransformInputOutput {
     public XML_DOM_FI() {
     }
 
-    public void parse(InputStream document, OutputStream finf) throws Exception {
+    public void parse(InputStream document, OutputStream finf, String workingDirectory) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         DocumentBuilder db = dbf.newDocumentBuilder();
+        if (workingDirectory != null) {
+            db.setEntityResolver(createRelativePathResolver(workingDirectory));
+        }
         Document d = db.parse(document);
 
         DOMDocumentSerializer s = new DOMDocumentSerializer();
         s.setOutputStream(finf);
         s.serialize(d);
+    }
+
+    public void parse(InputStream document, OutputStream finf) throws Exception {
+        parse(document, finf, null);
     }
 
     public static void main(String[] args) throws Exception {

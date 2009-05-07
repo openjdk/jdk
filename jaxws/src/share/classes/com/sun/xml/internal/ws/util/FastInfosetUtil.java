@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,78 +25,31 @@
 
 package com.sun.xml.internal.ws.util;
 
-import java.io.OutputStream;
-import java.io.StringReader;
-import java.util.List;
-import java.util.StringTokenizer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.soap.SOAPMessage;
-import javax.xml.soap.SOAPException;
+import com.sun.xml.internal.ws.streaming.XMLReaderException;
+import com.sun.xml.internal.ws.streaming.XMLStreamReaderException;
 
-import com.sun.xml.internal.ws.pept.ept.MessageInfo;
-import com.sun.xml.internal.messaging.saaj.soap.MessageImpl;
-import com.sun.xml.internal.ws.util.xml.XmlUtil;
-
-import static com.sun.xml.internal.ws.developer.JAXWSProperties.CONTENT_NEGOTIATION_PROPERTY;
+import javax.xml.stream.XMLStreamReader;
+import java.io.InputStream;
 
 public class FastInfosetUtil {
 
-    public static boolean isFastInfosetAccepted(String[] accepts) {
-        if (accepts != null) {
-            for (String accept : accepts) {
-                if (isFastInfosetAccepted(accept)) {
-                    return true;
-                }
-            }
+    /**
+     * Returns the FI parser allocated for this thread.
+     */
+    public static XMLStreamReader createFIStreamReader(InputStream in) {
+        // Check if compatible implementation of FI was found
+        if (FastInfosetReflection.fiStAXDocumentParser_new == null) {
+            throw new XMLReaderException("fastinfoset.noImplementation");
         }
-        return false;
-    }
 
-    public static boolean isFastInfosetAccepted(String accept) {
-        StringTokenizer st = new StringTokenizer(accept, ",");
-        while (st.hasMoreTokens()) {
-            final String token = st.nextToken().trim();
-            if (token.equalsIgnoreCase("application/fastinfoset")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static String getFastInfosetFromAccept(List<String> accepts) {
-        for (String accept : accepts) {
-            StringTokenizer st = new StringTokenizer(accept, ",");
-            while (st.hasMoreTokens()) {
-                final String token = st.nextToken().trim();
-                if (token.equalsIgnoreCase("application/fastinfoset")) {
-                    return "application/fastinfoset";
-                }
-                if (token.equalsIgnoreCase("application/soap+fastinfoset")) {
-                    return "application/soap+fastinfoset";
-                }
-            }
-        }
-        return null;
-    }
-
-    public static void transcodeXMLStringToFI(String xml, OutputStream out) {
         try {
-            XmlUtil.newTransformer().transform(
-                new StreamSource(new java.io.StringReader(xml)),
-                FastInfosetReflection.FastInfosetResult_new(out));
-        }
-        catch (Exception e) {
-            // Ignore
-        }
-    }
-
-    public static void ensureCorrectEncoding(MessageInfo messageInfo,
-        SOAPMessage message)
-    {
-        String conneg = (String) messageInfo.getMetaData(CONTENT_NEGOTIATION_PROPERTY);
-        if (conneg == "optimistic") {
-            ((MessageImpl) message).setIsFastInfoset(true);
+            // Do not use StAX pluggable layer for FI
+            Object sdp = FastInfosetReflection.fiStAXDocumentParser_new.newInstance();
+            FastInfosetReflection.fiStAXDocumentParser_setStringInterning.invoke(sdp, Boolean.TRUE);
+            FastInfosetReflection.fiStAXDocumentParser_setInputStream.invoke(sdp, in);
+            return (XMLStreamReader) sdp;
+        } catch (Exception e) {
+            throw new XMLStreamReaderException(e);
         }
     }
 

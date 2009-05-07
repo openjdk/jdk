@@ -99,45 +99,4 @@ class WPanelPeer extends WCanvasPeer implements PanelPeer {
     public Insets insets() {
         return getInsets();
     }
-
-    private native void pRestack(Object[] peers);
-    private void restack(Container cont, Vector peers) {
-        for (int i = 0; i < cont.getComponentCount(); i++) {
-            Component comp = cont.getComponent(i);
-            if (!comp.isLightweight()) {
-                ComponentPeer peer = comp.getPeer();
-                if (peer != null && (peer instanceof WComponentPeer))
-                {
-                    peers.add(peer);
-                } else {
-                    if (log.isLoggable(Level.FINE)) {
-                        log.log(Level.FINE,
-                                "peer of a {0} is null or not a WComponentPeer: {1}.",
-                                new Object[]{comp, peer});
-                    }
-                }
-            }
-            if (comp.isLightweight() && comp instanceof Container) {
-                restack((Container)comp, peers);
-            }
-        }
-    }
-
-    /**
-     * @see java.awt.peer.ContainerPeer#restack
-     */
-    public void restack() {
-        Vector peers = new Vector();
-        peers.add(this);
-        Container cont = (Container)target;
-        restack(cont, peers);
-        pRestack(peers.toArray());
-    }
-
-    /**
-     * @see java.awt.peer.ContainerPeer#isRestackSupported
-     */
-    public boolean isRestackSupported() {
-        return true;
-    }
 }

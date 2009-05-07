@@ -1,9 +1,5 @@
 /*
- * $Id: Fault1_2Impl.java,v 1.45 2006/01/27 12:49:47 vj135062 Exp $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ *
+ */
+
+
 
 /**
 *
@@ -50,7 +51,7 @@ import com.sun.xml.internal.messaging.saaj.util.LogDomainConstants;
 
 public class Fault1_2Impl extends FaultImpl {
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(
             LogDomainConstants.SOAP_VER1_2_DOMAIN,
             "com.sun.xml.internal.messaging.saaj.soap.ver1_2.LocalStrings");
@@ -300,7 +301,7 @@ public class Fault1_2Impl extends FaultImpl {
         if (faultNode != null) {
             faultNode.detachNode();
         }
-        faultNode = createSOAPFaultElement(getFaultNodeName().getLocalName());
+        faultNode = createSOAPFaultElement(getFaultNodeName());
         faultNode = faultNode.addTextNode(uri);
         if (getFaultRole() != null) {
             insertBefore(faultNode, this.faultActorElement);
@@ -323,7 +324,7 @@ public class Fault1_2Impl extends FaultImpl {
         if (this.faultActorElement != null)
             this.faultActorElement.detachNode();
         this.faultActorElement =
-            createSOAPFaultElement(getFaultActorName().getLocalName());
+            createSOAPFaultElement(getFaultActorName());
         this.faultActorElement.addTextNode(uri);
         if (hasDetail()) {
             insertBefore(this.faultActorElement, this.detail);
@@ -545,6 +546,18 @@ public class Fault1_2Impl extends FaultImpl {
 
     protected QName getDefaultFaultCode() {
         return SOAPConstants.SOAP_SENDER_FAULT;
+    }
+
+     protected FaultElementImpl createSOAPFaultElement(QName qname) {
+         return new FaultElement1_2Impl(
+                       ((SOAPDocument) getOwnerDocument()).getDocument(),
+                       qname);
+    }
+
+    protected FaultElementImpl createSOAPFaultElement(Name qname) {
+         return new FaultElement1_2Impl(
+                       ((SOAPDocument) getOwnerDocument()).getDocument(),
+                       (NameImpl)qname);
     }
 
 }

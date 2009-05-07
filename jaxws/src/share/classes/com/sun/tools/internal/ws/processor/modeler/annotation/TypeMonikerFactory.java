@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 package com.sun.tools.internal.ws.processor.modeler.annotation;
 
 
-import com.sun.mirror.declaration.TypeDeclaration;
-import com.sun.mirror.type.*;
-import com.sun.mirror.util.Types;
 import com.sun.mirror.apt.AnnotationProcessorEnvironment;
+import com.sun.mirror.declaration.TypeDeclaration;
+import com.sun.mirror.type.ArrayType;
+import com.sun.mirror.type.DeclaredType;
+import com.sun.mirror.type.PrimitiveType;
+import com.sun.mirror.type.TypeMirror;
 
-import java.util.Collection;
 import java.util.ArrayList;
-import com.sun.tools.internal.ws.processor.modeler.annotation.*;
+import java.util.Collection;
 
 /**
  *

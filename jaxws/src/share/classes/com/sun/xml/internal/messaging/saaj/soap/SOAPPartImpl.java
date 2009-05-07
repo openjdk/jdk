@@ -1,11 +1,5 @@
 /*
- * $Id: SOAPPartImpl.java,v 1.1.1.1 2006/01/27 13:10:55 kumarjayanti Exp $
- * $Revision: 1.1.1.1 $
- * $Date: 2006/01/27 13:10:55 $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ *
+ *
+ *
+ */
+
+
 package com.sun.xml.internal.messaging.saaj.soap;
 
 import java.io.*;
@@ -58,7 +59,7 @@ import javax.xml.transform.sax.SAXSource;
  * @author Anil Vijendran (anil@sun.com)
  */
 public abstract class SOAPPartImpl extends SOAPPart implements SOAPDocument {
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 

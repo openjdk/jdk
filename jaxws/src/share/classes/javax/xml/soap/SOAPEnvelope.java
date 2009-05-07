@@ -1,10 +1,4 @@
 /*
- * $Id: SOAPEnvelope.java,v 1.5 2004/04/02 01:24:18 ofung Exp $
- * $Revision: 1.5 $
- * $Date: 2004/04/02 01:24:18 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SOAPEnvelope.java,v 1.6 2005/04/05 22:42:05 mk125090 Exp $
+ * $Revision: 1.6 $
+ * $Date: 2005/04/05 22:42:05 $
+ */
+
+
 package javax.xml.soap;
 
 

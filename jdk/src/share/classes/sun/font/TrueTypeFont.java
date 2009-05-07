@@ -552,17 +552,6 @@ public class TrueTypeFont extends FileFont {
         ByteBuffer os2_Table = getTableBuffer(os_2Tag);
         setStyle(os2_Table);
         setCJKSupport(os2_Table);
-
-        ByteBuffer head_Table = getTableBuffer(headTag);
-        int upem = -1;
-        if (head_Table != null && head_Table.capacity() >= 18) {
-            ShortBuffer sb = head_Table.asShortBuffer();
-            upem = sb.get(9) & 0xffff;
-        }
-        setStrikethroughMetrics(os2_Table, upem);
-
-        ByteBuffer post_Table = getTableBuffer(postTag);
-        setUnderlineMetrics(post_Table, upem);
     }
 
     /* The array index corresponds to a bit offset in the TrueType
@@ -1020,8 +1009,26 @@ public class TrueTypeFont extends FileFont {
     }
 
     public void getStyleMetrics(float pointSize, float[] metrics, int offset) {
+
+        if (ulSize == 0f && ulPos == 0f) {
+
+            ByteBuffer head_Table = getTableBuffer(headTag);
+            int upem = -1;
+            if (head_Table != null && head_Table.capacity() >= 18) {
+                ShortBuffer sb = head_Table.asShortBuffer();
+                upem = sb.get(9) & 0xffff;
+            }
+
+            ByteBuffer os2_Table = getTableBuffer(os_2Tag);
+            setStrikethroughMetrics(os2_Table, upem);
+
+            ByteBuffer post_Table = getTableBuffer(postTag);
+            setUnderlineMetrics(post_Table, upem);
+        }
+
         metrics[offset] = stPos * pointSize;
         metrics[offset+1] = stSize * pointSize;
+
         metrics[offset+2] = ulPos * pointSize;
         metrics[offset+3] = ulSize * pointSize;
     }

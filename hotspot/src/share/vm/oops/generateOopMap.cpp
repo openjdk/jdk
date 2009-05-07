@@ -1252,8 +1252,9 @@ void GenerateOopMap::print_current_state(outputStream   *os,
       case Bytecodes::_invokevirtual:
       case Bytecodes::_invokespecial:
       case Bytecodes::_invokestatic:
+      case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
-        int idx = currentBC->get_index_big();
+        int idx = currentBC->get_index_int();
         constantPoolOop cp    = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
@@ -1283,8 +1284,9 @@ void GenerateOopMap::print_current_state(outputStream   *os,
       case Bytecodes::_invokevirtual:
       case Bytecodes::_invokespecial:
       case Bytecodes::_invokestatic:
+      case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
-        int idx = currentBC->get_index_big();
+        int idx = currentBC->get_index_int();
         constantPoolOop cp    = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
@@ -1310,6 +1312,7 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
       case Bytecodes::_invokevirtual:
       case Bytecodes::_invokespecial:
       case Bytecodes::_invokestatic:
+      case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
         _itr_send = itr;
         _report_result_for_send = true;
@@ -1556,6 +1559,7 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_big(), itr->bci()); break;
     case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_big(), itr->bci()); break;
+    case Bytecodes::_invokedynamic:     do_method(false, true,  itr->get_index_int(), itr->bci()); break;
     case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_big(), itr->bci()); break;
     case Bytecodes::_newarray:
     case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
@@ -1899,7 +1903,7 @@ void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci
   // Dig up signature for field in constant pool
   constantPoolOop cp    = _method->constants();
   int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
-  int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
+  int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);  // @@@@@
   symbolOop signature   = cp->symbol_at(signatureIdx);
 
   // Parse method signature

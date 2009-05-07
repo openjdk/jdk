@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public interface LogicalMessageContext
 
   /** Gets the message from this message context
    *
-   *  @return The contained message; returns null if no
+   *  @return The contained message; returns <code>null</code> if no
    *          message is present in this message context
   **/
   public LogicalMessage getMessage();

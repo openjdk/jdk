@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.xml.internal.ws.transport.http.client;
 
 import java.text.SimpleDateFormat;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -38,9 +39,7 @@ import java.util.TimeZone;
  *
  * @author WS Development Team
  */
-public class RfcDateParser {
-
-    private static final String debugProp = "hotjava.debug.RfcDateParser";
+final class RfcDateParser {
     private boolean isGMT = false;
     static final String[] standardFormats =
         { "EEEE', 'dd-MMM-yy HH:mm:ss z", // RFC 850 (obsoleted by 1036)
@@ -108,7 +107,7 @@ public class RfcDateParser {
 
         try {
             return df.parse(dateString);
-        } catch (Exception e) {
+        } catch (ParseException e) {
             return null;
         }
     }

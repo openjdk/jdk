@@ -111,6 +111,11 @@ public class BasicMenuItemUI extends MenuItemUI
         String prefix = getPropertyPrefix();
 
         acceleratorFont = UIManager.getFont("MenuItem.acceleratorFont");
+        // use default if missing so that BasicMenuItemUI can be used in other
+        // LAFs like Nimbus
+        if (acceleratorFont == null) {
+            acceleratorFont = UIManager.getFont("MenuItem.font");
+        }
 
         Object opaque = UIManager.get(getPropertyPrefix() + ".opaque");
         if (opaque != null) {
@@ -130,7 +135,7 @@ public class BasicMenuItemUI extends MenuItemUI
         LookAndFeel.installBorder(menuItem, prefix + ".border");
         oldBorderPainted = menuItem.isBorderPainted();
         LookAndFeel.installProperty(menuItem, "borderPainted",
-                                    UIManager.get(prefix + ".borderPainted"));
+                                    UIManager.getBoolean(prefix + ".borderPainted"));
         LookAndFeel.installColorsAndFont(menuItem,
                                          prefix + ".background",
                                          prefix + ".foreground",

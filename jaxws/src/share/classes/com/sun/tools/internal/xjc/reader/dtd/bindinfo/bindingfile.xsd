@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
- Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -24,7 +23,6 @@
  CA 95054 USA or visit www.sun.com if you need additional information or
  have any questions.
 -->
-
 <!--
   DTD binding information file which is supported by this version of XJC.
   $Id: bindingfile.xsd,v 1.1 2005/04/29 18:11:05 kohsuke Exp $

@@ -109,6 +109,9 @@ class Matcher : public PhaseTransform {
   Node* _mem_node;   // Ideal memory node consumed by mach node
 #endif
 
+  // Mach node for ConP #NULL
+  MachNode* _mach_null;
+
 public:
   int LabelRootDepth;
   static const int base2reg[];        // Map Types to machine register types
@@ -121,6 +124,8 @@ public:
   static uint mreg2regmask_max;
   static RegMask mreg2regmask[];
   static RegMask STACK_ONLY_mask;
+
+  MachNode* mach_null() const { return _mach_null; }
 
   bool    is_shared( Node *n ) { return _shared.test(n->_idx) != 0; }
   void   set_shared( Node *n ) {  _shared.set(n->_idx); }

@@ -253,6 +253,12 @@ public enum Target {
         return compareTo(JDK1_5) >= 0;
     }
 
+    /** Does the VM support an invokedynamic instruction?
+     */
+    public boolean hasInvokedynamic() {
+        return compareTo(JDK1_7) >= 0;
+    }
+
     /** Although we may not have support for class literals, should we
      *  avoid initializing the class that the literal refers to?
      *  See 4468823

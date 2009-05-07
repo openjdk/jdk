@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
 
 package com.sun.tools.internal.ws.wsdl.framework;
 
+import org.xml.sax.Locator;
+
 import java.util.HashMap;
 import java.util.Map;
+
+import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
 
 /**
  * An entity, typically corresponding to an XML element.
@@ -35,7 +39,18 @@ import java.util.Map;
  */
 public abstract class Entity implements Elemental {
 
-    public Entity() {
+    private final Locator locator;
+    protected ErrorReceiver errorReceiver;
+    public Entity(Locator locator) {
+        this.locator = locator;
+    }
+
+    public void setErrorReceiver(ErrorReceiver errorReceiver) {
+        this.errorReceiver = errorReceiver;
+    }
+
+    public Locator getLocator() {
+        return locator;
     }
 
     public Object getProperty(String key) {

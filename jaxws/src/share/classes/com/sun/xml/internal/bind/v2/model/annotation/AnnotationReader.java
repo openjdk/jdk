@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,15 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.annotation;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import javax.xml.bind.annotation.XmlTransient;
+
+import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.bind.v2.model.core.ErrorHandler;
 
 /**
@@ -83,6 +85,11 @@ public interface AnnotationReader<T,C,F,M> {
     boolean hasFieldAnnotation(Class<? extends Annotation> annotationType, F field);
 
     /**
+     * Checks if a class has the annotation.
+     */
+    boolean hasClassAnnotation(C clazz, Class<? extends Annotation> annotationType);
+
+    /**
      * Gets all the annotations on a field.
      */
     Annotation[] getAllFieldAnnotations(F field, Locatable srcPos);
@@ -119,17 +126,20 @@ public interface AnnotationReader<T,C,F,M> {
      * @return null
      *      if the annotation was not found.
      */
+    @Nullable
     <A extends Annotation> A getMethodParameterAnnotation(
             Class<A> annotation, M method, int paramIndex, Locatable srcPos );
 
     /**
      * Reads an annotation on a class.
      */
+    @Nullable
     <A extends Annotation> A getClassAnnotation(Class<A> annotation, C clazz, Locatable srcpos) ;
 
     /**
      * Reads an annotation on the package that the given class belongs to.
      */
+    @Nullable
     <A extends Annotation> A getPackageAnnotation(Class<A> annotation, C clazz, Locatable srcpos);
 
     /**
@@ -144,4 +154,10 @@ public interface AnnotationReader<T,C,F,M> {
      *      The name of the annotation parameter to be read.
      */
     T getClassValue( Annotation a, String name );
+
+    /**
+     * Similar to {@link #getClassValue(Annotation, String)} method but
+     * obtains an array parameter.
+     */
+    T[] getClassArrayValue( Annotation a, String name );
 }

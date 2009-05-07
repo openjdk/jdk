@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 
 /*
  * EfficientStreamingTransformer.java
@@ -61,20 +62,22 @@ import com.sun.xml.internal.messaging.saaj.util.FastInfosetReflection;
 public class EfficientStreamingTransformer
     extends javax.xml.transform.Transformer {
 
-  static final String version;
-  static final String vendor;
+  //static final String version;
+  //static final String vendor;
 
-  protected static TransformerFactory transformerFactory = TransformerFactory.newInstance();
+  protected static final TransformerFactory transformerFactory = TransformerFactory.newInstance();
 
-  static {
-        version = System.getProperty("java.vm.version");
-        vendor = System.getProperty("java.vm.vendor");
-        if (vendor.startsWith("Sun") &&
-            (version.startsWith("1.4") || version.startsWith("1.3"))) {
-            transformerFactory =
-                new com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl();
-        }
-  }
+   //removing support for Java 1.4 and 1.3 : CR6658158
+    /*static {
+    version = System.getProperty("java.vm.version");
+    vendor = System.getProperty("java.vm.vendor");
+    if (vendor.startsWith("Sun") &&
+    (version.startsWith("1.4") || version.startsWith("1.3"))) {
+    transformerFactory =
+    new com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl();
+    }
+}
+*/
 
     /**
      * TransformerFactory instance.

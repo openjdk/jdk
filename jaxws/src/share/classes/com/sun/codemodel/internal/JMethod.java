@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,14 +268,28 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
                 return name;
         }
 
-        /**
+    /**
+     * Changes the name of the method.
+     */
+    public void name(String n) {
+        this.name = n;
+    }
+
+    /**
          * Returns the return type.
          */
         public JType type() {
                 return type;
         }
 
-        /**
+    /**
+     * Overrides the return type.
+     */
+    public void type(JType t) {
+        this.type = t;
+    }
+
+    /**
          * Returns all the parameter types in an array.
          * @return
          *      If there's no parameter, an empty array will be returned.

@@ -65,10 +65,13 @@ import java.lang.reflect.Modifier;
 
 import java.rmi.MarshalledObject;
 
+import java.security.AccessControlContext;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -110,6 +113,8 @@ import javax.imageio.stream.ImageOutputStream;
 
 import sun.awt.image.ImageRepresentation;
 import sun.awt.image.ToolkitImage;
+
+import java.io.FilePermission;
 
 
 /**
@@ -1177,8 +1182,10 @@ search:
             (String.class.equals(flavor.getRepresentationClass()) &&
              isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
 
+            String str = removeSuspectedData(flavor, contents, (String)obj);
+
             return translateTransferableString(
-                (String)obj,
+                str,
                 format);
 
         // Source data is a Reader. Convert to a String and recur. In the
@@ -1286,6 +1293,11 @@ search:
                 throw new IOException("data translation failed");
             }
             final List list = (List)obj;
+
+            final ArrayList fileList = new ArrayList();
+
+            final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
+
             int nFiles = 0;
             for (int i = 0; i < list.size(); i++) {
                 Object o = list.get(i);
@@ -1293,17 +1305,18 @@ search:
                     nFiles++;
                 }
             }
-            final String[] files = new String[nFiles];
 
             try {
                 AccessController.doPrivileged(new PrivilegedExceptionAction() {
                     public Object run() throws IOException {
-                        for (int i = 0, j = 0; i < list.size(); i++) {
-                            Object o = list.get(i);
-                            if (o instanceof File) {
-                                files[j++] = ((File)o).getCanonicalPath();
-                            } else if (o instanceof String) {
-                                files[j++] = (String)o;
+                        for (Object fileObject : list)
+                        {
+                            File file = castToFile(fileObject);
+                            if (null == System.getSecurityManager() ||
+                                !(isFileInWebstartedCache(file) ||
+                                isForbiddenToRead(file, userProtectionDomain)))
+                            {
+                                fileList.add(file.getCanonicalPath());
                             }
                         }
                         return null;
@@ -1313,10 +1326,11 @@ search:
                 throw new IOException(pae.getMessage());
             }
 
-            for (int i = 0; i < files.length; i++) {
-                 byte[] bytes = files[i].getBytes();
-                 if (i != 0) bos.write(0);
-                 bos.write(bytes, 0, bytes.length);
+            for (int i = 0; i < fileList.size(); i++)
+            {
+                byte[] bytes = ((String)fileList.get(i)).getBytes();
+                if (i != 0) bos.write(0);
+                bos.write(bytes, 0, bytes.length);
             }
 
         // Source data is an InputStream. For arbitrary flavors, just grab the
@@ -1365,6 +1379,123 @@ search:
         bos.close();
         return ret;
     }
+
+    private String removeSuspectedData(DataFlavor flavor, final Transferable contents, final String str)
+            throws IOException
+    {
+        if (null == System.getSecurityManager()
+            || !flavor.isMimeTypeEqual("text/uri-list"))
+        {
+            return str;
+        }
+
+
+        String ret_val = "";
+        final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
+
+        try {
+            ret_val = (String) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    public Object run() {
+
+                        StringBuffer allowedFiles = new StringBuffer(str.length());
+                        String [] uriArray = str.split("(\\s)+");
+
+                        for (String fileName : uriArray)
+                        {
+                            File file = new File(fileName);
+                            if (file.exists() &&
+                                !(isFileInWebstartedCache(file) ||
+                                isForbiddenToRead(file, userProtectionDomain)))
+                            {
+
+                                if (0 != allowedFiles.length())
+                                {
+                                    allowedFiles.append("\\r\\n");
+                                }
+
+                                allowedFiles.append(fileName);
+                            }
+                        }
+
+                        return allowedFiles.toString();
+                    }
+                });
+        } catch (PrivilegedActionException pae) {
+            throw new IOException(pae.getMessage(), pae);
+        }
+
+        return ret_val;
+    }
+
+    private static ProtectionDomain getUserProtectionDomain(Transferable contents) {
+        return contents.getClass().getProtectionDomain();
+    }
+
+    private boolean isForbiddenToRead (File file, ProtectionDomain protectionDomain)
+    {
+        if (null == protectionDomain) {
+            return false;
+        }
+        try {
+            FilePermission filePermission =
+                    new FilePermission(file.getCanonicalPath(), "read, delete");
+            if (protectionDomain.implies(filePermission)) {
+                return false;
+            }
+        } catch (IOException e) {}
+
+        return true;
+    }
+
+    // It is important do not use user's successors
+    // of File class.
+    private File castToFile(Object fileObject) throws IOException {
+        String filePath = null;
+        if (fileObject instanceof File) {
+            filePath = ((File)fileObject).getCanonicalPath();
+        } else if (fileObject instanceof String) {
+           filePath = (String) fileObject;
+        }
+        return new File(filePath);
+    }
+
+    private final static String[] DEPLOYMENT_CACHE_PROPERTIES = {
+        "deployment.system.cachedir",
+        "deployment.user.cachedir",
+        "deployment.javaws.cachedir",
+        "deployment.javapi.cachedir"
+    };
+
+    private final static ArrayList <File> deploymentCacheDirectoryList =
+            new ArrayList<File>();
+
+    private static boolean isFileInWebstartedCache(File f) {
+
+        if (deploymentCacheDirectoryList.isEmpty()) {
+            for (String cacheDirectoryProperty : DEPLOYMENT_CACHE_PROPERTIES) {
+                String cacheDirectoryPath = System.getProperty(cacheDirectoryProperty);
+                if (cacheDirectoryPath != null) {
+                    try {
+                        File cacheDirectory = (new File(cacheDirectoryPath)).getCanonicalFile();
+                        if (cacheDirectory != null) {
+                            deploymentCacheDirectoryList.add(cacheDirectory);
+                        }
+                    } catch (IOException ioe) {}
+                }
+            }
+        }
+
+        for (File deploymentCacheDirectory : deploymentCacheDirectoryList) {
+            for (File dir = f; dir != null; dir = dir.getParentFile()) {
+                if (dir.equals(deploymentCacheDirectory)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 
     public Object translateBytes(byte[] bytes, DataFlavor flavor,
                                  long format, Transferable localeTransferable)

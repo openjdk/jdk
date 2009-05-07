@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
  * have any questions.
  */
 
+/*
+ * @(#)$Id: WildcardLoader.java,v 1.3.6.1 2006/08/23 17:24:39 kohsuke Exp $
+ */
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import javax.xml.bind.annotation.DomHandler;
@@ -53,11 +56,11 @@ public final class WildcardLoader extends ProxyLoader {
         this.mode = mode;
     }
 
-    protected Loader selectLoader(UnmarshallingContext.State state, TagName ea) {
+    protected Loader selectLoader(UnmarshallingContext.State state, TagName tag) throws SAXException {
         UnmarshallingContext context = state.getContext();
 
         if(mode.allowTypedObject) {
-            Loader l = context.getJAXBContext().selectRootLoader(state,ea);
+            Loader l = context.selectRootLoader(state,tag);
             if(l!=null)
                 return l;
         }

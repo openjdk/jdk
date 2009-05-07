@@ -1,11 +1,5 @@
 /*
- * $Id: AttachmentPartImpl.java,v 1.45 2006/01/27 12:49:26 vj135062 Exp $
- * $Revision: 1.45 $
- * $Date: 2006/01/27 12:49:26 $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: AttachmentPartImpl.java,v 1.1.1.1.2.1 2007/11/27 07:19:29 kumarjayanti Exp $
+ * $Revision: 1.1.1.1.2.1 $
+ * $Date: 2007/11/27 07:19:29 $
+ */
+
+
 package com.sun.xml.internal.messaging.saaj.soap;
 
 import com.sun.xml.internal.messaging.saaj.SOAPExceptionImpl;
@@ -69,7 +70,7 @@ import javax.xml.soap.*;
  */
 public class AttachmentPartImpl extends AttachmentPart {
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 
@@ -91,6 +92,7 @@ public class AttachmentPartImpl extends AttachmentPart {
                     "application/fastinfoset"
                         + hndlrStr
                         + "com.sun.xml.internal.messaging.saaj.soap.FastInfosetDataContentHandler");
+                /* Image DataContentHandler handles all image types
                 mailMap.addMailcap(
                     "image/jpeg"
                         + hndlrStr
@@ -98,7 +100,7 @@ public class AttachmentPartImpl extends AttachmentPart {
                 mailMap.addMailcap(
                     "image/gif"
                         + hndlrStr
-                        + "com.sun.xml.internal.messaging.saaj.soap.GifDataContentHandler");
+                        + "com.sun.xml.internal.messaging.saaj.soap.GifDataContentHandler");*/
                 /*mailMap.addMailcap(
                     "multipart/*"
                         + hndlrStr

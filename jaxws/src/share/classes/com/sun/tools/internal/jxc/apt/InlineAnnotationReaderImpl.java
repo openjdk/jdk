@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,22 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.jxc.apt;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
+import com.sun.mirror.declaration.AnnotationMirror;
+import com.sun.mirror.declaration.Declaration;
 import com.sun.mirror.declaration.FieldDeclaration;
 import com.sun.mirror.declaration.MethodDeclaration;
 import com.sun.mirror.declaration.ParameterDeclaration;
 import com.sun.mirror.declaration.TypeDeclaration;
-import com.sun.mirror.declaration.AnnotationMirror;
-import com.sun.mirror.declaration.Declaration;
 import com.sun.mirror.type.MirroredTypeException;
+import com.sun.mirror.type.MirroredTypesException;
 import com.sun.mirror.type.TypeMirror;
 import com.sun.xml.internal.bind.v2.model.annotation.AbstractInlineAnnotationReaderImpl;
 import com.sun.xml.internal.bind.v2.model.annotation.AnnotationReader;
@@ -67,6 +68,10 @@ public final class InlineAnnotationReaderImpl extends AbstractInlineAnnotationRe
         return f.getAnnotation(annotationType)!=null;
     }
 
+    public boolean hasClassAnnotation(TypeDeclaration clazz, Class<? extends Annotation> annotationType) {
+        return clazz.getAnnotation(annotationType)!=null;
+    }
+
     public Annotation[] getAllFieldAnnotations(FieldDeclaration field, Locatable srcPos) {
         return getAllAnnotations(field,srcPos);
     }
@@ -94,7 +99,8 @@ public final class InlineAnnotationReaderImpl extends AbstractInlineAnnotationRe
         for( AnnotationMirror m : decl.getAnnotationMirrors() ) {
             try {
                 String fullName = m.getAnnotationType().getDeclaration().getQualifiedName();
-                Class type = getClass().getClassLoader().loadClass(fullName);
+                Class<? extends Annotation> type =
+                    getClass().getClassLoader().loadClass(fullName).asSubclass(Annotation.class);
                 Annotation annotation = decl.getAnnotation(type);
                 if(annotation!=null)
                     r.add( LocatableAnnotation.create(annotation,srcPos) );
@@ -127,6 +133,26 @@ public final class InlineAnnotationReaderImpl extends AbstractInlineAnnotationRe
             if( e.getCause() instanceof MirroredTypeException ) {
                 MirroredTypeException me = (MirroredTypeException)e.getCause();
                 return me.getTypeMirror();
+            }
+            // impossible
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodError(e.getMessage());
+        }
+    }
+
+    public TypeMirror[] getClassArrayValue(Annotation a, String name) {
+        try {
+            a.annotationType().getMethod(name).invoke(a);
+            assert false;
+            throw new IllegalStateException("should throw a MirroredTypesException");
+        } catch (IllegalAccessException e) {
+            throw new IllegalAccessError(e.getMessage());
+        } catch (InvocationTargetException e) {
+            if( e.getCause() instanceof MirroredTypesException ) {
+                MirroredTypesException me = (MirroredTypesException)e.getCause();
+                Collection<TypeMirror> r = me.getTypeMirrors();
+                return r.toArray(new TypeMirror[r.size()]);
             }
             // impossible
             throw new RuntimeException(e);

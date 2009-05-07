@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 package com.sun.xml.internal.ws.handler;
 
+import com.sun.xml.internal.ws.api.BindingID;
+import com.sun.xml.internal.ws.client.WSServiceDelegate;
+
 import javax.xml.namespace.QName;
 import javax.xml.ws.handler.PortInfo;
 
@@ -34,21 +37,20 @@ import javax.xml.ws.handler.PortInfo;
  * is only used on the client side.
  *
  * <p>An instance is created by
- * {@link com.sun.xml.internal.ws.client.ServiceContextBuilder} when used to
+ * {@link WSServiceDelegate} when used to
  * place a handler chain into the HandlerResolver map. Another is
  * created later by
  * {@link com.sun.xml.internal.ws.client.WSServiceDelegate} to retrieve the
  * necessary handler chain to set on a binding instance.
  *
- * @see com.sun.xml.internal.ws.client.ServiceContextBuilder
- * @see com.sun.xml.internal.ws.client.WSServiceDelegate
- * @see HandlerResolverImpl
+ * @see WSServiceDelegate
+ * @see com.sun.xml.internal.ws.client.HandlerResolverImpl
  *
  * @author WS Development Team
  */
 public class PortInfoImpl implements PortInfo {
 
-    private String bindingId;
+    private BindingID bindingId;
     private QName portName;
     private QName serviceName;
 
@@ -60,7 +62,7 @@ public class PortInfoImpl implements PortInfo {
      * @param portName The QName of the port.
      * @param serviceName The QName of the service.
      */
-    public PortInfoImpl(String bindingId, QName portName, QName serviceName) {
+    public PortInfoImpl(BindingID bindingId, QName portName, QName serviceName) {
         if (bindingId == null) {
             throw new RuntimeException("bindingId cannot be null");
         }
@@ -76,7 +78,7 @@ public class PortInfoImpl implements PortInfo {
     }
 
     public String getBindingID() {
-        return bindingId;
+        return bindingId.toString();
     }
 
     public QName getPortName() {
@@ -100,7 +102,7 @@ public class PortInfoImpl implements PortInfo {
     public boolean equals(Object obj) {
         if (obj instanceof PortInfo) {
             PortInfo info = (PortInfo) obj;
-            if (bindingId.equals(info.getBindingID()) &&
+            if (bindingId.toString().equals(info.getBindingID()) &&
                 portName.equals(info.getPortName()) &&
                 serviceName.equals(info.getServiceName())) {
                 return true;
