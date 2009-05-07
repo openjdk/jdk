@@ -38,8 +38,7 @@ import javax.swing.filechooser.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.plaf.basic.*;
 import javax.swing.plaf.synth.*;
-
-import sun.swing.SwingUtilities2;
+import javax.swing.plaf.ActionMapUIResource;
 
 import sun.awt.shell.ShellFolder;
 import sun.swing.*;
@@ -286,9 +285,9 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         b.setAlignmentX(JComponent.LEFT_ALIGNMENT);
         b.setAlignmentY(JComponent.CENTER_ALIGNMENT);
         b.setMargin(shrinkwrap);
+        topButtonPanel.add(b);
+        topButtonPanel.add(Box.createRigidArea(hstrut5));
     }
-    topButtonPanel.add(b);
-    topButtonPanel.add(Box.createRigidArea(hstrut5));
 
     // View button group
     ButtonGroup viewButtonGroup = new ButtonGroup();
@@ -521,6 +520,9 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
         }
     }
 
+    @Override public void rescanCurrentDirectory(JFileChooser fc) {
+        filePane.rescanCurrentDirectory();
+    }
 
     protected void doSelectedFileChanged(PropertyChangeEvent e) {
         super.doSelectedFileChanged(e);
@@ -635,6 +637,14 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     // ************ FileChooser UI PLAF methods **************
     // *******************************************************
 
+    protected ActionMap createActionMap() {
+        ActionMap map = new ActionMapUIResource();
+        // add standard actions
+        FilePane.addActionsToMap(map, filePane.getActions());
+        // add synth only actions
+        map.put("fileNameCompletion", getFileNameCompletionAction());
+        return map;
+    }
 
     // *****************************
     // ***** Directory Actions *****
@@ -649,32 +659,44 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     }
 
     protected DirectoryComboBoxRenderer createDirectoryComboBoxRenderer(JFileChooser fc) {
-        return new DirectoryComboBoxRenderer();
+        return new DirectoryComboBoxRenderer(directoryComboBox.getRenderer());
     }
 
     //
     // Renderer for DirectoryComboBox
     //
-    class DirectoryComboBoxRenderer extends DefaultListCellRenderer  {
+    // Synth has some odd behavior with regards to renderers. Renderers are styled
+    // in a specific manner by the SynthComboBoxUI. If we extend DefaultListCellRenderer
+    // here, then we get none of those benefits or behaviors, leading to poor
+    // looking combo boxes.
+    // So what we do here is delegate most jobs to the "real" or original renderer,
+    // and simply monkey with the icon and text of the renderer.
+    private class DirectoryComboBoxRenderer implements ListCellRenderer {
+        private ListCellRenderer delegate;
         IndentIcon ii = new IndentIcon();
-        public Component getListCellRendererComponent(JList list, Object value,
-                                                      int index, boolean isSelected,
-                                                      boolean cellHasFocus) {
 
-            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        private DirectoryComboBoxRenderer(ListCellRenderer delegate) {
+            this.delegate = delegate;
+        }
 
+        @Override
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            Component c = delegate.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+            assert c instanceof JLabel;
+            JLabel label = (JLabel)c;
             if (value == null) {
-                setText("");
-                return this;
+                label.setText("");
+                return label;
             }
-            File directory = (File)value;
-            setText(getFileChooser().getName(directory));
+            File directory = (File) value;
+            label.setText(getFileChooser().getName(directory));
             Icon icon = getFileChooser().getIcon(directory);
             ii.icon = icon;
             ii.depth = directoryComboBoxModel.getDepth(index);
-            setIcon(ii);
+            label.setIcon(ii);
 
-            return this;
+            return label;
         }
     }
 
@@ -862,24 +884,33 @@ public class SynthFileChooserUIImpl extends SynthFileChooserUI {
     // Renderer for Types ComboBox
     //
     protected FilterComboBoxRenderer createFilterComboBoxRenderer() {
-        return new FilterComboBoxRenderer();
+        return new FilterComboBoxRenderer(filterComboBox.getRenderer());
     }
 
     /**
      * Render different type sizes and styles.
      */
-    public class FilterComboBoxRenderer extends DefaultListCellRenderer {
-        public Component getListCellRendererComponent(JList list,
-            Object value, int index, boolean isSelected,
-            boolean cellHasFocus) {
+    public class FilterComboBoxRenderer implements ListCellRenderer {
+        private ListCellRenderer delegate;
+        private FilterComboBoxRenderer(ListCellRenderer delegate) {
+            this.delegate = delegate;
+        }
 
-            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            Component c = delegate.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
+            String text = null;
             if (value != null && value instanceof FileFilter) {
-                setText(((FileFilter)value).getDescription());
+                text = ((FileFilter) value).getDescription();
             }
 
-            return this;
+            //this should always be true, since SynthComboBoxUI's SynthComboBoxRenderer
+            //extends JLabel
+            assert c instanceof JLabel;
+            if (text != null) {
+                ((JLabel)c).setText(text);
+            }
+            return c;
         }
     }
 

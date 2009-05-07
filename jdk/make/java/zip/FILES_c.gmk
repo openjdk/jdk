@@ -29,7 +29,6 @@ FILES_c = \
 	Deflater.c \
 	Inflater.c \
 	ZipFile.c \
-	ZipEntry.c \
 	zadler32.c \
 	zcrc32.c \
 	deflate.c \

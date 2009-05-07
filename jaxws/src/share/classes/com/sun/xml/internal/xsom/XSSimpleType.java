@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom;
 
 import com.sun.xml.internal.xsom.visitor.XSSimpleTypeFunction;
@@ -58,6 +57,37 @@ public interface XSSimpleType extends XSType, XSContentType
      * Gets the variety of this simple type.
      */
     XSVariety getVariety();
+
+    /**
+     * Gets the ancestor primitive {@link XSSimpleType} if
+     * this type is {@link XSVariety#ATOMIC atomic}.
+     *
+     * @return
+     *      null otherwise.
+     */
+    XSSimpleType getPrimitiveType();
+
+    /**
+     * Returns true if this is a primitive built-in simple type
+     * (that directly derives from xs:anySimpleType, by definition.)
+     */
+    boolean isPrimitive();
+
+    /**
+     * Gets the nearest ancestor {@link XSListSimpleType} (including itself)
+     * if the variety of this type is {@link XSVariety#LIST list}.
+     *
+     * @return otherwise return null
+     */
+    XSListSimpleType getBaseListType();
+
+    /**
+     * Gets the nearest ancestor {@link XSUnionSimpleType} (including itself)
+     * if the variety of this type is {@link XSVariety#UNION union}.
+     *
+     * @return otherwise return null
+     */
+    XSUnionSimpleType getBaseUnionType();
 
     /**
      * Returns true if this type definition is marked as 'final'

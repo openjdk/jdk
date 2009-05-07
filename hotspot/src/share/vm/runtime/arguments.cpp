@@ -2627,6 +2627,19 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 #endif // PRODUCT
 
+  if (EnableInvokeDynamic && !EnableMethodHandles) {
+    if (!FLAG_IS_DEFAULT(EnableMethodHandles)) {
+      warning("forcing EnableMethodHandles true to allow EnableInvokeDynamic");
+    }
+    EnableMethodHandles = true;
+  }
+  if (EnableMethodHandles && !AnonymousClasses) {
+    if (!FLAG_IS_DEFAULT(AnonymousClasses)) {
+      warning("forcing AnonymousClasses true to enable EnableMethodHandles");
+    }
+    AnonymousClasses = true;
+  }
+
   if (PrintGCDetails) {
     // Turn on -verbose:gc options as well
     PrintGC = true;

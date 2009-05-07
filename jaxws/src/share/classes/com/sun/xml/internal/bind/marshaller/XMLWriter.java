@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 // @@3RD PARTY CODE@@
 
 // XMLWriter.java - serialize an XML document.
@@ -248,6 +247,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * character data.</p>
  *
  * @author David Megginson, david@megginson.com
+ * @version 0.2
  * @since JAXB1.0
  * @see org.xml.sax.XMLFilter
  * @see org.xml.sax.ContentHandler

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
 #ifndef PRODUCT
   if (CountCompiledCalls) {
-    Address ctr(G5, SharedRuntime::nof_megamorphic_calls_addr());
-    __ sethi(ctr);
-    __ ld(ctr, G3_scratch);
-    __ inc(G3_scratch);
-    __ st(G3_scratch, ctr);
+    __ inc_counter(SharedRuntime::nof_megamorphic_calls_addr(), G5, G3_scratch);
   }
 #endif /* PRODUCT */
 
@@ -114,6 +110,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
                   (int)(s->code_end() - __ pc()));
   }
   guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+  // shut the door on sizing bugs
+  int slop = 2*BytesPerInstWord;  // 32-bit offset is this much larger than a 13-bit one
+  assert(vtable_index > 10 || __ pc() + slop <= s->code_end(), "room for sethi;add");
 
   s->set_exception_points(npe_addr, ame_addr);
   return s;
@@ -151,11 +150,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
 #ifndef PRODUCT
   if (CountCompiledCalls) {
-    Address ctr(L0, SharedRuntime::nof_megamorphic_calls_addr());
-    __ sethi(ctr);
-    __ ld(ctr, L1);
-    __ inc(L1);
-    __ st(L1, ctr);
+    __ inc_counter(SharedRuntime::nof_megamorphic_calls_addr(), L0, L1);
   }
 #endif /* PRODUCT */
 
@@ -195,8 +190,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ delayed()->nop();
 
   __ bind(throw_icce);
-  Address icce(G3_scratch, StubRoutines::throw_IncompatibleClassChangeError_entry());
-  __ jump_to(icce, 0);
+  AddressLiteral icce(StubRoutines::throw_IncompatibleClassChangeError_entry());
+  __ jump_to(icce, G3_scratch);
   __ delayed()->restore();
 
   masm->flush();
@@ -208,6 +203,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                   (int)(s->code_end() - __ pc()));
   }
   guarantee(__ pc() <= s->code_end(), "overflowed buffer");
+  // shut the door on sizing bugs
+  int slop = 2*BytesPerInstWord;  // 32-bit offset is this much larger than a 13-bit one
+  assert(itable_index > 10 || __ pc() + slop <= s->code_end(), "room for sethi;add");
 
   s->set_exception_points(npe_addr, ame_addr);
   return s;
@@ -233,6 +231,50 @@ int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
       return (basic + slop);
     }
   }
+
+  // In order to tune these parameters, run the JVM with VM options
+  // +PrintMiscellaneous and +WizardMode to see information about
+  // actual itable stubs.  Look for lines like this:
+  //   itable #1 at 0x5551212[116] left over: 8
+  // Reduce the constants so that the "left over" number is 8
+  // Do not aim at a left-over number of zero, because a very
+  // large vtable or itable offset (> 4K) will require an extra
+  // sethi/or pair of instructions.
+  //
+  // The JVM98 app. _202_jess has a megamorphic interface call.
+  // The itable code looks like this:
+  // Decoding VtableStub itbl[1]@16
+  //   ld  [ %o0 + 4 ], %g3
+  //   save  %sp, -64, %sp
+  //   ld  [ %g3 + 0xe8 ], %l2
+  //   sll  %l2, 2, %l2
+  //   add  %l2, 0x134, %l2
+  //   and  %l2, -8, %l2        ! NOT_LP64 only
+  //   add  %g3, %l2, %l2
+  //   add  %g3, 4, %g3
+  //   ld  [ %l2 ], %l5
+  //   brz,pn   %l5, throw_icce
+  //   cmp  %l5, %g5
+  //   be  %icc, success
+  //   add  %l2, 8, %l2
+  // loop:
+  //   ld  [ %l2 ], %l5
+  //   brz,pn   %l5, throw_icce
+  //   cmp  %l5, %g5
+  //   bne,pn   %icc, loop
+  //   add  %l2, 8, %l2
+  // success:
+  //   ld  [ %l2 + -4 ], %l2
+  //   ld  [ %g3 + %l2 ], %l5
+  //   restore  %l5, 0, %g5
+  //   ld  [ %g5 + 0x44 ], %g3
+  //   jmp  %g3
+  //   nop
+  // throw_icce:
+  //   sethi  %hi(throw_ICCE_entry), %g3
+  //   ! 5 more instructions here, LP64_ONLY
+  //   jmp  %g3 + %lo(throw_ICCE_entry)
+  //   restore
 }
 
 

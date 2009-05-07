@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import javax.activation.MimeType;
 
-import com.sun.codemodel.internal.JCodeModel;
 import com.sun.codemodel.internal.JExpression;
 import com.sun.tools.internal.xjc.model.nav.NType;
 import com.sun.tools.internal.xjc.outline.Outline;
@@ -59,7 +57,7 @@ public interface TypeUse {
     /**
      * Individual item type.
      */
-    CTypeInfo getInfo();
+    CNonElement getInfo();
 
     /**
      * Whether the referenced type (individual item type in case of collection)

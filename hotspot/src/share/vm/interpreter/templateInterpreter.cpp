@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,7 @@ address    TemplateInterpreter::_throw_ArrayIndexOutOfBoundsException_entry = NU
 address    TemplateInterpreter::_throw_ArrayStoreException_entry            = NULL;
 address    TemplateInterpreter::_throw_ArithmeticException_entry            = NULL;
 address    TemplateInterpreter::_throw_ClassCastException_entry             = NULL;
+address    TemplateInterpreter::_throw_WrongMethodType_entry                = NULL;
 address    TemplateInterpreter::_throw_NullPointerException_entry           = NULL;
 address    TemplateInterpreter::_throw_StackOverflowError_entry             = NULL;
 address    TemplateInterpreter::_throw_exception_entry                      = NULL;
@@ -177,12 +178,14 @@ EntryPoint TemplateInterpreter::_trace_code;
 #endif // !PRODUCT
 EntryPoint TemplateInterpreter::_return_entry[TemplateInterpreter::number_of_return_entries];
 EntryPoint TemplateInterpreter::_earlyret_entry;
+EntryPoint TemplateInterpreter::_return_unbox_entry;
 EntryPoint TemplateInterpreter::_deopt_entry [TemplateInterpreter::number_of_deopt_entries ];
 EntryPoint TemplateInterpreter::_continuation_entry;
 EntryPoint TemplateInterpreter::_safept_entry;
 
 address    TemplateInterpreter::_return_3_addrs_by_index[TemplateInterpreter::number_of_return_addrs];
 address    TemplateInterpreter::_return_5_addrs_by_index[TemplateInterpreter::number_of_return_addrs];
+address    TemplateInterpreter::_return_5_unbox_addrs_by_index[TemplateInterpreter::number_of_return_addrs];
 
 DispatchTable TemplateInterpreter::_active_table;
 DispatchTable TemplateInterpreter::_normal_table;
@@ -250,6 +253,22 @@ void TemplateInterpreterGenerator::generate_all() {
     }
   }
 
+  if (EnableInvokeDynamic) {
+    CodeletMark cm(_masm, "unboxing return entry points");
+    Interpreter::_return_unbox_entry =
+      EntryPoint(
+        generate_return_unbox_entry_for(btos, 5),
+        generate_return_unbox_entry_for(ctos, 5),
+        generate_return_unbox_entry_for(stos, 5),
+        generate_return_unbox_entry_for(atos, 5), // cast conversion
+        generate_return_unbox_entry_for(itos, 5),
+        generate_return_unbox_entry_for(ltos, 5),
+        generate_return_unbox_entry_for(ftos, 5),
+        generate_return_unbox_entry_for(dtos, 5),
+        Interpreter::_return_entry[5].entry(vtos) // no unboxing for void
+      );
+  }
+
   { CodeletMark cm(_masm, "earlyret entry points");
     Interpreter::_earlyret_entry =
       EntryPoint(
@@ -297,8 +316,11 @@ void TemplateInterpreterGenerator::generate_all() {
 
   for (int j = 0; j < number_of_states; j++) {
     const TosState states[] = {btos, ctos, stos, itos, ltos, ftos, dtos, atos, vtos};
-    Interpreter::_return_3_addrs_by_index[Interpreter::TosState_as_index(states[j])] = Interpreter::return_entry(states[j], 3);
-    Interpreter::_return_5_addrs_by_index[Interpreter::TosState_as_index(states[j])] = Interpreter::return_entry(states[j], 5);
+    int index = Interpreter::TosState_as_index(states[j]);
+    Interpreter::_return_3_addrs_by_index[index] = Interpreter::return_entry(states[j], 3);
+    Interpreter::_return_5_addrs_by_index[index] = Interpreter::return_entry(states[j], 5);
+    if (EnableInvokeDynamic)
+      Interpreter::_return_5_unbox_addrs_by_index[index] = Interpreter::return_unbox_entry(states[j], 5);
   }
 
   { CodeletMark cm(_masm, "continuation entry points");
@@ -341,6 +363,7 @@ void TemplateInterpreterGenerator::generate_all() {
     Interpreter::_throw_ArrayStoreException_entry            = generate_klass_exception_handler("java/lang/ArrayStoreException"                 );
     Interpreter::_throw_ArithmeticException_entry            = generate_exception_handler("java/lang/ArithmeticException"           , "/ by zero");
     Interpreter::_throw_ClassCastException_entry             = generate_ClassCastException_handler();
+    Interpreter::_throw_WrongMethodType_entry                = generate_WrongMethodType_handler();
     Interpreter::_throw_NullPointerException_entry           = generate_exception_handler("java/lang/NullPointerException"          , NULL       );
     Interpreter::_throw_StackOverflowError_entry             = generate_StackOverflowError_handler();
   }
@@ -358,6 +381,7 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(empty)
   method_entry(accessor)
   method_entry(abstract)
+  method_entry(method_handle)
   method_entry(java_lang_math_sin  )
   method_entry(java_lang_math_cos  )
   method_entry(java_lang_math_tan  )
@@ -520,6 +544,18 @@ void TemplateInterpreterGenerator::generate_and_dispatch(Template* t, TosState t
 address TemplateInterpreter::return_entry(TosState state, int length) {
   guarantee(0 <= length && length < Interpreter::number_of_return_entries, "illegal length");
   return _return_entry[length].entry(state);
+}
+
+
+address TemplateInterpreter::return_unbox_entry(TosState state, int length) {
+  assert(EnableInvokeDynamic, "");
+  if (state == vtos) {
+    // no unboxing to do, actually
+    return return_entry(state, length);
+  } else {
+    assert(length == 5, "unboxing entries generated for invokedynamic only");
+    return _return_unbox_entry.entry(state);
+  }
 }
 
 

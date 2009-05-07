@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,13 @@ void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, oop cached_o
   // (1) the oop is old (i.e., doesn't matter for scavenges)
   // (2) these ICStubs are removed *before* a GC happens, so the roots disappear
   assert(cached_oop == NULL || cached_oop->is_perm(), "must be old oop");
-  Address cached_oop_addr(G5_inline_cache_reg, address(cached_oop));
-  // Force the sethi to generate the fixed sequence so next_instruction_address works
-  masm->sethi(cached_oop_addr, true /* ForceRelocatable */ );
-  masm->add(cached_oop_addr, G5_inline_cache_reg);
+  AddressLiteral cached_oop_addrlit(cached_oop, relocInfo::none);
+  // Force the set to generate the fixed sequence so next_instruction_address works
+  masm->patchable_set(cached_oop_addrlit, G5_inline_cache_reg);
   assert(G3_scratch != G5_method, "Do not clobber the method oop in the transition stub");
   assert(G3_scratch != G5_inline_cache_reg, "Do not clobber the inline cache register in the transition stub");
-  Address entry(G3_scratch, entry_point);
-  masm->JUMP(entry, 0);
+  AddressLiteral entry(entry_point);
+  masm->JUMP(entry, G3_scratch, 0);
   masm->delayed()->nop();
   masm->flush();
 }

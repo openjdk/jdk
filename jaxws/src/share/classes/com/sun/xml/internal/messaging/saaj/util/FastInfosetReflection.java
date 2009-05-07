@@ -1,11 +1,5 @@
 /*
- * $Id: FastInfosetReflection.java,v 1.2 2006/06/06 18:46:01 sandoz Exp $
- * $Revision: 1.2 $
- * $Date: 2006/06/06 18:46:01 $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: FastInfosetReflection.java,v 1.2 2006/06/06 18:46:01 sandoz Exp $
+ * $Revision: 1.2 $
+ * $Date: 2006/06/06 18:46:01 $
+ */
+
+
 
 package com.sun.xml.internal.messaging.saaj.util;
 

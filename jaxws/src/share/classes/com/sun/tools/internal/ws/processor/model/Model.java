@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,11 @@
 
 package com.sun.tools.internal.ws.processor.model;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.EnumSet;
-import javax.xml.namespace.QName;
-
 import com.sun.tools.internal.ws.processor.model.jaxb.JAXBModel;
-import com.sun.tools.internal.ws.processor.ProcessorActionVersion;
+import com.sun.tools.internal.ws.wsdl.framework.Entity;
+
+import javax.xml.namespace.QName;
+import java.util.*;
 
 /**
  * The model is used to represent the entire Web Service.  The JAX-WS ProcessorActions can process
@@ -46,10 +39,12 @@ import com.sun.tools.internal.ws.processor.ProcessorActionVersion;
  */
 public class Model extends ModelObject {
 
-    public Model() {
+    public Model(Entity entity) {
+        super(entity);
     }
 
-    public Model(QName name) {
+    public Model(QName name, Entity entity) {
+        super(entity);
         this.name = name;
     }
 
@@ -145,31 +140,6 @@ public class Model extends ModelObject {
         source = string;
     }
 
-    public ProcessorActionVersion getProcessorActionVersion(){
-        return processorActionVersion;
-    }
-
-    public void setProcessorActionVersion(ProcessorActionVersion version){
-        this.processorActionVersion = version;
-    }
-
-    public void setProcessorActionVersion(String version){
-        for(ProcessorActionVersion paVersion : EnumSet.allOf(ProcessorActionVersion.class)){
-            switch(paVersion){
-                case PRE_20:
-                    if(version.equals(ProcessorActionVersion.PRE_20.toString()))
-                        processorActionVersion = ProcessorActionVersion.PRE_20;
-                    break;
-                case VERSION_20:
-                    if(version.equals(ProcessorActionVersion.VERSION_20.toString()))
-                        processorActionVersion = ProcessorActionVersion.VERSION_20;
-                    break;
-                default:
-                    throw new ModelException("model.invalid.processorActionVersion", new Object[]{version});
-            }
-        }
-    }
-
     public void setJAXBModel(JAXBModel jaxBModel) {
         this.jaxBModel = jaxBModel;
     }
@@ -185,5 +155,4 @@ public class Model extends ModelObject {
     private Set<AbstractType> extraTypes = new HashSet<AbstractType>();
     private String source;
     private JAXBModel jaxBModel = null;
-    private ProcessorActionVersion processorActionVersion = ProcessorActionVersion.VERSION_20;
 }

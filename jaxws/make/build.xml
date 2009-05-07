@@ -78,6 +78,15 @@
         <mkdir dir="${build.classes.dir}/META-INF/services"/>
             <copy todir="${build.classes.dir}/META-INF/services"
                   file="${src.classes.dir}/com/sun/tools/etc/META-INF/services/com.sun.mirror.apt.AnnotationProcessorFactory"/>
+            <copy todir="${build.classes.dir}/META-INF/services"
+                  file="${src.classes.dir}/com/sun/tools/etc/META-INF/services/com.sun.tools.internal.xjc.Plugin"/>
+ 	    <!-- copy jaxb sources files required for jaxb tool time -->	
+           <mkdir dir="${build.classes.dir}/com/sun/tools/internal/xjc/runtime"/>
+            <copy todir="${build.classes.dir}/com/sun/tools/internal/xjc/runtime">
+                 <fileset dir="${src.classes.dir}/com/sun/tools/internal/xjc/runtime"
+                     includes="**/*.java"
+                     excludes="**/*.package.html"/>
+            </copy>
     </target>
 
     <target name="-defs-pstrip">

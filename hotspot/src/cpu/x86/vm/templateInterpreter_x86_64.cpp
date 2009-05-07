@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,26 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
   return entry;
 }
 
+// Arguments are: required type in rarg1, failing object (or NULL) in rarg2
+address TemplateInterpreterGenerator::generate_WrongMethodType_handler() {
+  address entry = __ pc();
+
+  __ pop(c_rarg2);              // failing object is at TOS
+  __ pop(c_rarg1);              // required type is at TOS+8
+
+  // expression stack must be empty before entering the VM if an
+  // exception happened
+  __ empty_expression_stack();
+
+  __ call_VM(noreg,
+             CAST_FROM_FN_PTR(address,
+                              InterpreterRuntime::
+                              throw_WrongMethodTypeException),
+             // pass required type, failing object (or NULL)
+             c_rarg1, c_rarg2);
+  return entry;
+}
+
 address TemplateInterpreterGenerator::generate_exception_handler_common(
         const char* name, const char* message, bool pass_oop) {
   assert(!pass_oop || message == NULL, "either oop or message but not both");
@@ -146,7 +166,8 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 
 
 address TemplateInterpreterGenerator::generate_return_entry_for(TosState state,
-                                                                int step) {
+                                                                int step, bool unbox) {
+  assert(!unbox, "NYI");//6815692//
 
   // amd64 doesn't need to do anything special about compiled returns
   // to the interpreter so the code that exists on x86 to place a sentinel
@@ -1393,12 +1414,14 @@ address AbstractInterpreterGenerator::generate_method_entry(
   case Interpreter::empty                  : entry_point = ((InterpreterGenerator*) this)->generate_empty_entry();       break;
   case Interpreter::accessor               : entry_point = ((InterpreterGenerator*) this)->generate_accessor_entry();    break;
   case Interpreter::abstract               : entry_point = ((InterpreterGenerator*) this)->generate_abstract_entry();    break;
-  case Interpreter::java_lang_math_sin     :                                                                             break;
-  case Interpreter::java_lang_math_cos     :                                                                             break;
-  case Interpreter::java_lang_math_tan     :                                                                             break;
-  case Interpreter::java_lang_math_abs     :                                                                             break;
-  case Interpreter::java_lang_math_log     :                                                                             break;
-  case Interpreter::java_lang_math_log10   :                                                                             break;
+  case Interpreter::method_handle          : entry_point = ((InterpreterGenerator*) this)->generate_method_handle_entry();break;
+
+  case Interpreter::java_lang_math_sin     : // fall thru
+  case Interpreter::java_lang_math_cos     : // fall thru
+  case Interpreter::java_lang_math_tan     : // fall thru
+  case Interpreter::java_lang_math_abs     : // fall thru
+  case Interpreter::java_lang_math_log     : // fall thru
+  case Interpreter::java_lang_math_log10   : // fall thru
   case Interpreter::java_lang_math_sqrt    : entry_point = ((InterpreterGenerator*) this)->generate_math_entry(kind);    break;
   default                                  : ShouldNotReachHere();                                                       break;
   }
@@ -1422,7 +1445,8 @@ int AbstractInterpreter::size_top_interpreter_activation(methodOop method) {
     -(frame::interpreter_frame_initial_sp_offset) + entry_size;
 
   const int stub_code = frame::entry_frame_after_call_words;
-  const int method_stack = (method->max_locals() + method->max_stack()) *
+  const int extra_stack = methodOopDesc::extra_stack_entries();
+  const int method_stack = (method->max_locals() + method->max_stack() + extra_stack) *
                            Interpreter::stackElementWords();
   return (overhead_size + method_stack + stub_code);
 }

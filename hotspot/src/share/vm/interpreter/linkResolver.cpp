@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,20 @@ void LinkResolver::lookup_method_in_interfaces(methodHandle& result, KlassHandle
   result = methodHandle(THREAD, ik->lookup_method_in_all_interfaces(name(), signature()));
 }
 
+void LinkResolver::lookup_implicit_method(methodHandle& result, KlassHandle klass, symbolHandle name, symbolHandle signature, TRAPS) {
+  if (EnableMethodHandles && MethodHandles::enabled() &&
+      name == vmSymbolHandles::invoke_name() && klass() == SystemDictionary::MethodHandle_klass()) {
+    methodOop result_oop = SystemDictionary::find_method_handle_invoke(signature,
+                                                                       Handle(),
+                                                                       Handle(),
+                                                                       CHECK);
+    if (result_oop != NULL) {
+      assert(result_oop->is_method_handle_invoke() && result_oop->signature() == signature(), "consistent");
+      result = methodHandle(THREAD, result_oop);
+    }
+  }
+}
+
 void LinkResolver::check_method_accessability(KlassHandle ref_klass,
                                               KlassHandle resolved_klass,
                                               KlassHandle sel_klass,
@@ -238,6 +252,11 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle res
   if (resolved_method.is_null()) { // not found in the class hierarchy
     // 3. lookup method in all the interfaces implemented by the resolved klass
     lookup_method_in_interfaces(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+
+    if (resolved_method.is_null()) {
+      // JSR 292:  see if this is an implicitly generated method MethodHandle.invoke(*...)
+      lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+    }
 
     if (resolved_method.is_null()) {
       // 4. method lookup failed
@@ -928,6 +947,7 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, constantPoolHan
     case Bytecodes::_invokestatic   : resolve_invokestatic   (result,       pool, index, CHECK); break;
     case Bytecodes::_invokespecial  : resolve_invokespecial  (result,       pool, index, CHECK); break;
     case Bytecodes::_invokevirtual  : resolve_invokevirtual  (result, recv, pool, index, CHECK); break;
+    case Bytecodes::_invokedynamic  : resolve_invokedynamic  (result,       pool, index, CHECK); break;
     case Bytecodes::_invokeinterface: resolve_invokeinterface(result, recv, pool, index, CHECK); break;
   }
   return;
@@ -987,6 +1007,30 @@ void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, consta
   resolve_pool(resolved_klass, method_name,  method_signature, current_klass, pool, index, CHECK);
   KlassHandle recvrKlass (THREAD, recv.is_null() ? (klassOop)NULL : recv->klass());
   resolve_interface_call(result, recv, recvrKlass, resolved_klass, method_name, method_signature, current_klass, true, true, CHECK);
+}
+
+
+void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle pool, int raw_index, TRAPS) {
+  assert(EnableInvokeDynamic, "");
+
+  // This guy is reached from InterpreterRuntime::resolve_invokedynamic.
+
+  assert(constantPoolCacheOopDesc::is_secondary_index(raw_index), "must be secondary index");
+  int nt_index = pool->map_instruction_operand_to_index(raw_index);
+
+  // At this point, we only need the signature, and can ignore the name.
+  symbolHandle method_signature(THREAD, pool->nt_signature_ref_at(nt_index));
+  symbolHandle method_name = vmSymbolHandles::invoke_name();
+  KlassHandle resolved_klass = SystemDictionaryHandles::MethodHandle_klass();
+
+  // JSR 292:  this must be an implicitly generated method MethodHandle.invoke(*...)
+  // The extra MH receiver will be inserted into the stack on every call.
+  methodHandle resolved_method;
+  lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, CHECK);
+  if (resolved_method.is_null()) {
+    THROW(vmSymbols::java_lang_InternalError());
+  }
+  result.set_virtual(resolved_klass, KlassHandle(), resolved_method, resolved_method, resolved_method->vtable_index(), CHECK);
 }
 
 //------------------------------------------------------------------------------------------------------------------------

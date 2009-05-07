@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.bytecode;
 
 import java.io.ByteArrayOutputStream;
@@ -49,7 +48,7 @@ public final class ClassTailor {
     /**
      * Returns the class name in the JVM format (such as "java/lang/String")
      */
-    public static final String toVMClassName( Class c ) {
+    public static String toVMClassName( Class c ) {
         assert !c.isPrimitive();
         if(c.isArray())
             // I have no idea why it is designed like this, but javap says so.
@@ -57,7 +56,7 @@ public final class ClassTailor {
         return c.getName().replace('.','/');
     }
 
-    public static final String toVMTypeName( Class c ) {
+    public static String toVMTypeName( Class c ) {
         if(c.isArray()) {
             // TODO: study how an array type is encoded.
             return '['+toVMTypeName(c.getComponentType());
@@ -79,7 +78,7 @@ public final class ClassTailor {
 
 
 
-    public static final byte[] tailor( Class templateClass, String newClassName, String... replacements ) {
+    public static byte[] tailor( Class templateClass, String newClassName, String... replacements ) {
         String vmname = toVMClassName(templateClass);
         return tailor(
             templateClass.getClassLoader().getResourceAsStream(vmname+".class"),
@@ -99,7 +98,7 @@ public final class ClassTailor {
      *      The search strings found in the constant pool will be replaced by the corresponding
      *      replacement string.
      */
-    public static final byte[] tailor( InputStream image, String templateClassName, String newClassName, String... replacements ) {
+    public static byte[] tailor( InputStream image, String templateClassName, String newClassName, String... replacements ) {
         DataInputStream in = new DataInputStream(image);
 
         try {

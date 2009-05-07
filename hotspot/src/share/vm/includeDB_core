@@ -254,6 +254,7 @@ assembler_<arch>.cpp              cardTableModRefBS.hpp
 assembler_<arch>.cpp              collectedHeap.inline.hpp
 assembler_<arch>.cpp              interfaceSupport.hpp
 assembler_<arch>.cpp              interpreter.hpp
+assembler_<arch>.cpp              methodHandles.hpp
 assembler_<arch>.cpp              objectMonitor.hpp
 assembler_<arch>.cpp              os.hpp
 assembler_<arch>.cpp              resourceArea.hpp
@@ -1274,6 +1275,7 @@ cpCacheKlass.cpp                        bytecodes.hpp
 cpCacheKlass.cpp                        collectedHeap.hpp
 cpCacheKlass.cpp                        constantPoolOop.hpp
 cpCacheKlass.cpp                        cpCacheKlass.hpp
+cpCacheKlass.cpp                        genOopClosures.inline.hpp
 cpCacheKlass.cpp                        handles.inline.hpp
 cpCacheKlass.cpp                        javaClasses.hpp
 cpCacheKlass.cpp                        markSweep.inline.hpp
@@ -2202,6 +2204,7 @@ interpreter_<arch_model>.cpp            interpreterGenerator.hpp
 interpreter_<arch_model>.cpp            jvmtiExport.hpp
 interpreter_<arch_model>.cpp            jvmtiThreadState.hpp
 interpreter_<arch_model>.cpp            methodDataOop.hpp
+interpreter_<arch_model>.cpp            methodHandles.hpp
 interpreter_<arch_model>.cpp            methodOop.hpp
 interpreter_<arch_model>.cpp            oop.inline.hpp
 interpreter_<arch_model>.cpp            sharedRuntime.hpp
@@ -2596,6 +2599,7 @@ linkResolver.cpp                        handles.inline.hpp
 linkResolver.cpp                        instanceKlass.hpp
 linkResolver.cpp                        interpreterRuntime.hpp
 linkResolver.cpp                        linkResolver.hpp
+linkResolver.cpp                        methodHandles.hpp
 linkResolver.cpp                        nativeLookup.hpp
 linkResolver.cpp                        objArrayOop.hpp
 linkResolver.cpp                        reflection.hpp
@@ -2811,6 +2815,25 @@ methodDataOop.hpp                       bytecodes.hpp
 methodDataOop.hpp                       oop.hpp
 methodDataOop.hpp                       orderAccess.hpp
 methodDataOop.hpp                       universe.hpp
+
+methodHandles.hpp                       frame.inline.hpp
+methodHandles.hpp                       globals.hpp
+methodHandles.hpp                       interfaceSupport.hpp
+methodHandles.hpp                       javaClasses.hpp
+methodHandles.hpp                       vmSymbols.hpp
+
+methodHandles.cpp                       allocation.inline.hpp
+methodHandles.cpp                       interpreter.hpp
+methodHandles.cpp                       javaCalls.hpp
+methodHandles.cpp                       methodHandles.hpp
+methodHandles.cpp                       oopFactory.hpp
+methodHandles.cpp                       reflection.hpp
+methodHandles.cpp                       signature.hpp
+methodHandles.cpp                       symbolTable.hpp
+
+methodHandles_<arch>.cpp                allocation.inline.hpp
+methodHandles_<arch>.cpp                interpreter.hpp
+methodHandles_<arch>.cpp                methodHandles.hpp
 
 methodKlass.cpp                         collectedHeap.inline.hpp
 methodKlass.cpp                         constMethodKlass.hpp
@@ -3061,6 +3084,7 @@ oop.inline.hpp                          arrayKlass.hpp
 oop.inline.hpp                          arrayOop.hpp
 oop.inline.hpp                          atomic.hpp
 oop.inline.hpp                          barrierSet.inline.hpp
+oop.inline.hpp                          bytes_<arch>.hpp
 oop.inline.hpp                          cardTableModRefBS.hpp
 oop.inline.hpp                          collectedHeap.inline.hpp
 oop.inline.hpp                          compactingPermGenGen.hpp
@@ -3674,6 +3698,7 @@ sharedRuntime.cpp                       interpreterRuntime.hpp
 sharedRuntime.cpp                       interpreter.hpp
 sharedRuntime.cpp                       javaCalls.hpp
 sharedRuntime.cpp                       jvmtiExport.hpp
+sharedRuntime.cpp                       methodHandles.hpp
 sharedRuntime.cpp                       jvmtiRedefineClassesTrace.hpp
 sharedRuntime.cpp                       nativeInst_<arch>.hpp
 sharedRuntime.cpp                       nativeLookup.hpp
@@ -3862,6 +3887,7 @@ stubGenerator_<arch_model>.cpp          frame.inline.hpp
 stubGenerator_<arch_model>.cpp          handles.inline.hpp
 stubGenerator_<arch_model>.cpp          instanceOop.hpp
 stubGenerator_<arch_model>.cpp          interpreter.hpp
+stubGenerator_<arch_model>.cpp          methodHandles.hpp
 stubGenerator_<arch_model>.cpp          methodOop.hpp
 stubGenerator_<arch_model>.cpp          nativeInst_<arch>.hpp
 stubGenerator_<arch_model>.cpp          objArrayKlass.hpp
@@ -4076,6 +4102,7 @@ templateTable.hpp                       interp_masm_<arch_model>.hpp
 templateTable_<arch_model>.cpp          interpreterRuntime.hpp
 templateTable_<arch_model>.cpp          interpreter.hpp
 templateTable_<arch_model>.cpp          methodDataOop.hpp
+templateTable_<arch_model>.cpp          methodHandles.hpp
 templateTable_<arch_model>.cpp          objArrayKlass.hpp
 templateTable_<arch_model>.cpp          oop.inline.hpp
 templateTable_<arch_model>.cpp          sharedRuntime.hpp

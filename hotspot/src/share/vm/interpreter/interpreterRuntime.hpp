@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,11 @@ class InterpreterRuntime: AllStatic {
   static bool      already_resolved(JavaThread *thread) { return cache_entry(thread)->is_resolved(code(thread)); }
   static int       one_byte_index(JavaThread *thread)   { return bcp(thread)[1]; }
   static int       two_byte_index(JavaThread *thread)   { return Bytes::get_Java_u2(bcp(thread) + 1); }
+  static int       four_byte_index(JavaThread *thread)  { return Bytes::get_native_u4(bcp(thread) + 1); }
   static int       number_of_dimensions(JavaThread *thread)  { return bcp(thread)[3]; }
-  static ConstantPoolCacheEntry* cache_entry(JavaThread *thread)  { return method(thread)->constants()->cache()->entry_at(Bytes::get_native_u2(bcp(thread) + 1)); }
+
+  static ConstantPoolCacheEntry* cache_entry_at(JavaThread *thread, int i)  { return method(thread)->constants()->cache()->entry_at(i); }
+  static ConstantPoolCacheEntry* cache_entry(JavaThread *thread)            { return cache_entry_at(thread, Bytes::get_native_u2(bcp(thread) + 1)); }
   static void      note_trap(JavaThread *thread, int reason, TRAPS);
 
  public:
@@ -66,6 +69,7 @@ class InterpreterRuntime: AllStatic {
   static void    throw_StackOverflowError(JavaThread* thread);
   static void    throw_ArrayIndexOutOfBoundsException(JavaThread* thread, char* name, jint index);
   static void    throw_ClassCastException(JavaThread* thread, oopDesc* obj);
+  static void    throw_WrongMethodTypeException(JavaThread* thread, oopDesc* mtype = NULL, oopDesc* mhandle = NULL);
   static void    create_exception(JavaThread* thread, char* name, char* message);
   static void    create_klass_exception(JavaThread* thread, char* name, oopDesc* obj);
   static address exception_handler_for_exception(JavaThread* thread, oopDesc* exception);
@@ -82,7 +86,9 @@ class InterpreterRuntime: AllStatic {
   static void    new_illegal_monitor_state_exception(JavaThread* thread);
 
   // Calls
-  static void    resolve_invoke     (JavaThread* thread, Bytecodes::Code bytecode);
+  static void    resolve_invoke       (JavaThread* thread, Bytecodes::Code bytecode);
+  static void    resolve_invokedynamic(JavaThread* thread);
+  static void  bootstrap_invokedynamic(JavaThread* thread, oopDesc* call_site);
 
   // Breakpoints
   static void _breakpoint(JavaThread* thread, methodOopDesc* method, address bcp);

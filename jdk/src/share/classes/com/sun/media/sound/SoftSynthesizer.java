@@ -889,9 +889,12 @@ public class SoftSynthesizer implements AudioSynthesizer,
             return;
         }
         synchronized (control_mutex) {
+            Throwable causeException = null;
             try {
-                if (line != null)
+                if (line != null) {
+                    // can throw IllegalArgumentException
                     setFormat(line.getFormat());
+                }
 
                 AudioInputStream ais = openStream(getFormat(), info);
 
@@ -900,10 +903,13 @@ public class SoftSynthesizer implements AudioSynthesizer,
 
                 if (line == null)
                 {
-                    if(testline != null)
+                    if (testline != null) {
                         line = testline;
-                    else
+                    } else {
+                        // can throw LineUnavailableException,
+                        // IllegalArgumentException, SecurityException
                         line = AudioSystem.getSourceDataLine(getFormat());
+                    }
                 }
 
                 double latency = this.latency;
@@ -911,6 +917,8 @@ public class SoftSynthesizer implements AudioSynthesizer,
                 if (!line.isOpen()) {
                     int bufferSize = getFormat().getFrameSize()
                         * (int)(getFormat().getFrameRate() * (latency/1000000f));
+                    // can throw LineUnavailableException,
+                    // IllegalArgumentException, SecurityException
                     line.open(getFormat(), bufferSize);
 
                     // Remember that we opened that line
@@ -954,13 +962,22 @@ public class SoftSynthesizer implements AudioSynthesizer,
                     weakstream.sourceDataLine = sourceDataLine;
                 }
 
-
-
             } catch (LineUnavailableException e) {
+                causeException = e;
+            } catch (IllegalArgumentException e) {
+                causeException = e;
+            } catch (SecurityException e) {
+                causeException = e;
+            }
+
+            if (causeException != null) {
                 if (isOpen())
                     close();
                 // am: need MidiUnavailableException(Throwable) ctor!
-                throw new MidiUnavailableException(e.toString());
+                MidiUnavailableException ex = new MidiUnavailableException(
+                        "Can not open line");
+                ex.initCause(causeException);
+                throw ex;
             }
 
         }

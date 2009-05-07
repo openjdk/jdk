@@ -1,9 +1,5 @@
 /*
- * $Id: Detail1_2Impl.java,v 1.24 2006/01/27 12:49:45 vj135062 Exp $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ *
+ */
+
+
 
 /**
 *
@@ -46,7 +47,7 @@ import com.sun.xml.internal.messaging.saaj.soap.name.NameImpl;
 
 public class Detail1_2Impl extends DetailImpl {
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(Detail1_2Impl.class.getName(),
                          "com.sun.xml.internal.messaging.saaj.soap.ver1_2.LocalStrings");
 
