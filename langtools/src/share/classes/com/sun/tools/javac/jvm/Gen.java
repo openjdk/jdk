@@ -119,6 +119,7 @@ public class Gen extends JCTree.Visitor {
             : options.get("-g:vars") != null;
         genCrt = options.get("-Xjcov") != null;
         debugCode = options.get("debugcode") != null;
+        allowInvokedynamic = options.get("invokedynamic") != null;
 
         generateIproxies =
             target.requiresIproxy() ||
@@ -155,6 +156,7 @@ public class Gen extends JCTree.Visitor {
     private final boolean varDebugInfo;
     private final boolean genCrt;
     private final boolean debugCode;
+    private final boolean allowInvokedynamic;
 
     /** Default limit of (approximate) size of finalizer to inline.
      *  Zero means always use jsr.  100 or greater means never use
@@ -2140,6 +2142,9 @@ public class Gen extends JCTree.Visitor {
             }
             result = items.
                 makeImmediateItem(sym.type, ((VarSymbol) sym).getConstValue());
+        } else if (allowInvokedynamic && sym.kind == MTH && ssym == syms.invokeDynamicType.tsym) {
+            base.drop();
+            result = items.makeDynamicItem(sym);
         } else {
             if (!accessSuper)
                 sym = binaryQualifier(sym, tree.selected.type);
