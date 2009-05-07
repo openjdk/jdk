@@ -157,14 +157,13 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_read0(JNIEnv* env, jclass t
     WSABUF* lpWsaBuf = (WSABUF*) jlong_to_ptr(address);
     OVERLAPPED* lpOverlapped = (OVERLAPPED*) jlong_to_ptr(ov);
     BOOL res;
-    DWORD nread = 0;
     DWORD flags = 0;
 
     ZeroMemory((PVOID)lpOverlapped, sizeof(OVERLAPPED));
     res = WSARecv(s,
                   lpWsaBuf,
                   (DWORD)count,
-                  &nread,
+                  NULL,
                   &flags,
                   lpOverlapped,
                   NULL);
@@ -175,17 +174,12 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_read0(JNIEnv* env, jclass t
             return IOS_UNAVAILABLE;
         }
         if (error == WSAESHUTDOWN) {
-            return 0;       // input shutdown
+            return IOS_EOF;       // input shutdown
         }
         JNU_ThrowIOExceptionWithLastError(env, "WSARecv failed");
         return IOS_THROWN;
     }
-    if (nread == 0) {
-        // Handle graceful close or bytes not yet available cases
-        // via completion port notification.
-        return IOS_UNAVAILABLE;
-    }
-    return (jint)nread;
+    return IOS_UNAVAILABLE;
 }
 
 JNIEXPORT jint JNICALL
@@ -196,13 +190,12 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_write0(JNIEnv* env, jclass 
     WSABUF* lpWsaBuf = (WSABUF*) jlong_to_ptr(address);
     OVERLAPPED* lpOverlapped = (OVERLAPPED*) jlong_to_ptr(ov);
     BOOL res;
-    DWORD nwritten;
 
     ZeroMemory((PVOID)lpOverlapped, sizeof(OVERLAPPED));
     res = WSASend(s,
                   lpWsaBuf,
                   (DWORD)count,
-                  &nwritten,
+                  NULL,
                   0,
                   lpOverlapped,
                   NULL);
@@ -218,5 +211,5 @@ Java_sun_nio_ch_WindowsAsynchronousSocketChannelImpl_write0(JNIEnv* env, jclass 
         JNU_ThrowIOExceptionWithLastError(env, "WSASend failed");
         return IOS_THROWN;
     }
-    return (jint)nwritten;
+    return IOS_UNAVAILABLE;
 }
