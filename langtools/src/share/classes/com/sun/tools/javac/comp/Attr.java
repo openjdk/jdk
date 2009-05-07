@@ -118,6 +118,7 @@ public class Attr extends JCTree.Visitor {
         relax = (options.get("-retrofit") != null ||
                  options.get("-relax") != null);
         useBeforeDeclarationWarning = options.get("useBeforeDeclarationWarning") != null;
+        allowInvokedynamic = options.get("invokedynamic") != null;
     }
 
     /** Switch: relax some constraints for retrofit mode.
@@ -148,6 +149,10 @@ public class Attr extends JCTree.Visitor {
      * objects during constructor call?
      */
     boolean allowAnonOuterThis;
+
+    /** Switch: allow invokedynamic syntax
+     */
+    boolean allowInvokedynamic;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -438,14 +443,22 @@ public class Attr extends JCTree.Visitor {
     }
 
     /** Attribute a type argument list, returning a list of types.
+     *  Caller is responsible for calling checkRefTypes.
      */
-    List<Type> attribTypes(List<JCExpression> trees, Env<AttrContext> env) {
+    List<Type> attribAnyTypes(List<JCExpression> trees, Env<AttrContext> env) {
         ListBuffer<Type> argtypes = new ListBuffer<Type>();
         for (List<JCExpression> l = trees; l.nonEmpty(); l = l.tail)
-            argtypes.append(chk.checkRefType(l.head.pos(), attribType(l.head, env)));
+            argtypes.append(attribType(l.head, env));
         return argtypes.toList();
     }
 
+    /** Attribute a type argument list, returning a list of types.
+     *  Check that all the types are references.
+     */
+    List<Type> attribTypes(List<JCExpression> trees, Env<AttrContext> env) {
+        List<Type> types = attribAnyTypes(trees, env);
+        return chk.checkRefTypes(trees, types);
+    }
 
     /**
      * Attribute type variables (of generic classes or methods).
@@ -1194,6 +1207,7 @@ public class Attr extends JCTree.Visitor {
 
         // The types of the actual method type arguments.
         List<Type> typeargtypes = null;
+        boolean typeargtypesNonRefOK = false;
 
         Name methName = TreeInfo.name(tree.meth);
 
@@ -1281,7 +1295,7 @@ public class Attr extends JCTree.Visitor {
             // Otherwise, we are seeing a regular method call.
             // Attribute the arguments, yielding list of argument types, ...
             argtypes = attribArgs(tree.args, localEnv);
-            typeargtypes = attribTypes(tree.typeargs, localEnv);
+            typeargtypes = attribAnyTypes(tree.typeargs, localEnv);
 
             // ... and attribute the method using as a prototype a methodtype
             // whose formal argument types is exactly the list of actual
@@ -1316,6 +1330,20 @@ public class Attr extends JCTree.Visitor {
                                                                BoundKind.EXTENDS,
                                                                syms.boundClass)),
                               restype.tsym);
+            }
+
+            // as a special case, MethodHandle.<T>invoke(abc) and InvokeDynamic.<T>foo(abc)
+            // has type <T>, and T can be a primitive type.
+            if (tree.meth.getTag() == JCTree.SELECT && !typeargtypes.isEmpty()) {
+              Type selt = ((JCFieldAccess) tree.meth).selected.type;
+              if ((selt == syms.methodHandleType && methName == names.invoke) || selt == syms.invokeDynamicType) {
+                  assert types.isSameType(restype, typeargtypes.head) : mtype;
+                  typeargtypesNonRefOK = true;
+              }
+            }
+
+            if (!typeargtypesNonRefOK) {
+                chk.checkRefTypes(tree.typeargs, typeargtypes);
             }
 
             // Check that value of resulting type is admissible in the

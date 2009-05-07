@@ -318,7 +318,7 @@ public interface RuntimeConstants {
     public static final int opc_invokespecial            = 183;
     public static final int opc_invokestatic             = 184;
     public static final int opc_invokeinterface          = 185;
-//    public static final int opc_xxxunusedxxx             = 186;
+    public static final int opc_invokedynamic            = 186;
     public static final int opc_new                      = 187;
     public static final int opc_newarray                 = 188;
     public static final int opc_anewarray                = 189;
@@ -549,7 +549,7 @@ public interface RuntimeConstants {
         "invokespecial", //     was "invokenonvirtual",
         "invokestatic",
         "invokeinterface",
-        "bytecode 186", //"xxxunusedxxx",
+        "invokedynamic",
         "new",
         "newarray",
         "anewarray",
