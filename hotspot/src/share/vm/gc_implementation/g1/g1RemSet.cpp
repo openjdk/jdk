@@ -523,7 +523,7 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
     // and they are causing failures. When we resolve said race
     // conditions, we'll revert back to parallel remembered set
     // updating and scanning. See CRs 6677707 and 6677708.
-    if (G1EnableParallelRSetUpdating || (worker_i == 0)) {
+    if (G1ParallelRSetUpdatingEnabled || (worker_i == 0)) {
       updateRS(worker_i);
       scanNewRefsRS(oc, worker_i);
     } else {
@@ -532,7 +532,7 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
       _g1p->record_update_rs_time(worker_i, 0.0);
       _g1p->record_scan_new_refs_time(worker_i, 0.0);
     }
-    if (G1EnableParallelRSetScanning || (worker_i == 0)) {
+    if (G1ParallelRSetScanningEnabled || (worker_i == 0)) {
       scanRS(oc, worker_i);
     } else {
       _g1p->record_scan_rs_start_time(worker_i, os::elapsedTime());

@@ -28,45 +28,33 @@
 
 #define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw) \
                                                                             \
-  product(intx, ParallelGCG1AllocBufferSize, 8*K,                           \
+  product(intx, G1ParallelGCAllocBufferSize, 8*K,                           \
           "Size of parallel G1 allocation buffers in to-space.")            \
                                                                             \
-  product(intx, G1TimeSliceMS, 500,                                         \
-          "Time slice for MMU specification")                               \
-                                                                            \
-  product(intx, G1MaxPauseTimeMS, 200,                                      \
-          "Max GC time per MMU time slice")                                 \
-                                                                            \
-  product(intx, G1ConfidencePerc, 50,                                       \
+  product(intx, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions")                     \
                                                                             \
-  product(intx, G1MarkingOverheadPerc, 0,                                   \
+  develop(intx, G1MarkingOverheadPercent, 0,                                   \
           "Overhead of concurrent marking")                                 \
                                                                             \
-  product(bool, G1AccountConcurrentOverhead, false,                         \
+  develop(bool, G1AccountConcurrentOverhead, false,                         \
           "Whether soft real-time compliance in G1 will take into account"  \
           "concurrent overhead")                                            \
                                                                             \
   product(intx, G1YoungGenSize, 0,                                          \
           "Size of the G1 young generation, 0 is the adaptive policy")      \
                                                                             \
-  product(bool, G1Gen, true,                                                \
+  develop(bool, G1Gen, true,                                                \
           "If true, it will enable the generational G1")                    \
                                                                             \
-  develop(intx, G1GCPct, 10,                                                \
+  develop(intx, G1GCPercent, 10,                                                \
           "The desired percent time spent on GC")                           \
                                                                             \
-  product(intx, G1PolicyVerbose, 0,                                         \
+  develop(intx, G1PolicyVerbose, 0,                                         \
           "The verbosity level on G1 policy decisions")                     \
                                                                             \
   develop(bool, G1UseHRIntoRS, true,                                        \
           "Determines whether the 'advanced' HR Into rem set is used.")     \
-                                                                            \
-  product(bool, G1VerifyRemSet, false,                                      \
-          "If true, verify the rem set functioning at each GC")             \
-                                                                            \
-  product(bool, G1VerifyConcMark, false,                                    \
-          "If true, verify the conc marking code at full GC time")          \
                                                                             \
   develop(intx, G1MarkingVerboseLevel, 0,                                   \
           "Level (0-4) of verboseness of the marking code")                 \
@@ -77,38 +65,28 @@
   develop(bool, G1TraceMarkStackOverflow, false,                            \
           "If true, extra debugging code for CM restart for ovflw.")        \
                                                                             \
-  product(bool, G1VerifyMarkingInEvac, false,                               \
-          "If true, verify marking info during evacuation")                 \
-                                                                            \
   develop(intx, G1PausesBtwnConcMark, -1,                                   \
           "If positive, fixed number of pauses between conc markings")      \
                                                                             \
-  product(intx, G1EfficiencyPctCausesMark, 80,                              \
-          "The cum gc efficiency since mark fall-off that causes "          \
-          "new marking")                                                    \
-                                                                            \
-  product(bool, TraceConcurrentMark, false,                                 \
-          "Trace concurrent mark")                                          \
-                                                                            \
-  product(bool, SummarizeG1ConcMark, false,                                 \
+  diagnostic(bool, G1SummarizeConcurrentMark, false,                        \
           "Summarize concurrent mark info")                                 \
                                                                             \
-  product(bool, SummarizeG1RSStats, false,                                  \
+  diagnostic(bool, G1SummarizeRSetStats, false,                             \
           "Summarize remembered set processing info")                       \
                                                                             \
-  product(bool, SummarizeG1ZFStats, false,                                  \
+  diagnostic(bool, G1SummarizeZFStats, false,                               \
           "Summarize zero-filling info")                                    \
                                                                             \
-  product(bool, TraceG1Refine, false,                                       \
+  develop(bool, G1TraceConcurrentRefinement, false,                         \
           "Trace G1 concurrent refinement")                                 \
                                                                             \
   develop(bool, G1ConcMark, true,                                           \
           "If true, run concurrent marking for G1")                         \
                                                                             \
-  product(intx, G1CMStackSize, 2 * 1024 * 1024,                             \
+  product(intx, G1MarkStackSize, 2 * 1024 * 1024,                           \
           "Size of the mark stack for concurrent marking.")                 \
                                                                             \
-  product(intx, G1CMRegionStackSize, 1024 * 1024,                           \
+  product(intx, G1MarkRegionStackSize, 1024 * 1024,                         \
           "Size of the region stack for concurrent marking.")               \
                                                                             \
   develop(bool, G1ConcRefine, true,                                         \
@@ -121,7 +99,7 @@
           "Number of heap regions of alloc ahead of starting collection "   \
           "pause to start concurrent refinement (initially)")               \
                                                                             \
-  product(bool, G1SmoothConcRefine, true,                                   \
+  develop(bool, G1SmoothConcRefine, true,                                   \
           "Attempts to smooth out the overhead of concurrent refinement")   \
                                                                             \
   develop(bool, G1ConcZeroFill, true,                                       \
@@ -157,7 +135,7 @@
   develop(bool, G1SATBPrintStubs, false,                                    \
           "If true, print generated stubs for the SATB barrier")            \
                                                                             \
-  product(intx, G1ExpandByPctOfAvail, 20,                                   \
+  product(intx, G1ExpandByPercentOfAvailable, 20,                           \
           "When expanding, % of uncommitted space to claim.")               \
                                                                             \
   develop(bool, G1RSBarrierRegionFilter, true,                              \
@@ -179,17 +157,8 @@
           "If true, verify that no dirty cards remain after RS log "        \
           "processing.")                                                    \
                                                                             \
-  product(intx, G1MinPausesBetweenMarks, 2,                                 \
-          "Number of inefficient pauses necessary to trigger marking.")     \
-                                                                            \
-  product(intx, G1InefficientPausePct, 80,                                  \
-          "Threshold of an 'inefficient' pauses (as % of cum efficiency.")  \
-                                                                            \
   develop(bool, G1RSCountHisto, false,                                      \
           "If true, print a histogram of RS occupancies after each pause")  \
-                                                                            \
-  product(bool, G1TraceFileOverwrite, false,                                \
-          "Allow the trace file to be overwritten")                         \
                                                                             \
   develop(intx, G1PrintRegionLivenessInfo, 0,                               \
           "When > 0, print the occupancies of the <n> best and worst"       \
@@ -197,9 +166,6 @@
                                                                             \
   develop(bool, G1PrintParCleanupStats, false,                              \
           "When true, print extra stats about parallel cleanup.")           \
-                                                                            \
-  product(bool, G1DoAgeCohortChecks, false,                                 \
-          "When true, check well-formedness of age cohort structures.")     \
                                                                             \
   develop(bool, G1DisablePreBarrier, false,                                 \
           "Disable generation of pre-barrier (i.e., marking barrier)   ")   \
@@ -214,17 +180,17 @@
   develop(intx, G1ConcRSLogCacheSize, 10,                                   \
           "Log base 2 of the length of conc RS hot-card cache.")            \
                                                                             \
-  product(bool, G1ConcRSCountTraversals, false,                             \
+  develop(bool, G1ConcRSCountTraversals, false,                             \
           "If true, gather data about the number of times CR traverses "    \
           "cards ")                                                         \
                                                                             \
-  product(intx, G1ConcRSHotCardLimit, 4,                                    \
+  develop(intx, G1ConcRSHotCardLimit, 4,                                    \
           "The threshold that defines (>=) a hot card.")                    \
                                                                             \
   develop(bool, G1PrintOopAppls, false,                                     \
           "When true, print applications of closures to external locs.")    \
                                                                             \
-  product(intx, G1LogRSRegionEntries, 7,                                    \
+  develop(intx, G1LogRSRegionEntries, 7,                                    \
           "Log_2 of max number of regions for which we keep bitmaps.")      \
                                                                             \
   develop(bool, G1RecordHRRSOops, false,                                    \
@@ -254,11 +220,11 @@
           "It determines whether the system will calculate an optimum "     \
           "scan-only set.")                                                 \
                                                                             \
-  product(intx, G1MinReservePerc, 10,                                       \
+  product(intx, G1MinReservePercent, 10,                                    \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
                                                                             \
-  product(bool, G1TraceRegions, false,                                      \
+  diagnostic(bool, G1PrintRegions, false,                                   \
           "If set G1 will print information on which regions are being "    \
           "allocated and which are reclaimed.")                             \
                                                                             \
@@ -268,24 +234,24 @@
   develop(bool, G1HRRSFlushLogBuffersOnVerify, false,                       \
           "Forces flushing of log buffers before verification.")            \
                                                                             \
-  product(bool, G1UseSurvivorSpace, true,                                   \
+  product(bool, G1UseSurvivorSpaces, true,                                  \
           "When true, use survivor space.")                                 \
                                                                             \
-  product(bool, G1FixedTenuringThreshold, false,                            \
+  develop(bool, G1FixedTenuringThreshold, false,                            \
           "When set, G1 will not adjust the tenuring threshold")            \
                                                                             \
-  product(bool, G1FixedEdenSize, false,                                     \
+  develop(bool, G1FixedEdenSize, false,                                     \
           "When set, G1 will not allocate unused survivor space regions")   \
                                                                             \
-  product(uintx, G1FixedSurvivorSpaceSize, 0,                               \
+  develop(uintx, G1FixedSurvivorSpaceSize, 0,                               \
           "If non-0 is the size of the G1 survivor space, "                 \
           "otherwise SurvivorRatio is used to determine the size")          \
                                                                             \
-  experimental(bool, G1EnableParallelRSetUpdating, false,                   \
+  experimental(bool, G1ParallelRSetUpdatingEnabled, false,                  \
           "Enables the parallelization of remembered set updating "         \
           "during evacuation pauses")                                       \
                                                                             \
-  experimental(bool, G1EnableParallelRSetScanning, false,                   \
+  experimental(bool, G1ParallelRSetScanningEnabled, false,                  \
           "Enables the parallelization of remembered set scanning "         \
           "during evacuation pauses")
 
