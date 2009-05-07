@@ -88,6 +88,7 @@ import static java.lang.annotation.ElementType.PACKAGE;
  * @author <ul><li>Sekhar Vajjhala, Sun Microsystems Inc.</li> <li> Kohsuke Kawaguchi, Sun Microsystems Inc.</li></ul>
  * @since JAXB2.0
  * @see XmlAdapter
+ * @version $Revision: 1.9 $
  */
 
 @Retention(RUNTIME) @Target({PACKAGE,FIELD,METHOD,TYPE,PARAMETER})

@@ -216,6 +216,16 @@ printMedialibError(int status) {
 
 #endif /* ! DEBUG */
 
+static int
+getMlibEdgeHint(jint edgeHint) {
+    switch (edgeHint) {
+    case java_awt_image_ConvolveOp_EDGE_NO_OP:
+        return MLIB_EDGE_DST_COPY_SRC;
+    case java_awt_image_ConvolveOp_EDGE_ZERO_FILL:
+    default:
+        return MLIB_EDGE_DST_FILL_ZERO;
+    }
+}
 
 /***************************************************************************
  *                          External Functions                             *
@@ -400,22 +410,10 @@ Java_sun_awt_image_ImagingLib_convolveBI(JNIEnv *env, jobject this,
         }
     }
 
-    if (edgeHint == java_awt_image_ConvolveOp_EDGE_NO_OP) {
-        int kw2 = kwidth>>1;
-        int kh2 = kheight>>1;
-        int bsize = mlib_ImageGetChannels(src)*
-            (mlib_ImageGetType(src) == MLIB_BYTE ? 1 : 2);
-
-        void *dstDataP = mlib_ImageGetData(dst);
-        void *srcDataP = mlib_ImageGetData(src);
-        /* REMIND: Copy a smaller area */
-        memcpy(dstDataP, srcDataP, dst->width*dst->height*bsize);
-    }
-
     cmask = (1<<src->channels)-1;
     status = (*sMlibFns[MLIB_CONVMxN].fptr)(dst, src, kdata, w, h,
                                (w-1)/2, (h-1)/2, scale, cmask,
-                               MLIB_EDGE_DST_NO_WRITE);
+                               getMlibEdgeHint(edgeHint));
 
     if (status != MLIB_SUCCESS) {
         printMedialibError(status);
@@ -660,22 +658,10 @@ Java_sun_awt_image_ImagingLib_convolveRaster(JNIEnv *env, jobject this,
         }
     }
 
-    if (edgeHint == java_awt_image_ConvolveOp_EDGE_NO_OP) {
-        int kw2 = kwidth>>1;
-        int kh2 = kheight>>1;
-        int bsize = mlib_ImageGetChannels(src)*
-            (mlib_ImageGetType(src) == MLIB_BYTE ? 1 : 2);
-
-        void *dstDataP = mlib_ImageGetData(dst);
-        void *srcDataP = mlib_ImageGetData(src);
-        /* REMIND: Copy a smaller area */
-        memcpy(dstDataP, srcDataP, dst->width*dst->height*bsize);
-    }
-
     cmask = (1<<src->channels)-1;
     status = (*sMlibFns[MLIB_CONVMxN].fptr)(dst, src, kdata, w, h,
                                (w-1)/2, (h-1)/2, scale, cmask,
-                               MLIB_EDGE_DST_NO_WRITE);
+                               getMlibEdgeHint(edgeHint));
 
     if (status != MLIB_SUCCESS) {
         printMedialibError(status);

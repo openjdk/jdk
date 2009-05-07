@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.util;
 
 import java.util.AbstractList;
@@ -53,6 +52,12 @@ public final class CollisionCheckStack<E> extends AbstractList<E> {
     private int[] next;
     private int size = 0;
 
+    /**
+     * True if the check shall be done by using the object identity.
+     * False if the check shall be done with the equals method.
+     */
+    private boolean useIdentity = true;
+
     // for our purpose, there isn't much point in resizing this as we don't expect
     // the stack to grow that much.
     private final int[] initialHash;
@@ -61,6 +66,18 @@ public final class CollisionCheckStack<E> extends AbstractList<E> {
         initialHash = new int[17];
         data = new Object[16];
         next = new int[16];
+    }
+
+    /**
+     * Set to false to use {@link Object#equals(Object)} to detect cycles.
+     * This method can be only used when the stack is empty.
+     */
+    public void setUseIdentity(boolean useIdentity) {
+        this.useIdentity = useIdentity;
+    }
+
+    public boolean getUseIdentity() {
+        return useIdentity;
     }
 
     /**
@@ -105,7 +122,7 @@ public final class CollisionCheckStack<E> extends AbstractList<E> {
     }
 
     private int hash(Object o) {
-        return System.identityHashCode(o) % initialHash.length;
+        return ((useIdentity?System.identityHashCode(o):o.hashCode())&0x7FFFFFFF) % initialHash.length;
     }
 
     /**
@@ -138,7 +155,11 @@ public final class CollisionCheckStack<E> extends AbstractList<E> {
         while(p!=0) {
             p--;
             Object existing = data[p];
-            if(existing==o)     return true;
+            if (useIdentity) {
+                if(existing==o)     return true;
+            } else {
+                if (o.equals(existing)) return true;
+            }
             p = next[p];
         }
         return false;
@@ -165,5 +186,23 @@ public final class CollisionCheckStack<E> extends AbstractList<E> {
             size = 0;
             Arrays.fill(initialHash,0);
         }
+    }
+
+    /**
+     * String that represents the cycle.
+     */
+    public String getCycleString() {
+        StringBuilder sb = new StringBuilder();
+        int i=size()-1;
+        E obj = get(i);
+        sb.append(obj);
+        Object x;
+        do {
+            sb.append(" -> ");
+            x = get(--i);
+            sb.append(x);
+        } while(obj!=x);
+
+        return sb.toString();
     }
 }

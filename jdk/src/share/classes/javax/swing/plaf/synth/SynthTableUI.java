@@ -27,6 +27,7 @@ package javax.swing.plaf.synth;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -70,6 +71,7 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
 
     private boolean useTableColors;
     private boolean useUIBorder;
+    private Color alternateColor; //the background color to use for cells for alternate cells
 
     // TableCellRenderer installed on the JTable at the time we're installed,
     // cached so that we can reinstall them at uninstallUI time.
@@ -161,6 +163,21 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
             if (rowHeight != null) {
                 LookAndFeel.installProperty(table, "rowHeight", rowHeight);
             }
+            boolean showGrid = style.getBoolean(context, "Table.showGrid", true);
+            if (!showGrid) {
+                table.setShowGrid(false);
+            }
+            Dimension d = table.getIntercellSpacing();
+//            if (d == null || d instanceof UIResource) {
+            if (d != null) {
+                d = (Dimension)style.get(context, "Table.intercellSpacing");
+            }
+            alternateColor = (Color)style.get(context, "Table.alternateRowColor");
+            if (d != null) {
+                table.setIntercellSpacing(d);
+            }
+
+
             if (oldStyle != null) {
                 uninstallKeyboardActions();
                 installKeyboardActions();
@@ -617,6 +634,14 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
         else {
             TableCellRenderer renderer = table.getCellRenderer(row, column);
             Component component = table.prepareRenderer(renderer, row, column);
+            Color b = component.getBackground();
+            if ((b == null || b instanceof UIResource
+                    || component instanceof SynthBooleanTableCellRenderer)
+                    && !table.isCellSelected(row, column)) {
+                if (alternateColor != null && row % 2 == 0) {
+                    component.setBackground(alternateColor);
+                }
+            }
             rendererPane.paintComponent(g, component, table, cellRect.x,
                     cellRect.y, cellRect.width, cellRect.height, true);
         }
@@ -634,16 +659,8 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
         private boolean isRowSelected;
 
         public SynthBooleanTableCellRenderer() {
-            super();
             setHorizontalAlignment(JLabel.CENTER);
-        }
-
-        public String getName() {
-            String name = super.getName();
-            if (name == null) {
-                return "Table.cellRenderer";
-            }
-            return name;
+            setName("Table.cellRenderer");
         }
 
         public Component getTableCellRendererComponent(
@@ -652,15 +669,22 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
             isRowSelected = isSelected;
 
             if (isSelected) {
-                setForeground(table.getSelectionForeground());
-                setBackground(table.getSelectionBackground());
+                setForeground(unwrap(table.getSelectionForeground()));
+                setBackground(unwrap(table.getSelectionBackground()));
             } else {
-                setForeground(table.getForeground());
-                setBackground(table.getBackground());
+                setForeground(unwrap(table.getForeground()));
+                setBackground(unwrap(table.getBackground()));
             }
 
             setSelected((value != null && ((Boolean)value).booleanValue()));
             return this;
+        }
+
+        private Color unwrap(Color c) {
+            if (c instanceof UIResource) {
+                return new Color(c.getRGB());
+            }
+            return c;
         }
 
         public boolean isOpaque() {
@@ -732,7 +756,7 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
             }
             else if (columnClass == Icon.class || columnClass == ImageIcon.class) {
                 setHorizontalAlignment(JLabel.CENTER);
-                setIcon((Icon)value);
+                setIcon((value instanceof Icon) ? (Icon)value : null);
                 setText("");
             }
             else if (columnClass == Date.class) {

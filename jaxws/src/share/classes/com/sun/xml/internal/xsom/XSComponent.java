@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom;
 
 import com.sun.xml.internal.xsom.parser.SchemaDocument;
@@ -30,7 +29,9 @@ import com.sun.xml.internal.xsom.visitor.XSFunction;
 import com.sun.xml.internal.xsom.visitor.XSVisitor;
 import org.xml.sax.Locator;
 
+import javax.xml.namespace.NamespaceContext;
 import java.util.List;
+import java.util.Collection;
 
 /**
  * Base interface for all the schema components.
@@ -42,6 +43,20 @@ public interface XSComponent
 {
     /** Gets the annotation associated to this component, if any. */
     XSAnnotation getAnnotation();
+
+    /**
+     * Works like {@link #getAnnotation()}, but allow a new empty {@link XSAnnotation} to be created
+     * if not exist.
+     *
+     * @param createIfNotExist
+     *      true to create a new {@link XSAnnotation} if it doesn't exist already.
+     *      false to make this method behavel like {@link #getAnnotation()}.
+     *
+     * @return
+     *      null if <tt>createIfNotExist==false</tt> and annotation didn't exist.
+     *      Otherwise non-null.
+     */
+    XSAnnotation getAnnotation(boolean createIfNotExist);
 
     /**
      * Gets the foreign attributes on this schema component.
@@ -89,6 +104,15 @@ public interface XSComponent
     XSSchema getOwnerSchema();
 
     /**
+     * Gets the root schema set that includes this component.
+     *
+     * <p>
+     * In case of <code>XSEmpty</code> component, this method
+     * returns null since there is no owner component.
+     */
+    XSSchemaSet getRoot();
+
+    /**
      * Gets the {@link SchemaDocument} that indicates which document this component
      * was defined in.
      *
@@ -100,6 +124,39 @@ public interface XSComponent
      *      components this method returns non-null, even if they are local.
      */
     SchemaDocument getSourceDocument();
+
+    /**
+     * Evaluates a schema component designator against this schema component
+     * and returns the resulting schema components.
+     *
+     * @throws IllegalArgumentException
+     *      if SCD is syntactically incorrect.
+     *
+     * @param scd
+     *      Schema component designator. See {@link SCD} for more details.
+     * @param nsContext
+     *      The namespace context in which SCD is evaluated. Cannot be null.
+     * @return
+     *      Can be empty but never null.
+     */
+    Collection<XSComponent> select(String scd, NamespaceContext nsContext);
+
+    /**
+     * Evaluates a schema component designator against this schema component
+     * and returns the first resulting schema component.
+     *
+     * @throws IllegalArgumentException
+     *      if SCD is syntactically incorrect.
+     *
+     * @param scd
+     *      Schema component designator. See {@link SCD} for more details.
+     * @param nsContext
+     *      The namespace context in which SCD is evaluated. Cannot be null.
+     * @return
+     *      null if the SCD didn't match anything. If the SCD matched more than one node,
+     *      the first one will be returned.
+     */
+    XSComponent selectSingle(String scd, NamespaceContext nsContext);
 
     /**
      * Accepts a visitor.

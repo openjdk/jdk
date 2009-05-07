@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
 import com.sun.tools.internal.xjc.reader.gbind.Element;
+import com.sun.xml.internal.xsom.XSWildcard;
 
 /**
  * {@link Element} that represents a wildcard,
@@ -33,11 +33,31 @@ import com.sun.tools.internal.xjc.reader.gbind.Element;
  * @author Kohsuke Kawaguchi
  */
 final class GWildcardElement extends GElement {
+
+    /**
+     * If true, bind to <tt>Object</tt> for eager JAXB unmarshalling.
+     * Otherwise bind to DOM (I hate "you can put both" semantics,
+     * so I'm not going to do that in this binding mode.)
+     */
+    private boolean strict = true;
+
     public String toString() {
         return "#any";
     }
 
     String getPropertyNameSeed() {
         return "any";
+    }
+
+    public void merge(XSWildcard wc) {
+        switch(wc.getMode()) {
+        case XSWildcard.LAX:
+        case XSWildcard.SKIP:
+            strict = false;
+        }
+    }
+
+    public boolean isStrict() {
+        return strict;
     }
 }

@@ -1,10 +1,4 @@
 /*
- * $Id: SAAJMetaFactory.java,v 1.2.2.15 2005/02/11 07:26:15 vj135062 Exp $
- * $Revision: 1.2.2.15 $
- * $Date: 2005/02/11 07:26:15 $
- */
-
-/*
  * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: SAAJMetaFactory.java,v 1.4 2006/03/30 00:59:39 ofung Exp $
+ * $Revision: 1.4 $
+ * $Date: 2006/03/30 00:59:39 $
+ */
+
+
 package javax.xml.soap;
 
 /**
@@ -52,8 +53,6 @@ public abstract class SAAJMetaFactory {
     static private final String DEFAULT_META_FACTORY_CLASS =
         "com.sun.xml.internal.messaging.saaj.soap.SAAJMetaFactoryImpl";
 
-    static private SAAJMetaFactory instance = null;
-
     /**
      * Creates a new instance of a concrete <code>SAAJMetaFactory</code> object.
      * The SAAJMetaFactory is an SPI, it pulls the creation of the other factories together into a
@@ -75,20 +74,17 @@ public abstract class SAAJMetaFactory {
      * @return a concrete <code>SAAJMetaFactory</code> object
      * @exception SOAPException if there is an error in creating the <code>SAAJMetaFactory</code>
      */
-    static synchronized SAAJMetaFactory getInstance() throws SOAPException {
-        if (instance == null) {
+    static SAAJMetaFactory getInstance() throws SOAPException {
             try {
-                instance =
+                SAAJMetaFactory instance =
                     (SAAJMetaFactory) FactoryFinder.find(
                         META_FACTORY_CLASS_PROPERTY,
                         DEFAULT_META_FACTORY_CLASS);
+                return instance;
             } catch (Exception e) {
                 throw new SOAPException(
                     "Unable to create SAAJ meta-factory" + e.getMessage());
             }
-        }
-
-        return instance;
     }
 
     protected SAAJMetaFactory() { }

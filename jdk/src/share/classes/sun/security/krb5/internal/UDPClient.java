@@ -93,4 +93,7 @@ public class UDPClient {
         return data;
     }
 
+    public void close() {
+        dgSocket.close();
+    }
 }

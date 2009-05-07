@@ -1843,8 +1843,13 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       case WM_AWT_SETALWAYSONTOP: {
         AwtWindow* w = (AwtWindow*)lParam;
         BOOL value = (BOOL)wParam;
+        UINT flags = SWP_NOMOVE | SWP_NOSIZE;
+        // transient windows shouldn't change the owner window's position in the z-order
+        if (w->IsRetainingHierarchyZOrder()) {
+            flags |= SWP_NOOWNERZORDER;
+        }
         ::SetWindowPos(w->GetHWnd(), (value != 0 ? HWND_TOPMOST : HWND_NOTOPMOST),
-                       0,0,0,0, SWP_NOMOVE|SWP_NOSIZE);
+                       0,0,0,0, flags);
         break;
       }
 

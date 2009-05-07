@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.addon.locator;
 
 import java.io.IOException;
@@ -32,6 +31,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import com.sun.codemodel.internal.JDefinedClass;
 import com.sun.codemodel.internal.JMod;
 import com.sun.codemodel.internal.JVar;
+import com.sun.codemodel.internal.JMethod;
 import com.sun.tools.internal.xjc.BadCommandLineException;
 import com.sun.tools.internal.xjc.Options;
 import com.sun.tools.internal.xjc.Plugin;
@@ -80,6 +80,10 @@ public class SourceLocationAddOn extends Plugin {
                 impl._implements(Locatable.class);
 
                 impl.method(JMod.PUBLIC, Locator.class, "sourceLocation").body()._return($loc);
+
+                JMethod setter = impl.method(JMod.PUBLIC, Void.TYPE, "setSourceLocation");
+                JVar $newLoc = setter.param(Locator.class, "newLocator");
+                setter.body().assign($loc, $newLoc);
             }
         }
 

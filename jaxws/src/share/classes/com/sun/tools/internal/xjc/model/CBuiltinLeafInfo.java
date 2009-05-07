@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import java.awt.*;
@@ -113,8 +112,17 @@ public abstract class CBuiltinLeafInfo extends BuiltinLeafInfoImpl<NType,NClass>
      * Since {@link CBuiltinLeafInfo} represents a default binding,
      * it is never a collection.
      */
+    @Deprecated
     public final boolean isCollection() {
         return false;
+    }
+
+    /**
+     * Guaranteed to return this.
+     */
+    @Deprecated
+    public CNonElement getInfo() {
+        return this;
     }
 
     public ID idUse() {
@@ -128,15 +136,9 @@ public abstract class CBuiltinLeafInfo extends BuiltinLeafInfoImpl<NType,NClass>
         return null;
     }
 
-    /**
-     * By definition, a default handling doesn't need any adapter.
-     */
+    @Deprecated
     public final CAdapter getAdapterUse() {
         return null;
-    }
-
-    public final CBuiltinLeafInfo getInfo() {
-        return this;
     }
 
     public Locator getLocator() {

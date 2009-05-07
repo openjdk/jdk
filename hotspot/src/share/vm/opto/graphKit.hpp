@@ -699,7 +699,7 @@ class GraphKit : public Phase {
                      Node* slow_test = NULL,
                      bool raw_mem_only = false,
                      Node* *return_size_val = NULL);
-  Node* new_array(Node* klass_node, Node* count_val,
+  Node* new_array(Node* klass_node, Node* count_val, int nargs,
                   bool raw_mem_only = false, Node* *return_size_val = NULL);
 
   // Handy for making control flow

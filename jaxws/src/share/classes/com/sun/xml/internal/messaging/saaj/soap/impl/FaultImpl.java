@@ -1,11 +1,5 @@
 /*
- * $Id: FaultImpl.java,v 1.55 2006/01/27 12:49:35 vj135062 Exp $
- * $Revision: 1.55 $
- * $Date: 2006/01/27 12:49:35 $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ * $Id: FaultImpl.java,v 1.2 2006/11/16 17:39:10 kumarjayanti Exp $
+ * $Revision: 1.2 $
+ * $Date: 2006/11/16 17:39:10 $
+ */
+
+
 package com.sun.xml.internal.messaging.saaj.soap.impl;
 
 import java.util.Locale;
@@ -65,6 +66,8 @@ public abstract class FaultImpl extends ElementImpl implements SOAPFault {
     protected abstract NameImpl getFaultActorName();
     protected abstract DetailImpl createDetail();
     protected abstract FaultElementImpl createSOAPFaultElement(String localName);
+    protected abstract FaultElementImpl createSOAPFaultElement(QName qname);
+    protected abstract FaultElementImpl createSOAPFaultElement(Name qname);
     protected abstract void checkIfStandardFaultCode(String faultCode, String uri) throws SOAPException;
     protected abstract void finallySetFaultCode(String faultcode) throws SOAPException;
     protected abstract boolean isStandardFaultElement(String localName);
@@ -152,8 +155,8 @@ public abstract class FaultImpl extends ElementImpl implements SOAPFault {
         }
 
         String prefix = code.substring(0, prefixIndex);
-        String nsName =
-            ((ElementImpl) codeContainingElement).getNamespaceURI(prefix);
+        String nsName =((ElementImpl) codeContainingElement).lookupNamespaceURI(prefix);
+            //((ElementImpl) codeContainingElement).getNamespaceURI(prefix);
         return new QName(nsName, getLocalPart(code), prefix);
     }
 
@@ -233,7 +236,7 @@ public abstract class FaultImpl extends ElementImpl implements SOAPFault {
                 if (isStandardFaultElement(localName))
                     return replaceElementWithSOAPElement(
                                element,
-                               createSOAPFaultElement(localName));
+                               createSOAPFaultElement(soapElement.getElementQName()));
                 return soapElement;
             }
         } else {
@@ -245,7 +248,7 @@ public abstract class FaultImpl extends ElementImpl implements SOAPFault {
                 String localName = elementName.getLocalName();
                 if (isStandardFaultElement(localName))
                     newElement =
-                        (ElementImpl) createSOAPFaultElement(localName);
+                        (ElementImpl) createSOAPFaultElement(elementName);
                 else
                     newElement = (ElementImpl) createElement(elementName);
             }

@@ -32,6 +32,7 @@ import javax.swing.plaf.basic.BasicLookAndFeel;
 import javax.swing.text.DefaultEditorKit;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.text.JTextComponent;
 import sun.swing.plaf.synth.SynthUI;
 
 /**
@@ -758,28 +759,48 @@ public abstract class SynthStyle {
     public Color getColor(SynthContext context, ColorType type) {
         JComponent c = context.getComponent();
         Region id = context.getRegion();
-        int cs = context.getComponentState();
-        // For the enabled state, prefer the widget's colors
-        if (!id.isSubregion() && cs == SynthConstants.ENABLED) {
-            if (type == ColorType.BACKGROUND) {
-                return c.getBackground();
-            }
-            else if (type == ColorType.FOREGROUND) {
-                return c.getForeground();
-            }
-            else if (type == ColorType.TEXT_FOREGROUND) {
-                // If getForeground returns a non-UIResource it means the
-                // developer has explicitly set the foreground, use it over
-                // that of TEXT_FOREGROUND as that is typically the expected
-                // behavior.
-                Color color = c.getForeground();
-                if (!(color instanceof UIResource)) {
-                    return color;
+
+        if ((context.getComponentState() & SynthConstants.DISABLED) != 0) {
+            //This component is disabled, so return the disabled color.
+            //In some cases this means ignoring the color specified by the
+            //developer on the component. In other cases it means using a
+            //specified disabledTextColor, such as on JTextComponents.
+            //For example, JLabel doesn't specify a disabled color that the
+            //developer can set, yet it should have a disabled color to the
+            //text when the label is disabled. This code allows for that.
+            if (c instanceof JTextComponent) {
+                JTextComponent txt = (JTextComponent)c;
+                Color disabledColor = txt.getDisabledTextColor();
+                if (disabledColor == null || disabledColor instanceof UIResource) {
+                    return getColorForState(context, type);
                 }
+            } else if (c instanceof JLabel &&
+                            (type == ColorType.FOREGROUND ||
+                             type == ColorType.TEXT_FOREGROUND)) {
+                return getColorForState(context, type);
             }
         }
-        // Then use what we've locally defined
-        Color color = getColorForState(context, type);
+
+        // If the developer has specified a color, prefer it. Otherwise, get
+        // the color for the state.
+        Color color = null;
+        if (!id.isSubregion()) {
+            if (type == ColorType.BACKGROUND) {
+                color = c.getBackground();
+            }
+            else if (type == ColorType.FOREGROUND) {
+                color = c.getForeground();
+            }
+            else if (type == ColorType.TEXT_FOREGROUND) {
+                color = c.getForeground();
+            }
+        }
+
+        if (color == null || color instanceof UIResource) {
+            // Then use what we've locally defined
+            color = getColorForState(context, type);
+        }
+
         if (color == null) {
             // No color, fallback to that of the widget.
             if (type == ColorType.BACKGROUND ||
