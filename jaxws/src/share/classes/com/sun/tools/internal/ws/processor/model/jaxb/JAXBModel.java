@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,12 @@
  */
 package com.sun.tools.internal.ws.processor.model.jaxb;
 
-import com.sun.tools.internal.xjc.api.*;
+import com.sun.tools.internal.xjc.api.J2SJAXBModel;
+import com.sun.tools.internal.xjc.api.Mapping;
+import com.sun.tools.internal.xjc.api.S2JJAXBModel;
 
 import javax.xml.namespace.QName;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.sun.codemodel.internal.JType;
+import java.util.*;
 
 /**
  * Root of the JAXB Model.

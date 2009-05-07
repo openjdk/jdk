@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
@@ -37,12 +36,15 @@ import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.Name;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
+import com.sun.xml.internal.bind.v2.runtime.reflect.Lister;
+import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.ChildLoader;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.TagName;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Receiver;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Scope;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader;
 
 import org.xml.sax.SAXException;
 
@@ -75,18 +77,30 @@ abstract class ArrayERProperty<BeanT,ListT,ItemT> extends ArrayProperty<BeanT,Li
         this.isWrapperNillable = isWrapperNillable;
     }
 
-
+    /**
+     * Used to handle the collection wrapper element.
+     */
     private static final class ItemsLoader extends Loader {
-        public ItemsLoader(QNameMap<ChildLoader> children) {
+
+        private final Accessor acc;
+        private final Lister lister;
+
+        public ItemsLoader(Accessor acc, Lister lister, QNameMap<ChildLoader> children) {
             super(false);
+            this.acc = acc;
+            this.lister = lister;
             this.children = children;
         }
 
         @Override
-        public void startElement(UnmarshallingContext.State state, TagName ea) {
-            state.getContext().startScope(1);
+        public void startElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
+            UnmarshallingContext context = state.getContext();
+            context.startScope(1);
             // inherit the target so that our children can access its target
             state.target = state.prev.target;
+
+            // start it now, so that even if there's no children we can still return empty collection
+            context.getScope(0).start(acc,lister);
         }
 
         private final QNameMap<ChildLoader> children;
@@ -157,7 +171,10 @@ abstract class ArrayERProperty<BeanT,ListT,ItemT> extends ArrayProperty<BeanT,Li
             UnmarshallerChain c = new UnmarshallerChain(chain.context);
             QNameMap<ChildLoader> m = new QNameMap<ChildLoader>();
             createBodyUnmarshaller(c,m);
-            loaders.put(wrapperTagName,new ChildLoader(new ItemsLoader(m),null));
+            Loader loader = new ItemsLoader(acc, lister, m);
+            if(isWrapperNillable || chain.context.allNillable)
+                loader = new XsiNilLoader(loader);
+            loaders.put(wrapperTagName,new ChildLoader(loader,null));
         } else {
             createBodyUnmarshaller(chain,loaders);
         }

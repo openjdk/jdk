@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,23 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.xsom.util;
 
 import com.sun.xml.internal.xsom.XSAnnotation;
 import com.sun.xml.internal.xsom.parser.AnnotationContext;
 import com.sun.xml.internal.xsom.parser.AnnotationParser;
 import com.sun.xml.internal.xsom.parser.AnnotationParserFactory;
-import org.w3c.dom.Element;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
 
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
 
 /**
  * {@link AnnotationParserFactory} that parses annotations into a W3C DOM.
@@ -91,8 +90,10 @@ public class DomAnnotationParserFactory implements AnnotationParserFactory {
                 // merge all the children
                 Element prev = (Element) existing;
                 Node anchor = e.getFirstChild();
-                while(prev.getFirstChild()!=null)
-                    e.insertBefore(prev.getFirstChild(), anchor );
+                while(prev.getFirstChild()!=null) {
+                    Node move = prev.getFirstChild();
+                    e.insertBefore(e.getOwnerDocument().adoptNode(move), anchor );
+                }
             }
             return e;
         }

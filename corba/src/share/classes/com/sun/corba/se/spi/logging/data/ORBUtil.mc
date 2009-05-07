@@ -1,6 +1,6 @@
 ;
 
-; Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+; Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
 ; DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ;
 ; This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,8 @@
 	     15 WARNING "Read of full message failed : bytes requested = {0} bytes read = {1} max wait time = {2} total time spent waiting = {3}")
 	    (CREATE_LISTENER_FAILED 
 	     16 SEVERE "Unable to create listener thread on the specified port: {0}")
+	    (BUFFER_READ_MANAGER_TIMEOUT
+	     17 WARNING "Timeout while reading data in buffer manager")
 	    )
 	(DATA_CONVERSION
 	    (BAD_STRINGIFIED_IOR_LEN 1  WARNING "A character did not map to the transmission code set")

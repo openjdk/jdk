@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,6 @@
  * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
  */
 
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
- *
- * THIS FILE WAS MODIFIED BY SUN MICROSYSTEMS, INC.
- *
- */
 
 
 package com.sun.xml.internal.fastinfoset.util;
@@ -143,13 +116,16 @@ public class LocalNameQualifiedNamesMap extends KeyIntMap {
         }
     }
 
+    public final boolean isQNameFromReadOnlyMap(QualifiedName name) {
+        return (_readOnlyMap != null && name.index <= _readOnlyMap.getIndex());
+    }
+
     public final int getNextIndex() {
         return _index++;
     }
 
     public final int getIndex() {
         return _index;
-
     }
 
     public final Entry obtainEntry(String key) {
@@ -161,6 +137,19 @@ public class LocalNameQualifiedNamesMap extends KeyIntMap {
                 return entry;
             }
         }
+
+        final int tableIndex = indexFor(hash, _table.length);
+        for (Entry e = _table[tableIndex]; e != null; e = e._next) {
+            if (e._hash == hash && eq(key, e._key)) {
+                return e;
+            }
+        }
+
+        return addEntry(key, hash, tableIndex);
+    }
+
+    public final Entry obtainDynamicEntry(String key) {
+        final int hash = hashHash(key.hashCode());
 
         final int tableIndex = indexFor(hash, _table.length);
         for (Entry e = _table[tableIndex]; e != null; e = e._next) {

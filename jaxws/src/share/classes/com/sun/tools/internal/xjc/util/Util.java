@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.util;
+
+import org.xml.sax.Locator;
 
 
 /**
@@ -40,7 +41,7 @@ public final class Util {
      * that doesn't throw an exception even if a property cannot be
      * read.
      */
-    public static final String getSystemProperty( String name ) {
+    public static String getSystemProperty( String name ) {
         try {
             return System.getProperty(name);
         } catch( SecurityException e ) {
@@ -49,10 +50,26 @@ public final class Util {
     }
 
     /**
+     * Compares if two {@link Locator}s point to the exact same position.
+     */
+    public static boolean equals(Locator lhs, Locator rhs) {
+        return lhs.getLineNumber()==rhs.getLineNumber()
+        && lhs.getColumnNumber()==rhs.getColumnNumber()
+        && equals(lhs.getSystemId(),rhs.getSystemId())
+        && equals(lhs.getPublicId(),rhs.getPublicId());
+    }
+
+    private static boolean equals(String lhs, String rhs) {
+        if(lhs==null && rhs==null)  return true;
+        if(lhs==null || rhs==null)  return false;
+        return lhs.equals(rhs);
+    }
+
+    /**
      * Calls the other getSystemProperty method with
      * "[clazz]&#x2E;[name].
      */
-    public static final String getSystemProperty( Class clazz, String name ) {
+    public static String getSystemProperty( Class clazz, String name ) {
         return getSystemProperty( clazz.getName()+'.'+name );
     }
 }

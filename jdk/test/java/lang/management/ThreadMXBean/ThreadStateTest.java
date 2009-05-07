@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug     4967283
+ * @bug     4967283 5080203
+ * @ignore  Due to 5080203, cannot rely on this test always passing.
  * @summary Basic unit test of thread states returned by
  *          ThreadMXBean.getThreadInfo.getThreadState().
  *          It also tests lock information returned by ThreadInfo.

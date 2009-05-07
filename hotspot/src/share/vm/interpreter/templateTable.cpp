@@ -442,6 +442,7 @@ void TemplateTable::initialize() {
   def(Bytecodes::_invokespecial       , ubcp|disp|clvm|____, vtos, vtos, invokespecial       ,  1           );
   def(Bytecodes::_invokestatic        , ubcp|disp|clvm|____, vtos, vtos, invokestatic        ,  1           );
   def(Bytecodes::_invokeinterface     , ubcp|disp|clvm|____, vtos, vtos, invokeinterface     ,  1           );
+  def(Bytecodes::_invokedynamic       , ubcp|disp|clvm|____, vtos, vtos, invokedynamic       ,  1           );
   def(Bytecodes::_new                 , ubcp|____|clvm|____, vtos, atos, _new                ,  _           );
   def(Bytecodes::_newarray            , ubcp|____|clvm|____, itos, atos, newarray            ,  _           );
   def(Bytecodes::_anewarray           , ubcp|____|clvm|____, itos, atos, anewarray           ,  _           );
@@ -502,7 +503,6 @@ void TemplateTable::initialize() {
   def(Bytecodes::_fast_icaload        , ubcp|____|____|____, vtos, itos, fast_icaload        ,  _       );
 
   def(Bytecodes::_fast_invokevfinal   , ubcp|disp|clvm|____, vtos, vtos, fast_invokevfinal   ,  2           );
-
 
   def(Bytecodes::_fast_linearswitch   , ubcp|disp|____|____, itos, vtos, fast_linearswitch   ,  _           );
   def(Bytecodes::_fast_binaryswitch   , ubcp|disp|____|____, itos, vtos, fast_binaryswitch   ,  _           );

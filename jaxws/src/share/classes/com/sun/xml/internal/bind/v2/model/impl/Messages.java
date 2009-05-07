@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.text.MessageFormat;
@@ -39,6 +38,7 @@ enum Messages {
     DUPLICATE_ANNOTATIONS, // 1 arg
     NO_DEFAULT_CONSTRUCTOR, // 1 arg
     CANT_HANDLE_INTERFACE, // 1 arg
+    CANT_HANDLE_INNER_CLASS, // 1 arg
     ANNOTATION_ON_WRONG_METHOD, // 0 args
     GETTER_SETTER_INCOMPATIBLE_TYPE, // 2 args
     DUPLICATE_ENTRY_IN_PROP_ORDER, // 1 arg
@@ -82,9 +82,18 @@ enum Messages {
     NO_FACTORY_METHOD, // 2 args
     FACTORY_CLASS_NEEDS_FACTORY_METHOD, // 1 arg
 
+    INCOMPATIBLE_API_VERSION, // 2 args
+    INCOMPATIBLE_API_VERSION_MUSTANG, // 2 args
+
     MISSING_JAXB_PROPERTIES, // 1arg
     TRANSIENT_FIELD_NOT_BINDABLE, // 1 arg
-    THERE_MUST_BE_VALUE_IN_XMLVALUE // 1 arg
+    THERE_MUST_BE_VALUE_IN_XMLVALUE, // 1 arg
+    UNMATCHABLE_ADAPTER, // 2 args
+
+    ACCESSORFACTORY_INSTANTIATION_EXCEPTION, // 2 arg
+    ACCESSORFACTORY_ACCESS_EXCEPTION, // 2 arg
+    CUSTOM_ACCESSORFACTORY_PROPERTY_ERROR, // 2 arg
+    CUSTOM_ACCESSORFACTORY_FIELD_ERROR, // 2 arg
     ;
 
     private static final ResourceBundle rb = ResourceBundle.getBundle(Messages.class.getName());

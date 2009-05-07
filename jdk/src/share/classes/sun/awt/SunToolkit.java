@@ -2038,37 +2038,34 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Returns whether or not a containing top level window for the passed
      * component is
-     * {@link com.sun.awt.AWTUtilities.Translucency#PERPIXEL_TRANSLUCENT PERPIXEL_TRANSLUCENT}.
+     * {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT PERPIXEL_TRANSLUCENT}.
      *
      * @param c a Component which toplevel's to check
      * @return {@code true}  if the passed component is not null and has a
      * containing toplevel window which is opaque (so per-pixel translucency
      * is not enabled), {@code false} otherwise
-     * @see com.sun.awt.AWTUtilities.Translucency#PERPIXEL_TRANSLUCENT
-     * @see com.sun.awt.AWTUtilities#isWindowOpaque(Window)
+     * @see GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
      */
     public static boolean isContainingTopLevelOpaque(Component c) {
         Window w = getContainingWindow(c);
-        // return w != null && (w).isOpaque();
-        return w != null && com.sun.awt.AWTUtilities.isWindowOpaque(w);
+        return w != null && ((Window)w).getBackground() != null &&
+            ((Window)w).getBackground().getAlpha() == 255;
     }
 
     /**
      * Returns whether or not a containing top level window for the passed
      * component is
-     * {@link com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT TRANSLUCENT}.
+     * {@link GraphicsDevice.WindowTranslucency#TRANSLUCENT TRANSLUCENT}.
      *
      * @param c a Component which toplevel's to check
      * @return {@code true} if the passed component is not null and has a
      * containing toplevel window which has opacity less than
      * 1.0f (which means that it is translucent), {@code false} otherwise
-     * @see com.sun.awt.AWTUtilities.Translucency#TRANSLUCENT
-     * @see com.sun.awt.AWTUtilities#getWindowOpacity(Window)
+     * @see GraphicsDevice.WindowTranslucency#TRANSLUCENT
      */
     public static boolean isContainingTopLevelTranslucent(Component c) {
         Window w = getContainingWindow(c);
-        // return w != null && (w).getOpacity() < 1.0f;
-        return w != null && com.sun.awt.AWTUtilities.getWindowOpacity((Window)w) < 1.0f;
+        return w != null && ((Window)w).getOpacity() < 1.0f;
     }
 
     /**

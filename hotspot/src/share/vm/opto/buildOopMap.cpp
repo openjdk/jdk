@@ -363,6 +363,20 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
   */
 #endif
 
+#ifdef ASSERT
+  for( OopMapStream oms1(omap, OopMapValue::derived_oop_value); !oms1.is_done(); oms1.next()) {
+    OopMapValue omv1 = oms1.current();
+    bool found = false;
+    for( OopMapStream oms2(omap,OopMapValue::oop_value); !oms2.is_done(); oms2.next()) {
+      if( omv1.content_reg() == oms2.current().reg() ) {
+        found = true;
+        break;
+      }
+    }
+    assert( found, "derived with no base in oopmap" );
+  }
+#endif
+
   return omap;
 }
 

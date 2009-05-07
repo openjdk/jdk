@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public interface SOAPHandler<T extends SOAPMessageContext>
   /** Gets the header blocks that can be processed by this Handler
    *  instance.
    *
-   *  @return Set of QNames of header blocks processed by this
+   *  @return Set of <code>QNames</code> of header blocks processed by this
    *           handler instance. <code>QName</code> is the qualified
    *           name of the outermost element of the Header block.
   **/

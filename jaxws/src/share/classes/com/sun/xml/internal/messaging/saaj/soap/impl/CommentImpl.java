@@ -1,11 +1,5 @@
 /*
- * $Id: CommentImpl.java,v 1.17 2006/01/27 12:49:34 vj135062 Exp $
- * $Revision: 1.17 $
- * $Date: 2006/01/27 12:49:34 $
- */
-
-/*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +22,13 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+/*
+ *
+ *
+ *
+ */
+
+
 package com.sun.xml.internal.messaging.saaj.soap.impl;
 
 import java.util.ResourceBundle;
@@ -46,7 +47,7 @@ public class CommentImpl
     extends com.sun.org.apache.xerces.internal.dom.CommentImpl
     implements javax.xml.soap.Text, org.w3c.dom.Comment {
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_IMPL_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.impl.LocalStrings");
     protected static ResourceBundle rb =

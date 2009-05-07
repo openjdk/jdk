@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,10 @@ public final class Version {
             props.load(is);
         } catch (IOException e) {
             // ignore even if the property was not found. we'll treat everything as unknown
+        } catch (Exception e) {
+            //ignore even if property not found
         }
+
         return new Version(
             props.getProperty("build-id"),
             props.getProperty("build-version"),
@@ -70,5 +73,9 @@ public final class Version {
     private String fixNull(String v) {
         if(v==null) return "unknown";
         return v;
+    }
+
+    public String toString() {
+        return BUILD_VERSION;
     }
 }

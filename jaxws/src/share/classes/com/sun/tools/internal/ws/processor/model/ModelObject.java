@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,37 @@
 
 package com.sun.tools.internal.ws.processor.model;
 
+import com.sun.tools.internal.ws.wsdl.framework.Entity;
+import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.sun.xml.internal.ws.util.NullIterator;
+import org.xml.sax.Locator;
 
 /**
  *
  * @author WS Development Team
  */
 public abstract class ModelObject {
-
     public abstract void accept(ModelVisitor visitor) throws Exception;
+
+    private final Entity entity;
+    protected ErrorReceiver errorReceiver;
+
+    protected ModelObject(Entity entity) {
+        this.entity = entity;
+    }
+
+    public void setErrorReceiver(ErrorReceiver errorReceiver) {
+        this.errorReceiver = errorReceiver;
+    }
+
+    public Entity getEntity() {
+        return entity;
+    }
 
     public Object getProperty(String key) {
         if (_properties == null) {
@@ -66,18 +84,20 @@ public abstract class ModelObject {
 
     public Iterator getProperties() {
         if (_properties == null) {
-            return NullIterator.getInstance();
+            return Collections.emptyList().iterator();
         } else {
             return _properties.keySet().iterator();
         }
     }
 
-    /* serialization */
+    public Locator getLocator(){
+        return entity.getLocator();
+    }
+
     public Map getPropertiesMap() {
         return _properties;
     }
 
-    /* serialization */
     public void setPropertiesMap(Map m) {
         _properties = m;
     }

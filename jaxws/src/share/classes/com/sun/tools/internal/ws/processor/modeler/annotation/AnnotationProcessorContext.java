@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,18 @@
  */
 package com.sun.tools.internal.ws.processor.modeler.annotation;
 
-import com.sun.mirror.apt.AnnotationProcessorEnvironment;
 import com.sun.mirror.declaration.MethodDeclaration;
 import com.sun.mirror.declaration.ParameterDeclaration;
 import com.sun.mirror.declaration.TypeDeclaration;
-import com.sun.mirror.type.TypeMirror;
 import com.sun.tools.internal.ws.processor.model.Model;
 import com.sun.tools.internal.ws.processor.model.Operation;
 import com.sun.tools.internal.ws.processor.model.Port;
 import com.sun.tools.internal.ws.processor.model.Service;
-import com.sun.tools.internal.ws.processor.model.jaxb.JAXBModel;
 import com.sun.tools.internal.ws.wsdl.document.soap.SOAPUse;
 
-import com.sun.tools.internal.xjc.api.Reference;
-
-import javax.xml.namespace.QName;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import com.sun.tools.internal.ws.processor.modeler.annotation.*;
 
 
 /**
@@ -85,14 +75,6 @@ public class AnnotationProcessorContext {
         return seiContextMap.values();
     }
 
-    public boolean allEncoded() {
-        for (SEIContext seiContext : seiContextMap.values()) {
-            if (!isEncoded(seiContext.getModel()))
-                return false;
-        }
-        return true;
-    }
-
     public int getRound() {
         return round;
     }
@@ -128,23 +110,15 @@ public class AnnotationProcessorContext {
         private Map<String, WrapperInfo> resOperationWrapperMap;
         private Map<String, FaultInfo> exceptionBeanMap;
 
-        private Model model;
-        private Map<Object, Reference> schemaReferences;
-        private Map<QName, Reference> schemaElements;
-
-        private boolean modelCompiled = false;
         private String seiName;
         private String seiImplName;
         private boolean implementsSEI = false;
-        private JAXBModel jaxBModel;
         private String namespaceURI = null;
 
         public SEIContext(String seiName) {
             reqOperationWrapperMap = new HashMap<String, WrapperInfo>();
             resOperationWrapperMap = new HashMap<String, WrapperInfo>();
             exceptionBeanMap = new HashMap<String,FaultInfo>();
-            schemaReferences = new HashMap<Object, Reference>();
-            schemaElements = new HashMap<QName, Reference>();
             this.seiName = seiName;
         }
 
@@ -162,20 +136,6 @@ public class AnnotationProcessorContext {
 
         public String getNamespaceURI() {
             return namespaceURI;
-        }
-
-        public void setJAXBModel(JAXBModel model) {
-            this.jaxBModel = model;
-            if (this.model != null)
-                this.model.setJAXBModel(model);
-        }
-
-        public JAXBModel getJAXBModel() {
-            return jaxBModel;
-        }
-
-        public String getSEIName() {
-            return seiName;
         }
 
         public String getSEIImplName() {
@@ -209,35 +169,6 @@ public class AnnotationProcessorContext {
             return buf.toString();
         }
 
-        public void setModel(Model model) {
-            this.model = model;
-            model.setJAXBModel(jaxBModel);
-        }
-
-        public Model getModel() {
-            return model;
-        }
-
-        public boolean getModelCompiled() {
-            return modelCompiled;
-        }
-
-        public void setModelCompiled(boolean compiled) {
-            modelCompiled = compiled;
-        }
-
-        public Collection<Reference> getSchemaReferences(ModelBuilder builder) {
-            return schemaReferences.values();
-        }
-
-        public Map<QName, Reference> getSchemaElementMap(ModelBuilder builder) {
-            return schemaElements;
-        }
-
-        public Collection<Reference> getSchemaReferences() {
-            return schemaReferences.values();
-        }
-
         public void clearExceptionMap() {
             exceptionBeanMap.clear();
         }
@@ -248,52 +179,6 @@ public class AnnotationProcessorContext {
 
         public FaultInfo getExceptionBeanName(String exception) {
             return exceptionBeanMap.get(exception);
-        }
-
-        public Reference addReference(MethodDeclaration method) {
-            Reference ref = schemaReferences.get(method);
-            if (ref == null)
-                ref = new Reference(method);
-            addReference(method, ref);
-            return ref;
-        }
-
-        public Reference addReference(ParameterDeclaration param) {
-            Reference ref = schemaReferences.get(param);
-            if (ref == null)
-                ref = new Reference(param);
-            addReference(param, ref);
-            return ref;
-        }
-
-        public Reference addReference(TypeMirror type, ParameterDeclaration param) {
-            Reference ref = schemaReferences.get(param);
-            if (ref == null)
-                ref = new Reference(type, param);
-            addReference(param, ref);
-            return ref;
-        }
-
-        public Reference addReference(TypeDeclaration type, AnnotationProcessorEnvironment apEnv) {
-            Reference ref = schemaReferences.get(type);
-            if (ref == null)
-                ref = new Reference(type, apEnv);
-            addReference(type, ref);
-            return ref;
-        }
-
-        private void addReference(Object key, Reference reference) {
-            schemaReferences.put(key, reference);
-        }
-
-        public Reference getReference(Object key) {
-            return schemaReferences.get(key);
-        }
-
-        public void addSchemaElement(QName elemName, Reference reference) {
-            if (elemName == null)
-                throw new RuntimeException();
-            schemaElements.put(elemName, reference);
         }
     }
 }

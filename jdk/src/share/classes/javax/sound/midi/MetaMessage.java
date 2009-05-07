@@ -102,6 +102,29 @@ public class MetaMessage extends MidiMessage {
         this(defaultMessage);
     }
 
+    /**
+     * Constructs a new {@code MetaMessage} and sets the message parameters.
+     * The contents of the message can be changed by using
+     * the {@code setMessage} method.
+     *
+     * @param type   meta-message type (must be less than 128)
+     * @param data   the data bytes in the MIDI message
+     * @param length an amount of bytes in the {@code data} byte array;
+     *     it should be non-negative and less than or equal to
+     *     {@code data.length}
+     * @throws InvalidMidiDataException if the parameter values do not specify
+     *     a valid MIDI meta message
+     * @see #setMessage(int, byte[], int)
+     * @see #getType()
+     * @see #getData()
+     * @since 1.7
+     */
+    public MetaMessage(int type, byte[] data, int length)
+            throws InvalidMidiDataException {
+        super(null);
+        setMessage(type, data, length); // can throw InvalidMidiDataException
+    }
+
 
     /**
      * Constructs a new <code>MetaMessage</code>.

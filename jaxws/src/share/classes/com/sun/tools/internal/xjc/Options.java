@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -50,6 +52,7 @@ import com.sun.codemodel.internal.writer.PrologCodeWriter;
 import com.sun.org.apache.xml.internal.resolver.CatalogManager;
 import com.sun.org.apache.xml.internal.resolver.tools.CatalogResolver;
 import com.sun.tools.internal.xjc.api.ClassNameAllocator;
+import com.sun.tools.internal.xjc.api.SpecVersion;
 import com.sun.tools.internal.xjc.generator.bean.field.FieldRendererFactory;
 import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.reader.Util;
@@ -97,6 +100,11 @@ public class Options
     public boolean runtime14 = false;
 
     /**
+     * If true, try to resolve name conflicts automatically by assigning mechanical numbers.
+     */
+    public boolean automaticNameConflictResolution = false;
+
+    /**
      * strictly follow the compatibility rules and reject schemas that
      * contain features from App. E.2, use vendor binding extensions
      */
@@ -113,6 +121,16 @@ public class Options
      * or <code>EXTENSION</code>.
      */
     public int compatibilityMode = STRICT;
+
+    public boolean isExtensionMode() {
+        return compatibilityMode==EXTENSION;
+    }
+
+    /**
+     * Generates output for the specified version of the runtime.
+     */
+    public SpecVersion target = SpecVersion.V2_1;
+
 
     /** Target direcoty when producing files. */
     public File targetDir = new File(".");
@@ -376,10 +394,17 @@ public class Options
     }
 
     /**
-     * Adds a new input schema.
+     * Adds a new binding file.
      */
     public void addBindFile( InputSource is ) {
         bindFiles.add(absolutize(is));
+    }
+
+    /**
+     * Adds a new binding file.
+     */
+    public void addBindFile( File bindFile ) {
+        bindFiles.add(fileToInputSource(bindFile));
     }
 
     /**
@@ -410,12 +435,9 @@ public class Options
      * @exception BadCommandLineException
      *      If the callee wants to provide a custom message for an error.
      */
-    protected int parseArgument( String[] args, int i ) throws BadCommandLineException {
+    public int parseArgument( String[] args, int i ) throws BadCommandLineException {
         if (args[i].equals("-classpath") || args[i].equals("-cp")) {
-            if (i == args.length - 1)
-                throw new BadCommandLineException(
-                    Messages.format(Messages.MISSING_CLASSPATH));
-            File file = new File(args[++i]);
+            File file = new File(requireArgument(args[i],args,++i));
             try {
                 classpaths.add(file.toURL());
             } catch (MalformedURLException e) {
@@ -425,10 +447,7 @@ public class Options
             return 2;
         }
         if (args[i].equals("-d")) {
-            if (i == args.length - 1)
-                throw new BadCommandLineException(
-                    Messages.format(Messages.MISSING_DIR));
-            targetDir = new File(args[++i]);
+            targetDir = new File(requireArgument("-d",args,++i));
             if( !targetDir.exists() )
                 throw new BadCommandLineException(
                     Messages.format(Messages.NON_EXISTENT_DIR,targetDir));
@@ -439,10 +458,7 @@ public class Options
             return 1;
         }
         if (args[i].equals("-p")) {
-            if (i == args.length - 1)
-                throw new BadCommandLineException(
-                    Messages.format(Messages.MISSING_PACKAGENAME));
-            defaultPackage = args[++i];
+            defaultPackage = requireArgument("-p",args,++i);
             if(defaultPackage.length()==0) { // user specified default package
                 // there won't be any package to annotate, so disable them
                 // automatically as a usability feature
@@ -479,12 +495,12 @@ public class Options
             runtime14 = true;
             return 1;
         }
+        if (args[i].equals("-XautoNameResolution")) {
+            automaticNameConflictResolution = true;
+            return 1;
+        }
         if (args[i].equals("-b")) {
-            if (i==args.length-1 || args[i + 1].startsWith("-"))
-                throw new BadCommandLineException(
-                    Messages.format(Messages.MISSING_FILENAME));
-
-            addFile(args[i + 1],bindFiles,".xjb");
+            addFile(requireArgument("-b",args,++i),bindFiles,".xjb");
             return 2;
         }
         if (args[i].equals("-dtd")) {
@@ -510,6 +526,13 @@ public class Options
         if (args[i].equals("-extension")) {
             compatibilityMode = EXTENSION;
             return 1;
+        }
+        if (args[i].equals("-target")) {
+            String token = requireArgument("-target",args,++i);
+            target = SpecVersion.parse(token);
+            if(target==null)
+                throw new BadCommandLineException(Messages.format(Messages.ILLEGAL_TARGET_VERSION,token));
+            return 2;
         }
         if (args[i].equals("-httpproxyfile")) {
             if (i == args.length - 1 || args[i + 1].startsWith("-")) {
@@ -544,32 +567,19 @@ public class Options
             return 2;
         }
         if (args[i].equals("-host")) {
-            // legacy option. we use -httpproxy for more control
-            if (i == args.length - 1 || args[i + 1].startsWith("-")) {
-                throw new BadCommandLineException(
-                    Messages.format(Messages.MISSING_PROXYHOST));
-            }
-            proxyHost = args[++i];
+            proxyHost = requireArgument("-host",args,++i);
             return 2;
         }
         if (args[i].equals("-port")) {
-            // legacy option. we use -httpproxy for more control
-            if (i == args.length - 1 || args[i + 1].startsWith("-")) {
-                throw new BadCommandLineException(
-                    Messages.format(Messages.MISSING_PROXYPORT));
-            }
-            proxyPort = args[++i];
+            proxyPort = requireArgument("-port",args,++i);
             return 2;
         }
         if( args[i].equals("-catalog") ) {
             // use Sun's "XML Entity and URI Resolvers" by Norman Walsh
             // to resolve external entities.
             // http://www.sun.com/xml/developers/resolver/
-            if (i == args.length - 1)
-                throw new BadCommandLineException(
-                    Messages.format(Messages.MISSING_CATALOG));
 
-            File catalogFile = new File(args[++i]);
+            File catalogFile = new File(requireArgument("-catalog",args,++i));
             try {
                 addCatalog(catalogFile);
             } catch (IOException e) {
@@ -579,14 +589,11 @@ public class Options
             return 2;
         }
         if (args[i].equals("-source")) {
-            if (i == args.length - 1)
-                throw new BadCommandLineException(
-                    Messages.format(Messages.MISSING_VERSION));
-            String version = args[++i];
+            String version = requireArgument("-source",args,++i);
             //For source 1.0 the 1.0 Driver is loaded
             //Hence anything other than 2.0 is defaulted to
             //2.0
-            if( !version.equals("2.0") )
+            if( !version.equals("2.0") && !version.equals("2.1") )
                 throw new BadCommandLineException(
                     Messages.format(Messages.DEFAULT_VERSION));
             return 2;
@@ -603,14 +610,23 @@ public class Options
 
         // see if this is one of the extensions
         for( Plugin plugin : getAllPlugins() ) {
-            if( ('-'+plugin.getOptionName()).equals(args[i]) ) {
-                activePlugins.add(plugin);
-                plugin.onActivated(this);
-                pluginURIs.addAll(plugin.getCustomizationURIs());
-                return 1;
-            }
-
             try {
+                if( ('-'+plugin.getOptionName()).equals(args[i]) ) {
+                    activePlugins.add(plugin);
+                    plugin.onActivated(this);
+                    pluginURIs.addAll(plugin.getCustomizationURIs());
+
+                    // give the plugin a chance to parse arguments to this option.
+                    // this is new in 2.1, and due to the backward compatibility reason,
+                    // if plugin didn't understand it, we still return 1 to indicate
+                    // that this option is consumed.
+                    int r = plugin.parseArgument(this,args,i);
+                    if(r!=0)
+                        return r;
+                    else
+                        return 1;
+                }
+
                 int r = plugin.parseArgument(this,args,i);
                 if(r!=0)    return r;
             } catch (IOException e) {
@@ -639,6 +655,17 @@ public class Options
         } catch (NumberFormatException e) {
             throw new BadCommandLineException(Messages.format(Messages.ILLEGAL_PROXY,text));
         }
+    }
+
+    /**
+     * Obtains an operand and reports an error if it's not there.
+     */
+    public String requireArgument(String optionName, String[] args, int i) throws BadCommandLineException {
+        if (i == args.length || args[i].startsWith("-")) {
+            throw new BadCommandLineException(
+                Messages.format(Messages.MISSING_OPERAND,optionName));
+        }
+        return args[i];
     }
 
     /**
@@ -698,7 +725,10 @@ public class Options
                         Messages.format(Messages.UNRECOGNIZED_PARAMETER, args[i]));
                 i += (j-1);
             } else {
-                addFile(args[i],grammars,".xsd");
+                if(args[i].endsWith(".jar"))
+                    scanEpisodeFile(new File(args[i]));
+                else
+                    addFile(args[i],grammars,".xsd");
             }
         }
 
@@ -729,6 +759,27 @@ public class Options
 
         if( schemaLanguage==null )
             schemaLanguage = guessSchemaLanguage();
+
+        if(pluginLoadFailure!=null)
+            throw new BadCommandLineException(
+                Messages.format(Messages.PLUGIN_LOAD_FAILURE,pluginLoadFailure));
+    }
+
+    /**
+     * Finds the <tt>META-INF/sun-jaxb.episode</tt> file to add as a binding customization.
+     */
+    private void scanEpisodeFile(File jar) throws BadCommandLineException {
+        try {
+            URLClassLoader ucl = new URLClassLoader(new URL[]{jar.toURL()});
+            Enumeration<URL> resources = ucl.findResources("META-INF/sun-jaxb.episode");
+            while (resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                addBindFile(new InputSource(url.toExternalForm()));
+            }
+        } catch (IOException e) {
+            throw new BadCommandLineException(
+                    Messages.format(Messages.FAILED_TO_LOAD,jar,e.getMessage()), e);
+        }
     }
 
 
@@ -767,6 +818,14 @@ public class Options
         if(noFileHeader)
             return core;
 
+        return new PrologCodeWriter( core,getPrologComment() );
+    }
+
+    /**
+     * Gets the string suitable to be used as the prolog comment baked into artifacts.
+     * This is the string like "This file was generated by the JAXB RI on YYYY/mm/dd..."
+     */
+    public String getPrologComment() {
         // generate format syntax: <date> 'at' <time>
         String format =
             Messages.format(Messages.DATE_FORMAT)
@@ -776,14 +835,15 @@ public class Options
                 + Messages.format(Messages.TIME_FORMAT);
         SimpleDateFormat dateFormat = new SimpleDateFormat(format);
 
-        return new PrologCodeWriter( core,
-                Messages.format(
-                    Messages.FILE_PROLOG_COMMENT,
-                    dateFormat.format(new Date())) );
+        return Messages.format(
+            Messages.FILE_PROLOG_COMMENT,
+            dateFormat.format(new Date()));
     }
 
-
-
+    /**
+     * If a plugin failed to load, report.
+     */
+    private static String pluginLoadFailure;
 
     /**
      * Looks for all "META-INF/services/[className]" files and
@@ -825,9 +885,9 @@ public class Options
                         if(classNames.add(impl)) {
                             Class implClass = classLoader.loadClass(impl);
                             if(!clazz.isAssignableFrom(implClass)) {
-                                if(debug) {
-                                    System.out.println(impl+" is not a subclass of "+clazz+". Skipping");
-                                }
+                                pluginLoadFailure = impl+" is not a subclass of "+clazz+". Skipping";
+                                if(debug)
+                                    System.out.println(pluginLoadFailure);
                                 continue;
                             }
                             if(debug) {
@@ -839,8 +899,11 @@ public class Options
                     reader.close();
                 } catch( Exception ex ) {
                     // let it go.
+                    StringWriter w = new StringWriter();
+                    ex.printStackTrace(new PrintWriter(w));
+                    pluginLoadFailure = w.toString();
                     if(debug) {
-                        ex.printStackTrace(System.out);
+                        System.out.println(pluginLoadFailure);
                     }
                     if( reader!=null ) {
                         try {
@@ -855,8 +918,11 @@ public class Options
             return a.toArray((T[])Array.newInstance(clazz,a.size()));
         } catch( Throwable e ) {
             // ignore any error
+            StringWriter w = new StringWriter();
+            e.printStackTrace(new PrintWriter(w));
+            pluginLoadFailure = w.toString();
             if(debug) {
-                e.printStackTrace(System.out);
+                System.out.println(pluginLoadFailure);
             }
             return (T[])Array.newInstance(clazz,0);
         }

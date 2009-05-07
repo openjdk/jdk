@@ -202,6 +202,10 @@ public class IDLNameTranslatorImpl implements IDLNameTranslator {
     private IDLNameTranslatorImpl(Class[] interfaces)
     {
 
+        SecurityManager s = System.getSecurityManager();
+        if (s != null) {
+            s.checkPermission(new DynamicAccessPermission("access"));
+        }
         try {
             IDLTypesUtil idlTypesUtil = new IDLTypesUtil();
             for (int ctr=0; ctr<interfaces.length; ctr++)

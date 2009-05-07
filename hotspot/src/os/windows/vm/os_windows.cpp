@@ -2632,6 +2632,8 @@ bool os::can_execute_large_page_memory() {
 
 char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
 
+  const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
+
   if (UseLargePagesIndividualAllocation) {
     if (TracePageSizes && Verbose) {
        tty->print_cr("Reserving large pages individually.");
@@ -2694,13 +2696,7 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
         p_new = (char *) VirtualAlloc(next_alloc_addr,
                                     bytes_to_rq,
                                     MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES,
-                                    PAGE_READWRITE);
-        if (p_new != NULL && exec) {
-          DWORD oldprot;
-          // Windows doc says to use VirtualProtect to get execute permissions
-          VirtualProtect(next_alloc_addr, bytes_to_rq,
-                         PAGE_EXECUTE_READWRITE, &oldprot);
-        }
+                                    prot);
       }
 
       if (p_new == NULL) {
@@ -2729,12 +2725,7 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
   } else {
     // normal policy just allocate it all at once
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
-    char * res = (char *)VirtualAlloc(NULL, bytes, flag, PAGE_READWRITE);
-    if (res != NULL && exec) {
-      DWORD oldprot;
-      // Windows doc says to use VirtualProtect to get execute permissions
-      VirtualProtect(res, bytes, PAGE_EXECUTE_READWRITE, &oldprot);
-    }
+    char * res = (char *)VirtualAlloc(NULL, bytes, flag, prot);
     return res;
   }
 }

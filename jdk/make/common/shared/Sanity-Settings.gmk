@@ -233,6 +233,7 @@ ifeq ($(PLATFORM),windows)
   endif
 endif
 ALL_SETTINGS+=$(call addAltSetting,CACERTS_FILE)
+ALL_SETTINGS+=$(call addAltSetting,JIBX_LIBS_PATH)
 ifndef OPENJDK
   ALL_SETTINGS+=$(call addAltSetting,MOZILLA_HEADERS_PATH)
 endif

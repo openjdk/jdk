@@ -54,6 +54,7 @@ public class SoftAudioPusher implements Runnable {
             return;
         active = true;
         audiothread = new Thread(this);
+        audiothread.setDaemon(true);
         audiothread.setPriority(Thread.MAX_PRIORITY);
         audiothread.start();
     }
