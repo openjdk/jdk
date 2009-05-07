@@ -375,6 +375,9 @@ public class BasicShort
 
 
 
+
+
+
         // Compact
 
         relPut(b);
@@ -703,6 +706,8 @@ public class BasicShort
         relPut(b);                       // Required by testViews
 
     }
+
+
 
 
 

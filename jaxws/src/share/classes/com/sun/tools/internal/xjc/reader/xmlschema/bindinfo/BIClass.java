@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.reader.xmlschema.bindinfo;
 
 import javax.xml.bind.annotation.XmlAttribute;
@@ -32,8 +31,7 @@ import javax.xml.namespace.QName;
 
 import com.sun.tools.internal.xjc.reader.Const;
 import com.sun.xml.internal.bind.api.impl.NameConverter;
-
-import org.xml.sax.Locator;
+import com.sun.istack.internal.Nullable;
 
 /**
  * Class declaration.
@@ -49,14 +47,6 @@ import org.xml.sax.Locator;
  */
 @XmlRootElement(name="class")
 public final class BIClass extends AbstractDeclarationImpl {
-
-    public BIClass( Locator loc, String _className, String _implClass, String _javadoc ) {
-        super(loc);
-        this.className = _className;
-        this.javadoc = _javadoc;
-        this.userSpecifiedImplClass = _implClass;
-    }
-
     protected BIClass() {
     }
 
@@ -65,13 +55,14 @@ public final class BIClass extends AbstractDeclarationImpl {
 
     /**
      * Gets the specified class name, or null if not specified.
+     * (Not a fully qualified name.)
      *
      * @return
      *      Returns a class name. The caller should <em>NOT</em>
      *      apply XML-to-Java name conversion to the name
      *      returned from this method.
      */
-    public String getClassName() {
+    public @Nullable String getClassName() {
         if( className==null )   return null;
 
         BIGlobalBinding gb = getBuilder().getGlobalBinding();
@@ -95,6 +86,20 @@ public final class BIClass extends AbstractDeclarationImpl {
         return userSpecifiedImplClass;
     }
 
+    @XmlAttribute(name="ref")
+    private String ref;
+
+    /**
+     * Reference to the existing class, or null.
+     * Fully qualified name.
+     *
+     * <p>
+     * Caller needs to perform error check on this.
+     */
+    public String getExistingClassRef() {
+        return ref;
+    }
+
     @XmlElement
     private String javadoc;
     /**
@@ -105,7 +110,14 @@ public final class BIClass extends AbstractDeclarationImpl {
 
     public QName getName() { return NAME; }
 
+    public void setParent(BindInfo p) {
+        super.setParent(p);
+        // if this specifies a reference to external class,
+        // then it's OK even if noone actually refers this class.
+        if(ref!=null)
+            markAsAcknowledged();
+    }
+
     /** Name of this declaration. */
-    public static final QName NAME = new QName(
-        Const.JAXB_NSURI, "class" );
+    public static final QName NAME = new QName( Const.JAXB_NSURI, "class" );
 }

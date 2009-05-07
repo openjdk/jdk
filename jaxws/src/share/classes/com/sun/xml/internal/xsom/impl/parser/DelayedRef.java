@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,9 @@ import org.xml.sax.SAXException;
  * after all the schemas are parsed.
  */
 public abstract class DelayedRef implements Patch {
-    DelayedRef( PatcherManager _manager, Locator _source,
-        SchemaImpl _schema, UName _name ) {
+    DelayedRef( PatcherManager _manager, Locator _source, SchemaImpl _schema, UName _name ) {
 
-        this.schema = _schema.getParent();
+        this.schema = _schema.getRoot();
         this.manager = _manager;
         this.name = _name;
         this.source = _source;

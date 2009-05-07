@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,11 @@
  */
 package com.sun.tools.internal.ws.processor.modeler.wsdl;
 
-import com.sun.tools.internal.xjc.api.ClassNameAllocator;
 import com.sun.tools.internal.ws.processor.util.ClassNameCollector;
+import com.sun.tools.internal.xjc.api.ClassNameAllocator;
 
-import java.util.Set;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.Set;
 
 /**
  * @author Vivek Pandey

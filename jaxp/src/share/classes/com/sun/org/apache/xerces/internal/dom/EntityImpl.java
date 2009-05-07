@@ -148,7 +148,6 @@ public class EntityImpl
      * @exception DOMException
      *   <br>NO_MODIFICATION_ALLOWED_ERR: Raised if this node is readonly.
      */
-
     public void setPrefix(String prefix)
         throws DOMException
     {

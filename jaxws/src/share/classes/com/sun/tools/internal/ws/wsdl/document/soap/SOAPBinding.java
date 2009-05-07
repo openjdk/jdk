@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,20 @@
 
 package com.sun.tools.internal.ws.wsdl.document.soap;
 
-import javax.xml.namespace.QName;
+import com.sun.tools.internal.ws.wsdl.framework.ExtensionImpl;
+import org.xml.sax.Locator;
 
-import com.sun.tools.internal.ws.wsdl.framework.Extension;
+import javax.xml.namespace.QName;
 
 /**
  * A SOAP binding extension.
  *
  * @author WS Development Team
  */
-public class SOAPBinding extends Extension {
+public class SOAPBinding extends ExtensionImpl {
 
-    public SOAPBinding() {
+    public SOAPBinding(Locator locator) {
+        super(locator);
         _style = SOAPStyle.DOCUMENT;
     }
 

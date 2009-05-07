@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.api.util;
 
 import java.io.ByteArrayOutputStream;
@@ -32,6 +31,8 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.MalformedURLException;
+
+import com.sun.istack.internal.Nullable;
 
 /**
  * {@link ClassLoader} that loads APT and specified classes
@@ -52,9 +53,9 @@ public final class APTClassLoader extends URLClassLoader {
      * @param packagePrefixes
      *      The package prefixes that are forced to resolve within this class loader.
      * @param parent
-     *      The parent class loader to delegate to.
+     *      The parent class loader to delegate to. Null to indicate bootstrap classloader.
      */
-    public APTClassLoader(ClassLoader parent, String[] packagePrefixes) throws ToolsJarNotFoundException {
+    public APTClassLoader(@Nullable ClassLoader parent, String[] packagePrefixes) throws ToolsJarNotFoundException {
         super(getToolsJar(parent),parent);
         if(getURLs().length==0)
             // if tools.jar was found in our classloader, no need to create
@@ -114,11 +115,11 @@ public final class APTClassLoader extends URLClassLoader {
      * Returns a class loader that can load classes from JDK tools.jar.
      * @param parent
      */
-    private static URL[] getToolsJar(ClassLoader parent) throws ToolsJarNotFoundException {
+    private static URL[] getToolsJar(@Nullable ClassLoader parent) throws ToolsJarNotFoundException {
 
         try {
-            parent.loadClass("com.sun.tools.javac.Main");
-            parent.loadClass("com.sun.tools.apt.Main");
+            Class.forName("com.sun.tools.javac.Main",false,parent);
+            Class.forName("com.sun.tools.apt.Main",false,parent);
             return new URL[0];
             // we can already load them in the parent class loader.
             // so no need to look for tools.jar.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ package com.sun.xml.internal.dtdparser;
  * both to parse and to create such documents.
  *
  * @author David Brownell
+ * @version 1.1, 00/08/05
  */
 public class XmlChars {
     // can't construct instances

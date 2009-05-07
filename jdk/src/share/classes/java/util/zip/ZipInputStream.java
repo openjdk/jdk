@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
 import java.io.PushbackInputStream;
+import java.nio.charset.Charset;
 import static java.util.zip.ZipConstants64.*;
 
 /**
@@ -54,6 +55,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
     // one entry
     private boolean entryEOF = false;
 
+    private ZipCoder zc;
+
     /**
      * Check to make sure that this stream has not been closed
      */
@@ -65,14 +68,39 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
 
     /**
      * Creates a new ZIP input stream.
+     *
+     * <p>The UTF-8 {@link java.nio.charset.Charset charset} is used to
+     * decode the entry names.
+     *
      * @param in the actual input stream
      */
     public ZipInputStream(InputStream in) {
+        this(in, Charset.forName("UTF-8"));
+    }
+
+    /**
+     * Creates a new ZIP input stream.
+     *
+     * @param in the actual input stream
+     *
+     * @param charset
+     *        The {@linkplain java.nio.charset.Charset charset} to be
+     *        used to decode the ZIP entry name (ignored if the
+     *        <a href="package-summary.html#lang_encoding"> language
+     *        encoding bit</a> of the ZIP entry's general purpose bit
+     *        flag is set).
+     *
+     * @since 1.7
+     */
+    public ZipInputStream(InputStream in, Charset charset) {
         super(new PushbackInputStream(in, 512), new Inflater(true), 512);
         usesDefaultInflater = true;
         if(in == null) {
             throw new NullPointerException("in is null");
         }
+        if (charset == null)
+            throw new NullPointerException("charset is null");
+        this.zc = ZipCoder.get(charset);
     }
 
     /**
@@ -141,8 +169,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * @param len the maximum number of bytes read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @exception  NullPointerException If <code>b</code> is <code>null</code>.
-     * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
+     * @exception  NullPointerException if <code>b</code> is <code>null</code>.
+     * @exception  IndexOutOfBoundsException if <code>off</code> is negative,
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>b.length - off</code>
      * @exception ZipException if a ZIP file error has occurred
@@ -252,6 +280,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
         if (get32(tmpbuf, 0) != LOCSIG) {
             return null;
         }
+        // get flag first, we need check EFS.
+        flag = get16(tmpbuf, LOCFLG);
         // get the entry name and create the ZipEntry first
         int len = get16(tmpbuf, LOCNAM);
         int blen = b.length;
@@ -262,9 +292,11 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
             b = new byte[blen];
         }
         readFully(b, 0, len);
-        ZipEntry e = createZipEntry(getUTF8String(b, 0, len));
+        // Force to use UTF-8 if the EFS bit is ON, even the cs is NOT UTF-8
+        ZipEntry e = createZipEntry(((flag & EFS) != 0)
+                                    ? zc.toStringUTF8(b, len)
+                                    : zc.toString(b, len));
         // now get the remaining fields for the entry
-        flag = get16(tmpbuf, LOCFLG);
         if ((flag & 1) == 1) {
             throw new ZipException("encrypted ZIP entry not supported");
         }
@@ -311,71 +343,6 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
             }
         }
         return e;
-    }
-
-    /*
-     * Fetches a UTF8-encoded String from the specified byte array.
-     */
-    private static String getUTF8String(byte[] b, int off, int len) {
-        // First, count the number of characters in the sequence
-        int count = 0;
-        int max = off + len;
-        int i = off;
-        while (i < max) {
-            int c = b[i++] & 0xff;
-            switch (c >> 4) {
-            case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-                // 0xxxxxxx
-                count++;
-                break;
-            case 12: case 13:
-                // 110xxxxx 10xxxxxx
-                if ((b[i++] & 0xc0) != 0x80) {
-                    throw new IllegalArgumentException();
-                }
-                count++;
-                break;
-            case 14:
-                // 1110xxxx 10xxxxxx 10xxxxxx
-                if (((b[i++] & 0xc0) != 0x80) ||
-                    ((b[i++] & 0xc0) != 0x80)) {
-                    throw new IllegalArgumentException();
-                }
-                count++;
-                break;
-            default:
-                // 10xxxxxx, 1111xxxx
-                throw new IllegalArgumentException();
-            }
-        }
-        if (i != max) {
-            throw new IllegalArgumentException();
-        }
-        // Now decode the characters...
-        char[] cs = new char[count];
-        i = 0;
-        while (off < max) {
-            int c = b[off++] & 0xff;
-            switch (c >> 4) {
-            case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-                // 0xxxxxxx
-                cs[i++] = (char)c;
-                break;
-            case 12: case 13:
-                // 110xxxxx 10xxxxxx
-                cs[i++] = (char)(((c & 0x1f) << 6) | (b[off++] & 0x3f));
-                break;
-            case 14:
-                // 1110xxxx 10xxxxxx 10xxxxxx
-                int t = (b[off++] & 0x3f) << 6;
-                cs[i++] = (char)(((c & 0x0f) << 12) | t | (b[off++] & 0x3f));
-                break;
-            default:
-                // 10xxxxxx, 1111xxxx
-                throw new IllegalArgumentException();
-            }
-        }
-        return new String(cs, 0, count);
     }
 
     /**

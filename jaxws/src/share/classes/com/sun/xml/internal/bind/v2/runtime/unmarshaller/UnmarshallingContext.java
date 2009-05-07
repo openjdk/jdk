@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import java.lang.reflect.InvocationTargetException;
@@ -44,14 +43,15 @@ import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
 import javax.xml.bind.ValidationEventLocator;
 import javax.xml.bind.helpers.ValidationEventImpl;
-import javax.xml.bind.helpers.ValidationEventLocatorImpl;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
 
 import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
 import com.sun.istack.internal.SAXParseException2;
 import com.sun.xml.internal.bind.IDResolver;
 import com.sun.xml.internal.bind.api.AccessorException;
+import com.sun.xml.internal.bind.api.ClassResolver;
 import com.sun.xml.internal.bind.unmarshaller.InfosetScanner;
 import com.sun.xml.internal.bind.v2.ClassFactory;
 import com.sun.xml.internal.bind.v2.runtime.AssociationMap;
@@ -154,6 +154,10 @@ public final class UnmarshallingContext extends Coordinator
      */
     private NamespaceContext environmentNamespaceContext;
 
+    /**
+     * Used to discover additional classes when we hit unknown elements/types.
+     */
+    public @Nullable ClassResolver classResolver;
 
     /**
      * State information for each element.
@@ -293,6 +297,35 @@ public final class UnmarshallingContext extends Coordinator
     }
 
     /**
+     * On top of {@link JAXBContextImpl#selectRootLoader(State, TagName)},
+     * this method also consults {@link ClassResolver}.
+     *
+     * @throws SAXException
+     *      if {@link ValidationEventHandler} reported a failure.
+     */
+    public Loader selectRootLoader(State state, TagName tag) throws SAXException {
+        try {
+            Loader l = getJAXBContext().selectRootLoader(state, tag);
+            if(l!=null)     return l;
+
+            if(classResolver!=null) {
+                Class<?> clazz = classResolver.resolveElementName(tag.uri, tag.local);
+                if(clazz!=null) {
+                    JAXBContextImpl enhanced = getJAXBContext().createAugmented(clazz);
+                    JaxBeanInfo<?> bi = enhanced.getBeanInfo(clazz);
+                    return bi.getLoader(enhanced,true);
+                }
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            handleError(e);
+        }
+
+        return null;
+    }
+
+    /**
      * Allocates a few more {@link State}s.
      *
      * Allocating multiple {@link State}s at once allows those objects
@@ -343,7 +376,8 @@ public final class UnmarshallingContext extends Coordinator
     }
 
     public void startDocument(LocatorEx locator, NamespaceContext nsContext) throws SAXException {
-        this.locator = locator;
+        if(locator!=null)
+            this.locator = locator;
         this.environmentNamespaceContext = nsContext;
         // reset the object
         result = null;
@@ -353,8 +387,6 @@ public final class UnmarshallingContext extends Coordinator
         aborted = false;
         isUnmarshalInProgress = true;
         nsLen=0;
-
-        startPrefixMapping("",""); // by default, the default ns is bound to "".
 
         setThreadAffinity();
 
@@ -596,11 +628,11 @@ public final class UnmarshallingContext extends Coordinator
     /**
      * Called when there's no corresponding ID value.
      */
-    public void errorUnresolvedIDREF(Object bean, String idref) throws SAXException {
+    public void errorUnresolvedIDREF(Object bean, String idref, LocatorEx loc) throws SAXException {
         handleEvent( new ValidationEventImpl(
             ValidationEvent.ERROR,
             Messages.UNRESOLVED_IDREF.format(idref),
-            new ValidationEventLocatorImpl(bean)), true );
+            loc.getLocation()), true );
     }
 
 
@@ -728,6 +760,12 @@ public final class UnmarshallingContext extends Coordinator
             // temporary workaround until Zephyr fixes 6337180
             return environmentNamespaceContext.getNamespaceURI(prefix.intern());
 
+        // by default, the default ns is bound to "".
+        // but allow environmentNamespaceContext to take precedence
+        if(prefix.equals(""))
+            return "";
+
+        // unresolved. error.
         return null;
     }
 
@@ -750,7 +788,7 @@ public final class UnmarshallingContext extends Coordinator
      *      is represented by the empty string.
      */
     public String[] getAllDeclaredPrefixes() {
-        return getPrefixList( 2 );  // skip the default ""->"" mapping
+        return getPrefixList(0);
     }
 
     private String[] getPrefixList( int startIndex ) {
@@ -885,10 +923,15 @@ public final class UnmarshallingContext extends Coordinator
      */
     public void endScope(int frameSize) throws SAXException {
         try {
-            for( ; frameSize>0; frameSize-- )
-                scopes[scopeTop--].finish();
+            for( ; frameSize>0; frameSize--, scopeTop-- )
+                scopes[scopeTop].finish();
         } catch (AccessorException e) {
             handleError(e);
+
+            // the error might have left scopes in inconsistent state,
+            // so replace them by fresh ones
+            for( ; frameSize>0; frameSize-- )
+                scopes[scopeTop--] = new Scope(this);
         }
     }
 
@@ -928,9 +971,7 @@ public final class UnmarshallingContext extends Coordinator
          * unmarshalling.
          */
         public void childElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
-            JAXBContextImpl jaxbContext = state.getContext().getJAXBContext();
-
-            Loader loader = jaxbContext.selectRootLoader(state,ea);
+            Loader loader = state.getContext().selectRootLoader(state,ea);
             if(loader!=null) {
                 state.loader = loader;
                 state.receiver = this;
@@ -939,7 +980,7 @@ public final class UnmarshallingContext extends Coordinator
 
             // the registry doesn't know about this element.
             // try its xsi:type
-            JaxBeanInfo beanInfo = XsiTypeLoader.parseXsiType(state, ea);
+            JaxBeanInfo beanInfo = XsiTypeLoader.parseXsiType(state, ea, null);
             if(beanInfo==null) {
                 // we don't even know its xsi:type
                 reportUnexpectedChildElement(ea,false);

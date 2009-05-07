@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,14 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package com.sun.tools.internal.xjc.model;
 
 import java.util.Collection;
+import java.util.Map;
+import java.lang.annotation.Annotation;
 
 import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlSchemaType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.namespace.QName;
 
@@ -41,12 +43,15 @@ import com.sun.tools.internal.xjc.model.nav.NType;
 import com.sun.xml.internal.bind.api.impl.NameConverter;
 import com.sun.xml.internal.bind.v2.model.core.PropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.RuntimeUtil;
+import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.xsom.XSComponent;
 
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.Locator;
 
 /**
+ * Model of a property to be generated.
+ *
  * @author Kohsuke Kawaguchi
  */
 public abstract class CPropertyInfo implements PropertyInfo<NType,NClass>, CCustomizable {
@@ -91,10 +96,6 @@ public abstract class CPropertyInfo implements PropertyInfo<NType,NClass>, CCust
     public CDefaultValue defaultValue;
 
     private final CCustomizations customizations;
-    /**
-     * @see #getSchemaType()
-     */
-    public QName schemaType;
 
     protected CPropertyInfo(String name, boolean collection, XSComponent source,
                             CCustomizations customizations, Locator locator) {
@@ -270,10 +271,6 @@ public abstract class CPropertyInfo implements PropertyInfo<NType,NClass>, CCust
         return customizations;
     }
 
-    public QName getSchemaType() {
-        return schemaType;
-    }
-
     /**
      * @deprecated if you are calling this method directly, there's something wrong.
      */
@@ -282,4 +279,54 @@ public abstract class CPropertyInfo implements PropertyInfo<NType,NClass>, CCust
     }
 
     public abstract <V> V accept( CPropertyVisitor<V> visitor );
+
+    /**
+     * Checks if the given {@link TypeUse} would need an explicit {@link XmlSchemaType}
+     * annotation with the given type name.
+     */
+    protected static boolean needsExplicitTypeName(TypeUse type, QName typeName) {
+        if(typeName==null)
+            // this is anonymous type. can't have @XmlSchemaType
+            return false;
+
+        if(!typeName.getNamespaceURI().equals(WellKnownNamespace.XML_SCHEMA))
+            // if we put application-defined type name, it will be undefined
+            // by the time we generate a schema.
+            return false;
+
+        if(type.isCollection())
+            // there's no built-in binding for a list simple type,
+            // so any collection type always need @XmlSchemaType
+            return true;
+
+        QName itemType = type.getInfo().getTypeName();
+        if(itemType==null)
+            // this is somewhat strange case, as it means the bound type is anonymous
+            // but it's eventually derived by a named type and used.
+            // but we can certainly use typeName as @XmlSchemaType value here
+            return true;
+
+        // if it's the default type name for this item, then no need
+        return !itemType.equals(typeName);
+    }
+
+    /**
+     * Puts the element names that this property possesses to the map,
+     * so that we can find two properties that own the same element name,
+     * which is an error.
+     *
+     * @return
+     *      null if no conflict was found. Otherwise return the QName that has the collision.
+     */
+    public QName collectElementNames(Map<QName,CPropertyInfo> table) {
+        return null;
+    }
+
+    public final <A extends Annotation> A readAnnotation(Class<A> annotationType) {
+        throw new UnsupportedOperationException();
+    }
+
+    public final boolean hasAnnotation(Class<? extends Annotation> annotationType) {
+        throw new UnsupportedOperationException();
+    }
 }

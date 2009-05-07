@@ -320,6 +320,7 @@ class methodOopDesc : public oopDesc {
   enum VtableIndexFlag {
     // Valid vtable indexes are non-negative (>= 0).
     // These few negative values are used as sentinels.
+    highest_unused_vtable_index_value = -5,
     invalid_vtable_index    = -4,  // distinct from any valid vtable index
     garbage_vtable_index    = -3,  // not yet linked; no vtable layout yet
     nonvirtual_vtable_index = -2   // there is no need for vtable dispatch
@@ -523,6 +524,21 @@ class methodOopDesc : public oopDesc {
   // Reflection support
   bool is_overridden_in(klassOop k) const;
 
+  // JSR 292 support
+  bool is_method_handle_invoke() const              { return access_flags().is_method_handle_invoke(); }
+  static methodHandle make_invoke_method(KlassHandle holder,
+                                         symbolHandle signature,
+                                         Handle method_type,
+                                         TRAPS);
+  // these operate only on invoke methods:
+  oop method_handle_type() const;
+  static jint* method_type_offsets_chain();  // series of pointer-offsets, terminated by -1
+  // presize interpreter frames for extra interpreter stack entries, if needed
+  // method handles want to be able to push a few extra values (e.g., a bound receiver), and
+  // invokedynamic sometimes needs to push a bootstrap method, call site, and arglist,
+  // all without checking for a stack overflow
+  static int extra_stack_entries() { return (EnableMethodHandles ? (int)MethodHandlePushLimit : 0) + (EnableInvokeDynamic ? 3 : 0); }
+  static int extra_stack_words();  // = extra_stack_entries() * Interpreter::stackElementSize()
   // RedefineClasses() support:
   bool is_old() const                               { return access_flags().is_old(); }
   void set_is_old()                                 { _access_flags.set_is_old(); }

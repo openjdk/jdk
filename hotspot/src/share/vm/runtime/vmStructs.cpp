@@ -656,7 +656,6 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                                                                                      \
    volatile_nonstatic_field(Thread,            _suspend_flags,                                uint32_t)                              \
   nonstatic_field(Thread,                      _active_handles,                               JNIHandleBlock*)                       \
-  nonstatic_field(Thread,                      _highest_lock,                                 address)                               \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _current_pending_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(Thread,                      _current_pending_monitor_is_from_java,         bool)                                  \

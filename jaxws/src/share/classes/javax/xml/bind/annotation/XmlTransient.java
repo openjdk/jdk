@@ -32,7 +32,7 @@ import static java.lang.annotation.RetentionPolicy.*;
 
 /**
  * <p>
- * Prevents the mapping of a JavaBean property to XML representation.
+ * Prevents the mapping of a JavaBean property/type to XML representation.
  * <p>
  * The <tt>@XmlTransient</tt> annotation is useful for resolving name
  * collisions between a JavaBean property name and a field name or
@@ -42,12 +42,19 @@ import static java.lang.annotation.RetentionPolicy.*;
  * then the name collision can be resolved by preventing the
  * mapping of either the field or the JavaBean property using the
  * <tt>@XmlTransient</tt> annotation.
+ *
+ * <p>
+ * When placed on a class, it indicates that the class shouldn't be mapped
+ * to XML by itself. Properties on such class will be mapped to XML along
+ * with its derived classes, as if the class is inlined.
+ *
  * <p><b>Usage</b></p>
  * <p> The <tt>@XmlTransient</tt> annotation can be used with the following
  *     program elements:
  * <ul>
  *   <li> a JavaBean property </li>
  *   <li> field </li>
+ *   <li> class </li>
  * </ul>
  *
  * <p><tt>@XmlTransient</tt>is mutually exclusive with all other
@@ -82,7 +89,8 @@ import static java.lang.annotation.RetentionPolicy.*;
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
  * @since JAXB2.0
+ * @version $Revision$
  */
 
-@Retention(RUNTIME) @Target({FIELD, METHOD})
+@Retention(RUNTIME) @Target({FIELD, METHOD, TYPE})
 public @interface XmlTransient {}

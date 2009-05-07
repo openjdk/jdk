@@ -249,29 +249,38 @@ klassOop constantPoolOopDesc::klass_ref_at_if_loaded_check(constantPoolHandle th
 }
 
 
-symbolOop constantPoolOopDesc::uncached_name_ref_at(int which) {
-  jint ref_index = name_and_type_at(uncached_name_and_type_ref_index_at(which));
-  int name_index = extract_low_short_from_int(ref_index);
+symbolOop constantPoolOopDesc::impl_name_ref_at(int which, bool uncached) {
+  int name_index = name_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
   return symbol_at(name_index);
 }
 
 
-symbolOop constantPoolOopDesc::uncached_signature_ref_at(int which) {
-  jint ref_index = name_and_type_at(uncached_name_and_type_ref_index_at(which));
-  int signature_index = extract_high_short_from_int(ref_index);
+symbolOop constantPoolOopDesc::impl_signature_ref_at(int which, bool uncached) {
+  int signature_index = signature_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
   return symbol_at(signature_index);
 }
 
 
-int constantPoolOopDesc::uncached_name_and_type_ref_index_at(int which) {
-  jint ref_index = field_or_method_at(which, true);
+int constantPoolOopDesc::impl_name_and_type_ref_index_at(int which, bool uncached) {
+  jint ref_index = field_or_method_at(which, uncached);
   return extract_high_short_from_int(ref_index);
 }
 
 
-int constantPoolOopDesc::uncached_klass_ref_index_at(int which) {
-  jint ref_index = field_or_method_at(which, true);
+int constantPoolOopDesc::impl_klass_ref_index_at(int which, bool uncached) {
+  jint ref_index = field_or_method_at(which, uncached);
   return extract_low_short_from_int(ref_index);
+}
+
+
+
+int constantPoolOopDesc::map_instruction_operand_to_index(int operand) {
+  if (constantPoolCacheOopDesc::is_secondary_index(operand)) {
+    return cache()->main_entry_at(operand)->constant_pool_index();
+  }
+  assert((int)(u2)operand == operand, "clean u2");
+  int index = Bytes::swap_u2(operand);
+  return cache()->entry_at(index)->constant_pool_index();
 }
 
 
@@ -290,26 +299,14 @@ void constantPoolOopDesc::verify_constant_pool_resolve(constantPoolHandle this_o
 }
 
 
-int constantPoolOopDesc::klass_ref_index_at(int which) {
-  jint ref_index = field_or_method_at(which, false);
+int constantPoolOopDesc::name_ref_index_at(int which_nt) {
+  jint ref_index = name_and_type_at(which_nt);
   return extract_low_short_from_int(ref_index);
 }
 
 
-int constantPoolOopDesc::name_and_type_ref_index_at(int which) {
-  jint ref_index = field_or_method_at(which, false);
-  return extract_high_short_from_int(ref_index);
-}
-
-
-int constantPoolOopDesc::name_ref_index_at(int which) {
-  jint ref_index = name_and_type_at(which);
-  return extract_low_short_from_int(ref_index);
-}
-
-
-int constantPoolOopDesc::signature_ref_index_at(int which) {
-  jint ref_index = name_and_type_at(which);
+int constantPoolOopDesc::signature_ref_index_at(int which_nt) {
+  jint ref_index = name_and_type_at(which_nt);
   return extract_high_short_from_int(ref_index);
 }
 
@@ -350,20 +347,6 @@ char* constantPoolOopDesc::string_at_noresolve(int which) {
   } else {
     return (char*)"<pseudo-string>";
   }
-}
-
-
-symbolOop constantPoolOopDesc::name_ref_at(int which) {
-  jint ref_index = name_and_type_at(name_and_type_ref_index_at(which));
-  int name_index = extract_low_short_from_int(ref_index);
-  return symbol_at(name_index);
-}
-
-
-symbolOop constantPoolOopDesc::signature_ref_at(int which) {
-  jint ref_index = name_and_type_at(name_and_type_ref_index_at(which));
-  int signature_index = extract_high_short_from_int(ref_index);
-  return symbol_at(signature_index);
 }
 
 

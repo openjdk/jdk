@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,13 @@
 #define NOT_PRODUCT(xxx)
 #define assert(p)
 #define PRINTCR(args)
+#define VERSION_STRING "%s version %s\n"
 #else
 #define IF_PRODUCT(xxx)
 #define NOT_PRODUCT(xxx) xxx
 #define assert(p) ((p) || assert_failed(#p))
 #define PRINTCR(args)  u->verbose && u->printcr_if_verbose args
+#define VERSION_STRING "%s version non-product %s\n"
 extern "C" void breakpoint();
 extern int assert_failed(const char*);
 #define BREAK (breakpoint())
@@ -79,9 +81,9 @@ extern int assert_failed(const char*);
 
 #define lengthof(array) (sizeof(array)/sizeof(array[0]))
 
-#define NEW(T, n)    (T*) must_malloc((int)(sizeof(T)*(n)))
-#define U_NEW(T, n)  (T*) u->alloc(sizeof(T)*(n))
-#define T_NEW(T, n)  (T*) u->temp_alloc(sizeof(T)*(n))
+#define NEW(T, n)    (T*) must_malloc((int)(scale_size(n, sizeof(T))))
+#define U_NEW(T, n)  (T*) u->alloc(scale_size(n, sizeof(T)))
+#define T_NEW(T, n)  (T*) u->temp_alloc(scale_size(n, sizeof(T)))
 
 
 // bytes and byte arrays
@@ -152,6 +154,8 @@ enum { false, true };
 #define CHECK_NULL(p)           _CHECK_DO((p)==null, return)
 #define CHECK_NULL_(y,p)        _CHECK_DO((p)==null, return y)
 #define CHECK_NULL_0(p)         _CHECK_DO((p)==null, return 0)
+
+#define CHECK_COUNT(t)          if (t < 0){abort("bad value count");} CHECK
 
 #define STR_TRUE   "true"
 #define STR_FALSE  "false"

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 // AttributesImpl.java - default implementation of Attributes.
 // Written by David Megginson, sax@megginson.com
 // NO WARRANTY!  This class is in the public domain.
@@ -67,6 +66,7 @@ import org.xml.sax.Attributes;
  * @since SAX 2.0
  * @author David Megginson,
  *         <a href="mailto:sax@megginson.com">sax@megginson.com</a>
+ * @version 2.0
  */
 public class AttributesImpl implements Attributes
 {

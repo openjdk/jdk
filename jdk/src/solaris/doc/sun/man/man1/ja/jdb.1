@@ -1,107 +1,101 @@
-'\" t
-.\" Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
-.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-.\"
-.\" This code is free software; you can redistribute it and/or modify it
-.\" under the terms of the GNU General Public License version 2 only, as
-.\" published by the Free Software Foundation.
-.\"
-.\" This code is distributed in the hope that it will be useful, but WITHOUT
-.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-.\" version 2 for more details (a copy is included in the LICENSE file that
-.\" accompanied this code).
-.\"
-.\" You should have received a copy of the GNU General Public License version
-.\" 2 along with this work; if not, write to the Free Software Foundation,
-.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-.\"
-.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
-.\" CA 95054 USA or visit www.sun.com if you need additional information or
-.\" have any questions.
-.\" ` 
-.\" 
-.\"  This document was created by saving an HTML file as text
-.\"  from the JavaSoft web site:
-.\" 
-.\" http://java.sun.com/j2se/1.4/docs/tooldocs/tools.html
-.\" 
-.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
-.\"  man pages can change without notice, it may be helpful to diff
-.\"  files to identify changes other than new functionality. 
-.\" 
-.TH jdb 1 "2006 ǯ 9 �� 4 ��" "Java SE 6" "�桼�������ޥ��"
-.SH "̾��"
-jdb \- Java �ǥХå�
+." Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+." CA 95054 USA or visit www.sun.com if you need additional information or
+." have any questions.
+."
+.TH jdb 1 "04 May 2009"
+." Generated from HTML by html2man (author: Eric Armstrong)
+
+.LP
+.SH "名前"
+jdb \- Java デバッガ
+.LP
+.RS 3
+
+.LP
+.LP
+\f3jdb\fP は、Java 言語プログラムのバグを見つけて修正するために使用するツールです。
+.LP
+.RE
+.SH "形式"
+.LP
+
+.LP
+.nf
+\f3
+.fl
+\fP\f3jdb\fP [ options ] [ class ] [ arguments ] 
+.fl
+.fi
+
+.LP
+.RS 3
+
+.LP
+.RS 3
+.TP 3
+options 
+次に示すコマンド行オプション 
+.TP 3
+class 
+デバッグを開始するクラスの名前 
+.TP 3
+arguments 
+\f2class\fP の \f2main()\fP メソッドに渡す引数 
+.RE
+
+.LP
+.RE
+.SH " 説明"
 .LP
 
 .LP
 .LP
-\f3jdb\fP �ϡ�Java ����ץ������ΥХ��򸫤Ĥ��ƽ������뤿��˻��Ѥ���ġ���Ǥ���
-.LP
-.SH "����"
-.B jdb 
-[ 
-.I options
-] [
-.I class
-] [
-.I  arguments
-]
-.LP
-.TP 15
-.I options
-�ʲ��˻��ꤹ�륳�ޥ�ɹԥ��ץ����
-.TP
-.I class
-�ǥХå��򳫻Ϥ��륯�饹̾
-.TP
-.I arguments
-���饹��
-.B main(\|)
-�᥽�åɤ��Ϥ�������
-.SH "��ǽ����"
-.IX "Java debugger" "" "Java debugger \(em \fLjdb\fP"
-.IX "jdb" "" "\fLjdb\fP \(em Java debugger"
-Java �ǥХå���
-.BR jdb
-�ϡ�
-Java
-���饹�Ѥ�ñ��ʥ��ޥ�ɹԥǥХå��Ǥ���
+Java デバッガ \f3jdb\fP は、Java クラス用の簡単なコマンド行デバッガです。
 .na
-��\f2Java Platform Debugger Architecture\fP��
+\f2Java Platform Debugger Architecture\fP @
 .fi
- (http://java.sun.com/javase/6/docs/technotes/guides/jpda/index.html) 
-����̤�ɽ�����ʤ���¹Ԥ�����������ޤ��ϥ�⡼�Ȥ� Java ���ۥޥ���
-�θ����ȥǥХå���Ԥ����Ȥ��Ǥ��ޤ���
-.SS "jdb ���å����γ���"
-.IX "jdb" "Starting a jdb Session" "\fLjdb\fP \(em Java debugger"
-jdb ���å����򳫻Ϥ���ˤϤ��ޤ��ޤ���ˡ������ޤ��� ��äȤ����ˤ˻�
-����Τϡ����ץꥱ�������Υᥤ�󥯥饹��ǥХå����ơ�
-.B jdb
-���鿷���� Java ���ۥޥ��� (VM) ��ư������ˡ�Ǥ��� ���ޥ�ɹԤǡ�
-.BR java (1)
-�������
-.B jdb
-���ޥ�ɤ����Ϥ��ޤ������Ȥ��С����ץꥱ�������Υᥤ�󥯥饹��
-.BR MyClass
-�ξ��ϡ����Υ��ޥ�ɤ���Ѥ��� jdb �Ķ��ǥǥХå����ޤ���
+http://java.sun.com/javase/6/docs/technotes/guides/jpda/index.html を視覚的に実行し、ローカルまたはリモートの Java Virtual Machine の検査とデバッグを行うことができます。
 .LP
-.RS
-.B % jdb MyClass
-.RE
+.SS 
+jdb セッションの開始
 .LP
-���Τ褦�ˤ��Ƶ�ư����ȡ�
-.B jdb
-�� 2 ���ܤ� Java VM ��ƤӽФ������ꤵ�줿�ѥ�᡼�����Ϥ���
-���ꤵ�줿���饹������ɤ��ޤ������Τ��ȡ�
-���饹�κǽ��̿���¹Ԥ������� VM ����ߤ����ޤ���
+.RS 3
+
 .LP
-.B jdb
-�Τ⤦ 1 �Ĥλ�����ˡ�ϡ����Ǥ˵�ư���Ƥ��� Java VM ��
-.B jdb
-����³���뤳�ȤǤ���
-jdb ����³���� VM �򡢤��μ¹���˵�ư���뤿��ι�ʸ�򼡤˼����ޤ��� ����ϡ�����ץ������ǥХå��ѥ饤�֥�������ɤ�����³�μ������ꤷ�ޤ���
+.LP
+jdb セッションを開始するにはさまざまな方法があります。もっとも頻繁に使われるのは、デバッグするアプリケーションのメインクラスを使用して、\f3jdb\fP から新しい Java 仮想マシン (VM) を起動する方法です。コマンド行で、 \f3java\fP の代わりに \f3jdb\fP コマンドを入力します。たとえば、アプリケーションのメインクラスが MyClass の場合は、JDB 環境でデバッグするときに次のコマンドを使用します。
+.LP
+.nf
+\f3
+.fl
+ % jdb MyClass 
+.fl
+\fP
+.fi
+
+.LP
+.LP
+この方法で起動すると、\f3jdb\fP は、指定されたパラメータを使って 2 つ目の Java VM を呼び出します。 次に、指定されたクラスをロードして、クラスの最初の命令を実行する前に VM を停止させます。
+.LP
+.LP
+\f3jdb\fP のもう 1 つの使用方法は、すでに起動している Java VM に jdb を接続することです。jdb が接続する VM を、その実行中に起動するための構文を次に示します。これは、インプロセスデバッグ用ライブラリをロードし、接続の種類を指定します。
 .LP
 .nf
 \f3
@@ -113,11 +107,7 @@ jdb ����³���� VM �򡢤��μ¹���˵�ư���뤿��ι�ʸ�򼡤˼����ޤ��� ����ϡ����
 
 .LP
 .LP
-���Ȥ��С����Υ��ޥ�ɤ�
-.B MyClass
-���ץꥱ��������¹Ԥ������
-.B jdb 
-����³�Ǥ���褦�ˤ��ޤ���
+たとえば、次のコマンドは、MyClass アプリケーションを実行して、\f3jdb\fP があとでそのアプリケーションに接続できるようにします。
 .LP
 .nf
 \f3
@@ -129,375 +119,250 @@ jdb ����³���� VM �򡢤��μ¹���˵�ư���뤿��ι�ʸ�򼡤˼����ޤ��� ����ϡ����
 
 .LP
 .LP
-���Υ��ޥ�ɤ�
-.B jdb 
-�� VM ����³�Ǥ��ޤ���
+次のコマンドを使用して、\f3jdb\fP を VM に接続できます。
 .LP
-.RS
-.B % jdb \-attach 8000
-.RE
-.LP
-���ΤȤ���
-.B jdb
-�Ͽ����� VM ��ư����ΤǤϤʤ�����¸�� VM ����³����Τǡ�
-.B jdb 
-���ޥ�ɹԤ�
-.B MyClass
-����ꤷ�ʤ����Ȥ����դ��Ƥ���������
-.LP
-����ʳ��ˤ�ǥХå� (jdb) �� VM ����³������ˡ�Ϥ������󤢤ꡢ
-.BR jdb
-�Ϥ��Τ��٤Ƥ���ˡ�򥵥ݡ��Ȥ��Ƥ��ޤ���
-���Τ褦����³���ץ����ˤĤ��Ƥϡ�
+.nf
+\f3
+.fl
+ % jdb \-attach 8000 
+.fl
+\fP
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.html
-�� Java Platform Debugger Architecture �Υޥ˥奢��򻲾Ȥ��Ƥ���������
-\f3jdb\fP �ǻ��Ѥ��뤿��� J2SE 1.4.2 ������ VM ��ư������ˡ�ˤĤ��Ƥϡ�
-.fi
-http://java.sun.com/j2se/1.4.2/docs/technotes/guides/jpda/conninv.html
-�� 1.4.2 �Υɥ�����Ȥ򻲾Ȥ��Ƥ���������
-.SS " jdb ���ܥ��ޥ��"
-.IX "jdb" "Basic jdb Commands" "\fLjdb\fP \(em Java debugger"
-�ʲ���
-.B jdb
-���ܥ��ޥ�ɤΰ����򼨤��ޤ���
-Java
-�ǥХå��ǻ��Ѳ�ǽ�ʤ���¾�Υ��ޥ�ɤϡ�
-.B help
-���ޥ�ɤ�ɽ���Ǥ��ޤ���
-.TP 15
-.B help �ޤ��� ?
-.BR jdb
-�Υ��ޥ�ɤ���Ǥ�äȤ���פʤΤ�������
-.B help
-���ޥ�ɤǤ������Ѳ�ǽ�ʥ��ޥ�ɤΰ�����
-�ƥ��ޥ�ɤδ�ñ�������Ĥ���ɽ�����ޤ���
-.TP 15
-.B run
-.BR jdb
-��ư����ɬ�פʥ֥졼���ݥ���Ȥ����ꤷ�����Ȥˡ����Υ��ޥ�ɤ���Ѥ��ơ�
-�ǥХå����륢�ץꥱ�������μ¹Ԥ򳫻Ϥ��ޤ������Υ��ޥ�ɤϡ�
-�ǥХå����륢�ץꥱ��������
-.B jdb
-���鵯ư����Ȥ��ˤ������ѤǤ��ޤ��� 
-��¸�� VM ����³������Ȥϰۤʤ�ޤ���
-.TP
-.B cont
-�֥졼���ݥ���ȡ��㳰���ޤ��ϥ��ƥå׼¹ԤΤ��Ȥǡ��ǥХå����
-���ץꥱ�������μ¹Ԥ��³���ޤ���
-.TP 15
-.B print
-Java ���֥������Ȥ���ӥץ�ߥƥ����ͤ�ɽ�����ޤ��� �ץ�ߥƥ��ַ����ѿ�
-�ޤ��ϥե�����ɤξ��ˤϡ��ºݤ��ͤ���Ϥ��ޤ��� ���֥������Ȥξ��
-�ˤϡ�û����������Ϥ��ޤ��� ���֥������ȤˤĤ��Ƥϡ��ʹߤ�
-.B dump
-���ޥ�ɤ������򻲾Ȥ��Ƥ��������� 
-.sp 1n
-.LP
-��: �ɽ�
-(�����å�)
-�ѿ���֥饦������ˤϡ����Υ��饹��
-.B javac \-g
-���ץ����ǥ���ѥ��뤵��Ƥ���ɬ�פ�����ޤ���
-.sp 1n
-.LP
-.B print
-�ϡ��᥽�åɤθƤӽФ���ޤ�¿���δ�ñ�� Java ���򥵥ݡ��Ȥ��ޤ���
-������򼨤��ޤ��� 
-.RS
-.TP 3
-\(bu
-.B print MyClass.myStaticField 
-.PD 0
-.TP
-\(bu
-.B print myObj.myInstanceField 
-.TP
-\(bu
-\f3print\f1 \f2i\f1 \f3+\f1 \f2j\f1 \f3+\f1 \f2k\f1 (
-.IR i��
-.IR j ��
-����� 
-.I k
-�ϥץ�ߥƥ��֤Ǥ��ꡢ�ե�����ɤޤ��϶ɽ��ѿ��Τ����줫) 
-.TP
-\(bu
-\f3print myObj.myMethod(\|)\f1 (
-.B myMethod
-�� null �ʳ����֤����) 
-.TP
-\(bu
-.B print new java.lang.String("Hello").length(\|)
-.RE
-.PD
-.TP
-.B dump
-�ץ�ߥƥ����ͤξ��ˤϡ����Υ��ޥ�ɤ�
-.BR print
-��Ʊ���Ǥ������֥������Ȥξ��ˤϡ����֥�����������������Ƥ���
-�ƥե�����ɤθ��ߤ��ͤ���Ϥ��ޤ��� static �ե�����ɤ� instance
-�ե�����ɤ���Ϥ��ޤ��� 
-.sp 1n
-.LP
-.B dump
-���ޥ�ɤϡ�
-.B print
-���ޥ�ɤ�Ʊ�����򥵥ݡ��Ȥ��ޤ��� 
-.TP
-.B threads
-���߼¹���Υ���åɤ����ɽ�����ޤ�������åɤ��Ȥˡ�̾���ȸ��ߤξ��֡�
-����Ӥۤ��Υ��ޥ�ɤ˻��ѤǤ��륤��ǥå�������Ϥ��ޤ����������
-�����ޤ��� 
-.sp 1n
-.RS 20
-.LP
-.B 4. (java.lang.Thread)0x1 main      running
-.RE
-.RS 
-.sp 1n
-.LP
-������Ǥϡ�����åɥ���ǥå�����
-.BR 4
-�Ǥ��ꡢ����åɤ�
-.BR java.lang.Thread 
-�Υ��󥹥��󥹤Ǥ�������åɤ�̾���ϡ�
-.BR main
-�פǤ��ꡢ���߼¹���Ǥ��� 
-.RE
-.TP 15
-.B thread
-���ߤΥ���åɤ����򤷤ޤ��� ¿����
-.B jdb
-���ޥ�ɤϡ����ߤΥ���åɤ�����˴�Ť��Ƽ¹Ԥ���ޤ��� ����åɤϡ�
-.B threads 
-���ޥ�ɤ��������륹��åɥ���ǥå����ȤȤ�˻��ꤷ�ޤ��� 
-.TP 15
-.B where
-�����Τʤ�
-.B where
-���ޥ�ɤϡ����ߤΥ���å�
-(
-.B thread
-���ޥ�ɤ�����)
-�Υ����å������פ��ޤ���
-.B where all
-�Ȼ��ꤹ��ȡ����ߤΥ���åɥ��롼�פˤ���������åɤ�
-�����å������פ��ޤ���
-.BI where " threadindex"
-�Ȼ��ꤹ��ȡ�
-.I threadindex
-����������åɤΥ����å����������פ��ޤ���
-.sp 1n
-.LP
-���ߤΥ���åɤ� (�֥졼���ݥ���ȤʤɤΥ��٥�Ȥ�
-.B suspend
-���ޥ�ɤ�) ���Ǥ��Ƥ����硢
-.B print 
-���ޥ�ɤ�
-.B dump
-���ޥ�ɤ���Ѥ���С��ɽ��ѿ���ե�����ɤ�ɽ���Ǥ��ޤ���
-�ɤΥ����å��ե졼��򸽺ߤΥե졼��ˤ��뤫�ϡ�
-.B up
-�����
-.B down
-���ޥ�ɤ�����Ǥ��ޤ���
-.SS "�֥졼���ݥ�����ѥ��ޥ��"
-.IX "jdb" "Breakpoints" "\fLjdb\fP \(em Java debugger"
-.B jdb
-�Ǥϡ��֥졼���ݥ���Ȥ���ֹ�ǡ�
-�ޤ��ϥ᥽�åɤκǽ��̿���
-����Ǥ��ޤ���������򼨤��ޤ���
-.TP 25
-.B stop at MyClass:22
-.BR MyClass
-���ޤޤ�륽�����ե������
-.B 22
-���ܤκǽ��̿��˥֥졼���ݥ���Ȥ����ꤹ��
-.TP
-.B stop in java.lang.String.length
-.BR java.lang.String.length
-�᥽�åɤκǽ�˥֥졼���ݥ���Ȥ����ꤹ��
-.TP
-.BI "stop in MyClass." init
-.I init
-��
-.B MyClass
-���󥹥ȥ饯�����̤���
-.TP
-.BI "stop in MyClass." clinit
-.I clinit
-��
-.BR MyClass
-����Ū�ʽ���������ɤ��̤��� 
-.LP
-�᥽�åɤ������С������ɤ������ˤϡ��᥽�åɤΰ����η�����ꤷ�ơ�
-�֥졼���ݥ���Ȥ��Ф���Ŭ�ڤʥ᥽�åɤ����򤵤��褦�ˤ��ʤ���Фʤ�ޤ�
-�� ���Ȥ��С����Τ褦�˻��ꤷ�ޤ���
-.LP
-.RS 15
-.B MyClass.myMethod(int,java.lang.String)
-.RE
-.LP
-�ޤ���
-.LP
-.RS 15
-.B MyClass.myMethod() 
-.RE
-.LP
-.B clear
-���ޥ�ɤϡ���
-.BR clear MyClass:45
-�פΤ褦�ʹ�ʸ����Ѥ��ƥ֥졼���ݥ���Ȥ������ޤ���
-��������ꤷ�ʤ���
-.B clear
-���ޥ�ɤ���Ѥ���ȡ��������ꤵ��Ƥ�
-�뤹�٤ƤΥ֥졼���ݥ���Ȥ�ɽ������ޤ���
-.B cont
-���ޥ�ɤǼ¹Ԥ���³���ޤ��� 
-.SS "���ޥ�ɤΥ��ƥå׼¹�"
-.IX "jdb" "Stepping" "\fLjdb\fP \(em Java debugger"
-.B step
-���ޥ�ɤϡ����ߤΥ����å��ե졼��ޤ��ϸƤӽФ��줿�᥽�å���ǡ�
-���ιԤ�¹Ԥ��ޤ��� 
-.B next
-���ޥ�ɤϡ����ߤΥ����å��ե졼��μ��ιԤ�
-�¹Ԥ��ޤ��� 
-.SS "�㳰�����ѥ��ޥ��"
-.IX "jdb" "Exceptions" "\fLjdb\fP \(em Java debugger"
-���������Ƥ��륹��åɤθƤӽФ������å���Τɤ��ˤ� catch ʸ���ʤ��褦��
-�㳰��ȯ������ȡ�VM ���̾�㳰�ȥ졼������Ϥ��ƽ�λ���ޤ��� ��������
-.BR jdb 
-�Ķ��Ǽ¹Ԥ��Ƥ�����ϡ����Τ褦���㳰��ȯ�������
-.B jdb
-�����椬���ޤ��� ���ˡ�
-.BR jdb 
-����Ѥ����㳰�θ�������Ǥ��ޤ��� 
-.TP 15
-.B catch
-�ǥХå���Υ��ץꥱ��������¾���㳰�����������줿�Ȥ�������ߤ��ޤ���
-������򼨤��ޤ���
-.LP
-.RS 20
-.B catch java.io.FileNotFoundException
-.RE
-.sp 1n
-.RS 15
-�ޤ���
-.RE
-.LP
-.RS 20
-.B catch mypackage.BigTroubleException
-.RE
-.sp 1n
-.RS 15
-�㳰�����ꤷ�����饹 (�ޤ��ϡ����֥��饹) �Υ��󥹥��󥹤Ǥ����硢
-���ץꥱ�������ϥ��������줿�Ȥ�������ߤ��ޤ���
-.RE
-.TP 15
-.B ignore
-������
-.B catch
-���ޥ�ɤθ��̤�̵���ˤ��ޤ����ʤ������λ���ˤ�ä��㳰��̵�뤹��Τ�
-�ǥХå������Ǥ��ꡢ�ǥХå����줿 VM ��̵�뤷�ޤ���
-.SH "���ޥ�ɹԥ��ץ����"
-���ޥ�ɹԤ� Java ���ץꥱ�������ư�ġ���������
-.B jdb
-����Ѥ����硢
-.B jdb
-�ϡ�
-.BR \-D��
-.BR \-classpath��
-.BI \-X option\f1
-�ʤɡ�
-.BR java (1)
-���ޥ�ɤ�Ʊ�����ץ�����¿�����ѤǤ��ޤ���
-.LP
-.B jdb 
-�ϡ����Τۤ��˼��Υ��ץ�������ѤǤ��ޤ��� 
-.TP 3
-.BI \-help 
-�إ�ץ�å�������ɽ�����ޤ���
-.TP 3
-.BI \-sourcepath " dir1\f1:\f2dir2\f1:..."
-���ꤵ�줿�ѥ��ǡ��������ե�����򸡺����ޤ��� ���Υ��ץ����
-���ꤵ��Ƥ��ʤ����ϡ��ǥե���ȥѥ��Ρ�.�פ򸡺����ޤ��� 
-.TP
-.BI \-attach " address"
-�ǥե���Ȥ���³��������Ѥ��ơ����Ǥ˼¹���� VM �˥ǥХå�����³
-���ޤ��� 
-.TP
-.BI \-listen " address"
-�¹���� VM ��ɸ��Υ��ͥ�����Ȥäƻ��ꤵ�줿���ɥ쥹����³����Τ��Ե����ޤ���
-.TP
-.BI \-listenany
-�¹���� VM ��ɸ��Υ��ͥ�����Ȥä����Ѳ�ǽ��Ǥ�դΥ��ɥ쥹����³����Τ��Ե����ޤ���
-.TP
-.B \-launch
-�ǥХå����륢�ץꥱ��������
-.BR jdb
-�ε�ư�夿�����˵�ư���ޤ��� ���Υ��ץ�������Ѥ���ȡ�
-.B run
-���ޥ�ɤ���Ѥ���ɬ�פϤ���ޤ��� �ǥХå����륢�ץꥱ�������ϡ�
-��ư�塢�ǽ�Υ��ץꥱ������󥯥饹�������ɤ����ľ������ߤ��ޤ���
-���λ����ǡ�ɬ�פʥ֥졼���ݥ���Ȥ�����Ǥ��ޤ���
-�¹Ԥ��³����ˤ�
-.B cont
-���ޥ�ɤ���Ѥ��ޤ���
-.TP 3
-\-listconnectors 
-���� VM �����ѤǤ��륳�ͥ��������ɽ�����ޤ���
-.TP 3
-\-connect
-<connector\-name>:<name1>=<value1>,... 
-����ɽ�����줿�������ͤȻ���Υ��ͥ�����Ȥäƥ������å� VM ����³���ޤ���
-.TP 3
-\-dbgtrace [flags] 
-jdb �ΥǥХå��������Ϥ��ޤ���
-.TP 3
-\-tclient 
-Java HotSpot(tm) VM (���饤�����) ��ǥ��ץꥱ��������¹Ԥ��ޤ���
-.TP 3
-\-tserver 
-Java HotSpot(tm) VM (������) ��ǥ��ץꥱ��������¹Ԥ��ޤ���
-.TP
-.BI \-J "option"
-jdb �μ¹Ԥ˻��Ѥ���� Java ���ۥޥ���� \f2option\fP ���Ϥ��ޤ���(���ץꥱ������� Java ���ۥޥ�����Ф��륪�ץ����ϡ�\f3run\fP ���ޥ�ɤ��Ϥ���롣)
-���Ȥ��С�
-.I \-J-Xms48m
-�ϡ���ư���˻��Ѥ������� 48M �Х��Ȥ����ꤷ�ޤ���
-
 
 .LP
-����ʳ��ˤ⡢�ǥХå���ǥХå������ VM ����³���뤿������ص���
-�ѤΥ��ץ���󤬥��ݡ��Ȥ���Ƥ��ޤ���
-���Τ褦����³�����ص����ˤĤ��Ƥϡ�
+.LP
+この場合、\f3jdb\fP は新しい VM を起動する代わりに既存の VM に接続されるため、\f3jdb\fP コマンド行には「MyClass」は指定しません。
+.LP
+.LP
+デバッガを VM に接続するにはほかにもさまざまな方法があり、すべて \f3jdb\fP でサポートされています。接続オプションについては、Java Platform Debugger Architecture の
+.na
+\f2ドキュメント\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.html
-�� Java Platform Debugger Architecture �Υޥ˥奢��򻲾Ȥ��Ƥ���������
+http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.htmlを参照してください。\f3jdb\fP で使用するために J2SE 1.4.2 以前の VM を起動する方法については、
+.na
+\f21.4.2 のドキュメント\fP @
+.fi
+http://java.sun.com/j2se/1.4.2/docs/guide/jpda/conninv.htmlを参照してください。
 .LP
 .SS 
-�ǥХå��оݤΥץ�������ž������륪�ץ����
+基本 jdb コマンド
 .LP
-.TP 3
-\-v \-verbose[:class|gc|jni] 
-��Ĺ�⡼�ɤˤ��ޤ���
-.TP 3
-\-D<name>=<value> 
-�����ƥ�ץ��ѥƥ������ꤷ�ޤ���
-.TP 3
-\-classpath <directories separated by
-":"> 
-���饹�򸡺�����ǥ��쥯�ȥ�����ɽ�����ޤ���
-.TP 3
-\-X<option> 
-��ɸ�ॿ�����å� VM ���ץ����Ǥ���
 .LP
-.SH "��Ϣ����"
+基本的な \f3jdb\fP コマンドの一覧を示します。Java デバッガがサポートするコマンドはこれ以外にもあり、それらは \f3jdb\fP の \f2help\fP コマンドを使用して表示できます。
+.LP
+.RS 3
+
+.LP
+.RS 3
+.TP 3
+help または ? 
+もっとも重要な \f3jdb\fP コマンド \f2help\fP は、認識されたコマンドのリストに簡潔な説明を付けて表示します。 
+.TP 3
+run 
+\f3jdb\fP を起動して必要なブレークポイントを設定したあとに、このコマンドを使用して、デバッグするアプリケーションの実行を開始できます。このコマンドは、既存の VM に接続している場合とは異なり、デバッグするアプリケーションが \f3jdb\fP から起動したときにだけ使用できます。 
+.TP 3
+cont 
+ブレークポイント、例外、またはステップ実行のあとで、デバッグするアプリケーションの実行を継続します。 
+.TP 3
+print 
+Java オブジェクトおよびプリミティブ値を表示します。プリミティブ型の変数またはフィールドの場合には、実際の値が出力されます。オブジェクトの場合には、短い説明が出力されます。オブジェクトについては、以降の \f2dump\fP コマンドの説明を参照してください。 
+.LP
+\f2注:局所変数を表示するには、その変数を含むクラスが \fP\f2javac(1)\fP\f2 \fP\f2\-g\fP オプションでコンパイルされていなければなりません。 
+.LP
+\f2print\fP では、メソッドの呼び出しを含む多数の簡単な Java 式がサポートされています。 次に例を示します。 
+.RS 3
+.TP 2
+o
+\f2print MyClass.myStaticField\fP 
+.TP 2
+o
+\f2print myObj.myInstanceField\fP 
+.TP 2
+o
+\f2print i + j + k\fP (i、j、および k はプリミティブであり、フィールドまたは局所変数のいずれか) 
+.TP 2
+o
+\f2print myObj.myMethod()\fP (myMethod が null 以外を返す場合) 
+.TP 2
+o
+\f2print new java.lang.String("Hello").length()\fP 
+.RE
+.TP 3
+dump 
+プリミティブ値の場合には、このコマンドは \f2print\fP と同じです。オブジェクトの場合には、オブジェクト内に定義されている各フィールドの現在の値が出力されます。static フィールドと instance フィールドが出力されます。 
+.LP
+\f2dump\fP コマンドでは、\f2print\fP コマンドと同じ式がサポートされます。  
+.TP 3
+threads 
+現在実行中のスレッドを一覧表示します。スレッドごとに、名前と現在の状態、およびほかのコマンドに使用できるインデックスが出力されます。 次に例を示します。 
+.RS 3
+
+.LP
+.nf
+\f3
+.fl
+4. (java.lang.Thread)0x1 main      running
+.fl
+\fP
+.fi
+.RE
+この例では、スレッドインデックスは 4 であり、スレッドは java.lang.Thread のインスタンスです。 スレッドの名前は「main」であり、現在実行中です。 
+.TP 3
+thread 
+現在のスレッドにするスレッドを選択します。多くの \f3jdb\fP コマンドは、現在のスレッドの設定に基づいて実行されます。スレッドは、\f2threads\fP コマンドで説明したスレッドインデックスとともに指定します。 
+.TP 3
+where 
+引数を指定しないで \f2where\fP を実行すると、現在のスレッドのスタックがダンプされます。 \f2where all\fP コマンドは、現在のスレッドグループにあるスレッドのスタックを、すべてダンプします。 \f2where\fP \f2threadindex\fP は、指定されたスレッドのスタックをダンプします。 
+.LP
+現在のスレッドが (ブレークポイントか \f2suspend\fP コマンドによって) 中断している場合は、局所変数とフィールドは \f2print\fP コマンドと \f2dump\fP コマンドで表示できます。\f2up\fP コマンドと \f2down\fP コマンドで、どのスタックフレームをカレントにするかを選ぶことができます。  
+.RE
+
+.LP
+.RE
+.SS 
+ブレークポイント
+.LP
+.RS 3
+
+.LP
+.LP
+ブレークポイントは、行番号またはメソッドの最初の命令で \f3jdb\fP に設定できます。 次に例を示します。
+.LP
+.RS 3
+.TP 2
+o
+\f2stop at MyClass:22\fP (MyClass が含まれるソースファイルの 22 行目の最初の命令にブレークポイントを設定) 
+.TP 2
+o
+\f2stop in java.lang.String.length\fP (\f2java.lang.String.length\fP メソッドの最初にブレークポイントを設定) 
+.TP 2
+o
+\f2stop in MyClass.<init>\fP (<init> は MyClass コンストラクタを識別) 
+.TP 2
+o
+\f2stop in MyClass.<clinit>\fP (<clinit> は MyClass の静的初期化コードを識別) 
+.RE
+
+.LP
+.LP
+メソッドがオーバーロードされている場合には、メソッドの引数の型も指定して、ブレークポイントに対して適切なメソッドが選択されるようにしなければなりません。たとえば、「\f2MyClass.myMethod(int,java.lang.String)\fP」または「\f2MyClass.myMethod()\fP」と指定します。
+.LP
+.LP
+\f2clear\fP コマンドは、「\f2clear\ MyClass:45\fP」のような構文を使用してブレークポイントを削除します。\f2clear\fP を使用するか、引数を指定しないでコマンドを使用すると、現在設定されているすべてのブレークポイントが表示されます。\f2cont\fP コマンドは実行を継続します。
+.LP
+.RE
+.SS 
+ステップ実行
+.LP
+.RS 3
+
+.LP
+.LP
+\f2step\fP コマンドは、現在のスタックフレームまたは呼び出されたメソッド内で、次の行を実行します。\f2next\fP コマンドは、現在のスタックフレームの次の行を実行します。
+.LP
+.RE
+.SS 
+例外
+.LP
+.RS 3
+
+.LP
+.LP
+スローしているスレッドの呼び出しスタック上のどこにも catch 文がない場合に例外が発生すると、VM は通常、例外トレースを出力して終了します。ただし、\f3jdb\fP 環境で実行している場合は、例外が発生すると \f3jdb\fP に制御が戻ります。次に、\f3jdb\fP を使用して例外の原因を診断します。
+.LP
+.LP
+たとえば、「\f2catch java.io.FileNotFoundException\fP」または「\f2catch mypackage.BigTroubleException\fP」のように \f2catch\fP コマンドを使用すると、デバッグされたアプリケーションは、ほかの例外がスローされたときに停止します。例外が特定のクラス (またはサブクラス) のインスタンスの場合は、アプリケーションは例外がスローされた場所で停止します。
+.LP
+.LP
+\f2ignore\fP コマンドを使うと、以前の \f2catch\fP コマンドの効果が無効になります。
+.LP
+.LP
+\f2注:\fP\f2ignore\fP コマンドでは、デバッグされる VM は例外を無視せず、デバッガだけが例外を無視します。
+.LP
+.RE
+.RE
+.SH "コマンド行オプション"
 .LP
 
 .LP
 .LP
-javac��java��javah��javap��javadoc
+コマンド行で Java アプリケーション起動ツールの代わりに \f3jdb\fP を使用する場合、\f3jdb\fP は、\f2\-D\fP、\f2\-classpath\fP、\f2\-X<option>\fP など、java コマンドと同じ数のオプションを受け入れます。
+.LP
+.LP
+\f3jdb\fP は、そのほかに次のオプションを受け入れます。
+.LP
+.RS 3
+.TP 3
+\-help 
+ヘルプメッセージを表示します。 
+.TP 3
+\-sourcepath <dir1:dir2:...> 
+指定されたパスを使用して、ソースファイルを検索します。このオプションが指定されていない場合は、デフォルトパスの「.」が使われます。 
+.TP 3
+\-attach <address> 
+デフォルトの接続機構を使用して、すでに実行中の VM にデバッガを接続します。 
+.TP 3
+\-listen <address> 
+実行中の VM が標準のコネクタを使って指定されたアドレスに接続するのを待機します。 
+.TP 3
+\-listenany 
+実行中の VM が標準のコネクタを使って利用可能な任意のアドレスに接続するのを待機します。 
+.TP 3
+\-launch 
+デバッグするアプリケーションを jdb の起動後ただちに起動します。このオプションによって、\f2run\fP コマンドを使用する必要がなくなります。デバッグするアプリケーションは、起動後、初期アプリケーションクラスがロードされる直前に停止します。その時点で、必要なブレークポイントを設定し、\f2cont\fP を使用して実行を継続できます。 
+.TP 3
+\-listconnectors 
+この VM で利用できるコネクタを一覧表示します。 
+.TP 3
+\-connect <connector\-name>:<name1>=<value1>,... 
+一覧表示された引数の値と指定のコネクタを使ってターゲット VM に接続します。 
+.TP 3
+\-dbgtrace [flags] 
+jdb のデバッグ情報を出力します。 
+.TP 3
+\-tclient 
+Java HotSpot(tm) VM (クライアント) 内でアプリケーションを実行します。 
+.TP 3
+\-tserver 
+Java HotSpot(tm) VM (サーバー) 内でアプリケーションを実行します。 
+.TP 3
+\-Joption 
+jdb の実行に使用される Java 仮想マシンに \f2option\fP を渡します。(アプリケーション Java 仮想マシンに対するオプションは、\f3run\fP コマンドに渡される)。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。 
+.RE
+
+.LP
+.LP
+デバッガとデバッグを行う VM を接続するための代替機構に対して、その他のオプションがサポートされています。その他の接続オプションについては、Java Platform Debugger Architecture の
+.na
+\f2ドキュメント\fP @
+.fi
+http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.htmlを参照してください。
+.LP
+.SS 
+デバッグ対象のプロセスに転送されるオプション
+.LP
+.RS 3
+.TP 3
+\-v \-verbose[:class|gc|jni] 
+冗長モードにします。 
+.TP 3
+\-D<name>=<value> 
+システムプロパティーを設定します。 
+.TP 3
+\-classpath <directories separated by ":"> 
+クラスを検索するディレクトリを一覧表示します。 
+.TP 3
+\-X<option> 
+非標準ターゲット VM オプションです。 
+.RE
+
+.LP
+.SH "関連項目"
+.LP
+
+.LP
+.LP
+javac(1)、java(1)、javah(1)、javap(1)、javadoc(1)
 .LP
 
 .LP

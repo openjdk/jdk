@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,7 @@ import java.util.ResourceBundle;
  * as distributed in its JAR file.
  *
  * @author David Brownell
+ * @version 1.1, 00/08/05
  * @see java.util.Locale
  * @see java.util.ListResourceBundle
  * @see java.text.MessageFormat

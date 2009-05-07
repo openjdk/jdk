@@ -63,6 +63,7 @@ class PlaceholderTable;
 class LoaderConstraintTable;
 class HashtableBucket;
 class ResolutionErrorTable;
+class SymbolPropertyTable;
 
 // Certain classes are preloaded, such as java.lang.Object and java.lang.String.
 // They are all "well-known", in the sense that no class loader is allowed
@@ -130,6 +131,22 @@ class ResolutionErrorTable;
   template(reflect_delegating_classloader_klass, sun_reflect_DelegatingClassLoader, Opt) \
   template(reflect_constant_pool_klass,  sun_reflect_ConstantPool,       Opt_Only_JDK15) \
   template(reflect_unsafe_static_field_accessor_impl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15) \
+                                                                              \
+  /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */ \
+  template(MethodHandle_klass,           java_dyn_MethodHandle,          Opt) \
+  template(MemberName_klass,             sun_dyn_MemberName,             Opt) \
+  template(MethodHandleImpl_klass,       sun_dyn_MethodHandleImpl,       Opt) \
+  template(AdapterMethodHandle_klass,    sun_dyn_AdapterMethodHandle,    Opt) \
+  template(BoundMethodHandle_klass,      sun_dyn_BoundMethodHandle,      Opt) \
+  template(DirectMethodHandle_klass,     sun_dyn_DirectMethodHandle,     Opt) \
+  template(MethodType_klass,             java_dyn_MethodType,            Opt) \
+  template(MethodTypeForm_klass,         java_dyn_MethodTypeForm,        Opt) \
+  template(WrongMethodTypeException_klass, java_dyn_WrongMethodTypeException, Opt) \
+  template(Linkage_klass,                java_dyn_Linkage,               Opt) \
+  template(CallSite_klass,               java_dyn_CallSite,              Opt) \
+  template(CallSiteImpl_klass,           sun_dyn_CallSiteImpl,     Opt) \
+  template(Dynamic_klass,                java_dyn_Dynamic,               Opt) \
+  /* Note: MethodHandle must be first, and Dynamic last in group */           \
                                                                               \
   template(vector_klass,                 java_util_Vector,               Pre) \
   template(hashtable_klass,              java_util_Hashtable,            Pre) \
@@ -444,6 +461,32 @@ public:
   static char* check_signature_loaders(symbolHandle signature, Handle loader1,
                                        Handle loader2, bool is_method, TRAPS);
 
+  // JSR 292
+  // find the java.dyn.MethodHandles::invoke method for a given signature
+  static methodOop find_method_handle_invoke(symbolHandle signature,
+                                             Handle class_loader,
+                                             Handle protection_domain,
+                                             TRAPS);
+  // ask Java to compute the java.dyn.MethodType object for a given signature
+  static Handle    compute_method_handle_type(symbolHandle signature,
+                                              Handle class_loader,
+                                              Handle protection_domain,
+                                              TRAPS);
+  // ask Java to create a dynamic call site, while linking an invokedynamic op
+  static Handle    make_dynamic_call_site(KlassHandle caller,
+                                          int caller_method_idnum,
+                                          int caller_bci,
+                                          symbolHandle name,
+                                          methodHandle mh_invoke,
+                                          TRAPS);
+
+  // coordinate with Java about bootstrap methods
+  static Handle    find_bootstrap_method(KlassHandle caller,
+                                         // This argument is non-null only when a
+                                         // classfile attribute has been found:
+                                         KlassHandle search_bootstrap_klass,
+                                         TRAPS);
+
   // Utility for printing loader "name" as part of tracing constraints
   static const char* loader_name(oop loader) {
     return ((loader) == NULL ? "<bootloader>" :
@@ -460,6 +503,7 @@ public:
   enum Constants {
     _loader_constraint_size = 107,                     // number of entries in constraint table
     _resolution_error_size  = 107,                     // number of entries in resolution error table
+    _invoke_method_size     = 139,                     // number of entries in invoke method table
     _nof_buckets            = 1009                     // number of buckets in hash table
   };
 
@@ -489,6 +533,9 @@ public:
   // Resolution errors
   static ResolutionErrorTable*   _resolution_errors;
 
+  // Invoke methods (JSR 292)
+  static SymbolPropertyTable*    _invoke_method_table;
+
 public:
   // for VM_CounterDecay iteration support
   friend class CounterDecay;
@@ -506,6 +553,7 @@ private:
   static PlaceholderTable*   placeholders() { return _placeholders; }
   static LoaderConstraintTable* constraints() { return _loader_constraints; }
   static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
+  static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
 
   // Basic loading operations
   static klassOop resolve_instance_class_or_null(symbolHandle class_name, Handle class_loader, Handle protection_domain, TRAPS);

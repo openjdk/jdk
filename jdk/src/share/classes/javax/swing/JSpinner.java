@@ -28,7 +28,6 @@ package javax.swing;
 import java.awt.*;
 import java.awt.event.*;
 
-import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.*;
 import javax.swing.plaf.SpinnerUI;
@@ -154,7 +153,7 @@ public class JSpinner extends JComponent implements Accessible
         }
         this.model = model;
         this.editor = createEditor(model);
-        setOpaque(true);
+        setUIProperty("opaque",true);
         updateUI();
     }
 

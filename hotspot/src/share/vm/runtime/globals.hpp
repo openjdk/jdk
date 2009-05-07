@@ -3301,6 +3301,27 @@ class CommandLineFlags {
   product(bool, AnonymousClasses, false,                                    \
           "support sun.misc.Unsafe.defineAnonymousClass")                   \
                                                                             \
+  product(bool, EnableMethodHandles, false,                                 \
+          "support method handles (true by default under JSR 292)")         \
+                                                                            \
+  diagnostic(intx, MethodHandlePushLimit, 3,                                \
+          "number of additional stack slots a method handle may push")      \
+                                                                            \
+  develop(bool, TraceMethodHandles, false,                                  \
+          "trace internal method handle operations")                        \
+                                                                            \
+  diagnostic(bool, VerifyMethodHandles, trueInDebug,                        \
+          "perform extra checks when constructing method handles")          \
+                                                                            \
+  diagnostic(bool, OptimizeMethodHandles, true,                             \
+          "when constructing method handles, try to improve them")          \
+                                                                            \
+  product(bool, EnableInvokeDynamic, false,                                 \
+          "recognize the invokedynamic instruction")                        \
+                                                                            \
+  develop(bool, TraceInvokeDynamic, false,                                  \
+          "trace internal invoke dynamic operations")                       \
+                                                                            \
   product(bool, TaggedStackInterpreter, false,                              \
           "Insert tags in interpreter execution stack for oopmap generaion")\
                                                                             \

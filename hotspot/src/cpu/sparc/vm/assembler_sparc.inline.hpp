@@ -38,6 +38,11 @@ inline void MacroAssembler::pd_print_patched_instruction(address branch) {
 inline bool Address::is_simm13(int offset) { return Assembler::is_simm13(disp() + offset); }
 
 
+inline int AddressLiteral::low10() const {
+  return Assembler::low10(value());
+}
+
+
 // inlines for SPARC assembler -- dmu 5/97
 
 inline void Assembler::check_delay() {
@@ -63,10 +68,9 @@ inline void Assembler::emit_data(int x, RelocationHolder const& rspec) {
 }
 
 
-inline void Assembler::add(    Register s1, Register s2, Register d )                             { emit_long( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | rs2(s2) ); }
-inline void Assembler::add(    Register s1, int simm13a, Register d, relocInfo::relocType rtype ) { emit_data( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rtype ); }
-inline void Assembler::add(    Register s1, int simm13a, Register d, RelocationHolder const& rspec ) { emit_data( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec ); }
-inline void Assembler::add(    const Address& a, Register d, int offset) { add( a.base(), a.disp() + offset, d, a.rspec(offset)); }
+inline void Assembler::add(Register s1, Register s2, Register d )                             { emit_long( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::add(Register s1, int simm13a, Register d, relocInfo::relocType rtype ) { emit_data( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rtype ); }
+inline void Assembler::add(Register s1, int simm13a, Register d, RelocationHolder const& rspec ) { emit_data( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec ); }
 
 inline void Assembler::bpr( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt ) { v9_only();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(bpr_op2) | wdisp16(intptr_t(d), intptr_t(pc())) | predict(p) | rs1(s1), rt);  has_delay_slot(); }
 inline void Assembler::bpr( RCondition c, bool a, Predict p, Register s1, Label& L) { bpr( c, a, p, s1, target(L)); }
@@ -95,13 +99,10 @@ inline void Assembler::flush( Register s1, int simm13a) { emit_data( op(arith_op
 inline void Assembler::jmpl( Register s1, Register s2, Register d                          ) { emit_long( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
 inline void Assembler::jmpl( Register s1, int simm13a, Register d, RelocationHolder const& rspec ) { emit_data( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec);  has_delay_slot(); }
 
-inline void Assembler::jmpl( Address& a, Register d, int offset) { jmpl( a.base(), a.disp() + offset, d, a.rspec(offset)); }
+inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { emit_long( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | rs2(s2) ); }
+inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d, RelocationHolder const& rspec) { emit_data( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec); }
 
-
-inline void Assembler::ldf(    FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { emit_long( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | rs2(s2) ); }
-inline void Assembler::ldf(    FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d) { emit_data( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
-
-inline void Assembler::ldf(    FloatRegisterImpl::Width w, const Address& a, FloatRegister d, int offset) { relocate(a.rspec(offset)); ldf( w, a.base(), a.disp() + offset, d); }
+inline void Assembler::ldf(FloatRegisterImpl::Width w, const Address& a, FloatRegister d, int offset) { relocate(a.rspec(offset)); ldf( w, a.base(), a.disp() + offset, d); }
 
 inline void Assembler::ldfsr(  Register s1, Register s2) { v9_dep();   emit_long( op(ldst_op) |             op3(ldfsr_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldfsr(  Register s1, int simm13a) { v9_dep();   emit_data( op(ldst_op) |             op3(ldfsr_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
@@ -136,49 +137,68 @@ inline void Assembler::ldd(   Register s1, int simm13a, Register d) { v9_dep(); 
 
 #ifdef _LP64
 // Make all 32 bit loads signed so 64 bit registers maintain proper sign
-inline void Assembler::ld(  Register s1, Register s2, Register d) { ldsw( s1, s2, d); }
-inline void Assembler::ld(  Register s1, int simm13a, Register d) { ldsw( s1, simm13a, d); }
+inline void Assembler::ld(  Register s1, Register s2, Register d)      { ldsw( s1, s2, d); }
+inline void Assembler::ld(  Register s1, int simm13a, Register d)      { ldsw( s1, simm13a, d); }
 #else
-inline void Assembler::ld(  Register s1, Register s2, Register d) { lduw( s1, s2, d); }
-inline void Assembler::ld(  Register s1, int simm13a, Register d) { lduw( s1, simm13a, d); }
+inline void Assembler::ld(  Register s1, Register s2, Register d)      { lduw( s1, s2, d); }
+inline void Assembler::ld(  Register s1, int simm13a, Register d)      { lduw( s1, simm13a, d); }
 #endif
 
-inline void Assembler::ldub(  Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_register())  ldsb(s1, s2.as_register(), d);
-  else                   ldsb(s1, s2.as_constant(), d);
+#ifdef ASSERT
+  // ByteSize is only a class when ASSERT is defined, otherwise it's an int.
+# ifdef _LP64
+inline void Assembler::ld(  Register s1, ByteSize simm13a, Register d) { ldsw( s1, in_bytes(simm13a), d); }
+# else
+inline void Assembler::ld(  Register s1, ByteSize simm13a, Register d) { lduw( s1, in_bytes(simm13a), d); }
+# endif
+#endif
+
+inline void Assembler::ld(  const Address& a, Register d, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); ld(  a.base(), a.index(),         d); }
+  else               {                          ld(  a.base(), a.disp() + offset, d); }
 }
-inline void Assembler::ldsb(  Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_register())  ldsb(s1, s2.as_register(), d);
-  else                   ldsb(s1, s2.as_constant(), d);
+inline void Assembler::ldsb(const Address& a, Register d, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); ldsb(a.base(), a.index(),         d); }
+  else               {                          ldsb(a.base(), a.disp() + offset, d); }
 }
-inline void Assembler::lduh(  Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_register())  ldsh(s1, s2.as_register(), d);
-  else                   ldsh(s1, s2.as_constant(), d);
+inline void Assembler::ldsh(const Address& a, Register d, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); ldsh(a.base(), a.index(),         d); }
+  else               {                          ldsh(a.base(), a.disp() + offset, d); }
 }
-inline void Assembler::ldsh(  Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_register())  ldsh(s1, s2.as_register(), d);
-  else                   ldsh(s1, s2.as_constant(), d);
+inline void Assembler::ldsw(const Address& a, Register d, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); ldsw(a.base(), a.index(),         d); }
+  else               {                          ldsw(a.base(), a.disp() + offset, d); }
 }
-inline void Assembler::lduw(  Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_register())  ldsw(s1, s2.as_register(), d);
-  else                   ldsw(s1, s2.as_constant(), d);
+inline void Assembler::ldub(const Address& a, Register d, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); ldub(a.base(), a.index(),         d); }
+  else               {                          ldub(a.base(), a.disp() + offset, d); }
 }
-inline void Assembler::ldsw(  Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_register())  ldsw(s1, s2.as_register(), d);
-  else                   ldsw(s1, s2.as_constant(), d);
+inline void Assembler::lduh(const Address& a, Register d, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); lduh(a.base(), a.index(),         d); }
+  else               {                          lduh(a.base(), a.disp() + offset, d); }
 }
-inline void Assembler::ldx(   Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_register())  ldx(s1, s2.as_register(), d);
-  else                   ldx(s1, s2.as_constant(), d);
+inline void Assembler::lduw(const Address& a, Register d, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); lduw(a.base(), a.index(),         d); }
+  else               {                          lduw(a.base(), a.disp() + offset, d); }
 }
-inline void Assembler::ld(    Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_register())  ld(s1, s2.as_register(), d);
-  else                   ld(s1, s2.as_constant(), d);
+inline void Assembler::ldd( const Address& a, Register d, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); ldd( a.base(), a.index(),         d); }
+  else               {                          ldd( a.base(), a.disp() + offset, d); }
 }
-inline void Assembler::ldd(   Register s1, RegisterOrConstant s2, Register d) {
-  if (s2.is_register())  ldd(s1, s2.as_register(), d);
-  else                   ldd(s1, s2.as_constant(), d);
+inline void Assembler::ldx( const Address& a, Register d, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); ldx( a.base(), a.index(),         d); }
+  else               {                          ldx( a.base(), a.disp() + offset, d); }
 }
+
+inline void Assembler::ldub(Register s1, RegisterOrConstant s2, Register d) { ldub(Address(s1, s2), d); }
+inline void Assembler::ldsb(Register s1, RegisterOrConstant s2, Register d) { ldsb(Address(s1, s2), d); }
+inline void Assembler::lduh(Register s1, RegisterOrConstant s2, Register d) { lduh(Address(s1, s2), d); }
+inline void Assembler::ldsh(Register s1, RegisterOrConstant s2, Register d) { ldsh(Address(s1, s2), d); }
+inline void Assembler::lduw(Register s1, RegisterOrConstant s2, Register d) { lduw(Address(s1, s2), d); }
+inline void Assembler::ldsw(Register s1, RegisterOrConstant s2, Register d) { ldsw(Address(s1, s2), d); }
+inline void Assembler::ldx( Register s1, RegisterOrConstant s2, Register d) { ldx( Address(s1, s2), d); }
+inline void Assembler::ld(  Register s1, RegisterOrConstant s2, Register d) { ld(  Address(s1, s2), d); }
+inline void Assembler::ldd( Register s1, RegisterOrConstant s2, Register d) { ldd( Address(s1, s2), d); }
 
 // form effective addresses this way:
 inline void Assembler::add(   Register s1, RegisterOrConstant s2, Register d, int offset) {
@@ -186,17 +206,6 @@ inline void Assembler::add(   Register s1, RegisterOrConstant s2, Register d, in
   else                 { add(s1, s2.as_constant() + offset, d); offset = 0; }
   if (offset != 0)       add(d,  offset,                    d);
 }
-
-inline void Assembler::ld(   const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); ld(   a.base(), a.disp() + offset, d ); }
-inline void Assembler::ldsb( const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); ldsb( a.base(), a.disp() + offset, d ); }
-inline void Assembler::ldsh( const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); ldsh( a.base(), a.disp() + offset, d ); }
-inline void Assembler::ldsw( const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); ldsw( a.base(), a.disp() + offset, d ); }
-inline void Assembler::ldub( const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); ldub( a.base(), a.disp() + offset, d ); }
-inline void Assembler::lduh( const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); lduh( a.base(), a.disp() + offset, d ); }
-inline void Assembler::lduw( const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); lduw( a.base(), a.disp() + offset, d ); }
-inline void Assembler::ldd(  const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); ldd(  a.base(), a.disp() + offset, d ); }
-inline void Assembler::ldx(  const Address& a, Register d, int offset ) { relocate(a.rspec(offset)); ldx(  a.base(), a.disp() + offset, d ); }
-
 
 inline void Assembler::ldstub(  Register s1, Register s2, Register d) { emit_long( op(ldst_op) | rd(d) | op3(ldstub_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldstub(  Register s1, int simm13a, Register d) { emit_data( op(ldst_op) | rd(d) | op3(ldstub_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
@@ -240,36 +249,44 @@ inline void Assembler::stx(  Register d, Register s1, int simm13a) { v9_only(); 
 inline void Assembler::std(  Register d, Register s1, Register s2) { v9_dep(); assert(d->is_even(), "not even"); emit_long( op(ldst_op) | rd(d) | op3(std_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::std(  Register d, Register s1, int simm13a) { v9_dep(); assert(d->is_even(), "not even"); emit_data( op(ldst_op) | rd(d) | op3(std_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::st(  Register d, Register s1, Register s2) { stw(d, s1, s2); }
-inline void Assembler::st(  Register d, Register s1, int simm13a) { stw(d, s1, simm13a); }
+inline void Assembler::st( Register d, Register s1, Register s2)      { stw(d, s1, s2); }
+inline void Assembler::st( Register d, Register s1, int simm13a)      { stw(d, s1, simm13a); }
 
-inline void Assembler::stb(  Register d, Register s1, RegisterOrConstant s2) {
-  if (s2.is_register())  stb(d, s1, s2.as_register());
-  else                   stb(d, s1, s2.as_constant());
+#ifdef ASSERT
+// ByteSize is only a class when ASSERT is defined, otherwise it's an int.
+inline void Assembler::st( Register d, Register s1, ByteSize simm13a) { stw(d, s1, in_bytes(simm13a)); }
+#endif
+
+inline void Assembler::stb(Register d, const Address& a, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); stb(d, a.base(), a.index()        ); }
+  else               {                          stb(d, a.base(), a.disp() + offset); }
 }
-inline void Assembler::sth(  Register d, Register s1, RegisterOrConstant s2) {
-  if (s2.is_register())  sth(d, s1, s2.as_register());
-  else                   sth(d, s1, s2.as_constant());
+inline void Assembler::sth(Register d, const Address& a, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); sth(d, a.base(), a.index()        ); }
+  else               {                          sth(d, a.base(), a.disp() + offset); }
 }
-inline void Assembler::stx(  Register d, Register s1, RegisterOrConstant s2) {
-  if (s2.is_register())  stx(d, s1, s2.as_register());
-  else                   stx(d, s1, s2.as_constant());
+inline void Assembler::stw(Register d, const Address& a, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); stw(d, a.base(), a.index()        ); }
+  else               {                          stw(d, a.base(), a.disp() + offset); }
 }
-inline void Assembler::std( Register d, Register s1, RegisterOrConstant s2) {
-  if (s2.is_register())  std(d, s1, s2.as_register());
-  else                   std(d, s1, s2.as_constant());
+inline void Assembler::st( Register d, const Address& a, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); st( d, a.base(), a.index()        ); }
+  else               {                          st( d, a.base(), a.disp() + offset); }
 }
-inline void Assembler::st(  Register d, Register s1, RegisterOrConstant s2) {
-  if (s2.is_register())  st(d, s1, s2.as_register());
-  else                   st(d, s1, s2.as_constant());
+inline void Assembler::std(Register d, const Address& a, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); std(d, a.base(), a.index()        ); }
+  else               {                          std(d, a.base(), a.disp() + offset); }
+}
+inline void Assembler::stx(Register d, const Address& a, int offset) {
+  if (a.has_index()) { assert(offset == 0, ""); stx(d, a.base(), a.index()        ); }
+  else               {                          stx(d, a.base(), a.disp() + offset); }
 }
 
-inline void Assembler::stb( Register d, const Address& a, int offset) { relocate(a.rspec(offset)); stb( d, a.base(), a.disp() + offset); }
-inline void Assembler::sth( Register d, const Address& a, int offset) { relocate(a.rspec(offset)); sth( d, a.base(), a.disp() + offset); }
-inline void Assembler::stw( Register d, const Address& a, int offset) { relocate(a.rspec(offset)); stw( d, a.base(), a.disp() + offset); }
-inline void Assembler::st(  Register d, const Address& a, int offset) { relocate(a.rspec(offset)); st(  d, a.base(), a.disp() + offset); }
-inline void Assembler::std( Register d, const Address& a, int offset) { relocate(a.rspec(offset)); std( d, a.base(), a.disp() + offset); }
-inline void Assembler::stx( Register d, const Address& a, int offset) { relocate(a.rspec(offset)); stx( d, a.base(), a.disp() + offset); }
+inline void Assembler::stb(Register d, Register s1, RegisterOrConstant s2) { stb(d, Address(s1, s2)); }
+inline void Assembler::sth(Register d, Register s1, RegisterOrConstant s2) { sth(d, Address(s1, s2)); }
+inline void Assembler::stx(Register d, Register s1, RegisterOrConstant s2) { stx(d, Address(s1, s2)); }
+inline void Assembler::std(Register d, Register s1, RegisterOrConstant s2) { std(d, Address(s1, s2)); }
+inline void Assembler::st( Register d, Register s1, RegisterOrConstant s2) { st( d, Address(s1, s2)); }
 
 // v8 p 99
 
@@ -294,39 +311,46 @@ inline void Assembler::swap(    Address& a, Register d, int offset ) { relocate(
 // Use the right loads/stores for the platform
 inline void MacroAssembler::ld_ptr( Register s1, Register s2, Register d ) {
 #ifdef _LP64
-  Assembler::ldx( s1, s2, d);
+  Assembler::ldx(s1, s2, d);
 #else
-  Assembler::ld(  s1, s2, d);
+  Assembler::ld( s1, s2, d);
 #endif
 }
 
 inline void MacroAssembler::ld_ptr( Register s1, int simm13a, Register d ) {
 #ifdef _LP64
-  Assembler::ldx( s1, simm13a, d);
+  Assembler::ldx(s1, simm13a, d);
 #else
-  Assembler::ld(  s1, simm13a, d);
+  Assembler::ld( s1, simm13a, d);
 #endif
 }
+
+#ifdef ASSERT
+// ByteSize is only a class when ASSERT is defined, otherwise it's an int.
+inline void MacroAssembler::ld_ptr( Register s1, ByteSize simm13a, Register d ) {
+  ld_ptr(s1, in_bytes(simm13a), d);
+}
+#endif
 
 inline void MacroAssembler::ld_ptr( Register s1, RegisterOrConstant s2, Register d ) {
 #ifdef _LP64
-  Assembler::ldx( s1, s2, d);
+  Assembler::ldx(s1, s2, d);
 #else
-  Assembler::ld(  s1, s2, d);
+  Assembler::ld( s1, s2, d);
 #endif
 }
 
-inline void MacroAssembler::ld_ptr( const Address& a, Register d, int offset ) {
+inline void MacroAssembler::ld_ptr(const Address& a, Register d, int offset) {
 #ifdef _LP64
-  Assembler::ldx(  a, d, offset );
+  Assembler::ldx(a, d, offset);
 #else
-  Assembler::ld(   a, d, offset );
+  Assembler::ld( a, d, offset);
 #endif
 }
 
 inline void MacroAssembler::st_ptr( Register d, Register s1, Register s2 ) {
 #ifdef _LP64
-  Assembler::stx( d, s1, s2);
+  Assembler::stx(d, s1, s2);
 #else
   Assembler::st( d, s1, s2);
 #endif
@@ -334,25 +358,32 @@ inline void MacroAssembler::st_ptr( Register d, Register s1, Register s2 ) {
 
 inline void MacroAssembler::st_ptr( Register d, Register s1, int simm13a ) {
 #ifdef _LP64
-  Assembler::stx( d, s1, simm13a);
+  Assembler::stx(d, s1, simm13a);
 #else
   Assembler::st( d, s1, simm13a);
 #endif
 }
 
+#ifdef ASSERT
+// ByteSize is only a class when ASSERT is defined, otherwise it's an int.
+inline void MacroAssembler::st_ptr( Register d, Register s1, ByteSize simm13a ) {
+  st_ptr(d, s1, in_bytes(simm13a));
+}
+#endif
+
 inline void MacroAssembler::st_ptr( Register d, Register s1, RegisterOrConstant s2 ) {
 #ifdef _LP64
-  Assembler::stx( d, s1, s2);
+  Assembler::stx(d, s1, s2);
 #else
   Assembler::st( d, s1, s2);
 #endif
 }
 
-inline void MacroAssembler::st_ptr(  Register d, const Address& a, int offset) {
+inline void MacroAssembler::st_ptr(Register d, const Address& a, int offset) {
 #ifdef _LP64
-  Assembler::stx(  d, a, offset);
+  Assembler::stx(d, a, offset);
 #else
-  Assembler::st(  d, a, offset);
+  Assembler::st( d, a, offset);
 #endif
 }
 
@@ -381,11 +412,11 @@ inline void MacroAssembler::ld_long( Register s1, RegisterOrConstant s2, Registe
 #endif
 }
 
-inline void MacroAssembler::ld_long( const Address& a, Register d, int offset ) {
+inline void MacroAssembler::ld_long(const Address& a, Register d, int offset) {
 #ifdef _LP64
-  Assembler::ldx(a, d, offset );
+  Assembler::ldx(a, d, offset);
 #else
-  Assembler::ldd(a, d, offset );
+  Assembler::ldd(a, d, offset);
 #endif
 }
 
@@ -427,7 +458,7 @@ inline void MacroAssembler::sll_ptr( Register s1, Register s2, Register d ) {
 #ifdef _LP64
   Assembler::sllx(s1, s2, d);
 #else
-  Assembler::sll(s1, s2, d);
+  Assembler::sll( s1, s2, d);
 #endif
 }
 
@@ -435,7 +466,7 @@ inline void MacroAssembler::sll_ptr( Register s1, int imm6a,   Register d ) {
 #ifdef _LP64
   Assembler::sllx(s1, imm6a, d);
 #else
-  Assembler::sll(s1, imm6a, d);
+  Assembler::sll( s1, imm6a, d);
 #endif
 }
 
@@ -443,7 +474,7 @@ inline void MacroAssembler::srl_ptr( Register s1, Register s2, Register d ) {
 #ifdef _LP64
   Assembler::srlx(s1, s2, d);
 #else
-  Assembler::srl(s1, s2, d);
+  Assembler::srl( s1, s2, d);
 #endif
 }
 
@@ -451,7 +482,7 @@ inline void MacroAssembler::srl_ptr( Register s1, int imm6a,   Register d ) {
 #ifdef _LP64
   Assembler::srlx(s1, imm6a, d);
 #else
-  Assembler::srl(s1, imm6a, d);
+  Assembler::srl( s1, imm6a, d);
 #endif
 }
 
@@ -541,9 +572,8 @@ inline void MacroAssembler::call( address d, relocInfo::relocType rt ) {
   disp = (intptr_t)d - (intptr_t)pc();
   if ( disp != (intptr_t)(int32_t)disp ) {
     relocate(rt);
-    Address dest(O7, (address)d);
-    sethi(dest, /*ForceRelocatable=*/ true);
-    jmpl(dest, O7);
+    AddressLiteral dest(d);
+    jumpl_to(dest, O7, O7);
   }
   else {
     Assembler::call( d, rt );
@@ -603,87 +633,72 @@ inline intptr_t MacroAssembler::load_pc_address( Register reg, int bytes_to_skip
   return thepc;
 }
 
-inline void MacroAssembler::load_address( Address& a, int offset ) {
+
+inline void MacroAssembler::load_contents(AddressLiteral& addrlit, Register d, int offset) {
   assert_not_delayed();
-#ifdef _LP64
-  sethi(a);
-  add(a, a.base(), offset);
-#else
-  if (a.hi() == 0 && a.rtype() == relocInfo::none) {
-    set(a.disp() + offset, a.base());
-  }
-  else {
-    sethi(a);
-    add(a, a.base(), offset);
-  }
-#endif
+  sethi(addrlit, d);
+  ld(d, addrlit.low10() + offset, d);
 }
 
 
-inline void MacroAssembler::split_disp( Address& a, Register temp ) {
+inline void MacroAssembler::load_ptr_contents(AddressLiteral& addrlit, Register d, int offset) {
   assert_not_delayed();
-  a = a.split_disp();
-  Assembler::sethi(a.hi(), temp, a.rspec());
-  add(a.base(), temp, a.base());
+  sethi(addrlit, d);
+  ld_ptr(d, addrlit.low10() + offset, d);
 }
 
 
-inline void MacroAssembler::load_contents( Address& a, Register d, int offset ) {
+inline void MacroAssembler::store_contents(Register s, AddressLiteral& addrlit, Register temp, int offset) {
   assert_not_delayed();
-  sethi(a);
-  ld(a, d, offset);
+  sethi(addrlit, temp);
+  st(s, temp, addrlit.low10() + offset);
 }
 
 
-inline void MacroAssembler::load_ptr_contents( Address& a, Register d, int offset ) {
+inline void MacroAssembler::store_ptr_contents(Register s, AddressLiteral& addrlit, Register temp, int offset) {
   assert_not_delayed();
-  sethi(a);
-  ld_ptr(a, d, offset);
-}
-
-
-inline void MacroAssembler::store_contents( Register s, Address& a, int offset ) {
-  assert_not_delayed();
-  sethi(a);
-  st(s, a, offset);
-}
-
-
-inline void MacroAssembler::store_ptr_contents( Register s, Address& a, int offset ) {
-  assert_not_delayed();
-  sethi(a);
-  st_ptr(s, a, offset);
+  sethi(addrlit, temp);
+  st_ptr(s, temp, addrlit.low10() + offset);
 }
 
 
 // This code sequence is relocatable to any address, even on LP64.
-inline void MacroAssembler::jumpl_to( Address& a, Register d, int offset ) {
+inline void MacroAssembler::jumpl_to(AddressLiteral& addrlit, Register temp, Register d, int offset) {
   assert_not_delayed();
   // Force fixed length sethi because NativeJump and NativeFarCall don't handle
   // variable length instruction streams.
-  sethi(a, /*ForceRelocatable=*/ true);
-  jmpl(a, d, offset);
+  patchable_sethi(addrlit, temp);
+  jmpl(temp, addrlit.low10() + offset, d);
 }
 
 
-inline void MacroAssembler::jump_to( Address& a, int offset ) {
-  jumpl_to( a, G0, offset );
+inline void MacroAssembler::jump_to(AddressLiteral& addrlit, Register temp, int offset) {
+  jumpl_to(addrlit, temp, G0, offset);
 }
 
 
-inline void MacroAssembler::set_oop( jobject obj, Register d ) {
-  set_oop(allocate_oop_address(obj, d));
+inline void MacroAssembler::jump_indirect_to(Address& a, Register temp,
+                                             int ld_offset, int jmp_offset) {
+  assert_not_delayed();
+  //sethi(al);                   // sethi is caller responsibility for this one
+  ld_ptr(a, temp, ld_offset);
+  jmp(temp, jmp_offset);
 }
 
 
-inline void MacroAssembler::set_oop_constant( jobject obj, Register d ) {
-  set_oop(constant_oop_address(obj, d));
+inline void MacroAssembler::set_oop(jobject obj, Register d) {
+  set_oop(allocate_oop_address(obj), d);
 }
 
 
-inline void MacroAssembler::set_oop( Address obj_addr ) {
-  assert(obj_addr.rspec().type()==relocInfo::oop_type, "must be an oop reloc");
-  load_address(obj_addr);
+inline void MacroAssembler::set_oop_constant(jobject obj, Register d) {
+  set_oop(constant_oop_address(obj), d);
+}
+
+
+inline void MacroAssembler::set_oop(AddressLiteral& obj_addr, Register d) {
+  assert(obj_addr.rspec().type() == relocInfo::oop_type, "must be an oop reloc");
+  set(obj_addr, d);
 }
 
 

@@ -7609,6 +7609,83 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
 }
 
 
+// registers on entry:
+//  - rax ('check' register): required MethodType
+//  - rcx: method handle
+//  - rdx, rsi, or ?: killable temp
+void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_reg,
+                                              Register temp_reg,
+                                              Label& wrong_method_type) {
+  if (UseCompressedOops)  unimplemented();  // field accesses must decode
+  // compare method type against that of the receiver
+  cmpptr(mtype_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)));
+  jcc(Assembler::notEqual, wrong_method_type);
+}
+
+
+// A method handle has a "vmslots" field which gives the size of its
+// argument list in JVM stack slots.  This field is either located directly
+// in every method handle, or else is indirectly accessed through the
+// method handle's MethodType.  This macro hides the distinction.
+void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register mh_reg,
+                                                Register temp_reg) {
+  if (UseCompressedOops)  unimplemented();  // field accesses must decode
+  // load mh.type.form.vmslots
+  if (java_dyn_MethodHandle::vmslots_offset_in_bytes() != 0) {
+    // hoist vmslots into every mh to avoid dependent load chain
+    movl(vmslots_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::vmslots_offset_in_bytes, temp_reg)));
+  } else {
+    Register temp2_reg = vmslots_reg;
+    movptr(temp2_reg, Address(mh_reg,    delayed_value(java_dyn_MethodHandle::type_offset_in_bytes, temp_reg)));
+    movptr(temp2_reg, Address(temp2_reg, delayed_value(java_dyn_MethodType::form_offset_in_bytes, temp_reg)));
+    movl(vmslots_reg, Address(temp2_reg, delayed_value(java_dyn_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)));
+  }
+}
+
+
+// registers on entry:
+//  - rcx: method handle
+//  - rdx: killable temp (interpreted only)
+//  - rax: killable temp (compiled only)
+void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_reg) {
+  assert(mh_reg == rcx, "caller must put MH object in rcx");
+  assert_different_registers(mh_reg, temp_reg);
+
+  if (UseCompressedOops)  unimplemented();  // field accesses must decode
+
+  // pick out the interpreted side of the handler
+  movptr(temp_reg, Address(mh_reg, delayed_value(java_dyn_MethodHandle::vmentry_offset_in_bytes, temp_reg)));
+
+  // off we go...
+  jmp(Address(temp_reg, MethodHandleEntry::from_interpreted_entry_offset_in_bytes()));
+
+  // for the various stubs which take control at this point,
+  // see MethodHandles::generate_method_handle_stub
+}
+
+
+Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
+                                         int extra_slot_offset) {
+  // cf. TemplateTable::prepare_invoke(), if (load_receiver).
+  int stackElementSize = Interpreter::stackElementSize();
+  int offset = Interpreter::expr_offset_in_bytes(extra_slot_offset+0);
+#ifdef ASSERT
+  int offset1 = Interpreter::expr_offset_in_bytes(extra_slot_offset+1);
+  assert(offset1 - offset == stackElementSize, "correct arithmetic");
+#endif
+  Register             scale_reg    = noreg;
+  Address::ScaleFactor scale_factor = Address::no_scale;
+  if (arg_slot.is_constant()) {
+    offset += arg_slot.as_constant() * stackElementSize;
+  } else {
+    scale_reg    = arg_slot.as_register();
+    scale_factor = Address::times(stackElementSize);
+  }
+  offset += wordSize;           // return PC is on stack
+  return Address(rsp, scale_reg, scale_factor, offset);
+}
+
+
 void MacroAssembler::verify_oop_addr(Address addr, const char* s) {
   if (!VerifyOops) return;
 

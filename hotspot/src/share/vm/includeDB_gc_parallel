@@ -36,6 +36,18 @@ constantPoolKlass.cpp                   psPromotionManager.inline.hpp
 constantPoolKlass.cpp                   psScavenge.inline.hpp
 constantPoolKlass.cpp                   parOopClosures.inline.hpp
 
+constantPoolKlass.cpp                   cardTableRS.hpp
+constantPoolKlass.cpp                   oop.pcgc.inline.hpp
+constantPoolKlass.cpp                   psPromotionManager.inline.hpp
+constantPoolKlass.cpp                   psScavenge.inline.hpp
+constantPoolKlass.cpp                   parOopClosures.inline.hpp
+
+cpCacheKlass.cpp                        cardTableRS.hpp
+cpCacheKlass.cpp                        oop.pcgc.inline.hpp
+cpCacheKlass.cpp                        psPromotionManager.inline.hpp
+cpCacheKlass.cpp                        psScavenge.inline.hpp
+cpCacheKlass.cpp                        parOopClosures.inline.hpp
+
 genCollectedHeap.cpp                    concurrentMarkSweepThread.hpp
 genCollectedHeap.cpp                    vmCMSOperations.hpp
 
