@@ -139,6 +139,13 @@ public class Items {
         return new StaticItem(member);
     }
 
+    /** Make an item representing a dynamically invoked method.
+     *  @param member   The represented symbol.
+     */
+    Item makeDynamicItem(Symbol member) {
+        return new DynamicItem(member);
+    }
+
     /** Make an item representing an instance variable or method.
      *  @param member       The represented symbol.
      *  @param nonvirtual   Is the reference not virtual? (true for constructors
@@ -456,6 +463,38 @@ public class Items {
             return "static(" + member + ")";
         }
     }
+
+    /** An item representing a dynamic call site.
+     */
+    class DynamicItem extends StaticItem {
+        DynamicItem(Symbol member) {
+            super(member);
+            assert member.owner == syms.invokeDynamicType.tsym;
+        }
+
+        Item load() {
+            assert false;
+            return null;
+        }
+
+        void store() {
+            assert false;
+        }
+
+        Item invoke() {
+            // assert target.hasNativeInvokeDynamic();
+            MethodType mtype = (MethodType)member.erasure(types);
+            int rescode = Code.typecode(mtype.restype);
+            ClassFile.NameAndType descr = new ClassFile.NameAndType(member.name, mtype);
+            code.emitInvokedynamic(pool.put(descr), mtype);
+            return stackItem[rescode];
+        }
+
+        public String toString() {
+            return "dynamic(" + member + ")";
+        }
+    }
+
 
     /** An item representing an instance variable or method.
      */
