@@ -28,6 +28,7 @@ package com.sun.imageio.plugins.jpeg;
 import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.spi.ServiceRegistry;
 import javax.imageio.spi.IIORegistry;
+import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.ImageWriter;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.IIOException;
@@ -49,7 +50,7 @@ public class JPEGImageWriterSpi extends ImageWriterSpi {
               JPEG.suffixes,
               JPEG.MIMETypes,
               "com.sun.imageio.plugins.jpeg.JPEGImageWriter",
-              STANDARD_OUTPUT_TYPE,
+              new Class[] { ImageOutputStream.class },
               readerSpiNames,
               true,
               JPEG.nativeStreamMetadataFormatName,
