@@ -225,9 +225,15 @@ public:
   OptoRegPair *_parm_regs;        // Array of machine registers per argument
   RegMask *_calling_convention_mask; // Array of RegMasks per argument
 
-  // Does matcher support this ideal node?
+  // Does matcher have a match rule for this ideal node?
   static const bool has_match_rule(int opcode);
   static const bool _hasMatchRule[_last_opcode];
+
+  // Does matcher have a match rule for this ideal node and is the
+  // predicate (if there is one) true?
+  // NOTE: If this function is used more commonly in the future, ADLC
+  // should generate this one.
+  static const bool match_rule_supported(int opcode);
 
   // Used to determine if we have fast l2f conversion
   // USII has it, USIII doesn't

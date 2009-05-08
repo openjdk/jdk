@@ -1281,6 +1281,13 @@ static void emit_float_constant(CodeBuffer& cbuf, float x) {
 }
 
 
+const bool Matcher::match_rule_supported(int opcode) {
+  if (!has_match_rule(opcode))
+    return false;
+
+  return true;  // Per default match rules are supported.
+}
+
 int Matcher::regnum_to_fpu_offset(int regnum) {
   return regnum - 32; // The FP registers are in the second chunk
 }
@@ -6641,6 +6648,153 @@ instruct bytes_reverse_long(eRegL dst) %{
   ins_cost(125);
   ins_encode( bswap_long_bytes(dst) );
   ins_pipe( ialu_reg_reg);
+%}
+
+
+//---------- Zeros Count Instructions ------------------------------------------
+
+instruct countLeadingZerosI(eRegI dst, eRegI src, eFlagsReg cr) %{
+  predicate(UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosI src));
+  effect(KILL cr);
+
+  format %{ "LZCNT  $dst, $src\t# count leading zeros (int)" %}
+  ins_encode %{
+    __ lzcntl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosI_bsr(eRegI dst, eRegI src, eFlagsReg cr) %{
+  predicate(!UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosI src));
+  effect(KILL cr);
+
+  format %{ "BSR    $dst, $src\t# count leading zeros (int)\n\t"
+            "JNZ    skip\n\t"
+            "MOV    $dst, -1\n"
+      "skip:\n\t"
+            "NEG    $dst\n\t"
+            "ADD    $dst, 31" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    Label skip;
+    __ bsrl(Rdst, Rsrc);
+    __ jccb(Assembler::notZero, skip);
+    __ movl(Rdst, -1);
+    __ bind(skip);
+    __ negl(Rdst);
+    __ addl(Rdst, BitsPerInt - 1);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosL(eRegI dst, eRegL src, eFlagsReg cr) %{
+  predicate(UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosL src));
+  effect(TEMP dst, KILL cr);
+
+  format %{ "LZCNT  $dst, $src.hi\t# count leading zeros (long)\n\t"
+            "JNC    done\n\t"
+            "LZCNT  $dst, $src.lo\n\t"
+            "ADD    $dst, 32\n"
+      "done:" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    Label done;
+    __ lzcntl(Rdst, HIGH_FROM_LOW(Rsrc));
+    __ jccb(Assembler::carryClear, done);
+    __ lzcntl(Rdst, Rsrc);
+    __ addl(Rdst, BitsPerInt);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countLeadingZerosL_bsr(eRegI dst, eRegL src, eFlagsReg cr) %{
+  predicate(!UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosL src));
+  effect(TEMP dst, KILL cr);
+
+  format %{ "BSR    $dst, $src.hi\t# count leading zeros (long)\n\t"
+            "JZ     msw_is_zero\n\t"
+            "ADD    $dst, 32\n\t"
+            "JMP    not_zero\n"
+      "msw_is_zero:\n\t"
+            "BSR    $dst, $src.lo\n\t"
+            "JNZ    not_zero\n\t"
+            "MOV    $dst, -1\n"
+      "not_zero:\n\t"
+            "NEG    $dst\n\t"
+            "ADD    $dst, 63\n" %}
+ ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    Label msw_is_zero;
+    Label not_zero;
+    __ bsrl(Rdst, HIGH_FROM_LOW(Rsrc));
+    __ jccb(Assembler::zero, msw_is_zero);
+    __ addl(Rdst, BitsPerInt);
+    __ jmpb(not_zero);
+    __ bind(msw_is_zero);
+    __ bsrl(Rdst, Rsrc);
+    __ jccb(Assembler::notZero, not_zero);
+    __ movl(Rdst, -1);
+    __ bind(not_zero);
+    __ negl(Rdst);
+    __ addl(Rdst, BitsPerLong - 1);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosI(eRegI dst, eRegI src, eFlagsReg cr) %{
+  match(Set dst (CountTrailingZerosI src));
+  effect(KILL cr);
+
+  format %{ "BSF    $dst, $src\t# count trailing zeros (int)\n\t"
+            "JNZ    done\n\t"
+            "MOV    $dst, 32\n"
+      "done:" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Label done;
+    __ bsfl(Rdst, $src$$Register);
+    __ jccb(Assembler::notZero, done);
+    __ movl(Rdst, BitsPerInt);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct countTrailingZerosL(eRegI dst, eRegL src, eFlagsReg cr) %{
+  match(Set dst (CountTrailingZerosL src));
+  effect(TEMP dst, KILL cr);
+
+  format %{ "BSF    $dst, $src.lo\t# count trailing zeros (long)\n\t"
+            "JNZ    done\n\t"
+            "BSF    $dst, $src.hi\n\t"
+            "JNZ    msw_not_zero\n\t"
+            "MOV    $dst, 32\n"
+      "msw_not_zero:\n\t"
+            "ADD    $dst, 32\n"
+      "done:" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rsrc = $src$$Register;
+    Label msw_not_zero;
+    Label done;
+    __ bsfl(Rdst, Rsrc);
+    __ jccb(Assembler::notZero, done);
+    __ bsfl(Rdst, HIGH_FROM_LOW(Rsrc));
+    __ jccb(Assembler::notZero, msw_not_zero);
+    __ movl(Rdst, BitsPerInt);
+    __ bind(msw_not_zero);
+    __ addl(Rdst, BitsPerInt);
+    __ bind(done);
+  %}
+  ins_pipe(ialu_reg);
 %}
 
 
