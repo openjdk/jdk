@@ -136,7 +136,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _scanned_cards_seq(new TruncatedSeq(TruncatedSeqLength)),
   _rs_lengths_seq(new TruncatedSeq(TruncatedSeqLength)),
 
-  _pause_time_target_ms((double) G1MaxPauseTimeMS),
+  _pause_time_target_ms((double) MaxGCPauseMillis),
 
   // </NEW PREDICTION>
 
@@ -220,7 +220,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _par_last_termination_times_ms = new double[_parallel_gc_threads];
 
   // start conservatively
-  _expensive_region_limit_ms = 0.5 * (double) G1MaxPauseTimeMS;
+  _expensive_region_limit_ms = 0.5 * (double) MaxGCPauseMillis;
 
   // <NEW PREDICTION>
 
@@ -249,12 +249,12 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   // </NEW PREDICTION>
 
-  double time_slice  = (double) G1TimeSliceMS / 1000.0;
-  double max_gc_time = (double) G1MaxPauseTimeMS / 1000.0;
+  double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
+  double max_gc_time = (double) MaxGCPauseMillis / 1000.0;
   guarantee(max_gc_time < time_slice,
             "Max GC time should not be greater than the time slice");
   _mmu_tracker = new G1MMUTrackerQueue(time_slice, max_gc_time);
-  _sigma = (double) G1ConfidencePerc / 100.0;
+  _sigma = (double) G1ConfidencePercent / 100.0;
 
   // start conservatively (around 50ms is about right)
   _concurrent_mark_init_times_ms->add(0.05);
@@ -262,7 +262,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _concurrent_mark_cleanup_times_ms->add(0.20);
   _tenuring_threshold = MaxTenuringThreshold;
 
-  if (G1UseSurvivorSpace) {
+  if (G1UseSurvivorSpaces) {
     // if G1FixedSurvivorSpaceSize is 0 which means the size is not
     // fixed, then _max_survivor_regions will be calculated at
     // calculate_young_list_target_config during initialization
@@ -451,7 +451,7 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
   guarantee( adaptive_young_list_length(), "pre-condition" );
 
   double start_time_sec = os::elapsedTime();
-  size_t min_reserve_perc = MAX2((size_t)2, (size_t)G1MinReservePerc);
+  size_t min_reserve_perc = MAX2((size_t)2, (size_t)G1MinReservePercent);
   min_reserve_perc = MIN2((size_t) 50, min_reserve_perc);
   size_t reserve_regions =
     (size_t) ((double) min_reserve_perc * (double) _g1->n_regions() / 100.0);
@@ -1109,7 +1109,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   _short_lived_surv_rate_group->record_scan_only_prefix(short_lived_so_length);
   tag_scan_only(short_lived_so_length);
 
-  if (G1UseSurvivorSpace) {
+  if (G1UseSurvivorSpaces) {
     _survivors_age_table.clear();
   }
 
@@ -1826,11 +1826,11 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
     _rs_lengths_seq->add((double) _max_rs_lengths);
 
     double expensive_region_limit_ms =
-      (double) G1MaxPauseTimeMS - predict_constant_other_time_ms();
+      (double) MaxGCPauseMillis - predict_constant_other_time_ms();
     if (expensive_region_limit_ms < 0.0) {
       // this means that the other time was predicted to be longer than
       // than the max pause time
-      expensive_region_limit_ms = (double) G1MaxPauseTimeMS;
+      expensive_region_limit_ms = (double) MaxGCPauseMillis;
     }
     _expensive_region_limit_ms = expensive_region_limit_ms;
 
@@ -2093,24 +2093,24 @@ void G1CollectorPolicy::update_recent_gc_times(double end_time_sec,
 }
 
 double G1CollectorPolicy::recent_avg_time_for_pauses_ms() {
-  if (_recent_pause_times_ms->num() == 0) return (double) G1MaxPauseTimeMS;
+  if (_recent_pause_times_ms->num() == 0) return (double) MaxGCPauseMillis;
   else return _recent_pause_times_ms->avg();
 }
 
 double G1CollectorPolicy::recent_avg_time_for_CH_strong_ms() {
   if (_recent_CH_strong_roots_times_ms->num() == 0)
-    return (double)G1MaxPauseTimeMS/3.0;
+    return (double)MaxGCPauseMillis/3.0;
   else return _recent_CH_strong_roots_times_ms->avg();
 }
 
 double G1CollectorPolicy::recent_avg_time_for_G1_strong_ms() {
   if (_recent_G1_strong_roots_times_ms->num() == 0)
-    return (double)G1MaxPauseTimeMS/3.0;
+    return (double)MaxGCPauseMillis/3.0;
   else return _recent_G1_strong_roots_times_ms->avg();
 }
 
 double G1CollectorPolicy::recent_avg_time_for_evac_ms() {
-  if (_recent_evac_times_ms->num() == 0) return (double)G1MaxPauseTimeMS/3.0;
+  if (_recent_evac_times_ms->num() == 0) return (double)MaxGCPauseMillis/3.0;
   else return _recent_evac_times_ms->avg();
 }
 
@@ -2197,17 +2197,18 @@ G1CollectorPolicy::conservative_avg_survival_fraction_work(double avg,
 }
 
 size_t G1CollectorPolicy::expansion_amount() {
-  if ((int)(recent_avg_pause_time_ratio() * 100.0) > G1GCPct) {
-    // We will double the existing space, or take G1ExpandByPctOfAvail % of
-    // the available expansion space, whichever is smaller, bounded below
-    // by a minimum expansion (unless that's all that's left.)
+  if ((int)(recent_avg_pause_time_ratio() * 100.0) > G1GCPercent) {
+    // We will double the existing space, or take
+    // G1ExpandByPercentOfAvailable % of the available expansion
+    // space, whichever is smaller, bounded below by a minimum
+    // expansion (unless that's all that's left.)
     const size_t min_expand_bytes = 1*M;
     size_t reserved_bytes = _g1->g1_reserved_obj_bytes();
     size_t committed_bytes = _g1->capacity();
     size_t uncommitted_bytes = reserved_bytes - committed_bytes;
     size_t expand_bytes;
     size_t expand_bytes_via_pct =
-      uncommitted_bytes * G1ExpandByPctOfAvail / 100;
+      uncommitted_bytes * G1ExpandByPercentOfAvailable / 100;
     expand_bytes = MIN2(expand_bytes_via_pct, committed_bytes);
     expand_bytes = MAX2(expand_bytes, min_expand_bytes);
     expand_bytes = MIN2(expand_bytes, uncommitted_bytes);
@@ -2591,7 +2592,7 @@ size_t G1CollectorPolicy::max_regions(int purpose) {
 // Calculates survivor space parameters.
 void G1CollectorPolicy::calculate_survivors_policy()
 {
-  if (!G1UseSurvivorSpace) {
+  if (!G1UseSurvivorSpaces) {
     return;
   }
   if (G1FixedSurvivorSpaceSize == 0) {
@@ -2851,7 +2852,7 @@ record_concurrent_mark_cleanup_end(size_t freed_bytes,
 // estimate of the number of live bytes.
 void G1CollectorPolicy::
 add_to_collection_set(HeapRegion* hr) {
-  if (G1TraceRegions) {
+  if (G1PrintRegions) {
     gclog_or_tty->print_cr("added region to cset %d:["PTR_FORMAT", "PTR_FORMAT"], "
                   "top "PTR_FORMAT", young %s",
                   hr->hrs_index(), hr->bottom(), hr->end(),
