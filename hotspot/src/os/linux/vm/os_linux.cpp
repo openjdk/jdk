@@ -2314,7 +2314,8 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
 
 void os::free_memory(char *addr, size_t bytes) {
-  uncommit_memory(addr, bytes);
+  ::mmap(addr, bytes, PROT_READ | PROT_WRITE,
+         MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
