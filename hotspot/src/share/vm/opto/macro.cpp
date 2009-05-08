@@ -988,7 +988,7 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = BoolNode::make_predicate(initial_slow_test, &_igvn);
   }
 
-  if (DTraceAllocProbes ||
+  if (C->env()->dtrace_alloc_probes() ||
       !UseTLAB && (!Universe::heap()->supports_inline_contig_alloc() ||
                    (UseConcMarkSweepGC && CMSIncrementalMode))) {
     // Force slow-path allocation
@@ -1150,7 +1150,7 @@ void PhaseMacroExpand::expand_allocate_common(
                                         fast_oop_ctrl, fast_oop_rawmem, fast_oop,
                                         klass_node, length, size_in_bytes);
 
-    if (ExtendedDTraceProbes) {
+    if (C->env()->dtrace_extended_probes()) {
       // Slow-path call
       int size = TypeFunc::Parms + 2;
       CallLeafNode *call = new (C, size) CallLeafNode(OptoRuntime::dtrace_object_alloc_Type(),
