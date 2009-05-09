@@ -378,7 +378,7 @@ void LIR_Assembler::emit_exception_handler() {
   compilation()->offsets()->set_value(CodeOffsets::Exceptions, code_offset());
 
 
-  if (compilation()->has_exception_handlers() || JvmtiExport::can_post_exceptions()) {
+  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_exceptions()) {
     __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
     __ delayed()->nop();
   }
