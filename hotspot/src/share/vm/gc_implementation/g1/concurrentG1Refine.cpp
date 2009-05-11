@@ -25,23 +25,26 @@
 #include "incls/_precompiled.incl"
 #include "incls/_concurrentG1Refine.cpp.incl"
 
-bool ConcurrentG1Refine::_enabled = false;
-
 ConcurrentG1Refine::ConcurrentG1Refine() :
-  _pya(PYA_continue), _last_pya(PYA_continue),
-  _last_cards_during(), _first_traversal(false),
   _card_counts(NULL), _cur_card_count_histo(NULL), _cum_card_count_histo(NULL),
   _hot_cache(NULL),
   _def_use_cache(false), _use_cache(false),
-  _n_periods(0), _total_cards(0), _total_travs(0)
+  _n_periods(0), _total_cards(0), _total_travs(0),
+  _threads(NULL), _n_threads(0)
 {
   if (G1ConcRefine) {
-    _cg1rThread = new ConcurrentG1RefineThread(this);
-    assert(cg1rThread() != NULL, "Conc refine should have been created");
-    assert(cg1rThread()->cg1r() == this,
-           "Conc refine thread should refer to this");
-  } else {
-    _cg1rThread = NULL;
+    _n_threads = (G1ParallelRSetThreads > 0) ? G1ParallelRSetThreads : ParallelGCThreads;
+    if (_n_threads > 0) {
+      _threads = NEW_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads);
+      ConcurrentG1RefineThread *next = NULL;
+      for (int i = _n_threads - 1; i >= 0; i--) {
+        ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, i);
+        assert(t != NULL, "Conc refine should have been created");
+        assert(t->cg1r() == this, "Conc refine thread should refer to this");
+        _threads[i] = t;
+        next = t;
+      }
+    }
   }
 }
 
@@ -75,6 +78,14 @@ void ConcurrentG1Refine::init() {
   }
 }
 
+void ConcurrentG1Refine::stop() {
+  if (_threads != NULL) {
+    for (int i = 0; i < _n_threads; i++) {
+      _threads[i]->stop();
+    }
+  }
+}
+
 ConcurrentG1Refine::~ConcurrentG1Refine() {
   if (G1ConcRSLogCacheSize > 0 || G1ConcRSCountTraversals) {
     assert(_card_counts != NULL, "Logic");
@@ -88,104 +99,22 @@ ConcurrentG1Refine::~ConcurrentG1Refine() {
     assert(_hot_cache != NULL, "Logic");
     FREE_C_HEAP_ARRAY(jbyte*, _hot_cache);
   }
-}
-
-bool ConcurrentG1Refine::refine() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  unsigned cards_before = g1h->g1_rem_set()->conc_refine_cards();
-  clear_hot_cache();  // Any previous values in this are now invalid.
-  g1h->g1_rem_set()->concurrentRefinementPass(this);
-  _traversals++;
-  unsigned cards_after = g1h->g1_rem_set()->conc_refine_cards();
-  unsigned cards_during = cards_after-cards_before;
-  // If this is the first traversal in the current enabling
-  // and we did some cards, or if the number of cards found is decreasing
-  // sufficiently quickly, then keep going.  Otherwise, sleep a while.
-  bool res =
-    (_first_traversal && cards_during > 0)
-    ||
-    (!_first_traversal && cards_during * 3 < _last_cards_during * 2);
-  _last_cards_during = cards_during;
-  _first_traversal = false;
-  return res;
-}
-
-void ConcurrentG1Refine::enable() {
-  MutexLocker x(G1ConcRefine_mon);
-  if (!_enabled) {
-    _enabled = true;
-    _first_traversal = true; _last_cards_during = 0;
-    G1ConcRefine_mon->notify_all();
+  if (_threads != NULL) {
+    for (int i = 0; i < _n_threads; i++) {
+      delete _threads[i];
+    }
+    FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads);
   }
 }
 
-unsigned ConcurrentG1Refine::disable() {
-  MutexLocker x(G1ConcRefine_mon);
-  if (_enabled) {
-    _enabled = false;
-    return _traversals;
-  } else {
-    return 0;
-  }
-}
-
-void ConcurrentG1Refine::wait_for_ConcurrentG1Refine_enabled() {
-  G1ConcRefine_mon->lock();
-  while (!_enabled) {
-    G1ConcRefine_mon->wait(Mutex::_no_safepoint_check_flag);
-  }
-  G1ConcRefine_mon->unlock();
-  _traversals = 0;
-};
-
-void ConcurrentG1Refine::set_pya_restart() {
-  // If we're using the log-based RS barrier, the above will cause
-  // in-progress traversals of completed log buffers to quit early; we will
-  // also abandon all other buffers.
-  if (G1RSBarrierUseQueue) {
-    DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-    dcqs.abandon_logs();
-    // Reset the post-yield actions.
-    _pya = PYA_continue;
-    _last_pya = PYA_continue;
-  } else {
-    _pya = PYA_restart;
-  }
-}
-
-void ConcurrentG1Refine::set_pya_cancel() {
-  _pya = PYA_cancel;
-}
-
-PostYieldAction ConcurrentG1Refine::get_pya() {
-  if (_pya != PYA_continue) {
-    jint val = _pya;
-    while (true) {
-      jint val_read = Atomic::cmpxchg(PYA_continue, &_pya, val);
-      if (val_read == val) {
-        PostYieldAction res = (PostYieldAction)val;
-        assert(res != PYA_continue, "Only the refine thread should reset.");
-        _last_pya = res;
-        return res;
-      } else {
-        val = val_read;
-      }
+void ConcurrentG1Refine::threads_do(ThreadClosure *tc) {
+  if (_threads != NULL) {
+    for (int i = 0; i < _n_threads; i++) {
+      tc->do_thread(_threads[i]);
     }
   }
-  // QQQ WELL WHAT DO WE RETURN HERE???
-  // make up something!
-  return PYA_continue;
 }
 
-PostYieldAction ConcurrentG1Refine::get_last_pya() {
-  PostYieldAction res = _last_pya;
-  _last_pya = PYA_continue;
-  return res;
-}
-
-bool ConcurrentG1Refine::do_traversal() {
-  return _cg1rThread->do_traversal();
-}
 
 int ConcurrentG1Refine::add_card_count(jbyte* card_ptr) {
   size_t card_num = (card_ptr - _ct_bot);

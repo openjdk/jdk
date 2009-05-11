@@ -49,6 +49,8 @@ concurrentG1Refine.cpp			space.inline.hpp
 
 concurrentG1Refine.hpp			globalDefinitions.hpp
 concurrentG1Refine.hpp			allocation.hpp
+concurrentG1Refine.hpp			thread.hpp
+
 
 concurrentG1RefineThread.cpp		concurrentG1Refine.hpp
 concurrentG1RefineThread.cpp		concurrentG1RefineThread.hpp
