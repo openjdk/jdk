@@ -234,7 +234,7 @@ bool DirtyCardQueueSet::apply_closure_to_completed_buffer(int worker_i,
     nd = get_completed_buffer_lock(stop_at);
   }
   bool res = apply_closure_to_completed_buffer_helper(worker_i, nd);
-  if (res) _processed_buffers_rs_thread++;
+  if (res) Atomic::inc(&_processed_buffers_rs_thread);
   return res;
 }
 

@@ -1052,14 +1052,6 @@ bool OtherRegionsTable::contains_reference_locked(oop* from) const {
 
 }
 
-
-bool HeapRegionRemSet::_par_traversal = false;
-
-void HeapRegionRemSet::set_par_traversal(bool b) {
-  assert(_par_traversal != b, "Proper alternation...");
-  _par_traversal = b;
-}
-
 int HeapRegionRemSet::num_par_rem_sets() {
   // We always have at least two, so that a mutator thread can claim an
   // id and add to a rem set.

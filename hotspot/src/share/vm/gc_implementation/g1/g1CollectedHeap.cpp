@@ -447,7 +447,7 @@ void YoungList::print() {
 }
 
 void G1CollectedHeap::stop_conc_gc_threads() {
-  _cg1r->cg1rThread()->stop();
+  _cg1r->stop();
   _czft->stop();
   _cmThread->stop();
 }
@@ -1001,12 +1001,8 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
 
     gc_epilogue(true);
 
-    // Abandon concurrent refinement.  This must happen last: in the
-    // dirty-card logging system, some cards may be dirty by weak-ref
-    // processing, and may be enqueued.  But the whole card table is
-    // dirtied, so this should abandon those logs, and set "do_traversal"
-    // to true.
-    concurrent_g1_refine()->set_pya_restart();
+    // Discard all rset updates
+    JavaThread::dirty_card_queue_set().abandon_logs();
     assert(!G1DeferredRSUpdate
            || (G1DeferredRSUpdate && (dirty_card_queue_set().completed_buffers_num() == 0)), "Should not be any");
     assert(regions_accounted_for(), "Region leakage!");
@@ -1521,12 +1517,12 @@ jint G1CollectedHeap::initialize() {
                                                SATB_Q_FL_lock,
                                                0,
                                                Shared_SATB_Q_lock);
-  if (G1RSBarrierUseQueue) {
-    JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
-                                                  DirtyCardQ_FL_lock,
-                                                  G1DirtyCardQueueMax,
-                                                  Shared_DirtyCardQ_lock);
-  }
+
+  JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
+                                                DirtyCardQ_FL_lock,
+                                                G1DirtyCardQueueMax,
+                                                Shared_DirtyCardQ_lock);
+
   if (G1DeferredRSUpdate) {
     dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                       DirtyCardQ_FL_lock,
@@ -2249,6 +2245,15 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   _hrs->iterate(&blk);
 }
 
+class PrintOnThreadsClosure : public ThreadClosure {
+  outputStream* _st;
+public:
+  PrintOnThreadsClosure(outputStream* st) : _st(st) { }
+  virtual void do_thread(Thread *t) {
+    t->print_on(_st);
+  }
+};
+
 void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   if (ParallelGCThreads > 0) {
     workers()->print_worker_threads();
@@ -2256,8 +2261,9 @@ void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   st->print("\"G1 concurrent mark GC Thread\" ");
   _cmThread->print();
   st->cr();
-  st->print("\"G1 concurrent refinement GC Thread\" ");
-  _cg1r->cg1rThread()->print_on(st);
+  st->print("\"G1 concurrent refinement GC Threads\" ");
+  PrintOnThreadsClosure p(st);
+  _cg1r->threads_do(&p);
   st->cr();
   st->print("\"G1 zero-fill GC Thread\" ");
   _czft->print_on(st);
@@ -2269,7 +2275,7 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
     workers()->threads_do(tc);
   }
   tc->do_thread(_cmThread);
-  tc->do_thread(_cg1r->cg1rThread());
+  _cg1r->threads_do(tc);
   tc->do_thread(_czft);
 }
 
