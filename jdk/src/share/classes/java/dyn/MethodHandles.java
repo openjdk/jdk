@@ -73,6 +73,7 @@ public class MethodHandles {
     }
 
     /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * A factory object for creating method handles, when the creation
      * requires access checking.  Method handles do not perform
      * access checks when they are called; this is a major difference
@@ -108,8 +109,10 @@ public class MethodHandles {
      * access.  In any of these cases, an exception will be
      * thrown from the attempted lookup.
      * In general, the conditions under which a method handle may be
-     * created for a method M are exactly as restrictive as the conditions
-     * under which the lookup class could have compiled a call to M.
+     * created for a method {@code M} are exactly as restrictive as the conditions
+     * under which the lookup class could have compiled a call to {@code M}.
+     * At least some of these error conditions are likely to be
+     * represented by checked exceptions in the final version of this API.
      */
     public static final
     class Lookup {
@@ -222,11 +225,11 @@ public class MethodHandles {
 
         /**
          * Produce an early-bound method handle for a virtual method,
-         * or a handle for a constructor, as if called from an {@code invokespecial}
+         * as if called from an {@code invokespecial}
          * instruction from {@code caller}.
-         * The type of the method handle will be that of the method or constructor,
+         * The type of the method handle will be that of the method,
          * with a suitably restricted receiver type (such as {@code caller}) prepended.
-         * The method or constructor and all its argument types must be accessible
+         * The method and all its argument types must be accessible
          * to the caller.
          * <p>
          * When called, the handle will treat the first argument as a receiver,
