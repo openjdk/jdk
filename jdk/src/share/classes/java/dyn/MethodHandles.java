@@ -73,6 +73,7 @@ public class MethodHandles {
     }
 
     /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * A factory object for creating method handles, when the creation
      * requires access checking.  Method handles do not perform
      * access checks when they are called; this is a major difference
@@ -108,8 +109,10 @@ public class MethodHandles {
      * access.  In any of these cases, an exception will be
      * thrown from the attempted lookup.
      * In general, the conditions under which a method handle may be
-     * created for a method M are exactly as restrictive as the conditions
-     * under which the lookup class could have compiled a call to M.
+     * created for a method {@code M} are exactly as restrictive as the conditions
+     * under which the lookup class could have compiled a call to {@code M}.
+     * At least some of these error conditions are likely to be
+     * represented by checked exceptions in the final version of this API.
      */
     public static final
     class Lookup {
@@ -142,27 +145,30 @@ public class MethodHandles {
             this.lookupClass = lookupClass;
         }
 
+        private static final Class<?> PUBLIC_ONLY = sun.dyn.empty.Empty.class;
+
         /** Version of lookup which is trusted minimally.
          *  It can only be used to create method handles to
          *  publicly accessible members.
          */
-        public static final Lookup PUBLIC_LOOKUP = new Lookup(null);
+        public static final Lookup PUBLIC_LOOKUP = new Lookup(PUBLIC_ONLY);
 
         /** Package-private version of lookup which is trusted. */
-        static final Lookup IMPL_LOOKUP = new Lookup(Access.class);
+        static final Lookup IMPL_LOOKUP = new Lookup(null);
         static { MethodHandleImpl.initLookup(IMPL_TOKEN, IMPL_LOOKUP); }
 
         private static void checkUnprivilegedlookupClass(Class<?> lookupClass) {
-            if (lookupClass == null ||
-                lookupClass == Access.class ||
-                lookupClass.getName().startsWith("java.dyn."))
+            String name = lookupClass.getName();
+            if (name.startsWith("java.dyn.") || name.startsWith("sun.dyn."))
                 throw newIllegalArgumentException("illegal lookupClass: "+lookupClass);
         }
 
         @Override
         public String toString() {
-            if (lookupClass == null)
+            if (lookupClass == PUBLIC_ONLY)
                 return "public";
+            if (lookupClass == null)
+                return "privileged";
             return lookupClass.getName();
         }
 
@@ -202,6 +208,13 @@ public class MethodHandles {
          * with the receiver type ({@code defc}) prepended.
          * The method and all its argument types must be accessible to the lookup class.
          * <p>
+         * (<em>BUG NOTE:</em> The type {@code Object} may be prepended instead
+         * of the receiver type, if the receiver type is not on the boot class path.
+         * This is due to a temporary JVM limitation, in which MethodHandle
+         * claims to be unable to access such classes.  To work around this
+         * bug, use {@code convertArguments} to normalize the type of the leading
+         * argument to a type on the boot class path, such as {@code Object}.)
+         * <p>
          * When called, the handle will treat the first argument as a receiver
          * and dispatch on the receiver's type to determine which method
          * implementation to enter.
@@ -222,11 +235,11 @@ public class MethodHandles {
 
         /**
          * Produce an early-bound method handle for a virtual method,
-         * or a handle for a constructor, as if called from an {@code invokespecial}
+         * as if called from an {@code invokespecial}
          * instruction from {@code caller}.
-         * The type of the method handle will be that of the method or constructor,
+         * The type of the method handle will be that of the method,
          * with a suitably restricted receiver type (such as {@code caller}) prepended.
-         * The method or constructor and all its argument types must be accessible
+         * The method and all its argument types must be accessible
          * to the caller.
          * <p>
          * When called, the handle will treat the first argument as a receiver,
@@ -250,8 +263,7 @@ public class MethodHandles {
             MemberName method = IMPL_NAMES.resolveOrFail(new MemberName(defc, name, type), false, specialCaller);
             checkStatic(false, method, lookupClass);
             if (name.equals("<init>")) {
-                if (defc != specialCaller)
-                    throw newNoAccessException("constructor must be local to lookup class", method, lookupClass);
+                throw newNoAccessException("cannot directly invoke a constructor", method, null);
             } else if (defc.isInterface() || !defc.isAssignableFrom(specialCaller)) {
                 throw newNoAccessException("method must be in a superclass of lookup class", method, lookupClass);
             }
