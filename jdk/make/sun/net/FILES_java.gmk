@@ -24,6 +24,7 @@
 #
 
 FILES_java = \
+        sun/net/ApplicationProxy.java \
 	sun/net/InetAddressCachePolicy.java \
 	sun/net/URLCanonicalizer.java \
 	sun/net/NetworkClient.java \
