@@ -1891,15 +1891,17 @@ RegMask Matcher::modL_proj_mask() {
 // The intptr_t operand types, defined by textual substitution.
 // (Cf. opto/type.hpp.  This lets us avoid many, many other ifdefs.)
 #ifdef _LP64
-#define immX    immL
-#define immX13  immL13
-#define iRegX   iRegL
-#define g1RegX  g1RegL
+#define immX     immL
+#define immX13   immL13
+#define immX13m7 immL13m7
+#define iRegX    iRegL
+#define g1RegX   g1RegL
 #else
-#define immX    immI
-#define immX13  immI13
-#define iRegX   iRegI
-#define g1RegX  g1RegI
+#define immX     immI
+#define immX13   immI13
+#define immX13m7 immI13m7
+#define iRegX    iRegI
+#define g1RegX   g1RegI
 #endif
 
 //----------ENCODING BLOCK-----------------------------------------------------
@@ -3454,6 +3456,16 @@ operand immI13() %{
   interface(CONST_INTER);
 %}
 
+// Integer Immediate: 13-bit minus 7
+operand immI13m7() %{
+  predicate((-4096 < n->get_int()) && ((n->get_int() + 7) <= 4095));
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Unsigned (positive) Integer Immediate: 13-bit
 operand immU13() %{
   predicate((0 <= n->get_int()) && Assembler::is_simm13(n->get_int()));
@@ -3532,9 +3544,41 @@ operand immI_32_63() %{
   interface(CONST_INTER);
 %}
 
+// Immediates for special shifts (sign extend)
+
+// Integer Immediate: the value 16
+operand immI_16() %{
+  predicate(n->get_int() == 16);
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: the value 24
+operand immI_24() %{
+  predicate(n->get_int() == 24);
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Integer Immediate: the value 255
 operand immI_255() %{
   predicate( n->get_int() == 255 );
+  match(ConI);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: the value 65535
+operand immI_65535() %{
+  predicate(n->get_int() == 65535);
   match(ConI);
   op_cost(0);
 
@@ -3640,6 +3684,16 @@ operand immL0() %{
 // Long Immediate: 13-bit
 operand immL13() %{
   predicate((-4096L < n->get_long()) && (n->get_long() <= 4095L));
+  match(ConL);
+  op_cost(0);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long Immediate: 13-bit minus 7
+operand immL13m7() %{
+  predicate((-4096L < n->get_long()) && ((n->get_long() + 7L) <= 4095L));
   match(ConL);
   op_cost(0);
 
@@ -4084,8 +4138,23 @@ operand indirect(sp_ptr_RegP reg) %{
   %}
 %}
 
-// Indirect with Offset
+// Indirect with simm13 Offset
 operand indOffset13(sp_ptr_RegP reg, immX13 offset) %{
+  constraint(ALLOC_IN_RC(sp_ptr_reg));
+  match(AddP reg offset);
+
+  op_cost(100);
+  format %{ "[$reg + $offset]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0x0);
+    scale(0x0);
+    disp($offset);
+  %}
+%}
+
+// Indirect with simm13 Offset minus 7
+operand indOffset13m7(sp_ptr_RegP reg, immX13m7 offset) %{
   constraint(ALLOC_IN_RC(sp_ptr_reg));
   match(AddP reg offset);
 
@@ -5504,6 +5573,20 @@ instruct loadS(iRegI dst, memory mem) %{
   ins_pipe(iload_mask_mem);
 %}
 
+// Load Short (16 bit signed) to Byte (8 bit signed)
+instruct loadS2B(iRegI dst, indOffset13m7 mem, immI_24 twentyfour) %{
+  match(Set dst (RShiftI (LShiftI (LoadS mem) twentyfour) twentyfour));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+
+  format %{ "LDSB   $mem+1,$dst\t! short -> byte" %}
+  ins_encode %{
+    __ ldsb($mem$$Address, $dst$$Register, 1);
+  %}
+  ins_pipe(iload_mask_mem);
+%}
+
 // Load Short (16bit signed) into a Long Register
 instruct loadS2L(iRegL dst, memory mem) %{
   match(Set dst (ConvI2L (LoadS mem)));
@@ -5526,6 +5609,19 @@ instruct loadUS(iRegI dst, memory mem) %{
   format %{ "LDUH   $mem,$dst\t! ushort/char" %}
   ins_encode %{
     __ lduh($mem$$Address, $dst$$Register);
+  %}
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Unsigned Short/Char (16 bit UNsigned) to Byte (8 bit signed)
+instruct loadUS2B(iRegI dst, indOffset13m7 mem, immI_24 twentyfour) %{
+  match(Set dst (RShiftI (LShiftI (LoadUS mem) twentyfour) twentyfour));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDSB   $mem+1,$dst\t! ushort -> byte" %}
+  ins_encode %{
+    __ ldsb($mem$$Address, $dst$$Register, 1);
   %}
   ins_pipe(iload_mask_mem);
 %}
@@ -5554,6 +5650,62 @@ instruct loadI(iRegI dst, memory mem) %{
     __ lduw($mem$$Address, $dst$$Register);
   %}
   ins_pipe(iload_mem);
+%}
+
+// Load Integer to Byte (8 bit signed)
+instruct loadI2B(iRegI dst, indOffset13m7 mem, immI_24 twentyfour) %{
+  match(Set dst (RShiftI (LShiftI (LoadI mem) twentyfour) twentyfour));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+
+  format %{ "LDSB   $mem+3,$dst\t! int -> byte" %}
+  ins_encode %{
+    __ ldsb($mem$$Address, $dst$$Register, 3);
+  %}
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Integer to Unsigned Byte (8 bit UNsigned)
+instruct loadI2UB(iRegI dst, indOffset13m7 mem, immI_255 mask) %{
+  match(Set dst (AndI (LoadI mem) mask));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+
+  format %{ "LDUB   $mem+3,$dst\t! int -> ubyte" %}
+  ins_encode %{
+    __ ldub($mem$$Address, $dst$$Register, 3);
+  %}
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Integer to Short (16 bit signed)
+instruct loadI2S(iRegI dst, indOffset13m7 mem, immI_16 sixteen) %{
+  match(Set dst (RShiftI (LShiftI (LoadI mem) sixteen) sixteen));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+
+  format %{ "LDSH   $mem+2,$dst\t! int -> short" %}
+  ins_encode %{
+    __ ldsh($mem$$Address, $dst$$Register, 2);
+  %}
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Integer to Unsigned Short (16 bit UNsigned)
+instruct loadI2US(iRegI dst, indOffset13m7 mem, immI_65535 mask) %{
+  match(Set dst (AndI (LoadI mem) mask));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+
+  format %{ "LDUH   $mem+2,$dst\t! int -> ushort/char" %}
+  ins_encode %{
+    __ lduh($mem$$Address, $dst$$Register, 2);
+  %}
+  ins_pipe(iload_mask_mem);
 %}
 
 // Load Integer into a Long Register

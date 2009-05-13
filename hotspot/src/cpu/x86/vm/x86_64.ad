@@ -6459,6 +6459,18 @@ instruct loadS(rRegI dst, memory mem)
   ins_pipe(ialu_reg_mem);
 %}
 
+// Load Short (16 bit signed) to Byte (8 bit signed)
+instruct loadS2B(rRegI dst, memory mem, immI_24 twentyfour) %{
+  match(Set dst (RShiftI (LShiftI (LoadS mem) twentyfour) twentyfour));
+
+  ins_cost(125);
+  format %{ "movsbl $dst, $mem\t# short -> byte" %}
+  ins_encode %{
+    __ movsbl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Load Short (16 bit signed) into Long Register
 instruct loadS2L(rRegL dst, memory mem)
 %{
@@ -6489,6 +6501,18 @@ instruct loadUS(rRegI dst, memory mem)
   ins_pipe(ialu_reg_mem);
 %}
 
+// Load Unsigned Short/Char (16 bit UNsigned) to Byte (8 bit signed)
+instruct loadUS2B(rRegI dst, memory mem, immI_24 twentyfour) %{
+  match(Set dst (RShiftI (LShiftI (LoadUS mem) twentyfour) twentyfour));
+
+  ins_cost(125);
+  format %{ "movsbl $dst, $mem\t# ushort -> byte" %}
+  ins_encode %{
+    __ movsbl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Load Unsigned Short/Char (16 bit UNsigned) into Long Register
 instruct loadUS2L(rRegL dst, memory mem)
 %{
@@ -6516,6 +6540,54 @@ instruct loadI(rRegI dst, memory mem)
     __ movl($dst$$Register, $mem$$Address);
   %}
 
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer (32 bit signed) to Byte (8 bit signed)
+instruct loadI2B(rRegI dst, memory mem, immI_24 twentyfour) %{
+  match(Set dst (RShiftI (LShiftI (LoadI mem) twentyfour) twentyfour));
+
+  ins_cost(125);
+  format %{ "movsbl  $dst, $mem\t# int -> byte" %}
+  ins_encode %{
+    __ movsbl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer (32 bit signed) to Unsigned Byte (8 bit UNsigned)
+instruct loadI2UB(rRegI dst, memory mem, immI_255 mask) %{
+  match(Set dst (AndI (LoadI mem) mask));
+
+  ins_cost(125);
+  format %{ "movzbl  $dst, $mem\t# int -> ubyte" %}
+  ins_encode %{
+    __ movzbl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer (32 bit signed) to Short (16 bit signed)
+instruct loadI2S(rRegI dst, memory mem, immI_16 sixteen) %{
+  match(Set dst (RShiftI (LShiftI (LoadI mem) sixteen) sixteen));
+
+  ins_cost(125);
+  format %{ "movswl  $dst, $mem\t# int -> short" %}
+  ins_encode %{
+    __ movswl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer (32 bit signed) to Unsigned Short/Char (16 bit UNsigned)
+instruct loadI2US(rRegI dst, memory mem, immI_65535 mask) %{
+  match(Set dst (AndI (LoadI mem) mask));
+
+  ins_cost(125);
+  format %{ "movzwl  $dst, $mem\t# int -> ushort/char" %}
+  ins_encode %{
+    __ movzwl($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
