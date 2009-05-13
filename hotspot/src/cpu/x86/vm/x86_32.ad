@@ -5240,6 +5240,15 @@ operand immI_255() %{
   interface(CONST_INTER);
 %}
 
+// Constant for short-wide masking
+operand immI_65535() %{
+  predicate(n->get_int() == 65535);
+  match(ConI);
+
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Register Operands
 // Integer Register
 operand eRegI() %{
@@ -6938,6 +6947,18 @@ instruct loadS(eRegI dst, memory mem) %{
   ins_pipe(ialu_reg_mem);
 %}
 
+// Load Short (16 bit signed) to Byte (8 bit signed)
+instruct loadS2B(eRegI dst, memory mem, immI_24 twentyfour) %{
+  match(Set dst (RShiftI (LShiftI (LoadS mem) twentyfour) twentyfour));
+
+  ins_cost(125);
+  format %{ "MOVSX  $dst, $mem\t# short -> byte" %}
+  ins_encode %{
+    __ movsbl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Load Short (16bit signed) into Long Register
 instruct loadS2L(eRegL dst, memory mem) %{
   match(Set dst (ConvI2L (LoadS mem)));
@@ -6970,9 +6991,20 @@ instruct loadUS(eRegI dst, memory mem) %{
   ins_pipe(ialu_reg_mem);
 %}
 
+// Load Unsigned Short/Char (16 bit UNsigned) to Byte (8 bit signed)
+instruct loadUS2B(eRegI dst, memory mem, immI_24 twentyfour) %{
+  match(Set dst (RShiftI (LShiftI (LoadUS mem) twentyfour) twentyfour));
+
+  ins_cost(125);
+  format %{ "MOVSX  $dst, $mem\t# ushort -> byte" %}
+  ins_encode %{
+    __ movsbl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // Load Unsigned Short/Char (16 bit UNsigned) into Long Register
-instruct loadUS2L(eRegL dst, memory mem)
-%{
+instruct loadUS2L(eRegL dst, memory mem) %{
   match(Set dst (ConvI2L (LoadUS mem)));
 
   ins_cost(250);
@@ -6998,6 +7030,54 @@ instruct loadI(eRegI dst, memory mem) %{
     __ movl($dst$$Register, $mem$$Address);
   %}
 
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer (32 bit signed) to Byte (8 bit signed)
+instruct loadI2B(eRegI dst, memory mem, immI_24 twentyfour) %{
+  match(Set dst (RShiftI (LShiftI (LoadI mem) twentyfour) twentyfour));
+
+  ins_cost(125);
+  format %{ "MOVSX  $dst, $mem\t# int -> byte" %}
+  ins_encode %{
+    __ movsbl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer (32 bit signed) to Unsigned Byte (8 bit UNsigned)
+instruct loadI2UB(eRegI dst, memory mem, immI_255 mask) %{
+  match(Set dst (AndI (LoadI mem) mask));
+
+  ins_cost(125);
+  format %{ "MOVZX  $dst, $mem\t# int -> ubyte" %}
+  ins_encode %{
+    __ movzbl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer (32 bit signed) to Short (16 bit signed)
+instruct loadI2S(eRegI dst, memory mem, immI_16 sixteen) %{
+  match(Set dst (RShiftI (LShiftI (LoadI mem) sixteen) sixteen));
+
+  ins_cost(125);
+  format %{ "MOVSX  $dst, $mem\t# int -> short" %}
+  ins_encode %{
+    __ movswl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+// Load Integer (32 bit signed) to Unsigned Short/Char (16 bit UNsigned)
+instruct loadI2US(eRegI dst, memory mem, immI_65535 mask) %{
+  match(Set dst (AndI (LoadI mem) mask));
+
+  ins_cost(125);
+  format %{ "MOVZX  $dst, $mem\t# int -> ushort/char" %}
+  ins_encode %{
+    __ movzwl($dst$$Register, $mem$$Address);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -9034,28 +9114,28 @@ instruct shrI_eReg_imm(eRegI dst, immI8 shift, eFlagsReg cr) %{
 
 // Logical Shift Right by 24, followed by Arithmetic Shift Left by 24.
 // This idiom is used by the compiler for the i2b bytecode.
-instruct i2b(eRegI dst, xRegI src, immI_24 twentyfour, eFlagsReg cr) %{
+instruct i2b(eRegI dst, xRegI src, immI_24 twentyfour) %{
   match(Set dst (RShiftI (LShiftI src twentyfour) twentyfour));
-  effect(KILL cr);
 
   size(3);
   format %{ "MOVSX  $dst,$src :8" %}
-  opcode(0xBE, 0x0F);
-  ins_encode( OpcS, OpcP, RegReg( dst, src));
-  ins_pipe( ialu_reg_reg );
+  ins_encode %{
+    __ movsbl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
 %}
 
 // Logical Shift Right by 16, followed by Arithmetic Shift Left by 16.
 // This idiom is used by the compiler the i2s bytecode.
-instruct i2s(eRegI dst, xRegI src, immI_16 sixteen, eFlagsReg cr) %{
+instruct i2s(eRegI dst, xRegI src, immI_16 sixteen) %{
   match(Set dst (RShiftI (LShiftI src sixteen) sixteen));
-  effect(KILL cr);
 
   size(3);
   format %{ "MOVSX  $dst,$src :16" %}
-  opcode(0xBF, 0x0F);
-  ins_encode( OpcS, OpcP, RegReg( dst, src));
-  ins_pipe( ialu_reg_reg );
+  ins_encode %{
+    __ movswl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg_reg);
 %}
 
 
