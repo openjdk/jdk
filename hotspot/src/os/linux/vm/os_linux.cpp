@@ -2362,6 +2362,19 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
 extern "C" void numa_warn(int number, char *where, ...) { }
 extern "C" void numa_error(char *where) { }
 
+
+// If we are running with libnuma version > 2, then we should
+// be trying to use symbols with versions 1.1
+// If we are running with earlier version, which did not have symbol versions,
+// we should use the base version.
+void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
+  void *f = dlvsym(handle, name, "libnuma_1.1");
+  if (f == NULL) {
+    f = dlsym(handle, name);
+  }
+  return f;
+}
+
 bool os::Linux::libnuma_init() {
   // sched_getcpu() should be in libc.
   set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
@@ -2371,19 +2384,19 @@ bool os::Linux::libnuma_init() {
     void *handle = dlopen("libnuma.so.1", RTLD_LAZY);
     if (handle != NULL) {
       set_numa_node_to_cpus(CAST_TO_FN_PTR(numa_node_to_cpus_func_t,
-                                           dlsym(handle, "numa_node_to_cpus")));
+                                           libnuma_dlsym(handle, "numa_node_to_cpus")));
       set_numa_max_node(CAST_TO_FN_PTR(numa_max_node_func_t,
-                                       dlsym(handle, "numa_max_node")));
+                                       libnuma_dlsym(handle, "numa_max_node")));
       set_numa_available(CAST_TO_FN_PTR(numa_available_func_t,
-                                        dlsym(handle, "numa_available")));
+                                        libnuma_dlsym(handle, "numa_available")));
       set_numa_tonode_memory(CAST_TO_FN_PTR(numa_tonode_memory_func_t,
-                                            dlsym(handle, "numa_tonode_memory")));
+                                            libnuma_dlsym(handle, "numa_tonode_memory")));
       set_numa_interleave_memory(CAST_TO_FN_PTR(numa_interleave_memory_func_t,
-                                            dlsym(handle, "numa_interleave_memory")));
+                                            libnuma_dlsym(handle, "numa_interleave_memory")));
 
 
       if (numa_available() != -1) {
-        set_numa_all_nodes((unsigned long*)dlsym(handle, "numa_all_nodes"));
+        set_numa_all_nodes((unsigned long*)libnuma_dlsym(handle, "numa_all_nodes"));
         // Create a cpu -> node mapping
         _cpu_to_node = new (ResourceObj::C_HEAP) GrowableArray<int>(0, true);
         rebuild_cpu_to_node_map();
