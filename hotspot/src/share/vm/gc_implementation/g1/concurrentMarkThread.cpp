@@ -136,9 +136,6 @@ void ConcurrentMarkThread::run() {
         iter++;
         if (!cm()->has_aborted()) {
           _cm->markFromRoots();
-        } else {
-          if (TraceConcurrentMark)
-            gclog_or_tty->print_cr("CM-skip-mark-from-roots");
         }
 
         double mark_end_time = os::elapsedVTime();
@@ -163,9 +160,6 @@ void ConcurrentMarkThread::run() {
           sprintf(verbose_str, "GC remark");
           VM_CGC_Operation op(&final_cl, verbose_str);
           VMThread::execute(&op);
-        } else {
-          if (TraceConcurrentMark)
-            gclog_or_tty->print_cr("CM-skip-remark");
         }
         if (cm()->restart_for_overflow() &&
             G1TraceMarkStackOverflow) {
@@ -208,8 +202,6 @@ void ConcurrentMarkThread::run() {
                                    count_end_sec - count_start_sec);
           }
         }
-      } else {
-        if (TraceConcurrentMark) gclog_or_tty->print_cr("CM-skip-end-game");
       }
       double end_time = os::elapsedVTime();
       _vtime_count_accum += (end_time - counting_start_time);
@@ -230,7 +222,6 @@ void ConcurrentMarkThread::run() {
         VM_CGC_Operation op(&cl_cl, verbose_str);
         VMThread::execute(&op);
       } else {
-        if (TraceConcurrentMark) gclog_or_tty->print_cr("CM-skip-cleanup");
         G1CollectedHeap::heap()->set_marking_complete();
       }
 
@@ -287,9 +278,7 @@ void ConcurrentMarkThread::run() {
 
 
 void ConcurrentMarkThread::yield() {
-  if (TraceConcurrentMark) gclog_or_tty->print_cr("CM-yield");
   _sts.yield("Concurrent Mark");
-  if (TraceConcurrentMark) gclog_or_tty->print_cr("CM-yield-end");
 }
 
 void ConcurrentMarkThread::stop() {
@@ -299,7 +288,6 @@ void ConcurrentMarkThread::stop() {
   while (!_has_terminated) {
     Terminator_lock->wait();
   }
-  if (TraceConcurrentMark) gclog_or_tty->print_cr("CM-stop");
 }
 
 void ConcurrentMarkThread::print() {
@@ -314,12 +302,10 @@ void ConcurrentMarkThread::sleepBeforeNextCycle() {
   // below while the world is otherwise stopped.
   MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
   while (!started()) {
-    if (TraceConcurrentMark) gclog_or_tty->print_cr("CM-sleeping");
     CGC_lock->wait(Mutex::_no_safepoint_check_flag);
   }
   set_in_progress();
   clear_started();
-  if (TraceConcurrentMark) gclog_or_tty->print_cr("CM-starting");
 }
 
 // Note: this method, although exported by the ConcurrentMarkSweepThread,
