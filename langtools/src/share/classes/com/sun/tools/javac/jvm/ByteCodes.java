@@ -225,7 +225,7 @@ public interface ByteCodes {
         invokespecial   = 183,
         invokestatic    = 184,
         invokeinterface = 185,
-        // ___unused___ = 186,
+        invokedynamic   = 186,
         new_            = 187,
         newarray        = 188,
         anewarray       = 189,

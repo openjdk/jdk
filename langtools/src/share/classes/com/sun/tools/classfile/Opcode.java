@@ -226,7 +226,7 @@ public enum Opcode {
     INVOKESPECIAL(0xb7, CPREF_W),
     INVOKESTATIC(0xb8, CPREF_W),
     INVOKEINTERFACE(0xb9, CPREF_W_UBYTE_ZERO),
-    // unused 0xba
+    INVOKEDYNAMIC(0xba, CPREF_W_UBYTE_ZERO),
     NEW(0xbb, CPREF_W),
     NEWARRAY(0xbc, ATYPE),
     ANEWARRAY(0xbd, CPREF_W),
