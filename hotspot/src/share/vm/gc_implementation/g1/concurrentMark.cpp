@@ -448,8 +448,8 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
     gclog_or_tty->print_cr("[global] init, heap start = "PTR_FORMAT", "
                            "heap end = "PTR_FORMAT, _heap_start, _heap_end);
 
-  _markStack.allocate(G1CMStackSize);
-  _regionStack.allocate(G1CMRegionStackSize);
+  _markStack.allocate(G1MarkStackSize);
+  _regionStack.allocate(G1MarkRegionStackSize);
 
   // Create & start a ConcurrentMark thread.
   if (G1ConcMark) {
@@ -499,20 +499,21 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
     _marking_task_overhead    = 1.0;
   } else {
     if (ParallelMarkingThreads > 0) {
-      // notice that ParallelMarkingThreads overwrites G1MarkingOverheadPerc
+      // notice that ParallelMarkingThreads overwrites G1MarkingOverheadPercent
       // if both are set
 
       _parallel_marking_threads = ParallelMarkingThreads;
       _sleep_factor             = 0.0;
       _marking_task_overhead    = 1.0;
-    } else if (G1MarkingOverheadPerc > 0) {
+    } else if (G1MarkingOverheadPercent > 0) {
       // we will calculate the number of parallel marking threads
       // based on a target overhead with respect to the soft real-time
       // goal
 
-      double marking_overhead = (double) G1MarkingOverheadPerc / 100.0;
+      double marking_overhead = (double) G1MarkingOverheadPercent / 100.0;
       double overall_cm_overhead =
-        (double) G1MaxPauseTimeMS * marking_overhead / (double) G1TimeSliceMS;
+        (double) MaxGCPauseMillis * marking_overhead /
+        (double) GCPauseIntervalMillis;
       double cpu_ratio = 1.0 / (double) os::processor_count();
       double marking_thread_num = ceil(overall_cm_overhead / cpu_ratio);
       double marking_task_overhead =
@@ -1747,7 +1748,7 @@ void ConcurrentMark::cleanup() {
   g1h->increment_total_collections();
 
 #ifndef PRODUCT
-  if (G1VerifyConcMark) {
+  if (VerifyDuringGC) {
     G1CollectedHeap::heap()->prepare_for_verify();
     G1CollectedHeap::heap()->verify(true,false);
   }

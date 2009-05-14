@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: ElementImpl.java,v 1.6 2006/11/16 16:01:14 kumarjayanti Exp $
- * $Revision: 1.6 $
- * $Date: 2006/11/16 16:01:14 $
+ *
+ *
+ *
  */
 
 
@@ -60,7 +60,7 @@ public class ElementImpl
 
     protected QName elementQName;
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_IMPL_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.impl.LocalStrings");
 
