@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,7 @@ enum {
     JVM_OPC_invokespecial       = 183,
     JVM_OPC_invokestatic        = 184,
     JVM_OPC_invokeinterface     = 185,
-    JVM_OPC_xxxunusedxxx        = 186,
+    JVM_OPC_invokedynamic       = 186,
     JVM_OPC_new                 = 187,
     JVM_OPC_newarray            = 188,
     JVM_OPC_anewarray           = 189,
@@ -515,7 +515,7 @@ enum {
    3,   /* invokespecial */             \
    3,   /* invokestatic */              \
    5,   /* invokeinterface */           \
-   0,   /* xxxunusedxxx */              \
+   5,   /* invokedynamic */             \
    3,   /* new */                       \
    2,   /* newarray */                  \
    3,   /* anewarray */                 \

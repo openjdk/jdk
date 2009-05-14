@@ -475,6 +475,13 @@ public class JavapPrinter {
             return 5;
         }
 
+        case opc_invokedynamic: {
+            int index = getUShort(pc+1);
+            out.print("\t#"+index+"; //");
+            PrintConstant(index);
+            return 5;
+        }
+
         case opc_multianewarray: {
             int index = getUShort(pc+1), dimensions=getUbyte(pc+3);
             out.print("\t#"+index+",  "+dimensions+"; //");

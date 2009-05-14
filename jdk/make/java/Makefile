@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ SUBDIRS += hpi version jvm redist verify fdlibm java sun_nio jli main zip
 # Others
 #    Note: java_crw_demo java_hprof_demo are demos but must be delivered built in sdk
 SUBDIRS += security npt java_crw_demo java_hprof_demo \
-	    math awt util text applet net nio \
+	    math awt util text applet net nio dyn \
 	    sql rmi jar beans logging management instrument
 
 

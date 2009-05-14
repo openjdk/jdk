@@ -268,13 +268,18 @@ public class Main {
                     }
                     return null;
                 } else {
-                    options.put("-target", source.requiredTarget().name);
+                    target = source.requiredTarget();
+                    options.put("-target", target.name);
                 }
             } else {
                 if (targetString == null && !source.allowGenerics()) {
-                    options.put("-target", Target.JDK1_4.name);
+                    target = Target.JDK1_4;
+                    options.put("-target", target.name);
                 }
             }
+        }
+        if (target.hasInvokedynamic()) {
+            options.put("invokedynamic",  "invokedynamic");
         }
         return filenames.toList();
     }
