@@ -1288,10 +1288,14 @@ void Arguments::set_g1_gc_flags() {
                      Abstract_VM_Version::parallel_worker_threads());
   if (ParallelGCThreads == 0) {
     FLAG_SET_DEFAULT(ParallelGCThreads,
-                     Abstract_VM_Version::parallel_worker_threads
-());
+                     Abstract_VM_Version::parallel_worker_threads());
   }
   no_shared_spaces();
+
+  // Set the maximum pause time goal to be a reasonable default.
+  if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
+    FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
+  }
 }
 
 void Arguments::set_server_heap_size() {
