@@ -557,12 +557,13 @@ class AdapterHandlerEntry : public CHeapObj {
 
 class AdapterHandlerLibrary: public AllStatic {
  private:
-  static u_char                   _buffer[];  // the temporary code buffer
+  static BufferBlob* _buffer; // the temporary code buffer in CodeCache
   static GrowableArray<uint64_t>* _fingerprints; // the fingerprint collection
   static GrowableArray<AdapterHandlerEntry*> * _handlers; // the corresponding handlers
   enum {
     AbstractMethodHandler = 1 // special handler for abstract methods
   };
+  static BufferBlob* buffer_blob();
   static void initialize();
   static int get_create_adapter_index(methodHandle method);
   static address get_i2c_entry( int index ) {
