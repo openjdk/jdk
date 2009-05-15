@@ -318,11 +318,17 @@ public class VM {
     logMinObjAlignmentInBytes = db.lookupIntConstant("LogMinObjAlignmentInBytes").intValue();
     heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
-    heapOopSize  = db.lookupIntConstant("heapOopSize").intValue();
 
     intxType = db.lookupType("intx");
     uintxType = db.lookupType("uintx");
     boolType = (CIntegerType) db.lookupType("bool");
+
+    if (isCompressedOopsEnabled()) {
+      // Size info for oops within java objects is fixed
+      heapOopSize = (int)getIntSize();
+    } else {
+      heapOopSize = (int)getOopSize();
+    }
   }
 
   /** This could be used by a reflective runtime system */
@@ -343,13 +349,12 @@ public class VM {
     }
     soleInstance = new VM(db, debugger, debugger.getMachineDescription().isBigEndian());
 
-    debugger.putHeapConst(soleInstance.getHeapOopSize(), Universe.getNarrowOopBase(),
-                          Universe.getNarrowOopShift());
-
     for (Iterator iter = vmInitializedObservers.iterator(); iter.hasNext(); ) {
       ((Observer) iter.next()).update(null, null);
     }
 
+    debugger.putHeapConst(soleInstance.getHeapOopSize(), Universe.getNarrowOopBase(),
+                          Universe.getNarrowOopShift());
   }
 
   /** This is used by the debugging system */
