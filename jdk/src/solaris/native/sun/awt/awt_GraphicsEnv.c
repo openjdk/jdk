@@ -175,42 +175,11 @@ Java_sun_awt_X11GraphicsDevice_initIDs (JNIEnv *env, jclass cls)
 }
 
 #ifndef HEADLESS
+
 /*
- * error handlers
+ * XIOErrorHandler
  */
-
-int
-xerror_handler(Display * disp, XErrorEvent * err)
-{
-/* #ifdef DEBUG */
-    char msg[128];
-    char buf[128];
-    char *ev = getenv("NOISY_AWT");
-
-    if (!ev || !ev[0])
-        return 0;
-    XGetErrorText(disp, err->error_code, msg, sizeof(msg));
-    jio_fprintf(stderr, "Xerror %s, XID %x, ser# %d\n", msg, err->resourceid, err->serial);
-    jio_snprintf(buf, sizeof(buf), "%d", err->request_code);
-    XGetErrorDatabaseText(disp, "XRequest", buf, "Unknown", msg, sizeof(msg));
-    jio_fprintf(stderr, "Major opcode %d (%s)\n", err->request_code, msg);
-    if (err->request_code > 128) {
-        jio_fprintf(stderr, "Minor opcode %d\n", err->minor_code);
-    }
-    if (awtLockInited) {
-        /*SignalError(lockedee->lastpc, lockedee, "fp/ade/gui/GUIException", msg); */
-    }
-    if (strcasecmp(ev, "abort") == 0) {
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-
-        (*env)->FatalError(env, "xerror_handler abort");
-    }
-/* #endif */
-    return 0;
-}
-
-static int
-xioerror_handler(Display * disp)
+static int xioerror_handler(Display *disp)
 {
     if (awtLockInited) {
         if (errno == EPIPE) {
@@ -886,7 +855,6 @@ awt_init_Display(JNIEnv *env, jobject this)
         return NULL;
     }
 
-    XSetErrorHandler(xerror_handler);
     XSetIOErrorHandler(xioerror_handler);
 
     /* set awt_numScreens, and whether or not we're using Xinerama */

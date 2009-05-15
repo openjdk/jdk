@@ -575,7 +575,6 @@ performPoll(JNIEnv *env, jlong nextTaskTime) {
         pollFds[1].revents = 0;
     }
 
-
     AWT_NOFLUSH_UNLOCK();
 
     /* ACTUALLY DO THE POLL() */
@@ -684,8 +683,6 @@ JNIEXPORT jstring JNICALL Java_sun_awt_X11_XToolkit_getEnv
     return ret;
 }
 
-static XErrorHandler saved_error_handler = NULL;
-
 #ifdef __linux__
 void print_stack(void)
 {
@@ -705,38 +702,6 @@ void print_stack(void)
   free (strings);
 }
 #endif
-
-static int NoisyXErrorHandler(Display * dpy, XErrorEvent * event) {
-    fprintf(stderr, "id=%x, serial=%x, ec=%d, rc=%d, mc=%d\n",
-            event->resourceid, event->serial, event->error_code,
-            event->request_code, event->minor_code);
-    /*
-    #ifdef __linux__
-        print_stack();
-    #endif
-    */
-    if (jvm != NULL) {
-      JNIEnv * env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-      JNU_CallStaticMethodByName(env, NULL, "java/lang/Thread", "dumpStack", "()V");
-    }
-    if (!saved_error_handler) {
-        return saved_error_handler(dpy, event);
-    }
-    return 0;
-}
-
-/*
- * Class:     sun_awt_X11_XToolkit
- * Method:    setNoisyXErrorHandler
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_sun_awt_X11_XToolkit_setNoisyXErrorHandler
-(JNIEnv *env , jclass clazz)
-{
-    (*env)->GetJavaVM(env, &jvm);
-    saved_error_handler = XSetErrorHandler(NoisyXErrorHandler);
-}
-
 
 Window get_xawt_root_shell(JNIEnv *env) {
   static jclass classXRootWindow = NULL;
