@@ -113,6 +113,11 @@ endif
 
 OPT_CFLAGS/NOOPT=-O0
 
+# 6835796. Problem in GCC 4.3.0 with mulnode.o optimized compilation. 
+ifneq "$(shell expr \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) = 3 \) \))" "0"
+OPT_CFLAGS/mulnode.o += -O0
+endif
+
 #------------------------------------------------------------------------
 # Linker flags
 
