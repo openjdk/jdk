@@ -282,7 +282,7 @@ public abstract class GraphicsDevice {
                 w.setOpacity(1.0f);
             }
             Color bgColor = w.getBackground();
-            if (bgColor.getAlpha() < 255) {
+            if ((bgColor != null) && (bgColor.getAlpha() < 255)) {
                 bgColor = new Color(bgColor.getRed(), bgColor.getGreen(),
                                     bgColor.getBlue(), 255);
                 w.setBackground(bgColor);
