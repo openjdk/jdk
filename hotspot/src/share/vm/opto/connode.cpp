@@ -128,6 +128,10 @@ Node *CMoveNode::is_cmove_id( PhaseTransform *phase, Node *cmp, Node *t, Node *f
       // Swapped Cmp is OK
       (phase->eqv(cmp->in(2),f) &&
        phase->eqv(cmp->in(1),t)) ) {
+    // Give up this identity check for floating points because it may choose incorrect
+    // value around 0.0 and -0.0
+    if ( cmp->Opcode()==Op_CmpF || cmp->Opcode()==Op_CmpD )
+      return NULL;
     // Check for "(t==f)?t:f;" and replace with "f"
     if( b->_test._test == BoolTest::eq )
       return f;
