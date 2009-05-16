@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: MessageImpl.java,v 1.5 2006/12/12 10:16:33 kumarjayanti Exp $
- * $Revision: 1.5 $
- * $Date: 2006/12/12 10:16:33 $
+ *
+ *
+ *
  */
 
 
@@ -69,7 +69,7 @@ public abstract class MessageImpl
     public static final String CONTENT_ID             = "Content-ID";
     public static final String CONTENT_LOCATION       = "Content-Location";
 
-    protected static Logger log =
+    protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.LocalStrings");
 

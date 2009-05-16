@@ -84,7 +84,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * @param in the actual input stream
      *
      * @param charset
-     *        The {@link java.nio.charset.Charset {@code charset}} to be
+     *        The {@linkplain java.nio.charset.Charset charset} to be
      *        used to decode the ZIP entry name (ignored if the
      *        <a href="package-summary.html#lang_encoding"> language
      *        encoding bit</a> of the ZIP entry's general purpose bit
