@@ -34,6 +34,7 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Initial virtual time.
   int _worker_id;
+  int _worker_id_offset;
 
   // The refinement threads collection is linked list. A predecessor can activate a successor
   // when the number of the rset update buffer crosses a certain threshold. A successor
@@ -73,7 +74,8 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
 
  public:
   // Constructor
-  ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next, int worker_id);
+  ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next,
+                           int worker_id_offset, int worker_id);
 
   // Printing
   void print();

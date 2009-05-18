@@ -33,12 +33,13 @@ ConcurrentG1Refine::ConcurrentG1Refine() :
   _threads(NULL), _n_threads(0)
 {
   if (G1ConcRefine) {
-    _n_threads = (G1ParallelRSetThreads > 0) ? G1ParallelRSetThreads : ParallelGCThreads;
+    _n_threads = (int)thread_num();
     if (_n_threads > 0) {
       _threads = NEW_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads);
+      int worker_id_offset = (int)DirtyCardQueueSet::num_par_ids();
       ConcurrentG1RefineThread *next = NULL;
       for (int i = _n_threads - 1; i >= 0; i--) {
-        ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, i);
+        ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, worker_id_offset, i);
         assert(t != NULL, "Conc refine should have been created");
         assert(t->cg1r() == this, "Conc refine thread should refer to this");
         _threads[i] = t;
@@ -46,6 +47,13 @@ ConcurrentG1Refine::ConcurrentG1Refine() :
       }
     }
   }
+}
+
+size_t ConcurrentG1Refine::thread_num() {
+  if (G1ConcRefine) {
+    return (G1ParallelRSetThreads > 0) ? G1ParallelRSetThreads : ParallelGCThreads;
+  }
+  return 0;
 }
 
 void ConcurrentG1Refine::init() {

@@ -30,8 +30,10 @@
 // The CM thread is created when the G1 garbage collector is used
 
 ConcurrentG1RefineThread::
-ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *next, int worker_id) :
+ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *next,
+                         int worker_id_offset, int worker_id) :
   ConcurrentGCThread(),
+  _worker_id_offset(worker_id_offset),
   _worker_id(worker_id),
   _active(false),
   _next(next),
@@ -114,7 +116,7 @@ void ConcurrentG1RefineThread::run() {
     } else {
       lower_limit = DCQBarrierProcessCompletedThreshold / 4; // For now.
     }
-    while (dcqs.apply_closure_to_completed_buffer(_worker_id, lower_limit)) {
+    while (dcqs.apply_closure_to_completed_buffer(_worker_id + _worker_id_offset, lower_limit)) {
       double end_vtime_sec;
       double elapsed_vtime_sec;
       int elapsed_vtime_ms;
