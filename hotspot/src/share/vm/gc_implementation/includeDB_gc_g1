@@ -282,6 +282,7 @@ heapRegionRemSet.hpp			sparsePRT.hpp
 
 heapRegionRemSet.cpp                    allocation.hpp
 heapRegionRemSet.cpp                    bitMap.inline.hpp
+heapRegionRemSet.cpp                    concurrentG1Refine.hpp
 heapRegionRemSet.cpp                    g1BlockOffsetTable.inline.hpp
 heapRegionRemSet.cpp                    g1CollectedHeap.inline.hpp
 heapRegionRemSet.cpp                    heapRegionRemSet.hpp

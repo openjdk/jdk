@@ -29,7 +29,6 @@ class G1RemSet;
 class ConcurrentG1Refine: public CHeapObj {
   ConcurrentG1RefineThread** _threads;
   int _n_threads;
-
   // The cache for card refinement.
   bool     _use_cache;
   bool     _def_use_cache;
@@ -86,4 +85,6 @@ class ConcurrentG1Refine: public CHeapObj {
 
   void clear_and_record_card_counts();
   void print_final_card_counts();
+
+  static size_t thread_num();
 };
