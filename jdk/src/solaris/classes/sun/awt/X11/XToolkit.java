@@ -2263,6 +2263,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         try {
             if (awt_UseXKB_Calls && awt_XKBDescPtr != 0) {
                 XlibWrapper.XkbFreeKeyboard(awt_XKBDescPtr, 0xFF, true);
+                awt_XKBDescPtr = 0;
             }
         } finally {
             awtUnlock();
