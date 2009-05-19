@@ -1108,7 +1108,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             }
         }
 
-        warningWindow.setSecurityWarningVisible(show);
+        warningWindow.setSecurityWarningVisible(show, true);
     }
 
     boolean isOverrideRedirect() {
