@@ -310,6 +310,20 @@ public class ConstantPool {
             return cp.getUTF8Value(name_index);
         }
 
+        public String getBaseName() throws ConstantPoolException {
+            String name = getName();
+            int index = name.indexOf("[L") + 1;
+            return name.substring(index);
+        }
+
+        public int getDimensionCount() throws ConstantPoolException {
+            String name = getName();
+            int count = 0;
+            while (name.charAt(count) == '[')
+                count++;
+            return count;
+        }
+
         @Override
         public String toString() {
             return "CONSTANT_Class_info[name_index: " + name_index + "]";
