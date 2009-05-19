@@ -1343,15 +1343,20 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         setSizeHints(flags, x, y, width, height);
     }
 
-      void validateSurface() {
+    void validateSurface() {
         if ((width != oldWidth) || (height != oldHeight)) {
-            SurfaceData oldData = surfaceData;
-            if (oldData != null) {
-                surfaceData = graphicsConfig.createSurfaceData(this);
-                oldData.invalidate();
-            }
+            doValidateSurface();
+
             oldWidth = width;
             oldHeight = height;
+        }
+    }
+
+    final void doValidateSurface() {
+        SurfaceData oldData = surfaceData;
+        if (oldData != null) {
+            surfaceData = graphicsConfig.createSurfaceData(this);
+            oldData.invalidate();
         }
     }
 
