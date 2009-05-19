@@ -304,7 +304,7 @@ FILES_src = \
 	sun/io/CharToByteMacUkraine.java \
 	sun/io/CharToByteTIS620.java
 
-FILES_gen_extsbcs = \
+FILES_gen_extcs = \
 	sun/nio/cs/ext/IBM037.java \
 	sun/nio/cs/ext/IBM1006.java \
 	sun/nio/cs/ext/IBM1025.java \
@@ -374,6 +374,8 @@ FILES_gen_extsbcs = \
 	sun/nio/cs/ext/MacThai.java \
 	sun/nio/cs/ext/MacTurkish.java \
 	sun/nio/cs/ext/MacUkraine.java \
-	sun/nio/cs/ext/TIS_620.java
+	sun/nio/cs/ext/TIS_620.java \
+        sun/nio/cs/ext/EUC_TWMapping.java
 
-FILES_java = $(FILES_src) $(FILES_gen_extsbcs)
+FILES_java = $(FILES_src) $(FILES_gen_extcs)
+
