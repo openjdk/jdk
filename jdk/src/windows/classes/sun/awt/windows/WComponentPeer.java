@@ -488,13 +488,14 @@ public abstract class WComponentPeer extends WObjectPeer
         }
     }
 
-    public void updateGraphicsData(GraphicsConfiguration gc) {
+    public boolean updateGraphicsData(GraphicsConfiguration gc) {
         winGraphicsConfig = (Win32GraphicsConfig)gc;
         try {
             replaceSurfaceData();
         } catch (InvalidPipeException e) {
             // REMIND : what do we do if our surface creation failed?
         }
+        return false;
     }
 
     //This will return null for Components not yet added to a Container

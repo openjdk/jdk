@@ -386,5 +386,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     public void setZOrder(ComponentPeer above) {
     }
 
-    public void updateGraphicsData(GraphicsConfiguration gc) {}
+    public boolean updateGraphicsData(GraphicsConfiguration gc) {
+        return false;
+    }
 }

@@ -548,7 +548,8 @@ public interface ComponentPeer {
     /**
      * Updates internal data structures related to the component's GC.
      *
+     * @return if the peer needs to be recreated for the changes to take effect
      * @since 1.7
      */
-    void updateGraphicsData(GraphicsConfiguration gc);
+    boolean updateGraphicsData(GraphicsConfiguration gc);
 }
