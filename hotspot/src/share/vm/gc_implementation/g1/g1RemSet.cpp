@@ -219,6 +219,7 @@ public:
     HeapRegionRemSet* hrrs = r->rem_set();
     if (hrrs->iter_is_complete()) return false; // All done.
     if (!_try_claimed && !hrrs->claim_iter()) return false;
+    _g1h->push_dirty_cards_region(r);
     // If we didn't return above, then
     //   _try_claimed || r->claim_iter()
     // is true: either we're supposed to work on claimed-but-not-complete
@@ -241,6 +242,10 @@ public:
       HeapRegion* card_region = _g1h->heap_region_containing(card_start);
       assert(card_region != NULL, "Yielding cards not in the heap?");
       _cards++;
+
+      if (!card_region->is_on_dirty_cards_region_list()) {
+        _g1h->push_dirty_cards_region(card_region);
+      }
 
        // If the card is dirty, then we will scan it during updateRS.
       if (!card_region->in_collection_set() && !_ct_bs->is_card_dirty(card_index)) {
