@@ -446,6 +446,59 @@ void YoungList::print() {
   gclog_or_tty->print_cr("");
 }
 
+void G1CollectedHeap::push_dirty_cards_region(HeapRegion* hr)
+{
+  // Claim the right to put the region on the dirty cards region list
+  // by installing a self pointer.
+  HeapRegion* next = hr->get_next_dirty_cards_region();
+  if (next == NULL) {
+    HeapRegion* res = (HeapRegion*)
+      Atomic::cmpxchg_ptr(hr, hr->next_dirty_cards_region_addr(),
+                          NULL);
+    if (res == NULL) {
+      HeapRegion* head;
+      do {
+        // Put the region to the dirty cards region list.
+        head = _dirty_cards_region_list;
+        next = (HeapRegion*)
+          Atomic::cmpxchg_ptr(hr, &_dirty_cards_region_list, head);
+        if (next == head) {
+          assert(hr->get_next_dirty_cards_region() == hr,
+                 "hr->get_next_dirty_cards_region() != hr");
+          if (next == NULL) {
+            // The last region in the list points to itself.
+            hr->set_next_dirty_cards_region(hr);
+          } else {
+            hr->set_next_dirty_cards_region(next);
+          }
+        }
+      } while (next != head);
+    }
+  }
+}
+
+HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
+{
+  HeapRegion* head;
+  HeapRegion* hr;
+  do {
+    head = _dirty_cards_region_list;
+    if (head == NULL) {
+      return NULL;
+    }
+    HeapRegion* new_head = head->get_next_dirty_cards_region();
+    if (head == new_head) {
+      // The last region.
+      new_head = NULL;
+    }
+    hr = (HeapRegion*)Atomic::cmpxchg_ptr(new_head, &_dirty_cards_region_list,
+                                          head);
+  } while (hr != head);
+  assert(hr != NULL, "invariant");
+  hr->set_next_dirty_cards_region(NULL);
+  return hr;
+}
+
 void G1CollectedHeap::stop_conc_gc_threads() {
   _cg1r->stop();
   _czft->stop();
@@ -1329,7 +1382,8 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _gc_time_stamp(0),
   _surviving_young_words(NULL),
   _in_cset_fast_test(NULL),
-  _in_cset_fast_test_base(NULL) {
+  _in_cset_fast_test_base(NULL),
+  _dirty_cards_region_list(NULL) {
   _g1h = this; // To catch bugs.
   if (_process_strong_tasks == NULL || !_process_strong_tasks->valid()) {
     vm_exit_during_initialization("Failed necessary allocation.");
@@ -4691,15 +4745,58 @@ void G1CollectedHeap::dirtyCardsForYoungRegions(CardTableModRefBS* ct_bs, HeapRe
   }
 }
 
+
+class G1ParCleanupCTTask : public AbstractGangTask {
+  CardTableModRefBS* _ct_bs;
+  G1CollectedHeap* _g1h;
+public:
+  G1ParCleanupCTTask(CardTableModRefBS* ct_bs,
+                     G1CollectedHeap* g1h) :
+    AbstractGangTask("G1 Par Cleanup CT Task"),
+    _ct_bs(ct_bs),
+    _g1h(g1h)
+  { }
+
+  void work(int i) {
+    HeapRegion* r;
+    while (r = _g1h->pop_dirty_cards_region()) {
+      clear_cards(r);
+    }
+  }
+  void clear_cards(HeapRegion* r) {
+    // Cards for Survivor and Scan-Only regions will be dirtied later.
+    if (!r->is_scan_only() && !r->is_survivor()) {
+      _ct_bs->clear(MemRegion(r->bottom(), r->end()));
+    }
+  }
+};
+
+
 void G1CollectedHeap::cleanUpCardTable() {
   CardTableModRefBS* ct_bs = (CardTableModRefBS*) (barrier_set());
   double start = os::elapsedTime();
 
-  ct_bs->clear(_g1_committed);
-
+  // Iterate over the dirty cards region list.
+  G1ParCleanupCTTask cleanup_task(ct_bs, this);
+  if (ParallelGCThreads > 0) {
+    set_par_threads(workers()->total_workers());
+    workers()->run_task(&cleanup_task);
+    set_par_threads(0);
+  } else {
+    while (_dirty_cards_region_list) {
+      HeapRegion* r = _dirty_cards_region_list;
+      cleanup_task.clear_cards(r);
+      _dirty_cards_region_list = r->get_next_dirty_cards_region();
+      if (_dirty_cards_region_list == r) {
+        // The last region.
+        _dirty_cards_region_list = NULL;
+      }
+      r->set_next_dirty_cards_region(NULL);
+    }
+  }
   // now, redirty the cards of the scan-only and survivor regions
   // (it seemed faster to do it this way, instead of iterating over
-  // all regions and then clearing / dirtying as approprite)
+  // all regions and then clearing / dirtying as appropriate)
   dirtyCardsForYoungRegions(ct_bs, _young_list->first_scan_only_region());
   dirtyCardsForYoungRegions(ct_bs, _young_list->first_survivor_region());
 
