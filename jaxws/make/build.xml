@@ -107,6 +107,7 @@
              destdir="${build.classes.dir}"
              memoryInitialSize="${javac.memoryInitialSize}"
              memoryMaximumSize="${javac.memoryMaximumSize}"
+             source="${javac.source}"
              target="${javac.target}"
              excludes="com/sun/tools/internal/txw2/**">
          <compilerarg value="-J-Xbootclasspath/p:${bootstrap.dir}/lib/javac.jar"/>
