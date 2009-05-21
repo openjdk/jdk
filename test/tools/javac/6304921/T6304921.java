@@ -1,7 +1,7 @@
 /*
  * @test (important: no SCCS keywords to affect offsets in golden file.)  /nodynamiccopyright/
  * @bug 6304921
- * @compile/fail/ref=T6304921.out -XDstdout -XDcompilePolicy=bytodo -XDdiags=%b:%s/%o/%e:%_%t%m|%p%m -Xjcov -Xlint:all,-path -Werror T6304921.java
+ * @compile/fail/ref=T6304921.out -XDstdout -XDcompilePolicy=bytodo -XDrawDiagnostics -Xjcov -Xlint:all,-path -Werror T6304921.java
  */
 
 import java.util.ArrayList;

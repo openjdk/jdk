@@ -1,20 +1,7 @@
-T6304921.java:671/671/680: warning: [rawtypes] found raw type: java.util.ArrayList
-        List<Integer> list = new ArrayList();
-                                 ^
-  missing type parameters for generic class java.util.ArrayList<E>
-T6304921.java:667/667/682: warning: [unchecked] unchecked conversion
-        List<Integer> list = new ArrayList();
-                             ^
-  required: java.util.List<java.lang.Integer>
-  found:    java.util.ArrayList
-error: warnings found and -Werror specified
-T6304921.java:727/733/737: cannot find symbol
-        System.orr.println("abc"); // name not found
-              ^
-  symbol:   variable orr
-  location: class java.lang.System
-T6304921.java:812/816/822: operator + cannot be applied to int,boolean
-        return 123 + true; // bad binary expression
-                   ^
+T6304921.java:29:34: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>
+T6304921.java:29:30: compiler.warn.prob.found.req: (compiler.misc.unchecked.assign), java.util.ArrayList, java.util.List<java.lang.Integer>
+- compiler.err.warnings.and.werror
+T6304921.java:35:15: compiler.err.cant.resolve.location: kindname.variable, orr, , , kindname.class, java.lang.System
+T6304921.java:38:20: compiler.err.operator.cant.be.applied: +, int,boolean
 3 errors
 2 warnings
