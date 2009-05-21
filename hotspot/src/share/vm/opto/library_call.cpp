@@ -2593,7 +2593,8 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   Node* p = basic_plus_adr(top()/*!oop*/, tls_ptr, in_bytes(JavaThread::osthread_offset()));
   Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS);
   p = basic_plus_adr(top()/*!oop*/, osthread, in_bytes(OSThread::interrupted_offset()));
-  Node* int_bit = make_load(NULL, p, TypeInt::BOOL, T_INT);
+  // Set the control input on the field _interrupted read to prevent it floating up.
+  Node* int_bit = make_load(control(), p, TypeInt::BOOL, T_INT);
   Node* cmp_bit = _gvn.transform( new (C, 3) CmpINode(int_bit, intcon(0)) );
   Node* bol_bit = _gvn.transform( new (C, 2) BoolNode(cmp_bit, BoolTest::ne) );
 
