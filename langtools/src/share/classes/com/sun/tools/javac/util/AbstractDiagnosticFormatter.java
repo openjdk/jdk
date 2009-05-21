@@ -77,9 +77,11 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
     protected int depth = 0;
 
     /**
-     * Printer instance to be used for formatting types/symbol
+     * All captured types that have been encountered during diagnostic formatting.
+     * This info is used by the FormatterPrinter in order to print friendly unique
+     * ids for captured types
      */
-    protected Printer printer;
+    private List<Type> allCaptured = List.nil();
 
     /**
      * Initialize an AbstractDiagnosticFormatter by setting its JavacMessages object.
@@ -88,7 +90,6 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
     protected AbstractDiagnosticFormatter(JavacMessages messages, SimpleConfiguration config) {
         this.messages = messages;
         this.config = config;
-        this.printer = new FormatterPrinter();
     }
 
     public String formatKind(JCDiagnostic d, Locale l) {
@@ -104,7 +105,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
 
     @Override
     public String format(JCDiagnostic d, Locale locale) {
-        printer = new FormatterPrinter();
+        allCaptured = List.nil();
         return formatDiagnostic(d, locale);
     }
 
@@ -171,6 +172,9 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             return formatIterable(d, (Iterable<?>)arg, l);
         }
         else if (arg instanceof Type) {
+            if (!allCaptured.contains(arg)) {
+                allCaptured = allCaptured.append((Type)arg);
+            }
             return printer.visit((Type)arg, l);
         }
         else if (arg instanceof Symbol) {
@@ -291,6 +295,10 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
                 d.getIntPosition() != Position.NOPOS;
     }
 
+    public boolean isRaw() {
+        return false;
+    }
+
     /**
      * Creates a string with a given amount of empty spaces. Useful for
      * indenting the text of a diagnostic message.
@@ -355,26 +363,26 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             String showSource = null;
             if ((showSource = options.get("showSource")) != null) {
                 if (showSource.equals("true"))
-                    visibleParts.add(DiagnosticPart.SOURCE);
+                    setVisiblePart(DiagnosticPart.SOURCE, true);
                 else if (showSource.equals("false"))
-                    visibleParts.remove(DiagnosticPart.SOURCE);
+                    setVisiblePart(DiagnosticPart.SOURCE, false);
             }
             String diagOpts = options.get("diags");
             if (diagOpts != null) {//override -XDshowSource
                 Collection<String> args = Arrays.asList(diagOpts.split(","));
                 if (args.contains("short")) {
-                    visibleParts.remove(DiagnosticPart.DETAILS);
-                    visibleParts.remove(DiagnosticPart.SUBDIAGNOSTICS);
+                    setVisiblePart(DiagnosticPart.DETAILS, false);
+                    setVisiblePart(DiagnosticPart.SUBDIAGNOSTICS, false);
                 }
                 if (args.contains("source"))
-                    visibleParts.add(DiagnosticPart.SOURCE);
+                    setVisiblePart(DiagnosticPart.SOURCE, true);
                 if (args.contains("-source"))
-                    visibleParts.remove(DiagnosticPart.SOURCE);
+                    setVisiblePart(DiagnosticPart.SOURCE, false);
             }
             String multiPolicy = null;
             if ((multiPolicy = options.get("multilinePolicy")) != null) {
                 if (multiPolicy.equals("disabled"))
-                    visibleParts.remove(DiagnosticPart.SUBDIAGNOSTICS);
+                    setVisiblePart(DiagnosticPart.SUBDIAGNOSTICS, false);
                 else if (multiPolicy.startsWith("limit:")) {
                     String limitString = multiPolicy.substring("limit:".length());
                     String[] limits = limitString.split(":");
@@ -421,6 +429,13 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             visibleParts = EnumSet.copyOf(diagParts);
         }
 
+        public void setVisiblePart(DiagnosticPart diagParts, boolean enabled) {
+            if (enabled)
+                visibleParts.add(diagParts);
+            else
+                visibleParts.remove(diagParts);
+        }
+
         /**
          * Shows a '^' sign under the source line displayed by the formatter
          * (if applicable).
@@ -441,6 +456,14 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         }
     }
 
+    public Printer getPrinter() {
+        return printer;
+    }
+
+    public void setPrinter(Printer printer) {
+        this.printer = printer;
+    }
+
     /**
      * An enhanced printer for formatting types/symbols used by
      * AbstractDiagnosticFormatter. Provides alternate numbering of captured
@@ -450,33 +473,14 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
      * type referred by a given captured type C contains C itself) which might
      * lead to infinite loops.
      */
-    protected class FormatterPrinter extends Printer {
-
-        List<Type> allCaptured = List.nil();
-        List<Type> seenCaptured = List.nil();
-
+    protected Printer printer = new Printer() {
         @Override
         protected String localize(Locale locale, String key, Object... args) {
             return AbstractDiagnosticFormatter.this.localize(locale, key, args);
         }
-
         @Override
-        public String visitCapturedType(CapturedType t, Locale locale) {
-            if (seenCaptured.contains(t))
-                return localize(locale, "compiler.misc.type.captureof.1",
-                    allCaptured.indexOf(t) + 1);
-            else {
-                try {
-                    seenCaptured = seenCaptured.prepend(t);
-                    allCaptured = allCaptured.append(t);
-                    return localize(locale, "compiler.misc.type.captureof",
-                        allCaptured.indexOf(t) + 1,
-                        visit(t.wildcard, locale));
-                }
-                finally {
-                    seenCaptured = seenCaptured.tail;
-                }
-            }
+        protected String capturedVarId(CapturedType t, Locale locale) {
+            return "" + (allCaptured.indexOf(t) + 1);
         }
-    }
+    };
 }
