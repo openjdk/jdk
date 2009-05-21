@@ -1,0 +1,2 @@
+T6722234b.java:39:9: compiler.err.cant.apply.symbol: kindname.method, m, List<T>,List<T>, List<compiler.misc.type.captureof: 1, ? extends T6722234b>,List<compiler.misc.type.captureof: 2, ? extends T6722234b>, kindname.class, T6722234b, null
+1 error
