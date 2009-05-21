@@ -56,7 +56,7 @@ esac
 TMP1=T4955930.javap
 
 cp "${TESTSRC}${FS}T4955930.java" .
-"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -target 6 T4955930.java
+"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -source 6 -target 6 T4955930.java
 result=$?
 if [ $result -ne 0 ]
 then
