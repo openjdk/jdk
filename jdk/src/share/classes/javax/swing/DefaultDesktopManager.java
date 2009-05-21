@@ -34,6 +34,9 @@ import java.awt.event.ComponentListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
+import sun.awt.AWTAccessor;
+import sun.awt.SunToolkit;
+
 /** This is an implementation of the <code>DesktopManager</code>.
   * It currently implements the basic behaviors for managing
   * <code>JInternalFrame</code>s in an arbitrary parent.
@@ -361,7 +364,7 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
               g.dispose();
             }
         } else if (dragMode == FASTER_DRAG_MODE) {
-          dragFrameFaster(f, newX, newY);
+            dragFrameFaster(f, newX, newY);
         } else {
             setBoundsForFrame(f, newX, newY, f.getWidth(), f.getHeight());
         }
@@ -634,13 +637,8 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
 
       boolean floaterCollision = isFloaterCollision(previousBounds, currentBounds);
 
-    // System.out.println(previousBounds);
       JComponent parent = (JComponent)f.getParent();
       Rectangle visBounds = previousBounds.intersection(desktopBounds);
-    //  System.out.println(previousBounds);
-
-
-     // System.out.println(visBounds);
 
       RepaintManager currentManager = RepaintManager.currentManager(f);
 
@@ -682,7 +680,6 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
           } else {
               dirtyRects = new Rectangle[1];
               dirtyRects[0] = previousBounds;
-              //  System.out.println("no intersection");
           };
 
           // Fix the damage
@@ -701,13 +698,21 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
 
                   parent.paintImmediately(dirtyRects[i]);
                   ((JInternalFrame)f).isDragging = true;
-
-                  // System.out.println(dirtyRects[i]);
               }
 
           }
       } finally {
           currentManager.endPaint();
+      }
+
+      // update window if it's non-opaque
+      Window topLevel = SwingUtilities.getWindowAncestor(f);
+      Toolkit tk = Toolkit.getDefaultToolkit();
+      if (!AWTAccessor.getWindowAccessor().isOpaque(topLevel) &&
+          (tk instanceof SunToolkit) &&
+          ((SunToolkit)tk).needUpdateWindow())
+      {
+          AWTAccessor.getWindowAccessor().updateWindow(topLevel);
       }
    }
 
