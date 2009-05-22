@@ -60,7 +60,7 @@ endif # PLATFORM
 # this define is for the rule:
 CHARSETS_JAR = $(LIBDIR)/charsets.jar
 
-# extsbcs
+# extcs
 FILES_genout_extcs = $(FILES_gen_extcs:%.java=$(GENSRCDIR)/%.java)
 
 #
@@ -90,13 +90,15 @@ $(FILES_DAT): $(FILES_MAP)
 		$(FILES_MAP) $(FILES_DAT) sjis0213
 
 
-$(FILES_genout_extcs): $(GENCSDATASRC)/SingleByte-X.java $(GENCSDATASRC)/extsbcs
+$(FILES_genout_extcs): $(GENCSDATASRC)/SingleByte-X.java  $(GENCSDATASRC)/DoubleByte-X.java \
+		$(GENCSDATASRC)/extsbcs $(GENCSDATASRC)/dbcs
 	@$(prep-target)
 	$(RM) -r $(GENCSEXT)
 	$(MKDIR) -p $(GENCSEXT)
 	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE)	$(GENCSDATASRC) $(GENCSEXT) extsbcs
 	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE) $(GENCSDATASRC) $(GENCSEXT) euctw \
 		$(GENCSSRCDIR)/GenerateEUC_TW.java
+	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE) $(GENCSDATASRC) $(GENCSEXT) dbcs
 
 $(CLASSDESTDIR)/$(SERVICE_DESCRIPTION_PATH): \
   $(SHARE_SRC)/classes/sun/nio/cs/ext/$(SERVICE_DESCRIPTION_PATH)
