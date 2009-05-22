@@ -60,8 +60,6 @@ class WRobotPeer extends WObjectPeer implements RobotPeer
     }
     public native int getRGBPixelImpl(int x, int y);
 
-    public native int getNumberOfButtons();
-
     public int [] getRGBPixels(Rectangle bounds) {
         int pixelArray[] = new int[bounds.width*bounds.height];
         getRGBPixels(bounds.x, bounds.y, bounds.width, bounds.height, pixelArray);

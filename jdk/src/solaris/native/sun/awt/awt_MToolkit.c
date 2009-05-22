@@ -3168,21 +3168,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_motif_MToolkit_getMulticlickTime
 
 /*
  * Class:     sun_awt_motif_MToolkit
- * Method:    getNumMouseButtons
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_sun_awt_motif_MToolkit_getNumMouseButtons
-  (JNIEnv *env, jobject this)
-{
-    jint res = 0;
-    AWT_LOCK();
-    res = XGetPointerMapping(awt_display, NULL, 0);
-    AWT_UNLOCK();
-    return res;
-}
-
-/*
- * Class:     sun_awt_motif_MToolkit
  * Method:    loadXSettings
  * Signature: ()V
  */

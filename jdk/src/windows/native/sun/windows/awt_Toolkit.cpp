@@ -2259,3 +2259,8 @@ extern "C" JNIEXPORT void JNICALL Java_sun_awt_windows_WToolkit_setExtraMouseBut
 void AwtToolkit::setExtraMouseButtonsEnabled(BOOL enable) {
     m_areExtraMouseButtonsEnabled = enable;
 }
+
+JNIEXPORT jint JNICALL Java_sun_awt_windows_WToolkit_getNumberOfButtonsImpl
+(JNIEnv *, jobject self) {
+    return GetSystemMetrics(SM_CMOUSEBUTTONS);
+}
