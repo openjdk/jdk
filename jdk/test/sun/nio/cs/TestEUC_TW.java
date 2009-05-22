@@ -36,7 +36,7 @@ public class TestEUC_TW {
     static class Time {
         long t;
     }
-    static int iteration = 1000;
+    static int iteration = 100;
 
     static char[] decode(byte[] bb, Charset cs, boolean testDirect, Time t)
         throws Exception {

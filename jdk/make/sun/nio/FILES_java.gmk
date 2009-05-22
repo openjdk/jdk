@@ -375,7 +375,20 @@ FILES_gen_extcs = \
 	sun/nio/cs/ext/MacTurkish.java \
 	sun/nio/cs/ext/MacUkraine.java \
 	sun/nio/cs/ext/TIS_620.java \
-        sun/nio/cs/ext/EUC_TWMapping.java
+        sun/nio/cs/ext/EUC_TWMapping.java \
+	sun/nio/cs/ext/IBM1381.java \
+	sun/nio/cs/ext/IBM1383.java \
+	sun/nio/cs/ext/IBM930.java \
+	sun/nio/cs/ext/IBM933.java \
+	sun/nio/cs/ext/IBM935.java \
+	sun/nio/cs/ext/IBM937.java \
+	sun/nio/cs/ext/IBM939.java \
+	sun/nio/cs/ext/IBM942.java \
+	sun/nio/cs/ext/IBM943.java \
+	sun/nio/cs/ext/IBM948.java \
+	sun/nio/cs/ext/IBM949.java \
+	sun/nio/cs/ext/IBM950.java \
+	sun/nio/cs/ext/IBM970.java
 
 FILES_java = $(FILES_src) $(FILES_gen_extcs)
 

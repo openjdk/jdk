@@ -37,6 +37,9 @@ public class Main {
         }
         if ("sbcs".equals(args[2]) || "extsbcs".equals(args[2])) {
             GenerateSBCS.genSBCS(args);
+        } else if ("dbcs".equals(args[2])) {
+            GenerateDBCS.genDBCS(args);
+
         } else if ("euctw".equals(args[2])) {
             if (args.length != 4) {
                 System.out.println("Usage: java -jar charsetmapping.jar srcDir dstDir euctw copyrightSrc");
