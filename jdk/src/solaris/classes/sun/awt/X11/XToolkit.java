@@ -85,21 +85,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static boolean areExtraMouseButtonsEnabled = true;
 
     /**
-     * Number of buttons.
-     * By default it's taken from the system. If system value does not
-     * fit into int type range, use our own MAX_BUTTONS_SUPPORT value.
-     */
-    private static int numberOfButtons = 0;
-
-    /* XFree standard mention 24 buttons as maximum:
-     * http://www.xfree86.org/current/mouse.4.html
-     * We workaround systems supporting more than 24 buttons.
-     * Otherwise, we have to use long type values as masks
-     * which leads to API change.
-     */
-    private static int MAX_BUTTONS_SUPPORT = 24;
-
-    /**
      * True when the x settings have been loaded.
      */
     private boolean loadedXSettings;
@@ -1458,19 +1443,26 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             desktopProperties.put("awt.multiClickInterval",
                                   Integer.valueOf(getMultiClickTime()));
             desktopProperties.put("awt.mouse.numButtons",
-                                  Integer.valueOf(getNumMouseButtons()));
+                                  Integer.valueOf(getNumberOfButtons()));
         }
     }
 
-    public static int getNumMouseButtons() {
+    /**
+     * This method runs through the XPointer and XExtendedPointer array.
+     * XExtendedPointer has priority because on some systems XPointer
+     * (which is assigned to the virtual pointer) reports the maximum
+     * capabilities of the mouse pointer (i.e. 32 physical buttons).
+     */
+    private native synchronized int getNumberOfButtonsImpl();
+
+    @Override
+    public int getNumberOfButtons(){
         awtLock();
         try {
             if (numberOfButtons == 0) {
-                numberOfButtons = Math.min(
-                    XlibWrapper.XGetPointerMapping(XToolkit.getDisplay(), 0, 0),
-                    MAX_BUTTONS_SUPPORT);
+                numberOfButtons = getNumberOfButtonsImpl();
             }
-            return numberOfButtons;
+            return (numberOfButtons > MAX_BUTTONS_SUPPORTED)? MAX_BUTTONS_SUPPORTED : numberOfButtons;
         } finally {
             awtUnlock();
         }

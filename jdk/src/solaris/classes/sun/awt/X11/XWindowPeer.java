@@ -1894,7 +1894,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         if (isGrabbed()) {
             boolean dragging = false;
-            for (int i = 0; i<XToolkit.getNumMouseButtons(); i++){
+            final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
+
+            for (int i = 0; i < buttonsNumber; i++){
                 // here is the bug in WM: extra buttons doesn't have state!=0 as they should.
                 if ((i != 4) && (i != 5)){
                     dragging = dragging || ((xme.get_state() & XConstants.buttonsMask[i]) != 0);
@@ -1940,6 +1942,15 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     public void handleButtonPressRelease(XEvent xev) {
         XButtonEvent xbe = xev.get_xbutton();
+
+        /*
+         * Ignore the buttons above 20 due to the bit limit for
+         * InputEvent.BUTTON_DOWN_MASK.
+         * One more bit is reserved for FIRST_HIGH_BIT.
+         */
+        if (xbe.get_button() > SunToolkit.MAX_BUTTONS_SUPPORTED) {
+            return;
+        }
         if (grabLog.isLoggable(Level.FINE)) {
             grabLog.log(Level.FINE, "{0}, when grabbed {1}, contains {2} ({3}, {4}, {5}x{6})",
                         new Object[] {xbe, isGrabbed(), containsGlobal(xbe.get_x_root(), xbe.get_y_root()), getAbsoluteX(), getAbsoluteY(), getWidth(), getHeight()});

@@ -155,7 +155,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XRobotPeer_mouseReleaseImpl;
         Java_sun_awt_X11_XRobotPeer_mouseWheelImpl;
         Java_sun_awt_X11_XRobotPeer_setup;
-        Java_sun_awt_X11_XRobotPeer_getNumberOfButtonsImpl;
+        Java_sun_awt_X11_XToolkit_getNumberOfButtonsImpl;
         Java_java_awt_Component_initIDs;
         Java_java_awt_Container_initIDs;
         Java_java_awt_Button_initIDs;
