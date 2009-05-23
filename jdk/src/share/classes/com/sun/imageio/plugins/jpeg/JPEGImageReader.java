@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
@@ -214,51 +215,6 @@ public class JPEGImageReader extends ImageReader {
 
     /** The DisposerRecord that handles the actual disposal of this reader. */
     private DisposerRecord disposerRecord;
-
-    /**
-     * Maintain an array of the default image types corresponding to the
-     * various supported IJG colorspace codes.
-     */
-    private static final ImageTypeSpecifier [] defaultTypes =
-        new ImageTypeSpecifier [JPEG.NUM_JCS_CODES];
-
-    static {
-        defaultTypes[JPEG.JCS_GRAYSCALE] =
-            ImageTypeSpecifier.createFromBufferedImageType
-            (BufferedImage.TYPE_BYTE_GRAY);
-        defaultTypes[JPEG.JCS_RGB] =
-            ImageTypeSpecifier.createInterleaved
-            (JPEG.JCS.sRGB,
-             JPEG.bOffsRGB,
-             DataBuffer.TYPE_BYTE,
-             false,
-             false);
-        defaultTypes[JPEG.JCS_RGBA] =
-            ImageTypeSpecifier.createPacked
-            (JPEG.JCS.sRGB,
-             0xff000000,
-             0x00ff0000,
-             0x0000ff00,
-             0x000000ff,
-             DataBuffer.TYPE_INT,
-             false);
-        if (JPEG.JCS.YCC != null) {
-            defaultTypes[JPEG.JCS_YCC] =
-                ImageTypeSpecifier.createInterleaved
-                (JPEG.JCS.YCC,
-                 JPEG.bandOffsets[2],
-                 DataBuffer.TYPE_BYTE,
-                 false,
-                 false);
-            defaultTypes[JPEG.JCS_YCCA] =
-                ImageTypeSpecifier.createInterleaved
-                (JPEG.JCS.YCC,
-                 JPEG.bandOffsets[3],
-                 DataBuffer.TYPE_BYTE,
-                 true,
-                 false);
-        }
-    }
 
     /** Sets up static C structures. */
     private static native void initReaderIDs(Class iisClass,
@@ -706,11 +662,11 @@ public class JPEGImageReader extends ImageReader {
      * Return an ImageTypeSpecifier corresponding to the given
      * color space code, or null if the color space is unsupported.
      */
-    private ImageTypeSpecifier getImageType(int code) {
-        ImageTypeSpecifier ret = null;
+    private ImageTypeProducer getImageType(int code) {
+        ImageTypeProducer ret = null;
 
         if ((code > 0) && (code < JPEG.NUM_JCS_CODES)) {
-            ret = defaultTypes[code];
+            ret = ImageTypeProducer.getTypeProducer(code);
         }
         return ret;
     }
@@ -724,7 +680,7 @@ public class JPEGImageReader extends ImageReader {
             }
 
             // Returns null if it can't be represented
-            return getImageType(colorSpaceCode);
+            return getImageType(colorSpaceCode).getType();
         } finally {
             clearThreadLock();
         }
@@ -758,13 +714,13 @@ public class JPEGImageReader extends ImageReader {
 
         // Get the raw ITS, if there is one.  Note that this
         // won't always be the same as the default.
-        ImageTypeSpecifier raw = getImageType(colorSpaceCode);
+        ImageTypeProducer raw = getImageType(colorSpaceCode);
 
         // Given the encoded colorspace, build a list of ITS's
         // representing outputs you could handle starting
         // with the default.
 
-        ArrayList list = new ArrayList(1);
+        ArrayList<ImageTypeProducer> list = new ArrayList<ImageTypeProducer>(1);
 
         switch (colorSpaceCode) {
         case JPEG.JCS_GRAYSCALE:
@@ -774,9 +730,7 @@ public class JPEGImageReader extends ImageReader {
         case JPEG.JCS_RGB:
             list.add(raw);
             list.add(getImageType(JPEG.JCS_GRAYSCALE));
-            if (JPEG.JCS.YCC != null) {
-                list.add(getImageType(JPEG.JCS_YCC));
-            }
+            list.add(getImageType(JPEG.JCS_YCC));
             break;
         case JPEG.JCS_RGBA:
             list.add(raw);
@@ -801,19 +755,21 @@ public class JPEGImageReader extends ImageReader {
             list.add(getImageType(JPEG.JCS_RGB));
 
             if (iccCS != null) {
-                list.add(ImageTypeSpecifier.createInterleaved
+                list.add(new ImageTypeProducer() {
+                    protected ImageTypeSpecifier produce() {
+                        return ImageTypeSpecifier.createInterleaved
                          (iccCS,
                           JPEG.bOffsRGB,  // Assume it's for RGB
                           DataBuffer.TYPE_BYTE,
                           false,
-                          false));
+                          false);
+                    }
+                });
 
             }
 
             list.add(getImageType(JPEG.JCS_GRAYSCALE));
-            if (JPEG.JCS.YCC != null) { // Might be null if PYCC.pf not installed
-                list.add(getImageType(JPEG.JCS_YCC));
-            }
+            list.add(getImageType(JPEG.JCS_YCC));
             break;
         case JPEG.JCS_YCbCrA:  // Default is to convert to RGBA
             // As there is no YCbCr ColorSpace, we can't support
@@ -822,7 +778,7 @@ public class JPEGImageReader extends ImageReader {
             break;
         }
 
-        return list.iterator();
+        return new ImageTypeIterator(list.iterator());
     }
 
     /**
@@ -872,6 +828,10 @@ public class JPEGImageReader extends ImageReader {
             if  (csType == ColorSpace.TYPE_RGB) { // We want RGB
                 // IJG can do this for us more efficiently
                 setOutColorSpace(structPointer, JPEG.JCS_RGB);
+                // Update java state according to changes
+                // in the native part of decoder.
+                outColorSpaceCode = JPEG.JCS_RGB;
+                numComponents = 3;
             } else if (csType != ColorSpace.TYPE_GRAY) {
                 throw new IIOException("Incompatible color conversion");
             }
@@ -881,6 +841,10 @@ public class JPEGImageReader extends ImageReader {
                 if (colorSpaceCode == JPEG.JCS_YCbCr) {
                     // If the jpeg space is YCbCr, IJG can do it
                     setOutColorSpace(structPointer, JPEG.JCS_GRAYSCALE);
+                    // Update java state according to changes
+                    // in the native part of decoder.
+                    outColorSpaceCode = JPEG.JCS_GRAYSCALE;
+                    numComponents = 1;
                 }
             } else if ((iccCS != null) &&
                        (cm.getNumComponents() == numComponents) &&
@@ -906,20 +870,26 @@ public class JPEGImageReader extends ImageReader {
             }
             break;
         case JPEG.JCS_YCC:
-            if (JPEG.JCS.YCC == null) { // We can't do YCC at all
-                throw new IIOException("Incompatible color conversion");
-            }
-            if ((cs != JPEG.JCS.YCC) &&
-                (cm.getNumComponents() == numComponents)) {
-                convert = new ColorConvertOp(JPEG.JCS.YCC, cs, null);
+            {
+                ColorSpace YCC = JPEG.JCS.getYCC();
+                if (YCC == null) { // We can't do YCC at all
+                    throw new IIOException("Incompatible color conversion");
+                }
+                if ((cs != YCC) &&
+                    (cm.getNumComponents() == numComponents)) {
+                    convert = new ColorConvertOp(YCC, cs, null);
+                }
             }
             break;
         case JPEG.JCS_YCCA:
-            // No conversions available; image must be YCCA
-            if ((JPEG.JCS.YCC == null) || // We can't do YCC at all
-                (cs != JPEG.JCS.YCC) ||
-                (cm.getNumComponents() != numComponents)) {
-                throw new IIOException("Incompatible color conversion");
+            {
+                ColorSpace YCC = JPEG.JCS.getYCC();
+                // No conversions available; image must be YCCA
+                if ((YCC == null) || // We can't do YCC at all
+                    (cs != YCC) ||
+                    (cm.getNumComponents() != numComponents)) {
+                    throw new IIOException("Incompatible color conversion");
+                }
             }
             break;
         default:
@@ -1551,6 +1521,143 @@ public class JPEGImageReader extends ImageReader {
         theLockCount --;
         if (theLockCount == 0) {
             theThread = null;
+        }
+    }
+}
+
+/**
+ * An internal helper class that wraps producer's iterator
+ * and extracts specifier instances on demand.
+ */
+class ImageTypeIterator implements Iterator<ImageTypeSpecifier> {
+     private Iterator<ImageTypeProducer> producers;
+     private ImageTypeSpecifier theNext = null;
+
+     public ImageTypeIterator(Iterator<ImageTypeProducer> producers) {
+         this.producers = producers;
+     }
+
+     public boolean hasNext() {
+         if (theNext != null) {
+             return true;
+         }
+         if (!producers.hasNext()) {
+             return false;
+         }
+         do {
+             theNext = producers.next().getType();
+         } while (theNext == null && producers.hasNext());
+
+         return (theNext != null);
+     }
+
+     public ImageTypeSpecifier next() {
+         if (theNext != null || hasNext()) {
+             ImageTypeSpecifier t = theNext;
+             theNext = null;
+             return t;
+         } else {
+             throw new NoSuchElementException();
+         }
+     }
+
+     public void remove() {
+         producers.remove();
+     }
+}
+
+/**
+ * An internal helper class that provides means for deferred creation
+ * of ImageTypeSpecifier instance required to describe available
+ * destination types.
+ *
+ * This implementation only supports standard
+ * jpeg color spaces (defined by corresponding JCS color space code).
+ *
+ * To support other color spaces one can override produce() method to
+ * return custom instance of ImageTypeSpecifier.
+ */
+class ImageTypeProducer {
+
+    private ImageTypeSpecifier type = null;
+    boolean failed = false;
+    private int csCode;
+
+    public ImageTypeProducer(int csCode) {
+        this.csCode = csCode;
+    }
+
+    public ImageTypeProducer() {
+        csCode = -1; // undefined
+    }
+
+    public synchronized ImageTypeSpecifier getType() {
+        if (!failed && type == null) {
+            try {
+                type = produce();
+            } catch (Throwable e) {
+                failed = true;
+            }
+        }
+        return type;
+    }
+
+    private static final ImageTypeProducer [] defaultTypes =
+            new ImageTypeProducer [JPEG.NUM_JCS_CODES];
+
+    public synchronized static ImageTypeProducer getTypeProducer(int csCode) {
+        if (csCode < 0 || csCode >= JPEG.NUM_JCS_CODES) {
+            return null;
+        }
+        if (defaultTypes[csCode] == null) {
+            defaultTypes[csCode] = new ImageTypeProducer(csCode);
+        }
+        return defaultTypes[csCode];
+    }
+
+    protected ImageTypeSpecifier produce() {
+        switch (csCode) {
+            case JPEG.JCS_GRAYSCALE:
+                return ImageTypeSpecifier.createFromBufferedImageType
+                        (BufferedImage.TYPE_BYTE_GRAY);
+            case JPEG.JCS_RGB:
+                return ImageTypeSpecifier.createInterleaved(JPEG.JCS.sRGB,
+                        JPEG.bOffsRGB,
+                        DataBuffer.TYPE_BYTE,
+                        false,
+                        false);
+            case JPEG.JCS_RGBA:
+                return ImageTypeSpecifier.createPacked(JPEG.JCS.sRGB,
+                        0xff000000,
+                        0x00ff0000,
+                        0x0000ff00,
+                        0x000000ff,
+                        DataBuffer.TYPE_INT,
+                        false);
+            case JPEG.JCS_YCC:
+                if (JPEG.JCS.getYCC() != null) {
+                    return ImageTypeSpecifier.createInterleaved(
+                            JPEG.JCS.getYCC(),
+                        JPEG.bandOffsets[2],
+                        DataBuffer.TYPE_BYTE,
+                        false,
+                        false);
+                } else {
+                    return null;
+                }
+            case JPEG.JCS_YCCA:
+                if (JPEG.JCS.getYCC() != null) {
+                    return ImageTypeSpecifier.createInterleaved(
+                            JPEG.JCS.getYCC(),
+                        JPEG.bandOffsets[3],
+                        DataBuffer.TYPE_BYTE,
+                        true,
+                        false);
+                } else {
+                    return null;
+                }
+            default:
+                return null;
         }
     }
 }
