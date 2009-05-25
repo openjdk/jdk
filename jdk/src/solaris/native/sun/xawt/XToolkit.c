@@ -950,6 +950,7 @@ int32_t getNumButtons() {
         devices = XListInputDevices(awt_display, &numDevices);
         for (devIdx = 0; devIdx < numDevices; devIdx++) {
             aDevice = &(devices[devIdx]);
+#ifdef IsXExtensionPointer
             if (aDevice->use == IsXExtensionPointer) {
                 for (clsIdx = 0; clsIdx < aDevice->num_classes; clsIdx++) {
                     if (aDevice->inputclassinfo[clsIdx].class == ButtonClass) {
@@ -961,6 +962,7 @@ int32_t getNumButtons() {
                 }
                 break;
             }
+#endif
             if (local_num_buttons <= 0 ) {
                 if (aDevice->use == IsXPointer) {
                     for (clsIdx = 0; clsIdx < aDevice->num_classes; clsIdx++) {
