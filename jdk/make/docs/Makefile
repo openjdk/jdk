@@ -620,7 +620,7 @@ tracingdocs:
 	@# ######## api-tracing ############################
 	$(RM) -r $(TRACING_DOCDIR)
 	$(MKDIR) -p $(TRACING_DOCDIR)
-	$(JAVADOC) $(TRACING_JAVADOCFLAGS)                     \
+	$(JAVADOC_CMD) $(TRACING_JAVADOCFLAGS)                     \
 		   $(TRACING_PKGS)
 
 .PHONY: httpserverdocs
