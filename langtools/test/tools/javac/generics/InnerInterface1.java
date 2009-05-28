@@ -27,7 +27,7 @@
  * @summary Inner interfaces are not treated as static
  * @author gafter
  *
- * @compile -source 1.5 InnerInterface1.java
+ * @compile  InnerInterface1.java
  */
 
 package test.tools.javac.generics.InnerInterface1;

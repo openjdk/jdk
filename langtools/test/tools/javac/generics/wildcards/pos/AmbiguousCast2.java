@@ -27,7 +27,7 @@
  * @summary generics: unable to cast between two convertible types
  * @author gafter
  *
- * @compile -source 1.5 AmbiguousCast2.java
+ * @compile  AmbiguousCast2.java
  */
 
 import java.lang.ref.*;

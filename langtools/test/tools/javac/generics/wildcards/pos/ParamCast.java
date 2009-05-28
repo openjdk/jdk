@@ -27,7 +27,7 @@
  * @summary integrate improved wildcard substitution from CPH
  * @author gafter
  *
- * @compile -source 1.5 -Werror -Xlint:unchecked ParamCast.java
+ * @compile  -Werror -Xlint:unchecked ParamCast.java
  */
 
 class A<T> {}

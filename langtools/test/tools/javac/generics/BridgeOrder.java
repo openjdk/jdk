@@ -27,7 +27,7 @@
  * @summary generics: overridden method gets invoked (bridge method problem)
  * @author gafter
  *
- * @compile -source 1.5 BridgeOrder.java
+ * @compile  BridgeOrder.java
  * @run main BridgeOrder
  */
 

@@ -27,7 +27,7 @@
  * @summary crash in annotation class file reader
  * @author gafter
  *
- * @compile -source 1.5 OverrideCheck.java
+ * @compile OverrideCheck.java
  */
 
 class OverrideCheck {

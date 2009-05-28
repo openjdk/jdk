@@ -27,7 +27,7 @@
  * @summary Regression test from odersky
  * @author odersky
  *
- * @compile -source 1.5 BadTest2.java
+ * @compile  BadTest2.java
  */
 
 // this used to be a negative regression test, but when we

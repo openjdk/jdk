@@ -27,7 +27,7 @@
  * @summary javac should implement JLS3 three-pass overload resolution
  * @author gafter
  *
- * @compile -source 1.5 RawClient.java
+ * @compile  RawClient.java
  */
 
 package rawClient;

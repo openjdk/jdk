@@ -27,7 +27,7 @@
  * @summary missing ambiguity error
  * @author gafter
  *
- * @compile/fail -source 1.5 Covar3.java
+ * @compile/fail  Covar3.java
  */
 
 package covar3;

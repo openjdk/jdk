@@ -27,7 +27,7 @@
  * @summary drop compound boxing operations
  * @author gafter
  *
- * @compile/fail -source 1.5 CompoundBox.java
+ * @compile/fail CompoundBox.java
  */
 
 class CompoundBox {

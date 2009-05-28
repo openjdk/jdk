@@ -26,9 +26,6 @@
  * @bug 4915435
  * @summary NullPointerError in Resolve.findMethod() with foreach vs generics
  * @author gafter
- *
- * @compile -source 1.5 ListOfListTest.java
- * @run main ListOfListTest
  */
 
 import java.util.List;
