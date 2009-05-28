@@ -40,6 +40,12 @@ public class bug6713352 {
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
+                String tempDir = System.getProperty("java.io.tmpdir");
+
+                if (tempDir == null || !new File(tempDir).isDirectory()) {
+                    tempDir = System.getProperty("user.home");
+                }
+
                 MyFileSystemView systemView = new MyFileSystemView();
 
                 synchronized (systemView) { // Get SystemView lock
@@ -56,7 +62,7 @@ public class bug6713352 {
                     try {
                         System.out.println("Try to get Invokers lock");
 
-                        ShellFolder.getShellFolder(new File("c:/")).listFiles(true);
+                        ShellFolder.getShellFolder(new File(tempDir)).listFiles(true);
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException(e);
                     }
