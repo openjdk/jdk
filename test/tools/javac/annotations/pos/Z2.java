@@ -27,7 +27,7 @@
  * @summary implement "metadata" (attribute interfaces and program annotations)
  * @author gafter
  *
- * @compile -source 1.5 Z2.java
+ * @compile Z2.java
  */
 
 enum Color { red, green, blue }

@@ -27,7 +27,7 @@
  * @summary javac fails to reject local enums
  * @author gafter
  *
- * @compile/fail -source 1.5 LocalEnum.java
+ * @compile/fail LocalEnum.java
  */
 
 public class LocalEnum {

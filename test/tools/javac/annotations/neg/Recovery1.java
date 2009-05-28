@@ -27,7 +27,7 @@
  * @summary Assertion error is thrown when an annotation class cannot be found.
  * @author gafter
  *
- * @compile/fail -source 1.5 Recovery1.java
+ * @compile/fail Recovery1.java
  */
 
 package recovery1;

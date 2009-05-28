@@ -27,9 +27,9 @@
  * @summary need warning if varargs argument isn't boxed
  * @author gafter
  *
- * @compile      -source 1.5                     Warn1.java
- * @compile/fail -source 1.5 -Werror             Warn1.java
- * @compile      -source 1.5 -Werror -Xlint:none Warn1.java
+ * @compile                           Warn1.java
+ * @compile/fail  -Werror             Warn1.java
+ * @compile       -Werror -Xlint:none Warn1.java
  */
 
 package varargs.warn1;

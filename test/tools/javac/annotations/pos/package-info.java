@@ -27,7 +27,7 @@
  * @summary Package annotations
  * @author gafter
  *
- * @compile -source 1.5 package-info.java
+ * @compile package-info.java
  */
 
 @java.lang.annotation.Documented

@@ -27,7 +27,7 @@
  * @summary generics: bridge method not considered to fulfil interface in abstract class
  * @author gafter
  *
- * @compile -source 1.5 ExtendedRaw3.java
+ * @compile  ExtendedRaw3.java
  */
 
 interface MyComparable<T extends MyComparable<T>> {

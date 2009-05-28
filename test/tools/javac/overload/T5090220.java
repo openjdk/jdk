@@ -25,7 +25,7 @@
  * @test
  * @bug 5090220
  * @summary Autoboxing applied when calculating most-specific method
- * @compile/fail -source 5 T5090220.java
+ * @compile/fail T5090220.java
  */
 
 class T5090220 {

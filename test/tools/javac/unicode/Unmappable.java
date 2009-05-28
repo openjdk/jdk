@@ -29,7 +29,7 @@
  *
  * @compile              -encoding ascii -source 1.5 Unmappable.java
  * @compile/fail -Werror -encoding ascii -source 1.5 Unmappable.java
- * @compile/fail         -encoding ascii -source 6 Unmappable.java
+ * @compile/fail         -encoding ascii             Unmappable.java
  */
 
 // example from 4766897
