@@ -26,7 +26,7 @@
  * @bug     4813736
  * @summary Additional functionality test of task and JSR 269
  * @author  Peter von der Ah\u00e9
- * @ignore "misuse" of context breaks with 6358786
+ * @library ./lib
  * @run main TestJavacTaskScanner TestJavacTaskScanner.java
  */
 
@@ -42,16 +42,23 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.*;
-import javax.tools.JavaFileManager;
 
-public class TestJavacTaskScanner implements Runnable {
+public class TestJavacTaskScanner extends ToolTester {
 
     final JavacTaskImpl task;
     final Elements elements;
     final Types types;
 
-    TestJavacTaskScanner(JavacTaskImpl task) {
-        this.task = task;
+    int numTokens;
+    int numParseTypeElements;
+    int numAllMembers;
+
+    TestJavacTaskScanner(File file) {
+        final Iterable<? extends JavaFileObject> compilationUnits =
+            fm.getJavaFileObjects(new File[] {file});
+        task = (JavacTaskImpl)tool.getTask(null, fm, null, null, null, compilationUnits);
+        task.getContext().put(Scanner.Factory.scannerFactoryKey,
+                new MyScanner.Factory(task.getContext(), this));
         elements = task.getElements();
         types = task.getTypes();
     }
@@ -71,6 +78,23 @@ public class TestJavacTaskScanner implements Runnable {
             System.out.println();
             System.out.println();
         }
+
+        System.out.println("#tokens: " + numTokens);
+        System.out.println("#parseTypeElements: " + numParseTypeElements);
+        System.out.println("#allMembers: " + numAllMembers);
+
+        check(numTokens, "#Tokens", 891);
+        check(numParseTypeElements, "#parseTypeElements", 136);
+        check(numAllMembers, "#allMembers", 67);
+    }
+
+    void check(int value, String name, int expected) {
+        // allow some slop in the comparison to allow for minor edits in the
+        // test and in the platform
+        if (value < expected * 9 / 10)
+            throw new Error(name + " lower than expected; expected " + expected + "; found: " + value);
+        if (value > expected * 11 / 10)
+            throw new Error(name + " higher than expected; expected " + expected + "; found: " + value);
     }
 
     void testParseType(TypeElement clazz) {
@@ -78,23 +102,19 @@ public class TestJavacTaskScanner implements Runnable {
         for (Element member : elements.getAllMembers((TypeElement)type.asElement())) {
             TypeMirror mt = types.asMemberOf(type, member);
             System.out.format("%s : %s -> %s%n", member.getSimpleName(), member.asType(), mt);
+            numParseTypeElements++;
         }
     }
 
     public static void main(String... args) throws IOException {
-        JavaCompilerTool tool = ToolProvider.defaultJavaCompiler();
-        JavaFileManager fm = tool.getStandardFileManager();
         String srcdir = System.getProperty("test.src");
-        File file = new File(srcdir, args[0]);
-        JavacTaskImpl task = (JavacTaskImpl)tool.run(null, fm.getFileForInput(file.toString()));
-        MyScanner.Factory.preRegister(task.getContext());
-        TestJavacTaskScanner tester = new TestJavacTaskScanner(task);
-        tester.run();
+        new TestJavacTaskScanner(new File(srcdir, args[0])).run();
     }
 
     private void testGetAllMembers(TypeElement clazz) {
         for (Element member : elements.getAllMembers(clazz)) {
-            System.out.format("%s : %s", member.getSimpleName(), member.asType());
+            System.out.format("%s : %s%n", member.getSimpleName(), member.asType());
+            numAllMembers++;
         }
     }
 }
@@ -102,21 +122,15 @@ public class TestJavacTaskScanner implements Runnable {
 class MyScanner extends Scanner {
 
     public static class Factory extends Scanner.Factory {
-        public static void preRegister(final Context context) {
-            context.put(scannerFactoryKey, new Context.Factory<Scanner.Factory>() {
-                public Factory make() {
-                    return new Factory(context);
-                }
-            });
-        }
-        public Factory(Context context) {
+        public Factory(Context context, TestJavacTaskScanner test) {
             super(context);
+            this.test = test;
         }
 
         @Override
         public Scanner newScanner(CharSequence input) {
             if (input instanceof CharBuffer) {
-                return new MyScanner(this, (CharBuffer)input);
+                return new MyScanner(this, (CharBuffer)input, test);
             } else {
                 char[] array = input.toString().toCharArray();
                 return newScanner(array, array.length);
@@ -125,18 +139,26 @@ class MyScanner extends Scanner {
 
         @Override
         public Scanner newScanner(char[] input, int inputLength) {
-            return new MyScanner(this, input, inputLength);
+            return new MyScanner(this, input, inputLength, test);
         }
+
+        private TestJavacTaskScanner test;
     }
-    protected MyScanner(Factory fac, CharBuffer buffer) {
+    protected MyScanner(Factory fac, CharBuffer buffer, TestJavacTaskScanner test) {
         super(fac, buffer);
+        this.test = test;
     }
-    protected MyScanner(Factory fac, char[] input, int inputLength) {
+    protected MyScanner(Factory fac, char[] input, int inputLength, TestJavacTaskScanner test) {
         super(fac, input, inputLength);
+        this.test = test;
     }
 
     public void nextToken() {
         super.nextToken();
         System.err.format("Saw token %s (%s)%n", token(), name());
+        test.numTokens++;
     }
+
+    private TestJavacTaskScanner test;
+
 }
