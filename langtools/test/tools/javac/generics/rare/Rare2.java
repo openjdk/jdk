@@ -27,7 +27,7 @@
  * @summary "rare" types
  * @author gafter
  *
- * @compile/fail -source 1.5 Rare2.java
+ * @compile/fail  Rare2.java
  */
 
 package rare2;

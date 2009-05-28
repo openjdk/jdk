@@ -27,7 +27,7 @@
  * @summary compiler allows overriding with different primitive return type
  * @author gafter
  *
- * @compile/fail -source 1.5 PrimitiveVariant.java
+ * @compile/fail  PrimitiveVariant.java
  */
 
 package test.tools.javac.generics.PrimitiveVariant;

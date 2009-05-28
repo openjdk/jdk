@@ -27,7 +27,7 @@
  * @summary annotation syntax allows extra ',' in parameter list.
  * @author gafter
  *
- * @compile/fail -source 1.5 AnnComma.java
+ * @compile/fail AnnComma.java
  */
 
 package annComma;

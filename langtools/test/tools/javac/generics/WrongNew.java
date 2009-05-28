@@ -27,7 +27,7 @@
  * @summary generics: javac generares "new" of wrong class
  * @author gafter
  *
- * @compile -source 1.5 WrongNew.java
+ * @compile  WrongNew.java
  * @run main WrongNew
  */
 

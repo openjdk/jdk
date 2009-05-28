@@ -27,7 +27,7 @@
  * @summary generics problem with multiple interface extension
  * @author gafter
  *
- * @compile -source 1.5 MultipleInheritance.java
+ * @compile  MultipleInheritance.java
  */
 
 package test.tools.javac.generics.MultipleInheritance;

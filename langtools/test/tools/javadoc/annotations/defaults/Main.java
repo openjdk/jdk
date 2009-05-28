@@ -27,7 +27,7 @@
  * @summary Test an annotation type with default element values, and
  *          annotations that use them.
  * @library ../../lib
- * @compile -source 1.5 ../../lib/Tester.java Main.java
+ * @compile  ../../lib/Tester.java Main.java
  * @run main Main
  */
 

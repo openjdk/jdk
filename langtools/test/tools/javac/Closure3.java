@@ -27,7 +27,7 @@
  * @summary Initialization of up-level links, immediately after super(), occurs too late.
  * @author gafter
  *
- * @compile -source 1.4 -target 1.4 Closure3.java
+ * @compile Closure3.java
  * @run main Closure3
  */
 

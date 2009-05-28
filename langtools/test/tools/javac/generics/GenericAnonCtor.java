@@ -27,7 +27,7 @@
  * @summary javac crash on parameterized anonymous constructor invocation
  * @author gafter
  *
- * @compile -source 1.5 GenericAnonCtor.java
+ * @compile  GenericAnonCtor.java
  * @run main GenericAnonCtor
  */
 

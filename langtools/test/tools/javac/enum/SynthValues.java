@@ -26,9 +26,6 @@
  * @bug 4984627
  * @summary Enums: +VALUES field has no synthetic attribute
  * @author gafter
- *
- * @compile -source 1.5 SynthValues.java
- * @run main SynthValues
  */
 
 public enum SynthValues {

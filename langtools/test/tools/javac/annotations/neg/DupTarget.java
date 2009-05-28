@@ -27,7 +27,7 @@
  * @summary <at>Target
  * @author gafter
  *
- * @compile/fail -source 1.5 DupTarget.java
+ * @compile/fail DupTarget.java
  */
 
 @java.lang.annotation.Target({TYPE, FIELD, PACKAGE, FIELD})

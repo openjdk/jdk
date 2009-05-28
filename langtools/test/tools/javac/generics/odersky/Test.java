@@ -27,7 +27,7 @@
  * @summary Positive regression test from odersky
  * @author odersky
  *
- * @compile -source 1.5 Test.java
+ * @compile  Test.java
  */
 
 class Test {

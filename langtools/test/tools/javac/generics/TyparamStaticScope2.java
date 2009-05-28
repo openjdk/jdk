@@ -27,7 +27,7 @@
  * @summary type parameter referenced in static inner class improperly allowed!
  * @author gafter
  *
- * @compile/fail -source 1.5 TyparamStaticScope2.java
+ * @compile/fail  TyparamStaticScope2.java
  */
 
 package typaram.static_.scope2;

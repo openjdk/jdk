@@ -27,7 +27,7 @@
  * @summary Cannot make compound type involving Enums
  * @author Peter von der Ah\u00e9
  *
- * @compile -source 5 T5075242.java
+ * @compile T5075242.java
  */
 
 interface Iface {
