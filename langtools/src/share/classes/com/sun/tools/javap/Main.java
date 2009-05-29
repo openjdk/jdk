@@ -42,13 +42,6 @@ public class Main {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        if (args.length >= 1 && args[0].equals("-Xold")) {
-            String[] nArgs = new String[args.length - 1];
-            System.arraycopy(args, 1, nArgs, 0, nArgs.length);
-            sun.tools.javap.Main.main(args);  // calls System.exit
-            System.exit(1);
-        }
-
         JavapTask t = new JavapTask();
         int rc = t.run(args);
         System.exit(rc);
