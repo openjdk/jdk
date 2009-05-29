@@ -308,7 +308,7 @@
     <target name="build-javap" depends="build-javac">
         <build-tool name="javap"
                     includes="${javap.includes}"
-                    jarmainclass="sun.tools.javap.Main"
+                    jarmainclass="com.sun.tools.javap.Main"
                     jarclasspath="javac.jar"/>
     </target>
     
