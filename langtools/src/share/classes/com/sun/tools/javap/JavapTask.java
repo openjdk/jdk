@@ -212,9 +212,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
         new Option(false, "-Xold") {
             void process(JavapTask task, String opt, String arg) throws BadArgs {
-                // -Xold is only supported as first arg when invoked from
-                // command line; this is handled in Main,main
-                throw task.new BadArgs("err.Xold.not.supported.here");
+                task.log.println(task.getMessage("warn.Xold.not.supported"));
             }
         },
 
