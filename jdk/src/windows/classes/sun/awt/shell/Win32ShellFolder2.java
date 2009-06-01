@@ -527,7 +527,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return Whether this is a file system shell folder
      */
-    public synchronized boolean isFileSystem() {
+    public boolean isFileSystem() {
         if (cachedIsFileSystem == null) {
             cachedIsFileSystem = hasAttribute(ATTRIB_FILESYSTEM);
         }
@@ -543,8 +543,8 @@ final class Win32ShellFolder2 extends ShellFolder {
             public Boolean call() throws Exception {
                 // Caching at this point doesn't seem to be cost efficient
                 return (getAttributes0(getParentIShellFolder(),
-                        getRelativePIDL(), attribute)
-                        & attribute) != 0;
+                    getRelativePIDL(), attribute)
+                    & attribute) != 0;
             }
         });
     }
@@ -761,7 +761,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return Whether this shell folder is a link
      */
-    public synchronized boolean isLink() {
+    public boolean isLink() {
         if (cachedIsLink == null) {
             cachedIsLink = hasAttribute(ATTRIB_LINK);
         }
@@ -1160,8 +1160,16 @@ final class Win32ShellFolder2 extends ShellFolder {
     private static native int compareIDsByColumn(long pParentIShellFolder, long pidl1, long pidl2, int columnIdx);
 
 
-    public void sortChildren(List<? extends File> files) {
-        Collections.sort(files, new ColumnComparator(getIShellFolder(), 0));
+    public void sortChildren(final List<? extends File> files) {
+        // To avoid loads of synchronizations with Invoker and improve performance we
+        // synchronize the whole code of the sort method once
+        getInvoker().invoke(new Callable<Void>() {
+            public Void call() throws Exception {
+                Collections.sort(files, new ColumnComparator(getIShellFolder(), 0));
+
+                return null;
+            }
+        });
     }
 
     private static class ColumnComparator implements Comparator<File> {
