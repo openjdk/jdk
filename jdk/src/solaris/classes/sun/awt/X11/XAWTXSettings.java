@@ -126,7 +126,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
                 new WindowPropertyGetter(owner, xSettingsPropertyAtom, 0, MAX_LENGTH,
                         false, xSettingsPropertyAtom.getAtom() );
             try {
-                int status = getter.execute(XToolkit.IgnoreBadWindowHandler);
+                int status = getter.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                 if (status != XConstants.Success || getter.getData() == 0) {
                     if (log.isLoggable(Level.FINE)) log.fine("OH OH : getter failed  status = " + status );
