@@ -179,9 +179,15 @@ public class HeadlessToolkit extends Toolkit
         throw new HeadlessException();
     }
 
-    public  KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager)
-        throws HeadlessException {
-        throw new HeadlessException();
+    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager) {
+        // See 6833019.
+        return
+            new KeyboardFocusManagerPeer() {
+                public Window getCurrentFocusedWindow() { return null; }
+                public void setCurrentFocusOwner(Component comp) {}
+                public Component getCurrentFocusOwner() { return null; }
+                public void clearGlobalFocusOwner(Window activeWindow) {}
+            };
     }
 
     public TrayIconPeer createTrayIcon(TrayIcon target)

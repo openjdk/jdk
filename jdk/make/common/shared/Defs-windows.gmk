@@ -431,9 +431,11 @@ DEVTOOLS_PATH:=$(call AltCheckSpaces,DEVTOOLS_PATH)
 
 # _BOOTDIR1: First choice for a Bootstrap JDK, previous released JDK.
 # _BOOTDIR2: Second choice
+# The _BOOTDIR3 is defind optionally.
 ifndef ALT_BOOTDIR
   _BOOTDIR1  =$(_system_drive)/jdk$(PREVIOUS_JDK_VERSION)
   _BOOTDIR2  =$(USRJDKINSTANCES_PATH)/jdk$(PREVIOUS_JDK_VERSION)
+  _BOOTDIR3  =$(SLASH_JAVA)/re/jdk/$(PREVIOUS_JDK_VERSION)/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
 endif
 
 # 32 bit always needs 2 runtimes, 64 bit usually does too

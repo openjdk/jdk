@@ -121,11 +121,4 @@ public interface RobotPeer
      * Disposes the robot peer when it is not needed anymore.
      */
     void dispose();
-
-    /**
-     * Returns the number of buttons that the robot simulates.
-     *
-     * @return the number of buttons that the robot simulates
-     */
-    int getNumberOfButtons();
 }
