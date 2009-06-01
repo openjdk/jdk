@@ -1071,6 +1071,40 @@ Zone	Asia/Tokyo	9:18:59	-	LMT	1887 Dec 31 15:00u
 # http://www.petranews.gov.jo/nepras/2006/Sep/05/4000.htm
 # "Jordan will switch to winter time on Friday, October 27".
 #
+
+# From Phil Pizzey (2009-04-02):
+# ...I think I may have spotted an error in the timezone data for
+# Jordan.
+# The current (2009d) asia file shows Jordan going to daylight
+# saving
+# time on the last Thursday in March.
+#
+# Rule  Jordan      2000  max	-  Mar   lastThu     0:00s 1:00  S
+#
+# However timeanddate.com, which I usually find reliable, shows Jordan
+# going to daylight saving time on the last Friday in March since 2002.
+# Please see
+# <a href="http://www.timeanddate.com/worldclock/timezone.html?n=11">
+# http://www.timeanddate.com/worldclock/timezone.html?n=11
+# </a>
+
+# From Steffen Thorsen (2009-04-02):
+# This single one might be good enough, (2009-03-24, Arabic):
+# <a href="http://petra.gov.jo/Artical.aspx?Lng=2&Section=8&Artical=95279">
+# http://petra.gov.jo/Artical.aspx?Lng=2&Section=8&Artical=95279
+# </a>
+#
+# Google's translation:
+#
+# > The Council of Ministers decided in 2002 to adopt the principle of timely
+# > submission of the summer at 60 minutes as of midnight on the last Thursday
+# > of the month of March of each year.
+#
+# So - this means the midnight between Thursday and Friday since 2002.
+
+# From Arthur David Olson (2009-04-06):
+# We still have Jordan switching to DST on Thursdays in 2000 and 2001.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Jordan	1973	only	-	Jun	6	0:00	1:00	S
 Rule	Jordan	1973	1975	-	Oct	1	0:00	0	-
@@ -1093,8 +1127,9 @@ Rule	Jordan	1993	1998	-	Apr	Fri>=1	0:00	1:00	S
 Rule	Jordan	1994	only	-	Sep	Fri>=15	0:00	0	-
 Rule	Jordan	1995	1998	-	Sep	Fri>=15	0:00s	0	-
 Rule	Jordan	1999	only	-	Jul	 1	0:00s	1:00	S
-Rule	Jordan	1999	2002	-	Sep	lastThu	0:00s	0	-
-Rule	Jordan	2000	max	-	Mar	lastThu	0:00s	1:00	S
+Rule	Jordan	1999	2002	-	Sep	lastFri	0:00s	0	-
+Rule	Jordan	2000	2001	-	Mar	lastThu	0:00s	1:00	S
+Rule	Jordan	2002	max	-	Mar	lastFri	0:00s	1:00	S
 Rule	Jordan	2003	only	-	Oct	24	0:00s	0	-
 Rule	Jordan	2004	only	-	Oct	15	0:00s	0	-
 Rule	Jordan	2005	only	-	Sep	lastFri	0:00s	0	-
@@ -1576,11 +1611,46 @@ Zone	Asia/Muscat	3:54:20 -	LMT	1920
 # http://dailymailnews.com/200808/28/news/dmbrn03.html
 # </a>
 
+# From Alexander Krivenyshev (2009-04-08):
+# Based on previous media reports that "... proposed plan to
+# advance clocks by one hour from May 1 will cause disturbance
+# to the working schedules rather than bringing discipline in
+# official working."
+# <a href="http://www.thenews.com.pk/daily_detail.asp?id=171280">
+# http://www.thenews.com.pk/daily_detail.asp?id=171280
+# </a>
+#
+# recent news that instead of May 2009 - Pakistan plan to
+# introduce DST from April 15, 2009
+#
+# FYI: Associated Press Of Pakistan
+# April 08, 2009
+# Cabinet okays proposal to advance clocks by one hour from April 15
+# <a href="http://www.app.com.pk/en_/index.php?option=com_content&task=view&id=73043&Itemid=1">
+# http://www.app.com.pk/en_/index.php?option=com_content&task=view&id=73043&Itemid=1
+# </a>
+#
+# or
+#
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_pakistan05.html">
+# http://www.worldtimezone.com/dst_news/dst_news_pakistan05.html
+# </a>
+#
+# ....
+# The Federal Cabinet on Wednesday approved the proposal to
+# advance clocks in the country by one hour from April 15 to
+# conserve energy"
+
+# From Arthur David Olson (2009-04-10):
+# Assume for now that Pakistan will end DST in 2009 as it did in 2008.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule Pakistan	2002	only	-	Apr	Sun>=2	0:01	1:00	S
 Rule Pakistan	2002	only	-	Oct	Sun>=2	0:01	0	-
 Rule Pakistan	2008	only	-	Jun	1	0:00	1:00	S
 Rule Pakistan	2008	only	-	Nov	1	0:00	0	-
+Rule Pakistan	2009	only	-	Apr	15	0:00	1:00	S
+Rule Pakistan	2009	only	-	Nov	1	0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Karachi	4:28:12 -	LMT	1907
 			5:30	-	IST	1942 Sep
@@ -1717,6 +1787,22 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # http://www.worldtimezone.com/dst_news/dst_news_gazastrip01.html
 # </a>
 
+# From Alexander Krivenyshev (2009-03-26):
+# According to the Palestine News Network (arabic.pnn.ps), Palestinian
+# government decided to start Daylight Time on Thursday night March
+# 26 and continue until the night of 27 September 2009.
+#
+# (in Arabic)
+# <a href="http://arabic.pnn.ps/index.php?option=com_content&task=view&id=50850">
+# http://arabic.pnn.ps/index.php?option=com_content&task=view&id=50850
+# </a>
+#
+# or
+# (English translation)
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_westbank01.html">
+# http://www.worldtimezone.com/dst_news/dst_news_westbank01.html
+# </a>
+
 # The rules for Egypt are stolen from the `africa' file.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -1730,10 +1816,12 @@ Rule Palestine	1999	2005	-	Apr	Fri>=15	0:00	1:00	S
 Rule Palestine	1999	2003	-	Oct	Fri>=15	0:00	0	-
 Rule Palestine	2004	only	-	Oct	 1	1:00	0	-
 Rule Palestine	2005	only	-	Oct	 4	2:00	0	-
-Rule Palestine	2006	max	-	Apr	 1	0:00	1:00	S
+Rule Palestine	2006	2008	-	Apr	 1	0:00	1:00	S
 Rule Palestine	2006	only	-	Sep	22	0:00	0	-
 Rule Palestine	2007	only	-	Sep	Thu>=8	2:00	0	-
-Rule Palestine	2008	max	-	Aug	lastThu	2:00	0	-
+Rule Palestine	2008	only	-	Aug	lastFri	2:00	0	-
+Rule Palestine	2009	max	-	Mar	lastFri	0:00	1:00	S
+Rule Palestine	2009	max	-	Sep	lastMon	2:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
@@ -1991,8 +2079,29 @@ Rule	Syria	2007	only	-	Nov	 Fri>=1	0:00	0	-
 # http://sana.sy/ara/2/2008/10/07/195459.htm
 # </a>
 
-Rule	Syria	2008	max	-	Apr	Fri>=1	0:00	1:00	S
+# From Steffen Thorsen (2009-03-19):
+# Syria will start DST on 2009-03-27 00:00 this year according to many sources,
+# two examples:
+#
+# <a href="http://www.sana.sy/eng/21/2009/03/17/217563.htm">
+# http://www.sana.sy/eng/21/2009/03/17/217563.htm
+# </a>
+# (English, Syrian Arab News # Agency)
+# <a href="http://thawra.alwehda.gov.sy/_View_news2.asp?FileName=94459258720090318012209">
+# http://thawra.alwehda.gov.sy/_View_news2.asp?FileName=94459258720090318012209
+# </a>
+# (Arabic, gov-site)
+#
+# We have not found any sources saying anything about when DST ends this year.
+#
+# Our summary
+# <a href="http://www.timeanddate.com/news/time/syria-dst-starts-march-27-2009.html">
+# http://www.timeanddate.com/news/time/syria-dst-starts-march-27-2009.html
+# </a>
+
+Rule	Syria	2008	only	-	Apr	Fri>=1	0:00	1:00	S
 Rule	Syria	2008	max	-	Nov	1	0:00	0	-
+Rule	Syria	2009	max	-	Mar	lastFri	0:00	1:00	S
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Damascus	2:25:12 -	LMT	1920	# Dimashq
