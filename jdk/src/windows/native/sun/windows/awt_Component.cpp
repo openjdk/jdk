@@ -3334,7 +3334,13 @@ AwtComponent::BuildPrimaryDynamicTable() {
             // reset
             resetKbdState( kbdState );
         }else {
-            printf ("++++Whats that? wkey 0x%x (%d)\n", i,i);
+            // k > 1: this key does generate multiple characters. Ignore it.
+            // An example: Arabic Lam and Alef ligature.
+            // There will be no extended keycode and thus shortcuts for this  key.
+            // XXX shouldn't we reset the kbd state?
+#ifdef DEBUG
+            DTRACE_PRINTLN2("wkey 0x%02X (%d)", i,i);
+#endif
         }
         kbdState[i] = 0; // "key unpressed"
     }
