@@ -228,11 +228,34 @@ class ConstraintsChecker extends PKIXCertPathChecker {
 
         /* check if intermediate cert */
         if (i < certPathLength) {
-            int pathLenConstraint = currCert.getBasicConstraints();
+            // RFC5280: If certificate i is a version 3 certificate, verify
+            // that the basicConstraints extension is present and that cA is
+            // set to TRUE.  (If certificate i is a version 1 or version 2
+            // certificate, then the application MUST either verify that
+            // certificate i is a CA certificate through out-of-band means
+            // or reject the certificate.  Conforming implementations may
+            // choose to reject all version 1 and version 2 intermediate
+            // certificates.)
+            //
+            // We choose to reject all version 1 and version 2 intermediate
+            // certificates except that it is self issued by the trust
+            // anchor in order to support key rollover or changes in
+            // certificate policies.
+            int pathLenConstraint = -1;
+            if (currCert.getVersion() < 3) {    // version 1 or version 2
+                if (i == 1) {                   // issued by a trust anchor
+                    if (X509CertImpl.isSelfIssued(currCert)) {
+                        pathLenConstraint = Integer.MAX_VALUE;
+                    }
+                }
+            } else {
+                pathLenConstraint = currCert.getBasicConstraints();
+            }
+
             if (pathLenConstraint == -1) {
                 throw new CertPathValidatorException
-                    (msg + " check failed: this is not a CA certificate", null,
-                     null, -1, PKIXReason.NOT_CA_CERT);
+                    (msg + " check failed: this is not a CA certificate",
+                     null, null, -1, PKIXReason.NOT_CA_CERT);
             }
 
             if (!X509CertImpl.isSelfIssued(currCert)) {
