@@ -545,6 +545,11 @@ class CMSCollector: public CHeapObj {
   bool unloaded_classes_last_cycle() const {
     return concurrent_cycles_since_last_unload() == 0;
   }
+  // Root scanning options for perm gen
+  int _roots_scanning_options;
+  int roots_scanning_options() const      { return _roots_scanning_options; }
+  void add_root_scanning_option(int o)    { _roots_scanning_options |= o;   }
+  void remove_root_scanning_option(int o) { _roots_scanning_options &= ~o;  }
 
   // Verification support
   CMSBitMap     _verification_mark_bm;
@@ -718,11 +723,6 @@ class CMSCollector: public CHeapObj {
   NOT_PRODUCT(int _overflow_counter;)
   NOT_PRODUCT(bool simulate_overflow();)       // sequential
   NOT_PRODUCT(bool par_simulate_overflow();)   // MT version
-
-  int _roots_scanning_options;
-  int roots_scanning_options() const      { return _roots_scanning_options; }
-  void add_root_scanning_option(int o)    { _roots_scanning_options |= o;   }
-  void remove_root_scanning_option(int o) { _roots_scanning_options &= ~o;  }
 
   // CMS work methods
   void checkpointRootsInitialWork(bool asynch); // initial checkpoint work
