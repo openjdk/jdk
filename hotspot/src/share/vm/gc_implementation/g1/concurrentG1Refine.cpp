@@ -111,7 +111,7 @@ ConcurrentG1Refine::~ConcurrentG1Refine() {
     for (int i = 0; i < _n_threads; i++) {
       delete _threads[i];
     }
-    FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads);
+    FREE_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _threads);
   }
 }
 
