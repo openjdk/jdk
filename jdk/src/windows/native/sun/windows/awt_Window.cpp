@@ -464,7 +464,8 @@ void AwtWindow::CreateHWnd(JNIEnv *env, LPCWSTR title,
         size_t length = env->GetStringLength(javaWarningString) + 1;
         warningString = new WCHAR[length];
         env->GetStringRegion(javaWarningString, 0,
-                static_cast<jsize>(length - 1), warningString);
+                static_cast<jsize>(length - 1),
+                reinterpret_cast<jchar*>(warningString));
         warningString[length-1] = L'\0';
 
         env->DeleteLocalRef(javaWarningString);
