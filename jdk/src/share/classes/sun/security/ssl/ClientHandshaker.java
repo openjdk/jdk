@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,12 @@ import javax.net.ssl.*;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import sun.security.jgss.krb5.Krb5Util;
-import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 
 import com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager;
 
 import sun.security.ssl.HandshakeMessage.*;
 import sun.security.ssl.CipherSuite.*;
-import static sun.security.ssl.CipherSuite.*;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
 
 /**
@@ -364,7 +363,7 @@ final class ClientHandshaker extends Handshaker {
                             new PrivilegedExceptionAction<Subject>() {
                             public Subject run() throws Exception {
                                 return Krb5Util.getSubject(
-                                    GSSUtil.CALLER_SSL_CLIENT,
+                                    GSSCaller.CALLER_SSL_CLIENT,
                                     getAccSE());
                             }});
                     } catch (PrivilegedActionException e) {
