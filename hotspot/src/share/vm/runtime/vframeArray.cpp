@@ -61,6 +61,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf) {
     // Migrate the BasicLocks from the stack to the monitor chunk
     for (index = 0; index < list->length(); index++) {
       MonitorInfo* monitor = list->at(index);
+      assert(!monitor->owner_is_scalar_replaced(), "object should be reallocated already");
       assert(monitor->owner() == NULL || (!monitor->owner()->is_unlocked() && !monitor->owner()->has_bias_pattern()), "object must be null or locked, and unbiased");
       BasicObjectLock* dest = _monitors->at(index);
       dest->set_obj(monitor->owner());
@@ -89,6 +90,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf) {
     StackValue* value = locs->at(index);
     switch(value->type()) {
       case T_OBJECT:
+        assert(!value->obj_is_scalar_replaced(), "object should be reallocated already");
         // preserve object type
         _locals->add( new StackValue((intptr_t) (value->get_obj()()), T_OBJECT ));
         break;
@@ -113,6 +115,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf) {
     StackValue* value = exprs->at(index);
     switch(value->type()) {
       case T_OBJECT:
+        assert(!value->obj_is_scalar_replaced(), "object should be reallocated already");
         // preserve object type
         _expressions->add( new StackValue((intptr_t) (value->get_obj()()), T_OBJECT ));
         break;
