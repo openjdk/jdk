@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,56 +234,58 @@ public abstract class Configuration {
      *
      * @see #setConfiguration
      */
-    public static synchronized Configuration getConfiguration() {
+    public static Configuration getConfiguration() {
 
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
             sm.checkPermission(new AuthPermission("getLoginConfiguration"));
 
-        if (configuration == null) {
-            String config_class = null;
-            config_class = AccessController.doPrivileged
-                (new PrivilegedAction<String>() {
-                public String run() {
-                    return java.security.Security.getProperty
-                                ("login.configuration.provider");
-                }
-            });
-            if (config_class == null) {
-                config_class = "com.sun.security.auth.login.ConfigFile";
-            }
-
-            try {
-                final String finalClass = config_class;
-                configuration = AccessController.doPrivileged
-                    (new PrivilegedExceptionAction<Configuration>() {
-                    public Configuration run() throws ClassNotFoundException,
-                                        InstantiationException,
-                                        IllegalAccessException {
-                        return (Configuration)Class.forName
-                                (finalClass,
-                                true,
-                                contextClassLoader).newInstance();
+        synchronized (Configuration.class) {
+            if (configuration == null) {
+                String config_class = null;
+                config_class = AccessController.doPrivileged
+                    (new PrivilegedAction<String>() {
+                    public String run() {
+                        return java.security.Security.getProperty
+                                    ("login.configuration.provider");
                     }
                 });
-            } catch (PrivilegedActionException e) {
-                Exception ee = e.getException();
-                if (ee instanceof InstantiationException) {
-                    throw (SecurityException) new
-                        SecurityException
-                                ("Configuration error:" +
-                                 ee.getCause().getMessage() +
-                                 "\n").initCause(ee.getCause());
-                } else {
-                    throw (SecurityException) new
-                        SecurityException
-                                ("Configuration error: " +
-                                 ee.toString() +
-                                 "\n").initCause(ee);
+                if (config_class == null) {
+                    config_class = "com.sun.security.auth.login.ConfigFile";
+                }
+
+                try {
+                    final String finalClass = config_class;
+                    configuration = AccessController.doPrivileged
+                        (new PrivilegedExceptionAction<Configuration>() {
+                        public Configuration run() throws ClassNotFoundException,
+                                            InstantiationException,
+                                            IllegalAccessException {
+                            return (Configuration)Class.forName
+                                    (finalClass,
+                                    true,
+                                    contextClassLoader).newInstance();
+                        }
+                    });
+                } catch (PrivilegedActionException e) {
+                    Exception ee = e.getException();
+                    if (ee instanceof InstantiationException) {
+                        throw (SecurityException) new
+                            SecurityException
+                                    ("Configuration error:" +
+                                     ee.getCause().getMessage() +
+                                     "\n").initCause(ee.getCause());
+                    } else {
+                        throw (SecurityException) new
+                            SecurityException
+                                    ("Configuration error: " +
+                                     ee.toString() +
+                                     "\n").initCause(ee);
+                    }
                 }
             }
+            return configuration;
         }
-        return configuration;
     }
 
     /**
