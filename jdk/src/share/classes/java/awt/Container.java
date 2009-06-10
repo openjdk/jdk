@@ -1113,16 +1113,17 @@ public class Container extends Component {
     }
 
     @Override
-    void setGraphicsConfiguration(GraphicsConfiguration gc) {
-        synchronized (getTreeLock()) {
-            super.setGraphicsConfiguration(gc);
+    boolean updateGraphicsData(GraphicsConfiguration gc) {
+        checkTreeLock();
 
-            for (Component comp : component) {
-                if (comp != null) {
-                    comp.setGraphicsConfiguration(gc);
-                }
+        boolean ret = super.updateGraphicsData(gc);
+
+        for (Component comp : component) {
+            if (comp != null) {
+                ret |= comp.updateGraphicsData(gc);
             }
         }
+        return ret;
     }
 
     /**

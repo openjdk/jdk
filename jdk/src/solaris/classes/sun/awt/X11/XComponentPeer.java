@@ -1429,7 +1429,26 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
-    public void updateGraphicsData(GraphicsConfiguration gc) {
+    public boolean updateGraphicsData(GraphicsConfiguration gc) {
+        int oldVisual = -1, newVisual = -1;
+
+        if (graphicsConfig != null) {
+            oldVisual = graphicsConfig.getVisual();
+        }
+        if (gc != null && gc instanceof X11GraphicsConfig) {
+            newVisual = ((X11GraphicsConfig)gc).getVisual();
+        }
+
+        // If the new visual differs from the old one, the peer must be
+        // recreated because X11 does not allow changing the visual on the fly.
+        // So we even skip the initGraphicsConfiguration() call.
+        // The initial assignment should happen though, hence the != -1 thing.
+        if (oldVisual != -1 && oldVisual != newVisual) {
+            return true;
+        }
+
         initGraphicsConfiguration();
+        doValidateSurface();
+        return false;
     }
 }

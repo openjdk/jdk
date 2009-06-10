@@ -132,7 +132,7 @@ public final class AWTAccessor {
         /*
          * Update the image of a non-opaque (translucent) window.
          */
-        void updateWindow(Window window, BufferedImage backBuffer);
+        void updateWindow(Window window);
 
         /** Get the size of the security warning.
          */
