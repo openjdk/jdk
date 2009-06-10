@@ -360,6 +360,11 @@ public class WindowsKeybindings {
                         "DOWN", "decrement",
                         "KP_DOWN", "decrement",
                 }),
+                "RootPane.ancestorInputMap",
+                new UIDefaults.LazyInputMap(new Object[]{
+                        "shift F10", "postPopup",
+                        "CONTEXT_MENU", "postPopup"
+                }),
                 // These bindings are only enabled when there is a default
                 // button set on the rootpane.
                 "RootPane.defaultButtonWindowKeyBindings", new Object[]{

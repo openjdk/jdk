@@ -75,7 +75,7 @@ public class WindowPropertyGetter {
     public int execute() {
         return execute(null);
     }
-    public int execute(XToolkit.XErrorHandler errorHandler) {
+    public int execute(XErrorHandler errorHandler) {
 
         XToolkit.awtLock();
         try {
@@ -94,7 +94,7 @@ public class WindowPropertyGetter {
 
             // Fix for performance problem - IgnodeBadWindowHandler is
             // used too much without reason, just ignore it
-            if (errorHandler == XToolkit.IgnoreBadWindowHandler) {
+            if (errorHandler instanceof XErrorHandler.IgnoreBadWindowHandler) {
                 errorHandler = null;
             }
 
