@@ -22,6 +22,17 @@
  *
  */
 
+#ifdef ASSERT
+inline void BitMap::verify_index(idx_t index) const {
+  assert(index < _size, "BitMap index out of bounds");
+}
+
+inline void BitMap::verify_range(idx_t beg_index, idx_t end_index) const {
+  assert(beg_index <= end_index, "BitMap range error");
+  // Note that [0,0) and [size,size) are both valid ranges.
+  if (end_index != _size) verify_index(end_index);
+}
+#endif // #ifdef ASSERT
 
 inline void BitMap::set_bit(idx_t bit) {
   verify_index(bit);
