@@ -346,11 +346,6 @@ protected:
     BOOL m_iconInherited;     /* TRUE if icon is inherited from the owner */
     BOOL m_filterFocusAndActivation; /* Used in the WH_CBT hook */
 
-    //These are used in AwtComponent::CreatePrintedPixels. They are overridden
-    //here to handle non-opaque windows.
-    virtual void FillBackground(HDC hMemoryDC, SIZE &size);
-    virtual void FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha);
-
     inline BOOL IsUntrusted() {
         return warningString != NULL;
     }

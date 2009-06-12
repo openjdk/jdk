@@ -296,7 +296,7 @@ public class Window extends Container implements Accessible {
     transient boolean isInShow = false;
 
     /*
-     * Opacity level of the window
+     * The opacity level of the window
      *
      * @serial
      * @see #setOpacity(float)
@@ -306,7 +306,7 @@ public class Window extends Container implements Accessible {
     private float opacity = 1.0f;
 
     /*
-     * The shape assigned to this window. This field is set to null if
+     * The shape assigned to this window. This field is set to {@code null} if
      * no shape is set (rectangular window).
      *
      * @serial
@@ -3592,10 +3592,10 @@ public class Window extends Container implements Accessible {
     @Override
     public void setBackground(Color bgColor) {
         Color oldBg = getBackground();
+        super.setBackground(bgColor);
         if (oldBg != null && oldBg.equals(bgColor)) {
             return;
         }
-        super.setBackground(bgColor);
         int oldAlpha = oldBg != null ? oldBg.getAlpha() : 255;
         int alpha = bgColor.getAlpha();
         if ((oldAlpha == 255) && (alpha < 255)) { // non-opaque window
@@ -3623,16 +3623,37 @@ public class Window extends Container implements Accessible {
         }
     }
 
-    private void updateWindow(BufferedImage backBuffer) {
+    private void updateWindow() {
         synchronized (getTreeLock()) {
             WindowPeer peer = (WindowPeer)getPeer();
             if (peer != null) {
-                peer.updateWindow(backBuffer);
+                peer.updateWindow();
             }
         }
     }
 
-    private static final Color TRANSPARENT_BACKGROUND_COLOR = new Color(0, 0, 0, 0);
+    /**
+     * {@inheritDoc}
+     *
+     * @since 1.7
+     */
+    @Override
+    public void paint(Graphics g) {
+        Color bgColor = getBackground();
+        if ((bgColor != null) && (bgColor.getAlpha() < 255)) {
+            Graphics gg = g.create();
+            try {
+                if (gg instanceof Graphics2D) {
+                    gg.setColor(bgColor);
+                    ((Graphics2D)gg).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC));
+                    gg.fillRect(0, 0, getWidth(), getHeight());
+                }
+            } finally {
+                gg.dispose();
+            }
+        }
+        super.paint(g);
+    }
 
     private static void setLayersOpaque(Component component, boolean isOpaque) {
         // Shouldn't use instanceof to avoid loading Swing classes
@@ -3644,18 +3665,10 @@ public class Window extends Container implements Accessible {
             Container c = root.getContentPane();
             javax.swing.JComponent content =
                 (c instanceof javax.swing.JComponent) ? (javax.swing.JComponent)c : null;
-            javax.swing.JComponent gp =
-                (rpc.getGlassPane() instanceof javax.swing.JComponent) ?
-                (javax.swing.JComponent)rpc.getGlassPane() : null;
-            if (gp != null) {
-                gp.setDoubleBuffered(isOpaque);
-            }
             lp.setOpaque(isOpaque);
             root.setOpaque(isOpaque);
-            root.setDoubleBuffered(isOpaque);
             if (content != null) {
                 content.setOpaque(isOpaque);
-                content.setDoubleBuffered(isOpaque);
 
                 // Iterate down one level to see whether we have a JApplet
                 // (which is also a RootPaneContainer) which requires processing
@@ -3790,8 +3803,8 @@ public class Window extends Container implements Accessible {
                 window.setBackground(new Color(bg.getRed(), bg.getGreen(), bg.getBlue(),
                                                opaque ? 255 : 0));
             }
-            public void updateWindow(Window window, BufferedImage backBuffer) {
-                window.updateWindow(backBuffer);
+            public void updateWindow(Window window) {
+                window.updateWindow();
             }
 
             public Dimension getSecurityWarningSize(Window window) {

@@ -450,7 +450,7 @@ public final class MemberName implements Member, Cloneable {
             for (;;) {
                 int bufCount = MethodHandleNatives.getMembers(defc,
                         matchName, matchSig, matchFlags,
-                        MethodHandleNatives.asNativeCaller(lookupClass),
+                        lookupClass,
                         totalCount, buf);
                 if (bufCount <= buf.length) {
                     if (bufCount >= 0)
@@ -487,14 +487,13 @@ public final class MemberName implements Member, Cloneable {
             return result;
         }
         boolean resolveInPlace(MemberName m, boolean searchSupers, Class<?> lookupClass) {
-            Class<?> caller = MethodHandleNatives.asNativeCaller(lookupClass);
-            MethodHandleNatives.resolve(m, caller);
+            MethodHandleNatives.resolve(m, lookupClass);
             if (m.isResolved())  return true;
             int matchFlags = m.flags | (searchSupers ? SEARCH_ALL_SUPERS : 0);
             String matchSig = m.getSignature();
             MemberName[] buf = { m };
             int n = MethodHandleNatives.getMembers(m.getDeclaringClass(),
-                    m.getName(), matchSig, matchFlags, caller, 0, buf);
+                    m.getName(), matchSig, matchFlags, lookupClass, 0, buf);
             if (n != 1)  return false;
             return m.isResolved();
         }

@@ -33,20 +33,26 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
 
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Initial virtual time.
+  int _worker_id;
+  int _worker_id_offset;
 
+  // The refinement threads collection is linked list. A predecessor can activate a successor
+  // when the number of the rset update buffer crosses a certain threshold. A successor
+  // would self-deactivate when the number of the buffers falls below the threshold.
+  bool _active;
+  ConcurrentG1RefineThread *       _next;
  public:
   virtual void run();
 
+  bool is_active()  { return _active;  }
+  void activate()   { _active = true;  }
+  void deactivate() { _active = false; }
+
  private:
   ConcurrentG1Refine*              _cg1r;
-  bool                             _started;
-  bool                             _in_progress;
-  volatile bool                    _restart;
 
   COTracker                        _co_tracker;
   double                           _interval_ms;
-
-  bool                             _do_traversal;
 
   void decreaseInterval(int processing_time_ms) {
     double min_interval_ms = (double) processing_time_ms;
@@ -63,16 +69,13 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
 
   void sleepBeforeNextCycle();
 
-  void traversalBasedRefinement();
-
-  void queueBasedRefinement();
-
   // For use by G1CollectedHeap, which is a friend.
   static SuspendibleThreadSet* sts() { return &_sts; }
 
  public:
   // Constructor
-  ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r);
+  ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next,
+                           int worker_id_offset, int worker_id);
 
   // Printing
   void print();
@@ -82,23 +85,11 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
 
   ConcurrentG1Refine* cg1r()                     { return _cg1r;     }
 
-
-  void            set_started()                  { _started = true;   }
-  void            clear_started()                { _started = false;  }
-  bool            started()                      { return _started;   }
-
-  void            set_in_progress()              { _in_progress = true;   }
-  void            clear_in_progress()            { _in_progress = false;  }
-  bool            in_progress()                  { return _in_progress;   }
-
-  void            set_do_traversal(bool b);
-  bool            do_traversal() { return _do_traversal; }
-
   void            sample_young_list_rs_lengths();
 
   // Yield for GC
   void            yield();
 
   // shutdown
-  static void stop();
+  void stop();
 };
