@@ -36,7 +36,8 @@
 #define LE_USE_CMEMORY
 
 #ifdef LE_USE_CMEMORY
-#include "cmemory.h"
+#include <stdlib.h>
+#include <string.h>
 #endif
 
 #ifndef _LP64

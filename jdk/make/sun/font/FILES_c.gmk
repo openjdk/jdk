@@ -24,10 +24,6 @@
 #
 
 FILES_c_shared = \
-        jbidi.c \
-        ubidi.c \
-        ubidiln.c \
-        uchardir.c \
         DrawGlyphList.c \
         sunFont.c
 
