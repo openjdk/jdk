@@ -27,15 +27,11 @@ package build.tools.charsetmapping;
 
 import java.io.*;
 import java.util.regex.*;
-import build.tools.charsetmapping.GenerateSBCS;
 import static build.tools.charsetmapping.CharsetMapping.*;
 
 public class GenerateMapping {
-    public static void main(String argv[]) throws IOException {
-        if (argv.length < 2) {
-            System.out.println("Usage: java GenerateMapping fMap fDat");
-            System.exit(1);
-        }
+
+    public static void genMapping(String argv[]) throws IOException {
         genDataJIS0213(new FileInputStream(argv[0]),
                        new FileOutputStream(argv[1]));
     }
