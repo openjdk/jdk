@@ -1049,6 +1049,17 @@ public:
   virtual void prepare_for_verify();
 
   // Perform verification.
+
+  // use_prev_marking == true  -> use "prev" marking information,
+  // use_prev_marking == false -> use "next" marking information
+  // NOTE: Only the "prev" marking information is guaranteed to be
+  // consistent most of the time, so most calls to this should use
+  // use_prev_marking == true. Currently, there is only one case where
+  // this is called with use_prev_marking == false, which is to verify
+  // the "next" marking information at the end of remark.
+  void verify(bool allow_dirty, bool silent, bool use_prev_marking);
+
+  // Override; it uses the "prev" marking information
   virtual void verify(bool allow_dirty, bool silent);
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
@@ -1125,6 +1136,18 @@ public:
   bool isMarkedPrev(oop obj) const;
   bool isMarkedNext(oop obj) const;
 
+  // use_prev_marking == true  -> use "prev" marking information,
+  // use_prev_marking == false -> use "next" marking information
+  bool is_obj_dead_cond(const oop obj,
+                        const HeapRegion* hr,
+                        const bool use_prev_marking) const {
+    if (use_prev_marking) {
+      return is_obj_dead(obj, hr);
+    } else {
+      return is_obj_ill(obj, hr);
+    }
+  }
+
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs. An object is dead
   // iff a) it was not allocated since the last mark and b) it
@@ -1162,8 +1185,19 @@ public:
   // Added if it is in permanent gen it isn't dead.
   // Added if it is NULL it isn't dead.
 
-  bool is_obj_dead(oop obj) {
-    HeapRegion* hr = heap_region_containing(obj);
+  // use_prev_marking == true  -> use "prev" marking information,
+  // use_prev_marking == false -> use "next" marking information
+  bool is_obj_dead_cond(const oop obj,
+                        const bool use_prev_marking) {
+    if (use_prev_marking) {
+      return is_obj_dead(obj);
+    } else {
+      return is_obj_ill(obj);
+    }
+  }
+
+  bool is_obj_dead(const oop obj) {
+    const HeapRegion* hr = heap_region_containing(obj);
     if (hr == NULL) {
       if (Universe::heap()->is_in_permanent(obj))
         return false;
@@ -1173,8 +1207,8 @@ public:
     else return is_obj_dead(obj, hr);
   }
 
-  bool is_obj_ill(oop obj) {
-    HeapRegion* hr = heap_region_containing(obj);
+  bool is_obj_ill(const oop obj) {
+    const HeapRegion* hr = heap_region_containing(obj);
     if (hr == NULL) {
       if (Universe::heap()->is_in_permanent(obj))
         return false;
