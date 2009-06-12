@@ -1630,15 +1630,15 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
   // Before attempting fancy unrolling, RCE or alignment, see if we want
   // to completely unroll this loop or do loop unswitching.
   if( cl->is_normal_loop() ) {
+    if (should_unswitch) {
+      phase->do_unswitching(this, old_new);
+      return true;
+    }
     bool should_maximally_unroll =  policy_maximally_unroll(phase);
     if( should_maximally_unroll ) {
       // Here we did some unrolling and peeling.  Eventually we will
       // completely unroll this loop and it will no longer be a loop.
       phase->do_maximally_unroll(this,old_new);
-      return true;
-    }
-    if (should_unswitch) {
-      phase->do_unswitching(this, old_new);
       return true;
     }
   }

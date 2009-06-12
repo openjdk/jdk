@@ -34,11 +34,8 @@ import java.nio.charset.*;
 import static build.tools.charsetmapping.CharsetMapping.*;
 
 public class GenerateSBCS {
-    public static void main(String args[]) throws Exception {
-        if (args.length < 3) {
-            System.err.println("Usage: java GenSBCS srcDir dstDir config");
-            System.exit(1);
-        }
+
+    public static void genSBCS(String args[]) throws Exception {
 
         Scanner s = new Scanner(new File(args[0], args[2]));
         while (s.hasNextLine()) {
