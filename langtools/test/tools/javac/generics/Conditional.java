@@ -27,7 +27,7 @@
  * @summary Rule for semantics of ?: in the presence of generics and generic class Class
  * @author gafter
  *
- * @compile -source 1.5 Conditional.java
+ * @compile  Conditional.java
  */
 
 package conditional;

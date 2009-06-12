@@ -27,7 +27,7 @@
  * @summary JSR175 (2): don't allow annotating members from Object
  * @author gafter
  *
- * @compile/fail -source 1.5 ObjectMembers.java
+ * @compile/fail ObjectMembers.java
  */
 
 @ObjectMembers(hashCode = 23)

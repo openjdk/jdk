@@ -27,7 +27,7 @@
  * @summary javac crash when enum defined after use
  * @author gafter
  *
- * @compile -source 1.5 EnumSwitch3.java
+ * @compile EnumSwitch3.java
  */
 
 package enumswitch3;

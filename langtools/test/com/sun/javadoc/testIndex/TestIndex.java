@@ -41,7 +41,7 @@ public class TestIndex extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-source", "1.5", "-sourcepath", SRC_DIR, "pkg", SRC_DIR + FS + "NoPackage.java"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", SRC_DIR + FS + "NoPackage.java"
     };
 
     //Input for string search tests.

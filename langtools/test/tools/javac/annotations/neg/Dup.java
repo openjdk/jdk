@@ -27,7 +27,7 @@
  * @summary JSR175 (3): don't allow repeated annotations
  * @author gafter
  *
- * @compile/fail -source 1.5 Dup.java
+ * @compile/fail Dup.java
  */
 
 @Dup

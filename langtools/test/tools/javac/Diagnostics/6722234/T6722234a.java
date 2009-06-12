@@ -1,12 +1,10 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,18 @@
  * have any questions.
  */
 
-
-package sun.tools.javap;
-
-import java.util.*;
-import java.io.*;
-
 /**
- * Strores LineNumberTable data information.
- *
- * @author  Sucheta Dambalkar (Adopted code from jdis)
+ * @test
+ * @bug     6722234
+ * @summary javac diagnostics need better integration with the type-system
+ * @author  mcimadamore
+ * @compile/fail/ref=T6722234a_1.out -XDrawDiagnostics -XDdiags=disambiguateTvars T6722234a.java
+ * @compile/fail/ref=T6722234a_2.out -XDrawDiagnostics -XDdiags=disambiguateTvars,where T6722234a.java
  */
-class LineNumData {
-    short start_pc, line_number;
 
-    public LineNumData() {}
-
-    /**
-     * Read LineNumberTable attribute.
-     */
-    public LineNumData(DataInputStream in) throws IOException {
-        start_pc = in.readShort();
-        line_number=in.readShort();
-
+class T6722234a<T extends String> {
+    <T extends Integer> void test(T t) {
+        m(t);
     }
+    void m(T t) {}
 }

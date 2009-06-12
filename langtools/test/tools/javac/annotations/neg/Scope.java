@@ -27,7 +27,7 @@
  * @summary name lookup scope for annotations
  * @author gafter
  *
- * @compile/fail -source 1.5 Scope.java
+ * @compile/fail Scope.java
  */
 
 package annotation.scope;
