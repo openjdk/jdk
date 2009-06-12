@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,28 +283,37 @@ class JSSecurityManager {
 
 
     static List getProviders(final Class providerClass) {
-        PrivilegedAction action = new PrivilegedAction() {
-                public Object run() {
-                    List p = new ArrayList();
-                    Iterator ps = Service.providers(providerClass);
-                    while (ps.hasNext()) {
-                        try {
-                            Object provider = ps.next();
-                            if (providerClass.isInstance(provider)) {
-                                // $$mp 2003-08-22
-                                // Always adding at the beginning reverses the
-                                // order of the providers. So we no longer have
-                                // to do this in AudioSystem and MidiSystem.
-                                p.add(0, provider);
-                            }
-                        } catch (Throwable t) {
-                            //$$fb 2002-11-07: do not fail on SPI not found
-                            if (Printer.err) t.printStackTrace();
-                        }                                                                  }
-                    return p;
+        List p = new ArrayList();
+        // Service.providers(Class) just creates "lazy" iterator instance,
+        // so it doesn't require do be called from privileged section
+        final Iterator ps = Service.providers(providerClass);
+
+        // the iterator's hasNext() method looks through classpath for
+        // the provider class names, so it requires read permissions
+        PrivilegedAction<Boolean> hasNextAction = new PrivilegedAction<Boolean>() {
+            public Boolean run() {
+                return ps.hasNext();
+            }
+        };
+
+        while (AccessController.doPrivileged(hasNextAction)) {
+            try {
+                // the iterator's next() method creates instances of the
+                // providers and it should be called in the current security
+                // context
+                Object provider = ps.next();
+                if (providerClass.isInstance(provider)) {
+                    // $$mp 2003-08-22
+                    // Always adding at the beginning reverses the
+                    // order of the providers. So we no longer have
+                    // to do this in AudioSystem and MidiSystem.
+                    p.add(0, provider);
                 }
-            };
-        List providers = (List) AccessController.doPrivileged(action);
-        return providers;
+            } catch (Throwable t) {
+                //$$fb 2002-11-07: do not fail on SPI not found
+                if (Printer.err) t.printStackTrace();
+            }
+        }
+        return p;
     }
 }

@@ -1005,7 +1005,7 @@ public final class URL implements java.io.Serializable {
         }
 
         // Create a copy of Proxy as a security measure
-        Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : new Proxy(proxy.type(), proxy.address());
+        Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : sun.net.ApplicationProxy.create(proxy);
         SecurityManager sm = System.getSecurityManager();
         if (p.type() != Proxy.Type.DIRECT && sm != null) {
             InetSocketAddress epoint = (InetSocketAddress) p.address();

@@ -127,7 +127,7 @@ system.scope=sun.security.provider.IdentityDatabase
 # passed to checkPackageAccess unless the
 # corresponding RuntimePermission ("accessClassInPackage."+package) has
 # been granted.
-package.access=sun.
+package.access=sun.,com.sun.imageio.
 
 #
 # List of comma-separated packages that start with or equal this string
