@@ -27,7 +27,7 @@
  * @summary when upper bounds and lower bounds collide
  * @author gafter
  *
- * @compile -source 1.5 -Werror BoundsCollision.java
+ * @compile  -Werror BoundsCollision.java
  */
 
 class StreinBug {

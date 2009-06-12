@@ -27,7 +27,7 @@
  * @summary generics: missing bridge method
  * @author gafter
  *
- * @compile -source 1.5 A.java C.java D.java E.java
+ * @compile  A.java C.java D.java E.java
  * @run main D
  */
 

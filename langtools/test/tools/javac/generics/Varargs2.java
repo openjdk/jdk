@@ -27,7 +27,7 @@
  * @summary generics + varargs API changes
  * @author gafter
  *
- * @compile -source 1.5 Varargs2.java
+ * @compile  Varargs2.java
  * @run main Varargs2
  */
 

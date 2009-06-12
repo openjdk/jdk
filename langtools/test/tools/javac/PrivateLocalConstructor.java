@@ -26,9 +26,6 @@
  * @bug 4365809
  * @summary Incorrect access method for private constructor in local class.
  * @author gafter
- *
- * @compile -source 1.4 -target 1.4 PrivateLocalConstructor.java
- * @run main PrivateLocalConstructor
  */
 
 public class PrivateLocalConstructor {

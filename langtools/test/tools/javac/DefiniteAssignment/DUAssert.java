@@ -22,12 +22,12 @@
  */
 
 /*
- * @test %E
+ * @test
  * @bug 4478838 4533580
  * @summary Check correct handling of DU in assert statements
  * @author Neal Gafter (gafter)
  *
- * @run compile -source 1.4 DUAssert.java
+ * @run compile DUAssert.java
  */
 
 class DUSwitch {

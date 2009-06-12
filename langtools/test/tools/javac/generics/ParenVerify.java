@@ -27,7 +27,7 @@
  * @summary generics: verify error when redundant parens used!
  * @author gafter
  *
- * @compile -source 1.5 ParenVerify.java
+ * @compile  ParenVerify.java
  * @run main ParenVerify
  */
 

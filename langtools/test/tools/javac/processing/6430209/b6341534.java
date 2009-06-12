@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.Set;
 
 @SupportedAnnotationTypes({"*"})
-@SupportedSourceVersion(javax.lang.model.SourceVersion.RELEASE_6)
+@SupportedSourceVersion(javax.lang.model.SourceVersion.RELEASE_7)
 public class b6341534 extends AbstractProcessor {
     static int r = 0;
     static Elements E = null;

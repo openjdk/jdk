@@ -1,12 +1,10 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,19 +21,19 @@
  * have any questions.
  */
 
-
-package sun.tools.javap;
-
 /**
- *  Stores constant pool entry information with two fields.
- *
- * @author  Sucheta Dambalkar (Adopted code from jdis)
+ * @test
+ * @bug     6722234
+ * @summary javac diagnostics need better integration with the type-system
+ * @author  mcimadamore
+ * @compile/fail/ref=T6722234c.out -XDrawDiagnostics -XDdiags=simpleNames T6722234c.java
  */
-class CPX2 {
-    int cpx1,cpx2;
 
-    CPX2 (int cpx1, int cpx2) {
-        this.cpx1=cpx1;
-        this.cpx2=cpx2;
+class T6722234c {
+    static class String {}
+    <T> void m(String s2) {}
+
+    void test() {
+        m("");
     }
 }

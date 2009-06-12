@@ -27,7 +27,7 @@
  * @summary generic class method with vararg gets "java.lang.AssertionError: arraycode T"
  * @author gafter
  *
- * @compile -source 1.5 BadSyntax2.java
+ * @compile  BadSyntax2.java
  */
 
 class Tclass<T> {

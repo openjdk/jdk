@@ -27,8 +27,8 @@
  * @summary compiler disallows raw call to generic constructor
  * @author gafter
  *
- * @compile      -source 1.5 -Werror                  UncheckedConstructor.java
- * @compile/fail -source 1.5 -Werror -Xlint:unchecked UncheckedConstructor.java
+ * @compile       -Werror                  UncheckedConstructor.java
+ * @compile/fail  -Werror -Xlint:unchecked UncheckedConstructor.java
  */
 
 import java.util.*;

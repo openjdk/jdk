@@ -27,7 +27,7 @@
  * @summary Test casts (legal, warning, and errors)
  * @author gafter
  *
- * @compile/fail -source 1.5 -Werror -Xlint:unchecked CastWarn2.java
+ * @compile/fail  -Werror -Xlint:unchecked CastWarn2.java
  */
 
 import java.util.*;

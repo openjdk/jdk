@@ -27,7 +27,7 @@
  * @summary the type in an instanceof expression must be reifiable
  * @author seligman
  *
- * @compile/fail -source 1.5 InstanceOf3.java
+ * @compile/fail  InstanceOf3.java
  */
 
 public class InstanceOf3 {

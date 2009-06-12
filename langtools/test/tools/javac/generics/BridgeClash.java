@@ -27,7 +27,7 @@
  * @summary generics: incorrect erasure clash reported
  * @author gafter
  *
- * @compile -source 1.5 BridgeClash.java
+ * @compile  BridgeClash.java
  */
 
 interface I<T> {

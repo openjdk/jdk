@@ -27,9 +27,9 @@
  * @summary raw types versus separate compilation causes type error
  * @author gafter
  *
- * @compile -source 1.5 Hashtable.java
- * @compile -source 1.5 CharScanner.java
- * @compile -source 1.5 RetroLexer.java
+ * @compile  Hashtable.java
+ * @compile  CharScanner.java
+ * @compile  RetroLexer.java
  */
 
 package parser;

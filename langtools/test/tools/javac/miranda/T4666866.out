@@ -1,4 +1,2 @@
-T4666866.java:10: t is not abstract and does not override abstract method run() in java.lang.Runnable
-class t implements Runnable {}
-^
+T4666866.java:10:1: compiler.err.does.not.override.abstract: t, run(), java.lang.Runnable
 1 error

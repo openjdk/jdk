@@ -27,9 +27,6 @@
  * @summary Verify that assertions are enabled before the class is initialized
  * and not thereafter
  * @author gafter
- *
- * @compile -source 1.4 EarlyAssert.java
- * @run main EarlyAssert
  */
 
 /*

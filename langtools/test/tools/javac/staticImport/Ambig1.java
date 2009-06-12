@@ -27,7 +27,7 @@
  * @summary Missing ambiguity error when two methods are equally specific
  * @author gafter
  *
- * @compile/fail -source 1.5 Ambig1.java
+ * @compile/fail  Ambig1.java
  */
 
 package ambig1;

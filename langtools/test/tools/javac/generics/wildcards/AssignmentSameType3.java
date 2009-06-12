@@ -25,7 +25,7 @@
  * @test
  * @summary Test subtyping for wildcards with the same type bound.
  *
- * @compile/fail -source 1.5 AssignmentSameType3.java
+ * @compile/fail  AssignmentSameType3.java
  */
 
 public class AssignmentSameType3 {
