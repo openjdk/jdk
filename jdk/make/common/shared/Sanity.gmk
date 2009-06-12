@@ -1546,8 +1546,47 @@ ifeq ($(ARCH_DATA_MODEL), 32)
 	    "" >> $(ERROR_FILE) ; \
 	fi
   endif
+	@#
+	@# Check for presence of headers required for new Java Plug-In ("plugin2")
+	@#
+	@if [ ! -r $(subst \,/,$(MOZILLA_HEADERS_PATH))/plugin2_mozilla_headers/npapi.h ]; then \
+	  $(ECHO) "ERROR: You do not have access to valid Mozilla header files for the new Java Plug-In. \n" \
+	    "      Please check your access to \n" \
+	    "          $(subst \,/,$(MOZILLA_HEADERS_PATH))/plugin2_mozilla_headers/npapi.h \n" \
+	    "      and/or check your value of ALT_JDK_DEVTOOLS_DIR, ALT_MOZILLA_HEADERS_PATH, \n" \
+	    "" >> $(ERROR_FILE) ; \
+	fi
 endif
 
+
+######################################################
+# Make sure Java Kernel VM is accessible
+######################################################
+sane-kernel-vm:
+ifeq ($(PLATFORM), windows)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+	@if [ ! -r $(HOTSPOT_KERNEL_PATH)/jvm.dll ]; then \
+	    $(ECHO) "ERROR: Your HOTSPOT_IMPORT_PATH does not include a Kernel VM... \n" \
+		    "     $(HOTSPOT_KERNEL_PATH)/jvm.dll \n" \
+		    "     Please check the value of ALT_HOTSPOT_IMPORT_PATH. \n" \
+		    >> $(ERROR_FILE) ; \
+	fi
+  endif
+endif
+
+
+######################################################
+# SECURITY_BASELINE_131 test
+######################################################
+security_baseline_131:
+ifeq ($(PLATFORM), windows)
+	@if [ -z "$(SECURITY_BASELINE_131)" ]; then \
+	    $(ECHO) "WARNING: Your SECURITY_BASELINE_131 setting is empty.\n" \
+		"        Setting it to the default value of 1.3.1_20.\n" \
+		"        It is recommended to set SECURITY_BASELINE_131.\n" \
+		"" >> $(WARNING_FILE) ; \
+	fi
+endif
 
 ######################################################
 # SECURITY_BASELINE_142 test
@@ -1571,6 +1610,19 @@ ifeq ($(PLATFORM), windows)
 	    $(ECHO) "WARNING: Your SECURITY_BASELINE_150 setting is empty.\n" \
 		"        Setting it to the default value of 1.5.0_07.\n" \
 		"        It is recommended to set SECURITY_BASELINE_150.\n" \
+		"" >> $(WARNING_FILE) ; \
+	fi
+endif
+
+######################################################
+# SECURITY_BASELINE_160 test
+######################################################
+security_baseline_160:
+ifeq ($(PLATFORM), windows)
+	@if [ -z "$(SECURITY_BASELINE_160)" ]; then \
+	    $(ECHO) "WARNING: Your SECURITY_BASELINE_160 setting is empty.\n" \
+		"        Setting it to the default value of 1.6.0_11.\n" \
+		"        It is recommended to set SECURITY_BASELINE_160.\n" \
 		"" >> $(WARNING_FILE) ; \
 	fi
 endif
