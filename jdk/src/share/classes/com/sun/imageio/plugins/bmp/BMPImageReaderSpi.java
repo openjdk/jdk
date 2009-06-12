@@ -51,7 +51,7 @@ public class BMPImageReaderSpi extends ImageReaderSpi {
               entensions,
               mimeType,
               "com.sun.imageio.plugins.bmp.BMPImageReader",
-              STANDARD_INPUT_TYPE,
+              new Class[] { ImageInputStream.class },
               writerSpiNames,
               false,
               null, null, null, null,

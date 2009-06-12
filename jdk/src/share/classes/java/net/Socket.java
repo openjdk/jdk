@@ -118,7 +118,7 @@ class Socket implements java.io.Closeable {
         if (proxy == null) {
             throw new IllegalArgumentException("Invalid Proxy");
         }
-        Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : new Proxy(proxy.type(), proxy.address());
+        Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : sun.net.ApplicationProxy.create(proxy);
         if (p.type() == Proxy.Type.SOCKS) {
             SecurityManager security = System.getSecurityManager();
             InetSocketAddress epoint = (InetSocketAddress) p.address();
