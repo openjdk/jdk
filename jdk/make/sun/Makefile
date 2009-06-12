@@ -58,7 +58,7 @@ ifdef OPENJDK
 else
   RENDER_SUBDIR = dcpr
 endif
-SUBDIRS = jar security javazic misc net audio $(RENDER_SUBDIR) image \
+SUBDIRS = jar security javazic misc jkernel net audio $(RENDER_SUBDIR) image \
 	  awt splashscreen $(XAWT_SUBDIR) \
           $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
 	  font jpeg cmm applet rmi beans $(JDBC_SUBDIR) \

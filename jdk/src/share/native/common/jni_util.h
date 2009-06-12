@@ -320,6 +320,26 @@ JNU_GetEnv(JavaVM *vm, jint version);
 #define JNU_SetLongFieldFromPtr(env,obj,id,val) \
     (*(env))->SetLongField((env),(obj),(id),ptr_to_jlong(val))
 
+/*
+ * Internal use only.
+ */
+enum {
+    NO_ENCODING_YET = 0,        /* "sun.jnu.encoding" not yet set */
+    NO_FAST_ENCODING,           /* Platform encoding is not fast */
+    FAST_8859_1,                /* ISO-8859-1 */
+    FAST_CP1252,                /* MS-DOS Cp1252 */
+    FAST_646_US                 /* US-ASCII : ISO646-US */
+};
+
+jstring nativeNewStringPlatform(JNIEnv *env, const char *str);
+
+char* nativeGetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
+
+int getFastEncoding();
+
+void initializeEncoding();
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */

@@ -518,7 +518,7 @@ ifdef ALT_INSTALL_MSSDK
   xALT_INSTALL_MSSDK :="$(subst \,/,$(ALT_INSTALL_MSSDK))"
   INSTALL_MSSDK      :=$(call FullPath,$(xALT_INSTALL_MSSDK))
 else
-  INSTALL_MSSDK      :=$(_psdk)
+  INSTALL_MSSDK      :=$(_ms_sdk)
 endif
 INSTALL_MSSDK:=$(call AltCheckSpaces,INSTALL_MSSDK)
 
@@ -645,6 +645,17 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   HOTSPOT_CLIENT_PATH:=$(call AltCheckValue,HOTSPOT_CLIENT_PATH)
 endif
 
+# HOTSPOT_KERNEL_PATH: location of kernel jvm library file.
+ifeq ($(ARCH_DATA_MODEL), 32)
+  ifdef ALT_HOTSPOT_KERNEL_PATH
+    HOTSPOT_KERNEL_PATH :=$(call FullPath,$(ALT_HOTSPOT_KERNEL_PATH))
+  else
+    HOTSPOT_KERNEL_PATH   =$(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/kernel
+  endif
+  HOTSPOT_KERNEL_PATH:=$(call AltCheckSpaces,HOTSPOT_KERNEL_PATH)
+  HOTSPOT_KERNEL_PATH:=$(call AltCheckValue,HOTSPOT_KERNEL_PATH)
+endif
+
 # HOTSPOT_SERVER_PATH: location of server jvm library file.
 ifdef ALT_HOTSPOT_SERVER_PATH
   HOTSPOT_SERVER_PATH :=$(call FullPath,$(ALT_HOTSPOT_SERVER_PATH))
@@ -663,4 +674,3 @@ else
 endif
 HOTSPOT_LIB_PATH:=$(call AltCheckSpaces,HOTSPOT_LIB_PATH)
 HOTSPOT_LIB_PATH:=$(call AltCheckValue,HOTSPOT_LIB_PATH)
-
