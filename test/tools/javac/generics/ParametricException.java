@@ -27,7 +27,7 @@
  * @summary generics: parametric exception type versus overriding
  * @author gafter
  *
- * @compile -source 1.5 ParametricException.java
+ * @compile  ParametricException.java
  */
 
 import java.io.*;

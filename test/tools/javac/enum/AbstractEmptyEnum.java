@@ -27,7 +27,7 @@
  * @summary empty enum cannot be abstract
  * @author Joseph D. Darcy
  *
- * @compile/fail -source 1.5 AbstractEmptyEnum.java
+ * @compile/fail AbstractEmptyEnum.java
  */
 
 public enum AbstractEmptyEnum {

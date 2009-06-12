@@ -26,7 +26,7 @@
  * @bug 4861743
  * @summary generics: incorrect cyclic inheritance error with type parameters
  *
- * @compile -source 1.5 CyclicInheritance3.java
+ * @compile  CyclicInheritance3.java
  */
 
 class Cycle {

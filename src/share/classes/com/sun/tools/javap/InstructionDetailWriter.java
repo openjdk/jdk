@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,35 @@
  * have any questions.
  */
 
+package com.sun.tools.javap;
 
-package sun.tools.javap;
+import com.sun.tools.classfile.Instruction;
 
-import java.util.*;
-import java.io.*;
 
-/**
- * Stores exception table data in code attribute.
+/*
+ *  Write additional details for an instruction.
  *
- * @author  Sucheta Dambalkar (Adopted code from jdis)
+ *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
+ *  you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
-class TrapData {
-    short start_pc, end_pc, handler_pc, catch_cpx;
-  int num;
-
-
-    /**
-     * Read and store exception table data in code attribute.
-     */
-    public TrapData(DataInputStream in, int num) throws IOException {
-        this.num=num;
-        start_pc = in.readShort();
-        end_pc=in.readShort();
-        handler_pc=in.readShort();
-        catch_cpx=in.readShort();
+public abstract class InstructionDetailWriter extends BasicWriter {
+    public enum Kind {
+        LOCAL_VARS("localVariables"),
+        LOCAL_VAR_TYPES("localVariableTypes"),
+        SOURCE("source"),
+        STACKMAPS("stackMaps"),
+        TRY_BLOCKS("tryBlocks");
+        Kind(String option) {
+            this.option = option;
+        }
+        final String option;
+    }
+    InstructionDetailWriter(Context context) {
+        super(context);
     }
 
-    /**
-     * returns recommended identifier
-     */
-    public String ident() {
-        return "t"+num;
-    }
-
+    abstract void writeDetails(Instruction instr);
+    void flush() { }
 }

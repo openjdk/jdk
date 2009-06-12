@@ -27,7 +27,7 @@
  * @summary generics: compiler allows T.class for type variable T
  * @author gafter
  *
- * @compile/fail -source 1.5 TyparamLit.java
+ * @compile/fail  TyparamLit.java
  */
 
 class TyparamLit<T> {

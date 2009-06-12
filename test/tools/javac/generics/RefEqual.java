@@ -28,7 +28,7 @@
  * @author gafter
  *
  * @compile -source 1.4 RefEqual.java
- * @compile/fail -source 1.5 RefEqual.java
+ * @compile/fail  RefEqual.java
  */
 
 class RefEqual {

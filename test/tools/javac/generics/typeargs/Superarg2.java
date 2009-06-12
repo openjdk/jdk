@@ -27,7 +27,7 @@
  * @summary explicit type arguments
  * @author gafter
  *
- * @compile/fail -source 1.5 Superarg2.java
+ * @compile/fail  Superarg2.java
  */
 
 // Test type mismatch on type argument for inner super constructor

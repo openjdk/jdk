@@ -26,7 +26,7 @@
  * @bug 5097250 5087624
  * @summary Finalize methods on enums must be compile time error
  * @author Peter von der Ah\u00e9
- * @compile/fail -source 5 NoFinal3.java
+ * @compile/fail NoFinal3.java
  */
 
 enum NoFinal3 {

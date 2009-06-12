@@ -27,7 +27,7 @@
  * @summary varargs versus anonymous constructors crashes javac
  * @author gafter
  *
- * @compile -source 1.5 Anon.java
+ * @compile  Anon.java
  */
 
 class Anon {

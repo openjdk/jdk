@@ -27,7 +27,7 @@
  * @summary generics: subtyping problem when type parameters permuted
  * @author gafter
  *
- * @compile -source 1.5 PermuteBound.java
+ * @compile  PermuteBound.java
  */
 
 package test.tools.javac.generics.PermuteBound;

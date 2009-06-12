@@ -27,7 +27,7 @@
  * @summary overridden interface method causes the compiler to reject cast
  * @author gafter
  *
- * @compile -source 1.5 InterfaceCast1.java
+ * @compile  InterfaceCast1.java
  */
 
 public class InterfaceCast1 {

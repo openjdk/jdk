@@ -27,7 +27,7 @@
  * @summary Negative regression test from odersky
  * @author odersky
  *
- * @compile/fail -source 1.5 BadTest.java
+ * @compile/fail  BadTest.java
  */
 
 class BadTest {

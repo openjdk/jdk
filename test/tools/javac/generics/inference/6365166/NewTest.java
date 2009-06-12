@@ -25,7 +25,6 @@
  * @test
  * @bug     6365166
  * @summary javac (generic) unable to resolve methods
- * @ignore  waiting for 6365166
  * @compile NewTest.java
  */
 

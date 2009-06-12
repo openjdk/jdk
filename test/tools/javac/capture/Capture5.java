@@ -27,7 +27,7 @@
  * @summary wildcards versus recursive F-bounds
  * @author Peter von der Ahe
  *
- * @compile -source 1.5 Capture5.java
+ * @compile Capture5.java
  */
 
 package capture5;
