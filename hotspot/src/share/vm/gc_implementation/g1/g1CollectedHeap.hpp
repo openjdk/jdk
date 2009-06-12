@@ -59,6 +59,9 @@ class ConcurrentZFThread;
 typedef GenericTaskQueue<oop*>    RefToScanQueue;
 typedef GenericTaskQueueSet<oop*> RefToScanQueueSet;
 
+typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
+typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
+
 enum G1GCThreadGroups {
   G1CRGroup = 0,
   G1ZFGroup = 1,
