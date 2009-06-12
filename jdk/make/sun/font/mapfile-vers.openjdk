@@ -33,8 +33,6 @@ SUNWprivate_1.1 {
                 newLayoutTableCache; 
                 freeLayoutTableCache;
                 isNullScalerContext;
-		Java_java_text_Bidi_nativeBidiChars;
-		Java_java_text_Bidi_nativeGetDirectionCode;
                 Java_sun_font_NullFontScaler_getNullScalerContext;
                 Java_sun_font_NullFontScaler_getGlyphImage;
                 Java_sun_font_FontManager_getPlatformFontVar;
