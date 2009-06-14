@@ -29,6 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.io.*;
 
+import sun.misc.JavaLangAccess;
+import sun.misc.SharedSecrets;
+
 /**
  * LogRecord objects are used to pass logging requests between
  * the logging framework and individual log Handlers.
@@ -522,29 +525,31 @@ public class LogRecord implements java.io.Serializable {
     // Private method to infer the caller's class and method names
     private void inferCaller() {
         needToInferCaller = false;
-        // Get the stack trace.
-        StackTraceElement stack[] = (new Throwable()).getStackTrace();
-        // First, search back to a method in the Logger class.
-        int ix = 0;
-        while (ix < stack.length) {
-            StackTraceElement frame = stack[ix];
+        JavaLangAccess access = SharedSecrets.getJavaLangAccess();
+        Throwable throwable = new Throwable();
+        int depth = access.getStackTraceDepth(throwable);
+
+        String logClassName = "java.util.logging.Logger";
+        boolean lookingForLogger = true;
+        for (int ix = 0; ix < depth; ix++) {
+            // Calling getStackTraceElement directly prevents the VM
+            // from paying the cost of building the entire stack frame.
+            StackTraceElement frame =
+                access.getStackTraceElement(throwable, ix);
             String cname = frame.getClassName();
-            if (cname.equals("java.util.logging.Logger")) {
-                break;
+            if (lookingForLogger) {
+                // Skip all frames until we have found the first logger frame.
+                if (cname.equals(logClassName)) {
+                    lookingForLogger = false;
+                }
+            } else {
+                if (!cname.equals(logClassName)) {
+                    // We've found the relevant frame.
+                    setSourceClassName(cname);
+                    setSourceMethodName(frame.getMethodName());
+                    return;
+                }
             }
-            ix++;
-        }
-        // Now search for the first frame before the "Logger" class.
-        while (ix < stack.length) {
-            StackTraceElement frame = stack[ix];
-            String cname = frame.getClassName();
-            if (!cname.equals("java.util.logging.Logger")) {
-                // We've found the relevant frame.
-                setSourceClassName(cname);
-                setSourceMethodName(frame.getMethodName());
-                return;
-            }
-            ix++;
         }
         // We haven't found a suitable frame, so just punt.  This is
         // OK as we are only committed to making a "best effort" here.
