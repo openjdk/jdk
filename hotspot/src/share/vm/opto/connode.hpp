@@ -636,22 +636,62 @@ class MoveD2LNode : public Node {
   virtual const Type* Value( PhaseTransform *phase ) const;
 };
 
-//---------- PopCountINode -----------------------------------------------------
-// Population count (bit count) of an integer.
-class PopCountINode : public Node {
+//---------- CountBitsNode -----------------------------------------------------
+class CountBitsNode : public Node {
 public:
-  PopCountINode(Node* in1) : Node(0, in1) {}
-  virtual int Opcode() const;
+  CountBitsNode(Node* in1) : Node(0, in1) {}
   const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
+//---------- CountLeadingZerosINode --------------------------------------------
+// Count leading zeros (0-bit count starting from MSB) of an integer.
+class CountLeadingZerosINode : public CountBitsNode {
+public:
+  CountLeadingZerosINode(Node* in1) : CountBitsNode(in1) {}
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseTransform* phase) const;
+};
+
+//---------- CountLeadingZerosLNode --------------------------------------------
+// Count leading zeros (0-bit count starting from MSB) of a long.
+class CountLeadingZerosLNode : public CountBitsNode {
+public:
+  CountLeadingZerosLNode(Node* in1) : CountBitsNode(in1) {}
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseTransform* phase) const;
+};
+
+//---------- CountTrailingZerosINode -------------------------------------------
+// Count trailing zeros (0-bit count starting from LSB) of an integer.
+class CountTrailingZerosINode : public CountBitsNode {
+public:
+  CountTrailingZerosINode(Node* in1) : CountBitsNode(in1) {}
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseTransform* phase) const;
+};
+
+//---------- CountTrailingZerosLNode -------------------------------------------
+// Count trailing zeros (0-bit count starting from LSB) of a long.
+class CountTrailingZerosLNode : public CountBitsNode {
+public:
+  CountTrailingZerosLNode(Node* in1) : CountBitsNode(in1) {}
+  virtual int Opcode() const;
+  virtual const Type* Value(PhaseTransform* phase) const;
+};
+
+//---------- PopCountINode -----------------------------------------------------
+// Population count (bit count) of an integer.
+class PopCountINode : public CountBitsNode {
+public:
+  PopCountINode(Node* in1) : CountBitsNode(in1) {}
+  virtual int Opcode() const;
+};
+
 //---------- PopCountLNode -----------------------------------------------------
 // Population count (bit count) of a long.
-class PopCountLNode : public Node {
+class PopCountLNode : public CountBitsNode {
 public:
-  PopCountLNode(Node* in1) : Node(0, in1) {}
+  PopCountLNode(Node* in1) : CountBitsNode(in1) {}
   virtual int Opcode() const;
-  const Type* bottom_type() const { return TypeInt::INT; }
-  virtual uint ideal_reg() const { return Op_RegI; }
 };

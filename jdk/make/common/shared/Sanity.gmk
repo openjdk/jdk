@@ -194,7 +194,8 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-outputdir \
 	sane-alt_bootdir \
 	sane-bootdir \
-        sane-cups \
+	sane-local-bootdir \
+	sane-cups \
 	sane-devtools_path \
 	sane-compiler_path \
 	sane-unixcommand_path \
@@ -765,6 +766,23 @@ sane-bootdir:
 	    "      Please update your ALT_BOOTDIR setting and start your build again. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
+
+######################################################
+# BOOTDIR is recommended to reside on a local drive
+######################################################
+sane-local-bootdir:
+ifeq ($(PLATFORM), windows)
+	@if [ `$(ECHO) $(BOOTDIR) | $(EGREP) -ci '^J:'` -ne 0 ]; then \
+	  $(ECHO) "WARNING: Your BOOTDIR is located on the J: drive. Often the J:\n" \
+	    "        drive is mapped over a network. Using a mapped drive for\n" \
+	    "        the BOOTDIR may significantly slow down the build process.\n" \
+	    "        You may want to consider using the ALT_BOOTDIR variable\n" \
+	    "        to point the build to another location for the BOOTDIR instead. \n" \
+	    "        Your current BOOTDIR is:\n" \
+	    "           $(BOOTDIR) \n" \
+	    "" >> $(WARNING_FILE) ; \
+	fi
+endif
 
 ######################################################
 # CACERTS_FILE must be absoulte path and readable

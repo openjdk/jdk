@@ -128,6 +128,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XlibWrapper_SetToolkitErrorHandler;
         Java_sun_awt_X11_XlibWrapper_XSetErrorHandler;
         Java_sun_awt_X11_XlibWrapper_CallErrorHandler;
+        Java_sun_awt_X11_XlibWrapper_PrintXErrorEvent;
         Java_sun_awt_X11_XlibWrapper_XInternAtoms;
         Java_sun_awt_X11_XlibWrapper_XChangeWindowAttributes;
         Java_sun_awt_X11_XlibWrapper_XDeleteProperty;
@@ -154,7 +155,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XRobotPeer_mouseReleaseImpl;
         Java_sun_awt_X11_XRobotPeer_mouseWheelImpl;
         Java_sun_awt_X11_XRobotPeer_setup;
-        Java_sun_awt_X11_XRobotPeer_getNumberOfButtonsImpl;
+        Java_sun_awt_X11_XToolkit_getNumberOfButtonsImpl;
         Java_java_awt_Component_initIDs;
         Java_java_awt_Container_initIDs;
         Java_java_awt_Button_initIDs;
@@ -276,7 +277,6 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XToolkit_getDefaultXColormap;
         Java_sun_awt_X11_XToolkit_getDefaultScreenData;
         Java_sun_awt_X11_XToolkit_getEnv;
-        Java_sun_awt_X11_XToolkit_setNoisyXErrorHandler;
         Java_sun_awt_X11_XlibWrapper_XCreateBitmapFromData;
         Java_sun_awt_X11_XlibWrapper_XFreePixmap;
         Java_sun_awt_X11_XlibWrapper_XAllocColor;

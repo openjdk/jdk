@@ -32,6 +32,13 @@
 
 <project name="langtools" default="build" basedir="..">
     
+    <!-- Force full debuginfo for javac if the debug.classfiles
+    property is set.  This must be BEFORE the include of
+    build.properties because it sets javac.debuglevel.  -->
+    <condition property="javac.debuglevel" value="source,lines,vars">
+        <equals arg1="${debug.classfiles}" arg2="true"/>
+    </condition>
+
     <!-- The following locations can be used to override default property values. -->
 
     <!-- Use this location for customizations specific to this instance of this workspace -->

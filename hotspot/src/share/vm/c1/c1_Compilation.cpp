@@ -319,7 +319,7 @@ void Compilation::compile_method() {
     return;
   }
 
-  if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
+  if (_env->jvmti_can_hotswap_or_post_breakpoint()) {
     // We can assert evol_method because method->can_be_compiled is true.
     dependency_recorder()->assert_evol_method(method());
   }
@@ -435,7 +435,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
   assert(_arena == NULL, "shouldn't only one instance of Compilation in existence at a time");
   _arena = Thread::current()->resource_area();
   _compilation = this;
-  _needs_debug_information = JvmtiExport::can_examine_or_deopt_anywhere() ||
+  _needs_debug_information = _env->jvmti_can_examine_or_deopt_anywhere() ||
                                JavaMonitorsInStackTrace || AlwaysEmitDebugInfo || DeoptimizeALot;
   _exception_info_list = new ExceptionInfoList();
   _implicit_exception_table.set_size(0);

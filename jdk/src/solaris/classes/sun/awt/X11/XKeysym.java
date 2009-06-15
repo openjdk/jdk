@@ -29,6 +29,9 @@ package sun.awt.X11;
 import java.util.Hashtable;
 import sun.misc.Unsafe;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class XKeysym {
 
     public static void main( String args[] ) {
@@ -67,6 +70,7 @@ public class XKeysym {
     static Hashtable<Integer, Long> javaKeycode2KeysymHash = new Hashtable<Integer, Long>();
     static long keysym_lowercase = unsafe.allocateMemory(Native.getLongSize());
     static long keysym_uppercase = unsafe.allocateMemory(Native.getLongSize());
+    private static Logger keyEventLog = Logger.getLogger("sun.awt.X11.kye.XKeysym");
     public static char convertKeysym( long ks, int state ) {
 
         /* First check for Latin-1 characters (1:1 mapping) */
@@ -107,8 +111,15 @@ public class XKeysym {
                 // clearly means that caller needs a so called primary keysym.
                 mods ^= XConstants.ShiftMask;
             }
-            XlibWrapper.XkbTranslateKeyCode(XToolkit.getXKBKbdDesc(), ev.get_keycode(),
+            long kbdDesc = XToolkit.getXKBKbdDesc();
+            if( kbdDesc != 0 ) {
+                XlibWrapper.XkbTranslateKeyCode(kbdDesc, ev.get_keycode(),
                        mods, XlibWrapper.iarg1, XlibWrapper.larg3);
+            }else{
+                // xkb resources already gone
+                keyEventLog.fine("Thread race: Toolkit shutdown before the end of a key event processing.");
+                return 0;
+            }
             //XXX unconsumed modifiers?
             return Native.getLong(XlibWrapper.larg3);
         } finally {

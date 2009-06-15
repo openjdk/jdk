@@ -94,6 +94,21 @@ $(shell \
   fi)
 endef
 
+# Select a directory if it exists, or the alternate 2, or the alternate 3, or the alternate 4
+define DirExists4
+$(shell \
+  if [ -d "$1" ]; then  \
+    echo "$1"; \
+  elif [ -d "$2" ]; then \
+    echo "$2"; \
+  elif [ -d "$3" ]; then \
+    echo "$3"; \
+  else \
+    echo "$4"; \
+  fi)
+endef
+
+
 # Select a writable directory if it exists and is writable, or the alternate
 define WriteDirExists
 $(shell \
@@ -356,10 +371,15 @@ endif
 
 # BOOTDIR: Bootstrap JDK, previous released JDK.
 #   _BOOTDIR1 and _BOOTDIR2 picked by platform
+#   Platform may optionally define _BOOTDIR3 as well.
 ifdef ALT_BOOTDIR
   BOOTDIR =$(ALT_BOOTDIR)
 else
-  BOOTDIR  :=$(call DirExists,$(_BOOTDIR1),$(_BOOTDIR2),/NO_BOOTDIR)
+  ifdef _BOOTDIR3
+    BOOTDIR  :=$(call DirExists4,$(_BOOTDIR1),$(_BOOTDIR2),$(_BOOTDIR3),/NO_BOOTDIR)
+  else
+    BOOTDIR  :=$(call DirExists,$(_BOOTDIR1),$(_BOOTDIR2),/NO_BOOTDIR)
+  endif
 endif
 export BOOTDIR
 BOOTDIR:=$(call AltCheckSpaces,BOOTDIR)

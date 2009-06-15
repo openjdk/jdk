@@ -757,6 +757,14 @@ private:
   void andpd(XMMRegister dst, Address src);
   void andpd(XMMRegister dst, XMMRegister src);
 
+  void bsfl(Register dst, Register src);
+  void bsrl(Register dst, Register src);
+
+#ifdef _LP64
+  void bsfq(Register dst, Register src);
+  void bsrq(Register dst, Register src);
+#endif
+
   void bswapl(Register reg);
 
   void bswapq(Register reg);
@@ -1060,6 +1068,12 @@ private:
   }
 
   void lock();
+
+  void lzcntl(Register dst, Register src);
+
+#ifdef _LP64
+  void lzcntq(Register dst, Register src);
+#endif
 
   enum Membar_mask_bits {
     StoreStore = 1 << 3,
