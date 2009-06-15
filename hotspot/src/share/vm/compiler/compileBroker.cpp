@@ -1530,6 +1530,12 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     assert(thread->env() == &ci_env, "set by ci_env");
     // The thread-env() field is cleared in ~CompileTaskWrapper.
 
+    // Cache Jvmti state
+    ci_env.cache_jvmti_state();
+
+    // Cache DTrace flags
+    ci_env.cache_dtrace_flags();
+
     ciMethod* target = ci_env.get_method_from_handle(target_handle);
 
     TraceTime t1("compilation", &time);

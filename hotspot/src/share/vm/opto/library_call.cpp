@@ -222,6 +222,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_CAS(BasicType type);
   bool inline_unsafe_ordered_store(BasicType type);
   bool inline_fp_conversions(vmIntrinsics::ID id);
+  bool inline_numberOfLeadingZeros(vmIntrinsics::ID id);
+  bool inline_numberOfTrailingZeros(vmIntrinsics::ID id);
   bool inline_bitCount(vmIntrinsics::ID id);
   bool inline_reverseBytes(vmIntrinsics::ID id);
 };
@@ -629,6 +631,14 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_doubleToLongBits:
   case vmIntrinsics::_longBitsToDouble:
     return inline_fp_conversions(intrinsic_id());
+
+  case vmIntrinsics::_numberOfLeadingZeros_i:
+  case vmIntrinsics::_numberOfLeadingZeros_l:
+    return inline_numberOfLeadingZeros(intrinsic_id());
+
+  case vmIntrinsics::_numberOfTrailingZeros_i:
+  case vmIntrinsics::_numberOfTrailingZeros_l:
+    return inline_numberOfTrailingZeros(intrinsic_id());
 
   case vmIntrinsics::_bitCount_i:
   case vmIntrinsics::_bitCount_l:
@@ -1844,6 +1854,48 @@ inline Node* LibraryCallKit::make_unsafe_address(Node* base, Node* offset) {
   }
 }
 
+//-------------------inline_numberOfLeadingZeros_int/long-----------------------
+// inline int Integer.numberOfLeadingZeros(int)
+// inline int Long.numberOfLeadingZeros(long)
+bool LibraryCallKit::inline_numberOfLeadingZeros(vmIntrinsics::ID id) {
+  assert(id == vmIntrinsics::_numberOfLeadingZeros_i || id == vmIntrinsics::_numberOfLeadingZeros_l, "not numberOfLeadingZeros");
+  if (id == vmIntrinsics::_numberOfLeadingZeros_i && !Matcher::match_rule_supported(Op_CountLeadingZerosI)) return false;
+  if (id == vmIntrinsics::_numberOfLeadingZeros_l && !Matcher::match_rule_supported(Op_CountLeadingZerosL)) return false;
+  _sp += arg_size();  // restore stack pointer
+  switch (id) {
+  case vmIntrinsics::_numberOfLeadingZeros_i:
+    push(_gvn.transform(new (C, 2) CountLeadingZerosINode(pop())));
+    break;
+  case vmIntrinsics::_numberOfLeadingZeros_l:
+    push(_gvn.transform(new (C, 2) CountLeadingZerosLNode(pop_pair())));
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+  return true;
+}
+
+//-------------------inline_numberOfTrailingZeros_int/long----------------------
+// inline int Integer.numberOfTrailingZeros(int)
+// inline int Long.numberOfTrailingZeros(long)
+bool LibraryCallKit::inline_numberOfTrailingZeros(vmIntrinsics::ID id) {
+  assert(id == vmIntrinsics::_numberOfTrailingZeros_i || id == vmIntrinsics::_numberOfTrailingZeros_l, "not numberOfTrailingZeros");
+  if (id == vmIntrinsics::_numberOfTrailingZeros_i && !Matcher::match_rule_supported(Op_CountTrailingZerosI)) return false;
+  if (id == vmIntrinsics::_numberOfTrailingZeros_l && !Matcher::match_rule_supported(Op_CountTrailingZerosL)) return false;
+  _sp += arg_size();  // restore stack pointer
+  switch (id) {
+  case vmIntrinsics::_numberOfTrailingZeros_i:
+    push(_gvn.transform(new (C, 2) CountTrailingZerosINode(pop())));
+    break;
+  case vmIntrinsics::_numberOfTrailingZeros_l:
+    push(_gvn.transform(new (C, 2) CountTrailingZerosLNode(pop_pair())));
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+  return true;
+}
+
 //----------------------------inline_bitCount_int/long-----------------------
 // inline int Integer.bitCount(int)
 // inline int Long.bitCount(long)
@@ -2541,7 +2593,8 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   Node* p = basic_plus_adr(top()/*!oop*/, tls_ptr, in_bytes(JavaThread::osthread_offset()));
   Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS);
   p = basic_plus_adr(top()/*!oop*/, osthread, in_bytes(OSThread::interrupted_offset()));
-  Node* int_bit = make_load(NULL, p, TypeInt::BOOL, T_INT);
+  // Set the control input on the field _interrupted read to prevent it floating up.
+  Node* int_bit = make_load(control(), p, TypeInt::BOOL, T_INT);
   Node* cmp_bit = _gvn.transform( new (C, 3) CmpINode(int_bit, intcon(0)) );
   Node* bol_bit = _gvn.transform( new (C, 2) BoolNode(cmp_bit, BoolTest::ne) );
 

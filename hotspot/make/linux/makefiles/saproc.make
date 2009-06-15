@@ -43,6 +43,11 @@ SAMAPFILE = $(SASRCDIR)/mapfile
 
 DEST_SAPROC = $(JDK_LIBDIR)/$(LIBSAPROC)
 
+# DEBUG_BINARIES overrides everything, use full -g debug information
+ifeq ($(DEBUG_BINARIES), true)
+  SA_DEBUG_CFLAGS = -g
+endif
+
 # if $(AGENT_DIR) does not exist, we don't build SA
 # also, we don't build SA on Itanium.
 
@@ -67,6 +72,7 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           -I$(BOOT_JAVA_HOME)/include/$(Platform_os_family)    \
 	           $(SASRCFILES)                                        \
 	           $(SA_LFLAGS)                                         \
+	           $(SA_DEBUG_CFLAGS)                                   \
 	           -o $@                                                \
 	           -lthread_db
 
