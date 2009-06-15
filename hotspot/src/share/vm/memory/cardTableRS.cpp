@@ -33,12 +33,8 @@ CardTableRS::CardTableRS(MemRegion whole_heap,
 {
 #ifndef SERIALGC
   if (UseG1GC) {
-    if (G1RSBarrierUseQueue) {
       _ct_bs = new G1SATBCardTableLoggingModRefBS(whole_heap,
                                                   max_covered_regions);
-    } else {
-      _ct_bs = new G1SATBCardTableModRefBS(whole_heap, max_covered_regions);
-    }
   } else {
     _ct_bs = new CardTableModRefBSForCTRS(whole_heap, max_covered_regions);
   }

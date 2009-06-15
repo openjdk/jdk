@@ -105,9 +105,10 @@ public abstract class TranslucentWindowPainter {
     }
 
     /**
-     * Creates (if needed), clears and returns the buffer for this painter.
+     * Creates (if needed), clears (if requested) and returns the buffer
+     * for this painter.
      */
-    protected abstract Image getBackBuffer();
+    protected abstract Image getBackBuffer(boolean clear);
 
     /**
      * Updates the the window associated with this painter with the contents
@@ -123,31 +124,16 @@ public abstract class TranslucentWindowPainter {
     public abstract void flush();
 
     /**
-     * Updates the window associated with the painter given the passed image.
-     * If the passed image is null the painter will use its own buffer for
-     * rendering the contents of the window into it and updating the window.
+     * Updates the window associated with the painter.
      *
-     * If the passed buffer has dimensions different from the window, it is
-     * copied into the internal buffer first and the latter is used to update
-     * the window.
-     *
-     * @param bb the image to update the non opaque window with, or null.
-     * If not null, the image must be of ARGB_PRE type.
+     * @param repaint indicates if the window should be completely repainted
+     * to the back buffer using {@link java.awt.Window#paintAll} before update.
      */
-    public void updateWindow(Image bb) {
+    public void updateWindow(boolean repaint) {
         boolean done = false;
-        if (bb != null && (window.getWidth()  != bb.getWidth(null) ||
-                           window.getHeight() != bb.getHeight(null)))
-        {
-            Image ourBB = getBackBuffer();
-            Graphics2D g = (Graphics2D)ourBB.getGraphics();
-            g.drawImage(bb, 0, 0, null);
-            g.dispose();
-            bb = ourBB;
-        }
-        do {
-            if (bb == null) {
-                bb = getBackBuffer();
+        Image bb = getBackBuffer(repaint);
+        while (!done) {
+            if (repaint) {
                 Graphics2D g = (Graphics2D)bb.getGraphics();
                 try {
                     window.paintAll(g);
@@ -156,17 +142,12 @@ public abstract class TranslucentWindowPainter {
                 }
             }
 
-            peer.paintAppletWarning((Graphics2D)bb.getGraphics(),
-                                    bb.getWidth(null), bb.getHeight(null));
-
             done = update(bb);
-            // in case they passed us a lost VI, next time around we'll use our
-            // own bb because we can not validate and restore the contents of
-            // their VI
             if (!done) {
-                bb = null;
+                repaint = true;
+                bb = getBackBuffer(true);
             }
-        } while (!done);
+        }
     }
 
     private static final Image clearImage(Image bb) {
@@ -190,30 +171,24 @@ public abstract class TranslucentWindowPainter {
      * method (VI, BI, regular Images).
      */
     private static class BIWindowPainter extends TranslucentWindowPainter {
-        private WeakReference<BufferedImage> biRef;
+        private BufferedImage backBuffer;
 
         protected BIWindowPainter(WWindowPeer peer) {
             super(peer);
         }
 
-        private BufferedImage getBIBackBuffer() {
+        @Override
+        protected Image getBackBuffer(boolean clear) {
             int w = window.getWidth();
             int h = window.getHeight();
-            BufferedImage bb = biRef == null ? null : biRef.get();
-            if (bb == null || bb.getWidth() != w || bb.getHeight() != h) {
-                if (bb != null) {
-                    bb.flush();
-                    bb = null;
-                }
-                bb = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
-                biRef = new WeakReference<BufferedImage>(bb);
+            if (backBuffer == null ||
+                backBuffer.getWidth() != w ||
+                backBuffer.getHeight() != h)
+            {
+                flush();
+                backBuffer = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
             }
-            return (BufferedImage)clearImage(bb);
-        }
-
-        @Override
-        protected Image getBackBuffer() {
-            return getBIBackBuffer();
+            return clear ? (BufferedImage)clearImage(backBuffer) : backBuffer;
         }
 
         @Override
@@ -246,10 +221,7 @@ public abstract class TranslucentWindowPainter {
             }
 
             // copy the passed image into our own buffer, then upload
-            BufferedImage bi = getBIBackBuffer();
-            Graphics2D g = (Graphics2D)bi.getGraphics();
-            g.setComposite(AlphaComposite.Src);
-            g.drawImage(bb, 0, 0, null);
+            BufferedImage bi = (BufferedImage)clearImage(backBuffer);
 
             int data[] =
                 ((DataBufferInt)bi.getRaster().getDataBuffer()).getData();
@@ -259,8 +231,9 @@ public abstract class TranslucentWindowPainter {
         }
 
         public void flush() {
-            if (biRef != null) {
-                biRef.clear();
+            if (backBuffer != null) {
+                backBuffer.flush();
+                backBuffer = null;
             }
         }
     }
@@ -271,27 +244,22 @@ public abstract class TranslucentWindowPainter {
      * Java heap-based buffer (which is then uploaded to the layered window)
      */
     private static class VIWindowPainter extends BIWindowPainter {
-        private WeakReference<VolatileImage> viRef;
+        private VolatileImage viBB;
 
         protected VIWindowPainter(WWindowPeer peer) {
             super(peer);
         }
 
         @Override
-        protected Image getBackBuffer() {
+        protected Image getBackBuffer(boolean clear) {
             int w = window.getWidth();
             int h = window.getHeight();
             GraphicsConfiguration gc = peer.getGraphicsConfiguration();
 
-            VolatileImage viBB = viRef == null ? null : viRef.get();
-
             if (viBB == null || viBB.getWidth() != w || viBB.getHeight() != h ||
                 viBB.validate(gc) == IMAGE_INCOMPATIBLE)
             {
-                if (viBB != null) {
-                    viBB.flush();
-                    viBB = null;
-                }
+                flush();
 
                 if (gc instanceof AccelGraphicsConfig) {
                     AccelGraphicsConfig agc = ((AccelGraphicsConfig)gc);
@@ -303,21 +271,16 @@ public abstract class TranslucentWindowPainter {
                     viBB = gc.createCompatibleVolatileImage(w, h, TRANSLUCENT);
                 }
                 viBB.validate(gc);
-                viRef = new WeakReference<VolatileImage>(viBB);
             }
 
-            return clearImage(viBB);
+            return clear ? clearImage(viBB) : viBB;
         }
 
         @Override
         public void flush() {
-            if (viRef != null) {
-                VolatileImage viBB = viRef.get();
-                if (viBB != null) {
-                    viBB.flush();
-                    viBB = null;
-                }
-                viRef.clear();
+            if (viBB != null) {
+                viBB.flush();
+                viBB = null;
             }
         }
     }

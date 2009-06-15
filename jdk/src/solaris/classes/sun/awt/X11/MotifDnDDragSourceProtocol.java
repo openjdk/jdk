@@ -184,7 +184,7 @@ class MotifDnDDragSourceProtocol extends XDragSourceProtocol
                                      XConstants.AnyPropertyType);
 
         try {
-            int status = wpg.execute(XToolkit.IgnoreBadWindowHandler);
+            int status = wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
             /*
              * DragICCI.h:
