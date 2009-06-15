@@ -1745,6 +1745,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       fprintf(fp,"    del_req(i);\n");
       fprintf(fp,"  }\n");
       fprintf(fp,"  _num_opnds = %d;\n", new_num_opnds);
+      assert(new_num_opnds == node->num_unique_opnds(), "what?");
     }
   }
 
@@ -3761,6 +3762,12 @@ bool InstructForm::define_cisc_version(ArchDesc &AD, FILE *fp_cpp) {
     if ( this->captures_bottom_type() ) {
       fprintf(fp_cpp, "  node->_bottom_type = bottom_type();\n");
     }
+
+    uint cur_num_opnds = num_opnds();
+    if (cur_num_opnds > 1 && cur_num_opnds != num_unique_opnds()) {
+      fprintf(fp_cpp,"  node->_num_opnds = %d;\n", num_unique_opnds());
+    }
+
     fprintf(fp_cpp, "\n");
     fprintf(fp_cpp, "  // Copy _idx, inputs and operands to new node\n");
     fprintf(fp_cpp, "  fill_new_machnode(node, C);\n");

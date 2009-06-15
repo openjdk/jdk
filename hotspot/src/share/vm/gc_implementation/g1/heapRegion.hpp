@@ -227,6 +227,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // next region in the young "generation" region set
   HeapRegion* _next_young_region;
 
+  // Next region whose cards need cleaning
+  HeapRegion* _next_dirty_cards_region;
+
   // For parallel heapRegion traversal.
   jint _claimed;
 
@@ -467,6 +470,11 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_next_young_region(HeapRegion* hr) {
     _next_young_region = hr;
   }
+
+  HeapRegion* get_next_dirty_cards_region() const { return _next_dirty_cards_region; }
+  HeapRegion** next_dirty_cards_region_addr() { return &_next_dirty_cards_region; }
+  void set_next_dirty_cards_region(HeapRegion* hr) { _next_dirty_cards_region = hr; }
+  bool is_on_dirty_cards_region_list() const { return get_next_dirty_cards_region() != NULL; }
 
   // Allows logical separation between objects allocated before and after.
   void save_marks();
