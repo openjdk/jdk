@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -624,7 +624,6 @@ public class MToolkit extends UNIXToolkit implements Runnable {
     }
 
     private native int getMulticlickTime();
-    private native int getNumMouseButtons();
 
     protected void initializeDesktopProperties() {
         desktopProperties.put("DnD.Autoscroll.initialDelay",     Integer.valueOf(50));
@@ -643,7 +642,7 @@ public class MToolkit extends UNIXToolkit implements Runnable {
             desktopProperties.put("awt.multiClickInterval",
                                   Integer.valueOf(getMulticlickTime()));
             desktopProperties.put("awt.mouse.numButtons",
-                                  Integer.valueOf(getNumMouseButtons()));
+                                  Integer.valueOf(getNumberOfButtons()));
         }
     }
 

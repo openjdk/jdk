@@ -95,6 +95,22 @@ public class X11PMBlitLoops extends Blit {
             new X11PMBlitLoops(X11SurfaceData.UShortIndexedX11_BM,
                                X11SurfaceData.UShortIndexedX11, true),
 
+            new X11PMBlitLoops(X11SurfaceData.IntRgbX11,
+                               X11SurfaceData.IntArgbPreX11, true),
+            new X11PMBlitLoops(X11SurfaceData.IntRgbX11,
+                               X11SurfaceData.IntArgbPreX11, false),
+            new X11PMBlitLoops(X11SurfaceData.IntRgbX11_BM,
+                               X11SurfaceData.IntArgbPreX11, true),
+
+            new X11PMBlitLoops(X11SurfaceData.IntBgrX11,
+                               X11SurfaceData.FourByteAbgrPreX11, true),
+            new X11PMBlitLoops(X11SurfaceData.IntBgrX11,
+                               X11SurfaceData.FourByteAbgrPreX11, false),
+            new X11PMBlitLoops(X11SurfaceData.IntBgrX11_BM,
+                               X11SurfaceData.FourByteAbgrPreX11, true),
+
+
+
             // delegate loops
             new DelegateBlitLoop(X11SurfaceData.IntBgrX11_BM,
                                  X11SurfaceData.IntBgrX11),
