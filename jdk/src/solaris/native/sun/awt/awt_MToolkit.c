@@ -1926,26 +1926,6 @@ processOneEvent(XtInputMask iMask) {
               XtAppProcessEvent(awt_appContext, iMask & ~XtIMXEvent);
             }
 
-            /*
-            ** Bug #4361799: Forte4J sometimes crashes on Solaris:
-            ** There is an underlying bug in Selection.c in Xt lib.
-            ** The routine HandleSelectionEvents, can call EndProtectedSection()
-            ** more than  StartProtectedSection(), and then EndProtectedSection
-            ** will restore the default XError handler.  As a result awt's
-            ** XError handler gets removed and we later crash on an XError.
-            **
-            ** This happens when we call XtAppProcessEvent with event type 1e
-            ** (SelectionRequest) when running two copies of Forte
-            **
-            ** XSetErrorHandler can safely be called repeatedly, so we are
-            ** fixing this with the sledgehammer, and resetting our XError
-            ** handler every time through the loop:
-            */
-            {
-                extern int32_t xerror_handler();
-                XSetErrorHandler(xerror_handler);
-            }
-
 } /* processOneEvent() */
 
 /*
@@ -3184,21 +3164,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_motif_MToolkit_getMulticlickTime
   (JNIEnv *env, jobject this)
 {
     return awt_multiclick_time;
-}
-
-/*
- * Class:     sun_awt_motif_MToolkit
- * Method:    getNumMouseButtons
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_sun_awt_motif_MToolkit_getNumMouseButtons
-  (JNIEnv *env, jobject this)
-{
-    jint res = 0;
-    AWT_LOCK();
-    res = XGetPointerMapping(awt_display, NULL, 0);
-    AWT_UNLOCK();
-    return res;
 }
 
 /*

@@ -2280,6 +2280,25 @@ Zone America/Costa_Rica	-5:36:20 -	LMT	1890		# San Jose
 # From Arthur David Olson (2008-03-12):
 # Assume Sun>=15 (third Sunday) going forward.
 
+# From Alexander Krivenyshev (2009-03-04)
+# According to the Radio Reloj - Cuba will start Daylight Saving Time on
+# midnight between Saturday, March 07, 2009 and Sunday, March 08, 2009-
+# not on midnight March 14 / March 15 as previously thought.
+#
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_cuba05.html">
+# http://www.worldtimezone.com/dst_news/dst_news_cuba05.html
+# (in Spanish)
+# </a>
+
+# From Arthur David Olson (2009-03-09)
+# I listened over the Internet to
+# <a href="http://media.enet.cu/readioreloj">
+# http://media.enet.cu/readioreloj
+# </a>
+# this morning; when it was 10:05 a. m. here in Bethesda, Maryland the
+# the time was announced as "diez cinco"--the same time as here, indicating
+# that has indeed switched to DST. Assume second Sunday from 2009 forward.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Cuba	1928	only	-	Jun	10	0:00	1:00	D
 Rule	Cuba	1928	only	-	Oct	10	0:00	0	S
@@ -2312,7 +2331,8 @@ Rule	Cuba	1998	2003	-	Oct	lastSun	0:00s	0	S
 Rule	Cuba	2000	2004	-	Apr	Sun>=1	0:00s	1:00	D
 Rule	Cuba	2006	max	-	Oct	lastSun	0:00s	0	S
 Rule	Cuba	2007	only	-	Mar	Sun>=8	0:00s	1:00	D
-Rule	Cuba	2008	max	-	Mar	Sun>=15	0:00s	1:00	D
+Rule	Cuba	2008	only	-	Mar	Sun>=15	0:00s	1:00	D
+Rule	Cuba	2009	max	-	Mar	Sun>=8	0:00s	1:00	D
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Havana	-5:29:28 -	LMT	1890

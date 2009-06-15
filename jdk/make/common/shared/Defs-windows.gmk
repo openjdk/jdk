@@ -277,9 +277,9 @@ ifeq ($(ARCH_DATA_MODEL), 32)
     # Assume PlatformSDK is in VS71 (will be empty if VS90)
     _ms_sdk       :=$(call FullPath,$(_msvc_dir)/PlatformSDK)
     # Assume VS90, then VS80, then VS71
-    _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v3.5/Bin)
+    _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC90.CRT)
     ifeq ($(_redist_sdk),)
-      _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v2.0/Bin)
+      _redist_sdk   :=$(call FullPath,$(_msvc_dir)/redist/x86/Microsoft.VC80.CRT)
       ifeq ($(_redist_sdk),)
         _redist_sdk   :=$(call FullPath,$(_msvc_dir)/../SDK/v1.1/Bin)
       endif
@@ -431,9 +431,11 @@ DEVTOOLS_PATH:=$(call AltCheckSpaces,DEVTOOLS_PATH)
 
 # _BOOTDIR1: First choice for a Bootstrap JDK, previous released JDK.
 # _BOOTDIR2: Second choice
+# The _BOOTDIR3 is defind optionally.
 ifndef ALT_BOOTDIR
   _BOOTDIR1  =$(_system_drive)/jdk$(PREVIOUS_JDK_VERSION)
   _BOOTDIR2  =$(USRJDKINSTANCES_PATH)/jdk$(PREVIOUS_JDK_VERSION)
+  _BOOTDIR3  =$(SLASH_JAVA)/re/jdk/$(PREVIOUS_JDK_VERSION)/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
 endif
 
 # 32 bit always needs 2 runtimes, 64 bit usually does too

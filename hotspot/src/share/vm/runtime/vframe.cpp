@@ -559,7 +559,8 @@ void javaVFrame::print_value() const {
   }
   // Check frame size and print warning if it looks suspiciously large
   if (fr().sp() != NULL) {
-    uint size = fr().frame_size();
+    RegisterMap map = *register_map();
+    uint size = fr().frame_size(&map);
 #ifdef _LP64
     if (size > 8*K) warning("SUSPICIOUSLY LARGE FRAME (%d)", size);
 #else
