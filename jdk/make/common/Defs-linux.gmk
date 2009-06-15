@@ -165,6 +165,12 @@ ifeq ($(FASTDEBUG), true)
   endif
 endif
 
+# DEBUG_BINARIES overrides everything, use full -g debug information
+ifeq ($(DEBUG_BINARIES), true)
+  DEBUG_FLAG = -g
+  CFLAGS_REQUIRED += $(DEBUG_FLAG)
+endif
+
 CFLAGS_OPT      = $(CC_OPT)
 CFLAGS_DBG      = $(DEBUG_FLAG)
 CFLAGS_COMMON += $(CFLAGS_REQUIRED)
@@ -240,8 +246,11 @@ AUTOMATIC_PCH_OPTION =
 #
 ifeq ($(VARIANT), OPT)
   ifneq ($(NO_STRIP), true)
-    # Debug 'strip -g' leaves local function Elf symbols (better stack traces)
-    POST_STRIP_PROCESS = $(STRIP) -g
+    ifneq ($(DEBUG_BINARIES), true)
+      # Debug 'strip -g' leaves local function Elf symbols (better stack
+      # traces)
+      POST_STRIP_PROCESS = $(STRIP) -g
+    endif
   endif
 endif
 

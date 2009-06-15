@@ -4201,8 +4201,9 @@
             <stateType key="Disabled"/>
             <stateType key="Focused"/>
             <stateType key="Editable">
-               <codeSnippet><![CDATA[
-                          return ((JComboBox)c).isEditable();]]></codeSnippet>
+                <codeSnippet><![CDATA[
+        return c instanceof JComboBox && ((JComboBox)c).isEditable();
+                ]]></codeSnippet>
             </stateType>
          </stateTypes>
          <contentMargins top="0" bottom="0" left="0" right="0"/>
@@ -16160,12 +16161,14 @@
             <stateType key="Disabled"/>
             <stateType key="Indeterminate">
                <codeSnippet><![CDATA[
-                        return ((JProgressBar)c).isIndeterminate();
+        return c instanceof JProgressBar &&
+               ((JProgressBar)c).isIndeterminate();
                ]]></codeSnippet>
             </stateType>
             <stateType key="Finished">
                <codeSnippet><![CDATA[
-                        return ((JProgressBar)c).getPercentComplete() == 1.0;
+        return c instanceof JProgressBar &&
+               ((JProgressBar)c).getPercentComplete() == 1.0;
                 ]]></codeSnippet>
             </stateType>
          </stateTypes>
@@ -25845,26 +25848,26 @@
          <stateTypes>
             <stateType key="North">
                <codeSnippet><![CDATA[
-        JToolBar toolbar = (JToolBar)c;
-        return NimbusLookAndFeel.resolveToolbarConstraint(toolbar) == BorderLayout.NORTH;
+        return (c instanceof JToolBar) &&
+               NimbusLookAndFeel.resolveToolbarConstraint((JToolBar)c) == BorderLayout.NORTH;
                ]]></codeSnippet>
             </stateType>
             <stateType key="East">
                <codeSnippet><![CDATA[
-        JToolBar toolbar = (JToolBar)c;
-        return NimbusLookAndFeel.resolveToolbarConstraint(toolbar) == BorderLayout.EAST;
+        return (c instanceof JToolBar) &&
+               NimbusLookAndFeel.resolveToolbarConstraint((JToolBar)c) == BorderLayout.EAST;
                ]]></codeSnippet>
             </stateType>
             <stateType key="West">
                <codeSnippet><![CDATA[
-        JToolBar toolbar = (JToolBar)c;
-        return NimbusLookAndFeel.resolveToolbarConstraint(toolbar) == BorderLayout.WEST;
+        return (c instanceof JToolBar) &&
+               NimbusLookAndFeel.resolveToolbarConstraint((JToolBar)c) == BorderLayout.WEST;
                ]]></codeSnippet>
             </stateType>
             <stateType key="South">
                <codeSnippet><![CDATA[
-        JToolBar toolbar = (JToolBar)c;
-        return NimbusLookAndFeel.resolveToolbarConstraint(toolbar) == BorderLayout.SOUTH;
+        return (c instanceof JToolBar) &&
+               NimbusLookAndFeel.resolveToolbarConstraint((JToolBar)c) == BorderLayout.SOUTH;
                ]]></codeSnippet>
             </stateType>
          </stateTypes>

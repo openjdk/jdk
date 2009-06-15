@@ -300,7 +300,9 @@ public class NullComponentPeer implements LightweightPeer,
     public void setZOrder(ComponentPeer above) {
     }
 
-    public void updateGraphicsData(GraphicsConfiguration gc) {}
+    public boolean updateGraphicsData(GraphicsConfiguration gc) {
+        return false;
+    }
 
     public GraphicsConfiguration getAppropriateGraphicsConfiguration(
                         GraphicsConfiguration gc)
