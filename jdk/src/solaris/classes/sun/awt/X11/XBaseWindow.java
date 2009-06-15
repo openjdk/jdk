@@ -989,8 +989,17 @@ public class XBaseWindow {
      */
     public void handleButtonPressRelease(XEvent xev) {
         XButtonEvent xbe = xev.get_xbutton();
+        /*
+         * Ignore the buttons above 20 due to the bit limit for
+         * InputEvent.BUTTON_DOWN_MASK.
+         * One more bit is reserved for FIRST_HIGH_BIT.
+         */
+        if (xbe.get_button() > SunToolkit.MAX_BUTTONS_SUPPORTED) {
+            return;
+        }
         int buttonState = 0;
-        for (int i = 0; i<XToolkit.getNumMouseButtons(); i++){
+        final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
+        for (int i = 0; i<buttonsNumber; i++){
             // A bug in WM implementation: extra buttons doesn't have state!=0 as they should on Release message.
             if ((i != 4) && (i != 5)){
                 buttonState |= (xbe.get_state() & XConstants.buttonsMask[i]);
@@ -1026,7 +1035,9 @@ public class XBaseWindow {
      * Checks ButtonRelease released all Mouse buttons
      */
     static boolean isFullRelease(int buttonState, int button) {
-        if (button < 0 || button > XToolkit.getNumMouseButtons()) {
+        final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
+
+        if (button < 0 || button > buttonsNumber) {
             return buttonState == 0;
         } else {
             return buttonState == XConstants.buttonsMask[button - 1];

@@ -72,8 +72,8 @@ class ConcurrentGCThread: public NamedThread {
   friend class VMStructs;
 
 protected:
-  static bool _should_terminate;
-  static bool _has_terminated;
+  bool _should_terminate;
+  bool _has_terminated;
 
   enum CGC_flag_type {
     CGC_nil           = 0x0,

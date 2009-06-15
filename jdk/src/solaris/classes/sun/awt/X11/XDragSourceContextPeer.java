@@ -42,6 +42,7 @@ import sun.awt.ComponentAccessor;
 
 import sun.awt.dnd.SunDragSourceContextPeer;
 import sun.awt.dnd.SunDropTargetContextPeer;
+import sun.awt.SunToolkit;
 
 /**
  * The XDragSourceContextPeer class is the class responsible for handling
@@ -665,6 +666,15 @@ public final class XDragSourceContextPeer
             return true;
         case XConstants.ButtonRelease: {
             XButtonEvent xbutton = ev.get_xbutton();
+            /*
+             * Ignore the buttons above 20 due to the bit limit for
+             * InputEvent.BUTTON_DOWN_MASK.
+             * One more bit is reserved for FIRST_HIGH_BIT.
+             */
+            if (xbutton.get_button() > SunToolkit.MAX_BUTTONS_SUPPORTED) {
+                return true;
+            }
+
             /*
              * On some X servers it could happen that ButtonRelease coordinates
              * differ from the latest MotionNotify coordinates, so we need to
