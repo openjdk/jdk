@@ -29,7 +29,7 @@
  * @run main/othervm -server -Xbatch -XX:CompileOnly=Test1.init Test1
  */
 
-class Test1 {
+public class Test1 {
 
     public static void init(int src[], int [] dst, int[] ref) {
         // initialize the arrays

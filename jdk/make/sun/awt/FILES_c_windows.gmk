@@ -70,7 +70,6 @@ FILES_c = \
         FourByteAbgrPre.c \
 	BufferedMaskBlit.c \
 	BufferedRenderPipe.c \
-	RenderBuffer.c \
 	ShapeSpanIterator.c \
 	SpanClipRenderer.c \
 	SurfaceData.c \

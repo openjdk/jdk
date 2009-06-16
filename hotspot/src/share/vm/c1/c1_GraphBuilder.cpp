@@ -1662,7 +1662,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         // Register dependence if JVMTI has either breakpoint
         // setting or hotswapping of methods capabilities since they may
         // cause deoptimization.
-        if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
+        if (compilation()->env()->jvmti_can_hotswap_or_post_breakpoint()) {
           dependency_recorder()->assert_evol_method(inline_target);
         }
         return;
@@ -2863,7 +2863,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   start_block->merge(_initial_state);
 
   BlockBegin* sync_handler = NULL;
-  if (method()->is_synchronized() || DTraceMethodProbes) {
+  if (method()->is_synchronized() || _compilation->env()->dtrace_method_probes()) {
     // setup an exception handler to do the unlocking and/or notification
     sync_handler = new BlockBegin(-1);
     sync_handler->set(BlockBegin::exception_entry_flag);

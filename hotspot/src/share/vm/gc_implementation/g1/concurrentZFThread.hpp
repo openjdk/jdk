@@ -73,7 +73,7 @@ class ConcurrentZFThread: public ConcurrentGCThread {
   // while holding the ZF_needed_mon lock.
 
   // shutdown
-  static void stop();
+  void stop();
 
   // Stats
   static void note_region_alloc() {_region_allocs++; }
