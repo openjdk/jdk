@@ -172,9 +172,6 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             return formatIterable(d, (Iterable<?>)arg, l);
         }
         else if (arg instanceof Type) {
-            if (!allCaptured.contains(arg)) {
-                allCaptured = allCaptured.append((Type)arg);
-            }
             return printer.visit((Type)arg, l);
         }
         else if (arg instanceof Symbol) {
@@ -481,6 +478,13 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         @Override
         protected String capturedVarId(CapturedType t, Locale locale) {
             return "" + (allCaptured.indexOf(t) + 1);
+        }
+        @Override
+        public String visitCapturedType(CapturedType t, Locale locale) {
+            if (!allCaptured.contains(t)) {
+                allCaptured = allCaptured.append(t);
+            }
+            return super.visitCapturedType(t, locale);
         }
     };
 }
