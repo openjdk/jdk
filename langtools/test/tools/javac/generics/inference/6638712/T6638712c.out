@@ -1,0 +1,2 @@
+T6638712c.java:39:9: compiler.err.cant.apply.symbol: kindname.method, sort, T[],java.util.Comparator<? super T>, java.lang.Enum[],java.util.Comparator<java.lang.Enum<?>>, kindname.class, T6638712c, null
+1 error
