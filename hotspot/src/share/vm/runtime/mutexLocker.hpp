@@ -63,9 +63,6 @@ extern Monitor* FullGCCount_lock;                // in support of "concurrent" f
 extern Monitor* CMark_lock;                      // used for concurrent mark thread coordination
 extern Monitor* ZF_mon;                          // used for G1 conc zero-fill.
 extern Monitor* Cleanup_mon;                     // used for G1 conc cleanup.
-extern Monitor* G1ConcRefine_mon;                // used for G1 conc-refine
-                                                 // coordination.
-
 extern Mutex*   SATB_Q_FL_lock;                  // Protects SATB Q
                                                  // buffer free list.
 extern Monitor* SATB_Q_CBL_mon;                  // Protects SATB Q

@@ -113,6 +113,11 @@ endif
 
 OPT_CFLAGS/NOOPT=-O0
 
+# 6835796. Problem in GCC 4.3.0 with mulnode.o optimized compilation. 
+ifneq "$(shell expr \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) = 3 \) \))" "0"
+OPT_CFLAGS/mulnode.o += -O0
+endif
+
 #------------------------------------------------------------------------
 # Linker flags
 
@@ -165,4 +170,10 @@ DEBUG_CFLAGS/amd64 = -g
 DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
 ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
 DEBUG_CFLAGS += -gstabs
+endif
+
+# DEBUG_BINARIES overrides everything, use full -g debug information
+ifeq ($(DEBUG_BINARIES), true)
+  DEBUG_CFLAGS = -g
+  CFLAGS += $(DEBUG_CFLAGS)
 endif

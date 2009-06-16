@@ -105,28 +105,6 @@ StupidG1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
   _g1->heap_region_iterate(&rc);
 }
 
-class UpdateRSOutOfRegionClosure: public HeapRegionClosure {
-  G1CollectedHeap*    _g1h;
-  ModRefBarrierSet*   _mr_bs;
-  UpdateRSOopClosure  _cl;
-  int _worker_i;
-public:
-  UpdateRSOutOfRegionClosure(G1CollectedHeap* g1, int worker_i = 0) :
-    _cl(g1->g1_rem_set()->as_HRInto_G1RemSet(), worker_i),
-    _mr_bs(g1->mr_bs()),
-    _worker_i(worker_i),
-    _g1h(g1)
-    {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->in_collection_set() && !r->continuesHumongous()) {
-      _cl.set_from(r);
-      r->set_next_filter_kind(HeapRegionDCTOC::OutOfRegionFilterKind);
-      _mr_bs->mod_oop_in_space_iterate(r, &_cl, true, true);
-    }
-    return false;
-  }
-};
-
 class VerifyRSCleanCardOopClosure: public OopClosure {
   G1CollectedHeap* _g1;
 public:
@@ -180,6 +158,7 @@ class ScanRSClosure : public HeapRegionClosure {
   CardTableModRefBS *_ct_bs;
   int _worker_i;
   bool _try_claimed;
+  size_t _min_skip_distance, _max_skip_distance;
 public:
   ScanRSClosure(OopsInHeapRegionClosure* oc, int worker_i) :
     _oc(oc),
@@ -191,6 +170,8 @@ public:
     _g1h = G1CollectedHeap::heap();
     _bot_shared = _g1h->bot_shared();
     _ct_bs = (CardTableModRefBS*) (_g1h->barrier_set());
+    _min_skip_distance = 16;
+    _max_skip_distance = 2 * _g1h->n_par_threads() * _min_skip_distance;
   }
 
   void set_try_claimed() { _try_claimed = true; }
@@ -238,6 +219,7 @@ public:
     HeapRegionRemSet* hrrs = r->rem_set();
     if (hrrs->iter_is_complete()) return false; // All done.
     if (!_try_claimed && !hrrs->claim_iter()) return false;
+    _g1h->push_dirty_cards_region(r);
     // If we didn't return above, then
     //   _try_claimed || r->claim_iter()
     // is true: either we're supposed to work on claimed-but-not-complete
@@ -245,9 +227,13 @@ public:
     HeapRegionRemSetIterator* iter = _g1h->rem_set_iterator(_worker_i);
     hrrs->init_iterator(iter);
     size_t card_index;
+    size_t skip_distance = 0, current_card = 0, jump_to_card = 0;
     while (iter->has_next(card_index)) {
+      if (current_card < jump_to_card) {
+        ++current_card;
+        continue;
+      }
       HeapWord* card_start = _g1h->bot_shared()->address_for_index(card_index);
-
 #if 0
       gclog_or_tty->print("Rem set iteration yielded card [" PTR_FORMAT ", " PTR_FORMAT ").\n",
                           card_start, card_start + CardTableModRefBS::card_size_in_words);
@@ -257,20 +243,32 @@ public:
       assert(card_region != NULL, "Yielding cards not in the heap?");
       _cards++;
 
-      if (!card_region->in_collection_set()) {
-        // If the card is dirty, then we will scan it during updateRS.
-        if (!_ct_bs->is_card_claimed(card_index) &&
-            !_ct_bs->is_card_dirty(card_index)) {
-          assert(_ct_bs->is_card_clean(card_index) ||
-                 _ct_bs->is_card_claimed(card_index) ||
-                 _ct_bs->is_card_deferred(card_index),
-                 "Card is either clean, claimed or deferred");
-          if (_ct_bs->claim_card(card_index))
-            scanCard(card_index, card_region);
-        }
+      if (!card_region->is_on_dirty_cards_region_list()) {
+        _g1h->push_dirty_cards_region(card_region);
       }
+
+       // If the card is dirty, then we will scan it during updateRS.
+      if (!card_region->in_collection_set() && !_ct_bs->is_card_dirty(card_index)) {
+          if (!_ct_bs->is_card_claimed(card_index) && _ct_bs->claim_card(card_index)) {
+            scanCard(card_index, card_region);
+          } else if (_try_claimed) {
+            if (jump_to_card == 0 || jump_to_card != current_card) {
+              // We did some useful work in the previous iteration.
+              // Decrease the distance.
+              skip_distance = MAX2(skip_distance >> 1, _min_skip_distance);
+            } else {
+              // Previous iteration resulted in a claim failure.
+              // Increase the distance.
+              skip_distance = MIN2(skip_distance << 1, _max_skip_distance);
+            }
+            jump_to_card = current_card + skip_distance;
+          }
+      }
+      ++current_card;
     }
-    hrrs->set_iter_complete();
+    if (!_try_claimed) {
+      hrrs->set_iter_complete();
+    }
     return false;
   }
   // Set all cards back to clean.
@@ -335,30 +333,17 @@ void HRInto_G1RemSet::updateRS(int worker_i) {
   double start = os::elapsedTime();
   _g1p->record_update_rs_start_time(worker_i, start * 1000.0);
 
-  if (G1RSBarrierUseQueue && !cg1r->do_traversal()) {
-    // Apply the appropriate closure to all remaining log entries.
-    _g1->iterate_dirty_card_closure(false, worker_i);
-    // Now there should be no dirty cards.
-    if (G1RSLogCheckCardTable) {
-      CountNonCleanMemRegionClosure cl(_g1);
-      _ct_bs->mod_card_iterate(&cl);
-      // XXX This isn't true any more: keeping cards of young regions
-      // marked dirty broke it.  Need some reasonable fix.
-      guarantee(cl.n() == 0, "Card table should be clean.");
-    }
-  } else {
-    UpdateRSOutOfRegionClosure update_rs(_g1, worker_i);
-    _g1->heap_region_iterate(&update_rs);
-    // We did a traversal; no further one is necessary.
-    if (G1RSBarrierUseQueue) {
-      assert(cg1r->do_traversal(), "Or we shouldn't have gotten here.");
-      cg1r->set_pya_cancel();
-    }
-    if (_cg1r->use_cache()) {
-      _cg1r->clear_and_record_card_counts();
-      _cg1r->clear_hot_cache();
-    }
+  // Apply the appropriate closure to all remaining log entries.
+  _g1->iterate_dirty_card_closure(false, worker_i);
+  // Now there should be no dirty cards.
+  if (G1RSLogCheckCardTable) {
+    CountNonCleanMemRegionClosure cl(_g1);
+    _ct_bs->mod_card_iterate(&cl);
+    // XXX This isn't true any more: keeping cards of young regions
+    // marked dirty broke it.  Need some reasonable fix.
+    guarantee(cl.n() == 0, "Card table should be clean.");
   }
+
   _g1p->record_update_rs_time(worker_i, (os::elapsedTime() - start) * 1000.0);
 }
 
@@ -471,11 +456,6 @@ HRInto_G1RemSet::scanNewRefsRS(OopsInHeapRegionClosure* oc,
                                   * 1000.0);
 }
 
-void HRInto_G1RemSet::set_par_traversal(bool b) {
-  _par_traversal_in_progress = b;
-  HeapRegionRemSet::set_par_traversal(b);
-}
-
 void HRInto_G1RemSet::cleanupHRRS() {
   HeapRegionRemSet::cleanup();
 }
@@ -508,19 +488,19 @@ HRInto_G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
     // and they are causing failures. When we resolve said race
     // conditions, we'll revert back to parallel remembered set
     // updating and scanning. See CRs 6677707 and 6677708.
-    if (G1EnableParallelRSetUpdating || (worker_i == 0)) {
+    if (G1ParallelRSetUpdatingEnabled || (worker_i == 0)) {
       updateRS(worker_i);
       scanNewRefsRS(oc, worker_i);
     } else {
-      _g1p->record_update_rs_start_time(worker_i, os::elapsedTime());
+      _g1p->record_update_rs_start_time(worker_i, os::elapsedTime() * 1000.0);
       _g1p->record_update_rs_processed_buffers(worker_i, 0.0);
       _g1p->record_update_rs_time(worker_i, 0.0);
       _g1p->record_scan_new_refs_time(worker_i, 0.0);
     }
-    if (G1EnableParallelRSetScanning || (worker_i == 0)) {
+    if (G1ParallelRSetScanningEnabled || (worker_i == 0)) {
       scanRS(oc, worker_i);
     } else {
-      _g1p->record_scan_rs_start_time(worker_i, os::elapsedTime());
+      _g1p->record_scan_rs_start_time(worker_i, os::elapsedTime() * 1000.0);
       _g1p->record_scan_rs_time(worker_i, 0.0);
     }
   } else {
@@ -547,11 +527,6 @@ prepare_for_oops_into_collection_set_do() {
   if (ParallelGCThreads > 0) {
     set_par_traversal(true);
     _seq_task->set_par_threads((int)n_workers());
-    if (cg1r->do_traversal()) {
-      updateRS(0);
-      // Have to do this again after updaters
-      cleanupHRRS();
-    }
   }
   guarantee( _cards_scanned == NULL, "invariant" );
   _cards_scanned = NEW_C_HEAP_ARRAY(size_t, n_workers());
@@ -632,11 +607,8 @@ void HRInto_G1RemSet::cleanup_after_oops_into_collection_set_do() {
   _g1->collection_set_iterate(&iterClosure);
   // Set all cards back to clean.
   _g1->cleanUpCardTable();
+
   if (ParallelGCThreads > 0) {
-    ConcurrentG1Refine* cg1r = _g1->concurrent_g1_refine();
-    if (cg1r->do_traversal()) {
-      cg1r->cg1rThread()->set_do_traversal(false);
-    }
     set_par_traversal(false);
   }
 
@@ -706,138 +678,7 @@ void HRInto_G1RemSet::scrub_par(BitMap* region_bm, BitMap* card_bm,
 }
 
 
-class ConcRefineRegionClosure: public HeapRegionClosure {
-  G1CollectedHeap* _g1h;
-  CardTableModRefBS* _ctbs;
-  ConcurrentGCThread* _cgc_thrd;
-  ConcurrentG1Refine* _cg1r;
-  unsigned _cards_processed;
-  UpdateRSOopClosure _update_rs_oop_cl;
-public:
-  ConcRefineRegionClosure(CardTableModRefBS* ctbs,
-                          ConcurrentG1Refine* cg1r,
-                          HRInto_G1RemSet* g1rs) :
-    _ctbs(ctbs), _cg1r(cg1r), _cgc_thrd(cg1r->cg1rThread()),
-    _update_rs_oop_cl(g1rs), _cards_processed(0),
-    _g1h(G1CollectedHeap::heap())
-  {}
-
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->in_collection_set() &&
-        !r->continuesHumongous() &&
-        !r->is_young()) {
-      _update_rs_oop_cl.set_from(r);
-      UpdateRSObjectClosure update_rs_obj_cl(&_update_rs_oop_cl);
-
-      // For each run of dirty card in the region:
-      //   1) Clear the cards.
-      //   2) Process the range corresponding to the run, adding any
-      //      necessary RS entries.
-      // 1 must precede 2, so that a concurrent modification redirties the
-      // card.  If a processing attempt does not succeed, because it runs
-      // into an unparseable region, we will do binary search to find the
-      // beginning of the next parseable region.
-      HeapWord* startAddr = r->bottom();
-      HeapWord* endAddr = r->used_region().end();
-      HeapWord* lastAddr;
-      HeapWord* nextAddr;
-
-      for (nextAddr = lastAddr = startAddr;
-           nextAddr < endAddr;
-           nextAddr = lastAddr) {
-        MemRegion dirtyRegion;
-
-        // Get and clear dirty region from card table
-        MemRegion next_mr(nextAddr, endAddr);
-        dirtyRegion =
-          _ctbs->dirty_card_range_after_reset(
-                           next_mr,
-                           true, CardTableModRefBS::clean_card_val());
-        assert(dirtyRegion.start() >= nextAddr,
-               "returned region inconsistent?");
-
-        if (!dirtyRegion.is_empty()) {
-          HeapWord* stop_point =
-            r->object_iterate_mem_careful(dirtyRegion,
-                                          &update_rs_obj_cl);
-          if (stop_point == NULL) {
-            lastAddr = dirtyRegion.end();
-            _cards_processed +=
-              (int) (dirtyRegion.word_size() / CardTableModRefBS::card_size_in_words);
-          } else {
-            // We're going to skip one or more cards that we can't parse.
-            HeapWord* next_parseable_card =
-              r->next_block_start_careful(stop_point);
-            // Round this up to a card boundary.
-            next_parseable_card =
-              _ctbs->addr_for(_ctbs->byte_after_const(next_parseable_card));
-            // Now we invalidate the intervening cards so we'll see them
-            // again.
-            MemRegion remaining_dirty =
-              MemRegion(stop_point, dirtyRegion.end());
-            MemRegion skipped =
-              MemRegion(stop_point, next_parseable_card);
-            _ctbs->invalidate(skipped.intersection(remaining_dirty));
-
-            // Now start up again where we can parse.
-            lastAddr = next_parseable_card;
-
-            // Count how many we did completely.
-            _cards_processed +=
-              (stop_point - dirtyRegion.start()) /
-              CardTableModRefBS::card_size_in_words;
-          }
-          // Allow interruption at regular intervals.
-          // (Might need to make them more regular, if we get big
-          // dirty regions.)
-          if (_cgc_thrd != NULL) {
-            if (_cgc_thrd->should_yield()) {
-              _cgc_thrd->yield();
-              switch (_cg1r->get_pya()) {
-              case PYA_continue:
-                // This may have changed: re-read.
-                endAddr = r->used_region().end();
-                continue;
-              case PYA_restart: case PYA_cancel:
-                return true;
-              }
-            }
-          }
-        } else {
-          break;
-        }
-      }
-    }
-    // A good yield opportunity.
-    if (_cgc_thrd != NULL) {
-      if (_cgc_thrd->should_yield()) {
-        _cgc_thrd->yield();
-        switch (_cg1r->get_pya()) {
-        case PYA_restart: case PYA_cancel:
-          return true;
-        default:
-          break;
-        }
-
-      }
-    }
-    return false;
-  }
-
-  unsigned cards_processed() { return _cards_processed; }
-};
-
-
-void HRInto_G1RemSet::concurrentRefinementPass(ConcurrentG1Refine* cg1r) {
-  ConcRefineRegionClosure cr_cl(ct_bs(), cg1r, this);
-  _g1->heap_region_iterate(&cr_cl);
-  _conc_refine_traversals++;
-  _conc_refine_cards += cr_cl.cards_processed();
-}
-
 static IntHistogram out_of_histo(50, 50);
-
-
 
 void HRInto_G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i) {
   // If the card is no longer dirty, nothing to do.
@@ -968,10 +809,16 @@ public:
   HeapRegion* max_mem_sz_region() { return _max_mem_sz_region; }
 };
 
+class PrintRSThreadVTimeClosure : public ThreadClosure {
+public:
+  virtual void do_thread(Thread *t) {
+    ConcurrentG1RefineThread* crt = (ConcurrentG1RefineThread*) t;
+    gclog_or_tty->print("    %5.2f", crt->vtime_accum());
+  }
+};
+
 void HRInto_G1RemSet::print_summary_info() {
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  ConcurrentG1RefineThread* cg1r_thrd =
-    g1->concurrent_g1_refine()->cg1rThread();
 
 #if CARD_REPEAT_HISTO
   gclog_or_tty->print_cr("\nG1 card_repeat count histogram: ");
@@ -984,15 +831,13 @@ void HRInto_G1RemSet::print_summary_info() {
     gclog_or_tty->print_cr("  # of CS ptrs --> # of cards with that number.");
     out_of_histo.print_on(gclog_or_tty);
   }
-  gclog_or_tty->print_cr("\n Concurrent RS processed %d cards in "
-                "%5.2fs.",
-                _conc_refine_cards, cg1r_thrd->vtime_accum());
-
+  gclog_or_tty->print_cr("\n Concurrent RS processed %d cards",
+                         _conc_refine_cards);
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   jint tot_processed_buffers =
     dcqs.processed_buffers_mut() + dcqs.processed_buffers_rs_thread();
   gclog_or_tty->print_cr("  Of %d completed buffers:", tot_processed_buffers);
-  gclog_or_tty->print_cr("     %8d (%5.1f%%) by conc RS thread.",
+  gclog_or_tty->print_cr("     %8d (%5.1f%%) by conc RS threads.",
                 dcqs.processed_buffers_rs_thread(),
                 100.0*(float)dcqs.processed_buffers_rs_thread()/
                 (float)tot_processed_buffers);
@@ -1000,15 +845,12 @@ void HRInto_G1RemSet::print_summary_info() {
                 dcqs.processed_buffers_mut(),
                 100.0*(float)dcqs.processed_buffers_mut()/
                 (float)tot_processed_buffers);
-  gclog_or_tty->print_cr("   Did %d concurrent refinement traversals.",
-                _conc_refine_traversals);
-  if (!G1RSBarrierUseQueue) {
-    gclog_or_tty->print_cr("   Scanned %8.2f cards/traversal.",
-                  _conc_refine_traversals > 0 ?
-                  (float)_conc_refine_cards/(float)_conc_refine_traversals :
-                  0);
-  }
+  gclog_or_tty->print_cr("  Conc RS threads times(s)");
+  PrintRSThreadVTimeClosure p;
+  gclog_or_tty->print("     ");
+  g1->concurrent_g1_refine()->threads_do(&p);
   gclog_or_tty->print_cr("");
+
   if (G1UseHRIntoRS) {
     HRRSStatsIter blk;
     g1->heap_region_iterate(&blk);

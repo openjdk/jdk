@@ -1819,7 +1819,11 @@ class CommandLineFlags {
           "Decay factor to TenuredGenerationSizeIncrement")                 \
                                                                             \
   product(uintx, MaxGCPauseMillis, max_uintx,                               \
-          "Adaptive size policy maximum GC pause time goal in msec")        \
+          "Adaptive size policy maximum GC pause time goal in msec, "       \
+          "or (G1 Only) the max. GC time per MMU time slice")               \
+                                                                            \
+  product(intx, GCPauseIntervalMillis, 500,                                 \
+          "Time slice for MMU specification")                               \
                                                                             \
   product(uintx, MaxGCMinorPauseMillis, max_uintx,                          \
           "Adaptive size policy maximum GC minor pause time goal in msec")  \
@@ -2184,6 +2188,9 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, PrintIntrinsics, false,                                  \
           "prints attempted and successful inlining of intrinsics")         \
+                                                                            \
+  product(bool, UseCountLeadingZerosInstruction, false,                     \
+          "Use count leading zeros instruction")                            \
                                                                             \
   product(bool, UsePopCountInstruction, false,                              \
           "Use population count instruction")                               \

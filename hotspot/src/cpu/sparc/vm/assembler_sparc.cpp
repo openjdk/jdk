@@ -4454,43 +4454,26 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
     delayed()->nop();
   }
 
-  // Now we decide how to generate the card table write.  If we're
-  // enqueueing, we call out to a generated function.  Otherwise, we do it
-  // inline here.
-
-  if (G1RSBarrierUseQueue) {
-    // If the "store_addr" register is an "in" or "local" register, move it to
-    // a scratch reg so we can pass it as an argument.
-    bool use_scr = !(store_addr->is_global() || store_addr->is_out());
-    // Pick a scratch register different from "tmp".
-    Register scr = (tmp == G1_scratch ? G3_scratch : G1_scratch);
-    // Make sure we use up the delay slot!
-    if (use_scr) {
-      post_filter_masm->mov(store_addr, scr);
-    } else {
-      post_filter_masm->nop();
-    }
-    generate_dirty_card_log_enqueue_if_necessary(bs->byte_map_base);
-    save_frame(0);
-    call(dirty_card_log_enqueue);
-    if (use_scr) {
-      delayed()->mov(scr, O0);
-    } else {
-      delayed()->mov(store_addr->after_save(), O0);
-    }
-    restore();
-
+  // If the "store_addr" register is an "in" or "local" register, move it to
+  // a scratch reg so we can pass it as an argument.
+  bool use_scr = !(store_addr->is_global() || store_addr->is_out());
+  // Pick a scratch register different from "tmp".
+  Register scr = (tmp == G1_scratch ? G3_scratch : G1_scratch);
+  // Make sure we use up the delay slot!
+  if (use_scr) {
+    post_filter_masm->mov(store_addr, scr);
   } else {
-
-#ifdef _LP64
-    post_filter_masm->srlx(store_addr, CardTableModRefBS::card_shift, store_addr);
-#else
-    post_filter_masm->srl(store_addr, CardTableModRefBS::card_shift, store_addr);
-#endif
-    assert(tmp != store_addr, "need separate temp reg");
-    set(bs->byte_map_base, tmp);
-    stb(G0, tmp, store_addr);
+    post_filter_masm->nop();
   }
+  generate_dirty_card_log_enqueue_if_necessary(bs->byte_map_base);
+  save_frame(0);
+  call(dirty_card_log_enqueue);
+  if (use_scr) {
+    delayed()->mov(scr, O0);
+  } else {
+    delayed()->mov(store_addr->after_save(), O0);
+  }
+  restore();
 
   bind(filtered);
 

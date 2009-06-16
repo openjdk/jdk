@@ -27,6 +27,7 @@
  * @summary Verifies that (0, 0) is the upper-left corner of the page, not
  *          the upper-left corner adjusted for the margins.
  * @author dpm
+ * @run main/manual EdgeTest
  */
 
 import java.awt.*;
@@ -43,7 +44,9 @@ public class EdgeTest extends Panel {
                                 }
                             );
         f.setVisible(true);
-        PrintJob pj = getToolkit().getPrintJob(f, "EdgeTest", null);
+        JobAttributes job = new JobAttributes();
+        job.setDialog(JobAttributes.DialogType.NONE);
+        PrintJob pj = getToolkit().getPrintJob(f, "EdgeTest", job, null);
         if (pj != null) {
             Graphics g = pj.getGraphics();
             Dimension d = pj.getPageDimension();

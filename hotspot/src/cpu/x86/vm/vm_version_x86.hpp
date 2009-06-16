@@ -120,7 +120,7 @@ public:
       uint32_t LahfSahf     : 1,
                CmpLegacy    : 1,
                             : 4,
-               abm          : 1,
+               lzcnt        : 1,
                sse4a        : 1,
                misalignsse  : 1,
                prefetchw    : 1,
@@ -182,7 +182,8 @@ protected:
      CPU_SSE4A  = (1 << 10),
      CPU_SSE4_1 = (1 << 11),
      CPU_SSE4_2 = (1 << 12),
-     CPU_POPCNT = (1 << 13)
+     CPU_POPCNT = (1 << 13),
+     CPU_LZCNT  = (1 << 14)
    } cpuFeatureFlags;
 
   // cpuid information block.  All info derived from executing cpuid with
@@ -277,8 +278,6 @@ protected:
     if (_cpuid_info.std_cpuid1_edx.bits.mmx != 0 || is_amd() &&
         _cpuid_info.ext_cpuid1_edx.bits.mmx != 0)
       result |= CPU_MMX;
-    if (is_amd() && _cpuid_info.ext_cpuid1_edx.bits.tdnow != 0)
-      result |= CPU_3DNOW;
     if (_cpuid_info.std_cpuid1_edx.bits.sse != 0)
       result |= CPU_SSE;
     if (_cpuid_info.std_cpuid1_edx.bits.sse2 != 0)
@@ -287,14 +286,23 @@ protected:
       result |= CPU_SSE3;
     if (_cpuid_info.std_cpuid1_ecx.bits.ssse3 != 0)
       result |= CPU_SSSE3;
-    if (is_amd() && _cpuid_info.ext_cpuid1_ecx.bits.sse4a != 0)
-      result |= CPU_SSE4A;
     if (_cpuid_info.std_cpuid1_ecx.bits.sse4_1 != 0)
       result |= CPU_SSE4_1;
     if (_cpuid_info.std_cpuid1_ecx.bits.sse4_2 != 0)
       result |= CPU_SSE4_2;
     if (_cpuid_info.std_cpuid1_ecx.bits.popcnt != 0)
       result |= CPU_POPCNT;
+
+    // AMD features.
+    if (is_amd()) {
+      if (_cpuid_info.ext_cpuid1_edx.bits.tdnow != 0)
+        result |= CPU_3DNOW;
+      if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0)
+        result |= CPU_LZCNT;
+      if (_cpuid_info.ext_cpuid1_ecx.bits.sse4a != 0)
+        result |= CPU_SSE4A;
+    }
+
     return result;
   }
 
@@ -391,6 +399,7 @@ public:
   static bool supports_3dnow()    { return (_cpuFeatures & CPU_3DNOW) != 0; }
   static bool supports_mmx_ext()  { return is_amd() && _cpuid_info.ext_cpuid1_edx.bits.mmx_amd != 0; }
   static bool supports_3dnow2()   { return is_amd() && _cpuid_info.ext_cpuid1_edx.bits.tdnow2 != 0; }
+  static bool supports_lzcnt()    { return (_cpuFeatures & CPU_LZCNT) != 0; }
   static bool supports_sse4a()    { return (_cpuFeatures & CPU_SSE4A) != 0; }
 
   static bool supports_compare_and_exchange() { return true; }

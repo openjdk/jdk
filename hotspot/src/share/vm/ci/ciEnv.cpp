@@ -171,6 +171,34 @@ ciEnv::~ciEnv() {
 }
 
 // ------------------------------------------------------------------
+// Cache Jvmti state
+void ciEnv::cache_jvmti_state() {
+  VM_ENTRY_MARK;
+  // Get Jvmti capabilities under lock to get consistant values.
+  MutexLocker mu(JvmtiThreadState_lock);
+  _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
+  _jvmti_can_examine_or_deopt_anywhere  = JvmtiExport::can_examine_or_deopt_anywhere();
+  _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables();
+  _jvmti_can_post_exceptions            = JvmtiExport::can_post_exceptions();
+}
+
+// ------------------------------------------------------------------
+// Cache DTrace flags
+void ciEnv::cache_dtrace_flags() {
+  // Need lock?
+  _dtrace_extended_probes = ExtendedDTraceProbes;
+  if (_dtrace_extended_probes) {
+    _dtrace_monitor_probes  = true;
+    _dtrace_method_probes   = true;
+    _dtrace_alloc_probes    = true;
+  } else {
+    _dtrace_monitor_probes  = DTraceMonitorProbes;
+    _dtrace_method_probes   = DTraceMethodProbes;
+    _dtrace_alloc_probes    = DTraceAllocProbes;
+  }
+}
+
+// ------------------------------------------------------------------
 // helper for lazy exception creation
 ciInstance* ciEnv::get_or_create_exception(jobject& handle, symbolHandle name) {
   VM_ENTRY_MARK;
@@ -810,16 +838,39 @@ void ciEnv::register_method(ciMethod* target,
     // and invalidating our dependencies until we install this method.
     MutexLocker ml(Compile_lock);
 
-    if (log() != NULL) {
-      // Log the dependencies which this compilation declares.
-      dependencies()->log_all_dependencies();
+    // Change in Jvmti state may invalidate compilation.
+    if (!failing() &&
+        ( (!jvmti_can_hotswap_or_post_breakpoint() &&
+           JvmtiExport::can_hotswap_or_post_breakpoint()) ||
+          (!jvmti_can_examine_or_deopt_anywhere() &&
+           JvmtiExport::can_examine_or_deopt_anywhere()) ||
+          (!jvmti_can_access_local_variables() &&
+           JvmtiExport::can_access_local_variables()) ||
+          (!jvmti_can_post_exceptions() &&
+           JvmtiExport::can_post_exceptions()) )) {
+      record_failure("Jvmti state change invalidated dependencies");
     }
 
-    // Encode the dependencies now, so we can check them right away.
-    dependencies()->encode_content_bytes();
+    // Change in DTrace flags may invalidate compilation.
+    if (!failing() &&
+        ( (!dtrace_extended_probes() && ExtendedDTraceProbes) ||
+          (!dtrace_method_probes() && DTraceMethodProbes) ||
+          (!dtrace_alloc_probes() && DTraceAllocProbes) )) {
+      record_failure("DTrace flags change invalidated dependencies");
+    }
 
-    // Check for {class loads, evolution, breakpoints} during compilation
-    check_for_system_dictionary_modification(target);
+    if (!failing()) {
+      if (log() != NULL) {
+        // Log the dependencies which this compilation declares.
+        dependencies()->log_all_dependencies();
+      }
+
+      // Encode the dependencies now, so we can check them right away.
+      dependencies()->encode_content_bytes();
+
+      // Check for {class loads, evolution, breakpoints} during compilation
+      check_for_system_dictionary_modification(target);
+    }
 
     methodHandle method(THREAD, target->get_methodOop());
 
