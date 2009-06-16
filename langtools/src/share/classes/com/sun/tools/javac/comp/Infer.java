@@ -158,8 +158,7 @@ public class Infer {
                 that.inst = types.glb(that.hibounds);
         }
         if (that.inst == null ||
-            that.inst.isErroneous() ||
-            !types.isSubtypeUnchecked(that.inst, that.hibounds, warn))
+            that.inst.isErroneous())
             throw ambiguousNoInstanceException
                 .setMessage("no.unique.maximal.instance.exists",
                             that.qtype, that.hibounds);
