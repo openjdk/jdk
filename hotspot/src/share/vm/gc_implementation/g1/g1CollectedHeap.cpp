@@ -1535,6 +1535,15 @@ jint G1CollectedHeap::initialize() {
   guarantee(_hrs != NULL, "Couldn't allocate HeapRegionSeq");
   guarantee(_cur_alloc_region == NULL, "from constructor");
 
+  // 6843694 - ensure that the maximum region index can fit
+  // in the remembered set structures.
+  const size_t max_region_idx = ((size_t)1 << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
+  guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
+
+  const size_t cards_per_region = HeapRegion::GrainBytes >> CardTableModRefBS::card_shift;
+  size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
+  guarantee(cards_per_region < max_cards_per_region, "too many cards per region");
+
   _bot_shared = new G1BlockOffsetSharedArray(_reserved,
                                              heap_word_size(init_byte_size));
 
