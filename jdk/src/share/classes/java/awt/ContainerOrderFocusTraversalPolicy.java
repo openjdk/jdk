@@ -425,15 +425,13 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
             }
             if (log.isLoggable(Level.FINE)) log.fine("### Cycle is " + cycle);
 
-            for (int i = 0; i < cycle.size(); i++) {
-                Component comp = cycle.get(i);
+            for (Component comp : cycle) {
                 if (accept(comp)) {
                     return comp;
-                } else if (comp instanceof Container && comp != aContainer) {
-                    Container cont = (Container)comp;
-                    if (cont.isFocusTraversalPolicyProvider()) {
-                        return cont.getFocusTraversalPolicy().getDefaultComponent(cont);
-                    }
+                } else if (comp != aContainer &&
+                           (comp = getComponentDownCycle(comp, FORWARD_TRAVERSAL)) != null)
+                {
+                    return comp;
                 }
             }
         }
