@@ -647,17 +647,6 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   HOTSPOT_CLIENT_PATH:=$(call AltCheckValue,HOTSPOT_CLIENT_PATH)
 endif
 
-# HOTSPOT_KERNEL_PATH: location of kernel jvm library file.
-ifeq ($(ARCH_DATA_MODEL), 32)
-  ifdef ALT_HOTSPOT_KERNEL_PATH
-    HOTSPOT_KERNEL_PATH :=$(call FullPath,$(ALT_HOTSPOT_KERNEL_PATH))
-  else
-    HOTSPOT_KERNEL_PATH   =$(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/kernel
-  endif
-  HOTSPOT_KERNEL_PATH:=$(call AltCheckSpaces,HOTSPOT_KERNEL_PATH)
-  HOTSPOT_KERNEL_PATH:=$(call AltCheckValue,HOTSPOT_KERNEL_PATH)
-endif
-
 # HOTSPOT_SERVER_PATH: location of server jvm library file.
 ifdef ALT_HOTSPOT_SERVER_PATH
   HOTSPOT_SERVER_PATH :=$(call FullPath,$(ALT_HOTSPOT_SERVER_PATH))
