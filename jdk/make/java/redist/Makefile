@@ -106,8 +106,10 @@ ifeq ($(PLATFORM), windows)
 
 # Add the Java Kernel VM to the import path, but only on windows 32-bit Windows
 ifeq ($(ARCH_DATA_MODEL), 32)
-  IMPORT_LIST += $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVM_NAME) \
-                 $(LIB_LOCATION)/$(KERNEL_LOCATION)/Xusage.txt
+  ifeq ($(DO_KERNEL), true)
+    IMPORT_LIST += $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVM_NAME) \
+                   $(LIB_LOCATION)/$(KERNEL_LOCATION)/Xusage.txt
+  endif
 endif
 
 IMPORT_LIST += $(MS_RUNTIME_LIBRARIES:%=$(BINDIR)/%)
@@ -131,8 +133,10 @@ IMPORT_LIST += \
 ifeq ($(ARCH_DATA_MODEL), 32)
   IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME) \
                  $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMPDB_NAME)
-  IMPORT_LIST += $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMMAP_NAME) \
-                 $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME)
+  ifeq ($(DO_KERNEL), true)
+    IMPORT_LIST += $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMMAP_NAME) \
+                   $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME)
+  endif
 endif
 
 $(LIBDIR)/$(JVMLIB_NAME): $(HOTSPOT_LIB_PATH)/$(JVMLIB_NAME)
