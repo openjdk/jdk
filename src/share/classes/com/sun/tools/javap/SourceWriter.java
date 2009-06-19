@@ -134,6 +134,9 @@ public class SourceWriter extends InstructionDetailWriter {
     }
 
     private String readSource(ClassFile cf) {
+        if (fileManager == null)
+            return null;
+
         Location location;
         if (fileManager.hasLocation((StandardLocation.SOURCE_PATH)))
             location = StandardLocation.SOURCE_PATH;
