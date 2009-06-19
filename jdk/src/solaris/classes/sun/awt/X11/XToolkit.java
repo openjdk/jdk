@@ -1177,6 +1177,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         awtLock();
         try {
             XlibWrapper.XBell(getDisplay(), 0);
+            XlibWrapper.XFlush(getDisplay());
         } finally {
             awtUnlock();
         }
