@@ -36,6 +36,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -298,21 +299,28 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     };
 
-    JavapTask() {
+    public JavapTask() {
         context = new Context();
         context.put(Messages.class, this);
         options = Options.instance(context);
+        attributeFactory = new Attribute.Factory();
     }
 
-    JavapTask(Writer out,
+    public JavapTask(Writer out,
             JavaFileManager fileManager,
-            DiagnosticListener<? super JavaFileObject> diagnosticListener,
-            Iterable<String> options,
-            Iterable<String> classes) {
+            DiagnosticListener<? super JavaFileObject> diagnosticListener) {
         this();
         this.log = getPrintWriterForWriter(out);
         this.fileManager = fileManager;
         this.diagnosticListener = diagnosticListener;
+    }
+
+    public JavapTask(Writer out,
+            JavaFileManager fileManager,
+            DiagnosticListener<? super JavaFileObject> diagnosticListener,
+            Iterable<String> options,
+            Iterable<String> classes) {
+        this(out, fileManager, diagnosticListener);
 
         try {
             handleOptions(options, false);
@@ -553,29 +561,10 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                        continue;
                     }
                 }
-                Attribute.Factory attributeFactory = new Attribute.Factory();
                 attributeFactory.setCompat(options.compat);
                 attributeFactory.setJSR277(options.jsr277);
 
-                InputStream in = fo.openInputStream();
-                SizeInputStream sizeIn = null;
-                MessageDigest md  = null;
-                if (options.sysInfo || options.verbose) {
-                    md = MessageDigest.getInstance("MD5");
-                    in = new DigestInputStream(in, md);
-                    in = sizeIn = new SizeInputStream(in);
-                }
-
-                ClassFile cf = ClassFile.read(in, attributeFactory);
-
-                if (options.sysInfo || options.verbose) {
-                    classWriter.setFile(fo.toUri());
-                    classWriter.setLastModified(fo.getLastModified());
-                    classWriter.setDigest("MD5", md.digest());
-                    classWriter.setFileSize(sizeIn.size());
-                }
-
-                classWriter.write(cf);
+                write(read(fo));
 
             } catch (ConstantPoolException e) {
                 diagnosticListener.report(createDiagnostic("err.bad.constant.pool", className, e.getLocalizedMessage()));
@@ -604,6 +593,103 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         }
 
         return ok;
+    }
+
+    public static class ClassFileInfo {
+        ClassFileInfo(JavaFileObject fo, ClassFile cf, byte[] digest, int size) {
+            this.fo = fo;
+            this.cf = cf;
+            this.digest = digest;
+            this.size = size;
+        }
+        public final JavaFileObject fo;
+        public final ClassFile cf;
+        public final byte[] digest;
+        public final int size;
+    }
+
+    public ClassFileInfo read(JavaFileObject fo) throws IOException, ConstantPoolException {
+        InputStream in = fo.openInputStream();
+        try {
+            SizeInputStream sizeIn = null;
+            MessageDigest md  = null;
+            if (options.sysInfo || options.verbose) {
+                try {
+                    md = MessageDigest.getInstance("MD5");
+                } catch (NoSuchAlgorithmException ignore) {
+                }
+                in = new DigestInputStream(in, md);
+                in = sizeIn = new SizeInputStream(in);
+            }
+
+            ClassFile cf = ClassFile.read(in, attributeFactory);
+            byte[] digest = (md == null) ? null : md.digest();
+            int size = (sizeIn == null) ? -1 : sizeIn.size();
+            return new ClassFileInfo(fo, cf, digest, size);
+        } finally {
+            in.close();
+        }
+    }
+
+    public void write(ClassFileInfo info) {
+        ClassWriter classWriter = ClassWriter.instance(context);
+        if (options.sysInfo || options.verbose) {
+            classWriter.setFile(info.fo.toUri());
+            classWriter.setLastModified(info.fo.getLastModified());
+            classWriter.setDigest("MD5", info.digest);
+            classWriter.setFileSize(info.size);
+        }
+
+        classWriter.write(info.cf);
+    }
+
+    protected void setClassFile(ClassFile classFile) {
+        ClassWriter classWriter = ClassWriter.instance(context);
+        classWriter.setClassFile(classFile);
+    }
+
+    protected void setMethod(Method enclosingMethod) {
+        ClassWriter classWriter = ClassWriter.instance(context);
+        classWriter.setMethod(enclosingMethod);
+    }
+
+    protected void write(Attribute value) {
+        AttributeWriter attrWriter = AttributeWriter.instance(context);
+        ClassWriter classWriter = ClassWriter.instance(context);
+        ClassFile cf = classWriter.getClassFile();
+        attrWriter.write(cf, value, cf.constant_pool);
+    }
+
+    protected void write(Attributes attrs) {
+        AttributeWriter attrWriter = AttributeWriter.instance(context);
+        ClassWriter classWriter = ClassWriter.instance(context);
+        ClassFile cf = classWriter.getClassFile();
+        attrWriter.write(cf, attrs, cf.constant_pool);
+    }
+
+    protected void write(ConstantPool constant_pool) {
+        ConstantWriter constantWriter = ConstantWriter.instance(context);
+        constantWriter.writeConstantPool(constant_pool);
+    }
+
+    protected void write(ConstantPool constant_pool, int value) {
+        ConstantWriter constantWriter = ConstantWriter.instance(context);
+        constantWriter.write(value);
+    }
+
+    protected void write(ConstantPool.CPInfo value) {
+        ConstantWriter constantWriter = ConstantWriter.instance(context);
+        constantWriter.println(value);
+    }
+
+    protected void write(Field value) {
+        ClassWriter classWriter = ClassWriter.instance(context);
+        classWriter.writeField(value);
+    }
+
+    protected void write(Method value) {
+        ClassWriter classWriter = ClassWriter.instance(context);
+        classWriter.writeMethod(value);
     }
 
     private JavaFileManager getDefaultFileManager(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log) {
@@ -735,7 +821,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         }
     }
 
-    Context context;
+    protected Context context;
     JavaFileManager fileManager;
     PrintWriter log;
     DiagnosticListener<? super JavaFileObject> diagnosticListener;
@@ -744,6 +830,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     //ResourceBundle bundle;
     Locale task_locale;
     Map<Locale, ResourceBundle> bundles;
+    protected Attribute.Factory attributeFactory;
 
     private static final String progname = "javap";
 
