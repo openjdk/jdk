@@ -26,26 +26,18 @@
 
 package sun.io;
 
-import sun.nio.cs.ext.EUC_KR;
+import sun.nio.cs.ext.*;
 
-/**
- * Tables and data to convert EUC_KR to Unicode
- *
- * @author  ConverterGenerator tool
- */
+public class ByteToCharEUC_KR extends ByteToCharDBCS_ASCII {
 
-public class ByteToCharEUC_KR extends ByteToCharDoubleByte {
-
-    private final static EUC_KR nioCoder = new EUC_KR();
+    private static DoubleByte.Decoder dec =
+        (DoubleByte.Decoder)new EUC_KR().newDecoder();
 
     public String getCharacterEncoding() {
         return "EUC_KR";
     }
 
     public ByteToCharEUC_KR() {
-        super.index1 = nioCoder.getDecoderIndex1();
-        super.index2 = nioCoder.getDecoderIndex2();
-        start = 0xA1;
-        end = 0xFE;
+        super(dec);
     }
 }

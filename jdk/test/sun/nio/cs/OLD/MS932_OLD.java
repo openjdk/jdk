@@ -24,8 +24,6 @@
  */
 
 
-package sun.nio.cs.ext;
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -33,11 +31,12 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import sun.nio.cs.HistoricallyNamedCharset;
+import sun.nio.cs.ext.*;
 
-public class MS932 extends Charset implements HistoricallyNamedCharset
+public class MS932_OLD extends Charset implements HistoricallyNamedCharset
 {
-    public MS932() {
-        super("windows-31j", ExtendedCharsets.aliasesFor("windows-31j"));
+    public MS932_OLD() {
+        super("windows-31j-OLD", null);
     }
 
     public String historicalName() {
@@ -47,7 +46,7 @@ public class MS932 extends Charset implements HistoricallyNamedCharset
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
                 || (cs instanceof JIS_X_0201)
-                || (cs instanceof MS932));
+                || (cs instanceof MS932_OLD));
     }
 
     public CharsetDecoder newDecoder() {
@@ -59,7 +58,8 @@ public class MS932 extends Charset implements HistoricallyNamedCharset
     }
 
     private static class Decoder extends MS932DB.Decoder
-        implements DelegatableDecoder {
+                                         //        implements DelegatableDecoder
+    {
 
         JIS_X_0201.Decoder jisDec0201;
 
