@@ -1588,10 +1588,11 @@ sane-kernel-vm:
 ifeq ($(PLATFORM), windows)
   ifeq ($(ARCH_DATA_MODEL), 32)
 	@if [ ! -r $(HOTSPOT_KERNEL_PATH)/jvm.dll ]; then \
-	    $(ECHO) "ERROR: Your HOTSPOT_IMPORT_PATH does not include a Kernel VM... \n" \
+	    $(ECHO) "WARNING: Your HOTSPOT_IMPORT_PATH does not include a Kernel VM... \n" \
+		    "     The kernel installer may not be built (unless hotspot is also). \n" \
 		    "     $(HOTSPOT_KERNEL_PATH)/jvm.dll \n" \
 		    "     Please check the value of ALT_HOTSPOT_IMPORT_PATH. \n" \
-		    >> $(ERROR_FILE) ; \
+		    >> $(WARNING_FILE) ; \
 	fi
   endif
 endif
