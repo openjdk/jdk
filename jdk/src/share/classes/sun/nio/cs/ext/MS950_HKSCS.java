@@ -23,15 +23,13 @@
  * have any questions.
  */
 
-/*
- */
-
 package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.HistoricallyNamedCharset;
+import static sun.nio.cs.CharsetMapping.*;
 
 public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset
 {
@@ -59,8 +57,8 @@ public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset
 
     private static class Decoder extends HKSCS.Decoder {
 
-        private MS950.Decoder ms950Dec;
-
+        private static DoubleByte.Decoder ms950Dec =
+            (DoubleByte.Decoder)new MS950().newDecoder();
 
         /*
          * Note current decoder decodes 0x8BC2 --> U+F53A
@@ -73,18 +71,18 @@ public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset
 
         protected char decodeDouble(int byte1, int byte2) {
             char c = super.decodeDouble(byte1, byte2);
-            return (c != REPLACE_CHAR) ? c : ms950Dec.decodeDouble(byte1, byte2);
+            return (c != UNMAPPABLE_DECODING) ? c : ms950Dec.decodeDouble(byte1, byte2);
         }
 
         private Decoder(Charset cs) {
             super(cs);
-            ms950Dec = new MS950.Decoder(cs);
         }
     }
 
     private static class Encoder extends HKSCS.Encoder {
 
-        private MS950.Encoder ms950Enc;
+        private static DoubleByte.Encoder ms950Enc =
+            (DoubleByte.Encoder)new MS950().newEncoder();
 
         /*
          * Note current encoder encodes U+F53A --> 0x8BC2
@@ -93,12 +91,11 @@ public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset
          */
         protected int encodeDouble(char ch) {
             int r = super.encodeDouble(ch);
-            return (r != 0) ? r : ms950Enc.encodeDouble(ch);
+            return (r != UNMAPPABLE_ENCODING) ? r : ms950Enc.encodeChar(ch);
         }
 
         private Encoder(Charset cs) {
             super(cs);
-            ms950Enc = new MS950.Encoder(cs);
         }
     }
 }

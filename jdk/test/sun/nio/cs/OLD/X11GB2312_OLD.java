@@ -23,17 +23,14 @@
  * have any questions.
  */
 
-package sun.awt.motif;
-
 import java.nio.CharBuffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.*;
-import sun.nio.cs.ext.*;
-import static sun.nio.cs.CharsetMapping.*;
+import sun.nio.cs.ext.EUC_CN;
 
-public class X11KSC5601 extends Charset {
-    public X11KSC5601 () {
-        super("X11KSC5601", null);
+public class X11GB2312_OLD extends Charset {
+    public X11GB2312_OLD () {
+        super("X11GB2312-OLD", null);
     }
     public CharsetEncoder newEncoder() {
         return new Encoder(this);
@@ -43,31 +40,26 @@ public class X11KSC5601 extends Charset {
     }
 
     public boolean contains(Charset cs) {
-        return cs instanceof X11KSC5601;
+        return cs instanceof X11GB2312_OLD;
     }
 
-    private class Encoder extends CharsetEncoder {
-        private DoubleByte.Encoder enc = (DoubleByte.Encoder)new EUC_KR().newEncoder();
-
+    private class Encoder extends EUC_CN_OLD.Encoder {
         public Encoder(Charset cs) {
-            super(cs, 2.0f, 2.0f);
+            super(cs);
         }
 
         public boolean canEncode(char c) {
             if (c <= 0x7F) {
                 return false;
             }
-            return enc.canEncode(c);
-        }
-
-        protected int encodeDouble(char c) {
-            return enc.encodeChar(c);
+            return super.canEncode(c);
         }
 
         protected CoderResult encodeLoop(CharBuffer src, ByteBuffer dst) {
             char[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
+
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
@@ -97,15 +89,9 @@ public class X11KSC5601 extends Charset {
         }
     }
 
-    private class Decoder extends  CharsetDecoder {
-        private DoubleByte.Decoder dec = (DoubleByte.Decoder)new EUC_KR().newDecoder();
-
+    private class Decoder extends EUC_CN_OLD.Decoder {
         public Decoder(Charset cs) {
-            super(cs, 0.5f, 1.0f);
-        }
-
-        protected char decodeDouble(int b1, int b2) {
-            return dec.decodeDouble(b1, b2);
+            super(cs);
         }
 
         protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
@@ -120,7 +106,6 @@ public class X11KSC5601 extends Charset {
             assert (dp <= dl);
             dp = (dp <= dl ? dp : dl);
 
-
             try {
                 while (sp < sl) {
                     if ( sl - sp < 2) {
@@ -129,7 +114,7 @@ public class X11KSC5601 extends Charset {
                     int b1 = sa[sp] & 0xFF | 0x80;
                     int b2 = sa[sp + 1] & 0xFF | 0x80;
                     char c = decodeDouble(b1, b2);
-                    if (c == UNMAPPABLE_DECODING) {
+                    if (c == replacement().charAt(0)) {
                         return CoderResult.unmappableForLength(2);
                     }
                     if (dl - dp < 1)
@@ -145,4 +130,5 @@ public class X11KSC5601 extends Charset {
 
         }
     }
+
 }

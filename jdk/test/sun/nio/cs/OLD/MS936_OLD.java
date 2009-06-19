@@ -27,20 +27,19 @@
 /*
  */
 
-package sun.nio.cs.ext;
+//package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.HistoricallyNamedCharset;
 
-public class MS936
-    extends Charset
+public class MS936_OLD    extends Charset
     implements HistoricallyNamedCharset
 {
 
-    public MS936() {
-        super("x-mswin-936", ExtendedCharsets.aliasesFor("x-mswin-936"));
+    public MS936_OLD() {
+        super("x-mswin-936-OLD", null);
     }
 
     public String historicalName() {
@@ -49,7 +48,7 @@ public class MS936
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof MS936));
+                || (cs instanceof MS936_OLD));
     }
 
     public CharsetDecoder newDecoder() {
@@ -70,16 +69,16 @@ public class MS936
      */
 
     public short[] getDecoderIndex1() {
-        return MS936.Decoder.index1;
+        return Decoder.index1;
     }
     public String[] getDecoderIndex2() {
-        return MS936.Decoder.index2;
+        return Decoder.index2;
     }
     public short[] getEncoderIndex1() {
-        return MS936.Encoder.index1;
+        return Encoder.index1;
     }
     public String[] getEncoderIndex2() {
-        return MS936.Encoder.index2;
+        return Encoder.index2;
     }
 
     private static class Decoder extends DoubleByteDecoder {

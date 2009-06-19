@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,34 @@
  * have any questions.
  */
 
-package sun.io;
 
-import sun.nio.cs.ext.MS932DB;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CharsetDecoder;
+import sun.nio.cs.ext.GBK;
 
-/**
- * Tables and data to convert Unicode to MS932
- *
- * @author  ConverterGenerator tool
- */
+public class X11GBK_OLD extends Charset {
+    public X11GBK_OLD () {
+        super("X11GBK-OLD", null);
+    }
+    public CharsetEncoder newEncoder() {
+        return new Encoder(this);
+    }
+    public CharsetDecoder newDecoder() {
+        return new GBK_OLD.Decoder(this);
+    }
 
-abstract class CharToByteMS932DB extends CharToByteDoubleByte {
+    public boolean contains(Charset cs) {
+        return cs instanceof X11GBK_OLD;
+    }
 
-    public CharToByteMS932DB() {
-        super.index1 = MS932DB.Encoder.index1;
-        super.index2 = MS932DB.Encoder.index2;
+    private class Encoder extends GBK_OLD.Encoder {
+        public Encoder(Charset cs) {
+            super(cs);
+        }
+        public boolean canEncode(char ch){
+            if (ch < 0x80) return false;
+            return super.canEncode(ch);
+        }
     }
 }
