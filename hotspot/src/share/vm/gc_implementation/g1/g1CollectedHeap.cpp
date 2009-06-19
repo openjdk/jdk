@@ -2136,17 +2136,22 @@ public:
 };
 
 class VerifyObjsInRegionClosure: public ObjectClosure {
+private:
   G1CollectedHeap* _g1h;
   size_t _live_bytes;
   HeapRegion *_hr;
+  bool _use_prev_marking;
 public:
-  VerifyObjsInRegionClosure(HeapRegion *hr) : _live_bytes(0), _hr(hr) {
+  // use_prev_marking == true  -> use "prev" marking information,
+  // use_prev_marking == false -> use "next" marking information
+  VerifyObjsInRegionClosure(HeapRegion *hr, bool use_prev_marking)
+    : _live_bytes(0), _hr(hr), _use_prev_marking(use_prev_marking) {
     _g1h = G1CollectedHeap::heap();
   }
   void do_object(oop o) {
     VerifyLivenessOopClosure isLive(_g1h);
     assert(o != NULL, "Huh?");
-    if (!_g1h->is_obj_dead(o)) {
+    if (!_g1h->is_obj_dead_cond(o, _use_prev_marking)) {
       o->oop_iterate(&isLive);
       if (!_hr->obj_allocated_since_prev_marking(o))
         _live_bytes += (o->size() * HeapWordSize);
@@ -2185,17 +2190,22 @@ public:
 };
 
 class VerifyRegionClosure: public HeapRegionClosure {
-public:
+private:
   bool _allow_dirty;
   bool _par;
-  VerifyRegionClosure(bool allow_dirty, bool par = false)
-    : _allow_dirty(allow_dirty), _par(par) {}
+  bool _use_prev_marking;
+public:
+  // use_prev_marking == true  -> use "prev" marking information,
+  // use_prev_marking == false -> use "next" marking information
+  VerifyRegionClosure(bool allow_dirty, bool par, bool use_prev_marking)
+    : _allow_dirty(allow_dirty), _par(par),
+      _use_prev_marking(use_prev_marking) {}
   bool doHeapRegion(HeapRegion* r) {
     guarantee(_par || r->claim_value() == HeapRegion::InitialClaimValue,
               "Should be unclaimed at verify points.");
     if (!r->continuesHumongous()) {
-      VerifyObjsInRegionClosure not_dead_yet_cl(r);
-      r->verify(_allow_dirty);
+      VerifyObjsInRegionClosure not_dead_yet_cl(r, _use_prev_marking);
+      r->verify(_allow_dirty, _use_prev_marking);
       r->object_iterate(&not_dead_yet_cl);
       guarantee(r->max_live_bytes() >= not_dead_yet_cl.live_bytes(),
                 "More live objects than counted in last complete marking.");
@@ -2208,10 +2218,13 @@ class VerifyRootsClosure: public OopsInGenClosure {
 private:
   G1CollectedHeap* _g1h;
   bool             _failures;
-
+  bool             _use_prev_marking;
 public:
-  VerifyRootsClosure() :
-    _g1h(G1CollectedHeap::heap()), _failures(false) { }
+  // use_prev_marking == true  -> use "prev" marking information,
+  // use_prev_marking == false -> use "next" marking information
+  VerifyRootsClosure(bool use_prev_marking) :
+    _g1h(G1CollectedHeap::heap()), _failures(false),
+    _use_prev_marking(use_prev_marking) { }
 
   bool failures() { return _failures; }
 
@@ -2222,7 +2235,7 @@ public:
   void do_oop(oop* p) {
     oop obj = *p;
     if (obj != NULL) {
-      if (_g1h->is_obj_dead(obj)) {
+      if (_g1h->is_obj_dead_cond(obj, _use_prev_marking)) {
         gclog_or_tty->print_cr("Root location "PTR_FORMAT" "
                                "points to dead obj "PTR_FORMAT, p, (void*) obj);
         obj->print_on(gclog_or_tty);
@@ -2238,24 +2251,35 @@ class G1ParVerifyTask: public AbstractGangTask {
 private:
   G1CollectedHeap* _g1h;
   bool _allow_dirty;
+  bool _use_prev_marking;
 
 public:
-  G1ParVerifyTask(G1CollectedHeap* g1h, bool allow_dirty) :
+  // use_prev_marking == true  -> use "prev" marking information,
+  // use_prev_marking == false -> use "next" marking information
+  G1ParVerifyTask(G1CollectedHeap* g1h, bool allow_dirty,
+                  bool use_prev_marking) :
     AbstractGangTask("Parallel verify task"),
-    _g1h(g1h), _allow_dirty(allow_dirty) { }
+    _g1h(g1h), _allow_dirty(allow_dirty),
+    _use_prev_marking(use_prev_marking) { }
 
   void work(int worker_i) {
     HandleMark hm;
-    VerifyRegionClosure blk(_allow_dirty, true);
+    VerifyRegionClosure blk(_allow_dirty, true, _use_prev_marking);
     _g1h->heap_region_par_iterate_chunked(&blk, worker_i,
                                           HeapRegion::ParVerifyClaimValue);
   }
 };
 
 void G1CollectedHeap::verify(bool allow_dirty, bool silent) {
+  verify(allow_dirty, silent, /* use_prev_marking */ true);
+}
+
+void G1CollectedHeap::verify(bool allow_dirty,
+                             bool silent,
+                             bool use_prev_marking) {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     if (!silent) { gclog_or_tty->print("roots "); }
-    VerifyRootsClosure rootsCl;
+    VerifyRootsClosure rootsCl(use_prev_marking);
     process_strong_roots(false,
                          SharedHeap::SO_AllClasses,
                          &rootsCl,
@@ -2266,7 +2290,7 @@ void G1CollectedHeap::verify(bool allow_dirty, bool silent) {
       assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
              "sanity check");
 
-      G1ParVerifyTask task(this, allow_dirty);
+      G1ParVerifyTask task(this, allow_dirty, use_prev_marking);
       int n_workers = workers()->total_workers();
       set_par_threads(n_workers);
       workers()->run_task(&task);
@@ -2280,7 +2304,7 @@ void G1CollectedHeap::verify(bool allow_dirty, bool silent) {
       assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
              "sanity check");
     } else {
-      VerifyRegionClosure blk(allow_dirty);
+      VerifyRegionClosure blk(allow_dirty, false, use_prev_marking);
       _hrs->iterate(&blk);
     }
     if (!silent) gclog_or_tty->print("remset ");
