@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 1234567
+ * @bug 6850606
  * @summary Test BigDecimal.multiply(BigDecimal)
  * @author xlu
  */
@@ -71,6 +71,16 @@ public class MultiplyTests {
                     failures++;
                 }
             }
+        }
+
+        BigDecimal x = BigDecimal.valueOf(8L, 1);
+        BigDecimal xPower = BigDecimal.valueOf(-1L);
+        try {
+            for (int i = 0; i < 100; i++) {
+                xPower = xPower.multiply(x);
+            }
+        } catch (Exception ex) {
+            failures++;
         }
         return failures;
     }
