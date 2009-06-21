@@ -49,6 +49,18 @@
 #include <fcntl.h>
 #include <limits.h>
 
+/*
+ * (Hopefully temporarily) disable the clone-exec feature pending
+ * further investigation and bug-fixing.
+ * 32-bit (but not 64-bit) Linux fails on the program
+ *   Runtime.getRuntime().exec("/bin/true").waitFor();
+ * with:
+ * #  Internal Error (os_linux_x86.cpp:683), pid=19940, tid=2934639536
+ * #  Error: pthread_getattr_np failed with errno = 3 (ESRCH)
+ * Linux kernel/pthread gurus are invited to figure this out.
+ */
+#define USE_CLONE 0
+
 #ifndef USE_CLONE
 #ifdef __linux__
 #define USE_CLONE 1
