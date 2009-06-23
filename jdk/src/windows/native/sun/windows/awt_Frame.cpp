@@ -381,19 +381,28 @@ LRESULT CALLBACK AwtFrame::ProxyWindowProc(HWND hwnd, UINT message,
 
 void AwtFrame::CreateProxyFocusOwner()
 {
+    if (AwtToolkit::IsMainThread()) {
+        AwtFrame::_CreateProxyFocusOwner((void *)this);
+    } else {
+        AwtToolkit::GetInstance().InvokeFunction(AwtFrame::_CreateProxyFocusOwner, (void *)this);
+    }
+}
+
+void AwtFrame::_CreateProxyFocusOwner(void *param)
+{
+    DASSERT(AwtToolkit::IsMainThread());
     DASSERT(m_proxyFocusOwner == NULL);
-    DASSERT(AwtToolkit::MainThread() == ::GetCurrentThreadId());
 
-    m_proxyFocusOwner = ::CreateWindow(TEXT("STATIC"),
-                                       TEXT("ProxyFocusOwner"),
-                                       WS_CHILD,
-                                       0, 0, 0, 0, GetHWnd(), NULL,
-                                       AwtToolkit::GetInstance().
-                                           GetModuleHandle(),
-                                       NULL);
+    AwtFrame *f = (AwtFrame *)param;
+    f->m_proxyFocusOwner = ::CreateWindow(TEXT("STATIC"),
+                                          TEXT("ProxyFocusOwner"),
+                                          WS_CHILD,
+                                          0, 0, 0, 0, f->GetHWnd(), NULL,
+                                          AwtToolkit::GetInstance().
+                                          GetModuleHandle(),
+                                          NULL);
 
-    m_proxyDefWindowProc = ComCtl32Util::GetInstance().SubclassHWND(m_proxyFocusOwner, ProxyWindowProc);
-
+    f->m_proxyDefWindowProc = ComCtl32Util::GetInstance().SubclassHWND(f->m_proxyFocusOwner, ProxyWindowProc);
 }
 
 void AwtFrame::DestroyProxyFocusOwner()
