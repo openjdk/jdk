@@ -29,33 +29,25 @@ import java.awt.peer.*;
 import java.lang.reflect.Field;
 
 import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 
 public class WPopupMenuPeer extends WMenuPeer implements PopupMenuPeer {
     // We can't use target.getParent() for TrayIcon popup
     // because this method should return null for the TrayIcon
     // popup regardless of that whether it has parent or not.
-    private static Field f_parent;
-    private static Field f_isTrayIconPopup;
-
-    static {
-        f_parent = SunToolkit.getField(MenuComponent.class, "parent");
-        f_isTrayIconPopup = SunToolkit.getField(PopupMenu.class, "isTrayIconPopup");
-    }
 
     public WPopupMenuPeer(PopupMenu target) {
         this.target = target;
         MenuContainer parent = null;
-        boolean isTrayIconPopup = false;
-        try {
-            isTrayIconPopup = ((Boolean)f_isTrayIconPopup.get(target)).booleanValue();
-            if (isTrayIconPopup) {
-                parent = (MenuContainer)f_parent.get(target);
-            } else {
-                parent = target.getParent();
-            }
-        } catch (IllegalAccessException iae) {
-            iae.printStackTrace();
-            return;
+
+        // We can't use target.getParent() for TrayIcon popup
+        // because this method should return null for the TrayIcon
+        // popup regardless of that whether it has parent or not.
+        boolean isTrayIconPopup = AWTAccessor.getPopupMenuAccessor().isTrayIconPopup(target);
+        if (isTrayIconPopup) {
+            parent = AWTAccessor.getMenuComponentAccessor().getParent(target);
+        } else {
+            parent = target.getParent();
         }
 
         if (parent instanceof Component) {

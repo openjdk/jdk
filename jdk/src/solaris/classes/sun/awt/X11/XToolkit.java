@@ -1436,9 +1436,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return timeStamp;
     }
     protected void initializeDesktopProperties() {
-        desktopProperties.put("DnD.Autoscroll.initialDelay",     Integer.valueOf(50));
-        desktopProperties.put("DnD.Autoscroll.interval",         Integer.valueOf(50));
-        desktopProperties.put("DnD.Autoscroll.cursorHysteresis", Integer.valueOf(5));
+        desktopProperties.put("DnD.Autoscroll.initialDelay",
+                              Integer.valueOf(50));
+        desktopProperties.put("DnD.Autoscroll.interval",
+                              Integer.valueOf(50));
+        desktopProperties.put("DnD.Autoscroll.cursorHysteresis",
+                              Integer.valueOf(5));
+        desktopProperties.put("Shell.shellFolderManager",
+                              "sun.awt.shell.ShellFolderManager");
         // Don't want to call getMultiClickTime() if we are headless
         if (!GraphicsEnvironment.isHeadless()) {
             desktopProperties.put("awt.multiClickInterval",
