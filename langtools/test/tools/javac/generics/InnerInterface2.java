@@ -27,7 +27,7 @@
  * @summary inner interface causes "not within bounds"
  * @author gafter
  *
- * @compile -source 1.5 InnerInterface2.java
+ * @compile  InnerInterface2.java
  */
 
 package test.tools.javac.generics.InnerInterface2;

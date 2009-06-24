@@ -28,7 +28,7 @@
  *          ThreadInfo.getThreadState()
  * @author  Mandy Chung
  *
- * @run build Semaphore
+ * @run build Semaphore Utils
  * @run main ThreadStackTrace
  */
 
@@ -47,16 +47,6 @@ public class ThreadStackTrace {
     private static String[] examinerStack = {"run", "examine1", "examine2"};
     private static int esDepth = 3;
     private static int methodExamine1= 2;
-
-    private static void goSleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("Unexpected exception.");
-            testFailed = true;
-        }
-    }
 
     private static void checkNullThreadInfo(Thread t) throws Exception {
         ThreadInfo ti = mbean.getThreadInfo(t.getId());
@@ -96,7 +86,7 @@ public class ThreadStackTrace {
                            "is waiting to begin.");
 
         // The Examiner should be waiting to be notified by the BlockedThread
-        checkThreadState(examiner, Thread.State.WAITING);
+        Utils.checkThreadState(examiner, Thread.State.WAITING);
 
         // Check that the stack is returned correctly for a new thread
         checkStack(examiner, examinerStack, esDepth);
@@ -135,35 +125,6 @@ public class ThreadStackTrace {
         }
     }
 
-    private static void checkThreadState(Thread thread, Thread.State s)
-        throws Exception {
-
-        ThreadInfo ti = mbean.getThreadInfo(thread.getId());
-        if (ti.getThreadState() != s) {
-            ThreadInfo info =
-                mbean.getThreadInfo(thread.getId(), Integer.MAX_VALUE);
-            System.out.println(INDENT + "TEST FAILED:");
-            printStack(thread, info.getStackTrace());
-            System.out.println(INDENT + "Thread state: " + info.getThreadState());
-
-            throw new RuntimeException("TEST FAILED: " +
-                "Thread state for " + thread + " returns " + ti.getThreadState() +
-                ".  Expected to be " + s);
-        }
-    }
-
-    private static void checkThreadState(Thread thread,
-                                         Thread.State s1, Thread.State s2)
-        throws Exception {
-
-        ThreadInfo ti = mbean.getThreadInfo(thread.getId());
-        if (ti.getThreadState() != s1 && ti.getThreadState() != s2) {
-            throw new RuntimeException("TEST FAILED: " +
-                "Thread state for " + thread + " returns " + ti.getThreadState() +
-                ".  Expected to be " + s1 + " or " + s2);
-        }
-    }
-
     private static void checkStack(Thread t, String[] expectedStack,
                                    int depth) throws Exception {
         ThreadInfo ti = mbean.getThreadInfo(t.getId(), Integer.MAX_VALUE);
@@ -197,20 +158,20 @@ public class ThreadStackTrace {
             handshake.semaP();
 
             // give a chance for the examiner thread to really wait
-            goSleep(20);
+            Utils.goSleep(20);
         }
 
         void waitUntilLockAReleased() {
             handshake.semaP();
 
             // give a chance for the examiner thread to really wait
-            goSleep(50);
+            Utils.goSleep(50);
         }
 
         private void notifyWaiter() {
             // wait until the examiner waits on the semaphore
             while (handshake.getWaiterCount() == 0) {
-                goSleep(20);
+                Utils.goSleep(20);
             }
             handshake.semaV();
         }
@@ -278,10 +239,10 @@ public class ThreadStackTrace {
 
             // wait until the examiner is waiting for blockedThread's notification
             while (!blockedThread.hasWaitersForBlocked()) {
-                goSleep(50);
+                Utils.goSleep(50);
             }
             // give a chance for the examiner thread to really wait
-            goSleep(20);
+            Utils.goSleep(20);
         }
 
         private Thread itself;
@@ -290,7 +251,7 @@ public class ThreadStackTrace {
                 examine2();
                 try {
                     System.out.println("Checking examiner's its own stack trace");
-                    checkThreadState(itself, Thread.State.RUNNABLE);
+                    Utils.checkThreadState(itself, Thread.State.RUNNABLE);
                     checkStack(itself, examinerStack, methodExamine1);
 
                     // wait until blockedThread is blocked on lockB
@@ -298,7 +259,7 @@ public class ThreadStackTrace {
 
                     System.out.println("Checking stack trace for " +
                         "BlockedThread - should be blocked on lockB.");
-                    checkThreadState(blockedThread, Thread.State.BLOCKED);
+                    Utils.checkThreadState(blockedThread, Thread.State.BLOCKED);
                     checkStack(blockedThread, blockedStack, methodB);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -312,7 +273,7 @@ public class ThreadStackTrace {
             synchronized (lockA) {
                 // wait until main thread gets signalled of the semaphore
                 while (handshake.getWaiterCount() == 0) {
-                    goSleep(20);
+                    Utils.goSleep(20);
                 }
 
                 handshake.semaV();  // notify the main thread
@@ -321,12 +282,12 @@ public class ThreadStackTrace {
                     blockedThread.waitUntilBlocked();
 
                     System.out.println("Checking examiner's its own stack trace");
-                    checkThreadState(itself, Thread.State.RUNNABLE);
+                    Utils.checkThreadState(itself, Thread.State.RUNNABLE);
                     checkStack(itself, examinerStack, esDepth);
 
                     System.out.println("Checking stack trace for " +
                         "BlockedThread - should be blocked on lockA.");
-                    checkThreadState(blockedThread, Thread.State.BLOCKED);
+                    Utils.checkThreadState(blockedThread, Thread.State.BLOCKED);
                     checkStack(blockedThread, blockedStack, bsDepth);
 
                 } catch (Exception e) {
@@ -344,7 +305,7 @@ public class ThreadStackTrace {
                 try {
                     System.out.println("Checking stack trace for " +
                         "BlockedThread - should be waiting on lockA.");
-                    checkThreadState(blockedThread, Thread.State.WAITING);
+                    Utils.checkThreadState(blockedThread, Thread.State.WAITING);
                     checkStack(blockedThread, blockedStack, bsDepth);
 
                     // Let the blocked thread go
@@ -357,7 +318,7 @@ public class ThreadStackTrace {
                 }
             }
             // give some time for BlockedThread to proceed
-            goSleep(50);
+            Utils.goSleep(50);
         } // examine2()
 
         public void run() {

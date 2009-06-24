@@ -27,7 +27,7 @@
  * @summary problem with generic signature for reverseOrder
  * @author gafter
  *
- * @compile -source 1.5 ReverseOrder.java
+ * @compile  ReverseOrder.java
  */
 
 package test.reverseOrder;

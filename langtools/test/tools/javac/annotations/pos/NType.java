@@ -27,7 +27,7 @@
  * @summary compiler crash if annotation using an enum type defined inside the annotation
  * @author gafter
  *
- * @compile -source 1.5 NType.java
+ * @compile NType.java
  */
 
 package ntype;

@@ -50,6 +50,8 @@ PREFIX          = 1.2
 JAVADOCFLAGS    = $(NO_PROPRIETARY_API_WARNINGS) $(LANGUAGE_VERSION)
 SWINGPKG        = javax/swing
 LOCAL_JAVAC_FLAGS = $(OTHER_JAVACFLAGS)
+# since LOCAL_JAVADOC runs on ALT_BOOTDIR, the doclet and all its classes must be compiled to match
+DOCLET_JAVAC_FLAGS = -source 6 -target 6
 
 include FILES.gmk
 include $(BUILDDIR)/common/Release.gmk
@@ -86,7 +88,7 @@ $(OBJDIR) $(BEANCLASSDIR) $(BEANSRCDIR) $(DOCLETDST)::
 	@$(MKDIR) -p $@
 
 $(DOCLETDST)/%.class: $(DOCLETSRC)/%.java
-	$(JAVAC_CMD) $(LOCAL_JAVAC_FLAGS) -classpath "$(CLASSBINDIR)$(CLASSPATH_SEPARATOR)$(DOCLETSRC)" -d $(DOCLETDST) $?
+	$(JAVAC_CMD) $(LOCAL_JAVAC_FLAGS) $(DOCLET_JAVAC_FLAGS) -classpath "$(CLASSBINDIR)$(CLASSPATH_SEPARATOR)$(DOCLETSRC)" -d $(DOCLETDST) $?
 	@$(java-vm-cleanup)
 
 # To run, the doclet needs SwingBeanInfoBase class.  Also Notice the lie
@@ -95,11 +97,11 @@ $(DOCLETDST)/%.class: $(DOCLETSRC)/%.java
 .SwingBeanInfo: $(OBJDIR) $(BEANCLASSDIR) $(BEANSRCDIR) $(SWINGPKG)/BeanInfoUtils.class $(SWINGPKG)/SwingBeanInfoBase.class 
 
 $(SWINGPKG)/BeanInfoUtils.class: $(BEANSRCDIR)/BeanInfoUtils.java
-	$(JAVAC_CMD) $(LOCAL_JAVAC_FLAGS) -d $(BEANCLASSDIR) $<
+	$(JAVAC_CMD) $(LOCAL_JAVAC_FLAGS) $(DOCLET_JAVAC_FLAGS) -d $(BEANCLASSDIR) $<
 	@$(java-vm-cleanup)
 
 $(SWINGPKG)/SwingBeanInfoBase.class: $(BEANSRCDIR)/SwingBeanInfoBase.java $(BEANSRCDIR)/BeanInfoUtils.java
-	$(JAVAC_CMD) $(LOCAL_JAVAC_FLAGS) -classpath $(BEANCLASSDIR) -d $(BEANCLASSDIR) $<
+	$(JAVAC_CMD) $(LOCAL_JAVAC_FLAGS) $(DOCLET_JAVAC_FLAGS) -classpath $(BEANCLASSDIR) -d $(BEANCLASSDIR) $<
 	@$(java-vm-cleanup)
 
 #

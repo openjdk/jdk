@@ -95,7 +95,7 @@ public class ClassTranslator
         if (cp2 == null) {
             ConstantPool.CPInfo[] pool2 = new ConstantPool.CPInfo[cp.size()];
             boolean eq = true;
-            for (int i = 0; i < cp.size(); i++) {
+            for (int i = 0; i < cp.size(); ) {
                 ConstantPool.CPInfo cpInfo;
                 try {
                     cpInfo = cp.get(i);
@@ -107,11 +107,7 @@ public class ClassTranslator
                 pool2[i] = cpInfo2;
                 if (cpInfo.getTag() != cpInfo2.getTag())
                     throw new IllegalStateException();
-                switch (cpInfo.getTag()) {
-                    case ConstantPool.CONSTANT_Double:
-                    case ConstantPool.CONSTANT_Long:
-                        i += 1;
-                }
+                i += cpInfo.size();
             }
 
             if (eq)

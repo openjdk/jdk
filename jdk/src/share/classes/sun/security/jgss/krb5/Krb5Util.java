@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlContext;
 import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 
 import sun.security.krb5.Credentials;
 import sun.security.krb5.EncryptionKey;
@@ -67,7 +68,7 @@ public class Krb5Util {
      *
      * NOTE: This method is used by JSSE Kerberos Cipher Suites
      */
-    public static KerberosTicket getTicketFromSubjectAndTgs(int caller,
+    public static KerberosTicket getTicketFromSubjectAndTgs(GSSCaller caller,
         String clientPrincipal, String serverPrincipal, String tgsPrincipal,
         AccessControlContext acc)
         throws LoginException, KrbException, IOException {
@@ -138,7 +139,7 @@ public class Krb5Util {
      * useSubjectCredsOnly is false, then obtain ticket from
      * a LoginContext.
      */
-    static KerberosTicket getTicket(int caller,
+    static KerberosTicket getTicket(GSSCaller caller,
         String clientPrincipal, String serverPrincipal,
         AccessControlContext acc) throws LoginException {
 
@@ -168,7 +169,7 @@ public class Krb5Util {
      *
      * NOTE: This method is used by JSSE Kerberos Cipher Suites
      */
-    public static Subject getSubject(int caller,
+    public static Subject getSubject(GSSCaller caller,
         AccessControlContext acc) throws LoginException {
 
         // Try to get the Subject from acc
@@ -190,7 +191,7 @@ public class Krb5Util {
      *
      * NOTE: This method is used by JSSE Kerberos Cipher Suites
      */
-    public static KerberosKey[] getKeys(int caller,
+    public static KerberosKey[] getKeys(GSSCaller caller,
         String serverPrincipal, AccessControlContext acc)
                 throws LoginException {
 

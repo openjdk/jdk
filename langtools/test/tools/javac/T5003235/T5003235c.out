@@ -1,4 +1,2 @@
-T5003235c.java:15: T5003235c.B has private access in T5003235c
-class C extends T5003235c.B.Inner {}
-                         ^
+T5003235c.java:15:26: compiler.err.report.access: T5003235c.B, private, T5003235c
 1 error

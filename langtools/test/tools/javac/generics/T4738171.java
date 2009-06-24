@@ -27,7 +27,7 @@
  * @summary generics: problem with equivalence of generic types
  * @author gafter
  *
- * @compile/fail -source 1.5 T4738171.java
+ * @compile/fail  T4738171.java
  */
 
 interface If<T> {

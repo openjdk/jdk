@@ -27,7 +27,7 @@
  * @summary generics: erasure clash not detected
  * @author gafter
  *
- * @compile/fail -source 1.5 T4757416.java
+ * @compile/fail  T4757416.java
  */
 
 class T4756416 {

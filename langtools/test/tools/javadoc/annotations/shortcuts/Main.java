@@ -26,7 +26,7 @@
  * @bug 4904495
  * @summary Verify that "shortcuts" are used when printing annotations.
  * @library ../../lib
- * @compile -source 1.5 ../../lib/Tester.java Main.java
+ * @compile  ../../lib/Tester.java Main.java
  * @run main Main
  */
 

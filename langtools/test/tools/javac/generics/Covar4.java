@@ -27,7 +27,7 @@
  * @summary no covariant returns involving primitives
  * @author gafter
  *
- * @compile/fail -source 1.5 Covar4.java
+ * @compile/fail  Covar4.java
  */
 
 public class Covar4 {

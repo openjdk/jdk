@@ -27,7 +27,7 @@
  * @summary generics: used of ? get bound error
  * @author gafter
  *
- * @compile -source 1.5 BoundBug.java
+ * @compile  BoundBug.java
  */
 
 class BoundBug {
