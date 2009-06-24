@@ -25,7 +25,6 @@
  * @test
  * @bug 6578647
  * @summary Undefined requesting URL in java.net.Authenticator.getPasswordAuthentication()
- * @run main/othervm -Dsun.net.spi.nameservice.provider.1=ns,mock HttpNegotiateServer
  */
 
 import com.sun.net.httpserver.Headers;
@@ -40,12 +39,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
 import java.security.PrivilegedExceptionAction;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.Subject;
@@ -53,8 +50,6 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
 import sun.security.jgss.GSSUtil;
-import sun.net.spi.nameservice.NameService;
-import sun.net.spi.nameservice.NameServiceDescriptor;
 import sun.security.krb5.Config;
 
 /**
@@ -62,7 +57,7 @@ import sun.security.krb5.Config;
  * party uses JAAS login to get subjects and executes JGSS calls using
  * Subject.doAs.
  */
-public class HttpNegotiateServer implements NameServiceDescriptor {
+public class HttpNegotiateServer {
 
     // Two realm, web server in one, proxy server in another
     final static String REALM_WEB = "WEB.DOMAIN";
@@ -142,12 +137,12 @@ public class HttpNegotiateServer implements NameServiceDescriptor {
     public static void main(String[] args)
             throws Exception {
 
-        KDC kdcw = new KDC(REALM_WEB, 0, true);
+        KDC kdcw = KDC.create(REALM_WEB);
         kdcw.addPrincipal(WEB_USER, WEB_PASS);
         kdcw.addPrincipalRandKey("krbtgt/" + REALM_WEB);
         kdcw.addPrincipalRandKey("HTTP/" + WEB_HOST);
 
-        KDC kdcp = new KDC(REALM_PROXY, 0, true);
+        KDC kdcp = KDC.create(REALM_PROXY);
         kdcp.addPrincipal(PROXY_USER, PROXY_PASS);
         kdcp.addPrincipalRandKey("krbtgt/" + REALM_PROXY);
         kdcp.addPrincipalRandKey("HTTP/" + PROXY_HOST);
@@ -305,37 +300,6 @@ public class HttpNegotiateServer implements NameServiceDescriptor {
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    @Override
-    public NameService createNameService() throws Exception {
-        NameService ns = new NameService() {
-            @Override
-            public InetAddress[] lookupAllHostAddr(String host)
-                    throws UnknownHostException {
-                // Everything is localhost
-                return new InetAddress[]{
-                    InetAddress.getByAddress(host, new byte[]{127,0,0,1})
-                };
-            }
-            @Override
-            public String getHostByAddr(byte[] addr)
-                    throws UnknownHostException {
-                // No reverse lookup
-                throw new UnknownHostException();
-            }
-        };
-        return ns;
-    }
-
-    @Override
-    public String getProviderName() {
-        return "mock";
-    }
-
-    @Override
-    public String getType() {
-        return "ns";
     }
 }
 

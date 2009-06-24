@@ -26,7 +26,6 @@
 /*
  */
 
-package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;

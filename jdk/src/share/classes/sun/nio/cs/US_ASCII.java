@@ -160,7 +160,8 @@ public class US_ASCII
         }
 
         public boolean isLegalReplacement(byte[] repl) {
-            return (repl.length == 1 && repl[0] >= 0);
+            return (repl.length == 1 && repl[0] >= 0) ||
+                   super.isLegalReplacement(repl);
         }
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
