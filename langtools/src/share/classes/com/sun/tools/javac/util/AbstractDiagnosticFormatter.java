@@ -109,7 +109,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         return formatDiagnostic(d, locale);
     }
 
-    abstract String formatDiagnostic(JCDiagnostic d, Locale locale);
+    protected abstract String formatDiagnostic(JCDiagnostic d, Locale locale);
 
     public String formatPosition(JCDiagnostic d, PositionKind pk,Locale l) {
         assert (d.getPosition() != Position.NOPOS);
