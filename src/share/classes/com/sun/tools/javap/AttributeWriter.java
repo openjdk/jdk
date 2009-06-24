@@ -74,7 +74,7 @@ import static com.sun.tools.classfile.AccessFlags.*;
 public class AttributeWriter extends BasicWriter
         implements Attribute.Visitor<Void,Void>
 {
-    static AttributeWriter instance(Context context) {
+    public static AttributeWriter instance(Context context) {
         AttributeWriter instance = context.get(AttributeWriter.class);
         if (instance == null)
             instance = new AttributeWriter(context);

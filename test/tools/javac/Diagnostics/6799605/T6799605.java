@@ -27,6 +27,7 @@
  * @summary Basic/Raw formatters should use type/symbol printer instead of toString()
  * @author  mcimadamore
  * @compile/fail/ref=T6799605.out -XDrawDiagnostics  T6799605.java
+ * @compile/fail/ref=T6799605.out -XDoldDiags -XDrawDiagnostics  T6799605.java
  */
 
 class T6799605<X> {
