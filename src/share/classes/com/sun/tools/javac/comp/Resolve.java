@@ -82,15 +82,15 @@ public class Resolve {
         syms = Symtab.instance(context);
 
         varNotFound = new
-            ResolveError(ABSENT_VAR, syms.errSymbol, "variable not found");
+            SymbolNotFoundError(ABSENT_VAR);
         wrongMethod = new
-            ResolveError(WRONG_MTH, syms.errSymbol, "method not found");
+            InapplicableSymbolError(syms.errSymbol);
         wrongMethods = new
-            ResolveError(WRONG_MTHS, syms.errSymbol, "wrong methods");
+            InapplicableSymbolsError(syms.errSymbol);
         methodNotFound = new
-            ResolveError(ABSENT_MTH, syms.errSymbol, "method not found");
+            SymbolNotFoundError(ABSENT_MTH);
         typeNotFound = new
-            ResolveError(ABSENT_TYP, syms.errSymbol, "type not found");
+            SymbolNotFoundError(ABSENT_TYP);
 
         names = Names.instance(context);
         log = Log.instance(context);
@@ -110,11 +110,11 @@ public class Resolve {
 
     /** error symbols, which are returned when resolution fails
      */
-    final ResolveError varNotFound;
-    final ResolveError wrongMethod;
-    final ResolveError wrongMethods;
-    final ResolveError methodNotFound;
-    final ResolveError typeNotFound;
+    final SymbolNotFoundError varNotFound;
+    final InapplicableSymbolError wrongMethod;
+    final InapplicableSymbolsError wrongMethods;
+    final SymbolNotFoundError methodNotFound;
+    final SymbolNotFoundError typeNotFound;
 
 /* ************************************************************************
  * Identifier resolution
@@ -710,13 +710,13 @@ public class Resolve {
             return new AmbiguityError(m1, m2);
         case AMBIGUOUS:
             AmbiguityError e = (AmbiguityError)m2;
-            Symbol err1 = mostSpecific(m1, e.sym1, env, site, allowBoxing, useVarargs);
+            Symbol err1 = mostSpecific(m1, e.sym, env, site, allowBoxing, useVarargs);
             Symbol err2 = mostSpecific(m1, e.sym2, env, site, allowBoxing, useVarargs);
             if (err1 == err2) return err1;
-            if (err1 == e.sym1 && err2 == e.sym2) return m2;
+            if (err1 == e.sym && err2 == e.sym2) return m2;
             if (err1 instanceof AmbiguityError &&
                 err2 instanceof AmbiguityError &&
-                ((AmbiguityError)err1).sym1 == ((AmbiguityError)err2).sym1)
+                ((AmbiguityError)err1).sym == ((AmbiguityError)err2).sym)
                 return new AmbiguityError(m1, m2);
             else
                 return new AmbiguityError(err1, err2);
@@ -1192,18 +1192,12 @@ public class Resolve {
                   List<Type> argtypes,
                   List<Type> typeargtypes) {
         if (sym.kind >= AMBIGUOUS) {
-//          printscopes(site.tsym.members());//DEBUG
+            ResolveError errSym = (ResolveError)sym;
             if (!site.isErroneous() &&
                 !Type.isErroneous(argtypes) &&
                 (typeargtypes==null || !Type.isErroneous(typeargtypes)))
-                ((ResolveError)sym).report(log, pos, site, name, argtypes, typeargtypes);
-            do {
-                sym = ((ResolveError)sym).sym;
-            } while (sym.kind >= AMBIGUOUS);
-            if (sym == syms.errSymbol // preserve the symbol name through errors
-                || ((sym.kind & ERRONEOUS) == 0 // make sure an error symbol is returned
-                    && (sym.kind & TYP) != 0))
-                sym = types.createErrorType(name, qualified ? site.tsym : syms.noSymbol, sym.type).tsym;
+                logResolveError(errSym, pos, site, name, argtypes, typeargtypes);
+            sym = errSym.access(name, qualified ? site.tsym : syms.noSymbol);
         }
         return sym;
     }
@@ -1583,7 +1577,19 @@ public class Resolve {
 
     public void logAccessError(Env<AttrContext> env, JCTree tree, Type type) {
         AccessError error = new AccessError(env, type.getEnclosingType(), type.tsym);
-        error.report(log, tree.pos(), type.getEnclosingType(), null, null, null);
+        logResolveError(error, tree.pos(), type.getEnclosingType(), null, null, null);
+    }
+    //where
+    private void logResolveError(ResolveError error,
+            DiagnosticPosition pos,
+            Type site,
+            Name name,
+            List<Type> argtypes,
+            List<Type> typeargtypes) {
+        JCDiagnostic d = error.getDiagnostic(JCDiagnostic.DiagnosticType.ERROR,
+                pos, site, name, argtypes, typeargtypes);
+        if (d != null)
+            log.report(d);
     }
 
     private final LocalizedString noArgs = new LocalizedString("compiler.misc.no.args");
@@ -1592,152 +1598,71 @@ public class Resolve {
         return argtypes.isEmpty() ? noArgs : argtypes;
     }
 
-    /** Root class for resolve errors.
-     *  Instances of this class indicate "Symbol not found".
-     *  Instances of subclass indicate other errors.
+    /**
+     * Root class for resolution errors. Subclass of ResolveError
+     * represent a different kinds of resolution error - as such they must
+     * specify how they map into concrete compiler diagnostics.
      */
-    private class ResolveError extends Symbol {
+    private abstract class ResolveError extends Symbol {
 
-        ResolveError(int kind, Symbol sym, String debugName) {
-            super(kind, 0, null, null, null);
-            this.debugName = debugName;
-            this.sym = sym;
-        }
-
-        /** The name of the kind of error, for debugging only.
-         */
+        /** The name of the kind of error, for debugging only. */
         final String debugName;
 
-        /** The symbol that was determined by resolution, or errSymbol if none
-         *  was found.
-         */
-        final Symbol sym;
+        ResolveError(int kind, String debugName) {
+            super(kind, 0, null, null, null);
+            this.debugName = debugName;
+        }
 
-        /** The symbol that was a close mismatch, or null if none was found.
-         *  wrongSym is currently set if a simgle method with the correct name, but
-         *  the wrong parameters was found.
-         */
-        Symbol wrongSym;
-
-        /** An auxiliary explanation set in case of instantiation errors.
-         */
-        JCDiagnostic explanation;
-
-
+        @Override
         public <R, P> R accept(ElementVisitor<R, P> v, P p) {
             throw new AssertionError();
         }
 
-        /** Print the (debug only) name of the kind of error.
-         */
+        @Override
         public String toString() {
-            return debugName + " wrongSym=" + wrongSym + " explanation=" + explanation;
+            return debugName;
         }
 
-        /** Update wrongSym and explanation and return this.
-         */
-        ResolveError setWrongSym(Symbol sym, JCDiagnostic explanation) {
-            this.wrongSym = sym;
-            this.explanation = explanation;
-            return this;
-        }
-
-        /** Update wrongSym and return this.
-         */
-        ResolveError setWrongSym(Symbol sym) {
-            this.wrongSym = sym;
-            this.explanation = null;
-            return this;
-        }
-
+        @Override
         public boolean exists() {
-            switch (kind) {
-            case HIDDEN:
-            case ABSENT_VAR:
-            case ABSENT_MTH:
-            case ABSENT_TYP:
-                return false;
-            default:
-                return true;
-            }
+            return false;
         }
 
-        /** Report error.
-         *  @param log       The error log to be used for error reporting.
-         *  @param pos       The position to be used for error reporting.
-         *  @param site      The original type from where the selection took place.
-         *  @param name      The name of the symbol to be resolved.
-         *  @param argtypes  The invocation's value arguments,
-         *                   if we looked for a method.
-         *  @param typeargtypes  The invocation's type arguments,
-         *                   if we looked for a method.
+        /**
+         * Create an external representation for this erroneous symbol to be
+         * used during attribution - by default this returns the symbol of a
+         * brand new error type which stores the original type found
+         * during resolution.
+         *
+         * @param name     the name used during resolution
+         * @param location the location from which the symbol is accessed
          */
-        void report(Log log, DiagnosticPosition pos, Type site, Name name,
-                    List<Type> argtypes, List<Type> typeargtypes) {
-            if (argtypes == null)
-                argtypes = List.nil();
-            if (typeargtypes == null)
-                typeargtypes = List.nil();
-            if (name != names.error) {
-                KindName kindname = absentKind(kind);
-                Name idname = name;
-                if (kind >= WRONG_MTHS && kind <= ABSENT_MTH) {
-                    if (isOperator(name)) {
-                        log.error(pos, "operator.cant.be.applied",
-                                  name, argtypes);
-                        return;
-                    }
-                    if (name == names.init) {
-                        kindname = KindName.CONSTRUCTOR;
-                        idname = site.tsym.name;
-                    }
-                }
-                if (kind == WRONG_MTH) {
-                    Symbol ws = wrongSym.asMemberOf(site, types);
-                    log.error(pos,
-                              "cant.apply.symbol" + (explanation != null ? ".1" : ""),
-                              kindname,
-                              ws.name == names.init ? ws.owner.name : ws.name,
-                              methodArguments(ws.type.getParameterTypes()),
-                              methodArguments(argtypes),
-                              kindName(ws.owner),
-                              ws.owner.type,
-                              explanation);
-                } else if (!site.tsym.name.isEmpty()) {
-                    if (site.tsym.kind == PCK && !site.tsym.exists())
-                        log.error(pos, "doesnt.exist", site.tsym);
-                    else {
-                        String errKey = getErrorKey("cant.resolve.location",
-                                                    argtypes, typeargtypes,
-                                                    kindname);
-                        log.error(pos, errKey, kindname, idname, //symbol kindname, name
-                                  typeargtypes, argtypes, //type parameters and arguments (if any)
-                                  typeKindName(site), site); //location kindname, type
-                    }
-                } else {
-                    String errKey = getErrorKey("cant.resolve",
-                                                argtypes, typeargtypes,
-                                                kindname);
-                    log.error(pos, errKey, kindname, idname, //symbol kindname, name
-                              typeargtypes, argtypes); //type parameters and arguments (if any)
-                }
-            }
-        }
-        //where
-        String getErrorKey(String key, List<Type> argtypes, List<Type> typeargtypes, KindName kindname) {
-            String suffix = "";
-            switch (kindname) {
-                case METHOD:
-                case CONSTRUCTOR: {
-                    suffix += ".args";
-                    suffix += typeargtypes.nonEmpty() ? ".params" : "";
-                }
-            }
-            return key + suffix;
+        protected Symbol access(Name name, TypeSymbol location) {
+            return types.createErrorType(name, location, syms.errSymbol.type).tsym;
         }
 
-        /** A name designates an operator if it consists
-         *  of a non-empty sequence of operator symbols +-~!/*%&|^<>=
+        /**
+         * Create a diagnostic representing this resolution error.
+         *
+         * @param dkind     The kind of the diagnostic to be created (e.g error).
+         * @param pos       The position to be used for error reporting.
+         * @param site      The original type from where the selection took place.
+         * @param name      The name of the symbol to be resolved.
+         * @param argtypes  The invocation's value arguments,
+         *                  if we looked for a method.
+         * @param typeargtypes  The invocation's type arguments,
+         *                      if we looked for a method.
+         */
+        abstract JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes);
+
+        /**
+         * A name designates an operator if it consists
+         * of a non-empty sequence of operator symbols +-~!/*%&|^<>=
          */
         boolean isOperator(Name name) {
             int i = 0;
@@ -1747,9 +1672,206 @@ public class Resolve {
         }
     }
 
-    /** Resolve error class indicating that a symbol is not accessible.
+    /**
+     * This class is the root class of all resolution errors caused by
+     * an invalid symbol being found during resolution.
      */
-    class AccessError extends ResolveError {
+    abstract class InvalidSymbolError extends ResolveError {
+
+        /** The invalid symbol found during resolution */
+        Symbol sym;
+
+        InvalidSymbolError(int kind, Symbol sym, String debugName) {
+            super(kind, debugName);
+            this.sym = sym;
+        }
+
+        @Override
+        public boolean exists() {
+            return true;
+        }
+
+        @Override
+        public String toString() {
+             return super.toString() + " wrongSym=" + sym;
+        }
+
+        @Override
+        public Symbol access(Name name, TypeSymbol location) {
+            if (sym.kind >= AMBIGUOUS)
+                return ((ResolveError)sym).access(name, location);
+            else if ((sym.kind & ERRONEOUS) == 0 && (sym.kind & TYP) != 0)
+                return types.createErrorType(name, location, sym.type).tsym;
+            else
+                return sym;
+        }
+    }
+
+    /**
+     * InvalidSymbolError error class indicating that a symbol matching a
+     * given name does not exists in a given site.
+     */
+    class SymbolNotFoundError extends ResolveError {
+
+        SymbolNotFoundError(int kind) {
+            super(kind, "symbol not found error");
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes) {
+            argtypes = argtypes == null ? List.<Type>nil() : argtypes;
+            typeargtypes = typeargtypes == null ? List.<Type>nil() : typeargtypes;
+            if (name == names.error)
+                return null;
+
+            if (isOperator(name)) {
+                return diags.create(dkind, false, log.currentSource(), pos,
+                        "operator.cant.be.applied", name, argtypes);
+            }
+            boolean hasLocation = false;
+            if (!site.tsym.name.isEmpty()) {
+                if (site.tsym.kind == PCK && !site.tsym.exists()) {
+                    return diags.create(dkind, false, log.currentSource(), pos,
+                        "doesnt.exist", site.tsym);
+                }
+                hasLocation = true;
+            }
+            boolean isConstructor = kind == ABSENT_MTH &&
+                    name == names.table.names.init;
+            KindName kindname = isConstructor ? KindName.CONSTRUCTOR : absentKind(kind);
+            Name idname = isConstructor ? site.tsym.name : name;
+            String errKey = getErrorKey(kindname, typeargtypes.nonEmpty(), hasLocation);
+            if (hasLocation) {
+                return diags.create(dkind, false, log.currentSource(), pos,
+                        errKey, kindname, idname, //symbol kindname, name
+                        typeargtypes, argtypes, //type parameters and arguments (if any)
+                        typeKindName(site), site); //location kindname, type
+            }
+            else {
+                return diags.create(dkind, false, log.currentSource(), pos,
+                        errKey, kindname, idname, //symbol kindname, name
+                        typeargtypes, argtypes); //type parameters and arguments (if any)
+            }
+        }
+        //where
+        private String getErrorKey(KindName kindname, boolean hasTypeArgs, boolean hasLocation) {
+            String key = "cant.resolve";
+            String suffix = hasLocation ? ".location" : "";
+            switch (kindname) {
+                case METHOD:
+                case CONSTRUCTOR: {
+                    suffix += ".args";
+                    suffix += hasTypeArgs ? ".params" : "";
+                }
+            }
+            return key + suffix;
+        }
+    }
+
+    /**
+     * InvalidSymbolError error class indicating that a given symbol
+     * (either a method, a constructor or an operand) is not applicable
+     * given an actual arguments/type argument list.
+     */
+    class InapplicableSymbolError extends InvalidSymbolError {
+
+        /** An auxiliary explanation set in case of instantiation errors. */
+        JCDiagnostic explanation;
+
+        InapplicableSymbolError(Symbol sym) {
+            super(WRONG_MTH, sym, "inapplicable symbol error");
+        }
+
+        /** Update sym and explanation and return this.
+         */
+        InapplicableSymbolError setWrongSym(Symbol sym, JCDiagnostic explanation) {
+            this.sym = sym;
+            this.explanation = explanation;
+            return this;
+        }
+
+        /** Update sym and return this.
+         */
+        InapplicableSymbolError setWrongSym(Symbol sym) {
+            this.sym = sym;
+            this.explanation = null;
+            return this;
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + " explanation=" + explanation;
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes) {
+            if (name == names.error)
+                return null;
+
+            if (isOperator(name)) {
+                return diags.create(dkind, false, log.currentSource(),
+                        pos, "operator.cant.be.applied", name, argtypes);
+            }
+            else {
+                Symbol ws = sym.asMemberOf(site, types);
+                return diags.create(dkind, false, log.currentSource(), pos,
+                          "cant.apply.symbol" + (explanation != null ? ".1" : ""),
+                          kindName(ws),
+                          ws.name == names.init ? ws.owner.name : ws.name,
+                          methodArguments(ws.type.getParameterTypes()),
+                          methodArguments(argtypes),
+                          kindName(ws.owner),
+                          ws.owner.type,
+                          explanation);
+            }
+        }
+
+        @Override
+        public Symbol access(Name name, TypeSymbol location) {
+            return types.createErrorType(name, location, syms.errSymbol.type).tsym;
+        }
+    }
+
+    /**
+     * ResolveError error class indicating that a set of symbols
+     * (either methods, constructors or operands) is not applicable
+     * given an actual arguments/type argument list.
+     */
+    class InapplicableSymbolsError extends ResolveError {
+        InapplicableSymbolsError(Symbol sym) {
+            super(WRONG_MTHS, "inapplicable symbols");
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes) {
+            return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind, pos,
+                    site, name, argtypes, typeargtypes);
+        }
+    }
+
+    /**
+     * An InvalidSymbolError error class indicating that a symbol is not
+     * accessible from a given site
+     */
+    class AccessError extends InvalidSymbolError {
+
+        private Env<AttrContext> env;
+        private Type site;
 
         AccessError(Symbol sym) {
             this(null, null, sym);
@@ -1763,111 +1885,107 @@ public class Resolve {
                 log.error("proc.messager", sym + " @ " + site + " is inaccessible.");
         }
 
-        private Env<AttrContext> env;
-        private Type site;
+        @Override
+        public boolean exists() {
+            return false;
+        }
 
-        /** Report error.
-         *  @param log       The error log to be used for error reporting.
-         *  @param pos       The position to be used for error reporting.
-         *  @param site      The original type from where the selection took place.
-         *  @param name      The name of the symbol to be resolved.
-         *  @param argtypes  The invocation's value arguments,
-         *                   if we looked for a method.
-         *  @param typeargtypes  The invocation's type arguments,
-         *                   if we looked for a method.
-         */
-        void report(Log log, DiagnosticPosition pos, Type site, Name name,
-                    List<Type> argtypes, List<Type> typeargtypes) {
-            if (sym.owner.type.tag != ERROR) {
-                if (sym.name == names.init && sym.owner != site.tsym)
-                    new ResolveError(ABSENT_MTH, sym.owner, "absent method " + sym).report(
-                        log, pos, site, name, argtypes, typeargtypes);
-                if ((sym.flags() & PUBLIC) != 0
-                    || (env != null && this.site != null
-                        && !isAccessible(env, this.site)))
-                    log.error(pos, "not.def.access.class.intf.cant.access",
-                        sym, sym.location());
-                else if ((sym.flags() & (PRIVATE | PROTECTED)) != 0)
-                    log.error(pos, "report.access", sym,
-                              asFlagSet(sym.flags() & (PRIVATE | PROTECTED)),
-                              sym.location());
-                else
-                    log.error(pos, "not.def.public.cant.access",
-                              sym, sym.location());
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes) {
+            if (sym.owner.type.tag == ERROR)
+                return null;
+
+            if (sym.name == names.init && sym.owner != site.tsym) {
+                return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind,
+                        pos, site, name, argtypes, typeargtypes);
+            }
+            else if ((sym.flags() & PUBLIC) != 0
+                || (env != null && this.site != null
+                    && !isAccessible(env, this.site))) {
+                return diags.create(dkind, false, log.currentSource(),
+                        pos, "not.def.access.class.intf.cant.access",
+                    sym, sym.location());
+            }
+            else if ((sym.flags() & (PRIVATE | PROTECTED)) != 0) {
+                return diags.create(dkind, false, log.currentSource(),
+                        pos, "report.access", sym,
+                        asFlagSet(sym.flags() & (PRIVATE | PROTECTED)),
+                        sym.location());
+            }
+            else {
+                return diags.create(dkind, false, log.currentSource(),
+                        pos, "not.def.public.cant.access", sym, sym.location());
             }
         }
     }
 
-    /** Resolve error class indicating that an instance member was accessed
-     *  from a static context.
+    /**
+     * InvalidSymbolError error class indicating that an instance member
+     * has erroneously been accessed from a static context.
      */
-    class StaticError extends ResolveError {
+    class StaticError extends InvalidSymbolError {
+
         StaticError(Symbol sym) {
             super(STATICERR, sym, "static error");
         }
 
-        /** Report error.
-         *  @param log       The error log to be used for error reporting.
-         *  @param pos       The position to be used for error reporting.
-         *  @param site      The original type from where the selection took place.
-         *  @param name      The name of the symbol to be resolved.
-         *  @param argtypes  The invocation's value arguments,
-         *                   if we looked for a method.
-         *  @param typeargtypes  The invocation's type arguments,
-         *                   if we looked for a method.
-         */
-        void report(Log log,
-                    DiagnosticPosition pos,
-                    Type site,
-                    Name name,
-                    List<Type> argtypes,
-                    List<Type> typeargtypes) {
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes) {
             Symbol errSym = ((sym.kind == TYP && sym.type.tag == CLASS)
                 ? types.erasure(sym.type).tsym
                 : sym);
-            log.error(pos, "non-static.cant.be.ref",
-                      kindName(sym), errSym);
+            return diags.create(dkind, false, log.currentSource(), pos,
+                    "non-static.cant.be.ref", kindName(sym), errSym);
         }
     }
 
-    /** Resolve error class indicating an ambiguous reference.
+    /**
+     * InvalidSymbolError error class indicating that a pair of symbols
+     * (either methods, constructors or operands) are ambiguous
+     * given an actual arguments/type argument list.
      */
-    class AmbiguityError extends ResolveError {
-        Symbol sym1;
+    class AmbiguityError extends InvalidSymbolError {
+
+        /** The other maximally specific symbol */
         Symbol sym2;
 
         AmbiguityError(Symbol sym1, Symbol sym2) {
             super(AMBIGUOUS, sym1, "ambiguity error");
-            this.sym1 = sym1;
             this.sym2 = sym2;
         }
 
-        /** Report error.
-         *  @param log       The error log to be used for error reporting.
-         *  @param pos       The position to be used for error reporting.
-         *  @param site      The original type from where the selection took place.
-         *  @param name      The name of the symbol to be resolved.
-         *  @param argtypes  The invocation's value arguments,
-         *                   if we looked for a method.
-         *  @param typeargtypes  The invocation's type arguments,
-         *                   if we looked for a method.
-         */
-        void report(Log log, DiagnosticPosition pos, Type site, Name name,
-                    List<Type> argtypes, List<Type> typeargtypes) {
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes) {
             AmbiguityError pair = this;
             while (true) {
-                if (pair.sym1.kind == AMBIGUOUS)
-                    pair = (AmbiguityError)pair.sym1;
+                if (pair.sym.kind == AMBIGUOUS)
+                    pair = (AmbiguityError)pair.sym;
                 else if (pair.sym2.kind == AMBIGUOUS)
                     pair = (AmbiguityError)pair.sym2;
                 else break;
             }
-            Name sname = pair.sym1.name;
-            if (sname == names.init) sname = pair.sym1.owner.name;
-            log.error(pos, "ref.ambiguous", sname,
-                      kindName(pair.sym1),
-                      pair.sym1,
-                      pair.sym1.location(site, types),
+            Name sname = pair.sym.name;
+            if (sname == names.init) sname = pair.sym.owner.name;
+            return diags.create(dkind, false, log.currentSource(),
+                      pos, "ref.ambiguous", sname,
+                      kindName(pair.sym),
+                      pair.sym,
+                      pair.sym.location(site, types),
                       kindName(pair.sym2),
                       pair.sym2,
                       pair.sym2.location(site, types));
