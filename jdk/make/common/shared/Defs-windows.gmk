@@ -631,7 +631,12 @@ JDK_IMPORT_PATH:=$(call AltCheckValue,JDK_IMPORT_PATH)
 ifdef ALT_HOTSPOT_IMPORT_PATH
   HOTSPOT_IMPORT_PATH :=$(call FullPath,$(ALT_HOTSPOT_IMPORT_PATH))
 else
-  HOTSPOT_IMPORT_PATH =$(JDK_IMPORT_PATH)
+  # Default locations include the current $OUTPUTDIR, RE Promotions,
+  # and a JDK.  Please be aware the JDK does not include a Kernel VM.
+  _HOTSPOT_IMPORT_PATH1 = $(OUTPUTDIR)/hotspot/import
+  _HOTSPOT_IMPORT_PATH2 = $(PROMOTED_BUILD_DISTDIR)/hotspot/import
+  _HOTSPOT_IMPORT_PATH3 = $(JDK_IMPORT_PATH)
+   HOTSPOT_IMPORT_PATH := $(call DirExists,$(_HOTSPOT_IMPORT_PATH1),$(_HOTSPOT_IMPORT_PATH2),$(_HOTSPOT_IMPORT_PATH3))
 endif
 HOTSPOT_IMPORT_PATH:=$(call AltCheckSpaces,HOTSPOT_IMPORT_PATH)
 HOTSPOT_IMPORT_PATH:=$(call AltCheckValue,HOTSPOT_IMPORT_PATH)
@@ -645,25 +650,6 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   endif
   HOTSPOT_CLIENT_PATH:=$(call AltCheckSpaces,HOTSPOT_CLIENT_PATH)
   HOTSPOT_CLIENT_PATH:=$(call AltCheckValue,HOTSPOT_CLIENT_PATH)
-endif
-
-DO_KERNEL=false
-ifneq ($(KERNEL), off)
-  # HOTSPOT_KERNEL_PATH: location of kernel jvm library file.
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    ifdef ALT_HOTSPOT_KERNEL_PATH
-       HOTSPOT_KERNEL_PATH := $(call FullPath,$(ALT_HOTSPOT_KERNEL_PATH))
-    else
-       # if ALT_HOTSPOT_KERNEL_PATH not set, try getting from hotspot build
-       HOTSPOT_KERNEL_PATH := $(call FullPath,$(OUTPUTDIR)/bin/kernel)
-    endif
-    HOTSPOT_KERNEL_PATH:=$(call AltCheckSpaces,HOTSPOT_KERNEL_PATH)
-    DO_KERNEL = $(shell if [ -f $(HOTSPOT_KERNEL_PATH)/jvm.dll ] ; then \
-      $(ECHO) true ; \
-    else \
-      $(ECHO) false ; \
-    fi )
-  endif
 endif
 
 # HOTSPOT_SERVER_PATH: location of server jvm library file.

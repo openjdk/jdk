@@ -40,7 +40,6 @@ include $(BUILDDIR)/common/Defs.gmk
 
 SERVER_LOCATION = server
 CLIENT_LOCATION = client
-KERNEL_LOCATION = kernel
 
 DB_SUFFIX = _db
 
@@ -103,14 +102,6 @@ endif
 
 ifeq ($(PLATFORM), windows)
 #  Windows     vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  Windows
-
-# Add the Java Kernel VM to the import path, but only on windows 32-bit Windows
-ifeq ($(ARCH_DATA_MODEL), 32)
-  ifeq ($(DO_KERNEL), true)
-    IMPORT_LIST += $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVM_NAME) \
-                   $(LIB_LOCATION)/$(KERNEL_LOCATION)/Xusage.txt
-  endif
-endif
 
 IMPORT_LIST += $(MS_RUNTIME_LIBRARIES:%=$(BINDIR)/%)
 
