@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
 
 /*
  * @test
- * @bug     6476073
- * @summary Capture using super wildcard of type variables doesn't work
- * @ignore awaiting for 6650759 (see bug report for a detailed evaluation)
- * @compile T6476073.java
+ * @bug 6835430
+ * @summary 6835430: javac does not generate signature attributes for classes extending parameterized inner classes
+ * @author mcimadamore
+ *
+ * @compile A.java
+ * @compile T6835430.java
  */
 
-import java.util.Collection;
-import java.util.List;
-
-public class T6476073 {
-    public static <B> void m(List<? super B> list,Collection<? super B> coll) {
-        m(list,coll);
+class T6835430 {
+    void test(B.D d) {
+        B b = d.getT();
     }
 }
