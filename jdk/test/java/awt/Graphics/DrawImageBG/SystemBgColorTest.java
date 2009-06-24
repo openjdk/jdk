@@ -59,7 +59,6 @@ public class SystemBgColorTest {
         if (errcount > 0) {
             throw new RuntimeException(errcount+" errors");
         }
-        System.exit(0); // For 1.3 and earlier VMs...
     }
 
     static int cmap[] = {
