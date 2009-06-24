@@ -68,7 +68,10 @@ public class RichDiagnosticFormatter extends
     final JavacMessages messages;
 
     /* name simplifier used by this formatter */
-    ClassNameSimplifier nameSimplifier;
+    protected ClassNameSimplifier nameSimplifier;
+
+    /* type/symbol printer used by this formatter */
+    private RichPrinter printer;
 
     /* map for keeping track of a where clause associated to a given type */
     Map<WhereClauseKind, Map<Type, JCDiagnostic>> whereClauses;
@@ -83,7 +86,7 @@ public class RichDiagnosticFormatter extends
 
     protected RichDiagnosticFormatter(Context context) {
         super((AbstractDiagnosticFormatter)Log.instance(context).getDiagnosticFormatter());
-        this.formatter.setPrinter(printer);
+        setRichPrinter(new RichPrinter());
         this.syms = Symtab.instance(context);
         this.diags = JCDiagnostic.Factory.instance(context);
         this.types = Types.instance(context);
@@ -114,6 +117,23 @@ public class RichDiagnosticFormatter extends
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Sets the type/symbol printer used by this formatter.
+     * @param printer the rich printer to be set
+     */
+    protected void setRichPrinter(RichPrinter printer) {
+        this.printer = printer;
+        formatter.setPrinter(printer);
+    }
+
+    /**
+     * Gets the type/symbol printer used by this formatter.
+     * @return type/symbol rich printer
+     */
+    protected RichPrinter getRichPrinter() {
+        return printer;
     }
 
     /**
@@ -217,7 +237,7 @@ public class RichDiagnosticFormatter extends
      * name belong to different packages - in this case the formatter reverts
      * to fullnames as compact names might lead to a confusing diagnostic.
      */
-    class ClassNameSimplifier {
+    protected class ClassNameSimplifier {
 
         /* table for keeping track of all short name usages */
         Map<Name, List<Symbol>> nameClashes = new HashMap<Name, List<Symbol>>();
@@ -272,7 +292,7 @@ public class RichDiagnosticFormatter extends
      * discovered during type/symbol preprocessing. This printer is set on the delegate
      * formatter so that rich type/symbol info can be properly rendered.
      */
-    protected Printer printer = new Printer() {
+    protected class RichPrinter extends Printer {
 
         @Override
         public String localize(Locale locale, String key, Object... args) {
