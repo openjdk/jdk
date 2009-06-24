@@ -27,7 +27,7 @@
  * @summary compiler: crashes when attributes with same elements are used in place of other
  * @author gafter
  *
- * @compile/fail -source 1.5 WrongValue.java
+ * @compile/fail WrongValue.java
  */
 
 @interface TestM2 {

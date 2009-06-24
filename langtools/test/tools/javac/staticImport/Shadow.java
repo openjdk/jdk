@@ -27,7 +27,7 @@
  * @summary compiler fails to shadow inapplicable method with static import
  * @author gafter
  *
- * @compile/fail -source 1.5 Shadow.java
+ * @compile/fail  Shadow.java
  */
 
 package shadow;

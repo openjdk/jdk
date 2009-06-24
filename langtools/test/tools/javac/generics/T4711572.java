@@ -27,7 +27,7 @@
  * @summary generics: problem with type inference for recursive methods
  * @author gafter
  *
- * @compile -source 1.5 T4683314.java
+ * @compile  T4683314.java
  */
 
 class T4711572 {

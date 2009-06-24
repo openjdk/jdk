@@ -27,8 +27,8 @@
  * @summary generics: forward referenced bounds vs separate compilation
  * @author gafter
  *
- * @compile -source 1.5 ForwardSeparateBound1.java ForwardSeparateBound2.java
- * @compile -source 1.5 ForwardSeparateBound2.java
+ * @compile  ForwardSeparateBound1.java ForwardSeparateBound2.java
+ * @compile  ForwardSeparateBound2.java
  */
 
 class Z {}

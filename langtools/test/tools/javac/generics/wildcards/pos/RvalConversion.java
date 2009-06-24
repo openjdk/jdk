@@ -27,7 +27,7 @@
  * @summary rvalue conversion changes "? extends X" to "X".
  * @author gafter
  *
- * @compile -source 1.5 RvalConversion.java
+ * @compile  RvalConversion.java
  */
 
 import java.util.*;

@@ -27,7 +27,7 @@
  * @summary compiler crash with malformed annotations
  * @author gafter
  *
- * @compile/fail -source 1.5 Recovery.java
+ * @compile/fail Recovery.java
  */
 
 import java.lang.annotation.*;

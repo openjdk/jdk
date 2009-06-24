@@ -36,7 +36,7 @@ import java.util.*;
 
 public class CharsetMapping {
     public final static char UNMAPPABLE_DECODING = '\uFFFD';
-    public final static int  UNMAPPABLE_ENCODING = -1;
+    public final static int  UNMAPPABLE_ENCODING = 0xFFFD;
 
     public static class Entry {
         public int bs;   //byte sequence reps

@@ -27,7 +27,7 @@
  * @summary compiler crash with ill-formed annotation
  * @author gafter
  *
- * @compile/fail -source 1.5 Syntax1.java
+ * @compile/fail Syntax1.java
  */
 
 package syntax1;

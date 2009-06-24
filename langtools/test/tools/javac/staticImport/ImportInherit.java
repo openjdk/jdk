@@ -27,7 +27,7 @@
  * @summary static import versus inherited members
  * @author gafter
  *
- * @compile -source 1.5 ImportInherit.java
+ * @compile  ImportInherit.java
  */
 
 package importInherit;

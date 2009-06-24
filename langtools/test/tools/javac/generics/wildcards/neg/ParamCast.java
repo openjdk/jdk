@@ -27,7 +27,7 @@
  * @summary Description
  * @author gafter
  *
- * @compile/fail -source 1.5 ParamCast.java
+ * @compile/fail  ParamCast.java
  */
 
 class A<T> {}

@@ -26,9 +26,6 @@
  * @bug 4948063
  * @summary Invalid java.io.FileInputStream with v49 generate by javac
  * @author gafter
- *
- * @compile -source 1.5 -target 1.5 UninitThis.java
- * @run main UninitThis
  */
 
 // may fail due to VM bug 4948729

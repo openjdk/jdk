@@ -27,7 +27,7 @@
  * @summary Annotation members must not have same signature as Object or Annotation members
  * @author gafter
  *
- * @compile/fail -source 1.5 MemberOver.java
+ * @compile/fail MemberOver.java
  */
 
 package memberOver;

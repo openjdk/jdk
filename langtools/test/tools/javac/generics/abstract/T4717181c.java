@@ -27,7 +27,7 @@
  * @summary javac treats inherited abstract method as an overrider
  * @author gafter
  *
- * @compile/fail -source 1.5 T4717181c.java
+ * @compile/fail  T4717181c.java
  */
 
 class T4717181c {

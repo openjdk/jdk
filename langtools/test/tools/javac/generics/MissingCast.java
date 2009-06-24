@@ -27,7 +27,7 @@
  * @summary redundant cast with generified APIs causes verify error
  * @author gafter
  *
- * @compile -source 1.5 MissingCast.java
+ * @compile  MissingCast.java
  * @run main MissingCast
  */
 
