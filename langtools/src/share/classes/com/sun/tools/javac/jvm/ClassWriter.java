@@ -1521,9 +1521,9 @@ public class ClassWriter extends ClassFile {
         int acount = 0;
 
         boolean sigReq =
-            typarams.length() != 0 || supertype.getTypeArguments().length() != 0;
+            typarams.length() != 0 || supertype.allparams().length() != 0;
         for (List<Type> l = interfaces; !sigReq && l.nonEmpty(); l = l.tail)
-            sigReq = l.head.getTypeArguments().length() != 0;
+            sigReq = l.head.allparams().length() != 0;
         if (sigReq) {
             assert source.allowGenerics();
             int alenIdx = writeAttr(names.Signature);

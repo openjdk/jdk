@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,12 @@
  * have any questions.
  */
 
-/*
- * @test
- * @bug     6476073
- * @summary Capture using super wildcard of type variables doesn't work
- * @ignore awaiting for 6650759 (see bug report for a detailed evaluation)
- * @compile T6476073.java
- */
-
-import java.util.Collection;
-import java.util.List;
-
-public class T6476073 {
-    public static <B> void m(List<? super B> list,Collection<? super B> coll) {
-        m(list,coll);
+class A<T extends A<T>> {
+    class C {
+        public T getT() { return null; }
     }
+}
+
+class B extends A<B> {
+    public class D extends A<B>.C {}
 }
