@@ -190,6 +190,11 @@ public:
   // Currently, it also works around limitations involving interface types.
   virtual const Type *filter( const Type *kills ) const;
 
+#ifdef ASSERT
+  // One type is interface, the other is oop
+  virtual bool interface_vs_oop(const Type *t) const;
+#endif
+
   // Returns true if this pointer points at memory which contains a
   // compressed oop references.
   bool is_ptr_to_narrowoop() const;
@@ -546,6 +551,10 @@ public:
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   bool ary_must_be_exact() const;  // true if arrays of such are never generic
+#ifdef ASSERT
+  // One type is interface, the other is oop
+  virtual bool interface_vs_oop(const Type *t) const;
+#endif
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
 #endif
@@ -867,6 +876,10 @@ public:
   }
   static const TypeAryPtr *_array_body_type[T_CONFLICT+1];
   // sharpen the type of an int which is used as an array size
+#ifdef ASSERT
+  // One type is interface, the other is oop
+  virtual bool interface_vs_oop(const Type *t) const;
+#endif
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
 #endif
