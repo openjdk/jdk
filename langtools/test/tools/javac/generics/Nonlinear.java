@@ -27,7 +27,7 @@
  * @summary A bug in the original JSR14 generics specification
  *          created a loophole in the type system.
  *
- * @compile/fail -source 1.5 Nonlinear.java
+ * @compile/fail  Nonlinear.java
  */
 
 

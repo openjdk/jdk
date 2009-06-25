@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.net.Inet6Address;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import sun.security.krb5.*;
-import sun.security.jgss.GSSUtil;
+import sun.security.jgss.HttpCaller;
 import sun.security.krb5.internal.Krb5;
 
 abstract class InitialToken extends Krb5Token {
@@ -85,7 +85,7 @@ abstract class InitialToken extends Krb5Token {
                 CHECKSUM_FLAGS_SIZE;
 
             if (context.getCredDelegState()) {
-                if (context.getCaller() == GSSUtil.CALLER_HTTP_NEGOTIATE &&
+                if (context.getCaller() instanceof HttpCaller &&
                         !serviceTicket.getFlags()[Krb5.TKT_OPTS_DELEGATE]) {
                     // When the caller is HTTP/SPNEGO and OK-AS-DELEGATE
                     // is not present in the service ticket, delegation

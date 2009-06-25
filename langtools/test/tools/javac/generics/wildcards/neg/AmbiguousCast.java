@@ -27,7 +27,7 @@
  * @summary cast to parameterized type is accepted although it should be rejected
  * @author gafter
  *
- * @compile/fail -source 1.5 -Werror -Xlint:unchecked AmbiguousCast.java
+ * @compile/fail  -Werror -Xlint:unchecked AmbiguousCast.java
  */
 
 class Test {

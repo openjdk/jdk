@@ -24,6 +24,9 @@
  */
 package sun.io;
 
+import sun.nio.cs.ext.DoubleByte;
+import static sun.nio.cs.CharsetMapping.*;
+
 public abstract class ByteToCharDBCS_EBCDIC extends ByteToCharConverter
 {
 
@@ -35,20 +38,23 @@ public abstract class ByteToCharDBCS_EBCDIC extends ByteToCharConverter
 
     private int  currentState;
     private boolean savedBytePresent;
-    private byte savedByte;
+    private int savedByte;
 
-    protected String singleByteToChar;
-    protected short index1[];
-    protected String index2;
-    protected int   mask1;
-    protected int   mask2;
-    protected int   shift;
+    private DoubleByte.Decoder dec;
 
-
-    public ByteToCharDBCS_EBCDIC() {
+    public ByteToCharDBCS_EBCDIC(DoubleByte.Decoder dec) {
        super();
        currentState = SBCS;
        savedBytePresent = false;
+       this.dec = dec;
+    }
+
+    char decodeSingle(int b) {
+        return dec.decodeSingle(b);
+    }
+
+    char decodeDouble(int b1, int b2) {
+        return dec.decodeDouble(b1, b2);
     }
 
     public int flush(char [] output, int outStart, int outEnd)
@@ -74,17 +80,16 @@ public abstract class ByteToCharDBCS_EBCDIC extends ByteToCharConverter
                ConversionBufferFullException
     {
        int  inputSize;
-       char outputChar = '\uFFFD';
+       char outputChar = UNMAPPABLE_DECODING;
 
        charOff = outOff;
        byteOff = inOff;
 
        while(byteOff < inEnd) {
           int byte1, byte2;
-          int v;
 
           if (!savedBytePresent) {
-            byte1 = input[byteOff];
+            byte1 = input[byteOff] & 0xff;
             inputSize = 1;
           } else {
             byte1 = savedByte;
@@ -122,11 +127,8 @@ public abstract class ByteToCharDBCS_EBCDIC extends ByteToCharConverter
 
                 // Process the real data characters
 
-                if (byte1 < 0)
-                   byte1 += 256;
-
                 if (currentState == SBCS) {
-                   outputChar = singleByteToChar.charAt(byte1);
+                   outputChar = decodeSingle(byte1);
                 } else {
 
                    // for a DBCS character - architecture dictates the
@@ -141,16 +143,13 @@ public abstract class ByteToCharDBCS_EBCDIC extends ByteToCharConverter
                       // We have been split in the middle if a character
                       // save the first byte for next time around
 
-                      savedByte = (byte)byte1;
+                      savedByte = byte1;
                       savedBytePresent = true;
                       byteOff += inputSize;
                       break;
                    }
 
-                   byte2 = input[byteOff+inputSize];
-                   if (byte2 < 0)
-                      byte2 += 256;
-
+                   byte2 = input[byteOff+inputSize] & 0xff;
                    inputSize++;
 
                    // validate the pair of bytes meet the architecture
@@ -161,12 +160,10 @@ public abstract class ByteToCharDBCS_EBCDIC extends ByteToCharConverter
                       throw new MalformedInputException();
                    }
 
-                   // Lookup in the two level index
-                   v = byte1 * 256 + byte2;
-                   outputChar = index2.charAt(index1[((v & mask1) >> shift)] + (v & mask2));
+                   outputChar = decodeDouble(byte1, byte2);
                 }
 
-                if (outputChar == '\uFFFD') {
+                if (outputChar == UNMAPPABLE_DECODING) {
                    if (subMode)
                       outputChar = subChars[0];
                    else {

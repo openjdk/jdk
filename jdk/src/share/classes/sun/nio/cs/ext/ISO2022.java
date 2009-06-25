@@ -389,8 +389,8 @@ abstract class ISO2022
     protected static class Encoder extends CharsetEncoder {
         private final Surrogate.Parser sgp = new Surrogate.Parser();
         private final byte SS2 = (byte)0x8e;
-        private final byte P2 = (byte)0xA2;
-        private final byte P3 = (byte)0xA3;
+        private final byte PLANE2 = (byte)0xA2;
+        private final byte PLANE3 = (byte)0xA3;
         private final byte MSB = (byte)0x80;
 
         protected final byte maximumDesignatorLength = 4;
@@ -460,32 +460,32 @@ abstract class ISO2022
                 ebyte[index++] = (byte)(convByte[0] & 0x7f);
                 ebyte[index++] = (byte)(convByte[1] & 0x7f);
             } else {
-                if((convByte[0] == SS2) && (convByte[1] == P2)) {
-                    if (!SS2DesDefined) {
-                        newSS2DesDefined = true;
-                        ebyte[0] = ISO_ESC;
-                        tmpByte = SS2Desig.getBytes();
-                        System.arraycopy(tmpByte, 0, ebyte, 1, tmpByte.length);
-                        index = tmpByte.length+1;
+                if(convByte[0] == SS2) {
+                    if (convByte[1] == PLANE2) {
+                        if (!SS2DesDefined) {
+                            newSS2DesDefined = true;
+                            ebyte[0] = ISO_ESC;
+                            tmpByte = SS2Desig.getBytes();
+                            System.arraycopy(tmpByte, 0, ebyte, 1, tmpByte.length);
+                            index = tmpByte.length+1;
+                        }
+                        ebyte[index++] = ISO_ESC;
+                        ebyte[index++] = ISO_SS2_7;
+                        ebyte[index++] = (byte)(convByte[2] & 0x7f);
+                        ebyte[index++] = (byte)(convByte[3] & 0x7f);
+                    } else if (convByte[1] == PLANE3) {
+                        if(!SS3DesDefined){
+                            newSS3DesDefined = true;
+                            ebyte[0] = ISO_ESC;
+                            tmpByte = SS3Desig.getBytes();
+                            System.arraycopy(tmpByte, 0, ebyte, 1, tmpByte.length);
+                            index = tmpByte.length+1;
+                        }
+                        ebyte[index++] = ISO_ESC;
+                        ebyte[index++] = ISO_SS3_7;
+                        ebyte[index++] = (byte)(convByte[2] & 0x7f);
+                        ebyte[index++] = (byte)(convByte[3] & 0x7f);
                     }
-                    ebyte[index++] = ISO_ESC;
-                    ebyte[index++] = ISO_SS2_7;
-                    ebyte[index++] = (byte)(convByte[2] & 0x7f);
-                    ebyte[index++] = (byte)(convByte[3] & 0x7f);
-                }
-                if((convByte[0] == SS2)&&(convByte[1] == 0xA3))
-                {
-                    if(!SS3DesDefined){
-                        newSS3DesDefined = true;
-                        ebyte[0] = ISO_ESC;
-                        tmpByte = SS3Desig.getBytes();
-                        System.arraycopy(tmpByte, 0, ebyte, 1, tmpByte.length);
-                        index = tmpByte.length+1;
-                    }
-                    ebyte[index++] = ISO_ESC;
-                    ebyte[index++] = ISO_SS3_7;
-                    ebyte[index++] = (byte)(convByte[2] & 0x7f);
-                    ebyte[index++] = (byte)(convByte[3] & 0x7f);
                 }
             }
             return index;

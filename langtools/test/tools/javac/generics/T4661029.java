@@ -26,7 +26,7 @@
  * @summary generics: assertion error using Arrays.fill
  * @author gafter
  *
- * @compile -source 1.5 T4661029.java
+ * @compile  T4661029.java
  */
 
 public class T4661029 {

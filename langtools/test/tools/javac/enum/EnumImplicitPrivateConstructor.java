@@ -26,9 +26,6 @@
  * @bug 5009601 5010455 5005748
  * @summary enum constructors can be declared private
  * @author Joseph D. Darcy
- *
- * @compile -source 1.5 EnumImplicitPrivateConstructor.java
- * @run main EnumImplicitPrivateConstructor
  */
 
 import java.util.*;

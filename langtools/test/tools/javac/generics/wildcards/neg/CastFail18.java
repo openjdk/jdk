@@ -27,7 +27,7 @@
  * @summary Test casts (legal, warning, and errors)
  * @author gafter
  *
- * @compile/fail -source 1.5 CastFail18.java
+ * @compile/fail  CastFail18.java
  */
 
 import java.util.*;

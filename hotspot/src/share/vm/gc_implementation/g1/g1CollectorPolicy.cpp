@@ -167,11 +167,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _all_full_gc_times_ms(new NumberSeq()),
 
-  _conc_refine_enabled(0),
-  _conc_refine_zero_traversals(0),
-  _conc_refine_max_traversals(0),
-  _conc_refine_current_delta(G1ConcRefineInitialDelta),
-
   // G1PausesBtwnConcMark defaults to -1
   // so the hack is to do the cast  QQQ FIXME
   _pauses_btwn_concurrent_mark((size_t)G1PausesBtwnConcMark),
@@ -1634,9 +1629,8 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
         print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
         print_par_stats(2, "Update RS (Start)", _par_last_update_rs_start_times_ms, false);
         print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
-        if (G1RSBarrierUseQueue)
-          print_par_buffers(3, "Processed Buffers",
-                            _par_last_update_rs_processed_buffers, true);
+        print_par_buffers(3, "Processed Buffers",
+                          _par_last_update_rs_processed_buffers, true);
         print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
         print_par_stats(2, "Mark Stack Scanning", _par_last_mark_stack_scan_times_ms);
         print_par_stats(2, "Scan-Only Scanning", _par_last_scan_only_times_ms);
@@ -1649,9 +1643,8 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
         print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
       } else {
         print_stats(1, "Update RS", update_rs_time);
-        if (G1RSBarrierUseQueue)
-          print_stats(2, "Processed Buffers",
-                      (int)update_rs_processed_buffers);
+        print_stats(2, "Processed Buffers",
+                    (int)update_rs_processed_buffers);
         print_stats(1, "Ext Root Scanning", ext_root_scan_time);
         print_stats(1, "Mark Stack Scanning", mark_stack_scan_time);
         print_stats(1, "Scan-Only Scanning", scan_only_time);
@@ -2467,18 +2460,6 @@ void G1CollectorPolicy::print_tracing_info() const {
                (double) _region_num_young / (double) all_region_num * 100.0,
                _region_num_tenured,
                (double) _region_num_tenured / (double) all_region_num * 100.0);
-
-    if (!G1RSBarrierUseQueue) {
-      gclog_or_tty->print_cr("Of %d times conc refinement was enabled, %d (%7.2f%%) "
-                    "did zero traversals.",
-                    _conc_refine_enabled, _conc_refine_zero_traversals,
-                    _conc_refine_enabled > 0 ?
-                    100.0 * (float)_conc_refine_zero_traversals/
-                    (float)_conc_refine_enabled : 0.0);
-      gclog_or_tty->print_cr("  Max # of traversals = %d.",
-                    _conc_refine_max_traversals);
-      gclog_or_tty->print_cr("");
-    }
   }
   if (TraceGen1Time) {
     if (_all_full_gc_times_ms->num() > 0) {
@@ -2498,38 +2479,6 @@ void G1CollectorPolicy::print_yg_surv_rate_info() const {
   _short_lived_surv_rate_group->print_surv_rate_summary();
   // add this call for any other surv rate groups
 #endif // PRODUCT
-}
-
-void G1CollectorPolicy::update_conc_refine_data() {
-  unsigned traversals = _g1->concurrent_g1_refine()->disable();
-  if (traversals == 0) _conc_refine_zero_traversals++;
-  _conc_refine_max_traversals = MAX2(_conc_refine_max_traversals,
-                                     (size_t)traversals);
-
-  if (G1PolicyVerbose > 1)
-    gclog_or_tty->print_cr("Did a CR traversal series: %d traversals.", traversals);
-  double multiplier = 1.0;
-  if (traversals == 0) {
-    multiplier = 4.0;
-  } else if (traversals > (size_t)G1ConcRefineTargTraversals) {
-    multiplier = 1.0/1.5;
-  } else if (traversals < (size_t)G1ConcRefineTargTraversals) {
-    multiplier = 1.5;
-  }
-  if (G1PolicyVerbose > 1) {
-    gclog_or_tty->print_cr("  Multiplier = %7.2f.", multiplier);
-    gclog_or_tty->print("  Delta went from %d regions to ",
-               _conc_refine_current_delta);
-  }
-  _conc_refine_current_delta =
-    MIN2(_g1->n_regions(),
-         (size_t)(_conc_refine_current_delta * multiplier));
-  _conc_refine_current_delta =
-    MAX2(_conc_refine_current_delta, (size_t)1);
-  if (G1PolicyVerbose > 1) {
-    gclog_or_tty->print_cr("%d regions.", _conc_refine_current_delta);
-  }
-  _conc_refine_enabled++;
 }
 
 bool

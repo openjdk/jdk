@@ -27,7 +27,7 @@
  * @summary java allows class literal on generic type parameter array
  * @author gafter
  *
- * @compile/fail -source 1.5 GenLit2.java
+ * @compile/fail  GenLit2.java
  */
 
 package genLit2;

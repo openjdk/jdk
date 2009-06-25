@@ -27,7 +27,7 @@
  * @summary int.class and ilk have wrong type (5028351 rejected)
  * @author gafter
  *
- * @compile -source 1.5 PrimitiveClass.java
+ * @compile  PrimitiveClass.java
  */
 
 package primitive._class;

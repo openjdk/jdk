@@ -27,7 +27,7 @@
  * @summary Incorrect order for initializers in nested class
  * @author gafter
  *
- * @compile -source 1.4 -target 1.4 Closure5.java
+ * @compile Closure5.java
  * @run main Closure5
  */
 

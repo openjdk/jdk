@@ -26,9 +26,6 @@
  * @bug 4920023
  * @summary Test hex floating-point literals
  * @author darcy
- *
- * @compile -source 1.5 HexThree.java
- * @run main HexThree
  */
 
 public class HexThree {

@@ -26,9 +26,6 @@
  * @bug 4912795
  * @summary AbstractMethodError throws if not redeclare abstract iterator() method
  * @author gafter
- *
- * @compile -source 1.5 SuperfluousAbstract.java
- * @run main SuperfluousAbstract
  */
 
 import java.util.AbstractCollection;

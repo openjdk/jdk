@@ -26,9 +26,6 @@
  * @bug 4990346
  * @summary Verify autoboxed values are cached as required.
  * @author Joseph D. Darcy
- *
- * @compile -source 1.5 BoxingCaching.java
- * @run main BoxingCaching
  */
 
 public class BoxingCaching {

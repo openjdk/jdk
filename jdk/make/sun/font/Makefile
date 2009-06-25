@@ -145,7 +145,6 @@ include $(BUILDDIR)/common/Library.gmk
 # Add to the ambient vpath to pick up files in subdirectories
 #
 vpath %.c   $(PLATFORM_SRC)/native/$(PKGDIR)
-vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/bidi
 vpath %.cpp   $(SHARE_SRC)/native/$(PKGDIR)/layout
 vpath %.cpp   $(SHARE_SRC)/native/$(PKGDIR)
 
@@ -187,7 +186,6 @@ endif # PLATFORM
 
 CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR) \
             -I$(SHARE_SRC)/native/$(PKGDIR)/layout \
-            -I$(SHARE_SRC)/native/$(PKGDIR)/bidi \
 	    -I$(SHARE_SRC)/native/sun/awt/image/cvutils \
 	    -I$(PLATFORM_SRC)/native/sun/awt \
 	    -I$(SHARE_SRC)/native/sun/awt/debug \

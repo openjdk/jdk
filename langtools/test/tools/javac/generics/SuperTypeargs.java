@@ -27,7 +27,7 @@
  * @summary compilation error for super.<T,E>f() and ClassName.super.<T,E>f()
  * @author gafter
  *
- * @compile -source 1.5 SuperTypeargs.java
+ * @compile  SuperTypeargs.java
  */
 
 package superTypeargs;
