@@ -30,6 +30,7 @@
 
 #include "jlong.h"
 #include "awt_AWTEvent.h"
+#include "awt_BitmapUtil.h"
 #include "awt_Component.h"
 #include "awt_Cursor.h"
 #include "awt_Dimension.h"
@@ -127,6 +128,7 @@ struct CreatePrintedPixelsStruct {
     jobject component;
     int srcx, srcy;
     int srcw, srch;
+    jint alpha;
 };
 // Struct for _SetRectangularShape() method
 struct SetRectangularShapeStruct {
@@ -361,8 +363,8 @@ AwtComponent* AwtComponent::GetComponent(HWND hWnd) {
 AwtComponent* AwtComponent::GetComponentImpl(HWND hWnd) {
     AwtComponent *component =
         (AwtComponent *)::GetWindowLongPtr(hWnd, GWLP_USERDATA);
-    DASSERT( !IsBadReadPtr(component, sizeof(AwtComponent)) );
-    DASSERT( component->GetHWnd() == hWnd );
+    DASSERT(!component || !IsBadReadPtr(component, sizeof(AwtComponent)) );
+    DASSERT(!component || component->GetHWnd() == hWnd );
     return component;
 }
 
@@ -1252,6 +1254,8 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_AWT_CREATECONTEXT)
         WIN_MSG(WM_AWT_DESTROYCONTEXT)
         WIN_MSG(WM_AWT_ASSOCIATECONTEXT)
+        WIN_MSG(WM_AWT_GET_DEFAULT_IME_HANDLER)
+        WIN_MSG(WM_AWT_HANDLE_NATIVE_IME_EVENT)
         WIN_MSG(WM_AWT_PRE_KEYDOWN)
         WIN_MSG(WM_AWT_PRE_KEYUP)
         WIN_MSG(WM_AWT_PRE_SYSKEYDOWN)
@@ -1918,11 +1922,14 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
           mr = mrConsume;
           break;
       }
-      case WM_AWT_CREATE_PRINTED_PIXELS:
-          retValue = (LRESULT)CreatePrintedPixels(*((SIZE *)wParam),
-                                                  *((SIZE *)lParam));
+      case WM_AWT_CREATE_PRINTED_PIXELS: {
+          CreatePrintedPixelsStruct* cpps = (CreatePrintedPixelsStruct*)wParam;
+          SIZE loc = { cpps->srcx, cpps->srcy };
+          SIZE size = { cpps->srcw, cpps->srch };
+          retValue = (LRESULT)CreatePrintedPixels(loc, size, cpps->alpha);
           mr = mrConsume;
           break;
+      }
       case WM_UNDOCUMENTED_CLICKMENUBAR:
       {
           if (::IsWindow(AwtWindow::GetModalBlocker(GetHWnd()))) {
@@ -3329,7 +3336,13 @@ AwtComponent::BuildPrimaryDynamicTable() {
             // reset
             resetKbdState( kbdState );
         }else {
-            printf ("++++Whats that? wkey 0x%x (%d)\n", i,i);
+            // k > 1: this key does generate multiple characters. Ignore it.
+            // An example: Arabic Lam and Alef ligature.
+            // There will be no extended keycode and thus shortcuts for this  key.
+            // XXX shouldn't we reset the kbd state?
+#ifdef DEBUG
+            DTRACE_PRINTLN2("wkey 0x%02X (%d)", i,i);
+#endif
         }
         kbdState[i] = 0; // "key unpressed"
     }
@@ -4526,18 +4539,20 @@ void AwtComponent::FillBackground(HDC hMemoryDC, SIZE &size)
 
 void AwtComponent::FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha)
 {
-    if (bitmapBits) {
-        DWORD* dest = (DWORD*)bitmapBits;
-        //XXX: might be optimized to use one loop (cy*cx -> 0).
-        for (int i = 0; i < size.cy; i++ ) {
-            for (int j = 0; j < size.cx; j++ ) {
-                ((BYTE*)(dest++))[3] = alpha;
-            }
+    if (!bitmapBits) {
+        return;
+    }
+
+    DWORD* dest = (DWORD*)bitmapBits;
+    //XXX: might be optimized to use one loop (cy*cx -> 0)
+    for (int i = 0; i < size.cy; i++ ) {
+        for (int j = 0; j < size.cx; j++ ) {
+            ((BYTE*)(dest++))[3] = alpha;
         }
     }
 }
 
-jintArray AwtComponent::CreatePrintedPixels(SIZE &loc, SIZE &size) {
+jintArray AwtComponent::CreatePrintedPixels(SIZE &loc, SIZE &size, int alpha) {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     if (!::IsWindowVisible(GetHWnd())) {
@@ -4549,18 +4564,26 @@ jintArray AwtComponent::CreatePrintedPixels(SIZE &loc, SIZE &size) {
         return NULL;
     }
     HDC hMemoryDC = ::CreateCompatibleDC(hdc);
-    HBITMAP hBitmap = ::CreateCompatibleBitmap(hdc, size.cx, size.cy);
+    void *bitmapBits = NULL;
+    HBITMAP hBitmap = BitmapUtil::CreateARGBBitmap(size.cx, size.cy, &bitmapBits);
     HBITMAP hOldBitmap = (HBITMAP)::SelectObject(hMemoryDC, hBitmap);
     SendMessage(WM_AWT_RELEASEDC, (WPARAM)hdc);
 
-    RECT eraseR = { 0, 0, size.cx, size.cy };
-    VERIFY(::FillRect(hMemoryDC, &eraseR, GetBackgroundBrush()));
+    FillBackground(hMemoryDC, size);
 
     VERIFY(::SetWindowOrgEx(hMemoryDC, loc.cx, loc.cy, NULL));
 
     // Don't bother with PRF_CHECKVISIBLE because we called IsWindowVisible
     // above.
     SendMessage(WM_PRINT, (WPARAM)hMemoryDC, PRF_CLIENT | PRF_NONCLIENT);
+
+    // First make sure the system completed any drawing to the bitmap.
+    ::GdiFlush();
+
+    // WM_PRINT does not fill the alpha-channel of the ARGB bitmap
+    // leaving it equal to zero. Hence we need to fill it manually. Otherwise
+    // the pixels will be considered transparent when interpreting the data.
+    FillAlpha(bitmapBits, size, alpha);
 
     ::SelectObject(hMemoryDC, hOldBitmap);
 
@@ -5937,10 +5960,6 @@ jintArray AwtComponent::_CreatePrintedPixels(void *param)
 
     CreatePrintedPixelsStruct *cpps = (CreatePrintedPixelsStruct *)param;
     jobject self = cpps->component;
-    jint srcx = cpps->srcx;
-    jint srcy = cpps->srcy;
-    jint srcw = cpps->srcw;
-    jint srch = cpps->srch;
 
     jintArray result = NULL;
     AwtComponent *c = NULL;
@@ -5950,12 +5969,7 @@ jintArray AwtComponent::_CreatePrintedPixels(void *param)
     c = (AwtComponent *)pData;
     if (::IsWindow(c->GetHWnd()))
     {
-        SIZE loc = { srcx, srcy };
-        SIZE size = { srcw, srch };
-
-        result = (jintArray)
-            c->SendMessage(WM_AWT_CREATE_PRINTED_PIXELS, (WPARAM)&loc,
-                          (LPARAM)&size);
+        result = (jintArray)c->SendMessage(WM_AWT_CREATE_PRINTED_PIXELS, (WPARAM)cpps, 0);
     }
 ret:
     env->DeleteGlobalRef(self);
@@ -6749,7 +6763,7 @@ Java_sun_awt_windows_WComponentPeer_getTargetGC(JNIEnv* env, jobject theThis)
  */
 JNIEXPORT jintArray JNICALL
 Java_sun_awt_windows_WComponentPeer_createPrintedPixels(JNIEnv* env,
-    jobject self, jint srcX, jint srcY, jint srcW, jint srcH)
+    jobject self, jint srcX, jint srcY, jint srcW, jint srcH, jint alpha)
 {
     TRY;
 
@@ -6761,6 +6775,7 @@ Java_sun_awt_windows_WComponentPeer_createPrintedPixels(JNIEnv* env,
     cpps->srcy = srcY;
     cpps->srcw = srcW;
     cpps->srch = srcH;
+    cpps->alpha = alpha;
 
     jintArray globalRef = (jintArray)AwtToolkit::GetInstance().SyncCall(
         (void*(*)(void*))AwtComponent::_CreatePrintedPixels, cpps);

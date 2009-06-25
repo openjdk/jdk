@@ -27,7 +27,7 @@
  * @summary compiler allows new array of array of type parameter
  * @author gafter
  *
- * @compile/fail -source 1.5 UncheckedArray.java
+ * @compile/fail  UncheckedArray.java
  */
 
 package unchecked.array;

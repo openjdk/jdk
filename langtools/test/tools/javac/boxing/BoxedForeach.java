@@ -27,7 +27,7 @@
  * @summary boxing/unboxing versus foreach crashes javac
  * @author gafter
  *
- * @compile -source 1.5 BoxedForeach.java
+ * @compile BoxedForeach.java
  * @run main BoxedForeach
  */
 

@@ -177,8 +177,6 @@ private:
   G1BlockOffsetSharedArray* _bosa;
   G1BlockOffsetSharedArray* bosa() const { return _bosa; }
 
-  static bool _par_traversal;
-
   OtherRegionsTable _other_regions;
 
   // One set bit for every region that has an entry for this one.
@@ -211,8 +209,6 @@ public:
                    HeapRegion* hr);
 
   static int num_par_rem_sets();
-  static bool par_traversal() { return _par_traversal; }
-  static void set_par_traversal(bool b);
 
   HeapRegion* hr() const {
     return _other_regions.hr();

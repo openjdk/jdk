@@ -26,9 +26,6 @@
  * @bug 5034991 5040842 5040853
  * @summary Modify class-file representation of Class-valued annotation elements
  * @author gafter
- *
- * @compile -source 1.5 Primitives.java
- * @run main Primitives
  */
 
 public class Primitives {

@@ -27,7 +27,7 @@
  * @summary JSR175: annotations on enum constant
  * @author gafter
  *
- * @compile -source 1.5 Enum1.java
+ * @compile Enum1.java
  */
 
 package annotation.enums;

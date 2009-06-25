@@ -27,7 +27,7 @@
  * @summary generics: overload resolution error in non-generic code
  * @author gafter
  *
- * @compile -source 1.5 T4683314.java
+ * @compile  T4683314.java
  */
 
 class T4683314a {

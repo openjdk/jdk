@@ -27,7 +27,7 @@
  * @summary compiler crash on user-defined valueOf in enum
  * @author gafter
  *
- * @compile -source 1.5 UserValue.java
+ * @compile UserValue.java
  */
 
 public enum UserValue {

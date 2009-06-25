@@ -48,6 +48,7 @@
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
+#include <X11/extensions/Xrender.h>
 #ifndef XAWT
 #include <Xm/CascadeB.h>
 #include <Xm/DrawingA.h>
@@ -119,6 +120,10 @@ typedef struct _DamageRect {
 } DamageRect;
 
 #ifndef HEADLESS
+
+typedef XRenderPictFormat *
+XRenderFindVisualFormatFunc (Display *dpy, _Xconst Visual *visual);
+
 typedef struct _AwtGraphicsConfigData  {
     int         awt_depth;
     Colormap    awt_cmap;
@@ -136,6 +141,7 @@ typedef struct _AwtGraphicsConfigData  {
     ColorData      *color_data;
     struct _GLXGraphicsConfigInfo *glxInfo;
     int         isTranslucencySupported; /* Uses Xrender to find this out. */
+    XRenderPictFormat renderPictFormat; /*Used only if translucency supported*/
 } AwtGraphicsConfigData;
 
 typedef AwtGraphicsConfigData* AwtGraphicsConfigDataPtr;

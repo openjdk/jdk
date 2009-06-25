@@ -27,7 +27,7 @@
  * @summary generics: generic class files can cause recursive class loading (crashing javac)
  * @author gafter
  *
- * @compile -source 1.5 LoadOrder.java
+ * @compile  LoadOrder.java
  */
 
 import java.util.Collections;

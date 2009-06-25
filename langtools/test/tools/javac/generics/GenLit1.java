@@ -27,7 +27,7 @@
  * @summary compiler crash with ill-formed annotation
  * @author gafter
  *
- * @compile/fail -source 1.5 GenLit1.java
+ * @compile/fail  GenLit1.java
  */
 
 package genLit1;

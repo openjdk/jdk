@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6576763
+ * @ignore until hotspot 6776144 bug is resolved
  * @summary (thread) Thread constructors throw undocumented NPE for null name
  */
 

@@ -26,7 +26,7 @@
  * @bug 4862621
  * @summary generics: incorrect cyclic inheritance error
  *
- * @compile -source 1.5 CyclicInheritance5.java
+ * @compile  CyclicInheritance5.java
  */
 
 class G<N extends G.Node<N>> {

@@ -26,9 +26,6 @@
  * @bug 4872708 5058132
  * @summary Improper signature for valueOf
  * @author gafter
- *
- * @compile -source 1.5 ValueOf.java
- * @run main ValueOf
  */
 
 public enum ValueOf {

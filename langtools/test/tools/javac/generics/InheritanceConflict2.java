@@ -27,7 +27,7 @@
  * @summary two inherited methods with same signature
  * @author gafter, Maurizio Cimadamore
  *
- * @compile -source 1.5 InheritanceConflict2.java
+ * @compile  InheritanceConflict2.java
  */
 
 package inheritance.conflict2;

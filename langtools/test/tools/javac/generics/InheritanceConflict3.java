@@ -27,7 +27,7 @@
  * @summary two inherited methods with same signature
  * @author darcy
  *
- * @compile/fail -source 1.5 InheritanceConflict3.java
+ * @compile/fail  InheritanceConflict3.java
  */
 
 package inheritance.conflict3;

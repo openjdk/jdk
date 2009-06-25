@@ -26,7 +26,7 @@
  * @bug 6682380 6679509
  * @summary Foreach loop with generics inside finally block crashes javac with -target 1.5
  * @author Jan Lahoda, Maurizio Cimadamore
- * @compile -target 1.5 T6682380.java
+ * @compile -source 1.5 -target 1.5 T6682380.java
  */
 
 import java.util.List;

@@ -15,7 +15,7 @@ that expect to be able to build this workspace with GNU Make.
 
 System Requirements:
   Ant:      version 1.6.5 or later
-  NetBeans: version 5.0 or later (optional)
+  NetBeans: version 6.0 or later (optional)
   JDK:      currently version 1.5.0, although 1.6.0 is recommended
   OS:       any system supporting the above tools
 
