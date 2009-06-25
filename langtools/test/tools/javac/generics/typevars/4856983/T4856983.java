@@ -27,7 +27,7 @@
  * @summary (crash) mutually f-bounded type vars with multiple bounds may crash javac
  * @author Peter von der Ah\u00e9
  *
- * @compile -source 5 T4856983.java
+ * @compile  T4856983.java
  */
 
 import java.lang.Comparable;

@@ -245,6 +245,21 @@ XVisualInfo
     blue_mask	long
     colormap_size	int
     bits_per_rgb	int
+XRenderDirectFormat
+    red         short
+    redMask     short
+    green       short
+    greenMask   short
+    blue        short
+    blueMask    short
+    alpha       short
+    alphaMask   short
+XRenderPictFormat
+    id          long
+    type        int
+    depth       int
+    direct      struct XRenderDirectFormat
+    colormap    long
 XIMHotKeyTrigger
     keysym	long
     modifier	int
@@ -751,6 +766,7 @@ AwtGraphicsConfigData
     color_data pointer ColorData
     glxInfo pointer
     isTranslucencySupported int
+    renderPictFormat struct XRenderPictFormat
 
 AwtScreenData
     numConfigs int

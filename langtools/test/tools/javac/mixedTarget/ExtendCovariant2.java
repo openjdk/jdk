@@ -28,7 +28,7 @@
  * @author gafter
  *
  * @compile/fail -source 1.4 ExtendCovariant2.java
- * @compile -source 1.5 ExtendCovariant2.java
+ * @compile                  ExtendCovariant2.java
  */
 
 /**

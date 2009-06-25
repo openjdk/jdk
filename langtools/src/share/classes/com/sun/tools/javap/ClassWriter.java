@@ -26,7 +26,9 @@
 package com.sun.tools.javap;
 
 import java.net.URI;
+import java.text.DateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import com.sun.tools.classfile.AccessFlags;
@@ -47,8 +49,6 @@ import com.sun.tools.classfile.Signature_attribute;
 import com.sun.tools.classfile.SourceFile_attribute;
 import com.sun.tools.classfile.Type;
 
-import java.text.DateFormat;
-import java.util.Date;
 import static com.sun.tools.classfile.AccessFlags.*;
 
 /*

@@ -88,7 +88,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         try {
             Native.putLong(data, 0, XDnDConstants.XDND_PROTOCOL_VERSION);
 
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XDnDConstants.XA_XdndAware.setAtomData(window, XAtom.XA_ATOM, data, 1);
             XToolkit.RESTORE_XERROR_HANDLER();
 
@@ -122,7 +122,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                      false, XConstants.AnyPropertyType);
 
         try {
-            status = wpg1.execute(XToolkit.IgnoreBadWindowHandler);
+            status = wpg1.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
             if (status == XConstants.Success &&
                 wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
@@ -141,7 +141,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                          0, 1, false, XAtom.XA_WINDOW);
 
             try {
-                status = wpg2.execute(XToolkit.IgnoreBadWindowHandler);
+                status = wpg2.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                 if (status == XConstants.Success &&
                     wpg2.getData() != 0 &&
@@ -159,7 +159,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                              0, 1, false, XAtom.XA_WINDOW);
 
                 try {
-                    status = wpg3.execute(XToolkit.IgnoreBadWindowHandler);
+                    status = wpg3.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                     if (status != XConstants.Success ||
                         wpg3.getData() == 0 ||
@@ -175,7 +175,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                                      XConstants.AnyPropertyType);
 
                         try {
-                            status = wpg4.execute(XToolkit.IgnoreBadWindowHandler);
+                            status = wpg4.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                             if (status != XConstants.Success ||
                                 wpg4.getData() == 0 ||
@@ -205,7 +205,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
             /* The proxy window must have the XdndAware set, as XDnD protocol
                prescribes to check the proxy window for XdndAware. */
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XDnDConstants.XA_XdndAware.setAtomData(newProxy, XAtom.XA_ATOM,
                                                    data, 1);
             XToolkit.RESTORE_XERROR_HANDLER();
@@ -219,7 +219,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             Native.putLong(data, 0, newProxy);
 
             /* The proxy window must have the XdndProxy set to point to itself.*/
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XDnDConstants.XA_XdndProxy.setAtomData(newProxy, XAtom.XA_WINDOW,
                                                    data, 1);
             XToolkit.RESTORE_XERROR_HANDLER();
@@ -232,7 +232,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
             Native.putLong(data, 0, XDnDConstants.XDND_PROTOCOL_VERSION);
 
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XDnDConstants.XA_XdndAware.setAtomData(embedder, XAtom.XA_ATOM,
                                                    data, 1);
             XToolkit.RESTORE_XERROR_HANDLER();
@@ -245,7 +245,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
             Native.putLong(data, 0, newProxy);
 
-            XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
             XDnDConstants.XA_XdndProxy.setAtomData(embedder, XAtom.XA_WINDOW,
                                                    data, 1);
             XToolkit.RESTORE_XERROR_HANDLER();
@@ -278,7 +278,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             try {
                 Native.putLong(data, 0, entry.getVersion());
 
-                XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
                 XDnDConstants.XA_XdndAware.setAtomData(embedder, XAtom.XA_ATOM,
                                                        data, 1);
                 XToolkit.RESTORE_XERROR_HANDLER();
@@ -291,7 +291,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
                 Native.putLong(data, 0, (int)entry.getProxy());
 
-                XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
                 XDnDConstants.XA_XdndProxy.setAtomData(embedder, XAtom.XA_WINDOW,
                                                        data, 1);
                 XToolkit.RESTORE_XERROR_HANDLER();
@@ -329,7 +329,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                      false, XConstants.AnyPropertyType);
 
         try {
-            status = wpg1.execute(XToolkit.IgnoreBadWindowHandler);
+            status = wpg1.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
             if (status == XConstants.Success &&
                 wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
@@ -348,7 +348,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                          0, 1, false, XAtom.XA_WINDOW);
 
             try {
-                status = wpg2.execute(XToolkit.IgnoreBadWindowHandler);
+                status = wpg2.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                 if (status == XConstants.Success &&
                     wpg2.getData() != 0 &&
@@ -366,7 +366,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                              0, 1, false, XAtom.XA_WINDOW);
 
                 try {
-                    status = wpg3.execute(XToolkit.IgnoreBadWindowHandler);
+                    status = wpg3.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                     if (status != XConstants.Success ||
                         wpg3.getData() == 0 ||
@@ -382,7 +382,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                                      XConstants.AnyPropertyType);
 
                         try {
-                            status = wpg4.execute(XToolkit.IgnoreBadWindowHandler);
+                            status = wpg4.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                             if (status != XConstants.Success ||
                                 wpg4.getData() == 0 ||
@@ -411,7 +411,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                      false, XConstants.AnyPropertyType);
 
         try {
-            int status = wpg1.execute(XToolkit.IgnoreBadWindowHandler);
+            int status = wpg1.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
             if (status == XConstants.Success &&
                 wpg1.getData() != 0 && wpg1.getActualType() == XAtom.XA_ATOM) {
@@ -473,7 +473,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                          0, 0xFFFF, false,
                                          XAtom.XA_ATOM);
             try {
-                wpg.execute(XToolkit.IgnoreBadWindowHandler);
+                wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                 if (wpg.getActualType() == XAtom.XA_ATOM &&
                     wpg.getActualFormat() == 32) {
@@ -505,7 +505,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                          0, 0xFFFF, false,
                                          XAtom.XA_ATOM);
             try {
-                wpg.execute(XToolkit.IgnoreBadWindowHandler);
+                wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                 if (wpg.getActualType() == XAtom.XA_ATOM &&
                     wpg.getActualFormat() == 32) {
@@ -541,7 +541,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
          */
         XWindowAttributes wattr = new XWindowAttributes();
         try {
-            XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
+            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
             int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                           source_win, wattr.pData);
 
@@ -558,7 +558,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             wattr.dispose();
         }
 
-        XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
+        XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
         XlibWrapper.XSelectInput(XToolkit.getDisplay(), source_win,
                                  source_win_mask |
                                  XConstants.StructureNotifyMask);
@@ -963,7 +963,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
         if (sourceWindow != 0) {
             XToolkit.awtLock();
             try {
-                XToolkit.WITH_XERROR_HANDLER(XToolkit.IgnoreBadWindowHandler);
+                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
                 XlibWrapper.XSelectInput(XToolkit.getDisplay(), sourceWindow,
                                          sourceWindowMask);
                 XToolkit.RESTORE_XERROR_HANDLER();
@@ -1104,14 +1104,14 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                                  0, 0xFFFF, false,
                                                  XAtom.XA_ATOM);
                     try {
-                        wpg.execute(XToolkit.IgnoreBadWindowHandler);
+                        wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                         if (wpg.getActualType() == XAtom.XA_ATOM &&
                             wpg.getActualFormat() == 32) {
 
                             XToolkit.awtLock();
                             try {
-                                XToolkit.WITH_XERROR_HANDLER(XWM.VerifyChangePropertyHandler);
+                                XToolkit.WITH_XERROR_HANDLER(XErrorHandler.VerifyChangePropertyHandler.getInstance());
                                 XDnDConstants.XA_XdndTypeList.setAtomData(xclient.get_window(),
                                                                           XAtom.XA_ATOM,
                                                                           wpg.getData(),

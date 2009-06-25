@@ -27,7 +27,7 @@
  * @summary generics: array as generic argument type fails
  * @author gafter
  *
- * @compile -source 1.5 ArrayTypearg.java
+ * @compile  ArrayTypearg.java
  */
 
 import java.util.List;

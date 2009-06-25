@@ -402,6 +402,11 @@ public class GTKKeybindings {
                         "released SPACE", "released",
                         "RETURN", "pressed"
                 }),
+                "RootPane.ancestorInputMap",
+                new UIDefaults.LazyInputMap(new Object[]{
+                        "shift F10", "postPopup",
+                        "CONTEXT_MENU", "postPopup"
+                }),
                 // These bindings are only enabled when there is a default
                 // button set on the rootpane.
                 "RootPane.defaultButtonWindowKeyBindings", new Object[]{

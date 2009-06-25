@@ -49,6 +49,7 @@ package java.util.zip;
  *     compresser.setInput(input);
  *     compresser.finish();
  *     int compressedDataLength = compresser.deflate(output);
+ *     compresser.end();
  *
  *     // Decompress the bytes
  *     Inflater decompresser = new Inflater();

@@ -73,23 +73,18 @@ ifeq ($(PLATFORM), linux)
   ifneq ("$(findstring sparc,$(ARCH))", "")
     # sparc or sparcv9
     REQUIRED_CC_VER = 4.0
-    REQUIRED_GCC_VER = 4.0.*
   else
   ifeq ($(ARCH_DATA_MODEL), 32)
     # i586
     REQUIRED_CC_VER = 3.2
-    REQUIRED_GCC_VER = 3.2.1*
-    REQUIRED_GCC_VER_INT = 3.2.1-7a
   else
   ifeq ($(ARCH), amd64)
     # amd64
     REQUIRED_CC_VER = 3.2
-    REQUIRED_GCC_VER = 3.2.*
   endif
   ifeq ($(ARCH), ia64)
     # ia64
     REQUIRED_CC_VER = 3.2
-    REQUIRED_GCC_VER = 2.9[56789].*
   endif
   endif
   endif
@@ -109,13 +104,6 @@ ifeq ($(PLATFORM), solaris)
 
   # Option used to create a shared library
   SHARED_LIBRARY_FLAG = -G
-  # But gcc is still needed no matter what on 32bit
-  ifeq ($(ARCH_DATA_MODEL), 32)
-    REQUIRED_GCC_VER = 2.95
-    GCC =$(GCC_COMPILER_PATH)gcc
-    _GCC_VER :=$(shell $(GCC) -dumpversion 2>&1 )
-    GCC_VER  :=$(call GetVersion,"$(_GCC_VER)")
-  endif
 
 endif
 

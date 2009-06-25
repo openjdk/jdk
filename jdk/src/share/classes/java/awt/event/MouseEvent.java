@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.awt.IllegalComponentStateException;
 import java.awt.MouseInfo;
+import sun.awt.SunToolkit;
 
 /**
  * An event which indicates that a mouse action occurred in a component.
@@ -379,11 +380,24 @@ public class MouseEvent extends InputEvent {
      */
     private static final long serialVersionUID = -991214153494842848L;
 
+    /**
+     * A number of buttons available on the mouse at the {@code Toolkit} machinery startup.
+     */
+    private static int cachedNumberOfButtons;
+
     static {
         /* ensure that the necessary native libraries are loaded */
         NativeLibLoader.loadLibraries();
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
+        }
+        final Toolkit tk = Toolkit.getDefaultToolkit();
+        if (tk instanceof SunToolkit) {
+            cachedNumberOfButtons = ((SunToolkit)tk).getNumberOfButtons();
+        } else {
+            //It's expected that some toolkits (Headless,
+            //whatever besides SunToolkit) could also operate.
+            cachedNumberOfButtons = 3;
         }
     }
 
@@ -409,15 +423,6 @@ public class MouseEvent extends InputEvent {
      */
     public Point getLocationOnScreen(){
       return new Point(xAbs, yAbs);
-    }
-
-    /**
-     * A number of buttons available on the mouse at the {@code Toolkit} machinery startup.
-     */
-    private static int cachedNumberOfButtons;
-
-    static {
-        cachedNumberOfButtons = MouseInfo.getNumberOfButtons();
     }
 
     /**
@@ -735,7 +740,6 @@ public class MouseEvent extends InputEvent {
         if (button < NOBUTTON){
             throw new IllegalArgumentException("Invalid button value :" + button);
         }
-        //TODO: initialize MouseInfo.cachedNumber on toolkit creation.
         if (button > BUTTON3) {
             if (!Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled()){
                 throw new IllegalArgumentException("Extra mouse events are disabled " + button);

@@ -27,7 +27,7 @@
  * @summary extended 'for' with generic collections causes the compiler to crash
  * @author gafter
  *
- * @compile -source 1.5 GenericIterator.java
+ * @compile GenericIterator.java
  */
 
 import java.util.*;

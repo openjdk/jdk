@@ -71,10 +71,10 @@ DirtyCardQueueSet::DirtyCardQueueSet() :
   _all_active = true;
 }
 
+// Determines how many mutator threads can process the buffers in parallel.
 size_t DirtyCardQueueSet::num_par_ids() {
-  return MAX2(ParallelGCThreads, (size_t)2);
+  return os::processor_count();
 }
-
 
 void DirtyCardQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
                                    int max_completed_queue,
@@ -85,8 +85,6 @@ void DirtyCardQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
 
   _shared_dirty_card_queue.set_lock(lock);
   _free_ids = new FreeIdSet((int) num_par_ids(), _cbl_mon);
-  bool b = _free_ids->claim_perm_id(0);
-  guarantee(b, "Must reserve id zero for concurrent refinement thread.");
 }
 
 void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
@@ -234,7 +232,7 @@ bool DirtyCardQueueSet::apply_closure_to_completed_buffer(int worker_i,
     nd = get_completed_buffer_lock(stop_at);
   }
   bool res = apply_closure_to_completed_buffer_helper(worker_i, nd);
-  if (res) _processed_buffers_rs_thread++;
+  if (res) Atomic::inc(&_processed_buffers_rs_thread);
   return res;
 }
 

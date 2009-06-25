@@ -27,7 +27,7 @@
  * @summary an unbounded (bivariant) wildcard doesn't allow reading
  * @author gafter
  *
- * @compile/fail -source 1.5 Unbounded.java
+ * @compile/fail  Unbounded.java
  */
 
 import java.util.Stack;

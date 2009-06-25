@@ -27,7 +27,7 @@
  * @summary compiler crash (NullPointerException) with foreach in static context
  * @author gafter
  *
- * @compile -source 1.5 StaticBlock.java
+ * @compile StaticBlock.java
  */
 
 public class StaticBlock {

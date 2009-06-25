@@ -27,7 +27,7 @@
  * @summary verify specialized enum classes can't be abstract
  * @author Joseph D. Darcy
  *
- * @compile/fail -source 1.5 FauxSpecialEnum2.java
+ * @compile/fail FauxSpecialEnum2.java
  */
 
 public enum FauxSpecialEnum2 {
