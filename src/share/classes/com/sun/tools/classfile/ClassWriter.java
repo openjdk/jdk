@@ -118,13 +118,8 @@ public class ClassWriter {
         ConstantPool pool = classFile.constant_pool;
         int size = pool.size();
         out.writeShort(size);
-        try {
-            for (int i = 1; i < size; ) {
-                i += constantPoolWriter.write(pool.get(i), out);
-            }
-        } catch (ConstantPoolException e) {
-            throw new Error(e); // ??
-        }
+        for (CPInfo cpInfo: pool.entries())
+            constantPoolWriter.write(cpInfo, out);
     }
 
     protected void writeFields() throws IOException {

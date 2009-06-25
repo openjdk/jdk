@@ -27,7 +27,7 @@
  * @summary static import of private field crashes compiler
  * @author gafter
  *
- * @compile -source 1.5 A.java B.java
+ * @compile A.java B.java
  */
 
 package p1;

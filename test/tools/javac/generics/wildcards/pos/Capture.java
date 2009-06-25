@@ -27,7 +27,7 @@
  * @summary Wildcard capture
  * @author gafter
  *
- * @compile -source 1.5 -Werror Capture.java
+ * @compile  -Werror Capture.java
  */
 
 class X<T> {}

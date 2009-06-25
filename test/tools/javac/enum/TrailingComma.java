@@ -27,7 +27,7 @@
  * @summary enum spec allows trailing comma on enum constant list
  * @author gafter
  *
- * @compile -source 1.5 TrailingComma.java
+ * @compile TrailingComma.java
  */
 
 class TrailingComma {

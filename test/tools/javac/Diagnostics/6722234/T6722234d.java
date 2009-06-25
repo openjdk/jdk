@@ -1,12 +1,10 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,32 +21,24 @@
  * have any questions.
  */
 
-
-package sun.tools.javap;
-
-import java.util.*;
-import java.io.*;
-
 /**
- * Strores LocalVariableTable data information.
- *
- * @author  Sucheta Dambalkar (Adopted code from jdis)
+ * @test
+ * @bug     6722234
+ * @summary javac diagnostics need better integration with the type-system
+ * @author  mcimadamore
+ * @compile/fail/ref=T6722234d_1.out -XDrawDiagnostics -XDdiags=where T6722234d.java
+ * @compile/fail/ref=T6722234d_2.out -XDrawDiagnostics -XDdiags=where,simpleNames T6722234d.java
  */
-class LocVarData {
-    short start_pc, length, name_cpx, sig_cpx, slot;
 
-    public LocVarData() {
-    }
-
-    /**
-     * Read LocalVariableTable attribute.
-     */
-    public LocVarData(DataInputStream in) throws IOException {
-        start_pc = in.readShort();
-        length=in.readShort();
-        name_cpx=in.readShort();
-        sig_cpx=in.readShort();
-        slot=in.readShort();
-
+class T6722234d {
+    interface I1 {}
+    interface I2 {}
+    class A implements I1, I2 {}
+    class B implements I1, I2 {}
+    class Test {
+        <Z> Z m(Z z1, Z z2) { return null; }
+        void main(){
+            A a = m(new A(), new B());
+        }
     }
 }

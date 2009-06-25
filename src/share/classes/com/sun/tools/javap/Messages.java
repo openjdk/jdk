@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,20 @@
  * have any questions.
  */
 
+package com.sun.tools.javap;
 
-package sun.tools.javap;
+import java.util.Locale;
 
 /**
- * Stores constant pool entry information with one field.
+ *  Access to javap messages.
  *
- * @author  Sucheta Dambalkar (Adopted code from jdis)
+ *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
+ *  you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
-class CPX {
-    int cpx;
+public interface Messages {
+    String getMessage(String key, Object... args);
 
-    CPX (int cpx) {
-        this.cpx=cpx;
-    }
+    String getMessage(Locale locale, String key, Object... args);
 }

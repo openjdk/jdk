@@ -27,7 +27,7 @@
  * @summary using of synthetic names in local class causes ClassFormatError
  * @author gafter
  *
- * @compile/fail -source 1.4 -target 1.4 SynthName2.java
+ * @compile/fail SynthName2.java
  */
 
 import java.io.PrintStream;

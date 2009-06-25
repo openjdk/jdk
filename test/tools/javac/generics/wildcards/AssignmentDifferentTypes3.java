@@ -25,7 +25,7 @@
  * @test
  * @summary Test subtyping for wildcards with related type bounds.
  *
- * @compile/fail -source 1.5 AssignmentDifferentTypes3.java
+ * @compile/fail  AssignmentDifferentTypes3.java
  */
 
 public class AssignmentDifferentTypes3 {

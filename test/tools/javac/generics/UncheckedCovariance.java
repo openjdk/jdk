@@ -27,8 +27,8 @@
  * @summary A method returning a raw type cannot override a method returning a generic type
  * @author gafter
  *
- * @compile -source 1.5 UncheckedCovariance.java
- * @compile/fail -Xlint:unchecked -Werror -source 1.5 UncheckedCovariance.java
+ * @compile  UncheckedCovariance.java
+ * @compile/fail -Xlint:unchecked -Werror  UncheckedCovariance.java
  */
 
 class UncheckedCovariance {

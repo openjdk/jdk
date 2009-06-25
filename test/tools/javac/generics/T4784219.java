@@ -27,7 +27,7 @@
  * @summary generics: compiler crash after diagnostic
  * @author gafter
  *
- * @compile -source 1.5 T4683314.java
+ * @compile  T4683314.java
  */
 
 public class T4784219 {

@@ -27,8 +27,8 @@
  * @summary overriding with method of different arity is prohibited
  * @author gafter
  *
- * @compile -source 1.5 VarargsOverride.java
- * @compile/fail -source 1.5 -Werror -Xlint VarargsOverride.java
+ * @compile  VarargsOverride.java
+ * @compile/fail  -Werror -Xlint VarargsOverride.java
  */
 
 package varargs.override;
