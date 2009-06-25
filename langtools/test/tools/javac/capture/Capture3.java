@@ -27,7 +27,7 @@
  * @summary new wildcard subst scheme breaks java.lang.ref
  * @author gafter
  *
- * @compile -source 1.5 Capture3.java
+ * @compile Capture3.java
  */
 
 package capture3;

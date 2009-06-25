@@ -40,7 +40,7 @@ public class TestNavagation extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-d", BUG_ID, "-sourcepath", SRC_DIR, "-source", "1.5", "pkg"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.

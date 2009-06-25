@@ -189,6 +189,7 @@ jtreg_tests: prep $(JT_HOME) $(PRODUCT_HOME) $(JTREG)
           $(shell $(GETMIXEDPATH) "$(JTREG)")                                \
             -a -v:fail,error                                                 \
 	    -ignore:quiet                                                    \
+	    -timeoutFactor:2                                                 \
             $(EXTRA_JTREG_OPTIONS)                                           \
             -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport    \
             -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTwork      \
@@ -225,6 +226,25 @@ packtest_stress: PACKTEST_STRESS_OPTION=-s
 packtest_stress: packtest
 
 PHONY_LIST += packtest packtest_stress
+
+################################################################
+
+# perftest to collect statistics  
+
+# Expect JPRT to set JPRT_PACKTEST_HOME.
+PERFTEST_HOME = ${TEST_ROOT}/perf
+ifdef JPRT_PERFTEST_HOME
+  PERFTEST_HOME = $(JPRT_PERFTEST_HOME)
+endif
+
+perftest: ( $(PERFTEST_HOME)/perftest          \
+                 -t $(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")               \
+                 -w $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)") \
+                 -h $(PERFTEST_HOME) \
+	 ) ; $(BUNDLE_UP_AND_EXIT)
+
+
+PHONY_LIST += perftest
 
 ################################################################
 

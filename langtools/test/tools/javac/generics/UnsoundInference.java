@@ -27,7 +27,7 @@
  * @summary Generic method allowing passing of types that don't match collection types
  * @author gafter
  *
- * @compile/fail -source 1.5 UnsoundInference.java
+ * @compile/fail  UnsoundInference.java
  */
 
 import java.util.ArrayList;

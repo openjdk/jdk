@@ -27,7 +27,7 @@
  * @summary Please add annotation <at>Deprecated to supplant the javadoc tag
  * @author gafter
  *
- * @compile -source 1.5 -Xlint:dep-ann -Werror Dep.java
+ * @compile -Xlint:dep-ann -Werror Dep.java
  */
 
 /** @deprecated */

@@ -27,8 +27,8 @@
  * @summary generics: method overriding missed with separate compilation
  * @author gafter
  *
- * @compile -source 1.5 T4784207a.java
- * @compile -source 1.5 T4784207b.java
+ * @compile  T4784207a.java
+ * @compile  T4784207b.java
  */
 
 interface T4784207a_i extends Comparable<T4784207a_i>{

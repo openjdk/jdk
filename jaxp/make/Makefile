@@ -69,6 +69,10 @@ else
   endif
 endif
 
+ifeq ($(DEBUG_CLASSFILES), true)
+  ANT_OPTIONS += -Djavac.debug=true
+endif
+
 # Note: jdk/make/common/Defs.gmk uses LANGUAGE_VERSION (-source NN)
 # and the somewhat misnamed CLASS_VERSION (-target NN)
 ifdef TARGET_CLASS_VERSION
@@ -77,7 +81,15 @@ else
   ifdef JAVAC_TARGET_ARG
     ANT_OPTIONS += -Djavac.target=$(JAVAC_TARGET_ARG)
   endif
-endif
+endif 
+
+ifdef SOURCE_LANGUAGE_VERSION
+  ANT_OPTIONS += -Djavac.source=$(SOURCE_LANGUAGE_VERSION)
+else
+  ifdef JAVAC_SOURCE_ARG 
+    ANT_OPTIONS += -Djavac.source=$(JAVAC_SOURCE_ARG)
+  endif
+endif 
 
 ifdef ALT_BOOTDIR
   ANT_JAVA_HOME = JAVA_HOME=$(ALT_BOOTDIR)

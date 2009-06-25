@@ -39,30 +39,11 @@ public class ByteToCharEUC_TW extends ByteToCharConverter
     private final byte G4 = 4;
     private final byte MSB = (byte) 0x80;
     private final byte SS2 = (byte) 0x8E;
-    private final byte P2 = (byte) 0xA2;
-    private final byte P3 = (byte) 0xA3;
-
-    protected final char REPLACE_CHAR = '\uFFFD';
 
     private byte firstByte = 0, state = G0;
-    public static String unicodeCNS2, unicodeCNS3;
-    private static String unicodeCNS4, unicodeCNS5, unicodeCNS6;
-    private static String unicodeCNS7, unicodeCNS15;
-
     private int cnsPlane = 0;
-    private final static EUC_TW nioCoder = new EUC_TW();
 
-    public static String unicodeCNS1 = nioCoder.getUnicodeCNS1();
-
-        static String[] cnsChars = {
-            unicodeCNS2 = nioCoder.getUnicodeCNS2(),
-            unicodeCNS3 = nioCoder.getUnicodeCNS3(),
-            unicodeCNS4 = nioCoder.getUnicodeCNS4(),
-            unicodeCNS5 = nioCoder.getUnicodeCNS5(),
-            unicodeCNS6 = nioCoder.getUnicodeCNS6(),
-            unicodeCNS7 = nioCoder.getUnicodeCNS7(),
-            unicodeCNS15 = nioCoder.getUnicodeCNS15()
-            };
+    private EUC_TW.Decoder dec = (EUC_TW.Decoder)(new EUC_TW().newDecoder());
 
     public ByteToCharEUC_TW() {
     }
@@ -81,6 +62,7 @@ public class ByteToCharEUC_TW extends ByteToCharConverter
     }
 
     public void reset() {
+        dec.reset();
         state = G0;
         firstByte = 0;
         byteOff = charOff = 0;
@@ -95,7 +77,7 @@ public class ByteToCharEUC_TW extends ByteToCharConverter
                ConversionBufferFullException
     {
         int inputSize = 0;
-        char outputChar = (char) 0;
+        char[] c1 = new char[1];
 
         byteOff = inOff;
         charOff = outOff;
@@ -104,11 +86,12 @@ public class ByteToCharEUC_TW extends ByteToCharConverter
         while (byteOff < inEnd) {
             if (charOff >= outEnd)
                 throw new ConversionBufferFullException();
-
+            char[] outputChar = null;
             switch (state) {
             case G0:
                 if ( (input[byteOff] & MSB) == 0) {     // ASCII
-                    outputChar = (char) input[byteOff];
+                    outputChar = c1;
+                    outputChar[0] = (char) input[byteOff];
                 } else if (input[byteOff] == SS2) {     // Codeset 2
                     state = G2;
                 } else {                                // Codeset 1
@@ -119,9 +102,10 @@ public class ByteToCharEUC_TW extends ByteToCharConverter
             case G1:
                 inputSize = 2;
                 if ( (input[byteOff] & MSB) != 0) {     // 2nd byte
-                    cnsPlane = 1;
-                    outputChar = convToUnicode(firstByte,
-                                        input[byteOff], unicodeCNS1);
+                    cnsPlane = 0;
+                    outputChar = dec.toUnicode(firstByte & 0xff,
+                                               input[byteOff] & 0xff,
+                                               cnsPlane);
                 } else {                                // Error
                     badInputLength = 1;
                     throw new MalformedInputException();
@@ -154,9 +138,9 @@ public class ByteToCharEUC_TW extends ByteToCharConverter
                 break;
             case G4:
                 if ( (input[byteOff] & MSB) != 0) {     // 2nd byte
-                        outputChar = convToUnicode(firstByte,
-                                                   input[byteOff],
-                                                   cnsChars[cnsPlane - 2]);
+                    outputChar = dec.toUnicode(firstByte & 0xff,
+                                               input[byteOff] & 0xff,
+                                               cnsPlane - 1);
                 } else {                                // Error
                     badInputLength = 3;
                     throw new MalformedInputException();
@@ -166,21 +150,19 @@ public class ByteToCharEUC_TW extends ByteToCharConverter
                 break;
             }
             byteOff++;
-
-            if (outputChar != (char) 0) {
-                if (outputChar == REPLACE_CHAR) {
-                    if (subMode)                // substitution enabled
-                        outputChar = subChars[0];
-                    else {
+            if (state == G0) {
+                if (outputChar == null) {
+                    if (subMode) {               // substitution enabled
+                        outputChar = c1;
+                        outputChar[0] = subChars[0];
+                    } else {
                         badInputLength = inputSize;
                         throw new UnknownCharacterException();
                     }
                 }
-                output[charOff++] = outputChar;
-                outputChar = 0;
+                output[charOff++] = outputChar[0];
             }
         }
-
         return charOff - outOff;
     }
 
@@ -190,26 +172,5 @@ public class ByteToCharEUC_TW extends ByteToCharConverter
      */
     public String getCharacterEncoding() {
         return "EUC_TW";
-    }
-
-    protected char convToUnicode(byte byte1, byte byte2, String table)
-    {
-        int index;
-
-        if ((byte1 & 0xff) < 0xa1 || (byte2 & 0xff) < 0xa1 ||
-            (byte1 & 0xff) > 0xfe || (byte2 & 0xff) > 0xfe)
-            return REPLACE_CHAR;
-        index = (((byte1 & 0xff) - 0xa1) * 94)  + (byte2 & 0xff) - 0xa1;
-        if (index < 0 || index >= table.length())
-            return REPLACE_CHAR;
-
-        // Planes 3 and above containing zero value lead byte
-        // to accommodate surrogates for mappings which decode to a surrogate
-        // pair
-
-        if (this.cnsPlane >= 3)
-           index = (index * 2) + 1;
-
-        return table.charAt(index);
     }
 }

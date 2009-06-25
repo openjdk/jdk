@@ -246,7 +246,7 @@ public abstract class GraphicsDevice {
      * Simulated full-screen mode resizes
      * the window to the size of the screen and positions it at (0,0).
      * <p>
-     * When entering full-screen mode, if the window to be used as the
+     * When entering full-screen mode, if the window to be used as a
      * full-screen window is not visible, this method will make it visible.
      * It will remain visible when returning to windowed mode.
      * <p>
@@ -261,9 +261,9 @@ public abstract class GraphicsDevice {
      *
      * @param w a window to use as the full-screen window; {@code null}
      * if returning to windowed mode.  Some platforms expect the
-     * fullscreen window to be a top-level component (i.e., a Frame);
-     * therefore it is preferable to use a Frame here rather than a
-     * Window.
+     * fullscreen window to be a top-level component (i.e., a {@code Frame});
+     * therefore it is preferable to use a {@code Frame} here rather than a
+     * {@code Window}.
      *
      * @see #isFullScreenSupported
      * @see #getFullScreenWindow

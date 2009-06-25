@@ -27,7 +27,7 @@
  * @summary Crash on cast
  * @author gafter
  *
- * @compile/fail -source 1.5 CastCrash.java
+ * @compile/fail  CastCrash.java
  */
 
 package cast.crash;

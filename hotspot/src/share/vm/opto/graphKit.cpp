@@ -459,7 +459,7 @@ Bytecodes::Code GraphKit::java_bc() const {
 void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   bool must_throw = true;
 
-  if (JvmtiExport::can_post_exceptions()) {
+  if (env()->jvmti_can_post_exceptions()) {
     // Do not try anything fancy if we're notifying the VM on every throw.
     // Cf. case Bytecodes::_athrow in parse2.cpp.
     uncommon_trap(reason, Deoptimization::Action_none,
@@ -769,7 +769,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     }
   }
 
-  if (JvmtiExport::can_examine_or_deopt_anywhere()) {
+  if (env()->jvmti_can_examine_or_deopt_anywhere()) {
     // At any safepoint, this method can get breakpointed, which would
     // then require an immediate deoptimization.
     full_info = true;

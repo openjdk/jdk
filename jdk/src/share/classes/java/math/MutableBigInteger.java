@@ -41,6 +41,11 @@ package java.math;
  * @since   1.3
  */
 
+import java.util.Arrays;
+
+import static java.math.BigInteger.LONG_MASK;
+import static java.math.BigDecimal.INFLATED;
+
 class MutableBigInteger {
     /**
      * Holds the magnitude of this MutableBigInteger in big endian order.
@@ -62,10 +67,13 @@ class MutableBigInteger {
      */
     int offset = 0;
 
+    // Constants
     /**
-     * This mask is used to obtain the value of an int as if it were unsigned.
+     * MutableBigInteger with one element value array with the value 1. Used by
+     * BigDecimal divideAndRound to increment the quotient. Use this constant
+     * only when the method is not going to modify this object.
      */
-    private final static long LONG_MASK = 0xffffffffL;
+    static final MutableBigInteger ONE = new MutableBigInteger(1);
 
     // Constructors
 
@@ -90,15 +98,6 @@ class MutableBigInteger {
 
     /**
      * Construct a new MutableBigInteger with the specified value array
-     * up to the specified length.
-     */
-    MutableBigInteger(int[] val, int len) {
-        value = val;
-        intLen = len;
-    }
-
-    /**
-     * Construct a new MutableBigInteger with the specified value array
      * up to the length of the array supplied.
      */
     MutableBigInteger(int[] val) {
@@ -111,8 +110,8 @@ class MutableBigInteger {
      * specified BigInteger.
      */
     MutableBigInteger(BigInteger b) {
-        value = b.mag.clone();
-        intLen = value.length;
+        intLen = b.mag.length;
+        value = Arrays.copyOf(b.mag, intLen);
     }
 
     /**
@@ -121,10 +120,58 @@ class MutableBigInteger {
      */
     MutableBigInteger(MutableBigInteger val) {
         intLen = val.intLen;
-        value = new int[intLen];
+        value = Arrays.copyOfRange(val.value, val.offset, val.offset + intLen);
+    }
 
-        for(int i=0; i<intLen; i++)
-            value[i] = val.value[val.offset+i];
+    /**
+     * Internal helper method to return the magnitude array. The caller is not
+     * supposed to modify the returned array.
+     */
+    private int[] getMagnitudeArray() {
+        if (offset > 0 || value.length != intLen)
+            return Arrays.copyOfRange(value, offset, offset + intLen);
+        return value;
+    }
+
+    /**
+     * Convert this MutableBigInteger to a long value. The caller has to make
+     * sure this MutableBigInteger can be fit into long.
+     */
+    private long toLong() {
+        assert (intLen <= 2) : "this MutableBigInteger exceeds the range of long";
+        if (intLen == 0)
+            return 0;
+        long d = value[offset] & LONG_MASK;
+        return (intLen == 2) ? d << 32 | (value[offset + 1] & LONG_MASK) : d;
+    }
+
+    /**
+     * Convert this MutableBigInteger to a BigInteger object.
+     */
+    BigInteger toBigInteger(int sign) {
+        if (intLen == 0 || sign == 0)
+            return BigInteger.ZERO;
+        return new BigInteger(getMagnitudeArray(), sign);
+    }
+
+    /**
+     * Convert this MutableBigInteger to BigDecimal object with the specified sign
+     * and scale.
+     */
+    BigDecimal toBigDecimal(int sign, int scale) {
+        if (intLen == 0 || sign == 0)
+            return BigDecimal.valueOf(0, scale);
+        int[] mag = getMagnitudeArray();
+        int len = mag.length;
+        int d = mag[0];
+        // If this MutableBigInteger can't be fit into long, we need to
+        // make a BigInteger object for the resultant BigDecimal object.
+        if (len > 2 || (d < 0 && len == 2))
+            return new BigDecimal(new BigInteger(mag, sign), INFLATED, scale, 0);
+        long v = (len == 2) ?
+            ((mag[1] & LONG_MASK) | (d & LONG_MASK) << 32) :
+            d & LONG_MASK;
+        return new BigDecimal(null, sign == -1 ? -v : v, scale, 0);
     }
 
     /**
@@ -146,23 +193,67 @@ class MutableBigInteger {
     /**
      * Compare the magnitude of two MutableBigIntegers. Returns -1, 0 or 1
      * as this MutableBigInteger is numerically less than, equal to, or
-     * greater than {@code b}.
+     * greater than <tt>b</tt>.
      */
     final int compare(MutableBigInteger b) {
-        if (intLen < b.intLen)
+        int blen = b.intLen;
+        if (intLen < blen)
             return -1;
-        if (intLen > b.intLen)
-            return 1;
+        if (intLen > blen)
+           return 1;
 
-        for (int i=0; i<intLen; i++) {
-            int b1 = value[offset+i]     + 0x80000000;
-            int b2 = b.value[b.offset+i] + 0x80000000;
+        // Add Integer.MIN_VALUE to make the comparison act as unsigned integer
+        // comparison.
+        int[] bval = b.value;
+        for (int i = offset, j = b.offset; i < intLen + offset; i++, j++) {
+            int b1 = value[i] + 0x80000000;
+            int b2 = bval[j]  + 0x80000000;
             if (b1 < b2)
                 return -1;
             if (b1 > b2)
                 return 1;
         }
         return 0;
+    }
+
+    /**
+     * Compare this against half of a MutableBigInteger object (Needed for
+     * remainder tests).
+     * Assumes no leading unnecessary zeros, which holds for results
+     * from divide().
+     */
+    final int compareHalf(MutableBigInteger b) {
+        int blen = b.intLen;
+        int len = intLen;
+        if (len <= 0)
+            return blen <=0 ? 0 : -1;
+        if (len > blen)
+            return 1;
+        if (len < blen - 1)
+            return -1;
+        int[] bval = b.value;
+        int bstart = 0;
+        int carry = 0;
+        // Only 2 cases left:len == blen or len == blen - 1
+        if (len != blen) { // len == blen - 1
+            if (bval[bstart] == 1) {
+                ++bstart;
+                carry = 0x80000000;
+            } else
+                return -1;
+        }
+        // compare values with right-shifted values of b,
+        // carrying shifted-out bits across words
+        int[] val = value;
+        for (int i = offset, j = bstart; i < len + offset;) {
+            int bv = bval[j++];
+            long hb = ((bv >>> 1) + carry) & LONG_MASK;
+            long v = val[i++] & LONG_MASK;
+            if (v != hb)
+                return v < hb ? -1 : 1;
+            carry = (bv & 1) << 31; // carray will be either 0x80000000 or 0
+        }
+        return carry == 0? 0 : -1;
     }
 
     /**
@@ -178,7 +269,7 @@ class MutableBigInteger {
         b = value[j+offset];
         if (b==0)
             return -1;
-        return ((intLen-1-j)<<5) + BigInteger.trailingZeroCnt(b);
+        return ((intLen-1-j)<<5) + Integer.numberOfTrailingZeros(b);
     }
 
     /**
@@ -270,13 +361,11 @@ class MutableBigInteger {
      * Sets this MutableBigInteger's value array to a copy of the specified
      * array. The intLen is set to the length of the new array.
      */
-    void copyValue(MutableBigInteger val) {
-        int len = val.intLen;
+    void copyValue(MutableBigInteger src) {
+        int len = src.intLen;
         if (value.length < len)
             value = new int[len];
-
-        for(int i=0; i<len; i++)
-            value[i] = val.value[val.offset+i];
+        System.arraycopy(src.value, src.offset, value, 0, len);
         intLen = len;
         offset = 0;
     }
@@ -289,8 +378,7 @@ class MutableBigInteger {
         int len = val.length;
         if (value.length < len)
             value = new int[len];
-        for(int i=0; i<len; i++)
-            value[i] = val[i];
+        System.arraycopy(val, 0, value, 0, len);
         intLen = len;
         offset = 0;
     }
@@ -320,7 +408,7 @@ class MutableBigInteger {
      * Returns true iff this MutableBigInteger is odd.
      */
     boolean isOdd() {
-        return ((value[offset + intLen - 1] & 1) == 1);
+        return isZero() ? false : ((value[offset + intLen - 1] & 1) == 1);
     }
 
     /**
@@ -340,7 +428,7 @@ class MutableBigInteger {
      * Returns a String representation of this MutableBigInteger in radix 10.
      */
     public String toString() {
-        BigInteger b = new BigInteger(this, 1);
+        BigInteger b = toBigInteger(1);
         return b.toString();
     }
 
@@ -356,7 +444,7 @@ class MutableBigInteger {
         this.intLen -= nInts;
         if (nBits == 0)
             return;
-        int bitsInHighWord = BigInteger.bitLen(value[offset]);
+        int bitsInHighWord = BigInteger.bitLengthForInt(value[offset]);
         if (nBits >= bitsInHighWord) {
             this.primitiveLeftShift(32 - nBits);
             this.intLen--;
@@ -379,7 +467,7 @@ class MutableBigInteger {
            return;
         int nInts = n >>> 5;
         int nBits = n&0x1F;
-        int bitsInHighWord = BigInteger.bitLen(value[offset]);
+        int bitsInHighWord = BigInteger.bitLengthForInt(value[offset]);
 
         // If shift can be done without moving words, do so
         if (n <= (32-bitsInHighWord)) {
@@ -499,34 +587,41 @@ class MutableBigInteger {
         int[] result = (value.length < resultLen ? new int[resultLen] : value);
 
         int rstart = result.length-1;
-        long sum = 0;
+        long sum;
+        long carry = 0;
 
         // Add common parts of both numbers
         while(x>0 && y>0) {
             x--; y--;
             sum = (value[x+offset] & LONG_MASK) +
-                (addend.value[y+addend.offset] & LONG_MASK) + (sum >>> 32);
+                (addend.value[y+addend.offset] & LONG_MASK) + carry;
             result[rstart--] = (int)sum;
+            carry = sum >>> 32;
         }
 
         // Add remainder of the longer number
         while(x>0) {
             x--;
-            sum = (value[x+offset] & LONG_MASK) + (sum >>> 32);
+            if (carry == 0 && result == value && rstart == (x + offset))
+                return;
+            sum = (value[x+offset] & LONG_MASK) + carry;
             result[rstart--] = (int)sum;
+            carry = sum >>> 32;
         }
         while(y>0) {
             y--;
-            sum = (addend.value[y+addend.offset] & LONG_MASK) + (sum >>> 32);
+            sum = (addend.value[y+addend.offset] & LONG_MASK) + carry;
             result[rstart--] = (int)sum;
+            carry = sum >>> 32;
         }
 
-        if ((sum >>> 32) > 0) { // Result must grow in length
+        if (carry > 0) { // Result must grow in length
             resultLen++;
             if (result.length < resultLen) {
                 int temp[] = new int[resultLen];
-                for (int i=resultLen-1; i>0; i--)
-                    temp[i] = result[i-1];
+                // Result one word longer from carry-out; copy low-order
+                // bits into new result.
+                System.arraycopy(result, 0, temp, 1, result.length);
                 temp[0] = 1;
                 result = temp;
             } else {
@@ -708,29 +803,26 @@ class MutableBigInteger {
         z.value = zval;
     }
 
-    /**
+     /**
      * This method is used for division of an n word dividend by a one word
      * divisor. The quotient is placed into quotient. The one word divisor is
-     * specified by divisor. The value of this MutableBigInteger is the
-     * dividend at invocation but is replaced by the remainder.
+     * specified by divisor.
      *
-     * NOTE: The value of this MutableBigInteger is modified by this method.
+     * @return the remainder of the division is returned.
+     *
      */
-    void divideOneWord(int divisor, MutableBigInteger quotient) {
-        long divLong = divisor & LONG_MASK;
+    int divideOneWord(int divisor, MutableBigInteger quotient) {
+        long divisorLong = divisor & LONG_MASK;
 
         // Special case of one word dividend
         if (intLen == 1) {
-            long remValue = value[offset] & LONG_MASK;
-            quotient.value[0] = (int) (remValue / divLong);
-            quotient.intLen = (quotient.value[0] == 0) ? 0 : 1;
+            long dividendValue = value[offset] & LONG_MASK;
+            int q = (int) (dividendValue / divisorLong);
+            int r = (int) (dividendValue - q * divisorLong);
+            quotient.value[0] = q;
+            quotient.intLen = (q == 0) ? 0 : 1;
             quotient.offset = 0;
-
-            value[0] = (int) (remValue - (quotient.value[0] * divLong));
-            offset = 0;
-            intLen = (value[0] == 0) ? 0 : 1;
-
-            return;
+            return r;
         }
 
         if (quotient.value.length < intLen)
@@ -739,15 +831,15 @@ class MutableBigInteger {
         quotient.intLen = intLen;
 
         // Normalize the divisor
-        int shift = 32 - BigInteger.bitLen(divisor);
+        int shift = Integer.numberOfLeadingZeros(divisor);
 
         int rem = value[offset];
         long remLong = rem & LONG_MASK;
-        if (remLong < divLong) {
+        if (remLong < divisorLong) {
             quotient.value[0] = 0;
         } else {
-            quotient.value[0] = (int)(remLong/divLong);
-            rem = (int) (remLong - (quotient.value[0] * divLong));
+            quotient.value[0] = (int)(remLong / divisorLong);
+            rem = (int) (remLong - (quotient.value[0] * divisorLong));
             remLong = rem & LONG_MASK;
         }
 
@@ -757,8 +849,8 @@ class MutableBigInteger {
             long dividendEstimate = (remLong<<32) |
                 (value[offset + intLen - xlen] & LONG_MASK);
             if (dividendEstimate >= 0) {
-                qWord[0] = (int) (dividendEstimate/divLong);
-                qWord[1] = (int) (dividendEstimate - (qWord[0] * divLong));
+                qWord[0] = (int) (dividendEstimate / divisorLong);
+                qWord[1] = (int) (dividendEstimate - qWord[0] * divisorLong);
             } else {
                 divWord(qWord, dividendEstimate, divisor);
             }
@@ -767,81 +859,110 @@ class MutableBigInteger {
             remLong = rem & LONG_MASK;
         }
 
+        quotient.normalize();
         // Unnormalize
         if (shift > 0)
-            value[0] = rem %= divisor;
+            return rem % divisor;
         else
-            value[0] = rem;
-        intLen = (value[0] == 0) ? 0 : 1;
-
-        quotient.normalize();
+            return rem;
     }
 
-
     /**
-     * Calculates the quotient and remainder of this div b and places them
-     * in the MutableBigInteger objects provided.
+     * Calculates the quotient of this div b and places the quotient in the
+     * provided MutableBigInteger objects and the remainder object is returned.
      *
      * Uses Algorithm D in Knuth section 4.3.1.
      * Many optimizations to that algorithm have been adapted from the Colin
      * Plumb C library.
-     * It special cases one word divisors for speed.
-     * The contents of a and b are not changed.
+     * It special cases one word divisors for speed. The content of b is not
+     * changed.
      *
      */
-    void divide(MutableBigInteger b,
-                        MutableBigInteger quotient, MutableBigInteger rem) {
+    MutableBigInteger divide(MutableBigInteger b, MutableBigInteger quotient) {
         if (b.intLen == 0)
             throw new ArithmeticException("BigInteger divide by zero");
 
         // Dividend is zero
         if (intLen == 0) {
-            quotient.intLen = quotient.offset = rem.intLen = rem.offset = 0;
-            return;
+            quotient.intLen = quotient.offset;
+            return new MutableBigInteger();
         }
 
         int cmp = compare(b);
-
         // Dividend less than divisor
         if (cmp < 0) {
             quotient.intLen = quotient.offset = 0;
-            rem.copyValue(this);
-            return;
+            return new MutableBigInteger(this);
         }
         // Dividend equal to divisor
         if (cmp == 0) {
             quotient.value[0] = quotient.intLen = 1;
-            quotient.offset = rem.intLen = rem.offset = 0;
-            return;
+            quotient.offset = 0;
+            return new MutableBigInteger();
         }
 
         quotient.clear();
-
         // Special case one word divisor
         if (b.intLen == 1) {
-            rem.copyValue(this);
-            rem.divideOneWord(b.value[b.offset], quotient);
-            return;
+            int r = divideOneWord(b.value[b.offset], quotient);
+            if (r == 0)
+                return new MutableBigInteger();
+            return new MutableBigInteger(r);
         }
 
         // Copy divisor value to protect divisor
-        int[] d = new int[b.intLen];
-        for(int i=0; i<b.intLen; i++)
-            d[i] = b.value[b.offset+i];
-        int dlen = b.intLen;
+        int[] div = Arrays.copyOfRange(b.value, b.offset, b.offset + b.intLen);
+        return divideMagnitude(div, quotient);
+    }
+
+    /**
+     * Internally used  to calculate the quotient of this div v and places the
+     * quotient in the provided MutableBigInteger object and the remainder is
+     * returned.
+     *
+     * @return the remainder of the division will be returned.
+     */
+    long divide(long v, MutableBigInteger quotient) {
+        if (v == 0)
+            throw new ArithmeticException("BigInteger divide by zero");
+
+        // Dividend is zero
+        if (intLen == 0) {
+            quotient.intLen = quotient.offset = 0;
+            return 0;
+        }
+        if (v < 0)
+            v = -v;
+
+        int d = (int)(v >>> 32);
+        quotient.clear();
+        // Special case on word divisor
+        if (d == 0)
+            return divideOneWord((int)v, quotient) & LONG_MASK;
+        else {
+            int[] div = new int[]{ d, (int)(v & LONG_MASK) };
+            return divideMagnitude(div, quotient).toLong();
+        }
+    }
+
+    /**
+     * Divide this MutableBigInteger by the divisor represented by its magnitude
+     * array. The quotient will be placed into the provided quotient object &
+     * the remainder object is returned.
+     */
+    private MutableBigInteger divideMagnitude(int[] divisor,
+                                              MutableBigInteger quotient) {
 
         // Remainder starts as dividend with space for a leading zero
-        if (rem.value.length < intLen +1)
-            rem.value = new int[intLen+1];
-
-        for (int i=0; i<intLen; i++)
-            rem.value[i+1] = value[i+offset];
+        MutableBigInteger rem = new MutableBigInteger(new int[intLen + 1]);
+        System.arraycopy(value, offset, rem.value, 1, intLen);
         rem.intLen = intLen;
         rem.offset = 1;
 
         int nlen = rem.intLen;
 
         // Set the quotient size
+        int dlen = divisor.length;
         int limit = nlen - dlen + 1;
         if (quotient.value.length < limit) {
             quotient.value = new int[limit];
@@ -851,10 +972,10 @@ class MutableBigInteger {
         int[] q = quotient.value;
 
         // D1 normalize the divisor
-        int shift = 32 - BigInteger.bitLen(d[0]);
+        int shift = Integer.numberOfLeadingZeros(divisor[0]);
         if (shift > 0) {
             // First shift will not grow array
-            BigInteger.primitiveLeftShift(d, dlen, shift);
+            BigInteger.primitiveLeftShift(divisor, dlen, shift);
             // But this one might
             rem.leftShift(shift);
         }
@@ -866,9 +987,9 @@ class MutableBigInteger {
             rem.intLen++;
         }
 
-        int dh = d[0];
+        int dh = divisor[0];
         long dhLong = dh & LONG_MASK;
-        int dl = d[1];
+        int dl = divisor[1];
         int[] qWord = new int[2];
 
         // D2 Initialize j
@@ -910,7 +1031,7 @@ class MutableBigInteger {
                     qhat--;
                     qrem = (int)((qrem & LONG_MASK) + dhLong);
                     if ((qrem & LONG_MASK) >=  dhLong) {
-                        estProduct = (dl & LONG_MASK) * (qhat & LONG_MASK);
+                        estProduct -= (dl & LONG_MASK);
                         rs = ((qrem & LONG_MASK) << 32) | nl;
                         if (unsignedLongCompare(estProduct, rs))
                             qhat--;
@@ -920,12 +1041,12 @@ class MutableBigInteger {
 
             // D4 Multiply and subtract
             rem.value[j+rem.offset] = 0;
-            int borrow = mulsub(rem.value, d, qhat, dlen, j+rem.offset);
+            int borrow = mulsub(rem.value, divisor, qhat, dlen, j+rem.offset);
 
             // D5 Test remainder
             if (borrow + 0x80000000 > nh2) {
                 // D6 Add back
-                divadd(d, rem.value, j+1+rem.offset);
+                divadd(divisor, rem.value, j+1+rem.offset);
                 qhat--;
             }
 
@@ -937,8 +1058,9 @@ class MutableBigInteger {
         if (shift > 0)
             rem.rightShift(shift);
 
-        rem.normalize();
         quotient.normalize();
+        rem.normalize();
+        return rem;
     }
 
     /**
@@ -989,16 +1111,15 @@ class MutableBigInteger {
         // Use Euclid's algorithm until the numbers are approximately the
         // same length, then use the binary GCD algorithm to find the GCD.
         MutableBigInteger a = this;
-        MutableBigInteger q = new MutableBigInteger(),
-                          r = new MutableBigInteger();
+        MutableBigInteger q = new MutableBigInteger();
 
         while (b.intLen != 0) {
             if (Math.abs(a.intLen - b.intLen) < 2)
                 return a.binaryGCD(b);
 
-            a.divide(b, q, r);
-            MutableBigInteger swapper = a;
-            a = b; b = r; r = swapper;
+            MutableBigInteger r = a.divide(b, q);
+            a = b;
+            b = r;
         }
         return a;
     }
@@ -1069,40 +1190,21 @@ class MutableBigInteger {
         if (a==0)
             return b;
 
-        int x;
-        int aZeros = 0;
-        while ((x = a & 0xff) == 0) {
-            a >>>= 8;
-            aZeros += 8;
-        }
-        int y = BigInteger.trailingZeroTable[x];
-        aZeros += y;
-        a >>>= y;
-
-        int bZeros = 0;
-        while ((x = b & 0xff) == 0) {
-            b >>>= 8;
-            bZeros += 8;
-        }
-        y = BigInteger.trailingZeroTable[x];
-        bZeros += y;
-        b >>>= y;
+        // Right shift a & b till their last bits equal to 1.
+        int aZeros = Integer.numberOfTrailingZeros(a);
+        int bZeros = Integer.numberOfTrailingZeros(b);
+        a >>>= aZeros;
+        b >>>= bZeros;
 
         int t = (aZeros < bZeros ? aZeros : bZeros);
 
         while (a != b) {
             if ((a+0x80000000) > (b+0x80000000)) {  // a > b as unsigned
                 a -= b;
-
-                while ((x = a & 0xff) == 0)
-                    a >>>= 8;
-                a >>>= BigInteger.trailingZeroTable[x];
+                a >>>= Integer.numberOfTrailingZeros(a);
             } else {
                 b -= a;
-
-                while ((x = b & 0xff) == 0)
-                    b >>>= 8;
-                b >>>= BigInteger.trailingZeroTable[x];
+                b >>>= Integer.numberOfTrailingZeros(b);
             }
         }
         return a<<t;
@@ -1152,8 +1254,7 @@ class MutableBigInteger {
         temp1.multiply(y2, temp2);
 
         result.add(temp2);
-        result.divide(p, temp1, temp2);
-        return temp2;
+        return result.divide(p, temp1);
     }
 
     /*
@@ -1321,40 +1422,45 @@ class MutableBigInteger {
 
         MutableBigInteger a = new MutableBigInteger(this);
         MutableBigInteger q = new MutableBigInteger();
-        MutableBigInteger r = new MutableBigInteger();
+        MutableBigInteger r = b.divide(a, q);
 
-        b.divide(a, q, r);
-        MutableBigInteger swapper = b; b = r; r = swapper;
+        MutableBigInteger swapper = b;
+        // swap b & r
+        b = r;
+        r = swapper;
 
         MutableBigInteger t1 = new MutableBigInteger(q);
         MutableBigInteger t0 = new MutableBigInteger(1);
         MutableBigInteger temp = new MutableBigInteger();
 
         while (!b.isOne()) {
-            a.divide(b, q, r);
+            r = a.divide(b, q);
 
             if (r.intLen == 0)
                 throw new ArithmeticException("BigInteger not invertible.");
 
-            swapper = r; r = a; a = swapper;
+            swapper = r;
+            a = swapper;
 
             if (q.intLen == 1)
                 t1.mul(q.value[q.offset], temp);
             else
                 q.multiply(t1, temp);
-            swapper = q; q = temp; temp = swapper;
-
+            swapper = q;
+            q = temp;
+            temp = swapper;
             t0.add(q);
 
             if (a.isOne())
                 return t0;
 
-            b.divide(a, q, r);
+            r = b.divide(a, q);
 
             if (r.intLen == 0)
                 throw new ArithmeticException("BigInteger not invertible.");
 
-            swapper = b; b = r; r = swapper;
+            swapper = b;
+            b =  r;
 
             if (q.intLen == 1)
                 t0.mul(q.value[q.offset], temp);

@@ -27,7 +27,7 @@
  * @summary compiling annatations with nested enums issuing *.java leads to crash
  * @author gafter
  *
- * @compile -source 1.5 EnumInit.java
+ * @compile EnumInit.java
  */
 
 package enum_init_;

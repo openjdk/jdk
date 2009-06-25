@@ -27,7 +27,7 @@
  * @summary wildcard capture (snapshotting)
  * @author gafter
  *
- * @compile -Xlint:unchecked -Werror -source 1.5 Capture1.java
+ * @compile -Xlint:unchecked -Werror Capture1.java
  */
 
 package capture1;

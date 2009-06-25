@@ -27,7 +27,7 @@
  * @summary explicit type arguments
  * @author gafter
  *
- * @compile/fail -source 1.5 Metharg2.java
+ * @compile/fail  Metharg2.java
  */
 
 // Test type mismatch on type argument for qualified method call

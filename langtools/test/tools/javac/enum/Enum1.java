@@ -26,9 +26,6 @@
  * @bug 4945532
  * @summary enums: test output of values().toString()
  * @author gafter
- *
- * @compile -source 1.5 Enum1.java
- * @run main Enum1
  */
 
 import java.util.*;
