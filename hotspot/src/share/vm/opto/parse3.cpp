@@ -222,7 +222,7 @@ void Parse::do_put_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool 
   // Store the value.
   Node* store;
   if (bt == T_OBJECT) {
-    const TypePtr* field_type;
+    const TypeOopPtr* field_type;
     if (!field->type()->is_loaded()) {
       field_type = TypeInstPtr::BOTTOM;
     } else {
@@ -361,7 +361,7 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
     guarantee(length_con >= 0, "non-constant multianewarray");
     ciArrayKlass* array_klass_1 = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
     const TypePtr* adr_type = TypeAryPtr::OOPS;
-    const Type*    elemtype = _gvn.type(array)->is_aryptr()->elem();
+    const TypeOopPtr*    elemtype = _gvn.type(array)->is_aryptr()->elem()->is_oopptr();
     const intptr_t header   = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     for (jint i = 0; i < length_con; i++) {
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);

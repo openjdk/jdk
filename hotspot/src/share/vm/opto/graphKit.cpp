@@ -1378,7 +1378,7 @@ void GraphKit::pre_barrier(Node* ctl,
                            Node* adr,
                            uint adr_idx,
                            Node *val,
-                           const Type* val_type,
+                           const TypeOopPtr* val_type,
                            BasicType bt) {
   BarrierSet* bs = Universe::heap()->barrier_set();
   set_control(ctl);
@@ -1436,7 +1436,7 @@ Node* GraphKit::store_oop_to_object(Node* ctl,
                                     Node* adr,
                                     const TypePtr* adr_type,
                                     Node *val,
-                                    const Type* val_type,
+                                    const TypeOopPtr* val_type,
                                     BasicType bt) {
   uint adr_idx = C->get_alias_index(adr_type);
   Node* store;
@@ -1451,7 +1451,7 @@ Node* GraphKit::store_oop_to_array(Node* ctl,
                                    Node* adr,
                                    const TypePtr* adr_type,
                                    Node *val,
-                                   const Type* val_type,
+                                   const TypeOopPtr* val_type,
                                    BasicType bt) {
   uint adr_idx = C->get_alias_index(adr_type);
   Node* store;
@@ -1466,12 +1466,29 @@ Node* GraphKit::store_oop_to_unknown(Node* ctl,
                                      Node* adr,
                                      const TypePtr* adr_type,
                                      Node *val,
-                                     const Type* val_type,
                                      BasicType bt) {
-  uint adr_idx = C->get_alias_index(adr_type);
-  Node* store;
+  Compile::AliasType* at = C->alias_type(adr_type);
+  const TypeOopPtr* val_type = NULL;
+  if (adr_type->isa_instptr()) {
+    if (at->field() != NULL) {
+      // known field.  This code is a copy of the do_put_xxx logic.
+      ciField* field = at->field();
+      if (!field->type()->is_loaded()) {
+        val_type = TypeInstPtr::BOTTOM;
+      } else {
+        val_type = TypeOopPtr::make_from_klass(field->type()->as_klass());
+      }
+    }
+  } else if (adr_type->isa_aryptr()) {
+    val_type = adr_type->is_aryptr()->elem()->isa_oopptr();
+  }
+  if (val_type == NULL) {
+    val_type = TypeInstPtr::BOTTOM;
+  }
+
+  uint adr_idx = at->index();
   pre_barrier(ctl, obj, adr, adr_idx, val, val_type, bt);
-  store = store_to_memory(control(), adr, val, bt, adr_idx);
+  Node* store = store_to_memory(control(), adr, val, bt, adr_idx);
   post_barrier(control(), store, obj, adr, adr_idx, val, bt, true);
   return store;
 }
@@ -3202,7 +3219,7 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
                                     Node* adr,
                                     uint alias_idx,
                                     Node* val,
-                                    const Type* val_type,
+                                    const TypeOopPtr* val_type,
                                     BasicType bt) {
   IdealKit ideal(gvn(), control(), merged_memory(), true);
 #define __ ideal.

@@ -2178,9 +2178,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
       // Possibly an oop being stored to Java heap or native memory
       if (!TypePtr::NULL_PTR->higher_equal(_gvn.type(heap_base_oop))) {
         // oop to Java heap.
-        (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, val->bottom_type(), type);
+        (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type);
       } else {
-
         // We can't tell at compile time if we are storing in the Java heap or outside
         // of it. So we need to emit code to conditionally do the proper type of
         // store.
@@ -2189,7 +2188,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
         kit.declares_done();
         // QQQ who knows what probability is here??
         kit.if_then(heap_base_oop, BoolTest::ne, null(), PROB_UNLIKELY(0.999)); {
-          (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, val->bottom_type(), type);
+          (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type);
         } kit.else_(); {
           (void) store_to_memory(control(), adr, val, type, adr_type, is_volatile);
         } kit.end_if();
@@ -2394,7 +2393,7 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
   case T_OBJECT:
      // reference stores need a store barrier.
     // (They don't if CAS fails, but it isn't worth checking.)
-    pre_barrier(control(), base, adr, alias_idx, newval, value_type, T_OBJECT);
+    pre_barrier(control(), base, adr, alias_idx, newval, value_type->is_oopptr(), T_OBJECT);
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = _gvn.transform(new (C, 2) EncodePNode(newval, newval->bottom_type()->make_narrowoop()));
@@ -2489,7 +2488,7 @@ bool LibraryCallKit::inline_unsafe_ordered_store(BasicType type) {
   bool require_atomic_access = true;
   Node* store;
   if (type == T_OBJECT) // reference stores need a store barrier.
-    store = store_oop_to_unknown(control(), base, adr, adr_type, val, value_type, type);
+    store = store_oop_to_unknown(control(), base, adr, adr_type, val, type);
   else {
     store = store_to_memory(control(), adr, val, type, adr_type, require_atomic_access);
   }
