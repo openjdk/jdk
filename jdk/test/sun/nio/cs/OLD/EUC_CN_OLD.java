@@ -23,23 +23,18 @@
  * have any questions.
  */
 
-/*
- */
-
-package sun.nio.cs.ext;
-
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.HistoricallyNamedCharset;
 
-public class EUC_CN
+public class EUC_CN_OLD
     extends Charset
     implements HistoricallyNamedCharset
 {
 
-    public EUC_CN() {
-        super("GB2312", ExtendedCharsets.aliasesFor("GB2312"));
+    public EUC_CN_OLD() {
+        super("GB2312-OLD", null);
     }
 
     public String historicalName() {
@@ -47,7 +42,7 @@ public class EUC_CN
     }
 
     public boolean contains(Charset cs) {
-        return ((cs instanceof EUC_CN)
+        return ((cs instanceof EUC_CN_OLD)
                 || (cs.name().equals("US-ASCII")));
     }
 
@@ -60,16 +55,16 @@ public class EUC_CN
     }
 
     public short[] getDecoderIndex1() {
-        return EUC_CN.Decoder.index1;
+        return Decoder.index1;
     }
     public String[] getDecoderIndex2() {
-        return EUC_CN.Decoder.index2;
+        return Decoder.index2;
     }
     public short[] getEncoderIndex1() {
-        return EUC_CN.Encoder.index1;
+        return Encoder.index1;
     }
     public String[] getEncoderIndex2() {
-        return EUC_CN.Encoder.index2;
+        return Encoder.index2;
     }
 
     public static class Decoder extends DoubleByteDecoder {

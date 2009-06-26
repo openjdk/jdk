@@ -34,6 +34,6 @@ public class ByteToCharMS950_HKSCS extends ByteToCharHKSCS {
 
     protected char getUnicode(int byte1, int byte2) {
         char c = super.getUnicode(byte1, byte2);
-        return (c != REPLACE_CHAR) ? c : bcMS950.getUnicode(byte1, byte2);
+        return (c != REPLACE_CHAR) ? c : bcMS950.decodeDouble(byte1, byte2);
     }
 }

@@ -683,10 +683,16 @@ static void
 SetClassPath(const char *s)
 {
     char *def;
+    const char *orig = s;
+    static const char format[] = "-Djava.class.path=%s";
     s = JLI_WildcardExpandClasspath(s);
-    def = JLI_MemAlloc(JLI_StrLen(s) + 40);
-    sprintf(def, "-Djava.class.path=%s", s);
+    def = JLI_MemAlloc(sizeof(format)
+                       - 2 /* strlen("%s") */
+                       + JLI_StrLen(s));
+    sprintf(def, format, s);
     AddOption(def, NULL);
+    if (s != orig)
+        JLI_MemFree((char *) s);
 }
 
 /*
