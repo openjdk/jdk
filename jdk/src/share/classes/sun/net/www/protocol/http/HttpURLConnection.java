@@ -237,6 +237,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /* try auth without calling Authenticator */
     private boolean tryTransparentNTLMServer = NTLMAuthentication.supportsTransparentAuth();
     private boolean tryTransparentNTLMProxy = NTLMAuthentication.supportsTransparentAuth();
+    /* Used by Windows specific code */
+    Object authObj;
 
     /* Set if the user is manually setting the Authorization or Proxy-Authorization headers */
     boolean isUserServerAuth;
@@ -1219,6 +1221,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             disconnectInternal ();
                             throw new IOException ("Authentication failure");
                         }
+                        authObj = null;
                         doingNTLMp2ndStage = false;
                         continue;
                     }
@@ -1295,6 +1298,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             throw new IOException ("Authentication failure");
                         }
                         doingNTLM2ndStage = false;
+                        authObj = null;
                         setCookieHeader();
                         continue;
                     }
@@ -1646,6 +1650,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                             disconnectInternal();
                             throw new IOException ("Authentication failure");
                         }
+                        authObj = null;
                         doingNTLMp2ndStage = false;
                         continue;
                     }
