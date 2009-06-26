@@ -303,7 +303,7 @@ public class Attr extends JCTree.Visitor {
 
     public Env<AttrContext> attribExprToTree(JCTree expr, Env<AttrContext> env, JCTree tree) {
         breakTree = tree;
-        JavaFileObject prev = log.useSource(null);
+        JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
         try {
             attribExpr(expr, env);
         } catch (BreakAttr b) {
@@ -317,7 +317,7 @@ public class Attr extends JCTree.Visitor {
 
     public Env<AttrContext> attribStatToTree(JCTree stmt, Env<AttrContext> env, JCTree tree) {
         breakTree = tree;
-        JavaFileObject prev = log.useSource(null);
+        JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
         try {
             attribStat(stmt, env);
         } catch (BreakAttr b) {

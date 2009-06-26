@@ -1,0 +1,2 @@
+T6638712e.java:40:27: compiler.err.invalid.inferred.types: X, (compiler.misc.inferred.do.not.conform.to.params: T6638712e.Foo<? super java.lang.Object,? extends java.lang.Boolean>, T6638712e.Foo<java.lang.Boolean,java.lang.Boolean>)
+1 error

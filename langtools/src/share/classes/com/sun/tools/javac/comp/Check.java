@@ -391,6 +391,10 @@ public class Check {
                                      diags.fragment("incompatible.types" + (d!=null ? ".1" : ""), d),
                                      t, pt);
                 }
+            } catch (Infer.InvalidInstanceException ex) {
+                JCDiagnostic d = ex.getDiagnostic();
+                log.error(pos, "invalid.inferred.types", t.tvars, d);
+                return types.createErrorType(pt);
             }
         }
     }

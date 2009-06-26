@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,21 @@
 
 /*
  * @test
- * @bug     6476073
- * @summary Capture using super wildcard of type variables doesn't work
- * @ignore awaiting for 6650759 (see bug report for a detailed evaluation)
- * @compile T6476073.java
+ * @bug     6638712 6795689
+ * @author  mcimadamore
+ * @summary Inference with wildcard types causes selection of inapplicable method
+ * @compile/fail/ref=T6638712e.out -XDrawDiagnostics T6638712e.java
  */
 
-import java.util.Collection;
-import java.util.List;
+class T6638712e {
 
-public class T6476073 {
-    public static <B> void m(List<? super B> list,Collection<? super B> coll) {
-        m(list,coll);
+    static class Foo<A, B> {
+        <X> Foo<X, B> m(Foo<? super X, ? extends A> foo) { return null;}
+    }
+
+    static class Test {
+        Foo<Object, String> test(Foo<Boolean, String> foo1, Foo<Boolean, Boolean> foo2) {
+             return foo1.m(foo2);
+        }
     }
 }
