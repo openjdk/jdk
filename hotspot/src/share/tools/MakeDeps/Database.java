@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ public class Database {
   private HashMap<String,String> platformDepFiles;
   private long threshold;
   private int nOuterFiles;
-  private int nPrecompiledFiles;
   private boolean missingOk;
   private Platform plat;
   /** These allow you to specify files not in the include database
@@ -62,7 +61,6 @@ public class Database {
 
     threshold = t;
     nOuterFiles = 0;
-    nPrecompiledFiles = 0;
     missingOk = false;
     firstFile = null;
     lastFile = null;
@@ -343,7 +341,6 @@ public class Database {
             plat.getGIFileTemplate().getInvDir() +
             list.getName() +
             "\"");
-        nPrecompiledFiles += 1;
       }
     }
     inclFile.println();
@@ -408,22 +405,22 @@ public class Database {
       gd.println();
     }
 
-    if (nPrecompiledFiles > 0) {
-      // write Precompiled_Files = ...
-      gd.println("Precompiled_Files = \\");
-      for (Iterator iter = grandInclude.iterator(); iter.hasNext(); ) {
-        FileList list = (FileList) iter.next();
+    // write Precompiled_Files = ...
+    gd.println("Precompiled_Files = \\");
+    for (Iterator iter = grandInclude.iterator(); iter.hasNext(); ) {
+      FileList list = (FileList) iter.next();
+      if (list.getCount() >= threshold) {
         gd.println(list.getName() + " \\");
         String platformDep = platformDepFiles.get(list.getName());
         if (platformDep != null) {
-            // make sure changes to the platform dependent file will
-            // cause regeneration of the pch file.
-            gd.println(platformDep + " \\");
+          // make sure changes to the platform dependent file will
+          // cause regeneration of the pch file.
+          gd.println(platformDep + " \\");
         }
       }
-      gd.println();
-      gd.println();
     }
+    gd.println();
+    gd.println();
 
     gd.println("DTraced_Files = \\");
     for (Iterator iter = outerFiles.iterator(); iter.hasNext(); ) {
@@ -483,7 +480,6 @@ public class Database {
         }
 
         if (plat.includeGIDependencies()
-            && nPrecompiledFiles > 0
             && anII.getUseGrandInclude()) {
           gd.println("    $(Precompiled_Files) \\");
         }
