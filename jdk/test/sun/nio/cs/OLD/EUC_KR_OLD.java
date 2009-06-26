@@ -27,7 +27,7 @@
 /*
  */
 
-package sun.nio.cs.ext;
+//package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
@@ -35,12 +35,12 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharacterCodingException;
 import sun.nio.cs.HistoricallyNamedCharset;
 
-public class EUC_KR
+public class EUC_KR_OLD
     extends Charset
     implements HistoricallyNamedCharset
 {
-    public EUC_KR() {
-        super("EUC-KR", ExtendedCharsets.aliasesFor("EUC-KR"));
+    public EUC_KR_OLD() {
+        super("EUC-KR-OLD", null);
     }
 
     public String historicalName() {
@@ -48,7 +48,7 @@ public class EUC_KR
     }
 
     public boolean contains(Charset cs) {
-        return ((cs instanceof EUC_KR)
+        return ((cs instanceof EUC_KR_OLD)
                 || (cs.name().equals("US-ASCII")));
     }
 
