@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,18 @@
  * have any questions.
  */
 
-/*
+/**
  * @test
- * @bug     6476073
- * @summary Capture using super wildcard of type variables doesn't work
- * @ignore awaiting for 6650759 (see bug report for a detailed evaluation)
- * @compile T6476073.java
+ * @bug 6835428
+ * @author mcimadamore
+ * @summary regression: return-type inference rejects valid code
+ * @compile T6835428.java
  */
 
-import java.util.Collection;
-import java.util.List;
-
-public class T6476073 {
-    public static <B> void m(List<? super B> list,Collection<? super B> coll) {
-        m(list,coll);
-    }
+class T6835428<T> {
+    interface X<T> {}
+   <T extends Comparable<? super T>> T6835428<X<T>> m() { return null; }
+   <T extends Comparable<? super T>> void test() {
+      T6835428<X<T>> t = m();
+   }
 }
