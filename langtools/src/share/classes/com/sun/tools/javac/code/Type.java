@@ -1066,6 +1066,21 @@ public class Type implements PrimitiveType {
             return qtype.isErroneous();
         }
 
+        /**
+         * Replaces this ForAll's typevars with a set of concrete Java types
+         * and returns the instantiated generic type. Subclasses might override
+         * in order to check that the list of types is a valid instantiation
+         * of the ForAll's typevars.
+         *
+         * @param actuals list of actual types
+         * @param types types instance
+         * @return qtype where all occurrences of tvars are replaced
+         * by types in actuals
+         */
+        public Type inst(List<Type> actuals, Types types) {
+            return types.subst(qtype, tvars, actuals);
+        }
+
         public Type map(Mapping f) {
             return f.apply(qtype);
         }

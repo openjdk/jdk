@@ -58,7 +58,7 @@ public abstract class AbstractLog {
 
     protected DiagnosticSource getSource(JavaFileObject file) {
         if (file == null)
-            return null;
+            return DiagnosticSource.NO_SOURCE;
         DiagnosticSource s = sourceMap.get(file);
         if (s == null) {
             s = new DiagnosticSource(file, this);
