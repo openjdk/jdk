@@ -2130,39 +2130,33 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      */
     private static int backingStoreType;
 
-    static boolean awt_ServerInquired = false;
-    static boolean awt_IsXsunServer    = false;
+    static final int XSUN_KP_BEHAVIOR = 1;
+    static final int XORG_KP_BEHAVIOR = 2;
+
+    static int     awt_IsXsunKPBehavior = 0;
     static boolean awt_UseXKB         = false;
     static boolean awt_UseXKB_Calls   = false;
     static int     awt_XKBBaseEventCode = 0;
     static int     awt_XKBEffectiveGroup = 0; // so far, I don't use it leaving all calculations
                                               // to XkbTranslateKeyCode
     static long    awt_XKBDescPtr     = 0;
+
     /**
-       Try to understand if it is Xsun server.
-       By now (2005) Sun is vendor of Xsun and Xorg servers; we only return true if Xsun is running.
-    */
-    static boolean isXsunServer() {
+     * Check for Xsun convention regarding numpad keys.
+     * Xsun and some other servers (i.e. derived from Xsun)
+     * under certain conditions process numpad keys unlike Xorg.
+     */
+    static boolean isXsunKPBehavior() {
         awtLock();
         try {
-            if( awt_ServerInquired ) {
-                return awt_IsXsunServer;
+            if( awt_IsXsunKPBehavior == 0 ) {
+                if( XlibWrapper.IsXsunKPBehavior(getDisplay()) ) {
+                    awt_IsXsunKPBehavior = XSUN_KP_BEHAVIOR;
+                }else{
+                    awt_IsXsunKPBehavior = XORG_KP_BEHAVIOR;
+                }
             }
-            if( ! XlibWrapper.ServerVendor(getDisplay()).startsWith("Sun Microsystems") ) {
-                awt_ServerInquired = true;
-                awt_IsXsunServer = false;
-                return false;
-            }
-            // Now, it's Sun. It still may be Xorg though, eg on Solaris 10, x86.
-            // Today (2005), VendorRelease of Xorg is a Big Number unlike Xsun.
-            if( XlibWrapper.VendorRelease(getDisplay()) > 10000 ) {
-                awt_ServerInquired = true;
-                awt_IsXsunServer = false;
-                return false;
-            }
-            awt_ServerInquired = true;
-            awt_IsXsunServer = true;
-            return true;
+            return awt_IsXsunKPBehavior == XSUN_KP_BEHAVIOR ? true : false;
         } finally {
             awtUnlock();
         }
