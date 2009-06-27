@@ -105,6 +105,9 @@ public class JavacRoundEnvironment implements RoundEnvironment {
      * elements are {@linkplain #getSpecifiedTypeElements specified
      * types} and any types nested within them.
      *
+     * <p>This method will not return type annotations, which annotate
+     * types, not elements.
+     *
      * @param a  annotation type being requested
      * @return the elements annotated with the given annotation type,
      * or an empty set if there are none
