@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.attribute.BasicFileAttributeView
  * @library ../..
  */
@@ -48,14 +48,11 @@ public class Basic {
         check(!attrs.isRegularFile(), "is not a regular file");
         check(!attrs.isSymbolicLink(), "is not a link");
         check(!attrs.isOther(), "is not other");
-        check(attrs.linkCount() >= 1, "should be at least 1");
 
         // last-modified-time should match java.io.File
-        if (attrs.resolution() == TimeUnit.MILLISECONDS) {
-            File f = new File(dir.toString());
-            check(f.lastModified() == attrs.lastModifiedTime(),
-                "last-modified time should be the same");
-        }
+        File f = new File(dir.toString());
+        check(f.lastModified() == attrs.lastModifiedTime().toMillis(),
+              "last-modified time should be the same");
     }
 
     static void checkAttributesOfFile(Path dir, Path file)
@@ -66,30 +63,27 @@ public class Basic {
         check(!attrs.isDirectory(), "is not a directory");
         check(!attrs.isSymbolicLink(), "is not a link");
         check(!attrs.isOther(), "is not other");
-        check(attrs.linkCount() >= 1, "should be at least 1");
 
         // size and last-modified-time should match java.io.File
         File f = new File(file.toString());
         check(f.length() == attrs.size(), "size should be the same");
-        if (attrs.resolution() == TimeUnit.MILLISECONDS) {
-            check(f.lastModified() == attrs.lastModifiedTime(),
-                "last-modified time should be the same");
-        }
+        check(f.lastModified() == attrs.lastModifiedTime().toMillis(),
+              "last-modified time should be the same");
 
         // copy last-modified time and file create time from directory to file,
         // re-read attribtues, and check they match
         BasicFileAttributeView view =
             file.getFileAttributeView(BasicFileAttributeView.class);
         BasicFileAttributes dirAttrs = Attributes.readBasicFileAttributes(dir);
-        view.setTimes(dirAttrs.lastModifiedTime(), null, null, dirAttrs.resolution());
-        if (dirAttrs.creationTime() != -1L) {
-            view.setTimes(null, null, dirAttrs.creationTime(), dirAttrs.resolution());
+        view.setTimes(dirAttrs.lastModifiedTime(), null, null);
+        if (dirAttrs.creationTime() != null) {
+            view.setTimes(null, null, dirAttrs.creationTime());
         }
         attrs = view.readAttributes();
-        check(attrs.lastModifiedTime() == dirAttrs.lastModifiedTime(),
+        check(attrs.lastModifiedTime().equals(dirAttrs.lastModifiedTime()),
             "last-modified time should be equal");
-        if (dirAttrs.creationTime() != -1L) {
-            check(attrs.creationTime() == dirAttrs.creationTime(),
+        if (dirAttrs.creationTime() != null) {
+            check(attrs.creationTime().equals(dirAttrs.creationTime()),
                 "create time should be the same");
         }
 
@@ -107,7 +101,6 @@ public class Basic {
         check(!attrs.isDirectory(), "is a directory");
         check(!attrs.isRegularFile(), "is not a regular file");
         check(!attrs.isOther(), "is not other");
-        check(attrs.linkCount() >= 1, "should be at least 1");
     }
 
     static void attributeReadWriteTests(Path dir)

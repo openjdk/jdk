@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.attribute.DosFileAttributeView
  * @library ../..
  */
@@ -75,7 +75,7 @@ public class Basic {
 
         // create "foo" and test that we can read/write each FAT attribute
         Path file = dir.resolve("foo");
-        file.newOutputStream().close();
+        file.createFile();
         try {
             testAttributes(file
                 .getFileAttributeView(DosFileAttributeView.class));
