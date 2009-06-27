@@ -774,11 +774,14 @@ public class ClassWriter extends ClassFile {
         ListBuffer<Attribute.TypeCompound> invisibles = ListBuffer.lb();
 
         for (Attribute.TypeCompound tc : typeAnnos) {
-                switch (getRetention(tc.type.tsym)) {
-                case SOURCE: break;
-                case CLASS: invisibles.append(tc); break;
-                case RUNTIME: visibles.append(tc); break;
-                default: ;// /* fail soft */ throw new AssertionError(vis);
+            if (tc.position.type == TargetType.UNKNOWN
+                || !tc.position.emitToClassfile())
+                continue;
+            switch (getRetention(tc.type.tsym)) {
+            case SOURCE: break;
+            case CLASS: invisibles.append(tc); break;
+            case RUNTIME: visibles.append(tc); break;
+            default: ;// /* fail soft */ throw new AssertionError(vis);
             }
         }
 
@@ -905,12 +908,11 @@ public class ClassWriter extends ClassFile {
     }
 
     void writeTypeAnnotation(Attribute.TypeCompound c) {
-        // ignore UNKNOWN attributes - improve testing
-      if (debugJSR308)
-        System.out.println("TA: writing " + c + " at " + c.position
-                + " in " + log.currentSourceFile());
-      writeCompoundAttribute(c);
-      writePosition(c.position);
+        if (debugJSR308)
+            System.out.println("TA: writing " + c + " at " + c.position
+                    + " in " + log.currentSourceFile());
+        writeCompoundAttribute(c);
+        writePosition(c.position);
     }
 
     void writePosition(TypeAnnotationPosition p) {

@@ -53,25 +53,25 @@ public enum TargetType {
     //
 
     /** For annotations on typecasts. */
-    TYPECAST(0x00),
+    TYPECAST(0x00, IsLocal),
 
     /** For annotations on a type argument or nested array of a typecast. */
-    TYPECAST_GENERIC_OR_ARRAY(0x01, HasLocation),
+    TYPECAST_GENERIC_OR_ARRAY(0x01, HasLocation, IsLocal),
 
     /** For annotations on type tests. */
-    INSTANCEOF(0x02),
+    INSTANCEOF(0x02, IsLocal),
 
     /** For annotations on a type argument or nested array of a type test. */
-    INSTANCEOF_GENERIC_OR_ARRAY(0x03, HasLocation),
+    INSTANCEOF_GENERIC_OR_ARRAY(0x03, HasLocation, IsLocal),
 
     /** For annotations on object creation expressions. */
-    NEW(0x04),
+    NEW(0x04, IsLocal),
 
     /**
      * For annotations on a type argument or nested array of an object creation
      * expression.
      */
-    NEW_GENERIC_OR_ARRAY(0x05, HasLocation),
+    NEW_GENERIC_OR_ARRAY(0x05, HasLocation, IsLocal),
 
 
     /** For annotations on the method receiver. */
@@ -81,10 +81,10 @@ public enum TargetType {
     //@Deprecated METHOD_RECEIVER_GENERIC_OR_ARRAY(0x07, HasLocation),
 
     /** For annotations on local variables. */
-    LOCAL_VARIABLE(0x08),
+    LOCAL_VARIABLE(0x08, IsLocal),
 
     /** For annotations on a type argument or nested array of a local. */
-    LOCAL_VARIABLE_GENERIC_OR_ARRAY(0x09, HasLocation),
+    LOCAL_VARIABLE_GENERIC_OR_ARRAY(0x09, HasLocation, IsLocal),
 
     // handled by regular annotations
     //@Deprecated METHOD_RETURN(0x0A),
@@ -138,17 +138,17 @@ public enum TargetType {
     //@Deprecated THROWS_GENERIC_OR_ARRAY(0x17, HasLocation),
 
     /** For annotations in type arguments of object creation expressions. */
-    NEW_TYPE_ARGUMENT(0x18),
-    NEW_TYPE_ARGUMENT_GENERIC_OR_ARRAY(0x19, HasLocation),
+    NEW_TYPE_ARGUMENT(0x18, IsLocal),
+    NEW_TYPE_ARGUMENT_GENERIC_OR_ARRAY(0x19, HasLocation, IsLocal),
 
-    METHOD_TYPE_ARGUMENT(0x1A),
-    METHOD_TYPE_ARGUMENT_GENERIC_OR_ARRAY(0x1B, HasLocation),
+    METHOD_TYPE_ARGUMENT(0x1A, IsLocal),
+    METHOD_TYPE_ARGUMENT_GENERIC_OR_ARRAY(0x1B, HasLocation, IsLocal),
 
     WILDCARD_BOUND(0x1C, HasBound),
     WILDCARD_BOUND_GENERIC_OR_ARRAY(0x1D, HasBound, HasLocation),
 
-    CLASS_LITERAL(0x1E),
-    CLASS_LITERAL_GENERIC_OR_ARRAY(0x1F, HasLocation),
+    CLASS_LITERAL(0x1E, IsLocal),
+    CLASS_LITERAL_GENERIC_OR_ARRAY(0x1F, HasLocation, IsLocal),
 
     METHOD_TYPE_PARAMETER(0x20, HasParameter),
 
@@ -218,6 +218,17 @@ public enum TargetType {
         return flags.contains(HasBound);
     }
 
+    /**
+     * Returns whether or not this TargetType represents an annotation whose
+     * target is exclusively a tree in a method body
+     *
+     * Note: wildcard bound targets could target a local tree and a class
+     * member declaration signature tree
+     */
+    public boolean isLocal() {
+        return flags.contains(IsLocal);
+    }
+
     public int targetTypeValue() {
         return this.targetTypeValue;
     }
@@ -261,6 +272,6 @@ public enum TargetType {
     }
 
     static enum TargetAttribute {
-        HasLocation, HasParameter, HasBound;
+        HasLocation, HasParameter, HasBound, IsLocal;
     }
 }

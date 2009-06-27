@@ -45,6 +45,7 @@ public class TypeAnnotationPosition {
     public int pos = -1;
 
     // For typecasts, type tests, new (and locals, as start_pc).
+    public boolean isValidOffset = false;
     public int offset = -1;
 
     // For locals. arrays same length
@@ -176,5 +177,18 @@ public class TypeAnnotationPosition {
 
         sb.append(']');
         return sb.toString();
+    }
+
+    /**
+     * Indicates whether the target tree of the annotation has been optimized
+     * away from classfile or not.
+     * @return true if the target has not been optimized away
+     */
+    public boolean emitToClassfile() {
+        if (type == TargetType.WILDCARD_BOUND
+            || type == TargetType.WILDCARD_BOUND_GENERIC_OR_ARRAY)
+            return wildcard_position.isValidOffset;
+        else
+            return !type.isLocal() || isValidOffset;
     }
 }

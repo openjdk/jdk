@@ -1715,6 +1715,7 @@ public class Gen extends JCTree.Visitor {
             if (ta.position.pos == treePos) {
                 ta.position.offset = code.cp;
                 ta.position.lvarOffset[0] = code.cp;
+                ta.position.isValidOffset = true;
             }
         }
 
@@ -1726,6 +1727,7 @@ public class Gen extends JCTree.Visitor {
             if (ta.position.pos == treePos) {
                 ta.position.offset = code.cp;
                 ta.position.lvarOffset[0] = code.cp;
+                ta.position.isValidOffset = true;
             }
         }
 
@@ -1737,6 +1739,7 @@ public class Gen extends JCTree.Visitor {
                 if (ta.position.pos == treePos) {
                     ta.position.offset = code.cp;
                     ta.position.lvarOffset[0] = code.cp;
+                    ta.position.isValidOffset = true;
                 }
             }
         }
