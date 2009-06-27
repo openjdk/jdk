@@ -25,49 +25,27 @@
 
 package sun.nio.fs;
 
+import java.util.Map;
+import java.io.IOException;
+
 /**
- * Represents a MIME type for the purposes of validation and matching. For
- * now this class is implemented using the javax.activation.MimeType class but
- * this dependency can easily be eliminated when required.
+ * Implemented by FileAttributeView implementations to support access to
+ * attributes by names.
  */
 
-public class MimeType {
-    private final javax.activation.MimeType type;
-
-    private MimeType(javax.activation.MimeType type) {
-        this.type = type;
-    }
+interface DynamicFileAttributeView {
+    /**
+     * Reads the value of an attribute.
+     */
+    Object getAttribute(String attribute) throws IOException;
 
     /**
-     * Parses the given string as a MIME type.
-     *
-     * @throws  IllegalArgumentException
-     *          If the string is not a valid MIME type
+     * Sets/updates the value of an attribute.
      */
-    public static MimeType parse(String type) {
-        try {
-            return new MimeType(new javax.activation.MimeType(type));
-        } catch (javax.activation.MimeTypeParseException x) {
-            throw new IllegalArgumentException(x);
-        }
-    }
+    void setAttribute(String attribute, Object value) throws IOException;
 
     /**
-     * Returns {@code true} if this MIME type has parameters.
+     * Reads a set of file attributes as a bulk operation.
      */
-    public boolean hasParameters() {
-        return !type.getParameters().isEmpty();
-    }
-
-    /**
-     * Matches this MIME type against a given MIME type. This method returns
-     * true if the given string is a MIME type and it matches this type.
-     */
-    public boolean match(String other) {
-        try {
-            return type.match(other);
-        } catch (javax.activation.MimeTypeParseException x) {
-            return false;
-        }
-    }
+    Map<String,?> readAttributes(String[] attributes) throws IOException;
 }
