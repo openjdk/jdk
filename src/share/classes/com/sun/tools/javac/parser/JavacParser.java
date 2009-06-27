@@ -1211,7 +1211,6 @@ public class JavacParser implements Parser {
                 }
             } else {
                 if (!annos.isEmpty()) {
-                    illegal(0);
                     if (permitTypeAnnotationsPushBack)
                         typeAnnotationsPushedBack = annos;
                     else

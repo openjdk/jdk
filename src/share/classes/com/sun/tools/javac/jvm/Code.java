@@ -1912,8 +1912,8 @@ public class Code {
                 if (length < Character.MAX_VALUE) {
                     v.length = length;
                     putVar(v);
+                    fillLocalVarPosition(v);
                 }
-                fillLocalVarPosition(v);
             }
         }
         state.defined.excl(adr);
@@ -1929,6 +1929,7 @@ public class Code {
                 p.lvarOffset[0] = (int)lv.start_pc;
                 p.lvarLength[0] = (int)lv.length;
                 p.lvarIndex[0] = (int)lv.reg;
+                p.isValidOffset = true;
                 p = p.wildcard_position;
             }
         }

@@ -1979,7 +1979,6 @@ public class Lower extends TreeTranslator {
             c.members_field = new Scope(c);
             c.flags_field = flags;
             c.attributes_field = tree.packge.attributes_field;
-            tree.packge.attributes_field = List.nil();
             ClassType ctype = (ClassType) c.type;
             ctype.supertype_field = syms.objectType;
             ctype.interfaces_field = List.nil();
