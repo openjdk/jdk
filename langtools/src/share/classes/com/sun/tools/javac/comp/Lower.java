@@ -2369,6 +2369,11 @@ public class Lower extends TreeTranslator {
         result = tree;
     }
 
+    public void visitAnnotatedType(JCAnnotatedType tree) {
+        tree.underlyingType = translate(tree.underlyingType);
+        result = tree.underlyingType;
+    }
+
     public void visitTypeCast(JCTypeCast tree) {
         tree.clazz = translate(tree.clazz);
         if (tree.type.isPrimitive() != tree.expr.type.isPrimitive())

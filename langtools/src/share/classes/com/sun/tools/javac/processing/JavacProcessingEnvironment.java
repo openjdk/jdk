@@ -921,6 +921,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         } else { // Final compilation
             compiler.close(false);
             currentContext = contextForNextRound(currentContext, true);
+            this.context = currentContext;
+            updateProcessingState(currentContext, true);
             compiler = JavaCompiler.instance(currentContext);
 
             if (true) {
@@ -1212,6 +1214,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             public void visitIdent(JCIdent node) {
                 node.sym = null;
                 super.visitIdent(node);
+            }
+            public void visitApply(JCMethodInvocation node) {
+                scan(node.typeargs);
+                super.visitApply(node);
             }
         };
 
