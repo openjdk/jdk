@@ -66,7 +66,7 @@ class UnixMountEntry {
     boolean hasOption(String requested) {
         if (optionsAsString == null)
             optionsAsString = new String(opts);
-        for (String opt: optionsAsString.split("\\,", 0)) {
+        for (String opt: Util.split(optionsAsString, ',')) {
             if (opt.equals(requested))
                 return true;
         }

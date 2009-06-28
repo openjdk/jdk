@@ -97,9 +97,13 @@ class UnixFileAttributes
     long ino()  { return st_ino; }
     long dev()  { return st_dev; }
     long rdev() { return st_rdev; }
+    int nlink() { return st_nlink; }
     int uid()   { return st_uid; }
     int gid()   { return st_gid; }
-    long ctime() { return st_ctime; }
+
+    FileTime ctime() {
+        return FileTime.from(st_ctime, TimeUnit.SECONDS);
+    }
 
     boolean isDevice() {
         int type = st_mode & UnixConstants.S_IFMT;
@@ -109,23 +113,18 @@ class UnixFileAttributes
     }
 
     @Override
-    public long lastModifiedTime() {
-        return st_mtime;
+    public FileTime lastModifiedTime() {
+        return FileTime.from(st_mtime, TimeUnit.SECONDS);
     }
 
     @Override
-    public long lastAccessTime() {
-        return st_atime;
+    public FileTime lastAccessTime() {
+        return FileTime.from(st_atime, TimeUnit.SECONDS);
     }
 
     @Override
-    public long creationTime() {
-        return -1L;
-    }
-
-    @Override
-    public TimeUnit resolution() {
-        return TimeUnit.MILLISECONDS;
+    public FileTime creationTime() {
+        return null;
     }
 
     @Override
@@ -154,11 +153,6 @@ class UnixFileAttributes
     @Override
     public long size() {
         return st_size;
-    }
-
-    @Override
-    public int linkCount() {
-        return st_nlink;
     }
 
     @Override
@@ -260,20 +254,16 @@ class UnixFileAttributes
         }
 
         @Override
-        public long lastModifiedTime() {
+        public FileTime lastModifiedTime() {
             return attrs.lastModifiedTime();
         }
         @Override
-        public long lastAccessTime() {
+        public FileTime lastAccessTime() {
             return attrs.lastAccessTime();
         }
         @Override
-        public long creationTime() {
+        public FileTime creationTime() {
             return attrs.creationTime();
-        }
-        @Override
-        public TimeUnit resolution() {
-            return attrs.resolution();
         }
         @Override
         public boolean isRegularFile() {
@@ -294,10 +284,6 @@ class UnixFileAttributes
         @Override
         public long size() {
             return attrs.size();
-        }
-        @Override
-        public int linkCount() {
-            return attrs.linkCount();
         }
         @Override
         public Object fileKey() {
