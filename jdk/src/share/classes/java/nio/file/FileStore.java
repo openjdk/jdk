@@ -26,12 +26,13 @@
 package java.nio.file;
 
 import java.nio.file.attribute.*;
+import java.io.IOException;
 
 /**
  * Storage for files. A {@code FileStore} represents a storage pool, device,
  * partition, volume, concrete file system or other implementation specific means
  * of file storage. The {@code FileStore} for where a file is stored is obtained
- * by invoking the {@link FileRef#getFileStore getFileStore} method, or all file
+ * by invoking the {@link Path#getFileStore getFileStore} method, or all file
  * stores can be enumerated by invoking the {@link FileSystem#getFileStores
  * getFileStores} method.
  *
@@ -146,24 +147,41 @@ public abstract class FileStore {
         getFileStoreAttributeView(Class<V> type);
 
     /**
-     * Returns a {@code FileStoreAttributeView} of the given name.
+     * Reads the value of a file store attribute.
      *
-     * <p> This method is intended to be used where <em>dynamic access</em> to
-     * file store attributes is required. The {@code name} parameter specifies
-     * the {@link FileAttributeView#name name} of the file store attribute view
-     * and this method returns an instance of that view if supported.
+     * <p> The {@code attribute} parameter identifies the attribute to be read
+     * and takes the form:
+     * <blockquote>
+     * <i>view-name</i><b>:</b><i>attribute-name</i>
+     * </blockquote>
+     * where the character {@code ':'} stands for itself.
+     *
+     * <p> <i>view-name</i> is the {@link FileStoreAttributeView#name name} of
+     * a {@link FileStore AttributeView} that identifies a set of file attributes.
+     * <i>attribute-name</i> is the name of the attribute.
      *
      * <p> For {@code FileStore} objects created by the default provider, then
      * the file stores support the {@link FileStoreSpaceAttributeView} that
-     * provides access to space attributes. In that case invoking this method
-     * with a parameter value of {@code "space"} will always return an instance
-     * of that class.
+     * provides access to space attributes.
      *
-     * @param   name
-     *          the name of the attribute view
+     * <p> <b>Usage Example:</b>
+     * Suppose we want to know if ZFS compression is enabled (assuming the "zfs"
+     * view is supported):
+     * <pre>
+     *    boolean compression = (Boolean)fs.getAttribute("zfs:compression");
+     * </pre>
      *
-     * @return  a file store attribute view of the given name, or {@code null}
-     *          if the attribute view is not available
+     * @param   attribute
+     *          the attribute to read
+
+     * @return  the attribute value; {@code null} may be a valid valid for some
+     *          attributes
+     *
+     * @throws  UnsupportedOperationException
+     *          if the attribute view is not available or it does not support
+     *          reading the attribute
+     * @throws  IOException
+     *          if an I/O error occurs
      */
-    public abstract FileStoreAttributeView getFileStoreAttributeView(String name);
+    public abstract Object getAttribute(String attribute) throws IOException;
 }

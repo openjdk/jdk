@@ -21,6 +21,13 @@
  * have any questions.
  */
 
+/* @test
+ * @bug 4313887
+ * @summary Unit test for probeContentType method
+ * @library ..
+ * @build ContentType SimpleFileTypeDetector
+ */
+
 import java.nio.file.*;
 import java.io.*;
 
@@ -30,7 +37,7 @@ import java.io.*;
 
 public class ContentType {
 
-    static FileRef createHtmlFile() throws IOException {
+    static Path createHtmlFile() throws IOException {
         Path file = File.createTempFile("foo", ".html").toPath();
         OutputStream out = file.newOutputStream();
         try {
@@ -42,18 +49,14 @@ public class ContentType {
         return file;
     }
 
-    static FileRef createUnknownFile() throws IOException {
-        return File.createTempFile("unknown", "unknown-file-type-789").toPath();
-    }
-
-    static FileRef createGrapeFile() throws IOException {
+    static Path createGrapeFile() throws IOException {
         return File.createTempFile("red", ".grape").toPath();
     }
 
     public static void main(String[] args) throws IOException {
 
         // exercise default file type detector
-        FileRef file = createHtmlFile();
+        Path file = createHtmlFile();
         try {
             String type = Files.probeContentType(file);
             if (type == null) {
@@ -63,16 +66,7 @@ public class ContentType {
                     throw new RuntimeException("Unexpected type: " + type);
             }
         } finally {
-            TestUtil.deleteUnchecked(file);
-        }
-        file = createUnknownFile();
-        try {
-            String type = Files.probeContentType(file);
-            if (type != null)
-                 throw new RuntimeException(file + " should not be recognized as:" +
-                     type);
-        } finally {
-            TestUtil.deleteUnchecked(file);
+            file.delete();
         }
 
         // exercise custom file type detector
@@ -84,7 +78,7 @@ public class ContentType {
             if (!type.equals("grape/unknown"))
                 throw new RuntimeException("Unexpected type: " + type);
         } finally {
-            TestUtil.deleteUnchecked(file);
+            file.delete();
         }
 
     }
