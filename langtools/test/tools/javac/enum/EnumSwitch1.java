@@ -27,7 +27,7 @@
  * @summary enum switch case labels required to be unqualified.
  * @author gafter
  *
- * @compile -source 1.5 EnumSwitch1.java
+ * @compile EnumSwitch1.java
  */
 
 package enumswitch1;

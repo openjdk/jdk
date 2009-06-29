@@ -27,7 +27,7 @@
  * @summary generics: problem with inference of primitive return values
  * @author gafter
  *
- * @compile -source 1.5 T4695847.java
+ * @compile  T4695847.java
  */
 
 public class T4695847<T> {

@@ -27,7 +27,7 @@
  * @summary unchecked conversion from raw to reifiable generic requires no warning
  * @author gafter
  *
- * @compile -Xlint:unchecked -Werror -source 1.5 SilentUnchecked.java
+ * @compile -Xlint:unchecked -Werror  SilentUnchecked.java
  */
 
 package silent.unchecked;

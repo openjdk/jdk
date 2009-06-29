@@ -42,7 +42,7 @@ public class TestInterface extends JavadocTester {
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {
-        "-source", "1.5", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg"
     };
 
     //Input for string search tests.

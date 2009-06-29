@@ -27,7 +27,7 @@
  * @summary enum's cannot be explicitly declared abstract even if they are abstract
  * @author Joseph D. Darcy
  *
- * @compile/fail -source 1.5 ExplicitlyAbstractEnum2.java
+ * @compile/fail ExplicitlyAbstractEnum2.java
  */
 
 abstract enum ExplicitlyAbstractEnum2 {

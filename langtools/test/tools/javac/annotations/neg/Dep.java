@@ -28,8 +28,8 @@
  * @author gafter
  *
  * @compile      -source 1.4 -Xlint:dep-ann -Werror Dep.java
- * @compile/fail -source 1.5 -Xlint:dep-ann -Werror Dep.java
- * @compile      -source 1.5 -Xlint:dep-ann         Dep.java
+ * @compile/fail             -Xlint:dep-ann -Werror Dep.java
+ * @compile                  -Xlint:dep-ann         Dep.java
  */
 
 /** @deprecated */

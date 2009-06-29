@@ -3,10 +3,8 @@
  * @bug 4469737
  * @summary Verify the source position for assertions.
  * @author gafter
- *
- * @compile -source 1.4 Position.java
- * @run main Position
  */
+
 
 public class Position {
     static public void main(String[] args) {
@@ -14,6 +12,8 @@ public class Position {
         new U().main();
     }
 }
+
+
 class U {
     void main() {
         try {

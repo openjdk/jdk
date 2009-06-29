@@ -26,7 +26,7 @@
  * @summary enums: an enumeration type may not be extended
  * @author gafter
  *
- * @compile/fail -source 1.5 Enum2.java
+ * @compile/fail Enum2.java
  */
 
 public class Enum2 {

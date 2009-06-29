@@ -40,6 +40,5 @@ IMPORT_TOOLS_PACKAGES +=            \
       com/sun/tools/javac           \
       com/sun/tools/javadoc         \
       com/sun/tools/javah           \
-      com/sun/tools/javap           \
-      sun/tools/javap
+      com/sun/tools/javap
 

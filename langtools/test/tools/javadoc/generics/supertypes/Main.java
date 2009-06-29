@@ -26,7 +26,7 @@
  * @bug 4922918
  * @summary Check supertypes and superinterfaces of parameterized types.
  * @library ../../lib
- * @compile -source 1.5 ../../lib/Tester.java Main.java
+ * @compile  ../../lib/Tester.java Main.java
  * @run main Main
  */
 

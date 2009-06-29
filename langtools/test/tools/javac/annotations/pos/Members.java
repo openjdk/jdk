@@ -27,7 +27,7 @@
  * @summary annotation types may contain constants, types
  * @author gafter
  *
- * @compile -source 1.5 Members.java
+ * @compile Members.java
  */
 
 package members;

@@ -27,7 +27,7 @@
  * @summary javac failed to check second bound
  * @author gafter
  *
- * @compile/fail -source 1.5 Multibound1.java
+ * @compile/fail  Multibound1.java
  */
 
 package test.tools.javac.generics.Multibound1;

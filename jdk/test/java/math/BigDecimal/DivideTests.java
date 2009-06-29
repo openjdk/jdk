@@ -281,6 +281,10 @@ public class DivideTests {
         BigDecimal c = new BigDecimal("31425");
         BigDecimal c_minus = c.negate();
 
+         // Ad hoc tests
+        BigDecimal d = new BigDecimal(new BigInteger("-37361671119238118911893939591735"), 10);
+        BigDecimal e = new BigDecimal(new BigInteger("74723342238476237823787879183470"), 15);
+
         BigDecimal[][] testCases = {
             {a,         b,      BigDecimal.valueOf(ROUND_UP, 3),        new BigDecimal("3.142")},
             {a_minus,   b,      BigDecimal.valueOf(ROUND_UP, 3),        new BigDecimal("-3.142")},
@@ -305,6 +309,10 @@ public class DivideTests {
 
             {c,         b,      BigDecimal.valueOf(ROUND_HALF_EVEN, 3), new BigDecimal("3.142")},
             {c_minus,   b,      BigDecimal.valueOf(ROUND_HALF_EVEN, 3), new BigDecimal("-3.142")},
+
+            {d,         e,      BigDecimal.valueOf(ROUND_HALF_UP, -5),   BigDecimal.valueOf(-1, -5)},
+            {d,         e,      BigDecimal.valueOf(ROUND_HALF_DOWN, -5), BigDecimal.valueOf(0, -5)},
+            {d,         e,      BigDecimal.valueOf(ROUND_HALF_EVEN, -5), BigDecimal.valueOf(0, -5)},
         };
 
         for(BigDecimal tc[] : testCases) {

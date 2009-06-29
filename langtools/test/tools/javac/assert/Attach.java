@@ -26,9 +26,6 @@
  * @bug 4478095
  * @summary assertion flag attached to wrong class
  * @author gafter
- *
- * @compile -source 1.4 Attach.java
- * @run main Attach
  */
 
 public class Attach {
