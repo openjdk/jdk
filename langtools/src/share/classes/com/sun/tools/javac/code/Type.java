@@ -1008,11 +1008,10 @@ public class Type implements PrimitiveType {
         @Override
         public String toString() {
             return "capture#"
-                + (hashCode() & 0xFFFFFFFFL) % PRIME
+                + (hashCode() & 0xFFFFFFFFL) % Printer.PRIME
                 + " of "
                 + wildcard;
         }
-        static final int PRIME = 997;  // largest prime less than 1000
     }
 
     public static abstract class DelegatedType extends Type {

@@ -27,7 +27,7 @@
  * @summary Verify the contents of a ClassDoc containing a varArgs method.
  *          Verify that see/link tags can use "..." notation.
  * @library ../lib
- * @compile -source 1.5 ../lib/Tester.java Main.java
+ * @compile  ../lib/Tester.java Main.java
  * @run main Main
  */
 

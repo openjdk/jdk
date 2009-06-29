@@ -27,7 +27,7 @@
  * @summary generics: failure of some unchecked casts
  * @author gafter
  *
- * @compile -source 1.5 UncheckedCast1.java
+ * @compile  UncheckedCast1.java
  */
 
 class Z {

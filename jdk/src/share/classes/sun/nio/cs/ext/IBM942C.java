@@ -23,20 +23,17 @@
  * have any questions.
  */
 
-/*
- */
-
 package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CharacterCodingException;
+import java.util.Arrays;
 import sun.nio.cs.HistoricallyNamedCharset;
+import static sun.nio.cs.CharsetMapping.*;
 
 public class IBM942C extends Charset implements HistoricallyNamedCharset
 {
-
     public IBM942C() {
         super("x-IBM942C", ExtendedCharsets.aliasesFor("x-IBM942C"));
     }
@@ -51,51 +48,45 @@ public class IBM942C extends Charset implements HistoricallyNamedCharset
     }
 
     public CharsetDecoder newDecoder() {
-        return new Decoder(this);
+        return new DoubleByte.Decoder(this,
+                                      IBM942.b2c,
+                                      b2cSB,
+                                      0x40,
+                                      0xfc);
     }
 
     public CharsetEncoder newEncoder() {
-        return new Encoder(this);
+        return new DoubleByte.Encoder(this, c2b, c2bIndex);
     }
 
-    private static class Decoder extends IBM942.Decoder {
-        protected static final String singleByteToChar;
+    final static char[] b2cSB;
+    final static char[] c2b;
+    final static char[] c2bIndex;
 
-        static {
-          String indexs = "";
-          for (char c = '\0'; c < '\u0080'; ++c) indexs += c;
-              singleByteToChar = indexs +
-                                 IBM942.Decoder.singleByteToChar.substring(indexs.length());
-        }
+    static {
+        IBM942.initb2c();
 
-        public Decoder(Charset cs) {
-            super(cs, singleByteToChar);
-        }
-    }
+        // the mappings need udpate are
+        //    u+001a  <-> 0x1a
+        //    u+001c  <-> 0x1c
+        //    u+005c  <-> 0x5c
+        //    u+007e  <-> 0x7e
+        //    u+007f  <-> 0x7f
 
-    private static class Encoder extends IBM942.Encoder {
+        b2cSB = Arrays.copyOf(IBM942.b2cSB, IBM942.b2cSB.length);
+        b2cSB[0x1a] = 0x1a;
+        b2cSB[0x1c] = 0x1c;
+        b2cSB[0x5c] = 0x5c;
+        b2cSB[0x7e] = 0x7e;
+        b2cSB[0x7f] = 0x7f;
 
-   protected static final short index1[];
-   protected static final String index2a;
-   protected static final int shift = 5;
-
-        static {
-
-            String indexs = "";
-            for (char c = '\0'; c < '\u0080'; ++c) indexs += c;
-                index2a = IBM942.Encoder.index2a + indexs;
-
-            int o = IBM942.Encoder.index2a.length() + 15000;
-            index1 = new short[IBM942.Encoder.index1.length];
-            System.arraycopy(IBM942.Encoder.index1, 0, index1, 0, IBM942.Encoder.index1.length);
-
-            for (int i = 0; i * (1<<shift) < 128; ++i) {
-                index1[i] = (short)(o + i * (1<<shift));
-            }
-        }
-
-        public Encoder(Charset cs) {
-            super(cs, index1, index2a);
-        }
+        IBM942.initc2b();
+        c2b = Arrays.copyOf(IBM942.c2b, IBM942.c2b.length);
+        c2bIndex = Arrays.copyOf(IBM942.c2bIndex, IBM942.c2bIndex.length);
+        c2b[c2bIndex[0] + 0x1a] = 0x1a;
+        c2b[c2bIndex[0] + 0x1c] = 0x1c;
+        c2b[c2bIndex[0] + 0x5c] = 0x5c;
+        c2b[c2bIndex[0] + 0x7e] = 0x7e;
+        c2b[c2bIndex[0] + 0x7f] = 0x7f;
     }
 }

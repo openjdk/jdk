@@ -27,7 +27,7 @@
  * @summary enum's cannot be explicitly declared final
  * @author Joseph D. Darcy
  *
- * @compile/fail -source 1.5 ExplicitlyFinalEnum2.java
+ * @compile/fail ExplicitlyFinalEnum2.java
  */
 
 final enum ExplicitlyFinalEnum2 {

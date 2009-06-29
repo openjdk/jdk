@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,18 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 
 /**
  * @since 1.6
+ * Special callback handler used in JGSS for the HttpCaller.
  */
 public class NegotiateCallbackHandler implements CallbackHandler {
 
     private String username;
     private char[] password;
+
+    private final HttpCallerInfo hci;
+
+    public NegotiateCallbackHandler(HttpCallerInfo hci) {
+        this.hci = hci;
+    }
 
     public void handle(Callback[] callbacks) throws
             UnsupportedCallbackException, IOException {
@@ -51,8 +58,8 @@ public class NegotiateCallbackHandler implements CallbackHandler {
                 if (username == null) {
                     PasswordAuthentication passAuth =
                             Authenticator.requestPasswordAuthentication(
-                            null, null, 0, null,
-                            null, "Negotiate");
+                            hci.host, hci.addr, hci.port, hci.protocol,
+                            hci.prompt, hci.scheme, hci.url, hci.authType);
                     username = passAuth.getUserName();
                     password = passAuth.getPassword();
                 }
@@ -66,8 +73,8 @@ public class NegotiateCallbackHandler implements CallbackHandler {
                 if (password == null) {
                     PasswordAuthentication passAuth =
                             Authenticator.requestPasswordAuthentication(
-                            null, null, 0, null,
-                            null, "Negotiate");
+                            hci.host, hci.addr, hci.port, hci.protocol,
+                            hci.prompt, hci.scheme, hci.url, hci.authType);
                     username = passAuth.getUserName();
                     password = passAuth.getPassword();
                 }
@@ -76,7 +83,7 @@ public class NegotiateCallbackHandler implements CallbackHandler {
             } else {
                 throw new UnsupportedCallbackException(callBack,
                         "Call back not supported");
-            }//else
-        }//for
+            }
+        }
     }
 }

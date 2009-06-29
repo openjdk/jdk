@@ -27,7 +27,7 @@
  * @summary local variable annotations
  * @author gafter
  *
- * @compile -source 1.5 Local.java
+ * @compile Local.java
  */
 
 class Local {

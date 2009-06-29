@@ -27,7 +27,7 @@
  * @summary class literal causes the referenced class to be initialized
  * @author gafter
  *
- * @compile -source 1.4 -target 1.4.2 InitializeTarget.java
+ * @compile InitializeTarget.java
  * @run main InitializeTarget
  */
 

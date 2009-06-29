@@ -34,10 +34,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import static sun.nio.cs.CharsetMapping.*;
 
 // EBCDIC DBCS-only Korean
-public class IBM834
-    extends Charset
+public class IBM834 extends Charset
 {
     public IBM834() {
         super("x-IBM834", ExtendedCharsets.aliasesFor("x-IBM834"));
@@ -48,60 +48,42 @@ public class IBM834
     }
 
     public CharsetDecoder newDecoder() {
-        return new Decoder(this);
+        IBM933.initb2c();
+        return new DoubleByte.Decoder_EBCDIC_DBCSONLY(
+            this, IBM933.b2c, 0x40, 0xfe);  // hardcode the b2min/max
     }
 
     public CharsetEncoder newEncoder() {
+        IBM933.initc2b();
         return new Encoder(this);
     }
 
-    protected static class Decoder extends DBCS_ONLY_IBM_EBCDIC_Decoder {
-        public Decoder(Charset cs) {
-            super(cs);
-            super.mask1 = 0xFFF0;
-            super.mask2 = 0x000F;
-            super.shift = 4;
-            super.index1 = IBM933.getDecoderIndex1();
-            super.index2 = IBM933.getDecoderIndex2();
-        }
-    }
-
-    protected static class Encoder extends IBM933.Encoder {
+    protected static class Encoder extends DoubleByte.Encoder_EBCDIC_DBCSONLY {
         public Encoder(Charset cs) {
-            super(cs, new byte[] {(byte)0xfe, (byte)0xfe}, false);
+            super(cs, new byte[] {(byte)0xfe, (byte)0xfe},
+                  IBM933.c2b, IBM933.c2bIndex);
         }
 
-        protected CoderResult implFlush(ByteBuffer out) {
-            implReset();
-            return CoderResult.UNDERFLOW;
-        }
-
-        protected byte[] encodeHangul(char ch) {
-            byte[] bytes = super.encodeHangul(ch);
-            if (bytes.length == 0) {
+        public int encodeChar(char ch) {
+            int bb = super.encodeChar(ch);
+            if (bb == UNMAPPABLE_ENCODING) {
                 // Cp834 has 6 additional non-roundtrip char->bytes
                 // mappings, see#6379808
                 if (ch == '\u00b7') {
-                    return new byte[] {(byte)0x41, (byte)0x43 };
+                    return 0x4143;
                 } else if (ch == '\u00ad') {
-                    return new byte[] {(byte)0x41, (byte)0x48 };
+                    return 0x4148;
                 } else if (ch == '\u2015') {
-                    return new byte[] {(byte)0x41, (byte)0x49 };
+                    return 0x4149;
                 } else if (ch == '\u223c') {
-                    return new byte[] {(byte)0x42, (byte)0xa1 };
+                    return 0x42a1;
                 } else if (ch == '\uff5e') {
-                    return new byte[] {(byte)0x49, (byte)0x54 };
+                    return 0x4954;
                 } else if (ch == '\u2299') {
-                    return new byte[] {(byte)0x49, (byte)0x6f };
+                    return 0x496f;
                 }
-            } else if (bytes[0] == 0) {
-                return EMPTYBA;
             }
-            return bytes;
-        }
-
-        public boolean canEncode(char ch) {
-            return encodeHangul(ch).length != 0;
+            return bb;
         }
 
         public boolean isLegalReplacement(byte[] repl) {

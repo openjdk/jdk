@@ -27,7 +27,7 @@
  * @summary generics: generic interface method not implemented in abstract class causes err
  * @author gafter
  *
- * @compile -source 1.5 A.java B.java
+ * @compile  A.java B.java
  */
 
 interface A {

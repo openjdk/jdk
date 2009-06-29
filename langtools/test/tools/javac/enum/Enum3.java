@@ -26,9 +26,6 @@
  * @bug 4945532
  * @summary enums: test switch
  * @author gafter
- *
- * @compile -source 1.5 Enum3.java
- * @run main Enum3
  */
 
 public enum Enum3 {

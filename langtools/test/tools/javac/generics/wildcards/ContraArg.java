@@ -27,7 +27,7 @@
  * @summary generics: incorrect ambiguity error with super-bouded wildcards
  * @author gafter
  *
- * @compile -source 1.5 ContraArg.java
+ * @compile  ContraArg.java
  */
 
 class ContraArg {

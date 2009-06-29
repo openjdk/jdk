@@ -27,7 +27,7 @@
  * @summary Add -Xlint flag
  * @author gafter
  *
- * @compile/fail -source 1.5 -Xlint:unchecked -Werror Unchecked.java
+ * @compile/fail -Xlint:unchecked -Werror Unchecked.java
  */
 
 class Unchecked<T> {

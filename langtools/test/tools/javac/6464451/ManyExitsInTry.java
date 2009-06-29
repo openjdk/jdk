@@ -26,7 +26,7 @@
  * @bug     6464451
  * @summary javac in 5.0ux can not compile try-finally block which has a lot of "return"
  * @author  Wei Tao
- * @compile -target 5 ManyExitsInTry.java
+ * @compile -source 5 -target 5 ManyExitsInTry.java
  * @clean ManyExitsInTry
  * @compile/fail ManyExitsInTry.java
  */
