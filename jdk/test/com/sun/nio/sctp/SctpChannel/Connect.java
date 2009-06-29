@@ -30,8 +30,8 @@
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
@@ -48,47 +48,29 @@ import static java.lang.System.err;
  * getRemoteAddresses and association.
  */
 public class Connect {
-    final CountDownLatch finishedLatch = new CountDownLatch(1);
 
     void test(String[] args) {
-        SocketAddress address = null;
-        Server server = null;
-
         if (!Util.isSCTPSupported()) {
             out.println("SCTP protocol is not supported");
             out.println("Test cannot be run");
             return;
         }
 
-        if (args.length == 2) {
-            /* requested to connect to a specific address */
-            try {
-                int port = Integer.valueOf(args[1]);
-                address = new InetSocketAddress(args[0], port);
-            } catch (NumberFormatException nfe) {
-                err.println(nfe);
-            }
-        } else {
-            /* start server on local machine, default */
-            try {
-                server = new Server();
-                server.start();
-                address = server.address();
-                debug("Server started and listening on " + address);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-                return;
-            }
-        }
-
-        doTest(address);
+        doTest();
     }
 
-    void doTest(SocketAddress addr) {
+    void doTest() {
         SctpChannel channel = null;
-        final SocketAddress peerAddress = addr;
+        SctpServerChannel ssc = null;
 
         try {
+            /* Create a server channel to connect to */
+            ssc = SctpServerChannel.open().bind(null);
+            Set<SocketAddress> addrs = ssc.getAllLocalAddresses();
+            if (addrs.isEmpty())
+                debug("addrs should not be empty");
+            final SocketAddress peerAddress = (InetSocketAddress) addrs.iterator().next();
+
             channel = SctpChannel.open();
 
             /* TEST 0.5 Verify default values for new/unconnected channel */
@@ -118,6 +100,9 @@ public class Connect {
                         "finishConnect should have returned true");
             }
 
+            ssc.accept();
+            ssc.close();
+
             /* TEST 1.5 Verify after connect */
             check(!channel.getRemoteAddresses().isEmpty(),
                     "empty set for connected channel");
@@ -129,6 +114,16 @@ public class Connect {
             /* TEST 2: Verify AlreadyConnectedException thrown */
             try {
                 channel.connect(peerAddress);
+                fail("should have thrown AlreadyConnectedException");
+            } catch (AlreadyConnectedException unused) {
+                pass();
+            }  catch (IOException ioe) {
+                unexpected(ioe);
+            }
+
+            /* TEST 2.5: Verify AlreadyConnectedException thrown */
+            try {
+                channel.connect(peerAddress, 5, 5);
                 fail("should have thrown AlreadyConnectedException");
             } catch (AlreadyConnectedException unused) {
                 pass();
@@ -200,9 +195,10 @@ public class Connect {
         } catch (IOException ioe) {
             unexpected(ioe);
         } finally {
-            finishedLatch.countDown();
             try { if (channel != null) channel.close(); }
-            catch (IOException e) { unexpected(e);}
+            catch (IOException unused) {}
+            try { if (ssc != null) ssc.close(); }
+            catch (IOException unused) {}
         }
     }
 
@@ -216,47 +212,6 @@ public class Connect {
            pass();
         } catch (Exception ioe) {
             unexpected(ioe);
-        }
-    }
-
-    class Server implements Runnable
-    {
-        final InetSocketAddress serverAddr;
-        private SctpServerChannel ssc;
-
-        public Server() throws IOException {
-            ssc = SctpServerChannel.open().bind(null);
-            java.util.Set<SocketAddress> addrs = ssc.getAllLocalAddresses();
-            if (addrs.isEmpty())
-                debug("addrs should not be empty");
-
-            serverAddr = (InetSocketAddress) addrs.iterator().next();
-        }
-
-        public void start() {
-            (new Thread(this, "Server-"  + serverAddr.getPort())).start();
-        }
-
-        public InetSocketAddress address() {
-            return serverAddr;
-        }
-
-        @Override
-        public void run() {
-            SctpChannel sc = null;
-            try {
-                sc = ssc.accept();
-                finishedLatch.await();
-            } catch (IOException ioe) {
-                unexpected(ioe);
-            } catch (InterruptedException ie) {
-                unexpected(ie);
-            } finally {
-                try { if (ssc != null) ssc.close(); }
-                catch (IOException  ioe) { unexpected(ioe); }
-                try { if (sc != null) sc.close(); }
-                catch (IOException  ioe) { unexpected(ioe); }
-            }
         }
     }
 
