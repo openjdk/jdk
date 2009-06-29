@@ -34,7 +34,9 @@ import java.io.IOException;
  * PosixFileAttributeView or AclFileAttributeView object.
  */
 
-final class FileOwnerAttributeViewImpl implements FileOwnerAttributeView {
+final class FileOwnerAttributeViewImpl
+    implements FileOwnerAttributeView, DynamicFileAttributeView
+{
     private static final String OWNER_NAME = "owner";
 
     private final FileAttributeView view;
@@ -70,20 +72,16 @@ final class FileOwnerAttributeViewImpl implements FileOwnerAttributeView {
             setOwner((UserPrincipal)value);
             return;
         }
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("'" + name() + ":" +
+                attribute + "' not supported");
     }
 
     @Override
-    public Map<String,?> readAttributes(String first, String[] rest) throws IOException {
+    public Map<String,?> readAttributes(String[] attributes) throws IOException {
         Map<String,Object> result = new HashMap<String,Object>();
-        if (first.equals("*") || first.equals(OWNER_NAME)) {
-            result.put(OWNER_NAME, getOwner());
-        } else {
-            for (String attribute: rest) {
-                if (attribute.equals("*") || attribute.equals(OWNER_NAME)) {
-                    result.put(OWNER_NAME, getOwner());
-                    break;
-                }
+        for (String attribute: attributes) {
+            if (attribute.equals("*") || attribute.equals(OWNER_NAME)) {
+                result.put(OWNER_NAME, getOwner());
             }
         }
         return result;

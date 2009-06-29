@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.FileSystem
  * @library ..
  */
@@ -73,10 +73,10 @@ public class Basic {
         checkSupported(fs, "basic");
         String os = System.getProperty("os.name");
         if (os.equals("SunOS"))
-            checkSupported(fs, "posix", "unix", "owner", "acl", "xattr");
+            checkSupported(fs, "posix", "unix", "owner", "acl", "user");
         if (os.equals("Linux"))
-            checkSupported(fs, "posix", "unix", "owner", "dos", "xattr");
+            checkSupported(fs, "posix", "unix", "owner", "dos", "user");
         if (os.equals("Windows"))
-            checkSupported(fs, "owner", "dos", "acl", "xattr");
+            checkSupported(fs, "owner", "dos", "acl", "user");
     }
 }

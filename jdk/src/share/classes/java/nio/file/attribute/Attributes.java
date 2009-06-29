@@ -28,7 +28,6 @@ package java.nio.file.attribute;
 import java.nio.file.*;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -39,245 +38,7 @@ import java.util.concurrent.TimeUnit;
  */
 
 public final class Attributes {
-    private Attributes() {
-    }
-
-    /**
-     * Splits the given attribute name into the name of an attribute view and
-     * the attribute. If the attribute view is not identified then it assumed
-     * to be "basic".
-     */
-    private static String[] split(String attribute) {
-        String[] s = new String[2];
-        int pos = attribute.indexOf(':');
-        if (pos == -1) {
-            s[0] = "basic";
-            s[1] = attribute;
-        } else {
-            s[0] = attribute.substring(0, pos++);
-            s[1] = (pos == attribute.length()) ? "" : attribute.substring(pos);
-        }
-        return s;
-    }
-
-    /**
-     * Sets the value of a file attribute.
-     *
-     * <p> The {@code attribute} parameter identifies the attribute to be set
-     * and takes the form:
-     * <blockquote>
-     * [<i>view-name</i><b>:</b>]<i>attribute-name</i>
-     * </blockquote>
-     * where square brackets [...] delineate an optional component and the
-     * character {@code ':'} stands for itself.
-     *
-     * <p> <i>view-name</i> is the {@link FileAttributeView#name name} of a {@link
-     * FileAttributeView} that identifies a set of file attributes. If not
-     * specified then it defaults to {@code "basic"}, the name of the file
-     * attribute view that identifies the basic set of file attributes common to
-     * many file systems. <i>attribute-name</i> is the name of the attribute
-     * within the set.
-     *
-     * <p> <b>Usage Example:</b>
-     * Suppose we want to set the DOS "hidden" attribute:
-     * <pre>
-     *    Attributes.setAttribute(file, "dos:hidden", true);
-     * </pre>
-     *
-     * @param   file
-     *          A file reference that locates the file
-     * @param   attribute
-     *          The attribute to set
-     * @param   value
-     *          The attribute value
-     *
-     * @throws  UnsupportedOperationException
-     *          If the attribute view is not available or it does not
-     *          support updating the attribute
-     * @throws  IllegalArgumentException
-     *          If the attribute value is of the correct type but has an
-     *          inappropriate value
-     * @throws  ClassCastException
-     *          If the attribute value is not of the expected type or is a
-     *          collection containing elements that are not of the expected
-     *          type
-     * @throws  IOException
-     *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to the file. If this method is invoked
-     *          to set security sensitive attributes then the security manager
-     *          may be invoked to check for additional permissions.
-     */
-    public static void setAttribute(FileRef file, String attribute, Object value)
-        throws IOException
-    {
-        String[] s = split(attribute);
-        FileAttributeView view = file.getFileAttributeView(s[0]);
-        if (view == null)
-            throw new UnsupportedOperationException("View '" + s[0] + "' not available");
-        view.setAttribute(s[1], value);
-    }
-
-    /**
-     * Reads the value of a file attribute.
-     *
-     * <p> The {@code attribute} parameter identifies the attribute to be read
-     * and takes the form:
-     * <blockquote>
-     * [<i>view-name</i><b>:</b>]<i>attribute-name</i>
-     * </blockquote>
-     * where square brackets [...] delineate an optional component and the
-     * character {@code ':'} stands for itself.
-     *
-     * <p> <i>view-name</i> is the {@link FileAttributeView#name name} of a {@link
-     * FileAttributeView} that identifies a set of file attributes. If not
-     * specified then it defaults to {@code "basic"}, the name of the file
-     * attribute view that identifies the basic set of file attributes common to
-     * many file systems. <i>attribute-name</i> is the name of the attribute.
-     *
-     * <p> The {@code options} array may be used to indicate how symbolic links
-     * are handled for the case that the file is a symbolic link. By default,
-     * symbolic links are followed and the file attribute of the final target
-     * of the link is read. If the option {@link LinkOption#NOFOLLOW_LINKS
-     * NOFOLLOW_LINKS} is present then symbolic links are not followed and so
-     * the method returns the file attribute of the symbolic link.
-     *
-     * <p> <b>Usage Example:</b>
-     * Suppose we require the user ID of the file owner on a system that
-     * supports a "{@code unix}" view:
-     * <pre>
-     *    int uid = (Integer)Attributes.getAttribute(file, "unix:uid");
-     * </pre>
-     *
-     * @param   file
-     *          A file reference that locates the file
-     * @param   attribute
-     *          The attribute to read
-     * @param   options
-     *          Options indicating how symbolic links are handled
-     *
-     * @return  The attribute value, or {@code null} if the attribute view
-     *          is not available or it does not support reading the attribute
-     *
-     * @throws  IOException
-     *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, its {@link SecurityManager#checkRead(String) checkRead}
-     *          method denies read access to the file. If this method is invoked
-     *          to read security sensitive attributes then the security manager
-     *          may be invoked to check for additional permissions.
-     */
-    public static Object getAttribute(FileRef file,
-                                      String attribute,
-                                      LinkOption... options)
-        throws IOException
-    {
-        String[] s = split(attribute);
-        FileAttributeView view = file.getFileAttributeView(s[0], options);
-        if (view != null)
-            return view.getAttribute(s[1]);
-        // view not available
-        return null;
-    }
-
-    /**
-     * Reads a set of file attributes as a bulk operation.
-     *
-     * <p> The {@code attributes} parameter identifies the attributes to be read
-     * and takes the form:
-     * <blockquote>
-     * [<i>view-name</i><b>:</b>]<i>attribute-list</i>
-     * </blockquote>
-     * where square brackets [...] delineate an optional component and the
-     * character {@code ':'} stands for itself.
-     *
-     * <p> <i>view-name</i> is the {@link FileAttributeView#name name} of a {@link
-     * FileAttributeView} that identifies a set of file attributes. If not
-     * specified then it defaults to {@code "basic"}, the name of the file
-     * attribute view that identifies the basic set of file attributes common to
-     * many file systems.
-     *
-     * <p> The <i>attribute-list</i> component is a comma separated list of
-     * zero or more names of attributes to read. If the list contains the value
-     * {@code "*"} then all attributes are read. Attributes that are not supported
-     * are ignored and will not be present in the returned map. It is
-     * implementation specific if all attributes are read as an atomic operation
-     * with respect to other file system operations.
-     *
-     * <p> The following examples demonstrate possible values for the {@code
-     * attributes} parameter:
-     *
-     * <blockquote>
-     * <table border="0">
-     * <tr>
-     *   <td> {@code "*"} </td>
-     *   <td> Read all {@link BasicFileAttributes basic-file-attributes}. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@code "size,lastModifiedTime,lastAccessTime"} </td>
-     *   <td> Reads the file size, last modified time, and last access time
-     *     attributes. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@code "posix:*"} </td>
-     *   <td> Read all {@link PosixFileAttributes POSIX-file-attributes}.. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@code "posix:permissions,owner,size"} </td>
-     *   <td> Reads the POSX file permissions, owner, and file size. </td>
-     * </tr>
-     * </table>
-     * </blockquote>
-     *
-     * <p> The {@code options} array may be used to indicate how symbolic links
-     * are handled for the case that the file is a symbolic link. By default,
-     * symbolic links are followed and the file attributes of the final target
-     * of the link are read. If the option {@link LinkOption#NOFOLLOW_LINKS
-     * NOFOLLOW_LINKS} is present then symbolic links are not followed and so
-     * the method returns the file attributes of the symbolic link.
-     *
-     * @param   file
-     *          A file reference that locates the file
-     * @param   attributes
-     *          The attributes to read
-     * @param   options
-     *          Options indicating how symbolic links are handled
-     *
-     * @return  A map of the attributes returned; may be empty. The map's keys
-     *          are the attribute names, its values are the attribute values
-     *
-     * @throws  IOException
-     *          If an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, its {@link SecurityManager#checkRead(String) checkRead}
-     *          method denies read access to the file. If this method is invoked
-     *          to read security sensitive attributes then the security manager
-     *          may be invoke to check for additional permissions.
-     */
-    public static Map<String,?> readAttributes(FileRef file,
-                                               String attributes,
-                                               LinkOption... options)
-        throws IOException
-    {
-        String[] s = split(attributes);
-        FileAttributeView view = file.getFileAttributeView(s[0], options);
-        if (view != null) {
-            // further split attributes into the first and rest.
-            String[] names = s[1].split(",");
-            int rem = names.length-1;
-            String first = names[0];
-            String[] rest = new String[rem];
-            if (rem > 0) System.arraycopy(names, 1, rest, 0, rem);
-
-            return view.readAttributes(first, rest);
-        }
-        // view not available
-        return Collections.emptyMap();
-    }
+    private Attributes() { }
 
     /**
      * Reads the basic file attributes of a file.
@@ -551,29 +312,28 @@ public final class Attributes {
     }
 
     /**
-     * Updates the value of a file's last modified time attribute.
+     * Updates a file's last modified time attribute. The file time is converted
+     * to the epoch and precision supported by the file system. Converting from
+     * finer to coarser granularities result in precision loss. The behavior of
+     * this method when attempting to set a timestamp to a value that is outside
+     * the range supported by the underlying file store is not defined. It may
+     * or not fail by throwing an {@code IOException}.
      *
-     * <p> The time value is measured since the epoch
-     * (00:00:00 GMT, January 1, 1970) and is converted to the precision supported
-     * by the file system. Converting from finer to coarser granularities result
-     * in precision loss.
+     * <p> If the file system does not support a last modified time attribute
+     * then this method has no effect.
      *
-     * <p> If the file system does not support a last modified time attribute then
-     * this method has no effect.
+     * <p> <b>Usage Example:</b>
+     * Suppose we want to set the last modified time to the current time:
+     * <pre>
+     *    FileTime now = FileTime.fromMillis(System.currentTimeMillis());
+     *    Attributes.setLastModifiedTime(file, now);
+     * </pre>
      *
      * @param   file
      *          A file reference that locates the file
-     *
      * @param   lastModifiedTime
-     *          The new last modified time, or {@code -1L} to update it to
-     *          the current time
-     * @param   unit
-     *          A {@code TimeUnit} determining how to interpret the
-     *          {@code lastModifiedTime} parameter
+     *          The new last modified time
      *
-     * @throws  IllegalArgumentException
-     *          If the {@code lastModifiedime} parameter is a negative value other
-     *          than {@code -1L}
      * @throws  IOException
      *          If an I/O error occurs
      * @throws  SecurityException
@@ -584,35 +344,31 @@ public final class Attributes {
      * @see BasicFileAttributeView#setTimes
      */
     public static void setLastModifiedTime(FileRef file,
-                                           long lastModifiedTime,
-                                           TimeUnit unit)
+                                           FileTime lastModifiedTime)
         throws IOException
     {
+        if (lastModifiedTime == null)
+            throw new NullPointerException("'lastModifiedTime' is null");
         file.getFileAttributeView(BasicFileAttributeView.class)
-            .setTimes(lastModifiedTime, null, null, unit);
+            .setTimes(lastModifiedTime, null, null);
     }
 
     /**
-     * Updates the value of a file's last access time attribute.
-     *
-     * <p> The time value is measured since the epoch
-     * (00:00:00 GMT, January 1, 1970) and is converted to the precision supported
-     * by the file system. Converting from finer to coarser granularities result
-     * in precision loss.
+     * Updates a file's last access time attribute. The file time is converted
+     * to the epoch and precision supported by the file system. Converting from
+     * finer to coarser granularities result in precision loss. The behavior of
+     * this method when attempting to set a timestamp to a value that is outside
+     * the range supported by the underlying file store is not defined. It may
+     * or not fail by throwing an {@code IOException}.
      *
      * <p> If the file system does not support a last access time attribute then
      * this method has no effect.
      *
+     * @param   file
+     *          A file reference that locates the file
      * @param   lastAccessTime
-     *          The new last access time, or {@code -1L} to update it to
-     *          the current time
-     * @param   unit
-     *          A {@code TimeUnit} determining how to interpret the
-     *          {@code lastModifiedTime} parameter
+     *          The new last access time
      *
-     * @throws  IllegalArgumentException
-     *          If the {@code lastAccessTime} parameter is a negative value other
-     *          than {@code -1L}
      * @throws  IOException
      *          If an I/O error occurs
      * @throws  SecurityException
@@ -623,12 +379,13 @@ public final class Attributes {
      * @see BasicFileAttributeView#setTimes
      */
     public static void setLastAccessTime(FileRef file,
-                                         long lastAccessTime,
-                                         TimeUnit unit)
+                                         FileTime lastAccessTime)
         throws IOException
     {
+        if (lastAccessTime == null)
+            throw new NullPointerException("'lastAccessTime' is null");
         file.getFileAttributeView(BasicFileAttributeView.class)
-            .setTimes(null, lastAccessTime, null, unit);
+            .setTimes(null, lastAccessTime, null);
     }
 
     /**
