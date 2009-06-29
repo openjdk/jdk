@@ -42,9 +42,9 @@ import java.io.IOException;
  *         &#64;Override
  *         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
  *             try {
- *                 file.delete(false);
+ *                 file.delete();
  *             } catch (IOException exc) {
- *                 // failed to delete
+ *                 // failed to delete, do error handling here
  *             }
  *             return FileVisitResult.CONTINUE;
  *         }
@@ -52,9 +52,9 @@ import java.io.IOException;
  *         public FileVisitResult postVisitDirectory(Path dir, IOException e) {
  *             if (e == null) {
  *                 try {
- *                     dir.delete(false);
+ *                     dir.delete();
  *                 } catch (IOException exc) {
- *                     // failed to delete
+ *                     // failed to delete, do error handling here
  *                 }
  *             } else {
  *                 // directory iteration failed
@@ -80,7 +80,8 @@ import java.io.IOException;
  *                 } catch (FileAlreadyExistsException e) {
  *                      // ignore
  *                 } catch (IOException e) {
- *                     // copy failed, skip rest of directory and descendants
+ *                     // copy failed, do error handling here
+ *                     // skip rest of directory and descendants
  *                     return SKIP_SUBTREE;
  *                 }
  *                 return CONTINUE;
@@ -90,7 +91,7 @@ import java.io.IOException;
  *                 try {
  *                     file.copyTo(target.resolve(source.relativize(file)));
  *                 } catch (IOException e) {
- *                     // copy failed
+ *                     // copy failed, do error handling here
  *                 }
  *                 return CONTINUE;
  *             }
@@ -100,7 +101,7 @@ import java.io.IOException;
  * @since 1.7
  */
 
-public interface FileVisitor<T extends FileRef> {
+public interface FileVisitor<T> {
 
     /**
      * Invoked for a directory before entries in the directory are visited.

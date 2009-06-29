@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,37 @@
  * have any questions.
  */
 
-package java.nio.file;
-
-import java.io.IOException;
+package sun.nio.fs;
 
 /**
- * An interface that is implemented by objects that operate on a file. An
- * implementation of this interface is provided to the {@link Files#withDirectory
- * withDirectory} utility method so that the file action is {@link #invoke
- * invoked} for all accepted entries in the directory, after which, the directory
- * is automatically closed.
- *
- * <p> <b>Usage Example:</b>
- * Suppose we require to perform a task on all class files in a directory:
- * <pre>
- *     Path dir = ...
- *     Files.withDirectory(dir, "*.class", new FileAction&lt;Path&gt;() {
- *         public void invoke(Path entry) {
- *             :
- *         }
- *     });
- * </pre>
- *
- * @param   <T>     the type of file reference
- *
- * @since 1.7
+ * Utility methods
  */
 
-public interface FileAction<T extends FileRef> {
+class Util {
+    private Util() { }
+
     /**
-     * Invoked for a file.
-     *
-     * @param   file
-     *          the file
-     *
-     * @throws  IOException
-     *          if the block terminates due an uncaught I/O exception
+     * Splits a string around the given character. The array returned by this
+     * method contains each substring that is terminated by the character. Use
+     * for simple string spilting cases when needing to avoid loading regex.
      */
-    void invoke(T file) throws IOException;
+    static String[] split(String s, char c) {
+        int count = 0;
+        for (int i=0; i<s.length(); i++) {
+            if (s.charAt(i) == c)
+                count++;
+        }
+        String[] result = new String[count+1];
+        int n = 0;
+        int last = 0;
+        for (int i=0; i<s.length(); i++) {
+            if (s.charAt(i) == c) {
+                result[n++] = s.substring(last, i);
+                last = i + 1;
+            }
+        }
+        result[n] = s.substring(last, s.length());
+        return result;
+
+    }
 }

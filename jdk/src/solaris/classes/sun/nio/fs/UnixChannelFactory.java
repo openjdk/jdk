@@ -49,13 +49,13 @@ class UnixChannelFactory {
     private static final JavaIOFileDescriptorAccess fdAccess =
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
-    private UnixChannelFactory() {
+    protected UnixChannelFactory() {
     }
 
     /**
      * Represents the flags from a user-supplied set of open options.
      */
-    private static class Flags {
+    protected static class Flags {
         boolean read;
         boolean write;
         boolean append;
@@ -179,11 +179,11 @@ class UnixChannelFactory {
      * Opens file based on parameters and options, returning a FileDescriptor
      * encapsulating the handle to the open file.
      */
-    static FileDescriptor open(int dfd,
-                               UnixPath path,
-                               String pathForPermissionCheck,
-                               Flags flags,
-                               int mode)
+    protected static FileDescriptor open(int dfd,
+                                         UnixPath path,
+                                         String pathForPermissionCheck,
+                                         Flags flags,
+                                         int mode)
         throws UnixException
     {
         // map to oflags
