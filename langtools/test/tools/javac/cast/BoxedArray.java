@@ -27,7 +27,7 @@
  * @summary REGRESSION: compiler allows cast from Integer[] to int[]
  * @author gafter
  *
- * @compile/fail -source 1.5 BoxedArray.java
+ * @compile/fail BoxedArray.java
  */
 
 public class BoxedArray {

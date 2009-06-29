@@ -229,6 +229,25 @@ PHONY_LIST += packtest packtest_stress
 
 ################################################################
 
+# perftest to collect statistics  
+
+# Expect JPRT to set JPRT_PACKTEST_HOME.
+PERFTEST_HOME = ${TEST_ROOT}/perf
+ifdef JPRT_PERFTEST_HOME
+  PERFTEST_HOME = $(JPRT_PERFTEST_HOME)
+endif
+
+perftest: ( $(PERFTEST_HOME)/perftest          \
+                 -t $(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")               \
+                 -w $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)") \
+                 -h $(PERFTEST_HOME) \
+	 ) ; $(BUNDLE_UP_AND_EXIT)
+
+
+PHONY_LIST += perftest
+
+################################################################
+
 # vmsqe tests
 
 # Expect JPRT to set JPRT_VMSQE_HOME.

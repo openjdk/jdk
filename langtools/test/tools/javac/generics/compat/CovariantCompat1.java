@@ -27,7 +27,7 @@
  * @summary generics: non-generic code should be able to call covariant method
  * @author gafter
  *
- * @compile -source 1.5 CovariantCompat1.java
+ * @compile  CovariantCompat1.java
  * @compile -source 1.4 CovariantCompat2.java
  */
 

@@ -27,7 +27,7 @@
  * @summary unclear diagnostic for "new T()"
  * @author never
  *
- * @compile/fail -source 1.5 NewGeneric.java
+ * @compile/fail NewGeneric.java
  */
 
 

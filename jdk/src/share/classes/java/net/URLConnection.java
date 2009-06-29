@@ -1237,7 +1237,6 @@ public abstract class URLConnection {
     }
 
     private static Hashtable handlers = new Hashtable();
-    private static final ContentHandler UnknownContentHandlerP = new UnknownContentHandler();
 
     /**
      * Gets the Content Handler appropriate for this connection.
@@ -1264,7 +1263,7 @@ public abstract class URLConnection {
                 handler = lookupContentHandlerClassFor(contentType);
             } catch(Exception e) {
                 e.printStackTrace();
-                handler = UnknownContentHandlerP;
+                handler = UnknownContentHandler.INSTANCE;
             }
             handlers.put(contentType, handler);
         }
@@ -1335,7 +1334,7 @@ public abstract class URLConnection {
             }
         }
 
-        return UnknownContentHandlerP;
+        return UnknownContentHandler.INSTANCE;
     }
 
     /**
@@ -1761,6 +1760,8 @@ public abstract class URLConnection {
 
 
 class UnknownContentHandler extends ContentHandler {
+    static final ContentHandler INSTANCE = new UnknownContentHandler();
+
     public Object getContent(URLConnection uc) throws IOException {
         return uc.getInputStream();
     }

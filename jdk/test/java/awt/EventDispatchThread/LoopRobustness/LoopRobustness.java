@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,10 @@
  * @bug 4023283
  * @summary Checks that an Error which propogate up to the EventDispatch
  * loop does not crash AWT.
- * @author Andrei Dmitriev Oleg Sukhodolsky
+ * @author Andrei Dmitriev: area=awt.event
+ * @library ../../regtesthelpers
+ * @build Util
+ * @run main LoopRobustness
  */
 
 import java.awt.*;

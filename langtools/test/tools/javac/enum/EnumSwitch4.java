@@ -26,9 +26,6 @@
  * @bug 5006662
  * @summary enum switch on null fails to throw NullPointerException
  * @author gafter
- *
- * @compile -source 1.5 EnumSwitch4.java
- * @run main EnumSwitch4
  */
 
 public enum EnumSwitch4 {

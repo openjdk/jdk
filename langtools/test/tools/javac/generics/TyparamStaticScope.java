@@ -27,7 +27,7 @@
  * @summary javac mistakenly reports static use error for enclosing type parameter
  * @author gafter
  *
- * @compile -source 1.5 TyparamStaticScope.java
+ * @compile  TyparamStaticScope.java
  */
 
 package typaram.static_.scope;

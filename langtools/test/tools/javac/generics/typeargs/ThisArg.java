@@ -27,7 +27,7 @@
  * @summary explicit type arguments
  * @author gafter
  *
- * @compile/fail -source 1.5 ThisArg.java
+ * @compile/fail  ThisArg.java
  */
 
 // Test type mismatch on type argument for this constructor

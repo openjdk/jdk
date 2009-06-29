@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import org.ietf.jgss.Oid;
 public class LoginConfigImpl extends Configuration {
 
     private final Configuration config;
-    private final int caller;
+    private final GSSCaller caller;
     private final String mechName;
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("gssloginconfig", "\t[GSS LoginConfigImpl]");
@@ -50,7 +50,7 @@ public class LoginConfigImpl extends Configuration {
      * @param caller defined in GSSUtil as CALLER_XXX final fields
      * @param oid defined in GSSUtil as XXX_MECH_OID final fields
      */
-    public LoginConfigImpl(int caller, Oid mech) {
+    public LoginConfigImpl(GSSCaller caller, Oid mech) {
 
         this.caller = caller;
 
@@ -88,40 +88,31 @@ public class LoginConfigImpl extends Configuration {
         // entry name is not provided.
 
         if ("krb5".equals(mechName)) {
-            switch (caller) {
-            case GSSUtil.CALLER_INITIATE:
+            if (caller == GSSCaller.CALLER_INITIATE) {
                 alts = new String[] {
                     "com.sun.security.jgss.krb5.initiate",
                     "com.sun.security.jgss.initiate",
                 };
-                break;
-            case GSSUtil.CALLER_ACCEPT:
+            } else if (caller == GSSCaller.CALLER_ACCEPT) {
                 alts = new String[] {
                     "com.sun.security.jgss.krb5.accept",
                     "com.sun.security.jgss.accept",
                 };
-                break;
-            case GSSUtil.CALLER_SSL_CLIENT:
+            } else if (caller == GSSCaller.CALLER_SSL_CLIENT) {
                 alts = new String[] {
                     "com.sun.security.jgss.krb5.initiate",
                     "com.sun.net.ssl.client",
                 };
-                break;
-            case GSSUtil.CALLER_SSL_SERVER:
+            } else if (caller == GSSCaller.CALLER_SSL_SERVER) {
                 alts = new String[] {
                     "com.sun.security.jgss.krb5.accept",
                     "com.sun.net.ssl.server",
                 };
-                break;
-            case GSSUtil.CALLER_HTTP_NEGOTIATE:
+            } else if (caller instanceof HttpCaller) {
                 alts = new String[] {
                     "com.sun.security.jgss.krb5.initiate",
                 };
-                break;
-            case GSSUtil.CALLER_UNKNOWN:
-                // should never use
-                throw new AssertionError("caller cannot be unknown");
-            default:
+            } else if (caller == GSSCaller.CALLER_UNKNOWN) {
                 throw new AssertionError("caller not defined");
             }
         } else {
@@ -199,8 +190,8 @@ public class LoginConfigImpl extends Configuration {
         return null;
     }
 
-    private static boolean isServerSide (int caller) {
-        return GSSUtil.CALLER_ACCEPT == caller ||
-               GSSUtil.CALLER_SSL_SERVER == caller;
+    private static boolean isServerSide (GSSCaller caller) {
+        return GSSCaller.CALLER_ACCEPT == caller ||
+               GSSCaller.CALLER_SSL_SERVER == caller;
     }
 }

@@ -26,9 +26,6 @@
  * @bug 4934060
  * @summary private enum ctor versus specialized enum constant crashes javac
  * @author gafter
- *
- * @compile -source 1.5 Enum1.java
- * @run main Enum1
  */
 
 public enum Enum1 {
