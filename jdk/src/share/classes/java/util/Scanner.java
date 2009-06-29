@@ -690,7 +690,7 @@ public final class Scanner implements Iterator<String> {
     public Scanner(FileRef source)
         throws IOException
     {
-        this(source.newByteChannel());
+        this(source.newInputStream());
     }
 
     /**
@@ -713,7 +713,7 @@ public final class Scanner implements Iterator<String> {
     public Scanner(FileRef source, String charsetName)
         throws IOException
     {
-        this(source.newByteChannel(), charsetName);
+        this(source.newInputStream(), charsetName);
     }
 
     /**

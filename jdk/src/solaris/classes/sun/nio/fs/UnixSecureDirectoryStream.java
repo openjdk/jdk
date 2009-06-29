@@ -40,7 +40,7 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixSecureDirectoryStream
-    extends SecureDirectoryStream
+    extends SecureDirectoryStream<Path>
 {
     private final UnixDirectoryStream ds;
     private final int dfd;
@@ -85,13 +85,13 @@ class UnixSecureDirectoryStream
      * Opens sub-directory in this directory
      */
     @Override
-    public SecureDirectoryStream newDirectoryStream(Path obj,
-                                                    boolean followLinks,
-                                                    DirectoryStream.Filter<? super Path> filter)
+    public SecureDirectoryStream<Path> newDirectoryStream(Path obj,
+                                                          LinkOption... options)
         throws IOException
     {
         UnixPath file = getName(obj);
         UnixPath child = ds.directory().resolve(file);
+        boolean followLinks = file.getFileSystem().followLinks(options);
 
         // permission check using name resolved against original path of directory
         SecurityManager sm = System.getSecurityManager();
@@ -124,7 +124,7 @@ class UnixSecureDirectoryStream
                     throw new NotDirectoryException(file.toString());
                 x.rethrowAsIOException(file);
             }
-            return new UnixSecureDirectoryStream(child, ptr, newdfd2, filter);
+            return new UnixSecureDirectoryStream(child, ptr, newdfd2, null);
         } finally {
             ds.readLock().unlock();
         }
@@ -225,7 +225,7 @@ class UnixSecureDirectoryStream
      * Rename/move file in this directory to another (open) directory
      */
     @Override
-    public void move(Path fromObj, SecureDirectoryStream dir, Path toObj)
+    public void move(Path fromObj, SecureDirectoryStream<Path> dir, Path toObj)
         throws IOException
     {
         UnixPath from = getName(fromObj);
@@ -310,13 +310,10 @@ class UnixSecureDirectoryStream
      * A BasicFileAttributeView implementation that using a dfd/name pair.
      */
     private class BasicFileAttributeViewImpl
-        extends AbstractBasicFileAttributeView
+        implements BasicFileAttributeView
     {
         final UnixPath file;
         final boolean followLinks;
-
-        // set to true when binding to another object
-        volatile boolean forwarding;
 
         BasicFileAttributeViewImpl(UnixPath file, boolean followLinks)
         {
@@ -380,17 +377,11 @@ class UnixSecureDirectoryStream
         }
 
         @Override
-        public void setTimes(Long lastModifiedTime,
-                             Long lastAccessTime,
-                             Long createTime, // ignore
-                             TimeUnit unit)
+        public void setTimes(FileTime lastModifiedTime,
+                             FileTime lastAccessTime,
+                             FileTime createTime) // ignore
             throws IOException
         {
-            // no effect
-            if (lastModifiedTime == null && lastAccessTime == null) {
-                return;
-            }
-
             checkWriteAccess();
 
             ds.readLock().lock();
@@ -400,47 +391,23 @@ class UnixSecureDirectoryStream
 
                 int fd = (file == null) ? dfd : open();
                 try {
-                    UnixFileAttributes attrs = null;
-
                     // if not changing both attributes then need existing attributes
                     if (lastModifiedTime == null || lastAccessTime == null) {
                         try {
-                            attrs = UnixFileAttributes.get(fd);
+                            UnixFileAttributes attrs = UnixFileAttributes.get(fd);
+                            if (lastModifiedTime == null)
+                                lastModifiedTime = attrs.lastModifiedTime();
+                            if (lastAccessTime == null)
+                                lastAccessTime = attrs.lastAccessTime();
                         } catch (UnixException x) {
                             x.rethrowAsIOException(file);
                         }
                     }
-
-                    // modified time = existing, now, or new value
-                    long modTime;
-                    if (lastModifiedTime == null) {
-                        modTime = attrs.lastModifiedTime();
-                    } else {
-                        if (lastModifiedTime >= 0L) {
-                            modTime = TimeUnit.MILLISECONDS.convert(lastModifiedTime, unit);
-                        } else {
-                            if (lastModifiedTime != -1L)
-                                throw new IllegalArgumentException();
-                            modTime = System.currentTimeMillis();
-                        }
-                    }
-
-                    // access time = existing, now, or new value
-                    long accTime;
-                    if (lastAccessTime == null) {
-                        accTime = attrs.lastAccessTime();
-                    } else {
-                        if (lastAccessTime >= 0L) {
-                            accTime = TimeUnit.MILLISECONDS.convert(lastAccessTime, unit);
-                        } else {
-                            if (lastAccessTime != -1L)
-                                throw new IllegalArgumentException();
-                            accTime = System.currentTimeMillis();
-                        }
-                    }
-
+                    // update times
                     try {
-                        futimes(fd, accTime, modTime);
+                        futimes(fd,
+                                lastAccessTime.to(TimeUnit.MICROSECONDS),
+                                lastModifiedTime.to(TimeUnit.MICROSECONDS));
                     } catch (UnixException x) {
                         x.rethrowAsIOException(file);
                     }
@@ -460,10 +427,6 @@ class UnixSecureDirectoryStream
     private class PosixFileAttributeViewImpl
         extends BasicFileAttributeViewImpl implements PosixFileAttributeView
     {
-        private static final String PERMISSIONS_NAME = "permissions";
-        private static final String OWNER_NAME = "owner";
-        private static final String GROUP_NAME = "group";
-
         PosixFileAttributeViewImpl(UnixPath file, boolean followLinks) {
             super(file, followLinks);
         }
@@ -479,59 +442,6 @@ class UnixSecureDirectoryStream
         @Override
         public String name() {
             return "posix";
-        }
-
-        @Override
-        public Object getAttribute(String attribute) throws IOException {
-            if (attribute.equals(PERMISSIONS_NAME))
-                return readAttributes().permissions();
-            if (attribute.equals(OWNER_NAME))
-                return readAttributes().owner();
-            if (attribute.equals(GROUP_NAME))
-                return readAttributes().group();
-            return super.getAttribute(attribute);
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void setAttribute(String attribute, Object value)
-            throws IOException
-        {
-            if (attribute.equals(PERMISSIONS_NAME)) {
-                setPermissions((Set<PosixFilePermission>)value);
-                return;
-            }
-            if (attribute.equals(OWNER_NAME)) {
-                setOwner((UserPrincipal)value);
-                return;
-            }
-            if (attribute.equals(GROUP_NAME)) {
-                setGroup((GroupPrincipal)value);
-                return;
-            }
-            super.setAttribute(attribute, value);
-        }
-
-        final void addPosixAttributesToBuilder(PosixFileAttributes attrs,
-                                               AttributesBuilder builder)
-        {
-            if (builder.match(PERMISSIONS_NAME))
-                builder.add(PERMISSIONS_NAME, attrs.permissions());
-            if (builder.match(OWNER_NAME))
-                builder.add(OWNER_NAME, attrs.owner());
-            if (builder.match(GROUP_NAME))
-                builder.add(GROUP_NAME, attrs.group());
-        }
-
-        @Override
-        public Map<String,?> readAttributes(String first, String[] rest)
-            throws IOException
-        {
-            AttributesBuilder builder = AttributesBuilder.create(first, rest);
-            PosixFileAttributes attrs = readAttributes();
-            addBasicAttributesToBuilder(attrs, builder);
-            addPosixAttributesToBuilder(attrs, builder);
-            return builder.unmodifiableMap();
         }
 
         @Override

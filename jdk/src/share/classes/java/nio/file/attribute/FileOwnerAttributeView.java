@@ -37,11 +37,11 @@ import java.io.IOException;
  * <p> The {@link #getOwner getOwner} or {@link #setOwner setOwner} methods may
  * be used to read or update the owner of the file.
  *
- * <p> Where dynamic access to file attributes is required, the owner attribute
- * is identified by the name {@code "owner"}, and the value of the attribute is
- * a {@link UserPrincipal}. The {@link #readAttributes readAttributes}, {@link
- * #getAttribute getAttribute} and {@link #setAttribute setAttributes} methods
- * may be used to read or update the file owner.
+ * <p> The {@link java.nio.file.FileRef#getAttribute getAttribute} and
+ * {@link java.nio.file.FileRef#setAttribute setAttribute} methods may also be
+ * used to read or update the owner. In that case, the owner attribute is
+ * identified by the name {@code "owner"}, and the value of the attribute is
+ * a {@link UserPrincipal}.
  *
  * @since 1.7
  */
