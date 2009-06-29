@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
 package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
-import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
 import sun.security.krb5.*;
 import javax.security.auth.kerberos.*;
-import java.io.IOException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.AccessController;
@@ -80,7 +79,7 @@ public class Krb5AcceptCredential
         }
     }
 
-    static Krb5AcceptCredential getInstance(final int caller, Krb5NameElement name)
+    static Krb5AcceptCredential getInstance(final GSSCaller caller, Krb5NameElement name)
         throws GSSException {
 
         final String serverPrinc = (name == null? null:
@@ -93,7 +92,7 @@ public class Krb5AcceptCredential
                         new PrivilegedExceptionAction<KerberosKey[]>() {
                 public KerberosKey[] run() throws Exception {
                     return Krb5Util.getKeys(
-                        caller == GSSUtil.CALLER_UNKNOWN ? GSSUtil.CALLER_ACCEPT: caller,
+                        caller == GSSCaller.CALLER_UNKNOWN ? GSSCaller.CALLER_ACCEPT: caller,
                         serverPrinc, acc);
                 }});
         } catch (PrivilegedActionException e) {

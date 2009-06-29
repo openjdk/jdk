@@ -27,7 +27,7 @@
  * @summary REGRESSION: compatibility problem inheriting raw type
  * @author gafter
  *
- * @compile -source 1.5 ExtendedRaw4.java
+ * @compile  ExtendedRaw4.java
  */
 
 class ExtendedRaw4 extends java.util.TreeSet {}

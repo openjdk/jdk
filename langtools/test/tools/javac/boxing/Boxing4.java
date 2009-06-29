@@ -26,9 +26,6 @@
  * @bug 4999689
  * @summary Compiler incorrectly create Integer in "Character c = 95"
  * @author gafter
- *
- * @compile -source 1.5 Boxing4.java
- * @run main Boxing4
  */
 
 public class Boxing4 {

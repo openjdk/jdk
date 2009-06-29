@@ -63,7 +63,7 @@ case "$OS" in
     ;;
 esac
 
-"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -verbose -source 5 -d "${TESTCLASSES}" -cp "${TESTSRC}${FS}broken.jar" "${TESTSRC}${FS}$1"
+"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -verbose -d "${TESTCLASSES}" -cp "${TESTSRC}${FS}broken.jar" "${TESTSRC}${FS}$1"
 
 result=$?
 

@@ -160,6 +160,13 @@ public class TrueTypeFont extends FileFont {
     private boolean supportsJA;
     private boolean supportsCJK;
 
+    /* These are for faster access to the name of the font as
+     * typically exposed via API to applications.
+     */
+    private Locale nameLocale;
+    private String localeFamilyName;
+    private String localeFullName;
+
     /**
      * - does basic verification of the file
      * - reads the header table for this font (within a collection)
@@ -1092,6 +1099,10 @@ public class TrueTypeFont extends FileFont {
              * greater than 32767, so read and store those as ints
              */
             int stringPtr = sbuffer.get() & 0xffff;
+
+            nameLocale = sun.awt.SunToolkit.getStartupLocale();
+            short nameLocaleID = FontManager.getLCIDFromLocale(nameLocale);
+
             for (int i=0; i<numRecords; i++) {
                 short platformID = sbuffer.get();
                 if (platformID != MS_PLATFORM_ID) {
@@ -1103,15 +1114,24 @@ public class TrueTypeFont extends FileFont {
                 short nameID     = sbuffer.get();
                 int nameLen    = ((int) sbuffer.get()) & 0xffff;
                 int namePtr    = (((int) sbuffer.get()) & 0xffff) + stringPtr;
-
+                String tmpName = null;
                 switch (nameID) {
 
                 case FAMILY_NAME_ID:
 
-                    if (familyName == null || langID == ENGLISH_LOCALE_ID) {
+                    if (familyName == null || langID == ENGLISH_LOCALE_ID ||
+                        langID == nameLocaleID)
+                    {
                         buffer.position(namePtr);
                         buffer.get(name, 0, nameLen);
-                        familyName = makeString(name, nameLen, encodingID);
+                        tmpName = makeString(name, nameLen, encodingID);
+
+                        if (familyName == null || langID == ENGLISH_LOCALE_ID){
+                            familyName = tmpName;
+                        }
+                        if (langID == nameLocaleID) {
+                            localeFamilyName = tmpName;
+                        }
                     }
 /*
                     for (int ii=0;ii<nameLen;ii++) {
@@ -1129,14 +1149,28 @@ public class TrueTypeFont extends FileFont {
 
                 case FULL_NAME_ID:
 
-                    if (fullName == null || langID == ENGLISH_LOCALE_ID) {
+                    if (fullName == null || langID == ENGLISH_LOCALE_ID ||
+                        langID == nameLocaleID)
+                    {
                         buffer.position(namePtr);
                         buffer.get(name, 0, nameLen);
-                        fullName = makeString(name, nameLen, encodingID);
+                        tmpName = makeString(name, nameLen, encodingID);
+
+                        if (fullName == null || langID == ENGLISH_LOCALE_ID) {
+                            fullName = tmpName;
+                        }
+                        if (langID == nameLocaleID) {
+                            localeFullName = tmpName;
+                        }
                     }
                     break;
-
                 }
+            }
+            if (localeFamilyName == null) {
+                localeFamilyName = familyName;
+            }
+            if (localeFullName == null) {
+                localeFullName = fullName;
             }
         }
     }
@@ -1220,6 +1254,8 @@ public class TrueTypeFont extends FileFont {
     public String getFontName(Locale locale) {
         if (locale == null) {
             return fullName;
+        } else if (locale.equals(nameLocale) && localeFullName != null) {
+            return localeFullName;
         } else {
             short localeID = FontManager.getLCIDFromLocale(locale);
             String name = lookupName(localeID, FULL_NAME_ID);
@@ -1234,11 +1270,13 @@ public class TrueTypeFont extends FileFont {
     public String getFamilyName(Locale locale) {
         if (locale == null) {
             return familyName;
+        } else if (locale.equals(nameLocale) && localeFamilyName != null) {
+            return localeFamilyName;
         } else {
             short localeID = FontManager.getLCIDFromLocale(locale);
             String name = lookupName(localeID, FAMILY_NAME_ID);
             if (name == null) {
-                return familyName;
+               return familyName;
             } else {
                 return name;
             }

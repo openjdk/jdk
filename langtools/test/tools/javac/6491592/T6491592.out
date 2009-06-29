@@ -1,2 +1,2 @@
-T6491592.java:12:11: compiler.err.operator.cant.be.applied: +, java.lang.Object,<nulltype>
+T6491592.java:12:11: compiler.err.operator.cant.be.applied: +, java.lang.Object,compiler.misc.type.null
 1 error

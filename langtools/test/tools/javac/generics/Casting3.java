@@ -27,7 +27,7 @@
  * @summary compiler crash with stack overflow on unchecked cast
  * @author gafter
  *
- * @compile -source 1.5 Casting3.java
+ * @compile  Casting3.java
  */
 
 package test.tools.javac.generics.Casting3;

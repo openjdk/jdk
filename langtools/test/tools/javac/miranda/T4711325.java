@@ -27,7 +27,7 @@
  * @summary compiler allows unimplementable interfaces
  * @author gafter
  *
- * @compile -source 1.5 T4711325.java
+ * @compile                  T4711325.java
  * @compile/fail -source 1.4 T4711325.java
  */
 

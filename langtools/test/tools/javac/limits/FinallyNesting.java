@@ -29,7 +29,7 @@
  *
  * @compile -source 1.4 -target 1.4 FinallyNesting.java
  */
-
+// Source and target 1.4 are needed for the test to pass with default memory sizes.
 class FinallyNesting {
     public static void main(String[] args) {
         int x;

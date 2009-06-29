@@ -27,7 +27,7 @@
  * @summary varargs doesn't work for generic methods
  * @author gafter
  *
- * @compile -source 1.5 Varargs.java
+ * @compile  Varargs.java
  */
 
 package varargs.versus.generics;

@@ -27,7 +27,7 @@
  * @summary NPE while compiling static import of inaccessible class member
  * @author gafter
  *
- * @compile/fail -source 1.5 ImportPrivate.java
+ * @compile/fail  ImportPrivate.java
  */
 
 package importPrivate;

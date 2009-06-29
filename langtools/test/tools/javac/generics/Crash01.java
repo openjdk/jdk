@@ -27,7 +27,7 @@
  * @summary generics: crash when using class in bound defined after usage
  * @author gafter
  *
- * @compile -source 1.5 Crash01.java
+ * @compile  Crash01.java
  */
 
 public class Crash01<A extends TestClass1 & IA> {

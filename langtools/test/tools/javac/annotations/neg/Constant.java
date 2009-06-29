@@ -27,7 +27,7 @@
  * @summary JSR175 (5): annotations must be "constants"
  * @author gafter
  *
- * @compile/fail -source 1.5 Constant.java
+ * @compile/fail Constant.java
  */
 
 package test.tools.javac.annotation.Constant;

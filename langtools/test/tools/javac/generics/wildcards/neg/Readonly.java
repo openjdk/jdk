@@ -27,7 +27,7 @@
  * @summary an extends-bound (covariant) wildcard is like readonly
  * @author gafter
  *
- * @compile/fail -source 1.5 Readonly.java
+ * @compile/fail  Readonly.java
  */
 
 class Err<T> {
