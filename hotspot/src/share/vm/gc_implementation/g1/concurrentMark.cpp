@@ -1256,8 +1256,8 @@ public:
       // the humongous regions (in case this changes in the future).
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       size_t end_index = index + 1;
-      while (index < g1h->n_regions()) {
-        HeapRegion* chr = g1h->region_at(index);
+      while (end_index < g1h->n_regions()) {
+        HeapRegion* chr = g1h->region_at(end_index);
         if (!chr->continuesHumongous()) {
           break;
         }
