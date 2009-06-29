@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import com.sun.imageio.plugins.common.I18N;
+import com.sun.imageio.plugins.common.ReaderUtil;
 
 /** This class is the Java Image IO plugin reader for WBMP images.
  *  It may subsample the image, clip the image,
@@ -141,11 +142,11 @@ public class WBMPImageReader extends ImageReader {
         metadata.wbmpType = wbmpType;
 
         // Read image width
-        width = readMultiByteInteger();
+        width = ReaderUtil.readMultiByteInteger(iis);
         metadata.width = width;
 
         // Read image height
-        height = readMultiByteInteger();
+        height = ReaderUtil.readMultiByteInteger(iis);
         metadata.height = height;
 
         gotHeader = true;
@@ -309,17 +310,6 @@ public class WBMPImageReader extends ImageReader {
         super.reset();
         iis = null;
         gotHeader = false;
-    }
-
-    private int readMultiByteInteger() throws IOException {
-        int value = iis.readByte();
-        int result = value & 0x7f;
-        while((value & 0x80) == 0x80) {
-            result <<= 7;
-            value = iis.readByte();
-            result |= (value & 0x7f);
-        }
-        return result;
     }
 
     /*
