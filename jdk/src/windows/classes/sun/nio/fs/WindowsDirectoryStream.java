@@ -152,11 +152,13 @@ class WindowsDirectoryStream
             }
             Path entry = WindowsPath
                 .createFromNormalizedPath(dir.getFileSystem(), s, attrs);
-            if (filter.accept(entry)) {
-                return entry;
-            } else {
-                return null;
+            try {
+                if (filter.accept(entry))
+                    return entry;
+            } catch (IOException ioe) {
+                throwAsConcurrentModificationException(ioe);
             }
+            return null;
         }
 
         // reads next directory entry
@@ -244,7 +246,7 @@ class WindowsDirectoryStream
                 prevEntry = null;
             }
             try {
-                entry.delete(true);
+                entry.delete();
             } catch (IOException ioe) {
                 throwAsConcurrentModificationException(ioe);
             } catch (SecurityException se) {

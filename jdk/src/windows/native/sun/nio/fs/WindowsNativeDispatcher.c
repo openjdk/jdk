@@ -560,9 +560,9 @@ Java_sun_nio_fs_WindowsNativeDispatcher_SetFileTime(JNIEnv* env, jclass this,
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
 
     if (SetFileTime(h,
-        (createTime == (jlong)0) ? NULL : (CONST FILETIME *)&createTime,
-        (lastAccessTime == (jlong)0) ? NULL : (CONST FILETIME *)&lastAccessTime,
-        (lastWriteTime == (jlong)0) ? NULL : (CONST FILETIME *)&lastWriteTime) == 0)
+        (createTime == (jlong)-1) ? NULL : (CONST FILETIME *)&createTime,
+        (lastAccessTime == (jlong)-1) ? NULL : (CONST FILETIME *)&lastAccessTime,
+        (lastWriteTime == (jlong)-1) ? NULL : (CONST FILETIME *)&lastWriteTime) == 0)
     {
         throwWindowsException(env, GetLastError());
     }

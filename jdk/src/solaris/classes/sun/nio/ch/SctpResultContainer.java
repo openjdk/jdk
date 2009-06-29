@@ -121,6 +121,8 @@ public class SctpResultContainer {
             case SHUTDOWN:             sb.append("SHUTDOWN");            break;
             default :                  sb.append("Unknown result type");
         }
-       return sb.append(", Value: ").append(value.toString()).toString();
+        sb.append(", Value: ");
+        sb.append((value == null) ? "null" : value.toString());
+        return sb.toString();
     }
 }
