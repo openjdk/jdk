@@ -24,14 +24,13 @@
 /*
  * @test
  * @bug     4967283 5080203
- * @ignore  Due to 5080203, cannot rely on this test always passing.
  * @summary Basic unit test of thread states returned by
  *          ThreadMXBean.getThreadInfo.getThreadState().
  *          It also tests lock information returned by ThreadInfo.
  *
  * @author  Mandy Chung
  *
- * @build ThreadExecutionSynchronizer
+ * @build ThreadExecutionSynchronizer Utils
  * @run main ThreadStateTest
  */
 
@@ -43,7 +42,6 @@ import java.util.concurrent.locks.LockSupport;
 
 public class ThreadStateTest {
     private static final ThreadMXBean tm = ManagementFactory.getThreadMXBean();
-    private static boolean testFailed = false;
 
     static class Lock {
         private String name;
@@ -64,32 +62,32 @@ public class ThreadStateTest {
         MyThread myThread = new MyThread("MyThread");
 
         // before myThread starts
-        // checkThreadState(myThread, Thread.State.NEW);
+        // Utils.checkThreadState(myThread, Thread.State.NEW);
 
         myThread.start();
         myThread.waitUntilStarted();
-        checkThreadState(myThread, Thread.State.RUNNABLE);
+        Utils.checkThreadState(myThread, Thread.State.RUNNABLE);
         checkLockInfo(myThread, Thread.State.RUNNABLE, null, null);
 
         myThread.suspend();
-        goSleep(10);
+        Utils.goSleep(10);
         checkSuspendedThreadState(myThread, Thread.State.RUNNABLE);
         myThread.resume();
 
         synchronized (globalLock) {
             myThread.goBlocked();
-            checkThreadState(myThread, Thread.State.BLOCKED);
+            Utils.checkThreadState(myThread, Thread.State.BLOCKED);
             checkLockInfo(myThread, Thread.State.BLOCKED,
                           globalLock, Thread.currentThread());
         }
 
         myThread.goWaiting();
-        checkThreadState(myThread, Thread.State.WAITING);
+        Utils.checkThreadState(myThread, Thread.State.WAITING);
         checkLockInfo(myThread, Thread.State.WAITING,
                       globalLock, null);
 
         myThread.goTimedWaiting();
-        checkThreadState(myThread, Thread.State.TIMED_WAITING);
+        Utils.checkThreadState(myThread, Thread.State.TIMED_WAITING);
         checkLockInfo(myThread, Thread.State.TIMED_WAITING,
                       globalLock, null);
 
@@ -102,32 +100,30 @@ public class ThreadStateTest {
          Bug ID : 5062095
        ***********************************************
         myThread.goParked();
-        checkThreadState(myThread, Thread.State.WAITING);
+        Utils.checkThreadState(myThread, Thread.State.WAITING);
         checkLockInfo(myThread, Thread.State.WAITING, null, null);
 
         myThread.goTimedParked();
-        checkThreadState(myThread, Thread.State.TIMED_WAITING);
+        Utils.checkThreadState(myThread, Thread.State.TIMED_WAITING);
         checkLockInfo(myThread, Thread.State.TIMED_WAITING, null, null);
 
        */
 
         myThread.goSleeping();
-        checkThreadState(myThread, Thread.State.TIMED_WAITING);
+        Utils.checkThreadState(myThread, Thread.State.TIMED_WAITING);
         checkLockInfo(myThread, Thread.State.TIMED_WAITING, null, null);
 
 
         myThread.terminate();
-        // checkThreadState(myThread, ThreadState.TERMINATED);
+        // Utils.checkThreadState(myThread, ThreadState.TERMINATED);
 
         try {
             myThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
-            System.out.println("Unexpected exception.");
-            testFailed = true;
+            System.out.println("TEST FAILED: Unexpected exception.");
+            throw new RuntimeException(e);
         }
-        if (testFailed)
-            throw new RuntimeException("TEST FAILED.");
         System.out.println("Test passed.");
     }
 
@@ -148,32 +144,7 @@ public class ThreadStateTest {
             throw new RuntimeException(t.getName() + " expected to be suspended " +
                 " but isSuspended() returns " + info.isSuspended());
         }
-        checkThreadState(t, state);
-    }
-
-    private static void checkThreadState(Thread t, Thread.State expected) {
-        ThreadInfo ti = tm.getThreadInfo(t.getId());
-        Thread.State state = ti.getThreadState();
-        if (state == null) {
-            throw new RuntimeException(t.getName() + " expected to have " +
-                expected + " but got null.");
-        }
-
-        if (state != expected) {
-            if (expected ==  Thread.State.BLOCKED) {
-                int retryCount=0;
-                while (ti.getThreadState() != expected) {
-                    if (retryCount >= 500) {
-                        throw new RuntimeException(t.getName() +
-                            " expected to have " + expected + " but got " + state);
-                     }
-                     goSleep(100);
-                }
-            } else {
-                throw new RuntimeException(t.getName() + " expected to have " +
-                    expected + " but got " + state);
-            }
-        }
+        Utils.checkThreadState(t, state);
     }
 
     private static String getLockName(Object lock) {
@@ -247,16 +218,6 @@ public class ThreadStateTest {
         if (info.isSuspended()) {
             throw new RuntimeException(t.getName() +
                 " isSuspended() returns " + info.isSuspended());
-        }
-    }
-
-    private static void goSleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("Unexpected exception.");
-            testFailed = true;
         }
     }
 
@@ -335,7 +296,7 @@ public class ThreadStateTest {
                         LockSupport.park();
                         // give a chance for the main thread to block
                         System.out.println("  myThread is going to park.");
-                        goSleep(10);
+                        Utils.goSleep(10);
                         break;
                     }
                     case TIMED_PARKED: {
@@ -346,7 +307,7 @@ public class ThreadStateTest {
                         LockSupport.parkUntil(deadline);
 
                         // give a chance for the main thread to block
-                        goSleep(10);
+                        Utils.goSleep(10);
                         break;
                     }
                     case SLEEPING: {
@@ -375,7 +336,7 @@ public class ThreadStateTest {
         public void waitUntilStarted() {
             // wait for MyThread.
             thrsync.waitForSignal();
-            goSleep(10);
+            Utils.goSleep(10);
         }
 
         public void goBlocked() {
@@ -383,7 +344,7 @@ public class ThreadStateTest {
             setState(BLOCKED);
             // wait for MyThread to get blocked
             thrsync.waitForSignal();
-            goSleep(20);
+            Utils.goSleep(20);
         }
 
         public void goWaiting() {
@@ -391,28 +352,28 @@ public class ThreadStateTest {
             setState(WAITING);
             // wait for  MyThread to wait on object.
             thrsync.waitForSignal();
-            goSleep(20);
+            Utils.goSleep(20);
         }
         public void goTimedWaiting() {
             System.out.println("Waiting myThread to go timed waiting.");
             setState(TIMED_WAITING);
             // wait for MyThread timed wait call.
             thrsync.waitForSignal();
-            goSleep(20);
+            Utils.goSleep(20);
         }
         public void goParked() {
             System.out.println("Waiting myThread to go parked.");
             setState(PARKED);
             // wait for  MyThread state change to PARKED.
             thrsync.waitForSignal();
-            goSleep(20);
+            Utils.goSleep(20);
         }
         public void goTimedParked() {
             System.out.println("Waiting myThread to go timed parked.");
             setState(TIMED_PARKED);
             // wait for  MyThread.
             thrsync.waitForSignal();
-            goSleep(20);
+            Utils.goSleep(20);
         }
 
         public void goSleeping() {
@@ -420,21 +381,21 @@ public class ThreadStateTest {
             setState(SLEEPING);
             // wait for  MyThread.
             thrsync.waitForSignal();
-            goSleep(20);
+            Utils.goSleep(20);
         }
         public void terminate() {
             System.out.println("Waiting myThread to terminate.");
             setState(TERMINATE);
             // wait for  MyThread.
             thrsync.waitForSignal();
-            goSleep(20);
+            Utils.goSleep(20);
         }
 
         private void setState(int newState) {
             switch (state) {
                 case BLOCKED:
                     while (state == BLOCKED) {
-                        goSleep(20);
+                        Utils.goSleep(20);
                     }
                     state = newState;
                     break;

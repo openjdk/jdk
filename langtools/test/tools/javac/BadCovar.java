@@ -27,7 +27,7 @@
  * @summary Compiler allows inheritance of multiple methods with unrelated return types
  * @author gafter
  *
- * @compile/fail -source 1.5 BadCovar.java
+ * @compile/fail BadCovar.java
  */
 
 package bad.covar;

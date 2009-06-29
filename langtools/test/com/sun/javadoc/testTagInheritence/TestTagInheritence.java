@@ -36,7 +36,7 @@ public class TestTagInheritence extends JavadocTester {
 
     private static final String BUG_ID = "4496223-4496270-4618686-4720974-4812240-6253614-6253604";
     private static final String[] ARGS = new String[] {
-        "-source", "1.5", "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", "firstSentence", "firstSentence2"
+        "-d", BUG_ID, "-sourcepath", SRC_DIR, "pkg", "firstSentence", "firstSentence2"
     };
 
     /**

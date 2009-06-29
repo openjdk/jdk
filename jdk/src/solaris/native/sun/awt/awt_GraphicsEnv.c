@@ -337,7 +337,7 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
     char errmsg[128];
     int xinawareScreen;
     void* xrenderLibHandle = NULL;
-    XRenderFindVisualFormatFunc *XRenderFindVisualFormat = NULL;
+    XRenderFindVisualFormatFunc* xrenderFindVisualFormat = NULL;
     int major_opcode, first_event, first_error;
 
     if (usingXinerama) {
@@ -435,7 +435,7 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
 #endif
 
         if (xrenderLibHandle != NULL) {
-            XRenderFindVisualFormat =
+            xrenderFindVisualFormat =
                 (XRenderFindVisualFormatFunc*)dlsym(xrenderLibHandle,
                                                     "XRenderFindVisualFormat");
         }
@@ -454,8 +454,8 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
         graphicsConfigs [ind]->awt_depth = pVITrue [i].depth;
         memcpy (&graphicsConfigs [ind]->awt_visInfo, &pVITrue [i],
                 sizeof (XVisualInfo));
-       if (XRenderFindVisualFormat != NULL) {
-            XRenderPictFormat *format = XRenderFindVisualFormat (awt_display,
+       if (xrenderFindVisualFormat != NULL) {
+            XRenderPictFormat *format = xrenderFindVisualFormat (awt_display,
                     pVITrue [i].visual);
             if (format &&
                 format->type == PictTypeDirect &&

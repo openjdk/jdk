@@ -27,7 +27,7 @@
  * @summary multiple methods inheritence
  * @author gafter
  *
- * @compile -source 1.5 GoodCovar.java
+ * @compile GoodCovar.java
  */
 
 package good.covar;

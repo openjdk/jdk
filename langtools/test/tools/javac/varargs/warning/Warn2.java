@@ -27,7 +27,7 @@
  * @summary fixed-arity warning given too often
  * @author gafter
  *
- * @compile -Werror -source 1.5 Warn2.java
+ * @compile -Werror  Warn2.java
  */
 
 package varargs.warning.warn2;

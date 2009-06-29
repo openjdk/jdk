@@ -26,8 +26,6 @@
  * @bug 5105890
  * @summary (codegen) constant folding broken for conditional operator
  * @author Peter von der Ah\u00e9
- * @compile -source 5 T5105890.java
- * @run main T5105890
  */
 
 public class T5105890 {

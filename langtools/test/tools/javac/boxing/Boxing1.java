@@ -26,9 +26,6 @@
  * @bug 4869233 4872709 4868735 4921949 4921209 4965701 4934916 4975565 4974939
  * @summary Boxing/unboxing positive unit and regression tests
  * @author gafter
- *
- * @compile -source 1.5 Boxing1.java
- * @run main Boxing1
  */
 
 public class Boxing1 {

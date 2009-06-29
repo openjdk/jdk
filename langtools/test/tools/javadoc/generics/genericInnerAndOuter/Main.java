@@ -27,7 +27,7 @@
  * @summary Verify the contents of the ClassDoc of
  *          a generic class with a generic inner class.
  * @library ../../lib
- * @compile -source 1.5 ../../lib/Tester.java Main.java
+ * @compile  ../../lib/Tester.java Main.java
  * @run main Main
  */
 

@@ -27,7 +27,7 @@
  * @summary generics: bridge for inherited final method can cause verify error
  * @author gafter
  *
- * @compile -source 1.5 FinalBridge.java
+ * @compile  FinalBridge.java
  * @run main FinalBridge
  */
 

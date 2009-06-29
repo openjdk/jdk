@@ -27,8 +27,8 @@
  * @summary javac crash loading class files containing Class-valued annotation fields
  * @author gafter
  *
- * @compile -source 1.5 ClassA.java ClassB.java
- * @compile -source 1.5 ClassB.java
+ * @compile ClassA.java ClassB.java
+ * @compile ClassB.java
  */
 
 @interface ClassA {
