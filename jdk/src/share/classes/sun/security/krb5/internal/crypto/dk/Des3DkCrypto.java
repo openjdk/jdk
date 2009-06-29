@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,33 +169,15 @@ public class Des3DkCrypto extends DkCrypto {
         return result;
     }
 
-    /* Mask used to check for parity adjustment */
-    private static final byte[] PARITY_BIT_MASK = {
-        (byte)0x80, (byte)0x40, (byte)0x20, (byte)0x10,
-        (byte)0x08, (byte)0x04, (byte)0x02
-    };
-
     /**
      * Sets the parity bit (0th bit) in each byte so that each byte
      * contains an odd number of 1's.
      */
     private static void setParityBit(byte[] key) {
         for (int i = 0; i < key.length; i++) {
-            int bitCount = 0;
-            for (int maskIndex = 0;
-                 maskIndex < PARITY_BIT_MASK.length; maskIndex++) {
-                if ((key[i] & PARITY_BIT_MASK[maskIndex])
-                    == PARITY_BIT_MASK[maskIndex]) {
-                    bitCount++;
-                }
-            }
-            if ((bitCount & 0x01) == 1) {
-                // Odd number of 1 bits in the top 7 bits. Set parity bit to 0
-                key[i] = (byte)(key[i] & (byte)0xfe);
-            } else {
-                // Even number of 1 bits in the top 7 bits. Set parity bit to 1
-                key[i] = (byte)(key[i] | 1);
-            }
+            int b = key[i] & 0xfe;
+            b |= (Integer.bitCount(b) & 1) ^ 1;
+            key[i] = (byte) b;
         }
     }
 

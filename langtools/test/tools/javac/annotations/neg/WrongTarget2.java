@@ -27,7 +27,7 @@
  * @summary Compiler allows Inherited meta-attribute on local variable declaration.
  * @author gafter
  *
- * @compile/fail -source 1.5 WrongTarget2.java
+ * @compile/fail WrongTarget2.java
  */
 
 import java.lang.annotation.Inherited;

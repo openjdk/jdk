@@ -27,8 +27,8 @@
  * @summary javac appears to omit throws portion of generic signature attribute
  * @author gafter
  *
- * @compile -source 1.5 J.java
- * @compile -source 1.5 K.java
+ * @compile  J.java
+ * @compile  K.java
  */
 
 class J<T extends Exception> {

@@ -91,6 +91,8 @@ ABS_TEMP_DIR = $(ABS_OUTPUTDIR)/tmp
 
 dummy := $(shell $(MKDIR) -p $(TEMP_DIR))
 
+# The language version we want for this jdk build
+SOURCE_LANGUAGE_VERSION=5
 # The class version we want for this jdk build
 TARGET_CLASS_VERSION=5
 

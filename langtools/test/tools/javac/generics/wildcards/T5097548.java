@@ -26,7 +26,7 @@
  * @bug 5097548
  * @summary (crash) Stack overflow in capture conversion
  * @author Peter von der Ah\u00e9
- * @compile -source 5 T5097548.java
+ * @compile  T5097548.java
  * @run main T5097548
  */
 

@@ -91,16 +91,19 @@ Java_sun_awt_windows_WInputMethod_enableNativeIME(JNIEnv *env, jobject self, job
 {
     TRY;
 
-    //get C++ Class of Focused Component
-    if (peer == 0)      return;
-    AwtComponent* p = (AwtComponent*)JNI_GET_PDATA(peer);
-    if (p == 0)         return;
+    jobject selfGlobalRef = env->NewGlobalRef(self);
+    jobject peerGlobalRef = env->NewGlobalRef(peer);
 
-    p->SetInputMethod(self, useNativeCompWindow);
+    EnableNativeIMEStruct *enis = new EnableNativeIMEStruct;
 
-    // use special message to call ImmAssociateContext() in main thread.
+    enis->self = selfGlobalRef;
+    enis->peer = peerGlobalRef;
+    enis->context = context;
+    enis->useNativeCompWindow = useNativeCompWindow;
+
     AwtToolkit::GetInstance().SendMessage(WM_AWT_ASSOCIATECONTEXT,
-                                          reinterpret_cast<WPARAM>(p->GetHWnd()), context);
+                                          reinterpret_cast<WPARAM>(enis), (LPARAM)0);
+    // global refs are deleted in message handler
 
     CATCH_BAD_ALLOC;
 }
@@ -116,16 +119,18 @@ Java_sun_awt_windows_WInputMethod_disableNativeIME(JNIEnv *env, jobject self, jo
 {
     TRY_NO_VERIFY;
 
-    //get C++ Class of Focused Component
-    if (peer == 0)      return;
-    AwtComponent* p = (AwtComponent*)JNI_GET_PDATA(peer);
-    if (p == 0)         return;
+    jobject peerGlobalRef = env->NewGlobalRef(peer);
+    // self reference is not used
 
-    p->SetInputMethod(NULL, TRUE);
+    EnableNativeIMEStruct *enis = new EnableNativeIMEStruct;
+    enis->self = NULL;
+    enis->peer = peerGlobalRef;
+    enis->context = NULL;
+    enis->useNativeCompWindow = JNI_TRUE;
 
-    // use special message to call ImmAssociateContext() in main thread.
     AwtToolkit::GetInstance().SendMessage(WM_AWT_ASSOCIATECONTEXT,
-                                          reinterpret_cast<WPARAM>(p->GetHWnd()), NULL);
+                                          reinterpret_cast<WPARAM>(enis), (LPARAM)0);
+    // global refs are deleted in message handler
 
     CATCH_BAD_ALLOC;
 }
@@ -167,23 +172,14 @@ Java_sun_awt_windows_WInputMethod_handleNativeIMEEvent(JNIEnv *env, jobject self
     if (id >= java_awt_event_InputMethodEvent_INPUT_METHOD_FIRST &&
         id <= java_awt_event_InputMethodEvent_INPUT_METHOD_LAST)
     {
-        long modifiers = p->GetJavaModifiers();
-        if (msg.message==WM_CHAR || msg.message==WM_SYSCHAR) {
-            WCHAR unicodeChar = L'\0';
-            unicodeChar = (WCHAR)msg.wParam;
-            p->SendKeyEvent(java_awt_event_KeyEvent_KEY_TYPED,
-                            0, //to be fixed nowMillis(),
-                            java_awt_event_KeyEvent_CHAR_UNDEFINED,
-                            unicodeChar,
-                            modifiers,
-                            java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN, (jlong)0,
-                            &msg);
-        } else {
-            MSG* pCopiedMsg = new MSG;
-            *pCopiedMsg = msg;
-            p->SendMessage(WM_AWT_HANDLE_EVENT, (WPARAM) FALSE,
-                        (LPARAM) pCopiedMsg);
-        }
+        jobject peerGlobalRef = env->NewGlobalRef(peer);
+
+        // use special message to access pData on the toolkit thread
+        AwtToolkit::GetInstance().SendMessage(WM_AWT_HANDLE_NATIVE_IME_EVENT,
+                                              reinterpret_cast<WPARAM>(peerGlobalRef),
+                                              reinterpret_cast<LPARAM>(&msg));
+        // global ref is deleted in message handler
+
         (env)->SetBooleanField(event, AwtAWTEvent::consumedID, JNI_TRUE);
     }
 
@@ -373,22 +369,27 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WInputMethod_setStatusWindowVisible
        Windows system creates a default input method window for the
        toolkit thread.
     */
-    HWND hwndIME = AwtToolkit::GetInstance().GetInputMethodWindow();
-    if (hwndIME == NULL) {
-        if (peer == NULL) {
-            return;
-        }
 
-        AwtComponent* p = (AwtComponent*)JNI_GET_PDATA(peer);
-        if (p == NULL || (hwndIME = ImmGetDefaultIMEWnd(p->GetHWnd())) == NULL) {
-            return;
-        }
+    HWND defaultIMEHandler = AwtToolkit::GetInstance().GetInputMethodWindow();
 
-        AwtToolkit::GetInstance().SetInputMethodWindow(hwndIME);
+    if (defaultIMEHandler == NULL)
+    {
+        jobject peerGlobalRef = env->NewGlobalRef(peer);
+
+        // use special message to access pData on the toolkit thread
+        LRESULT res = AwtToolkit::GetInstance().SendMessage(WM_AWT_GET_DEFAULT_IME_HANDLER,
+                                          reinterpret_cast<WPARAM>(peerGlobalRef), 0);
+        // global ref is deleted in message handler
+
+        if (res == TRUE) {
+            defaultIMEHandler = AwtToolkit::GetInstance().GetInputMethodWindow();
+        }
     }
 
-    ::SendMessage(hwndIME, WM_IME_CONTROL,
-                  visible ? IMC_OPENSTATUSWINDOW : IMC_CLOSESTATUSWINDOW, 0);
+    if (defaultIMEHandler != NULL) {
+        ::SendMessage(defaultIMEHandler, WM_IME_CONTROL,
+                      visible ? IMC_OPENSTATUSWINDOW : IMC_CLOSESTATUSWINDOW, 0);
+    }
 }
 
 /*
@@ -417,6 +418,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WInputMethod_openCandidateWindow
     // use special message to open candidate window in main thread.
     AwtToolkit::GetInstance().SendMessage(WM_AWT_OPENCANDIDATEWINDOW,
                                           (WPARAM)peerGlobalRef, MAKELONG(x, y));
+    // global ref is deleted in message handler
 
     CATCH_BAD_ALLOC;
 }

@@ -27,7 +27,7 @@
  * @summary the type of x.getClass() is Class<? extends |X|>
  * @author seligman
  *
- * @compile -source 1.5 GetClass2.java
+ * @compile  GetClass2.java
  * @run main GetClass2
  */
 

@@ -26,9 +26,6 @@
  * @bug 5003207
  * @summary new "for" statement  fails to cast to second upper bound
  * @author gafter
- *
- * @compile -source 1.5 IntersectIterator.java
- * @run main IntersectIterator
  */
 
 import java.util.*;

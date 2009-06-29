@@ -26,8 +26,6 @@
  * @bug 4909767
  * @summary Verify that omitting Doclet.languageVersion() hides 1.5 language
  *      features from the doclet.
- * @compile -source 1.5 LangVers.java
- * @run main LangVers
  */
 
 import java.util.List;

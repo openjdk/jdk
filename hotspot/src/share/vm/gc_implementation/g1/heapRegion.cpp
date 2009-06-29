@@ -40,15 +40,19 @@ FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
 {}
 
 class VerifyLiveClosure: public OopClosure {
+private:
   G1CollectedHeap* _g1h;
   CardTableModRefBS* _bs;
   oop _containing_obj;
   bool _failures;
   int _n_failures;
+  bool _use_prev_marking;
 public:
-  VerifyLiveClosure(G1CollectedHeap* g1h) :
+  // use_prev_marking == true  -> use "prev" marking information,
+  // use_prev_marking == false -> use "next" marking information
+  VerifyLiveClosure(G1CollectedHeap* g1h, bool use_prev_marking) :
     _g1h(g1h), _bs(NULL), _containing_obj(NULL),
-    _failures(false), _n_failures(0)
+    _failures(false), _n_failures(0), _use_prev_marking(use_prev_marking)
   {
     BarrierSet* bs = _g1h->barrier_set();
     if (bs->is_a(BarrierSet::CardTableModRef))
@@ -68,11 +72,13 @@ public:
 
   void do_oop(oop* p) {
     assert(_containing_obj != NULL, "Precondition");
-    assert(!_g1h->is_obj_dead(_containing_obj), "Precondition");
+    assert(!_g1h->is_obj_dead_cond(_containing_obj, _use_prev_marking),
+           "Precondition");
     oop obj = *p;
     if (obj != NULL) {
       bool failed = false;
-      if (!_g1h->is_in_closed_subset(obj) || _g1h->is_obj_dead(obj)) {
+      if (!_g1h->is_in_closed_subset(obj) ||
+          _g1h->is_obj_dead_cond(obj, _use_prev_marking)) {
         if (!_failures) {
           gclog_or_tty->print_cr("");
           gclog_or_tty->print_cr("----------");
@@ -647,19 +653,23 @@ void HeapRegion::print_on(outputStream* st) const {
   G1OffsetTableContigSpace::print_on(st);
 }
 
+void HeapRegion::verify(bool allow_dirty) const {
+  verify(allow_dirty, /* use_prev_marking */ true);
+}
+
 #define OBJ_SAMPLE_INTERVAL 0
 #define BLOCK_SAMPLE_INTERVAL 100
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
 // We would need a mechanism to make that code skip dead objects.
 
-void HeapRegion::verify(bool allow_dirty) const {
+void HeapRegion::verify(bool allow_dirty, bool use_prev_marking) const {
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
   int objs = 0;
   int blocks = 0;
-  VerifyLiveClosure vl_cl(g1);
+  VerifyLiveClosure vl_cl(g1, use_prev_marking);
   while (p < top()) {
     size_t size = oop(p)->size();
     if (blocks == BLOCK_SAMPLE_INTERVAL) {
@@ -671,7 +681,7 @@ void HeapRegion::verify(bool allow_dirty) const {
     }
     if (objs == OBJ_SAMPLE_INTERVAL) {
       oop obj = oop(p);
-      if (!g1->is_obj_dead(obj, this)) {
+      if (!g1->is_obj_dead_cond(obj, this, use_prev_marking)) {
         obj->verify();
         vl_cl.set_containing_obj(obj);
         obj->oop_iterate(&vl_cl);

@@ -27,7 +27,7 @@
  * @summary explicit type arguments
  * @author gafter
  *
- * @compile -source 1.5 Basic.java
+ * @compile  Basic.java
  */
 
 // Test all of the basic forms for explicit type arguments

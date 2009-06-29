@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1516,11 +1516,6 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
 
     // ---------------- DES and 3 DES key manipulation routines
 
-    /* Mask used to check for parity adjustment */
-    private static final byte[] PARITY_BIT_MASK = {
-        (byte)0x80, (byte)0x40, (byte)0x20, (byte)0x10,
-        (byte)0x08, (byte)0x04, (byte)0x02
-    };
     private static final BigInteger MASK = new BigInteger("7f", 16);
 
     /**
@@ -1529,21 +1524,9 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
      */
     private static void setParityBit(byte[] key) {
         for (int i = 0; i < key.length; i++) {
-            int bitCount = 0;
-            for (int maskIndex = 0;
-                 maskIndex < PARITY_BIT_MASK.length; maskIndex++) {
-                if ((key[i] & PARITY_BIT_MASK[maskIndex])
-                    == PARITY_BIT_MASK[maskIndex]) {
-                    bitCount++;
-                }
-            }
-            if ((bitCount & 0x01) == 1) {
-                // Odd number of 1 bits in the top 7 bits. Set parity bit to 0
-                key[i] = (byte)(key[i] & (byte)0xfe);
-            } else {
-                // Even number of 1 bits in the top 7 bits. Set parity bit to 1
-                key[i] = (byte)(key[i] | 1);
-            }
+            int b = key[i] & 0xfe;
+            b |= (Integer.bitCount(b) & 1) ^ 1;
+            key[i] = (byte) b;
         }
     }
 

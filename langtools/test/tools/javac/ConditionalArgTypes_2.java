@@ -28,7 +28,7 @@
  * @author maddox
  *
  * @compile/fail -source 1.4 ConditionalArgTypes_2.java
- * @compile -source 1.5 ConditionalArgTypes_2.java
+ * @compile                  ConditionalArgTypes_2.java
  */
 
 // This case was working before -- controlling expression is not a constant.

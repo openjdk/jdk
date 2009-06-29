@@ -1254,6 +1254,8 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_AWT_CREATECONTEXT)
         WIN_MSG(WM_AWT_DESTROYCONTEXT)
         WIN_MSG(WM_AWT_ASSOCIATECONTEXT)
+        WIN_MSG(WM_AWT_GET_DEFAULT_IME_HANDLER)
+        WIN_MSG(WM_AWT_HANDLE_NATIVE_IME_EVENT)
         WIN_MSG(WM_AWT_PRE_KEYDOWN)
         WIN_MSG(WM_AWT_PRE_KEYUP)
         WIN_MSG(WM_AWT_PRE_SYSKEYDOWN)
@@ -3334,7 +3336,13 @@ AwtComponent::BuildPrimaryDynamicTable() {
             // reset
             resetKbdState( kbdState );
         }else {
-            printf ("++++Whats that? wkey 0x%x (%d)\n", i,i);
+            // k > 1: this key does generate multiple characters. Ignore it.
+            // An example: Arabic Lam and Alef ligature.
+            // There will be no extended keycode and thus shortcuts for this  key.
+            // XXX shouldn't we reset the kbd state?
+#ifdef DEBUG
+            DTRACE_PRINTLN2("wkey 0x%02X (%d)", i,i);
+#endif
         }
         kbdState[i] = 0; // "key unpressed"
     }

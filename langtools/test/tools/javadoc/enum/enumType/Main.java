@@ -26,7 +26,7 @@
  * @bug 4421066
  * @summary Verify the contents of an enum type.
  * @library ../../lib
- * @compile -source 1.5 ../../lib/Tester.java Main.java
+ * @compile  ../../lib/Tester.java Main.java
  * @run main Main
  */
 

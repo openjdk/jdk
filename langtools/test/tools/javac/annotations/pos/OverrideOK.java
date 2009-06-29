@@ -27,7 +27,7 @@
  * @summary JSR175 (7): implement <at>Overrides
  * @author gafter
  *
- * @compile -source 1.5 OverrideOK.java
+ * @compile OverrideOK.java
  */
 
 package overrideOK;

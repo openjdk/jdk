@@ -26,7 +26,7 @@
  * @bug 5097548
  * @summary Stack overflow in capture conversion
  * @author Peter von der Ah\u00e9
- * @compile -source 5 T5097548b.java
+ * @compile  T5097548b.java
  */
 
 interface Edge<N extends Node<? extends Edge<N>>> {
