@@ -391,9 +391,10 @@ void AwtFrame::CreateProxyFocusOwner()
 void AwtFrame::_CreateProxyFocusOwner(void *param)
 {
     DASSERT(AwtToolkit::IsMainThread());
-    DASSERT(m_proxyFocusOwner == NULL);
 
     AwtFrame *f = (AwtFrame *)param;
+    DASSERT(f->m_proxyFocusOwner == NULL);
+
     f->m_proxyFocusOwner = ::CreateWindow(TEXT("STATIC"),
                                           TEXT("ProxyFocusOwner"),
                                           WS_CHILD,
