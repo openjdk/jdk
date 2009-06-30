@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,26 @@
  * have any questions.
  */
 
-/* @test
-   @bug 4528128 6846616
-   @summary Test if reading InputStream of a closed ZipFile crashes VM
-   @author kladko
-   */
+/*
+ * @test
+ * @bug 6855671
+ * @summary DerOutputStream encodes negative integer incorrectly
+ */
+import sun.security.util.DerOutputStream;
 
+public class NegInt {
 
-import java.util.zip.*;
-import java.io.*;
-import java.util.*;
-
-public class ReadAfterClose {
-    public static void main(String[] argv) throws Exception {
-        ZipFile zf = new ZipFile(new File(System.getProperty("test.src","."),"crash.jar"));
-        ZipEntry zent = zf.getEntry("Test.java");
-        InputStream in = zf.getInputStream(zent);
-        zf.close();
-        try {
-            in.read();
-        } catch (IOException e) {
-            return;
+    public static void main(String[] args) throws Exception {
+        DerOutputStream out;
+        out = new DerOutputStream();
+        out.putInteger(-128);
+        if(out.toByteArray().length != 3) {
+            throw new Exception("-128 encode error");
         }
-        throw new Exception("Test failed.");
+        out = new DerOutputStream();
+        out.putInteger(-129);
+        if(out.toByteArray().length != 4) {
+            throw new Exception("-129 encode error");
+        }
     }
 }
