@@ -27,7 +27,7 @@
  * @summary generics: missing bridge method for inherited implementation
  * @author gafter
  *
- * @compile -source 1.5 T4711694.java
+ * @compile  T4711694.java
  * @run main T4711694
  */
 

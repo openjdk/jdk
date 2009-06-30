@@ -27,7 +27,7 @@
  * @summary generics: allow arrays of unbounded generic types
  * @author gafter
  *
- * @compile -source 1.5 UnboundArray.java
+ * @compile  UnboundArray.java
  */
 
 class C<E> {

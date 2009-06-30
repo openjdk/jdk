@@ -28,7 +28,7 @@
  *          monitors.
  * @author  Mandy Chung
  *
- * @build ThreadDump
+ * @build ThreadDump Utils
  */
 
 import java.lang.management.*;
@@ -63,6 +63,9 @@ public class SynchronizerLockingThread extends Thread {
                throw new RuntimeException(e);
            }
         }
+
+        Utils.waitForBlockWaitingState(t1);
+        Utils.waitForBlockWaitingState(t2);
     }
 
     static long[] getThreadIds() {

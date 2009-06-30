@@ -44,6 +44,9 @@ public class BasicWriter {
     protected BasicWriter(Context context) {
         lineWriter = LineWriter.instance(context);
         out = context.get(PrintWriter.class);
+        messages = context.get(Messages.class);
+        if (messages == null)
+            throw new AssertionError();
     }
 
     protected void print(String s) {
@@ -88,8 +91,26 @@ public class BasicWriter {
         return "???";
     }
 
+    protected String space(int w) {
+        if (w < spaces.length && spaces[w] != null)
+            return spaces[w];
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < w; i++)
+            sb.append(" ");
+
+        String s = sb.toString();
+        if (w < spaces.length)
+            spaces[w] = s;
+
+        return s;
+    }
+
+    private String[] spaces = new String[80];
+
     private LineWriter lineWriter;
     private PrintWriter out;
+    protected Messages messages;
 
     private static class LineWriter {
         static LineWriter instance(Context context) {

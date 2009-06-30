@@ -26,9 +26,6 @@
  * @bug 5054976
  * @summary compiler fails to flag an enum abstract
  * @author gafter
- *
- * @compile -source 1.5 AbstractEnum1.java
- * @run main AbstractEnum1
  */
 
 import java.lang.reflect.Modifier;

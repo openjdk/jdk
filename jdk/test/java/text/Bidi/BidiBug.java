@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4827312
+ * @bug 4827312 6850113
  * @summary verify that argument validity check is not fooled by overflow
  */
 public class BidiBug {
@@ -33,9 +33,9 @@ public class BidiBug {
         java.text.Bidi bidi = new java.text.Bidi(new char[20],10,buff,Integer.MAX_VALUE-3,4,1);
     }
     catch (IllegalArgumentException e) {
-        System.out.println(e);
+        System.out.println("Passed: " + e);
         return; // success
     }
-    throw new RuntimeException("didn't throw error, though we didn't crash either");
+    throw new RuntimeException("Failed: Bidi didn't throw error, though we didn't crash either");
   }
 }

@@ -22,35 +22,19 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package sun.io;
 
-import sun.nio.cs.ext.IBM950;
+import sun.nio.cs.ext.*;
 
-/**
-* Tables and data to convert Unicode to Cp950
-*
-* @author Malcolm Ayres, assisted by UniMap program
-*/
-public class CharToByteCp950
-        extends CharToByteDBCS_ASCII
+public class CharToByteCp950 extends CharToByteDBCS_ASCII {
 
-{
-        private static IBM950 nioCoder = new IBM950();
+    // Return the character set id
+    public String getCharacterEncoding() {
+        return "Cp950";
+    }
 
-        // Return the character set id
-        public String getCharacterEncoding()
-        {
-                return "Cp950";
-        }
-
-        public CharToByteCp950()
-        {
-                super();
-                super.mask1 = 0xFFC0;
-                super.mask2 = 0x003F;
-                super.shift = 6;
-                super.index1 = nioCoder.getEncoderIndex1();
-                super.index2 = nioCoder.getEncoderIndex2();
-                super.index2a = nioCoder.getEncoderIndex2a();
-        }
+    public CharToByteCp950() {
+        super((DoubleByte.Encoder)new IBM950().newEncoder());
+    }
 }

@@ -27,7 +27,7 @@
  * @summary generics: compiler crash merging signatures of generic methods
  * @author gafter
  *
- * @compile -source 1.5 GenericMerge.java
+ * @compile  GenericMerge.java
  */
 
 class Box<T> {}

@@ -27,7 +27,6 @@
  * @summary JSR 199: Changes to JavaFileManager to support JSR 269 Filer API
  * @author  Peter von der Ah\u00e9
  * @library ../lib
- * @ignore  Need to fix this test when 6508981 is fixed.
  * @compile T6431257.java package-info.java
  * @run main T6431257 foo.bar.baz foo/bar/baz
  */
