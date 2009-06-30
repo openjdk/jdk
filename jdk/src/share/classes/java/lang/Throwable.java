@@ -645,17 +645,21 @@ public class Throwable implements Serializable {
     /**
      * Returns the number of elements in the stack trace (or 0 if the stack
      * trace is unavailable).
+     *
+     * package-protection for use by SharedSecrets.
      */
-    private native int getStackTraceDepth();
+    native int getStackTraceDepth();
 
     /**
      * Returns the specified element of the stack trace.
+     *
+     * package-protection for use by SharedSecrets.
      *
      * @param index index of the element to return.
      * @throws IndexOutOfBoundsException if <tt>index &lt; 0 ||
      *         index &gt;= getStackTraceDepth() </tt>
      */
-    private native StackTraceElement getStackTraceElement(int index);
+    native StackTraceElement getStackTraceElement(int index);
 
     private synchronized void writeObject(java.io.ObjectOutputStream s)
         throws IOException

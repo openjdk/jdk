@@ -27,7 +27,7 @@
  * @summary generics: compiler allows ref to type bounds in static members
  * @author gafter
  *
- * @compile/fail -source 1.5 T4695348.java
+ * @compile/fail  T4695348.java
  */
 
 class T4695348<T> {

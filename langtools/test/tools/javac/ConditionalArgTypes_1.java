@@ -28,7 +28,7 @@
  * @author maddox
  *
  * @compile/fail -source 1.4 ConditionalArgTypes_1.java
- * @compile -source 1.5 ConditionalArgTypes_1.java
+ * @compile                  ConditionalArgTypes_1.java
  */
 
 // This is the problematic case -- the controlling expression is a boolean constant.

@@ -27,7 +27,7 @@
  * @summary stack overflow error compiling EnumSet.java
  * @author gafter
  *
- * @compile -source 1.5 Casting2.java
+ * @compile  Casting2.java
  */
 
 import java.util.*;

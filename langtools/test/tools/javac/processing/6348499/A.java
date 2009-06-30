@@ -28,7 +28,7 @@ import javax.lang.model.*;
 import javax.lang.model.element.*;
 
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
+@SupportedSourceVersion(SourceVersion.RELEASE_7)
 public class A extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv) {
         Filer filer = processingEnv.getFiler();

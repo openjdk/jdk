@@ -27,7 +27,7 @@
  * @summary java.lang.Throwable inheritance in parameterized type
  * @author gafter
  *
- * @compile/fail -source 1.5 GenericThrowable.java
+ * @compile/fail  GenericThrowable.java
  */
 
 class GenericThrowable<T> extends NullPointerException {

@@ -27,7 +27,7 @@
  * @summary static import of private field crashes compiler
  * @author gafter
  *
- * @compile/fail -source 1.5 PrivateStaticImport.java
+ * @compile/fail  PrivateStaticImport.java
  */
 
 package psi;

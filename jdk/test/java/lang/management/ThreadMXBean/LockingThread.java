@@ -66,6 +66,8 @@ public class LockingThread extends Thread {
                throw new RuntimeException(e);
            }
         }
+        Utils.waitForBlockWaitingState(t1);
+        Utils.waitForBlockWaitingState(t2);
     }
     static long[] getThreadIds() {
         return new long[] {t1.getId(), t2.getId()};

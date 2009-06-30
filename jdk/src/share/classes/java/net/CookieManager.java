@@ -286,6 +286,14 @@ public class CookieManager extends CookieHandler
                             }
                             cookie.setPath(path);
                         }
+
+                        // As per RFC 2965, section 3.3.1:
+                        // Domain  Defaults to the effective request-host.  (Note that because
+                        // there is no dot at the beginning of effective request-host,
+                        // the default Domain can only domain-match itself.)
+                        if (cookie.getDomain() == null) {
+                            cookie.setDomain(uri.getHost());
+                        }
                         String ports = cookie.getPortlist();
                         if (ports != null) {
                             int port = uri.getPort();

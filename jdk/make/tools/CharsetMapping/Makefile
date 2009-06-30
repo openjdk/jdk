@@ -34,7 +34,7 @@ PROGRAM = charsetmapping
 include $(BUILDDIR)/common/Defs.gmk
 
 BUILDTOOL_SOURCE_ROOT = $(BUILDDIR)/tools/src
-BUILDTOOL_MAIN        = $(PKGDIR)/GenerateMapping.java
+BUILDTOOL_MAIN        = $(PKGDIR)/Main.java
 
 #
 # Build tool jar rules.

@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 6371437 6371422 6371416 6371619 5058184 6371431
+   @bug 6371437 6371422 6371416 6371619 5058184 6371431 6639450 6569191 6577466
    @summary Check if the problems reported in above bugs have been fixed
  */
 
@@ -136,11 +136,50 @@ public class TestIBMBugs {
             throw new Exception("Charset "+charset+": "+errors+" errors");
     }
 
+    private static void bug6639450 () throws Exception {
+        byte[] bytes1 = "\\".getBytes("IBM949");
+        "\\".getBytes("IBM949C");
+        byte[] bytes2 = "\\".getBytes("IBM949");
+        if (bytes1.length != 1 || bytes2.length != 1 ||
+            bytes1[0] != (byte)0x82 ||
+            bytes2[0] != (byte)0x82)
+        throw new Exception("IBM949/IBM949C failed");
+    }
+
+    private static void bug6569191 () throws Exception {
+        byte[] bs = new byte[] { (byte)0x81, (byte)0xad,
+                                 (byte)0x81, (byte)0xae,
+                                 (byte)0x81, (byte)0xaf,
+                                 (byte)0x81, (byte)0xb0,
+                                 (byte)0x85, (byte)0x81,
+                                 (byte)0x85, (byte)0x87,
+                                 (byte)0x85, (byte)0xe0,
+                                 (byte)0x85, (byte)0xf0 };
+        String s = new String(bs, "Cp943");
+        if (!"\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd"
+            .equals(s))
+            throw new Exception("Cp943 failed");
+    }
+
+
+    private static void bug6577466 () throws Exception {
+        for (int c = Character.MIN_VALUE; c <= Character.MAX_VALUE; c++){
+            if (!Character.isDefined((char)c)) continue;
+            String s = String.valueOf((char)c);
+            byte[] bb = null;
+            bb = s.getBytes("x-IBM970");
+        }
+    }
+
     public static void main (String[] args) throws Exception {
+        bug6577466();
+        // need to be tested before any other IBM949C test case
+        bug6639450();
         bug6371437();
         bug6371422();
         bug6371416();
         bug6371619();
         bug6371431();
+        bug6569191();
     }
 }

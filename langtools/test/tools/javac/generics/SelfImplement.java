@@ -27,7 +27,7 @@
  * @summary generics: reject implementation with incorrect return type
  * @author gafter
  *
- * @compile/fail -source 1.5 SelfImplement.java
+ * @compile/fail  SelfImplement.java
  */
 
 class SelfImplement {

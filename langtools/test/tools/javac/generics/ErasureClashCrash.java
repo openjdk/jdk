@@ -27,7 +27,7 @@
  * @summary javac crash with improper overrider
  * @author gafter
  *
- * @compile/fail -source 1.5 ErasureClashCrash.java
+ * @compile/fail  ErasureClashCrash.java
  */
 
 interface Compar<T> {
