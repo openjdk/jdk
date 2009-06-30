@@ -27,7 +27,7 @@
  * @summary Check correct DU computation for assertions.
  * @author gafter
  *
- * @compile/fail -source 1.4 DU2.java
+ * @compile/fail DU2.java
  */
 
 class DU2 {

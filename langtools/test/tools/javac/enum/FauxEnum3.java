@@ -27,7 +27,7 @@
  * @summary verify an enum type can't be directly subclassed
  * @author Joseph D. Darcy
  *
- * @compile/fail -source 1.5 FauxEnum3.java
+ * @compile/fail FauxEnum3.java
  */
 
 public class FauxEnum3 extends SpecializedEnum {

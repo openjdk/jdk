@@ -27,7 +27,7 @@
  * @summary (JSR175) compiler allows self-containing annotation types
  * @author gafter
  *
- * @compile/fail -source 1.5 Cycle1.java
+ * @compile/fail Cycle1.java
  */
 
 package cycle1;

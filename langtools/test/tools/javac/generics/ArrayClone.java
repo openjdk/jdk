@@ -27,7 +27,7 @@
  * @summary The clone method on arrays should be strongly typed
  * @author gafter
  *
- * @compile -source 1.5 ArrayClone.java
+ * @compile  ArrayClone.java
  * @run main ArrayClone
  */
 

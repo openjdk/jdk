@@ -27,7 +27,7 @@
  * @summary JSR175 (15): single element array annotation value
  * @author gafter
  *
- * @compile -source 1.5 AnnoteElideBraces.java
+ * @compile AnnoteElideBraces.java
  */
 
 @interface D {

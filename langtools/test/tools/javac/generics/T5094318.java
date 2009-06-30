@@ -28,7 +28,7 @@
  *
  * @compile -source 1.4 T5094318.java
  * @run main T5094318
- * @compile -source 1.5 T5094318.java
+ * @compile  T5094318.java
  * @run main/fail T5094318
  */
 

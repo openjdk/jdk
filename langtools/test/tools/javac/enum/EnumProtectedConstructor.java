@@ -27,7 +27,7 @@
  * @summary enum constructors cannot be declared public or protected
  * @author Joseph D. Darcy
  *
- * @compile/fail -source 1.5 EnumProtectedConstructor.java
+ * @compile/fail EnumProtectedConstructor.java
  */
 
 enum EnumProtectedConstructor {

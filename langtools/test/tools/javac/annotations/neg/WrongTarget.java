@@ -27,7 +27,7 @@
  * @summary java.lang.annotation.Target
  * @author gafter
  *
- * @compile/fail -source 1.5 WrongTarget.java
+ * @compile/fail WrongTarget.java
  */
 
 @java.lang.annotation.Target({FIELD})

@@ -26,7 +26,7 @@
  * @bug 5031171
  * @summary Test parameter annotations.
  * @library ../../lib
- * @compile -source 1.5 ../../lib/Tester.java Main.java
+ * @compile  ../../lib/Tester.java Main.java
  * @run main Main
  */
 

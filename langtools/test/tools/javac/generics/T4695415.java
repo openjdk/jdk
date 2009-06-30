@@ -27,7 +27,7 @@
  * @summary generics: bug in type inference when method result used as an argument
  * @author gafter
  *
- * @compile -source 1.5 T4695415.java
+ * @compile  T4695415.java
  */
 
 class X<T extends Number> {

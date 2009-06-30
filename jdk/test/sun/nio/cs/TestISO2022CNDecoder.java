@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4779029 4924625 6392664
+   @bug 4779029 4924625 6392664 6730652
    @summary Test decoding of various permutations of valid ISO-2022-CN byte sequences
  */
 
@@ -387,6 +387,12 @@ public class TestISO2022CNDecoder
     };
     private static  CoderResult test15_result = CoderResult.unmappableForLength(4);
 
+    private static boolean encodeTest6730652 () throws Exception {
+        //sample p3 codepoints
+        String strCNSP3 = "\u4e28\u4e36\u4e3f\u4e85\u4e05\u4e04\u5369\u53b6\u4e2a\u4e87\u4e49\u51e2\u56b8\u56b9\u56c4\u8053\u92b0";
+        return strCNSP3.equals(new String(strCNSP3.getBytes("x-ISO-2022-CN-CNS"), "x-ISO-2022-CN-CNS"));
+    }
+
     /**
      * Main program to test ISO2022CN conformance
      *
@@ -430,6 +436,9 @@ public class TestISO2022CNDecoder
         pass &= decodeTest(test13_bytes, test13_chars, "escapes13");
         pass &= decodeResultTest(test14_bytes, test14_result, "escapes14");
         pass &= decodeResultTest(test15_bytes, test15_result, "escapes15");
+
+        pass &= encodeTest6730652 ();
+
         // PASS/FAIL status is what the whole thing is about.
         //
         if (! pass) {

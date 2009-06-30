@@ -27,7 +27,7 @@
  * @summary generics: crash after error regarding bounds on type variable
  * @author gafter
  *
- * @compile/fail -source 1.5 T4739399.java
+ * @compile/fail  T4739399.java
  */
 
 class T4739399 {

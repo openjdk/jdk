@@ -27,7 +27,7 @@
  * @summary varags, auto boxing
  * @author gafter
  *
- * @compile -source 1.5 Varargs1.java
+ * @compile  Varargs1.java
  * @run main Varargs1
  */
 

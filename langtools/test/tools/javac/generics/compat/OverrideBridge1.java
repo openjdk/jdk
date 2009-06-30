@@ -27,10 +27,10 @@
  * @summary generics: compiler allows 1.4 code to override a bridge method
  * @author gafter
  *
- * @compile -source 1.5 OverrideBridge1.java
+ * @compile  OverrideBridge1.java
  * @compile/fail -Werror -source 1.4 OverrideBridge2.java
  * @compile -source 1.4 OverrideBridge2.java
- * @compile -source 1.5 OverrideBridge3.java
+ * @compile  OverrideBridge3.java
  */
 
 // ALLOW users to override bridge methods.
