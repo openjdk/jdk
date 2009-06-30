@@ -51,7 +51,6 @@ ea=-ea:com.sun.tools
 # All other parameters become parameters of #PROGRAM#.
 
 # Separate out -J* options for the JVM
-# Note jdk as possible default to run jtreg
 # Unset IFS and use newline as arg separator to preserve spaces in args
 DUALCASE=1  # for MKS: make case statement case-sensitive (6709498)
 saveIFS="$IFS"
