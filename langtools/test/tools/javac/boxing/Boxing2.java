@@ -27,7 +27,7 @@
  * @summary Boxing/unboxing negative unit and regression tests
  * @author gafter
  *
- * @compile/fail -source 1.5 Boxing2.java
+ * @compile/fail Boxing2.java
  */
 
 public class Boxing2 {

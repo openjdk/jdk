@@ -25,6 +25,9 @@
 
 package com.sun.tools.javap;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.sun.tools.classfile.AccessFlags;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.ConstantPool;
@@ -33,9 +36,6 @@ import com.sun.tools.classfile.DescriptorException;
 import com.sun.tools.classfile.Instruction;
 import com.sun.tools.classfile.Instruction.TypeKind;
 import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.Opcode;
-
-//import static com.sun.tools.classfile.OpCodes.*;
 
 /*
  *  Write the contents of a Code attribute.
@@ -59,6 +59,12 @@ class CodeWriter extends BasicWriter {
         attrWriter = AttributeWriter.instance(context);
         classWriter = ClassWriter.instance(context);
         constantWriter = ConstantWriter.instance(context);
+        sourceWriter = SourceWriter.instance(context);
+        tryBlockWriter = TryBlockWriter.instance(context);
+        stackMapWriter = StackMapWriter.instance(context);
+        localVariableTableWriter = LocalVariableTableWriter.instance(context);
+        localVariableTypeTableWriter = LocalVariableTypeTableWriter.instance(context);
+        options = Options.instance(context);
     }
 
     void write(Code_attribute attr, ConstantPool constant_pool) {
@@ -90,14 +96,21 @@ class CodeWriter extends BasicWriter {
     }
 
     public void writeInstrs(Code_attribute attr) {
+        List<InstructionDetailWriter> detailWriters = getDetailWriters(attr);
+
         for (Instruction instr: attr.getInstructions()) {
             try {
+                for (InstructionDetailWriter w: detailWriters)
+                    w.writeDetails(instr);
                 writeInstr(instr);
             } catch (ArrayIndexOutOfBoundsException e) {
                 println(report("error at or after byte " + instr.getPC()));
                 break;
             }
         }
+
+        for (InstructionDetailWriter w: detailWriters)
+            w.flush();
     }
 
     public void writeInstr(Instruction instr) {
@@ -211,11 +224,45 @@ class CodeWriter extends BasicWriter {
         print(s);
     }
 
-    private static int align(int n) {
-        return (n + 3) & ~3;
+    private List<InstructionDetailWriter> getDetailWriters(Code_attribute attr) {
+        List<InstructionDetailWriter> detailWriters =
+                new ArrayList<InstructionDetailWriter>();
+        if (options.details.contains(InstructionDetailWriter.Kind.SOURCE)) {
+            sourceWriter.reset(classWriter.getClassFile(), attr);
+            detailWriters.add(sourceWriter);
+        }
+
+        if (options.details.contains(InstructionDetailWriter.Kind.LOCAL_VARS)) {
+            localVariableTableWriter.reset(attr);
+            detailWriters.add(localVariableTableWriter);
+        }
+
+        if (options.details.contains(InstructionDetailWriter.Kind.LOCAL_VAR_TYPES)) {
+            localVariableTypeTableWriter.reset(attr);
+            detailWriters.add(localVariableTypeTableWriter);
+        }
+
+        if (options.details.contains(InstructionDetailWriter.Kind.STACKMAPS)) {
+            stackMapWriter.reset(attr);
+            stackMapWriter.writeInitialDetails();
+            detailWriters.add(stackMapWriter);
+        }
+
+        if (options.details.contains(InstructionDetailWriter.Kind.TRY_BLOCKS)) {
+            tryBlockWriter.reset(attr);
+            detailWriters.add(tryBlockWriter);
+        }
+
+        return detailWriters;
     }
 
     private AttributeWriter attrWriter;
     private ClassWriter classWriter;
     private ConstantWriter constantWriter;
+    private LocalVariableTableWriter localVariableTableWriter;
+    private LocalVariableTypeTableWriter localVariableTypeTableWriter;
+    private SourceWriter sourceWriter;
+    private StackMapWriter stackMapWriter;
+    private TryBlockWriter tryBlockWriter;
+    private Options options;
 }

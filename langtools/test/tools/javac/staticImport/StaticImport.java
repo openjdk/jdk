@@ -27,7 +27,7 @@
  * @summary add support for JSR 201's static import facility
  * @author gafter
  *
- * @compile -source 1.5 StaticImport.java
+ * @compile  StaticImport.java
  * @run main StaticImport
  */
 

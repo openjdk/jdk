@@ -27,11 +27,11 @@
  * @summary Constraints regarding annotation defaults
  * @author gafter
  *
- * @compile -source 1.5 A.java
- * @compile -source 1.5 B.java
- * @compile -source 1.5 C.java
- * @compile/fail -source 1.5 Derr.java
- * @compile/fail -source 1.5 Eerr.java
+ * @compile A.java
+ * @compile B.java
+ * @compile C.java
+ * @compile/fail Derr.java
+ * @compile/fail Eerr.java
  */
 
 public @interface A {

@@ -27,7 +27,7 @@
  * @summary Use ldc instruction for class literals
  * @author gafter
  *
- * @compile -target 1.5 ClassLit.java
+ * @compile -source 1.5 -target 1.5 ClassLit.java
  * @run main ClassLit
  */
 

@@ -827,8 +827,7 @@ CHARSETMAPPING_JARFILE = $(BUILDTOOLJARDIR)/charsetmapping.jar
 
 $(FILES_gensbcs_out): $(GENCSSRC)/SingleByte-X.java $(GENCSSRC)/sbcs
 	@$(prep-target)
-	$(BOOT_JAVA_CMD) -cp $(CHARSETMAPPING_JARFILE) build.tools.charsetmapping.GenerateSBCS \
-		$(GENCSSRC) $(SCS_GEN) sbcs
+	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE) $(GENCSSRC) $(SCS_GEN) sbcs
 
 # 
 # Generated file system implementation classes (Unix only)

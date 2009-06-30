@@ -27,7 +27,7 @@
  * @summary generics: type cast with instance of
  * @author gafter
  *
- * @compile -source 1.5 -Werror InstanceOf.java
+ * @compile  -Werror InstanceOf.java
  */
 
 class InstanceOf<T> {

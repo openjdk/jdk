@@ -26,9 +26,6 @@
  * @bug 4855355
  * @summary implement "foreach" loops as specified in JSR 201
  * @author gafter
- *
- * @compile -source 1.5 Foreach.java
- * @run main Foreach
  */
 
 import java.util.Iterator;

@@ -27,7 +27,7 @@
  * @summary implement "metadata" (attribute interfaces and program annotations)
  * @author gafter
  *
- * @compile/fail -source 1.5 Z13.java
+ * @compile/fail Z13.java
  */
 
 @interface An {

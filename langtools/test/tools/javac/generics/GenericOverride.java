@@ -27,7 +27,7 @@
  * @summary Cannot override non-trivial generic method
  * @author gafter
  *
- * @compile -source 1.5 GenericOverride.java
+ * @compile  GenericOverride.java
  */
 
 package generic.override;

@@ -27,14 +27,14 @@
  * @summary 1.4 javac should not accept the Covariant Return Type
  * @author gafter
  *
- * @compile      -source 1.5 CompatibleAbstracts1.java
- * @compile      -source 1.5 CompatibleAbstracts2.java
+ * @compile                  CompatibleAbstracts1.java
+ * @compile                  CompatibleAbstracts2.java
  * @compile      -source 1.4 CompatibleAbstracts2.java
- * @compile      -source 1.5 CompatibleAbstracts3.java
+ * @compile                  CompatibleAbstracts3.java
  * @compile/fail -source 1.4 CompatibleAbstracts3.java
- * @compile      -source 1.5 CompatibleAbstracts4.java
+ * @compile                  CompatibleAbstracts4.java
  * @compile/fail -source 1.4 CompatibleAbstracts4.java
- * @compile      -source 1.5 CompatibleAbstracts5.java
+ * @compile                  CompatibleAbstracts5.java
  * @compile/fail -source 1.4 CompatibleAbstracts5.java
  */
 
