@@ -1891,17 +1891,17 @@ RegMask Matcher::modL_proj_mask() {
 // The intptr_t operand types, defined by textual substitution.
 // (Cf. opto/type.hpp.  This lets us avoid many, many other ifdefs.)
 #ifdef _LP64
-#define immX     immL
-#define immX13   immL13
-#define immX13m7 immL13m7
-#define iRegX    iRegL
-#define g1RegX   g1RegL
+#define immX      immL
+#define immX13    immL13
+#define immX13m7  immL13m7
+#define iRegX     iRegL
+#define g1RegX    g1RegL
 #else
-#define immX     immI
-#define immX13   immI13
-#define immX13m7 immI13m7
-#define iRegX    iRegI
-#define g1RegX   g1RegI
+#define immX      immI
+#define immX13    immI13
+#define immX13m7  immI13m7
+#define iRegX     iRegI
+#define g1RegX    g1RegI
 #endif
 
 //----------ENCODING BLOCK-----------------------------------------------------
@@ -3446,6 +3446,15 @@ operand immI() %{
   interface(CONST_INTER);
 %}
 
+// Integer Immediate: 8-bit
+operand immI8() %{
+  predicate(Assembler::is_simm(n->get_int(), 8));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Integer Immediate: 13-bit
 operand immI13() %{
   predicate(Assembler::is_simm13(n->get_int()));
@@ -3462,6 +3471,15 @@ operand immI13m7() %{
   match(ConI);
   op_cost(0);
 
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: 16-bit
+operand immI16() %{
+  predicate(Assembler::is_simm(n->get_int(), 16));
+  match(ConI);
+  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -5544,7 +5562,7 @@ instruct loadUB(iRegI dst, memory mem) %{
   ins_encode %{
     __ ldub($mem$$Address, $dst$$Register);
   %}
-  ins_pipe(iload_mask_mem);
+  ins_pipe(iload_mem);
 %}
 
 // Load Unsigned Byte (8bit UNsigned) into a Long Register
@@ -5557,7 +5575,22 @@ instruct loadUB2L(iRegL dst, memory mem) %{
   ins_encode %{
     __ ldub($mem$$Address, $dst$$Register);
   %}
-  ins_pipe(iload_mask_mem);
+  ins_pipe(iload_mem);
+%}
+
+// Load Unsigned Byte (8 bit UNsigned) with 8-bit mask into Long Register
+instruct loadUB2L_immI8(iRegL dst, memory mem, immI8 mask) %{
+  match(Set dst (ConvI2L (AndI (LoadUB mem) mask)));
+  ins_cost(MEMORY_REF_COST + DEFAULT_COST);
+
+  size(2*4);
+  format %{ "LDUB   $mem,$dst\t# ubyte & 8-bit mask -> long\n\t"
+            "AND    $dst,$mask,$dst" %}
+  ins_encode %{
+    __ ldub($mem$$Address, $dst$$Register);
+    __ and3($dst$$Register, $mask$$constant, $dst$$Register);
+  %}
+  ins_pipe(iload_mem);
 %}
 
 // Load Short (16bit signed)
@@ -5610,7 +5643,7 @@ instruct loadUS(iRegI dst, memory mem) %{
   ins_encode %{
     __ lduh($mem$$Address, $dst$$Register);
   %}
-  ins_pipe(iload_mask_mem);
+  ins_pipe(iload_mem);
 %}
 
 // Load Unsigned Short/Char (16 bit UNsigned) to Byte (8 bit signed)
@@ -5636,7 +5669,56 @@ instruct loadUS2L(iRegL dst, memory mem) %{
   ins_encode %{
     __ lduh($mem$$Address, $dst$$Register);
   %}
-  ins_pipe(iload_mask_mem);
+  ins_pipe(iload_mem);
+%}
+
+// Load Unsigned Short/Char (16bit UNsigned) with mask 0xFF into a Long Register
+instruct loadUS2L_immI_255(iRegL dst, indOffset13m7 mem, immI_255 mask) %{
+  match(Set dst (ConvI2L (AndI (LoadUS mem) mask)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDUB   $mem+1,$dst\t! ushort/char & 0xFF -> long" %}
+  ins_encode %{
+    __ ldub($mem$$Address, $dst$$Register, 1);  // LSB is index+1 on BE
+  %}
+  ins_pipe(iload_mem);
+%}
+
+// Load Unsigned Short/Char (16bit UNsigned) with a 13-bit mask into a Long Register
+instruct loadUS2L_immI13(iRegL dst, memory mem, immI13 mask) %{
+  match(Set dst (ConvI2L (AndI (LoadUS mem) mask)));
+  ins_cost(MEMORY_REF_COST + DEFAULT_COST);
+
+  size(2*4);
+  format %{ "LDUH   $mem,$dst\t! ushort/char & 13-bit mask -> long\n\t"
+            "AND    $dst,$mask,$dst" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ lduh($mem$$Address, Rdst);
+    __ and3(Rdst, $mask$$constant, Rdst);
+  %}
+  ins_pipe(iload_mem);
+%}
+
+// Load Unsigned Short/Char (16bit UNsigned) with a 16-bit mask into a Long Register
+instruct loadUS2L_immI16(iRegL dst, memory mem, immI16 mask, iRegL tmp) %{
+  match(Set dst (ConvI2L (AndI (LoadUS mem) mask)));
+  effect(TEMP dst, TEMP tmp);
+  ins_cost(MEMORY_REF_COST + 2*DEFAULT_COST);
+
+  size(3*4);
+  format %{ "LDUH   $mem,$dst\t! ushort/char & 16-bit mask -> long\n\t"
+            "SET    $mask,$tmp\n\t"
+            "AND    $dst,$tmp,$dst" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rtmp = $tmp$$Register;
+    __ lduh($mem$$Address, Rdst);
+    __ set($mask$$constant, Rtmp);
+    __ and3(Rdst, Rtmp, Rdst);
+  %}
+  ins_pipe(iload_mem);
 %}
 
 // Load Integer
@@ -5717,6 +5799,68 @@ instruct loadI2L(iRegL dst, memory mem) %{
   format %{ "LDSW   $mem,$dst\t! int -> long" %}
   ins_encode %{
     __ ldsw($mem$$Address, $dst$$Register);
+  %}
+  ins_pipe(iload_mask_mem);
+%}
+
+// Load Integer with mask 0xFF into a Long Register
+instruct loadI2L_immI_255(iRegL dst, indOffset13m7 mem, immI_255 mask) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDUB   $mem+3,$dst\t! int & 0xFF -> long" %}
+  ins_encode %{
+    __ ldub($mem$$Address, $dst$$Register, 3);  // LSB is index+3 on BE
+  %}
+  ins_pipe(iload_mem);
+%}
+
+// Load Integer with mask 0xFFFF into a Long Register
+instruct loadI2L_immI_65535(iRegL dst, indOffset13m7 mem, immI_65535 mask) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+  ins_cost(MEMORY_REF_COST);
+
+  size(4);
+  format %{ "LDUH   $mem+2,$dst\t! int & 0xFFFF -> long" %}
+  ins_encode %{
+    __ lduh($mem$$Address, $dst$$Register, 2);  // LSW is index+2 on BE
+  %}
+  ins_pipe(iload_mem);
+%}
+
+// Load Integer with a 13-bit mask into a Long Register
+instruct loadI2L_immI13(iRegL dst, memory mem, immI13 mask) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+  ins_cost(MEMORY_REF_COST + DEFAULT_COST);
+
+  size(2*4);
+  format %{ "LDUW   $mem,$dst\t! int & 13-bit mask -> long\n\t"
+            "AND    $dst,$mask,$dst" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    __ lduw($mem$$Address, Rdst);
+    __ and3(Rdst, $mask$$constant, Rdst);
+  %}
+  ins_pipe(iload_mem);
+%}
+
+// Load Integer with a 32-bit mask into a Long Register
+instruct loadI2L_immI(iRegL dst, memory mem, immI mask, iRegL tmp) %{
+  match(Set dst (ConvI2L (AndI (LoadI mem) mask)));
+  effect(TEMP dst, TEMP tmp);
+  ins_cost(MEMORY_REF_COST + 2*DEFAULT_COST);
+
+  size(3*4);
+  format %{ "LDUW   $mem,$dst\t! int & 32-bit mask -> long\n\t"
+            "SET    $mask,$tmp\n\t"
+            "AND    $dst,$tmp,$dst" %}
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Register Rtmp = $tmp$$Register;
+    __ lduw($mem$$Address, Rdst);
+    __ set($mask$$constant, Rtmp);
+    __ and3(Rdst, Rtmp, Rdst);
   %}
   ins_pipe(iload_mem);
 %}
