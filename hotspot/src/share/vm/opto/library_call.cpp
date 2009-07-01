@@ -2393,7 +2393,7 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
   case T_OBJECT:
      // reference stores need a store barrier.
     // (They don't if CAS fails, but it isn't worth checking.)
-    pre_barrier(control(), base, adr, alias_idx, newval, value_type->is_oopptr(), T_OBJECT);
+    pre_barrier(control(), base, adr, alias_idx, newval, value_type->make_oopptr(), T_OBJECT);
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
       Node *newval_enc = _gvn.transform(new (C, 2) EncodePNode(newval, newval->bottom_type()->make_narrowoop()));

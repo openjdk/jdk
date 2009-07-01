@@ -3484,27 +3484,27 @@ const TypeNarrowOop* TypeNarrowOop::make(const TypePtr* type) {
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeNarrowOop::hash(void) const {
-  return _ooptype->hash() + 7;
+  return _ptrtype->hash() + 7;
 }
 
 
 bool TypeNarrowOop::eq( const Type *t ) const {
   const TypeNarrowOop* tc = t->isa_narrowoop();
   if (tc != NULL) {
-    if (_ooptype->base() != tc->_ooptype->base()) {
+    if (_ptrtype->base() != tc->_ptrtype->base()) {
       return false;
     }
-    return tc->_ooptype->eq(_ooptype);
+    return tc->_ptrtype->eq(_ptrtype);
   }
   return false;
 }
 
 bool TypeNarrowOop::singleton(void) const {    // TRUE if type is a singleton
-  return _ooptype->singleton();
+  return _ptrtype->singleton();
 }
 
 bool TypeNarrowOop::empty(void) const {
-  return _ooptype->empty();
+  return _ptrtype->empty();
 }
 
 //------------------------------xmeet------------------------------------------
@@ -3538,7 +3538,7 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
     return this;
 
   case NarrowOop: {
-    const Type* result = _ooptype->xmeet(t->make_ptr());
+    const Type* result = _ptrtype->xmeet(t->make_ptr());
     if (result->isa_ptr()) {
       return TypeNarrowOop::make(result->is_ptr());
     }
@@ -3554,13 +3554,13 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
 }
 
 const Type *TypeNarrowOop::xdual() const {    // Compute dual right now.
-  const TypePtr* odual = _ooptype->dual()->is_ptr();
+  const TypePtr* odual = _ptrtype->dual()->is_ptr();
   return new TypeNarrowOop(odual);
 }
 
 const Type *TypeNarrowOop::filter( const Type *kills ) const {
   if (kills->isa_narrowoop()) {
-    const Type* ft =_ooptype->filter(kills->is_narrowoop()->_ooptype);
+    const Type* ft =_ptrtype->filter(kills->is_narrowoop()->_ptrtype);
     if (ft->empty())
       return Type::TOP;           // Canonical empty value
     if (ft->isa_ptr()) {
@@ -3568,7 +3568,7 @@ const Type *TypeNarrowOop::filter( const Type *kills ) const {
     }
     return ft;
   } else if (kills->isa_ptr()) {
-    const Type* ft = _ooptype->join(kills);
+    const Type* ft = _ptrtype->join(kills);
     if (ft->empty())
       return Type::TOP;           // Canonical empty value
     return ft;
@@ -3579,13 +3579,13 @@ const Type *TypeNarrowOop::filter( const Type *kills ) const {
 
 
 intptr_t TypeNarrowOop::get_con() const {
-  return _ooptype->get_con();
+  return _ptrtype->get_con();
 }
 
 #ifndef PRODUCT
 void TypeNarrowOop::dump2( Dict & d, uint depth, outputStream *st ) const {
   st->print("narrowoop: ");
-  _ooptype->dump2(d, depth, st);
+  _ptrtype->dump2(d, depth, st);
 }
 #endif
 
