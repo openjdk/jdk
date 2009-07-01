@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4528128
+   @bug 4528128 6846616
    @summary Test if reading InputStream of a closed ZipFile crashes VM
    @author kladko
    */
@@ -40,7 +40,7 @@ public class ReadAfterClose {
         zf.close();
         try {
             in.read();
-        } catch (ZipException e) {
+        } catch (IOException e) {
             return;
         }
         throw new Exception("Test failed.");

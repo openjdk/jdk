@@ -1,12 +1,10 @@
 /*
- * Copyright 1998-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,22 +21,26 @@
  * have any questions.
  */
 
-package sun.io;
-
-import sun.nio.cs.ext.MS932DB;
-
-/**
- * Tables and data to convert MS932 to Unicode
- *
- * @author  ConverterGenerator tool
+/*
+ * @test
+ * @bug 6855671
+ * @summary DerOutputStream encodes negative integer incorrectly
  */
+import sun.security.util.DerOutputStream;
 
-abstract class ByteToCharMS932DB extends ByteToCharDoubleByte {
+public class NegInt {
 
-    public ByteToCharMS932DB() {
-        super.index1 = MS932DB.Decoder.index1;
-        super.index2 = MS932DB.Decoder.index2;
-        start = 0x40;
-        end = 0xFC;
+    public static void main(String[] args) throws Exception {
+        DerOutputStream out;
+        out = new DerOutputStream();
+        out.putInteger(-128);
+        if(out.toByteArray().length != 3) {
+            throw new Exception("-128 encode error");
+        }
+        out = new DerOutputStream();
+        out.putInteger(-129);
+        if(out.toByteArray().length != 4) {
+            throw new Exception("-129 encode error");
+        }
     }
 }

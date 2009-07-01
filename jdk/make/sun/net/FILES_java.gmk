@@ -24,7 +24,6 @@
 #
 
 FILES_java = \
-        sun/net/ApplicationProxy.java \
 	sun/net/InetAddressCachePolicy.java \
 	sun/net/URLCanonicalizer.java \
 	sun/net/NetworkClient.java \
@@ -67,6 +66,9 @@ FILES_java = \
 	sun/net/www/protocol/file/Handler.java \
 	sun/net/www/protocol/file/FileURLConnection.java \
 	sun/net/www/http/HttpClient.java \
+	sun/net/www/http/HttpCapture.java \
+	sun/net/www/http/HttpCaptureInputStream.java \
+	sun/net/www/http/HttpCaptureOutputStream.java \
 	sun/net/www/http/PosterOutputStream.java \
 	sun/net/www/http/ChunkedInputStream.java \
 	sun/net/www/http/ChunkedOutputStream.java \
@@ -76,6 +78,7 @@ FILES_java = \
 	sun/net/www/http/Hurryable.java \
 	sun/net/www/protocol/http/Handler.java \
 	sun/net/www/protocol/http/HttpURLConnection.java \
+	sun/net/www/protocol/http/HttpLogFormatter.java \
 	sun/net/www/protocol/http/HttpAuthenticator.java \
 	sun/net/www/protocol/http/AuthenticationHeader.java \
 	sun/net/www/protocol/http/AuthenticationInfo.java \

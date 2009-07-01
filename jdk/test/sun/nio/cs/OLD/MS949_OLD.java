@@ -27,20 +27,18 @@
 /*
  */
 
-package sun.nio.cs.ext;
-
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.HistoricallyNamedCharset;
 
-public class MS949
+public class MS949_OLD
     extends Charset implements HistoricallyNamedCharset
 {
 
-    public MS949() {
-        super("x-windows-949", ExtendedCharsets.aliasesFor("x-windows-949"));
+    public MS949_OLD() {
+        super("x-windows-949-OLD", null);
     }
 
     public String historicalName() {
@@ -49,7 +47,7 @@ public class MS949
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof MS949));
+                || (cs instanceof MS949_OLD));
     }
 
     public CharsetDecoder newDecoder() {
@@ -70,16 +68,16 @@ public class MS949
      */
 
     public short[] getDecoderIndex1() {
-        return MS949.Decoder.index1;
+        return Decoder.index1;
     }
     public String[] getDecoderIndex2() {
-        return MS949.Decoder.index2;
+        return Decoder.index2;
     }
     public short[] getEncoderIndex1() {
-        return MS949.Encoder.index1;
+        return Encoder.index1;
     }
     public String[] getEncoderIndex2() {
-        return MS949.Encoder.index2;
+        return Encoder.index2;
     }
 
 

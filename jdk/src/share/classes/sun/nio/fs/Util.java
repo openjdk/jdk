@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,37 @@
  * have any questions.
  */
 
-package sun.io;
-
-import sun.nio.cs.ext.MS932DB;
+package sun.nio.fs;
 
 /**
- * Tables and data to convert Unicode to MS932
- *
- * @author  ConverterGenerator tool
+ * Utility methods
  */
 
-abstract class CharToByteMS932DB extends CharToByteDoubleByte {
+class Util {
+    private Util() { }
 
-    public CharToByteMS932DB() {
-        super.index1 = MS932DB.Encoder.index1;
-        super.index2 = MS932DB.Encoder.index2;
+    /**
+     * Splits a string around the given character. The array returned by this
+     * method contains each substring that is terminated by the character. Use
+     * for simple string spilting cases when needing to avoid loading regex.
+     */
+    static String[] split(String s, char c) {
+        int count = 0;
+        for (int i=0; i<s.length(); i++) {
+            if (s.charAt(i) == c)
+                count++;
+        }
+        String[] result = new String[count+1];
+        int n = 0;
+        int last = 0;
+        for (int i=0; i<s.length(); i++) {
+            if (s.charAt(i) == c) {
+                result[n++] = s.substring(last, i);
+                last = i + 1;
+            }
+        }
+        result[n] = s.substring(last, s.length());
+        return result;
+
     }
 }
