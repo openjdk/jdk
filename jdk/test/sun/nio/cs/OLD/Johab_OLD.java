@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2002-2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,24 +26,23 @@
 /*
  */
 
-package sun.nio.cs.ext;
+//package sun.nio.cs.ext;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharacterCodingException;
 
-public class Johab
-    extends Charset
+public class Johab_OLD  extends Charset
 {
 
-    public Johab() {
-        super("x-Johab", ExtendedCharsets.aliasesFor("x-Johab"));
+    public Johab_OLD() {
+        super("x-Johab-OLD", null);
     }
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof Johab));
+                || (cs instanceof Johab_OLD));
     }
 
     public CharsetDecoder newDecoder() {
