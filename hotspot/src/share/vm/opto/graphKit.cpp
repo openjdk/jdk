@@ -1480,7 +1480,7 @@ Node* GraphKit::store_oop_to_unknown(Node* ctl,
       }
     }
   } else if (adr_type->isa_aryptr()) {
-    val_type = adr_type->is_aryptr()->elem()->isa_oopptr();
+    val_type = adr_type->is_aryptr()->elem()->make_oopptr();
   }
   if (val_type == NULL) {
     val_type = TypeInstPtr::BOTTOM;

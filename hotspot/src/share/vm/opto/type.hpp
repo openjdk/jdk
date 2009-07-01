@@ -232,6 +232,11 @@ public:
 
   // Returns this ptr type or the equivalent ptr type for this compressed pointer.
   const TypePtr* make_ptr() const;
+
+  // Returns this oopptr type or the equivalent oopptr type for this compressed pointer.
+  // Asserts if the underlying type is not an oopptr or narrowoop.
+  const TypeOopPtr* make_oopptr() const;
+
   // Returns this compressed pointer or the equivalent compressed version
   // of this pointer type.
   const TypeNarrowOop* make_narrowoop() const;
@@ -932,13 +937,13 @@ public:
 // between the normal and the compressed form.
 class TypeNarrowOop : public Type {
 protected:
-  const TypePtr* _ooptype; // Could be TypePtr::NULL_PTR
+  const TypePtr* _ptrtype; // Could be TypePtr::NULL_PTR
 
-  TypeNarrowOop( const TypePtr* ooptype): Type(NarrowOop),
-    _ooptype(ooptype) {
-    assert(ooptype->offset() == 0 ||
-           ooptype->offset() == OffsetBot ||
-           ooptype->offset() == OffsetTop, "no real offsets");
+  TypeNarrowOop( const TypePtr* ptrtype): Type(NarrowOop),
+    _ptrtype(ptrtype) {
+    assert(ptrtype->offset() == 0 ||
+           ptrtype->offset() == OffsetBot ||
+           ptrtype->offset() == OffsetTop, "no real offsets");
   }
 public:
   virtual bool eq( const Type *t ) const;
@@ -962,8 +967,8 @@ public:
   }
 
   // returns the equivalent ptr type for this compressed pointer
-  const TypePtr *make_oopptr() const {
-    return _ooptype;
+  const TypePtr *get_ptrtype() const {
+    return _ptrtype;
   }
 
   static const TypeNarrowOop *BOTTOM;
@@ -1150,8 +1155,12 @@ inline const TypeKlassPtr *Type::is_klassptr() const {
 }
 
 inline const TypePtr* Type::make_ptr() const {
-  return (_base == NarrowOop) ? is_narrowoop()->make_oopptr() :
+  return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype() :
                                 (isa_ptr() ? is_ptr() : NULL);
+}
+
+inline const TypeOopPtr* Type::make_oopptr() const {
+  return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype()->is_oopptr() : is_oopptr();
 }
 
 inline const TypeNarrowOop* Type::make_narrowoop() const {
