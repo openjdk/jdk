@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.beans;
 
+import com.sun.beans.finder.BeanInfoFinder;
 import com.sun.beans.finder.ClassFinder;
 
 import java.lang.ref.Reference;
@@ -45,6 +46,8 @@ import java.util.EventListener;
 import java.util.List;
 import java.util.WeakHashMap;
 import java.util.TreeMap;
+
+import sun.awt.AppContext;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -137,10 +140,6 @@ public class Introspector {
     // events maps from String names to EventSetDescriptors
     private Map events;
 
-    private final static String DEFAULT_INFO_PATH = "sun.beans.infos";
-
-    private static String[] searchPath = { DEFAULT_INFO_PATH };
-
     private final static EventSetDescriptor[] EMPTY_EVENTSETDESCRIPTORS = new EventSetDescriptor[0];
 
     static final String ADD_PREFIX = "add";
@@ -149,7 +148,7 @@ public class Introspector {
     static final String SET_PREFIX = "set";
     static final String IS_PREFIX = "is";
 
-    private static final String BEANINFO_SUFFIX = "BeanInfo";
+    private static final Object FINDER_KEY = new Object();
 
     //======================================================================
     //                          Public methods
@@ -309,13 +308,11 @@ public class Introspector {
      *          Sun implementation initially sets to {"sun.beans.infos"}.
      */
 
-    public static synchronized String[] getBeanInfoSearchPath() {
-        // Return a copy of the searchPath.
-        String result[] = new String[searchPath.length];
-        for (int i = 0; i < searchPath.length; i++) {
-            result[i] = searchPath[i];
+    public static String[] getBeanInfoSearchPath() {
+        BeanInfoFinder finder = getFinder();
+        synchronized (finder) {
+            return finder.getPackages();
         }
-        return result;
     }
 
     /**
@@ -334,12 +331,15 @@ public class Introspector {
      * @see SecurityManager#checkPropertiesAccess
      */
 
-    public static synchronized void setBeanInfoSearchPath(String path[]) {
+    public static void setBeanInfoSearchPath(String[] path) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        searchPath = path;
+        BeanInfoFinder finder = getFinder();
+        synchronized (finder) {
+            finder.setPackages(path);
+        }
     }
 
 
@@ -447,67 +447,14 @@ public class Introspector {
      * then it checks to see if the class is its own BeanInfo. Finally,
      * the BeanInfo search path is prepended to the class and searched.
      *
+     * @param beanClass  the class type of the bean
      * @return Instance of an explicit BeanInfo class or null if one isn't found.
      */
-    private static synchronized BeanInfo findExplicitBeanInfo(Class beanClass) {
-        String name = beanClass.getName() + BEANINFO_SUFFIX;
-        try {
-            return (java.beans.BeanInfo)instantiate(beanClass, name);
-        } catch (Exception ex) {
-            // Just drop through
-
+    private static BeanInfo findExplicitBeanInfo(Class beanClass) {
+        BeanInfoFinder finder = getFinder();
+        synchronized (finder) {
+            return finder.find(beanClass);
         }
-        // Now try checking if the bean is its own BeanInfo.
-        try {
-            if (isSubclass(beanClass, java.beans.BeanInfo.class)) {
-                return (java.beans.BeanInfo)beanClass.newInstance();
-            }
-        } catch (Exception ex) {
-            // Just drop through
-        }
-        // Now try looking for <searchPath>.fooBeanInfo
-        name = name.substring(name.lastIndexOf('.')+1);
-
-        for (int i = 0; i < searchPath.length; i++) {
-            // This optimization will only use the BeanInfo search path if is has changed
-            // from the original or trying to get the ComponentBeanInfo.
-            if (!DEFAULT_INFO_PATH.equals(searchPath[i]) ||
-                DEFAULT_INFO_PATH.equals(searchPath[i]) && "ComponentBeanInfo".equals(name)) {
-                try {
-                    String fullName = searchPath[i] + "." + name;
-                    java.beans.BeanInfo bi = (java.beans.BeanInfo)instantiate(beanClass, fullName);
-
-                    // Make sure that the returned BeanInfo matches the class.
-                    if (bi.getBeanDescriptor() != null) {
-                        if (bi.getBeanDescriptor().getBeanClass() == beanClass) {
-                            return bi;
-                        }
-                    } else if (bi.getPropertyDescriptors() != null) {
-                        PropertyDescriptor[] pds = bi.getPropertyDescriptors();
-                        for (int j = 0; j < pds.length; j++) {
-                            Method method = pds[j].getReadMethod();
-                            if (method == null) {
-                                method = pds[j].getWriteMethod();
-                            }
-                            if (method != null && method.getDeclaringClass() == beanClass) {
-                                return bi;
-                            }
-                        }
-                    } else if (bi.getMethodDescriptors() != null) {
-                        MethodDescriptor[] mds = bi.getMethodDescriptors();
-                        for (int j = 0; j < mds.length; j++) {
-                            Method method = mds[j].getMethod();
-                            if (method != null && method.getDeclaringClass() == beanClass) {
-                                return bi;
-                            }
-                        }
-                    }
-                } catch (Exception ex) {
-                    // Silently ignore any errors.
-                }
-            }
-        }
-        return null;
     }
 
     /**
@@ -1483,6 +1430,16 @@ public class Introspector {
         return false;
     }
 
+    private static BeanInfoFinder getFinder() {
+        AppContext context = AppContext.getAppContext();
+        Object object = context.get(FINDER_KEY);
+        if (object instanceof BeanInfoFinder) {
+            return (BeanInfoFinder) object;
+        }
+        BeanInfoFinder finder = new BeanInfoFinder();
+        context.put(FINDER_KEY, finder);
+        return finder;
+    }
 
     /**
      * Try to create an instance of a named class.
