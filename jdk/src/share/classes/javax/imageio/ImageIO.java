@@ -28,6 +28,7 @@ package javax.imageio;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
+import java.io.FilePermission;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -195,13 +196,22 @@ public final class ImageIO {
                     } else {
                         cachepath = getTempDir();
 
-                        if (cachepath == null) {
+                        if (cachepath == null || cachepath.isEmpty()) {
                             getCacheInfo().setHasPermission(Boolean.FALSE);
                             return false;
                         }
                     }
 
-                    security.checkWrite(cachepath);
+                    // we have to check whether we can read, write,
+                    // and delete cache files.
+                    // So, compose cache file path and check it.
+                    String filepath = cachepath;
+                    if (!filepath.endsWith(File.separator)) {
+                        filepath += File.separator;
+                    }
+                    filepath += "*";
+
+                    security.checkPermission(new FilePermission(filepath, "read, write, delete"));
                 }
             } catch (SecurityException e) {
                 getCacheInfo().setHasPermission(Boolean.FALSE);
