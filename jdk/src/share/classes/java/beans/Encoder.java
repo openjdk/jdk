@@ -246,12 +246,11 @@ public class Encoder {
         for (int i = 0; i < oldArgs.length; i++) {
             newArgs[i] = writeObject1(oldArgs[i]);
         }
-        if (oldExp.getClass() == Statement.class) {
-            return new Statement(newTarget, oldExp.getMethodName(), newArgs);
-        }
-        else {
-            return new Expression(newTarget, oldExp.getMethodName(), newArgs);
-        }
+        Statement newExp = Statement.class.equals(oldExp.getClass())
+                ? new Statement(newTarget, oldExp.getMethodName(), newArgs)
+                : new Expression(newTarget, oldExp.getMethodName(), newArgs);
+        newExp.loader = oldExp.loader;
+        return newExp;
     }
 
     /**
