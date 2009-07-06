@@ -27,7 +27,7 @@
  * @summary the type of x.getClass() is no longer Class<? extends X>
  * @author gafter
  *
- * @compile/fail -source 1.5 GetClass.java
+ * @compile/fail  GetClass.java
  */
 
 public class GetClass {

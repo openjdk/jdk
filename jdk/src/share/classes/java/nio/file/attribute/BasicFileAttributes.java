@@ -81,13 +81,13 @@ public interface BasicFileAttributes {
     boolean isDirectory();
 
     /**
-     * Tells whether the file is a symbolic-link.
+     * Tells whether the file is a symbolic link.
      */
     boolean isSymbolicLink();
 
     /**
      * Tells whether the file is something other than a regular file, directory,
-     * or link.
+     * or symbolic link.
      */
     boolean isOther();
 

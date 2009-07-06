@@ -1,4 +1,2 @@
-T4093617.java:12: java.lang.Object has no superclass
-    Object() { super(); }
-               ^
+T4093617.java:12:16: compiler.err.no.superclass: java.lang.Object
 1 error

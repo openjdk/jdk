@@ -27,8 +27,8 @@
  * @summary javac-generated code doesn't obey binary compatibility for enums
  * @author gafter
  *
- * @compile -source 1.5 EnumSwitch.java
- * @compile -source 1.5 Color2.java
+ * @compile EnumSwitch.java
+ * @compile Color2.java
  * @run main EnumSwitch
  */
 

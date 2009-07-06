@@ -27,7 +27,7 @@
  * @summary soundness problem with failure to subsitute wildcard as type formal argument
  * @author gafter
  *
- * @compile/fail -source 1.5 Capture2.java
+ * @compile/fail Capture2.java
  */
 
 package capture2;

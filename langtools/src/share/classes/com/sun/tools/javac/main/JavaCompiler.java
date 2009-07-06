@@ -391,6 +391,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             (options.get("shouldStopPolicy") != null)
             ? CompileState.valueOf(options.get("shouldStopPolicy"))
             : null;
+        if (options.get("oldDiags") == null)
+            log.setDiagnosticFormatter(RichDiagnosticFormatter.instance(context));
     }
 
     /* Switches:

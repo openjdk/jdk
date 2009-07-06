@@ -51,14 +51,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import sun.net.*;
 import sun.net.www.*;
 import sun.net.www.http.HttpClient;
 import sun.net.www.http.PosterOutputStream;
 import sun.net.www.http.ChunkedInputStream;
 import sun.net.www.http.ChunkedOutputStream;
+import sun.net.www.http.HttpCapture;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import java.net.MalformedURLException;
@@ -70,8 +69,6 @@ import java.nio.ByteBuffer;
 
 
 public class HttpURLConnection extends java.net.HttpURLConnection {
-
-    private static Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
 
     static String HTTP_CONNECT = "CONNECT";
 
@@ -304,14 +301,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<PasswordAuthentication>() {
                 public PasswordAuthentication run() {
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.finest("Requesting Authentication: host =" + host + " url = " + url);
+                    if (HttpCapture.isLoggable("FINEST")) {
+                        HttpCapture.finest("Requesting Authentication: host =" + host + " url = " + url);
                     }
                     PasswordAuthentication pass = Authenticator.requestPasswordAuthentication(
                         host, addr, port, protocol,
                         prompt, scheme, url, authType);
-                    if (pass != null && logger.isLoggable(Level.FINEST)) {
-                        logger.finest("Authentication returned: " + pass.toString());
+                    if (HttpCapture.isLoggable("FINEST")) {
+                        HttpCapture.finest("Authentication returned: " + (pass != null ? pass.toString() : "null"));
                     }
                     return pass;
                 }
@@ -466,8 +463,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             setRequests=true;
         }
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(requests.toString());
+        if (HttpCapture.isLoggable("FINE")) {
+            HttpCapture.fine(requests.toString());
         }
         http.writeRequests(requests, poster);
         if (ps.checkError()) {
@@ -731,11 +728,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         && !(cachedResponse instanceof SecureCacheResponse)) {
                         cachedResponse = null;
                     }
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.finest("Cache Request for " + uri + " / " + getRequestMethod());
-                        if (cachedResponse != null) {
-                            logger.finest("From cache: "+cachedResponse.toString());
-                        }
+                    if (HttpCapture.isLoggable("FINEST")) {
+                        HttpCapture.finest("Cache Request for " + uri + " / " + getRequestMethod());
+                        HttpCapture.finest("From cache: " + (cachedResponse != null ? cachedResponse.toString() : "null"));
                     }
                     if (cachedResponse != null) {
                         cachedHeaders = mapToMessageHeader(cachedResponse.getHeaders());
@@ -774,8 +769,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                              });
                 if (sel != null) {
                     URI uri = sun.net.www.ParseUtil.toURI(url);
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.finest("ProxySelector Request for " + uri);
+                    if (HttpCapture.isLoggable("FINEST")) {
+                        HttpCapture.finest("ProxySelector Request for " + uri);
                     }
                     Iterator<Proxy> it = sel.select(uri).iterator();
                     Proxy p;
@@ -791,9 +786,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                 http = getNewHttpClient(url, p, connectTimeout, false);
                                 http.setReadTimeout(readTimeout);
                             }
-                            if (logger.isLoggable(Level.FINEST)) {
+                            if (HttpCapture.isLoggable("FINEST")) {
                                 if (p != null) {
-                                    logger.finest("Proxy used: " + p.toString());
+                                    HttpCapture.finest("Proxy used: " + p.toString());
                                 }
                             }
                             break;
@@ -1023,15 +1018,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             URI uri = ParseUtil.toURI(url);
             if (uri != null) {
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.finest("CookieHandler request for " + uri);
+                if (HttpCapture.isLoggable("FINEST")) {
+                    HttpCapture.finest("CookieHandler request for " + uri);
                 }
                 Map<String, List<String>> cookies
                     = cookieHandler.get(
                         uri, requests.getHeaders(EXCLUDE_HEADERS));
                 if (!cookies.isEmpty()) {
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.finest("Cookies retrieved: " + cookies.toString());
+                    if (HttpCapture.isLoggable("FINEST")) {
+                        HttpCapture.finest("Cookies retrieved: " + cookies.toString());
                     }
                     for (Map.Entry<String, List<String>> entry :
                              cookies.entrySet()) {
@@ -1162,8 +1157,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     writeRequests();
                 }
                 http.parseHTTP(responses, pi, this);
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(responses.toString());
+                if (HttpCapture.isLoggable("FINE")) {
+                    HttpCapture.fine(responses.toString());
                 }
                 inputStream = http.getInputStream();
 
@@ -1607,8 +1602,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 http.parseHTTP(responses, null, this);
 
                 /* Log the response to the CONNECT */
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(responses.toString());
+                if (HttpCapture.isLoggable("FINE")) {
+                    HttpCapture.fine(responses.toString());
                 }
 
                 statusLine = responses.getValue(0);
@@ -1735,8 +1730,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         setPreemptiveProxyAuthentication(requests);
 
          /* Log the CONNECT request */
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(requests.toString());
+        if (HttpCapture.isLoggable("FINE")) {
+            HttpCapture.fine(requests.toString());
         }
 
         http.writeRequests(requests, null);
@@ -1880,8 +1875,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
             }
         }
-        if (logger.isLoggable(Level.FINER)) {
-            logger.finer("Proxy Authentication for " + authhdr.toString() +" returned " + ret.toString());
+        if (HttpCapture.isLoggable("FINER")) {
+            HttpCapture.finer("Proxy Authentication for " + authhdr.toString() +" returned " + (ret != null ? ret.toString() : "null"));
         }
         return ret;
     }
@@ -2010,8 +2005,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 }
             }
         }
-        if (logger.isLoggable(Level.FINER)) {
-            logger.finer("Server Authentication for " + authhdr.toString() +" returned " + ret.toString());
+        if (HttpCapture.isLoggable("FINER")) {
+            HttpCapture.finer("Server Authentication for " + authhdr.toString() +" returned " + (ret != null ? ret.toString() : "null"));
         }
         return ret;
     }
@@ -2086,8 +2081,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         if (streaming()) {
             throw new HttpRetryException (RETRY_MSG3, stat, loc);
         }
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine("Redirected from " + url + " to " + locUrl);
+        if (HttpCapture.isLoggable("FINE")) {
+            HttpCapture.fine("Redirected from " + url + " to " + locUrl);
         }
 
         // clear out old response headers!!!!

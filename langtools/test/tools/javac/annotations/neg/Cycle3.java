@@ -27,7 +27,7 @@
  * @summary javac allows cyclic annotation interfaces with arrays
  * @author gafter
  *
- * @compile/fail -source 1.5 Cycle3.java
+ * @compile/fail Cycle3.java
  */
 
 package cycle3;

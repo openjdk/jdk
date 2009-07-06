@@ -25,20 +25,39 @@
  * @test
  * @bug 6405099
  * @summary Compiler crashes when javac encounters /usr/jdk/packges/lib/ext with no 777 permissions
- *
- * @ignore causes NPE in Java Test
- * @run main T6405099
- * @compile -extdirs bad T6405099.java
  */
 
-import java.io.File;
+import java.io.*;
 
 public class T6405099
 {
     public static void main(String[] args) {
         File bad = new File("bad");
-        bad.mkdir();
-        bad.setReadable(false);
-        bad.setExecutable(false);
+        try {
+            bad.mkdir();
+            bad.setReadable(false);
+            bad.setExecutable(false);
+
+            test(bad);
+
+        } finally {
+            bad.setExecutable(true);
+            bad.setReadable(true);
+        }
+    }
+
+    static void test(File dir) {
+        String[] args = {
+            "-extdirs", dir.getPath(), "-d", ".",
+            new File(System.getProperty("test.src", "."), "T6405099.java").getPath()
+        };
+
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        int rc = com.sun.tools.javac.Main.compile(args, pw);
+        if (rc != 0)
+            throw new Error("compilation failed");
+
+        System.out.println(sw);
     }
 }

@@ -27,7 +27,7 @@
  * @summary Generics: assignment of Class to type parm's default should elicit error
  * @author never
  *
- * @compile/fail -source 1.5 ClassToTypeParm.java
+ * @compile/fail ClassToTypeParm.java
  */
 
 class ClassToTypeParm<T> {

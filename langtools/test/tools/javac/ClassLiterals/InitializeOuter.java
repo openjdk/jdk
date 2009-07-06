@@ -27,7 +27,7 @@
  * @summary Using a class literal causes outermost class to be initialized early
  * @author gafter
  *
- * @compile -source 1.4 -target 1.4.2 InitializeOuter.java
+ * @compile InitializeOuter.java
  * @run main InitializeOuter
  */
 

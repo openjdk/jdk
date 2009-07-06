@@ -27,7 +27,7 @@
  * @summary generics: problem with methods when type parameter doesn't appear in signature
  * @author gafter
  *
- * @compile -source 1.5 T4711570.java
+ * @compile  T4711570.java
  */
 
 class T4711570 {

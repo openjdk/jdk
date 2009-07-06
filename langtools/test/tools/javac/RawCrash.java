@@ -27,7 +27,7 @@
  * @summary compiler crash with raw instantiation of generic inner class
  * @author gafter
  *
- * @compile -source 1.5 RawCrash.java
+ * @compile RawCrash.java
  */
 
 class A<E> {

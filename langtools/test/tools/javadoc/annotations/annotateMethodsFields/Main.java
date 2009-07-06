@@ -28,7 +28,7 @@
  *          annotation type elements.
  *          Test an annotation type with a type nested within.
  * @library ../../lib
- * @compile -source 1.5 ../../lib/Tester.java Main.java
+ * @compile  ../../lib/Tester.java Main.java
  * @run main Main
  */
 

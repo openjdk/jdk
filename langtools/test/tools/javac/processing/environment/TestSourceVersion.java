@@ -34,6 +34,8 @@
  * @compile -processor TestSourceVersion -proc:only -source   5 -AExpectedVersion=RELEASE_5 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.6 -AExpectedVersion=RELEASE_6 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source   6 -AExpectedVersion=RELEASE_6 HelloWorld.java
+ * @compile -processor TestSourceVersion -proc:only -source 1.7 -AExpectedVersion=RELEASE_7 HelloWorld.java
+ * @compile -processor TestSourceVersion -proc:only -source   7 -AExpectedVersion=RELEASE_7 HelloWorld.java
  */
 
 import java.util.Set;
