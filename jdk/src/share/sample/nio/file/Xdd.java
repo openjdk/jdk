@@ -59,7 +59,7 @@ public class Xdd {
 
         // check that user defined attributes are supported by the file system
         FileStore store = file.getFileStore();
-        if (!store.supportsFileAttributeView("xattr")) {
+        if (!store.supportsFileAttributeView("user")) {
             System.err.format("UserDefinedFileAttributeView not supported on %s\n", store);
             System.exit(-1);
 

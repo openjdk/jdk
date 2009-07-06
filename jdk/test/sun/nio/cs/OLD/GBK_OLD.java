@@ -27,24 +27,22 @@
 /*
  */
 
-package sun.nio.cs.ext;
-
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CharacterCodingException;
 
-public class GBK
+public class GBK_OLD
     extends Charset
 {
 
-    public GBK() {
-        super("GBK", ExtendedCharsets.aliasesFor("GBK"));
+    public GBK_OLD() {
+        super("GBK-OLD", null);
     }
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof GBK));
+                || (cs instanceof GBK_OLD));
     }
 
     public CharsetDecoder newDecoder() {

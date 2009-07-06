@@ -28,7 +28,6 @@ package sun.nio.fs;
 import java.nio.*;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
-import java.nio.file.spi.AbstractPath;
 import java.nio.charset.*;
 import java.nio.channels.*;
 import java.security.AccessController;
@@ -88,15 +87,19 @@ class UnixPath
         char prevChar = 0;
         for (int i=0; i < n; i++) {
             char c = input.charAt(i);
-            if (c == '\u0000')
-                throw new InvalidPathException(input, "Nul character not allowed");
             if ((c == '/') && (prevChar == '/'))
                 return normalize(input, n, i - 1);
+            checkNotNul(input, c);
             prevChar = c;
         }
         if (prevChar == '/')
             return normalize(input, n, n - 1);
         return input;
+    }
+
+    private static void checkNotNul(String input, char c) {
+        if (c == '\u0000')
+            throw new InvalidPathException(input, "Nul character not allowed");
     }
 
     private static String normalize(String input, int len, int off) {
@@ -114,6 +117,7 @@ class UnixPath
             char c = input.charAt(i);
             if ((c == '/') && (prevChar == '/'))
                 continue;
+            checkNotNul(input, c);
             sb.append(c);
             prevChar = c;
         }
@@ -862,7 +866,7 @@ class UnixPath
     }
 
     @Override
-    public void delete(boolean failIfNotExists) throws IOException {
+    void implDelete(boolean failIfNotExists) throws IOException {
         checkDelete();
 
         // need file attributes to know if file is directory
@@ -896,13 +900,14 @@ class UnixPath
             throw new NullPointerException();
         checkRead();
 
-        // can't return SecureDirectoryStream on older kernels.
-        if (!getFileSystem().supportsSecureDirectoryStreams()) {
+        // can't return SecureDirectoryStream on kernels that don't support
+        // openat, etc.
+        if (!supportsAtSysCalls()) {
             try {
                 long ptr = opendir(this);
                 return new UnixDirectoryStream(this, ptr, filter);
             } catch (UnixException x) {
-                if (x.errno() == UnixConstants.ENOTDIR)
+                if (x.errno() == ENOTDIR)
                     throw new NotDirectoryException(getPathForExecptionMessage());
                 x.rethrowAsIOException(this);
             }
@@ -959,7 +964,9 @@ class UnixPath
     }
 
     @Override
-    public FileAttributeView getFileAttributeView(String name, LinkOption... options) {
+    public DynamicFileAttributeView getFileAttributeView(String name,
+                                                         LinkOption... options)
+    {
         return getFileSystem().newFileAttributeView(name, this, options);
     }
 
@@ -980,20 +987,8 @@ class UnixPath
     }
 
     @Override
-    public InputStream newInputStream()throws IOException {
-        try {
-            Set<OpenOption> options = Collections.emptySet();
-            FileChannel fc = UnixChannelFactory.newFileChannel(this, options, 0);
-            return Channels.newInputStream(fc);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(this);
-            return null;  // keep compiler happy
-        }
-    }
-
-    @Override
     public SeekableByteChannel newByteChannel(Set<? extends OpenOption> options,
-                                                      FileAttribute<?>... attrs)
+                                              FileAttribute<?>... attrs)
          throws IOException
     {
         int mode = UnixFileModeAttribute
@@ -1007,29 +1002,7 @@ class UnixPath
     }
 
     @Override
-    public OutputStream newOutputStream(Set<? extends OpenOption> options,
-                                        FileAttribute<?>... attrs)
-        throws IOException
-    {
-        // need to copy options to add WRITE
-        Set<OpenOption> opts = new HashSet<OpenOption>(options);
-        if (opts.contains(StandardOpenOption.READ))
-            throw new IllegalArgumentException("READ not allowed");
-        opts.add(StandardOpenOption.WRITE);
-
-        int mode = UnixFileModeAttribute
-            .toUnixMode(UnixFileModeAttribute.ALL_READWRITE, attrs);
-        try {
-            FileChannel fc = UnixChannelFactory.newFileChannel(this, opts, mode);
-            return Channels.newOutputStream(fc);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(this);
-            return null;  // keep compiler happy
-        }
-    }
-
-    @Override
-    public boolean isSameFile(FileRef obj) throws IOException {
+    public boolean isSameFile(Path obj) throws IOException {
         if (this.equals(obj))
             return true;
         if (!(obj instanceof UnixPath))  // includes null check
@@ -1187,13 +1160,6 @@ class UnixPath
                 }
             }
             result = result.resolve(element);
-        }
-
-        // finally check that file exists
-        try {
-            UnixFileAttributes.get(result, true);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(result);
         }
         return result;
     }

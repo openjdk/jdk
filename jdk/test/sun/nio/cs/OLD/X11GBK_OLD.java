@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,34 @@
  * have any questions.
  */
 
-package java.nio.file;
 
-import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CharsetDecoder;
+import sun.nio.cs.ext.GBK;
 
-/**
- * An interface that is implemented by objects that operate on a file. An
- * implementation of this interface is provided to the {@link Files#withDirectory
- * withDirectory} utility method so that the file action is {@link #invoke
- * invoked} for all accepted entries in the directory, after which, the directory
- * is automatically closed.
- *
- * <p> <b>Usage Example:</b>
- * Suppose we require to perform a task on all class files in a directory:
- * <pre>
- *     Path dir = ...
- *     Files.withDirectory(dir, "*.class", new FileAction&lt;Path&gt;() {
- *         public void invoke(Path entry) {
- *             :
- *         }
- *     });
- * </pre>
- *
- * @param   <T>     the type of file reference
- *
- * @since 1.7
- */
+public class X11GBK_OLD extends Charset {
+    public X11GBK_OLD () {
+        super("X11GBK-OLD", null);
+    }
+    public CharsetEncoder newEncoder() {
+        return new Encoder(this);
+    }
+    public CharsetDecoder newDecoder() {
+        return new GBK_OLD.Decoder(this);
+    }
 
-public interface FileAction<T extends FileRef> {
-    /**
-     * Invoked for a file.
-     *
-     * @param   file
-     *          the file
-     *
-     * @throws  IOException
-     *          if the block terminates due an uncaught I/O exception
-     */
-    void invoke(T file) throws IOException;
+    public boolean contains(Charset cs) {
+        return cs instanceof X11GBK_OLD;
+    }
+
+    private class Encoder extends GBK_OLD.Encoder {
+        public Encoder(Charset cs) {
+            super(cs);
+        }
+        public boolean canEncode(char ch){
+            if (ch < 0x80) return false;
+            return super.canEncode(ch);
+        }
+    }
 }
