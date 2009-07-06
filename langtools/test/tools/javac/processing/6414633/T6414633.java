@@ -55,6 +55,7 @@ public class T6414633 {
             fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, A.class.getName()+".java")));
         String[] opts = { "-proc:only",
                           "-processor", A.class.getName(),
+                          "-source", "1.6",
                           "-classpath", testClasses };
         JavacTask task = tool.getTask(null, fm, dl, Arrays.asList(opts), null, files);
         task.call();

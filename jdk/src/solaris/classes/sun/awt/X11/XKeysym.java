@@ -145,7 +145,7 @@ public class XKeysym {
     {
         // Xsun without XKB uses keysymarray[2] keysym to determine if it is KP event.
         // Otherwise, it is [1].
-        int ndx = XToolkit.isXsunServer() &&
+        int ndx = XToolkit.isXsunKPBehavior() &&
                   ! XToolkit.isXKBenabled() ? 2 : 1;
         // Even if XKB is enabled, we have another problem: some symbol tables (e.g. cz) force
         // a regular comma instead of KP_comma for a decimal separator. Result is,
@@ -193,7 +193,7 @@ public class XKeysym {
     private static long getKeypadKeysym( XKeyEvent ev ) {
         int ndx = 0;
         long keysym = XConstants.NoSymbol;
-        if( XToolkit.isXsunServer() &&
+        if( XToolkit.isXsunKPBehavior() &&
             ! XToolkit.isXKBenabled() ) {
             if( (ev.get_state() & XConstants.ShiftMask) != 0 ) { // shift modifier is on
                 ndx = 3;

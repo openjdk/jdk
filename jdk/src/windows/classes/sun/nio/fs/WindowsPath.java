@@ -27,7 +27,6 @@ package sun.nio.fs;
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
-import java.nio.file.spi.AbstractPath;
 import java.nio.channels.*;
 import java.io.*;
 import java.net.URI;
@@ -166,6 +165,8 @@ class WindowsPath extends AbstractPath {
         public void invalidate() {
             ref.clear();
         }
+
+        // no need to override equals/hashCode.
     }
 
     // use this message when throwing exceptions
@@ -948,7 +949,7 @@ class WindowsPath extends AbstractPath {
     }
 
     @Override
-    public void delete(boolean failIfNotExists) throws IOException {
+    void implDelete(boolean failIfNotExists) throws IOException {
         checkDelete();
 
         WindowsFileAttributes attrs = null;
@@ -1040,7 +1041,7 @@ class WindowsPath extends AbstractPath {
     }
 
     @Override
-    public FileAttributeView getFileAttributeView(String name, LinkOption... options) {
+    public DynamicFileAttributeView getFileAttributeView(String name, LinkOption... options) {
         boolean followLinks = followLinks(options);
         if (name.equals("basic"))
             return WindowsFileAttributeViews.createBasicView(this, followLinks);
@@ -1051,7 +1052,7 @@ class WindowsPath extends AbstractPath {
         if (name.equals("owner"))
             return new FileOwnerAttributeViewImpl(
                 new WindowsAclFileAttributeView(this, followLinks));
-        if (name.equals("xattr"))
+        if (name.equals("user"))
             return new WindowsUserDefinedFileAttributeView(this, followLinks);
         return null;
     }
@@ -1070,22 +1071,6 @@ class WindowsPath extends AbstractPath {
             sd.release();
         }
         return this;
-    }
-
-    @Override
-    public InputStream newInputStream()throws IOException {
-        try {
-            Set<OpenOption> options = Collections.emptySet();
-            FileChannel fc = WindowsChannelFactory
-                .newFileChannel(getPathForWin32Calls(),
-                                getPathForPermissionCheck(),
-                                options,
-                                0L);
-            return Channels.newInputStream(fc);
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(this);
-            return null;  // keep compiler happy
-        }
     }
 
     @Override
@@ -1110,36 +1095,7 @@ class WindowsPath extends AbstractPath {
     }
 
     @Override
-    public OutputStream newOutputStream(Set<? extends OpenOption> options,
-                                        FileAttribute<?>... attrs)
-        throws IOException
-    {
-        // need to copy options to add WRITE
-        Set<OpenOption> opts = new HashSet<OpenOption>(options);
-        if (opts.contains(StandardOpenOption.READ))
-            throw new IllegalArgumentException("READ not allowed");
-        opts.add(StandardOpenOption.WRITE);
-
-        WindowsSecurityDescriptor sd =
-            WindowsSecurityDescriptor.fromAttribute(attrs);
-        FileChannel fc;
-        try {
-            fc = WindowsChannelFactory
-                .newFileChannel(getPathForWin32Calls(),
-                                getPathForPermissionCheck(),
-                                opts,
-                                sd.address());
-            return Channels.newOutputStream(fc);
-        } catch (WindowsException x) {
-            x.rethrowAsIOException(this);
-            return null;  // keep compiler happy
-        } finally {
-            sd.release();
-        }
-    }
-
-    @Override
-    public boolean isSameFile(FileRef obj) throws IOException {
+    public boolean isSameFile(Path obj) throws IOException {
         if (this.equals(obj))
             return true;
         if (!(obj instanceof WindowsPath))  // includes null check
@@ -1216,7 +1172,7 @@ class WindowsPath extends AbstractPath {
          * creates a link with the resolved target for this case.
          */
         if (target.type == WindowsPathType.DRIVE_RELATIVE) {
-            throw new IOException("Cannot create symbolic link to drive-relative target");
+            throw new IOException("Cannot create symbolic link to working directory relative target");
         }
 
         /*

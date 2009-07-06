@@ -63,6 +63,7 @@ public class T6430209 {
             new File(testSrc, "test0.java"), new File(testSrc, "test1.java")));
         Iterable<String> opts = Arrays.asList("-proc:only",
                                               "-processor", "b6341534",
+                                              "-source", "1.6",
                                               "-processorpath", testClasses);
         StringWriter out = new StringWriter();
         JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
