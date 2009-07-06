@@ -524,9 +524,9 @@ public class Introspector {
                             pd = new PropertyDescriptor(this.beanClass, name.substring(2), method, null);
                         }
                     } else if (argCount == 1) {
-                        if (argTypes[0] == int.class && name.startsWith(GET_PREFIX)) {
+                        if (int.class.equals(argTypes[0]) && name.startsWith(GET_PREFIX)) {
                             pd = new IndexedPropertyDescriptor(this.beanClass, name.substring(3), null, null, method, null);
-                        } else if (resultType == void.class && name.startsWith(SET_PREFIX)) {
+                        } else if (void.class.equals(resultType) && name.startsWith(SET_PREFIX)) {
                             // Simple setter
                             pd = new PropertyDescriptor(this.beanClass, name.substring(3), null, method);
                             if (throwsException(method, PropertyVetoException.class)) {
@@ -534,7 +534,7 @@ public class Introspector {
                             }
                         }
                     } else if (argCount == 2) {
-                            if (argTypes[0] == int.class && name.startsWith(SET_PREFIX)) {
+                            if (void.class.equals(resultType) && int.class.equals(argTypes[0]) && name.startsWith(SET_PREFIX)) {
                             pd = new IndexedPropertyDescriptor(this.beanClass, name.substring(3), null, null, null, method);
                             if (throwsException(method, PropertyVetoException.class)) {
                                 pd.setConstrained(true);
