@@ -55,7 +55,7 @@ public class TestUtil {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 try {
-                    file.delete(false);
+                    file.delete();
                 } catch (IOException x) {
                     System.err.format("Unable to delete %s: %s\n", file, x);
                 }
@@ -64,7 +64,7 @@ public class TestUtil {
             @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
                 try {
-                    dir.delete(false);
+                    dir.delete();
                 } catch (IOException x) {
                     System.err.format("Unable to delete %s: %s\n", dir, x);
                 }
@@ -78,7 +78,7 @@ public class TestUtil {
         });
     }
 
-    static void deleteUnchecked(FileRef file) {
+    static void deleteUnchecked(Path file) {
         try {
             file.delete();
         } catch (IOException exc) {
@@ -114,7 +114,7 @@ public class TestUtil {
         Path target = dir.resolve("testtarget");
         try {
             link.createSymbolicLink(target);
-            target.delete(false);
+            link.delete();
             return true;
         } catch (UnsupportedOperationException x) {
             return false;

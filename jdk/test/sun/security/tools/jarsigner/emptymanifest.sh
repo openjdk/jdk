@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,50 +22,45 @@
 #
 
 # @test
-# @bug 4313887
-# @summary Unit test for probeContentType method
-# @library ..
-# @build ContentType SimpleFileTypeDetector
-# @run shell content_type.sh
+# @bug 6712755
+# @summary jarsigner fails to sign itextasian.jar since 1.5.0_b14, it works with 1.5.0_13
+#
+# @run shell emptymanifest.sh
+#
 
-# if TESTJAVA isn't set then we assume an interactive run.
-
-if [ -z "$TESTJAVA" ]; then
-    TESTSRC=.
-    TESTCLASSES=.
-    JAVA=java
-else
-    JAVA="${TESTJAVA}/bin/java"
+if [ "${TESTJAVA}" = "" ] ; then
+  JAVAC_CMD=`which javac`
+  TESTJAVA=`dirname $JAVAC_CMD`/..
 fi
 
+# set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-    Windows_* )
-        CLASSPATH="${TESTCLASSES};${TESTSRC}"
-        ;;
-    * )
-        CLASSPATH=${TESTCLASSES}:${TESTSRC}
-        ;;
+  Windows_* )
+    FS="\\"
+    ;;
+  * )
+    FS="/"
+    ;;
 esac
-export CLASSPATH
 
-failures=0
+KS=emptymanifest.jks
+JFILE=em.jar
 
-go() {
-    echo ''
-    $JAVA $1 $2 $3 2>&1
-    if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
-}
+KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore $KS"
+JAR=$TESTJAVA${FS}bin${FS}jar
+JARSIGNER=$TESTJAVA${FS}bin${FS}jarsigner
 
-# Run the test
+rm $KS $JFILE
+echo A > A
+echo B > B
+mkdir META-INF
+printf "\r\n" > META-INF${FS}MANIFEST.MF
+zip $JFILE META-INF${FS}MANIFEST.MF A B
 
-go ContentType
+$KT -alias a -dname CN=a -keyalg rsa -genkey -validity 300
 
-#
-# Results
-#
-echo ''
-if [ $failures -gt 0 ];
-  then echo "$failures test(s) failed";
-  else echo "All test(s) passed"; fi
-exit $failures
+$JARSIGNER -keystore $KS -storepass changeit $JFILE a || exit 1
+$JARSIGNER -keystore $KS -verify -debug -strict $JFILE || exit 2
+
+exit 0

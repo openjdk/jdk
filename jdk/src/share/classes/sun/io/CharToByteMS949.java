@@ -26,24 +26,18 @@
 
 package sun.io;
 
-import sun.nio.cs.ext.MS949;
+import sun.nio.cs.ext.*;
 
-/**
- * Tables and data to convert Unicode to MS949
- *
- * @author  ConverterGenerator tool
- */
+public class CharToByteMS949 extends CharToByteDBCS_ASCII {
 
-public class CharToByteMS949 extends CharToByteDoubleByte {
-
-    private final static MS949 nioCoder = new MS949();
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new MS949().newEncoder();
 
     public String getCharacterEncoding() {
         return "MS949";
     }
 
     public CharToByteMS949() {
-        super.index1 = nioCoder.getEncoderIndex1();
-        super.index2 = nioCoder.getEncoderIndex2();
+        super(enc);
     }
 }

@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2002-2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,20 +26,18 @@
 /*
  */
 
-package sun.nio.cs.ext;
-
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.HistoricallyNamedCharset;
 
-public class MS950
+public class MS950_OLD
     extends Charset
     implements HistoricallyNamedCharset
 {
 
-    public MS950() {
-        super("x-windows-950", ExtendedCharsets.aliasesFor("x-windows-950"));
+    public MS950_OLD() {
+        super("x-windows-950-OLD", null);
     }
 
     public String historicalName() {
@@ -49,7 +46,7 @@ public class MS950
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof MS950));
+                || (cs instanceof MS950_OLD));
     }
 
     public CharsetDecoder newDecoder() {
@@ -70,19 +67,19 @@ public class MS950
      */
 
     public short[] getDecoderIndex1() {
-        return MS950.Decoder.index1;
+        return Decoder.index1;
     }
 
     public String[] getDecoderIndex2() {
-        return MS950.Decoder.index2;
+        return Decoder.index2;
     }
 
     public short[] getEncoderIndex1() {
-        return MS950.Encoder.index1;
+        return Encoder.index1;
     }
 
     public String[] getEncoderIndex2() {
-        return MS950.Encoder.index2;
+        return Encoder.index2;
     }
 
     protected static class Decoder extends DoubleByteDecoder {

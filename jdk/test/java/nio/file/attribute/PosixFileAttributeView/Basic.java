@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.attribute.PosixFileAttributeView
  * @library ../..
  */
@@ -44,15 +44,14 @@ public class Basic {
      * Use view to update permission to the given mode and check that the
      * permissions have been updated.
      */
-    static void testPermissions(PosixFileAttributeView view, String mode)
-        throws IOException
-    {
+    static void testPermissions(Path file, String mode) throws IOException {
         System.out.format("change mode: %s\n", mode);
         Set<PosixFilePermission> perms = PosixFilePermissions.fromString(mode);
 
         // change permissions and re-read them.
-        view.setPermissions(perms);
-        Set<PosixFilePermission> current = view.readAttributes().permissions();
+        Attributes.setPosixFilePermissions(file, perms);
+        Set<PosixFilePermission> current = Attributes
+            .readPosixFileAttributes(file).permissions();
         if (!current.equals(perms)) {
             throw new RuntimeException("Actual permissions: " +
                 PosixFilePermissions.toString(current) + ", expected: " +
@@ -60,8 +59,8 @@ public class Basic {
         }
 
         // repeat test using setAttribute/getAttribute
-        view.setAttribute("permissions", perms);
-        current = (Set<PosixFilePermission>)view.getAttribute("permissions");
+        file.setAttribute("posix:permissions", perms);
+        current = (Set<PosixFilePermission>)file.getAttribute("posix:permissions");
         if (!current.equals(perms)) {
             throw new RuntimeException("Actual permissions: " +
                 PosixFilePermissions.toString(current) + ", expected: " +
@@ -98,17 +97,14 @@ public class Basic {
         FileAttribute<Set<PosixFilePermission>> attr =
             PosixFilePermissions.asFileAttribute(requested);
         System.out.format("create file with mode: %s\n", mode);
-
-        EnumSet<StandardOpenOption> options = EnumSet.of(StandardOpenOption.CREATE_NEW,
-            StandardOpenOption.WRITE);
-        file.newOutputStream(options, attr).close();
+        file.createFile(attr);
         try {
             checkSecure(requested,  file
                 .getFileAttributeView(PosixFileAttributeView.class)
                 .readAttributes()
                 .permissions());
         } finally {
-            file.delete(false);
+            file.delete();
         }
 
         System.out.format("create directory with mode: %s\n", mode);
@@ -119,7 +115,7 @@ public class Basic {
                 .readAttributes()
                 .permissions());
         } finally {
-            file.delete(false);
+            file.delete();
         }
     }
 
@@ -134,7 +130,7 @@ public class Basic {
         // create file and test updating and reading its permissions
         Path file = dir.resolve("foo");
         System.out.format("create %s\n", file);
-        file.newOutputStream().close();
+        file.createFile();
         try {
             // get initial permissions so that we can restore them later
             PosixFileAttributeView view = file
@@ -144,32 +140,32 @@ public class Basic {
 
             // test various modes
             try {
-                testPermissions(view, "---------");
-                testPermissions(view, "r--------");
-                testPermissions(view, "-w-------");
-                testPermissions(view, "--x------");
-                testPermissions(view, "rwx------");
-                testPermissions(view, "---r-----");
-                testPermissions(view, "----w----");
-                testPermissions(view, "-----x---");
-                testPermissions(view, "---rwx---");
-                testPermissions(view, "------r--");
-                testPermissions(view, "-------w-");
-                testPermissions(view, "--------x");
-                testPermissions(view, "------rwx");
-                testPermissions(view, "r--r-----");
-                testPermissions(view, "r--r--r--");
-                testPermissions(view, "rw-rw----");
-                testPermissions(view, "rwxrwx---");
-                testPermissions(view, "rw-rw-r--");
-                testPermissions(view, "r-xr-x---");
-                testPermissions(view, "r-xr-xr-x");
-                testPermissions(view, "rwxrwxrwx");
+                testPermissions(file, "---------");
+                testPermissions(file, "r--------");
+                testPermissions(file, "-w-------");
+                testPermissions(file, "--x------");
+                testPermissions(file, "rwx------");
+                testPermissions(file, "---r-----");
+                testPermissions(file, "----w----");
+                testPermissions(file, "-----x---");
+                testPermissions(file, "---rwx---");
+                testPermissions(file, "------r--");
+                testPermissions(file, "-------w-");
+                testPermissions(file, "--------x");
+                testPermissions(file, "------rwx");
+                testPermissions(file, "r--r-----");
+                testPermissions(file, "r--r--r--");
+                testPermissions(file, "rw-rw----");
+                testPermissions(file, "rwxrwx---");
+                testPermissions(file, "rw-rw-r--");
+                testPermissions(file, "r-xr-x---");
+                testPermissions(file, "r-xr-xr-x");
+                testPermissions(file, "rwxrwxrwx");
             } finally {
                 view.setPermissions(save);
             }
         } finally {
-            file.delete(false);
+            file.delete();
         }
 
         // create link (to file that doesn't exist) and test reading of
@@ -185,7 +181,7 @@ public class Basic {
                     throw new RuntimeException("not a link");
                 }
             } finally {
-                link.delete(false);
+                link.delete();
             }
         }
 
@@ -239,7 +235,7 @@ public class Basic {
         Path file = dir.resolve("gus");
         System.out.format("create %s\n", file);
 
-        file.newOutputStream().close();
+        file.createFile();
         try {
 
             // read attributes of directory to get owner/group
@@ -251,13 +247,14 @@ public class Basic {
             view.setOwner(attrs.owner());
             view.setGroup(attrs.group());
 
-            // repeat test using setAttribute
-            Map<String,?> map = view.readAttributes("owner","group");
-            view.setAttribute("owner", map.get("owner"));
-            view.setAttribute("group", map.get("group"));
+            // repeat test using set/getAttribute
+            UserPrincipal owner = (UserPrincipal)file.getAttribute("posix:owner");
+            file.setAttribute("posix:owner", owner);
+            UserPrincipal group = (UserPrincipal)file.getAttribute("posix:group");
+            file.setAttribute("posix:group", group);
 
         } finally {
-            file.delete(false);
+            file.delete();
         }
 
         System.out.println("OKAY");
