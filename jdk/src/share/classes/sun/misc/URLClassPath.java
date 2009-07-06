@@ -135,7 +135,9 @@ public class URLClassPath {
      * If the URL specified is null or is already in the list of
      * URLs, then invoking this method has no effect.
      */
-    public void addURL(URL url) {
+    public synchronized void addURL(URL url) {
+        if (closed)
+            return;
         synchronized (urls) {
             if (url == null || path.contains(url))
                 return;

@@ -782,7 +782,16 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void print() const;
   void print_on(outputStream* st) const;
 
-  // Override
+  // use_prev_marking == true  -> use "prev" marking information,
+  // use_prev_marking == false -> use "next" marking information
+  // NOTE: Only the "prev" marking information is guaranteed to be
+  // consistent most of the time, so most calls to this should use
+  // use_prev_marking == true. Currently, there is only one case where
+  // this is called with use_prev_marking == false, which is to verify
+  // the "next" marking information at the end of remark.
+  void verify(bool allow_dirty, bool use_prev_marking) const;
+
+  // Override; it uses the "prev" marking information
   virtual void verify(bool allow_dirty) const;
 
 #ifdef DEBUG

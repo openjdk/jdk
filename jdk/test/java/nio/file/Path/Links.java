@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.Path createSymbolicLink,
  *     readSymbolicLink, and createLink methods
  * @library ..
@@ -99,16 +99,6 @@ public class Links {
                 Object key2 = Attributes
                     .readBasicFileAttributes(bar).fileKey();
                 assertTrue((key1 == null) || (key1.equals(key2)));
-
-// Testing of linkCount disabled until linkCount method removed frmo
-// BasicFileAttributes
-/*
-                assertTrue(Attributes
-                    .readBasicFileAttributes(foo).linkCount() >= 2);
-                assertTrue(Attributes
-                    .readBasicFileAttributes(bar).linkCount() >= 2);
-*/
-
             } finally {
                 bar.delete();
             }

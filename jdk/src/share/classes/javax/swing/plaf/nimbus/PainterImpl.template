@@ -31,7 +31,7 @@ import javax.swing.*;
 import javax.swing.Painter;
 
 
-public final class ${PAINTER_NAME} extends AbstractRegionPainter {
+final class ${PAINTER_NAME} extends AbstractRegionPainter {
     //package private integers representing the available states that
     //this painter will paint. These are used when creating a new instance
     //of ${PAINTER_NAME} to determine which region/state is being painted
