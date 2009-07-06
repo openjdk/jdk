@@ -27,7 +27,7 @@
  * @summary enum constructors can be declared private
  * @author Joseph D. Darcy
  *
- * @compile -source 1.5 EnumPrivateConstructor.java
+ * @compile EnumPrivateConstructor.java
  */
 
 enum EnumPrivateConstructor {

@@ -27,7 +27,7 @@
  * @summary generics problem with casting
  * @author gafter
  *
- * @compile -source 1.5 Casting.java
+ * @compile  Casting.java
  */
 
 package test.tools.javac.generics.Casting;

@@ -27,7 +27,7 @@
  * @summary JSR175: Parameter annotations
  * @author gafter
  *
- * @compile -source 1.5 Parameter.java
+ * @compile Parameter.java
  */
 
 package annotation.parameter;

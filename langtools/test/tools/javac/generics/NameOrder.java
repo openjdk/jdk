@@ -27,7 +27,7 @@
  * @summary generics: type inference failure due to a bug in ClassSymbol.isLess
  * @author gafter
  *
- * @compile -source 1.5 NameOrder.java
+ * @compile  NameOrder.java
  */
 
 package test.tools.javac.generics.NameOrder;

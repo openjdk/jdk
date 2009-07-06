@@ -66,7 +66,7 @@ public class Paths {
      *  @param context the context
      *  @return the Paths instance for this context
      */
-    public static Paths instance(Context context) {
+    static Paths instance(Context context) {
         Paths instance = context.get(pathsKey);
         if (instance == null)
             instance = new Paths(context);

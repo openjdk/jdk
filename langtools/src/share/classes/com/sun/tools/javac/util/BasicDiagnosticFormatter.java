@@ -209,6 +209,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
 
     @Override
     public BasicConfiguration getConfiguration() {
+        //the following cast is always safe - see init
         return (BasicConfiguration)super.getConfiguration();
     }
 

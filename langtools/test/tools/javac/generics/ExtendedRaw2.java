@@ -27,7 +27,7 @@
  * @summary generics: extension of raw not treated as raw.
  * @author gafter
  *
- * @compile -source 1.5 ExtendedRaw2.java
+ * @compile  ExtendedRaw2.java
  */
 
 // from library

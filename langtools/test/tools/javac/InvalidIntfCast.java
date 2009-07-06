@@ -27,7 +27,7 @@
  * @summary The compiler should detect an invalid cast between interfaces.
  * @author turnidge
  *
- * @compile -source 1.5 InvalidIntfCast.java
+ * @compile InvalidIntfCast.java
  */
 
 interface I {

@@ -26,9 +26,6 @@
  * @bug 4920023
  * @summary add "hexadecimal floating-point literal" support to javac as per 4896828
  * @author gafter
- *
- * @compile -source 1.5 HexFloatLiterals.java
- * @run main HexFloatLiterals
  */
 
 public class HexFloatLiterals {

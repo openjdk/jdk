@@ -27,7 +27,7 @@
  * @summary constant static fields cannot be referenced from const, instance initializers
  * @author gafter
  *
- * @compile -source 1.5 Def.java
+ * @compile Def.java
  */
 
 package _enum.def;

@@ -27,7 +27,7 @@
  * @summary javac should implement JLS3 three-pass overload resolution
  * @author gafter
  *
- * @compile/fail -source 1.5 T5011073.java
+ * @compile/fail  T5011073.java
  */
 
 import java.util.*;

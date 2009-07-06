@@ -28,10 +28,10 @@
  * @summary Empty Enums allowed in non-static contexts
  * @author Peter von der Ah\u00e9
  *
- * @compile/fail -source 1.5 T5081785.java
- * @compile/fail -source 1.5 T5081785a.java
- * @compile/fail -source 1.5 T5081785b.java
- * @compile/fail -source 1.5 T5081785c.java
+ * @compile/fail T5081785.java
+ * @compile/fail T5081785a.java
+ * @compile/fail T5081785b.java
+ * @compile/fail T5081785c.java
  */
 
 class A {
