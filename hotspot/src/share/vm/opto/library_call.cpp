@@ -4500,26 +4500,26 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       generate_negative_guard(copy_length, slow_region);
     }
 
+    // copy_length is 0.
     if (!stopped() && must_clear_dest) {
       Node* dest_length = alloc->in(AllocateNode::ALength);
       if (_gvn.eqv_uncast(copy_length, dest_length)
           || _gvn.find_int_con(dest_length, 1) <= 0) {
-        // There is no zeroing to do.
+        // There is no zeroing to do. No need for a secondary raw memory barrier.
       } else {
         // Clear the whole thing since there are no source elements to copy.
         generate_clear_array(adr_type, dest, basic_elem_type,
                              intcon(0), NULL,
                              alloc->in(AllocateNode::AllocSize));
+        // Use a secondary InitializeNode as raw memory barrier.
+        // Currently it is needed only on this path since other
+        // paths have stub or runtime calls as raw memory barriers.
+        InitializeNode* init = insert_mem_bar_volatile(Op_Initialize,
+                                                       Compile::AliasIdxRaw,
+                                                       top())->as_Initialize();
+        init->set_complete(&_gvn);  // (there is no corresponding AllocateNode)
       }
     }
-
-    // Use a secondary InitializeNode as raw memory barrier.
-    // Currently it is needed only on this path since other
-    // paths have stub or runtime calls as raw memory barriers.
-    InitializeNode* init = insert_mem_bar_volatile(Op_Initialize,
-                                                   Compile::AliasIdxRaw,
-                                                   top())->as_Initialize();
-    init->set_complete(&_gvn);  // (there is no corresponding AllocateNode)
 
     // Present the results of the fast call.
     result_region->init_req(zero_path, control());
