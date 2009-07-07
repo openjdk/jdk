@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -981,6 +981,15 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserB
         hBitmap = (HBITMAP)LoadImage(libShell32,
                     IS_WINVISTA ? TEXT("IDB_TB_SH_DEF_16") : MAKEINTRESOURCE(216),
                     IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+
+        if (hBitmap == NULL) {
+            // version of shell32.dll doesn't match OS version.
+            // So we either are in a Vista Compatibility Mode
+            // or shell32.dll was copied from OS of another version
+            hBitmap = (HBITMAP)LoadImage(libShell32,
+                    IS_WINVISTA ? MAKEINTRESOURCE(216) : TEXT("IDB_TB_SH_DEF_16"),
+                    IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+        }
     }
     if (hBitmap == NULL) {
         libComCtl32 = LoadLibrary(TEXT("comctl32.dll"));
