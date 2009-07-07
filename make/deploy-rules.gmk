@@ -31,23 +31,6 @@ deploy:  deploy-build
 
 DEPLOY = deploy
 
-BUILD_DEPLOY=true
-
-ifeq ($(ARCH), ia64) 
-  BUILD_DEPLOY=false
-endif
-
-ifeq ($(ARCH), sparcv9)
-  BUILD_DEPLOY=false;
-endif
-
-ifeq ($(ARCH), amd64)
-  ifeq ($(PLATFORM), solaris)
-    BUILD_DEPLOY=false
-  endif
-endif
-
-
 # put the generated bundles in their own place in OUTPUTDIR
 DEPLOY_OUTPUTDIR = $(ABS_OUTPUTDIR)
 
