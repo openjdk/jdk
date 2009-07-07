@@ -3597,7 +3597,7 @@ public class Window extends Container implements Accessible {
             return;
         }
         int oldAlpha = oldBg != null ? oldBg.getAlpha() : 255;
-        int alpha = bgColor.getAlpha();
+        int alpha = bgColor != null ? bgColor.getAlpha() : 255;
         if ((oldAlpha == 255) && (alpha < 255)) { // non-opaque window
             GraphicsConfiguration gc = getGraphicsConfiguration();
             GraphicsDevice gd = gc.getDevice();
