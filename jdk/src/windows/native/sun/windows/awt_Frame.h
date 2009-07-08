@@ -117,7 +117,6 @@ public:
     INLINE BOOL IsUndecorated() { return m_isUndecorated; }
 
     INLINE HWND GetProxyFocusOwner() {
-        DASSERT(AwtToolkit::MainThread() == ::GetCurrentThreadId());
         if (m_proxyFocusOwner == NULL) {
             CreateProxyFocusOwner();
         }
@@ -165,6 +164,8 @@ private:
     void CreateProxyFocusOwner();
     void DestroyProxyFocusOwner();
 
+    /* creates proxy focus owner, called on Toolkit thread */
+    static void _CreateProxyFocusOwner(void *param);
     /* destroys proxy focus owner, called on Toolkit thread */
     static void _DestroyProxyFocusOwner(void *param);
 
