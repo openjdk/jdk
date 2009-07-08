@@ -106,7 +106,9 @@ public abstract class IntegrityHmac extends SignatureAlgorithmSpi {
    }
 
    public void reset() {
-           _HMACOutputLength=0;
+       _HMACOutputLength=0;
+       _HMACOutputLengthSet = false;
+       _macAlgorithm.reset();
    }
 
    /**
