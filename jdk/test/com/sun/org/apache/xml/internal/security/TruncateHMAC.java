@@ -23,7 +23,7 @@
 
 /**
  * @test %I% %E%
- * @bug 6824440
+ * @bug 6824440 6858484
  * @summary Check that Apache XMLSec APIs will not accept HMAC truncation
  *    lengths less than minimum bound
  * @compile -XDignore.symbol.file TruncateHMAC.java
@@ -56,8 +56,10 @@ public class TruncateHMAC {
         dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         dbf.setValidating(false);
-        validate("signature-enveloping-hmac-sha1-trunclen-0-attack.xml");
-        validate("signature-enveloping-hmac-sha1-trunclen-8-attack.xml");
+        validate("signature-enveloping-hmac-sha1-trunclen-0-attack.xml", false);
+        validate("signature-enveloping-hmac-sha1-trunclen-8-attack.xml", false);
+        // this one should pass
+        validate("signature-enveloping-hmac-sha1.xml", true);
         generate_hmac_sha1_40();
 
         if (atLeastOneFailed) {
@@ -66,7 +68,7 @@ public class TruncateHMAC {
         }
     }
 
-    private static void validate(String data) throws Exception {
+    private static void validate(String data, boolean pass) throws Exception {
         System.out.println("Validating " + data);
         File file = new File(DIR, data);
 
@@ -83,11 +85,19 @@ public class TruncateHMAC {
         try {
             System.out.println
                 ("Validation status: " + signature.checkSignatureValue(sk));
-            System.out.println("FAILED");
-            atLeastOneFailed = true;
+            if (!pass) {
+                System.out.println("FAILED");
+                atLeastOneFailed = true;
+            } else {
+                System.out.println("PASSED");
+            }
         } catch (XMLSignatureException xse) {
             System.out.println(xse.getMessage());
-            System.out.println("PASSED");
+            if (!pass) {
+                System.out.println("PASSED");
+            } else {
+                System.out.println("FAILED");
+            }
         }
     }
 
