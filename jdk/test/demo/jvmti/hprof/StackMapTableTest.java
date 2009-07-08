@@ -23,11 +23,11 @@
 
 
 /* @test
- * @bug 6266289 6299047
+ * @bug 6266289 6299047 6855180 6855551
  * @summary Test jvmti hprof and java_crw_demo with StackMapTable attributes
  *
  * @compile ../DemoRun.java
- * @compile -source 1.6 -g:lines HelloWorld.java
+ * @compile -source 7 -g:lines HelloWorld.java
  * @build StackMapTableTest
  * @run main StackMapTableTest HelloWorld
  */
