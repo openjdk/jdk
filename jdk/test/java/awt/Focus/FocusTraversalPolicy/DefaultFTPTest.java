@@ -104,7 +104,7 @@ comp[unfocusable]               - <comp> is set unfocusable.
 */
 
 public class DefaultFTPTest {
-    final int TESTS_NUMBER = 10;
+    final int TESTS_NUMBER = 11;
 
     public static void main(String[] args) {
         DefaultFTPTest app = new DefaultFTPTest();
@@ -926,5 +926,65 @@ class PolicyTest10 extends AbstractPolicyTest {
         } else {
             return "btn-6";
         }
+    }
+}
+
+/*
+ * frame [ container(root) [...] comp ]
+ * - getDefaultComponent(<frame>) should implicitly down-cycle into the <container>.
+ * - getFirstComponent(<frame>) should implicitly down-cycle into the <container>.
+ */
+class PolicyTest11 extends AbstractPolicyTest {
+    protected Frame createFrame() {
+        Frame frame = (Frame) registerComponent("frame", new Frame("Test Frame"));
+        frame.setLayout(new FlowLayout());
+
+        Container cont = (Container)registerComponent("panel", new Panel());
+        cont.add(registerComponent("btn-1", new Button("button")));
+        cont.add(registerComponent("btn-2", new Button("button")));
+
+        frame.add(cont);
+        frame.add(registerComponent("btn-3", new Button("button")));
+
+        return frame;
+    }
+
+    protected void customizeHierarchy() {
+        ((Container)getComponent("frame")).setFocusTraversalPolicy(new DefaultFocusTraversalPolicy());
+        ((Container)getComponent("panel")).setFocusCycleRoot(true);
+    }
+
+    protected Map<String, String> getForwardOrder() {
+        Map<String, String> order = new HashMap<String, String>();
+        order.put("frame", "btn-1");
+        order.put("btn-1", "btn-2");
+        order.put("btn-2", "btn-1");
+        order.put("btn-3", "btn-1");
+        return order;
+    }
+
+    protected Map<String, String> getBackwardOrder() {
+        Map<String, String> order = new HashMap<String, String>();
+        order.put("btn-3", "btn-1");
+        order.put("btn-2", "btn-1");
+        order.put("btn-1", "btn-2");
+        order.put("frame", "btn-3");
+        return order;
+    }
+
+    protected String[] getContainersToTest() {
+        return new String[] {"frame"};
+    }
+
+    protected String getDefaultComp(String focusCycleRoot_id) {
+        return "btn-1";
+    }
+
+    protected String getFirstComp(String focusCycleRoot_id) {
+        return "btn-1";
+    }
+
+    protected String getLastComp(String focusCycleRoot_id) {
+        return "btn-3";
     }
 }
