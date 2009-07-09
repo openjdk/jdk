@@ -43,6 +43,7 @@ import sun.awt.AWTAutoShutdown;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
 import sun.awt.EventQueueItem;
+import sun.awt.AWTAccessor;
 
 /**
  * <code>EventQueue</code> is a platform-independent class
@@ -153,6 +154,18 @@ public class EventQueue {
     private final String name = "AWT-EventQueue-" + nextThreadNum();
 
     private static final Logger eventLog = Logger.getLogger("java.awt.event.EventQueue");
+
+    static {
+        AWTAccessor.setEventQueueAccessor(
+            new AWTAccessor.EventQueueAccessor() {
+                public EventQueue getNextQueue(EventQueue eventQueue) {
+                    return eventQueue.nextQueue;
+                }
+                public Thread getDispatchThread(EventQueue eventQueue) {
+                    return eventQueue.dispatchThread;
+                }
+            });
+    }
 
     public EventQueue() {
         for (int i = 0; i < NUM_PRIORITIES; i++) {
