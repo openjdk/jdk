@@ -158,9 +158,6 @@ bool instanceKlass::link_class_impl(
   // timer handles recursion
   assert(THREAD->is_Java_thread(), "non-JavaThread in link_class_impl");
   JavaThread* jt = (JavaThread*)THREAD;
-  PerfTraceTimedEvent vmtimer(ClassLoader::perf_class_link_time(),
-                        ClassLoader::perf_classes_linked(),
-                        jt->get_thread_stat()->class_link_recursion_count_addr());
 
   // link super class before linking this class
   instanceKlassHandle super(THREAD, this_oop->super());
@@ -194,6 +191,15 @@ bool instanceKlass::link_class_impl(
     return true;
   }
 
+  // trace only the link time for this klass that includes
+  // the verification time
+  PerfClassTraceTime vmtimer(ClassLoader::perf_class_link_time(),
+                             ClassLoader::perf_class_link_selftime(),
+                             ClassLoader::perf_classes_linked(),
+                             jt->get_thread_stat()->perf_recursion_counts_addr(),
+                             jt->get_thread_stat()->perf_timers_addr(),
+                             PerfClassTraceTime::CLASS_LINK);
+
   // verification & rewriting
   {
     ObjectLocker ol(this_oop, THREAD);
@@ -203,12 +209,14 @@ bool instanceKlass::link_class_impl(
     if (!this_oop->is_linked()) {
       if (!this_oop->is_rewritten()) {
         {
-          assert(THREAD->is_Java_thread(), "non-JavaThread in link_class_impl");
-          JavaThread* jt = (JavaThread*)THREAD;
           // Timer includes any side effects of class verification (resolution,
           // etc), but not recursive entry into verify_code().
-          PerfTraceTime timer(ClassLoader::perf_class_verify_time(),
-                            jt->get_thread_stat()->class_verify_recursion_count_addr());
+          PerfClassTraceTime timer(ClassLoader::perf_class_verify_time(),
+                                   ClassLoader::perf_class_verify_selftime(),
+                                   ClassLoader::perf_classes_verified(),
+                                   jt->get_thread_stat()->perf_recursion_counts_addr(),
+                                   jt->get_thread_stat()->perf_timers_addr(),
+                                   PerfClassTraceTime::CLASS_VERIFY);
           bool verify_ok = verify_code(this_oop, throw_verifyerror, THREAD);
           if (!verify_ok) {
             return false;
@@ -350,9 +358,12 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     JavaThread* jt = (JavaThread*)THREAD;
     // Timer includes any side effects of class initialization (resolution,
     // etc), but not recursive entry into call_class_initializer().
-    PerfTraceTimedEvent timer(ClassLoader::perf_class_init_time(),
-                              ClassLoader::perf_classes_inited(),
-                              jt->get_thread_stat()->class_init_recursion_count_addr());
+    PerfClassTraceTime timer(ClassLoader::perf_class_init_time(),
+                             ClassLoader::perf_class_init_selftime(),
+                             ClassLoader::perf_classes_inited(),
+                             jt->get_thread_stat()->perf_recursion_counts_addr(),
+                             jt->get_thread_stat()->perf_timers_addr(),
+                             PerfClassTraceTime::CLASS_CLINIT);
     this_oop->call_class_initializer(THREAD);
   }
 

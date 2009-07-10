@@ -756,6 +756,20 @@ static void is_lock_held_by_thread(Handle loader, PerfCounter* counter, TRAPS) {
 static jclass jvm_define_class_common(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd, const char *source, TRAPS) {
   if (source == NULL)  source = "__JVM_DefineClass__";
 
+  assert(THREAD->is_Java_thread(), "must be a JavaThread");
+  JavaThread* jt = (JavaThread*) THREAD;
+
+  PerfClassTraceTime vmtimer(ClassLoader::perf_define_appclass_time(),
+                             ClassLoader::perf_define_appclass_selftime(),
+                             ClassLoader::perf_define_appclasses(),
+                             jt->get_thread_stat()->perf_recursion_counts_addr(),
+                             jt->get_thread_stat()->perf_timers_addr(),
+                             PerfClassTraceTime::DEFINE_CLASS);
+
+  if (UsePerfData) {
+    ClassLoader::perf_app_classfile_bytes_read()->inc(len);
+  }
+
   // Since exceptions can be thrown, class initialization can take place
   // if name is NULL no check for class name in .class stream has to be made.
   symbolHandle class_name;
