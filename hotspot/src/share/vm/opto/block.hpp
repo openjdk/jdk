@@ -380,6 +380,10 @@ class PhaseCFG : public Phase {
   bool _trace_opto_pipelining;  // tracing flag
 #endif
 
+#ifdef ASSERT
+  Unique_Node_List _raw_oops;
+#endif
+
   // Build dominators
   void Dominators();
 
