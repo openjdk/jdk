@@ -1,5 +1,5 @@
 /*
- * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,42 +19,37 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-package sun.jvm.hotspot.code;
+/*
+ * @test
+ * @bug 6855164
+ * @summary SIGSEGV during compilation of method involving loop over CharSequence
+ * @run main/othervm -Xbatch Test
+ */
 
-import java.io.*;
+public class Test{
+    public static void main(String[] args) throws Exception {
+        StringBuffer builder = new StringBuffer();
 
-public class MonitorValue {
-  private ScopeValue owner;
-  private Location   basicLock;
-  private boolean    eliminated;
+        for(int i = 0; i < 100; i++)
+            builder.append("I am the very model of a modern major general\n");
 
-  // FIXME: not useful yet
-  //  MonitorValue(ScopeValue* owner, Location basic_lock);
-
-  public MonitorValue(DebugInfoReadStream stream) {
-    basicLock = new Location(stream);
-    owner     = ScopeValue.readFrom(stream);
-    eliminated= stream.readBoolean();
-  }
-
-  public ScopeValue owner()     { return owner; }
-  public Location   basicLock() { return basicLock; }
-  public boolean   eliminated() { return eliminated; }
-
-  // FIXME: not yet implementable
-  //  void write_on(DebugInfoWriteStream* stream);
-
-  public void printOn(PrintStream tty) {
-    tty.print("monitor{");
-    owner().printOn(tty);
-    tty.print(",");
-    basicLock().printOn(tty);
-    tty.print("}");
-    if (eliminated) {
-      tty.print(" (eliminated)");
+        for(int j = 0; j < builder.length(); j++){
+            previousSpaceIndex(builder, j);
+        }
     }
-  }
+
+    private static final int previousSpaceIndex(CharSequence sb, int seek) {
+        seek--;
+        while (seek > 0) {
+            if (sb.charAt(seek) == ' ') {
+                while (seek > 0 && sb.charAt(seek - 1) == ' ')
+                    seek--;
+                return seek;
+            }
+            seek--;
+        }
+        return 0;
+    }
 }

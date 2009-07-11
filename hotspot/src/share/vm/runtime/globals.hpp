@@ -1994,6 +1994,10 @@ class CommandLineFlags {
   product_rw(bool, PrintHeapAtGC, false,                                    \
           "Print heap layout before and after each GC")                     \
                                                                             \
+  product_rw(bool, PrintHeapAtGCExtended, false,                            \
+          "Prints extended information about the layout of the heap "       \
+          "when -XX:+PrintHeapAtGC is set")                                 \
+                                                                            \
   product(bool, PrintHeapAtSIGBREAK, true,                                  \
           "Print heap layout in response to SIGBREAK")                      \
                                                                             \
