@@ -40,6 +40,7 @@ import sun.awt.SubRegionShowable;
 import sun.java2d.SunGraphics2D;
 import sun.security.action.GetPropertyAction;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
+import sun.awt.SunToolkit;
 
 /**
  * A PaintManager implementation that uses a BufferStrategy for
@@ -571,8 +572,9 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
         rootJ = c;
         root = c;
         xOffset = yOffset = 0;
-        while (root != null && (!(root instanceof Window) &&
-                                !(root instanceof Applet))) {
+        while (root != null &&
+               (!(root instanceof Window) &&
+                !SunToolkit.isInstanceOf(root, "java.applet.Applet"))) {
             xOffset += root.getX();
             yOffset += root.getY();
             root = root.getParent();
@@ -839,7 +841,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                     null);
             }
             BufferStrategy bs = null;
-            if (root instanceof Applet) {
+            if (SunToolkit.isInstanceOf(root, "java.applet.Applet")) {
                 try {
                     getCreateBufferStrategyMethod().invoke(root, 2, caps);
                     bs = (BufferStrategy)getGetBufferStrategyMethod().

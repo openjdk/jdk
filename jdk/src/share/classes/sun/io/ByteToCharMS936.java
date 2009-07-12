@@ -25,26 +25,18 @@
 
 package sun.io;
 
-import sun.nio.cs.ext.MS936;
+import sun.nio.cs.ext.*;
 
-/**
- * Tables and data to convert MS936 to Unicode
- *
- * @author  ConverterGenerator tool
- */
+public class ByteToCharMS936 extends ByteToCharDBCS_ASCII {
 
-public class ByteToCharMS936 extends ByteToCharDoubleByte {
-
-    private final static MS936 nioCoder = new MS936();
+    private static DoubleByte.Decoder dec =
+        (DoubleByte.Decoder)new MS936().newDecoder();
 
     public String getCharacterEncoding() {
         return "MS936";
     }
 
     public ByteToCharMS936() {
-        super.index1 = nioCoder.getDecoderIndex1();
-        super.index2 = nioCoder.getDecoderIndex2();
-        start = 0x40;
-        end = 0xFE;
+        super(dec);
     }
 }

@@ -54,6 +54,7 @@ public class T6348499 {
             fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, "A.java")));
         Iterable<String> opts = Arrays.asList("-proc:only",
                                               "-processor", "A",
+                                              "-source", "1.6",
                                               "-processorpath", testClasses);
         StringWriter out = new StringWriter();
         JavacTask task = tool.getTask(out, fm, dl, opts, null, files);

@@ -298,6 +298,8 @@ public class TreeInfo {
         case(JCTree.POSTINC):
         case(JCTree.POSTDEC):
             return getStartPos(((JCUnary) tree).arg);
+        case(JCTree.ANNOTATED_TYPE):
+            return getStartPos(((JCAnnotatedType) tree).underlyingType);
         case(JCTree.VARDEF): {
             JCVariableDecl node = (JCVariableDecl)tree;
             if (node.mods.pos != Position.NOPOS) {
@@ -857,6 +859,27 @@ public class TreeInfo {
 
         default:
             return null;
+        }
+    }
+
+    /**
+     * Returns the underlying type of the tree if it is annotated type,
+     * or the tree itself otherwise
+     */
+    public static JCExpression typeIn(JCExpression tree) {
+        switch (tree.getTag()) {
+        case JCTree.ANNOTATED_TYPE:
+            return ((JCAnnotatedType)tree).underlyingType;
+        case JCTree.IDENT: /* simple names */
+        case JCTree.TYPEIDENT: /* primitive name */
+        case JCTree.SELECT: /* qualified name */
+        case JCTree.TYPEARRAY: /* array types */
+        case JCTree.WILDCARD: /* wild cards */
+        case JCTree.TYPEPARAMETER: /* type parameters */
+        case JCTree.TYPEAPPLY: /* parameterized types */
+            return tree;
+        default:
+            throw new AssertionError("Unexpected type tree: " + tree);
         }
     }
 }

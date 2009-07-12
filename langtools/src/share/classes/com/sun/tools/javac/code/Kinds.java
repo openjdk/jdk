@@ -95,6 +95,7 @@ public class Kinds {
         ANNOTATION("kindname.interface"),
         CONSTRUCTOR("kindname.constructor"),
         INTERFACE("kindname.interface"),
+        ENUM("kindname.enum"),
         STATIC("kindname.static"),
         TYPEVAR("kindname.type.variable"),
         BOUND("kindname.type.variable.bound"),
@@ -145,10 +146,14 @@ public class Kinds {
             return KindName.PACKAGE;
 
         case ENUM:
+            return KindName.ENUM;
+
         case ANNOTATION_TYPE:
-        case INTERFACE:
         case CLASS:
             return KindName.CLASS;
+
+        case INTERFACE:
+            return KindName.INTERFACE;
 
         case TYPE_PARAMETER:
             return KindName.TYPEVAR;
@@ -160,8 +165,10 @@ public class Kinds {
         case EXCEPTION_PARAMETER:
             return KindName.VAR;
 
-        case METHOD:
         case CONSTRUCTOR:
+            return KindName.CONSTRUCTOR;
+
+        case METHOD:
         case STATIC_INIT:
         case INSTANCE_INIT:
             return KindName.METHOD;

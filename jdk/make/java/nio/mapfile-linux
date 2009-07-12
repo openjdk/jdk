@@ -142,7 +142,7 @@ SUNWprivate_1.1 {
 		Java_sun_nio_fs_LinuxNativeDispatcher_fremovexattr0;
 		Java_sun_nio_fs_LinuxNativeDispatcher_setmntent0;
 		Java_sun_nio_fs_LinuxNativeDispatcher_endmntent;
-		Java_sun_nio_fs_UnixNativeDispatcher_initIDs;
+		Java_sun_nio_fs_UnixNativeDispatcher_init;
 		Java_sun_nio_fs_UnixNativeDispatcher_getcwd;
 		Java_sun_nio_fs_UnixNativeDispatcher_strerror;
 		Java_sun_nio_fs_UnixNativeDispatcher_dup;

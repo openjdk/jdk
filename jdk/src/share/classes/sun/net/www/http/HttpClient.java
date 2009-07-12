@@ -27,6 +27,9 @@ package sun.net.www.http;
 
 import java.io.*;
 import java.net.*;
+import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import sun.net.NetworkClient;
 import sun.net.ProgressSource;
 import sun.net.www.MessageHeader;
@@ -34,7 +37,6 @@ import sun.net.www.HeaderParser;
 import sun.net.www.MeteredStream;
 import sun.net.www.ParseUtil;
 import sun.net.www.protocol.http.HttpURLConnection;
-import sun.misc.RegexpPool;
 
 /**
  * @author Herb Jellinek
@@ -64,6 +66,10 @@ public class HttpClient extends NetworkClient {
     /** Default port number for http daemons. REMIND: make these private */
     static final int    httpPortNumber = 80;
 
+    // Use same logger as HttpURLConnection since we want to combine both event
+    // streams into one single HTTP log
+    private static Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
+
     /** return default port number (subclasses may override) */
     protected int getDefaultPort () { return httpPortNumber; }
 
@@ -74,30 +80,6 @@ public class HttpClient extends NetworkClient {
             return 443;
         return -1;
     }
-
-    /* The following three data members are left in for binary */
-    /* backwards-compatibility.  Unfortunately, HotJava sets them directly */
-    /* when it wants to change the settings.  The new design has us not */
-    /* cache these, so this is unnecessary, but eliminating the data members */
-    /* would break HJB 1.1 under JDK 1.2. */
-    /* */
-    /* These data members are not used, and their values are meaningless. */
-    /* REMIND:  Take them out for JDK 2.0! */
-    /**
-     * @deprecated
-     */
-    //    public static String proxyHost = null;
-    /**
-     * @deprecated
-     */
-    //    public static int proxyPort = 80;
-
-    /* instance-specific proxy fields override the static fields if set.
-     * Used by FTP.  These are set to the true proxy host/port if
-     * usingProxy is true.
-     */
-    //    private String instProxy = null;
-    //    private int instProxyPort = -1;
 
     /* All proxying (generic as well as instance-specific) may be
      * disabled through use of this flag
@@ -140,6 +122,9 @@ public class HttpClient extends NetworkClient {
 
     /* if set, the client will be reused and must not be put in cache */
     public boolean reuse = false;
+
+    // Traffic capture tool, if configured. See HttpCapture class for info
+     private HttpCapture capture = null;
 
     /**
      * A NOP method kept for backwards binary compatibility
@@ -226,6 +211,7 @@ public class HttpClient extends NetworkClient {
                 }
             });
 
+        capture = HttpCapture.getCapture(url);
         openServer();
     }
 
@@ -300,8 +286,10 @@ public class HttpClient extends NetworkClient {
                     // KeepAliveTimeout will get reset. We simply close the connection.
                     // This should be fine as it is very rare that a connection
                     // to the same host will not use the same proxy.
-                    ret.inCache = false;
-                    ret.closeServer();
+                    synchronized(ret) {
+                        ret.inCache = false;
+                        ret.closeServer();
+                    }
                     ret = null;
                 }
             }
@@ -369,7 +357,7 @@ public class HttpClient extends NetworkClient {
         kac.put(url, null, this);
     }
 
-    protected boolean isInKeepAliveCache() {
+    protected synchronized boolean isInKeepAliveCache() {
         return inCache;
     }
 
@@ -389,11 +377,16 @@ public class HttpClient extends NetworkClient {
      * method parseHTTP().  That's why this method is overidden from the
      * superclass.
      */
+    @Override
     public void openServer(String server, int port) throws IOException {
         serverSocket = doConnect(server, port);
         try {
+            OutputStream out = serverSocket.getOutputStream();
+            if (capture != null) {
+                out = new HttpCaptureOutputStream(out, capture);
+            }
             serverOutput = new PrintStream(
-                new BufferedOutputStream(serverSocket.getOutputStream()),
+                new BufferedOutputStream(out),
                                          false, encoding);
         } catch (UnsupportedEncodingException e) {
             throw new InternalError(encoding+" encoding not found");
@@ -412,7 +405,7 @@ public class HttpClient extends NetworkClient {
     /*
      * Returns true if this httpclient is from cache
      */
-    public boolean isCachedConnection() {
+    public synchronized boolean isCachedConnection() {
         return cachedHttpClient;
     }
 
@@ -458,26 +451,6 @@ public class HttpClient extends NetworkClient {
     }
 
     /*
-     * call super.openServer in a privileged block
-     */
-    private synchronized void privilegedSuperOpenServer(final String proxyHost,
-                                                        final int proxyPort)
-        throws IOException
-    {
-        try {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<Void>() {
-                    public Void run() throws IOException {
-                    superOpenServer(proxyHost, proxyPort);
-                    return null;
-                }
-            });
-        } catch (java.security.PrivilegedActionException pae) {
-            throw (IOException) pae.getException();
-        }
-    }
-
-    /*
      */
     protected synchronized void openServer() throws IOException {
 
@@ -489,8 +462,6 @@ public class HttpClient extends NetworkClient {
         if (keepingAlive) { // already opened
             return;
         }
-
-        String urlHost = url.getHost().toLowerCase();
 
         if (url.getProtocol().equals("http") ||
             url.getProtocol().equals("https") ) {
@@ -595,6 +566,9 @@ public class HttpClient extends NetworkClient {
 
         try {
             serverInput = serverSocket.getInputStream();
+            if (capture != null) {
+                serverInput = new HttpCaptureInputStream(serverInput, capture);
+            }
             serverInput = new BufferedInputStream(serverInput);
             return (parseHTTPHeader(responses, pi, httpuc));
         } catch (SocketTimeoutException stex) {
@@ -686,7 +660,7 @@ public class HttpClient extends NetworkClient {
                 if (keep == null) {
                     keep = responses.findValue("Connection");
                 }
-                if (keep != null && keep.toLowerCase().equals("keep-alive")) {
+                if (keep != null && keep.toLowerCase(Locale.US).equals("keep-alive")) {
                     /* some servers, notably Apache1.1, send something like:
                      * "Keep-Alive: timeout=15, max=1" which we should respect.
                      */
@@ -767,10 +741,7 @@ public class HttpClient extends NetworkClient {
          * the HTTP method and response code indicate there will be
          * no entity body to parse.
          */
-        String te = null;
-        try {
-            te = responses.findValue("Transfer-Encoding");
-        } catch (Exception e) {}
+        String te = responses.findValue("Transfer-Encoding");
         if (te != null && te.equalsIgnoreCase("chunked")) {
             serverInput = new ChunkedInputStream(serverInput, this, responses);
 
@@ -794,10 +765,14 @@ public class HttpClient extends NetworkClient {
              * 2. "Not-Modified" or "No-Content" responses - RFC 2616 states that
              *    204 or 304 response must not include a message body.
              */
-            try {
-                cl = Long.parseLong(responses.findValue("content-length"));
-            } catch (Exception e) {}
-
+            String cls = responses.findValue("content-length");
+            if (cls != null) {
+                try {
+                    cl = Long.parseLong(cls);
+                } catch (NumberFormatException e) {
+                    cl = -1;
+                }
+            }
             String requestLine = requests.getKey(0);
 
             if ((requestLine != null &&
@@ -835,6 +810,9 @@ public class HttpClient extends NetworkClient {
 
             if (isKeepingAlive())   {
                 // Wrap KeepAliveStream if keep alive is enabled.
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest("KeepAlive stream used: " + url);
+                }
                 serverInput = new KeepAliveStream(serverInput, pi, cl, this);
                 failedOnce = false;
             }
