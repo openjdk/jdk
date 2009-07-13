@@ -120,19 +120,20 @@ public class TreePath implements Iterable<Tree> {
     public Iterator<Tree> iterator() {
         return new Iterator<Tree>() {
             public boolean hasNext() {
-                return curr.parent != null;
+                return next != null;
             }
 
             public Tree next() {
-                curr = curr.parent;
-                return curr.leaf;
+                Tree t = next.leaf;
+                next = next.parent;
+                return t;
             }
 
             public void remove() {
                 throw new UnsupportedOperationException();
             }
 
-            private TreePath curr;
+            private TreePath next = TreePath.this;
         };
     }
 

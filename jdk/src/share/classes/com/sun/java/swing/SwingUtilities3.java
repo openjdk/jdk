@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,17 @@ package com.sun.java.swing;
 
 import sun.awt.EventQueueDelegate;
 import sun.awt.AppContext;
+import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.awt.AWTEvent;
 import java.awt.EventQueue;
 import java.awt.Component;
+import java.awt.Container;
 import javax.swing.JComponent;
 import javax.swing.RepaintManager;
+import javax.swing.SwingUtilities;
 
 /**
  * A collection of utility methods for Swing.
@@ -67,6 +71,43 @@ public class SwingUtilities3 {
 
         component.putClientProperty(DELEGATE_REPAINT_MANAGER_KEY,
                                     repaintManager);
+    }
+
+    private static final Map<Container, Boolean> vsyncedMap =
+        Collections.synchronizedMap(new WeakHashMap<Container, Boolean>());
+
+    /**
+     * Sets vsyncRequested state for the {@code rootContainer}.  If
+     * {@code isRequested} is {@code true} then vsynced
+     * {@code BufferStrategy} is enabled for this {@code rootContainer}.
+     *
+     * Note: requesting vsynced painting does not guarantee one. The outcome
+     * depends on current RepaintManager's RepaintManager.PaintManager
+     * and on the capabilities of the graphics hardware/software and what not.
+     *
+     * @param rootContainer topmost container. Should be either {@code Window}
+     *  or {@code Applet}
+     * @param isRequested the value to set vsyncRequested state to
+     */
+    public static void setVsyncRequested(Container rootContainer,
+                                         boolean isRequested) {
+        assert SwingUtilities.getRoot(rootContainer) == rootContainer;
+        if (isRequested) {
+            vsyncedMap.put(rootContainer, Boolean.TRUE);
+        } else {
+            vsyncedMap.remove(rootContainer);
+        }
+    }
+
+    /**
+     * Checks if vsync painting is requested for {@code rootContainer}
+     *
+     * @param rootContainer topmost container. Should be either Window or Applet
+     * @return {@code true} if vsync painting is requested for {@code rootContainer}
+     */
+    public static boolean isVsyncRequested(Container rootContainer) {
+        assert SwingUtilities.getRoot(rootContainer) == rootContainer;
+        return Boolean.TRUE == vsyncedMap.get(rootContainer);
     }
 
     /**

@@ -59,12 +59,11 @@ import java.io.IOException;
  * attributes.
  *
  * <p> Where dynamic access to file attributes is required, the {@link
- * #getAttribute getAttribute} or {@link #readAttributes(String,String[])
- * readAttributes(String,String[])} methods may be used to read the attribute
- * value. The attribute value is returned as a byte array (byte[]). The {@link
- * #setAttribute setAttribute} method may be used to write the value of a
- * user-defined attribute from a buffer (as if by invoking the {@link #write
- * write} method), or byte array (byte[]).
+ * java.nio.file.FileRef#getAttribute getAttribute} method may be used to read
+ * the attribute value. The attribute value is returned as a byte array (byte[]).
+ * The {@link java.nio.file.FileRef#setAttribute setAttribute} method may be used
+ * to write the value of a user-defined attribute from a buffer (as if by
+ * invoking the {@link #write write} method), or byte array (byte[]).
  *
  * @since 1.7
  */
@@ -74,7 +73,7 @@ public interface UserDefinedFileAttributeView
 {
     /**
      * Returns the name of this attribute view. Attribute views of this type
-     * have the name {@code "xattr"}.
+     * have the name {@code "user"}.
      */
     @Override
     String name();

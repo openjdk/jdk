@@ -34,6 +34,6 @@ public class CharToByteMS950_HKSCS extends CharToByteHKSCS {
 
     protected int getNative(char ch) {
         int r = super.getNative(ch);
-        return (r != 0) ? r : cbMS950.getNative(ch);
+        return (r != 0) ? r : cbMS950.encodeChar(ch);
     }
 }

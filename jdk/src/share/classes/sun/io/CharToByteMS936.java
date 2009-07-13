@@ -25,24 +25,18 @@
 
 package sun.io;
 
-import sun.nio.cs.ext.MS936;
+import sun.nio.cs.ext.*;
 
-/**
- * Tables and data to convert Unicode to MS936
- *
- * @author  ConverterGenerator tool
- */
+public class CharToByteMS936 extends CharToByteDBCS_ASCII {
 
-public class CharToByteMS936 extends CharToByteDoubleByte {
-
-    private final static MS936 nioCoder = new MS936();
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new MS936().newEncoder();
 
     public String getCharacterEncoding() {
         return "MS936";
     }
 
     public CharToByteMS936() {
-        super.index1 = nioCoder.getEncoderIndex1();
-        super.index2 = nioCoder.getEncoderIndex2();
+        super(enc);
     }
 }

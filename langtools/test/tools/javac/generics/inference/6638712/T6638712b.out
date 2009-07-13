@@ -1,0 +1,2 @@
+T6638712b.java:37:21: compiler.err.invalid.inferred.types: T, (compiler.misc.inferred.do.not.conform.to.bounds: T6638712b<java.lang.Integer>, T6638712b<java.lang.String>)
+1 error
