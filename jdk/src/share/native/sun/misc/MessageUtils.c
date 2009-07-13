@@ -39,6 +39,11 @@ printToFile(JNIEnv *env, jstring s, FILE *file)
     int i;
     const jchar *sAsArray;
 
+    if (s == NULL) {
+      s = (*env)->NewStringUTF(env, "null");
+      if (s == NULL) return;
+    }
+
     sAsArray = (*env)->GetStringChars(env, s, NULL);
     length = (*env)->GetStringLength(env, s);
     sConverted = (char *) malloc(length + 1);

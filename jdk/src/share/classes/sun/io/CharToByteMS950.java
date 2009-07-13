@@ -26,24 +26,18 @@
 
 package sun.io;
 
-import sun.nio.cs.ext.MS950;
+import sun.nio.cs.ext.*;
 
-/**
- * Tables and data to convert Unicode to MS950
- *
- * @author  ConverterGenerator tool
- */
+public class CharToByteMS950 extends CharToByteDBCS_ASCII {
 
-public class CharToByteMS950 extends CharToByteDoubleByte {
-
-    private final static MS950 nioCoder = new MS950();
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new MS950().newEncoder();
 
     public String getCharacterEncoding() {
         return "MS950";
     }
 
     public CharToByteMS950() {
-        super.index1 = nioCoder.getEncoderIndex1();
-        super.index2 = nioCoder.getEncoderIndex2();
+        super(enc);
     }
 }

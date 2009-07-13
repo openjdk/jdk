@@ -85,9 +85,12 @@ public class Test12 extends Test {
             System.out.println ("OK");
         } finally {
             delay();
-            s1.stop(2);
-            s2.stop(2);
-            executor.shutdown ();
+            if (s1 != null)
+                s1.stop(2);
+            if (s2 != null)
+                s2.stop(2);
+            if (executor != null)
+                executor.shutdown ();
         }
     }
 
