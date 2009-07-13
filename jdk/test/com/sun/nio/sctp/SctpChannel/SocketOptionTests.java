@@ -29,15 +29,24 @@
 
 import java.io.IOException;
 import java.util.Set;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.nio.channels.ClosedChannelException;
 import com.sun.nio.sctp.SctpChannel;
+import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.SctpSocketOption;
+import java.security.AccessController;
+import sun.security.action.GetPropertyAction;
 import static com.sun.nio.sctp.SctpStandardSocketOption.*;
 import static java.lang.System.out;
 
 public class SocketOptionTests {
+    final String osName = AccessController.doPrivileged(
+                    new GetPropertyAction("os.name"));
+
     <T> void checkOption(SctpChannel sc, SctpSocketOption<T> name,
             T expectedValue) throws IOException {
         T value = sc.getOption(name);
@@ -92,13 +101,6 @@ public class SocketOptionTests {
             optionalSupport(sc, SCTP_EXPLICIT_COMPLETE, true);
             optionalSupport(sc, SCTP_FRAGMENT_INTERLEAVE, 1);
 
-
-            //TODO: SCTP_PRIMARY_ADDR
-            //sc.bind(null);
-            //connect
-            //InetSocketAddress addr = new InetSocketAddress(0);
-            //sc.setOption(SCTP_PRIMARY_ADDR, addr);
-
             sc.setOption(SCTP_NODELAY, true);
             checkOption(sc, SCTP_NODELAY, true);
             sc.setOption(SO_SNDBUF, 16*1024);
@@ -107,6 +109,8 @@ public class SocketOptionTests {
             sc.setOption(SO_LINGER, 2000);
             checkOption(sc, SO_LINGER, 2000);
 
+            /* SCTP_PRIMARY_ADDR */
+            sctpPrimaryAddr();
 
             /* NullPointerException */
             try {
@@ -135,6 +139,60 @@ public class SocketOptionTests {
         }
     }
 
+    /* SCTP_PRIMARY_ADDR */
+    void sctpPrimaryAddr() throws IOException {
+        SocketAddress addrToSet = null;;
+
+        System.out.println("TESTING SCTP_PRIMARY_ADDR");
+        SctpChannel sc = SctpChannel.open();
+        SctpServerChannel ssc = SctpServerChannel.open().bind(null);
+        Set<SocketAddress> addrs = ssc.getAllLocalAddresses();
+        if (addrs.isEmpty())
+            debug("addrs should not be empty");
+        debug("Listening on " + addrs);
+
+        InetSocketAddress serverAddr = (InetSocketAddress) addrs.iterator().next();
+        debug("connecting to " + serverAddr);
+        sc.connect(serverAddr);
+        SctpChannel peerChannel = ssc.accept();
+        ssc.close();
+        Set<SocketAddress> peerAddrs = peerChannel.getAllLocalAddresses();
+        debug("Peer local Addresses: ");
+        for (Iterator<SocketAddress> it = peerAddrs.iterator(); it.hasNext(); ) {
+            InetSocketAddress addr = (InetSocketAddress)it.next();
+            debug("\t" + addr);
+            addrToSet = addr;   // any of the peer addresses will do!
+        }
+
+        /* retrieval of SCTP_PRIMARY_ADDR is not supported on Solaris */
+        if ("SunOS".equals(osName)) {
+            /* For now do not set this option. There is a bug on Solaris 10 pre Update 5
+             * where setting this option returns Invalid argument */
+            //debug("Set SCTP_PRIMARY_ADDR with " + addrToSet);
+            //sc.setOption(SCTP_PRIMARY_ADDR, addrToSet);
+            return;
+        } else { /* Linux */
+            SocketAddress primaryAddr = sc.getOption(SCTP_PRIMARY_ADDR);
+            System.out.println("SCTP_PRIMARY_ADDR returned: " + primaryAddr);
+            /* Verify that this is one of the peer addresses */
+            boolean found = false;
+            addrToSet = primaryAddr; // may not have more than one addr
+            for (Iterator<SocketAddress> it = peerAddrs.iterator(); it.hasNext(); ) {
+                InetSocketAddress addr = (InetSocketAddress)it.next();
+                if (addr.equals(primaryAddr)) {
+                    found = true;
+                }
+                addrToSet = addr;
+            }
+            check(found, "SCTP_PRIMARY_ADDR returned bogus address!");
+
+            sc.setOption(SCTP_PRIMARY_ADDR, addrToSet);
+            System.out.println("SCTP_PRIMARY_ADDR set to: " + addrToSet);
+            primaryAddr = sc.getOption(SCTP_PRIMARY_ADDR);
+            System.out.println("SCTP_PRIMARY_ADDR returned: " + primaryAddr);
+            check(addrToSet.equals(primaryAddr),"SCTP_PRIMARY_ADDR not set correctly");
+        }
+    }
             //--------------------- Infrastructure ---------------------------
     boolean debug = true;
     volatile int passed = 0, failed = 0;

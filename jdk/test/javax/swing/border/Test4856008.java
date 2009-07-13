@@ -35,6 +35,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Insets;
 
+import javax.swing.ActionMap;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -51,6 +52,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
 import javax.swing.border.SoftBevelBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.plaf.ActionMapUIResource;
 import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.synth.SynthLookAndFeel;
 import javax.swing.plaf.basic.BasicBorders;
@@ -59,7 +61,6 @@ import javax.swing.plaf.metal.MetalBorders;
 import javax.swing.plaf.metal.MetalComboBoxEditor;
 
 import sun.swing.plaf.synth.SynthFileChooserUI;
-import sun.tools.jconsole.BorderedComponent;
 
 public class Test4856008 {
     private static final JLabel LABEL = new JLabel();
@@ -133,11 +134,6 @@ public class Test4856008 {
 
             //+ SynthFileChooserUI.UIBorder:
             new SynthFileChooser().getUIBorder(),
-
-            //+ BorderedComponent.FocusBorder:
-            getBorder(false),
-            //+ BorderedComponent.LabeledBorder:
-            getBorder(true),
     };
 
     public static void main(String[] args) {
@@ -182,15 +178,6 @@ public class Test4856008 {
         return LABEL;
     }
 
-    // This method is used to get the border from BorderedComponent
-    private static Border getBorder(boolean labeled) {
-        JComponent component = new BorderedComponent("4856008", null, true);
-        CompoundBorder border = (CompoundBorder) component.getBorder();
-        return labeled
-                ? border.getInsideBorder()
-                : border.getOutsideBorder();
-    }
-
     // This class is used to get the instance of BasicBorders.RolloverMarginBorder
     private static class ToolBar extends BasicToolBarUI {
         private Border getRolloverMarginBorder() {
@@ -221,6 +208,11 @@ public class Test4856008 {
             CHOOSER.setBorder(null);
             installDefaults(CHOOSER);
             return CHOOSER.getBorder();
+        }
+
+        @Override
+        protected ActionMap createActionMap() {
+            return new ActionMapUIResource();
         }
 
         @Override

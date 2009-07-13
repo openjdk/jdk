@@ -127,8 +127,7 @@ public class Copy {
                 Path newdir = target.resolve(source.relativize(dir));
                 try {
                     BasicFileAttributes attrs = Attributes.readBasicFileAttributes(dir);
-                    Attributes.setLastModifiedTime(newdir,
-                        attrs.lastModifiedTime(), attrs.resolution());
+                    Attributes.setLastModifiedTime(newdir, attrs.lastModifiedTime());
                 } catch (IOException x) {
                     System.err.format("Unable to copy all attributes to: %s: %s%n", newdir, x);
                 }

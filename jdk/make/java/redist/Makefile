@@ -119,10 +119,15 @@ IMPORT_LIST += \
 	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME) \
 	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME)
 
-# Hotspot client is only available on 32-bit builds
+# Add .map and .pdb files to the import path for client and kernel VMs. 
+# These are only available on 32-bit windows builds. 
 ifeq ($(ARCH_DATA_MODEL), 32)
   IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME) \
                  $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMPDB_NAME)
+  ifeq ($(DO_KERNEL), true)
+    IMPORT_LIST += $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMMAP_NAME) \
+                   $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME)
+  endif
 endif
 
 $(LIBDIR)/$(JVMLIB_NAME): $(HOTSPOT_LIB_PATH)/$(JVMLIB_NAME)
@@ -134,6 +139,10 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMMAP_NAME)  $@
 
+$(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMMAP_NAME):
+	@$(prep-target)
+	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVMMAP_NAME)  $@
+
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMMAP_NAME) $@
@@ -141,6 +150,10 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME):
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMPDB_NAME)  $@
+
+$(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME):
+	@$(prep-target)
+	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVMPDB_NAME)  $@
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME): 
 	@$(prep-target)
@@ -195,6 +208,9 @@ endif # PLATFORM
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVM_NAME)
 	$(install-import-file)
 
+$(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVM_NAME): $(HOTSPOT_KERNEL_PATH)/$(JVM_NAME)
+	$(install-file)
+
 $(LIB_LOCATION)/$(LIBJSIG_NAME): $(HOTSPOT_SERVER_PATH)/$(LIBJSIG_NAME)
 	$(install-import-file)
 
@@ -223,6 +239,9 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/Xusage.txt : $(HOTSPOT_SERVER_PATH)/Xusage.tx
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/Xusage.txt : $(HOTSPOT_CLIENT_PATH)/Xusage.txt
 	$(install-import-file)
+
+$(LIB_LOCATION)/$(KERNEL_LOCATION)/Xusage.txt : $(HOTSPOT_KERNEL_PATH)/Xusage.txt
+	$(install-file)
 
 ifeq ($(INCLUDE_SA), true)
 # The Serviceability Agent is built in the Hotspot workspace.

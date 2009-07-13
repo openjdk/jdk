@@ -232,6 +232,11 @@ public class SctpNet {
         shutdown0(fd, assocId);
     }
 
+    static FileDescriptor branch(int fd, int assocId) throws IOException {
+        int nativefd = branch0(fd, assocId);
+        return IOUtil.newFD(nativefd);
+    }
+
     /* Native Methods */
     static native int socket0(boolean oneToOne) throws IOException;
 
@@ -247,6 +252,8 @@ public class SctpNet {
 
     static native SocketAddress[] getRemoteAddresses0(int fd, int assocId)
             throws IOException;
+
+    static native int branch0(int fd, int assocId) throws IOException;
 
     static native void setPrimAddrOption0(int fd, int assocId, InetAddress ia,
             int port) throws IOException;

@@ -79,8 +79,9 @@ public abstract class GraphicsEnvironment {
 
             try {
 //                      long t0 = System.currentTimeMillis();
-                localEnv =
-                    (GraphicsEnvironment) Class.forName(nm).newInstance();
+                ClassLoader cl = ClassLoader.getSystemClassLoader();
+                Class geCls = Class.forName(nm, true, cl);
+                localEnv = (GraphicsEnvironment)geCls.newInstance();
 //              long t1 = System.currentTimeMillis();
 //              System.out.println("GE creation took " + (t1-t0)+ "ms.");
                 if (isHeadless()) {

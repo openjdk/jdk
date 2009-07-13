@@ -81,6 +81,7 @@ public class PerformanceLogger {
     private static Vector<TimeData> times;
     private static String logFileName = null;
     private static Writer logWriter = null;
+    private static long baseTime;
 
     static {
         String perfLoggingProp =
@@ -188,6 +189,16 @@ public class PerformanceLogger {
     }
 
     /**
+     * Sets the base time, output can then
+     * be displayed as offsets from the base time;.
+     */
+    public static void setBaseTime(long time) {
+        if (loggingEnabled()) {
+            baseTime = time;
+        }
+    }
+
+    /**
      * Sets the start time.
      * This version of the method is
      * given the time to log, instead of expecting this method to
@@ -281,7 +292,8 @@ public class PerformanceLogger {
                         TimeData td = times.get(i);
                         if (td != null) {
                             writer.write(i + " " + td.getMessage() + ": " +
-                                         td.getTime() + "\n");
+                                         (td.getTime() - baseTime) + "\n");
+
                         }
                     }
                 }

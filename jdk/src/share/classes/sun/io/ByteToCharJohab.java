@@ -26,26 +26,18 @@
 
 package sun.io;
 
-import sun.nio.cs.ext.Johab;
+import sun.nio.cs.ext.*;
 
-/**
- * Tables and data to convert Johab to Unicode
- *
- * @author  ConverterGenerator tool
- */
+public class ByteToCharJohab extends ByteToCharDBCS_ASCII {
 
-public class ByteToCharJohab extends ByteToCharDoubleByte {
-
-    private final static Johab nioCoder = new Johab();
+    private static DoubleByte.Decoder dec =
+        (DoubleByte.Decoder)new Johab().newDecoder();
 
     public String getCharacterEncoding() {
         return "Johab";
     }
 
     public ByteToCharJohab() {
-        super.index1 = nioCoder.getDecoderIndex1();
-        super.index2 = nioCoder.getDecoderIndex2();
-        start = 0x20;
-        end = 0xFE;
+        super(dec);
     }
 }

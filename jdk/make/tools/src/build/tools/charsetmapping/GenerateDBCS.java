@@ -35,7 +35,7 @@ import static build.tools.charsetmapping.CharsetMapping.*;
 
 public class GenerateDBCS {
     // pattern used by this class to read in mapping table
-    static Pattern mPattern = Pattern.compile("(\\p{XDigit}++)\\s++(\\p{XDigit}++)(\\s++#.*)?");
+    static Pattern mPattern = Pattern.compile("(?:0x)?(\\p{XDigit}++)\\s++(?:0x)?(\\p{XDigit}++)(?:\\s++#.*)?");
     public static void genDBCS(String args[]) throws Exception {
 
         Scanner s = new Scanner(new File(args[0], args[2]));
@@ -260,10 +260,12 @@ public class GenerateDBCS {
                                 "StandardCharsets.aliases_" + clzName :
                                 "ExtendedCharsets.aliasesFor(\"" + csName + "\")")
                        .replace("$NAME_CS$" , csName)
-                       .replace("$CONTAINS$", isASCII ?
-                                "        return ((cs.name().equals(\"US-ASCII\")) || (cs instanceof "
-                                + clzName + "));":
-                                "        return (cs instanceof " + clzName + ");")
+                       .replace("$CONTAINS$",
+                                "MS932".equals(clzName)?
+                                "return ((cs.name().equals(\"US-ASCII\")) || (cs instanceof JIS_X_0201) || (cs instanceof " + clzName + "));":
+                                (isASCII ?
+                                 "return ((cs.name().equals(\"US-ASCII\")) || (cs instanceof " + clzName + "));":
+                                 "return (cs instanceof " + clzName + ");"))
                        .replace("$HISTORICALNAME$",
                                 (hisName == null)? "" :
                                 "    public String historicalName() { return \"" + hisName + "\"; }")

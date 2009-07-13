@@ -51,8 +51,10 @@ import com.sun.tools.classfile.ModuleMemberTable_attribute;
 import com.sun.tools.classfile.Module_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
+import com.sun.tools.classfile.RuntimeInvisibleTypeAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute;
+import com.sun.tools.classfile.RuntimeVisibleTypeAnnotations_attribute;
 import com.sun.tools.classfile.Signature_attribute;
 import com.sun.tools.classfile.SourceDebugExtension_attribute;
 import com.sun.tools.classfile.SourceFile_attribute;
@@ -74,7 +76,7 @@ import static com.sun.tools.classfile.AccessFlags.*;
 public class AttributeWriter extends BasicWriter
         implements Attribute.Visitor<Void,Void>
 {
-    static AttributeWriter instance(Context context) {
+    public static AttributeWriter instance(Context context) {
         AttributeWriter instance = context.get(AttributeWriter.class);
         if (instance == null)
             instance = new AttributeWriter(context);
@@ -426,6 +428,26 @@ public class AttributeWriter extends BasicWriter
 
     public Void visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr, Void ignore) {
         println("  RuntimeInvisibleAnnotations: ");
+        for (int i = 0; i < attr.annotations.length; i++) {
+            print("    " + i + ": ");
+            annotationWriter.write(attr.annotations[i]);
+            println();
+        }
+        return null;
+    }
+
+    public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr, Void ignore) {
+        println("  RuntimeVisibleTypeAnnotations: ");
+        for (int i = 0; i < attr.annotations.length; i++) {
+            print("    " + i + ": ");
+            annotationWriter.write(attr.annotations[i]);
+            println();
+        }
+        return null;
+    }
+
+    public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr, Void ignore) {
+        println("  RuntimeInvisibleTypeAnnotations: ");
         for (int i = 0; i < attr.annotations.length; i++) {
             print("    " + i + ": ");
             annotationWriter.write(attr.annotations[i]);
