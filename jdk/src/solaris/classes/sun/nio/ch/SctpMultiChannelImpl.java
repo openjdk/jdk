@@ -26,6 +26,7 @@ package sun.nio.ch;
 
 import java.net.InetAddress;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.InetSocketAddress;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -398,8 +399,8 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             if (!isOpen())
                 throw new ClosedChannelException();
 
-            SctpNet.setSocketOption(fdVal, name, value,
-                    association.associationID());
+            int assocId = association == null ? 0 : association.associationID();
+            SctpNet.setSocketOption(fdVal, name, value, assocId);
         }
         return this;
     }
@@ -414,12 +415,15 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             throw new UnsupportedOperationException("'" + name + "' not supported");
 
         synchronized (stateLock) {
-            checkAssociation(association);
+            if (association != null && (name.equals(SCTP_PRIMARY_ADDR) ||
+                    name.equals(SCTP_SET_PEER_PRIMARY_ADDR))) {
+                checkAssociation(association);
+            }
             if (!isOpen())
                 throw new ClosedChannelException();
 
-            return (T)SctpNet.getSocketOption(fdVal, name,
-                    association.associationID());
+            int assocId = association == null ? 0 : association.associationID();
+            return (T)SctpNet.getSocketOption(fdVal, name, assocId);
         }
     }
 
@@ -626,15 +630,19 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 case ASSOCIATION_CHANGED :
                     result = absHandler.handleNotification(
                             resultContainer.getAssociationChanged(), attachment);
+                    break;
                 case PEER_ADDRESS_CHANGED :
                     result = absHandler.handleNotification(
                             resultContainer.getPeerAddressChanged(), attachment);
+                    break;
                 case SEND_FAILED :
                     result = absHandler.handleNotification(
                             resultContainer.getSendFailed(), attachment);
+                    break;
                 case SHUTDOWN :
                     result =  absHandler.handleNotification(
                             resultContainer.getShutdown(), attachment);
+                    break;
                 default :
                     /* implementation specific handlers */
                     result =  absHandler.handleNotification(
@@ -836,7 +844,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         int ppid = messageInfo.payloadProtocolID();
         int pos = src.position();
         int lim = src.limit();
-        assert (pos <= lim && streamNumber > 0);
+        assert (pos <= lim && streamNumber >= 0);
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (src instanceof DirectBuffer)
@@ -914,7 +922,13 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             if (!isOpen())
                 throw new ClosedChannelException();
 
-            return SctpNet.getRemoteAddresses(fdVal, association.associationID());
+            try {
+                return SctpNet.getRemoteAddresses(fdVal, association.associationID());
+            } catch (SocketException se) {
+                /* a valid association should always have remote addresses */
+                Set<SocketAddress> addrs = associationMap.get(association);
+                return addrs != null ? addrs : Collections.EMPTY_SET;
+            }
         }
     }
 
@@ -922,7 +936,16 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     public SctpChannel branch(Association association)
             throws IOException {
         synchronized (stateLock) {
-            return null;  //TODO: implement
+            checkAssociation(association);
+            if (!isOpen())
+                throw new ClosedChannelException();
+
+            FileDescriptor bFd = SctpNet.branch(fdVal,
+                                                association.associationID());
+            /* successfully branched, we can now remove it from assoc list */
+            removeAssociation(association);
+
+            return new SctpChannelImpl(provider(), bFd, association);
         }
     }
 

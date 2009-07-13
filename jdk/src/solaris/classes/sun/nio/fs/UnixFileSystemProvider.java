@@ -93,7 +93,7 @@ public abstract class UnixFileSystemProvider
         return UnixUriUtils.fromUri(theFileSystem, uri);
     }
 
-    private UnixPath checkPath(Path obj) {
+    protected UnixPath checkPath(Path obj) {
         if (obj == null)
             throw new NullPointerException();
         if (!(obj instanceof UnixPath))
@@ -102,9 +102,9 @@ public abstract class UnixFileSystemProvider
     }
 
     @Override
-    public final FileChannel newFileChannel(Path obj,
-                                            Set<? extends OpenOption> options,
-                                            FileAttribute<?>... attrs)
+    public FileChannel newFileChannel(Path obj,
+                                      Set<? extends OpenOption> options,
+                                      FileAttribute<?>... attrs)
         throws IOException
     {
         UnixPath file = checkPath(obj);
@@ -119,10 +119,10 @@ public abstract class UnixFileSystemProvider
     }
 
     @Override
-    public final AsynchronousFileChannel newAsynchronousFileChannel(Path obj,
-                                                                    Set<? extends OpenOption> options,
-                                                                    ExecutorService executor,
-                                                                    FileAttribute<?>... attrs) throws IOException
+    public AsynchronousFileChannel newAsynchronousFileChannel(Path obj,
+                                                              Set<? extends OpenOption> options,
+                                                              ExecutorService executor,
+                                                              FileAttribute<?>... attrs) throws IOException
     {
         UnixPath file = checkPath(obj);
         int mode = UnixFileModeAttribute

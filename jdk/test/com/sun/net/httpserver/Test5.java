@@ -61,8 +61,10 @@ public class Test5 extends Test {
             System.out.println ("OK");
         } finally {
             delay ();
-            server.stop(2);
-            exec.shutdown();
+            if (server != null)
+                server.stop(2);
+            if (exec != null)
+                exec.shutdown();
         }
     }
 

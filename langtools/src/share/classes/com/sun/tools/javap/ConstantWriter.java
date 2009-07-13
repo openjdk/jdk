@@ -40,7 +40,7 @@ import static com.sun.tools.classfile.ConstantPool.*;
  *  deletion without notice.</b>
  */
 public class ConstantWriter extends BasicWriter {
-    static ConstantWriter instance(Context context) {
+    public static ConstantWriter instance(Context context) {
         ConstantWriter instance = context.get(ConstantWriter.class);
         if (instance == null)
             instance = new ConstantWriter(context);
@@ -54,7 +54,12 @@ public class ConstantWriter extends BasicWriter {
         options = Options.instance(context);
     }
 
-    void writeConstantPool() {
+    protected void writeConstantPool() {
+        ConstantPool constant_pool = classWriter.getClassFile().constant_pool;
+        writeConstantPool(constant_pool);
+    }
+
+    protected void writeConstantPool(ConstantPool constant_pool) {
         ConstantPool.Visitor<Integer, Void> v = new ConstantPool.Visitor<Integer,Void>() {
             public Integer visitClass(CONSTANT_Class_info info, Void p) {
                 println("#" + info.name_index + ";\t//  " + stringValue(info));
@@ -114,7 +119,6 @@ public class ConstantWriter extends BasicWriter {
 
         };
         println("  Constant pool:");
-        ConstantPool constant_pool = classWriter.getClassFile().constant_pool;
         int cpx = 1;
         while (cpx < constant_pool.size()) {
             try {
@@ -127,7 +131,7 @@ public class ConstantWriter extends BasicWriter {
         }
     }
 
-    void write(int cpx) {
+    protected void write(int cpx) {
         ClassFile classFile = classWriter.getClassFile();
         if (cpx == 0) {
             print("#0");

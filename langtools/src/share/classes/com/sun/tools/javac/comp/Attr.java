@@ -303,7 +303,7 @@ public class Attr extends JCTree.Visitor {
 
     public Env<AttrContext> attribExprToTree(JCTree expr, Env<AttrContext> env, JCTree tree) {
         breakTree = tree;
-        JavaFileObject prev = log.useSource(null);
+        JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
         try {
             attribExpr(expr, env);
         } catch (BreakAttr b) {
@@ -317,7 +317,7 @@ public class Attr extends JCTree.Visitor {
 
     public Env<AttrContext> attribStatToTree(JCTree stmt, Env<AttrContext> env, JCTree tree) {
         breakTree = tree;
-        JavaFileObject prev = log.useSource(null);
+        JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
         try {
             attribStat(stmt, env);
         } catch (BreakAttr b) {
@@ -700,7 +700,6 @@ public class Attr extends JCTree.Visitor {
             localEnv.info.scope.leave();
             result = tree.type = m.type;
             chk.validateAnnotations(tree.mods.annotations, m);
-
         }
         finally {
             chk.setLint(prevLint);
@@ -2516,10 +2515,11 @@ public class Attr extends JCTree.Visitor {
                 Type clazzOuter = clazztype.getEnclosingType();
                 if (clazzOuter.tag == CLASS) {
                     Type site;
-                    if (tree.clazz.getTag() == JCTree.IDENT) {
+                    JCExpression clazz = TreeInfo.typeIn(tree.clazz);
+                    if (clazz.getTag() == JCTree.IDENT) {
                         site = env.enclClass.sym.type;
-                    } else if (tree.clazz.getTag() == JCTree.SELECT) {
-                        site = ((JCFieldAccess) tree.clazz).selected.type;
+                    } else if (clazz.getTag() == JCTree.SELECT) {
+                        site = ((JCFieldAccess) clazz).selected.type;
                     } else throw new AssertionError(""+tree);
                     if (clazzOuter.tag == CLASS && site != clazzOuter) {
                         if (site.tag == CLASS)
@@ -2626,6 +2626,10 @@ public class Attr extends JCTree.Visitor {
     public void visitAnnotation(JCAnnotation tree) {
         log.error(tree.pos(), "annotation.not.valid.for.type", pt);
         result = tree.type = syms.errType;
+    }
+
+    public void visitAnnotatedType(JCAnnotatedType tree) {
+        result = tree.type = attribType(tree.getUnderlyingType(), env);
     }
 
     public void visitErroneous(JCErroneous tree) {
@@ -2816,6 +2820,9 @@ public class Attr extends JCTree.Visitor {
             (c.flags() & ABSTRACT) == 0) {
             checkSerialVersionUID(tree, c);
         }
+
+        // Check type annotations applicability rules
+        validateTypeAnnotations(tree);
     }
         // where
         /** check if a class is a subtype of Serializable, if that is available. */
@@ -2858,4 +2865,33 @@ public class Attr extends JCTree.Visitor {
     private Type capture(Type type) {
         return types.capture(type);
     }
+
+    private void validateTypeAnnotations(JCTree tree) {
+        tree.accept(typeAnnotationsValidator);
+    }
+    //where
+    private final JCTree.Visitor typeAnnotationsValidator =
+        new TreeScanner() {
+        public void visitAnnotation(JCAnnotation tree) {
+            if (tree instanceof JCTypeAnnotation) {
+                chk.validateTypeAnnotation((JCTypeAnnotation)tree, false);
+            }
+            super.visitAnnotation(tree);
+        }
+        public void visitTypeParameter(JCTypeParameter tree) {
+            chk.validateTypeAnnotations(tree.annotations, true);
+            // don't call super. skip type annotations
+            scan(tree.bounds);
+        }
+        public void visitMethodDef(JCMethodDecl tree) {
+            // need to check static methods
+            if ((tree.sym.flags() & Flags.STATIC) != 0) {
+                for (JCTypeAnnotation a : tree.receiverAnnotations) {
+                    if (chk.isTypeAnnotation(a, false))
+                        log.error(a.pos(), "annotation.type.not.applicable");
+                }
+            }
+            super.visitMethodDef(tree);
+        }
+    };
 }

@@ -407,7 +407,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
             if (!isOpen())
                 throw new ClosedChannelException();
             if (!isBound())
-                return null;
+                return Collections.EMPTY_SET;
 
             return SctpNet.getLocalAddresses(fdVal);
         }
