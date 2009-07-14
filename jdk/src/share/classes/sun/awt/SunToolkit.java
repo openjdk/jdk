@@ -1985,8 +1985,7 @@ public abstract class SunToolkit extends Toolkit
      */
     public static boolean isContainingTopLevelOpaque(Component c) {
         Window w = getContainingWindow(c);
-        return w != null && ((Window)w).getBackground() != null &&
-            ((Window)w).getBackground().getAlpha() == 255;
+        return w != null && w.isOpaque();
     }
 
     /**
