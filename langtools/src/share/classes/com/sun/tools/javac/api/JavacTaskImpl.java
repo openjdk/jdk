@@ -133,6 +133,7 @@ public class JavacTaskImpl extends JavacTask {
     public Boolean call() {
         if (!used.getAndSet(true)) {
             beginContext();
+            notYetEntered = new HashMap<JavaFileObject, JCCompilationUnit>();
             try {
                 compilerMain.setFatalErrors(true);
                 result = compilerMain.compile(args, context, fileObjects, processors);
@@ -143,6 +144,7 @@ public class JavacTaskImpl extends JavacTask {
             args = null;
             context = null;
             fileObjects = null;
+            notYetEntered = null;
             return result == 0;
         } else {
             throw new IllegalStateException("multiple calls to method 'call'");

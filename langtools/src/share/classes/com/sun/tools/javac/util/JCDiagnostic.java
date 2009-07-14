@@ -83,7 +83,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic error(
                 DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return new JCDiagnostic(formatter, ERROR, true, source, pos, qualify(ERROR, key), args);
+            return create(ERROR, true, source, pos, key, args);
         }
 
         /**
@@ -96,7 +96,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic mandatoryWarning(
                  DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return new JCDiagnostic(formatter, WARNING, true, source, pos, qualify(WARNING, key), args);
+            return create(WARNING, true, source, pos, key, args);
         }
 
         /**
@@ -108,7 +108,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic warning(
                 DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return new JCDiagnostic(formatter, WARNING, false, source, pos, qualify(WARNING, key), args);
+            return create(WARNING, false, source, pos, key, args);
         }
 
         /**
@@ -118,7 +118,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  @see MandatoryWarningHandler
          */
         public JCDiagnostic mandatoryNote(DiagnosticSource source, String key, Object... args) {
-            return new JCDiagnostic(formatter, NOTE, true, source, null, qualify(NOTE, key), args);
+            return create(NOTE, true, source, null, key, args);
         }
 
         /**
@@ -127,7 +127,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  @param args   Fields of the error message.
          */
         public JCDiagnostic note(String key, Object... args) {
-            return note(null, null, key, args);
+            return create(NOTE, false, null, null, key, args);
         }
 
         /**
@@ -139,7 +139,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          */
         public JCDiagnostic note(
                 DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
-            return new JCDiagnostic(formatter, NOTE, false, source, pos, qualify(NOTE, key), args);
+            return create(NOTE, false, source, pos, key, args);
         }
 
         /**
@@ -148,7 +148,21 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          *  @param args   Fields of the error message.
          */
         public JCDiagnostic fragment(String key, Object... args) {
-            return new JCDiagnostic(formatter, FRAGMENT, false, null, null, qualify(FRAGMENT, key), args);
+            return create(FRAGMENT, false, null, null, key, args);
+        }
+
+        /**
+         * Create a new diagnostic of the given kind.
+         *  @param kind        The diagnostic kind
+         *  @param isMandatory is diagnostic mandatory?
+         *  @param source      The source of the compilation unit, if any, in which to report the note.
+         *  @param pos         The source position at which to report the note.
+         *  @param key         The key for the localized error message.
+         *  @param args        Fields of the error message.
+         */
+        public JCDiagnostic create(
+                DiagnosticType kind, boolean isMandatory, DiagnosticSource source, DiagnosticPosition pos, String key, Object... args) {
+            return new JCDiagnostic(formatter, kind, isMandatory, source, pos, qualify(kind, key), args);
         }
 
         protected String qualify(DiagnosticType t, String key) {

@@ -50,6 +50,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.DiagnosticListener;
 
+import com.sun.source.util.AbstractTypeProcessor;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.JavacTaskImpl;
@@ -58,6 +59,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.JavaCompiler;
+import com.sun.tools.javac.main.JavaCompiler.CompileState;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.parser.*;
@@ -93,6 +95,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final boolean lint;
     private final boolean procOnly;
     private final boolean fatalErrors;
+    private boolean foundTypeProcessors;
 
     private final JavacFiler filer;
     private final JavacMessager messager;
@@ -153,6 +156,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             options.get("-Xprint") != null;
         fatalErrors = options.get("fatalEnterError") != null;
         platformAnnotations = initPlatformAnnotations();
+        foundTypeProcessors = false;
 
         // Initialize services before any processors are initialzied
         // in case processors use them.
@@ -670,6 +674,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             }
 
             if (matchedNames.size() > 0 || ps.contributed) {
+                foundTypeProcessors = foundTypeProcessors || (ps.processor instanceof AbstractTypeProcessor);
                 boolean processingResult = callProcessor(ps.processor, typeElements, renv);
                 ps.contributed = true;
                 ps.removeSupportedOptions(unmatchedProcessorOptions);
@@ -916,12 +921,16 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             compiler.log.nerrors += messager.errorCount();
             if (compiler.errorCount() == 0)
                 compiler.log.nerrors++;
-        } else if (procOnly) {
+        } else if (procOnly && !foundTypeProcessors) {
             compiler.todo.clear();
         } else { // Final compilation
             compiler.close(false);
             currentContext = contextForNextRound(currentContext, true);
+            this.context = currentContext;
+            updateProcessingState(currentContext, true);
             compiler = JavaCompiler.instance(currentContext);
+            if (procOnly && foundTypeProcessors)
+                compiler.shouldStopPolicy = CompileState.FLOW;
 
             if (true) {
                 compiler.enterTrees(cleanTrees(roots));
@@ -1212,6 +1221,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             public void visitIdent(JCIdent node) {
                 node.sym = null;
                 super.visitIdent(node);
+            }
+            public void visitApply(JCMethodInvocation node) {
+                scan(node.typeargs);
+                super.visitApply(node);
             }
         };
 

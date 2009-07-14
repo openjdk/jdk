@@ -99,6 +99,8 @@ public class Names {
     public final Name Annotation;
     public final Name RuntimeVisibleAnnotations;
     public final Name RuntimeInvisibleAnnotations;
+    public final Name RuntimeVisibleTypeAnnotations;
+    public final Name RuntimeInvisibleTypeAnnotations;
     public final Name RuntimeVisibleParameterAnnotations;
     public final Name RuntimeInvisibleParameterAnnotations;
     public final Name Value;
@@ -115,6 +117,8 @@ public class Names {
     public final Name getClass;
     public final Name invoke;
     public final Name TYPE;
+    public final Name TYPE_USE;
+    public final Name TYPE_PARAMETER;
     public final Name FIELD;
     public final Name METHOD;
     public final Name PARAMETER;
@@ -205,6 +209,8 @@ public class Names {
         Annotation = fromString("Annotation");
         RuntimeVisibleAnnotations = fromString("RuntimeVisibleAnnotations");
         RuntimeInvisibleAnnotations = fromString("RuntimeInvisibleAnnotations");
+        RuntimeVisibleTypeAnnotations = fromString("RuntimeVisibleTypeAnnotations");
+        RuntimeInvisibleTypeAnnotations = fromString("RuntimeInvisibleTypeAnnotations");
         RuntimeVisibleParameterAnnotations = fromString("RuntimeVisibleParameterAnnotations");
         RuntimeInvisibleParameterAnnotations = fromString("RuntimeInvisibleParameterAnnotations");
         Value = fromString("Value");
@@ -224,6 +230,8 @@ public class Names {
         invoke = fromString("invoke");
 
         TYPE = fromString("TYPE");
+        TYPE_USE = fromString("TYPE_USE");
+        TYPE_PARAMETER = fromString("TYPE_PARAMETER");
         FIELD = fromString("FIELD");
         METHOD = fromString("METHOD");
         PARAMETER = fromString("PARAMETER");
