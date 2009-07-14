@@ -30,7 +30,6 @@ package java.nio;
 import sun.misc.Cleaner;
 import sun.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
-import sun.nio.ch.FileChannelImpl;
 
 
 class Direct$Type$Buffer$RW$$BO$

@@ -1,5 +1,5 @@
 #
-# Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,25 +41,31 @@ OS=`uname -s`
 case "$OS" in
   Windows_* )
     FS="\\"
+    SEP=";"
     ;;
   * )
     FS="/"
+    SEP=":"
     ;;
 esac
 
-${TESTJAVA}${FS}bin${FS}javac -d . \
+${TESTJAVA}${FS}bin${FS}javac -XDignore.symbol.file -d . \
     ${TESTSRC}${FS}BasicKrb5Test.java \
     ${TESTSRC}${FS}KDC.java \
     ${TESTSRC}${FS}OneKDC.java \
     ${TESTSRC}${FS}Action.java \
     ${TESTSRC}${FS}Context.java \
     || exit 10
-${TESTJAVA}${FS}bin${FS}java -Dtest.src=$TESTSRC BasicKrb5Test || exit 100
-${TESTJAVA}${FS}bin${FS}java -Dtest.src=$TESTSRC BasicKrb5Test des-cbc-crc || exit 1
-${TESTJAVA}${FS}bin${FS}java -Dtest.src=$TESTSRC BasicKrb5Test des-cbc-md5 || exit 3
-${TESTJAVA}${FS}bin${FS}java -Dtest.src=$TESTSRC BasicKrb5Test des3-cbc-sha1 || exit 16
-${TESTJAVA}${FS}bin${FS}java -Dtest.src=$TESTSRC BasicKrb5Test aes128-cts || exit 17
-${TESTJAVA}${FS}bin${FS}java -Dtest.src=$TESTSRC BasicKrb5Test aes256-cts || exit 18
-${TESTJAVA}${FS}bin${FS}java -Dtest.src=$TESTSRC BasicKrb5Test rc4-hmac || exit 23
+
+# Add $TESTSRC to classpath so that customized nameservice can be used
+J="${TESTJAVA}${FS}bin${FS}java -cp $TESTSRC${SEP}. BasicKrb5Test"
+
+$J || exit 100
+$J des-cbc-crc || exit 1
+$J des-cbc-md5 || exit 3
+$J des3-cbc-sha1 || exit 16
+$J aes128-cts || exit 17
+$J aes256-cts || exit 18
+$J rc4-hmac || exit 23
 
 exit 0
