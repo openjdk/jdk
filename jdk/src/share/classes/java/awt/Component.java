@@ -2370,12 +2370,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * rectangular region. A non-opaque component paints only some of
      * its pixels, allowing the pixels underneath it to "show through".
      * A component that does not fully paint its pixels therefore
-     * provides a degree of transparency.  Only lightweight
-     * components can be transparent.
+     * provides a degree of transparency.
      * <p>
      * Subclasses that guarantee to always completely paint their
-     * contents should override this method and return true.  All
-     * of the "heavyweight" AWT components are opaque.
+     * contents should override this method and return true.
      *
      * @return true if this component is completely opaque
      * @see #isLightweight
