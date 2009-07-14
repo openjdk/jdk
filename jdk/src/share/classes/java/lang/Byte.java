@@ -90,8 +90,8 @@ public final class Byte extends Number implements Comparable<Byte> {
      * If a new {@code Byte} instance is not required, this method
      * should generally be used in preference to the constructor
      * {@link #Byte(byte)}, as this method is likely to yield
-     * significantly better space and time performance by caching
-     * frequently requested values.
+     * significantly better space and time performance since
+     * all byte values are cached.
      *
      * @param  b a byte value.
      * @return a {@code Byte} instance representing {@code b}.
