@@ -30,12 +30,8 @@ inline size_t G1RemSet::n_workers() {
   }
 }
 
-inline void HRInto_G1RemSet::write_ref_nv(HeapRegion* from, oop* p) {
-  par_write_ref(from, p, 0);
-}
-
-inline void HRInto_G1RemSet::write_ref(HeapRegion* from, oop* p) {
-  write_ref_nv(from, p);
+template <class T> inline void HRInto_G1RemSet::write_ref_nv(HeapRegion* from, T* p) {
+  par_write_ref_nv(from, p, 0);
 }
 
 inline bool HRInto_G1RemSet::self_forwarded(oop obj) {
@@ -43,8 +39,8 @@ inline bool HRInto_G1RemSet::self_forwarded(oop obj) {
   return result;
 }
 
-inline void HRInto_G1RemSet::par_write_ref(HeapRegion* from, oop* p, int tid) {
-  oop obj = *p;
+template <class T> inline void HRInto_G1RemSet::par_write_ref_nv(HeapRegion* from, T* p, int tid) {
+  oop obj = oopDesc::load_decode_heap_oop(p);
 #ifdef ASSERT
   // can't do because of races
   // assert(obj == NULL || obj->is_oop(), "expected an oop");
@@ -71,7 +67,7 @@ inline void HRInto_G1RemSet::par_write_ref(HeapRegion* from, oop* p, int tid) {
     // false during the evacuation failure handing.
     if (_par_traversal_in_progress &&
         to->in_collection_set() && !self_forwarded(obj)) {
-      _new_refs[tid]->push(p);
+      _new_refs[tid]->push((void*)p);
       // Deferred updates to the Cset are either discarded (in the normal case),
       // or processed (if an evacuation failure occurs) at the end
       // of the collection.
@@ -89,11 +85,7 @@ inline void HRInto_G1RemSet::par_write_ref(HeapRegion* from, oop* p, int tid) {
   }
 }
 
-inline void UpdateRSOopClosure::do_oop(narrowOop* p) {
-  guarantee(false, "NYI");
-}
-
-inline void UpdateRSOopClosure::do_oop(oop* p) {
+template <class T> inline void UpdateRSOopClosure::do_oop_work(T* p) {
   assert(_from != NULL, "from region must be non-NULL");
   _rs->par_write_ref(_from, p, _worker_i);
 }
