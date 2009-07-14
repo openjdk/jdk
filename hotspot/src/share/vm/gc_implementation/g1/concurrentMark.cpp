@@ -452,13 +452,10 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
   _regionStack.allocate(G1MarkRegionStackSize);
 
   // Create & start a ConcurrentMark thread.
-  if (G1ConcMark) {
-    _cmThread = new ConcurrentMarkThread(this);
-    assert(cmThread() != NULL, "CM Thread should have been created");
-    assert(cmThread()->cm() != NULL, "CM Thread should refer to this cm");
-  } else {
-    _cmThread = NULL;
-  }
+  _cmThread = new ConcurrentMarkThread(this);
+  assert(cmThread() != NULL, "CM Thread should have been created");
+  assert(cmThread()->cm() != NULL, "CM Thread should refer to this cm");
+
   _g1h = G1CollectedHeap::heap();
   assert(CGC_lock != NULL, "Where's the CGC_lock?");
   assert(_markBitMap1.covers(rs), "_markBitMap1 inconsistency");
@@ -783,18 +780,18 @@ public:
                      bool do_barrier) : _cm(cm), _g1h(g1h),
                                         _do_barrier(do_barrier) { }
 
-  virtual void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
 
-  virtual void do_oop(oop* p) {
-    oop thisOop = *p;
-    if (thisOop != NULL) {
-      assert(thisOop->is_oop() || thisOop->mark() == NULL,
+  template <class T> void do_oop_work(T* p) {
+    T heap_oop = oopDesc::load_heap_oop(p);
+    if (!oopDesc::is_null(heap_oop)) {
+      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+      assert(obj->is_oop() || obj->mark() == NULL,
              "expected an oop, possibly with mark word displaced");
-      HeapWord* addr = (HeapWord*)thisOop;
+      HeapWord* addr = (HeapWord*)obj;
       if (_g1h->is_in_g1_reserved(addr)) {
-        _cm->grayRoot(thisOop);
+        _cm->grayRoot(obj);
       }
     }
     if (_do_barrier) {
@@ -849,16 +846,6 @@ void ConcurrentMark::checkpointRootsInitial() {
 
   double start = os::elapsedTime();
   GCOverheadReporter::recordSTWStart(start);
-
-  // If there has not been a GC[n-1] since last GC[n] cycle completed,
-  // precede our marking with a collection of all
-  // younger generations to keep floating garbage to a minimum.
-  // YSR: we won't do this for now -- it's an optimization to be
-  // done post-beta.
-
-  // YSR:    ignoring weak refs for now; will do at bug fixing stage
-  // EVM:    assert(discoveredRefsAreClear());
-
 
   G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
   g1p->record_concurrent_mark_init_start();
@@ -1135,6 +1122,13 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     return;
   }
 
+  if (VerifyDuringGC) {
+    HandleMark hm;  // handle scope
+    gclog_or_tty->print(" VerifyDuringGC:(before)");
+    Universe::heap()->prepare_for_verify();
+    Universe::verify(true, false, true);
+  }
+
   G1CollectorPolicy* g1p = g1h->g1_policy();
   g1p->record_concurrent_mark_remark_start();
 
@@ -1159,10 +1153,12 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     JavaThread::satb_mark_queue_set().set_active_all_threads(false);
 
     if (VerifyDuringGC) {
-      g1h->prepare_for_verify();
-      g1h->verify(/* allow_dirty */      true,
-                  /* silent */           false,
-                  /* use_prev_marking */ false);
+      HandleMark hm;  // handle scope
+      gclog_or_tty->print(" VerifyDuringGC:(after)");
+      Universe::heap()->prepare_for_verify();
+      Universe::heap()->verify(/* allow_dirty */      true,
+                               /* silent */           false,
+                               /* use_prev_marking */ false);
     }
   }
 
@@ -1658,6 +1654,15 @@ void ConcurrentMark::cleanup() {
     return;
   }
 
+  if (VerifyDuringGC) {
+    HandleMark hm;  // handle scope
+    gclog_or_tty->print(" VerifyDuringGC:(before)");
+    Universe::heap()->prepare_for_verify();
+    Universe::verify(/* allow dirty  */ true,
+                     /* silent       */ false,
+                     /* prev marking */ true);
+  }
+
   _cleanup_co_tracker.disable();
 
   G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
@@ -1790,10 +1795,12 @@ void ConcurrentMark::cleanup() {
   g1h->increment_total_collections();
 
   if (VerifyDuringGC) {
-    g1h->prepare_for_verify();
-    g1h->verify(/* allow_dirty */      true,
-                /* silent */           false,
-                /* use_prev_marking */ true);
+    HandleMark hm;  // handle scope
+    gclog_or_tty->print(" VerifyDuringGC:(after)");
+    Universe::heap()->prepare_for_verify();
+    Universe::verify(/* allow dirty  */ true,
+                     /* silent       */ false,
+                     /* prev marking */ true);
   }
 }
 
@@ -1852,12 +1859,11 @@ class G1CMKeepAliveClosure: public OopClosure {
     _g1(g1), _cm(cm),
     _bitMap(bitMap) {}
 
-  void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
 
-  void do_oop(oop* p) {
-    oop thisOop = *p;
+  template <class T> void do_oop_work(T* p) {
+    oop thisOop = oopDesc::load_decode_heap_oop(p);
     HeapWord* addr = (HeapWord*)thisOop;
     if (_g1->is_in_g1_reserved(addr) && _g1->is_obj_ill(thisOop)) {
       _bitMap->mark(addr);
@@ -2016,12 +2022,11 @@ public:
   ReachablePrinterOopClosure(CMBitMapRO* bitmap, outputStream* out) :
     _bitmap(bitmap), _g1h(G1CollectedHeap::heap()), _out(out) { }
 
-  void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(      oop* p) { do_oop_work(p); }
 
-  void do_oop(oop* p) {
-    oop         obj = *p;
+  template <class T> void do_oop_work(T* p) {
+    oop         obj = oopDesc::load_decode_heap_oop(p);
     const char* str = NULL;
     const char* str2 = "";
 
@@ -2163,6 +2168,7 @@ void ConcurrentMark::deal_with_reference(oop obj) {
 
 
   HeapWord* objAddr = (HeapWord*) obj;
+  assert(obj->is_oop_or_null(true /* ignore mark word */), "Error");
   if (_g1h->is_in_g1_reserved(objAddr)) {
     tmp_guarantee_CM( obj != NULL, "is_in_g1_reserved should ensure this" );
     HeapRegion* hr = _g1h->heap_region_containing(obj);
@@ -2380,7 +2386,7 @@ class CSMarkOopClosure: public OopClosure {
     }
   }
 
-  bool drain() {
+  template <class T> bool drain() {
     while (_ms_ind > 0) {
       oop obj = pop();
       assert(obj != NULL, "Since index was non-zero.");
@@ -2394,9 +2400,8 @@ class CSMarkOopClosure: public OopClosure {
         }
         // Now process this portion of this one.
         int lim = MIN2(next_arr_ind, len);
-        assert(!UseCompressedOops, "This needs to be fixed");
         for (int j = arr_ind; j < lim; j++) {
-          do_oop(aobj->obj_at_addr<oop>(j));
+          do_oop(aobj->obj_at_addr<T>(j));
         }
 
       } else {
@@ -2423,13 +2428,13 @@ public:
     FREE_C_HEAP_ARRAY(jint, _array_ind_stack);
   }
 
-  void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
 
-  void do_oop(oop* p) {
-    oop obj = *p;
-    if (obj == NULL) return;
+  template <class T> void do_oop_work(T* p) {
+    T heap_oop = oopDesc::load_heap_oop(p);
+    if (oopDesc::is_null(heap_oop)) return;
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
     if (obj->is_forwarded()) {
       // If the object has already been forwarded, we have to make sure
       // that it's marked.  So follow the forwarding pointer.  Note that
@@ -2478,7 +2483,11 @@ public:
     oop obj = oop(addr);
     if (!obj->is_forwarded()) {
       if (!_oop_cl.push(obj)) return false;
-      if (!_oop_cl.drain()) return false;
+      if (UseCompressedOops) {
+        if (!_oop_cl.drain<narrowOop>()) return false;
+      } else {
+        if (!_oop_cl.drain<oop>()) return false;
+      }
     }
     // Otherwise...
     return true;
@@ -2636,9 +2645,6 @@ void ConcurrentMark::disable_co_trackers() {
 
 // abandon current marking iteration due to a Full GC
 void ConcurrentMark::abort() {
-  // If we're not marking, nothing to do.
-  if (!G1ConcMark) return;
-
   // Clear all marks to force marking thread to do nothing
   _nextMarkBitMap->clearAll();
   // Empty mark stack
@@ -2814,14 +2820,14 @@ private:
   CMTask*            _task;
 
 public:
-  void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
 
-  void do_oop(oop* p) {
+  template <class T> void do_oop_work(T* p) {
     tmp_guarantee_CM( _g1h->is_in_g1_reserved((HeapWord*) p), "invariant" );
+    tmp_guarantee_CM( !_g1h->heap_region_containing((HeapWord*) p)->is_on_free_list(), "invariant" );
 
-    oop obj = *p;
+    oop obj = oopDesc::load_decode_heap_oop(p);
     if (_cm->verbose_high())
       gclog_or_tty->print_cr("[%d] we're looking at location "
                              "*"PTR_FORMAT" = "PTR_FORMAT,
@@ -2967,6 +2973,7 @@ void CMTask::deal_with_reference(oop obj) {
   ++_refs_reached;
 
   HeapWord* objAddr = (HeapWord*) obj;
+  assert(obj->is_oop_or_null(true /* ignore mark word */), "Error");
   if (_g1h->is_in_g1_reserved(objAddr)) {
     tmp_guarantee_CM( obj != NULL, "is_in_g1_reserved should ensure this" );
     HeapRegion* hr =  _g1h->heap_region_containing(obj);
@@ -3030,6 +3037,7 @@ void CMTask::deal_with_reference(oop obj) {
 void CMTask::push(oop obj) {
   HeapWord* objAddr = (HeapWord*) obj;
   tmp_guarantee_CM( _g1h->is_in_g1_reserved(objAddr), "invariant" );
+  tmp_guarantee_CM( !_g1h->heap_region_containing(objAddr)->is_on_free_list(), "invariant" );
   tmp_guarantee_CM( !_g1h->is_obj_ill(obj), "invariant" );
   tmp_guarantee_CM( _nextMarkBitMap->isMarked(objAddr), "invariant" );
 
@@ -3274,6 +3282,8 @@ void CMTask::drain_local_queue(bool partially) {
                                (void*) obj);
 
       tmp_guarantee_CM( _g1h->is_in_g1_reserved((HeapWord*) obj),
+                        "invariant" );
+      tmp_guarantee_CM( !_g1h->heap_region_containing(obj)->is_on_free_list(),
                         "invariant" );
 
       scan_object(obj);

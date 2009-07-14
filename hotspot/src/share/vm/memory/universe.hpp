@@ -398,7 +398,7 @@ class Universe: AllStatic {
 
   // Debugging
   static bool verify_in_progress() { return _verify_in_progress; }
-  static void verify(bool allow_dirty = true, bool silent = false);
+  static void verify(bool allow_dirty = true, bool silent = false, bool option = true);
   static int  verify_count()                  { return _verify_count; }
   static void print();
   static void print_on(outputStream* st);

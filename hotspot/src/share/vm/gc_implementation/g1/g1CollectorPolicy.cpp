@@ -293,10 +293,6 @@ void G1CollectorPolicy::init() {
   if (G1SteadyStateUsed < 50) {
     vm_exit_during_initialization("G1SteadyStateUsed must be at least 50%.");
   }
-  if (UseConcMarkSweepGC) {
-    vm_exit_during_initialization("-XX:+UseG1GC is incompatible with "
-                                  "-XX:+UseConcMarkSweepGC.");
-  }
 
   initialize_gc_policy_counters();
 
