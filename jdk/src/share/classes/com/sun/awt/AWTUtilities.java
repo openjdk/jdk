@@ -374,7 +374,7 @@ public final class AWTUtilities {
                     "The window argument should not be null.");
         }
 
-        return AWTAccessor.getWindowAccessor().isOpaque(window);
+        return window.isOpaque();
     }
 
     /**
