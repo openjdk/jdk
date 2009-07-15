@@ -1666,6 +1666,11 @@ size_t G1CollectedHeap::used() const {
   return result;
 }
 
+size_t G1CollectedHeap::used_unlocked() const {
+  size_t result = _summary_bytes_used;
+  return result;
+}
+
 class SumUsedClosure: public HeapRegionClosure {
   size_t _used;
 public:
@@ -2349,7 +2354,7 @@ void G1CollectedHeap::print_on(outputStream* st) const {
 void G1CollectedHeap::print_on(outputStream* st, bool extended) const {
   st->print(" %-20s", "garbage-first heap");
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
-            capacity()/K, used()/K);
+            capacity()/K, used_unlocked()/K);
   st->print(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
             _g1_storage.low_boundary(),
             _g1_storage.high(),
