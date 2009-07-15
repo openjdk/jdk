@@ -700,6 +700,9 @@ public:
   size_t g1_reserved_obj_bytes() { return _g1_reserved.byte_size(); }
   virtual size_t capacity() const;
   virtual size_t used() const;
+  // This should be called when we're not holding the heap lock. The
+  // result might be a bit inaccurate.
+  size_t used_unlocked() const;
   size_t recalculate_used() const;
 #ifndef PRODUCT
   size_t recalculate_used_regions() const;
