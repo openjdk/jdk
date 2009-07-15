@@ -569,7 +569,8 @@ public class RichDiagnosticFormatter extends
         @Override
         public Void visitMethodSymbol(MethodSymbol s, Void ignored) {
             visit(s.owner, null);
-            typePreprocessor.visit(s.type);
+            if (s.type != null)
+                typePreprocessor.visit(s.type);
             return null;
         }
     };
