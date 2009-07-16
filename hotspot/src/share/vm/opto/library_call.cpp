@@ -1030,7 +1030,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   const TypeAry* target_array_type = TypeAry::make(TypeInt::CHAR, TypeInt::make(0, target_length, Type::WidenMin));
   const TypeAryPtr* target_type = TypeAryPtr::make(TypePtr::BotPTR, target_array_type, target_array->klass(), true, Type::OffsetBot);
 
-  IdealKit kit(gvn(), control(), merged_memory());
+  IdealKit kit(gvn(), control(), merged_memory(), false, true);
 #define __ kit.
   Node* zero             = __ ConI(0);
   Node* one              = __ ConI(1);
@@ -1042,7 +1042,7 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
   Node* targetOffset     = __ ConI(targetOffset_i);
   Node* sourceEnd        = __ SubI(__ AddI(sourceOffset, sourceCount), targetCountLess1);
 
-  IdealVariable rtn(kit), i(kit), j(kit); __ declares_done();
+  IdealVariable rtn(kit), i(kit), j(kit); __ declarations_done();
   Node* outer_loop = __ make_label(2 /* goto */);
   Node* return_    = __ make_label(1);
 
@@ -1079,9 +1079,9 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
        __ bind(outer_loop);
   }__ end_loop(); __ dead(i);
   __ bind(return_);
-  __ drain_delay_transform();
 
-  set_control(__ ctrl());
+  // Final sync IdealKit and GraphKit.
+  sync_kit(kit);
   Node* result = __ value(rtn);
 #undef __
   C->set_has_loops(true);
@@ -2183,14 +2183,23 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
         // of it. So we need to emit code to conditionally do the proper type of
         // store.
 
-        IdealKit kit(gvn(), control(),  merged_memory());
-        kit.declares_done();
+        IdealKit ideal(gvn(), control(),  merged_memory());
+#define __ ideal.
         // QQQ who knows what probability is here??
-        kit.if_then(heap_base_oop, BoolTest::ne, null(), PROB_UNLIKELY(0.999)); {
-          (void) store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type);
-        } kit.else_(); {
-          (void) store_to_memory(control(), adr, val, type, adr_type, is_volatile);
-        } kit.end_if();
+        __ if_then(heap_base_oop, BoolTest::ne, null(), PROB_UNLIKELY(0.999)); {
+          // Sync IdealKit and graphKit.
+          set_all_memory( __ merged_memory());
+          set_control(__ ctrl());
+          Node* st = store_oop_to_unknown(control(), heap_base_oop, adr, adr_type, val, type);
+          // Update IdealKit memory.
+          __ set_all_memory(merged_memory());
+          __ set_ctrl(control());
+        } __ else_(); {
+          __ store(__ ctrl(), adr, val, type, alias_type->index(), is_volatile);
+        } __ end_if();
+        // Final sync IdealKit and GraphKit.
+        sync_kit(ideal);
+#undef __
       }
     }
   }
