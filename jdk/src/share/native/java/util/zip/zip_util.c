@@ -256,6 +256,8 @@ freeZip(jzfile *zip)
 #else
     free(zip->cencache.data);
 #endif
+    if (zip->comment != NULL)
+        free(zip->comment);
     if (zip->zfd != -1) ZFILE_Close(zip->zfd);
     free(zip);
 }
@@ -264,6 +266,24 @@ freeZip(jzfile *zip)
 static const jlong END_MAXLEN = 0xFFFF + ENDHDR;
 
 #define READBLOCKSZ 128
+
+static jboolean verifyEND(jzfile *zip, jlong endpos, char *endbuf) {
+    /* ENDSIG matched, however the size of file comment in it does not
+       match the real size. One "common" cause for this problem is some
+       "extra" bytes are padded at the end of the zipfile.
+       Let's do some extra verification, we don't care about the performance
+       in this situation.
+     */
+    jlong cenpos = endpos - ENDSIZ(endbuf);
+    jlong locpos = cenpos - ENDOFF(endbuf);
+    char buf[4];
+    return (cenpos >= 0 &&
+            locpos >= 0 &&
+            readFullyAt(zip->zfd, buf, sizeof(buf), cenpos) != -1 &&
+            GETSIG(buf) == CENSIG &&
+            readFullyAt(zip->zfd, buf, sizeof(buf), locpos) != -1 &&
+            GETSIG(buf) == LOCSIG);
+}
 
 /*
  * Searches for end of central directory (END) header. The contents of
@@ -280,6 +300,7 @@ findEND(jzfile *zip, void *endbuf)
     const ZFILE zfd = zip->zfd;
     const jlong minHDR = len - END_MAXLEN > 0 ? len - END_MAXLEN : 0;
     const jlong minPos = minHDR - (sizeof(buf)-ENDHDR);
+    jint clen;
 
     for (pos = len - sizeof(buf); pos >= minPos; pos -= (sizeof(buf)-ENDHDR)) {
 
@@ -302,13 +323,31 @@ findEND(jzfile *zip, void *endbuf)
                 buf[i+1] == 'K'    &&
                 buf[i+2] == '\005' &&
                 buf[i+3] == '\006' &&
-                (pos + i + ENDHDR + ENDCOM(buf + i) == len)) {
-                    /* Found END header */
-                    memcpy(endbuf, buf + i, ENDHDR);
-                    return pos + i;
+                ((pos + i + ENDHDR + ENDCOM(buf + i) == len)
+                 || verifyEND(zip, pos + i, buf + i))) {
+                /* Found END header */
+                memcpy(endbuf, buf + i, ENDHDR);
+
+                clen = ENDCOM(endbuf);
+                if (clen != 0) {
+                    zip->comment = malloc(clen + 1);
+                    if (zip->comment == NULL) {
+                        return -1;
+                    }
+                    if (readFullyAt(zfd, zip->comment, clen, pos + i + ENDHDR)
+                        == -1) {
+                        free(zip->comment);
+                        zip->comment = NULL;
+                        return -1;
+                    }
+                    zip->comment[clen] = '\0';
+                    zip->clen = clen;
+                }
+                return pos + i;
             }
         }
     }
+
     return -1; /* END header not found */
 }
 
@@ -654,7 +693,6 @@ readCEN(jzfile *zip, jint knownTotal)
         ZIP_FORMAT_ERROR("invalid CEN header (bad header size)");
 
     zip->total = i;
-
     goto Finally;
 
  Catch:

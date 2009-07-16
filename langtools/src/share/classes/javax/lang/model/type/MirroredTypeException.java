@@ -54,7 +54,7 @@ public class MirroredTypeException extends RuntimeException {
      * @param type  the type being accessed
      */
     public MirroredTypeException(TypeMirror type) {
-        super("Attempt to access Class object for TypeMirror " + type);
+        super("Attempt to access Class object for TypeMirror " + type.toString());
         this.type = type;
     }
 

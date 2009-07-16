@@ -27,6 +27,7 @@ package java.nio.file;
 
 import java.util.Iterator;
 import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * An object to iterate over the entries in a directory. A directory stream
@@ -50,13 +51,10 @@ import java.io.Closeable;
  *
  * <p> A {@code DirectoryStream} is opened upon creation and is closed by
  * invoking the {@link #close close} method. Closing the directory stream
- * releases any resources associated with the stream. The {@link
- * Files#withDirectory Files.withDirectory} utility method is useful for cases
- * where a task is performed on entries in a directory. This method automatically
- * closes the directory stream when iteration is complete (or an error occurs).
- * Once a directory stream is closed, all further method invocations on the
- * iterator throw {@link java.util.concurrent.ConcurrentModificationException}
- * with cause {@link ClosedDirectoryStreamException}.
+ * releases any resources associated with the stream. Once a directory stream
+ * is closed, all further method invocations on the iterator throw {@link
+ * java.util.concurrent.ConcurrentModificationException} with cause {@link
+ * ClosedDirectoryStreamException}.
  *
  * <p> A directory stream is not required to be <i>asynchronously closeable</i>.
  * If a thread is blocked on the directory stream's iterator reading from the
@@ -79,7 +77,7 @@ import java.io.Closeable;
  *
  * <p> The iterator's {@link Iterator#remove() remove} method removes the
  * directory entry for the last element returned by the iterator, as if by
- * invoking the {@link FileRef#delete delete} method. If an I/O error or
+ * invoking the {@link Path#delete delete} method. If an I/O error or
  * security exception occurs then {@code ConcurrentModificationException} is
  * thrown with the cause.
  *
@@ -104,10 +102,6 @@ public interface DirectoryStream<T>
      * newDirectoryStream} method when opening a directory to iterate over the
      * entries in the directory.
      *
-     * <p> The {@link DirectoryStreamFilters} class defines factory methods to
-     * create filters for a number of common usages and also methods to combine
-     * filters.
-     *
      * @param   <T>     the type of the directory entry
      *
      * @since 1.7
@@ -120,8 +114,11 @@ public interface DirectoryStream<T>
          *          the directory entry to be tested
          *
          * @return  {@code true} if the directory entry should be accepted
+         *
+         * @throws  IOException
+         *          If an I/O error occurs
          */
-        boolean accept(T entry);
+        boolean accept(T entry) throws IOException;
     }
 
     /**

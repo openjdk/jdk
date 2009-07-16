@@ -25,29 +25,19 @@
 
 package sun.io;
 
-/**
- * Tables and data to convert MS932 to Unicode
- *
- * @author Limin Shi
- * @author Mark Son-Bell
- */
+import sun.nio.cs.ext.*;
 
-public class ByteToCharMS932 extends ByteToCharMS932DB {
-    ByteToCharJIS0201 bcJIS0201 = new ByteToCharJIS0201();
+public class ByteToCharMS932 extends ByteToCharDBCS_ASCII {
+
+    private static DoubleByte.Decoder dec =
+        (DoubleByte.Decoder)new MS932().newDecoder();
 
     public String getCharacterEncoding() {
         return "MS932";
     }
 
-    protected char convSingleByte(int b) {
-        // If the high bits are all off, it's ASCII == Unicode
-        if ((b & 0xFF80) == 0) {
-            return (char)b;
-        }
-        return bcJIS0201.getUnicode(b);
+    public ByteToCharMS932() {
+        super(dec);
     }
 
-    String prt(int i) {
-        return Integer.toString(i,16);
-    }
 }

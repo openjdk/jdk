@@ -270,7 +270,9 @@ public abstract class FileSystemProvider {
     public abstract FileSystem getFileSystem(URI uri);
 
     /**
-     * Return a {@code Path} object by converting the given {@link URI}.
+     * Return a {@code Path} object by converting the given {@link URI}. The
+     * resulting {@code Path} is associated with a {@link FileSystem} that
+     * already exists or is constructed automatically.
      *
      * <p> The exact form of the URI is file system provider dependent. In the
      * case of the default provider, the URI scheme is {@code "file"} and the
@@ -290,7 +292,8 @@ public abstract class FileSystemProvider {
      *          If the URI scheme does not identify this provider or other
      *          preconditions on the uri parameter do not hold
      * @throws  FileSystemNotFoundException
-     *          The file system, identified by the URI, does not exist
+     *          The file system, identified by the URI, does not exist and
+     *          cannot be created automatically
      * @throws  SecurityException
      *          If a security manager is installed and it denies an unspecified
      *          permission.

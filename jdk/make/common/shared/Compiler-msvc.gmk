@@ -35,8 +35,8 @@ ifeq ($(PLATFORM), windows)
   LIBEXE       = $(COMPILER_PATH)lib
   LINK         = $(COMPILER_PATH)link
   RC           = $(MSDEVTOOLS_PATH)rc
+  RSC          = $(MSDEVTOOLS_PATH)rc
   LINK32       = $(LINK)
-  RSC          = $(RC)
  
   # Fill in unknown values
   COMPILER_NAME=Unknown MSVC Compiler
@@ -98,6 +98,9 @@ ifeq ($(PLATFORM), windows)
     endif
     ifeq ($(CC_MAJORVER), 14)
       ifeq ($(ARCH), amd64)
+        #rebase and midl moved out of Visual Studio into the SDK:
+        REBASE     = $(MSDEVTOOLS_PATH)/rebase
+        MTL        = $(MSDEVTOOLS_PATH)/midl.exe
         ifeq ($(CC_MICROVER), 30701)
           # This should be: CC_VER=14.00.30701 LINK_VER=8.00.30701
 	  # WARNING: it says 14, but it is such an early build it doesn't
@@ -110,6 +113,8 @@ ifeq ($(PLATFORM), windows)
 	  COMPILER_NAME=Microsoft Platform SDK - April 2005 Edition (3790.1830)
           COMPILER_VERSION=VS2005
         endif
+      else
+        REBASE         = $(COMPILER_PATH)../rebase
       endif
     endif
     ifeq ($(CC_MAJORVER), 15)
@@ -120,7 +125,6 @@ ifeq ($(PLATFORM), windows)
     endif
     # This will cause problems if ALT_COMPILER_PATH is defined to ""
     # which is a directive to use the PATH.
-    REBASE         = $(COMPILER_PATH)../REBASE
     ifndef COMPILER_PATH
       COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
     endif

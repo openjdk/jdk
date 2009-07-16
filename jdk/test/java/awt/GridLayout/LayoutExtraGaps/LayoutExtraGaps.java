@@ -24,7 +24,8 @@
 /*
    @test
    @bug 4370316
-   @summary GridLayout does not fill its Container
+   @summary GridLayout does not centre its component properly
+    (summary was GridLayout does not fill its Container)
    @library ../../regtesthelpers
    @build Util
    @author Andrei Dmitriev : area=awt.layout
@@ -90,25 +91,97 @@ public class LayoutExtraGaps extends Frame {
         setVisible(true);
 
         Util.waitForIdle(Util.createRobot());
-        Rectangle r1 = yellowPanel.getComponent(0).getBounds();
-        Rectangle r2 = bluePanel.getComponent(0).getBounds();
-        Rectangle r3 = blackPanel.getComponent(0).getBounds();
-        Rectangle r4 = redPanel.getComponent(0).getBounds();
 
-        System.out.println("firstHorizLabel bounds  ="+r1);
-        System.out.println("firstVertLabel bounds ="+r2);
-        System.out.println("firstHorizLabel_RTL bounds ="+r3);
-        System.out.println("firstVertLabel_RTL bounds ="+r4);
-        if ((r1.getX() == 0 && r1.getY() == 0) ||
-            (r2.getX() == 0 && r2.getY() == 0) ||
-            (r3.getX() == 0 && r3.getY() == 0) ||
-            // RTL only affects horizontal positioning and components lays out from top right corner
-            (r4.getX() == blackPanel.getWidth() && r4.getY() == 0))
+        if (isComponentCentredLTR(yellowPanel) && isComponentCentredLTR(bluePanel)
+                && isComponentCentredLTR(blackPanel) && isComponentCentredRTL(redPanel))
         {
-            throw new RuntimeException("Test failed. GridLayout doesn't center component.");
-        } else {
             System.out.println("Test passed.");
+        } else {
+            throw new RuntimeException("Test failed. GridLayout doesn't center component.");
         }
+    }
+
+    /**
+     * Checks if the components under Panel p are properly centred (i.e.
+     * opposite borders between the Panel and component are equal). Panel p
+     * must not be affect by RTL orientation (RTL only affects horizontal
+     * positioning and components lay out from top right corner).
+     *
+     * @param      p the panel where the components exist and is not affected
+     *             by right to left orientation
+     * @return     true if components of panel p are properly centre, false
+     *             otherwise
+     */
+    public static boolean isComponentCentredLTR(Panel p) {
+        double borderLeft;
+        double borderRight;
+        double borderTop;
+        double borderBottom;
+
+        //The first component(rectangle) in panel p.
+        Rectangle firstRec = p.getComponent(0).getBounds();
+
+        //The last component(rectangle) in panel p.
+        Rectangle lastRec = p.getComponent(compCount - 1).getBounds();
+
+        System.out.println("bounds of the first rectangle in "+ p.getName() + " = " + firstRec);
+        System.out.println("bounds of the last rectangle in "+ p.getName() + " = " + lastRec);
+
+        borderLeft = firstRec.getX();
+        borderRight = p.getWidth() - lastRec.getWidth() - lastRec.getX();
+        borderTop = firstRec.getY();
+        borderBottom = p.getHeight() - lastRec.getHeight() - lastRec.getY();
+
+        return areBordersEqual(borderLeft, borderRight) &&
+                areBordersEqual(borderTop, borderBottom);
+    }
+
+    /**
+     * Checks if the components under Panel p are properly centred (i.e.
+     * opposite borders between the Panel and component are equal). Panel p
+     * must be affect by RTL orientation (RTL only affects horizontal positioning
+     * and components lay out from top right corner).
+     *
+     * @param      p the panel where the components exist and is affected by
+     *             right to left orientation
+     * @return     true if components of panel p are properly centre, false
+     *             otherwise
+     */
+    public static boolean isComponentCentredRTL(Panel p) {
+        double borderLeft;
+        double borderRight;
+        double borderTop;
+        double borderBottom;
+
+        //The first component(rectangle) in panel p.
+        Rectangle firstRec = p.getComponent(0).getBounds();
+
+        //The last component(rectangle) in panel p.
+        Rectangle lastRec = p.getComponent(compCount - 1).getBounds();
+
+        System.out.println("bounds of the first rectangle in "+ p.getName() + " = " + firstRec);
+        System.out.println("bounds of the last rectangle in "+ p.getName() + " = " + lastRec);
+
+        borderLeft = lastRec.getX();
+        borderRight = p.getWidth() - firstRec.getWidth() - firstRec.getX();
+        borderTop = lastRec.getY();
+        borderBottom = p.getHeight() - firstRec.getHeight() - firstRec.getY();
+
+        return areBordersEqual(borderLeft, borderRight) &&
+                areBordersEqual(borderTop, borderBottom);
+    }
+
+    /**
+     * Given two borders border1 and border2 check if they are equal.
+     *
+     * @param      border1 one of the borders being compared
+     * @param      border2 the other border being compared
+     * @return     true if border1 and border2 are equal to each other (i.e.
+     *             their width/height difference is at most 1, assuming the
+     *             smallest pixel is of size 1), false otherwise
+     */
+    public static boolean areBordersEqual(double border1, double border2) {
+        return Math.abs(border1 - border2) <= 1;
     }
 
     public static void main(String[] args) {
