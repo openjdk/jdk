@@ -26,10 +26,12 @@
 package java.nio.file;
 
 import java.nio.file.attribute.*;
-import java.nio.channels.*;
-import java.io.*;
+import java.nio.channels.SeekableByteChannel;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * A file reference that locates a file using a system dependent path. The file
@@ -70,19 +72,27 @@ import java.util.*;
  * this class defines the following operations:
  *
  * <ul>
+ *   <li><p> The {@link #newByteChannel newByteChannel} method
+ *     may be used to open a file and obtain a byte channel for reading or
+ *     writing. </p></li>
  *   <li><p> Files may be {@link #createFile(FileAttribute[]) created}, or
  *     directories may be {@link #createDirectory(FileAttribute[]) created}.
  *     </p></li>
+ *   <li><p> The {@link #delete delete} method may be used to delete a file.
+ *     </p></li>
+ *   <li><p> The {@link #checkAccess checkAccess} method may be used to check
+ *     the existence or accessibility of a file. </p></li>
+ *   <li><p> The {@link #isSameFile isSameFile} method may be used to test if
+ *     two file references locate the same file. </p></li>
+ *   <li><p> The {@link #getFileStore getFileStore} method may be used to
+ *     obtain the {@link FileStore} representing the storage where a file is
+ *     located. </p></li>
  *   <li><p> Directories can be {@link #newDirectoryStream opened} so as to
  *      iterate over the entries in the directory. </p></li>
  *   <li><p> Files can be {@link #copyTo(Path,CopyOption[]) copied} or
  *     {@link #moveTo(Path,CopyOption[]) moved}. </p></li>
  *   <li><p> Symbolic-links may be {@link #createSymbolicLink created}, or the
  *     target of a link may be {@link #readSymbolicLink read}. </p></li>
- *   <li><p> {@link #newInputStream InputStream} or {@link #newOutputStream
- *     OutputStream} streams can be created to allow for interoperation with the
- *     <a href="../../../java/io/package-summary.html">{@code java.io}</a> package
- *     where required. </li></p>
  *   <li><p> The {@link #toRealPath real} path of an existing file may be
  *     obtained. </li></p>
  * </ul>
@@ -93,13 +103,14 @@ import java.util.*;
  *
  * <h4>File attributes</h4>
  *
- * The <a href="attribute/package-summary.html">{@code java.nio.file.attribute}</a>
- * package provides access to file attributes or <em>meta-data</em> associated
- * with files. The {@link Attributes Attributes} class defines methods that
- * operate on or return file attributes. For example, the file type, size,
- * timestamps, and other <em>basic</em> meta-data are obtained, in bulk, by
- * invoking the {@link Attributes#readBasicFileAttributes
- * Attributes.readBasicFileAttributes} method:
+ * In addition to the {@link #setAttribute setAttribute} and {@link #getAttribute
+ * getAttribute} methods, the <a href="attribute/package-summary.html">{@code
+ * java.nio.file.attribute}</a> package provides type-safe and efficient access
+ * to file attributes or <em>meta-data</em> associated with files. The {@link
+ * Attributes Attributes} class defines methods that operate on or return file
+ * attributes. For example, the file type, size, timestamps, and other
+ * <em>basic</em> meta-data are obtained, in bulk, by invoking the {@link
+ * Attributes#readBasicFileAttributes Attributes.readBasicFileAttributes} method:
  * <pre>
  *     Path file = ...
  *     BasicFileAttributes attrs = Attributes.readBasicFileAttributes(file);
@@ -417,12 +428,38 @@ public abstract class Path
     /**
      * Deletes the file located by this path.
      *
-     * <p> The {@code failIfNotExists} parameter determines how the method
-     * behaves when the file does not exist. When {@code true}, and the file
-     * does not exist, then the method fails. When {@code false} then the method
-     * does not fail.
+     * <p> An implementation may require to examine the file to determine if the
+     * file is a directory. Consequently this method may not be atomic with respect
+     * to other file system operations.  If the file is a symbolic-link then the
+     * link is deleted and not the final target of the link.
      *
-     * <p> As with the {@link FileRef#delete delete()} method, an implementation
+     * <p> If the file is a directory then the directory must be empty. In some
+     * implementations a directory has entries for special files or links that
+     * are created when the directory is created. In such implementations a
+     * directory is considered empty when only the special entries exist.
+     *
+     * <p> On some operating systems it may not be possible to remove a file when
+     * it is open and in use by this Java virtual machine or other programs.
+     *
+     * @throws  NoSuchFileException
+     *          if the file does not exist <i>(optional specific exception)</i>
+     * @throws  DirectoryNotEmptyException
+     *          if the file is a directory and could not otherwise be deleted
+     *          because the directory is not empty <i>(optional specific
+     *          exception)</i>
+     * @throws  IOException
+     *          if an I/O error occurs
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkDelete(String)} method
+     *          is invoked to check delete access to the file
+     */
+    public abstract void delete() throws IOException;
+
+    /**
+     * Deletes the file located by this path, if it exists.
+     *
+     * <p> As with the {@link #delete delete()} method, an implementation
      * may require to examine the file to determine if the file is a directory.
      * Consequently this method may not be atomic with respect to other file
      * system operations.  If the file is a symbolic-link then the link is
@@ -436,13 +473,6 @@ public abstract class Path
      * <p> On some operating systems it may not be possible to remove a file when
      * it is open and in use by this Java virtual machine or other programs.
      *
-     * @param   failIfNotExists
-     *          {@code true} if the method should fail when the file does not
-     *          exist
-     *
-     * @throws  NoSuchFileException
-     *          if the value of the {@code failIfNotExists} is {@code true} and
-     *          the file does not exist <i>(optional specific exception)</i>
      * @throws  DirectoryNotEmptyException
      *          if the file is a directory and could not otherwise be deleted
      *          because the directory is not empty <i>(optional specific
@@ -454,7 +484,7 @@ public abstract class Path
      *          installed, the {@link SecurityManager#checkDelete(String)} method
      *          is invoked to check delete access to the file.
      */
-    public abstract void delete(boolean failIfNotExists) throws IOException;
+    public abstract void deleteIfExists() throws IOException;
 
     /**
      * Creates a symbolic link to a target <i>(optional operation)</i>.
@@ -536,8 +566,6 @@ public abstract class Path
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to both this path and the path of the
      *          existing file.
-     *
-     * @see BasicFileAttributes#linkCount
      */
     public abstract Path createLink(Path existing) throws IOException;
 
@@ -608,7 +636,7 @@ public abstract class Path
      *
      * @return  an absolute, hierarchical URI with a non-empty path component
      *
-     * @throws  IOError
+     * @throws  java.io.IOError
      *          if an I/O error occurs obtaining the absolute path, or where a
      *          file system is constructed to access the contents of a file as
      *          a file system, and the URI of the enclosing file system cannot be
@@ -636,8 +664,9 @@ public abstract class Path
      * @throws  IOError
      *          if an I/O error occurs
      * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, its {@link SecurityManager#checkPropertyAccess(String)
+     *          In the case of the default provider, a security manager
+     *          is installed, and this path is not absolute, then the security
+     *          manager's {@link SecurityManager#checkPropertyAccess(String)
      *          checkPropertyAccess} method is invoked to check access to the
      *          system property {@code user.dir}
      */
@@ -720,7 +749,9 @@ public abstract class Path
      *     the target file. The exact file attributes that are copied is platform
      *     and file system dependent and therefore unspecified. Minimally, the
      *     {@link BasicFileAttributes#lastModifiedTime last-modified-time} is
-     *     copied to the target file. </td>
+     *     copied to the target file if supported by both the source and target
+     *     file store. Copying of file timestamps may result in precision
+     *     loss. </td>
      * </tr>
      * <tr>
      *   <td> {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} </td>
@@ -867,10 +898,7 @@ public abstract class Path
      *
      * <p> The directory stream's {@code close} method should be invoked after
      * iteration is completed so as to free any resources held for the open
-     * directory. The {@link Files#withDirectory Files.withDirectory} utility
-     * method is useful for cases where a task is performed on each accepted
-     * entry in a directory. This method closes the directory when iteration is
-     * complete (or an error occurs).
+     * directory.
      *
      * <p> When an implementation supports operations on entries in the
      * directory that execute in a race-free manner then the returned directory
@@ -927,8 +955,6 @@ public abstract class Path
      *
      * @throws  java.util.regex.PatternSyntaxException
      *          if the pattern is invalid
-     * @throws  UnsupportedOperationException
-     *          if the pattern syntax is not known to the implementation
      * @throws  NotDirectoryException
      *          if the file could not otherwise be opened because it is not
      *          a directory <i>(optional specific exception)</i>
@@ -950,19 +976,18 @@ public abstract class Path
      * directory. The {@code Path} objects are obtained as if by {@link
      * #resolve(Path) resolving} the name of the directory entry against this
      * path. The entries returned by the iterator are filtered by the given
-     * {@link DirectoryStream.Filter filter}. The {@link DirectoryStreamFilters}
-     * class defines factory methods that create useful filters.
+     * {@link DirectoryStream.Filter filter}.
      *
      * <p> The directory stream's {@code close} method should be invoked after
      * iteration is completed so as to free any resources held for the open
-     * directory. The {@link Files#withDirectory Files.withDirectory} utility
-     * method is useful for cases where a task is performed on each accepted
-     * entry in a directory. This method closes the directory when iteration is
-     * complete (or an error occurs).
+     * directory.
      *
      * <p> Where the filter terminates due to an uncaught error or runtime
-     * exception then it propogated to the caller of the iterator's {@link
-     * Iterator#hasNext() hasNext} or {@link Iterator#next() next} methods.
+     * exception then it is propogated to the iterator's {@link Iterator#hasNext()
+     * hasNext} or {@link Iterator#next() next} method. Where an {@code
+     * IOException} is thrown, it is propogated as a {@link
+     * java.util.concurrent.ConcurrentModificationException} with the {@code
+     * IOException} as the cause.
      *
      * <p> When an implementation supports operations on entries in the
      * directory that execute in a race-free manner then the returned directory
@@ -973,14 +998,9 @@ public abstract class Path
      * larger than 8K.
      * <pre>
      *     DirectoryStream.Filter&lt;Path&gt; filter = new DirectoryStream.Filter&lt;Path&gt;() {
-     *         public boolean accept(Path file) {
-     *             try {
-     *                 long size = Attributes.readBasicFileAttributes(file).size();
-     *                 return (size > 8192L);
-     *             } catch (IOException e) {
-     *                 // failed to get size
-     *                 return false;
-     *             }
+     *         public boolean accept(Path file) throws IOException {
+     *             long size = Attributes.readBasicFileAttributes(file).size();
+     *             return (size > 8192L);
      *         }
      *     };
      *     Path dir = ...
@@ -1071,6 +1091,8 @@ public abstract class Path
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to the new directory.
+     *
+     * @see Files#createDirectories
      */
     public abstract Path createDirectory(FileAttribute<?>... attrs)
         throws IOException;
@@ -1159,7 +1181,7 @@ public abstract class Path
      * FileAttribute file-attributes} to set atomically when a new file is created.
      *
      * <p> In the case of the default provider, the returned seekable byte channel
-     * is a {@link FileChannel}.
+     * is a {@link java.nio.channels.FileChannel}.
      *
      * <p> <b>Usage Examples:</b>
      * <pre>
@@ -1212,12 +1234,9 @@ public abstract class Path
      * Opens or creates a file, returning a seekable byte channel to access the
      * file.
      *
-     * <p> This method extends the options defined by the {@code FileRef}
-     * interface and to the options specified by the {@link
-     * #newByteChannel(Set,FileAttribute[]) newByteChannel} method
-     * except that the options are specified by an array. In the case of the
-     * default provider, the returned seekable byte channel is a {@link
-     * FileChannel}.
+     * <p> This method opens or creates a file in exactly the manner specified
+     * by the {@link Path#newByteChannel(Set,FileAttribute[]) newByteChannel}
+     * method.
      *
      * @param   options
      *          options specifying how the file is opened
@@ -1232,108 +1251,40 @@ public abstract class Path
      *          if a file of that name already exists and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
-     * @throws  IOException                 {@inheritDoc}
-     * @throws  SecurityException           {@inheritDoc}
-     */
-    @Override
-    public abstract SeekableByteChannel newByteChannel(OpenOption... options)
-        throws IOException;
-
-    /**
-     * Opens the file located by this path for reading, returning an input
-     * stream to read bytes from the file. The stream will not be buffered, and
-     * is not required to support the {@link InputStream#mark mark} or {@link
-     * InputStream#reset reset} methods. The stream will be safe for access by
-     * multiple concurrent threads. Reading commences at the beginning of the file.
-     *
-     * @return  an input stream to read bytes from the file
-     *
      * @throws  IOException
      *          if an I/O error occurs
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file.
+     *          method is invoked to check read access to the path if the file is
+     *          opened for reading. The {@link SecurityManager#checkWrite(String)
+     *          checkWrite} method is invoked to check write access to the path
+     *          if the file is opened for writing.
      */
-    public abstract InputStream newInputStream() throws IOException;
+    public abstract SeekableByteChannel newByteChannel(OpenOption... options)
+        throws IOException;
 
     /**
-     * Opens or creates the file located by this path for writing, returning an
-     * output stream to write bytes to the file.
+     * Opens or creates the file located by this object for writing, returning
+     * an output stream to write bytes to the file.
      *
      * <p> This method opens or creates a file in exactly the manner specified
      * by the {@link Path#newByteChannel(Set,FileAttribute[]) newByteChannel}
      * method except that the {@link StandardOpenOption#READ READ} option may not
-     * be present in the array of open options. If no open options are present
-     * then this method creates a new file for writing or truncates an existing
-     * file.
-     *
-     * <p> The resulting stream will not be buffered. The stream will be safe
-     * for access by multiple concurrent threads.
-     *
-     * <p> <b>Usage Example:</b>
-     * Suppose we wish to open a log file for writing so that we append to the
-     * file if it already exists, or create it when it doesn't exist.
-     * <pre>
-     *     Path logfile = ...
-     *     OutputStream out = new BufferedOutputStream(logfile.newOutputStream(CREATE, APPEND));
-     * </pre>
+     * be present in the array of open options.
      *
      * @param   options
      *          options specifying how the file is opened
-     *
-     * @return  a new seekable byte channel
-     *
-     * @throws  IllegalArgumentException
-     *          if {@code options} contains an invalid combination of options
-     * @throws  UnsupportedOperationException
-     *          if an unsupported open option is specified
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file.
-     */
-    public abstract OutputStream newOutputStream(OpenOption... options)
-        throws IOException;
-
-    /**
-     * Opens or creates the file located by this path for writing, returning an
-     * output stream to write bytes to the file.
-     *
-     * <p> This method opens or creates a file in exactly the manner specified
-     * by the {@link Path#newByteChannel(Set,FileAttribute[]) newByteChannel}
-     * method except that {@code options} parameter may not contain the {@link
-     * StandardOpenOption#READ READ} option. If no open options are present
-     * then this method creates a new file for writing or truncates an existing
-     * file.
-     *
-     * <p> The resulting stream will not be buffered. The stream will be safe
-     * for access by multiple concurrent threads.
-     *
-     * @param   options
-     *          options specifying how the file is opened
-     * @param   attrs
-     *          an optional list of file attributes to set atomically when
-     *          creating the file
      *
      * @return  a new output stream
      *
-     * @throws  IllegalArgumentException
-     *          if the set contains an invalid combination of options
-     * @throws  UnsupportedOperationException
-     *          if an unsupported open option is specified or the array contains
-     *          attributes that cannot be set atomically when creating the file
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file.
+     * @throws  IllegalArgumentException            {@inheritDoc}
+     * @throws  UnsupportedOperationException       {@inheritDoc}
+     * @throws  IOException                         {@inheritDoc}
+     * @throws  SecurityException                   {@inheritDoc}
      */
-    public abstract OutputStream newOutputStream(Set<? extends OpenOption> options,
-                                                 FileAttribute<?>... attrs)
+    @Override
+    public abstract OutputStream newOutputStream(OpenOption... options)
         throws IOException;
 
     /**
@@ -1357,6 +1308,80 @@ public abstract class Path
      *          method is invoked to check read access to the file.
      */
     public abstract boolean isHidden() throws IOException;
+
+    /**
+     * Checks the existence and optionally the accessibility of the file
+     * located by this path.
+     *
+     * <p> This method checks the existence of a file and that this Java virtual
+     * machine has appropriate privileges that would allow it access the file
+     * according to all of access modes specified in the {@code modes} parameter
+     * as follows:
+     *
+     * <table border=1 cellpadding=5 summary="">
+     * <tr> <th>Value</th> <th>Description</th> </tr>
+     * <tr>
+     *   <td> {@link AccessMode#READ READ} </td>
+     *   <td> Checks that the file exists and that the Java virtual machine has
+     *     permission to read the file. </td>
+     * </tr>
+     * <tr>
+     *   <td> {@link AccessMode#WRITE WRITE} </td>
+     *   <td> Checks that the file exists and that the Java virtual machine has
+     *     permission to write to the file, </td>
+     * </tr>
+     * <tr>
+     *   <td> {@link AccessMode#EXECUTE EXECUTE} </td>
+     *   <td> Checks that the file exists and that the Java virtual machine has
+     *     permission to {@link Runtime#exec execute} the file. The semantics
+     *     may differ when checking access to a directory. For example, on UNIX
+     *     systems, checking for {@code EXECUTE} access checks that the Java
+     *     virtual machine has permission to search the directory in order to
+     *     access file or subdirectories. </td>
+     * </tr>
+     * </table>
+     *
+     * <p> If the {@code modes} parameter is of length zero, then the existence
+     * of the file is checked.
+     *
+     * <p> This method follows symbolic links if the file referenced by this
+     * object is a symbolic link. Depending on the implementation, this method
+     * may require to read file permissions, access control lists, or other
+     * file attributes in order to check the effective access to the file. To
+     * determine the effective access to a file may require access to several
+     * attributes and so in some implementations this method may not be atomic
+     * with respect to other file system operations. Furthermore, as the result
+     * of this method is immediately outdated, there is no guarantee that a
+     * subsequence access will succeed (or even that it will access the same
+     * file). Care should be taken when using this method in security sensitive
+     * applications.
+     *
+     * @param   modes
+     *          The access modes to check; may have zero elements
+     *
+     * @throws  UnsupportedOperationException
+     *          an implementation is required to support checking for
+     *          {@code READ}, {@code WRITE}, and {@code EXECUTE} access. This
+     *          exception is specified to allow for the {@code Access} enum to
+     *          be extended in future releases.
+     * @throws  NoSuchFileException
+     *          if a file does not exist <i>(optional specific exception)</i>
+     * @throws  AccessDeniedException
+     *          the requested access would be denied or the access cannot be
+     *          determined because the Java virtual machine has insufficient
+     *          privileges or other reasons. <i>(optional specific exception)</i>
+     * @throws  IOException
+     *          if an I/O error occurs
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
+     *          is invoked when checking read access to the file or only the
+     *          existence of the file, the {@link SecurityManager#checkWrite(String)
+     *          checkWrite} is invoked when checking write access to the file,
+     *          and {@link SecurityManager#checkExec(String) checkExec} is invoked
+     *          when checking execute access.
+     */
+    public abstract void checkAccess(AccessMode... modes) throws IOException;
 
     /**
      * Tests whether the file located by this path exists.
@@ -1413,6 +1438,30 @@ public abstract class Path
      *          read access to the file.
      */
     public abstract boolean notExists();
+
+    /**
+     * Returns the {@link FileStore} representing the file store where an
+     * existing file, located by this path, is stored.
+     *
+     * <p> Once a reference to the {@code FileStore} is obtained it is
+     * implementation specific if operations on the returned {@code FileStore},
+     * or {@link FileStoreAttributeView} objects obtained from it, continue
+     * to depend on the existence of the file. In particular the behavior is not
+     * defined for the case that the file is deleted or moved to a different
+     * file store.
+     *
+     * @return  the file store where the file is stored
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
+     *          method is invoked to check read access to the file, and in
+     *          addition it checks {@link RuntimePermission}<tt>
+     *          ("getFileStoreAttributes")</tt>
+     */
+    public abstract FileStore getFileStore() throws IOException;
 
     // -- watchable --
 
@@ -1560,6 +1609,49 @@ public abstract class Path
      */
     @Override
     public abstract int compareTo(Path other);
+
+    /**
+     * Tests if the file referenced by this object is the same file referenced
+     * by another object.
+     *
+     * <p> If this {@code FileRef} and the given {@code FileRef} are {@link
+     * #equals(Object) equal} then this method returns {@code true} without checking
+     * if the file exists. If the {@code FileRef} and the given {@code FileRef}
+     * are associated with different providers, or the given {@code FileRef} is
+     * {@code null} then this method returns {@code false}. Otherwise, this method
+     * checks if both {@code FileRefs} locate the same file, and depending on the
+     * implementation, may require to open or access both files.
+     *
+     * <p> If the file system and files remain static, then this method implements
+     * an equivalence relation for non-null {@code FileRefs}.
+     * <ul>
+     * <li>It is <i>reflexive</i>: for a non-null {@code FileRef} {@code f},
+     *     {@code f.isSameFile(f)} should return {@code true}.
+     * <li>It is <i>symmetric</i>: for two non-null {@code FileRefs}
+     *     {@code f} and {@code g}, {@code f.isSameFile(g)} will equal
+     *     {@code g.isSameFile(f)}.
+     * <li>It is <i>transitive</i>: for three {@code FileRefs}
+     *     {@code f}, {@code g}, and {@code h}, if {@code f.isSameFile(g)} returns
+     *     {@code true} and {@code g.isSameFile(h)} returns {@code true}, then
+     *     {@code f.isSameFile(h)} will return return {@code true}.
+     * </ul>
+     *
+     * @param   other
+     *          the other file reference
+     *
+     * @return  {@code true} if, and only if, this object and the given object
+     *          locate the same file
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
+     *          method is invoked to check read access to both files.
+     *
+     * @see java.nio.file.attribute.BasicFileAttributes#fileKey
+     */
+    public abstract boolean isSameFile(Path other) throws IOException;
 
     /**
      * Tests this path for equality with the given object.

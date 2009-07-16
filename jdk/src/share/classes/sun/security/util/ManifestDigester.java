@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ public class ManifestDigester {
 
             if (len > 6) {
                 if (isNameAttr(bytes, start)) {
-                    StringBuilder nameBuf = new StringBuilder();
+                    StringBuilder nameBuf = new StringBuilder(sectionLen);
 
                     try {
                         nameBuf.append(

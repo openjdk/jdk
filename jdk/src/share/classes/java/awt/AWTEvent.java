@@ -32,6 +32,7 @@ import java.awt.peer.LightweightPeer;
 import java.lang.reflect.Field;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import sun.awt.AWTAccessor;
 
 /**
  * The root event class for all AWT events.
@@ -230,6 +231,12 @@ public abstract class AWTEvent extends EventObject {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+        AWTAccessor.setAWTEventAccessor(
+            new AWTAccessor.AWTEventAccessor() {
+                public void setPosted(AWTEvent ev) {
+                    ev.isPosted = true;
+                }
+            });
     }
 
     private static synchronized Field get_InputEvent_CanAccessSystemClipboard() {

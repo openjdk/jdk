@@ -31,11 +31,11 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Base implementation of NamedAttributeView
+ * Base implementation of UserDefinedAttributeView
  */
 
 abstract class AbstractUserDefinedFileAttributeView
-    implements UserDefinedFileAttributeView
+    implements UserDefinedFileAttributeView, DynamicFileAttributeView
 {
     protected AbstractUserDefinedFileAttributeView() { }
 
@@ -56,7 +56,7 @@ abstract class AbstractUserDefinedFileAttributeView
 
     @Override
     public final String name() {
-        return "xattr";
+        return "user";
     }
 
     @Override
@@ -70,6 +70,7 @@ abstract class AbstractUserDefinedFileAttributeView
                 throw e;
             return null;
         }
+
         byte[] buf = new byte[size];
         int n = read(attribute, ByteBuffer.wrap(buf));
         return (n == size) ? buf : Arrays.copyOf(buf, n);
@@ -89,27 +90,20 @@ abstract class AbstractUserDefinedFileAttributeView
     }
 
     @Override
-    public final Map<String,?> readAttributes(String first, String... rest)
+    public final Map<String,?> readAttributes(String[] attributes)
         throws IOException
     {
         // names of attributes to return
         List<String> names = new ArrayList<String>();
 
-        boolean readAll = false;
-        if (first.equals("*")) {
-            readAll = true;
-        } else {
-            names.add(first);
-        }
-        for (String name: rest) {
+        for (String name: attributes) {
             if (name.equals("*")) {
-                readAll = true;
+                names = list();
+                break;
             } else {
                 names.add(name);
             }
         }
-        if (readAll)
-            names = list();
 
         // read each value and return in map
         Map<String,Object> result = new HashMap<String,Object>();
