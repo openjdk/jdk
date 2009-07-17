@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -922,7 +922,7 @@ public class DnsContext extends ComponentDirContext {
 
     //---------- Debugging
 
-    public static boolean debug = false;
+    private static final boolean debug = false;
 
     private static final void dprint(String msg) {
         if (debug) {
