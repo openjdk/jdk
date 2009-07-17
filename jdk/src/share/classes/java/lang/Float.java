@@ -438,12 +438,13 @@ public final class Float extends Number implements Comparable<Float> {
      * represented by the specified {@code String}, as performed
      * by the {@code valueOf} method of class {@code Float}.
      *
-     * @param      s   the string to be parsed.
+     * @param  s the string to be parsed.
      * @return the {@code float} value represented by the string
      *         argument.
-     * @throws  NumberFormatException  if the string does not contain a
+     * @throws NullPointerException  if the string is null
+     * @throws NumberFormatException if the string does not contain a
      *               parsable {@code float}.
-     * @see        java.lang.Float#valueOf(String)
+     * @see    java.lang.Float#valueOf(String)
      * @since 1.2
      */
     public static float parseFloat(String s) throws NumberFormatException {
