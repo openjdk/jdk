@@ -2074,7 +2074,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
 
     // See if it is a narrow oop array.
     if (adr_type->isa_aryptr()) {
-      if (adr_type->offset() >= objArrayOopDesc::base_offset_in_bytes(type)) {
+      if (adr_type->offset() >= objArrayOopDesc::base_offset_in_bytes()) {
         const TypeOopPtr *elem_type = adr_type->is_aryptr()->elem()->isa_oopptr();
         if (elem_type != NULL) {
           sharpened_klass = elem_type->klass();
