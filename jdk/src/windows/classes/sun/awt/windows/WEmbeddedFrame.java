@@ -211,9 +211,10 @@ public class WEmbeddedFrame extends EmbeddedFrame {
      */
     public void notifyModalBlocked(Dialog blocker, boolean blocked) {
         try {
-            notifyModalBlockedImpl((WEmbeddedFramePeer)ComponentAccessor.getPeer(this),
-                                   (WWindowPeer)ComponentAccessor.getPeer(blocker),
-                                   blocked);
+            ComponentPeer thisPeer = (ComponentPeer)WToolkit.targetToPeer(this);
+            ComponentPeer blockerPeer = (ComponentPeer)WToolkit.targetToPeer(blocker);
+            notifyModalBlockedImpl((WEmbeddedFramePeer)thisPeer,
+                                   (WWindowPeer)blockerPeer, blocked);
         } catch (Exception z) {
             z.printStackTrace(System.err);
         }

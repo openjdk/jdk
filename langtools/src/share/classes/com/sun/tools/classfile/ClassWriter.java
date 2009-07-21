@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -477,6 +478,16 @@ public class ClassWriter {
             return null;
         }
 
+        public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr, ClassOutputStream out) {
+            annotationWriter.write(attr.annotations, out);
+            return null;
+        }
+
+        public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr, ClassOutputStream out) {
+            annotationWriter.write(attr.annotations, out);
+            return null;
+        }
+
         public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, ClassOutputStream out) {
             out.writeByte(attr.parameter_annotations.length);
             for (Annotation[] annos: attr.parameter_annotations)
@@ -636,11 +647,22 @@ public class ClassWriter {
                 write(anno, out);
         }
 
+        public void write(ExtendedAnnotation[] annos, ClassOutputStream out) {
+            out.writeShort(annos.length);
+            for (ExtendedAnnotation anno: annos)
+                write(anno, out);
+        }
+
         public void write(Annotation anno, ClassOutputStream out) {
             out.writeShort(anno.type_index);
             out.writeShort(anno.element_value_pairs.length);
             for (element_value_pair p: anno.element_value_pairs)
                 write(p, out);
+        }
+
+        public void write(ExtendedAnnotation anno, ClassOutputStream out) {
+            write(anno.annotation, out);
+            write(anno.position, out);
         }
 
         public void write(element_value_pair pair, ClassOutputStream out) {
@@ -679,6 +701,96 @@ public class ClassWriter {
             for (element_value v: ev.values)
                 write(v, out);
             return null;
+        }
+
+        private void write(ExtendedAnnotation.Position p, ClassOutputStream out) {
+            out.writeByte(p.type.targetTypeValue());
+            switch (p.type) {
+            // type case
+            case TYPECAST:
+            case TYPECAST_GENERIC_OR_ARRAY:
+            // object creation
+            case INSTANCEOF:
+            case INSTANCEOF_GENERIC_OR_ARRAY:
+            // new expression
+            case NEW:
+            case NEW_GENERIC_OR_ARRAY:
+            case NEW_TYPE_ARGUMENT:
+            case NEW_TYPE_ARGUMENT_GENERIC_OR_ARRAY:
+                out.writeShort(p.offset);
+                break;
+             // local variable
+            case LOCAL_VARIABLE:
+            case LOCAL_VARIABLE_GENERIC_OR_ARRAY:
+                int table_length = p.lvarOffset.length;
+                out.writeShort(table_length);
+                for (int i = 0; i < table_length; ++i) {
+                    out.writeShort(1);  // for table length
+                    out.writeShort(p.lvarOffset[i]);
+                    out.writeShort(p.lvarLength[i]);
+                    out.writeShort(p.lvarIndex[i]);
+                }
+                break;
+             // method receiver
+            case METHOD_RECEIVER:
+                // Do nothing
+                break;
+            // type parameters
+            case CLASS_TYPE_PARAMETER:
+            case METHOD_TYPE_PARAMETER:
+                out.writeByte(p.parameter_index);
+                break;
+            // type parameters bounds
+            case CLASS_TYPE_PARAMETER_BOUND:
+            case CLASS_TYPE_PARAMETER_BOUND_GENERIC_OR_ARRAY:
+            case METHOD_TYPE_PARAMETER_BOUND:
+            case METHOD_TYPE_PARAMETER_BOUND_GENERIC_OR_ARRAY:
+                out.writeByte(p.parameter_index);
+                out.writeByte(p.bound_index);
+                break;
+             // wildcards
+            case WILDCARD_BOUND:
+            case WILDCARD_BOUND_GENERIC_OR_ARRAY:
+                write(p.wildcard_position, out);
+                break;
+            // Class extends and implements clauses
+            case CLASS_EXTENDS:
+            case CLASS_EXTENDS_GENERIC_OR_ARRAY:
+                out.writeByte(p.type_index);
+                break;
+            // throws
+            case THROWS:
+                out.writeByte(p.type_index);
+                break;
+            case CLASS_LITERAL:
+                out.writeShort(p.offset);
+                break;
+            // method parameter: not specified
+            case METHOD_PARAMETER_GENERIC_OR_ARRAY:
+                out.writeByte(p.parameter_index);
+                break;
+            // method type argument: wasn't specified
+            case METHOD_TYPE_ARGUMENT:
+            case METHOD_TYPE_ARGUMENT_GENERIC_OR_ARRAY:
+                out.writeShort(p.offset);
+                out.writeByte(p.type_index);
+                break;
+            // We don't need to worry abut these
+            case METHOD_RETURN_GENERIC_OR_ARRAY:
+            case FIELD_GENERIC_OR_ARRAY:
+                break;
+            case UNKNOWN:
+                break;
+            default:
+                throw new AssertionError("unknown type: " + p);
+            }
+
+            // Append location data for generics/arrays.
+            if (p.type.hasLocation()) {
+                out.writeShort(p.location.size());
+                for (int i : p.location)
+                    out.writeByte((byte)i);
+            }
         }
     }
 }
