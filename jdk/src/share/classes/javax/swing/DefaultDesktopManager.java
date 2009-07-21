@@ -708,7 +708,7 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
       // update window if it's non-opaque
       Window topLevel = SwingUtilities.getWindowAncestor(f);
       Toolkit tk = Toolkit.getDefaultToolkit();
-      if (!AWTAccessor.getWindowAccessor().isOpaque(topLevel) &&
+      if (!topLevel.isOpaque() &&
           (tk instanceof SunToolkit) &&
           ((SunToolkit)tk).needUpdateWindow())
       {

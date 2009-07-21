@@ -24,7 +24,7 @@
 
 /* HelloWorld:
  *
- *   Sample target appluication for HPROF tests
+ *   Sample target application for HPROF tests
  *
  */
 
