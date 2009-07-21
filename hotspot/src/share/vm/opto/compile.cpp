@@ -101,7 +101,8 @@ CallGenerator* Compile::find_intrinsic(ciMethod* m, bool is_virtual) {
     }
   }
   // Lazily create intrinsics for intrinsic IDs well-known in the runtime.
-  if (m->intrinsic_id() != vmIntrinsics::_none) {
+  if (m->intrinsic_id() != vmIntrinsics::_none &&
+      m->intrinsic_id() <= vmIntrinsics::LAST_COMPILER_INLINE) {
     CallGenerator* cg = make_vm_intrinsic(m, is_virtual);
     if (cg != NULL) {
       // Save it for next time:
