@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 
 package sun.security.provider.certpath;
 
+import java.util.Date;
 import java.util.Set;
 
 import java.security.cert.X509CertSelector;
+import java.security.cert.X509CRLSelector;
 
 import sun.security.x509.GeneralNameInterface;
 
@@ -55,8 +57,14 @@ public abstract class CertPathHelper {
     protected abstract void implSetPathToNames(X509CertSelector sel,
             Set<GeneralNameInterface> names);
 
+    protected abstract void implSetDateAndTime(X509CRLSelector sel, Date date, long skew);
+
     static void setPathToNames(X509CertSelector sel,
             Set<GeneralNameInterface> names) {
         instance.implSetPathToNames(sel, names);
+    }
+
+    static void setDateAndTime(X509CRLSelector sel, Date date, long skew) {
+        instance.implSetDateAndTime(sel, date, skew);
     }
 }

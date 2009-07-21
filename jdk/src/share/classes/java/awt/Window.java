@@ -3658,7 +3658,7 @@ public class Window extends Container implements Accessible {
     private static void setLayersOpaque(Component component, boolean isOpaque) {
         // Shouldn't use instanceof to avoid loading Swing classes
         //    if it's a pure AWT application.
-        if (Component.doesImplement(component, "javax.swing.RootPaneContainer")) {
+        if (SunToolkit.isInstanceOf(component, "javax.swing.RootPaneContainer")) {
             javax.swing.RootPaneContainer rpc = (javax.swing.RootPaneContainer)component;
             javax.swing.JRootPane root = rpc.getRootPane();
             javax.swing.JLayeredPane lp = root.getLayeredPane();
@@ -3838,6 +3838,10 @@ public class Window extends Container implements Accessible {
                     double x, double y, double w, double h)
             {
                 return window.calculateSecurityWarningPosition(x, y, w, h);
+            }
+
+            public void setLWRequestStatus(Window changed, boolean status) {
+                changed.syncLWRequests = status;
             }
         }); // WindowAccessor
     } // static

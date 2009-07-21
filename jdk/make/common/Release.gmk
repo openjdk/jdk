@@ -789,6 +789,11 @@ ifeq ($(PLATFORM), windows)
 	$(CD) $(JRE_IMAGE_DIR)/lib && \
             $(RM) java.$(LIB_SUFFIX) jvm.$(LIB_SUFFIX) \
                   hpi.$(LIB_SUFFIX) awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+	@# The Java Kernel JRE image ships with a special VM.  It is not included
+	@# in the full JRE image, so remove it.  Also, is it only for 32-bit windows.
+	$(CD) $(JRE_IMAGE_DIR)/bin && $(RM) -r kernel
+  endif
 endif # Windows
 ifneq ($(PLATFORM), windows)
 	$(call copy-man-pages,$(JRE_IMAGE_DIR),$(JRE_MAN_PAGES))

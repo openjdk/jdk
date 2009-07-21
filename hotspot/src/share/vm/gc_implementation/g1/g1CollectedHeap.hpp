@@ -1061,8 +1061,14 @@ public:
 
   // Override; it uses the "prev" marking information
   virtual void verify(bool allow_dirty, bool silent);
+  // Default behavior by calling print(tty);
   virtual void print() const;
+  // This calls print_on(st, PrintHeapAtGCExtended).
   virtual void print_on(outputStream* st) const;
+  // If extended is true, it will print out information for all
+  // regions in the heap by calling print_on_extended(st).
+  virtual void print_on(outputStream* st, bool extended) const;
+  virtual void print_on_extended(outputStream* st) const;
 
   virtual void print_gc_threads_on(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;

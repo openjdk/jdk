@@ -93,7 +93,7 @@ class EnumPersistenceDelegate extends PersistenceDelegate {
 
     protected Expression instantiate(Object oldInstance, Encoder out) {
         Enum e = (Enum) oldInstance;
-        return new Expression(e, Enum.class, "valueOf", new Object[]{e.getClass(), e.name()});
+        return new Expression(e, Enum.class, "valueOf", new Object[]{e.getDeclaringClass(), e.name()});
     }
 }
 
