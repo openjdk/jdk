@@ -301,6 +301,7 @@ public class Resources extends java.util.ListResourceBundle {
                 "-certreq     [-v] [-protected]"},
         {"\t     [-alias <alias>] [-sigalg <sigalg>]",
                 "\t     [-alias <alias>] [-sigalg <sigalg>]"},
+        {"\t     [-dname <dname>]", "\t     [-dname <dname>]"},
         {"\t     [-file <csr_file>] [-keypass <keypass>]",
                 "\t     [-file <csr_file>] [-keypass <keypass>]"},
         {"\t     [-keystore <keystore>] [-storepass <storepass>]",
