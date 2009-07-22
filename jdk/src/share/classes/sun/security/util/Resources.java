@@ -215,7 +215,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"\t(RETURN if same as for <otherAlias>)",
                 "\t(RETURN if same as for <{0}>)"},
         {"*PATTERN* printX509Cert",
-                "Owner: {0}\nIssuer: {1}\nSerial number: {2}\nValid from: {3} until: {4}\nCertificate fingerprints:\n\t MD5:  {5}\n\t SHA1: {6}\n\t Signature algorithm name: {7}\n\t Version: {8}"},
+                "Owner: {0}\nIssuer: {1}\nSerial number: {2}\nValid from: {3} until: {4}\nCertificate fingerprints:\n\t MD5:  {5}\n\t SHA1: {6}\n\t SHA256: {7}\n\t Signature algorithm name: {8}\n\t Version: {9}"},
         {"What is your first and last name?",
                 "What is your first and last name?"},
         {"What is the name of your organizational unit?",

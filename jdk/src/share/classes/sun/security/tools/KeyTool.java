@@ -1318,7 +1318,7 @@ public final class KeyTool {
         if ("DSA".equalsIgnoreCase(keyAlgName)) {
             return "SHA1WithDSA";
         } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
-            return "SHA1WithRSA";
+            return "SHA256WithRSA";
         } else if ("EC".equalsIgnoreCase(keyAlgName)) {
             return "SHA1withECDSA";
         } else {
@@ -1336,6 +1336,8 @@ public final class KeyTool {
         if (keysize == -1) {
             if ("EC".equalsIgnoreCase(keyAlgName)) {
                 keysize = 256;
+            } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
+                keysize = 2048;
             } else {
                 keysize = 1024;
             }
@@ -2499,6 +2501,7 @@ public final class KeyTool {
                         cert.getNotAfter().toString(),
                         getCertFingerPrint("MD5", cert),
                         getCertFingerPrint("SHA1", cert),
+                        getCertFingerPrint("SHA-256", cert),
                         cert.getSigAlgName(),
                         cert.getVersion()
                         };
