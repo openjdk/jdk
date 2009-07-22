@@ -343,6 +343,7 @@ class Universe: AllStatic {
   // For UseCompressedOops
   static address* narrow_oop_base_addr()              { return &_narrow_oop._base; }
   static address  narrow_oop_base()                   { return  _narrow_oop._base; }
+  static bool  is_narrow_oop_base(void* addr)         { return (narrow_oop_base() == (address)addr); }
   static int      narrow_oop_shift()                  { return  _narrow_oop._shift; }
   static void     set_narrow_oop_base(address base)   { _narrow_oop._base  = base; }
   static void     set_narrow_oop_shift(int shift)     { _narrow_oop._shift = shift; }

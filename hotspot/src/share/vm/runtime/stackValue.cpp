@@ -104,7 +104,17 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
     }
 #endif
     case Location::oop: {
-      Handle h(*(oop *)value_addr); // Wrap a handle around the oop
+      oop val = *(oop *)value_addr;
+#ifdef _LP64
+      if (Universe::is_narrow_oop_base(val)) {
+         // Compiled code may produce decoded oop = narrow_oop_base
+         // when a narrow oop implicit null check is used.
+         // The narrow_oop_base could be NULL or be the address
+         // of the page below heap. Use NULL value for both cases.
+         val = (oop)NULL;
+      }
+#endif
+      Handle h(val); // Wrap a handle around the oop
       return new StackValue(h);
     }
     case Location::addr: {
