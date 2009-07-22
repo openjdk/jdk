@@ -1052,7 +1052,7 @@ public final class KeyTool {
         X509CertImpl signerCertImpl = new X509CertImpl(encoded);
         X509CertInfo signerCertInfo = (X509CertInfo)signerCertImpl.get(
                 X509CertImpl.NAME + "." + X509CertImpl.INFO);
-        X500Name owner = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "." +
+        X500Name issuer = (X500Name)signerCertInfo.get(X509CertInfo.SUBJECT + "." +
                                            CertificateSubjectName.DN_NAME);
 
         Date firstDate = getStartDate(startDate);
@@ -1068,7 +1068,7 @@ public final class KeyTool {
         Signature signature = Signature.getInstance(sigAlgName);
         signature.initSign(privateKey);
 
-        X500Signer signer = new X500Signer(signature, owner);
+        X500Signer signer = new X500Signer(signature, issuer);
 
         X509CertInfo info = new X509CertInfo();
         info.set(X509CertInfo.VALIDITY, interval);
@@ -1102,7 +1102,8 @@ public final class KeyTool {
         PKCS10 req = new PKCS10(rawReq);
 
         info.set(X509CertInfo.KEY, new CertificateX509Key(req.getSubjectPublicKeyInfo()));
-        info.set(X509CertInfo.SUBJECT, new CertificateSubjectName(req.getSubjectName()));
+        info.set(X509CertInfo.SUBJECT, new CertificateSubjectName(
+                dname==null?req.getSubjectName():new X500Name(dname)));
         CertificateExtensions reqex = null;
         Iterator<PKCS10Attribute> attrs = req.getAttributes().getAttributes().iterator();
         while (attrs.hasNext()) {
@@ -1160,8 +1161,9 @@ public final class KeyTool {
 
         Signature signature = Signature.getInstance(sigAlgName);
         signature.initSign(privKey);
-        X500Name subject =
-            new X500Name(((X509Certificate)cert).getSubjectDN().toString());
+        X500Name subject = dname == null?
+                new X500Name(((X509Certificate)cert).getSubjectDN().toString()):
+                new X500Name(dname);
         X500Signer signer = new X500Signer(signature, subject);
 
         // Sign the request and base-64 encode it
@@ -3428,7 +3430,7 @@ public final class KeyTool {
 
                 int colonpos = name.indexOf(':');
                 if (colonpos >= 0) {
-                    if (name.substring(colonpos+1).equalsIgnoreCase("critical")) {
+                    if (oneOf(name.substring(colonpos+1), "critical") == 0) {
                         isCritical = true;
                     }
                     name = name.substring(0, colonpos);
@@ -3689,6 +3691,8 @@ public final class KeyTool {
         System.err.println(rb.getString
                 ("\t     [-alias <alias>] [-sigalg <sigalg>]"));
         System.err.println(rb.getString
+                ("\t     [-dname <dname>]"));
+        System.err.println(rb.getString
                 ("\t     [-file <csr_file>] [-keypass <keypass>]"));
         System.err.println(rb.getString
                 ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
@@ -3770,6 +3774,8 @@ public final class KeyTool {
                 ("\t     [-infile <infile>] [-outfile <outfile>]"));
         System.err.println(rb.getString
                 ("\t     [-alias <alias>]"));
+        System.err.println(rb.getString
+                ("\t     [-dname <dname>]"));
         System.err.println(rb.getString
                 ("\t     [-sigalg <sigalg>]"));
         System.err.println(rb.getString
