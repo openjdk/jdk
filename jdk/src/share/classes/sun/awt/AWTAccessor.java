@@ -137,11 +137,6 @@ public final class AWTAccessor {
          */
         void setShape(Window window, Shape shape);
         /*
-         * Identify whether the given window is opaque (true)
-         *  or translucent (false).
-         */
-        boolean isOpaque(Window window);
-        /*
          * Set the opaque preoperty to the given window.
          */
         void setOpaque(Window window, boolean isOpaque);
