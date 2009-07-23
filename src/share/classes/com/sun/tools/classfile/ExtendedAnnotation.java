@@ -357,6 +357,7 @@ public class ExtendedAnnotation {
                 sb.append(type_index);
                 break;
             case CLASS_LITERAL:
+            case CLASS_LITERAL_GENERIC_OR_ARRAY:
                 sb.append(", offset = ");
                 sb.append(offset);
                 break;
