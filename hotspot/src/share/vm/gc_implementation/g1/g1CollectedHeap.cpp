@@ -1655,9 +1655,8 @@ void G1CollectedHeap::iterate_dirty_card_closure(bool concurrent,
 // Computes the sum of the storage used by the various regions.
 
 size_t G1CollectedHeap::used() const {
-  // Temporarily, until 6859911 is fixed. XXX
-  // assert(Heap_lock->owner() != NULL,
-  //        "Should be owned on this thread's behalf.");
+  assert(Heap_lock->owner() != NULL,
+         "Should be owned on this thread's behalf.");
   size_t result = _summary_bytes_used;
   // Read only once in case it is set to NULL concurrently
   HeapRegion* hr = _cur_alloc_region;
