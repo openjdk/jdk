@@ -194,8 +194,11 @@ class UnixDirectoryStream
                     Path entry = dir.resolve(nameAsBytes);
 
                     // return entry if no filter or filter accepts it
-                    if (filter.accept(entry)) {
-                        return entry;
+                    try {
+                        if (filter == null || filter.accept(entry))
+                            return entry;
+                    } catch (IOException ioe) {
+                        throwAsConcurrentModificationException(ioe);
                     }
                 }
             }
@@ -248,7 +251,7 @@ class UnixDirectoryStream
                     ((UnixSecureDirectoryStream)stream)
                         .implDelete(entry.getName(), false, 0);
                 } else {
-                    entry.delete(true);
+                    entry.delete();
                 }
             } catch (IOException ioe) {
                 throwAsConcurrentModificationException(ioe);

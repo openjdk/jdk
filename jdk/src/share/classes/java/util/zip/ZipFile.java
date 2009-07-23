@@ -25,6 +25,7 @@
 
 package java.util.zip;
 
+import java.io.Closeable;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
@@ -47,7 +48,7 @@ import static java.util.zip.ZipConstants64.*;
  * @author      David Connelly
  */
 public
-class ZipFile implements ZipConstants {
+class ZipFile implements ZipConstants, Closeable {
     private long jzfile;  // address of jzfile data
     private String name;  // zip file name
     private int total;    // total number of entries
@@ -246,6 +247,25 @@ class ZipFile implements ZipConstants {
     public ZipFile(File file, Charset charset) throws IOException
     {
         this(file, OPEN_READ, charset);
+    }
+
+    /**
+     * Returns the zip file comment, or null if none.
+     *
+     * @return the comment string for the zip file, or null if none
+     *
+     * @throws IllegalStateException if the zip file has been closed
+     *
+     * Since 1.7
+     */
+    public String getComment() {
+        synchronized (this) {
+            ensureOpen();
+            byte[] bcomm = getCommentBytes(jzfile);
+            if (bcomm == null)
+                return null;
+            return zc.toString(bcomm, bcomm.length);
+        }
     }
 
     /**
@@ -663,6 +683,7 @@ class ZipFile implements ZipConstants {
     private static native long getEntrySize(long jzentry);
     private static native int getEntryMethod(long jzentry);
     private static native int getEntryFlag(long jzentry);
+    private static native byte[] getCommentBytes(long jzfile);
 
     private static final int JZENTRY_NAME = 0;
     private static final int JZENTRY_EXTRA = 1;

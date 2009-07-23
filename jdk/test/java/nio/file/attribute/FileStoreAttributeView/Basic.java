@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.attribute.FileStoreAttributeView
  * @library ../..
  */
@@ -106,43 +106,10 @@ public class Basic {
         checkWithin1GB(free, attrs.unallocatedSpace());
         checkWithin1GB(usable, attrs.usableSpace());
 
-        // get values by name (and in bulk)
-        FileStoreAttributeView view = fs.getFileStoreAttributeView("space");
-        checkWithin1GB(total, (Long)view.getAttribute("totalSpace"));
-        checkWithin1GB(free, (Long)view.getAttribute("unallocatedSpace"));
-        checkWithin1GB(usable, (Long)view.getAttribute("usableSpace"));
-        Map<String,?> map = view.readAttributes("*");
-        checkWithin1GB(total, (Long)map.get("totalSpace"));
-        checkWithin1GB(free, (Long)map.get("unallocatedSpace"));
-        checkWithin1GB(usable, (Long)map.get("usableSpace"));
-        map = view.readAttributes("totalSpace", "unallocatedSpace", "usableSpace");
-        checkWithin1GB(total, (Long)map.get("totalSpace"));
-        checkWithin1GB(free, (Long)map.get("unallocatedSpace"));
-        checkWithin1GB(usable, (Long)map.get("usableSpace"));
-    }
-
-    /**
-     * Check (Windows-specific) volume attributes
-     */
-    static void checkVolumeAttributes() throws IOException {
-        System.out.println(" -- volumes -- ");
-        for (FileStore store: FileSystems.getDefault().getFileStores()) {
-            FileStoreAttributeView view = store.getFileStoreAttributeView("volume");
-            if (view == null)
-                continue;
-            Map<String,?> attrs = view.readAttributes("*");
-            int vsn = (Integer)attrs.get("vsn");
-            boolean compressed = (Boolean)attrs.get("compressed");
-            boolean removable = (Boolean)attrs.get("removable");
-            boolean cdrom = (Boolean)attrs.get("cdrom");
-            String type;
-            if (removable) type = "removable";
-            else if (cdrom) type = "cdrom";
-            else type = "unknown";
-            System.out.format("%s (%s) vsn:%x compressed:%b%n", store.name(),
-                type, vsn, compressed);
-        }
-
+        // get values by name
+        checkWithin1GB(total, (Long)fs.getAttribute("space:totalSpace"));
+        checkWithin1GB(free, (Long)fs.getAttribute("space:unallocatedSpace"));
+        checkWithin1GB(usable, (Long)fs.getAttribute("space:usableSpace"));
     }
 
     public static void main(String[] args) throws IOException {
@@ -160,9 +127,6 @@ public class Basic {
             // check space using file
             Path file = dir.resolve("foo").createFile();
             checkSpace(file);
-
-            // volume attributes (Windows specific)
-            checkVolumeAttributes();
 
         } finally {
             TestUtil.removeAll(dir);

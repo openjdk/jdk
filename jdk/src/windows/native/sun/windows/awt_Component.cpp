@@ -5976,17 +5976,7 @@ ret:
     env->DeleteGlobalRef(self);
 
     delete cpps;
-
-    if (result != NULL)
-    {
-        jintArray resultGlobalRef = (jintArray)env->NewGlobalRef(result);
-        env->DeleteLocalRef(result);
-        return resultGlobalRef;
-    }
-    else
-    {
-        return NULL;
-    }
+    return result; // this reference is global
 }
 
 jboolean AwtComponent::_IsObscured(void *param)

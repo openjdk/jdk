@@ -89,7 +89,7 @@ public abstract class UserPrincipalLookupService {
      * @param   group
      *          the string representation of the group to lookup
      *
-     * @return  a user principal
+     * @return  a group principal
      *
      * @throws  UserPrincipalNotFoundException
      *          the principal does not exist or is not a group

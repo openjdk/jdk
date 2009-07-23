@@ -1245,6 +1245,11 @@ public class Flow extends TreeScanner {
         }
     }
 
+    public void visitAnnotatedType(JCAnnotatedType tree) {
+        // annotations don't get scanned
+        tree.underlyingType.accept(this);
+    }
+
     public void visitIdent(JCIdent tree) {
         if (tree.sym.kind == VAR)
             checkInit(tree.pos(), (VarSymbol)tree.sym);
@@ -1254,13 +1259,31 @@ public class Flow extends TreeScanner {
         super.visitTypeCast(tree);
         if (!tree.type.isErroneous()
             && lint.isEnabled(Lint.LintCategory.CAST)
-            && types.isSameType(tree.expr.type, tree.clazz.type)) {
+            && types.isSameType(tree.expr.type, tree.clazz.type)
+            && !(ignoreAnnotatedCasts && containsTypeAnnotation(tree.clazz))) {
             log.warning(tree.pos(), "redundant.cast", tree.expr.type);
         }
     }
 
     public void visitTopLevel(JCCompilationUnit tree) {
         // Do nothing for TopLevel since each class is visited individually
+    }
+
+/**************************************************************************
+ * utility methods for ignoring type-annotated casts lint checking
+ *************************************************************************/
+    private static final boolean ignoreAnnotatedCasts = true;
+    private static class AnnotationFinder extends TreeScanner {
+        public boolean foundTypeAnno = false;
+        public void visitAnnotation(JCAnnotation tree) {
+            foundTypeAnno = foundTypeAnno || (tree instanceof JCTypeAnnotation);
+        }
+    }
+
+    private boolean containsTypeAnnotation(JCTree e) {
+        AnnotationFinder finder = new AnnotationFinder();
+        finder.scan(e);
+        return finder.foundTypeAnno;
     }
 
 /**************************************************************************

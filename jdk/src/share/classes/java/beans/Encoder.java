@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 package java.beans;
 
-import java.util.Collections;
+import com.sun.beans.finder.PersistenceDelegateFinder;
+
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -45,8 +46,7 @@ import java.util.Map;
  */
 
 public class Encoder {
-    private final Map<Class<?>, PersistenceDelegate> delegates
-            = Collections.synchronizedMap(new HashMap<Class<?>, PersistenceDelegate>());
+    private final PersistenceDelegateFinder finder = new PersistenceDelegateFinder();
     private Map bindings = new IdentityHashMap();
     private ExceptionListener exceptionListener;
     boolean executeStatements = true;
@@ -166,8 +166,13 @@ public class Encoder {
      * @see java.beans.BeanInfo#getBeanDescriptor
      */
     public PersistenceDelegate getPersistenceDelegate(Class<?> type) {
-        PersistenceDelegate pd = this.delegates.get(type);
-        return (pd != null) ? pd : MetaData.getPersistenceDelegate(type);
+        synchronized (this.finder) {
+            PersistenceDelegate pd = this.finder.find(type);
+            if (pd != null) {
+                return pd;
+            }
+        }
+        return MetaData.getPersistenceDelegate(type);
     }
 
     /**
@@ -184,10 +189,8 @@ public class Encoder {
     public void setPersistenceDelegate(Class<?> type,
                                        PersistenceDelegate persistenceDelegate)
     {
-        if (persistenceDelegate != null) {
-            this.delegates.put(type, persistenceDelegate);
-        } else {
-            this.delegates.remove(type);
+        synchronized (this.finder) {
+            this.finder.register(type, persistenceDelegate);
         }
     }
 
@@ -243,12 +246,11 @@ public class Encoder {
         for (int i = 0; i < oldArgs.length; i++) {
             newArgs[i] = writeObject1(oldArgs[i]);
         }
-        if (oldExp.getClass() == Statement.class) {
-            return new Statement(newTarget, oldExp.getMethodName(), newArgs);
-        }
-        else {
-            return new Expression(newTarget, oldExp.getMethodName(), newArgs);
-        }
+        Statement newExp = Statement.class.equals(oldExp.getClass())
+                ? new Statement(newTarget, oldExp.getMethodName(), newArgs)
+                : new Expression(newTarget, oldExp.getMethodName(), newArgs);
+        newExp.loader = oldExp.loader;
+        return newExp;
     }
 
     /**

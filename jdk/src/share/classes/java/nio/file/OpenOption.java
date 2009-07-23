@@ -30,7 +30,7 @@ package java.nio.file;
  *
  * <p> Objects of this type are used by methods such as {@link
  * Path#newOutputStream(OpenOption[]) newOutputStream}, {@link
- * FileRef#newByteChannel newByteChannel}, {@link
+ * Path#newByteChannel newByteChannel}, {@link
  * java.nio.channels.FileChannel#open FileChannel.open}, and {@link
  * java.nio.channels.AsynchronousFileChannel#open AsynchronousFileChannel.open}
  * when opening or creating a file.

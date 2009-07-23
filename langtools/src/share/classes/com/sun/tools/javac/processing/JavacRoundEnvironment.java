@@ -37,6 +37,9 @@ import java.util.*;
 /**
  * Object providing state about a prior round of annotation processing.
  *
+ * <p>The methods in this class do not take type annotations into account,
+ * as target types, not java elements.
+ *
  * <p><b>This is NOT part of any API supported by Sun Microsystems.
  * If you write code that depends on this, you do so at your own risk.
  * This code and its internal interfaces are subject to change or
