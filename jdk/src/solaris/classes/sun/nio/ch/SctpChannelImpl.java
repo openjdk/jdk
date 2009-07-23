@@ -127,8 +127,6 @@ public class SctpChannelImpl extends SctpChannel
 
     /* -- End of fields protected by stateLock -- */
 
-    private SctpResultContainer commUpResultContainer;  /* null */
-
     /**
      * Constructor for normal connecting sockets
      */
@@ -761,12 +759,6 @@ public class SctpChannelImpl extends SctpChannel
                     if (!ensureReceiveOpen())
                         return null;
 
-                    if (commUpResultContainer != null) {
-                        resultContainer = commUpResultContainer;
-                        commUpResultContainer = null;
-                        continue;
-                    }
-
                     int n = 0;
                     try {
                         begin();
@@ -778,7 +770,7 @@ public class SctpChannelImpl extends SctpChannel
                         }
 
                         do {
-                            n = receive(fdVal, buffer, resultContainer);
+                            n = receive(fdVal, buffer, resultContainer, fromConnect);
                         } while ((n == IOStatus.INTERRUPTED) && isOpen());
                     } finally {
                         receiverCleanup();
@@ -809,9 +801,9 @@ public class SctpChannelImpl extends SctpChannel
 
                     if (fromConnect)  {
                         /* If we reach here, then it was connect that invoked
-                         * receive an received the COMM_UP. Save it and allow
-                         * the user handler to process it upon next receive. */
-                        commUpResultContainer = resultContainer;
+                         * receive and received the COMM_UP. We have already
+                         * handled the COMM_UP with the internal notification
+                         * handler. Simply return. */
                         return null;
                     }
                 }  /* receiveLock */
@@ -827,20 +819,21 @@ public class SctpChannelImpl extends SctpChannel
 
     private int receive(int fd,
                         ByteBuffer dst,
-                        SctpResultContainer resultContainer)
+                        SctpResultContainer resultContainer,
+                        boolean peek)
             throws IOException {
         int pos = dst.position();
         int lim = dst.limit();
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
         if (dst instanceof DirectBuffer && rem > 0)
-            return receiveIntoNativeBuffer(fd, resultContainer, dst, rem, pos);
+            return receiveIntoNativeBuffer(fd, resultContainer, dst, rem, pos, peek);
 
         /* Substitute a native buffer */
         int newSize = Math.max(rem, 1);
         ByteBuffer bb = Util.getTemporaryDirectBuffer(newSize);
         try {
-            int n = receiveIntoNativeBuffer(fd, resultContainer, bb, newSize, 0);
+            int n = receiveIntoNativeBuffer(fd, resultContainer, bb, newSize, 0, peek);
             bb.flip();
             if (n > 0 && rem > 0)
                 dst.put(bb);
@@ -854,10 +847,11 @@ public class SctpChannelImpl extends SctpChannel
                                         SctpResultContainer resultContainer,
                                         ByteBuffer bb,
                                         int rem,
-                                        int pos)
+                                        int pos,
+                                        boolean peek)
         throws IOException
     {
-        int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem);
+        int n = receive0(fd, resultContainer, ((DirectBuffer)bb).address() + pos, rem, peek);
 
         if (n > 0)
             bb.position(pos + n);
@@ -1089,7 +1083,7 @@ public class SctpChannelImpl extends SctpChannel
     private static native void initIDs();
 
     static native int receive0(int fd, SctpResultContainer resultContainer,
-            long address, int length) throws IOException;
+            long address, int length, boolean peek) throws IOException;
 
     static native int send0(int fd, long address, int length,
             SocketAddress target, int assocId, int streamNumber,
