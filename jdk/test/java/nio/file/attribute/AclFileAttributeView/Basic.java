@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.attribute.AclFileAttribueView
  * @library ../..
  */
@@ -147,7 +147,10 @@ public class Basic {
     }
 
     public static void main(String[] args) throws IOException {
-        Path dir = TestUtil.createTemporaryDirectory();
+        // use work directory rather than system temporary directory to
+        // improve chances that ACLs are supported
+        Path dir = Paths.get("./work" + new Random().nextInt())
+            .createDirectory();
         try {
             if (!dir.getFileStore().supportsFileAttributeView("acl")) {
                 System.out.println("ACLs not supported - test skipped!");

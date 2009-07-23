@@ -66,4 +66,3 @@ public class TranslatedOutlineTest {
         throw new RuntimeException("Outline was not detected");
     }
 }
-

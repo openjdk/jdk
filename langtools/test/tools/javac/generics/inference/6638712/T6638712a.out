@@ -1,0 +1,2 @@
+T6638712a.java:39:41: compiler.err.invalid.inferred.types: T, (compiler.misc.inferred.do.not.conform.to.params: java.lang.Iterable<? extends java.util.Comparator<? super java.lang.String>>, java.util.List<java.util.Comparator<?>>)
+1 error

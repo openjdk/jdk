@@ -26,6 +26,7 @@
 package com.sun.tools.javap;
 
 import com.sun.tools.classfile.Annotation;
+import com.sun.tools.classfile.ExtendedAnnotation;
 import com.sun.tools.classfile.Annotation.Annotation_element_value;
 import com.sun.tools.classfile.Annotation.Array_element_value;
 import com.sun.tools.classfile.Annotation.Class_element_value;
@@ -60,6 +61,12 @@ public class AnnotationWriter extends BasicWriter {
             write(annot.element_value_pairs[i]);
         }
         print(")");
+    }
+
+    public void write(ExtendedAnnotation annot) {
+        write(annot.annotation);
+        print('@');
+        print(annot.position.toString());
     }
 
     public void write(Annotation.element_value_pair pair) {

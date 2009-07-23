@@ -93,17 +93,25 @@ public class ClassWriter extends BasicWriter {
         this.lastModified = lastModified;
     }
 
-    ClassFile getClassFile() {
+    protected ClassFile getClassFile() {
         return classFile;
     }
 
-    Method getMethod() {
+    protected void setClassFile(ClassFile cf) {
+        classFile = cf;
+        constant_pool = classFile.constant_pool;
+    }
+
+    protected Method getMethod() {
         return method;
     }
 
+    protected void setMethod(Method m) {
+        method = m;
+    }
+
     public void write(ClassFile cf) {
-        classFile = cf;
-        constant_pool = classFile.constant_pool;
+        setClassFile(cf);
 
         if ((options.sysInfo || options.verbose) && !options.compat) {
             if (uri != null) {
@@ -197,13 +205,13 @@ public class ClassWriter extends BasicWriter {
         println();
     }
 
-    void writeFields() {
+    protected void writeFields() {
         for (Field f: classFile.fields) {
             writeField(f);
         }
     }
 
-    void writeField(Field f) {
+    protected void writeField(Field f) {
         if (!options.checkAccess(f.access_flags))
             return;
 
@@ -259,12 +267,12 @@ public class ClassWriter extends BasicWriter {
             println();
     }
 
-    void writeMethods() {
+    protected void writeMethods() {
         for (Method m: classFile.methods)
             writeMethod(m);
     }
 
-    void writeMethod(Method m) {
+    protected void writeMethod(Method m) {
         if (!options.checkAccess(m.access_flags))
             return;
 

@@ -25,6 +25,7 @@
  * @test
  * @bug     6476073
  * @summary Capture using super wildcard of type variables doesn't work
+ * @ignore awaiting for 6650759 (see bug report for a detailed evaluation)
  * @compile T6476073.java
  */
 
