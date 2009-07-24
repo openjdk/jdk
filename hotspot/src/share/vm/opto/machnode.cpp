@@ -300,6 +300,12 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
           }
         }
         adr_type = t_disp->add_offset(offset);
+      } else if( base == NULL && offset != 0 && offset != Type::OffsetBot ) {
+        // Use ideal type if it is oop ptr.
+        const TypePtr *tp = oper->type()->isa_ptr();
+        if( tp != NULL) {
+          adr_type = tp;
+        }
       }
     }
 

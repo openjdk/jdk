@@ -378,7 +378,18 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // Force the original merge dead
   igvn->hash_delete(r);
-  r->set_req_X(0,NULL,igvn);
+  // First, remove region's dead users.
+  for (DUIterator_Last lmin, l = r->last_outs(lmin); l >= lmin;) {
+    Node* u = r->last_out(l);
+    if( u == r ) {
+      r->set_req(0, NULL);
+    } else {
+      assert(u->outcnt() == 0, "only dead users");
+      igvn->remove_dead_node(u);
+    }
+    l -= 1;
+  }
+  igvn->remove_dead_node(r);
 
   // Now remove the bogus extra edges used to keep things alive
   igvn->remove_dead_node( hook );

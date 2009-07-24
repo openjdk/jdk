@@ -578,10 +578,23 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
   if (phi_alias_idx == alias_idx) {
     return orig_phi;
   }
-  // have we already created a Phi for this alias index?
+  // Have we recently created a Phi for this alias index?
   PhiNode *result = get_map_phi(orig_phi->_idx);
   if (result != NULL && C->get_alias_index(result->adr_type()) == alias_idx) {
     return result;
+  }
+  // Previous check may fail when the same wide memory Phi was split into Phis
+  // for different memory slices. Search all Phis for this region.
+  if (result != NULL) {
+    Node* region = orig_phi->in(0);
+    for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+      Node* phi = region->fast_out(i);
+      if (phi->is_Phi() &&
+          C->get_alias_index(phi->as_Phi()->adr_type()) == alias_idx) {
+        assert(phi->_idx >= nodes_size(), "only new Phi per instance memory slice");
+        return phi->as_Phi();
+      }
+    }
   }
   if ((int)C->unique() + 2*NodeLimitFudgeFactor > MaxNodeLimit) {
     if (C->do_escape_analysis() == true && !C->failing()) {
@@ -595,6 +608,7 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
   orig_phi_worklist.append_if_missing(orig_phi);
   const TypePtr *atype = C->get_adr_type(alias_idx);
   result = PhiNode::make(orig_phi->in(0), NULL, Type::MEMORY, atype);
+  C->copy_node_notes_to(result, orig_phi);
   set_map_phi(orig_phi->_idx, result);
   igvn->set_type(result, result->bottom_type());
   record_for_optimizer(result);
