@@ -1789,15 +1789,19 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #ifdef _LP64
   // Push DecodeN down through phi.
   // The rest of phi graph will transform by split EncodeP node though phis up.
-  if (UseNewCode && UseCompressedOops && can_reshape && progress == NULL) {
+  if (UseCompressedOops && can_reshape && progress == NULL) {
     bool may_push = true;
     bool has_decodeN = false;
     Node* in_decodeN = NULL;
     for (uint i=1; i<req(); ++i) {// For all paths in
       Node *ii = in(i);
       if (ii->is_DecodeN() && ii->bottom_type() == bottom_type()) {
-        has_decodeN = true;
-        in_decodeN = ii->in(1);
+        // Note: in_decodeN is used only to define the type of new phi.
+        // Find a non dead path otherwise phi type will be wrong.
+        if (ii->in(1)->bottom_type() != Type::TOP) {
+          has_decodeN = true;
+          in_decodeN = ii->in(1);
+        }
       } else if (!ii->is_Phi()) {
         may_push = false;
       }
@@ -1805,7 +1809,6 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
     if (has_decodeN && may_push) {
       PhaseIterGVN *igvn = phase->is_IterGVN();
-      // Note: in_decodeN is used only to define the type of new phi here.
       PhiNode *new_phi = PhiNode::make_blank(in(0), in_decodeN);
       uint orig_cnt = req();
       for (uint i=1; i<req(); ++i) {// For all paths in

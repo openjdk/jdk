@@ -1373,11 +1373,12 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   return st;
 }
 
+
 void GraphKit::pre_barrier(Node* ctl,
                            Node* obj,
                            Node* adr,
-                           uint adr_idx,
-                           Node *val,
+                           uint  adr_idx,
+                           Node* val,
                            const TypeOopPtr* val_type,
                            BasicType bt) {
   BarrierSet* bs = Universe::heap()->barrier_set();
@@ -1385,7 +1386,7 @@ void GraphKit::pre_barrier(Node* ctl,
   switch (bs->kind()) {
     case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
-        g1_write_barrier_pre(obj, adr, adr_idx, val, val_type, bt);
+      g1_write_barrier_pre(obj, adr, adr_idx, val, val_type, bt);
       break;
 
     case BarrierSet::CardTableModRef:
@@ -1404,8 +1405,8 @@ void GraphKit::post_barrier(Node* ctl,
                             Node* store,
                             Node* obj,
                             Node* adr,
-                            uint adr_idx,
-                            Node *val,
+                            uint  adr_idx,
+                            Node* val,
                             BasicType bt,
                             bool use_precise) {
   BarrierSet* bs = Universe::heap()->barrier_set();
@@ -1413,7 +1414,7 @@ void GraphKit::post_barrier(Node* ctl,
   switch (bs->kind()) {
     case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
-        g1_write_barrier_post(store, obj, adr, adr_idx, val, bt, use_precise);
+      g1_write_barrier_post(store, obj, adr, adr_idx, val, bt, use_precise);
       break;
 
     case BarrierSet::CardTableModRef:
@@ -1431,42 +1432,36 @@ void GraphKit::post_barrier(Node* ctl,
   }
 }
 
-Node* GraphKit::store_oop_to_object(Node* ctl,
-                                    Node* obj,
-                                    Node* adr,
-                                    const TypePtr* adr_type,
-                                    Node *val,
-                                    const TypeOopPtr* val_type,
-                                    BasicType bt) {
+Node* GraphKit::store_oop(Node* ctl,
+                          Node* obj,
+                          Node* adr,
+                          const TypePtr* adr_type,
+                          Node* val,
+                          const TypeOopPtr* val_type,
+                          BasicType bt,
+                          bool use_precise) {
+
+  set_control(ctl);
+  if (stopped()) return top(); // Dead path ?
+
+  assert(bt == T_OBJECT, "sanity");
+  assert(val != NULL, "not dead path");
   uint adr_idx = C->get_alias_index(adr_type);
-  Node* store;
-  pre_barrier(ctl, obj, adr, adr_idx, val, val_type, bt);
-  store = store_to_memory(control(), adr, val, bt, adr_idx);
-  post_barrier(control(), store, obj, adr, adr_idx, val, bt, false);
+  assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
+
+  pre_barrier(control(), obj, adr, adr_idx, val, val_type, bt);
+  Node* store = store_to_memory(control(), adr, val, bt, adr_idx);
+  post_barrier(control(), store, obj, adr, adr_idx, val, bt, use_precise);
   return store;
 }
 
-Node* GraphKit::store_oop_to_array(Node* ctl,
-                                   Node* obj,
-                                   Node* adr,
-                                   const TypePtr* adr_type,
-                                   Node *val,
-                                   const TypeOopPtr* val_type,
-                                   BasicType bt) {
-  uint adr_idx = C->get_alias_index(adr_type);
-  Node* store;
-  pre_barrier(ctl, obj, adr, adr_idx, val, val_type, bt);
-  store = store_to_memory(control(), adr, val, bt, adr_idx);
-  post_barrier(control(), store, obj, adr, adr_idx, val, bt, true);
-  return store;
-}
-
+// Could be an array or object we don't know at compile time (unsafe ref.)
 Node* GraphKit::store_oop_to_unknown(Node* ctl,
-                                     Node* obj,
-                                     Node* adr,
-                                     const TypePtr* adr_type,
-                                     Node *val,
-                                     BasicType bt) {
+                             Node* obj,   // containing obj
+                             Node* adr,  // actual adress to store val at
+                             const TypePtr* adr_type,
+                             Node* val,
+                             BasicType bt) {
   Compile::AliasType* at = C->alias_type(adr_type);
   const TypeOopPtr* val_type = NULL;
   if (adr_type->isa_instptr()) {
@@ -1485,12 +1480,7 @@ Node* GraphKit::store_oop_to_unknown(Node* ctl,
   if (val_type == NULL) {
     val_type = TypeInstPtr::BOTTOM;
   }
-
-  uint adr_idx = at->index();
-  pre_barrier(ctl, obj, adr, adr_idx, val, val_type, bt);
-  Node* store = store_to_memory(control(), adr, val, bt, adr_idx);
-  post_barrier(control(), store, obj, adr, adr_idx, val, bt, true);
-  return store;
+  return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, true);
 }
 
 
@@ -1801,93 +1791,6 @@ Node* GraphKit::just_allocated_object(Node* current_control) {
   if (C->recent_alloc_ctl() == current_control)
     return C->recent_alloc_obj();
   return NULL;
-}
-
-
-//------------------------------store_barrier----------------------------------
-// Insert a write-barrier store.  This is to let generational GC work; we have
-// to flag all oop-stores before the next GC point.
-void GraphKit::write_barrier_post(Node* oop_store, Node* obj, Node* adr,
-                                  Node* val, bool use_precise) {
-  // No store check needed if we're storing a NULL or an old object
-  // (latter case is probably a string constant). The concurrent
-  // mark sweep garbage collector, however, needs to have all nonNull
-  // oop updates flagged via card-marks.
-  if (val != NULL && val->is_Con()) {
-    // must be either an oop or NULL
-    const Type* t = val->bottom_type();
-    if (t == TypePtr::NULL_PTR || t == Type::TOP)
-      // stores of null never (?) need barriers
-      return;
-    ciObject* con = t->is_oopptr()->const_oop();
-    if (con != NULL
-        && con->is_perm()
-        && Universe::heap()->can_elide_permanent_oop_store_barriers())
-      // no store barrier needed, because no old-to-new ref created
-      return;
-  }
-
-  if (use_ReduceInitialCardMarks()
-      && obj == just_allocated_object(control())) {
-    // We can skip marks on a freshly-allocated object.
-    // Keep this code in sync with do_eager_card_mark in runtime.cpp.
-    // That routine eagerly marks the occasional object which is produced
-    // by the slow path, so that we don't have to do it here.
-    return;
-  }
-
-  if (!use_precise) {
-    // All card marks for a (non-array) instance are in one place:
-    adr = obj;
-  }
-  // (Else it's an array (or unknown), and we want more precise card marks.)
-  assert(adr != NULL, "");
-
-  // Get the alias_index for raw card-mark memory
-  int adr_type = Compile::AliasIdxRaw;
-  // Convert the pointer to an int prior to doing math on it
-  Node* cast = _gvn.transform(new (C, 2) CastP2XNode(control(), adr));
-  // Divide by card size
-  assert(Universe::heap()->barrier_set()->kind() == BarrierSet::CardTableModRef,
-         "Only one we handle so far.");
-  CardTableModRefBS* ct =
-    (CardTableModRefBS*)(Universe::heap()->barrier_set());
-  Node *b = _gvn.transform(new (C, 3) URShiftXNode( cast, _gvn.intcon(CardTableModRefBS::card_shift) ));
-  // We store into a byte array, so do not bother to left-shift by zero
-  Node *c = byte_map_base_node();
-  // Combine
-  Node *sb_ctl = control();
-  Node *sb_adr = _gvn.transform(new (C, 4) AddPNode( top()/*no base ptr*/, c, b ));
-  Node *sb_val = _gvn.intcon(0);
-  // Smash zero into card
-  if( !UseConcMarkSweepGC ) {
-    BasicType bt = T_BYTE;
-    store_to_memory(sb_ctl, sb_adr, sb_val, bt, adr_type);
-  } else {
-    // Specialized path for CM store barrier
-    cms_card_mark( sb_ctl, sb_adr, sb_val, oop_store);
-  }
-}
-
-// Specialized path for CMS store barrier
-void GraphKit::cms_card_mark(Node* ctl, Node* adr, Node* val, Node *oop_store) {
-  BasicType bt = T_BYTE;
-  int adr_idx = Compile::AliasIdxRaw;
-  Node* mem = memory(adr_idx);
-
-  // The type input is NULL in PRODUCT builds
-  const TypePtr* type = NULL;
-  debug_only(type = C->get_adr_type(adr_idx));
-
-  // Add required edge to oop_store, optimizer does not support precedence edges.
-  // Convert required edge to precedence edge before allocation.
-  Node *store = _gvn.transform( new (C, 5) StoreCMNode(ctl, mem, adr, type, val, oop_store) );
-  set_memory(store, adr_idx);
-
-  // For CMS, back-to-back card-marks can only remove the first one
-  // and this requires DU info.  Push on worklist for optimizer.
-  if (mem->req() > MemNode::Address && adr == mem->in(MemNode::Address))
-    record_for_igvn(store);
 }
 
 
@@ -3215,6 +3118,79 @@ InitializeNode* AllocateNode::initialization() {
   return NULL;
 }
 
+//----------------------------- store barriers ----------------------------
+#define __ ideal.
+
+void GraphKit::sync_kit(IdealKit& ideal) {
+  // Final sync IdealKit and graphKit.
+  __ drain_delay_transform();
+  set_all_memory(__ merged_memory());
+  set_control(__ ctrl());
+}
+
+// vanilla/CMS post barrier
+// Insert a write-barrier store.  This is to let generational GC work; we have
+// to flag all oop-stores before the next GC point.
+void GraphKit::write_barrier_post(Node* oop_store,
+                                  Node* obj,
+                                  Node* adr,
+                                  Node* val,
+                                  bool use_precise) {
+  // No store check needed if we're storing a NULL or an old object
+  // (latter case is probably a string constant). The concurrent
+  // mark sweep garbage collector, however, needs to have all nonNull
+  // oop updates flagged via card-marks.
+  if (val != NULL && val->is_Con()) {
+    // must be either an oop or NULL
+    const Type* t = val->bottom_type();
+    if (t == TypePtr::NULL_PTR || t == Type::TOP)
+      // stores of null never (?) need barriers
+      return;
+    ciObject* con = t->is_oopptr()->const_oop();
+    if (con != NULL
+        && con->is_perm()
+        && Universe::heap()->can_elide_permanent_oop_store_barriers())
+      // no store barrier needed, because no old-to-new ref created
+      return;
+  }
+
+  if (!use_precise) {
+    // All card marks for a (non-array) instance are in one place:
+    adr = obj;
+  }
+  // (Else it's an array (or unknown), and we want more precise card marks.)
+  assert(adr != NULL, "");
+
+  IdealKit ideal(gvn(), control(), merged_memory(), true);
+
+  // Convert the pointer to an int prior to doing math on it
+  Node* cast = __ CastPX(__ ctrl(), adr);
+
+  // Divide by card size
+  assert(Universe::heap()->barrier_set()->kind() == BarrierSet::CardTableModRef,
+         "Only one we handle so far.");
+  Node* card_offset = __ URShiftX( cast, __ ConI(CardTableModRefBS::card_shift) );
+
+  // Combine card table base and card offset
+  Node* card_adr = __ AddP(__ top(), byte_map_base_node(), card_offset );
+
+  // Get the alias_index for raw card-mark memory
+  int adr_type = Compile::AliasIdxRaw;
+  // Smash zero into card
+  Node*   zero = __ ConI(0);
+  BasicType bt = T_BYTE;
+  if( !UseConcMarkSweepGC ) {
+    __ store(__ ctrl(), card_adr, zero, bt, adr_type);
+  } else {
+    // Specialized path for CM store barrier
+    __ storeCM(__ ctrl(), card_adr, zero, oop_store, bt, adr_type);
+  }
+
+  // Final sync IdealKit and GraphKit.
+  sync_kit(ideal);
+}
+
+// G1 pre/post barriers
 void GraphKit::g1_write_barrier_pre(Node* obj,
                                     Node* adr,
                                     uint alias_idx,
@@ -3222,10 +3198,8 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
                                     const TypeOopPtr* val_type,
                                     BasicType bt) {
   IdealKit ideal(gvn(), control(), merged_memory(), true);
-#define __ ideal.
-  __ declares_done();
 
-  Node* thread = __ thread();
+  Node* tls = __ thread(); // ThreadLocalStorage
 
   Node* no_ctrl = NULL;
   Node* no_base = __ top();
@@ -3248,9 +3222,9 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
 
   // set_control( ctl);
 
-  Node* marking_adr = __ AddP(no_base, thread, __ ConX(marking_offset));
-  Node* buffer_adr  = __ AddP(no_base, thread, __ ConX(buffer_offset));
-  Node* index_adr   = __ AddP(no_base, thread, __ ConX(index_offset));
+  Node* marking_adr = __ AddP(no_base, tls, __ ConX(marking_offset));
+  Node* buffer_adr  = __ AddP(no_base, tls, __ ConX(buffer_offset));
+  Node* index_adr   = __ AddP(no_base, tls, __ ConX(index_offset));
 
   // Now some of the values
 
@@ -3278,55 +3252,52 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
         Node* next_index = __ SubI(index,  __ ConI(sizeof(intptr_t)));
         Node* next_indexX = next_index;
 #ifdef _LP64
-          // We could refine the type for what it's worth
-          // const TypeLong* lidxtype = TypeLong::make(CONST64(0), get_size_from_queue);
-          next_indexX = _gvn.transform( new (C, 2) ConvI2LNode(next_index, TypeLong::make(0, max_jlong, Type::WidenMax)) );
-#endif // _LP64
+        // We could refine the type for what it's worth
+        // const TypeLong* lidxtype = TypeLong::make(CONST64(0), get_size_from_queue);
+        next_indexX = _gvn.transform( new (C, 2) ConvI2LNode(next_index, TypeLong::make(0, max_jlong, Type::WidenMax)) );
+#endif
 
         // Now get the buffer location we will log the original value into and store it
-
         Node *log_addr = __ AddP(no_base, buffer, next_indexX);
-        // __ store(__ ctrl(), log_addr, orig, T_OBJECT, C->get_alias_index(TypeOopPtr::BOTTOM));
         __ store(__ ctrl(), log_addr, orig, T_OBJECT, Compile::AliasIdxRaw);
 
-
         // update the index
-        // __ store(__ ctrl(), index_adr, next_index, T_INT, Compile::AliasIdxRaw);
-        // This is a hack to force this store to occur before the oop store that is coming up
-        __ store(__ ctrl(), index_adr, next_index, T_INT, C->get_alias_index(TypeOopPtr::BOTTOM));
+        __ store(__ ctrl(), index_adr, next_index, T_INT, Compile::AliasIdxRaw);
 
       } __ else_(); {
 
         // logging buffer is full, call the runtime
         const TypeFunc *tf = OptoRuntime::g1_wb_pre_Type();
-        // __ make_leaf_call(tf, OptoRuntime::g1_wb_pre_Java(), "g1_wb_pre", orig, thread);
-        __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), "g1_wb_pre", orig, thread);
-      } __ end_if();
-    } __ end_if();
-  } __ end_if();
+        __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), "g1_wb_pre", orig, tls);
+      } __ end_if();  // (!index)
+    } __ end_if();  // (orig != NULL)
+  } __ end_if();  // (!marking)
 
-  __ drain_delay_transform();
-  set_control( __ ctrl());
-  set_all_memory( __ merged_memory());
-
-#undef __
+  // Final sync IdealKit and GraphKit.
+  sync_kit(ideal);
 }
 
 //
 // Update the card table and add card address to the queue
 //
-void GraphKit::g1_mark_card(IdealKit* ideal, Node* card_adr, Node* store,  Node* index, Node* index_adr, Node* buffer, const TypeFunc* tf) {
-#define __ ideal->
+void GraphKit::g1_mark_card(IdealKit& ideal,
+                            Node* card_adr,
+                            Node* oop_store,
+                            Node* index,
+                            Node* index_adr,
+                            Node* buffer,
+                            const TypeFunc* tf) {
+
   Node* zero = __ ConI(0);
   Node* no_base = __ top();
   BasicType card_bt = T_BYTE;
   // Smash zero into card. MUST BE ORDERED WRT TO STORE
-  __ storeCM(__ ctrl(), card_adr, zero, store, card_bt, Compile::AliasIdxRaw);
+  __ storeCM(__ ctrl(), card_adr, zero, oop_store, card_bt, Compile::AliasIdxRaw);
 
   //  Now do the queue work
   __ if_then(index, BoolTest::ne, zero); {
 
-    Node* next_index = __ SubI(index,  __ ConI(sizeof(intptr_t)));
+    Node* next_index = __ SubI(index, __ ConI(sizeof(intptr_t)));
     Node* next_indexX = next_index;
 #ifdef _LP64
     // We could refine the type for what it's worth
@@ -3341,10 +3312,10 @@ void GraphKit::g1_mark_card(IdealKit* ideal, Node* card_adr, Node* store,  Node*
   } __ else_(); {
     __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), "g1_wb_post", card_adr, __ thread());
   } __ end_if();
-#undef __
+
 }
 
-void GraphKit::g1_write_barrier_post(Node* store,
+void GraphKit::g1_write_barrier_post(Node* oop_store,
                                      Node* obj,
                                      Node* adr,
                                      uint alias_idx,
@@ -3369,10 +3340,8 @@ void GraphKit::g1_write_barrier_post(Node* store,
   assert(adr != NULL, "");
 
   IdealKit ideal(gvn(), control(), merged_memory(), true);
-#define __ ideal.
-  __ declares_done();
 
-  Node* thread = __ thread();
+  Node* tls = __ thread(); // ThreadLocalStorage
 
   Node* no_ctrl = NULL;
   Node* no_base = __ top();
@@ -3394,8 +3363,8 @@ void GraphKit::g1_write_barrier_post(Node* store,
 
   // Pointers into the thread
 
-  Node* buffer_adr = __ AddP(no_base, thread, __ ConX(buffer_offset));
-  Node* index_adr =  __ AddP(no_base, thread, __ ConX(index_offset));
+  Node* buffer_adr = __ AddP(no_base, tls, __ ConX(buffer_offset));
+  Node* index_adr =  __ AddP(no_base, tls, __ ConX(index_offset));
 
   // Now some values
 
@@ -3404,18 +3373,14 @@ void GraphKit::g1_write_barrier_post(Node* store,
 
 
   // Convert the store obj pointer to an int prior to doing math on it
-  // Use addr not obj gets accurate card marks
-
-  // Node* cast = __ CastPX(no_ctrl, adr /* obj */);
-
   // Must use ctrl to prevent "integerized oop" existing across safepoint
-  Node* cast =  __ CastPX(__ ctrl(), ( use_precise ? adr : obj ));
+  Node* cast =  __ CastPX(__ ctrl(), adr);
 
   // Divide pointer by card size
   Node* card_offset = __ URShiftX( cast, __ ConI(CardTableModRefBS::card_shift) );
 
   // Combine card table base and card offset
-  Node *card_adr = __ AddP(no_base, byte_map_base_node(), card_offset );
+  Node* card_adr = __ AddP(no_base, byte_map_base_node(), card_offset );
 
   // If we know the value being stored does it cross regions?
 
@@ -3439,18 +3404,17 @@ void GraphKit::g1_write_barrier_post(Node* store,
         Node* card_val = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);
 
         __ if_then(card_val, BoolTest::ne, zero); {
-          g1_mark_card(&ideal, card_adr, store, index, index_adr, buffer, tf);
+          g1_mark_card(ideal, card_adr, oop_store, index, index_adr, buffer, tf);
         } __ end_if();
       } __ end_if();
     } __ end_if();
   } else {
-    g1_mark_card(&ideal, card_adr, store, index, index_adr, buffer, tf);
+    // Object.clone() instrinsic uses this path.
+    g1_mark_card(ideal, card_adr, oop_store, index, index_adr, buffer, tf);
   }
 
-
-  __ drain_delay_transform();
-  set_control( __ ctrl());
-  set_all_memory( __ merged_memory());
+  // Final sync IdealKit and GraphKit.
+  sync_kit(ideal);
+}
 #undef __
 
-}

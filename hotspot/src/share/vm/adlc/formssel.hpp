@@ -158,6 +158,9 @@ public:
 
   virtual Form::CallType is_ideal_call() const; // matches ideal 'Call'
   virtual Form::DataType is_ideal_load() const; // node matches ideal 'LoadXNode'
+  // Should antidep checks be disabled for this Instruct
+  // See definition of MatchRule::skip_antidep_check
+  bool skip_antidep_check() const;
   virtual Form::DataType is_ideal_store() const;// node matches ideal 'StoreXNode'
           bool        is_ideal_mem() const { return is_ideal_load() != Form::none || is_ideal_store() != Form::none; }
   virtual uint        two_address(FormDict &globals); // output reg must match input reg
@@ -1003,6 +1006,9 @@ public:
   bool       is_ideal_loopEnd() const; // node matches ideal 'LoopEnd'
   bool       is_ideal_bool() const;    // node matches ideal 'Bool'
   Form::DataType is_ideal_load() const;// node matches ideal 'LoadXNode'
+  // Should antidep checks be disabled for this rule
+  // See definition of MatchRule::skip_antidep_check
+  bool skip_antidep_check() const;
   Form::DataType is_ideal_store() const;// node matches ideal 'StoreXNode'
 
   // Check if 'mRule2' is a cisc-spill variant of this MatchRule
