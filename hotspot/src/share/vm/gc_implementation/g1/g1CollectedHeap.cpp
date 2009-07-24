@@ -1655,9 +1655,8 @@ void G1CollectedHeap::iterate_dirty_card_closure(bool concurrent,
 // Computes the sum of the storage used by the various regions.
 
 size_t G1CollectedHeap::used() const {
-  // Temporarily, until 6859911 is fixed. XXX
-  // assert(Heap_lock->owner() != NULL,
-  //        "Should be owned on this thread's behalf.");
+  assert(Heap_lock->owner() != NULL,
+         "Should be owned on this thread's behalf.");
   size_t result = _summary_bytes_used;
   // Read only once in case it is set to NULL concurrently
   HeapRegion* hr = _cur_alloc_region;
@@ -2981,6 +2980,7 @@ void G1CollectedHeap::get_gc_alloc_regions() {
 
   for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
     assert(_gc_alloc_regions[ap] == NULL, "invariant");
+    assert(_gc_alloc_region_counts[ap] == 0, "invariant");
 
     // Create new GC alloc regions.
     HeapRegion* alloc_region = _retained_gc_alloc_regions[ap];
@@ -3009,6 +3009,9 @@ void G1CollectedHeap::get_gc_alloc_regions() {
     if (alloc_region == NULL) {
       // we will get a new GC alloc region
       alloc_region = newAllocRegionWithExpansion(ap, 0);
+    } else {
+      // the region was retained from the last collection
+      ++_gc_alloc_region_counts[ap];
     }
 
     if (alloc_region != NULL) {
@@ -3047,11 +3050,11 @@ void G1CollectedHeap::release_gc_alloc_regions(bool totally) {
   for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
     HeapRegion* r = _gc_alloc_regions[ap];
     _retained_gc_alloc_regions[ap] = NULL;
+    _gc_alloc_region_counts[ap] = 0;
 
     if (r != NULL) {
       // we retain nothing on _gc_alloc_regions between GCs
       set_gc_alloc_region(ap, NULL);
-      _gc_alloc_region_counts[ap] = 0;
 
       if (r->is_empty()) {
         // we didn't actually allocate anything in it; let's just put
