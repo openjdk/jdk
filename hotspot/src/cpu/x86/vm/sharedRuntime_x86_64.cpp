@@ -1302,22 +1302,19 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   const Register ic_reg = rax;
   const Register receiver = j_rarg0;
-  const Register tmp = rdx;
 
   Label ok;
   Label exception_pending;
 
+  assert_different_registers(ic_reg, receiver, rscratch1);
   __ verify_oop(receiver);
-  __ push(tmp); // spill (any other registers free here???)
-  __ load_klass(tmp, receiver);
-  __ cmpq(ic_reg, tmp);
+  __ load_klass(rscratch1, receiver);
+  __ cmpq(ic_reg, rscratch1);
   __ jcc(Assembler::equal, ok);
 
-  __ pop(tmp);
   __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
 
   __ bind(ok);
-  __ pop(tmp);
 
   // Verified entry point must be aligned
   __ align(8);

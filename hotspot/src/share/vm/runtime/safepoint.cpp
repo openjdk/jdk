@@ -49,7 +49,7 @@ void SafepointSynchronize::begin() {
     // In the future we should investigate whether CMS can use the
     // more-general mechanism below.  DLD (01/05).
     ConcurrentMarkSweepThread::synchronize(false);
-  } else {
+  } else if (UseG1GC) {
     ConcurrentGCThread::safepoint_synchronize();
   }
 #endif // SERIALGC
@@ -400,7 +400,7 @@ void SafepointSynchronize::end() {
   // If there are any concurrent GC threads resume them.
   if (UseConcMarkSweepGC) {
     ConcurrentMarkSweepThread::desynchronize(false);
-  } else {
+  } else if (UseG1GC) {
     ConcurrentGCThread::safepoint_desynchronize();
   }
 #endif // SERIALGC
