@@ -450,6 +450,8 @@ public:
     subsume_node(old, nn);
   }
 
+  bool delay_transform() const { return _delay_transform; }
+
   void set_delay_transform(bool delay) {
     _delay_transform = delay;
   }
