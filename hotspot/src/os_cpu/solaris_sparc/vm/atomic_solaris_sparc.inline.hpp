@@ -46,6 +46,8 @@ inline void Atomic::dec    (volatile jint*     dest) { (void)add    (-1, dest); 
 inline void Atomic::dec_ptr(volatile intptr_t* dest) { (void)add_ptr(-1, dest); }
 inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); }
 
+inline jlong Atomic::load(volatile jlong* src) { return *src; }
+
 #ifdef _GNU_SOURCE
 
 inline jint     Atomic::add    (jint     add_value, volatile jint*     dest) {
