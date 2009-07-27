@@ -46,7 +46,7 @@ import java.security.BasicPermission;
  *   known as creating a link, or hard link. </td>
  *   <td> Extreme care should be taken when granting this permission. It allows
  *   linking to any file or directory in the file system thus allowing the
- *   attacker to access to all files. </td>
+ *   attacker access to all files. </td>
  * </tr>
  * <tr>
  *   <td>symbolic</td>
