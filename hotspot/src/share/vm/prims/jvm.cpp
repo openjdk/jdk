@@ -638,11 +638,54 @@ JVM_ENTRY(void, JVM_ResolveClass(JNIEnv* env, jclass cls))
   if (PrintJVMWarnings) warning("JVM_ResolveClass not implemented");
 JVM_END
 
-// Common implementation for JVM_FindClassFromBootLoader and
-// JVM_FindClassFromLoader
-static jclass jvm_find_class_from_class_loader(JNIEnv* env, const char* name,
-                                  jboolean init, jobject loader,
-                                  jboolean throwError, TRAPS) {
+
+// Returns a class loaded by the bootstrap class loader; or null
+// if not found.  ClassNotFoundException is not thrown.
+//
+// Rationale behind JVM_FindClassFromBootLoader
+// a> JVM_FindClassFromClassLoader was never exported in the export tables.
+// b> because of (a) java.dll has a direct dependecy on the  unexported
+//    private symbol "_JVM_FindClassFromClassLoader@20".
+// c> the launcher cannot use the private symbol as it dynamically opens
+//    the entry point, so if something changes, the launcher will fail
+//    unexpectedly at runtime, it is safest for the launcher to dlopen a
+//    stable exported interface.
+// d> re-exporting JVM_FindClassFromClassLoader as public, will cause its
+//    signature to change from _JVM_FindClassFromClassLoader@20 to
+//    JVM_FindClassFromClassLoader and will not be backward compatible
+//    with older JDKs.
+// Thus a public/stable exported entry point is the right solution,
+// public here means public in linker semantics, and is exported only
+// to the JDK, and is not intended to be a public API.
+
+JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
+                                              const char* name))
+  JVMWrapper2("JVM_FindClassFromBootLoader %s", name);
+
+  // Java libraries should ensure that name is never null...
+  if (name == NULL || (int)strlen(name) > symbolOopDesc::max_length()) {
+    // It's impossible to create this class;  the name cannot fit
+    // into the constant pool.
+    return NULL;
+  }
+
+  symbolHandle h_name = oopFactory::new_symbol_handle(name, CHECK_NULL);
+  klassOop k = SystemDictionary::resolve_or_null(h_name, CHECK_NULL);
+  if (k == NULL) {
+    return NULL;
+  }
+
+  if (TraceClassResolution) {
+    trace_class_resolution(k);
+  }
+  return (jclass) JNIHandles::make_local(env, Klass::cast(k)->java_mirror());
+JVM_END
+
+JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
+                                               jboolean init, jobject loader,
+                                               jboolean throwError))
+  JVMWrapper3("JVM_FindClassFromClassLoader %s throw %s", name,
+               throwError ? "error" : "exception");
   // Java libraries should ensure that name is never null...
   if (name == NULL || (int)strlen(name) > symbolOopDesc::max_length()) {
     // It's impossible to create this class;  the name cannot fit
@@ -662,40 +705,6 @@ static jclass jvm_find_class_from_class_loader(JNIEnv* env, const char* name,
     trace_class_resolution(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(result)));
   }
   return result;
-}
-
-// Rationale behind JVM_FindClassFromBootLoader
-// a> JVM_FindClassFromClassLoader was never exported in the export tables.
-// b> because of (a) java.dll has a direct dependecy on the  unexported
-//    private symbol "_JVM_FindClassFromClassLoader@20".
-// c> the launcher cannot use the private symbol as it dynamically opens
-//    the entry point, so if something changes, the launcher will fail
-//    unexpectedly at runtime, it is safest for the launcher to dlopen a
-//    stable exported interface.
-// d> re-exporting JVM_FindClassFromClassLoader as public, will cause its
-//    signature to change from _JVM_FindClassFromClassLoader@20 to
-//    JVM_FindClassFromClassLoader and will not be backward compatible
-//    with older JDKs.
-// Thus a public/stable exported entry point is the right solution,
-// public here means public in linker semantics, and is exported only
-// to the JDK, and is not intended to be a public API.
-
-JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
-                                              const char* name,
-                                              jboolean throwError))
-  JVMWrapper3("JVM_FindClassFromBootLoader %s throw %s", name,
-              throwError ? "error" : "exception");
-  return jvm_find_class_from_class_loader(env, name, JNI_FALSE,
-                                          (jobject)NULL, throwError, THREAD);
-JVM_END
-
-JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
-                                               jboolean init, jobject loader,
-                                               jboolean throwError))
-  JVMWrapper3("JVM_FindClassFromClassLoader %s throw %s", name,
-               throwError ? "error" : "exception");
-  return jvm_find_class_from_class_loader(env, name, init, loader,
-                                          throwError, THREAD);
 JVM_END
 
 
@@ -3919,6 +3928,7 @@ jclass find_class_from_class_loader(JNIEnv* env, symbolHandle name, jboolean ini
   //   The Java level wrapper will perform the necessary security check allowing
   //   us to pass the NULL as the initiating class loader.
   klassOop klass = SystemDictionary::resolve_or_fail(name, loader, protection_domain, throwError != 0, CHECK_NULL);
+
   KlassHandle klass_handle(THREAD, klass);
   // Check if we should initialize the class
   if (init && klass_handle->oop_is_instance()) {
