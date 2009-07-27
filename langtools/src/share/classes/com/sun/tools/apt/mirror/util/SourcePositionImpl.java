@@ -36,7 +36,7 @@ import com.sun.tools.javac.util.Position;
 /**
  * Implementation of SourcePosition
  */
-
+@SuppressWarnings("deprecation")
 public class SourcePositionImpl implements SourcePosition {
 
     private JavaFileObject sourcefile;

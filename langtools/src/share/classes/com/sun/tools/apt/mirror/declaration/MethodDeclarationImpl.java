@@ -36,7 +36,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 /**
  * Implementation of MethodDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class MethodDeclarationImpl extends ExecutableDeclarationImpl
                                    implements MethodDeclaration {
 

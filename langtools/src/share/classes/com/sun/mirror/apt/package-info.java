@@ -23,39 +23,16 @@
  * have any questions.
  */
 
-package com.sun.tools.apt.mirror.type;
-
-
-import com.sun.mirror.declaration.*;
-import com.sun.mirror.type.*;
-import com.sun.mirror.util.TypeVisitor;
-import com.sun.tools.apt.mirror.AptEnv;
-import com.sun.tools.javac.code.Type;
-
-
 /**
- * Implementation of InterfaceType
+ * Classes used to communicate information between {@linkplain
+ * com.sun.mirror.apt.AnnotationProcessor annotation processors} and
+ * an annotation processing tool.
+ *
+ * <p>The {@code apt} tool and its associated API have been superseded
+ * by the standardized annotation processing API.  The replacement for
+ * the functionality in this package is {@link
+ * javax.annotation.processing}.
+ *
+ * @since 1.5
  */
-@SuppressWarnings("deprecation")
-public class InterfaceTypeImpl extends DeclaredTypeImpl
-                               implements InterfaceType {
-
-    InterfaceTypeImpl(AptEnv env, Type.ClassType type) {
-        super(env, type);
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    public InterfaceDeclaration getDeclaration() {
-        return (InterfaceDeclaration) super.getDeclaration();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void accept(TypeVisitor v) {
-        v.visitInterfaceType(this);
-    }
-}
+package com.sun.mirror.apt;
