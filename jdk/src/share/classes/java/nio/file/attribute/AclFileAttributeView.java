@@ -110,13 +110,13 @@ import java.io.IOException;
  * </table>
  * </blockquote>
  *
- * <p> The {@link #getAttribute getAttribute} or {@link #readAttributes
- * readAttributes} methods may be used to read the ACL or owner attributes as if
- * by invoking the {@link #getAcl getAcl} or {@link #getOwner getOwner} methods.
+ * <p> The {@link FileRef#getAttribute getAttribute} method may be used to read
+ * the ACL or owner attributes as if by invoking the {@link #getAcl getAcl} or
+ * {@link #getOwner getOwner} methods.
  *
- * <p> The {@link #setAttribute setAttribute} method may be used to update the
- * ACL or owner attributes as if by invoking the {@link #setAcl setAcl} or {@link
- * #setOwner setOwner} methods.
+ * <p> The {@link FileRef#setAttribute setAttribute} method may be used to
+ * update the ACL or owner attributes as if by invoking the {@link #setAcl setAcl}
+ * or {@link #setOwner setOwner} methods.
  *
  * <h4> Setting the ACL when creating a file </h4>
  *

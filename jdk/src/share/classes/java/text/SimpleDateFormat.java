@@ -1030,9 +1030,9 @@ public class SimpleDateFormat extends DateFormat {
 
         case 1: // 'y' - YEAR
             if (calendar instanceof GregorianCalendar) {
-                if (count >= 4)
+                if (count != 2)
                     zeroPaddingNumber(value, count, maxIntCount, buffer);
-                else // count < 4
+                else // count == 2
                     zeroPaddingNumber(value, 2, 2, buffer); // clip 1996 to 96
             } else {
                 if (current == null) {

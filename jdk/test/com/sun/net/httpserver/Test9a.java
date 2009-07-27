@@ -92,8 +92,10 @@ public class Test9a extends Test {
             System.out.println ("OK");
         } finally {
             delay();
-            server.stop(2);
-            executor.shutdown ();
+            if (server != null)
+                server.stop(2);
+            if (executor != null)
+                executor.shutdown();
         }
     }
 

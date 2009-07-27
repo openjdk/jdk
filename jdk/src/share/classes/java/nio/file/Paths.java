@@ -35,7 +35,7 @@ import java.net.URI;
  * @since 1.7
  */
 
-public class Paths {
+public final class Paths {
     private Paths() { }
 
     /**
@@ -106,8 +106,9 @@ public class Paths {
      *          if preconditions on the {@code uri} parameter do not hold. The
      *          format of the URI is provider specific.
      * @throws  FileSystemNotFoundException
-     *          if the file system identified by the URI does not exist or the
-     *          provider identified by the URI's scheme component is not installed
+     *          The file system, identified by the URI, does not exist and
+     *          cannot be created automatically, or the provider identified by
+     *          the URI's scheme component is not installed
      * @throws  SecurityException
      *          if a security manager is installed and it denies an unspecified
      *          permission to access the file system

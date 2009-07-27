@@ -46,10 +46,21 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  *  deletion without notice.</b>
  */
 public class DiagnosticSource {
+
+    /* constant DiagnosticSource to be used when sourcefile is missing */
+    public static final DiagnosticSource NO_SOURCE = new DiagnosticSource() {
+        @Override
+        protected boolean findLine(int pos) {
+            return false;
+        }
+    };
+
     public DiagnosticSource(JavaFileObject fo, AbstractLog log) {
         this.fileObject = fo;
         this.log = log;
     }
+
+    private DiagnosticSource() {}
 
     /** Return the underlying file object handled by this
      *  DiagnosticSource object.
@@ -134,7 +145,7 @@ public class DiagnosticSource {
     /** Find the line in the buffer that contains the current position
      * @param pos      Character offset into the buffer
      */
-    private boolean findLine(int pos) {
+    protected boolean findLine(int pos) {
         if (pos == Position.NOPOS)
             return false;
 

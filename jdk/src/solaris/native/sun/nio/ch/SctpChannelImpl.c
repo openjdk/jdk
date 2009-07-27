@@ -254,7 +254,6 @@ void handleSendFailed
 
         if (remaining > 0) {
             if ((rv = recvmsg(fd, msg, 0)) < 0) {
-                fprintf(stdout, "\nNative: handleSFN: recvmsg failed: errno = %d  ", errno);
                 handleSocketError(env, errno);
                 return;
             }
@@ -269,7 +268,7 @@ void handleSendFailed
 
     /* create SctpSendFailed */
     resultObj = (*env)->NewObject(env, ssf_class, ssf_ctrID, ssf->ssf_assoc_id,
-            sri->sinfo_stream, ssf->ssf_error, isaObj, bufferObj);
+            isaObj, bufferObj, ssf->ssf_error, sri->sinfo_stream);
     CHECK_NULL(resultObj);
     (*env)->SetObjectField(env, resultContainerObj, src_valueID, resultObj);
     (*env)->SetIntField(env, resultContainerObj, src_typeID,

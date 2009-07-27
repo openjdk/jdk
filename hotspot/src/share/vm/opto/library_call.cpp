@@ -310,11 +310,6 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!InlineAtomicLong)  return NULL;
     break;
 
-  case vmIntrinsics::_Object_init:
-  case vmIntrinsics::_invoke:
-    // We do not intrinsify these; they are marked for other purposes.
-    return NULL;
-
   case vmIntrinsics::_getCallerClass:
     if (!UseNewReflection)  return NULL;
     if (!InlineReflectionGetCallerClass)  return NULL;
@@ -327,6 +322,8 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
 
  default:
+    assert(id <= vmIntrinsics::LAST_COMPILER_INLINE, "caller responsibility");
+    assert(id != vmIntrinsics::_Object_init && id != vmIntrinsics::_invoke, "enum out of order?");
     break;
   }
 
@@ -394,18 +391,11 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   }
 
   if (PrintIntrinsics) {
-    switch (intrinsic_id()) {
-    case vmIntrinsics::_invoke:
-    case vmIntrinsics::_Object_init:
-      // We do not expect to inline these, so do not produce any noise about them.
-      break;
-    default:
-      tty->print("Did not inline intrinsic %s%s at bci:%d in",
-                 vmIntrinsics::name_at(intrinsic_id()),
-                 (is_virtual() ? " (virtual)" : ""), kit.bci());
-      kit.caller()->print_short_name(tty);
-      tty->print_cr(" (%d bytes)", kit.caller()->code_size());
-    }
+    tty->print("Did not inline intrinsic %s%s at bci:%d in",
+               vmIntrinsics::name_at(intrinsic_id()),
+               (is_virtual() ? " (virtual)" : ""), kit.bci());
+    kit.caller()->print_short_name(tty);
+    tty->print_cr(" (%d bytes)", kit.caller()->code_size());
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
   return NULL;

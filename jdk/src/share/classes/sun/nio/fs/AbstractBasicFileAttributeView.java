@@ -26,24 +26,21 @@
 package sun.nio.fs;
 
 import java.nio.file.attribute.*;
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
 
 /**
  * Base implementation of BasicFileAttributeView
  */
 
 abstract class AbstractBasicFileAttributeView
-    implements BasicFileAttributeView
+    implements BasicFileAttributeView, DynamicFileAttributeView
 {
     private static final String SIZE_NAME = "size";
     private static final String CREATION_TIME_NAME = "creationTime";
     private static final String LAST_ACCESS_TIME_NAME = "lastAccessTime";
     private static final String LAST_MODIFIED_TIME_NAME = "lastModifiedTime";
-    private static final String RESOLUTION_NAME = "resolution";
     private static final String FILE_KEY_NAME = "fileKey";
-    private static final String LINK_COUNT_NAME = "linkCount";
     private static final String IS_DIRECTORY_NAME = "isDirectory";
     private static final String IS_REGULAR_FILE_NAME = "isRegularFile";
     private static final String IS_SYMBOLIC_LINK_NAME = "isSymbolicLink";
@@ -67,12 +64,8 @@ abstract class AbstractBasicFileAttributeView
             return attrs.lastAccessTime();
         if (attribute.equals(LAST_MODIFIED_TIME_NAME))
             return attrs.lastModifiedTime();
-        if (attribute.equals(RESOLUTION_NAME))
-            return attrs.resolution();
         if (attribute.equals(FILE_KEY_NAME))
             return attrs.fileKey();
-        if (attribute.equals(LINK_COUNT_NAME))
-            return attrs.linkCount();
         if (attribute.equals(IS_DIRECTORY_NAME))
             return attrs.isDirectory();
         if (attribute.equals(IS_REGULAR_FILE_NAME))
@@ -84,29 +77,20 @@ abstract class AbstractBasicFileAttributeView
         return null;
     }
 
-    private Long toTimeValue(Object value) {
-        if (value == null)
-            throw new NullPointerException();
-        Long time = (Long)value;
-        if (time < 0L && time != -1L)
-            throw new IllegalArgumentException("time value cannot be negative");
-        return time;
-    }
-
     @Override
     public void setAttribute(String attribute, Object value)
         throws IOException
     {
         if (attribute.equals(LAST_MODIFIED_TIME_NAME)) {
-            setTimes(toTimeValue(value), null, null, TimeUnit.MILLISECONDS);
+            setTimes((FileTime)value, null, null);
             return;
         }
         if (attribute.equals(LAST_ACCESS_TIME_NAME)) {
-            setTimes(null, toTimeValue(value), null, TimeUnit.MILLISECONDS);
+            setTimes(null, (FileTime)value, null);
             return;
         }
         if (attribute.equals(CREATION_TIME_NAME)) {
-            setTimes(null, null, toTimeValue(value), TimeUnit.MILLISECONDS);
+            setTimes(null, null, (FileTime)value);
             return;
         }
         throw new UnsupportedOperationException("'" + attribute +
@@ -114,24 +98,18 @@ abstract class AbstractBasicFileAttributeView
     }
 
     /**
-     *
+     * Used to build a map of attribute name/values.
      */
     static class AttributesBuilder {
         private Set<String> set = new HashSet<String>();
         private Map<String,Object> map = new HashMap<String,Object>();
         private boolean copyAll;
 
-        private AttributesBuilder(String first, String[] rest) {
-            if (first.equals("*")) {
-                copyAll = true;
-            } else {
-                set.add(first);
-                // copy names into the given Set bailing out if "*" is found
-                for (String attribute: rest) {
-                    if (attribute.equals("*")) {
-                        copyAll = true;
-                        break;
-                    }
+        private AttributesBuilder(String[] attributes) {
+            for (String attribute: attributes) {
+                if (attribute.equals("*")) {
+                    copyAll = true;
+                } else {
                     set.add(attribute);
                 }
             }
@@ -140,8 +118,8 @@ abstract class AbstractBasicFileAttributeView
         /**
          * Creates builder to build up a map of the matching attributes
          */
-        static AttributesBuilder create(String first, String[] rest) {
-            return new AttributesBuilder(first, rest);
+        static AttributesBuilder create(String[] attributes) {
+            return new AttributesBuilder(attributes);
         }
 
         /**
@@ -181,12 +159,8 @@ abstract class AbstractBasicFileAttributeView
             builder.add(LAST_ACCESS_TIME_NAME, attrs.lastAccessTime());
         if (builder.match(LAST_MODIFIED_TIME_NAME))
             builder.add(LAST_MODIFIED_TIME_NAME, attrs.lastModifiedTime());
-        if (builder.match(RESOLUTION_NAME))
-            builder.add(RESOLUTION_NAME, attrs.resolution());
         if (builder.match(FILE_KEY_NAME))
             builder.add(FILE_KEY_NAME, attrs.fileKey());
-        if (builder.match(LINK_COUNT_NAME))
-            builder.add(LINK_COUNT_NAME, attrs.linkCount());
         if (builder.match(IS_DIRECTORY_NAME))
             builder.add(IS_DIRECTORY_NAME, attrs.isDirectory());
         if (builder.match(IS_REGULAR_FILE_NAME))
@@ -198,10 +172,8 @@ abstract class AbstractBasicFileAttributeView
     }
 
     @Override
-    public Map<String,?> readAttributes(String first, String[] rest)
-        throws IOException
-    {
-        AttributesBuilder builder = AttributesBuilder.create(first, rest);
+    public Map<String,?> readAttributes(String[] attributes) throws IOException {
+        AttributesBuilder builder = AttributesBuilder.create(attributes);
         addBasicAttributesToBuilder(readAttributes(), builder);
         return builder.unmodifiableMap();
     }

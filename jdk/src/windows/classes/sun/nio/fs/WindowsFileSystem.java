@@ -63,7 +63,7 @@ class WindowsFileSystem
 
         PrivilegedAction<String> pa = new GetPropertyAction("os.version");
         String osversion = AccessController.doPrivileged(pa);
-        String[] vers = osversion.split("\\.", 0);
+        String[] vers = Util.split(osversion, '.');
         int major = Integer.parseInt(vers[0]);
         int minor = Integer.parseInt(vers[1]);
 
@@ -227,7 +227,7 @@ class WindowsFileSystem
 
     // supported views
     private static final Set<String> supportedFileAttributeViews = Collections
-        .unmodifiableSet(new HashSet<String>(Arrays.asList("basic", "dos", "acl", "owner", "xattr")));
+        .unmodifiableSet(new HashSet<String>(Arrays.asList("basic", "dos", "acl", "owner", "user")));
 
     @Override
     public Set<String> supportedFileAttributeViews() {

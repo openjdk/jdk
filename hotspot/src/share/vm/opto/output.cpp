@@ -50,6 +50,13 @@ void Compile::Output() {
   init_scratch_buffer_blob();
   if (failing())  return; // Out of memory
 
+  // The number of new nodes (mostly MachNop) is proportional to
+  // the number of java calls and inner loops which are aligned.
+  if ( C->check_node_count((NodeLimitFudgeFactor + C->java_calls()*3 +
+                            C->inner_loops()*(OptoLoopAlignment-1)),
+                           "out of nodes before code generation" ) ) {
+    return;
+  }
   // Make sure I can find the Start Node
   Block_Array& bbs = _cfg->_bbs;
   Block *entry = _cfg->_blocks[1];
@@ -1105,7 +1112,7 @@ void Compile::Fill_buffer() {
   uint *call_returns = NEW_RESOURCE_ARRAY(uint, _cfg->_num_blocks+1);
 
   uint  return_offset = 0;
-  MachNode *nop = new (this) MachNopNode();
+  int nop_size = (new (this) MachNopNode())->size(_regalloc);
 
   int previous_offset = 0;
   int current_offset  = 0;
@@ -1188,7 +1195,6 @@ void Compile::Fill_buffer() {
         }
 
         // align the instruction if necessary
-        int nop_size = nop->size(_regalloc);
         int padding = mach->compute_padding(current_offset);
         // Make sure safepoint node for polling is distinct from a call's
         // return by adding a nop if needed.
@@ -1372,7 +1378,6 @@ void Compile::Fill_buffer() {
 
     // If the next block is the top of a loop, pad this block out to align
     // the loop top a little. Helps prevent pipe stalls at loop back branches.
-    int nop_size = (new (this) MachNopNode())->size(_regalloc);
     if( i<_cfg->_num_blocks-1 ) {
       Block *nb = _cfg->_blocks[i+1];
       uint padding = nb->alignment_padding(current_offset);

@@ -25,7 +25,7 @@
  * @test
  * @bug 6843578
  * @summary Test IBM DB charsets
- * @build IBM930_OLD IBM933_OLD IBM935_OLD IBM937_OLD IBM939_OLD IBM942_OLD IBM943_OLD IBM948_OLD IBM949_OLD IBM950_OLD IBM970_OLD IBM942C_OLD IBM943C_OLD IBM949C_OLD IBM1381_OLD IBM1383_OLD
+ * @build IBM930_OLD IBM933_OLD IBM935_OLD IBM937_OLD IBM939_OLD IBM942_OLD IBM943_OLD IBM948_OLD IBM949_OLD IBM950_OLD IBM970_OLD IBM942C_OLD IBM943C_OLD IBM949C_OLD IBM1381_OLD IBM1383_OLD EUC_CN_OLD EUC_KR_OLD GBK_OLD Johab_OLD MS932_OLD MS936_OLD MS949_OLD MS950_OLD
  */
 
 import java.nio.charset.*;
@@ -36,7 +36,7 @@ public class TestIBMDB {
     static class Time {
         long t;
     }
-    static int iteration = 100;
+    static int iteration = 200;
 
     static char[] decode(byte[] bb, Charset cs, boolean testDirect, Time t)
         throws Exception {
@@ -181,20 +181,21 @@ public class TestIBMDB {
             boolean canOld = encOLD.canEncode(c);
             boolean canNew = encNew.canEncode(c);
 
-if (is970 && c == 0x2299)
-    continue;
+            if (is970 && c == 0x2299)
+                continue;
+
             if (canOld != canNew) {
                 if (canNew) {
                     System.out.printf("      NEW(only): ");
                     printEntry(c, newCS);
                 } else {
-if (is970) {
-    byte[] bb = new String(new char[] {c}).getBytes(oldCS);
-    if (bb.length == 2 && bb[0] == (byte)0xa2 && bb[1] == (byte)0xc1) {
-        // we know 970 has bogus nnnn -> a2c1 -> 2299
-        continue;
-    }
-}
+                    if (is970) {
+                        byte[] bb = new String(new char[] {c}).getBytes(oldCS);
+                        if (bb.length == 2 && bb[0] == (byte)0xa2 && bb[1] == (byte)0xc1) {
+                        // we know 970 has bogus nnnn -> a2c1 -> 2299
+                            continue;
+                        }
+                    }
                     System.out.printf("      OLD(only): ");
                     printEntry(c, oldCS);
                 }
@@ -240,8 +241,10 @@ if (is970) {
             String sOld = new String(bb, oldCS);
             String sNew = new String(bb, newCS);
             if (!sOld.equals(sNew)) {
-                System.out.printf("        b=%x:  %x  %x%n",
-                    b& 0xff, sOld.charAt(0) & 0xffff, sNew.charAt(0) & 0xffff);
+                System.out.printf("        b=%x:  %x/%d(old)  %x/%d(new)%n",
+                                  b& 0xff,
+                                  sOld.charAt(0) & 0xffff, sOld.length(),
+                                  sNew.charAt(0) & 0xffff, sNew.length());
             }
         }
 
@@ -250,6 +253,22 @@ if (is970) {
         int b1Min = 0x40;
         int b1Max = 0xfe;
         for (int b1 = 0x40; b1 < 0xff; b1++) {
+            if (!isEBCDIC) {
+                // decodable singlebyte b1
+                bb[0] = (byte)b1;
+                String sOld = new String(bb, oldCS);
+                String sNew = new String(bb, newCS);
+                if (!sOld.equals(sNew)) {
+                    if (sOld.length() != 2 && sOld.charAt(0) != 0) {
+                        // only prints we are NOT expected. above two are known issue
+                        System.out.printf("        b1=%x:  %x/%d(old)  %x/%d(new)%n",
+                                          b1 & 0xff,
+                                          sOld.charAt(0) & 0xffff, sOld.length(),
+                                          sNew.charAt(0) & 0xffff, sNew.length());
+                        continue;
+                    }
+                }
+            }
             for (int b2 = 0x40; b2 < 0xff; b2++) {
                 if (isEBCDIC) {
                     bb[0] = 0x0e;
@@ -268,7 +287,7 @@ if (is970) {
 if (sOld.charAt(0) == 0 && sNew.charAt(0) == 0xfffd)
     continue; // known issude in old implementation
 
-                    System.out.printf("        bb=<%x,%x>  %x,  %x%n",
+                    System.out.printf("        bb=<%x,%x>  c(old)=%x,  c(new)=%x%n",
                         b1, b2, sOld.charAt(0) & 0xffff, sNew.charAt(0) & 0xffff);
                 }
             }
@@ -486,6 +505,15 @@ if (sOld.charAt(0) == 0 && sNew.charAt(0) == 0xfffd)
         "IBM949C",
         "IBM1381",
         "IBM1383",
+
+        "EUC_CN",
+        "EUC_KR",
+        "GBK",
+        "Johab",
+        "MS932",
+        "MS936",
+        "MS949",
+        "MS950",
     };
 
     public static void main(String[] args) throws Exception {
