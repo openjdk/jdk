@@ -109,11 +109,39 @@ Java_sun_misc_VM_getThreadStateValues(JNIEnv *env, jclass cls,
     get_thread_state_info(env, JAVA_THREAD_STATE_TERMINATED, values, names);
 }
 
+typedef void (JNICALL *GetJvmVersionInfo_fp)(JNIEnv*, jvm_version_info*, size_t);
+
 JNIEXPORT void JNICALL
 Java_sun_misc_VM_initialize(JNIEnv *env, jclass cls) {
     char errmsg[128];
+    GetJvmVersionInfo_fp func_p;
 
     if (!JDK_InitJvmHandle()) {
         JNU_ThrowInternalError(env, "Handle for JVM not found for symbol lookup");
+        return;
+    }
+
+    func_p = (GetJvmVersionInfo_fp) JDK_FindJvmEntry("JVM_GetVersionInfo");
+     if (func_p != NULL) {
+        char errmsg[100];
+        jfieldID fid;
+        jvm_version_info info;
+
+        memset(&info, 0, sizeof(info));
+
+        /* obtain the JVM version info */
+        (*func_p)(env, &info, sizeof(info));
+
+        if (info.is_kernel_jvm == 1) {
+            /* set the static field VM.kernelVM to true for kernel VM */
+            fid = (*env)->GetStaticFieldID(env, cls, "kernelVM", "Z");
+            if (fid != 0) {
+                (*env)->SetStaticBooleanField(env, cls, fid, info.is_kernel_jvm);
+            } else {
+                sprintf(errmsg, "Static kernelVM boolean field not found");
+                JNU_ThrowInternalError(env, errmsg);
+            }
+        }
     }
 }
+

@@ -26,13 +26,15 @@
 package java.nio.file;
 
 import java.nio.file.spi.FileTypeDetector;
+import java.nio.file.attribute.*;
 import java.io.IOException;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
- * Utility methods for files and directories.
+ * This class consists exclusively of static methods that operate on files or
+ * directories.
  *
  * @since 1.7
  */
@@ -109,8 +111,6 @@ public final class Files {
      * @throws  SecurityException
      *          If a security manager is installed and it denies an unspecified
      *          permission required by a file type detector implementation.
-     *
-     * @see DirectoryStreamFilters#newContentTypeFilter
      */
     public static String probeContentType(FileRef file)
         throws IOException
@@ -125,158 +125,6 @@ public final class Files {
         // fallback to default
         return DefaultFileTypeDetectorHolder.defaultFileTypeDetector
             .probeContentType(file);
-    }
-
-    /**
-     * Invokes a {@link FileAction} for each entry in a directory accepted
-     * by a given {@link java.nio.file.DirectoryStream.Filter filter}.
-     *
-     * <p> This method opens the given directory and invokes the file action's
-     * {@link FileAction#invoke invoke} method for each entry accepted by the
-     * filter. When iteration is completed then the directory is closed. If the
-     * {@link DirectoryStream#close close} method throws an {@code IOException}
-     * then it is silently ignored.
-     *
-     * <p> If the {@code FileAction}'s {@code invoke} method terminates due
-     * to an uncaught {@link IOException}, {@code Error} or {@code RuntimeException}
-     * then the exception is propagated by this method after closing the
-     * directory.
-     *
-     * @param   dir
-     *          The directory
-     * @param   filter
-     *          The filter
-     * @param   action
-     *          The {@code FileAction} to invoke for each accepted entry
-     *
-     * @throws  NotDirectoryException
-     *          If the {@code dir} parameter is not a directory <i>(optional
-     *          specific exception)</i>
-     * @throws  IOException
-     *          If an I/O error occurs or the {@code invoke} method terminates
-     *          due to an uncaught {@code IOException}
-     * @throws  SecurityException
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String) checkRead} method is invoked
-     *          to check read access to the directory.
-     */
-    public static void withDirectory(Path dir,
-                                     DirectoryStream.Filter<? super Path> filter,
-                                     FileAction<? super Path> action)
-        throws IOException
-    {
-        // explicit null check required in case directory is empty
-        if (action == null)
-            throw new NullPointerException();
-
-        DirectoryStream<Path> stream = dir.newDirectoryStream(filter);
-        try {
-            // set to true when invoking the action so as to distinguish a
-            // CME thrown by the iteration from a CME thrown by the invoke
-            boolean inAction = false;
-            try {
-                for (Path entry: stream) {
-                    inAction = true;
-                    action.invoke(entry);
-                    inAction = false;
-                }
-            } catch (ConcurrentModificationException cme) {
-                if (!inAction) {
-                    Throwable cause = cme.getCause();
-                    if (cause instanceof IOException)
-                        throw (IOException)cause;
-                }
-                throw cme;
-            }
-        } finally {
-            try {
-                stream.close();
-            } catch (IOException x) { }
-        }
-    }
-
-    /**
-     * Invokes a {@link FileAction} for each entry in a directory with a
-     * file name that matches a given pattern.
-     *
-     * <p> This method opens the given directory and invokes the file action's
-     * {@link FileAction#invoke invoke} method for each entry that matches the
-     * given pattern. When iteration is completed then the directory is closed.
-     * If the {@link DirectoryStream#close close} method throws an {@code
-     * IOException} then it is silently ignored.
-     *
-     * <p> If the {@code FileAction}'s {@code invoke} method terminates due
-     * to an uncaught {@link IOException}, {@code Error} or {@code RuntimeException}
-     * then the exception is propagated by this method after closing the
-     * directory.
-     *
-     * <p> The globbing pattern language supported by this method is as
-     * specified by the {@link FileSystem#getPathMatcher getPathMatcher} method.
-     *
-     * @param   dir
-     *          The directory
-     * @param   glob
-     *          The globbing pattern
-     * @param   action
-     *          The {@code FileAction} to invoke for each entry
-     *
-     * @throws  NotDirectoryException
-     *          If the {@code dir} parameter is not a directory <i>(optional
-     *          specific exception)</i>
-     * @throws  IOException
-     *          If an I/O error occurs or the {@code invoke} method terminates
-     *          due to an uncaught {@code IOException}
-     * @throws  SecurityException
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String) checkRead} method is invoked
-     *          to check read access to the directory.
-     */
-    public static void withDirectory(Path dir,
-                                     String glob,
-                                     FileAction<? super Path> action)
-        throws IOException
-    {
-        if (glob == null)
-            throw new NullPointerException("'glob' is null");
-        final PathMatcher matcher = dir.getFileSystem().getPathMatcher("glob:" + glob);
-        DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
-            @Override
-            public boolean accept(Path entry)  {
-                return matcher.matches(entry.getName());
-            }
-        };
-        withDirectory(dir, filter, action);
-    }
-
-    /**
-     * Invokes a {@link FileAction} for all entries in a directory.
-     *
-     * <p> This method works as if invoking it were equivalent to evaluating the
-     * expression:
-     * <blockquote><pre>
-     * withDirectory(dir, "*", action)
-     * </pre></blockquote>
-     *
-     * @param   dir
-     *          The directory
-     * @param   action
-     *          The {@code FileAction} to invoke for each entry
-     *
-     * @throws  NotDirectoryException
-     *          If the {@code dir} parameter is not a directory <i>(optional
-     *          specific exception)</i>
-     * @throws  IOException
-     *          If an I/O error occurs or the {@code invoke} method terminates
-     *          due to an uncaught {@code IOException}
-     * @throws  SecurityException
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String) checkRead} method is invoked
-     *          to check read access to the directory.
-     */
-    public static void withDirectory(Path dir, FileAction<? super Path> action)
-        throws IOException
-    {
-        withDirectory(dir, "*", action);
     }
 
     /**
@@ -328,7 +176,7 @@ public final class Files {
      * arises when there is an entry in a directory that is an ancestor of the
      * directory. Cycle detection is done by recording the {@link
      * java.nio.file.attribute.BasicFileAttributes#fileKey file-key} of directories,
-     * or if file keys are not available, by invoking the {@link FileRef#isSameFile
+     * or if file keys are not available, by invoking the {@link Path#isSameFile
      * isSameFile} method to test if a directory is the same file as an
      * ancestor. When a cycle is detected the {@link FileVisitor#visitFile
      * visitFile} is invoked with the attributes of the directory. The {@link
@@ -402,5 +250,109 @@ public final class Files {
                      EnumSet.noneOf(FileVisitOption.class),
                      Integer.MAX_VALUE,
                      visitor);
+    }
+
+    /**
+     * Creates a directory by creating all nonexistent parent directories first.
+     *
+     * <p> The {@code attrs} parameter is an optional array of {@link FileAttribute
+     * file-attributes} to set atomically when creating the nonexistent
+     * directories. Each file attribute is identified by its {@link
+     * FileAttribute#name name}. If more than one attribute of the same name is
+     * included in the array then all but the last occurrence is ignored.
+     *
+     * <p> If this method fails, then it may do so after creating some, but not
+     * all, of the parent directories.
+     *
+     * @param   dir
+     *          the directory to create
+     *
+     * @param   attrs
+     *          an optional list of file attributes to set atomically when
+     *          creating the directory
+     *
+     * @throws  UnsupportedOperationException
+     *          if the array contains an attribute that cannot be set atomically
+     *          when creating the directory
+     * @throws  FileAlreadyExistsException
+     *          if {@code dir} exists but is not a directory <i>(optional specific
+     *          exception)</i>
+     * @throws  IOException
+     *          if an I/O error occurs
+     * @throws  SecurityException
+     *          in the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
+     *          method is invoked prior to attempting to create a directory and
+     *          its {@link SecurityManager#checkRead(String) checkRead} is
+     *          invoked for each parent directory that is checked. If {@code
+     *          dir} is not an absolute path then its {@link Path#toAbsolutePath
+     *          toAbsolutePath} may need to be invoked to get its absolute path.
+     *          This may invoke the security manager's {@link
+     *          SecurityManager#checkPropertyAccess(String) checkPropertyAccess}
+     *          method to check access to the system property {@code user.dir}
+     *
+     */
+    public static void createDirectories(Path dir, FileAttribute<?>... attrs)
+        throws IOException
+    {
+        // attempt to create the directory
+        try {
+            createAndCheckIsDirectory(dir, attrs);
+            return;
+        } catch (FileAlreadyExistsException x) {
+            // file exists and is not a directory
+            throw x;
+        } catch (IOException x) {
+            // parent may not exist or other reason
+        }
+
+        // find existing parent (may require absolute path)
+        SecurityException se = null;
+        try {
+            dir = dir.toAbsolutePath();
+        } catch (SecurityException x) {
+            // don't have permission to get absolute path
+            se = x;
+        }
+        Path parent = dir.getParent();
+        while (parent != null) {
+            try {
+                parent.checkAccess();
+                break;
+            } catch (NoSuchFileException x) {
+                // does not exist
+            }
+            parent = parent.getParent();
+        }
+        if (parent == null) {
+            // unable to find existing parent
+            if (se != null)
+                throw se;
+            throw new IOException("Root directory does not exist");
+        }
+
+        // create directories
+        Path child = parent;
+        for (Path name: parent.relativize(dir)) {
+            child = child.resolve(name);
+            createAndCheckIsDirectory(child, attrs);
+        }
+    }
+
+    /**
+     * Attempts to create a directory. Does nothing if the directory already
+     * exists.
+     */
+    private static void createAndCheckIsDirectory(Path dir, FileAttribute<?>... attrs)
+        throws IOException
+    {
+        try {
+            dir.createDirectory(attrs);
+        } catch (FileAlreadyExistsException x) {
+            boolean isDirectory = Attributes
+                .readBasicFileAttributes(dir, LinkOption.NOFOLLOW_LINKS).isDirectory();
+            if (!isDirectory)
+                throw x;
+        }
     }
 }

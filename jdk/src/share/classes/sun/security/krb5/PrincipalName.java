@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,6 @@ import sun.security.util.*;
 import java.net.*;
 import java.util.Vector;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import sun.security.krb5.internal.ccache.CCacheOutputStream;
 
@@ -383,19 +381,26 @@ public class PrincipalName
         switch (type) {
         case KRB_NT_SRV_HST:
             if (nameParts.length >= 2) {
+                String hostName = nameParts[1];
                 try {
-                    // Canonicalize the hostname as per the
-                    // RFC4120 Section 6.2.1 and
-                    // RFC1964 Section 2.1.2
-                    // we assume internet domain names
-                    String hostName =
-                        (InetAddress.getByName(nameParts[1])).
-                        getCanonicalHostName();
-                    nameParts[1] = hostName.toLowerCase();
+                    // RFC4120 does not recommend canonicalizing a hostname.
+                    // However, for compatibility reason, we will try
+                    // canonicalize it and see if the output looks better.
+
+                    String canonicalized = (InetAddress.getByName(hostName)).
+                            getCanonicalHostName();
+
+                    // Looks if canonicalized is a longer format of hostName,
+                    // we accept cases like
+                    //     bunny -> bunny.rabbit.hole
+                    if (canonicalized.toLowerCase()
+                            .startsWith(hostName.toLowerCase()+".")) {
+                        hostName = canonicalized;
+                    }
                 } catch (UnknownHostException e) {
-                    // no canonicalization, just convert to lowercase
-                    nameParts[1] = nameParts[1].toLowerCase();
+                    // no canonicalization, use old
                 }
+                nameParts[1] = hostName.toLowerCase();
             }
             nameStrings = nameParts;
             nameType = type;

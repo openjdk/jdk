@@ -27,7 +27,7 @@
  * @summary java.lang.annotation.Target
  * @author gafter
  *
- * @compile -source 1.5 RightTarget.java
+ * @compile RightTarget.java
  */
 
 import java.lang.annotation.ElementType;

@@ -3237,6 +3237,16 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     this_klass->set_minor_version(minor_version);
     this_klass->set_major_version(major_version);
 
+    // Set up methodOop::intrinsic_id as soon as we know the names of methods.
+    // (We used to do this lazily, but now we query it in Rewriter,
+    // which is eagerly done for every method, so we might as well do it now,
+    // when everything is fresh in memory.)
+    if (methodOopDesc::klass_id_for_intrinsics(this_klass->as_klassOop()) != vmSymbols::NO_SID) {
+      for (int j = 0; j < methods->length(); j++) {
+        ((methodOop)methods->obj_at(j))->init_intrinsic_id();
+      }
+    }
+
     if (cached_class_file_bytes != NULL) {
       // JVMTI: we have an instanceKlass now, tell it about the cached bytes
       this_klass->set_cached_class_file(cached_class_file_bytes,

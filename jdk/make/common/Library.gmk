@@ -207,10 +207,10 @@ ifndef LOCAL_RESOURCE_FILE
 endif
 	@$(ECHO) Created $@ 
 
-# J2SE name required here
-RC_FLAGS += /D "J2SE_FNAME=$(LIBRARY).dll" \
-            /D "J2SE_INTERNAL_NAME=$(LIBRARY)" \
-            /D "J2SE_FTYPE=0x2L"
+# JDK name required here
+RC_FLAGS += /D "JDK_FNAME=$(LIBRARY).dll" \
+            /D "JDK_INTERNAL_NAME=$(LIBRARY)" \
+            /D "JDK_FTYPE=0x2L"
 
 $(OBJDIR)/$(LIBRARY).res: $(VERSIONINFO_RESOURCE)
 ifndef LOCAL_RESOURCE_FILE

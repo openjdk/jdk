@@ -25,8 +25,6 @@
 
 package java.nio.file.attribute;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * Basic attributes associated with a file in a file system.
  *
@@ -50,47 +48,27 @@ public interface BasicFileAttributes {
     /**
      * Returns the time of last modification.
      *
-     * <p> The {@link #resolution() resolution} method returns the {@link TimeUnit}
-     * to interpret the return value of this method.
-     *
-     * @return  a <code>long</code> value representing the time the file was
-     *          last modified since the epoch (00:00:00 GMT, January 1, 1970),
-     *          or {@code -1L} if the attribute is not supported.
+     * @return  a {@code FileTime} representing the time the file was last
+     *          modified or {@code null} if the attribute is not supported.
      */
-    long lastModifiedTime();
+    FileTime lastModifiedTime();
 
     /**
      * Returns the time of last access if supported.
      *
-     * <p> The {@link #resolution() resolution} method returns the {@link TimeUnit}
-     * to interpret the return value of this method.
-     *
-     * @return  a <code>long</code> value representing the time of last access
-     *          since the epoch (00:00:00 GMT, January 1, 1970), or {@code -1L}
-     *          if the attribute is not supported.
+     * @return  a {@code FileTime} representing the time of last access or
+     *          {@code null} if the attribute is not supported.
      */
-    long lastAccessTime();
+    FileTime lastAccessTime();
 
     /**
      * Returns the creation time if supported. The creation time is the time
      * that the file was created.
      *
-     * <p> The {@link #resolution() resolution} method returns the {@link TimeUnit}
-     * to interpret the return value of this method.
-     *
-     * @return  a <code>long</code> value representing the time the file was
-     *          created since the epoch (00:00:00 GMT, January 1, 1970), or
-     *          {@code -1L} if the attribute is not supported.
+     * @return   a {@code FileTime} representing the time  the file was created
+     *           or {@code null} if the attribute is not supported.
      */
-    long creationTime();
-
-    /**
-     * Returns the {@link TimeUnit} required to interpret the time of last
-     * modification, time of last access, and creation time.
-     *
-     * @return  the {@code TimeUnit} required to interpret the file time stamps
-     */
-    TimeUnit resolution();
+    FileTime creationTime();
 
     /**
      * Tells whether the file is a regular file with opaque content.
@@ -125,18 +103,6 @@ public interface BasicFileAttributes {
     long size();
 
     /**
-     * Returns the number of <em>links</em> to this file.
-     *
-     * <p> On file systems where the same file may be in several directories then
-     * the link count is the number of directory entries for the file. The return
-     * value is {@code 1} on file systems that only allow a file to have a
-     * single name in a single directory.
-     *
-     * @see java.nio.file.Path#createLink
-     */
-    int linkCount();
-
-    /**
      * Returns an object that uniquely identifies the given file, or {@code
      * null} if a file key is not available. On some platforms or file systems
      * it is possible to use an identifier, or a combination of identifiers to
@@ -154,7 +120,7 @@ public interface BasicFileAttributes {
      *
      * <p> File keys returned by this method can be compared for equality and are
      * suitable for use in collections. If the file system and files remain static,
-     * and two files are the {@link java.nio.file.FileRef#isSameFile same} with
+     * and two files are the {@link java.nio.file.Path#isSameFile same} with
      * non-{@code null} file keys, then their file keys are equal.
      *
      * @see java.nio.file.Files#walkFileTree

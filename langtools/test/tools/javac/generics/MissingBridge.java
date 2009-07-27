@@ -27,7 +27,7 @@
  * @summary Calling inherited generics method via interface causes AbstractMethodError
  * @author gafter
  *
- * @compile -source 1.5 MissingBridge.java
+ * @compile  MissingBridge.java
  * @run main MissingBridge
  */
 

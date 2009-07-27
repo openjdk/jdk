@@ -27,8 +27,8 @@
  * @summary com/sun/tools/javac/comp/Check.java refers to the undefined resource
  * @author gafter
  *
- * @compile      -source 1.5 -Werror                  5005368.java
- * @compile/fail -source 1.5 -Werror -Xlint:unchecked 5005368.java
+ * @compile      -Werror                  5005368.java
+ * @compile/fail -Werror -Xlint:unchecked 5005368.java
  */
 
 package p5005368;

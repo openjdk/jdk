@@ -27,7 +27,7 @@
  * @summary Cannot cast Comparable<?>s
  * @author gafter
  *
- * @compile -Werror -Xlint:unchecked -source 1.5 Casting4.java
+ * @compile -Werror -Xlint:unchecked  Casting4.java
  */
 
 package test.tools.javac.generics.Casting4;

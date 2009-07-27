@@ -27,9 +27,6 @@
  * @summary Verify that access to member of java.lang.Object via qualification of
  * object of an interface type is handled successfully.
  * @author maddox
- *
- * @run compile -source 1.3 -target 1.2 -g ObjectMethodRefFromInterface.java
- * @run main/othervm ObjectMethodRefFromInterface
  */
 
 public class ObjectMethodRefFromInterface {

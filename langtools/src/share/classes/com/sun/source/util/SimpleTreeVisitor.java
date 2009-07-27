@@ -244,6 +244,10 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
         return defaultAction(node, p);
     }
 
+    public R visitAnnotatedType(AnnotatedTypeTree node, P p) {
+        return defaultAction(node, p);
+    }
+
     public R visitErroneous(ErroneousTree node, P p) {
         return defaultAction(node, p);
     }

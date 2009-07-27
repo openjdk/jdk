@@ -56,8 +56,8 @@ class ConcurrentZFThread;
 #  define IF_G1_DETAILED_STATS(code)
 #endif
 
-typedef GenericTaskQueue<oop*>    RefToScanQueue;
-typedef GenericTaskQueueSet<oop*> RefToScanQueueSet;
+typedef GenericTaskQueue<StarTask>    RefToScanQueue;
+typedef GenericTaskQueueSet<StarTask> RefToScanQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
@@ -700,6 +700,9 @@ public:
   size_t g1_reserved_obj_bytes() { return _g1_reserved.byte_size(); }
   virtual size_t capacity() const;
   virtual size_t used() const;
+  // This should be called when we're not holding the heap lock. The
+  // result might be a bit inaccurate.
+  size_t used_unlocked() const;
   size_t recalculate_used() const;
 #ifndef PRODUCT
   size_t recalculate_used_regions() const;
@@ -1061,8 +1064,14 @@ public:
 
   // Override; it uses the "prev" marking information
   virtual void verify(bool allow_dirty, bool silent);
+  // Default behavior by calling print(tty);
   virtual void print() const;
+  // This calls print_on(st, PrintHeapAtGCExtended).
   virtual void print_on(outputStream* st) const;
+  // If extended is true, it will print out information for all
+  // regions in the heap by calling print_on_extended(st).
+  virtual void print_on(outputStream* st, bool extended) const;
+  virtual void print_on_extended(outputStream* st) const;
 
   virtual void print_gc_threads_on(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
@@ -1265,6 +1274,552 @@ public:
 
 };
 
-// Local Variables: ***
-// c-indentation-style: gnu ***
-// End: ***
+#define use_local_bitmaps         1
+#define verify_local_bitmaps      0
+#define oop_buffer_length       256
+
+#ifndef PRODUCT
+class GCLabBitMap;
+class GCLabBitMapClosure: public BitMapClosure {
+private:
+  ConcurrentMark* _cm;
+  GCLabBitMap*    _bitmap;
+
+public:
+  GCLabBitMapClosure(ConcurrentMark* cm,
+                     GCLabBitMap* bitmap) {
+    _cm     = cm;
+    _bitmap = bitmap;
+  }
+
+  virtual bool do_bit(size_t offset);
+};
+#endif // !PRODUCT
+
+class GCLabBitMap: public BitMap {
+private:
+  ConcurrentMark* _cm;
+
+  int       _shifter;
+  size_t    _bitmap_word_covers_words;
+
+  // beginning of the heap
+  HeapWord* _heap_start;
+
+  // this is the actual start of the GCLab
+  HeapWord* _real_start_word;
+
+  // this is the actual end of the GCLab
+  HeapWord* _real_end_word;
+
+  // this is the first word, possibly located before the actual start
+  // of the GCLab, that corresponds to the first bit of the bitmap
+  HeapWord* _start_word;
+
+  // size of a GCLab in words
+  size_t _gclab_word_size;
+
+  static int shifter() {
+    return MinObjAlignment - 1;
+  }
+
+  // how many heap words does a single bitmap word corresponds to?
+  static size_t bitmap_word_covers_words() {
+    return BitsPerWord << shifter();
+  }
+
+  static size_t gclab_word_size() {
+    return G1ParallelGCAllocBufferSize / HeapWordSize;
+  }
+
+  static size_t bitmap_size_in_bits() {
+    size_t bits_in_bitmap = gclab_word_size() >> shifter();
+    // We are going to ensure that the beginning of a word in this
+    // bitmap also corresponds to the beginning of a word in the
+    // global marking bitmap. To handle the case where a GCLab
+    // starts from the middle of the bitmap, we need to add enough
+    // space (i.e. up to a bitmap word) to ensure that we have
+    // enough bits in the bitmap.
+    return bits_in_bitmap + BitsPerWord - 1;
+  }
+public:
+  GCLabBitMap(HeapWord* heap_start)
+    : BitMap(bitmap_size_in_bits()),
+      _cm(G1CollectedHeap::heap()->concurrent_mark()),
+      _shifter(shifter()),
+      _bitmap_word_covers_words(bitmap_word_covers_words()),
+      _heap_start(heap_start),
+      _gclab_word_size(gclab_word_size()),
+      _real_start_word(NULL),
+      _real_end_word(NULL),
+      _start_word(NULL)
+  {
+    guarantee( size_in_words() >= bitmap_size_in_words(),
+               "just making sure");
+  }
+
+  inline unsigned heapWordToOffset(HeapWord* addr) {
+    unsigned offset = (unsigned) pointer_delta(addr, _start_word) >> _shifter;
+    assert(offset < size(), "offset should be within bounds");
+    return offset;
+  }
+
+  inline HeapWord* offsetToHeapWord(size_t offset) {
+    HeapWord* addr =  _start_word + (offset << _shifter);
+    assert(_real_start_word <= addr && addr < _real_end_word, "invariant");
+    return addr;
+  }
+
+  bool fields_well_formed() {
+    bool ret1 = (_real_start_word == NULL) &&
+                (_real_end_word == NULL) &&
+                (_start_word == NULL);
+    if (ret1)
+      return true;
+
+    bool ret2 = _real_start_word >= _start_word &&
+      _start_word < _real_end_word &&
+      (_real_start_word + _gclab_word_size) == _real_end_word &&
+      (_start_word + _gclab_word_size + _bitmap_word_covers_words)
+                                                              > _real_end_word;
+    return ret2;
+  }
+
+  inline bool mark(HeapWord* addr) {
+    guarantee(use_local_bitmaps, "invariant");
+    assert(fields_well_formed(), "invariant");
+
+    if (addr >= _real_start_word && addr < _real_end_word) {
+      assert(!isMarked(addr), "should not have already been marked");
+
+      // first mark it on the bitmap
+      at_put(heapWordToOffset(addr), true);
+
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  inline bool isMarked(HeapWord* addr) {
+    guarantee(use_local_bitmaps, "invariant");
+    assert(fields_well_formed(), "invariant");
+
+    return at(heapWordToOffset(addr));
+  }
+
+  void set_buffer(HeapWord* start) {
+    guarantee(use_local_bitmaps, "invariant");
+    clear();
+
+    assert(start != NULL, "invariant");
+    _real_start_word = start;
+    _real_end_word   = start + _gclab_word_size;
+
+    size_t diff =
+      pointer_delta(start, _heap_start) % _bitmap_word_covers_words;
+    _start_word = start - diff;
+
+    assert(fields_well_formed(), "invariant");
+  }
+
+#ifndef PRODUCT
+  void verify() {
+    // verify that the marks have been propagated
+    GCLabBitMapClosure cl(_cm, this);
+    iterate(&cl);
+  }
+#endif // PRODUCT
+
+  void retire() {
+    guarantee(use_local_bitmaps, "invariant");
+    assert(fields_well_formed(), "invariant");
+
+    if (_start_word != NULL) {
+      CMBitMap*       mark_bitmap = _cm->nextMarkBitMap();
+
+      // this means that the bitmap was set up for the GCLab
+      assert(_real_start_word != NULL && _real_end_word != NULL, "invariant");
+
+      mark_bitmap->mostly_disjoint_range_union(this,
+                                0, // always start from the start of the bitmap
+                                _start_word,
+                                size_in_words());
+      _cm->grayRegionIfNecessary(MemRegion(_real_start_word, _real_end_word));
+
+#ifndef PRODUCT
+      if (use_local_bitmaps && verify_local_bitmaps)
+        verify();
+#endif // PRODUCT
+    } else {
+      assert(_real_start_word == NULL && _real_end_word == NULL, "invariant");
+    }
+  }
+
+  static size_t bitmap_size_in_words() {
+    return (bitmap_size_in_bits() + BitsPerWord - 1) / BitsPerWord;
+  }
+};
+
+class G1ParGCAllocBuffer: public ParGCAllocBuffer {
+private:
+  bool        _retired;
+  bool        _during_marking;
+  GCLabBitMap _bitmap;
+
+public:
+  G1ParGCAllocBuffer() :
+    ParGCAllocBuffer(G1ParallelGCAllocBufferSize / HeapWordSize),
+    _during_marking(G1CollectedHeap::heap()->mark_in_progress()),
+    _bitmap(G1CollectedHeap::heap()->reserved_region().start()),
+    _retired(false)
+  { }
+
+  inline bool mark(HeapWord* addr) {
+    guarantee(use_local_bitmaps, "invariant");
+    assert(_during_marking, "invariant");
+    return _bitmap.mark(addr);
+  }
+
+  inline void set_buf(HeapWord* buf) {
+    if (use_local_bitmaps && _during_marking)
+      _bitmap.set_buffer(buf);
+    ParGCAllocBuffer::set_buf(buf);
+    _retired = false;
+  }
+
+  inline void retire(bool end_of_gc, bool retain) {
+    if (_retired)
+      return;
+    if (use_local_bitmaps && _during_marking) {
+      _bitmap.retire();
+    }
+    ParGCAllocBuffer::retire(end_of_gc, retain);
+    _retired = true;
+  }
+};
+
+class G1ParScanThreadState : public StackObj {
+protected:
+  G1CollectedHeap* _g1h;
+  RefToScanQueue*  _refs;
+  DirtyCardQueue   _dcq;
+  CardTableModRefBS* _ct_bs;
+  G1RemSet* _g1_rem;
+
+  typedef GrowableArray<StarTask> OverflowQueue;
+  OverflowQueue* _overflowed_refs;
+
+  G1ParGCAllocBuffer _alloc_buffers[GCAllocPurposeCount];
+  ageTable           _age_table;
+
+  size_t           _alloc_buffer_waste;
+  size_t           _undo_waste;
+
+  OopsInHeapRegionClosure*      _evac_failure_cl;
+  G1ParScanHeapEvacClosure*     _evac_cl;
+  G1ParScanPartialArrayClosure* _partial_scan_cl;
+
+  int _hash_seed;
+  int _queue_num;
+
+  int _term_attempts;
+#if G1_DETAILED_STATS
+  int _pushes, _pops, _steals, _steal_attempts;
+  int _overflow_pushes;
+#endif
+
+  double _start;
+  double _start_strong_roots;
+  double _strong_roots_time;
+  double _start_term;
+  double _term_time;
+
+  // Map from young-age-index (0 == not young, 1 is youngest) to
+  // surviving words. base is what we get back from the malloc call
+  size_t* _surviving_young_words_base;
+  // this points into the array, as we use the first few entries for padding
+  size_t* _surviving_young_words;
+
+#define PADDING_ELEM_NUM (64 / sizeof(size_t))
+
+  void   add_to_alloc_buffer_waste(size_t waste) { _alloc_buffer_waste += waste; }
+
+  void   add_to_undo_waste(size_t waste)         { _undo_waste += waste; }
+
+  DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
+  CardTableModRefBS* ctbs()                      { return _ct_bs; }
+
+  template <class T> void immediate_rs_update(HeapRegion* from, T* p, int tid) {
+    if (!from->is_survivor()) {
+      _g1_rem->par_write_ref(from, p, tid);
+    }
+  }
+
+  template <class T> void deferred_rs_update(HeapRegion* from, T* p, int tid) {
+    // If the new value of the field points to the same region or
+    // is the to-space, we don't need to include it in the Rset updates.
+    if (!from->is_in_reserved(oopDesc::load_decode_heap_oop(p)) && !from->is_survivor()) {
+      size_t card_index = ctbs()->index_for(p);
+      // If the card hasn't been added to the buffer, do it.
+      if (ctbs()->mark_card_deferred(card_index)) {
+        dirty_card_queue().enqueue((jbyte*)ctbs()->byte_for_index(card_index));
+      }
+    }
+  }
+
+public:
+  G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num);
+
+  ~G1ParScanThreadState() {
+    FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
+  }
+
+  RefToScanQueue*   refs()            { return _refs;             }
+  OverflowQueue*    overflowed_refs() { return _overflowed_refs;  }
+  ageTable*         age_table()       { return &_age_table;       }
+
+  G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
+    return &_alloc_buffers[purpose];
+  }
+
+  size_t alloc_buffer_waste()                    { return _alloc_buffer_waste; }
+  size_t undo_waste()                            { return _undo_waste; }
+
+  template <class T> void push_on_queue(T* ref) {
+    assert(ref != NULL, "invariant");
+    assert(has_partial_array_mask(ref) ||
+           _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(ref)), "invariant");
+#ifdef ASSERT
+    if (has_partial_array_mask(ref)) {
+      oop p = clear_partial_array_mask(ref);
+      // Verify that we point into the CS
+      assert(_g1h->obj_in_cs(p), "Should be in CS");
+    }
+#endif
+    if (!refs()->push(ref)) {
+      overflowed_refs()->push(ref);
+      IF_G1_DETAILED_STATS(note_overflow_push());
+    } else {
+      IF_G1_DETAILED_STATS(note_push());
+    }
+  }
+
+  void pop_from_queue(StarTask& ref) {
+    if (refs()->pop_local(ref)) {
+      assert((oop*)ref != NULL, "pop_local() returned true");
+      assert(UseCompressedOops || !ref.is_narrow(), "Error");
+      assert(has_partial_array_mask((oop*)ref) ||
+             _g1h->obj_in_cs(ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)ref)
+                                             : oopDesc::load_decode_heap_oop((oop*)ref)),
+             "invariant");
+      IF_G1_DETAILED_STATS(note_pop());
+    } else {
+      StarTask null_task;
+      ref = null_task;
+    }
+  }
+
+  void pop_from_overflow_queue(StarTask& ref) {
+    StarTask new_ref = overflowed_refs()->pop();
+    assert((oop*)new_ref != NULL, "pop() from a local non-empty stack");
+    assert(UseCompressedOops || !new_ref.is_narrow(), "Error");
+    assert(has_partial_array_mask((oop*)new_ref) ||
+           _g1h->obj_in_cs(new_ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)new_ref)
+                                               : oopDesc::load_decode_heap_oop((oop*)new_ref)),
+             "invariant");
+    ref = new_ref;
+  }
+
+  int refs_to_scan()                             { return refs()->size();                 }
+  int overflowed_refs_to_scan()                  { return overflowed_refs()->length();    }
+
+  template <class T> void update_rs(HeapRegion* from, T* p, int tid) {
+    if (G1DeferredRSUpdate) {
+      deferred_rs_update(from, p, tid);
+    } else {
+      immediate_rs_update(from, p, tid);
+    }
+  }
+
+  HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
+
+    HeapWord* obj = NULL;
+    if (word_sz * 100 <
+        (size_t)(G1ParallelGCAllocBufferSize / HeapWordSize) *
+                                                  ParallelGCBufferWastePct) {
+      G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
+      add_to_alloc_buffer_waste(alloc_buf->words_remaining());
+      alloc_buf->retire(false, false);
+
+      HeapWord* buf =
+        _g1h->par_allocate_during_gc(purpose, G1ParallelGCAllocBufferSize / HeapWordSize);
+      if (buf == NULL) return NULL; // Let caller handle allocation failure.
+      // Otherwise.
+      alloc_buf->set_buf(buf);
+
+      obj = alloc_buf->allocate(word_sz);
+      assert(obj != NULL, "buffer was definitely big enough...");
+    } else {
+      obj = _g1h->par_allocate_during_gc(purpose, word_sz);
+    }
+    return obj;
+  }
+
+  HeapWord* allocate(GCAllocPurpose purpose, size_t word_sz) {
+    HeapWord* obj = alloc_buffer(purpose)->allocate(word_sz);
+    if (obj != NULL) return obj;
+    return allocate_slow(purpose, word_sz);
+  }
+
+  void undo_allocation(GCAllocPurpose purpose, HeapWord* obj, size_t word_sz) {
+    if (alloc_buffer(purpose)->contains(obj)) {
+      assert(alloc_buffer(purpose)->contains(obj + word_sz - 1),
+             "should contain whole object");
+      alloc_buffer(purpose)->undo_allocation(obj, word_sz);
+    } else {
+      CollectedHeap::fill_with_object(obj, word_sz);
+      add_to_undo_waste(word_sz);
+    }
+  }
+
+  void set_evac_failure_closure(OopsInHeapRegionClosure* evac_failure_cl) {
+    _evac_failure_cl = evac_failure_cl;
+  }
+  OopsInHeapRegionClosure* evac_failure_closure() {
+    return _evac_failure_cl;
+  }
+
+  void set_evac_closure(G1ParScanHeapEvacClosure* evac_cl) {
+    _evac_cl = evac_cl;
+  }
+
+  void set_partial_scan_closure(G1ParScanPartialArrayClosure* partial_scan_cl) {
+    _partial_scan_cl = partial_scan_cl;
+  }
+
+  int* hash_seed() { return &_hash_seed; }
+  int  queue_num() { return _queue_num; }
+
+  int term_attempts()   { return _term_attempts; }
+  void note_term_attempt()  { _term_attempts++; }
+
+#if G1_DETAILED_STATS
+  int pushes()          { return _pushes; }
+  int pops()            { return _pops; }
+  int steals()          { return _steals; }
+  int steal_attempts()  { return _steal_attempts; }
+  int overflow_pushes() { return _overflow_pushes; }
+
+  void note_push()          { _pushes++; }
+  void note_pop()           { _pops++; }
+  void note_steal()         { _steals++; }
+  void note_steal_attempt() { _steal_attempts++; }
+  void note_overflow_push() { _overflow_pushes++; }
+#endif
+
+  void start_strong_roots() {
+    _start_strong_roots = os::elapsedTime();
+  }
+  void end_strong_roots() {
+    _strong_roots_time += (os::elapsedTime() - _start_strong_roots);
+  }
+  double strong_roots_time() { return _strong_roots_time; }
+
+  void start_term_time() {
+    note_term_attempt();
+    _start_term = os::elapsedTime();
+  }
+  void end_term_time() {
+    _term_time += (os::elapsedTime() - _start_term);
+  }
+  double term_time() { return _term_time; }
+
+  double elapsed() {
+    return os::elapsedTime() - _start;
+  }
+
+  size_t* surviving_young_words() {
+    // We add on to hide entry 0 which accumulates surviving words for
+    // age -1 regions (i.e. non-young ones)
+    return _surviving_young_words;
+  }
+
+  void retire_alloc_buffers() {
+    for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
+      size_t waste = _alloc_buffers[ap].words_remaining();
+      add_to_alloc_buffer_waste(waste);
+      _alloc_buffers[ap].retire(true, false);
+    }
+  }
+
+private:
+  template <class T> void deal_with_reference(T* ref_to_scan) {
+    if (has_partial_array_mask(ref_to_scan)) {
+      _partial_scan_cl->do_oop_nv(ref_to_scan);
+    } else {
+      // Note: we can use "raw" versions of "region_containing" because
+      // "obj_to_scan" is definitely in the heap, and is not in a
+      // humongous region.
+      HeapRegion* r = _g1h->heap_region_containing_raw(ref_to_scan);
+      _evac_cl->set_region(r);
+      _evac_cl->do_oop_nv(ref_to_scan);
+    }
+  }
+
+public:
+  void trim_queue() {
+    // I've replicated the loop twice, first to drain the overflow
+    // queue, second to drain the task queue. This is better than
+    // having a single loop, which checks both conditions and, inside
+    // it, either pops the overflow queue or the task queue, as each
+    // loop is tighter. Also, the decision to drain the overflow queue
+    // first is not arbitrary, as the overflow queue is not visible
+    // to the other workers, whereas the task queue is. So, we want to
+    // drain the "invisible" entries first, while allowing the other
+    // workers to potentially steal the "visible" entries.
+
+    while (refs_to_scan() > 0 || overflowed_refs_to_scan() > 0) {
+      while (overflowed_refs_to_scan() > 0) {
+        StarTask ref_to_scan;
+        assert((oop*)ref_to_scan == NULL, "Constructed above");
+        pop_from_overflow_queue(ref_to_scan);
+        // We shouldn't have pushed it on the queue if it was not
+        // pointing into the CSet.
+        assert((oop*)ref_to_scan != NULL, "Follows from inner loop invariant");
+        if (ref_to_scan.is_narrow()) {
+          assert(UseCompressedOops, "Error");
+          narrowOop* p = (narrowOop*)ref_to_scan;
+          assert(!has_partial_array_mask(p) &&
+                 _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+          deal_with_reference(p);
+        } else {
+          oop* p = (oop*)ref_to_scan;
+          assert((has_partial_array_mask(p) && _g1h->obj_in_cs(clear_partial_array_mask(p))) ||
+                 _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+          deal_with_reference(p);
+        }
+      }
+
+      while (refs_to_scan() > 0) {
+        StarTask ref_to_scan;
+        assert((oop*)ref_to_scan == NULL, "Constructed above");
+        pop_from_queue(ref_to_scan);
+        if ((oop*)ref_to_scan != NULL) {
+          if (ref_to_scan.is_narrow()) {
+            assert(UseCompressedOops, "Error");
+            narrowOop* p = (narrowOop*)ref_to_scan;
+            assert(!has_partial_array_mask(p) &&
+                   _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+            deal_with_reference(p);
+          } else {
+            oop* p = (oop*)ref_to_scan;
+            assert((has_partial_array_mask(p) && _g1h->obj_in_cs(clear_partial_array_mask(p))) ||
+                  _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+            deal_with_reference(p);
+          }
+        }
+      }
+    }
+  }
+};

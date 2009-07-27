@@ -26,9 +26,6 @@
  * @bug 4911157
  * @summary Runtime error because of missing method in iterator
  * @author gafter
- *
- * @compile -source 1.5 SpecIterable.java
- * @run main SpecIterable
  */
 
 import java.util.Iterator;

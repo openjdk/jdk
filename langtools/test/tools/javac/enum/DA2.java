@@ -27,7 +27,7 @@
  * @summary One can refer static, const static variables from instance initializers of enum
  * @author gafter
  *
- * @compile/fail -source 1.5 DA2.java
+ * @compile/fail DA2.java
  */
 
 package da2;

@@ -28,7 +28,7 @@
  *          compilation.  This was fixed in 1.2beta2.
  * @author turnidge
  *
- * @compile -source 1.4 ArrayCast.java
+ * @compile ArrayCast.java
  */
 
 public class ArrayCast {

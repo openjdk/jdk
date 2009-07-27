@@ -1008,11 +1008,10 @@ public class Type implements PrimitiveType {
         @Override
         public String toString() {
             return "capture#"
-                + (hashCode() & 0xFFFFFFFFL) % PRIME
+                + (hashCode() & 0xFFFFFFFFL) % Printer.PRIME
                 + " of "
                 + wildcard;
         }
-        static final int PRIME = 997;  // largest prime less than 1000
     }
 
     public static abstract class DelegatedType extends Type {
@@ -1065,6 +1064,21 @@ public class Type implements PrimitiveType {
 
         public boolean isErroneous()  {
             return qtype.isErroneous();
+        }
+
+        /**
+         * Replaces this ForAll's typevars with a set of concrete Java types
+         * and returns the instantiated generic type. Subclasses might override
+         * in order to check that the list of types is a valid instantiation
+         * of the ForAll's typevars.
+         *
+         * @param actuals list of actual types
+         * @param types types instance
+         * @return qtype where all occurrences of tvars are replaced
+         * by types in actuals
+         */
+        public Type inst(List<Type> actuals, Types types) {
+            return types.subst(qtype, tvars, actuals);
         }
 
         public Type map(Mapping f) {

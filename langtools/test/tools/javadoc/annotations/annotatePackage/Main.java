@@ -26,7 +26,7 @@
  * @bug 5031168
  * @summary Test package annotations and package-info.java package comments.
  * @library ../../lib
- * @compile -source 1.5 ../../lib/Tester.java Main.java
+ * @compile  ../../lib/Tester.java Main.java
  * @run main Main
  */
 

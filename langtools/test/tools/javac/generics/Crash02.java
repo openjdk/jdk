@@ -27,7 +27,7 @@
  * @summary compiler crash in class writer
  * @author gafter
  *
- * @compile -source 1.5 Crash02.java
+ * @compile  Crash02.java
  */
 
 import java.util.ArrayList;

@@ -391,6 +391,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             (options.get("shouldStopPolicy") != null)
             ? CompileState.valueOf(options.get("shouldStopPolicy"))
             : null;
+        if (options.get("oldDiags") == null)
+            log.setDiagnosticFormatter(RichDiagnosticFormatter.instance(context));
     }
 
     /* Switches:
@@ -475,7 +477,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     public Todo todo;
 
     /** Ordered list of compiler phases for each compilation unit. */
-    protected enum CompileState {
+    public enum CompileState {
         PARSE(1),
         ENTER(2),
         PROCESS(3),

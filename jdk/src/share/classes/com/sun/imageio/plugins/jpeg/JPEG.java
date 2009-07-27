@@ -215,17 +215,21 @@ public class JPEG {
     public static class JCS {
         public static final ColorSpace sRGB =
             ColorSpace.getInstance(ColorSpace.CS_sRGB);
-        public static final ColorSpace YCC;
 
-        static {
-            ColorSpace cs = null;
-            try {
-                cs = ColorSpace.getInstance(ColorSpace.CS_PYCC);
-            } catch (IllegalArgumentException e) {
-                // PYCC.pf may not always be installed
-            } finally {
-                YCC = cs;
+        private static ColorSpace YCC = null;
+        private static boolean yccInited = false;
+
+        public static ColorSpace getYCC() {
+            if (!yccInited) {
+                try {
+                    YCC = ColorSpace.getInstance(ColorSpace.CS_PYCC);
+                } catch (IllegalArgumentException e) {
+                    // PYCC.pf may not always be installed
+                } finally {
+                    yccInited = true;
+                }
             }
+            return YCC;
         }
     }
 

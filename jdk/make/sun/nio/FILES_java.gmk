@@ -151,7 +151,6 @@ FILES_src = \
 	sun/io/ByteToCharJISAutoDetect.java \
 	sun/io/ByteToCharJohab.java \
 	sun/io/ByteToCharMS874.java \
-	sun/io/ByteToCharMS932DB.java \
 	sun/io/ByteToCharMS932.java \
 	sun/io/ByteToCharMS936.java \
 	sun/io/ByteToCharMS949.java \
@@ -283,7 +282,6 @@ FILES_src = \
 	sun/io/CharToByteISO8859_8.java \
 	sun/io/CharToByteJohab.java \
 	sun/io/CharToByteMS874.java \
-	sun/io/CharToByteMS932DB.java \
 	sun/io/CharToByteMS932.java \
 	sun/io/CharToByteMS936.java \
 	sun/io/CharToByteMS949.java \
@@ -304,7 +302,7 @@ FILES_src = \
 	sun/io/CharToByteMacUkraine.java \
 	sun/io/CharToByteTIS620.java
 
-FILES_gen_extsbcs = \
+FILES_gen_extcs = \
 	sun/nio/cs/ext/IBM037.java \
 	sun/nio/cs/ext/IBM1006.java \
 	sun/nio/cs/ext/IBM1025.java \
@@ -374,6 +372,29 @@ FILES_gen_extsbcs = \
 	sun/nio/cs/ext/MacThai.java \
 	sun/nio/cs/ext/MacTurkish.java \
 	sun/nio/cs/ext/MacUkraine.java \
-	sun/nio/cs/ext/TIS_620.java
+	sun/nio/cs/ext/TIS_620.java \
+        sun/nio/cs/ext/EUC_TWMapping.java \
+	sun/nio/cs/ext/IBM1381.java \
+	sun/nio/cs/ext/IBM1383.java \
+	sun/nio/cs/ext/IBM930.java \
+	sun/nio/cs/ext/IBM933.java \
+	sun/nio/cs/ext/IBM935.java \
+	sun/nio/cs/ext/IBM937.java \
+	sun/nio/cs/ext/IBM939.java \
+	sun/nio/cs/ext/IBM942.java \
+	sun/nio/cs/ext/IBM943.java \
+	sun/nio/cs/ext/IBM948.java \
+	sun/nio/cs/ext/IBM949.java \
+	sun/nio/cs/ext/IBM950.java \
+	sun/nio/cs/ext/IBM970.java \
+	sun/nio/cs/ext/EUC_CN.java \
+	sun/nio/cs/ext/EUC_KR.java \
+	sun/nio/cs/ext/Johab.java \
+	sun/nio/cs/ext/MS932.java \
+	sun/nio/cs/ext/MS936.java \
+	sun/nio/cs/ext/MS949.java \
+	sun/nio/cs/ext/MS950.java \
+	sun/nio/cs/ext/GBK.java
 
-FILES_java = $(FILES_src) $(FILES_gen_extsbcs)
+FILES_java = $(FILES_src) $(FILES_gen_extcs)
+

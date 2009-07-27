@@ -190,6 +190,11 @@ public:
   // Currently, it also works around limitations involving interface types.
   virtual const Type *filter( const Type *kills ) const;
 
+#ifdef ASSERT
+  // One type is interface, the other is oop
+  virtual bool interface_vs_oop(const Type *t) const;
+#endif
+
   // Returns true if this pointer points at memory which contains a
   // compressed oop references.
   bool is_ptr_to_narrowoop() const;
@@ -227,6 +232,11 @@ public:
 
   // Returns this ptr type or the equivalent ptr type for this compressed pointer.
   const TypePtr* make_ptr() const;
+
+  // Returns this oopptr type or the equivalent oopptr type for this compressed pointer.
+  // Asserts if the underlying type is not an oopptr or narrowoop.
+  const TypeOopPtr* make_oopptr() const;
+
   // Returns this compressed pointer or the equivalent compressed version
   // of this pointer type.
   const TypeNarrowOop* make_narrowoop() const;
@@ -546,6 +556,10 @@ public:
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   bool ary_must_be_exact() const;  // true if arrays of such are never generic
+#ifdef ASSERT
+  // One type is interface, the other is oop
+  virtual bool interface_vs_oop(const Type *t) const;
+#endif
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint, outputStream *st  ) const; // Specialized per-Type dumping
 #endif
@@ -867,6 +881,10 @@ public:
   }
   static const TypeAryPtr *_array_body_type[T_CONFLICT+1];
   // sharpen the type of an int which is used as an array size
+#ifdef ASSERT
+  // One type is interface, the other is oop
+  virtual bool interface_vs_oop(const Type *t) const;
+#endif
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
 #endif
@@ -919,13 +937,13 @@ public:
 // between the normal and the compressed form.
 class TypeNarrowOop : public Type {
 protected:
-  const TypePtr* _ooptype; // Could be TypePtr::NULL_PTR
+  const TypePtr* _ptrtype; // Could be TypePtr::NULL_PTR
 
-  TypeNarrowOop( const TypePtr* ooptype): Type(NarrowOop),
-    _ooptype(ooptype) {
-    assert(ooptype->offset() == 0 ||
-           ooptype->offset() == OffsetBot ||
-           ooptype->offset() == OffsetTop, "no real offsets");
+  TypeNarrowOop( const TypePtr* ptrtype): Type(NarrowOop),
+    _ptrtype(ptrtype) {
+    assert(ptrtype->offset() == 0 ||
+           ptrtype->offset() == OffsetBot ||
+           ptrtype->offset() == OffsetTop, "no real offsets");
   }
 public:
   virtual bool eq( const Type *t ) const;
@@ -949,8 +967,8 @@ public:
   }
 
   // returns the equivalent ptr type for this compressed pointer
-  const TypePtr *make_oopptr() const {
-    return _ooptype;
+  const TypePtr *get_ptrtype() const {
+    return _ptrtype;
   }
 
   static const TypeNarrowOop *BOTTOM;
@@ -1137,8 +1155,12 @@ inline const TypeKlassPtr *Type::is_klassptr() const {
 }
 
 inline const TypePtr* Type::make_ptr() const {
-  return (_base == NarrowOop) ? is_narrowoop()->make_oopptr() :
+  return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype() :
                                 (isa_ptr() ? is_ptr() : NULL);
+}
+
+inline const TypeOopPtr* Type::make_oopptr() const {
+  return (_base == NarrowOop) ? is_narrowoop()->get_ptrtype()->is_oopptr() : is_oopptr();
 }
 
 inline const TypeNarrowOop* Type::make_narrowoop() const {
@@ -1194,6 +1216,8 @@ inline bool Type::is_floatingpoint() const {
 #define Op_AndX      Op_AndL
 #define Op_AddX      Op_AddL
 #define Op_SubX      Op_SubL
+#define Op_XorX      Op_XorL
+#define Op_URShiftX  Op_URShiftL
 // conversions
 #define ConvI2X(x)   ConvI2L(x)
 #define ConvL2X(x)   (x)
@@ -1236,6 +1260,8 @@ inline bool Type::is_floatingpoint() const {
 #define Op_AndX      Op_AndI
 #define Op_AddX      Op_AddI
 #define Op_SubX      Op_SubI
+#define Op_XorX      Op_XorI
+#define Op_URShiftX  Op_URShiftI
 // conversions
 #define ConvI2X(x)   (x)
 #define ConvL2X(x)   ConvL2I(x)

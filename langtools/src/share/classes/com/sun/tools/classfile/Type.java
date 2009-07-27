@@ -25,7 +25,10 @@
 
 package com.sun.tools.classfile;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /*
  *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
@@ -33,8 +36,9 @@ import java.util.List;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class Type {
+public abstract class Type {
     protected Type() { }
+    public abstract <R,D> R accept(Visitor<R,D> visitor, D data);
 
     protected static void append(StringBuilder sb, String prefix, List<? extends Type> types, String suffix) {
         sb.append(prefix);
@@ -52,10 +56,32 @@ public class Type {
             append(sb, prefix, types, suffix);
     }
 
+    public interface Visitor<R,P> {
+        R visitSimpleType(SimpleType type, P p);
+        R visitArrayType(ArrayType type, P p);
+        R visitMethodType(MethodType type, P p);
+        R visitClassSigType(ClassSigType type, P p);
+        R visitClassType(ClassType type, P p);
+        R visitInnerClassType(InnerClassType type, P p);
+        R visitTypeArgType(TypeArgType type, P p);
+        R visitWildcardType(WildcardType type, P p);
+    }
+
     public static class SimpleType extends Type {
         public SimpleType(String name) {
             this.name = name;
         }
+
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitSimpleType(this, data);
+        }
+
+        public boolean isPrimitiveType() {
+            return primitiveTypes.contains(name);
+        }
+        // where
+        private static final Set<String> primitiveTypes = new HashSet<String>(Arrays.asList(
+            "boolean", "byte", "char", "double", "float", "int", "long", "short", "void"));
 
         @Override
         public String toString() {
@@ -68,6 +94,10 @@ public class Type {
     public static class ArrayType extends Type {
         public ArrayType(Type elemType) {
             this.elemType = elemType;
+        }
+
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitArrayType(this, data);
         }
 
         @Override
@@ -93,6 +123,10 @@ public class Type {
             this.throwsTypes = throwsTypes;
         }
 
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitMethodType(this, data);
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -114,6 +148,10 @@ public class Type {
             this.typeArgTypes = typeArgTypes;
             this.superclassType = superclassType;
             this.superinterfaceTypes = superinterfaceTypes;
+        }
+
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitClassSigType(this, data);
         }
 
         @Override
@@ -139,6 +177,10 @@ public class Type {
             this.typeArgs = typeArgs;
         }
 
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitClassType(this, data);
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -158,6 +200,10 @@ public class Type {
             this.innerType = innerType;
         }
 
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitInnerClassType(this, data);
+        }
+
         @Override
         public String toString() {
             return outerType + "." + innerType;
@@ -172,6 +218,10 @@ public class Type {
             this.name = name;
             this.classBound = classBound;
             this.interfaceBounds = interfaceBounds;
+        }
+
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitTypeArgType(this, data);
         }
 
         @Override
@@ -207,6 +257,10 @@ public class Type {
         public WildcardType(String kind, Type boundType) {
             this.kind = kind;
             this.boundType = boundType;
+        }
+
+        public <R, D> R accept(Visitor<R, D> visitor, D data) {
+            return visitor.visitWildcardType(this, data);
         }
 
         @Override

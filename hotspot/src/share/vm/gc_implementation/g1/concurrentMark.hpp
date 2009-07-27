@@ -763,6 +763,7 @@ private:
   CMBitMap*                   _nextMarkBitMap;
   // the task queue of this task
   CMTaskQueue*                _task_queue;
+private:
   // the task queue set---needed for stealing
   CMTaskQueueSet*             _task_queues;
   // indicates whether the task has been claimed---this is only  for

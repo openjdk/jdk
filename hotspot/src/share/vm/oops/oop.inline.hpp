@@ -148,12 +148,14 @@ inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 
 inline narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
   assert(!is_null(v), "oop value can never be zero");
+  assert(Universe::heap()->is_in_reserved(v), "Address not in heap");
   address base = Universe::narrow_oop_base();
   int    shift = Universe::narrow_oop_shift();
   uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base, 1));
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
   uint64_t result = pd >> shift;
   assert((result & CONST64(0xffffffff00000000)) == 0, "narrow oop overflow");
+  assert(decode_heap_oop(result) == v, "reversibility");
   return (narrowOop)result;
 }
 
@@ -449,7 +451,7 @@ inline void update_barrier_set(void* p, oop v) {
   oopDesc::bs()->write_ref_field(p, v);
 }
 
-inline void update_barrier_set_pre(void* p, oop v) {
+template <class T> inline void update_barrier_set_pre(T* p, oop v) {
   oopDesc::bs()->write_ref_field_pre(p, v);
 }
 
@@ -459,15 +461,15 @@ template <class T> inline void oop_store(T* p, oop v) {
   } else {
     update_barrier_set_pre(p, v);
     oopDesc::encode_store_heap_oop(p, v);
-    update_barrier_set(p, v);
+    update_barrier_set((void*)p, v);  // cast away type
   }
 }
 
 template <class T> inline void oop_store(volatile T* p, oop v) {
-  update_barrier_set_pre((void*)p, v);
+  update_barrier_set_pre((T*)p, v);   // cast away volatile
   // Used by release_obj_field_put, so use release_store_ptr.
   oopDesc::release_encode_store_heap_oop(p, v);
-  update_barrier_set((void*)p, v);
+  update_barrier_set((void*)p, v);    // cast away type
 }
 
 template <class T> inline void oop_store_without_check(T* p, oop v) {

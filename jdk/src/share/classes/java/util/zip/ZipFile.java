@@ -25,6 +25,7 @@
 
 package java.util.zip;
 
+import java.io.Closeable;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
@@ -32,6 +33,8 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Vector;
 import java.util.Enumeration;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.NoSuchElementException;
 import static java.util.zip.ZipConstants64.*;
 
@@ -45,7 +48,7 @@ import static java.util.zip.ZipConstants64.*;
  * @author      David Connelly
  */
 public
-class ZipFile implements ZipConstants {
+class ZipFile implements ZipConstants, Closeable {
     private long jzfile;  // address of jzfile data
     private String name;  // zip file name
     private int total;    // total number of entries
@@ -247,6 +250,25 @@ class ZipFile implements ZipConstants {
     }
 
     /**
+     * Returns the zip file comment, or null if none.
+     *
+     * @return the comment string for the zip file, or null if none
+     *
+     * @throws IllegalStateException if the zip file has been closed
+     *
+     * Since 1.7
+     */
+    public String getComment() {
+        synchronized (this) {
+            ensureOpen();
+            byte[] bcomm = getCommentBytes(jzfile);
+            if (bcomm == null)
+                return null;
+            return zc.toString(bcomm, bcomm.length);
+        }
+    }
+
+    /**
      * Returns the zip file entry for the specified name, or null
      * if not found.
      *
@@ -276,6 +298,9 @@ class ZipFile implements ZipConstants {
 
     // freeEntry releases the C jzentry struct.
     private static native void freeEntry(long jzfile, long jzentry);
+
+    // the outstanding inputstreams that need to be closed.
+    private Set<ZipFileInputStream> streams = new HashSet<ZipFileInputStream>();
 
     /**
      * Returns an input stream for reading the contents of the specified
@@ -308,6 +333,7 @@ class ZipFile implements ZipConstants {
                 return null;
             }
             in = new ZipFileInputStream(jzentry);
+            streams.add(in);
         }
         final ZipFileInputStream zfin = in;
         switch (getEntryMethod(jzentry)) {
@@ -323,7 +349,7 @@ class ZipFile implements ZipConstants {
 
                 public void close() throws IOException {
                     if (!isClosed) {
-                         releaseInflater(inf);
+                        releaseInflater(inf);
                         this.in.close();
                         isClosed = true;
                     }
@@ -497,6 +523,13 @@ class ZipFile implements ZipConstants {
         synchronized (this) {
             closeRequested = true;
 
+            if (streams.size() !=0) {
+                Set<ZipFileInputStream> copy = streams;
+                streams = new HashSet<ZipFileInputStream>();
+                for (ZipFileInputStream is: copy)
+                    is.close();
+            }
+
             if (jzfile != 0) {
                 // Close the zip file
                 long zf = this.jzfile;
@@ -631,9 +664,9 @@ class ZipFile implements ZipConstants {
                     freeEntry(ZipFile.this.jzfile, jzentry);
                     jzentry = 0;
                 }
+                streams.remove(this);
             }
         }
-
     }
 
 
@@ -650,6 +683,7 @@ class ZipFile implements ZipConstants {
     private static native long getEntrySize(long jzentry);
     private static native int getEntryMethod(long jzentry);
     private static native int getEntryFlag(long jzentry);
+    private static native byte[] getCommentBytes(long jzfile);
 
     private static final int JZENTRY_NAME = 0;
     private static final int JZENTRY_EXTRA = 1;

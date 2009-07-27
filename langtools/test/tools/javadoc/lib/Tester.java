@@ -39,7 +39,6 @@ public class Tester {
     protected final String TEST_CLASSES = System.getProperty("test.classes",
                                                              ".");
     private final String DEFAULT_ARGS[] = {
-        "-source", "1.5",
         "-sourcepath", TEST_SRC,
     };
 

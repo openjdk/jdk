@@ -66,16 +66,16 @@ public:
   bool failures() { return _failures; }
   int n_failures() { return _n_failures; }
 
-  virtual void do_oop(narrowOop* p) {
-    guarantee(false, "NYI");
-  }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(      oop* p) { do_oop_work(p); }
 
-  void do_oop(oop* p) {
+  template <class T> void do_oop_work(T* p) {
     assert(_containing_obj != NULL, "Precondition");
     assert(!_g1h->is_obj_dead_cond(_containing_obj, _use_prev_marking),
            "Precondition");
-    oop obj = *p;
-    if (obj != NULL) {
+    T heap_oop = oopDesc::load_heap_oop(p);
+    if (!oopDesc::is_null(heap_oop)) {
+      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       bool failed = false;
       if (!_g1h->is_in_closed_subset(obj) ||
           _g1h->is_obj_dead_cond(obj, _use_prev_marking)) {
@@ -106,8 +106,8 @@ public:
       }
 
       if (!_g1h->full_collection()) {
-        HeapRegion* from = _g1h->heap_region_containing(p);
-        HeapRegion* to   = _g1h->heap_region_containing(*p);
+        HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
+        HeapRegion* to   = _g1h->heap_region_containing(obj);
         if (from != NULL && to != NULL &&
             from != to &&
             !to->isHumongous()) {
@@ -534,13 +534,13 @@ HeapRegion::object_iterate_mem_careful(MemRegion mr,
   // Otherwise, find the obj that extends onto mr.start().
 
   assert(cur <= mr.start()
-         && (oop(cur)->klass() == NULL ||
+         && (oop(cur)->klass_or_null() == NULL ||
              cur + oop(cur)->size() > mr.start()),
          "postcondition of block_start");
   oop obj;
   while (cur < mr.end()) {
     obj = oop(cur);
-    if (obj->klass() == NULL) {
+    if (obj->klass_or_null() == NULL) {
       // Ran into an unparseable point.
       return cur;
     } else if (!g1h->is_obj_dead(obj)) {
@@ -577,7 +577,7 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
   assert(cur <= mr.start(), "Postcondition");
 
   while (cur <= mr.start()) {
-    if (oop(cur)->klass() == NULL) {
+    if (oop(cur)->klass_or_null() == NULL) {
       // Ran into an unparseable point.
       return cur;
     }
@@ -591,7 +591,7 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
   obj = oop(cur);
   // If we finish this loop...
   assert(cur <= mr.start()
-         && obj->klass() != NULL
+         && obj->klass_or_null() != NULL
          && cur + obj->size() > mr.start(),
          "Loop postcondition");
   if (!g1h->is_obj_dead(obj)) {
@@ -601,7 +601,7 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
   HeapWord* next;
   while (cur < mr.end()) {
     obj = oop(cur);
-    if (obj->klass() == NULL) {
+    if (obj->klass_or_null() == NULL) {
       // Ran into an unparseable point.
       return cur;
     };
@@ -703,7 +703,7 @@ void HeapRegion::verify(bool allow_dirty, bool use_prev_marking) const {
   }
   if (vl_cl.failures()) {
     gclog_or_tty->print_cr("Heap:");
-    G1CollectedHeap::heap()->print();
+    G1CollectedHeap::heap()->print_on(gclog_or_tty, true /* extended */);
     gclog_or_tty->print_cr("");
   }
   if (VerifyDuringGC &&
@@ -781,8 +781,13 @@ void G1OffsetTableContigSpace::set_saved_mark() {
     // will pick up the right saved_mark_word() as the high water mark
     // of the region. Either way, the behaviour will be correct.
     ContiguousSpace::set_saved_mark();
+    OrderAccess::storestore();
     _gc_time_stamp = curr_gc_time_stamp;
-    OrderAccess::fence();
+    // The following fence is to force a flush of the writes above, but
+    // is strictly not needed because when an allocating worker thread
+    // calls set_saved_mark() it does so under the ParGCRareEvent_lock;
+    // when the lock is released, the write will be flushed.
+    // OrderAccess::fence();
   }
 }
 
