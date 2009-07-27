@@ -39,7 +39,7 @@ import com.sun.tools.javac.code.Symbol.*;
 /**
  * Implementation of ExecutableDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public abstract class ExecutableDeclarationImpl extends MemberDeclarationImpl
                                              implements ExecutableDeclaration {
     public MethodSymbol sym;

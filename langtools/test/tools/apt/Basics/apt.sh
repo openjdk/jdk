@@ -43,7 +43,7 @@ case "${OS}" in
 esac
 
 # Construct path to apt executable
-APT="${TESTJAVA}/bin/apt ${TESTTOOLVMOPTS}"
+APT="${TESTJAVA}/bin/apt ${TESTTOOLVMOPTS} -XDsuppress-tool-api-removal-message "
 
 printf "%s\n" "-classpath ${TESTCLASSES}"                    > options
 printf "%s\n" "-factorypath ./nullap.jar"                   >> options
@@ -57,6 +57,7 @@ printf "%s\n" "-sourcepath ${TESTSRC} "                     >> options1
 printf "%s\n" "-nocompile"                                  >> options1
 printf "%s\n" "-XListAnnotationTypes"                       >> options1
 printf "%s\n" "-XclassesAsDecls"                            >> options1
+
 
 # Construct path to javac executable
 JAVAC="${TESTJAVA}/bin/javac ${TESTTOOLVMOPTS} -source 1.5 -sourcepath ${TESTSRC} -classpath ${TESTJAVA}/lib/tools.jar -d . "
