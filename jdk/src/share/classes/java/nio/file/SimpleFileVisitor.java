@@ -40,7 +40,7 @@ import java.io.IOError;
  * @since 1.7
  */
 
-public class SimpleFileVisitor<T extends FileRef> implements FileVisitor<T> {
+public class SimpleFileVisitor<T> implements FileVisitor<T> {
     /**
      * Initializes a new instance of this class.
      */

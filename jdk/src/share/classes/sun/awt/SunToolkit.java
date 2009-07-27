@@ -77,14 +77,7 @@ public abstract class SunToolkit extends Toolkit
      */
     public static final int GRAB_EVENT_MASK = 0x80000000;
 
-    private static Field syncLWRequestsField;
     private static Method  wakeupMethod;
-    private static Field componentKeyField;
-    private static Field menuComponentKeyField;
-    private static Field trayIconKeyField;
-    private static Field componentAppContextField;
-    private static Field menuComponentAppContextField;
-    private static Field isPostedField;
     /* The key to put()/get() the PostEventQueue into/from the AppContext.
      */
     private static final String POST_EVENT_QUEUE_KEY = "PostEventQueue";
@@ -422,32 +415,21 @@ public abstract class SunToolkit extends Toolkit
     private static final Map appContextMap =
         Collections.synchronizedMap(new WeakHashMap());
 
-
     /**
      * Sets the appContext field of target. If target is not a Component or
      * MenuComponent, this returns false.
      */
-    private static boolean setAppContext(Object target, AppContext context)
-    {
-        if (!(target instanceof Component) && !(target instanceof MenuComponent)) {
+    private static boolean setAppContext(Object target,
+                                         AppContext context) {
+        if (target instanceof Component) {
+            AWTAccessor.getComponentAccessor().
+                setAppContext((Component)target, context);
+        } else if (target instanceof MenuComponent) {
+            AWTAccessor.getMenuComponentAccessor().
+                setAppContext((MenuComponent)target, context);
+        } else {
             return false;
         }
-        try{
-            if (target instanceof Component){
-                if (componentAppContextField == null) {
-                    componentAppContextField = getField(Component.class, "appContext");
-                }
-                componentAppContextField.set(target, context);
-            } else if (target instanceof MenuComponent) {
-                if (menuComponentAppContextField == null) {
-                    menuComponentAppContextField = getField(MenuComponent.class, "appContext");
-                }
-                menuComponentAppContextField.set(target, context);
-            }
-        } catch( IllegalAccessException e){
-            assert false;
-        }
-
         return true;
     }
 
@@ -456,23 +438,15 @@ public abstract class SunToolkit extends Toolkit
      * Component or MenuComponent this returns null.
      */
     private static AppContext getAppContext(Object target) {
-        AppContext retObj = null;
-        try{
-            if (target instanceof Component){
-                if (componentAppContextField == null) {
-                    componentAppContextField = getField(Component.class, "appContext");
-                }
-                retObj = (AppContext) componentAppContextField.get(target);
-            } else if (target instanceof MenuComponent) {
-                if (menuComponentAppContextField == null) {
-                    menuComponentAppContextField = getField(MenuComponent.class, "appContext");
-                }
-                retObj = (AppContext) menuComponentAppContextField.get(target);
-            }
-        } catch( IllegalAccessException e){
-            assert false;
+        if (target instanceof Component) {
+            return AWTAccessor.getComponentAccessor().
+                       getAppContext((Component)target);
+        } else if (target instanceof MenuComponent) {
+            return AWTAccessor.getMenuComponentAccessor().
+                       getAppContext((MenuComponent)target);
+        } else {
+            return null;
         }
-        return retObj;
     }
 
     /*
@@ -520,16 +494,7 @@ public abstract class SunToolkit extends Toolkit
       */
 
     public static void setLWRequestStatus(Window changed,boolean status){
-        if (syncLWRequestsField == null){
-            syncLWRequestsField = getField(Window.class, "syncLWRequests");
-        }
-        try{
-            if (syncLWRequestsField != null){
-                syncLWRequestsField.setBoolean(changed, status);
-            }
-        } catch( IllegalAccessException e){
-            assert false;
-        }
+        AWTAccessor.getWindowAccessor().setLWRequestStatus(changed, status);
     };
 
     public static void checkAndSetPolicy(Container cont, boolean isSwingCont)
@@ -637,18 +602,9 @@ public abstract class SunToolkit extends Toolkit
      * Post AWTEvent of high priority.
      */
     public static void postPriorityEvent(final AWTEvent e) {
-        if (isPostedField == null) {
-            isPostedField = getField(AWTEvent.class, "isPosted");
-        }
         PeerEvent pe = new PeerEvent(Toolkit.getDefaultToolkit(), new Runnable() {
                 public void run() {
-                    try {
-                        isPostedField.setBoolean(e, true);
-                    } catch (IllegalArgumentException e) {
-                        assert(false);
-                    } catch (IllegalAccessException e) {
-                        assert(false);
-                    }
+                    AWTAccessor.getAWTEventAccessor().setPosted(e);
                     ((Component)e.getSource()).dispatchEvent(e);
                 }
             }, PeerEvent.ULTIMATE_PRIORITY_EVENT);
@@ -757,36 +713,6 @@ public abstract class SunToolkit extends Toolkit
     }
 
     /*
-     * Returns next queue for the given EventQueue which has private access
-     */
-    private static EventQueue getNextQueue(final Object o) {
-        EventQueue result = null;
-        try{
-            Field nextQueueField = getField(EventQueue.class,
-                                            "nextQueue");
-            result = (EventQueue)nextQueueField.get(o);
-        } catch( IllegalAccessException e){
-            assert false;
-        }
-        return result;
-    }
-
-    /*
-     * Returns dispatch thread for the given EventQueue which has private access
-     */
-    private static Thread getDispatchThread(final Object o) {
-        Thread result = null;
-        try{
-            Field dispatchThreadField = getField(EventQueue.class,
-                                                 "dispatchThread");
-            result = (Thread)dispatchThreadField.get(o);
-        } catch( IllegalAccessException e){
-            assert false;
-        }
-        return result;
-    }
-
-    /*
      * Returns true if the calling thread is the event dispatch thread
      * contained within AppContext which associated with the given target.
      * Use this call to ensure that a given task is being executed
@@ -796,13 +722,14 @@ public abstract class SunToolkit extends Toolkit
         AppContext appContext = targetToAppContext(target);
         EventQueue eq = (EventQueue)appContext.get(AppContext.EVENT_QUEUE_KEY);
 
-        EventQueue next = getNextQueue(eq);
+        AWTAccessor.EventQueueAccessor accessor = AWTAccessor.getEventQueueAccessor();
+        EventQueue next = accessor.getNextQueue(eq);
         while (next != null) {
             eq = next;
-            next = getNextQueue(eq);
+            next = accessor.getNextQueue(eq);
         }
 
-        return (Thread.currentThread() == getDispatchThread(eq));
+        return (Thread.currentThread() == accessor.getDispatchThread(eq));
     }
 
     public Dimension getScreenSize() {
@@ -1356,22 +1283,7 @@ public abstract class SunToolkit extends Toolkit
         return false;
     }
 
-    private static Dialog.ModalExclusionType DEFAULT_MODAL_EXCLUSION_TYPE;
-
-    static {
-        DEFAULT_MODAL_EXCLUSION_TYPE = (Dialog.ModalExclusionType)AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                Dialog.ModalExclusionType defaultType = Dialog.ModalExclusionType.NO_EXCLUDE;
-                try {
-                    java.lang.reflect.Field f = Dialog.class.getDeclaredField("DEFAULT_MODAL_EXCLUSION_TYPE");
-                    f.setAccessible(true);
-                    defaultType = (Dialog.ModalExclusionType)f.get(null);
-                } catch (Exception e) {
-                }
-                return defaultType;
-            }
-        });
-    }
+    private static Dialog.ModalExclusionType DEFAULT_MODAL_EXCLUSION_TYPE = null;
 
     /**
      * Returns whether the XEmbed server feature is requested by
@@ -1430,6 +1342,9 @@ public abstract class SunToolkit extends Toolkit
      */
     public static void setModalExcluded(Window window)
     {
+        if (DEFAULT_MODAL_EXCLUSION_TYPE == null) {
+            DEFAULT_MODAL_EXCLUSION_TYPE = Dialog.ModalExclusionType.APPLICATION_EXCLUDE;
+        }
         window.setModalExclusionType(DEFAULT_MODAL_EXCLUSION_TYPE);
     }
 
@@ -1451,6 +1366,9 @@ public abstract class SunToolkit extends Toolkit
      */
     public static boolean isModalExcluded(Window window)
     {
+        if (DEFAULT_MODAL_EXCLUSION_TYPE == null) {
+            DEFAULT_MODAL_EXCLUSION_TYPE = Dialog.ModalExclusionType.APPLICATION_EXCLUDE;
+        }
         return window.getModalExclusionType().compareTo(DEFAULT_MODAL_EXCLUSION_TYPE) >= 0;
     }
 
@@ -2103,6 +2021,42 @@ public abstract class SunToolkit extends Toolkit
      */
     public int getNumberOfButtons(){
         return 3;
+    }
+
+    /**
+     * Checks that the given object implements/extends the given
+     * interface/class.
+     *
+     * Note that using the instanceof operator causes a class to be loaded.
+     * Using this method doesn't load a class and it can be used instead of
+     * the instanceof operator for performance reasons.
+     *
+     * @param obj Object to be checked
+     * @param type The name of the interface/class. Must be
+     * fully-qualified interface/class name.
+     * @return true, if this object implements/extends the given
+     *         interface/class, false, otherwise, or if obj or type is null
+     */
+    public static boolean isInstanceOf(Object obj, String type) {
+        if (obj == null) return false;
+        if (type == null) return false;
+
+        return isInstanceOf(obj.getClass(), type);
+    }
+
+    private static boolean isInstanceOf(Class cls, String type) {
+        if (cls == null) return false;
+
+        if (cls.getName().equals(type)) {
+            return true;
+        }
+
+        for (Class c : cls.getInterfaces()) {
+            if (c.getName().equals(type)) {
+                return true;
+            }
+        }
+        return isInstanceOf(cls.getSuperclass(), type);
     }
 } // class SunToolkit
 

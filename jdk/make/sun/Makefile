@@ -59,7 +59,7 @@ else
   RENDER_SUBDIR = dcpr
 endif
 # nio need to be compiled before awt to have all charsets ready
-SUBDIRS = jar security javazic misc net audio $(RENDER_SUBDIR) image \
+SUBDIRS = jar security javazic misc jkernel net audio $(RENDER_SUBDIR) image \
 	  nio awt splashscreen $(XAWT_SUBDIR) \
           $(HEADLESS_SUBDIR) $(DGA_SUBDIR) \
 	  font jpeg cmm applet rmi beans $(JDBC_SUBDIR) \

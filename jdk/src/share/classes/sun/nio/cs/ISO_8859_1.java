@@ -142,7 +142,7 @@ class ISO_8859_1
         }
 
         public boolean isLegalReplacement(byte[] repl) {
-            return (repl.length == 1);  // we accept any byte value
+            return true;  // we accept any byte value
         }
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();

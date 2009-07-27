@@ -100,6 +100,17 @@ public abstract class Symbol implements Element {
      */
     public Type type;
 
+    /** The type annotations targeted to a tree directly owned by this symbol
+     */
+    // type annotations are stored here for two purposes:
+    //  - convenient location to store annotations for generation after erasure
+    //  - a private interface for accessing type annotations parsed from
+    //    classfiles
+    //  the field is populated for the following declaration only
+    //  class, field, variable and type parameters
+    //
+    public List<Attribute.TypeCompound> typeAnnotations;
+
     /** The owner of this symbol.
      */
     public Symbol owner;
@@ -122,6 +133,7 @@ public abstract class Symbol implements Element {
         this.completer = null;
         this.erasure_field = null;
         this.attributes_field = List.nil();
+        this.typeAnnotations = List.nil();
         this.name = name;
     }
 

@@ -416,5 +416,3 @@ class GlobalListener implements AWTEventListener {
 //         }
     }
 }
-
-

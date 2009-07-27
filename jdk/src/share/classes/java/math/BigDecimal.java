@@ -1101,7 +1101,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // See "Hacker's Delight" section 2-12 for explanation of
             // the overflow test.
             if ( (((sum ^ xs) & (sum ^ ys))) >= 0L) // not overflowed
-                return new BigDecimal(null, sum, rscale, 0);
+                return BigDecimal.valueOf(sum, rscale);
         }
         if (fst == null)
             fst = BigInteger.valueOf(xs);
@@ -1311,9 +1311,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
              * would occur since division is expensive on most CPUs.
              */
             long product = x * y;
-            int prec = this.precision() + multiplicand.precision();
+            long prec = this.precision() + multiplicand.precision();
             if (prec < 19 || (prec < 21 && (y == 0 || product / y == x)))
-                return new BigDecimal(null, product, productScale, 0);
+                return BigDecimal.valueOf(product, productScale);
             return new BigDecimal(BigInteger.valueOf(x).multiply(y), INFLATED,
                                   productScale, 0);
         }
@@ -1584,7 +1584,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return (preferredScale >= 0 &&
                     preferredScale < ZERO_SCALED_BY.length) ?
                 ZERO_SCALED_BY[preferredScale] :
-                new BigDecimal(null, 0, preferredScale, 1);
+                BigDecimal.valueOf(0, preferredScale);
         else {
             this.inflate();
             divisor.inflate();

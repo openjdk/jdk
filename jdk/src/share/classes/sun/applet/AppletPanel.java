@@ -80,7 +80,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * The classloader for the applet.
      */
-    AppletClassLoader loader;
+    protected AppletClassLoader loader;
 
     /* applet event ids */
     public final static int APPLET_DISPOSE = 0;
@@ -116,7 +116,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * The thread for the applet.
      */
-    Thread handler;
+    protected Thread handler;
 
 
     /**

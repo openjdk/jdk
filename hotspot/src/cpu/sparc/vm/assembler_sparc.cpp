@@ -4208,6 +4208,7 @@ void MacroAssembler::g1_write_barrier_pre(Register obj, Register index, int offs
                   PtrQueue::byte_offset_of_active()),
          tmp);
   }
+
   // Check on whether to annul.
   br_on_reg_cond(rc_z, /*annul*/false, Assembler::pt, tmp, filtered);
   delayed() -> nop();
@@ -4215,13 +4216,13 @@ void MacroAssembler::g1_write_barrier_pre(Register obj, Register index, int offs
   // satb_log_barrier_work1(tmp, offset);
   if (index == noreg) {
     if (Assembler::is_simm13(offset)) {
-      ld_ptr(obj, offset, tmp);
+      load_heap_oop(obj, offset, tmp);
     } else {
       set(offset, tmp);
-      ld_ptr(obj, tmp, tmp);
+      load_heap_oop(obj, tmp, tmp);
     }
   } else {
-    ld_ptr(obj, index, tmp);
+    load_heap_oop(obj, index, tmp);
   }
 
   // satb_log_barrier_work2(obj, tmp, offset);

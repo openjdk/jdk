@@ -35,6 +35,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler.CompilationTask;
 
 import com.sun.source.tree.ClassTree;
@@ -182,7 +183,20 @@ public abstract class Trees {
     /**
       * Gets the original type from the ErrorType object.
       * @param errorType The errorType for which we want to get the original type.
-      * @returns javax.lang.model.type.TypeMirror corresponding to the original type, replaced by the ErrorType.
+      * @return javax.lang.model.type.TypeMirror corresponding to the original type, replaced by the ErrorType.
       */
     public abstract TypeMirror getOriginalType(ErrorType errorType);
+
+    /**
+     * Prints a message of the specified kind at the location of the
+     * tree within the provided compilation unit
+     *
+     * @param kind the kind of message
+     * @param msg  the message, or an empty string if none
+     * @param t    the tree to use as a position hint
+     * @param root the compilation unit that contains tree
+     */
+    public abstract void printMessage(Diagnostic.Kind kind, CharSequence msg,
+            com.sun.source.tree.Tree t,
+            com.sun.source.tree.CompilationUnitTree root);
 }
