@@ -27,7 +27,7 @@
  * @summary Additional unit tests for covariant returns
  * @author gafter
  *
- * @compile -source 1.5 Covar2.java
+ * @compile  Covar2.java
  * @run main Covar2
  */
 

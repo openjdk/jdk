@@ -138,6 +138,7 @@ Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this,
 
             in_buf = (jbyte *) malloc(this_len);
             if (in_buf == 0) {
+                JNU_ThrowOutOfMemoryError(env, 0);
                 return 0;
             }
             (*env)->GetByteArrayRegion(env, this_buf, this_off, this_len, in_buf);
@@ -145,6 +146,7 @@ Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this,
             out_buf = (jbyte *) malloc(len);
             if (out_buf == 0) {
                 free(in_buf);
+                JNU_ThrowOutOfMemoryError(env, 0);
                 return 0;
             }
 
@@ -179,6 +181,7 @@ Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this,
 
             in_buf = (jbyte *) malloc(this_len);
             if (in_buf == 0) {
+                JNU_ThrowOutOfMemoryError(env, 0);
                 return 0;
             }
             (*env)->GetByteArrayRegion(env, this_buf, this_off, this_len, in_buf);
@@ -186,6 +189,7 @@ Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this,
             out_buf = (jbyte *) malloc(len);
             if (out_buf == 0) {
                 free(in_buf);
+                JNU_ThrowOutOfMemoryError(env, 0);
                 return 0;
             }
 

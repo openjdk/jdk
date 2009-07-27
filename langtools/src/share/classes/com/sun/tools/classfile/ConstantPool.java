@@ -26,6 +26,7 @@
 package com.sun.tools.classfile;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 /**
  * See JVMS3, section 4.5.
@@ -223,6 +224,40 @@ public class ConstantPool {
         throw new EntryNotFound(value);
     }
 
+    public Iterable<CPInfo> entries() {
+        return new Iterable<CPInfo>() {
+            public Iterator<CPInfo> iterator() {
+                return new Iterator<CPInfo>() {
+
+                    public boolean hasNext() {
+                        return next < pool.length;
+                    }
+
+                    public CPInfo next() {
+                        current = pool[next];
+                        switch (current.getTag()) {
+                            case CONSTANT_Double:
+                            case CONSTANT_Long:
+                                next += 2;
+                                break;
+                            default:
+                                next += 1;
+                        }
+                        return current;
+                    }
+
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    private CPInfo current;
+                    private int next = 1;
+
+                };
+            }
+        };
+    }
+
     private CPInfo[] pool;
 
     public interface Visitor<R,P> {
@@ -249,6 +284,12 @@ public class ConstantPool {
         }
 
         public abstract int getTag();
+
+        /** The number of slots in the constant pool used by this entry.
+         * 2 for CONSTANT_Double and CONSTANT_Long; 1 for everything else. */
+        public int size() {
+            return 1;
+        }
 
         public abstract <R,D> R accept(Visitor<R,D> visitor, D data);
 
@@ -310,6 +351,20 @@ public class ConstantPool {
             return cp.getUTF8Value(name_index);
         }
 
+        public String getBaseName() throws ConstantPoolException {
+            String name = getName();
+            int index = name.indexOf("[L") + 1;
+            return name.substring(index);
+        }
+
+        public int getDimensionCount() throws ConstantPoolException {
+            String name = getName();
+            int count = 0;
+            while (name.charAt(count) == '[')
+                count++;
+            return count;
+        }
+
         @Override
         public String toString() {
             return "CONSTANT_Class_info[name_index: " + name_index + "]";
@@ -333,6 +388,11 @@ public class ConstantPool {
 
         public int getTag() {
             return CONSTANT_Double;
+        }
+
+        @Override
+        public int size() {
+            return 2;
         }
 
         @Override
@@ -449,6 +509,11 @@ public class ConstantPool {
         }
 
         @Override
+        public int size() {
+            return 2;
+        }
+
+        @Override
         public String toString() {
             return "CONSTANT_Long_info[value: " + value + "]";
         }
@@ -508,6 +573,11 @@ public class ConstantPool {
             return visitor.visitNameAndType(this, data);
         }
 
+        @Override
+        public String toString() {
+            return "CONSTANT_NameAndType_info[name_index: " + name_index + ", type_index: " + type_index + "]";
+        }
+
         public final int name_index;
         public final int type_index;
     }
@@ -535,6 +605,11 @@ public class ConstantPool {
             return visitor.visitString(this, data);
         }
 
+        @Override
+        public String toString() {
+            return "CONSTANT_String_info[class_index: " + string_index + "]";
+        }
+
         public final int string_index;
     }
 
@@ -553,7 +628,19 @@ public class ConstantPool {
 
         @Override
         public String toString() {
-            return "CONSTANT_Utf8_info[value: " + value + "]";
+            if (value.length() < 32 && isPrintableAscii(value))
+                return "CONSTANT_Utf8_info[value: \"" + value + "\"]";
+            else
+                return "CONSTANT_Utf8_info[value: (" + value.length() + " chars)]";
+        }
+
+        static boolean isPrintableAscii(String s) {
+            for (int i = 0; i < s.length(); i++) {
+                char c = s.charAt(i);
+                if (c < 32 || c >= 127)
+                    return false;
+            }
+            return true;
         }
 
         public <R, D> R accept(Visitor<R, D> visitor, D data) {

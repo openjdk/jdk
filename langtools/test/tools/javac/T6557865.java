@@ -24,10 +24,10 @@
 /*
  * @test
  * @bug 6557865
- * @summary -target 5 should not put ACC_SYNTHETIC on package-info
+ * @summary -source 5 -target 5 should not put ACC_SYNTHETIC on package-info
  * @author Wei Tao
  * @compile T6557865.java
- * @compile -target 5 T6232928/package-info.java
+ * @compile -source 5 -target 5 T6232928/package-info.java
  * @run main T6557865
  */
 

@@ -24,23 +24,28 @@
  */
 package sun.io;
 
+import sun.nio.cs.ext.DoubleByte;
+import static sun.nio.cs.CharsetMapping.*;
+
 public abstract class ByteToCharDBCS_ASCII extends ByteToCharConverter
 {
     private boolean savedBytePresent;
-    private byte    savedByte;
+    private int savedByte;
 
-    protected String  singleByteToChar;
-    protected boolean leadByte[];
-    protected short   index1[];
-    protected String  index2;
-    protected int     mask1;
-    protected int     mask2;
-    protected int     shift;
+    private DoubleByte.Decoder dec;
 
-
-    public ByteToCharDBCS_ASCII() {
+    public ByteToCharDBCS_ASCII(DoubleByte.Decoder dec) {
         super();
         savedBytePresent = false;
+        this.dec = dec;
+    }
+
+    char decodeSingle(int b) {
+        return dec.decodeSingle(b);
+    }
+
+    char decodeDouble(int b1, int b2) {
+        return dec.decodeDouble(b1, b2);
     }
 
     public int flush(char [] output, int outStart, int outEnd)
@@ -66,18 +71,17 @@ public abstract class ByteToCharDBCS_ASCII extends ByteToCharConverter
                ConversionBufferFullException
     {
         int inputSize;
-        char    outputChar = '\uFFFD';
+        char    outputChar = UNMAPPABLE_DECODING;
 
         charOff = outOff;
         byteOff = inOff;
 
         while(byteOff < inEnd)
         {
-           int byte1, byte2;
-           int v;
+           int byte1;
 
            if (!savedBytePresent) {
-              byte1 = input[byteOff];
+              byte1 = input[byteOff] & 0xff;
               inputSize = 1;
            } else {
               byte1 = savedByte;
@@ -85,33 +89,21 @@ public abstract class ByteToCharDBCS_ASCII extends ByteToCharConverter
               inputSize = 0;
            }
 
-           if (byte1 < 0)
-              byte1 += 256;
-
-           if (!leadByte[byte1])
-           {
-              outputChar = singleByteToChar.charAt(byte1);
-           } else {
+           outputChar = decodeSingle(byte1);
+           if (outputChar == UNMAPPABLE_DECODING) {
 
               if (byteOff + inputSize >= inEnd) {
-                savedByte = (byte)byte1;
+                savedByte = byte1;
                 savedBytePresent = true;
                 byteOff += inputSize;
                 break;
               }
 
-              byte2 = input[byteOff+inputSize];
-              if (byte2 < 0)
-                byte2 += 256;
-
+              outputChar = decodeDouble(byte1, input[byteOff+inputSize] & 0xff);
               inputSize++;
-
-              // Lookup in the two level index
-              v = byte1 * 256 + byte2;
-              outputChar = index2.charAt(index1[((v & mask1) >> shift)] + (v & mask2));
            }
 
-           if (outputChar == '\uFFFD') {
+           if (outputChar == UNMAPPABLE_DECODING) {
               if (subMode)
                  outputChar = subChars[0];
               else {

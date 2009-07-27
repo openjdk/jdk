@@ -161,6 +161,8 @@ public class OopTreeNodeAdapter extends FieldTreeNodeAdapter {
           child = new OopTreeNodeAdapter(field.getValue(getObj()), field.getID(), getTreeTableMode());
         } catch (AddressException e) {
           child = new BadOopTreeNodeAdapter(field.getValueAsOopHandle(getObj()), field.getID(), getTreeTableMode());
+        } catch (UnknownOopException e) {
+          child = new BadOopTreeNodeAdapter(field.getValueAsOopHandle(getObj()), field.getID(), getTreeTableMode());
         }
       }
       ++curField;

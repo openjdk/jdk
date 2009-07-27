@@ -137,13 +137,9 @@ abstract class UnixFileSystem
      * @param   tfd
      *          Open file descriptor to target file
      */
-    abstract void copyNonPosixAttributes(int sfd, int tfd);
-
-    /**
-     * Tells if directory relative system calls (openat, etc.) are available
-     * on this operating system.
-     */
-    abstract boolean supportsSecureDirectoryStreams();
+    void copyNonPosixAttributes(int sfd, int tfd) {
+        // no-op by default
+    }
 
     /**
      * Unix systems only have a single root directory (/)
@@ -340,9 +336,9 @@ abstract class UnixFileSystem
         return Arrays.asList("basic", "posix", "unix", "owner");
     }
 
-    protected FileAttributeView newFileAttributeView(String name,
-                                                     UnixPath file,
-                                                     LinkOption... options)
+    protected DynamicFileAttributeView newFileAttributeView(String name,
+                                                            UnixPath file,
+                                                            LinkOption... options)
     {
         boolean followLinks = followLinks(options);
         if (name.equals("basic"))

@@ -85,8 +85,6 @@ oop objArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
 template <class T> void objArrayKlass::do_copy(arrayOop s, T* src,
                                arrayOop d, T* dst, int length, TRAPS) {
 
-  const size_t word_len = objArrayOopDesc::array_size(length);
-
   BarrierSet* bs = Universe::heap()->barrier_set();
   // For performance reasons, we assume we are that the write barrier we
   // are using has optimized modes for arrays of references.  At least one
@@ -94,11 +92,10 @@ template <class T> void objArrayKlass::do_copy(arrayOop s, T* src,
   assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
   assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
 
-  MemRegion dst_mr = MemRegion((HeapWord*)dst, word_len);
   if (s == d) {
     // since source and destination are equal we do not need conversion checks.
     assert(length > 0, "sanity check");
-    bs->write_ref_array_pre(dst_mr);
+    bs->write_ref_array_pre(dst, length);
     Copy::conjoint_oops_atomic(src, dst, length);
   } else {
     // We have to make sure all elements conform to the destination array
@@ -106,7 +103,7 @@ template <class T> void objArrayKlass::do_copy(arrayOop s, T* src,
     klassOop stype = objArrayKlass::cast(s->klass())->element_klass();
     if (stype == bound || Klass::cast(stype)->is_subtype_of(bound)) {
       // elements are guaranteed to be subtypes, so no check necessary
-      bs->write_ref_array_pre(dst_mr);
+      bs->write_ref_array_pre(dst, length);
       Copy::conjoint_oops_atomic(src, dst, length);
     } else {
       // slow case: need individual subtype checks
@@ -138,6 +135,7 @@ template <class T> void objArrayKlass::do_copy(arrayOop s, T* src,
       }
     }
   }
+  const size_t word_len = objArrayOopDesc::array_size(length);
   bs->write_ref_array(MemRegion((HeapWord*)dst, word_len));
 }
 

@@ -26,8 +26,6 @@
  * @bug 5097250
  * @summary Finalize methods on enums must be compile time error
  * @author Peter von der Ah\u00e9
- * @compile -source 5 OkFinal.java
- * @run main OkFinal
  */
 
 public enum OkFinal {

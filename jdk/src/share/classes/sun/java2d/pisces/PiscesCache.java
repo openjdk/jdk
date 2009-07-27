@@ -96,7 +96,7 @@ public final class PiscesCache {
             bboxX1 = x1+1;
         } else {
             if (bboxX0 > x0) bboxX0 = x0;
-            if (bboxX1 < x1) bboxX1 = x1;
+            if (bboxX1 < x1 + 1) bboxX1 = x1 + 1;
             while (bboxY1++ < y) {
                 reallocRowInfo(alphaRows+1);
                 minTouched[alphaRows] = 0;

@@ -27,7 +27,7 @@
  * @summary Missing ambiguity error when two methods are equally specific
  * @author gafter
  *
- * @compile/fail -source 1.5 Ambig3.java
+ * @compile/fail Ambig3.java
  */
 
 class Test<T,E> {

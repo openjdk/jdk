@@ -339,6 +339,16 @@ class DistributionPointFetcher {
                 debug.println("crl issuer does not equal cert issuer");
             }
             return false;
+        } else {
+            // in case of self-issued indirect CRL issuer.
+            byte[] certAKID = certImpl.getExtensionValue(
+                                PKIXExtensions.AuthorityKey_Id.toString());
+            byte[] crlAKID = crlImpl.getExtensionValue(
+                                PKIXExtensions.AuthorityKey_Id.toString());
+
+            if (!Arrays.equals(certAKID, crlAKID)) {
+                indirectCRL = true;
+            }
         }
 
         if (!indirectCRL && !signFlag) {

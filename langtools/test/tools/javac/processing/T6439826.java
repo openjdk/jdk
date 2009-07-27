@@ -39,7 +39,7 @@ import static javax.lang.model.util.ElementFilter.*;
 
 
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_6 )
+@SupportedSourceVersion(SourceVersion.RELEASE_7 )
 public class T6439826 extends AbstractProcessor {
     public static void main(String... args) {
         String testSrc = System.getProperty("test.src", ".");
@@ -49,7 +49,8 @@ public class T6439826 extends AbstractProcessor {
         StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
         Iterable<? extends JavaFileObject> files =
             fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T6439826.class.getName()+".java")));
-        Iterable<String> opts = Arrays.asList("-proc:only",
+        Iterable<String> opts = Arrays.asList("-source","1.6",
+                                              "-proc:only",
                                               "-processor", "T6439826",
                                               "-processorpath", testClasses);
         StringWriter out = new StringWriter();

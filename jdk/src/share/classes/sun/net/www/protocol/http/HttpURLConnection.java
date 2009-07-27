@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import sun.net.*;
@@ -64,7 +63,6 @@ import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
-import java.lang.reflect.*;
 
 /**
  * A class to represent an HTTP connection to a remote object.
@@ -239,6 +237,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /* try auth without calling Authenticator */
     private boolean tryTransparentNTLMServer = NTLMAuthentication.supportsTransparentAuth();
     private boolean tryTransparentNTLMProxy = NTLMAuthentication.supportsTransparentAuth();
+    /* Used by Windows specific code */
     Object authObj;
 
     /* Set if the user is manually setting the Authorization or Proxy-Authorization headers */
@@ -305,9 +304,16 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<PasswordAuthentication>() {
                 public PasswordAuthentication run() {
-                    return Authenticator.requestPasswordAuthentication(
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest("Requesting Authentication: host =" + host + " url = " + url);
+                    }
+                    PasswordAuthentication pass = Authenticator.requestPasswordAuthentication(
                         host, addr, port, protocol,
                         prompt, scheme, url, authType);
+                    if (pass != null && logger.isLoggable(Level.FINEST)) {
+                        logger.finest("Authentication returned: " + pass.toString());
+                    }
+                    return pass;
                 }
             });
     }
@@ -460,7 +466,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             setRequests=true;
         }
-        if(logger.isLoggable(Level.FINEST)) {
+        if (logger.isLoggable(Level.FINE)) {
             logger.fine(requests.toString());
         }
         http.writeRequests(requests, poster);
@@ -604,7 +610,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     {
         boolean redir;
         int redirects = 0;
-        InputStream in = null;
+        InputStream in;
 
         do {
             if (c instanceof HttpURLConnection) {
@@ -717,6 +723,12 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         && !(cachedResponse instanceof SecureCacheResponse)) {
                         cachedResponse = null;
                     }
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest("Cache Request for " + uri + " / " + getRequestMethod());
+                        if (cachedResponse != null) {
+                            logger.finest("From cache: "+cachedResponse.toString());
+                        }
+                    }
                     if (cachedResponse != null) {
                         cachedHeaders = mapToMessageHeader(cachedResponse.getHeaders());
                         cachedInputStream = cachedResponse.getBody();
@@ -752,10 +764,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                      return ProxySelector.getDefault();
                                  }
                              });
-                Proxy p = null;
                 if (sel != null) {
                     URI uri = sun.net.www.ParseUtil.toURI(url);
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest("ProxySelector Request for " + uri);
+                    }
                     Iterator<Proxy> it = sel.select(uri).iterator();
+                    Proxy p;
                     while (it.hasNext()) {
                         p = it.next();
                         try {
@@ -767,6 +782,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                 // attempt failed
                                 http = getNewHttpClient(url, p, connectTimeout, false);
                                 http.setReadTimeout(readTimeout);
+                            }
+                            if (logger.isLoggable(Level.FINEST)) {
+                                if (p != null) {
+                                    logger.finest("Proxy used: " + p.toString());
+                                }
                             }
                             break;
                         } catch (IOException ioex) {
@@ -829,6 +849,56 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return HttpClient.New(url, p, connectTimeout, useCache);
     }
 
+    private void expect100Continue() throws IOException {
+            // Expect: 100-Continue was set, so check the return code for
+            // Acceptance
+            int oldTimeout = http.getReadTimeout();
+            boolean enforceTimeOut = false;
+            boolean timedOut = false;
+            if (oldTimeout <= 0) {
+                // 5s read timeout in case the server doesn't understand
+                // Expect: 100-Continue
+                http.setReadTimeout(5000);
+                enforceTimeOut = true;
+            }
+
+            try {
+                http.parseHTTP(responses, pi, this);
+            } catch (SocketTimeoutException se) {
+                if (!enforceTimeOut) {
+                    throw se;
+                }
+                timedOut = true;
+                http.setIgnoreContinue(true);
+            }
+            if (!timedOut) {
+                // Can't use getResponseCode() yet
+                String resp = responses.getValue(0);
+                // Parse the response which is of the form:
+                // HTTP/1.1 417 Expectation Failed
+                // HTTP/1.1 100 Continue
+                if (resp != null && resp.startsWith("HTTP/")) {
+                    String[] sa = resp.split("\\s+");
+                    responseCode = -1;
+                    try {
+                        // Response code is 2nd token on the line
+                        if (sa.length > 1)
+                            responseCode = Integer.parseInt(sa[1]);
+                    } catch (NumberFormatException numberFormatException) {
+                    }
+                }
+                if (responseCode != 100) {
+                    throw new ProtocolException("Server rejected operation");
+                }
+            }
+            if (oldTimeout > 0) {
+                http.setReadTimeout(oldTimeout);
+            }
+            responseCode = -1;
+            responses.reset();
+            // Proceed
+    }
+
     /*
      * Allowable input/output sequences:
      * [interpreted as POST/PUT]
@@ -866,13 +936,19 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (!checkReuseConnection())
                 connect();
 
-            /* REMIND: This exists to fix the HttpsURLConnection subclass.
-             * Hotjava needs to run on JDK1.1FCS.  Do proper fix in subclass
-             * for 1.2 and remove this.
-             */
+            boolean expectContinue = false;
+            String expects = requests.findValue("Expect");
+            if ("100-Continue".equalsIgnoreCase(expects)) {
+                http.setIgnoreContinue(false);
+                expectContinue = true;
+            }
 
             if (streaming() && strOutputStream == null) {
                 writeRequests();
+            }
+
+            if (expectContinue) {
+                expect100Continue();
             }
             ps = (PrintStream)http.getOutputStream();
             if (streaming()) {
@@ -899,6 +975,13 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
         } catch (RuntimeException e) {
             disconnectInternal();
+            throw e;
+        } catch (ProtocolException e) {
+            // Save the response code which may have been set while enforcing
+            // the 100-continue. disconnectInternal() forces it to -1
+            int i = responseCode;
+            disconnectInternal();
+            responseCode = i;
             throw e;
         } catch (IOException e) {
             disconnectInternal();
@@ -932,10 +1015,16 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             URI uri = ParseUtil.toURI(url);
             if (uri != null) {
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest("CookieHandler request for " + uri);
+                }
                 Map<String, List<String>> cookies
                     = cookieHandler.get(
                         uri, requests.getHeaders(EXCLUDE_HEADERS));
                 if (!cookies.isEmpty()) {
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest("Cookies retrieved: " + cookies.toString());
+                    }
                     for (Map.Entry<String, List<String>> entry :
                              cookies.entrySet()) {
                         String key = entry.getKey();
@@ -1065,7 +1154,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     writeRequests();
                 }
                 http.parseHTTP(responses, pi, this);
-                if(logger.isLoggable(Level.FINEST)) {
+                if (logger.isLoggable(Level.FINE)) {
                     logger.fine(responses.toString());
                 }
                 inputStream = http.getInputStream();
@@ -1104,7 +1193,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                     AuthenticationHeader authhdr = new AuthenticationHeader (
                             "Proxy-Authenticate", responses,
-                            http.getProxyHostUsed(), dontUseNegotiate
+                            new HttpCallerInfo(url, http.getProxyHostUsed(),
+                                http.getProxyPortUsed()),
+                            dontUseNegotiate
                     );
 
                     if (!doingNTLMp2ndStage) {
@@ -1169,7 +1260,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                     srvHdr = new AuthenticationHeader (
                             "WWW-Authenticate", responses,
-                            url.getHost().toLowerCase(), dontUseNegotiate
+                            new HttpCallerInfo(url),
+                            dontUseNegotiate
                     );
 
                     String raw = srvHdr.raw();
@@ -1507,7 +1599,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 http.parseHTTP(responses, null, this);
 
                 /* Log the response to the CONNECT */
-                logger.fine(responses.toString());
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(responses.toString());
+                }
 
                 statusLine = responses.getValue(0);
                 StringTokenizer st = new StringTokenizer(statusLine);
@@ -1534,7 +1628,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                     AuthenticationHeader authhdr = new AuthenticationHeader (
                             "Proxy-Authenticate", responses,
-                            http.getProxyHostUsed(), dontUseNegotiate
+                            new HttpCallerInfo(url, http.getProxyHostUsed(),
+                                http.getProxyPortUsed()),
+                            dontUseNegotiate
                     );
                     if (!doingNTLMp2ndStage) {
                         proxyAuthentication =
@@ -1551,8 +1647,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         reset ();
                         if (!proxyAuthentication.setHeaders(this,
                                                 authhdr.headerParser(), raw)) {
-                            proxyHost = http.getProxyHostUsed();
-                            proxyPort = http.getProxyPortUsed();
                             disconnectInternal();
                             throw new IOException ("Authentication failure");
                         }
@@ -1633,7 +1727,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         setPreemptiveProxyAuthentication(requests);
 
          /* Log the CONNECT request */
-        logger.fine(requests.toString());
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(requests.toString());
+        }
 
         http.writeRequests(requests, null);
         // remove CONNECT header
@@ -1750,9 +1846,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                     tryTransparentNTLMProxy = false;
                 } else if (schemeID == NegotiateAuthentication.NEGOTIATE_AUTH) {
-                    ret = new NegotiateAuthentication(true, host, port, null, "Negotiate");
+                    ret = new NegotiateAuthentication(new HttpCallerInfo(authhdr.getHttpCallerInfo(), "Negotiate"));
                 } else if (schemeID == NegotiateAuthentication.KERBEROS_AUTH) {
-                    ret = new NegotiateAuthentication(true, host, port, null, "Kerberos");
+                    ret = new NegotiateAuthentication(new HttpCallerInfo(authhdr.getHttpCallerInfo(), "Kerberos"));
                 }
             }
             // For backwards compatibility, we also try defaultAuth
@@ -1775,6 +1871,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     ret = null;
                 }
             }
+        }
+        if (logger.isLoggable(Level.FINER)) {
+            logger.finer("Proxy Authentication for " + authhdr.toString() +" returned " + ret.toString());
         }
         return ret;
     }
@@ -1830,22 +1929,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
             if (ret == null) {
                 if (schemeID == NegotiateAuthentication.KERBEROS_AUTH) {
-                    URL url1;
-                    try {
-                        url1 = new URL (url, "/"); /* truncate the path */
-                    } catch (Exception e) {
-                        url1 = url;
-                    }
-                    ret = new NegotiateAuthentication(false, url1, null, "Kerberos");
+                    ret = new NegotiateAuthentication(new HttpCallerInfo(authhdr.getHttpCallerInfo(), "Kerberos"));
                 }
                 if (schemeID == NegotiateAuthentication.NEGOTIATE_AUTH) {
-                    URL url1;
-                    try {
-                        url1 = new URL (url, "/"); /* truncate the path */
-                    } catch (Exception e) {
-                        url1 = url;
-                    }
-                    ret = new NegotiateAuthentication(false, url1, null, "Negotiate");
+                    ret = new NegotiateAuthentication(new HttpCallerInfo(authhdr.getHttpCallerInfo(), "Negotiate"));
                 }
                 if (schemeID == BasicAuthentication.BASIC_AUTH) {
                     PasswordAuthentication a =
@@ -1914,6 +2001,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     ret = null;
                 }
             }
+        }
+        if (logger.isLoggable(Level.FINER)) {
+            logger.finer("Server Authentication for " + authhdr.toString() +" returned " + ret.toString());
         }
         return ret;
     }
@@ -1987,6 +2077,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         disconnectInternal();
         if (streaming()) {
             throw new HttpRetryException (RETRY_MSG3, stat, loc);
+        }
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine("Redirected from " + url + " to " + locUrl);
         }
 
         // clear out old response headers!!!!
@@ -2092,11 +2185,17 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     /* raw stream, which will block on read, so only read
                      * the expected number of bytes, probably 0
                      */
-                    int cl = 0, n=0;
-                    try {
-                        cl = Integer.parseInt (responses.findValue ("Content-Length"));
-                    } catch (Exception e) {}
-                    for (int i=0; i<cl; ) {
+                    long cl = 0;
+                    int n = 0;
+                    String cls = responses.findValue ("Content-Length");
+                    if (cls != null) {
+                        try {
+                            cl = Long.parseLong (cls);
+                        } catch (NumberFormatException e) {
+                            cl = 0;
+                        }
+                    }
+                    for (long i=0; i<cl; ) {
                         if ((n = is.read (cdata)) == -1) {
                             break;
                         } else {
@@ -2443,12 +2542,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return readTimeout < 0 ? 0 : readTimeout;
     }
 
-    @Override
-    protected void finalize() {
-        // this should do nothing.  The stream finalizer will close
-        // the fd
-    }
-
     String getMethod() {
         return method;
     }
@@ -2752,7 +2845,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             try {
                 // set SO_TIMEOUT to 1/5th of the total timeout
                 // remember the old timeout value so that we can restore it
-                int oldTimeout = http.setTimeout(timeout4ESBuffer/5);
+                int oldTimeout = http.getReadTimeout();
+                http.setReadTimeout(timeout4ESBuffer/5);
 
                 long expected = 0;
                 boolean isChunked = false;
@@ -2790,7 +2884,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     } while (count < exp && time < timeout4ESBuffer);
 
                     // reset SO_TIMEOUT to old value
-                    http.setTimeout(oldTimeout);
+                    http.setReadTimeout(oldTimeout);
 
                     // if count < cl at this point, we will not try to reuse
                     // the connection

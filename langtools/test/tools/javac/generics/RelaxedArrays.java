@@ -27,7 +27,7 @@
  * @summary relaxed rules for array of generic type and varargs.
  * @author gafter
  *
- * @compile -source 1.5 RelaxedArrays.java
+ * @compile  RelaxedArrays.java
  * @run main RelaxedArrays
  */
 

@@ -26,7 +26,7 @@
  * @bug 4856983
  * @summary (crash) mutually f-bounded type vars with multiple bounds may crash javac
  * @author Peter von der Ah\u00e9
- * @compile/fail -source 5 T4856983a.java
+ * @compile/fail  T4856983a.java
  */
 
 interface I1 { Number m(); }

@@ -68,7 +68,9 @@ endif
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 # Compiler warnings are treated as errors
-CFLAGS_WARN = +w -errwarn
+ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
+  CFLAGS_WARN = +w -errwarn
+endif
 CFLAGS += $(CFLAGS_WARN)
 
 ifeq ("${Platform_compiler}", "sparcWorks")

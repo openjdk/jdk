@@ -26,7 +26,7 @@
  * @bug 4421066
  * @summary Check a type parameter whose bound cycles back on itself.
  * @library ../../lib
- * @compile -source 1.5 ../../lib/Tester.java Main.java
+ * @compile  ../../lib/Tester.java Main.java
  * @run main Main
  */
 

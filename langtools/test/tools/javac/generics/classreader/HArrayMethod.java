@@ -27,8 +27,8 @@
  * @summary generics: override checks break when using separate compilation
  * @author gafter
  *
- * @compile -source 1.5 HArrayMethod.java HMember.java HMethod.java HMethodImpl.java
- * @compile -source 1.5 HArrayMethod.java
+ * @compile  HArrayMethod.java HMember.java HMethod.java HMethodImpl.java
+ * @compile  HArrayMethod.java
  */
 
 class HArrayMethod extends HMethodImpl {

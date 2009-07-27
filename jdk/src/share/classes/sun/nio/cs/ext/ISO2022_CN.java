@@ -86,14 +86,14 @@ public class ISO2022_CN
 
         private static final Charset gb2312 = new EUC_CN();
         private static final Charset cns = new EUC_TW();
-        private final EUC_CN.Decoder gb2312Decoder;
+        private final DoubleByte.Decoder gb2312Decoder;
         private final EUC_TW.Decoder cnsDecoder;
 
         Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
             shiftOut = false;
             currentSODesig = SODesigGB;
-            gb2312Decoder = (EUC_CN.Decoder)gb2312.newDecoder();
+            gb2312Decoder = (DoubleByte.Decoder)gb2312.newDecoder();
             cnsDecoder = (EUC_TW.Decoder)cns.newDecoder();
         }
 
@@ -105,17 +105,19 @@ public class ISO2022_CN
         private char cnsDecode(byte byte1, byte byte2, byte SS) {
             byte1 |= MSB;
             byte2 |= MSB;
-            if (SS == ISO_SS2_7) {
-                return cnsDecoder.convToUnicode(byte1, byte2,
-                                                cnsDecoder.unicodeCNS2);
-
-            } else { //SS == ISO_SS3_7
-                char[] outSurr = cnsDecoder.convToSurrogate(byte1, byte2,
-                                                            cnsDecoder.unicodeCNS3);
-                if (outSurr == null || outSurr[0] != '\u0000')
-                    return REPLACE_CHAR;
-                return outSurr[1];
-            }
+            int p = 0;
+            if (SS == ISO_SS2_7)
+                p = 1;    //plane 2, index -- 1
+            else if (SS == ISO_SS3_7)
+                p = 2;    //plane 3, index -- 2
+            else
+                return REPLACE_CHAR;  //never happen.
+            char[] ret = cnsDecoder.toUnicode(byte1 & 0xff,
+                                              byte2 & 0xff,
+                                              p);
+            if (ret == null || ret.length == 2)
+                return REPLACE_CHAR;
+            return ret[0];
         }
 
         private char SODecode(byte byte1, byte byte2, byte SOD) {
@@ -125,9 +127,12 @@ public class ISO2022_CN
                 return gb2312Decoder.decodeDouble(byte1 & 0xff,
                                                   byte2 & 0xff);
             } else {    // SOD == SODesigCNS
-                return cnsDecoder.convToUnicode(byte1,
-                                                byte2,
-                                                cnsDecoder.unicodeCNS1);
+                char[] ret = cnsDecoder.toUnicode(byte1 & 0xff,
+                                                  byte2 & 0xff,
+                                                  0);
+                if (ret == null)
+                    return REPLACE_CHAR;
+                return ret[0];
             }
         }
 

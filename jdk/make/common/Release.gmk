@@ -97,7 +97,7 @@ else
   ifeq ($(PLATFORM), windows)
     LICENSE_DOCLIST_JDK = $(subst $(LICENSE_VERSION),,\
 		   $(shell $(CD) $(SHARE_JDK_DOC_SRC) && \
- 		           $(LS) *LICENSE*$(LICENSE_VERSION)))
+		           $(LS) *LICENSE*$(LICENSE_VERSION)))
     LICENSE_DOCLIST_JRE = $(subst $(LICENSE_VERSION),,\
 		   $(shell $(CD) $(SHARE_JRE_DOC_SRC) && \
 		           $(LS) *LICENSE*$(LICENSE_VERSION)))
@@ -345,7 +345,6 @@ TOOLS = \
 	sun/tools/jar		\
 	sun/tools/java		\
 	sun/tools/javac		\
-	sun/tools/javap		\
 	sun/tools/jps		\
 	sun/tools/jstat		\
 	sun/tools/jstatd	\
@@ -402,7 +401,7 @@ TOOLS = \
 	sun/tools/jstack        \
 	sun/tools/jinfo         \
 	sun/tools/jmap
-	
+
 # classes that go into jsse.jar
 JSSE_CLASSES_DIRS = \
 	sun/security/provider/Sun.class \
@@ -570,7 +569,6 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/tools/asm/" >> $@
 	$(ECHO) "sun/tools/java/" >> $@
 	$(ECHO) "sun/tools/javac/" >> $@
-	$(ECHO) "sun/tools/javap/" >> $@
 	$(ECHO) "com/sun/tools/classfile/" >> $@
 	$(ECHO) "com/sun/tools/javap/" >> $@
 	$(ECHO) "sun/tools/jconsole/" >> $@
@@ -647,7 +645,7 @@ $(RT_JAR_FILELIST) + $(RES_JAR_FILELIST): \
 	@$(java-vm-cleanup)
 
 # Create the manifest file.
-JAR_MANIFEST_FILE=$(TEMPDIR)/manifest.tmp
+JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/manifest.tmp
 $(JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
 	$(prep-target)
 	$(SED) -e "s/@@RELEASE@@/$(RELEASE)/" $(MAINMANIFEST) >> $@
@@ -655,25 +653,22 @@ $(JAR_MANIFEST_FILE): $(MAINMANIFEST) $(BEANMANIFEST)
 	$(CAT) $(BEANMANIFEST) >> $@
 
 # Create resources.jar containing non-class files
-RESOURCES_JAR=$(TEMPDIR)/resources-orig.jar
-RES_JAR_ARGLIST=$(RES_JAR_FILELIST)_args
-$(RES_JAR_ARGLIST): $(RES_JAR_FILELIST)
+RESOURCES_JAR=$(ABS_TEMPDIR)/resources-orig.jar
+$(RESOURCES_JAR): $(RES_JAR_FILELIST) $(JAR_MANIFEST_FILE)
 	$(prep-target)
-	$(SED) -e "s@^@-C $(CLASSBINDIR) @" $< > $@
-$(RESOURCES_JAR): $(RES_JAR_ARGLIST) $(JAR_MANIFEST_FILE)
-	$(prep-target)
-	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
-	    @$(RES_JAR_ARGLIST) $(BOOT_JAR_JFLAGS)
-	@$(java-vm-cleanup)
+	$(CD) $(CLASSBINDIR) && \
+	    $(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
+	        @$(RES_JAR_FILELIST) $(BOOT_JAR_JFLAGS)
+	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 
 # Create jsse.jar containing SunJSSE implementation classes
-JSSE_JAR=$(TEMPDIR)/jsse-orig.jar
+JSSE_JAR=$(ABS_TEMPDIR)/jsse-orig.jar
 $(JSSE_JAR): $(JAR_MANIFEST_FILE)
 	$(prep-target)
-	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
-		$(JSSE_CLASSES_DIRS:%=-C $(CLASSBINDIR) %) \
-		$(BOOT_JAR_JFLAGS)
-	@$(java-vm-cleanup)
+	$(CD) $(CLASSBINDIR) && \
+	    $(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
+		$(JSSE_CLASSES_DIRS) $(BOOT_JAR_JFLAGS)
+	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 
 # Create sec-bin.zip
 SEC_FILES_ZIP=$(ABS_TEMPDIR)/sec-bin.zip
@@ -715,15 +710,12 @@ endif
 
 # Create rt.jar
 RT_JAR=$(ABS_TEMPDIR)/rt-orig.jar
-RT_JAR_ARGLIST=$(RT_JAR_FILELIST)_args
-$(RT_JAR_ARGLIST): $(RT_JAR_FILELIST)
+$(RT_JAR): $(RT_JAR_FILELIST) $(JAR_MANIFEST_FILE)
 	$(prep-target)
-	$(SED) -e "s@^@-C $(CLASSBINDIR) @" $< > $@
-$(RT_JAR): $(RT_JAR_ARGLIST) $(JAR_MANIFEST_FILE)
-	$(prep-target)
-	$(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
-	    @$(RT_JAR_ARGLIST) $(BOOT_JAR_JFLAGS)
-	@$(java-vm-cleanup)
+	$(CD) $(CLASSBINDIR) && \
+	    $(BOOT_JAR_CMD) c0mf $(JAR_MANIFEST_FILE) $@ \
+	        @$(RT_JAR_FILELIST) $(BOOT_JAR_JFLAGS)
+	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 
 # Meta-index construction to make core class loaders lazier
 
@@ -797,6 +789,11 @@ ifeq ($(PLATFORM), windows)
 	$(CD) $(JRE_IMAGE_DIR)/lib && \
             $(RM) java.$(LIB_SUFFIX) jvm.$(LIB_SUFFIX) \
                   hpi.$(LIB_SUFFIX) awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+	@# The Java Kernel JRE image ships with a special VM.  It is not included
+	@# in the full JRE image, so remove it.  Also, is it only for 32-bit windows.
+	$(CD) $(JRE_IMAGE_DIR)/bin && $(RM) -r kernel
+  endif
 endif # Windows
 ifneq ($(PLATFORM), windows)
 	$(call copy-man-pages,$(JRE_IMAGE_DIR),$(JRE_MAN_PAGES))
@@ -946,10 +943,10 @@ initial-image-jdk:: initial-image-jdk-setup \
 	@#
 	@# lib/tools.jar
 	@#
-	$(BOOT_JAR_CMD) c0f $(LIBDIR)/tools.jar $(addprefix \
-		-C $(CLASSBINDIR) , $(TOOLS)) \
-	        $(BOOT_JAR_JFLAGS)
-	@$(java-vm-cleanup)
+	$(CD) $(CLASSBINDIR) && \
+	    $(BOOT_JAR_CMD) c0f $(ABS_LIBDIR)/tools.jar \
+	        $(TOOLS) $(BOOT_JAR_JFLAGS)
+	@$(CD) $(CLASSBINDIR) && $(java-vm-cleanup)
 	$(CP) $(LIBDIR)/tools.jar $(JDK_IMAGE_DIR)/lib/tools.jar
 	@#
 	@# lib/ct.sym

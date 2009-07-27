@@ -27,7 +27,7 @@
  * @summary JSR175 (4): don't allow "new" in annotations
  * @author gafter
  *
- * @compile/fail -source 1.5 ArrayLit.java
+ * @compile/fail ArrayLit.java
  */
 
 @ArrayLit(new int[] {1, 2, 3})

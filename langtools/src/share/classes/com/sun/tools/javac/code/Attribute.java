@@ -204,6 +204,21 @@ public abstract class Attribute implements AnnotationValue {
         }
     }
 
+    public static class TypeCompound extends Compound {
+        public TypeAnnotationPosition position;
+        public TypeCompound(Compound compound,
+                TypeAnnotationPosition position) {
+            this(compound.type, compound.values, position);
+        }
+        public TypeCompound(Type type,
+                List<Pair<MethodSymbol, Attribute>> values,
+                TypeAnnotationPosition position) {
+            super(type, values);
+            this.position = position;
+        }
+
+    }
+
     /** The value for an annotation element of an array type.
      */
     public static class Array extends Attribute {

@@ -72,6 +72,7 @@
                             <li>Linux and Solaris:
                                 <ul>
                                     <li><a href="#cups">CUPS Include files</a> </li>
+                                    <li><a href="#xrender">XRender Include files</a></li>
                                 </ul>
                             </li>
                             <li>Linux only:
@@ -119,6 +120,7 @@
                         <th>Base OS and Architecture</th>
                         <th>OS</th>
                         <th>C/C++ Compiler</th>
+                        <th>BOOT JDK</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -126,57 +128,65 @@
                         <td>Linux X86 (32-bit)</td>
                         <td>Fedora 9</td>
                         <td>gcc 4 </td>
+                        <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
                         <td>Linux X64 (64-bit)</td>
                         <td>Fedora 9</td>
                         <td>gcc 4 </td>
+                        <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
                         <td>Solaris SPARC (32-bit)</td>
-                        <td>Solaris 10 + patches 
+                        <td>Solaris 10u2 + patches 
                             <br>
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
                             SunSolve</a> for patch downloads.
                         </td>
                         <td>Sun Studio 12</td>
+                        <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
                         <td>Solaris SPARCV9 (64-bit)</td>
-                        <td>Solaris 10 + patches
+                        <td>Solaris 10u2 + patches
                             <br>
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
                             SunSolve</a> for patch downloads.
                         </td>
                         <td>Sun Studio 12</td>
+                        <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
                         <td>Solaris X86 (32-bit)</td>
-                        <td>Solaris 10 + patches
+                        <td>Solaris 10u2 + patches
                             <br>
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
                             SunSolve</a> for patch downloads.
                         </td>
                         <td>Sun Studio 12</td>
+                        <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
                         <td>Solaris X64 (64-bit)</td>
-                        <td>Solaris 10 + patches
+                        <td>Solaris 10u2 + patches
                             <br>
                             See <a href="http://sunsolve.sun.com/pub-cgi/show.pl?target=patches/JavaSE" target="_blank">
                             SunSolve</a> for patch downloads.
                         </td>
                         <td>Sun Studio 12</td>
+                        <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
                         <td>Windows X86 (32-bit)</td>
                         <td>Windows XP</td>
                         <td>Microsoft Visual Studio C++ 2008 Standard Edition</td>
+                        <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
                         <td>Windows X64 (64-bit)</td>
                         <td>Windows Server 2003 - Enterprise x64 Edition</td>
                         <td>Microsoft Platform SDK - April 2005</td>
+                        <td>JDK 6u14 FCS </td>
                     </tr>
                 </tbody>
             </table>
@@ -657,6 +667,9 @@
                     <tt><a href="#ALT_CUPS_HEADERS_PATH">ALT_CUPS_HEADERS_PATH</a></tt>.
                 </li>
                 <li>
+                    Install the <a href="#xrender">XRender Include files</a>.
+                </li>
+                <li>
                     Install the
                     <a href="#jibx">JIBX Libraries</a>, set
                     <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>.
@@ -1030,6 +1043,27 @@
                 <tt><a href="#ALT_CUPS_HEADERS_PATH">ALT_CUPS_HEADERS_PATH</a></tt>
                 can be used to override the default location of the
                 CUPS Header files.
+            </blockquote>
+            <!-- ------------------------------------------------------ -->
+            <h4><a name="xrender">XRender Extension Headers (Solaris &amp; Linux)</a></h4>
+            <blockquote>
+                <p>
+                <strong>Solaris:</strong>
+                XRender header files are required for building the 
+                OpenJDK on Solaris.
+                The XRender header file is included with the other X11 header files
+                in the package <strong>SFWxwinc</strong> on new enough versions of
+                Solaris and will be installed in
+	        <tt>/usr/X11/include/X11/extensions/Xrender.h</tt>
+                </p><p>
+                <strong>Linux:</strong>
+                XRender header files are required for building the 
+                OpenJDK on Linux.
+                The Linux header files are usually available from a "Xrender"
+                development package, it's recommended that you try and use
+                the package provided by the particular distribution of Linux that
+                you are using.
+	        </p>
             </blockquote>
             <!-- ------------------------------------------------------ -->
             <h4><a name="freetype">FreeType 2</a></h4>

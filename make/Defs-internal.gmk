@@ -153,6 +153,20 @@ ifdef OPENJDK
   endif
   SKIP_OPENJDK_BUILD = true
 else
+  
+  # Various non-OPENJDK reasons to NOT build the deploy repository
+  ifeq ($(ARCH), ia64)
+    BUILD_DEPLOY=false
+  endif
+  ifeq ($(ARCH), sparcv9)
+    BUILD_DEPLOY=false
+  endif
+  ifeq ($(ARCH), amd64)
+    ifeq ($(PLATFORM), solaris)
+      BUILD_DEPLOY=false
+    endif
+  endif
+
   ifndef SKIP_OPENJDK_BUILD
     #SKIP_OPENJDK_BUILD = false
     # Until 6675289 is resolved, or this feature is removed.
@@ -218,6 +232,7 @@ COMMON_BUILD_ARGUMENTS = \
     JDK_TOPDIR=$(ABS_JDK_TOPDIR) \
     JDK_MAKE_SHARED_DIR=$(ABS_JDK_TOPDIR)/make/common/shared \
     EXTERNALSANITYCONTROL=true \
+    SOURCE_LANGUAGE_VERSION=$(SOURCE_LANGUAGE_VERSION) \
     TARGET_CLASS_VERSION=$(TARGET_CLASS_VERSION) \
     MILESTONE=$(MILESTONE) \
     BUILD_NUMBER=$(BUILD_NUMBER) \

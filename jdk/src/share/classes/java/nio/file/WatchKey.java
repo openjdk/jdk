@@ -103,7 +103,7 @@ public abstract class WatchKey {
      *
      * <p> Note that this method does not wait if there are no events pending.
      *
-     * @return  the list of the events retrieved
+     * @return  the list of the events retrieved; may be empty
      */
     public abstract List<WatchEvent<?>> pollEvents();
 
@@ -128,7 +128,7 @@ public abstract class WatchKey {
      * will be invalid. If the watch key is enqueued, waiting to be retrieved
      * from the watch service, then it will remain in the queue until it is
      * removed. Pending events, if any, remain pending and may be retrieved by
-     * invoking the {@link #pollEvents pollEvents} method event after the key is
+     * invoking the {@link #pollEvents pollEvents} method after the key is
      * cancelled.
      *
      * <p> If this watch key has already been cancelled then invoking this

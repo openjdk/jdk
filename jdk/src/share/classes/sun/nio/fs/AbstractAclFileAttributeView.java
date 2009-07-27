@@ -26,15 +26,15 @@
 package sun.nio.fs;
 
 import java.nio.file.attribute.*;
-import java.io.IOException;
 import java.util.*;
+import java.io.IOException;
 
 /**
  * Base implementation of AclFileAttributeView
  */
 
 abstract class AbstractAclFileAttributeView
-    implements AclFileAttributeView
+    implements AclFileAttributeView, DynamicFileAttributeView
 {
     private static final String OWNER_NAME = "owner";
     private static final String ACL_NAME = "acl";
@@ -66,38 +66,29 @@ abstract class AbstractAclFileAttributeView
             setAcl((List<AclEntry>)value);
             return;
         }
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("'" + name() + ":" +
+                attribute + "' not supported");
     }
 
     @Override
-    public final Map<String,?> readAttributes(String first, String[] rest)
+    public final Map<String,?> readAttributes(String[] attributes)
         throws IOException
     {
         boolean acl = false;
         boolean owner = false;
-
-        if (first.equals(ACL_NAME)) acl = true;
-        else if (first.equals(OWNER_NAME)) owner = true;
-        else if (first.equals("*")) {
-            owner = true;
-            acl = true;
-        }
-
-        if (!acl || !owner) {
-            for (String attribute: rest) {
-                if (attribute.equals("*")) {
-                    owner = true;
-                    acl = true;
-                    break;
-                }
-                if (attribute.equals(ACL_NAME)) {
-                    acl = true;
-                    continue;
-                }
-                if (attribute.equals(OWNER_NAME)) {
-                    owner = true;
-                    continue;
-                }
+        for (String attribute: attributes) {
+            if (attribute.equals("*")) {
+                owner = true;
+                acl = true;
+                continue;
+            }
+            if (attribute.equals(ACL_NAME)) {
+                acl = true;
+                continue;
+            }
+            if (attribute.equals(OWNER_NAME)) {
+                owner = true;
+                continue;
             }
         }
         Map<String,Object> result = new HashMap<String,Object>(2);
