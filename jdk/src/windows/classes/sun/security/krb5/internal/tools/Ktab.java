@@ -1,4 +1,5 @@
 /*
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +31,15 @@
 package sun.security.krb5.internal.tools;
 
 import sun.security.krb5.*;
-import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ktab.*;
-import sun.security.krb5.KrbCryptoException;
-import java.lang.RuntimeException;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.FileOutputStream;
 import java.io.File;
+import java.text.DateFormat;
 import java.util.Arrays;
+import java.util.Date;
+import sun.security.krb5.internal.crypto.EType;
 /**
  * This class can execute as a command-line tool to help the user manage
  * entires in the key table.
@@ -55,6 +55,9 @@ public class Ktab {
     char action;
     String name;   // name and directory of key table
     String principal;
+    boolean showEType;
+    boolean showTime;
+    int etype = -1;
     char[] password = null;
 
     /**
@@ -62,13 +65,14 @@ public class Ktab {
      * <br>Usage: ktab <options>
      * <br>available options to Ktab:
      * <ul>
-     * <li><b>-l</b>  list the keytab name and entries
+     * <li><b>-l [-e] [-t]</b>  list the keytab name and entries, -e show
+     * encryption etypes, -t show timestamps.
      * <li><b>-a</b>  &lt;<i>principal name</i>&gt;
      * (&lt;<i>password</i>&gt;)  add an entry to the keytab.
      * The entry is added only to the keytab. No changes are made to the
      * Kerberos database.
-     * <li><b>-d</b>  &lt;<i>principal name</i>&gt;
-     * delete an entry from the keytab
+     * <li><b>-d</b>  &lt;<i>principal name</i>&gt; [&lt;<i>etype</i>&gt;]
+     * delete an entry from the keytab.
      * The entry is deleted only from the keytab. No changes are made to the
      * Kerberos database.
      * <li><b>-k</b>  &lt;<i>keytab name</i> &gt;
@@ -182,6 +186,11 @@ public class Ktab {
                 i++;
                 if ((i < args.length) && (!args[i].startsWith("-"))) {
                     principal = args[i];
+                    int j = i + 1;
+                    if ((j < args.length) && (!args[j].startsWith("-"))) {
+                        etype = Integer.parseInt(args[j]);
+                        i = j;
+                    }
                 } else {
                     System.out.println("Please specify the principal" +
                                        "name of the entry you want to " +
@@ -206,6 +215,12 @@ public class Ktab {
                     printHelp();
                     System.exit(-1);
                 }
+                break;
+            case 'e':
+                showEType = true;
+                break;
+            case 't':
+                showTime = true;
                 break;
             default:
                 printHelp();
@@ -271,25 +286,54 @@ public class Ktab {
      * Lists key table name and entries in it.
      */
     void listKt() {
-        int version;
-        String principal;
-        // System.out.println("Keytab name: " + admin.getKeyTabName());
-        System.out.println("Keytab name: " + table.tabName());
-        // KeyTabEntry[] entries = admin.getEntries();
+        System.out.println("Keytab name: " + KeyTab.tabName());
         KeyTabEntry[] entries = table.getEntries();
         if ((entries != null) && (entries.length > 0)) {
-            System.out.println("KVNO    Principal");
+            String[][] output = new String[entries.length+1][showTime?3:2];
+            int column = 0;
+            output[0][column++] = "KVNO";
+            if (showTime) output[0][column++] = "Timestamp";
+            output[0][column++] = "Principal";
             for (int i = 0; i < entries.length; i++) {
-                version = entries[i].getKey().getKeyVersionNumber().intValue();
-                principal = entries[i].getService().toString();
-                if (i == 0) {
-                    StringBuffer separator = new StringBuffer();
-                    for (int j = 0; j < 9 + principal.length(); j++) {
-                        separator.append("-");
-                    }
-                    System.out.println(separator.toString());
+                column = 0;
+                output[i+1][column++] = entries[i].getKey().
+                        getKeyVersionNumber().toString();
+                if (showTime) output[i+1][column++] =
+                        DateFormat.getDateTimeInstance(
+                        DateFormat.SHORT, DateFormat.SHORT).format(
+                        new Date(entries[i].getTimeStamp().getTime()));
+                String princ = entries[i].getService().toString();
+                if (showEType) {
+                    int e = entries[i].getKey().getEType();
+                    output[i+1][column++] = princ + " (" + e + ":" +
+                            EType.toString(e) + ")";
+                } else {
+                    output[i+1][column++] = princ;
                 }
-                System.out.println("  " + version + "     " + principal);
+            }
+            int[] width = new int[column];
+            for (int j=0; j<column; j++) {
+                for (int i=0; i <= entries.length; i++) {
+                    if (output[i][j].length() > width[j]) {
+                        width[j] = output[i][j].length();
+                    }
+                }
+                if (j != 0) width[j] = -width[j];
+            }
+            for (int j=0; j<column; j++) {
+                System.out.printf("%" + width[j] + "s ", output[0][j]);
+            }
+            System.out.println();
+            for (int j=0; j<column; j++) {
+                for (int k=0; k<Math.abs(width[j]); k++) System.out.print("-");
+                System.out.print(" ");
+            }
+            System.out.println();
+            for (int i=0; i<entries.length; i++) {
+                for (int j=0; j<column; j++) {
+                    System.out.printf("%" + width[j] + "s ", output[i+1][j]);
+                }
+                System.out.println();
             }
         } else {
             System.out.println("0 entry.");
@@ -309,9 +353,10 @@ public class Ktab {
             String answer;
             BufferedReader cis =
                 new BufferedReader(new InputStreamReader(System.in));
-            System.out.print("Are you sure you want to "+
+            System.out.print("Are you sure you want to"+
                              " delete service key for " + pname.toString() +
-                             " in " + table.tabName() + "?(Y/N) :");
+                             " (" + (etype==-1?"all etypes":("etype = "+etype)) +
+                             ") in " + table.tabName() + "?(Y/N): ");
 
             System.out.flush();
             answer = cis.readLine();
@@ -333,19 +378,26 @@ public class Ktab {
             e.printStackTrace();
             System.exit(-1);
         }
-        // admin.deleteEntry(pname);
-        table.deleteEntry(pname);
 
-        try {
-            table.save();
-        } catch (IOException e) {
-            System.err.println("Error occurs while saving the keytab." +
+        int count;
+        if (etype == -1) count = table.deleteEntry(pname);
+        else count = table.deleteEntry(pname, etype);
+
+        if (count == 0) {
+            System.err.println("No matched entry in the keytab. " +
                                "Deletion fails.");
-            e.printStackTrace();
             System.exit(-1);
+        } else {
+            try {
+                table.save();
+            } catch (IOException e) {
+                System.err.println("Error occurs while saving the keytab. " +
+                                   "Deletion fails.");
+                e.printStackTrace();
+                System.exit(-1);
+            }
+            System.out.println("Done!");
         }
-        System.out.println("Done!");
-
     }
 
     /**
@@ -355,12 +407,12 @@ public class Ktab {
         System.out.println("\nUsage: ktab " +
                            "<options>");
         System.out.println("available options to Ktab:");
-        System.out.println("-l\t\t\t\tlist the keytab name and entries");
+        System.out.println("-l [-e] [-t]\t\t\tlist the keytab name and entries,\n\t\t\t\t-e with etype, -t with timestamp");
         System.out.println("-a <principal name> (<password>)add an entry " +
                            "to the keytab");
-        System.out.println("-d <principal name>\t\tdelete an entry from "+
-                           "the keytab");
+        System.out.println("-d <principal name> [<etype>]\tdelete an "+
+                           "entry from the keytab");
         System.out.println("-k <keytab name>\t\tspecify keytab name and "+
-                           " path with prefix FILE:");
+                           "path with prefix FILE:");
     }
 }
