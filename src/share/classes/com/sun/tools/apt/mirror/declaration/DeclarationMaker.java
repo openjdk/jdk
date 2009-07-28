@@ -40,7 +40,7 @@ import com.sun.tools.javac.main.JavaCompiler;
 /**
  * Utilities for constructing and caching declarations.
  */
-
+@SuppressWarnings("deprecation")
 public class DeclarationMaker {
 
     private AptEnv env;

@@ -38,7 +38,7 @@ import com.sun.tools.apt.util.Bark;
 /**
  * Implementation of Messager.
  */
-
+@SuppressWarnings("deprecation")
 public class MessagerImpl implements Messager {
     private final Bark bark;
 

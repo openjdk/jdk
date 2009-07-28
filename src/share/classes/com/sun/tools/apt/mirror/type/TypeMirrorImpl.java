@@ -35,7 +35,7 @@ import com.sun.tools.javac.code.*;
 /**
  * Implementation of TypeMirror
  */
-
+@SuppressWarnings("deprecation")
 public abstract class TypeMirrorImpl implements TypeMirror {
 
     protected final AptEnv env;

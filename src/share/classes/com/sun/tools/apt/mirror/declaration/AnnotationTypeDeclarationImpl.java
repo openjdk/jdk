@@ -37,7 +37,7 @@ import com.sun.tools.javac.code.Symbol.*;
 /**
  * Implementation of AnnotationTypeDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class AnnotationTypeDeclarationImpl extends InterfaceDeclarationImpl
                                            implements AnnotationTypeDeclaration
 {
