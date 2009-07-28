@@ -487,6 +487,23 @@ bool Type::is_nan()    const {
   return false;
 }
 
+//----------------------interface_vs_oop---------------------------------------
+#ifdef ASSERT
+bool Type::interface_vs_oop(const Type *t) const {
+  bool result = false;
+
+  const TypeInstPtr* this_inst = this->isa_instptr();
+  const TypeInstPtr*    t_inst =    t->isa_instptr();
+  if( this_inst && this_inst->is_loaded() && t_inst && t_inst->is_loaded() ) {
+    bool this_interface = this_inst->klass()->is_interface();
+    bool    t_interface =    t_inst->klass()->is_interface();
+    result = this_interface ^ t_interface;
+  }
+
+  return result;
+}
+#endif
+
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  NOT virtual.  It enforces that meet is
 // commutative and the lattice is symmetric.
@@ -507,16 +524,8 @@ const Type *Type::meet( const Type *t ) const {
   // Interface meet Oop is Not Symmetric:
   // Interface:AnyNull meet Oop:AnyNull == Interface:AnyNull
   // Interface:NotNull meet Oop:NotNull == java/lang/Object:NotNull
-  const TypeInstPtr* this_inst = this->isa_instptr();
-  const TypeInstPtr*    t_inst =    t->isa_instptr();
-  bool interface_vs_oop = false;
-  if( this_inst && this_inst->is_loaded() && t_inst && t_inst->is_loaded() ) {
-    bool this_interface = this_inst->klass()->is_interface();
-    bool    t_interface =    t_inst->klass()->is_interface();
-    interface_vs_oop = this_interface ^ t_interface;
-  }
 
-  if( !interface_vs_oop && (t2t != t->_dual || t2this != _dual) ) {
+  if( !interface_vs_oop(t) && (t2t != t->_dual || t2this != _dual) ) {
     tty->print_cr("=== Meet Not Symmetric ===");
     tty->print("t   =                   ");         t->dump(); tty->cr();
     tty->print("this=                   ");            dump(); tty->cr();
@@ -1799,6 +1808,17 @@ bool TypeAry::eq( const Type *t ) const {
 int TypeAry::hash(void) const {
   return (intptr_t)_elem + (intptr_t)_size;
 }
+
+//----------------------interface_vs_oop---------------------------------------
+#ifdef ASSERT
+bool TypeAry::interface_vs_oop(const Type *t) const {
+  const TypeAry* t_ary = t->is_ary();
+  if (t_ary) {
+    return _elem->interface_vs_oop(t_ary->_elem);
+  }
+  return false;
+}
+#endif
 
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
@@ -3389,6 +3409,17 @@ const Type *TypeAryPtr::xdual() const {
   return new TypeAryPtr( dual_ptr(), _const_oop, _ary->dual()->is_ary(),_klass, _klass_is_exact, dual_offset(), dual_instance_id() );
 }
 
+//----------------------interface_vs_oop---------------------------------------
+#ifdef ASSERT
+bool TypeAryPtr::interface_vs_oop(const Type *t) const {
+  const TypeAryPtr* t_aryptr = t->isa_aryptr();
+  if (t_aryptr) {
+    return _ary->interface_vs_oop(t_aryptr->_ary);
+  }
+  return false;
+}
+#endif
+
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
@@ -3453,27 +3484,27 @@ const TypeNarrowOop* TypeNarrowOop::make(const TypePtr* type) {
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 int TypeNarrowOop::hash(void) const {
-  return _ooptype->hash() + 7;
+  return _ptrtype->hash() + 7;
 }
 
 
 bool TypeNarrowOop::eq( const Type *t ) const {
   const TypeNarrowOop* tc = t->isa_narrowoop();
   if (tc != NULL) {
-    if (_ooptype->base() != tc->_ooptype->base()) {
+    if (_ptrtype->base() != tc->_ptrtype->base()) {
       return false;
     }
-    return tc->_ooptype->eq(_ooptype);
+    return tc->_ptrtype->eq(_ptrtype);
   }
   return false;
 }
 
 bool TypeNarrowOop::singleton(void) const {    // TRUE if type is a singleton
-  return _ooptype->singleton();
+  return _ptrtype->singleton();
 }
 
 bool TypeNarrowOop::empty(void) const {
-  return _ooptype->empty();
+  return _ptrtype->empty();
 }
 
 //------------------------------xmeet------------------------------------------
@@ -3507,7 +3538,7 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
     return this;
 
   case NarrowOop: {
-    const Type* result = _ooptype->xmeet(t->make_ptr());
+    const Type* result = _ptrtype->xmeet(t->make_ptr());
     if (result->isa_ptr()) {
       return TypeNarrowOop::make(result->is_ptr());
     }
@@ -3523,13 +3554,13 @@ const Type *TypeNarrowOop::xmeet( const Type *t ) const {
 }
 
 const Type *TypeNarrowOop::xdual() const {    // Compute dual right now.
-  const TypePtr* odual = _ooptype->dual()->is_ptr();
+  const TypePtr* odual = _ptrtype->dual()->is_ptr();
   return new TypeNarrowOop(odual);
 }
 
 const Type *TypeNarrowOop::filter( const Type *kills ) const {
   if (kills->isa_narrowoop()) {
-    const Type* ft =_ooptype->filter(kills->is_narrowoop()->_ooptype);
+    const Type* ft =_ptrtype->filter(kills->is_narrowoop()->_ptrtype);
     if (ft->empty())
       return Type::TOP;           // Canonical empty value
     if (ft->isa_ptr()) {
@@ -3537,7 +3568,7 @@ const Type *TypeNarrowOop::filter( const Type *kills ) const {
     }
     return ft;
   } else if (kills->isa_ptr()) {
-    const Type* ft = _ooptype->join(kills);
+    const Type* ft = _ptrtype->join(kills);
     if (ft->empty())
       return Type::TOP;           // Canonical empty value
     return ft;
@@ -3548,13 +3579,13 @@ const Type *TypeNarrowOop::filter( const Type *kills ) const {
 
 
 intptr_t TypeNarrowOop::get_con() const {
-  return _ooptype->get_con();
+  return _ptrtype->get_con();
 }
 
 #ifndef PRODUCT
 void TypeNarrowOop::dump2( Dict & d, uint depth, outputStream *st ) const {
   st->print("narrowoop: ");
-  _ooptype->dump2(d, depth, st);
+  _ptrtype->dump2(d, depth, st);
 }
 #endif
 
