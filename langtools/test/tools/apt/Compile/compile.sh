@@ -67,7 +67,7 @@ case "${OS}" in
 esac
 
 
-APT="${TESTJAVA}/bin/apt ${TESTTOOLVMOPTS} "
+APT="${TESTJAVA}/bin/apt ${TESTTOOLVMOPTS} -XDsuppress-tool-api-removal-message "
 JAVA="${TESTJAVA}/bin/java ${TESTVMOPTS} "
 JAVAC="${TESTJAVA}/bin/javac ${TESTTOOLVMOPTS} "
 

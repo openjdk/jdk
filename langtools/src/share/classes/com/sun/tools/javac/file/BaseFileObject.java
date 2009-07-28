@@ -36,6 +36,12 @@ import javax.tools.JavaFileObject;
 
 import static javax.tools.JavaFileObject.Kind.*;
 
+/**
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+*/
 public abstract class BaseFileObject implements JavaFileObject {
     protected BaseFileObject(JavacFileManager fileManager) {
         this.fileManager = fileManager;

@@ -38,7 +38,7 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 /**
  * Implementation of DeclaredType
  */
-
+@SuppressWarnings("deprecation")
 abstract class DeclaredTypeImpl extends TypeMirrorImpl
                                 implements DeclaredType {
 
