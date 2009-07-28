@@ -99,7 +99,7 @@ public class StressLoopback {
         void start() {
             sentBuffer.position(0);
             sentBuffer.limit(sentBuffer.capacity());
-            channel.write(sentBuffer, null, new CompletionHandler<Integer,Void> () {
+            channel.write(sentBuffer, (Void)null, new CompletionHandler<Integer,Void> () {
                 public void completed(Integer nwrote, Void att) {
                     bytesSent += nwrote;
                     if (finished) {
@@ -107,7 +107,7 @@ public class StressLoopback {
                     } else {
                         sentBuffer.position(0);
                         sentBuffer.limit(sentBuffer.capacity());
-                        channel.write(sentBuffer, null, this);
+                        channel.write(sentBuffer, (Void)null, this);
                     }
                 }
                 public void failed(Throwable exc, Void att) {
@@ -142,14 +142,14 @@ public class StressLoopback {
         }
 
         void start() {
-            channel.read(readBuffer, null, new CompletionHandler<Integer,Void> () {
+            channel.read(readBuffer, (Void)null, new CompletionHandler<Integer,Void> () {
                 public void completed(Integer nread, Void att) {
                     if (nread < 0) {
                         closeUnchecked(channel);
                     } else {
                         bytesRead += nread;
                         readBuffer.clear();
-                        channel.read(readBuffer, null, this);
+                        channel.read(readBuffer, (Void)null, this);
                     }
                 }
                 public void failed(Throwable exc, Void att) {
