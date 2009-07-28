@@ -1082,6 +1082,9 @@ class CommandLineFlags {
   product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
                                                                             \
+  product(bool, ForceFullGCJVMTIEpilogues, false,                           \
+          "Force 'Full GC' was done semantics for JVMTI GC epilogues")      \
+                                                                            \
   /* This option can change an EMCP method into an obsolete method. */      \
   /* This can affect tests that except specific methods to be EMCP. */      \
   /* This option should be used with caution. */                            \
