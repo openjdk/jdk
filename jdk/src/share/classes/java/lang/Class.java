@@ -627,7 +627,7 @@ public final
      *
      * @return an array of {@code TypeVariable} objects that represent
      *     the type variables declared by this generic declaration
-     * @throws GenericSignatureFormatError if the generic
+     * @throws java.lang.reflect.GenericSignatureFormatError if the generic
      *     signature of this generic declaration does not conform to
      *     the format specified in the Java Virtual Machine Specification,
      *     3rd edition
@@ -673,12 +673,12 @@ public final
      * {@code Class} object representing the {@code Object} class is
      * returned.
      *
-     * @throws GenericSignatureFormatError if the generic
+     * @throws java.lang.reflect.GenericSignatureFormatError if the generic
      *     class signature does not conform to the format specified in the
      *     Java Virtual Machine Specification, 3rd edition
      * @throws TypeNotPresentException if the generic superclass
      *     refers to a non-existent type declaration
-     * @throws MalformedParameterizedTypeException if the
+     * @throws java.lang.reflect.MalformedParameterizedTypeException if the
      *     generic superclass refers to a parameterized type that cannot be
      *     instantiated  for any reason
      * @return the superclass of the class represented by this object
@@ -795,14 +795,14 @@ public final
      * <p>If this object represents a primitive type or void, the
      * method returns an array of length 0.
      *
-     * @throws GenericSignatureFormatError
+     * @throws java.lang.reflect.GenericSignatureFormatError
      *     if the generic class signature does not conform to the format
      *     specified in the Java Virtual Machine Specification, 3rd edition
      * @throws TypeNotPresentException if any of the generic
      *     superinterfaces refers to a non-existent type declaration
-     * @throws MalformedParameterizedTypeException if any of the
-     *     generic superinterfaces refer to a parameterized type that cannot
-     *     be instantiated  for any reason
+     * @throws java.lang.reflect.MalformedParameterizedTypeException
+     *     if any of the generic superinterfaces refer to a parameterized
+     *     type that cannot be instantiated for any reason
      * @return an array of interfaces implemented by this class
      * @since 1.5
      */

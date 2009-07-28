@@ -61,7 +61,7 @@ public class InterpretedVFrame extends JavaVFrame {
       StackValue sv;
       if (oopMask.isOop(i)) {
         // oop value
-        sv = new StackValue(addr.getOopHandleAt(0));
+        sv = new StackValue(addr.getOopHandleAt(0), 0);
       } else {
         // integer
         // Fetch a signed integer the size of a stack slot
@@ -95,7 +95,7 @@ public class InterpretedVFrame extends JavaVFrame {
       StackValue sv;
       if (oopMask.isOop(i + nofLocals)) {
         // oop value
-        sv = new StackValue(addr.getOopHandleAt(0));
+        sv = new StackValue(addr.getOopHandleAt(0), 0);
       } else {
         // integer
         // Fetch a signed integer the size of a stack slot
@@ -113,7 +113,7 @@ public class InterpretedVFrame extends JavaVFrame {
     for (BasicObjectLock current = getFrame().interpreterFrameMonitorEnd();
          current.address().lessThan(getFrame().interpreterFrameMonitorBegin().address());
          current = getFrame().nextMonitorInInterpreterFrame(current)) {
-      result.add(new MonitorInfo(current.obj(), current.lock()));
+      result.add(new MonitorInfo(current.obj(), current.lock(), false, false));
     }
     return result;
   }
