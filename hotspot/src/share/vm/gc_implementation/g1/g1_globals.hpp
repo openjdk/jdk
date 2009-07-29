@@ -167,9 +167,16 @@
   develop(bool, G1DisablePostBarrier, false,                                \
           "Disable generation of post-barrier (i.e., RS barrier)   ")       \
                                                                             \
-  product(intx, G1DirtyCardQueueMax, 30,                                    \
-          "Maximum number of completed RS buffers before mutator threads "  \
-          "start processing them.")                                         \
+  product(intx, G1UpdateBufferSize, 256,                                    \
+          "Size of an update buffer")                                       \
+                                                                            \
+  product(intx, G1UpdateBufferQueueProcessingThreshold, 5,                  \
+          "Number of enqueued update buffers that will "                    \
+          "trigger concurrent processing")                                  \
+                                                                            \
+  product(intx, G1UpdateBufferQueueMaxLength, 30,                           \
+          "Maximum number of enqueued update buffers before mutator "       \
+          "threads start processing new ones instead of enqueueing them")   \
                                                                             \
   develop(intx, G1ConcRSLogCacheSize, 10,                                   \
           "Log base 2 of the length of conc RS hot-card cache.")            \

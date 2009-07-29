@@ -104,17 +104,17 @@ void ConcurrentG1RefineThread::run() {
     double start_vtime_sec; // only used when G1SmoothConcRefine is on
     int prev_buffer_num; // only used when G1SmoothConcRefine is on
     // This thread activation threshold
-    int threshold = DCQBarrierProcessCompletedThreshold * _worker_id;
+    int threshold = G1UpdateBufferQueueProcessingThreshold * _worker_id;
     // Next thread activation threshold
-    int next_threshold = threshold + DCQBarrierProcessCompletedThreshold;
-    int deactivation_threshold = MAX2<int>(threshold - DCQBarrierProcessCompletedThreshold / 2, 0);
+    int next_threshold = threshold + G1UpdateBufferQueueProcessingThreshold;
+    int deactivation_threshold = MAX2<int>(threshold - G1UpdateBufferQueueProcessingThreshold / 2, 0);
 
     if (G1SmoothConcRefine) {
       lower_limit = 0;
       start_vtime_sec = os::elapsedVTime();
       prev_buffer_num = (int) dcqs.completed_buffers_num();
     } else {
-      lower_limit = DCQBarrierProcessCompletedThreshold / 4; // For now.
+      lower_limit = G1UpdateBufferQueueProcessingThreshold / 4; // For now.
     }
     while (dcqs.apply_closure_to_completed_buffer(_worker_id + _worker_id_offset, lower_limit)) {
       double end_vtime_sec;
