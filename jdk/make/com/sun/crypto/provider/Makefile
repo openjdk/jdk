@@ -267,6 +267,7 @@ $(OBFUS_DIR)/sunjce.dox: $(CLOSED_DIR)/obfus/sunjce.dox
 # supports up to v49 class file format.  Force v49 classfiles in our
 # builds for now.
 #
+SOURCE_LANGUAGE_VERSION = 5
 TARGET_CLASS_VERSION = 5
 
 
