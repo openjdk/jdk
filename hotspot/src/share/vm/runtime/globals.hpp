@@ -2924,12 +2924,6 @@ class CommandLineFlags {
           "how many entries we'll try to leave on the stack during "        \
           "parallel GC")                                                    \
                                                                             \
-  product(intx, DCQBarrierQueueBufferSize, 256,                             \
-          "Number of elements in a dirty card queue buffer")                \
-                                                                            \
-  product(intx, DCQBarrierProcessCompletedThreshold, 5,                     \
-          "Number of completed dirty card buffers to trigger processing.")  \
-                                                                            \
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \
           "Number of yellow zone (recoverable overflows) pages")            \

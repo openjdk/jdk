@@ -1591,7 +1591,7 @@ jint G1CollectedHeap::initialize() {
 
   JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
-                                                G1DirtyCardQueueMax,
+                                                G1UpdateBufferQueueMaxLength,
                                                 Shared_DirtyCardQ_lock);
 
   if (G1DeferredRSUpdate) {
