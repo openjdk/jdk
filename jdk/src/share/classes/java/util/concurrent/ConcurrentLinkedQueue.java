@@ -562,7 +562,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     /**
      * Returns an iterator over the elements in this queue in proper sequence.
      * The returned iterator is a "weakly consistent" iterator that
-     * will never throw {@link ConcurrentModificationException},
+     * will never throw {@link java.util.ConcurrentModificationException
+     * ConcurrentModificationException},
      * and guarantees to traverse elements as they existed upon
      * construction of the iterator, and may (but is not guaranteed to)
      * reflect any modifications subsequent to construction.
