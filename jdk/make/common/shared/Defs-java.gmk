@@ -122,13 +122,13 @@ ifeq ($(JAVAC_WARNINGS_FATAL), true)
   JAVACFLAGS  += -Werror
 endif
 
-# Add the source level (currently all source is 1.5, should this be 1.6?)
-SOURCE_LANGUAGE_VERSION = 5
+# Add the source level
+SOURCE_LANGUAGE_VERSION = 7
 LANGUAGE_VERSION = -source $(SOURCE_LANGUAGE_VERSION)
 JAVACFLAGS  += $(LANGUAGE_VERSION)
 
-# Add the class version we want (currently this is 5, should it be 6 or even 7?)
-TARGET_CLASS_VERSION = 5
+# Add the class version we want
+TARGET_CLASS_VERSION = 7
 CLASS_VERSION = -target $(TARGET_CLASS_VERSION)
 JAVACFLAGS  += $(CLASS_VERSION)
 JAVACFLAGS  += -encoding ascii

@@ -1177,14 +1177,20 @@ class WindowsPath extends AbstractPath {
 
         /*
          * Windows treates symbolic links to directories differently than it
-         * does to other file types. For that reason we check if the exists and
-         * is a directory.
+         * does to other file types. For that reason we need to check if the
+         * target is a directory (or a directory junction).
          */
+        WindowsPath resolvedTarget;
+        if (target.type == WindowsPathType.RELATIVE) {
+            WindowsPath parent = getParent();
+            resolvedTarget = (parent == null) ? target : parent.resolve(target);
+        } else {
+            resolvedTarget = resolve(target);
+        }
         int flags = 0;
-        WindowsPath resolvedTarget =
-            WindowsPath.createFromNormalizedPath(getFileSystem(), resolve(target).path);
         try {
-            if (WindowsFileAttributes.get(resolvedTarget, true).isDirectory())
+            WindowsFileAttributes wattrs = WindowsFileAttributes.get(resolvedTarget, false);
+            if (wattrs.isDirectory() || wattrs.isDirectoryLink())
                 flags |= SYMBOLIC_LINK_FLAG_DIRECTORY;
         } catch (WindowsException x) {
             // unable to access target so assume target is not a directory
