@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1565,7 +1565,7 @@ void Parse::do_one_bytecode() {
     c = pop();                  // Oop to store
     b = pop();                  // index (already used)
     a = pop();                  // the array itself
-    const Type* elemtype  = _gvn.type(a)->is_aryptr()->elem();
+    const TypeOopPtr* elemtype  = _gvn.type(a)->is_aryptr()->elem()->make_oopptr();
     const TypeAryPtr* adr_type = TypeAryPtr::OOPS;
     Node* store = store_oop_to_array(control(), a, d, adr_type, c, elemtype, T_OBJECT);
     break;

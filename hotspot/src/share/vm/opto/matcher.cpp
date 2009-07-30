@@ -141,6 +141,10 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 
 //---------------------------match---------------------------------------------
 void Matcher::match( ) {
+  if( MaxLabelRootDepth < 100 ) { // Too small?
+    assert(false, "invalid MaxLabelRootDepth, increase it to 100 minimum");
+    MaxLabelRootDepth = 100;
+  }
   // One-time initialization of some register masks.
   init_spill_mask( C->root()->in(1) );
   _return_addr_mask = return_addr();
@@ -1485,8 +1489,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
 #ifdef ASSERT
     // Verify adr type after matching memory operation
     const MachOper* oper = mach->memory_operand();
-    if (oper != NULL && oper != (MachOper*)-1 &&
-        mach->adr_type() != TypeRawPtr::BOTTOM) { // non-direct addressing mode
+    if (oper != NULL && oper != (MachOper*)-1) {
       // It has a unique memory operand.  Find corresponding ideal mem node.
       Node* m = NULL;
       if (leaf->is_Mem()) {

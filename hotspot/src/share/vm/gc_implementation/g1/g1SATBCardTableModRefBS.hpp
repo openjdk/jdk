@@ -47,31 +47,41 @@ public:
 
   // This notes that we don't need to access any BarrierSet data
   // structures, so this can be called from a static context.
-  static void write_ref_field_pre_static(void* field, oop newVal) {
-    assert(!UseCompressedOops, "Else needs to be templatized");
-    oop preVal = *((oop*)field);
-    if (preVal != NULL) {
-      enqueue(preVal);
+  template <class T> static void write_ref_field_pre_static(T* field, oop newVal) {
+    T heap_oop = oopDesc::load_heap_oop(field);
+    if (!oopDesc::is_null(heap_oop)) {
+      enqueue(oopDesc::decode_heap_oop(heap_oop));
     }
   }
 
   // When we know the current java thread:
-  static void write_ref_field_pre_static(void* field, oop newVal,
-                                         JavaThread* jt);
+  template <class T> static void write_ref_field_pre_static(T* field, oop newVal,
+                                                            JavaThread* jt);
 
   // We export this to make it available in cases where the static
   // type of the barrier set is known.  Note that it is non-virtual.
-  inline void inline_write_ref_field_pre(void* field, oop newVal) {
+  template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal) {
     write_ref_field_pre_static(field, newVal);
   }
 
-  // This is the more general virtual version.
-  void write_ref_field_pre_work(void* field, oop new_val) {
+  // These are the more general virtual versions.
+  virtual void write_ref_field_pre_work(oop* field, oop new_val) {
     inline_write_ref_field_pre(field, new_val);
   }
+  virtual void write_ref_field_pre_work(narrowOop* field, oop new_val) {
+    inline_write_ref_field_pre(field, new_val);
+  }
+  virtual void write_ref_field_pre_work(void* field, oop new_val) {
+    guarantee(false, "Not needed");
+  }
 
-  virtual void write_ref_array_pre(MemRegion mr);
-
+  template <class T> void write_ref_array_pre_work(T* dst, int count);
+  virtual void write_ref_array_pre(oop* dst, int count) {
+    write_ref_array_pre_work(dst, count);
+  }
+  virtual void write_ref_array_pre(narrowOop* dst, int count) {
+    write_ref_array_pre_work(dst, count);
+  }
 };
 
 // Adds card-table logging to the post-barrier.

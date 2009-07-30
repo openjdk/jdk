@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,7 +346,10 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
 
     // Yes!  Reshape address expression!
     Node *inv_scale = new (C, 3) LShiftINode( add_invar, scale );
-    register_new_node( inv_scale, add_invar_ctrl );
+    Node *inv_scale_ctrl =
+      dom_depth(add_invar_ctrl) > dom_depth(scale_ctrl) ?
+      add_invar_ctrl : scale_ctrl;
+    register_new_node( inv_scale, inv_scale_ctrl );
     Node *var_scale = new (C, 3) LShiftINode( add_var, scale );
     register_new_node( var_scale, n_ctrl );
     Node *var_add = new (C, 3) AddINode( var_scale, inv_scale );
@@ -667,7 +670,6 @@ static bool merge_point_too_heavy(Compile* C, Node* region) {
   }
 }
 
-#ifdef _LP64
 static bool merge_point_safe(Node* region) {
   // 4799512: Stop split_if_with_blocks from splitting a block with a ConvI2LNode
   // having a PhiNode input. This sidesteps the dangerous case where the split
@@ -676,20 +678,25 @@ static bool merge_point_safe(Node* region) {
   // uses.
   // A better fix for this problem can be found in the BugTraq entry, but
   // expediency for Mantis demands this hack.
+  // 6855164: If the merge point has a FastLockNode with a PhiNode input, we stop
+  // split_if_with_blocks from splitting a block because we could not move around
+  // the FastLockNode.
   for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
     Node* n = region->fast_out(i);
     if (n->is_Phi()) {
       for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
         Node* m = n->fast_out(j);
-        if (m->Opcode() == Op_ConvI2L) {
+        if (m->is_FastLock())
           return false;
-        }
+#ifdef _LP64
+        if (m->Opcode() == Op_ConvI2L)
+          return false;
+#endif
       }
     }
   }
   return true;
 }
-#endif
 
 
 //------------------------------place_near_use---------------------------------
@@ -771,12 +778,10 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
       if( get_loop(n_ctrl->in(j)) != n_loop )
         return;
 
-#ifdef _LP64
     // Check for safety of the merge point.
     if( !merge_point_safe(n_ctrl) ) {
       return;
     }
-#endif
 
     // Split compare 'n' through the merge point if it is profitable
     Node *phi = split_thru_phi( n, n_ctrl, policy );

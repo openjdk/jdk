@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,10 @@ public class JSJavaThread extends JSJavaInstance {
                     List frameMonitors = frame.getMonitors();  // List<MonitorInfo>
                     for (Iterator miItr = frameMonitors.iterator(); miItr.hasNext(); ) {
                         MonitorInfo mi = (MonitorInfo) miItr.next();
+
+                        if (mi.eliminated() && frame.isCompiledFrame()) {
+                          continue; // skip eliminated monitor
+                        }
                         OopHandle obj = mi.owner();
                         if (obj == null) {
                             // this monitor doesn't have an owning object so skip it

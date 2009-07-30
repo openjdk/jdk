@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,8 @@ public class OopTreeNodeAdapter extends FieldTreeNodeAdapter {
         try {
           child = new OopTreeNodeAdapter(field.getValue(getObj()), field.getID(), getTreeTableMode());
         } catch (AddressException e) {
+          child = new BadOopTreeNodeAdapter(field.getValueAsOopHandle(getObj()), field.getID(), getTreeTableMode());
+        } catch (UnknownOopException e) {
           child = new BadOopTreeNodeAdapter(field.getValueAsOopHandle(getObj()), field.getID(), getTreeTableMode());
         }
       }

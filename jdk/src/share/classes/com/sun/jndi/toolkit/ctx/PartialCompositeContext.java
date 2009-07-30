@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,9 +493,9 @@ public abstract class PartialCompositeContext implements Context, Resolver {
      * Tests whether a name contains a nonempty component.
      */
     protected static boolean allEmpty(Name name) {
-        Enumeration enum_ = name.getAll();
+        Enumeration<String> enum_ = name.getAll();
         while (enum_.hasMoreElements()) {
-            if (!enum_.equals("")) {
+            if (!enum_.nextElement().isEmpty()) {
                 return false;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.*;
 
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXReason;
@@ -43,12 +44,22 @@ import java.security.cert.X509CertSelector;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.Debug;
+import sun.security.util.DerOutputStream;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.PKIXExtensions;
 import sun.security.x509.PolicyMappingsExtension;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
+import sun.security.x509.X509CRLImpl;
+import sun.security.x509.AuthorityKeyIdentifierExtension;
+import sun.security.x509.KeyIdentifier;
+import sun.security.x509.SubjectKeyIdentifierExtension;
+import sun.security.x509.SerialNumber;
+import sun.security.x509.GeneralNames;
+import sun.security.x509.GeneralName;
+import sun.security.x509.GeneralNameInterface;
+import java.math.BigInteger;
 
 /**
  * This class represents a forward builder, which is able to retrieve
@@ -237,7 +248,7 @@ class ForwardBuilder extends Builder {
         } else {
 
             if (caSelector == null) {
-                caSelector = new X509CertSelector();
+                caSelector = new AdaptableX509CertSelector();
 
                 /*
                  * Match on certificate validity date.
@@ -269,6 +280,29 @@ class ForwardBuilder extends Builder {
              * at least as many CA certs that have already been traversed
              */
             caSelector.setBasicConstraints(currentState.traversedCACerts);
+
+            /*
+             * Facilitate certification path construction with authority
+             * key identifier and subject key identifier.
+             */
+            AuthorityKeyIdentifierExtension akidext =
+                    currentState.cert.getAuthorityKeyIdentifierExtension();
+            if (akidext != null) {
+                KeyIdentifier akid = (KeyIdentifier)akidext.get(akidext.KEY_ID);
+                if (akid != null) {
+                    DerOutputStream derout = new DerOutputStream();
+                    derout.putOctetString(akid.getIdentifier());
+                    caSelector.setSubjectKeyIdentifier(derout.toByteArray());
+                }
+
+                SerialNumber asn =
+                    (SerialNumber)akidext.get(akidext.SERIAL_NUMBER);
+                if (asn != null) {
+                    caSelector.setSerialNumber(asn.getNumber());
+                }
+                // the subject criterion was set previously.
+            }
+
             sel = caSelector;
         }
 
@@ -817,13 +851,25 @@ class ForwardBuilder extends Builder {
                 } else {
                     continue;
                 }
-            }
+            } else {
+                X500Principal principal = anchor.getCA();
+                java.security.PublicKey publicKey = anchor.getCAPublicKey();
 
-            X500Principal trustedCAName = anchor.getCA();
+                if (principal != null && publicKey != null &&
+                        principal.equals(cert.getSubjectX500Principal())) {
+                    if (publicKey.equals(cert.getPublicKey())) {
+                        // the cert itself is a trust anchor
+                        this.trustAnchor = anchor;
+                        return true;
+                    }
+                    // else, it is a self-issued certificate of the anchor
+                }
 
-            /* Check subject/issuer name chaining */
-            if (!trustedCAName.equals(cert.getIssuerX500Principal())) {
-                continue;
+                // Check subject/issuer name chaining
+                if (principal == null ||
+                        !principal.equals(cert.getIssuerX500Principal())) {
+                    continue;
+                }
             }
 
             /* Check revocation if it is enabled */
@@ -889,5 +935,121 @@ class ForwardBuilder extends Builder {
      */
     void removeFinalCertFromPath(LinkedList<X509Certificate> certPathList) {
         certPathList.removeFirst();
+    }
+
+    /** Verifies whether a CRL is issued by a certain certificate
+     *
+     * @param cert the certificate
+     * @param crl the CRL to be verified
+     * @param provider the name of the signature provider
+     */
+    static boolean issues(X509CertImpl cert, X509CRLImpl crl, String provider)
+            throws IOException {
+
+        boolean kidmatched = false;
+
+        // check certificate's key usage
+        boolean[] usages = cert.getKeyUsage();
+        if (usages != null && !usages[6]) {
+            return false;
+        }
+
+        // check certificate's SKID and CRL's AKID
+        AuthorityKeyIdentifierExtension akidext = crl.getAuthKeyIdExtension();
+        if (akidext != null) {
+            // the highest priority, matching KID
+            KeyIdentifier akid = (KeyIdentifier)akidext.get(akidext.KEY_ID);
+            if (akid != null) {
+                SubjectKeyIdentifierExtension skidext =
+                            cert.getSubjectKeyIdentifierExtension();
+                if (skidext != null) {
+                    KeyIdentifier skid =
+                            (KeyIdentifier)skidext.get(skidext.KEY_ID);
+                    if (!akid.equals(skid)) {
+                        return false;
+                    }
+
+                    kidmatched = true;
+                }
+                // conservatively, in case of X509 V1 certificate,
+                // does return false here if no SKID extension.
+            }
+
+            // the medium priority, matching issuer name/serial number
+            SerialNumber asn = (SerialNumber)akidext.get(akidext.SERIAL_NUMBER);
+            GeneralNames anames = (GeneralNames)akidext.get(akidext.AUTH_NAME);
+            if (asn != null && anames != null) {
+                X500Name subject = (X500Name)cert.getSubjectDN();
+                BigInteger serial = cert.getSerialNumber();
+
+                if (serial != null && subject != null) {
+                    if (serial.equals(asn.getNumber())) {
+                        return false;
+                    }
+
+                    for (GeneralName name : anames.names()) {
+                        GeneralNameInterface gni = name.getName();
+                        if (subject.equals(gni)) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            if (kidmatched) {
+                return true;
+            }
+        }
+
+        // the last priority, verify the CRL signature with the cert.
+        X500Principal crlIssuer = crl.getIssuerX500Principal();
+        X500Principal certSubject = cert.getSubjectX500Principal();
+        if (certSubject != null && certSubject.equals(crlIssuer)) {
+            try {
+                crl.verify(cert.getPublicKey(), provider);
+                return true;
+            } catch (Exception e) {
+                // ignore all exceptions.
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * An adaptable X509 certificate selector for forward certification path
+     * building.
+     */
+    private static class AdaptableX509CertSelector extends X509CertSelector {
+        public AdaptableX509CertSelector() {
+            super();
+        }
+
+        /**
+         * Decides whether a <code>Certificate</code> should be selected.
+         *
+         * For the purpose of compatibility, when a certificate is of
+         * version 1 and version 2, or the certificate does not include
+         * a subject key identifier extension, the selection criterion
+         * of subjectKeyIdentifier will be disabled.
+         *
+         * @Override
+         */
+        public boolean match(Certificate cert) {
+            if (!(cert instanceof X509Certificate)) {
+                return false;
+            }
+            X509Certificate xcert = (X509Certificate)cert;
+
+            if (xcert.getVersion() < 3 ||
+                xcert.getExtensionValue("2.5.29.14") == null) {
+                // disable the subjectKeyIdentifier criterion
+                setSubjectKeyIdentifier(null);
+            }
+
+            return super.match(cert);
+        }
     }
 }

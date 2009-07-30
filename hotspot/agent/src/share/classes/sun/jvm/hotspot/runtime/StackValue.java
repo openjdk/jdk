@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,11 @@ public class StackValue {
     type = BasicType.getTConflict();
   }
 
-  public StackValue(OopHandle h) {
+  public StackValue(OopHandle h, long scalar_replaced) {
     handleValue = h;
     type = BasicType.getTObject();
+    integerValue = scalar_replaced;
+    Assert.that(integerValue == 0 || handleValue == null, "not null object should not be marked as scalar replaced");
   }
 
   public StackValue(long i) {
@@ -57,6 +59,13 @@ public class StackValue {
       Assert.that(type == BasicType.getTObject(), "type check");
     }
     return handleValue;
+  }
+
+  boolean objIsScalarReplaced() {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(type == BasicType.getTObject(), "type check");
+    }
+    return integerValue != 0;
   }
 
   public long getInteger() {

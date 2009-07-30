@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -933,7 +933,7 @@ static void collect_monitors(compiledVFrame* cvf, GrowableArray<Handle>* objects
   GrowableArray<MonitorInfo*>* monitors = cvf->monitors();
   for (int i = 0; i < monitors->length(); i++) {
     MonitorInfo* mon_info = monitors->at(i);
-    if (mon_info->owner() != NULL && !mon_info->eliminated()) {
+    if (!mon_info->eliminated() && mon_info->owner() != NULL) {
       objects_to_revoke->append(Handle(mon_info->owner()));
     }
   }

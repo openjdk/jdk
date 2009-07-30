@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,17 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
     }
 #endif
     case Location::oop: {
-      Handle h(*(oop *)value_addr); // Wrap a handle around the oop
+      oop val = *(oop *)value_addr;
+#ifdef _LP64
+      if (Universe::is_narrow_oop_base(val)) {
+         // Compiled code may produce decoded oop = narrow_oop_base
+         // when a narrow oop implicit null check is used.
+         // The narrow_oop_base could be NULL or be the address
+         // of the page below heap. Use NULL value for both cases.
+         val = (oop)NULL;
+      }
+#endif
+      Handle h(val); // Wrap a handle around the oop
       return new StackValue(h);
     }
     case Location::addr: {
@@ -146,8 +156,9 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
     value.jl = ((ConstantLongValue *)sv)->value();
     return new StackValue(value.p);
 #endif
-  } else if (sv->is_object()) {
-    return new StackValue(((ObjectValue *)sv)->value());
+  } else if (sv->is_object()) { // Scalar replaced object in compiled frame
+    Handle ov = ((ObjectValue *)sv)->value();
+    return new StackValue(ov, (ov.is_null()) ? 1 : 0);
   }
 
   // Unknown ScopeValue type

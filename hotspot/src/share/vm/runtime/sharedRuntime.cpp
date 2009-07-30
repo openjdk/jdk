@@ -119,6 +119,7 @@ JRT_LEAF(void, SharedRuntime::g1_wb_pre(oopDesc* orig, JavaThread *thread))
     assert(false, "should be optimized out");
     return;
   }
+  assert(orig->is_oop(true /* ignore mark word */), "Error");
   // store the original value that was in the field reference
   thread->satb_mark_queue().enqueue(orig);
 JRT_END

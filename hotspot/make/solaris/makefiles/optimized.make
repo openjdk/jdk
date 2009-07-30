@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ ifeq ($(COMPILER_REV_NUMERIC),509)
 endif
 
 # Workaround SS11 bug 6345274 (all platforms) (Fixed in SS11 patch and SS12)
-ifeq ($(COMPILER_REV_NUMERIC),508))
+ifeq ($(COMPILER_REV_NUMERIC),508)
 OPT_CFLAGS/ciTypeFlow.o = $(OPT_CFLAGS/O2)
 endif # COMPILER_REV_NUMERIC == 508
 

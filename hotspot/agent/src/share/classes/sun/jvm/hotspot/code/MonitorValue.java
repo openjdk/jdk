@@ -1,5 +1,5 @@
 /*
- * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 public class MonitorValue {
   private ScopeValue owner;
   private Location   basicLock;
+  private boolean    eliminated;
 
   // FIXME: not useful yet
   //  MonitorValue(ScopeValue* owner, Location basic_lock);
@@ -36,10 +37,12 @@ public class MonitorValue {
   public MonitorValue(DebugInfoReadStream stream) {
     basicLock = new Location(stream);
     owner     = ScopeValue.readFrom(stream);
+    eliminated= stream.readBoolean();
   }
 
   public ScopeValue owner()     { return owner; }
   public Location   basicLock() { return basicLock; }
+  public boolean   eliminated() { return eliminated; }
 
   // FIXME: not yet implementable
   //  void write_on(DebugInfoWriteStream* stream);
@@ -50,5 +53,8 @@ public class MonitorValue {
     tty.print(",");
     basicLock().printOn(tty);
     tty.print("}");
+    if (eliminated) {
+      tty.print(" (eliminated)");
+    }
   }
 }

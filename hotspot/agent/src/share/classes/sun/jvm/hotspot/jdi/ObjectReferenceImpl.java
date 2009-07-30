@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,6 +249,7 @@ public class ObjectReferenceImpl extends ValueImpl implements ObjectReference {
             OopHandle givenHandle = obj.getHandle();
             for (Iterator itr = monitors.iterator(); itr.hasNext();) {
                 MonitorInfo mi = (MonitorInfo) itr.next();
+                if (mi.eliminated() && frame.isCompiledFrame()) continue; // skip eliminated monitor
                 if (givenHandle.equals(mi.owner())) {
                     res++;
                 }

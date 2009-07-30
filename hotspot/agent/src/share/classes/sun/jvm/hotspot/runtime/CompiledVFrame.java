@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,8 +131,18 @@ public class CompiledVFrame extends JavaVFrame {
     List result = new ArrayList(monitors.size());
     for (int i = 0; i < monitors.size(); i++) {
       MonitorValue mv = (MonitorValue) monitors.get(i);
-      StackValue ownerSV = createStackValue(mv.owner()); // it is an oop
-      result.add(new MonitorInfo(ownerSV.getObject(), resolveMonitorLock(mv.basicLock())));
+      ScopeValue ov = mv.owner();
+      StackValue ownerSV = createStackValue(ov); // it is an oop
+      if (ov.isObject()) { // The owner object was scalar replaced
+        Assert.that(mv.eliminated() && ownerSV.objIsScalarReplaced(), "monitor should be eliminated for scalar replaced object");
+        // Put klass for scalar replaced object.
+        ScopeValue kv = ((ObjectValue)ov).getKlass();
+        Assert.that(kv.isConstantOop(), "klass should be oop constant for scalar replaced object");
+        OopHandle k = ((ConstantOopReadValue)kv).getValue();
+        result.add(new MonitorInfo(k, resolveMonitorLock(mv.basicLock()), mv.eliminated(), true));
+      } else {
+        result.add(new MonitorInfo(ownerSV.getObject(), resolveMonitorLock(mv.basicLock()), mv.eliminated(), false));
+      }
     }
     return result;
   }
@@ -212,12 +222,12 @@ public class CompiledVFrame extends JavaVFrame {
           // long or is unused.  He always saves a long.  Here we know
           // a long was saved, but we only want an narrow oop back.  Narrow the
           // saved long to the narrow oop that the JVM wants.
-          return new StackValue(valueAddr.getCompOopHandleAt(VM.getVM().getIntSize()));
+          return new StackValue(valueAddr.getCompOopHandleAt(VM.getVM().getIntSize()), 0);
         } else {
-          return new StackValue(valueAddr.getCompOopHandleAt(0));
+          return new StackValue(valueAddr.getCompOopHandleAt(0), 0);
         }
       } else if( loc.holdsOop() ) {  // Holds an oop?
-        return new StackValue(valueAddr.getOopHandleAt(0));
+        return new StackValue(valueAddr.getOopHandleAt(0), 0);
       } else if( loc.holdsDouble() ) {
         // Double value in a single stack slot
         return new StackValue(valueAddr.getJIntAt(0) & 0xFFFFFFFF);
@@ -277,7 +287,7 @@ public class CompiledVFrame extends JavaVFrame {
       return new StackValue(((ConstantIntValue) sv).getValue() & 0xFFFFFFFF);
     } else if (sv.isConstantOop()) {
       // constant oop
-      return new StackValue(((ConstantOopReadValue) sv).getValue());
+      return new StackValue(((ConstantOopReadValue) sv).getValue(), 0);
     } else if (sv.isConstantDouble()) {
       // Constant double in a single stack slot
       double d = ((ConstantDoubleValue) sv).getValue();
@@ -285,6 +295,9 @@ public class CompiledVFrame extends JavaVFrame {
     } else if (VM.getVM().isLP64() && sv.isConstantLong()) {
       // Constant long in a single stack slot
       return new StackValue(((ConstantLongValue) sv).getValue() & 0xFFFFFFFF);
+    } else if (sv.isObject()) {
+      // Scalar replaced object in compiled frame
+      return new StackValue(((ObjectValue)sv).getValue(), 1);
     }
 
     // Unknown ScopeValue type
