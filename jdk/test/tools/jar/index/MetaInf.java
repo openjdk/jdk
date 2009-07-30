@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,15 @@
 
 /*
  * @test
- * @bug 4408526
+ * @bug 4408526 6854795
  * @summary Index the non-meta files in META-INF, such as META-INF/services.
  */
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.jar.*;
 import sun.tools.jar.Main;
+import java.util.zip.ZipFile;
 
 public class MetaInf {
 
@@ -39,29 +41,51 @@ public class MetaInf {
     static String contents =
         System.getProperty("test.src") + File.separatorChar + "jarcontents";
 
-    // Options passed to "jar" command.
-    static String[] jarArgs1 = new String[] {
-        "cf", jarName, "-C", contents, SERVICES
-    };
-    static String[] jarArgs2 = new String[] {
-        "i", jarName
-    };
+    static void run(String ... args) {
+        if (! new Main(System.out, System.err, "jar").run(args))
+            throw new Error("jar failed: args=" + Arrays.toString(args));
+    }
 
-    public static void main(String[] args) throws IOException {
+    static void copy(File from, File to) throws IOException {
+        FileInputStream in = new FileInputStream(from);
+        FileOutputStream out = new FileOutputStream(to);
+        try {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) != -1)
+                out.write(buf, 0, n);
+        } finally {
+            in.close();
+            out.close();
+        }
+    }
+
+    static boolean contains(File jarFile, String entryName)
+        throws IOException {
+        return new ZipFile(jarFile).getEntry(entryName) != null;
+    }
+
+    static void checkContains(File jarFile, String entryName)
+        throws IOException {
+        if (! contains(jarFile, entryName))
+            throw new Error(String.format("expected jar %s to contain %s",
+                                          jarFile, entryName));
+    }
+
+    static void testIndex(String jarName) throws IOException {
+        System.err.printf("jarName=%s%n", jarName);
+
+        File jar = new File(jarName);
 
         // Create a jar to be indexed.
-        Main jarTool = new Main(System.out, System.err, "jar");
-        if (!jarTool.run(jarArgs1)) {
-            throw new Error("Could not create jar file.");
+        run("cf", jarName, "-C", contents, SERVICES);
+
+        for (int i = 0; i < 2; i++) {
+            run("i", jarName);
+            checkContains(jar, INDEX);
+            checkContains(jar, SERVICES);
         }
 
-        // Index the jar.
-        jarTool = new Main(System.out, System.err, "jar");
-        if (!jarTool.run(jarArgs2)) {
-            throw new Error("Could not index jar file.");
-        }
-
-        // Read the index.  Verify that META-INF/services is indexed.
         JarFile f = new JarFile(jarName);
         BufferedReader index =
             new BufferedReader(
@@ -74,5 +98,18 @@ public class MetaInf {
             }
         }
         throw new Error(SERVICES + " not indexed.");
+    }
+
+    public static void main(String[] args) throws IOException {
+        testIndex("a.jar");             // a path with parent == null
+        testIndex("./a.zip");           // a path with parent != null
+
+        // Try indexing a jar in the default temp directory.
+        File tmpFile = File.createTempFile("MetaInf", null, null);
+        try {
+            testIndex(tmpFile.getPath());
+        } finally {
+            tmpFile.delete();
+        }
     }
 }

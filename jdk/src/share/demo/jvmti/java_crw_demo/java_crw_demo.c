@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -263,8 +263,8 @@ assert_error(CrwClassImage *ci, const char *condition,
     (void)sprintf(buf,
                 "CRW ASSERTION FAILURE: %s (%s:%s:%d)",
                 condition,
-                ci->name==0?"?":ci->name,
-                mi->name==0?"?":mi->name,
+                ci->name==NULL?"?":ci->name,
+                (mi==NULL||mi->name==NULL)?"?":mi->name,
                 byte_code_offset);
     fatal_error(ci, buf, file, line);
 }
