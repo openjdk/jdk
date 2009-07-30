@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -606,6 +606,7 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
     if (!mons->is_empty()) {
       for (int i = 0; i < mons->length(); i++) {
         MonitorInfo *mi = mons->at(i);
+        if (mi->owner_is_scalar_replaced()) continue;
 
         // see if owner of the monitor is our object
         if (mi->owner() != NULL && mi->owner() == hobj()) {
@@ -725,6 +726,8 @@ JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread
 
   for (int i = 0; i < mons->length(); i++) {
     MonitorInfo *mi = mons->at(i);
+
+    if (mi->owner_is_scalar_replaced()) continue;
 
     oop obj = mi->owner();
     if (obj == NULL) {

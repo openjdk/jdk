@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,9 @@ void C2Compiler::compile_method(ciEnv* env,
     initialize();
   }
   bool subsume_loads = true;
-  bool do_escape_analysis = DoEscapeAnalysis;
+  bool do_escape_analysis = DoEscapeAnalysis &&
+                            !(env->jvmti_can_hotswap_or_post_breakpoint() ||
+                              env->jvmti_can_examine_or_deopt_anywhere());
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
     Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis);

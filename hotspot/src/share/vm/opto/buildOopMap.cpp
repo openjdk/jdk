@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,9 +74,11 @@ struct OopFlow : public ResourceObj {
   // this block.
   Block *_b;                    // Block for this struct
   OopFlow *_next;               // Next free OopFlow
+                                // or NULL if dead/conflict
+  Compile* C;
 
-  OopFlow( short *callees, Node **defs ) : _callees(callees), _defs(defs),
-    _b(NULL), _next(NULL) { }
+  OopFlow( short *callees, Node **defs, Compile* c ) : _callees(callees), _defs(defs),
+    _b(NULL), _next(NULL), C(c) { }
 
   // Given reaching-defs for this block start, compute it for this block end
   void compute_reach( PhaseRegAlloc *regalloc, int max_reg, Dict *safehash );
@@ -88,7 +90,7 @@ struct OopFlow : public ResourceObj {
   void clone( OopFlow *flow, int max_size);
 
   // Make a new OopFlow from scratch
-  static OopFlow *make( Arena *A, int max_size );
+  static OopFlow *make( Arena *A, int max_size, Compile* C );
 
   // Build an oopmap from the current flow info
   OopMap *build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, int* live );
@@ -180,11 +182,11 @@ void OopFlow::clone( OopFlow *flow, int max_size ) {
 }
 
 //------------------------------make-------------------------------------------
-OopFlow *OopFlow::make( Arena *A, int max_size ) {
+OopFlow *OopFlow::make( Arena *A, int max_size, Compile* C ) {
   short *callees = NEW_ARENA_ARRAY(A,short,max_size+1);
   Node **defs    = NEW_ARENA_ARRAY(A,Node*,max_size+1);
   debug_only( memset(defs,0,(max_size+1)*sizeof(Node*)) );
-  OopFlow *flow = new (A) OopFlow(callees+1, defs+1);
+  OopFlow *flow = new (A) OopFlow(callees+1, defs+1, C);
   assert( &flow->_callees[OptoReg::Bad] == callees, "Ok to index at OptoReg::Bad" );
   assert( &flow->_defs   [OptoReg::Bad] == defs   , "Ok to index at OptoReg::Bad" );
   return flow;
@@ -288,7 +290,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
               m = m->in(idx);
             }
           }
-         guarantee( 0, "must find derived/base pair" );
+          guarantee( 0, "must find derived/base pair" );
         }
       found: ;
         Node *base = n->in(i+1); // Base is other half of pair
@@ -347,6 +349,13 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
     } else {
       // Other - some reaching non-oop value
       omap->set_value( r);
+#ifdef ASSERT
+      if( t->isa_rawptr() && C->cfg()->_raw_oops.member(def) ) {
+        def->dump();
+        n->dump();
+        assert(false, "there should be a oop in OopMap instead of a live raw oop at safepoint");
+      }
+#endif
     }
 
   }
@@ -562,7 +571,7 @@ void Compile::BuildOopMaps() {
 
   // Do the first block 'by hand' to prime the worklist
   Block *entry = _cfg->_blocks[1];
-  OopFlow *rootflow = OopFlow::make(A,max_reg);
+  OopFlow *rootflow = OopFlow::make(A,max_reg,this);
   // Initialize to 'bottom' (not 'top')
   memset( rootflow->_callees, OptoReg::Bad, max_reg*sizeof(short) );
   memset( rootflow->_defs   ,            0, max_reg*sizeof(Node*) );
@@ -628,7 +637,7 @@ void Compile::BuildOopMaps() {
       // Carry it forward.
     } else {                    // Draw a new OopFlow from the freelist
       if( !free_list )
-        free_list = OopFlow::make(A,max_reg);
+        free_list = OopFlow::make(A,max_reg,C);
       flow = free_list;
       assert( flow->_b == NULL, "oopFlow is not free" );
       free_list = flow->_next;

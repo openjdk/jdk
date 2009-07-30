@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,12 +49,15 @@ public abstract class ScopeValue {
   static final int CONSTANT_OOP_CODE    = 2;
   static final int CONSTANT_LONG_CODE   = 3;
   static final int CONSTANT_DOUBLE_CODE = 4;
+  static final int CONSTANT_OBJECT_CODE = 5;
+  static final int CONSTANT_OBJECT_ID_CODE = 6;
 
   public boolean isLocation()       { return false; }
   public boolean isConstantInt()    { return false; }
   public boolean isConstantDouble() { return false; }
   public boolean isConstantLong()   { return false; }
   public boolean isConstantOop()    { return false; }
+  public boolean isObject()         { return false; }
 
   public static ScopeValue readFrom(DebugInfoReadStream stream) {
     switch (stream.readInt()) {
@@ -68,6 +71,10 @@ public abstract class ScopeValue {
       return new ConstantLongValue(stream);
     case CONSTANT_DOUBLE_CODE:
       return new ConstantDoubleValue(stream);
+    case CONSTANT_OBJECT_CODE:
+      return stream.readObjectValue();
+    case CONSTANT_OBJECT_ID_CODE:
+      return stream.getCachedObject();
     default:
       Assert.that(false, "should not reach here");
       return null;

@@ -449,21 +449,34 @@ class GraphKit : public Phase {
   //
   // If val==NULL, it is taken to be a completely unknown value. QQQ
 
+  Node* store_oop(Node* ctl,
+                  Node* obj,   // containing obj
+                  Node* adr,  // actual adress to store val at
+                  const TypePtr* adr_type,
+                  Node* val,
+                  const TypeOopPtr* val_type,
+                  BasicType bt,
+                  bool use_precise);
+
   Node* store_oop_to_object(Node* ctl,
                             Node* obj,   // containing obj
                             Node* adr,  // actual adress to store val at
                             const TypePtr* adr_type,
                             Node* val,
-                            const Type* val_type,
-                            BasicType bt);
+                            const TypeOopPtr* val_type,
+                            BasicType bt) {
+    return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, false);
+  }
 
   Node* store_oop_to_array(Node* ctl,
                            Node* obj,   // containing obj
                            Node* adr,  // actual adress to store val at
                            const TypePtr* adr_type,
                            Node* val,
-                           const Type* val_type,
-                           BasicType bt);
+                           const TypeOopPtr* val_type,
+                           BasicType bt) {
+    return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, true);
+  }
 
   // Could be an array or object we don't know at compile time (unsafe ref.)
   Node* store_oop_to_unknown(Node* ctl,
@@ -471,12 +484,11 @@ class GraphKit : public Phase {
                              Node* adr,  // actual adress to store val at
                              const TypePtr* adr_type,
                              Node* val,
-                             const Type* val_type,
                              BasicType bt);
 
   // For the few case where the barriers need special help
   void pre_barrier(Node* ctl, Node* obj, Node* adr, uint adr_idx,
-                   Node* val, const Type* val_type, BasicType bt);
+                   Node* val, const TypeOopPtr* val_type, BasicType bt);
 
   void post_barrier(Node* ctl, Node* store, Node* obj, Node* adr, uint adr_idx,
                     Node* val, BasicType bt, bool use_precise);
@@ -488,9 +500,6 @@ class GraphKit : public Phase {
 
   // Return a load of array element at idx.
   Node* load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype);
-
-  // CMS card-marks have an input from the corresponding oop_store
-  void  cms_card_mark(Node* ctl, Node* adr, Node* val, Node* oop_store);
 
   //---------------- Dtrace support --------------------
   void make_dtrace_method_entry_exit(ciMethod* method, bool is_entry);
@@ -583,9 +592,6 @@ class GraphKit : public Phase {
     return C->too_many_recompiles(method(), bci(), reason);
   }
 
-  // vanilla/CMS post barrier
-  void write_barrier_post(Node *store, Node* obj, Node* adr, Node* val, bool use_precise);
-
   // Returns the object (if any) which was created the moment before.
   Node* just_allocated_object(Node* current_control);
 
@@ -594,12 +600,17 @@ class GraphKit : public Phase {
             && Universe::heap()->can_elide_tlab_store_barriers());
   }
 
+  void sync_kit(IdealKit& ideal);
+
+  // vanilla/CMS post barrier
+  void write_barrier_post(Node *store, Node* obj, Node* adr, Node* val, bool use_precise);
+
   // G1 pre/post barriers
   void g1_write_barrier_pre(Node* obj,
                             Node* adr,
                             uint alias_idx,
                             Node* val,
-                            const Type* val_type,
+                            const TypeOopPtr* val_type,
                             BasicType bt);
 
   void g1_write_barrier_post(Node* store,
@@ -611,7 +622,7 @@ class GraphKit : public Phase {
                              bool use_precise);
   // Helper function for g1
   private:
-  void g1_mark_card(IdealKit* ideal, Node* card_adr, Node* store,  Node* index, Node* index_adr,
+  void g1_mark_card(IdealKit& ideal, Node* card_adr, Node* store,  Node* index, Node* index_adr,
                     Node* buffer, const TypeFunc* tf);
 
   public:
