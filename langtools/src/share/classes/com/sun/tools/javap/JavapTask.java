@@ -289,6 +289,12 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             void process(JavapTask task, String opt, String arg) {
                 task.options.showConstants = true;
             }
+        },
+
+        new Option(false, "-XDinner") {
+            void process(JavapTask task, String opt, String arg) {
+                task.options.showInnerClasses = true;
+            }
         }
 
     };
@@ -529,46 +535,15 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         SourceWriter sourceWriter = SourceWriter.instance(context);
         sourceWriter.setFileManager(fileManager);
 
+        attributeFactory.setCompat(options.compat);
+        attributeFactory.setJSR277(options.jsr277);
+
         boolean ok = true;
 
         for (String className: classes) {
             JavaFileObject fo;
             try {
-                if (className.endsWith(".class")) {
-                    if (fileManager instanceof StandardJavaFileManager) {
-                        StandardJavaFileManager sfm = (StandardJavaFileManager) fileManager;
-                        fo = sfm.getJavaFileObjects(className).iterator().next();
-                    } else {
-                       reportError("err.not.standard.file.manager", className);
-                       ok = false;
-                       continue;
-                    }
-                } else {
-                    fo = getClassFileObject(className);
-                    if (fo == null) {
-                        // see if it is an inner class, by replacing dots to $, starting from the right
-                        String cn = className;
-                        int lastDot;
-                        while (fo == null && (lastDot = cn.lastIndexOf(".")) != -1) {
-                            cn = cn.substring(0, lastDot) + "$" + cn.substring(lastDot + 1);
-                            fo = getClassFileObject(cn);
-                        }
-                    }
-                    if (fo == null) {
-                       reportError("err.class.not.found", className);
-                       ok = false;
-                       continue;
-                    }
-                }
-                attributeFactory.setCompat(options.compat);
-                attributeFactory.setJSR277(options.jsr277);
-                ClassFileInfo cfInfo = read(fo);
-                if (!className.endsWith(".class")) {
-                    String cfName = cfInfo.cf.getName();
-                    if (!cfName.replaceAll("[/$]", ".").equals(className.replaceAll("[/$]", ".")))
-                        reportWarning("warn.unexpected.class", className, cfName.replace('/', '.'));
-                }
-                write(cfInfo);
+                writeClass(classWriter, className);
             } catch (ConstantPoolException e) {
                 reportError("err.bad.constant.pool", className, e.getLocalizedMessage());
                 ok = false;
@@ -596,6 +571,76 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         }
 
         return ok;
+    }
+
+    protected boolean writeClass(ClassWriter classWriter, String className)
+            throws IOException, ConstantPoolException {
+        JavaFileObject fo;
+        if (className.endsWith(".class")) {
+            if (fileManager instanceof StandardJavaFileManager) {
+                StandardJavaFileManager sfm = (StandardJavaFileManager) fileManager;
+                fo = sfm.getJavaFileObjects(className).iterator().next();
+            } else {
+                reportError("err.not.standard.file.manager", className);
+                return false;
+            }
+        } else {
+            fo = getClassFileObject(className);
+            if (fo == null) {
+                // see if it is an inner class, by replacing dots to $, starting from the right
+                String cn = className;
+                int lastDot;
+                while (fo == null && (lastDot = cn.lastIndexOf(".")) != -1) {
+                    cn = cn.substring(0, lastDot) + "$" + cn.substring(lastDot + 1);
+                    fo = getClassFileObject(cn);
+                }
+            }
+            if (fo == null) {
+                reportError("err.class.not.found", className);
+                return false;
+            }
+        }
+
+        ClassFileInfo cfInfo = read(fo);
+        if (!className.endsWith(".class")) {
+            String cfName = cfInfo.cf.getName();
+            if (!cfName.replaceAll("[/$]", ".").equals(className.replaceAll("[/$]", ".")))
+                reportWarning("warn.unexpected.class", className, cfName.replace('/', '.'));
+        }
+        write(cfInfo);
+
+        if (options.showInnerClasses) {
+            ClassFile cf = cfInfo.cf;
+            Attribute a = cf.getAttribute(Attribute.InnerClasses);
+            if (a instanceof InnerClasses_attribute) {
+                InnerClasses_attribute inners = (InnerClasses_attribute) a;
+                try {
+                    boolean ok = true;
+                    for (int i = 0; i < inners.classes.length; i++) {
+                        int outerIndex = inners.classes[i].outer_class_info_index;
+                        ConstantPool.CONSTANT_Class_info outerClassInfo = cf.constant_pool.getClassInfo(outerIndex);
+                        String outerClassName = outerClassInfo.getName();
+                        if (outerClassName.equals(cf.getName())) {
+                            int innerIndex = inners.classes[i].inner_class_info_index;
+                            ConstantPool.CONSTANT_Class_info innerClassInfo = cf.constant_pool.getClassInfo(innerIndex);
+                            String innerClassName = innerClassInfo.getName();
+                            classWriter.println("// inner class " + innerClassName.replaceAll("[/$]", "."));
+                            classWriter.println();
+                            ok = ok & writeClass(classWriter, innerClassName);
+                        }
+                    }
+                    return ok;
+                } catch (ConstantPoolException e) {
+                    reportError("err.bad.innerclasses.attribute", className);
+                    return false;
+                }
+            } else if (a != null) {
+                reportError("err.bad.innerclasses.attribute", className);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static class ClassFileInfo {
@@ -801,6 +846,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 return JavapTask.this.getMessage(locale, key, args);
             }
 
+            @Override
             public String toString() {
                 return getClass().getName() + "[key=" + key + ",args=" + Arrays.asList(args) + "]";
             }
