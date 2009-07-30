@@ -817,6 +817,23 @@ public class TransTypes extends TreeTranslator {
             pop();
         }
 
+        private boolean inClass = false;
+
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+           if (!inClass) {
+               // Do not recurse into nested and inner classes since
+               // TransTypes.visitClassDef makes an invocation for each class
+               // separately.
+               inClass = true;
+               try {
+                   super.visitClassDef(tree);
+               } finally {
+                   inClass = false;
+               }
+           }
+        }
+
         private TypeAnnotationPosition resolveFrame(JCTree tree, JCTree frame,
                 List<JCTree> path, TypeAnnotationPosition p) {
             switch (frame.getKind()) {
