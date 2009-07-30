@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.net.www.http;
 import java.io.*;
 import java.net.*;
 import java.util.Locale;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import sun.net.NetworkClient;
 import sun.net.ProgressSource;
 import sun.net.www.MessageHeader;
@@ -65,10 +63,6 @@ public class HttpClient extends NetworkClient {
 
     /** Default port number for http daemons. REMIND: make these private */
     static final int    httpPortNumber = 80;
-
-    // Use same logger as HttpURLConnection since we want to combine both event
-    // streams into one single HTTP log
-    private static Logger logger = Logger.getLogger("sun.net.www.protocol.http.HttpURLConnection");
 
     /** return default port number (subclasses may override) */
     protected int getDefaultPort () { return httpPortNumber; }
@@ -810,8 +804,8 @@ public class HttpClient extends NetworkClient {
 
             if (isKeepingAlive())   {
                 // Wrap KeepAliveStream if keep alive is enabled.
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.finest("KeepAlive stream used: " + url);
+                if (HttpCapture.isLoggable("FINEST")) {
+                    HttpCapture.finest("KeepAlive stream used: " + url);
                 }
                 serverInput = new KeepAliveStream(serverInput, pi, cl, this);
                 failedOnce = false;

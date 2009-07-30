@@ -194,8 +194,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             // default value of a boolean field is 'false', so set isOpaque to
             // true here explicitly
             this.isOpaque = true;
-            Color bgColor = ((Window)target).getBackground();
-            setOpaque((bgColor == null) || (bgColor.getAlpha() == 255));
+            setOpaque(((Window)target).isOpaque());
         }
     }
 

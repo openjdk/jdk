@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -559,6 +559,11 @@ public final class Long extends Number implements Comparable<Long> {
      * {@link #Long(long)}, as this method is likely to yield
      * significantly better space and time performance by caching
      * frequently requested values.
+     *
+     * Note that unlike the {@linkplain Integer#valueOf(int)
+     * corresponding method} in the {@code Integer} class, this method
+     * is <em>not</em> required to cache values within a particular
+     * range.
      *
      * @param  l a long value.
      * @return a {@code Long} instance representing {@code l}.
