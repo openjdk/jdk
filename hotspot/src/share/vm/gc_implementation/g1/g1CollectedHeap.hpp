@@ -167,15 +167,10 @@ class G1CollectedHeap : public SharedHeap {
   friend class G1MarkSweep;
 
 private:
-  enum SomePrivateConstants {
-    VeryLargeInBytes = HeapRegion::GrainBytes/2,
-    VeryLargeInWords = VeryLargeInBytes/HeapWordSize,
-    MinHeapDeltaBytes = 10 * HeapRegion::GrainBytes,      // FIXME
-    NumAPIs = HeapRegion::MaxAge
-  };
-
   // The one and only G1CollectedHeap, so static functions can find it.
   static G1CollectedHeap* _g1h;
+
+  static size_t _humongous_object_threshold_in_words;
 
   // Storage for the G1 heap (excludes the permanent generation).
   VirtualSpace _g1_storage;
@@ -1021,7 +1016,7 @@ public:
 
   // Returns "true" iff the given word_size is "very large".
   static bool isHumongous(size_t word_size) {
-    return word_size >= VeryLargeInWords;
+    return word_size >= _humongous_object_threshold_in_words;
   }
 
   // Update mod union table with the set of dirty cards.

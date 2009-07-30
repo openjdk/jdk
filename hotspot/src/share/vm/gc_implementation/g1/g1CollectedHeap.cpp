@@ -25,6 +25,8 @@
 #include "incls/_precompiled.incl"
 #include "incls/_g1CollectedHeap.cpp.incl"
 
+size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
+
 // turn it on so that the contents of the young list (scan-only /
 // to-be-collected) are printed at "strategic" points before / during
 // / after the collection --- this is useful for debugging
@@ -1394,6 +1396,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   if (_process_strong_tasks == NULL || !_process_strong_tasks->valid()) {
     vm_exit_during_initialization("Failed necessary allocation.");
   }
+
+  _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
+
   int n_queues = MAX2((int)ParallelGCThreads, 1);
   _task_queues = new RefToScanQueueSet(n_queues);
 
@@ -1546,9 +1551,10 @@ jint G1CollectedHeap::initialize() {
   const size_t max_region_idx = ((size_t)1 << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
 
-  const size_t cards_per_region = HeapRegion::GrainBytes >> CardTableModRefBS::card_shift;
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
-  guarantee(cards_per_region < max_cards_per_region, "too many cards per region");
+  guarantee(HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
+  guarantee((size_t) HeapRegion::CardsPerRegion < max_cards_per_region,
+            "too many cards per region");
 
   _bot_shared = new G1BlockOffsetSharedArray(_reserved,
                                              heap_word_size(init_byte_size));

@@ -165,6 +165,7 @@ g1CollectedHeap.inline.hpp              g1CollectedHeap.hpp
 g1CollectedHeap.inline.hpp              heapRegionSeq.hpp
 g1CollectedHeap.inline.hpp		taskqueue.hpp
 
+g1CollectorPolicy.cpp			arguments.hpp
 g1CollectorPolicy.cpp			concurrentG1Refine.hpp
 g1CollectorPolicy.cpp			concurrentMark.hpp
 g1CollectorPolicy.cpp			concurrentMarkThread.inline.hpp

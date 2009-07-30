@@ -37,7 +37,7 @@
   develop(intx, G1MarkingOverheadPercent, 0,                                \
           "Overhead of concurrent marking")                                 \
                                                                             \
-  product(intx, G1YoungGenSize, 0,                                          \
+  product(uintx, G1YoungGenSize, 0,                                         \
           "Size of the G1 young generation, 0 is the adaptive policy")      \
                                                                             \
   develop(bool, G1Gen, true,                                                \
@@ -245,6 +245,9 @@
   develop(uintx, G1FixedSurvivorSpaceSize, 0,                               \
           "If non-0 is the size of the G1 survivor space, "                 \
           "otherwise SurvivorRatio is used to determine the size")          \
+                                                                            \
+  product(uintx, G1HeapRegionSize, 0,                                       \
+          "Size of the G1 regions.")                                        \
                                                                             \
   experimental(bool, G1ParallelRSetUpdatingEnabled, false,                  \
           "Enables the parallelization of remembered set updating "         \
