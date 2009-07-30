@@ -95,6 +95,13 @@ public class Attributes implements Iterable<Attribute> {
         return attrs.length;
     }
 
+    public int byteLength() {
+        int length = 2;
+        for (Attribute a: attrs)
+            length += a.byteLength();
+        return length;
+    }
+
     public final Attribute[] attrs;
     public final Map<String, Attribute> map;
 }
