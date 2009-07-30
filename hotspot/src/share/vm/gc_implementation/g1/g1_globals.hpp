@@ -34,7 +34,7 @@
   product(intx, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions")                     \
                                                                             \
-  develop(intx, G1MarkingOverheadPercent, 0,                                   \
+  develop(intx, G1MarkingOverheadPercent, 0,                                \
           "Overhead of concurrent marking")                                 \
                                                                             \
   develop(bool, G1AccountConcurrentOverhead, false,                         \
@@ -47,7 +47,7 @@
   develop(bool, G1Gen, true,                                                \
           "If true, it will enable the generational G1")                    \
                                                                             \
-  develop(intx, G1GCPercent, 10,                                                \
+  develop(intx, G1GCPercent, 10,                                            \
           "The desired percent time spent on GC")                           \
                                                                             \
   develop(intx, G1PolicyVerbose, 0,                                         \
@@ -73,6 +73,12 @@
                                                                             \
   diagnostic(bool, G1SummarizeRSetStats, false,                             \
           "Summarize remembered set processing info")                       \
+                                                                            \
+  diagnostic(intx, G1SummarizeRSetStatsPeriod, 0,                           \
+          "The period (in number of GCs) at which we will generate "        \
+          "update buffer processing info "                                  \
+          "(0 means do not periodically generate this info); "              \
+          "it also requires -XX:+G1SummarizeRSetStats")                     \
                                                                             \
   diagnostic(bool, G1SummarizeZFStats, false,                               \
           "Summarize zero-filling info")                                    \
