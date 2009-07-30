@@ -92,9 +92,7 @@ protected:
   int _parallel_gc_threads;
 
   enum SomePrivateConstants {
-    NumPrevPausesForHeuristics = 10,
-    NumPrevGCsForHeuristics = 10,
-    NumAPIs = HeapRegion::MaxAge
+    NumPrevPausesForHeuristics = 10
   };
 
   G1MMUTracker* _mmu_tracker;
