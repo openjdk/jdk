@@ -85,6 +85,7 @@ public class Options {
     public boolean showAllAttrs;
     public boolean showConstants;
     public boolean sysInfo;
+    public boolean showInnerClasses;
 
     public boolean compat;             // bug-for-bug compatibility mode with old javap
     public boolean jsr277;
