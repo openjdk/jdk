@@ -2845,6 +2845,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
+  if (G1SummarizeRSetStats &&
+      (G1SummarizeRSetStatsPeriod > 0) &&
+      (total_collections() % G1SummarizeRSetStatsPeriod == 0)) {
+    g1_rem_set()->print_summary_info();
+  }
 }
 
 void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
