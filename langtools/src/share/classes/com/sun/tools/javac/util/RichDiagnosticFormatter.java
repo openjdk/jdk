@@ -524,10 +524,16 @@ public class RichDiagnosticFormatter extends
         @Override
         public Void visitTypeVar(TypeVar t, Void ignored) {
             if (indexOf(t, WhereClauseKind.TYPEVAR) == -1) {
+                //access the bound type and skip error types
                 Type bound = t.bound;
                 while ((bound instanceof ErrorType))
                     bound = ((ErrorType)bound).getOriginalType();
-                List<Type> bounds  = types.getBounds(t);
+                //retrieve the bound list - if the type variable
+                //has not been attributed the bound is not set
+                List<Type> bounds = bound != null ?
+                    types.getBounds(t) :
+                    List.<Type>nil();
+
                 nameSimplifier.addUsage(t.tsym);
 
                 boolean boundErroneous = bounds.head == null ||
