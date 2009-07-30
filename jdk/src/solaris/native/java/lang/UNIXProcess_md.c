@@ -447,14 +447,16 @@ execve_with_shell_fallback(const char *file,
 }
 
 /**
- * execvpe should have been included in the Unix standards.
- * execvpe is identical to execvp, except that the child environment is
+ * 'execvpe' should have been included in the Unix standards,
+ * and is a GNU extension in glibc 2.10.
+ *
+ * JDK_execvpe is identical to execvp, except that the child environment is
  * specified via the 3rd argument instead of being inherited from environ.
  */
 static void
-execvpe(const char *file,
-        const char *argv[],
-        const char *const envp[])
+JDK_execvpe(const char *file,
+            const char *argv[],
+            const char *const envp[])
 {
     /* This is one of the rare times it's more portable to declare an
      * external symbol explicitly, rather than via a system header.
@@ -644,7 +646,7 @@ childProcess(void *arg)
     if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
         goto WhyCantJohnnyExec;
 
-    execvpe(p->argv[0], p->argv, p->envv);
+    JDK_execvpe(p->argv[0], p->argv, p->envv);
 
  WhyCantJohnnyExec:
     /* We used to go to an awful lot of trouble to predict whether the
