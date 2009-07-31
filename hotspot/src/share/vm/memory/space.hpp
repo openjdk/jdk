@@ -106,6 +106,7 @@ class Space: public CHeapObj {
   virtual void set_end(HeapWord* value)    { _end = value; }
 
   virtual HeapWord* saved_mark_word() const  { return _saved_mark_word; }
+
   void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
 
   MemRegionClosure* preconsumptionDirtyCardClosure() const {

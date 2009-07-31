@@ -101,7 +101,8 @@ CallGenerator* Compile::find_intrinsic(ciMethod* m, bool is_virtual) {
     }
   }
   // Lazily create intrinsics for intrinsic IDs well-known in the runtime.
-  if (m->intrinsic_id() != vmIntrinsics::_none) {
+  if (m->intrinsic_id() != vmIntrinsics::_none &&
+      m->intrinsic_id() <= vmIntrinsics::LAST_COMPILER_INLINE) {
     CallGenerator* cg = make_vm_intrinsic(m, is_virtual);
     if (cg != NULL) {
       // Save it for next time:
@@ -440,6 +441,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _orig_pc_slot_offset_in_bytes(0),
                   _node_bundling_limit(0),
                   _node_bundling_base(NULL),
+                  _java_calls(0),
+                  _inner_loops(0),
 #ifndef PRODUCT
                   _trace_opto_output(TraceOptoOutput || method()->has_option("TraceOptoOutput")),
                   _printer(IdealGraphPrinter::printer()),
@@ -710,6 +713,8 @@ Compile::Compile( ciEnv* ci_env,
     _code_buffer("Compile::Fill_buffer"),
     _node_bundling_limit(0),
     _node_bundling_base(NULL),
+    _java_calls(0),
+    _inner_loops(0),
 #ifndef PRODUCT
     _trace_opto_output(TraceOptoOutput),
     _printer(NULL),
@@ -1850,22 +1855,26 @@ struct Final_Reshape_Counts : public StackObj {
   int  _float_count;            // count float ops requiring 24-bit precision
   int  _double_count;           // count double ops requiring more precision
   int  _java_call_count;        // count non-inlined 'java' calls
+  int  _inner_loop_count;       // count loops which need alignment
   VectorSet _visited;           // Visitation flags
   Node_List _tests;             // Set of IfNodes & PCTableNodes
 
   Final_Reshape_Counts() :
-    _call_count(0), _float_count(0), _double_count(0), _java_call_count(0),
+    _call_count(0), _float_count(0), _double_count(0),
+    _java_call_count(0), _inner_loop_count(0),
     _visited( Thread::current()->resource_area() ) { }
 
   void inc_call_count  () { _call_count  ++; }
   void inc_float_count () { _float_count ++; }
   void inc_double_count() { _double_count++; }
   void inc_java_call_count() { _java_call_count++; }
+  void inc_inner_loop_count() { _inner_loop_count++; }
 
   int  get_call_count  () const { return _call_count  ; }
   int  get_float_count () const { return _float_count ; }
   int  get_double_count() const { return _double_count; }
   int  get_java_call_count() const { return _java_call_count; }
+  int  get_inner_loop_count() const { return _inner_loop_count; }
 };
 
 static bool oop_offset_is_sane(const TypeInstPtr* tp) {
@@ -1877,7 +1886,7 @@ static bool oop_offset_is_sane(const TypeInstPtr* tp) {
 
 //------------------------------final_graph_reshaping_impl----------------------
 // Implement items 1-5 from final_graph_reshaping below.
-static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
+static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
 
   if ( n->outcnt() == 0 ) return; // dead node
   uint nop = n->Opcode();
@@ -1919,13 +1928,13 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_CmpF:
   case Op_CmpF3:
   // case Op_ConvL2F: // longs are split into 32-bit halves
-    fpu.inc_float_count();
+    frc.inc_float_count();
     break;
 
   case Op_ConvF2D:
   case Op_ConvD2F:
-    fpu.inc_float_count();
-    fpu.inc_double_count();
+    frc.inc_float_count();
+    frc.inc_double_count();
     break;
 
   // Count all double operations that may use FPU
@@ -1942,7 +1951,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_ConD:
   case Op_CmpD:
   case Op_CmpD3:
-    fpu.inc_double_count();
+    frc.inc_double_count();
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
   case Op_Opaque2:              // Remove Opaque Nodes before matching
@@ -1951,7 +1960,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_CallStaticJava:
   case Op_CallJava:
   case Op_CallDynamicJava:
-    fpu.inc_java_call_count(); // Count java call site;
+    frc.inc_java_call_count(); // Count java call site;
   case Op_CallRuntime:
   case Op_CallLeaf:
   case Op_CallLeafNoFP: {
@@ -1962,7 +1971,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
     // uncommon_trap, _complete_monitor_locking, _complete_monitor_unlocking,
     // _new_Java, _new_typeArray, _new_objArray, _rethrow_Java, ...
     if( !call->is_CallStaticJava() || !call->as_CallStaticJava()->_name ) {
-      fpu.inc_call_count();   // Count the call site
+      frc.inc_call_count();   // Count the call site
     } else {                  // See if uncommon argument is shared
       Node *n = call->in(TypeFunc::Parms);
       int nop = n->Opcode();
@@ -1983,11 +1992,11 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_StoreD:
   case Op_LoadD:
   case Op_LoadD_unaligned:
-    fpu.inc_double_count();
+    frc.inc_double_count();
     goto handle_mem;
   case Op_StoreF:
   case Op_LoadF:
-    fpu.inc_float_count();
+    frc.inc_float_count();
     goto handle_mem;
 
   case Op_StoreB:
@@ -2324,6 +2333,12 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
       n->subsume_by(btp);
     }
     break;
+  case Op_Loop:
+  case Op_CountedLoop:
+    if (n->as_Loop()->is_inner_loop()) {
+      frc.inc_inner_loop_count();
+    }
+    break;
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
@@ -2332,17 +2347,17 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
 
   // Collect CFG split points
   if (n->is_MultiBranch())
-    fpu._tests.push(n);
+    frc._tests.push(n);
 }
 
 //------------------------------final_graph_reshaping_walk---------------------
 // Replacing Opaque nodes with their input in final_graph_reshaping_impl(),
 // requires that the walk visits a node's inputs before visiting the node.
-static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &fpu ) {
+static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc ) {
   ResourceArea *area = Thread::current()->resource_area();
   Unique_Node_List sfpt(area);
 
-  fpu._visited.set(root->_idx); // first, mark node as visited
+  frc._visited.set(root->_idx); // first, mark node as visited
   uint cnt = root->req();
   Node *n = root;
   uint  i = 0;
@@ -2351,7 +2366,7 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
       // Place all non-visited non-null inputs onto stack
       Node* m = n->in(i);
       ++i;
-      if (m != NULL && !fpu._visited.test_set(m->_idx)) {
+      if (m != NULL && !frc._visited.test_set(m->_idx)) {
         if (m->is_SafePoint() && m->as_SafePoint()->jvms() != NULL)
           sfpt.push(m);
         cnt = m->req();
@@ -2361,7 +2376,7 @@ static void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Re
       }
     } else {
       // Now do post-visit work
-      final_graph_reshaping_impl( n, fpu );
+      final_graph_reshaping_impl( n, frc );
       if (nstack.is_empty())
         break;             // finished
       n = nstack.node();   // Get node from stack
@@ -2442,16 +2457,16 @@ bool Compile::final_graph_reshaping() {
     return true;
   }
 
-  Final_Reshape_Counts fpu;
+  Final_Reshape_Counts frc;
 
   // Visit everybody reachable!
   // Allocate stack of size C->unique()/2 to avoid frequent realloc
   Node_Stack nstack(unique() >> 1);
-  final_graph_reshaping_walk(nstack, root(), fpu);
+  final_graph_reshaping_walk(nstack, root(), frc);
 
   // Check for unreachable (from below) code (i.e., infinite loops).
-  for( uint i = 0; i < fpu._tests.size(); i++ ) {
-    MultiBranchNode *n = fpu._tests[i]->as_MultiBranch();
+  for( uint i = 0; i < frc._tests.size(); i++ ) {
+    MultiBranchNode *n = frc._tests[i]->as_MultiBranch();
     // Get number of CFG targets.
     // Note that PCTables include exception targets after calls.
     uint required_outcnt = n->required_outcnt();
@@ -2497,7 +2512,7 @@ bool Compile::final_graph_reshaping() {
     // Check that I actually visited all kids.  Unreached kids
     // must be infinite loops.
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++)
-      if (!fpu._visited.test(n->fast_out(j)->_idx)) {
+      if (!frc._visited.test(n->fast_out(j)->_idx)) {
         record_method_not_compilable("infinite loop");
         return true;            // Found unvisited kid; must be unreach
       }
@@ -2506,13 +2521,14 @@ bool Compile::final_graph_reshaping() {
   // If original bytecodes contained a mixture of floats and doubles
   // check if the optimizer has made it homogenous, item (3).
   if( Use24BitFPMode && Use24BitFP &&
-      fpu.get_float_count() > 32 &&
-      fpu.get_double_count() == 0 &&
-      (10 * fpu.get_call_count() < fpu.get_float_count()) ) {
+      frc.get_float_count() > 32 &&
+      frc.get_double_count() == 0 &&
+      (10 * frc.get_call_count() < frc.get_float_count()) ) {
     set_24_bit_selection_and_mode( false,  true );
   }
 
-  set_has_java_calls(fpu.get_java_call_count() > 0);
+  set_java_calls(frc.get_java_call_count());
+  set_inner_loops(frc.get_inner_loop_count());
 
   // No infinite loops, no reason to bail out.
   return false;
