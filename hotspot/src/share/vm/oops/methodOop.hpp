@@ -104,7 +104,7 @@ class methodOopDesc : public oopDesc {
   u2                _max_stack;                  // Maximum number of entries on the expression stack
   u2                _max_locals;                 // Number of local variables used by this method
   u2                _size_of_parameters;         // size of the parameter block (receiver + arguments) in words
-  u1                _intrinsic_id_cache;         // Cache for intrinsic_id; 0 or 1+vmInt::ID
+  u1                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
   u1                _highest_tier_compile;       // Highest compile level this method has ever seen.
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
   u2                _number_of_breakpoints;      // fullspeed debugging support
@@ -223,8 +223,6 @@ class methodOopDesc : public oopDesc {
   void set_max_locals(int size)                  { _max_locals = size; }
   int highest_tier_compile()                     { return _highest_tier_compile;}
   void set_highest_tier_compile(int level)      { _highest_tier_compile = level;}
-
-  void clear_intrinsic_id_cache() { _intrinsic_id_cache = 0; }
 
   // Count of times method was exited via exception while interpreting
   void interpreter_throwout_increment() {
@@ -571,18 +569,12 @@ class methodOopDesc : public oopDesc {
   void set_cached_itable_index(int index)           { instanceKlass::cast(method_holder())->set_cached_itable_index(method_idnum(), index); }
 
   // Support for inlining of intrinsic methods
-  vmIntrinsics::ID intrinsic_id() const { // returns zero if not an intrinsic
-    const u1& cache = _intrinsic_id_cache;
-    if (cache != 0) {
-      return (vmIntrinsics::ID)(cache - 1);
-    } else {
-      vmIntrinsics::ID id = compute_intrinsic_id();
-      *(u1*)&cache = ((u1) id) + 1;   // force the cache to be non-const
-      vmIntrinsics::verify_method(id, (methodOop) this);
-      assert((vmIntrinsics::ID)(cache - 1) == id, "proper conversion");
-      return id;
-    }
-  }
+  vmIntrinsics::ID intrinsic_id() const          { return (vmIntrinsics::ID) _intrinsic_id;           }
+  void     set_intrinsic_id(vmIntrinsics::ID id) {                           _intrinsic_id = (u1) id; }
+
+  // Helper routines for intrinsic_id() and vmIntrinsics::method().
+  void init_intrinsic_id();     // updates from _none if a match
+  static vmSymbols::SID klass_id_for_intrinsics(klassOop holder);
 
   // On-stack replacement support
   bool has_osr_nmethod()                         { return instanceKlass::cast(method_holder())->lookup_osr_nmethod(this, InvocationEntryBci) != NULL; }
@@ -634,9 +626,6 @@ class methodOopDesc : public oopDesc {
   // size of parameters
   void set_size_of_parameters(int size)          { _size_of_parameters = size; }
  private:
-
-  // Helper routine for intrinsic_id().
-  vmIntrinsics::ID compute_intrinsic_id() const;
 
   // Inlined elements
   address* native_function_addr() const          { assert(is_native(), "must be native"); return (address*) (this+1); }

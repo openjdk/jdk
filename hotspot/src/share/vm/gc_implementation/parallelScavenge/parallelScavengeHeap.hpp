@@ -217,7 +217,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 
-  void verify(bool allow_dirty, bool silent);
+  void verify(bool allow_dirty, bool silent, bool /* option */);
 
   void print_heap_change(size_t prev_used);
 
