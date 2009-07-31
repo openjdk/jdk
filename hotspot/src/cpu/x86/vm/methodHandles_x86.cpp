@@ -269,11 +269,11 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
 
 #ifndef PRODUCT
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh,
+                              oopDesc* mh,
                               intptr_t* entry_sp,
                               intptr_t* saved_sp) {
   // called as a leaf from native code: do not block the JVM!
-  printf("MH %s "PTR_FORMAT" "PTR_FORMAT" "INTX_FORMAT"\n", adaptername, mh, entry_sp, entry_sp - saved_sp);
+  printf("MH %s "PTR_FORMAT" "PTR_FORMAT" "INTX_FORMAT"\n", adaptername, (void*)mh, entry_sp, entry_sp - saved_sp);
 }
 #endif //PRODUCT
 
