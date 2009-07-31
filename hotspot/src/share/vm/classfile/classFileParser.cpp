@@ -547,7 +547,6 @@ objArrayHandle ClassFileParser::parse_interfaces(constantPoolHandle cp,
                                                  int length,
                                                  Handle class_loader,
                                                  Handle protection_domain,
-                                                 PerfTraceTime* vmtimer,
                                                  symbolHandle class_name,
                                                  TRAPS) {
   ClassFileStream* cfs = stream();
@@ -575,13 +574,11 @@ objArrayHandle ClassFileParser::parse_interfaces(constantPoolHandle cp,
       guarantee_property(unresolved_klass->byte_at(0) != JVM_SIGNATURE_ARRAY,
                          "Bad interface name in class file %s", CHECK_(nullHandle));
 
-      vmtimer->suspend();  // do not count recursive loading twice
       // Call resolve_super so classcircularity is checked
       klassOop k = SystemDictionary::resolve_super_or_fail(class_name,
                     unresolved_klass, class_loader, protection_domain,
                     false, CHECK_(nullHandle));
       interf = KlassHandle(THREAD, k);
-      vmtimer->resume();
 
       if (LinkWellKnownClasses)  // my super type is well known to me
         cp->klass_at_put(interface_index, interf()); // eagerly resolve
@@ -2558,7 +2555,15 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
 
   ClassFileStream* cfs = stream();
   // Timing
-  PerfTraceTime vmtimer(ClassLoader::perf_accumulated_time());
+  assert(THREAD->is_Java_thread(), "must be a JavaThread");
+  JavaThread* jt = (JavaThread*) THREAD;
+
+  PerfClassTraceTime ctimer(ClassLoader::perf_class_parse_time(),
+                            ClassLoader::perf_class_parse_selftime(),
+                            NULL,
+                            jt->get_thread_stat()->perf_recursion_counts_addr(),
+                            jt->get_thread_stat()->perf_timers_addr(),
+                            PerfClassTraceTime::PARSE_CLASS);
 
   _has_finalizer = _has_empty_finalizer = _has_vanilla_constructor = false;
 
@@ -2738,7 +2743,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     if (itfs_len == 0) {
       local_interfaces = objArrayHandle(THREAD, Universe::the_empty_system_obj_array());
     } else {
-      local_interfaces = parse_interfaces(cp, itfs_len, class_loader, protection_domain, &vmtimer, _class_name, CHECK_(nullHandle));
+      local_interfaces = parse_interfaces(cp, itfs_len, class_loader, protection_domain, _class_name, CHECK_(nullHandle));
     }
 
     // Fields (offsets are filled in later)
@@ -2782,6 +2787,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                                            protection_domain,
                                                            true,
                                                            CHECK_(nullHandle));
+
       KlassHandle kh (THREAD, k);
       super_klass = instanceKlassHandle(THREAD, kh());
       if (LinkWellKnownClasses)  // my super class is well known to me

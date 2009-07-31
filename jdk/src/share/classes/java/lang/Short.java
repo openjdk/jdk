@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,9 @@ public final class Short extends Number implements Comparable<Short> {
      * {@link #Short(short)}, as this method is likely to yield
      * significantly better space and time performance by caching
      * frequently requested values.
+     *
+     * This method will always cache values in the range -128 to 127,
+     * inclusive, and may cache other values outside of this range.
      *
      * @param  s a short value.
      * @return a {@code Short} instance representing {@code s}.
