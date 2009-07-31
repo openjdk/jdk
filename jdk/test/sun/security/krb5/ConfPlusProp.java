@@ -23,7 +23,7 @@
 /*
  * @test
  * @bug 6857795
- * @buf 6858589
+ * @bug 6858589
  * @summary krb5.conf ignored if system properties on realm and kdc are provided
  */
 
