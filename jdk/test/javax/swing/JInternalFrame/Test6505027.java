@@ -26,6 +26,7 @@
  * @bug 6505027
  * @summary Tests focus problem inside internal frame
  * @author Sergey Malenkov
+ * @library ..
  */
 
 import java.awt.AWTException;
@@ -45,11 +46,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
-public class Test6505027 implements Runnable {
+public class Test6505027 {
 
     private static final boolean INTERNAL = true;
     private static final boolean TERMINATE = true;
@@ -57,80 +57,53 @@ public class Test6505027 implements Runnable {
     private static final int WIDTH = 450;
     private static final int HEIGHT = 200;
     private static final int OFFSET = 10;
-    private static final long PAUSE = 2048L;
 
-    private static final String[] COLUMNS = { "Size", "Shape" }; // NON-NLS
-    private static final String[] ITEMS = { "a", "b", "c", "d" }; // NON-NLS
-    private static final String KEY = "terminateEditOnFocusLost"; // NON-NLS
+    private static final String[] COLUMNS = { "Size", "Shape" }; // NON-NLS: column names
+    private static final String[] ITEMS = { "a", "b", "c", "d" }; // NON-NLS: combobox content
+    private static final String KEY = "terminateEditOnFocusLost"; // NON-NLS: property name
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Test6505027());
-
-        Component component = null;
-        while (component == null) {
-            try {
-                Thread.sleep(PAUSE);
-            }
-            catch (InterruptedException exception) {
-                // ignore interrupted exception
-            }
-            component = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-        }
-        if (!component.getClass().equals(JComboBox.class)) {
-            throw new Error("unexpected focus owner: " + component);
-        }
-        SwingUtilities.getWindowAncestor(component).dispose();
+    public static void main(String[] args) throws Throwable {
+        SwingTest.start(Test6505027.class);
     }
 
-    private JTable table;
-    private Point point;
+    private final JTable table = new JTable(new DefaultTableModel(COLUMNS, 2));
 
-    public void run() {
-        if (this.table == null) {
-            JFrame main = new JFrame();
-            main.setSize(WIDTH + OFFSET * 3, HEIGHT + OFFSET * 5);
-            main.setLocationRelativeTo(null);
-            main.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-            main.setVisible(true);
+    public Test6505027(JFrame main) {
+        Container container = main;
+        if (INTERNAL) {
+            JInternalFrame frame = new JInternalFrame();
+            frame.setBounds(OFFSET, OFFSET, WIDTH, HEIGHT);
+            frame.setVisible(true);
 
-            Container container = main;
-            if (INTERNAL) {
-                JInternalFrame frame = new JInternalFrame();
-                frame.setBounds(OFFSET, OFFSET, WIDTH, HEIGHT);
-                frame.setVisible(true);
+            JDesktopPane desktop = new JDesktopPane();
+            desktop.add(frame, new Integer(1));
 
-                JDesktopPane desktop = new JDesktopPane();
-                desktop.add(frame, new Integer(1));
-
-                container.add(desktop);
-                container = frame;
-            }
-            this.table = new JTable(new DefaultTableModel(COLUMNS, 2));
-            if (TERMINATE) {
-                this.table.putClientProperty(KEY, Boolean.TRUE);
-            }
-            TableColumn column = this.table.getColumn(COLUMNS[1]);
-            column.setCellEditor(new DefaultCellEditor(new JComboBox(ITEMS)));
-
-            container.add(BorderLayout.NORTH, new JTextField());
-            container.add(BorderLayout.CENTER, new JScrollPane(this.table));
-
-            SwingUtilities.invokeLater(this);
+            container.add(desktop);
+            container = frame;
         }
-        else if (this.point == null) {
-            this.point = this.table.getCellRect(1, 1, false).getLocation();
-            SwingUtilities.convertPointToScreen(this.point, this.table);
-            SwingUtilities.invokeLater(this);
+        if (TERMINATE) {
+            this.table.putClientProperty(KEY, Boolean.TRUE);
         }
-        else {
-            try {
-                Robot robot = new Robot();
-                robot.mouseMove(this.point.x + 1, this.point.y + 1);
-                robot.mousePress(InputEvent.BUTTON1_MASK);
-            }
-            catch (AWTException exception) {
-                throw new Error("unexpected exception", exception);
-            }
+        TableColumn column = this.table.getColumn(COLUMNS[1]);
+        column.setCellEditor(new DefaultCellEditor(new JComboBox(ITEMS)));
+
+        container.add(BorderLayout.NORTH, new JTextField());
+        container.add(BorderLayout.CENTER, new JScrollPane(this.table));
+    }
+
+    public void press() throws AWTException {
+        Point point = this.table.getCellRect(1, 1, false).getLocation();
+        SwingUtilities.convertPointToScreen(point, this.table);
+
+        Robot robot = new Robot();
+        robot.mouseMove(point.x + 1, point.y + 1);
+        robot.mousePress(InputEvent.BUTTON1_MASK);
+    }
+
+    public static void validate() {
+        Component component = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+        if (!component.getClass().equals(JComboBox.class)) {
+            throw new Error("unexpected focus owner: " + component);
         }
     }
 }
