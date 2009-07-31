@@ -29,6 +29,7 @@
 typedef juint narrowOop; // Offset instead of address for an oop within a java object
 typedef class klassOopDesc* wideKlassOop; // to keep SA happy and unhandled oop
                                           // detector happy.
+typedef void* OopOrNarrowOopStar;
 
 #ifndef CHECK_UNHANDLED_OOPS
 
