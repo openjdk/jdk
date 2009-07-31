@@ -81,9 +81,13 @@ public:
   // barrier types.  Semantically, it should be thought of as a call to the
   // virtual "_work" function below, which must implement the barrier.)
   // First the pre-write versions...
-  inline void write_ref_field_pre(void* field, oop new_val);
+  template <class T> inline void write_ref_field_pre(T* field, oop new_val);
+private:
+  // Keep this private so as to catch violations at build time.
+  virtual void write_ref_field_pre_work(     void* field, oop new_val) { guarantee(false, "Not needed"); };
 protected:
-  virtual void write_ref_field_pre_work(void* field, oop new_val) {};
+  virtual void write_ref_field_pre_work(      oop* field, oop new_val) {};
+  virtual void write_ref_field_pre_work(narrowOop* field, oop new_val) {};
 public:
 
   // ...then the post-write version.
@@ -117,12 +121,17 @@ public:
   virtual void read_ref_array(MemRegion mr) = 0;
   virtual void read_prim_array(MemRegion mr) = 0;
 
-  virtual void write_ref_array_pre(MemRegion mr) {}
+  virtual void write_ref_array_pre(      oop* dst, int length) {}
+  virtual void write_ref_array_pre(narrowOop* dst, int length) {}
   inline void write_ref_array(MemRegion mr);
 
   // Static versions, suitable for calling from generated code.
   static void static_write_ref_array_pre(HeapWord* start, size_t count);
   static void static_write_ref_array_post(HeapWord* start, size_t count);
+  // Narrow oop versions of the above; count is # of array elements being written,
+  // starting with "start", which is HeapWord-aligned.
+  static void static_write_ref_array_pre_narrow(HeapWord* start, size_t count);
+  static void static_write_ref_array_post_narrow(HeapWord* start, size_t count);
 
 protected:
   virtual void write_ref_array_work(MemRegion mr) = 0;
