@@ -420,6 +420,13 @@ Form::DataType InstructForm::is_ideal_load() const {
   return  _matrule->is_ideal_load();
 }
 
+// Return 'true' if this instruction matches an ideal 'LoadKlass' node
+bool InstructForm::skip_antidep_check() const {
+  if( _matrule == NULL ) return false;
+
+  return  _matrule->skip_antidep_check();
+}
+
 // Return 'true' if this instruction matches an ideal 'Load?' node
 Form::DataType InstructForm::is_ideal_store() const {
   if( _matrule == NULL ) return Form::none;
@@ -567,6 +574,8 @@ bool InstructForm::rematerialize(FormDict &globals, RegisterForm *registers ) {
 
 // loads from memory, so must check for anti-dependence
 bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
+  if ( skip_antidep_check() ) return false;
+
   // Machine independent loads must be checked for anti-dependences
   if( is_ideal_load() != Form::none )  return true;
 
@@ -3954,6 +3963,28 @@ Form::DataType MatchRule::is_ideal_load() const {
   }
 
   return ideal_load;
+}
+
+
+bool MatchRule::skip_antidep_check() const {
+  // Some loads operate on what is effectively immutable memory so we
+  // should skip the anti dep computations.  For some of these nodes
+  // the rewritable field keeps the anti dep logic from triggering but
+  // for certain kinds of LoadKlass it does not since they are
+  // actually reading memory which could be rewritten by the runtime,
+  // though never by generated code.  This disables it uniformly for
+  // the nodes that behave like this: LoadKlass, LoadNKlass and
+  // LoadRange.
+  if ( _opType && (strcmp(_opType,"Set") == 0) && _rChild ) {
+    const char *opType = _rChild->_opType;
+    if (strcmp("LoadKlass", opType) == 0 ||
+        strcmp("LoadNKlass", opType) == 0 ||
+        strcmp("LoadRange", opType) == 0) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 
