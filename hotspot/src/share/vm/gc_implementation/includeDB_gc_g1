@@ -27,6 +27,7 @@
 bufferingOopClosure.hpp			genOopClosures.hpp
 bufferingOopClosure.hpp			generation.hpp
 bufferingOopClosure.hpp			os.hpp
+bufferingOopClosure.hpp			taskqueue.hpp
 
 cardTableRS.cpp				concurrentMark.hpp
 cardTableRS.cpp				g1SATBCardTableModRefBS.hpp
@@ -139,7 +140,7 @@ g1CollectedHeap.cpp                     concurrentZFThread.hpp
 g1CollectedHeap.cpp                     g1CollectedHeap.inline.hpp
 g1CollectedHeap.cpp                     g1CollectorPolicy.hpp
 g1CollectedHeap.cpp                     g1MarkSweep.hpp
-g1CollectedHeap.cpp                     g1RemSet.hpp
+g1CollectedHeap.cpp                     g1RemSet.inline.hpp
 g1CollectedHeap.cpp                     g1OopClosures.inline.hpp
 g1CollectedHeap.cpp                     genOopClosures.inline.hpp
 g1CollectedHeap.cpp                     gcLocker.inline.hpp
@@ -151,13 +152,14 @@ g1CollectedHeap.cpp                     icBuffer.hpp
 g1CollectedHeap.cpp                     isGCActiveMark.hpp
 g1CollectedHeap.cpp			oop.inline.hpp
 g1CollectedHeap.cpp			oop.pcgc.inline.hpp
-g1CollectedHeap.cpp			parGCAllocBuffer.hpp
 g1CollectedHeap.cpp                     vm_operations_g1.hpp
 g1CollectedHeap.cpp                     vmThread.hpp
 
 g1CollectedHeap.hpp                     barrierSet.hpp
+g1CollectedHeap.hpp                     g1RemSet.hpp
 g1CollectedHeap.hpp                     heapRegion.hpp
 g1CollectedHeap.hpp                     memRegion.hpp
+g1CollectedHeap.hpp			parGCAllocBuffer.hpp
 g1CollectedHeap.hpp                     sharedHeap.hpp
 
 g1CollectedHeap.inline.hpp              concurrentMark.hpp
@@ -245,6 +247,7 @@ g1RemSet.cpp				intHisto.hpp
 g1RemSet.cpp				iterator.hpp
 g1RemSet.cpp				oop.inline.hpp
 
+g1RemSet.inline.hpp			oop.inline.hpp
 g1RemSet.inline.hpp			g1RemSet.hpp
 g1RemSet.inline.hpp			heapRegionRemSet.hpp
 
@@ -255,6 +258,7 @@ g1SATBCardTableModRefBS.cpp		thread.hpp
 g1SATBCardTableModRefBS.cpp		thread_<os_family>.inline.hpp
 g1SATBCardTableModRefBS.cpp		satbQueue.hpp
 
+g1SATBCardTableModRefBS.hpp		oop.inline.hpp
 g1SATBCardTableModRefBS.hpp		cardTableModRefBS.hpp
 g1SATBCardTableModRefBS.hpp		memRegion.hpp
 
