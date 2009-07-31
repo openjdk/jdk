@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -637,6 +637,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      * the constructor {@link #Integer(int)}, as this method is likely
      * to yield significantly better space and time performance by
      * caching frequently requested values.
+     *
+     * This method will always cache values in the range -128 to 127,
+     * inclusive, and may cache other values outside of this range.
      *
      * @param  i an {@code int} value.
      * @return an {@code Integer} instance representing {@code i}.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2425,6 +2425,11 @@ JvmtiGCMarker::JvmtiGCMarker(bool full) : _full(full), _invocation_count(0) {
   // if there aren't any JVMTI environments then nothing to do
   if (!JvmtiEnv::environments_might_exist()) {
     return;
+  }
+
+  if (ForceFullGCJVMTIEpilogues) {
+    // force 'Full GC' was done semantics for JVMTI GC epilogues
+    _full = true;
   }
 
   // GarbageCollectionStart event posted from VM thread - okay because
