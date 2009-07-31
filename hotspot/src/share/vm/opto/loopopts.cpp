@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,7 +346,10 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
 
     // Yes!  Reshape address expression!
     Node *inv_scale = new (C, 3) LShiftINode( add_invar, scale );
-    register_new_node( inv_scale, add_invar_ctrl );
+    Node *inv_scale_ctrl =
+      dom_depth(add_invar_ctrl) > dom_depth(scale_ctrl) ?
+      add_invar_ctrl : scale_ctrl;
+    register_new_node( inv_scale, inv_scale_ctrl );
     Node *var_scale = new (C, 3) LShiftINode( add_var, scale );
     register_new_node( var_scale, n_ctrl );
     Node *var_add = new (C, 3) AddINode( var_scale, inv_scale );
