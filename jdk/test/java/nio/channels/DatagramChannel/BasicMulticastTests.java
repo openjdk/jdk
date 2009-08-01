@@ -25,6 +25,7 @@
  * @bug 4527345
  * @summary Unit test for DatagramChannel's multicast support
  * @build BasicMulticastTests NetworkConfiguration
+ * @run main BasicMulticastTests
  */
 
 import java.nio.ByteBuffer;

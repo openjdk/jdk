@@ -33,9 +33,8 @@
 
 /*
  * @test
- * @bug 4486658
- * @compile -source 1.5 ConcurrentQueueLoops.java
- * @run main/timeout=230 ConcurrentQueueLoops
+ * @bug 4486658 6785442
+ * @run main ConcurrentQueueLoops 8 123456
  * @summary Checks that a set of threads can repeatedly get and modify items
  */
 
@@ -44,34 +43,75 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 public class ConcurrentQueueLoops {
-    static final ExecutorService pool = Executors.newCachedThreadPool();
-    static AtomicInteger totalItems;
-    static boolean print = false;
+    ExecutorService pool;
+    AtomicInteger totalItems;
+    boolean print;
 
-    public static void main(String[] args) throws Exception {
-        int maxStages = 8;
-        int items = 100000;
+    // Suitable for benchmarking.  Overriden by args[0] for testing.
+    int maxStages = 20;
 
+    // Suitable for benchmarking.  Overriden by args[1] for testing.
+    int items = 1024 * 1024;
+
+    Collection<Queue<Integer>> concurrentQueues() {
+        List<Queue<Integer>> queues = new ArrayList<Queue<Integer>>();
+        queues.add(new ConcurrentLinkedQueue<Integer>());
+        queues.add(new ArrayBlockingQueue<Integer>(items, false));
+        //queues.add(new ArrayBlockingQueue<Integer>(count, true));
+        queues.add(new LinkedBlockingQueue<Integer>());
+        queues.add(new LinkedBlockingDeque<Integer>());
+
+        try {
+            queues.add((Queue<Integer>)
+                       Class.forName("java.util.concurrent.LinkedTransferQueue")
+                       .newInstance());
+        } catch (IllegalAccessException e) {
+        } catch (InstantiationException e) {
+        } catch (ClassNotFoundException e) {
+            // OK; not yet added to JDK
+        }
+
+        // Following additional implementations are available from:
+        // http://gee.cs.oswego.edu/dl/concurrency-interest/index.html
+        // queues.add(new LinkedTransferQueue<Integer>());
+        // queues.add(new SynchronizedLinkedListQueue<Integer>());
+
+        // Avoid "first fast, second slow" benchmark effect.
+        Collections.shuffle(queues);
+        return queues;
+    }
+
+    void test(String[] args) throws Throwable {
         if (args.length > 0)
             maxStages = Integer.parseInt(args[0]);
+        if (args.length > 1)
+            items = Integer.parseInt(args[1]);
+
+        for (Queue<Integer> queue : concurrentQueues())
+            test(queue);
+    }
+
+    void test(final Queue<Integer> q) throws Throwable {
+        System.out.println(q.getClass().getSimpleName());
+        pool = Executors.newCachedThreadPool();
+        print = false;
 
         print = false;
         System.out.println("Warmup...");
-        oneRun(1, items);
-        Thread.sleep(100);
-        oneRun(1, items);
+        oneRun(1, items, q);
+        //Thread.sleep(100);
+        oneRun(3, items, q);
         Thread.sleep(100);
         print = true;
 
         for (int i = 1; i <= maxStages; i += (i+1) >>> 1) {
-            oneRun(i, items);
+            oneRun(i, items, q);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
-            throw new Error();
+        check(pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS));
    }
 
-    static class Stage implements Callable<Integer> {
+    class Stage implements Callable<Integer> {
         final Queue<Integer> queue;
         final CyclicBarrier barrier;
         int items;
@@ -110,15 +150,11 @@ public class ConcurrentQueueLoops {
                 }
                 return new Integer(l);
             }
-            catch (Exception ie) {
-                ie.printStackTrace();
-                throw new Error("Call loop failed");
-            }
+            catch (Throwable t) { unexpected(t); return null; }
         }
     }
 
-    static void oneRun(int n, int items) throws Exception {
-        Queue<Integer> q = new ConcurrentLinkedQueue<Integer>();
+    void oneRun(int n, int items, final Queue<Integer> q) throws Exception {
         LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
         CyclicBarrier barrier = new CyclicBarrier(n + 1, timer);
         totalItems = new AtomicInteger(n * items);
@@ -141,6 +177,22 @@ public class ConcurrentQueueLoops {
             System.out.println(LoopHelpers.rightJustify(time / (items * n)) + " ns per item");
         if (total == 0) // avoid overoptimization
             System.out.println("useless result: " + total);
-
     }
+
+    //--------------------- Infrastructure ---------------------------
+    volatile int passed = 0, failed = 0;
+    void pass() {passed++;}
+    void fail() {failed++; Thread.dumpStack();}
+    void fail(String msg) {System.err.println(msg); fail();}
+    void unexpected(Throwable t) {failed++; t.printStackTrace();}
+    void check(boolean cond) {if (cond) pass(); else fail();}
+    void equal(Object x, Object y) {
+        if (x == null ? y == null : x.equals(y)) pass();
+        else fail(x + " not equal to " + y);}
+    public static void main(String[] args) throws Throwable {
+        new ConcurrentQueueLoops().instanceMain(args);}
+    public void instanceMain(String[] args) throws Throwable {
+        try {test(args);} catch (Throwable t) {unexpected(t);}
+        System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
+        if (failed > 0) throw new AssertionError("Some tests failed");}
 }
