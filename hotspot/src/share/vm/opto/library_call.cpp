@@ -3222,24 +3222,32 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
   }
 
   if (!stopped()) {
-    // How many elements will we copy from the original?
-    // The answer is MinI(orig_length - start, length).
-    Node* orig_tail = _gvn.transform( new(C, 3) SubINode(orig_length, start) );
-    Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
+    Node *newcopy;
+    //set the original stack and the reexecute bit for the interpreter to reexecute
+    //the bytecode that invokes Arrays.copyOf if deoptimization happens
+    { PreserveReexecuteState preexecs(this);
+      _sp += nargs;
+      jvms()->set_should_reexecute(true);
 
-    const bool raw_mem_only = true;
-    Node* newcopy = new_array(klass_node, length, nargs, raw_mem_only);
+      // How many elements will we copy from the original?
+      // The answer is MinI(orig_length - start, length).
+      Node* orig_tail = _gvn.transform( new(C, 3) SubINode(orig_length, start) );
+      Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
 
-    // Generate a direct call to the right arraycopy function(s).
-    // We know the copy is disjoint but we might not know if the
-    // oop stores need checking.
-    // Extreme case:  Arrays.copyOf((Integer[])x, 10, String[].class).
-    // This will fail a store-check if x contains any non-nulls.
-    bool disjoint_bases = true;
-    bool length_never_negative = true;
-    generate_arraycopy(TypeAryPtr::OOPS, T_OBJECT,
-                       original, start, newcopy, intcon(0), moved,
-                       disjoint_bases, length_never_negative);
+      const bool raw_mem_only = true;
+      newcopy = new_array(klass_node, length, 0, raw_mem_only);
+
+      // Generate a direct call to the right arraycopy function(s).
+      // We know the copy is disjoint but we might not know if the
+      // oop stores need checking.
+      // Extreme case:  Arrays.copyOf((Integer[])x, 10, String[].class).
+      // This will fail a store-check if x contains any non-nulls.
+      bool disjoint_bases = true;
+      bool length_never_negative = true;
+      generate_arraycopy(TypeAryPtr::OOPS, T_OBJECT,
+                         original, start, newcopy, intcon(0), moved,
+                         disjoint_bases, length_never_negative);
+    } //original reexecute and sp are set back here
 
     push(newcopy);
   }
@@ -4024,109 +4032,116 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   int raw_adr_idx = Compile::AliasIdxRaw;
   const bool raw_mem_only = true;
 
-  Node* array_ctl = generate_array_guard(obj_klass, (RegionNode*)NULL);
-  if (array_ctl != NULL) {
-    // It's an array.
-    PreserveJVMState pjvms(this);
-    set_control(array_ctl);
-    Node* obj_length = load_array_length(obj);
-    Node* obj_size = NULL;
-    Node* alloc_obj = new_array(obj_klass, obj_length, nargs,
-                                raw_mem_only, &obj_size);
+  //set the original stack and the reexecute bit for the interpreter to reexecute
+  //the bytecode that invokes Object.clone if deoptimization happens
+  { PreserveReexecuteState preexecs(this);
+    _sp += nargs;
+    jvms()->set_should_reexecute(true);
 
-    if (!use_ReduceInitialCardMarks()) {
-      // If it is an oop array, it requires very special treatment,
-      // because card marking is required on each card of the array.
-      Node* is_obja = generate_objArray_guard(obj_klass, (RegionNode*)NULL);
-      if (is_obja != NULL) {
-        PreserveJVMState pjvms2(this);
-        set_control(is_obja);
-        // Generate a direct call to the right arraycopy function(s).
-        bool disjoint_bases = true;
-        bool length_never_negative = true;
-        generate_arraycopy(TypeAryPtr::OOPS, T_OBJECT,
-                           obj, intcon(0), alloc_obj, intcon(0),
-                           obj_length,
-                           disjoint_bases, length_never_negative);
-        result_reg->init_req(_objArray_path, control());
-        result_val->init_req(_objArray_path, alloc_obj);
-        result_i_o ->set_req(_objArray_path, i_o());
-        result_mem ->set_req(_objArray_path, reset_memory());
+    Node* array_ctl = generate_array_guard(obj_klass, (RegionNode*)NULL);
+    if (array_ctl != NULL) {
+      // It's an array.
+      PreserveJVMState pjvms(this);
+      set_control(array_ctl);
+      Node* obj_length = load_array_length(obj);
+      Node* obj_size  = NULL;
+      Node* alloc_obj = new_array(obj_klass, obj_length, 0,
+                                  raw_mem_only, &obj_size);
+
+      if (!use_ReduceInitialCardMarks()) {
+        // If it is an oop array, it requires very special treatment,
+        // because card marking is required on each card of the array.
+        Node* is_obja = generate_objArray_guard(obj_klass, (RegionNode*)NULL);
+        if (is_obja != NULL) {
+          PreserveJVMState pjvms2(this);
+          set_control(is_obja);
+          // Generate a direct call to the right arraycopy function(s).
+          bool disjoint_bases = true;
+          bool length_never_negative = true;
+          generate_arraycopy(TypeAryPtr::OOPS, T_OBJECT,
+                             obj, intcon(0), alloc_obj, intcon(0),
+                             obj_length,
+                             disjoint_bases, length_never_negative);
+          result_reg->init_req(_objArray_path, control());
+          result_val->init_req(_objArray_path, alloc_obj);
+          result_i_o ->set_req(_objArray_path, i_o());
+          result_mem ->set_req(_objArray_path, reset_memory());
+        }
+      }
+      // We can dispense with card marks if we know the allocation
+      // comes out of eden (TLAB)...  In fact, ReduceInitialCardMarks
+      // causes the non-eden paths to simulate a fresh allocation,
+      // insofar that no further card marks are required to initialize
+      // the object.
+
+      // Otherwise, there are no card marks to worry about.
+
+      if (!stopped()) {
+        copy_to_clone(obj, alloc_obj, obj_size, true, false);
+
+        // Present the results of the copy.
+        result_reg->init_req(_array_path, control());
+        result_val->init_req(_array_path, alloc_obj);
+        result_i_o ->set_req(_array_path, i_o());
+        result_mem ->set_req(_array_path, reset_memory());
       }
     }
-    // We can dispense with card marks if we know the allocation
-    // comes out of eden (TLAB)...  In fact, ReduceInitialCardMarks
-    // causes the non-eden paths to simulate a fresh allocation,
-    // insofar that no further card marks are required to initialize
-    // the object.
 
-    // Otherwise, there are no card marks to worry about.
+    // We only go to the instance fast case code if we pass a number of guards.
+    // The paths which do not pass are accumulated in the slow_region.
+    RegionNode* slow_region = new (C, 1) RegionNode(1);
+    record_for_igvn(slow_region);
+    if (!stopped()) {
+      // It's an instance (we did array above).  Make the slow-path tests.
+      // If this is a virtual call, we generate a funny guard.  We grab
+      // the vtable entry corresponding to clone() from the target object.
+      // If the target method which we are calling happens to be the
+      // Object clone() method, we pass the guard.  We do not need this
+      // guard for non-virtual calls; the caller is known to be the native
+      // Object clone().
+      if (is_virtual) {
+        generate_virtual_guard(obj_klass, slow_region);
+      }
+
+      // The object must be cloneable and must not have a finalizer.
+      // Both of these conditions may be checked in a single test.
+      // We could optimize the cloneable test further, but we don't care.
+      generate_access_flags_guard(obj_klass,
+                                  // Test both conditions:
+                                  JVM_ACC_IS_CLONEABLE | JVM_ACC_HAS_FINALIZER,
+                                  // Must be cloneable but not finalizer:
+                                  JVM_ACC_IS_CLONEABLE,
+                                  slow_region);
+    }
 
     if (!stopped()) {
-      copy_to_clone(obj, alloc_obj, obj_size, true, false);
+      // It's an instance, and it passed the slow-path tests.
+      PreserveJVMState pjvms(this);
+      Node* obj_size  = NULL;
+      Node* alloc_obj = new_instance(obj_klass, NULL, raw_mem_only, &obj_size);
 
-      // Present the results of the copy.
-      result_reg->init_req(_array_path, control());
-      result_val->init_req(_array_path, alloc_obj);
-      result_i_o ->set_req(_array_path, i_o());
-      result_mem ->set_req(_array_path, reset_memory());
-    }
-  }
+      copy_to_clone(obj, alloc_obj, obj_size, false, !use_ReduceInitialCardMarks());
 
-  // We only go to the instance fast case code if we pass a number of guards.
-  // The paths which do not pass are accumulated in the slow_region.
-  RegionNode* slow_region = new (C, 1) RegionNode(1);
-  record_for_igvn(slow_region);
-  if (!stopped()) {
-    // It's an instance (we did array above).  Make the slow-path tests.
-    // If this is a virtual call, we generate a funny guard.  We grab
-    // the vtable entry corresponding to clone() from the target object.
-    // If the target method which we are calling happens to be the
-    // Object clone() method, we pass the guard.  We do not need this
-    // guard for non-virtual calls; the caller is known to be the native
-    // Object clone().
-    if (is_virtual) {
-      generate_virtual_guard(obj_klass, slow_region);
+      // Present the results of the slow call.
+      result_reg->init_req(_instance_path, control());
+      result_val->init_req(_instance_path, alloc_obj);
+      result_i_o ->set_req(_instance_path, i_o());
+      result_mem ->set_req(_instance_path, reset_memory());
     }
 
-    // The object must be cloneable and must not have a finalizer.
-    // Both of these conditions may be checked in a single test.
-    // We could optimize the cloneable test further, but we don't care.
-    generate_access_flags_guard(obj_klass,
-                                // Test both conditions:
-                                JVM_ACC_IS_CLONEABLE | JVM_ACC_HAS_FINALIZER,
-                                // Must be cloneable but not finalizer:
-                                JVM_ACC_IS_CLONEABLE,
-                                slow_region);
-  }
-
-  if (!stopped()) {
-    // It's an instance, and it passed the slow-path tests.
-    PreserveJVMState pjvms(this);
-    Node* obj_size = NULL;
-    Node* alloc_obj = new_instance(obj_klass, NULL, raw_mem_only, &obj_size);
-
-    copy_to_clone(obj, alloc_obj, obj_size, false, !use_ReduceInitialCardMarks());
-
-    // Present the results of the slow call.
-    result_reg->init_req(_instance_path, control());
-    result_val->init_req(_instance_path, alloc_obj);
-    result_i_o ->set_req(_instance_path, i_o());
-    result_mem ->set_req(_instance_path, reset_memory());
-  }
-
-  // Generate code for the slow case.  We make a call to clone().
-  set_control(_gvn.transform(slow_region));
-  if (!stopped()) {
-    PreserveJVMState pjvms(this);
-    CallJavaNode* slow_call = generate_method_call(vmIntrinsics::_clone, is_virtual);
-    Node* slow_result = set_results_for_java_call(slow_call);
-    // this->control() comes from set_results_for_java_call
-    result_reg->init_req(_slow_path, control());
-    result_val->init_req(_slow_path, slow_result);
-    result_i_o ->set_req(_slow_path, i_o());
-    result_mem ->set_req(_slow_path, reset_memory());
-  }
+    // Generate code for the slow case.  We make a call to clone().
+    set_control(_gvn.transform(slow_region));
+    if (!stopped()) {
+      PreserveJVMState pjvms(this);
+      CallJavaNode* slow_call = generate_method_call(vmIntrinsics::_clone, is_virtual);
+      Node* slow_result = set_results_for_java_call(slow_call);
+      // this->control() comes from set_results_for_java_call
+      result_reg->init_req(_slow_path, control());
+      result_val->init_req(_slow_path, slow_result);
+      result_i_o ->set_req(_slow_path, i_o());
+      result_mem ->set_req(_slow_path, reset_memory());
+    }
+  } //original reexecute and sp are set back here
 
   // Return the combined state.
   set_control(    _gvn.transform(result_reg) );

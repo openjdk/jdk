@@ -280,6 +280,7 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
 void DebugInformationRecorder::describe_scope(int         pc_offset,
                                               ciMethod*   method,
                                               int         bci,
+                                              bool        reexecute,
                                               DebugToken* locals,
                                               DebugToken* expressions,
                                               DebugToken* monitors) {
@@ -297,7 +298,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   // serialize scope
   jobject method_enc = (method == NULL)? NULL: method->encoding();
   stream()->write_int(oop_recorder()->find_index(method_enc));
-  stream()->write_bci(bci);
+  stream()->write_bci_and_reexecute(bci, reexecute);
   assert(method == NULL ||
          (method->is_native() && bci == 0) ||
          (!method->is_native() && 0 <= bci && bci < method->code_size()) ||

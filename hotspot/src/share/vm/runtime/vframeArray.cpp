@@ -44,6 +44,7 @@ void vframeArrayElement::fill_in(compiledVFrame* vf) {
 
   _method = vf->method();
   _bci    = vf->raw_bci();
+  _reexecute = vf->should_reexecute();
 
   int index;
 
@@ -148,16 +149,20 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
   // C++ interpreter doesn't need a pc since it will figure out what to do when it
   // begins execution
   address pc;
-  bool use_next_mdp; // true if we should use the mdp associated with the next bci
-                     // rather than the one associated with bcp
+  bool use_next_mdp = false; // true if we should use the mdp associated with the next bci
+                             // rather than the one associated with bcp
   if (raw_bci() == SynchronizationEntryBCI) {
     // We are deoptimizing while hanging in prologue code for synchronized method
     bcp = method()->bcp_from(0); // first byte code
     pc  = Interpreter::deopt_entry(vtos, 0); // step = 0 since we don't skip current bytecode
-    use_next_mdp = false;
+  } else if (should_reexecute()) { //reexecute this bytecode
+    assert(is_top_frame, "reexecute allowed only for the top frame");
+    bcp = method()->bcp_from(bci());
+    pc  = Interpreter::deopt_reexecute_entry(method(), bcp);
   } else {
     bcp = method()->bcp_from(bci());
-    pc  = Interpreter::continuation_for(method(), bcp, callee_parameters, is_top_frame, use_next_mdp);
+    pc  = Interpreter::deopt_continue_after_entry(method(), bcp, callee_parameters, is_top_frame);
+    use_next_mdp = true;
   }
   assert(Bytecodes::is_defined(*bcp), "must be a valid bytecode");
 

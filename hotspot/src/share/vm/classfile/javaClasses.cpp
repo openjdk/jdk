@@ -1229,10 +1229,13 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, TRAPS) {
 
     // Compiled java method case.
     if (decode_offset != 0) {
+      bool dummy_reexecute = false;
       DebugInfoReadStream stream(nm, decode_offset);
       decode_offset = stream.read_int();
       method = (methodOop)nm->oop_at(stream.read_int());
-      bci = stream.read_bci();
+      //fill_in_stack_trace does not need the reexecute information which is designed
+      //for the deopt to reexecute
+      bci = stream.read_bci_and_reexecute(dummy_reexecute);
     } else {
       if (fr.is_first_frame()) break;
       address pc = fr.pc();
