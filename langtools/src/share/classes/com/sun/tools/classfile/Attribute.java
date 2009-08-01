@@ -166,6 +166,10 @@ public abstract class Attribute {
 
     public abstract <R,D> R accept(Attribute.Visitor<R,D> visitor, D data);
 
+    public int byteLength() {
+        return 6 + attribute_length;
+    }
+
     public final int attribute_name_index;
     public final int attribute_length;
 

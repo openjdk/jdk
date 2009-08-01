@@ -64,6 +64,7 @@ class CodeWriter extends BasicWriter {
         stackMapWriter = StackMapWriter.instance(context);
         localVariableTableWriter = LocalVariableTableWriter.instance(context);
         localVariableTypeTableWriter = LocalVariableTypeTableWriter.instance(context);
+        typeAnnotationWriter = TypeAnnotationWriter.instance(context);
         options = Options.instance(context);
     }
 
@@ -253,6 +254,11 @@ class CodeWriter extends BasicWriter {
             detailWriters.add(tryBlockWriter);
         }
 
+        if (options.details.contains(InstructionDetailWriter.Kind.TYPE_ANNOS)) {
+            typeAnnotationWriter.reset(attr);
+            detailWriters.add(typeAnnotationWriter);
+        }
+
         return detailWriters;
     }
 
@@ -261,6 +267,7 @@ class CodeWriter extends BasicWriter {
     private ConstantWriter constantWriter;
     private LocalVariableTableWriter localVariableTableWriter;
     private LocalVariableTypeTableWriter localVariableTypeTableWriter;
+    private TypeAnnotationWriter typeAnnotationWriter;
     private SourceWriter sourceWriter;
     private StackMapWriter stackMapWriter;
     private TryBlockWriter tryBlockWriter;

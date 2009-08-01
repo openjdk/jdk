@@ -139,6 +139,38 @@ public class ClassFile {
         return access_flags.is(ACC_INTERFACE);
     }
 
+    public int byteLength() {
+        return  4 +     // magic
+                2 +     // minor
+                2 +     // major
+                constant_pool.byteLength() +
+                2 +     // access flags
+                2 +     // this_class
+                2 +     // super_class
+                byteLength(interfaces) +
+                byteLength(fields) +
+                byteLength(methods) +
+                attributes.byteLength();
+    }
+
+    private int byteLength(int[] indices) {
+        return 2 + 2 * indices.length;
+    }
+
+    private int byteLength(Field[] fields) {
+        int length = 2;
+        for (Field f: fields)
+            length += f.byteLength();
+        return length;
+    }
+
+    private int byteLength(Method[] methods) {
+        int length = 2;
+        for (Method m: methods)
+            length += m.byteLength();
+        return length;
+    }
+
     public final int magic;
     public final int minor_version;
     public final int major_version;
