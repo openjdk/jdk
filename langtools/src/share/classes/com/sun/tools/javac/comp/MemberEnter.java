@@ -1040,15 +1040,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
                     try {
                         enterTypeAnnotations(annotations);
-
-                        // enrich type parameter symbols... easier for annotation processors
-                        if (tree instanceof JCTypeParameter) {
-                            JCTypeParameter typeparam = (JCTypeParameter)tree;
-                            ListBuffer<Attribute.Compound> buf = ListBuffer.lb();
-                            for (JCTypeAnnotation anno : annotations)
-                                buf.add(anno.attribute_field);
-                            typeparam.type.tsym.attributes_field = buf.toList();
-                        }
                     } finally {
                         log.useSource(prev);
                     }
