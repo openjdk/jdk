@@ -402,7 +402,12 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
   DebugInfoReadStream buffer(nm(), decode_offset);
   _sender_decode_offset = buffer.read_int();
   _method               = methodOop(buffer.read_oop());
-  _bci                  = buffer.read_bci();
+  // Deoptimization needs reexecute bit to determine whether to reexecute the bytecode
+  // only at the time when it "unpack_frames", and the reexecute bit info could always
+  // be obtained from the scopeDesc in the compiledVFrame. As a result, we don't keep
+  // the reexecute bit here.
+  bool dummy_reexecute;
+  _bci                  = buffer.read_bci_and_reexecute(dummy_reexecute);
 
   assert(_method->is_method(), "checking type of decoded method");
 }
