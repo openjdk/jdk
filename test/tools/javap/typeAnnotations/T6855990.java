@@ -21,39 +21,31 @@
  * have any questions.
  */
 
+import java.io.*;
+
 /*
  * @test
- * @bug 6843077
- * @summary compiler crashes when visiting inner classes
- * @author Mahmood Ali
- * @compile -source 1.7 InnerClass.java
+ * @bug 6855990
+ * @summary InstructionDetailWriter should support new 308 annotations attribute
  */
 
-class InnerClass {
-
-    InnerClass() {}
-    InnerClass(Object o) {}
-
-    private void a() {
-        new Object() {
-            public <R> void method() { }
-        };
+public class T6855990 {
+    public static void main(String[] args) throws Exception {
+        new T6855990().run();
     }
 
-    Object f1 = new InnerClass() {
-            <R> void method() { }
-        };
-
-    Object f2 = new InnerClass() {
-            <@A R> void method() { }
-        };
-
-    Object f3 = new InnerClass(null) {
-            <R> void method() { }
-        };
-
-    Object f4 = new InnerClass(null) {
-            <@A R> void method() { }
-        };
-    @interface A { }
+    public void run() throws Exception {
+        @Simple String[] args = { "-c", "-XDdetails:typeAnnotations", "T6855990" };
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        int rc = com.sun.tools.javap.Main.run(args, pw);
+        pw.close();
+        String out = sw.toString();
+        System.out.println(out);
+        if (out.indexOf("@Simple: LOCAL_VARIABLE") == -1)
+            throw new Exception("expected output not found");
+    }
 }
+
+@interface Simple { }
+

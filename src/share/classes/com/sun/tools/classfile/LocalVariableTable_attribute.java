@@ -50,7 +50,7 @@ public class LocalVariableTable_attribute extends Attribute {
     }
 
     public LocalVariableTable_attribute(int name_index, Entry[] local_variable_table) {
-        super(name_index, local_variable_table.length * Entry.length());
+        super(name_index, 2 + local_variable_table.length * Entry.length());
         this.local_variable_table_length = local_variable_table.length;
         this.local_variable_table = local_variable_table;
     }
