@@ -24,6 +24,7 @@
 # @test
 # @summary (almost) all keytool behaviors
 # @author Weijun Wang
+# @run shell/timeout=600 standard.sh
 #
 # This test is always excecuted.
 #
