@@ -57,8 +57,8 @@ size_t ConcurrentG1Refine::thread_num() {
 }
 
 void ConcurrentG1Refine::init() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
   if (G1ConcRSLogCacheSize > 0 || G1ConcRSCountTraversals) {
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
     _n_card_counts =
       (unsigned) (g1h->g1_reserved_obj_bytes() >> CardTableModRefBS::card_shift);
     _card_counts = NEW_C_HEAP_ARRAY(unsigned char, _n_card_counts);
@@ -83,6 +83,12 @@ void ConcurrentG1Refine::init() {
     _hot_cache = NEW_C_HEAP_ARRAY(jbyte*, _hot_cache_size);
     _n_hot = 0;
     _hot_cache_idx = 0;
+
+    // For refining the cards in the hot cache in parallel
+    int n_workers = (ParallelGCThreads > 0 ?
+                        g1h->workers()->total_workers() : 1);
+    _hot_cache_par_chunk_size = MAX2(1, _hot_cache_size / n_workers);
+    _hot_cache_par_claimed_idx = 0;
   }
 }
 
@@ -161,17 +167,23 @@ jbyte* ConcurrentG1Refine::cache_insert(jbyte* card_ptr) {
 
 void ConcurrentG1Refine::clean_up_cache(int worker_i, G1RemSet* g1rs) {
   assert(!use_cache(), "cache should be disabled");
-  int start_ind = _hot_cache_idx-1;
-  for (int i = 0; i < _n_hot; i++) {
-    int ind = start_ind - i;
-    if (ind < 0) ind = ind + _hot_cache_size;
-    jbyte* entry = _hot_cache[ind];
-    if (entry != NULL) {
-      g1rs->concurrentRefineOneCard(entry, worker_i);
+  int start_idx;
+
+  while ((start_idx = _hot_cache_par_claimed_idx) < _n_hot) { // read once
+    int end_idx = start_idx + _hot_cache_par_chunk_size;
+
+    if (start_idx ==
+        Atomic::cmpxchg(end_idx, &_hot_cache_par_claimed_idx, start_idx)) {
+      // The current worker has successfully claimed the chunk [start_idx..end_idx)
+      end_idx = MIN2(end_idx, _n_hot);
+      for (int i = start_idx; i < end_idx; i++) {
+        jbyte* entry = _hot_cache[i];
+        if (entry != NULL) {
+          g1rs->concurrentRefineOneCard(entry, worker_i);
+        }
+      }
     }
   }
-  _n_hot = 0;
-  _hot_cache_idx = 0;
 }
 
 void ConcurrentG1Refine::clear_and_record_card_counts() {
