@@ -28,10 +28,17 @@ package com.sun.mirror.util;
 /**
  * Utilities to create specialized <tt>DeclarationVisitor</tt> instances.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  There is no direct
+ * replacement for the functionality of this class in the standardized
+ * API due to that API's different visitor structure.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @since 1.5
  */
+@Deprecated
+@SuppressWarnings("deprecation")
 public class DeclarationVisitors {
     private DeclarationVisitors(){} // do not instantiate.
 

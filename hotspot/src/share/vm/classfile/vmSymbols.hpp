@@ -513,9 +513,6 @@
 //
 // for Emacs: (let ((c-backslash-column 120) (c-backslash-max-column 120)) (c-backslash-region (point) (point-max) nil t))
 #define VM_INTRINSICS_DO(do_intrinsic, do_class, do_name, do_signature, do_alias)                                       \
-  do_intrinsic(_Object_init,              java_lang_Object, object_initializer_name, void_method_signature,      F_R)   \
-  /*    (symbol object_initializer_name defined above) */                                                               \
-                                                                                                                        \
   do_intrinsic(_hashCode,                 java_lang_Object,       hashCode_name, void_int_signature,             F_R)   \
    do_name(     hashCode_name,                                   "hashCode")                                            \
   do_intrinsic(_getClass,                 java_lang_Object,       getClass_name, void_class_signature,           F_R)   \
@@ -635,9 +632,6 @@
   do_intrinsic(_equalsC,                  java_util_Arrays,       equals_name,    equalsC_signature,             F_S)   \
    do_signature(equalsC_signature,                               "([C[C)Z")                                             \
                                                                                                                         \
-  do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_array_object_object_signature, F_R) \
-  /*   (symbols invoke_name and invoke_signature defined above) */                                                      \
-                                                                                                                        \
   do_intrinsic(_compareTo,                java_lang_String,       compareTo_name, string_int_signature,          F_R)   \
    do_name(     compareTo_name,                                  "compareTo")                                           \
   do_intrinsic(_indexOf,                  java_lang_String,       indexOf_name, string_int_signature,            F_R)   \
@@ -655,8 +649,6 @@
   do_intrinsic(_attemptUpdate,            sun_misc_AtomicLongCSImpl, attemptUpdate_name, attemptUpdate_signature, F_R)  \
    do_name(     attemptUpdate_name,                                 "attemptUpdate")                                    \
    do_signature(attemptUpdate_signature,                            "(JJ)Z")                                            \
-                                                                                                                        \
-  do_intrinsic(_fillInStackTrace,         java_lang_Throwable, fillInStackTrace_name, void_throwable_signature,  F_RNY) \
                                                                                                                         \
   /* support for sun.misc.Unsafe */                                                                                     \
   do_class(sun_misc_Unsafe,               "sun/misc/Unsafe")                                                            \
@@ -819,7 +811,19 @@
    do_name(     prefetchReadStatic_name,                         "prefetchReadStatic")                                  \
   do_intrinsic(_prefetchWriteStatic,      sun_misc_Unsafe,        prefetchWriteStatic_name, prefetch_signature,  F_SN)  \
    do_name(     prefetchWriteStatic_name,                        "prefetchWriteStatic")                                 \
+    /*== LAST_COMPILER_INLINE*/                                                                                         \
+    /*the compiler does have special inlining code for these; bytecode inline is just fine */                           \
+                                                                                                                        \
+  do_intrinsic(_fillInStackTrace,         java_lang_Throwable, fillInStackTrace_name, void_throwable_signature,  F_RNY) \
+                                                                                                                        \
+  do_intrinsic(_Object_init,              java_lang_Object, object_initializer_name, void_method_signature,      F_R)   \
+  /*    (symbol object_initializer_name defined above) */                                                               \
+                                                                                                                        \
+  do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_array_object_object_signature, F_R) \
+  /*   (symbols invoke_name and invoke_signature defined above) */                                                      \
+                                                                                                                        \
     /*end*/
+
 
 
 
@@ -935,6 +939,7 @@ class vmIntrinsics: AllStatic {
     #undef VM_INTRINSIC_ENUM
 
     ID_LIMIT,
+    LAST_COMPILER_INLINE = _prefetchWriteStatic,
     FIRST_ID = _none + 1
   };
 
@@ -972,4 +977,7 @@ public:
   static Flags              flags_for(ID id);
 
   static const char* short_name_as_C_string(ID id, char* buf, int size);
+
+  // Access to intrinsic methods:
+  static methodOop method_for(ID id);
 };

@@ -35,7 +35,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 /**
  * Implementation of EnumConstantDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class EnumConstantDeclarationImpl extends FieldDeclarationImpl
                                          implements EnumConstantDeclaration {
 

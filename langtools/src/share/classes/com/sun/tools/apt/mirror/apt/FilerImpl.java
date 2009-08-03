@@ -45,7 +45,7 @@ import static com.sun.mirror.apt.Filer.Location.*;
 /**
  * Implementation of Filer.
  */
-
+@SuppressWarnings("deprecation")
 public class FilerImpl implements Filer {
     /*
      * The Filer class must maintain a number of constraints.  First,

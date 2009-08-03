@@ -337,7 +337,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSlotList
     CK_ULONG ckTokenNumber;
     CK_SLOT_ID_PTR ckpSlotList;
     CK_BBOOL ckTokenPresent;
-    jlongArray jSlotList;
+    jlongArray jSlotList = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -637,7 +637,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetMechanismList
     CK_SLOT_ID ckSlotID;
     CK_ULONG ckMechanismNumber;
     CK_MECHANISM_TYPE_PTR ckpMechanismList;
-    jlongArray jMechanismList;
+    jlongArray jMechanismList = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);

@@ -46,13 +46,19 @@ import com.sun.mirror.type.ClassType;
  * provides a simple way to select just the items of interest
  * when a method returns a collection of declarations.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this interface is included in {@link
+ * javax.lang.model.element.TypeElement}.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  *
  * @see ClassType
  * @since 1.5
  */
-
+@Deprecated
+@SuppressWarnings("deprecation")
 public interface ClassDeclaration extends TypeDeclaration {
 
     /**
