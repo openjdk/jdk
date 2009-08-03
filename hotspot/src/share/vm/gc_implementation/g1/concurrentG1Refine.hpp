@@ -36,15 +36,19 @@ class ConcurrentG1Refine: public CHeapObj {
   size_t _total_cards;
   size_t _total_travs;
 
-  unsigned char*  _card_counts;
-  unsigned _n_card_counts;
-  const jbyte* _ct_bot;
-  unsigned* _cur_card_count_histo;
-  unsigned* _cum_card_count_histo;
-  jbyte**  _hot_cache;
-  int      _hot_cache_size;
-  int      _n_hot;
-  int      _hot_cache_idx;
+  unsigned char* _card_counts;
+  unsigned       _n_card_counts;
+  const jbyte*   _ct_bot;
+  unsigned*      _cur_card_count_histo;
+  unsigned*      _cum_card_count_histo;
+
+  jbyte**      _hot_cache;
+  int          _hot_cache_size;
+  int          _n_hot;
+  int          _hot_cache_idx;
+
+  int          _hot_cache_par_chunk_size;
+  volatile int _hot_cache_par_claimed_idx;
 
   // Returns the count of this card after incrementing it.
   int add_card_count(jbyte* card_ptr);
@@ -69,6 +73,11 @@ class ConcurrentG1Refine: public CHeapObj {
 
   // Process the cached entries.
   void clean_up_cache(int worker_i, G1RemSet* g1rs);
+
+  // Set up for parallel processing of the cards in the hot cache
+  void clear_hot_cache_claimed_index() {
+    _hot_cache_par_claimed_idx = 0;
+  }
 
   // Discard entries in the hot cache.
   void clear_hot_cache() {
