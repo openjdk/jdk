@@ -96,14 +96,14 @@ forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
     while (n <= addr) {
       q = n;
       oop obj = oop(q);
-      if (obj->klass() == NULL) return q;
+      if (obj->klass_or_null() == NULL) return q;
       n += obj->size();
     }
   } else {
     while (n <= addr) {
       q = n;
       oop obj = oop(q);
-      if (obj->klass() == NULL) return q;
+      if (obj->klass_or_null() == NULL) return q;
       n += _sp->block_size(q);
     }
   }
@@ -115,7 +115,7 @@ forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
 inline HeapWord*
 G1BlockOffsetArray::forward_to_block_containing_addr(HeapWord* q,
                                                      const void* addr) {
-  if (oop(q)->klass() == NULL) return q;
+  if (oop(q)->klass_or_null() == NULL) return q;
   HeapWord* n = q + _sp->block_size(q);
   // In the normal case, where the query "addr" is a card boundary, and the
   // offset table chunks are the same size as cards, the block starting at

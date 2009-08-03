@@ -78,15 +78,15 @@ public class Identity {
         final AsynchronousServerSocketChannel listener =
             AsynchronousServerSocketChannel.open()
                 .bind(new InetSocketAddress(0));
-        listener.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
+        listener.accept((Void)null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
             public void completed(final AsynchronousSocketChannel ch, Void att) {
-                listener.accept(null, this);
+                listener.accept((Void)null, this);
 
                 final ByteBuffer buf = ByteBuffer.allocate(100);
-                ch.read(buf, null, new CompletionHandler<Integer,Void>() {
+                ch.read(buf, (Void)null, new CompletionHandler<Integer,Void>() {
                     public void completed(Integer bytesRead, Void att) {
                         buf.clear();
-                        ch.read(buf, null, this);
+                        ch.read(buf, (Void)null, this);
                     }
                     public void failed(Throwable exc, Void att) {
                     }

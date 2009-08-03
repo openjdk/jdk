@@ -85,19 +85,21 @@ static jfieldID entry_options;
 static jfieldID entry_dev;
 
 /**
- * System calls that may not be available at build time.
+ * System calls that may not be available at run time.
  */
 typedef int openat64_func(int, const char *, int, ...);
 typedef int fstatat64_func(int, const char *, struct stat64 *, int);
 typedef int unlinkat_func(int, const char*, int);
 typedef int renameat_func(int, const char*, int, const char*);
 typedef int futimesat_func(int, const char *, const struct timeval *);
+typedef DIR* fdopendir_func(int);
 
 static openat64_func* my_openat64_func = NULL;
 static fstatat64_func* my_fstatat64_func = NULL;
 static unlinkat_func* my_unlinkat_func = NULL;
 static renameat_func* my_renameat_func = NULL;
 static futimesat_func* my_futimesat_func = NULL;
+static fdopendir_func* my_fdopendir_func = NULL;
 
 /**
  * fstatat missing from glibc on Linux. Temporary workaround
@@ -183,7 +185,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     entry_options = (*env)->GetFieldID(env, clazz, "opts", "[B");
     entry_dev = (*env)->GetFieldID(env, clazz, "dev", "J");
 
-    /* system calls that might not be available at build time */
+    /* system calls that might not be available at run time */
 
 #if defined(__solaris__) && defined(_LP64)
     /* Solaris 64-bit does not have openat64/fstatat64 */
@@ -196,6 +198,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
     my_futimesat_func = (futimesat_func*) dlsym(RTLD_DEFAULT, "futimesat");
+    my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
 
 #if defined(FSTATAT64_SYSCALL_AVAILABLE)
     /* fstatat64 missing from glibc */
@@ -205,7 +208,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     if (my_openat64_func != NULL &&  my_fstatat64_func != NULL &&
         my_unlinkat_func != NULL && my_renameat_func != NULL &&
-        my_futimesat_func != NULL)
+        my_futimesat_func != NULL && my_fdopendir_func != NULL)
     {
         flags |= sun_nio_fs_UnixNativeDispatcher_HAS_AT_SYSCALLS;
     }
@@ -565,8 +568,13 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_fdopendir(JNIEnv* env, jclass this, int dfd) {
     DIR* dir;
 
+    if (my_fdopendir_func == NULL) {
+        JNU_ThrowInternalError(env, "should not reach here");
+        return (jlong)-1;
+    }
+
     /* EINTR not listed as a possible error */
-    dir = fdopendir((int)dfd);
+    dir = (*my_fdopendir_func)((int)dfd);
     if (dir == NULL) {
         throwUnixException(env, errno);
     }

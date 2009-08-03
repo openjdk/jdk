@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,31 +59,31 @@
 #
 # Main Targets (JDK/OPENJDK):
 #
-#     all/clobber/clean		The usual, plus the native libraries.
-#				    If OpenJDK, installs sunmscapi.jar.
-#				    If JDK, installs prebuilt
-#				    sunmscapi.jar.
+#     all/clobber/clean        The usual, plus the native libraries.
+#                                  If OpenJDK, installs sunmscapi.jar.
+#                                  If JDK, installs prebuilt
+#                                      sunmscapi.jar.
 #
-#     jar			Builds/installs sunmscapi.jar
-#				    If OpenJDK, does not sign.
-#				    If JDK, tries to sign.
+#     jar                      Builds/installs sunmscapi.jar
+#                                  If OpenJDK, does not sign.
+#                                  If JDK, tries to sign.
 #
 # Other lesser-used Targets (JDK/OPENJDK):
 #
-#     build-jar			Builds sunmscapi.jar
-#				    (does not sign/install)
+#     build-jar                Builds sunmscapi.jar
+#                                  (does not sign/install)
 #
-#     install-jar		Alias for "jar" above.
+#     install-jar              Alias for "jar" above.
 #
 # Other targets (JDK only):
 #
-#     sign			Alias for sign-jar
-#	  sign-jar		Builds/signs sunmscapi.jar (no install)
+#     sign                     Alias for sign-jar
+#          sign-jar            Builds/signs sunmscapi.jar (no install)
 #
-#     release			Builds all targets in preparation
-#				for workspace integration.
+#     release                  Builds all targets in preparation
+#                              for workspace integration.
 #
-#     install-prebuilt		Installs the pre-built jar files
+#     install-prebuilt         Installs the pre-built jar files
 #
 # This makefile was written to support parallel target execution.
 #

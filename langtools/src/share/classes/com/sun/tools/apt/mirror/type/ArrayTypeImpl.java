@@ -35,7 +35,7 @@ import com.sun.tools.javac.code.Type;
 /**
  * Implementation of ArrayType
  */
-
+@SuppressWarnings("deprecation")
 public class ArrayTypeImpl extends TypeMirrorImpl implements ArrayType {
 
     protected Type.ArrayType type;
