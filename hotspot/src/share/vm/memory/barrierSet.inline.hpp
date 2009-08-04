@@ -23,10 +23,10 @@
  */
 
 // Inline functions of BarrierSet, which de-virtualize certain
-// performance-critical calls when when the barrier is the most common
+// performance-critical calls when the barrier is the most common
 // card-table kind.
 
-void BarrierSet::write_ref_field_pre(void* field, oop new_val) {
+template <class T> void BarrierSet::write_ref_field_pre(T* field, oop new_val) {
   if (kind() == CardTableModRef) {
     ((CardTableModRefBS*)this)->inline_write_ref_field_pre(field, new_val);
   } else {

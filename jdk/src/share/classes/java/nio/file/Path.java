@@ -987,7 +987,7 @@ public abstract class Path
      * exception then it is propogated to the iterator's {@link Iterator#hasNext()
      * hasNext} or {@link Iterator#next() next} method. Where an {@code
      * IOException} is thrown, it is propogated as a {@link
-     * java.util.concurrent.ConcurrentModificationException} with the {@code
+     * java.util.ConcurrentModificationException} with the {@code
      * IOException} as the cause.
      *
      * <p> When an implementation supports operations on entries in the

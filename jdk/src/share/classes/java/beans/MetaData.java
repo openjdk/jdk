@@ -219,7 +219,9 @@ class java_lang_Class_PersistenceDelegate extends PersistenceDelegate {
             return new Expression(oldInstance, String.class, "getClass", new Object[]{});
         }
         else {
-            return new Expression(oldInstance, Class.class, "forName", new Object[]{c.getName()});
+            Expression newInstance = new Expression(oldInstance, Class.class, "forName", new Object[] { c.getName() });
+            newInstance.loader = c.getClassLoader();
+            return newInstance;
         }
     }
 }
