@@ -112,7 +112,6 @@ protected:
     return 8*M;
   }
 
-
   double _cur_collection_start_sec;
   size_t _cur_collection_pause_used_at_start_bytes;
   size_t _cur_collection_pause_used_regions_at_start;
@@ -121,6 +120,15 @@ protected:
   double _cur_satb_drain_time_ms;
   double _cur_clear_ct_time_ms;
   bool   _satb_drain_time_set;
+
+#ifndef PRODUCT
+  // Card Table Count Cache stats
+  double _min_clear_cc_time_ms;         // min
+  double _max_clear_cc_time_ms;         // max
+  double _cur_clear_cc_time_ms;         // clearing time during current pause
+  double _cum_clear_cc_time_ms;         // cummulative clearing time
+  jlong  _num_cc_clears;                // number of times the card count cache has been cleared
+#endif
 
   double _cur_CH_strong_roots_end_sec;
   double _cur_CH_strong_roots_dur_ms;
@@ -930,6 +938,18 @@ public:
     _cur_aux_times_set[i] = true;
     _cur_aux_times_ms[i] += ms;
   }
+
+#ifndef PRODUCT
+  void record_cc_clear_time(double ms) {
+    if (_min_clear_cc_time_ms < 0.0 || ms <= _min_clear_cc_time_ms)
+      _min_clear_cc_time_ms = ms;
+    if (_max_clear_cc_time_ms < 0.0 || ms >= _max_clear_cc_time_ms)
+      _max_clear_cc_time_ms = ms;
+    _cur_clear_cc_time_ms = ms;
+    _cum_clear_cc_time_ms += ms;
+    _num_cc_clears++;
+  }
+#endif
 
   // Record the fact that "bytes" bytes allocated in a region.
   void record_before_bytes(size_t bytes);

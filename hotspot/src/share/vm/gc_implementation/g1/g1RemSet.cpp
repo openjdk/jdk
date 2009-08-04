@@ -676,61 +676,12 @@ void HRInto_G1RemSet::scrub_par(BitMap* region_bm, BitMap* card_bm,
 
 static IntHistogram out_of_histo(50, 50);
 
-void HRInto_G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i) {
-  // If the card is no longer dirty, nothing to do.
-  if (*card_ptr != CardTableModRefBS::dirty_card_val()) return;
-
+void HRInto_G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i) {
   // Construct the region representing the card.
   HeapWord* start = _ct_bs->addr_for(card_ptr);
   // And find the region containing it.
   HeapRegion* r = _g1->heap_region_containing(start);
-  if (r == NULL) {
-    guarantee(_g1->is_in_permanent(start), "Or else where?");
-    return;  // Not in the G1 heap (might be in perm, for example.)
-  }
-  // Why do we have to check here whether a card is on a young region,
-  // given that we dirty young regions and, as a result, the
-  // post-barrier is supposed to filter them out and never to enqueue
-  // them? When we allocate a new region as the "allocation region" we
-  // actually dirty its cards after we release the lock, since card
-  // dirtying while holding the lock was a performance bottleneck. So,
-  // as a result, it is possible for other threads to actually
-  // allocate objects in the region (after the acquire the lock)
-  // before all the cards on the region are dirtied. This is unlikely,
-  // and it doesn't happen often, but it can happen. So, the extra
-  // check below filters out those cards.
-  if (r->is_young()) {
-    return;
-  }
-  // While we are processing RSet buffers during the collection, we
-  // actually don't want to scan any cards on the collection set,
-  // since we don't want to update remebered sets with entries that
-  // point into the collection set, given that live objects from the
-  // collection set are about to move and such entries will be stale
-  // very soon. This change also deals with a reliability issue which
-  // involves scanning a card in the collection set and coming across
-  // an array that was being chunked and looking malformed. Note,
-  // however, that if evacuation fails, we have to scan any objects
-  // that were not moved and create any missing entries.
-  if (r->in_collection_set()) {
-    return;
-  }
-
-  // Should we defer it?
-  if (_cg1r->use_cache()) {
-    card_ptr = _cg1r->cache_insert(card_ptr);
-    // If it was not an eviction, nothing to do.
-    if (card_ptr == NULL) return;
-
-    // OK, we have to reset the card start, region, etc.
-    start = _ct_bs->addr_for(card_ptr);
-    r = _g1->heap_region_containing(start);
-    if (r == NULL) {
-      guarantee(_g1->is_in_permanent(start), "Or else where?");
-      return;  // Not in the G1 heap (might be in perm, for example.)
-    }
-    guarantee(!r->is_young(), "It was evicted in the current minor cycle.");
-  }
+  assert(r != NULL, "unexpected null");
 
   HeapWord* end   = _ct_bs->addr_for(card_ptr + 1);
   MemRegion dirtyRegion(start, end);
@@ -771,6 +722,106 @@ void HRInto_G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i) {
   } else {
     out_of_histo.add_entry(filter_then_update_rs_oop_cl.out_of_region());
     _conc_refine_cards++;
+  }
+}
+
+void HRInto_G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i) {
+  // If the card is no longer dirty, nothing to do.
+  if (*card_ptr != CardTableModRefBS::dirty_card_val()) return;
+
+  // Construct the region representing the card.
+  HeapWord* start = _ct_bs->addr_for(card_ptr);
+  // And find the region containing it.
+  HeapRegion* r = _g1->heap_region_containing(start);
+  if (r == NULL) {
+    guarantee(_g1->is_in_permanent(start), "Or else where?");
+    return;  // Not in the G1 heap (might be in perm, for example.)
+  }
+  // Why do we have to check here whether a card is on a young region,
+  // given that we dirty young regions and, as a result, the
+  // post-barrier is supposed to filter them out and never to enqueue
+  // them? When we allocate a new region as the "allocation region" we
+  // actually dirty its cards after we release the lock, since card
+  // dirtying while holding the lock was a performance bottleneck. So,
+  // as a result, it is possible for other threads to actually
+  // allocate objects in the region (after the acquire the lock)
+  // before all the cards on the region are dirtied. This is unlikely,
+  // and it doesn't happen often, but it can happen. So, the extra
+  // check below filters out those cards.
+  if (r->is_young()) {
+    return;
+  }
+  // While we are processing RSet buffers during the collection, we
+  // actually don't want to scan any cards on the collection set,
+  // since we don't want to update remebered sets with entries that
+  // point into the collection set, given that live objects from the
+  // collection set are about to move and such entries will be stale
+  // very soon. This change also deals with a reliability issue which
+  // involves scanning a card in the collection set and coming across
+  // an array that was being chunked and looking malformed. Note,
+  // however, that if evacuation fails, we have to scan any objects
+  // that were not moved and create any missing entries.
+  if (r->in_collection_set()) {
+    return;
+  }
+
+  // Should we defer processing the card?
+  //
+  // Previously the result from the insert_cache call would be
+  // either card_ptr (implying that card_ptr was currently "cold"),
+  // null (meaning we had inserted the card ptr into the "hot"
+  // cache, which had some headroom), or a "hot" card ptr
+  // extracted from the "hot" cache.
+  //
+  // Now that the _card_counts cache in the ConcurrentG1Refine
+  // instance is an evicting hash table, the result we get back
+  // could be from evicting the card ptr in an already occupied
+  // bucket (in which case we have replaced the card ptr in the
+  // bucket with card_ptr and "defer" is set to false). To avoid
+  // having a data structure (updates to which would need a lock)
+  // to hold these unprocessed dirty cards, we need to immediately
+  // process card_ptr. The actions needed to be taken on return
+  // from cache_insert are summarized in the following table:
+  //
+  // res      defer   action
+  // --------------------------------------------------------------
+  // null     false   card evicted from _card_counts & replaced with
+  //                  card_ptr; evicted ptr added to hot cache.
+  //                  No need to process res; immediately process card_ptr
+  //
+  // null     true    card not evicted from _card_counts; card_ptr added
+  //                  to hot cache.
+  //                  Nothing to do.
+  //
+  // non-null false   card evicted from _card_counts & replaced with
+  //                  card_ptr; evicted ptr is currently "cold" or
+  //                  caused an eviction from the hot cache.
+  //                  Immediately process res; process card_ptr.
+  //
+  // non-null true    card not evicted from _card_counts; card_ptr is
+  //                  currently cold, or caused an eviction from hot
+  //                  cache.
+  //                  Immediately process res; no need to process card_ptr.
+
+  jbyte* res = card_ptr;
+  bool defer = false;
+  if (_cg1r->use_cache()) {
+    jbyte* res = _cg1r->cache_insert(card_ptr, &defer);
+    if (res != NULL && (res != card_ptr || defer)) {
+      start = _ct_bs->addr_for(res);
+      r = _g1->heap_region_containing(start);
+      if (r == NULL) {
+        assert(_g1->is_in_permanent(start), "Or else where?");
+      } else {
+        guarantee(!r->is_young(), "It was evicted in the current minor cycle.");
+        // Process card pointer we get back from the hot card cache
+        concurrentRefineOneCard_impl(res, worker_i);
+      }
+    }
+  }
+
+  if (!defer) {
+    concurrentRefineOneCard_impl(card_ptr, worker_i);
   }
 }
 
