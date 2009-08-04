@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class Robot {
     private RobotPeer peer;
     private boolean isAutoWaitForIdle = false;
     private int autoDelay = 0;
-    private static int LEGAL_BUTTON_MASK;
+    private static int LEGAL_BUTTON_MASK = 0;
 
     // location of robot's GC, used in mouseMove(), getPixelColor() and captureScreenImage()
     private Point gdLoc;
@@ -95,23 +95,6 @@ public class Robot {
         }
         init(GraphicsEnvironment.getLocalGraphicsEnvironment()
             .getDefaultScreenDevice());
-        int tmpMask = 0;
-
-        if (Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled()){
-            if (Toolkit.getDefaultToolkit() instanceof SunToolkit) {
-                final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
-                for (int i = 0; i < buttonsNumber; i++){
-                    tmpMask |= InputEvent.getMaskForButton(i+1);
-                }
-            }
-        }
-        tmpMask |= InputEvent.BUTTON1_MASK|
-            InputEvent.BUTTON2_MASK|
-            InputEvent.BUTTON3_MASK|
-            InputEvent.BUTTON1_DOWN_MASK|
-            InputEvent.BUTTON2_DOWN_MASK|
-            InputEvent.BUTTON3_DOWN_MASK;
-        LEGAL_BUTTON_MASK = tmpMask;
     }
 
     /**
@@ -156,6 +139,28 @@ public class Robot {
             disposer = new RobotDisposer(peer);
             sun.java2d.Disposer.addRecord(anchor, disposer);
         }
+        initLegalButtonMask();
+    }
+
+    private static synchronized void initLegalButtonMask() {
+        if (LEGAL_BUTTON_MASK != 0) return;
+
+        int tmpMask = 0;
+        if (Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled()){
+            if (Toolkit.getDefaultToolkit() instanceof SunToolkit) {
+                final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
+                for (int i = 0; i < buttonsNumber; i++){
+                    tmpMask |= InputEvent.getMaskForButton(i+1);
+                }
+            }
+        }
+        tmpMask |= InputEvent.BUTTON1_MASK|
+            InputEvent.BUTTON2_MASK|
+            InputEvent.BUTTON3_MASK|
+            InputEvent.BUTTON1_DOWN_MASK|
+            InputEvent.BUTTON2_DOWN_MASK|
+            InputEvent.BUTTON3_DOWN_MASK;
+        LEGAL_BUTTON_MASK = tmpMask;
     }
 
     /* determine if the security policy allows Robot's to be created */

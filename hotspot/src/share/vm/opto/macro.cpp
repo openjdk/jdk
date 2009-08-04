@@ -198,14 +198,79 @@ void PhaseMacroExpand::extract_call_projections(CallNode *call) {
 }
 
 // Eliminate a card mark sequence.  p2x is a ConvP2XNode
-void PhaseMacroExpand::eliminate_card_mark(Node *p2x) {
+void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
   assert(p2x->Opcode() == Op_CastP2X, "ConvP2XNode required");
-  Node *shift = p2x->unique_out();
-  Node *addp = shift->unique_out();
-  for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
-    Node *st = addp->last_out(j);
-    assert(st->is_Store(), "store required");
-    _igvn.replace_node(st, st->in(MemNode::Memory));
+  if (!UseG1GC) {
+    // vanilla/CMS post barrier
+    Node *shift = p2x->unique_out();
+    Node *addp = shift->unique_out();
+    for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
+      Node *st = addp->last_out(j);
+      assert(st->is_Store(), "store required");
+      _igvn.replace_node(st, st->in(MemNode::Memory));
+    }
+  } else {
+    // G1 pre/post barriers
+    assert(p2x->outcnt() == 2, "expects 2 users: Xor and URShift nodes");
+    // It could be only one user, URShift node, in Object.clone() instrinsic
+    // but the new allocation is passed to arraycopy stub and it could not
+    // be scalar replaced. So we don't check the case.
+
+    // Remove G1 post barrier.
+
+    // Search for CastP2X->Xor->URShift->Cmp path which
+    // checks if the store done to a different from the value's region.
+    // And replace Cmp with #0 (false) to collapse G1 post barrier.
+    Node* xorx = NULL;
+    for (DUIterator_Fast imax, i = p2x->fast_outs(imax); i < imax; i++) {
+      Node* u = p2x->fast_out(i);
+      if (u->Opcode() == Op_XorX) {
+        xorx = u;
+        break;
+      }
+    }
+    assert(xorx != NULL, "missing G1 post barrier");
+    Node* shift = xorx->unique_out();
+    Node* cmpx = shift->unique_out();
+    assert(cmpx->is_Cmp() && cmpx->unique_out()->is_Bool() &&
+    cmpx->unique_out()->as_Bool()->_test._test == BoolTest::ne,
+    "missing region check in G1 post barrier");
+    _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
+
+    // Remove G1 pre barrier.
+
+    // Search "if (marking != 0)" check and set it to "false".
+    Node* this_region = p2x->in(0);
+    assert(this_region != NULL, "");
+    // There is no G1 pre barrier if previous stored value is NULL
+    // (for example, after initialization).
+    if (this_region->is_Region() && this_region->req() == 3) {
+      int ind = 1;
+      if (!this_region->in(ind)->is_IfFalse()) {
+        ind = 2;
+      }
+      if (this_region->in(ind)->is_IfFalse()) {
+        Node* bol = this_region->in(ind)->in(0)->in(1);
+        assert(bol->is_Bool(), "");
+        cmpx = bol->in(1);
+        if (bol->as_Bool()->_test._test == BoolTest::ne &&
+            cmpx->is_Cmp() && cmpx->in(2) == intcon(0) &&
+            cmpx->in(1)->is_Load()) {
+          Node* adr = cmpx->in(1)->as_Load()->in(MemNode::Address);
+          const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() +
+                                              PtrQueue::byte_offset_of_active());
+          if (adr->is_AddP() && adr->in(AddPNode::Base) == top() &&
+              adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
+              adr->in(AddPNode::Offset) == MakeConX(marking_offset)) {
+            _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
+          }
+        }
+      }
+    }
+    // Now CastP2X can be removed since it is used only on dead path
+    // which currently still alive until igvn optimize it.
+    assert(p2x->unique_out()->Opcode() == Op_URShiftX, "");
+    _igvn.replace_node(p2x, top());
   }
 }
 
@@ -760,14 +825,11 @@ void PhaseMacroExpand::process_users_of_allocation(AllocateNode *alloc) {
           if (n->is_Store()) {
             _igvn.replace_node(n, n->in(MemNode::Memory));
           } else {
-            assert( n->Opcode() == Op_CastP2X, "CastP2X required");
             eliminate_card_mark(n);
           }
           k -= (oc2 - use->outcnt());
         }
       } else {
-        assert( !use->is_SafePoint(), "safepoint uses must have been already elimiated");
-        assert( use->Opcode() == Op_CastP2X, "CastP2X required");
         eliminate_card_mark(use);
       }
       j -= (oc1 - res->outcnt());

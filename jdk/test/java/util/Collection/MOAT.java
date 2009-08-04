@@ -426,6 +426,36 @@ public class MOAT {
         q.poll();
         equal(q.size(), 4);
         checkFunctionalInvariants(q);
+        if ((q instanceof LinkedBlockingQueue) ||
+            (q instanceof LinkedBlockingDeque) ||
+            (q instanceof ConcurrentLinkedQueue)) {
+            testQueueIteratorRemove(q);
+        }
+    }
+
+    private static void testQueueIteratorRemove(Queue<Integer> q) {
+        System.err.printf("testQueueIteratorRemove %s%n",
+                          q.getClass().getSimpleName());
+        q.clear();
+        for (int i = 0; i < 5; i++)
+            q.add(i);
+        Iterator<Integer> it = q.iterator();
+        check(it.hasNext());
+        for (int i = 3; i >= 0; i--)
+            q.remove(i);
+        equal(it.next(), 0);
+        equal(it.next(), 4);
+
+        q.clear();
+        for (int i = 0; i < 5; i++)
+            q.add(i);
+        it = q.iterator();
+        equal(it.next(), 0);
+        check(it.hasNext());
+        for (int i = 1; i < 4; i++)
+            q.remove(i);
+        equal(it.next(), 1);
+        equal(it.next(), 4);
     }
 
     private static void testList(final List<Integer> l) {
@@ -451,6 +481,11 @@ public class MOAT {
     }
 
     private static void testCollection(Collection<Integer> c) {
+        try { testCollection1(c); }
+        catch (Throwable t) { unexpected(t); }
+    }
+
+    private static void testCollection1(Collection<Integer> c) {
 
         System.out.println("\n==> " + c.getClass().getName());
 

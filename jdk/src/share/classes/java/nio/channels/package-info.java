@@ -115,8 +115,8 @@
  *     <td>Reads, writes, maps, and manipulates files</td></tr>
  * <tr><td valign=top><tt>{@link java.nio.channels.FileLock}</tt></td>
  *     <td>A lock on a (region of a) file</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.MappedByteBuffer}/{@link java.nio.MappedBigByteBuffer}&nbsp;&nbsp;</tt></td>
- *     <td>A direct byte buffer or big byte buffer mapped to a region of a&nbsp;file</td></tr>
+ * <tr><td valign=top><tt>{@link java.nio.MappedByteBuffer}&nbsp;&nbsp;</tt></td>
+ *     <td>A direct byte buffer mapped to a region of a&nbsp;file</td></tr>
  * </table></blockquote>
  *
  * <p> The {@link java.nio.channels.FileChannel} class supports the usual
