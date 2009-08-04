@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,24 +115,6 @@ public final class SunMSCAPI extends Provider {
 
         if (map != this) {
             AccessController.doPrivileged(new PutAllAction(this, map));
-        }
-    }
-
-    // set to true once self verification is complete
-    private static volatile boolean integrityVerified;
-
-    static void verifySelfIntegrity(Class c) {
-        if (integrityVerified) {
-            return;
-        }
-        doVerifySelfIntegrity(c);
-    }
-
-    private static synchronized void doVerifySelfIntegrity(Class c) {
-        integrityVerified = JarVerifier.verify(c);
-        if (integrityVerified == false) {
-            throw new ProviderException
-                ("The SunMSCAPI provider may have been tampered with.");
         }
     }
 }
