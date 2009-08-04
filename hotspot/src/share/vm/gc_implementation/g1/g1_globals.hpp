@@ -187,10 +187,6 @@
   develop(intx, G1ConcRSLogCacheSize, 10,                                   \
           "Log base 2 of the length of conc RS hot-card cache.")            \
                                                                             \
-  develop(bool, G1ConcRSCountTraversals, false,                             \
-          "If true, gather data about the number of times CR traverses "    \
-          "cards ")                                                         \
-                                                                            \
   develop(intx, G1ConcRSHotCardLimit, 4,                                    \
           "The threshold that defines (>=) a hot card.")                    \
                                                                             \
@@ -264,6 +260,10 @@
                                                                             \
   product(uintx, G1ParallelRSetThreads, 0,                                  \
           "If non-0 is the number of parallel rem set update threads, "     \
-          "otherwise the value is determined ergonomically.")
+          "otherwise the value is determined ergonomically.")               \
+                                                                            \
+  develop(intx, G1CardCountCacheExpandThreshold, 16,                        \
+          "Expand the card count cache if the number of collisions for "    \
+          "a particular entry exceeds this value.")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)

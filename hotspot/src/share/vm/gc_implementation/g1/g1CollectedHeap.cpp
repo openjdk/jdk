@@ -2414,8 +2414,6 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 void G1CollectedHeap::print_tracing_info() const {
-  concurrent_g1_refine()->print_final_card_counts();
-
   // We'll overload this to mean "trace GC pause statistics."
   if (TraceGen0Time || TraceGen1Time) {
     // The "G1CollectorPolicy" is keeping track of these stats, so delegate
