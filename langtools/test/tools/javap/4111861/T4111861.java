@@ -89,7 +89,7 @@ public class T4111861 {
             String line;
             while ((line = in.readLine()) != null) {
                 if (line.indexOf("public static final") > 0) {
-                    sb.append(line);
+                    sb.append(line.trim());
                     sb.append('\n');
                 }
             }
