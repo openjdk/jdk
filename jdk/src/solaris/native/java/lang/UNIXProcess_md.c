@@ -140,6 +140,13 @@
 
 #define FAIL_FILENO (STDERR_FILENO + 1)
 
+/* TODO: Refactor. */
+#define RESTARTABLE(_cmd, _result) do { \
+  do { \
+    _result = _cmd; \
+  } while((_result == -1) && (errno == EINTR)); \
+} while(0)
+
 /* This is one of the rare times it's more portable to declare an
  * external symbol explicitly, rather than via a system header.
  * The declaration is standardized as part of UNIX98, but there is
@@ -342,6 +349,36 @@ Java_java_lang_UNIXProcess_waitForProcessExit(JNIEnv* env,
     }
 }
 
+static ssize_t
+restartableWrite(int fd, const void *buf, size_t count)
+{
+    ssize_t result;
+    RESTARTABLE(write(fd, buf, count), result);
+    return result;
+}
+
+static int
+restartableDup2(int fd_from, int fd_to)
+{
+    int err;
+    RESTARTABLE(dup2(fd_from, fd_to), err);
+    return err;
+}
+
+static int
+restartableClose(int fd)
+{
+    int err;
+    RESTARTABLE(close(fd), err);
+    return err;
+}
+
+static int
+closeSafely(int fd)
+{
+    return (fd == -1) ? 0 : restartableClose(fd);
+}
+
 static int
 isAsciiDigit(char c)
 {
@@ -362,8 +399,8 @@ closeDescriptors(void)
      * the lowest numbered file descriptor, just like open().  So we
      * close a couple explicitly.  */
 
-    close(from_fd);             /* for possible use by opendir() */
-    close(from_fd + 1);         /* another one for good luck */
+    restartableClose(from_fd);          /* for possible use by opendir() */
+    restartableClose(from_fd + 1);      /* another one for good luck */
 
     if ((dp = opendir("/proc/self/fd")) == NULL)
         return 0;
@@ -375,7 +412,7 @@ closeDescriptors(void)
         int fd;
         if (isAsciiDigit(dirp->d_name[0]) &&
             (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd + 2)
-            close(fd);
+            restartableClose(fd);
     }
 
     closedir(dp);
@@ -383,13 +420,15 @@ closeDescriptors(void)
     return 1;
 }
 
-static void
+static int
 moveDescriptor(int fd_from, int fd_to)
 {
     if (fd_from != fd_to) {
-        dup2(fd_from, fd_to);
-        close(fd_from);
+        if ((restartableDup2(fd_from, fd_to) == -1) ||
+            (restartableClose(fd_from) == -1))
+            return -1;
     }
+    return 0;
 }
 
 static const char *
@@ -586,13 +625,6 @@ JDK_execvpe(const char *file,
     }
 }
 
-static void
-closeSafely(int fd)
-{
-    if (fd != -1)
-        close(fd);
-}
-
 /*
  * Reads nbyte bytes from file descriptor fd into buf,
  * The read operation is retried in case of EINTR or partial reads.
@@ -661,31 +693,40 @@ childProcess(void *arg)
     /* Close the parent sides of the pipes.
        Closing pipe fds here is redundant, since closeDescriptors()
        would do it anyways, but a little paranoia is a good thing. */
-    closeSafely(p->in[1]);
-    closeSafely(p->out[0]);
-    closeSafely(p->err[0]);
-    closeSafely(p->fail[0]);
+    if ((closeSafely(p->in[1])   == -1) ||
+        (closeSafely(p->out[0])  == -1) ||
+        (closeSafely(p->err[0])  == -1) ||
+        (closeSafely(p->fail[0]) == -1))
+        goto WhyCantJohnnyExec;
 
     /* Give the child sides of the pipes the right fileno's. */
     /* Note: it is possible for in[0] == 0 */
-    moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0], STDIN_FILENO);
-    moveDescriptor(p->out[1]!= -1 ? p->out[1] : p->fds[1], STDOUT_FILENO);
+    if ((moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0],
+                        STDIN_FILENO) == -1) ||
+        (moveDescriptor(p->out[1]!= -1 ? p->out[1] : p->fds[1],
+                        STDOUT_FILENO) == -1))
+        goto WhyCantJohnnyExec;
 
     if (p->redirectErrorStream) {
-      closeSafely(p->err[1]);
-      dup2(STDOUT_FILENO, STDERR_FILENO);
+        if ((closeSafely(p->err[1]) == -1) ||
+            (restartableDup2(STDOUT_FILENO, STDERR_FILENO) == -1))
+            goto WhyCantJohnnyExec;
     } else {
-      moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2], STDERR_FILENO);
+        if (moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2],
+                           STDERR_FILENO) == -1)
+            goto WhyCantJohnnyExec;
     }
 
-    moveDescriptor(p->fail[1], FAIL_FILENO);
+    if (moveDescriptor(p->fail[1], FAIL_FILENO) == -1)
+        goto WhyCantJohnnyExec;
 
     /* close everything */
     if (closeDescriptors() == 0) { /* failed,  close the old way */
         int max_fd = (int)sysconf(_SC_OPEN_MAX);
-        int i;
-        for (i = FAIL_FILENO + 1; i < max_fd; i++)
-            close(i);
+        int fd;
+        for (fd = FAIL_FILENO + 1; fd < max_fd; fd++)
+            if (restartableClose(fd) == -1 && errno != EBADF)
+                goto WhyCantJohnnyExec;
     }
 
     /* change to the new working directory */
@@ -710,9 +751,9 @@ childProcess(void *arg)
      */
     {
         int errnum = errno;
-        write(FAIL_FILENO, &errnum, sizeof(errnum));
+        restartableWrite(FAIL_FILENO, &errnum, sizeof(errnum));
     }
-    close(FAIL_FILENO);
+    restartableClose(FAIL_FILENO);
     _exit(-1);
     return 0;  /* Suppress warning "no return value from function" */
 }
@@ -847,7 +888,7 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
         goto Catch;
     }
 
-    close(fail[1]); fail[1] = -1; /* See: WhyCantJohnnyExec */
+    restartableClose(fail[1]); fail[1] = -1; /* See: WhyCantJohnnyExec */
 
     switch (readFully(fail[0], &errnum, sizeof(errnum))) {
     case 0: break; /* Exec succeeded */
