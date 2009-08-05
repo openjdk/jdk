@@ -29,7 +29,7 @@
  *  @author jjh
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -source 1.5 -target 1.5 -g GenericsTest.java
+ *  @run compile -g GenericsTest.java
  *  @run main GenericsTest
  */
 import com.sun.jdi.*;
