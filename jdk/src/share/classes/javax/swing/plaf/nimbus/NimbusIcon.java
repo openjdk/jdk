@@ -84,6 +84,8 @@ class NimbusIcon extends SynthIcon {
                         translatex = 1;
                     }
                 }
+            } else if (c instanceof JMenu) {
+                flip = ! c.getComponentOrientation().isLeftToRight();
             }
             if (g instanceof Graphics2D){
                 Graphics2D gfx = (Graphics2D)g;
