@@ -29,7 +29,7 @@
  *  @author jjh
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -source 1.5 -target 1.5 -g EnumTest.java
+ *  @run compile -g EnumTest.java
  *  @run main EnumTest
  */
 import com.sun.jdi.*;
