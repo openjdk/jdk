@@ -3169,65 +3169,62 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
   Node* end               = is_copyOfRange? argument(2): argument(1);
   Node* array_type_mirror = is_copyOfRange? argument(3): argument(2);
 
-  _sp += nargs;  // set original stack for use by uncommon_trap
-  array_type_mirror = do_null_check(array_type_mirror, T_OBJECT);
-  original          = do_null_check(original, T_OBJECT);
-  _sp -= nargs;
+  Node* newcopy;
 
-  // Check if a null path was taken unconditionally.
-  if (stopped())  return true;
+  //set the original stack and the reexecute bit for the interpreter to reexecute
+  //the bytecode that invokes Arrays.copyOf if deoptimization happens
+  { PreserveReexecuteState preexecs(this);
+    _sp += nargs;
+    jvms()->set_should_reexecute(true);
 
-  Node* orig_length = load_array_length(original);
+    array_type_mirror = do_null_check(array_type_mirror, T_OBJECT);
+    original          = do_null_check(original, T_OBJECT);
 
-  Node* klass_node = load_klass_from_mirror(array_type_mirror, false, nargs,
-                                            NULL, 0);
-  _sp += nargs;  // set original stack for use by uncommon_trap
-  klass_node = do_null_check(klass_node, T_OBJECT);
-  _sp -= nargs;
+    // Check if a null path was taken unconditionally.
+    if (stopped())  return true;
 
-  RegionNode* bailout = new (C, 1) RegionNode(1);
-  record_for_igvn(bailout);
+    Node* orig_length = load_array_length(original);
 
-  // Despite the generic type of Arrays.copyOf, the mirror might be int, int[], etc.
-  // Bail out if that is so.
-  Node* not_objArray = generate_non_objArray_guard(klass_node, bailout);
-  if (not_objArray != NULL) {
-    // Improve the klass node's type from the new optimistic assumption:
-    ciKlass* ak = ciArrayKlass::make(env()->Object_klass());
-    const Type* akls = TypeKlassPtr::make(TypePtr::NotNull, ak, 0/*offset*/);
-    Node* cast = new (C, 2) CastPPNode(klass_node, akls);
-    cast->init_req(0, control());
-    klass_node = _gvn.transform(cast);
-  }
+    Node* klass_node = load_klass_from_mirror(array_type_mirror, false, 0,
+                                              NULL, 0);
+    klass_node = do_null_check(klass_node, T_OBJECT);
 
-  // Bail out if either start or end is negative.
-  generate_negative_guard(start, bailout, &start);
-  generate_negative_guard(end,   bailout, &end);
+    RegionNode* bailout = new (C, 1) RegionNode(1);
+    record_for_igvn(bailout);
 
-  Node* length = end;
-  if (_gvn.type(start) != TypeInt::ZERO) {
-    length = _gvn.transform( new (C, 3) SubINode(end, start) );
-  }
+    // Despite the generic type of Arrays.copyOf, the mirror might be int, int[], etc.
+    // Bail out if that is so.
+    Node* not_objArray = generate_non_objArray_guard(klass_node, bailout);
+    if (not_objArray != NULL) {
+      // Improve the klass node's type from the new optimistic assumption:
+      ciKlass* ak = ciArrayKlass::make(env()->Object_klass());
+      const Type* akls = TypeKlassPtr::make(TypePtr::NotNull, ak, 0/*offset*/);
+      Node* cast = new (C, 2) CastPPNode(klass_node, akls);
+      cast->init_req(0, control());
+      klass_node = _gvn.transform(cast);
+    }
 
-  // Bail out if length is negative.
-  // ...Not needed, since the new_array will throw the right exception.
-  //generate_negative_guard(length, bailout, &length);
+    // Bail out if either start or end is negative.
+    generate_negative_guard(start, bailout, &start);
+    generate_negative_guard(end,   bailout, &end);
 
-  if (bailout->req() > 1) {
-    PreserveJVMState pjvms(this);
-    set_control( _gvn.transform(bailout) );
-    _sp += nargs;  // push the arguments back on the stack
-    uncommon_trap(Deoptimization::Reason_intrinsic,
-                  Deoptimization::Action_maybe_recompile);
-  }
+    Node* length = end;
+    if (_gvn.type(start) != TypeInt::ZERO) {
+      length = _gvn.transform( new (C, 3) SubINode(end, start) );
+    }
 
-  if (!stopped()) {
-    Node *newcopy;
-    //set the original stack and the reexecute bit for the interpreter to reexecute
-    //the bytecode that invokes Arrays.copyOf if deoptimization happens
-    { PreserveReexecuteState preexecs(this);
-      _sp += nargs;
-      jvms()->set_should_reexecute(true);
+    // Bail out if length is negative.
+    // ...Not needed, since the new_array will throw the right exception.
+    //generate_negative_guard(length, bailout, &length);
+
+    if (bailout->req() > 1) {
+      PreserveJVMState pjvms(this);
+      set_control( _gvn.transform(bailout) );
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_maybe_recompile);
+    }
+
+    if (!stopped()) {
 
       // How many elements will we copy from the original?
       // The answer is MinI(orig_length - start, length).
@@ -3247,8 +3244,10 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       generate_arraycopy(TypeAryPtr::OOPS, T_OBJECT,
                          original, start, newcopy, intcon(0), moved,
                          disjoint_bases, length_never_negative);
-    } //original reexecute and sp are set back here
+    }
+  } //original reexecute and sp are set back here
 
+  if(!stopped()) {
     push(newcopy);
   }
 
@@ -4000,43 +3999,49 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
 //
 bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   int nargs = 1;
-  Node* obj = null_check_receiver(callee());
-  if (stopped())  return true;
-  Node* obj_klass = load_object_klass(obj);
-  const TypeKlassPtr* tklass = _gvn.type(obj_klass)->isa_klassptr();
-  const TypeOopPtr*   toop   = ((tklass != NULL)
-                                ? tklass->as_instance_type()
-                                : TypeInstPtr::NOTNULL);
-
-  // Conservatively insert a memory barrier on all memory slices.
-  // Do not let writes into the original float below the clone.
-  insert_mem_bar(Op_MemBarCPUOrder);
-
-  // paths into result_reg:
-  enum {
-    _slow_path = 1,     // out-of-line call to clone method (virtual or not)
-    _objArray_path,     // plain array allocation, plus arrayof_oop_arraycopy
-    _array_path,        // plain array allocation, plus arrayof_long_arraycopy
-    _instance_path,     // plain instance allocation, plus arrayof_long_arraycopy
-    PATH_LIMIT
-  };
-  RegionNode* result_reg = new(C, PATH_LIMIT) RegionNode(PATH_LIMIT);
-  PhiNode*    result_val = new(C, PATH_LIMIT) PhiNode(result_reg,
-                                                      TypeInstPtr::NOTNULL);
-  PhiNode*    result_i_o = new(C, PATH_LIMIT) PhiNode(result_reg, Type::ABIO);
-  PhiNode*    result_mem = new(C, PATH_LIMIT) PhiNode(result_reg, Type::MEMORY,
-                                                      TypePtr::BOTTOM);
-  record_for_igvn(result_reg);
-
-  const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-  int raw_adr_idx = Compile::AliasIdxRaw;
-  const bool raw_mem_only = true;
+  PhiNode* result_val;
 
   //set the original stack and the reexecute bit for the interpreter to reexecute
   //the bytecode that invokes Object.clone if deoptimization happens
   { PreserveReexecuteState preexecs(this);
-    _sp += nargs;
     jvms()->set_should_reexecute(true);
+
+    //null_check_receiver will adjust _sp (push and pop)
+    Node* obj = null_check_receiver(callee());
+    if (stopped())  return true;
+
+    _sp += nargs;
+
+    Node* obj_klass = load_object_klass(obj);
+    const TypeKlassPtr* tklass = _gvn.type(obj_klass)->isa_klassptr();
+    const TypeOopPtr*   toop   = ((tklass != NULL)
+                                ? tklass->as_instance_type()
+                                : TypeInstPtr::NOTNULL);
+
+    // Conservatively insert a memory barrier on all memory slices.
+    // Do not let writes into the original float below the clone.
+    insert_mem_bar(Op_MemBarCPUOrder);
+
+    // paths into result_reg:
+    enum {
+      _slow_path = 1,     // out-of-line call to clone method (virtual or not)
+      _objArray_path,     // plain array allocation, plus arrayof_oop_arraycopy
+      _array_path,        // plain array allocation, plus arrayof_long_arraycopy
+      _instance_path,     // plain instance allocation, plus arrayof_long_arraycopy
+      PATH_LIMIT
+    };
+    RegionNode* result_reg = new(C, PATH_LIMIT) RegionNode(PATH_LIMIT);
+    result_val             = new(C, PATH_LIMIT) PhiNode(result_reg,
+                                                        TypeInstPtr::NOTNULL);
+    PhiNode*    result_i_o = new(C, PATH_LIMIT) PhiNode(result_reg, Type::ABIO);
+    PhiNode*    result_mem = new(C, PATH_LIMIT) PhiNode(result_reg, Type::MEMORY,
+                                                        TypePtr::BOTTOM);
+    record_for_igvn(result_reg);
+
+    const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
+    int raw_adr_idx = Compile::AliasIdxRaw;
+    const bool raw_mem_only = true;
+
 
     Node* array_ctl = generate_array_guard(obj_klass, (RegionNode*)NULL);
     if (array_ctl != NULL) {
@@ -4141,12 +4146,12 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       result_i_o ->set_req(_slow_path, i_o());
       result_mem ->set_req(_slow_path, reset_memory());
     }
-  } //original reexecute and sp are set back here
 
-  // Return the combined state.
-  set_control(    _gvn.transform(result_reg) );
-  set_i_o(        _gvn.transform(result_i_o) );
-  set_all_memory( _gvn.transform(result_mem) );
+    // Return the combined state.
+    set_control(    _gvn.transform(result_reg) );
+    set_i_o(        _gvn.transform(result_i_o) );
+    set_all_memory( _gvn.transform(result_mem) );
+  } //original reexecute and sp are set back here
 
   push(_gvn.transform(result_val));
 
