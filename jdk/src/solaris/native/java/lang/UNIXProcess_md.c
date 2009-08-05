@@ -50,27 +50,72 @@
 #include <limits.h>
 
 /*
- * (Hopefully temporarily) disable the clone-exec feature pending
- * further investigation and bug-fixing.
- * 32-bit (but not 64-bit) Linux fails on the program
- *   Runtime.getRuntime().exec("/bin/true").waitFor();
- * with:
- * #  Internal Error (os_linux_x86.cpp:683), pid=19940, tid=2934639536
- * #  Error: pthread_getattr_np failed with errno = 3 (ESRCH)
- * Linux kernel/pthread gurus are invited to figure this out.
+ * There are 3 possible strategies we might use to "fork":
+ *
+ * - fork(2).  Very portable and reliable but subject to
+ *   failure due to overcommit (see the documentation on
+ *   /proc/sys/vm/overcommit_memory in Linux proc(5)).
+ *   This is the ancient problem of spurious failure whenever a large
+ *   process starts a small subprocess.
+ *
+ * - vfork().  Using this is scary because all relevant man pages
+ *   contain dire warnings, e.g. Linux vfork(2).  But at least it's
+ *   documented in the glibc docs and is standardized by XPG4.
+ *   http://www.opengroup.org/onlinepubs/000095399/functions/vfork.html
+ *   On Linux, one might think that vfork() would be implemented using
+ *   the clone system call with flag CLONE_VFORK, but in fact vfork is
+ *   a separate system call (which is a good sign, suggesting that
+ *   vfork will continue to be supported at least on Linux).
+ *   Another good sign is that glibc implements posix_spawn using
+ *   vfork whenever possible.  Note that we cannot use posix_spawn
+ *   ourselves because there's no reliable way to close all inherited
+ *   file descriptors.
+ *
+ * - clone() with flags CLONE_VM but not CLONE_THREAD.  clone() is
+ *   Linux-specific, but this ought to work - at least the glibc
+ *   sources contain code to handle different combinations of CLONE_VM
+ *   and CLONE_THREAD.  However, when this was implemented, it
+ *   appeared to fail on 32-bit i386 (but not 64-bit x86_64) Linux with
+ *   the simple program
+ *     Runtime.getRuntime().exec("/bin/true").waitFor();
+ *   with:
+ *     #  Internal Error (os_linux_x86.cpp:683), pid=19940, tid=2934639536
+ *     #  Error: pthread_getattr_np failed with errno = 3 (ESRCH)
+ *   We believe this is a glibc bug, reported here:
+ *     http://sources.redhat.com/bugzilla/show_bug.cgi?id=10311
+ *   but the glibc maintainers closed it as WONTFIX.
+ *
+ * Based on the above analysis, we are currently using vfork() on
+ * Linux and fork() on other Unix systems, but the code to use clone()
+ * remains.
  */
-#define USE_CLONE 0
 
-#ifndef USE_CLONE
-#ifdef __linux__
-#define USE_CLONE 1
-#else
-#define USE_CLONE 0
-#endif
+#define START_CHILD_USE_CLONE 0  /* clone() currently disabled; see above. */
+
+#ifndef START_CHILD_USE_CLONE
+  #ifdef __linux__
+    #define START_CHILD_USE_CLONE 1
+  #else
+    #define START_CHILD_USE_CLONE 0
+  #endif
 #endif
 
-#if USE_CLONE
+/* By default, use vfork() on Linux. */
+#ifndef START_CHILD_USE_VFORK
+  #ifdef __linux__
+    #define START_CHILD_USE_VFORK 1
+  #else
+    #define START_CHILD_USE_VFORK 0
+  #endif
+#endif
+
+#if START_CHILD_USE_CLONE
 #include <sched.h>
+#define START_CHILD_SYSTEM_CALL "clone"
+#elif START_CHILD_USE_VFORK
+#define START_CHILD_SYSTEM_CALL "vfork"
+#else
+#define START_CHILD_SYSTEM_CALL "fork"
 #endif
 
 #ifndef STDIN_FILENO
@@ -94,6 +139,20 @@
 #endif
 
 #define FAIL_FILENO (STDERR_FILENO + 1)
+
+/* This is one of the rare times it's more portable to declare an
+ * external symbol explicitly, rather than via a system header.
+ * The declaration is standardized as part of UNIX98, but there is
+ * no standard (not even de-facto) header file where the
+ * declaration is to be found.  See:
+ * http://www.opengroup.org/onlinepubs/009695399/functions/environ.html
+ * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
+ *
+ * "All identifiers in this volume of IEEE Std 1003.1-2001, except
+ * environ, are defined in at least one of the headers" (!)
+ */
+extern char **environ;
+
 
 static void
 setSIGCHLDHandler(JNIEnv *env)
@@ -434,13 +493,13 @@ execve_with_shell_fallback(const char *file,
                            const char *argv[],
                            const char *const envp[])
 {
-#if USE_CLONE
+#if START_CHILD_USE_CLONE || START_CHILD_USE_VFORK
+    /* shared address space; be very careful. */
     execve(file, (char **) argv, (char **) envp);
     if (errno == ENOEXEC)
         execve_as_traditional_shell_script(file, argv, envp);
 #else
-    /* Our address space is unshared, so can mutate environ. */
-    extern char **environ;
+    /* unshared address space; we can mutate environ. */
     environ = (char **) envp;
     execvp(file, (char **) argv);
 #endif
@@ -458,19 +517,6 @@ JDK_execvpe(const char *file,
             const char *argv[],
             const char *const envp[])
 {
-    /* This is one of the rare times it's more portable to declare an
-     * external symbol explicitly, rather than via a system header.
-     * The declaration is standardized as part of UNIX98, but there is
-     * no standard (not even de-facto) header file where the
-     * declaration is to be found.  See:
-     * http://www.opengroup.org/onlinepubs/009695399/functions/environ.html
-     * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_02.html
-     *
-     * "All identifiers in this volume of IEEE Std 1003.1-2001, except
-     * environ, are defined in at least one of the headers" (!)
-     */
-    extern char **environ;
-
     if (envp == NULL || (char **) envp == environ) {
         execvp(file, (char **) argv);
         return;
@@ -589,6 +635,9 @@ typedef struct _ChildStuff
     const char **envv;
     const char *pdir;
     jboolean redirectErrorStream;
+#if START_CHILD_USE_CLONE
+    void *clone_stack;
+#endif
 } ChildStuff;
 
 static void
@@ -668,6 +717,55 @@ childProcess(void *arg)
     return 0;  /* Suppress warning "no return value from function" */
 }
 
+/**
+ * Start a child process running function childProcess.
+ * This function only returns in the parent.
+ * We are unusually paranoid; use of clone/vfork is
+ * especially likely to tickle gcc/glibc bugs.
+ */
+#ifdef __attribute_noinline__  /* See: sys/cdefs.h */
+__attribute_noinline__
+#endif
+static pid_t
+startChild(ChildStuff *c) {
+#if START_CHILD_USE_CLONE
+#define START_CHILD_CLONE_STACK_SIZE (64 * 1024)
+    /*
+     * See clone(2).
+     * Instead of worrying about which direction the stack grows, just
+     * allocate twice as much and start the stack in the middle.
+     */
+    if ((c->clone_stack = malloc(2 * START_CHILD_CLONE_STACK_SIZE)) == NULL)
+        /* errno will be set to ENOMEM */
+        return -1;
+    return clone(childProcess,
+                 c->clone_stack + START_CHILD_CLONE_STACK_SIZE,
+                 CLONE_VFORK | CLONE_VM | SIGCHLD, c);
+#else
+  #if START_CHILD_USE_VFORK
+    /*
+     * We separate the call to vfork into a separate function to make
+     * very sure to keep stack of child from corrupting stack of parent,
+     * as suggested by the scary gcc warning:
+     *  warning: variable 'foo' might be clobbered by 'longjmp' or 'vfork'
+     */
+    volatile pid_t resultPid = vfork();
+  #else
+    /*
+     * From Solaris fork(2): In Solaris 10, a call to fork() is
+     * identical to a call to fork1(); only the calling thread is
+     * replicated in the child process. This is the POSIX-specified
+     * behavior for fork().
+     */
+    pid_t resultPid = fork();
+  #endif
+    if (resultPid == 0)
+        childProcess(c);
+    assert(resultPid != 0);  /* childProcess never returns */
+    return resultPid;
+#endif /* ! START_CHILD_USE_CLONE */
+}
+
 JNIEXPORT jint JNICALL
 Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
                                        jobject process,
@@ -680,9 +778,6 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
 {
     int errnum;
     int resultPid = -1;
-#if USE_CLONE
-    void *clone_stack = NULL;
-#endif
     int in[2], out[2], err[2], fail[2];
     jint *fds = NULL;
     const char *pprog = NULL;
@@ -696,6 +791,9 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     c->argv = NULL;
     c->envv = NULL;
     c->pdir = NULL;
+#if START_CHILD_USE_CLONE
+    c->clone_stack = NULL;
+#endif
 
     /* Convert prog + argBlock into a char ** argv.
      * Add one word room for expansion of argv for use by
@@ -741,35 +839,13 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
 
     c->redirectErrorStream = redirectErrorStream;
 
-    {
-#if USE_CLONE
-        /* See clone(2).
-         * Instead of worrying about which direction the stack grows, just
-         * allocate twice as much and start the stack in the middle. */
-        const int stack_size = 64 * 1024;
-        if ((clone_stack = NEW(char, 2 * stack_size)) == NULL) goto Catch;
-        resultPid = clone(childProcess, clone_stack + stack_size,
-                          /* CLONE_VFORK | // works, but unnecessary */
-                          CLONE_VM | SIGCHLD, c);
-#else
-        /* From fork(2): In Solaris 10, a call to fork() is identical
-         * to a call to fork1(); only the calling thread is replicated
-         * in the child process. This is the POSIX-specified behavior
-         * for fork(). */
-        resultPid = fork();
-        if (resultPid == 0) {
-          childProcess(c);
-          assert(0);  /* childProcess must not return */
-        }
-#endif
-    }
+    resultPid = startChild(c);
+    assert(resultPid != 0);
 
     if (resultPid < 0) {
-        throwIOException(env, errno, "Fork failed");
+        throwIOException(env, errno, START_CHILD_SYSTEM_CALL " failed");
         goto Catch;
     }
-
-    /* parent process */
 
     close(fail[1]); fail[1] = -1; /* See: WhyCantJohnnyExec */
 
@@ -789,8 +865,8 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     fds[2] = (err[0] != -1) ? err[0] : -1;
 
  Finally:
-#if USE_CLONE
-    free(clone_stack);
+#if START_CHILD_USE_CLONE
+    free(c->clone_stack);
 #endif
 
     /* Always clean up the child's side of the pipes */
