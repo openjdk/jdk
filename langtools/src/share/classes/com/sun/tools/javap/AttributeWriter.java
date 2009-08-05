@@ -329,7 +329,7 @@ public class AttributeWriter extends BasicWriter
             print("InnerClass");
         else
             print("InnerClasses");
-        println(": ");
+        println(":");
         indent(+1);
     }
 
