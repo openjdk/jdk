@@ -227,10 +227,10 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      *
      * @param x an encoded x value (0...1, or 1...2, or 2...3)
      * @return the decoded x value
+     * @throws IllegalArgumentException
+     *      if {@code x < 0} or {@code x > 3}
      */
     protected final float decodeX(float x) {
-        if (ctx.canvasSize == null) return x;
-
         if (x >= 0 && x <= 1) {
             return x * leftWidth;
         } else if (x > 1 && x < 2) {
@@ -238,7 +238,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
         } else if (x >= 2 && x <= 3) {
             return ((x-2) * rightWidth) + leftWidth + centerWidth;
         } else {
-            throw new AssertionError("Invalid x");
+            throw new IllegalArgumentException("Invalid x");
         }
     }
 
@@ -248,10 +248,10 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      *
      * @param y an encoded y value (0...1, or 1...2, or 2...3)
      * @return the decoded y value
+     * @throws IllegalArgumentException
+     *      if {@code y < 0} or {@code y > 3}
      */
     protected final float decodeY(float y) {
-        if (ctx.canvasSize == null) return y;
-
         if (y >= 0 && y <= 1) {
             return y * topHeight;
         } else if (y > 1 && y < 2) {
@@ -259,7 +259,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
         } else if (y >= 2 && y <= 3) {
             return ((y-2) * bottomHeight) + topHeight + centerHeight;
         } else {
-            throw new AssertionError("Invalid y");
+            throw new IllegalArgumentException("Invalid y");
         }
     }
 
@@ -271,10 +271,10 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      * @param x an encoded x value of the bezier control point (0...1, or 1...2, or 2...3)
      * @param dx the offset distance to the anchor from the control point x
      * @return the decoded x location of the control point
+     * @throws IllegalArgumentException
+     *      if {@code x < 0} or {@code x > 3}
      */
     protected final float decodeAnchorX(float x, float dx) {
-        if (ctx.canvasSize == null) return x + dx;
-
         if (x >= 0 && x <= 1) {
             return decodeX(x) + (dx * leftScale);
         } else if (x > 1 && x < 2) {
@@ -282,7 +282,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
         } else if (x >= 2 && x <= 3) {
             return decodeX(x) + (dx * rightScale);
         } else {
-            throw new AssertionError("Invalid x");
+            throw new IllegalArgumentException("Invalid x");
         }
     }
 
@@ -294,10 +294,10 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      * @param y an encoded y value of the bezier control point (0...1, or 1...2, or 2...3)
      * @param dy the offset distance to the anchor from the control point y
      * @return the decoded y position of the control point
+     * @throws IllegalArgumentException
+     *      if {@code y < 0} or {@code y > 3}
      */
     protected final float decodeAnchorY(float y, float dy) {
-        if (ctx.canvasSize == null) return y + dy;
-
         if (y >= 0 && y <= 1) {
             return decodeY(y) + (dy * topScale);
         } else if (y > 1 && y < 2) {
@@ -305,7 +305,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
         } else if (y >= 2 && y <= 3) {
             return decodeY(y) + (dy * bottomScale);
         } else {
-            throw new AssertionError("Invalid y");
+            throw new IllegalArgumentException("Invalid y");
         }
     }
 
@@ -363,6 +363,15 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      * @param midpoints
      * @param colors
      * @return a valid LinearGradientPaint. This method never returns null.
+     * @throws NullPointerException
+     *      if {@code midpoints} array is null,
+     *      or {@code colors} array is null,
+     * @throws IllegalArgumentException
+     *      if start and end points are the same points,
+     *      or {@code midpoints.length != colors.length},
+     *      or {@code colors} is less than 2 in size,
+     *      or a {@code midpoints} value is less than 0.0 or greater than 1.0,
+     *      or the {@code midpoints} are not provided in strictly increasing order
      */
     protected final LinearGradientPaint decodeGradient(float x1, float y1, float x2, float y2, float[] midpoints, Color[] colors) {
         if (x1 == x2 && y1 == y2) {
@@ -384,6 +393,15 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      * @param midpoints
      * @param colors
      * @return a valid RadialGradientPaint. This method never returns null.
+     * @throws NullPointerException
+     *      if {@code midpoints} array is null,
+     *      or {@code colors} array is null
+     * @throws IllegalArgumentException
+     *      if {@code r} is non-positive,
+     *      or {@code midpoints.length != colors.length},
+     *      or {@code colors} is less than 2 in size,
+     *      or a {@code midpoints} value is less than 0.0 or greater than 1.0,
+     *      or the {@code midpoints} are not provided in strictly increasing order
      */
     protected final RadialGradientPaint decodeRadialGradient(float x, float y, float r, float[] midpoints, Color[] colors) {
         if (r == 0f) {
@@ -537,10 +555,10 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
             this.maxVerticalScaleFactor = maxV;
 
             if (canvasSize != null) {
-                a = insets.left;
-                b = canvasSize.width - insets.right;
-                c = insets.top;
-                d = canvasSize.height - insets.bottom;
+                a = stretchingInsets.left;
+                b = canvasSize.width - stretchingInsets.right;
+                c = stretchingInsets.top;
+                d = canvasSize.height - stretchingInsets.bottom;
                 this.canvasSize = canvasSize;
                 this.inverted = inverted;
                 if (inverted) {
