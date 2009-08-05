@@ -62,7 +62,9 @@ public class ConstantWriter extends BasicWriter {
     protected void writeConstantPool(ConstantPool constant_pool) {
         ConstantPool.Visitor<Integer, Void> v = new ConstantPool.Visitor<Integer,Void>() {
             public Integer visitClass(CONSTANT_Class_info info, Void p) {
-                println("#" + info.name_index + ";\t//  " + stringValue(info));
+                print("#" + info.name_index + ";");
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
@@ -72,7 +74,9 @@ public class ConstantWriter extends BasicWriter {
             }
 
             public Integer visitFieldref(CONSTANT_Fieldref_info info, Void p) {
-                println("#" + info.class_index + ".#" + info.name_and_type_index + ";\t//  " + stringValue(info));
+                print("#" + info.class_index + ".#" + info.name_and_type_index + ";");
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
@@ -87,7 +91,9 @@ public class ConstantWriter extends BasicWriter {
             }
 
             public Integer visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, Void p) {
-                println("#" + info.class_index + ".#" + info.name_and_type_index + ";\t//  " + stringValue(info));
+                print("#" + info.class_index + ".#" + info.name_and_type_index + ";");
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
@@ -97,18 +103,23 @@ public class ConstantWriter extends BasicWriter {
             }
 
             public Integer visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
-                String tab = (options.compat ? "" : "\t"); // BUG 6622232 javap gets whitespace confused
-                println("#" + info.name_index + ":#" + info.type_index + ";" + tab + "//  " + stringValue(info));
+                print("#" + info.name_index + ":#" + info.type_index + ";");
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitMethodref(CONSTANT_Methodref_info info, Void p) {
-                println("#" + info.class_index + ".#" + info.name_and_type_index + ";\t//  " + stringValue(info));
+                print("#" + info.class_index + ".#" + info.name_and_type_index + ";");
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitString(CONSTANT_String_info info, Void p) {
-                println("#" + info.string_index + ";\t//  " + stringValue(info));
+                print("#" + info.string_index + ";");
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
@@ -118,17 +129,21 @@ public class ConstantWriter extends BasicWriter {
             }
 
         };
-        println("  Constant pool:");
+        println("Constant pool:");
+        indent(+1);
+        int width = String.valueOf(constant_pool.size()).length() + 1;
         int cpx = 1;
         while (cpx < constant_pool.size()) {
+            print(String.format("const %" + width + "s", ("#" + cpx)));
             try {
                 CPInfo cpInfo = constant_pool.get(cpx);
-                print("const #" + cpx + " = " + tagName(cpInfo.getTag()) + "\t");
+                print(String.format(" = %-15s ", tagName(cpInfo.getTag())));
                 cpx += cpInfo.accept(v, null);
             } catch (ConstantPool.InvalidIndex ex) {
-                print("const #" + cpx); // should not happen
+                // should not happen
             }
         }
+        indent(-1);
     }
 
     protected void write(int cpx) {
