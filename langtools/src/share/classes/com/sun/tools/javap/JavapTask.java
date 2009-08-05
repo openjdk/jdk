@@ -32,8 +32,10 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -49,6 +51,8 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.NestingKind;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager;
@@ -57,6 +61,9 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.classfile.*;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
 
 /**
  *  "Main" class for javap, normally accessed from the command line
@@ -607,30 +614,10 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     protected boolean writeClass(ClassWriter classWriter, String className)
             throws IOException, ConstantPoolException {
-        JavaFileObject fo;
-        if (className.endsWith(".class")) {
-            if (fileManager instanceof StandardJavaFileManager) {
-                StandardJavaFileManager sfm = (StandardJavaFileManager) fileManager;
-                fo = sfm.getJavaFileObjects(className).iterator().next();
-            } else {
-                reportError("err.not.standard.file.manager", className);
-                return false;
-            }
-        } else {
-            fo = getClassFileObject(className);
-            if (fo == null) {
-                // see if it is an inner class, by replacing dots to $, starting from the right
-                String cn = className;
-                int lastDot;
-                while (fo == null && (lastDot = cn.lastIndexOf(".")) != -1) {
-                    cn = cn.substring(0, lastDot) + "$" + cn.substring(lastDot + 1);
-                    fo = getClassFileObject(cn);
-                }
-            }
-            if (fo == null) {
-                reportError("err.class.not.found", className);
-                return false;
-            }
+        JavaFileObject fo = open(className);
+        if (fo == null) {
+            reportError("err.class.not.found", className);
+            return false;
         }
 
         ClassFileInfo cfInfo = read(fo);
@@ -673,6 +660,102 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         }
 
         return true;
+    }
+
+    protected JavaFileObject open(String className) throws IOException {
+        // for compatibility, first see if it is a class name
+        JavaFileObject fo = getClassFileObject(className);
+        if (fo != null)
+            return fo;
+
+        // see if it is an inner class, by replacing dots to $, starting from the right
+        String cn = className;
+        int lastDot;
+        while ((lastDot = cn.lastIndexOf(".")) != -1) {
+            cn = cn.substring(0, lastDot) + "$" + cn.substring(lastDot + 1);
+            fo = getClassFileObject(cn);
+            if (fo != null)
+                return fo;
+        }
+
+        if (!className.endsWith(".class"))
+            return null;
+
+        if (fileManager instanceof StandardJavaFileManager) {
+            StandardJavaFileManager sfm = (StandardJavaFileManager) fileManager;
+            fo = sfm.getJavaFileObjects(className).iterator().next();
+            if (fo != null && fo.getLastModified() != 0) {
+                return fo;
+            }
+        }
+
+        // see if it is a URL, and if so, wrap it in just enough of a JavaFileObject
+        // to suit javap's needs
+        if (className.matches("^[A-Za-z]+:.*")) {
+            try {
+                final URI uri = new URI(className);
+                final URL url = uri.toURL();
+                final URLConnection conn = url.openConnection();
+                return new JavaFileObject() {
+                    public Kind getKind() {
+                        return JavaFileObject.Kind.CLASS;
+                    }
+
+                    public boolean isNameCompatible(String simpleName, Kind kind) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public NestingKind getNestingKind() {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public Modifier getAccessLevel() {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public URI toUri() {
+                        return uri;
+                    }
+
+                    public String getName() {
+                        return url.toString();
+                    }
+
+                    public InputStream openInputStream() throws IOException {
+                        return conn.getInputStream();
+                    }
+
+                    public OutputStream openOutputStream() throws IOException {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public Writer openWriter() throws IOException {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public long getLastModified() {
+                        return conn.getLastModified();
+                    }
+
+                    public boolean delete() {
+                        throw new UnsupportedOperationException();
+                    }
+
+                };
+            } catch (URISyntaxException ignore) {
+            } catch (IOException ignore) {
+            }
+        }
+
+        return null;
     }
 
     public static class ClassFileInfo {
