@@ -27,16 +27,10 @@ package javax.swing.plaf.basic;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.peer.LightweightPeer;
-
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.event.*;
-
 import java.beans.*;
-import java.io.Serializable;
-
 import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
 
@@ -55,6 +49,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
     protected MouseInputAdapter          borderListener;
     protected PropertyChangeListener     propertyChangeListener;
     protected LayoutManager              internalFrameLayout;
+    protected ComponentListener          componentListener;
     protected MouseInputListener         glassPaneDispatcher;
     private InternalFrameListener        internalFrameListener;
 
@@ -66,9 +61,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
     protected BasicInternalFrameTitlePane titlePane; // access needs this
 
     private static DesktopManager sharedDesktopManager;
+    private boolean componentListenerAdded = false;
 
     private Rectangle parentBounds;
-    private DesktopIconMover desktopIconMover;
 
     private boolean dragging = false;
     private boolean resizing = false;
@@ -209,17 +204,14 @@ public class BasicInternalFrameUI extends InternalFrameUI
             frame.getGlassPane().addMouseListener(glassPaneDispatcher);
             frame.getGlassPane().addMouseMotionListener(glassPaneDispatcher);
         }
+        componentListener =  createComponentListener();
         if (frame.getParent() != null) {
           parentBounds = frame.getParent().getBounds();
         }
-        getDesktopIconMover().installListeners();
-    }
-
-    private DesktopIconMover getDesktopIconMover() {
-        if (desktopIconMover == null) {
-            desktopIconMover = new DesktopIconMover(frame);
+        if ((frame.getParent() != null) && !componentListenerAdded) {
+            frame.getParent().addComponentListener(componentListener);
+            componentListenerAdded = true;
         }
-        return desktopIconMover;
     }
 
     // Provide a FocusListener to listen for a WINDOW_LOST_FOCUS event,
@@ -290,7 +282,11 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * @since 1.3
      */
     protected void uninstallListeners() {
-      getDesktopIconMover().uninstallListeners();
+        if ((frame.getParent() != null) && componentListenerAdded) {
+            frame.getParent().removeComponentListener(componentListener);
+            componentListenerAdded = false;
+        }
+        componentListener = null;
       if (glassPaneDispatcher != null) {
           frame.getGlassPane().removeMouseListener(glassPaneDispatcher);
           frame.getGlassPane().removeMouseMotionListener(glassPaneDispatcher);
@@ -1228,6 +1224,15 @@ public class BasicInternalFrameUI extends InternalFrameUI
                 }
             }
 
+            // Relocate the icon base on the new parent bounds.
+            if (icon != null) {
+                Rectangle iconBounds = icon.getBounds();
+                int y = iconBounds.y +
+                        (parentNewBounds.height - parentBounds.height);
+                icon.setBounds(iconBounds.x, y,
+                        iconBounds.width, iconBounds.height);
+            }
+
             // Update the new parent bounds for next resize.
             if (!parentBounds.equals(parentNewBounds)) {
                 parentBounds = parentNewBounds;
@@ -1399,6 +1404,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
                     // Cancel a resize in progress if the internal frame
                     // gets a setClosed(true) or dispose().
                     cancelResize();
+                    if ((frame.getParent() != null) && componentListenerAdded) {
+                        frame.getParent().removeComponentListener(componentListener);
+                    }
                     closeFrame(f);
                 }
             } else if (JInternalFrame.IS_MAXIMUM_PROPERTY == prop) {
@@ -1430,6 +1438,10 @@ public class BasicInternalFrameUI extends InternalFrameUI
                     parentBounds = f.getParent().getBounds();
                 } else {
                     parentBounds = null;
+                }
+                if ((frame.getParent() != null) && !componentListenerAdded) {
+                    f.getParent().addComponentListener(componentListener);
+                    componentListenerAdded = true;
                 }
             } else if (JInternalFrame.TITLE_PROPERTY == prop ||
                     prop == "closable" || prop == "iconable" ||
