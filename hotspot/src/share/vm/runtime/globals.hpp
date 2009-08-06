@@ -3309,7 +3309,7 @@ class CommandLineFlags {
   product(bool, AnonymousClasses, false,                                    \
           "support sun.misc.Unsafe.defineAnonymousClass")                   \
                                                                             \
-  product(bool, EnableMethodHandles, false,                                 \
+  experimental(bool, EnableMethodHandles, false,                            \
           "support method handles (true by default under JSR 292)")         \
                                                                             \
   diagnostic(intx, MethodHandlePushLimit, 3,                                \
@@ -3324,7 +3324,7 @@ class CommandLineFlags {
   diagnostic(bool, OptimizeMethodHandles, true,                             \
           "when constructing method handles, try to improve them")          \
                                                                             \
-  product(bool, EnableInvokeDynamic, false,                                 \
+  experimental(bool, EnableInvokeDynamic, false,                            \
           "recognize the invokedynamic instruction")                        \
                                                                             \
   develop(bool, TraceInvokeDynamic, false,                                  \
