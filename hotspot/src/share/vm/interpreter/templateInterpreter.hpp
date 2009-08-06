@@ -171,11 +171,15 @@ class TemplateInterpreter: public AbstractInterpreter {
   static void       ignore_safepoints();                        // ignores safepoints
 
   // Deoptimization support
-  static address    continuation_for(methodOop method,
-                                     address bcp,
-                                     int callee_parameters,
-                                     bool is_top_frame,
-                                     bool& use_next_mdp);
+  // Compute the entry address for continuation after
+  static address deopt_continue_after_entry(methodOop method,
+                                            address bcp,
+                                            int callee_parameters,
+                                            bool is_top_frame);
+  // Deoptimization should reexecute this bytecode
+  static bool    bytecode_should_reexecute(Bytecodes::Code code);
+  // Compute the address for reexecution
+  static address deopt_reexecute_entry(methodOop method, address bcp);
 
 #include "incls/_templateInterpreter_pd.hpp.incl"
 

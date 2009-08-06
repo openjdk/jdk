@@ -25,11 +25,12 @@
 class compiledVFrame: public javaVFrame {
  public:
   // JVM state
-  methodOop                    method()         const;
-  int                          bci()            const;
-  StackValueCollection*        locals()         const;
-  StackValueCollection*        expressions()    const;
-  GrowableArray<MonitorInfo*>* monitors()       const;
+  methodOop                    method()             const;
+  int                          bci()                const;
+  bool                         should_reexecute()   const;
+  StackValueCollection*        locals()             const;
+  StackValueCollection*        expressions()        const;
+  GrowableArray<MonitorInfo*>* monitors()           const;
 
   void set_locals(StackValueCollection* values) const;
 

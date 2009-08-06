@@ -41,6 +41,7 @@ public class ScopeDesc {
   private NMethod code;
   private Method  method;
   private int     bci;
+  private boolean reexecute;
   /** Decoding offsets */
   private int     decodeOffset;
   private int     senderDecodeOffset;
@@ -61,7 +62,7 @@ public class ScopeDesc {
 
     senderDecodeOffset = stream.readInt();
     method = (Method) VM.getVM().getObjectHeap().newOop(stream.readOopHandle());
-    bci    = stream.readBCI();
+    setBCIAndReexecute(stream.readInt());
     // Decode offsets for body and sender
     localsDecodeOffset      = stream.readInt();
     expressionsDecodeOffset = stream.readInt();
@@ -78,7 +79,7 @@ public class ScopeDesc {
 
     senderDecodeOffset = stream.readInt();
     method = (Method) VM.getVM().getObjectHeap().newOop(stream.readOopHandle());
-    bci    = stream.readBCI();
+    setBCIAndReexecute(stream.readInt());
     // Decode offsets for body and sender
     localsDecodeOffset      = stream.readInt();
     expressionsDecodeOffset = stream.readInt();
@@ -88,6 +89,7 @@ public class ScopeDesc {
   public NMethod getNMethod() { return code; }
   public Method getMethod() { return method; }
   public int    getBCI()    { return bci;    }
+  public boolean getReexecute() {return reexecute;}
 
   /** Returns a List&lt;ScopeValue&gt; */
   public List getLocals() {
@@ -150,6 +152,7 @@ public class ScopeDesc {
     tty.print("ScopeDesc for ");
     method.printValueOn(tty);
     tty.println(" @bci " + bci);
+    tty.println(" reexecute: " + reexecute);
   }
 
   // FIXME: add more accessors
@@ -157,6 +160,11 @@ public class ScopeDesc {
   //--------------------------------------------------------------------------------
   // Internals only below this point
   //
+  private void setBCIAndReexecute(int combination) {
+    int InvocationEntryBci = VM.getVM().getInvocationEntryBCI();
+    bci = (combination >> 1) + InvocationEntryBci;
+    reexecute = (combination & 1)==1 ? true : false;
+  }
 
   private DebugInfoReadStream streamAt(int decodeOffset) {
     return new DebugInfoReadStream(code, decodeOffset, objects);
