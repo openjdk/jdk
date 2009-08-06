@@ -1170,7 +1170,7 @@ void Universe::print_heap_after_gc(outputStream* st) {
   st->print_cr("}");
 }
 
-void Universe::verify(bool allow_dirty, bool silent) {
+void Universe::verify(bool allow_dirty, bool silent, bool option) {
   if (SharedSkipVerify) {
     return;
   }
@@ -1194,7 +1194,7 @@ void Universe::verify(bool allow_dirty, bool silent) {
   if (!silent) gclog_or_tty->print("[Verifying ");
   if (!silent) gclog_or_tty->print("threads ");
   Threads::verify();
-  heap()->verify(allow_dirty, silent);
+  heap()->verify(allow_dirty, silent, option);
 
   if (!silent) gclog_or_tty->print("syms ");
   SymbolTable::verify();

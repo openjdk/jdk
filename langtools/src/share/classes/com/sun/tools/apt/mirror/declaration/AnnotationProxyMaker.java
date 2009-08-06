@@ -49,7 +49,7 @@ import com.sun.tools.javac.util.Pair;
  * <p> The "dynamic proxy return form" of an attribute element value is
  * the form used by sun.reflect.annotation.AnnotationInvocationHandler.
  */
-
+@SuppressWarnings("deprecation")
 class AnnotationProxyMaker {
 
     private final AptEnv env;

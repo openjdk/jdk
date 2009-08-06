@@ -39,6 +39,7 @@ import static com.sun.tools.javac.code.TypeTags.*;
 /**
  * Utility class for operating on constant expressions.
  */
+@SuppressWarnings("deprecation")
 class Constants {
 
     /**

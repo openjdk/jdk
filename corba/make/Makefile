@@ -1,5 +1,5 @@
 #
-# Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ BOOTSTRAP_TARGET_LEVEL = 5
 ifdef TARGET_CLASS_VERSION
     TARGET_LEVEL = $(TARGET_CLASS_VERSION)
 else
-    TARGET_LEVEL = 6
+    TARGET_LEVEL = 7
 endif
 
 ifndef TARGET_JAVA

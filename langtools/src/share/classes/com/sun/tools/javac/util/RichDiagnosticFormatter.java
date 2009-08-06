@@ -58,6 +58,11 @@ import static com.sun.tools.javac.util.RichDiagnosticFormatter.RichConfiguration
  * formatted and (iii) type-variable disambiguation - when the diagnostic refers
  * to two different type-variables with the same name, their representation is
  * disambiguated by appending an index to the type variable name.
+ *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
 public class RichDiagnosticFormatter extends
         ForwardingDiagnosticFormatter<JCDiagnostic, AbstractDiagnosticFormatter> {
@@ -569,7 +574,8 @@ public class RichDiagnosticFormatter extends
         @Override
         public Void visitMethodSymbol(MethodSymbol s, Void ignored) {
             visit(s.owner, null);
-            typePreprocessor.visit(s.type);
+            if (s.type != null)
+                typePreprocessor.visit(s.type);
             return null;
         }
     };
