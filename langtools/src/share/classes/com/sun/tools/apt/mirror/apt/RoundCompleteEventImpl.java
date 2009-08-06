@@ -29,6 +29,7 @@ import com.sun.mirror.apt.AnnotationProcessorEnvironment;
 import com.sun.mirror.apt.RoundCompleteEvent;
 import com.sun.mirror.apt.RoundState;
 
+@SuppressWarnings("deprecation")
 public class RoundCompleteEventImpl extends RoundCompleteEvent {
     private static final long serialVersionUID = 7067621446720784300L;
 

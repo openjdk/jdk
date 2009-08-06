@@ -294,8 +294,6 @@ public class KrbApReq {
         apReqMessg.ticket.sname.setRealm(apReqMessg.ticket.realm);
         enc_ticketPart.cname.setRealm(enc_ticketPart.crealm);
 
-        Config.getInstance().resetDefaultRealm(apReqMessg.ticket.realm.toString());
-
         if (!authenticator.cname.equals(enc_ticketPart.cname))
             throw new KrbApErrException(Krb5.KRB_AP_ERR_BADMATCH);
 

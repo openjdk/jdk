@@ -223,7 +223,8 @@ class Compile : public Phase {
   PhaseCFG*             _cfg;                   // Results of CFG finding
   bool                  _select_24_bit_instr;   // We selected an instruction with a 24-bit result
   bool                  _in_24_bit_fp_mode;     // We are emitting instructions with 24-bit results
-  bool                  _has_java_calls;        // True if the method has java calls
+  int                   _java_calls;            // Number of java calls in the method
+  int                   _inner_loops;           // Number of inner loops in the method
   Matcher*              _matcher;               // Engine to map ideal to machine instructions
   PhaseRegAlloc*        _regalloc;              // Results of register allocation.
   int                   _frame_slots;           // Size of total frame in stack slots
@@ -505,7 +506,9 @@ class Compile : public Phase {
   PhaseCFG*         cfg()                       { return _cfg; }
   bool              select_24_bit_instr() const { return _select_24_bit_instr; }
   bool              in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
-  bool              has_java_calls() const      { return _has_java_calls; }
+  bool              has_java_calls() const      { return _java_calls > 0; }
+  int               java_calls() const          { return _java_calls; }
+  int               inner_loops() const         { return _inner_loops; }
   Matcher*          matcher()                   { return _matcher; }
   PhaseRegAlloc*    regalloc()                  { return _regalloc; }
   int               frame_slots() const         { return _frame_slots; }
@@ -532,7 +535,8 @@ class Compile : public Phase {
     _in_24_bit_fp_mode   = mode;
   }
 
-  void set_has_java_calls(bool z) { _has_java_calls = z; }
+  void  set_java_calls(int z) { _java_calls  = z; }
+  void set_inner_loops(int z) { _inner_loops = z; }
 
   // Instruction bits passed off to the VM
   int               code_size()                 { return _method_size; }

@@ -18,7 +18,7 @@ The make/makefile rules are:
   ALT_LANGTOOLS_DIST    The dist area from a langtools build to use, if provided
   ALT_OUTPUTDIR         Parent dir of build and dist directories, if provided
   VARIANT               If DBG, debug build, if OPT, optimized build
-  TARGET_CLASS_VERSION  The classfile version number (currently 5)
+  TARGET_CLASS_VERSION  The classfile version number (currently 7)
   ANT_HOME              Home of ant to use, if provided
   QUIET                 If defined, be quiet
   VERBOSE               If defined, be verbose
