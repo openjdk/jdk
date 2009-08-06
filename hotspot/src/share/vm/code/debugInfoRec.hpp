@@ -87,6 +87,7 @@ class DebugInformationRecorder: public ResourceObj {
   void describe_scope(int         pc_offset,
                       ciMethod*   method,
                       int         bci,
+                      bool        reexecute,
                       DebugToken* locals      = NULL,
                       DebugToken* expressions = NULL,
                       DebugToken* monitors    = NULL);
