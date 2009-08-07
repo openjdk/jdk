@@ -60,6 +60,9 @@ import java.util.Properties;
 
 import java.util.logging.*;
 
+import sun.font.FontManager;
+import sun.font.FontManagerFactory;
+import sun.font.SunFontManager;
 import sun.misc.PerformanceLogger;
 
 public class WToolkit extends SunToolkit implements Runnable {
@@ -572,8 +575,11 @@ public class WToolkit extends SunToolkit implements Runnable {
 
 
     public FontMetrics getFontMetrics(Font font) {
-        // REMIND: platform font flag should be removed post-merlin.
-        if (sun.font.FontManager.usePlatformFontMetrics()) {
+        // This is an unsupported hack, but left in for a customer.
+        // Do not remove.
+        FontManager fm = FontManagerFactory.getInstance();
+        if (fm instanceof SunFontManager
+            && ((SunFontManager) fm).usePlatformFontMetrics()) {
             return WFontMetrics.getFontMetrics(font);
         }
         return super.getFontMetrics(font);

@@ -51,6 +51,7 @@ import java.util.logging.Logger;
 import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
 import sun.awt.*;
+import sun.font.FontConfigManager;
 import sun.font.FontManager;
 import sun.misc.PerformanceLogger;
 import sun.print.PrintJob2D;
@@ -94,6 +95,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * <p>
      */
     private XSettings xs;
+
+    private FontConfigManager fcManager = new FontConfigManager();
 
     static int arrowCursor;
     static TreeMap winMap = new TreeMap();
@@ -1527,7 +1530,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                  */
                 if (desktopProperties.get(SunToolkit.DESKTOPFONTHINTS) == null) {
                     if (XWM.isKDE2()) {
-                        Object hint = FontManager.getFontConfigAAHint();
+                        Object hint = fcManager.getFontConfigAAHint();
                         if (hint != null) {
                             /* set the fontconfig/KDE property so that
                              * getDesktopHints() below will see it
