@@ -75,6 +75,11 @@ public class Classes extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
+        case 0:
+            {
+                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
+            }
+            break;
         case 12:
             {
                 if(($__uri == "" && $__local == "classes")) {
@@ -92,18 +97,6 @@ public class Classes extends NGCCHandler {
                 $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
             }
             break;
-        case 2:
-            {
-                if(($__uri == "" && $__local == "excludes")) {
-                    $runtime.onEnterElementConsumed($__uri, $__local, $__qname, $attrs);
-                    $_ngcc_current_state = 6;
-                }
-                else {
-                    $_ngcc_current_state = 1;
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-            }
-            break;
         case 11:
             {
                 if(($__uri == "" && $__local == "includes")) {
@@ -115,9 +108,16 @@ public class Classes extends NGCCHandler {
                 }
             }
             break;
-        case 0:
+        case 2:
             {
-                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
+                if(($__uri == "" && $__local == "excludes")) {
+                    $runtime.onEnterElementConsumed($__uri, $__local, $__qname, $attrs);
+                    $_ngcc_current_state = 6;
+                }
+                else {
+                    $_ngcc_current_state = 1;
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
             }
             break;
         default:
@@ -133,6 +133,17 @@ public class Classes extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
+        case 0:
+            {
+                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 4:
+            {
+                $_ngcc_current_state = 3;
+                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 3:
             {
                 if(($__uri == "" && $__local == "excludes")) {
@@ -144,27 +155,10 @@ public class Classes extends NGCCHandler {
                 }
             }
             break;
-        case 4:
-            {
-                $_ngcc_current_state = 3;
-                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 2:
             {
                 $_ngcc_current_state = 1;
                 $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 1:
-            {
-                if(($__uri == "" && $__local == "classes")) {
-                    $runtime.onLeaveElementConsumed($__uri, $__local, $__qname);
-                    $_ngcc_current_state = 0;
-                }
-                else {
-                    unexpectedLeaveElement($__qname);
-                }
             }
             break;
         case 8:
@@ -178,9 +172,15 @@ public class Classes extends NGCCHandler {
                 }
             }
             break;
-        case 0:
+        case 1:
             {
-                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
+                if(($__uri == "" && $__local == "classes")) {
+                    $runtime.onLeaveElementConsumed($__uri, $__local, $__qname);
+                    $_ngcc_current_state = 0;
+                }
+                else {
+                    unexpectedLeaveElement($__qname);
+                }
             }
             break;
         default:
@@ -196,6 +196,11 @@ public class Classes extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
+        case 0:
+            {
+                revertToParentFromEnterAttribute(this, super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 4:
             {
                 $_ngcc_current_state = 3;
@@ -206,11 +211,6 @@ public class Classes extends NGCCHandler {
             {
                 $_ngcc_current_state = 1;
                 $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
-        case 0:
-            {
-                revertToParentFromEnterAttribute(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -226,6 +226,11 @@ public class Classes extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
+        case 0:
+            {
+                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
         case 4:
             {
                 $_ngcc_current_state = 3;
@@ -238,11 +243,6 @@ public class Classes extends NGCCHandler {
                 $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
-        case 0:
-            {
-                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         default:
             {
                 unexpectedLeaveAttribute($__qname);
@@ -253,6 +253,11 @@ public class Classes extends NGCCHandler {
 
     public void text(String $value) throws SAXException {
         switch($_ngcc_current_state) {
+        case 0:
+            {
+                revertToParentFromText(this, super._cookie, $value);
+            }
+            break;
         case 9:
             {
                 include_content = $value;
@@ -260,14 +265,14 @@ public class Classes extends NGCCHandler {
                 action2();
             }
             break;
-        case 3:
+        case 4:
             {
                 exclude_content = $value;
                 $_ngcc_current_state = 3;
                 action0();
             }
             break;
-        case 4:
+        case 3:
             {
                 exclude_content = $value;
                 $_ngcc_current_state = 3;
@@ -299,11 +304,6 @@ public class Classes extends NGCCHandler {
                 __text = $value;
                 $_ngcc_current_state = 4;
                 action1();
-            }
-            break;
-        case 0:
-            {
-                revertToParentFromText(this, super._cookie, $value);
             }
             break;
         }

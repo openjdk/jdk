@@ -127,7 +127,7 @@ public abstract class TransportTubeFactory {
         String scheme = context.getAddress().getURI().getScheme();
         if (scheme != null) {
             if(scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
-                return new HttpTransportPipe(context.getCodec());
+                return new HttpTransportPipe(context.getCodec(), context.getBinding());
         }
 
         throw new WebServiceException("Unsupported endpoint address: "+context.getAddress());    // TODO: i18n

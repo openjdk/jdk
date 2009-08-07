@@ -46,6 +46,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.ws.*;
 import javax.xml.ws.wsaddressing.W3CEndpointReference;
+import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.IOException;
 import java.net.URL;
@@ -57,6 +58,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 
 import org.xml.sax.EntityResolver;
+import org.xml.sax.SAXException;
 import org.w3c.dom.Element;
 
 
@@ -205,7 +207,7 @@ public class EndpointImpl extends Endpoint {
         try {
             Class.forName("com.sun.net.httpserver.HttpServer");
         } catch (Exception e) {
-            throw new UnsupportedOperationException("NOT SUPPORTED");
+            throw new UnsupportedOperationException("Couldn't load light weight http server", e);
         }
 
         WSEndpoint wse = WSEndpoint.create(
@@ -243,8 +245,7 @@ public class EndpointImpl extends Endpoint {
             Transformer transformer = XmlUtil.newTransformer();
             for (Source source : metadata) {
                 try {
-                    XMLStreamBufferResult xsbr = new XMLStreamBufferResult();
-                    transformer.transform(source, xsbr);
+                    XMLStreamBufferResult xsbr = XmlUtil.identityTransform(source, new XMLStreamBufferResult());
                     String systemId = source.getSystemId();
 
                     r.add(SDDocumentSource.create(new URL(systemId), xsbr.getXMLStreamBuffer()));
@@ -252,6 +253,10 @@ public class EndpointImpl extends Endpoint {
                     throw new ServerRtException("server.rt.err", te);
                 } catch (IOException te) {
                     throw new ServerRtException("server.rt.err", te);
+                } catch (SAXException e) {
+                    throw new ServerRtException("server.rt.err", e);
+                } catch (ParserConfigurationException e) {
+                    throw new ServerRtException("server.rt.err", e);
                 }
             }
         }
@@ -265,6 +270,7 @@ public class EndpointImpl extends Endpoint {
     private @Nullable SDDocumentSource getPrimaryWsdl() {
         Class implType = implementor.getClass();
         // Takes care of @WebService, @WebServiceProvider's wsdlLocation
+        EndpointFactory.verifyImplementorClass(implType);
         String wsdlLocation = EndpointFactory.getWsdlLocation(implType);
         if (wsdlLocation != null) {
             ClassLoader cl = implType.getClassLoader();

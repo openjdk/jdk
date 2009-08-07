@@ -22,11 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: DetailImpl.java,v 1.16 2006/01/27 12:49:34 vj135062 Exp $
- * $Revision: 1.16 $
- * $Date: 2006/01/27 12:49:34 $
- */
+
 
 
 package com.sun.xml.internal.messaging.saaj.soap.impl;
@@ -124,5 +120,29 @@ public abstract class DetailImpl extends FaultElementImpl implements Detail {
    protected  boolean isStandardFaultElement() {
        return true;
    }
+
+    //overriding this method since the only two uses of this method
+    // are in ElementImpl and DetailImpl
+    //whereas the original base impl does the correct job for calls to it inside ElementImpl
+    // But it would not work for DetailImpl.
+    protected SOAPElement circumventBug5034339(SOAPElement element) {
+
+        Name elementName = element.getElementName();
+        if (!isNamespaceQualified(elementName)) {
+            String prefix = elementName.getPrefix();
+            String defaultNamespace = getNamespaceURI(prefix);
+            if (defaultNamespace != null) {
+                Name newElementName =
+                    NameImpl.create(
+                        elementName.getLocalName(),
+                        elementName.getPrefix(),
+                        defaultNamespace);
+                SOAPElement newElement = createDetailEntry(newElementName);
+                replaceChild(newElement, element);
+                return newElement;
+            }
+        }
+        return element;
+    }
 
 }

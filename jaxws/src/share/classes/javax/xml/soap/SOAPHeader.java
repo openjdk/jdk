@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: SOAPHeader.java,v 1.14 2005/04/05 22:46:27 mk125090 Exp $
- * $Revision: 1.14 $
- * $Date: 2005/04/05 22:46:27 $
+ * $Id: SOAPHeader.java,v 1.15 2006/03/30 00:59:41 ofung Exp $
+ * $Revision: 1.15 $
+ * $Date: 2006/03/30 00:59:41 $
  */
 
 

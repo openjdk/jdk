@@ -331,7 +331,7 @@ public final class ModelerMessages {
     }
 
     /**
-     * Schema descriptor {0} in message part "{1}" could not be bound to Java!
+     * Schema descriptor {0} in message part "{1}" is not defined and could not be bound to Java. Perhaps the schema descriptor {0} is not defined in the schema imported/included in the WSDL. You can either add such imports/includes or run wsimport and provide the schema location using -b switch.
      *
      */
     public static String WSDLMODELER_JAXB_JAVATYPE_NOTFOUND(Object arg0, Object arg1) {
@@ -590,6 +590,18 @@ public final class ModelerMessages {
         return localizer.localize(localizableWSDLMODELER_WARNING_IGNORING_OPERATION_CANNOT_HANDLE_BODY_PARTS_ATTRIBUTE(arg0));
     }
 
+    public static Localizable localizableWSDLMODELER_NON_UNIQUE_BODY_ERROR(Object arg0, Object arg1, Object arg2, Object arg3) {
+        return messageFactory.getMessage("wsdlmodeler.nonUnique.body.error", arg0, arg1, arg2, arg3);
+    }
+
+    /**
+     * Non unique body parts! In a port, as per BP 1.1 R2710 operations must have unique operation signaure on the wire for successful dispatch. In port {0}, Operations "{1}" and "{2}" have the same request body block {3}. Try running wsimport with -extension switch, runtime will try to dispatch using SOAPAction
+     *
+     */
+    public static String WSDLMODELER_NON_UNIQUE_BODY_ERROR(Object arg0, Object arg1, Object arg2, Object arg3) {
+        return localizer.localize(localizableWSDLMODELER_NON_UNIQUE_BODY_ERROR(arg0, arg1, arg2, arg3));
+    }
+
     public static Localizable localizableWSDLMODELER_WARNING_IGNORING_SOAP_BINDING_MIXED_STYLE(Object arg0) {
         return messageFactory.getMessage("wsdlmodeler.warning.ignoringSOAPBinding.mixedStyle", arg0);
     }
@@ -816,18 +828,6 @@ public final class ModelerMessages {
      */
     public static String WSDLMODELER_INVALID_BINDING_OPERATION_MULTIPLE_MATCHING_OPERATIONS(Object arg0, Object arg1) {
         return localizer.localize(localizableWSDLMODELER_INVALID_BINDING_OPERATION_MULTIPLE_MATCHING_OPERATIONS(arg0, arg1));
-    }
-
-    public static Localizable localizableWSDLMODELER_NON_UNIQUE_BODY(Object arg0, Object arg1, Object arg2, Object arg3) {
-        return messageFactory.getMessage("wsdlmodeler.nonUnique.body", arg0, arg1, arg2, arg3);
-    }
-
-    /**
-     * Non unique body parts! In a port, operations must have unique operation signaure on the wire for successful dispatch. In port {0}, Operations "{1}" and "{2}" have the same request body block {3}
-     *
-     */
-    public static String WSDLMODELER_NON_UNIQUE_BODY(Object arg0, Object arg1, Object arg2, Object arg3) {
-        return localizer.localize(localizableWSDLMODELER_NON_UNIQUE_BODY(arg0, arg1, arg2, arg3));
     }
 
     public static Localizable localizableWSDLMODELER_WARNING_IGNORING_HEADER_CANT_RESOLVE_MESSAGE(Object arg0, Object arg1) {
@@ -1236,6 +1236,18 @@ public final class ModelerMessages {
      */
     public static String WSDLMODELER_WARNING_IGNORING_HEADER_FAULT_NOT_FOUND(Object arg0, Object arg1, Object arg2) {
         return localizer.localize(localizableWSDLMODELER_WARNING_IGNORING_HEADER_FAULT_NOT_FOUND(arg0, arg1, arg2));
+    }
+
+    public static Localizable localizableWSDLMODELER_NON_UNIQUE_BODY_WARNING(Object arg0, Object arg1, Object arg2, Object arg3) {
+        return messageFactory.getMessage("wsdlmodeler.nonUnique.body.warning", arg0, arg1, arg2, arg3);
+    }
+
+    /**
+     * Non unique body parts! In a port, as per BP 1.1 R2710 operations must have unique operation signaure on the wire for successful dispatch. In port {0}, Operations "{1}" and "{2}" have the same request body block {3}. Method dispatching may fail, runtime will try to dispatch using SOAPAction
+     *
+     */
+    public static String WSDLMODELER_NON_UNIQUE_BODY_WARNING(Object arg0, Object arg1, Object arg2, Object arg3) {
+        return localizer.localize(localizableWSDLMODELER_NON_UNIQUE_BODY_WARNING(arg0, arg1, arg2, arg3));
     }
 
     public static Localizable localizableWSDLMODELER_INVALID_OPERATION_JAVA_RESERVED_WORD_NOT_ALLOWED_WRAPPER_STYLE(Object arg0, Object arg1, Object arg2) {

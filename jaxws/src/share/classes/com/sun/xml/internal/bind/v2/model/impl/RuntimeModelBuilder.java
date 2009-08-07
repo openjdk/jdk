@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.lang.reflect.Field;
@@ -50,7 +51,10 @@ import com.sun.xml.internal.bind.v2.runtime.SchemaTypeTransducer;
 import com.sun.xml.internal.bind.v2.runtime.Transducer;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
+import com.sun.istack.internal.Nullable;
 
+import com.sun.xml.internal.bind.v2.WellKnownNamespace;
+import javax.xml.namespace.QName;
 import org.xml.sax.SAXException;
 
 /**
@@ -66,8 +70,9 @@ import org.xml.sax.SAXException;
 public class RuntimeModelBuilder extends ModelBuilder<Type,Class,Field,Method> {
     /**
      * The {@link JAXBContextImpl} for which the model is built.
+     * Null when created for reflection.
      */
-    public final JAXBContextImpl context;
+    public final @Nullable JAXBContextImpl context;
 
     public RuntimeModelBuilder(JAXBContextImpl context, RuntimeAnnotationReader annotationReader, Map<Class, Class> subclassReplacements, String defaultNamespaceRemap) {
         super(annotationReader, Navigator.REFLECTION, subclassReplacements, defaultNamespaceRemap);
@@ -144,13 +149,19 @@ public class RuntimeModelBuilder extends ModelBuilder<Type,Class,Field,Method> {
         if(src.inlineBinaryData())
             t = new InlineBinaryTransducer(t);
 
-        if(src.getSchemaType()!=null)
+        if(src.getSchemaType()!=null) {
+            if (src.getSchemaType().equals(createXSSimpleType())) {
+                return RuntimeBuiltinLeafInfoImpl.STRING;
+            }
             t = new SchemaTypeTransducer(t,src.getSchemaType());
+        }
 
         return t;
     }
 
-
+    private static QName createXSSimpleType() {
+        return new QName(WellKnownNamespace.XML_SCHEMA,"anySimpleType");
+    }
 
     /**
      * Transducer implementation for ID.

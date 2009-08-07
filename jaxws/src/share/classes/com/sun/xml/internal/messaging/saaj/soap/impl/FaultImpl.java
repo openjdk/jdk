@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: FaultImpl.java,v 1.2 2006/11/16 17:39:10 kumarjayanti Exp $
- * $Revision: 1.2 $
- * $Date: 2006/11/16 17:39:10 $
- */
 
 
 package com.sun.xml.internal.messaging.saaj.soap.impl;
@@ -100,7 +95,7 @@ public abstract class FaultImpl extends ElementImpl implements SOAPFault {
         throws SOAPException {
 
         if (prefix == null || prefix.equals("")) {
-            if (uri == null || uri.equals("")) {
+            if (uri == null) {
                 log.severe("SAAJ0140.impl.no.ns.URI");
                 throw new SOAPExceptionImpl("No NamespaceURI, SOAP requires faultcode content to be a QName");
             }
@@ -121,7 +116,7 @@ public abstract class FaultImpl extends ElementImpl implements SOAPFault {
         if (uri == null || uri.equals("")) {
             uri = this.faultCodeElement.getNamespaceURI(prefix);
         }
-        if (uri == null || uri.equals("")) {
+        if (uri == null) {
             log.severe("SAAJ0140.impl.no.ns.URI");
             throw new SOAPExceptionImpl("No NamespaceURI, SOAP requires faultcode content to be a QName");
         } else {
@@ -256,7 +251,7 @@ public abstract class FaultImpl extends ElementImpl implements SOAPFault {
         }
     }
 
-    private SOAPFaultElement addFaultCodeElement() throws SOAPException {
+    protected SOAPFaultElement addFaultCodeElement() throws SOAPException {
         if (this.faultCodeElement == null)
             findFaultCodeElement();
         if (this.faultCodeElement == null) {

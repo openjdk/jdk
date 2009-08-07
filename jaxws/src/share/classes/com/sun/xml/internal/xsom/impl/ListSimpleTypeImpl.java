@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSFacet;
@@ -33,6 +35,8 @@ import com.sun.xml.internal.xsom.visitor.XSSimpleTypeFunction;
 import com.sun.xml.internal.xsom.visitor.XSSimpleTypeVisitor;
 import org.xml.sax.Locator;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public class ListSimpleTypeImpl extends SimpleTypeImpl implements XSListSimpleType
@@ -60,6 +64,7 @@ public class ListSimpleTypeImpl extends SimpleTypeImpl implements XSListSimpleTy
 
     // list type by itself doesn't have any facet. */
     public XSFacet getFacet( String name ) { return null; }
+    public List<XSFacet> getFacets( String name ) { return Collections.EMPTY_LIST; }
 
     public XSVariety getVariety() { return XSVariety.LIST; }
 
