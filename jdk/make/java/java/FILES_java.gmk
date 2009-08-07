@@ -77,6 +77,7 @@ JAVA_JAVA_java = \
     java/lang/Compiler.java \
     java/lang/Throwable.java \
         java/lang/Exception.java \
+	    java/lang/ReflectiveOperationException.java \
 	    java/lang/IllegalAccessException.java \
 	    java/lang/InstantiationException.java \
 	    java/lang/ClassNotFoundException.java \
