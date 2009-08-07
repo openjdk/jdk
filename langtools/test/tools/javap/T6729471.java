@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,55 @@
  * have any questions.
  */
 
+
 /*
  * @test
- * @bug 4975569 6622215
- * @summary javap doesn't print new flag bits
+ * @bug 6729471
+ * @summary javap does not output inner interfaces of an interface
  */
 
 import java.io.*;
 import java.util.*;
 
-public class T4975569
+public class T6729471
 {
     public static void main(String... args) {
-        new T4975569().run();
+        new T6729471().run();
     }
 
     void run() {
-        verify("T4975569$Anno", "flags: ACC_INTERFACE, ACC_ABSTRACT, ACC_ANNOTATION");
-        verify("T4975569$E",    "flags: ACC_FINAL, ACC_SUPER, ACC_ENUM");
-        verify("T4975569$S",    "flags: ACC_BRIDGE, ACC_SYNTHETIC",
-                                "InnerClasses:\n       static");
-        verify("T4975569$V",    "void m(java.lang.String...)",
-                                "flags: ACC_VARARGS");
-        verify("T4975569$Prot", "InnerClasses:\n       protected");
-        //verify("T4975569$Priv", "InnerClasses");
+        // simple class
+        verify("java.util.Map",
+                "public abstract boolean containsKey(java.lang.Object)");
+
+        // inner class
+        verify("java.util.Map.Entry",
+                "public abstract K getKey()");
+
+        // file name
+        verify("../classes/tools/javap/T6729471.class",
+                "public static void main(java.lang.String...)");
+
+        // file url
+        verify("file:../classes/tools/javap/T6729471.class",
+                "public static void main(java.lang.String...)");
+
+        // jar url: rt.jar
+        File java_home = new File(System.getProperty("java.home"));
+        if (java_home.getName().equals("jre"))
+            java_home = java_home.getParentFile();
+        File rt_jar = new File(new File(new File(java_home, "jre"), "lib"), "rt.jar");
+        verify("jar:file:" + rt_jar + "!/java/util/Map.class",
+                "public abstract boolean containsKey(java.lang.Object)");
+
+        // jar url: ct.sym, if it exists
+        File ct_sym = new File(new File(java_home, "lib"), "ct.sym");
+        if (ct_sym.exists()) {
+            verify("jar:file:" + ct_sym + "!/META-INF/sym/rt.jar/java/util/Map.class",
+                "public abstract boolean containsKey(java.lang.Object)");
+        } else
+            System.err.println("warning: ct.sym not found");
+
         if (errors > 0)
             throw new Error(errors + " found.");
     }
@@ -68,27 +93,17 @@ public class T4975569
         String testClasses = System.getProperty("test.classes", ".");
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
-        String[] args = { "-v", "-classpath", testClasses, className };
+        String[] args = { "-classpath", testClasses, className };
         int rc = com.sun.tools.javap.Main.run(args, out);
-        if (rc != 0)
-            throw new Error("javap failed. rc=" + rc);
         out.close();
         String output = sw.toString();
         System.out.println("class " + className);
         System.out.println(output);
+        if (rc != 0)
+            throw new Error("javap failed. rc=" + rc);
+        if (output.indexOf("Error:") != -1)
+            throw new Error("javap reported error.");
         return output;
     }
-
-    List x() { return null; };
-
-    class V { void m(String... args) { } }
-    enum E { e; }
-    @interface Anno { }
-    static class S extends T4975569 {
-        ArrayList x() { return null; }
-    }
-
-    protected class Prot { }
-    //private class Priv { int i; }
 }
 
