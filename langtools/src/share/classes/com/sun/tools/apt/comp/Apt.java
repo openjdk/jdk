@@ -65,6 +65,7 @@ import static com.sun.tools.apt.mirror.declaration.DeclarationMaker.isJavaIdenti
  *  risk.  This code and its internal interfaces are subject to change
  *  or deletion without notice.</b>
  */
+@SuppressWarnings("deprecation")
 public class Apt extends ListBuffer<Env<AttrContext>> {
     java.util.Set<String> genSourceFileNames = new java.util.LinkedHashSet<String>();
     public java.util.Set<String> getSourceFileNames() {

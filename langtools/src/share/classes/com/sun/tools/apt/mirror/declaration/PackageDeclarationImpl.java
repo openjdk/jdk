@@ -39,7 +39,7 @@ import com.sun.tools.javac.code.Symbol.*;
 /**
  * Implementation of PackageDeclaration.
  */
-
+@SuppressWarnings("deprecation")
 public class PackageDeclarationImpl extends DeclarationImpl
                                     implements PackageDeclaration {
 
