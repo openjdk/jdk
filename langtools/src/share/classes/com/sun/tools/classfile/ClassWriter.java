@@ -435,7 +435,7 @@ public class ClassWriter {
         }
 
         public Void visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr, ClassOutputStream out) {
-            out.writeByte(attr.local_variable_table.length);
+            out.writeShort(attr.local_variable_table.length);
             for (LocalVariableTypeTable_attribute.Entry e: attr.local_variable_table)
                 writeLocalVariableTypeTableEntry(e, out);
             return null;
