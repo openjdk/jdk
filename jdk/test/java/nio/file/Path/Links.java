@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333
+ * @bug 4313887 6838333 6863864
  * @summary Unit test for java.nio.file.Path createSymbolicLink,
  *     readSymbolicLink, and createLink methods
  * @library ..
@@ -31,7 +31,6 @@
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.io.*;
-import java.util.*;
 
 public class Links {
 
@@ -47,7 +46,7 @@ public class Links {
      * Exercise createSymbolicLink and readLink methods
      */
     static void testSymLinks(Path dir) throws IOException {
-        Path link = dir.resolve("link");
+        final Path link = dir.resolve("link");
 
         // Check if sym links are supported
         try {
@@ -75,6 +74,63 @@ public class Links {
             } finally {
                 link.delete();
             }
+        }
+
+        // Test links to directory
+        Path mydir = dir.resolve("mydir");
+        Path myfile = mydir.resolve("myfile");
+        try {
+            mydir.createDirectory();
+            myfile.createFile();
+
+            // link -> "mydir"
+            link.createSymbolicLink(mydir.getName());
+            assertTrue(link.readSymbolicLink().equals(mydir.getName()));
+
+            // Test access to directory via link
+            DirectoryStream<Path> stream = link.newDirectoryStream();
+            try {
+                boolean found = false;
+                for (Path entry: stream) {
+                    if (entry.getName().equals(myfile.getName())) {
+                        found = true;
+                        break;
+                    }
+                }
+                assertTrue(found);
+            } finally {
+                stream.close();
+            }
+
+            // Test link2 -> link -> mydir
+            final Path link2 = dir.resolve("link2");
+            Path target2 = link.getName();
+            link2.createSymbolicLink(target2);
+            try {
+                assertTrue(link2.readSymbolicLink().equals(target2));
+                link2.newDirectoryStream().close();
+            } finally {
+                link2.delete();
+            }
+
+            // Remove mydir and re-create link2 before re-creating mydir
+            // (This is a useful test on Windows to ensure that creating a
+            // sym link to a directory sym link creates the right type of link).
+            myfile.delete();
+            mydir.delete();
+            link2.createSymbolicLink(target2);
+            try {
+                assertTrue(link2.readSymbolicLink().equals(target2));
+                mydir.createDirectory();
+                link2.newDirectoryStream().close();
+            } finally {
+                link2.delete();
+            }
+
+        } finally {
+            myfile.deleteIfExists();
+            mydir.deleteIfExists();
+            link.deleteIfExists();
         }
     }
 

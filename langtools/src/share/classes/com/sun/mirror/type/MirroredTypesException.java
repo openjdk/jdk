@@ -38,9 +38,16 @@ import com.sun.mirror.declaration.Declaration;
  * Thrown when an application attempts to access a sequence of {@link Class}
  * objects each corresponding to a {@link TypeMirror}.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this exception is {@link
+ * javax.lang.model.type.MirroredTypesException}.
+ *
  * @see MirroredTypeException
  * @see Declaration#getAnnotation(Class)
  */
+@Deprecated
+@SuppressWarnings("deprecation")
 public class MirroredTypesException extends RuntimeException {
 
     private static final long serialVersionUID = 1;

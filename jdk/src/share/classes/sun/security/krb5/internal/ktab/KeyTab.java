@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -403,11 +403,11 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Retrieves the key table entry with the specified service name.
      * @param service the service which may have an entry in the key table.
+     * @param keyType the etype to match, returns the 1st one if -1 provided
      * @return -1 if the entry is not found, else return the entry index
      * in the list.
      */
     private int retrieveEntry(PrincipalName service, int keyType) {
-        int found = -1;
         KeyTabEntry e;
         if (entries != null) {
             for (int i = 0; i < entries.size(); i++) {
@@ -418,7 +418,7 @@ public class KeyTab implements KeyTabConstants {
                 }
             }
         }
-        return found;
+        return -1;
     }
 
     /**
@@ -476,12 +476,29 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Removes an entry from the key table.
      * @param service the service <code>PrincipalName</code>.
+     * @param etype the etype to match, first one if -1 provided
+     * @return 1 if removed successfully, 0 otherwise
      */
-    public void deleteEntry(PrincipalName service) {
-        int result = retrieveEntry(service, -1);
+    public int deleteEntry(PrincipalName service, int etype) {
+        int result = retrieveEntry(service, etype);
         if (result != -1) {
             entries.removeElementAt(result);
+            return 1;
         }
+        return 0;
+    }
+
+    /**
+     * Removes an entry from the key table.
+     * @param service the service <code>PrincipalName</code>.
+     * @return number of entries removed
+     */
+    public int deleteEntry(PrincipalName service) {
+        int count = 0;
+        while (deleteEntry(service, -1) > 0) {
+            count++;
+        }
+        return count;
     }
 
     /**

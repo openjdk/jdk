@@ -36,7 +36,7 @@ import com.sun.tools.javac.code.Type;
 /**
  * Implementation of EnumType
  */
-
+@SuppressWarnings("deprecation")
 public class EnumTypeImpl extends ClassTypeImpl implements EnumType {
 
     EnumTypeImpl(AptEnv env, Type.ClassType type) {

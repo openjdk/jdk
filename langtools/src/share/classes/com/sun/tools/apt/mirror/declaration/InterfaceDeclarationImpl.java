@@ -35,7 +35,7 @@ import com.sun.tools.javac.code.Symbol.*;
 /**
  * Implementation of InterfaceDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class InterfaceDeclarationImpl extends TypeDeclarationImpl
                                       implements InterfaceDeclaration {
 

@@ -34,6 +34,11 @@ import javax.tools.JavaFileObject;
  * Used to represent a platform-neutral path within a platform-specific
  * container, such as a directory or zip file.
  * Internally, the file separator is always '/'.
+ *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
 public abstract class RelativePath implements Comparable<RelativePath> {
     /**
