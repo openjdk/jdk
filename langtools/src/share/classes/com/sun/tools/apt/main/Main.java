@@ -64,6 +64,7 @@ import com.sun.mirror.apt.AnnotationProcessorFactory;
  *  risk.  This code and its internal interfaces are subject to change
  *  or deletion without notice.</b>
  */
+@SuppressWarnings("deprecation")
 public class Main {
 
     /** For testing: enter any options you want to be set implicitly
@@ -780,7 +781,6 @@ public class Main {
         // prefixed to command line arguments.
         processArgs(forcedOpts);
 
-
         /*
          * A run of apt only gets passed the most recently generated
          * files; the initial run of apt gets passed the files from
@@ -792,6 +792,11 @@ public class Main {
             // assign args the result of parse to capture results of
             // '@file' expansion
             origFilenames = processArgs((args=CommandLine.parse(args)));
+
+            if (options.get("suppress-tool-api-removal-message") == null) {
+                Bark.printLines(out, getLocalizedString("misc.Deprecation"));
+            }
+
             if (origFilenames == null) {
                 return EXIT_CMDERR;
             } else if (origFilenames.size() == 0) {

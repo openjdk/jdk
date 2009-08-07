@@ -39,7 +39,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 /**
  * Implementation of ConstructorDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class ConstructorDeclarationImpl extends ExecutableDeclarationImpl
                                         implements ConstructorDeclaration {
 

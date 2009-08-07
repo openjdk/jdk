@@ -50,6 +50,7 @@ import com.sun.tools.javac.parser.DocCommentScanner;
  *  risk.  This code and its internal interfaces are subject to change
  *  or deletion without notice.</b>
  */
+@SuppressWarnings("deprecation")
 public class JavaCompiler extends com.sun.tools.javac.main.JavaCompiler {
     /** The context key for the compiler. */
     protected static final Context.Key<JavaCompiler> compilerKey =

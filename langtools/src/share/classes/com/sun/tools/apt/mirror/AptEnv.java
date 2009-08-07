@@ -39,7 +39,7 @@ import com.sun.tools.javac.util.Names;
 /**
  * The environment for a run of apt.
  */
-
+@SuppressWarnings("deprecation")
 public class AptEnv {
 
     public Names names;                 // javac's name table
