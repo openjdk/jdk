@@ -21,39 +21,18 @@
  * have any questions.
  */
 
-/*
+/**
  * @test
- * @bug 6843077
- * @summary compiler crashes when visiting inner classes
- * @author Mahmood Ali
- * @compile -source 1.7 InnerClass.java
+ * @bug     6862608
+ * @summary rich diagnostic sometimes contain wrong type variable numbering
+ * @author  mcimadamore
+ * @compile/fail/ref=T6862608b.out -XDrawDiagnostics -XDdiags=disambiguateTvars,where T6862608b.java
  */
 
-class InnerClass {
+class T66862608b<T extends String, S> {
+   <S, T extends S> void foo(T t) {
+      test(t);
+   }
 
-    InnerClass() {}
-    InnerClass(Object o) {}
-
-    private void a() {
-        new Object() {
-            public <R> void method() { }
-        };
-    }
-
-    Object f1 = new InnerClass() {
-            <R> void method() { }
-        };
-
-    Object f2 = new InnerClass() {
-            <@A R> void method() { }
-        };
-
-    Object f3 = new InnerClass(null) {
-            <R> void method() { }
-        };
-
-    Object f4 = new InnerClass(null) {
-            <@A R> void method() { }
-        };
-    @interface A { }
+   void test(T t) {}
 }

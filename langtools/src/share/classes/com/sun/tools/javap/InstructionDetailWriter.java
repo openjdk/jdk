@@ -42,7 +42,8 @@ public abstract class InstructionDetailWriter extends BasicWriter {
         LOCAL_VAR_TYPES("localVariableTypes"),
         SOURCE("source"),
         STACKMAPS("stackMaps"),
-        TRY_BLOCKS("tryBlocks");
+        TRY_BLOCKS("tryBlocks"),
+        TYPE_ANNOS("typeAnnotations");
         Kind(String option) {
             this.option = option;
         }
