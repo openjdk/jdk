@@ -26,6 +26,7 @@
 package com.sun.xml.internal.txw2;
 
 import com.sun.xml.internal.txw2.output.XmlSerializer;
+import com.sun.xml.internal.txw2.output.TXWSerializer;
 import com.sun.xml.internal.txw2.annotation.XmlElement;
 import com.sun.xml.internal.txw2.annotation.XmlNamespace;
 
@@ -84,6 +85,11 @@ public abstract class TXW {
      *      The target of the writing.
      */
     public static <T extends TypedXmlWriter> T create( Class<T> rootElement, XmlSerializer out ) {
+        if (out instanceof TXWSerializer) {
+            TXWSerializer txws = (TXWSerializer) out;
+            return txws.txw._element(rootElement);
+        }
+
         Document doc = new Document(out);
         QName n = getTagName(rootElement);
         return new ContainerElement(doc,null,n.getNamespaceURI(),n.getLocalPart())._cast(rootElement);
@@ -102,6 +108,10 @@ public abstract class TXW {
      * @see #create(Class,XmlSerializer)
      */
     public static <T extends TypedXmlWriter> T create( QName tagName, Class<T> rootElement, XmlSerializer out ) {
+        if (out instanceof TXWSerializer) {
+            TXWSerializer txws = (TXWSerializer) out;
+            return txws.txw._element(tagName,rootElement);
+        }
         return new ContainerElement(new Document(out),null,tagName.getNamespaceURI(),tagName.getLocalPart())._cast(rootElement);
     }
 }

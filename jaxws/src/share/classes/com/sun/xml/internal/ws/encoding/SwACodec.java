@@ -26,10 +26,13 @@
 package com.sun.xml.internal.ws.encoding;
 
 import com.sun.xml.internal.ws.api.SOAPVersion;
+import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.message.Packet;
+import com.sun.xml.internal.ws.api.message.Attachment;
 import com.sun.xml.internal.ws.api.pipe.Codec;
 import com.sun.xml.internal.ws.api.pipe.ContentType;
 import com.sun.xml.internal.ws.message.stream.StreamAttachment;
+import com.sun.xml.internal.ws.message.MimeAttachmentSet;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
@@ -42,8 +45,8 @@ import java.util.Map;
  */
 public final class SwACodec extends MimeCodec {
 
-    public SwACodec(SOAPVersion version, Codec rootCodec) {
-        super(version);
+    public SwACodec(SOAPVersion version, WSBinding binding, Codec rootCodec) {
+        super(version, binding);
         this.rootCodec = rootCodec;
     }
 
@@ -55,11 +58,15 @@ public final class SwACodec extends MimeCodec {
     @Override
     protected void decode(MimeMultipartParser mpp, Packet packet) throws IOException {
         // TODO: handle attachments correctly
-        StreamAttachment root = mpp.getRootPart();
-        rootCodec.decode(root.asInputStream(),root.getContentType(),packet);
-        Map<String, StreamAttachment> atts = mpp.getAttachmentParts();
-        for(Map.Entry<String, StreamAttachment> att : atts.entrySet()) {
-            packet.getMessage().getAttachments().add(att.getValue());
+        Attachment root = mpp.getRootPart();
+        if (rootCodec instanceof RootOnlyCodec) {
+            ((RootOnlyCodec)rootCodec).decode(root.asInputStream(),root.getContentType(),packet, new MimeAttachmentSet(mpp));
+        } else {
+            rootCodec.decode(root.asInputStream(),root.getContentType(),packet);
+            Map<String, Attachment> atts = mpp.getAttachmentParts();
+            for(Map.Entry<String, Attachment> att : atts.entrySet()) {
+                packet.getMessage().getAttachments().add(att.getValue());
+            }
         }
     }
 

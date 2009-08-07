@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSAttGroupDecl;
@@ -30,6 +32,8 @@ import com.sun.xml.internal.xsom.XSAttributeUse;
 import com.sun.xml.internal.xsom.XSComplexType;
 import com.sun.xml.internal.xsom.XSContentType;
 import com.sun.xml.internal.xsom.XSElementDecl;
+import com.sun.xml.internal.xsom.XSSchema;
+import com.sun.xml.internal.xsom.XSSchemaSet;
 import com.sun.xml.internal.xsom.XSSimpleType;
 import com.sun.xml.internal.xsom.XSType;
 import com.sun.xml.internal.xsom.XSWildcard;
@@ -38,9 +42,14 @@ import com.sun.xml.internal.xsom.impl.parser.SchemaDocumentImpl;
 import com.sun.xml.internal.xsom.impl.scd.Iterators;
 import com.sun.xml.internal.xsom.visitor.XSFunction;
 import com.sun.xml.internal.xsom.visitor.XSVisitor;
+import java.util.ArrayList;
+import java.util.List;
 import org.xml.sax.Locator;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 public class ComplexTypeImpl extends AttributesHolder implements XSComplexType, Ref.ComplexType
 {
@@ -230,12 +239,28 @@ public class ComplexTypeImpl extends AttributesHolder implements XSComplexType, 
             super.iterateAttributeUses() );
     }
 
+    public Collection<XSAttributeUse> getAttributeUses() {
+        XSComplexType baseType = getBaseType().asComplexType();
+
+        if( baseType==null )    return super.getAttributeUses();
+
+        // TODO: this is fairly inefficient
+        Map<UName,XSAttributeUse> uses = new HashMap<UName, XSAttributeUse>();
+        for( XSAttributeUse a : baseType.getAttributeUses())
+            uses.put(new UName(a.getDecl()),a);
+
+        uses.keySet().removeAll(prohibitedAtts);
+
+        for( XSAttributeUse a : super.getAttributeUses())
+            uses.put(new UName(a.getDecl()),a);
+
+        return uses.values();
+    }
+
 
     public XSType[] listSubstitutables() {
         return Util.listSubstitutables(this);
     }
-
-
 
     public void visit( XSVisitor visitor ) {
         visitor.complexType(this);
@@ -246,4 +271,30 @@ public class ComplexTypeImpl extends AttributesHolder implements XSComplexType, 
 
     // Ref.ComplexType implementation
     public XSComplexType getType() { return this; }
+
+    public List<XSComplexType> getSubtypes() {
+        ArrayList subtypeList = new ArrayList();
+        Iterator<XSComplexType> cTypes = getRoot().iterateComplexTypes();
+        while (cTypes.hasNext()) {
+            XSComplexType cType= cTypes.next();
+            XSType base = cType.getBaseType();
+            if ((base != null) && (base.equals(this))) {
+                subtypeList.add(cType);
+            }
+        }
+        return subtypeList;
+    }
+
+    public List<XSElementDecl> getElementDecls() {
+        ArrayList declList = new ArrayList();
+        XSSchemaSet schemaSet = getRoot();
+        for (XSSchema sch : schemaSet.getSchemas()) {
+            for (XSElementDecl decl : sch.getElementDecls().values()) {
+                if (decl.getType().equals(this)) {
+                    declList.add(decl);
+                }
+            }
+        }
+        return declList;
+    }
 }

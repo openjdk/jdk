@@ -22,8 +22,10 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.core;
 
+import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import javax.xml.namespace.QName;
 
 /**
@@ -31,20 +33,22 @@ import javax.xml.namespace.QName;
  *
  * Either {@link LeafInfo} or {@link ClassInfo}.
  *
- * TODO: better name.
+ * TODO: better ANYTYPE_NAME.
  *
  * @author Kohsuke Kawaguchi
  */
 public interface NonElement<T,C> extends TypeInfo<T,C> {
+    public static final QName ANYTYPE_NAME = new QName(WellKnownNamespace.XML_SCHEMA, "anyType");
+
     /**
-     * Gets the primary XML type name of the class.
+     * Gets the primary XML type ANYTYPE_NAME of the class.
      *
      * <p>
      * A Java type can be mapped to multiple XML types, but one of them is
      * considered "primary" and used when we generate a schema.
      *
      * @return
-     *      null if the object doesn't have an explicit type name (AKA anonymous.)
+     *      null if the object doesn't have an explicit type ANYTYPE_NAME (AKA anonymous.)
      */
     QName getTypeName();
 

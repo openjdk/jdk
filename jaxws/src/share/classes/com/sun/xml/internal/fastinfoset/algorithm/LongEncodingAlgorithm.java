@@ -140,14 +140,15 @@ public class LongEncodingAlgorithm extends IntegerEncodingAlgorithm {
             }
 
             final long l =
-                    ((long)(b[0] & 0xFF) << 56) |
-                    ((long)(b[1] & 0xFF) << 48) |
-                    ((long)(b[2] & 0xFF) << 40) |
-                    ((long)(b[3] & 0xFF) << 32) |
-                    ((b[4] & 0xFF) << 24) |
-                    ((b[5] & 0xFF) << 16) |
-                    ((b[6] & 0xFF) << 8) |
-                    (b[7] & 0xFF);
+                    (((long) b[0] << 56) +
+                    ((long) (b[1] & 0xFF) << 48) +
+                    ((long) (b[2] & 0xFF) << 40) +
+                    ((long) (b[3] & 0xFF) << 32) +
+                    ((long) (b[4] & 0xFF) << 24) +
+                    ((b[5] & 0xFF) << 16) +
+                    ((b[6] & 0xFF) << 8) +
+                    ((b[7] & 0xFF) << 0));
+
             longList.add(Long.valueOf(l));
         }
 

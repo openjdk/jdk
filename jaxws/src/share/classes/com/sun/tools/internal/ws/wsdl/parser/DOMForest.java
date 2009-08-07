@@ -24,22 +24,23 @@
  */
 
 
-
 package com.sun.tools.internal.ws.wsdl.parser;
 
+import com.sun.istack.internal.NotNull;
+import com.sun.tools.internal.ws.resources.WscompileMessages;
+import com.sun.tools.internal.ws.wscompile.AbortException;
+import com.sun.tools.internal.ws.wscompile.DefaultAuthenticator;
 import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
 import com.sun.tools.internal.ws.wscompile.WsimportOptions;
 import com.sun.tools.internal.ws.wsdl.document.schema.SchemaConstants;
-import com.sun.tools.internal.ws.resources.WscompileMessages;
 import com.sun.tools.internal.xjc.reader.internalizer.LocatorTable;
 import com.sun.xml.internal.bind.marshaller.DataWriter;
+import com.sun.xml.internal.ws.util.JAXWSUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
+import org.xml.sax.*;
 import org.xml.sax.helpers.XMLFilterImpl;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -51,17 +52,15 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.net.*;
+import java.util.*;
 
 /**
  * @author Vivek Pandey
@@ -134,10 +133,9 @@ public class DOMForest {
         return inlinedSchemaElements;
     }
 
-    public Document parse(InputSource source, boolean root) throws SAXException {
+    public @NotNull Document parse(InputSource source, boolean root) throws SAXException, IOException {
         if (source.getSystemId() == null)
             throw new IllegalArgumentException();
-
         return parse(source.getSystemId(), source, root);
     }
 
@@ -148,7 +146,7 @@ public class DOMForest {
      *
      * @return the parsed DOM document object.
      */
-    public Document parse(String systemId, boolean root) throws SAXException, IOException {
+    public Document parse(String systemId, boolean root) throws SAXException, IOException{
 
         systemId = normalizeSystemId(systemId);
 
@@ -179,13 +177,11 @@ public class DOMForest {
      *
      * @return null if there was a parse error. otherwise non-null.
      */
-    public Document parse(String systemId, InputSource inputSource, boolean root) throws SAXException {
+    public @NotNull Document parse(String systemId, InputSource inputSource, boolean root) throws SAXException, IOException{
         Document dom = documentBuilder.newDocument();
 
         systemId = normalizeSystemId(systemId);
 
-        boolean retryMex = false;
-        Exception exception = null;
         // put into the map before growing a tree, to
         // prevent recursive reference from causing infinite loop.
         core.put(systemId, dom);
@@ -201,8 +197,70 @@ public class DOMForest {
                 reader.setErrorHandler(errorReceiver);
             if (options.entityResolver != null)
                 reader.setEntityResolver(options.entityResolver);
+
+            InputStream is = null;
+            if(inputSource.getByteStream() != null){
+                is = inputSource.getByteStream();
+            }
+            if(is == null){
+                int redirects=0;
+                boolean redirect;
+                URL url = JAXWSUtils.getFileOrURL(inputSource.getSystemId());
+                URLConnection conn = url.openConnection();
+                if (conn instanceof HttpsURLConnection) {
+                    if (options.disableSSLHostnameVerification) {
+                        ((HttpsURLConnection) conn).setHostnameVerifier(new HttpClientVerifier());
+                    }
+                }
+
+                do {
+                    redirect = false;
+                    try {
+                        is = conn.getInputStream();
+                        //is = sun.net.www.protocol.http.HttpURLConnection.openConnectionCheckRedirects(conn);
+                    } catch (IOException e) {
+                        if (conn instanceof HttpURLConnection) {
+                            HttpURLConnection httpConn = ((HttpURLConnection) conn);
+                            int code = httpConn.getResponseCode();
+                            if (code == 401) {
+                                errorReceiver.error(new SAXParseException(WscompileMessages.WSIMPORT_AUTH_INFO_NEEDED(e.getMessage(), systemId, DefaultAuthenticator.defaultAuthfile), null, e));
+                                throw new AbortException();
+                            }
+                            //FOR other code we will retry with MEX
+                        }
+                        throw e;
+                    }
+
+                    //handle 302 or 303, JDK does not seem to handle 302 very well.
+                    //Need to redesign this a bit as we need to throw better error message for IOException in this case
+                    if (conn instanceof HttpURLConnection) {
+                        HttpURLConnection httpConn = ((HttpURLConnection) conn);
+                        int code = httpConn.getResponseCode();
+                        if (code == 302 || code == 303) {
+                            //retry with the value in Location header
+                            List<String> seeOther = httpConn.getHeaderFields().get("Location");
+                            if (seeOther != null && seeOther.size() > 0) {
+                                URL newurl = new URL(url, seeOther.get(0));
+                                if (!newurl.equals(url)){
+                                    errorReceiver.info(new SAXParseException(WscompileMessages.WSIMPORT_HTTP_REDIRECT(code, seeOther.get(0)), null));
+                                    url = newurl;
+                                    httpConn.disconnect();
+                                    if(redirects >= 5){
+                                        errorReceiver.error(new SAXParseException(WscompileMessages.WSIMPORT_MAX_REDIRECT_ATTEMPT(), null));
+                                        throw new AbortException();
+                                    }
+                                    conn = url.openConnection();
+                                    redirects++;
+                                    redirect = true;
+                                }
+                            }
+                        }
+                    }
+                } while (redirect);
+            }
+            inputSource.setByteStream(is);
             reader.parse(inputSource);
-             Element doc = dom.getDocumentElement();
+            Element doc = dom.getDocumentElement();
             if (doc == null) {
                 return null;
             }
@@ -211,18 +269,10 @@ public class DOMForest {
                 inlinedSchemaElements.add((Element) schemas.item(i));
             }
         } catch (ParserConfigurationException e) {
-            exception = e;
-        } catch (IOException e) {
-            exception = e;
-        } catch (SAXException e) {
-            exception = e;
+            errorReceiver.error(e);
+            throw new SAXException(e.getMessage());
         }
 
-        if (exception != null) {
-            errorReceiver.error(WscompileMessages.WSIMPORT_NO_WSDL(systemId), exception);
-            core.remove(systemId);
-            rootDocuments.remove(systemId);
-        }
         return dom;
     }
 
@@ -234,6 +284,14 @@ public class DOMForest {
 
     public Set<String> getExternalReferences() {
         return externalReferences;
+    }
+
+    // overide default SSL HttpClientVerifier to always return true
+    // effectively overiding Hostname client verification when using SSL
+    private static class HttpClientVerifier implements HostnameVerifier {
+        public boolean verify(String s, SSLSession sslSession) {
+            return true;
+        }
     }
 
     public interface Handler extends ContentHandler {

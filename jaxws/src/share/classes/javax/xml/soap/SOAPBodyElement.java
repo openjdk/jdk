@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: SOAPBodyElement.java,v 1.3 2005/04/05 22:28:13 mk125090 Exp $
- * $Revision: 1.3 $
- * $Date: 2005/04/05 22:28:13 $
+ * $Id: SOAPBodyElement.java,v 1.4 2006/03/30 00:59:40 ofung Exp $
+ * $Revision: 1.4 $
+ * $Date: 2006/03/30 00:59:40 $
  */
 
 

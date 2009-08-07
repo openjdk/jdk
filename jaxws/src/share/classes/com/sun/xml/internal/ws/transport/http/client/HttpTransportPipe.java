@@ -25,19 +25,19 @@
 package com.sun.xml.internal.ws.transport.http.client;
 
 import com.sun.istack.internal.NotNull;
+import com.sun.xml.internal.ws.api.SOAPVersion;
+import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.message.Packet;
-import com.sun.xml.internal.ws.api.pipe.Codec;
-import com.sun.xml.internal.ws.api.pipe.ContentType;
-import com.sun.xml.internal.ws.api.pipe.NextAction;
-import com.sun.xml.internal.ws.api.pipe.Pipe;
-import com.sun.xml.internal.ws.api.pipe.Tube;
-import com.sun.xml.internal.ws.api.pipe.TubeCloner;
+import com.sun.xml.internal.ws.api.pipe.*;
 import com.sun.xml.internal.ws.api.pipe.helper.AbstractTubeImpl;
 import com.sun.xml.internal.ws.transport.http.WSHTTPConnection;
+import com.sun.xml.internal.ws.transport.Headers;
 import com.sun.xml.internal.ws.util.ByteArrayBuffer;
+import com.sun.xml.internal.ws.client.ClientTransportException;
+import com.sun.xml.internal.ws.resources.ClientMessages;
 
-import javax.xml.ws.BindingProvider;
 import javax.xml.ws.WebServiceException;
+import javax.xml.ws.soap.SOAPBinding;
 import javax.xml.ws.handler.MessageContext;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,25 +47,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.net.HttpURLConnection;
 
 /**
  * {@link Pipe} and {@link Tube} that sends a request to a remote HTTP server.
+ *
+ * TODO: need to create separate HTTP transport pipes for binding. SOAP1.1, SOAP1.2,
+ * TODO: XML/HTTP differ in handling status codes.
  *
  * @author Jitendra Kotamraju
  */
 public class HttpTransportPipe extends AbstractTubeImpl {
 
     private final Codec codec;
+    private final WSBinding binding;
 
-    public HttpTransportPipe(Codec codec) {
+    public HttpTransportPipe(Codec codec, WSBinding binding) {
         this.codec = codec;
+        this.binding = binding;
     }
 
     /**
      * Copy constructor for {@link Tube#copy(TubeCloner)}.
      */
     private HttpTransportPipe(HttpTransportPipe that, TubeCloner cloner) {
-        this( that.codec.copy() );
+        this( that.codec.copy(), that.binding);
         cloner.add(that,this);
     }
 
@@ -85,10 +91,11 @@ public class HttpTransportPipe extends AbstractTubeImpl {
         HttpClientTransport con;
         try {
             // get transport headers from message
-            Map<String, List<String>> reqHeaders = (Map<String, List<String>>) request.invocationProperties.get(MessageContext.HTTP_REQUEST_HEADERS);
-            //assign empty map if its null
-            if(reqHeaders == null){
-                reqHeaders = new HashMap<String, List<String>>();
+            Map<String, List<String>> reqHeaders = new Headers();
+            Map<String, List<String>> userHeaders = (Map<String, List<String>>) request.invocationProperties.get(MessageContext.HTTP_REQUEST_HEADERS);
+            if (userHeaders != null) {
+                // userHeaders may not be modifiable like SingletonMap, just copy them
+                reqHeaders.putAll(userHeaders);
             }
 
             con = new HttpClientTransport(request,reqHeaders);
@@ -105,7 +112,9 @@ public class HttpTransportPipe extends AbstractTubeImpl {
                 if (ct.getAcceptHeader() != null) {
                     reqHeaders.put("Accept", Collections.singletonList(ct.getAcceptHeader()));
                 }
-                writeSOAPAction(reqHeaders, ct.getSOAPActionHeader(),request);
+                if (binding instanceof SOAPBinding) {
+                    writeSOAPAction(reqHeaders, ct.getSOAPActionHeader(),request);
+                }
 
                 if(dump)
                     dump(buf, "HTTP request", reqHeaders);
@@ -117,12 +126,14 @@ public class HttpTransportPipe extends AbstractTubeImpl {
                 if (ct.getAcceptHeader() != null) {
                     reqHeaders.put("Accept", Collections.singletonList(ct.getAcceptHeader()));
                 }
-                writeSOAPAction(reqHeaders, ct.getSOAPActionHeader(), request);
+                if (binding instanceof SOAPBinding) {
+                    writeSOAPAction(reqHeaders, ct.getSOAPActionHeader(), request);
+                }
 
                 if(dump) {
                     ByteArrayBuffer buf = new ByteArrayBuffer();
                     codec.encode(request, buf);
-                    dump(buf, "HTTP request", reqHeaders);
+                    dump(buf, "HTTP request - "+request.endpointAddress, reqHeaders);
                     OutputStream out = con.getOutput();
                     if (out != null) {
                         buf.writeTo(out);
@@ -137,10 +148,25 @@ public class HttpTransportPipe extends AbstractTubeImpl {
 
             con.closeOutput();
 
-            con.checkResponseCode();
-            if (con.statusCode== WSHTTPConnection.ONEWAY) {
+            con.readResponseCodeAndMessage();   // throws IOE
+            InputStream response = con.getInput();
+            if(dump) {
+                ByteArrayBuffer buf = new ByteArrayBuffer();
+                if (response != null) {
+                    buf.write(response);
+                    response.close();
+                }
+                dump(buf,"HTTP response - "+request.endpointAddress+" - "+con.statusCode, con.getHeaders());
+                response = buf.newInputStream();
+            }
+
+            if (con.statusCode== WSHTTPConnection.ONEWAY || (request.expectReply != null && !request.expectReply)) {
+                checkStatusCodeOneway(response, con.statusCode, con.statusMessage);   // throws ClientTransportException
                 return request.createClientResponse(null);    // one way. no response given.
             }
+
+            checkStatusCode(response, con.statusCode, con.statusMessage); // throws ClientTransportException
+
             String contentType = con.getContentType();
             if (contentType == null) {
                 throw new WebServiceException("No Content-type in the header!");
@@ -151,13 +177,6 @@ public class HttpTransportPipe extends AbstractTubeImpl {
             Packet reply = request.createClientResponse(null);
             //reply.addSatellite(new HttpResponseProperties(con));
             reply.wasTransportSecure = con.isSecure();
-            InputStream response = con.getInput();
-            if(dump) {
-                ByteArrayBuffer buf = new ByteArrayBuffer();
-                buf.write(response);
-                dump(buf,"HTTP response "+con.statusCode, con.getHeaders());
-                response = buf.newInputStream();
-            }
             codec.decode(response, contentType, reply);
             return reply;
         } catch(WebServiceException wex) {
@@ -167,11 +186,36 @@ public class HttpTransportPipe extends AbstractTubeImpl {
         }
     }
 
+    private void checkStatusCode(InputStream in, int statusCode, String statusMessage) throws IOException {
+        // SOAP1.1 and SOAP1.2 differ here
+        if (binding instanceof SOAPBinding) {
+            if (statusCode != HttpURLConnection.HTTP_OK && statusCode != HttpURLConnection.HTTP_INTERNAL_ERROR) {
+                if (in != null) {
+                    in.close();
+                }
+                throw new ClientTransportException(ClientMessages.localizableHTTP_STATUS_CODE(statusCode, statusMessage));
+            }
+        }
+        // Every status code is OK for XML/HTTP
+    }
+
+    private void checkStatusCodeOneway(InputStream in, int statusCode, String statusMessage) throws IOException {
+        if (statusCode != WSHTTPConnection.ONEWAY && statusCode != WSHTTPConnection.OK) {
+            if (in != null) {
+                in.close();
+            }
+            throw new ClientTransportException(ClientMessages.localizableHTTP_STATUS_CODE(statusCode,statusMessage));
+        }
+    }
+
     /**
      * write SOAPAction header if the soapAction parameter is non-null or BindingProvider properties set.
      * BindingProvider properties take precedence.
      */
     private void writeSOAPAction(Map<String, List<String>> reqHeaders, String soapAction, Packet packet) {
+        //dont write SOAPAction HTTP header for SOAP 1.2 messages.
+        if(SOAPVersion.SOAP_12.equals(binding.getSOAPVersion()))
+            return;
         if (soapAction != null)
             reqHeaders.put("SOAPAction", Collections.singletonList(soapAction));
         else

@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -53,7 +52,6 @@ import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.reader.Ring;
 import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
 import com.sun.xml.internal.bind.annotation.XmlLocation;
-import com.sun.xml.internal.bind.api.TypeReference;
 import com.sun.xml.internal.bind.marshaller.MinimumEscapeHandler;
 import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
@@ -82,7 +80,7 @@ public final class BindInfo implements Iterable<BIDeclaration> {
     /**
      * Documentation taken from &lt;xs:documentation>s.
      */
-    @XmlElement
+    @XmlElement(namespace=WellKnownNamespace.XML_SCHEMA)
     private Documentation documentation;
 
     /**
@@ -146,7 +144,7 @@ public final class BindInfo implements Iterable<BIDeclaration> {
 
 
     // only used by JAXB
-    @XmlElement
+    @XmlElement(namespace=WellKnownNamespace.XML_SCHEMA)
     void setAppinfo(AppInfo aib) {
         aib.addTo(this);
     }
@@ -318,13 +316,15 @@ public final class BindInfo implements Iterable<BIDeclaration> {
         synchronized(AnnotationParserFactoryImpl.class) {
             try {
                 if(customizationContext==null)
-                    customizationContext = new JAXBContextImpl(
+                    customizationContext = new JAXBContextImpl.JAXBContextBuilder().setClasses(
                         new Class[] {
                             BindInfo.class, // for xs:annotation
                             BIClass.class,
                             BIConversion.User.class,
                             BIConversion.UserAdapter.class,
                             BIDom.class,
+                            BIFactoryMethod.class,
+                            BIInlineBinaryData.class,
                             BIXDom.class,
                             BIXSubstitutable.class,
                             BIEnum.class,
@@ -332,8 +332,7 @@ public final class BindInfo implements Iterable<BIDeclaration> {
                             BIGlobalBinding.class,
                             BIProperty.class,
                             BISchemaBinding.class
-                        }, Collections.<TypeReference>emptyList(),
-                            Collections.<Class,Class>emptyMap(), null, false, null, false, false);
+                        }).build();
                 return customizationContext;
             } catch (JAXBException e) {
                 throw new AssertionError(e);

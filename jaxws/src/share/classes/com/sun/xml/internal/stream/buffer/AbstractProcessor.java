@@ -48,13 +48,13 @@ public abstract class AbstractProcessor extends AbstractCreatorProcessor {
     protected  static final int STATE_COMMENT_AS_STRING             = 15;
     protected  static final int STATE_PROCESSING_INSTRUCTION        = 16;
     protected  static final int STATE_END                           = 17;
-    protected  static final int[] _eiiStateTable = new int[256];
+    private  static final int[] _eiiStateTable = new int[256];
 
     protected  static final int STATE_NAMESPACE_ATTRIBUTE           = 1;
     protected  static final int STATE_NAMESPACE_ATTRIBUTE_P         = 2;
     protected  static final int STATE_NAMESPACE_ATTRIBUTE_P_U       = 3;
     protected  static final int STATE_NAMESPACE_ATTRIBUTE_U         = 4;
-    protected  static final int[] _niiStateTable = new int[256];
+    private  static final int[] _niiStateTable = new int[256];
 
     protected  static final int STATE_ATTRIBUTE_U_LN_QN             = 1;
     protected  static final int STATE_ATTRIBUTE_P_U_LN              = 2;
@@ -64,7 +64,7 @@ public abstract class AbstractProcessor extends AbstractCreatorProcessor {
     protected  static final int STATE_ATTRIBUTE_P_U_LN_OBJECT       = 6;
     protected  static final int STATE_ATTRIBUTE_U_LN_OBJECT         = 7;
     protected  static final int STATE_ATTRIBUTE_LN_OBJECT           = 8;
-    protected  static final int[] _aiiStateTable = new int[256];
+    private  static final int[] _aiiStateTable = new int[256];
 
     static {
         /*
@@ -170,6 +170,18 @@ public abstract class AbstractProcessor extends AbstractCreatorProcessor {
 
     protected final int readEiiState() {
         return _eiiStateTable[readStructure()];
+    }
+
+    protected static int getEIIState(int item) {
+        return _eiiStateTable[item];
+    }
+
+    protected static int getNIIState(int item) {
+        return _niiStateTable[item];
+    }
+
+    protected static int getAIIState(int item) {
+        return _aiiStateTable[item];
     }
 
     protected final int readStructure16() {
