@@ -41,7 +41,7 @@ import com.sun.tools.javac.code.Symbol.*;
 /**
  * Implementation of WildcardType
  */
-
+@SuppressWarnings("deprecation")
 public class WildcardTypeImpl extends TypeMirrorImpl implements WildcardType {
 
     protected Type.WildcardType type;
