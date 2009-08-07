@@ -34,6 +34,7 @@ G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(MemRegion whole_heap,
 
 
 void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
+  assert(pre_val->is_oop_or_null(true), "Error");
   if (!JavaThread::satb_mark_queue_set().active()) return;
   Thread* thr = Thread::current();
   if (thr->is_Java_thread()) {
@@ -46,31 +47,30 @@ void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
 }
 
 // When we know the current java thread:
-void
-G1SATBCardTableModRefBS::write_ref_field_pre_static(void* field,
-                                                    oop newVal,
+template <class T> void
+G1SATBCardTableModRefBS::write_ref_field_pre_static(T* field,
+                                                    oop new_val,
                                                     JavaThread* jt) {
   if (!JavaThread::satb_mark_queue_set().active()) return;
-  assert(!UseCompressedOops, "Else will need to modify this to deal with narrowOop");
-  oop preVal = *(oop*)field;
-  if (preVal != NULL) {
-    jt->satb_mark_queue().enqueue(preVal);
+  T heap_oop = oopDesc::load_heap_oop(field);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop pre_val = oopDesc::decode_heap_oop_not_null(heap_oop);
+    assert(pre_val->is_oop(true /* ignore mark word */), "Error");
+    jt->satb_mark_queue().enqueue(pre_val);
   }
 }
 
-void
-G1SATBCardTableModRefBS::write_ref_array_pre(MemRegion mr) {
+template <class T> void
+G1SATBCardTableModRefBS::write_ref_array_pre_work(T* dst, int count) {
   if (!JavaThread::satb_mark_queue_set().active()) return;
-  assert(!UseCompressedOops, "Else will need to modify this to deal with narrowOop");
-  oop* elem_ptr = (oop*)mr.start();
-  while ((HeapWord*)elem_ptr < mr.end()) {
-    oop elem = *elem_ptr;
-    if (elem != NULL) enqueue(elem);
-    elem_ptr++;
+  T* elem_ptr = dst;
+  for (int i = 0; i < count; i++, elem_ptr++) {
+    T heap_oop = oopDesc::load_heap_oop(elem_ptr);
+    if (!oopDesc::is_null(heap_oop)) {
+      enqueue(oopDesc::decode_heap_oop_not_null(heap_oop));
+    }
   }
 }
-
-
 
 G1SATBCardTableLoggingModRefBS::
 G1SATBCardTableLoggingModRefBS(MemRegion whole_heap,

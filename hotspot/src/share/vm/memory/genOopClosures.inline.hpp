@@ -40,18 +40,20 @@ inline void OopsInGenClosure::set_generation(Generation* gen) {
 
 template <class T> inline void OopsInGenClosure::do_barrier(T* p) {
   assert(generation()->is_in_reserved(p), "expected ref in generation");
-  assert(!oopDesc::is_null(*p), "expected non-null object");
-  oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+  T heap_oop = oopDesc::load_heap_oop(p);
+  assert(!oopDesc::is_null(heap_oop), "expected non-null oop");
+  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
   // If p points to a younger generation, mark the card.
   if ((HeapWord*)obj < _gen_boundary) {
     _rs->inline_write_ref_field_gc(p, obj);
   }
 }
 
-inline void OopsInGenClosure::par_do_barrier(oop* p) {
+template <class T> inline void OopsInGenClosure::par_do_barrier(T* p) {
   assert(generation()->is_in_reserved(p), "expected ref in generation");
-  oop obj = *p;
-  assert(obj != NULL, "expected non-null object");
+  T heap_oop = oopDesc::load_heap_oop(p);
+  assert(!oopDesc::is_null(heap_oop), "expected non-null oop");
+  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
   // If p points to a younger generation, mark the card.
   if ((HeapWord*)obj < gen_boundary()) {
     rs()->write_ref_field_gc_par(p, obj);

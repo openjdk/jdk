@@ -31,6 +31,8 @@ import java.net.InetSocketAddress;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map.Entry;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -702,7 +704,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             int assocId = association.associationID();
             Set<SocketAddress> addresses = null;
 
-            try {
+             try {
                 addresses = SctpNet.getRemoteAddresses(fdVal, assocId);
             } catch (IOException unused) {
                 /* OK, determining connected addresses may not be possible
@@ -723,9 +725,11 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 /* We cannot determine the connected addresses */
                 Set<java.util.Map.Entry<SocketAddress, Association>> addrAssocs =
                         addressMap.entrySet();
-                for (java.util.Map.Entry<SocketAddress, Association> entry : addrAssocs) {
+                Iterator<Entry<SocketAddress, Association>> iterator = addrAssocs.iterator();
+                while (iterator.hasNext()) {
+                    Entry<SocketAddress, Association> entry = iterator.next();
                     if (entry.getValue().equals(association)) {
-                        addressMap.remove(entry.getKey());
+                        iterator.remove();
                     }
                 }
             }
@@ -957,7 +961,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                                 int length)
             throws IOException{
         return SctpChannelImpl.receive0(fd, resultContainer, address,
-                length);
+                length, false /*peek */);
     }
 
     private static int send0(int fd,

@@ -50,7 +50,7 @@ package java.lang;
  * @see     java.lang.ClassLoader#loadClass(java.lang.String, boolean)
  * @since   JDK1.0
  */
-public class ClassNotFoundException extends Exception {
+public class ClassNotFoundException extends ReflectiveOperationException {
     /**
      * use serialVersionUID from JDK 1.1.X for interoperability
      */

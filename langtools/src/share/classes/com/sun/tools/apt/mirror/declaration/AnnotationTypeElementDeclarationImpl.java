@@ -35,7 +35,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 /**
  * Implementation of AnnotationTypeElementDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class AnnotationTypeElementDeclarationImpl extends MethodDeclarationImpl
                                   implements AnnotationTypeElementDeclaration {
 

@@ -37,14 +37,12 @@ template<bool do_gen_barrier, G1Barrier barrier,
 class G1ParCopyClosure;
 class G1ParScanClosure;
 
-typedef G1ParCopyClosure<false, G1BarrierEvac, false, true>
-                                                      G1ParScanHeapEvacClosure;
+typedef G1ParCopyClosure<false, G1BarrierEvac, false, true> G1ParScanHeapEvacClosure;
 
 class FilterIntoCSClosure;
 class FilterOutOfRegionClosure;
 class FilterInHeapRegionAndIntoCSClosure;
 class FilterAndMarkInHeapRegionAndIntoCSClosure;
-class G1ScanAndBalanceClosure;
 
 #ifdef FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES
 #error "FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES already defined."
@@ -56,8 +54,7 @@ class G1ScanAndBalanceClosure;
       f(FilterIntoCSClosure,_nv)                        \
       f(FilterOutOfRegionClosure,_nv)                   \
       f(FilterInHeapRegionAndIntoCSClosure,_nv)         \
-      f(FilterAndMarkInHeapRegionAndIntoCSClosure,_nv)  \
-      f(G1ScanAndBalanceClosure,_nv)
+      f(FilterAndMarkInHeapRegionAndIntoCSClosure,_nv)
 
 #ifdef FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES
 #error "FURTHER_SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES already defined."

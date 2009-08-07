@@ -251,7 +251,8 @@ public class Resolve {
             return true;
         else {
             Symbol s2 = ((MethodSymbol)sym).implementation(site.tsym, types, true);
-            return (s2 == null || s2 == sym);
+            return (s2 == null || s2 == sym ||
+                    !types.isSubSignature(types.memberType(site, s2), types.memberType(site, sym)));
         }
     }
     //where
