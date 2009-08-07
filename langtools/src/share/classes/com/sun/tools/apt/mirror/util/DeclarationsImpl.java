@@ -42,7 +42,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 /**
  * Implementation of Declarations utility methods for annotation processors
  */
-
+@SuppressWarnings("deprecation")
 public class DeclarationsImpl implements Declarations {
 
     private final AptEnv env;

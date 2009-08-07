@@ -181,7 +181,6 @@ public class SocketOptionTests {
         /* Receive the COMM_UP */
         buffer.clear();
         SOTNotificationHandler handler = new SOTNotificationHandler();
-        smc.configureBlocking(false);
         info = smc.receive(buffer, null, handler);
         check(handler.receivedCommUp(), "COMM_UP no received");
         Set<Association> associations = smc.associations();
@@ -220,6 +219,7 @@ public class SocketOptionTests {
             }
             check(found, "SCTP_PRIMARY_ADDR returned bogus address!");
 
+            System.out.println("Try SCTP_PRIMARY_ADDR set to: " + addrToSet);
             smc.setOption(SCTP_PRIMARY_ADDR, addrToSet, assoc);
             System.out.println("SCTP_PRIMARY_ADDR set to: " + addrToSet);
             primaryAddr = smc.getOption(SCTP_PRIMARY_ADDR, assoc);

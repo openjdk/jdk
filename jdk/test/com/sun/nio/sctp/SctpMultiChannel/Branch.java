@@ -115,7 +115,6 @@ public class Branch {
             /* Receive the COMM_UP */
             buffer.clear();
             BranchNotificationHandler handler = new BranchNotificationHandler();
-            channel.configureBlocking(false);
             info = channel.receive(buffer, null, handler);
             check(handler.receivedCommUp(), "COMM_UP no received");
             Set<Association> associations = channel.associations();
