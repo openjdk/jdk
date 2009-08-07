@@ -61,6 +61,7 @@ import java.awt.dnd.InvalidDnDOperationException;
 import java.awt.dnd.peer.DragSourceContextPeer;
 
 //import sun.awt.motif.MInputMethod;
+import sun.awt.X11FontManager;
 import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsEnvironment;
 import sun.awt.XSettings;
@@ -124,7 +125,7 @@ public class MToolkit extends UNIXToolkit implements Runnable {
          * and when we know that MToolkit is the one that will be used,
          * since XToolkit doesn't need the X11 font path set
          */
-        X11GraphicsEnvironment.setNativeFontPath();
+        X11FontManager.getInstance().setNativeFontPath();
 
         motifdnd = ((Boolean)java.security.AccessController.doPrivileged(
             new GetBooleanAction("awt.dnd.motifdnd"))).booleanValue();

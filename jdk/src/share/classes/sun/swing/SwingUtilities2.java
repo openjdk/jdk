@@ -54,7 +54,7 @@ import sun.security.util.SecurityConstants;
 import java.io.*;
 import java.util.*;
 import sun.font.FontDesignMetrics;
-import sun.font.FontManager;
+import sun.font.FontUtilities;
 import sun.java2d.SunGraphicsEnvironment;
 
 import java.util.concurrent.Callable;
@@ -193,7 +193,7 @@ public class SwingUtilities2 {
      *         <tt>false</tt> if TextLayout is not required
      */
     public static final boolean isComplexLayout(char[] text, int start, int limit) {
-        return FontManager.isComplexText(text, start, limit);
+        return FontUtilities.isComplexText(text, start, limit);
     }
 
     //

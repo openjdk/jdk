@@ -39,7 +39,9 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Locale;
 import java.util.logging.Level;
 import sun.java2d.Disposer;
@@ -101,6 +103,9 @@ public class TrueTypeFont extends FileFont {
     public static final int FULL_NAME_ID = 4;
     public static final int POSTSCRIPT_NAME_ID = 6;
 
+    private static final short US_LCID = 0x0409;  // US English - default
+
+    private static Map<String, Short> lcidMap;
 
     class DirectoryEntry {
         int tag;
@@ -176,7 +181,7 @@ public class TrueTypeFont extends FileFont {
      * @throws FontFormatException - if the font can't be opened
      * or fails verification,  or there's no usable cmap
      */
-    TrueTypeFont(String platname, Object nativeNames, int fIndex,
+    public TrueTypeFont(String platname, Object nativeNames, int fIndex,
                  boolean javaRasterizer)
         throws FontFormatException {
         super(platname, nativeNames);
@@ -207,12 +212,13 @@ public class TrueTypeFont extends FileFont {
      * as PCF bitmap fonts on the X11 font path).
      * This method is called when creating the first strike for this font.
      */
+    @Override
     protected boolean checkUseNatives() {
         if (checkedNatives) {
             return useNatives;
         }
-        if (!FontManager.isSolaris || useJavaRasterizer ||
-            FontManager.useT2K || nativeNames == null ||
+        if (!FontUtilities.isSolaris || useJavaRasterizer ||
+            FontUtilities.useT2K || nativeNames == null ||
             getDirectoryEntry(EBLCTag) != null ||
             GraphicsEnvironment.isHeadless()) {
             checkedNatives = true;
@@ -279,8 +285,8 @@ public class TrueTypeFont extends FileFont {
      */
     private synchronized FileChannel open() throws FontFormatException {
         if (disposerRecord.channel == null) {
-            if (FontManager.logging) {
-                FontManager.logger.info("open TTF: " + platName);
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger().info("open TTF: " + platName);
             }
             try {
                 RandomAccessFile raf = (RandomAccessFile)
@@ -296,7 +302,10 @@ public class TrueTypeFont extends FileFont {
                 });
                 disposerRecord.channel = raf.getChannel();
                 fileSize = (int)disposerRecord.channel.size();
-                FontManager.addToPool(this);
+                FontManager fm = FontManagerFactory.getInstance();
+                if (fm instanceof SunFontManager) {
+                    ((SunFontManager) fm).addToPool(this);
+                }
             } catch (NullPointerException e) {
                 close();
                 throw new FontFormatException(e.toString());
@@ -340,11 +349,11 @@ public class TrueTypeFont extends FileFont {
                          * isn't updated. If the file has changed whilst we
                          * are executing we want to bail, not spin.
                          */
-                        if (FontManager.logging) {
+                        if (FontUtilities.isLogging()) {
                             String msg = "Read offset is " + offset +
                                 " file size is " + fileSize+
                                 " file is " + platName;
-                            FontManager.logger.severe(msg);
+                            FontUtilities.getLogger().severe(msg);
                         }
                         return -1;
                     } else {
@@ -362,8 +371,8 @@ public class TrueTypeFont extends FileFont {
                             msg += " File size was " + fileSize +
                                 " and now is " + currSize;
                         }
-                        if (FontManager.logging) {
-                            FontManager.logger.severe(msg);
+                        if (FontUtilities.isLogging()) {
+                            FontUtilities.getLogger().severe(msg);
                         }
                         // We could still flip() the buffer here because
                         // it's possible that we did read some data in
@@ -377,10 +386,10 @@ public class TrueTypeFont extends FileFont {
                         // data was read to probably continue.
                         if (bread > length/2 || bread > 16384) {
                             buffer.flip();
-                            if (FontManager.logging) {
+                            if (FontUtilities.isLogging()) {
                                 msg = "Returning " + bread +
                                     " bytes instead of " + length;
-                                FontManager.logger.severe(msg);
+                                FontUtilities.getLogger().severe(msg);
                             }
                         } else {
                             bread = -1;
@@ -395,8 +404,8 @@ public class TrueTypeFont extends FileFont {
                 }
             }
         } catch (FontFormatException e) {
-            if (FontManager.logging) {
-                FontManager.logger.log(Level.SEVERE,
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger().log(Level.SEVERE,
                                        "While reading " + platName, e);
             }
             bread = -1; // signal EOF
@@ -416,8 +425,8 @@ public class TrueTypeFont extends FileFont {
              * seems unlikely this would occur as problems opening the
              * file are handled as a FontFormatException.
              */
-            if (FontManager.logging) {
-                FontManager.logger.log(Level.SEVERE,
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger().log(Level.SEVERE,
                                        "While reading " + platName, e);
             }
             if (bread == 0) {
@@ -540,8 +549,8 @@ public class TrueTypeFont extends FileFont {
             }
             initNames();
         } catch (Exception e) {
-            if (FontManager.logging) {
-                FontManager.logger.severe(e.toString());
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger().severe(e.toString());
             }
             if (e instanceof FontFormatException) {
                 throw (FontFormatException)e;
@@ -687,7 +696,7 @@ public class TrueTypeFont extends FileFont {
             return defaultCodePage;
         }
 
-        if (FontManager.isWindows) {
+        if (FontUtilities.isWindows) {
             defaultCodePage =
                 (String)java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction("file.encoding"));
@@ -724,6 +733,7 @@ public class TrueTypeFont extends FileFont {
     /* Theoretically, reserved bits must not be set, include symbol bits */
     public static final int reserved_bits1 = 0x80000000;
     public static final int reserved_bits2 = 0x0000ffff;
+    @Override
     boolean supportsEncoding(String encoding) {
         if (encoding == null) {
             encoding = getCodePage();
@@ -858,6 +868,7 @@ public class TrueTypeFont extends FileFont {
         }
     }
 
+    @Override
     byte[] getTableBytes(int tag) {
         ByteBuffer buffer = getTableBuffer(tag);
         if (buffer == null) {
@@ -932,6 +943,7 @@ public class TrueTypeFont extends FileFont {
     /* This probably won't get called but is there to support the
      * contract() of setStyle() defined in the superclass.
      */
+    @Override
     protected void setStyle() {
         setStyle(getTableBuffer(os_2Tag));
     }
@@ -977,7 +989,7 @@ public class TrueTypeFont extends FileFont {
             style = Font.ITALIC;
             break;
         case fsSelectionBoldBit:
-            if (FontManager.isSolaris && platName.endsWith("HG-GothicB.ttf")) {
+            if (FontUtilities.isSolaris && platName.endsWith("HG-GothicB.ttf")) {
                 /* Workaround for Solaris's use of a JA font that's marked as
                  * being designed bold, but is used as a PLAIN font.
                  */
@@ -1015,6 +1027,7 @@ public class TrueTypeFont extends FileFont {
         ulPos = -sb.get(4) / (float)upem;
     }
 
+    @Override
     public void getStyleMetrics(float pointSize, float[] metrics, int offset) {
 
         if (ulSize == 0f && ulPos == 0f) {
@@ -1075,8 +1088,8 @@ public class TrueTypeFont extends FileFont {
         try {
             return new String(bytes, 0, len, charset);
         } catch (UnsupportedEncodingException e) {
-            if (FontManager.logging) {
-                FontManager.logger.warning(e + " EncodingID=" + encoding);
+            if (FontUtilities.isLogging()) {
+                FontUtilities.getLogger().warning(e + " EncodingID=" + encoding);
             }
             return new String(bytes, 0, len);
         } catch (Throwable t) {
@@ -1101,7 +1114,7 @@ public class TrueTypeFont extends FileFont {
             int stringPtr = sbuffer.get() & 0xffff;
 
             nameLocale = sun.awt.SunToolkit.getStartupLocale();
-            short nameLocaleID = FontManager.getLCIDFromLocale(nameLocale);
+            short nameLocaleID = getLCIDFromLocale(nameLocale);
 
             for (int i=0; i<numRecords; i++) {
                 short platformID = sbuffer.get();
@@ -1232,7 +1245,7 @@ public class TrueTypeFont extends FileFont {
 
     protected synchronized FontScaler getScaler() {
         if (scaler == null) {
-            scaler = FontManager.getScaler(this, fontIndex,
+            scaler = FontScaler.getScaler(this, fontIndex,
                 supportsCJK, fileSize);
         }
         return scaler;
@@ -1242,6 +1255,7 @@ public class TrueTypeFont extends FileFont {
     /* Postscript name is rarely requested. Don't waste cycles locating it
      * as part of font creation, nor storage to hold it. Get it only on demand.
      */
+    @Override
     public String getPostscriptName() {
         String name = lookupName(ENGLISH_LOCALE_ID, POSTSCRIPT_NAME_ID);
         if (name == null) {
@@ -1251,13 +1265,14 @@ public class TrueTypeFont extends FileFont {
         }
     }
 
+    @Override
     public String getFontName(Locale locale) {
         if (locale == null) {
             return fullName;
         } else if (locale.equals(nameLocale) && localeFullName != null) {
             return localeFullName;
         } else {
-            short localeID = FontManager.getLCIDFromLocale(locale);
+            short localeID = getLCIDFromLocale(locale);
             String name = lookupName(localeID, FULL_NAME_ID);
             if (name == null) {
                 return fullName;
@@ -1267,16 +1282,239 @@ public class TrueTypeFont extends FileFont {
         }
     }
 
+    // Return a Microsoft LCID from the given Locale.
+    // Used when getting localized font data.
+
+    private static void addLCIDMapEntry(Map<String, Short> map,
+                                        String key, short value) {
+        map.put(key, Short.valueOf(value));
+    }
+
+    private static synchronized void createLCIDMap() {
+        if (lcidMap != null) {
+            return;
+        }
+
+        Map<String, Short> map = new HashMap<String, Short>(200);
+
+        // the following statements are derived from the langIDMap
+        // in src/windows/native/java/lang/java_props_md.c using the following
+        // awk script:
+        //    $1~/\/\*/   { next}
+        //    $3~/\?\?/   { next }
+        //    $3!~/_/     { next }
+        //    $1~/0x0409/ { next }
+        //    $1~/0x0c0a/ { next }
+        //    $1~/0x042c/ { next }
+        //    $1~/0x0443/ { next }
+        //    $1~/0x0812/ { next }
+        //    $1~/0x04/   { print "        addLCIDMapEntry(map, " substr($3, 0, 3) "\", (short) " substr($1, 0, 6) ");" ; next }
+        //    $3~/,/      { print "        addLCIDMapEntry(map, " $3  " (short) " substr($1, 0, 6) ");" ; next }
+        //                { print "        addLCIDMapEntry(map, " $3 ", (short) " substr($1, 0, 6) ");" ; next }
+        // The lines of this script:
+        // - eliminate comments
+        // - eliminate questionable locales
+        // - eliminate language-only locales
+        // - eliminate the default LCID value
+        // - eliminate a few other unneeded LCID values
+        // - print language-only locale entries for x04* LCID values
+        //   (apparently Microsoft doesn't use language-only LCID values -
+        //   see http://www.microsoft.com/OpenType/otspec/name.htm
+        // - print complete entries for all other LCID values
+        // Run
+        //     awk -f awk-script langIDMap > statements
+        addLCIDMapEntry(map, "ar", (short) 0x0401);
+        addLCIDMapEntry(map, "bg", (short) 0x0402);
+        addLCIDMapEntry(map, "ca", (short) 0x0403);
+        addLCIDMapEntry(map, "zh", (short) 0x0404);
+        addLCIDMapEntry(map, "cs", (short) 0x0405);
+        addLCIDMapEntry(map, "da", (short) 0x0406);
+        addLCIDMapEntry(map, "de", (short) 0x0407);
+        addLCIDMapEntry(map, "el", (short) 0x0408);
+        addLCIDMapEntry(map, "es", (short) 0x040a);
+        addLCIDMapEntry(map, "fi", (short) 0x040b);
+        addLCIDMapEntry(map, "fr", (short) 0x040c);
+        addLCIDMapEntry(map, "iw", (short) 0x040d);
+        addLCIDMapEntry(map, "hu", (short) 0x040e);
+        addLCIDMapEntry(map, "is", (short) 0x040f);
+        addLCIDMapEntry(map, "it", (short) 0x0410);
+        addLCIDMapEntry(map, "ja", (short) 0x0411);
+        addLCIDMapEntry(map, "ko", (short) 0x0412);
+        addLCIDMapEntry(map, "nl", (short) 0x0413);
+        addLCIDMapEntry(map, "no", (short) 0x0414);
+        addLCIDMapEntry(map, "pl", (short) 0x0415);
+        addLCIDMapEntry(map, "pt", (short) 0x0416);
+        addLCIDMapEntry(map, "rm", (short) 0x0417);
+        addLCIDMapEntry(map, "ro", (short) 0x0418);
+        addLCIDMapEntry(map, "ru", (short) 0x0419);
+        addLCIDMapEntry(map, "hr", (short) 0x041a);
+        addLCIDMapEntry(map, "sk", (short) 0x041b);
+        addLCIDMapEntry(map, "sq", (short) 0x041c);
+        addLCIDMapEntry(map, "sv", (short) 0x041d);
+        addLCIDMapEntry(map, "th", (short) 0x041e);
+        addLCIDMapEntry(map, "tr", (short) 0x041f);
+        addLCIDMapEntry(map, "ur", (short) 0x0420);
+        addLCIDMapEntry(map, "in", (short) 0x0421);
+        addLCIDMapEntry(map, "uk", (short) 0x0422);
+        addLCIDMapEntry(map, "be", (short) 0x0423);
+        addLCIDMapEntry(map, "sl", (short) 0x0424);
+        addLCIDMapEntry(map, "et", (short) 0x0425);
+        addLCIDMapEntry(map, "lv", (short) 0x0426);
+        addLCIDMapEntry(map, "lt", (short) 0x0427);
+        addLCIDMapEntry(map, "fa", (short) 0x0429);
+        addLCIDMapEntry(map, "vi", (short) 0x042a);
+        addLCIDMapEntry(map, "hy", (short) 0x042b);
+        addLCIDMapEntry(map, "eu", (short) 0x042d);
+        addLCIDMapEntry(map, "mk", (short) 0x042f);
+        addLCIDMapEntry(map, "tn", (short) 0x0432);
+        addLCIDMapEntry(map, "xh", (short) 0x0434);
+        addLCIDMapEntry(map, "zu", (short) 0x0435);
+        addLCIDMapEntry(map, "af", (short) 0x0436);
+        addLCIDMapEntry(map, "ka", (short) 0x0437);
+        addLCIDMapEntry(map, "fo", (short) 0x0438);
+        addLCIDMapEntry(map, "hi", (short) 0x0439);
+        addLCIDMapEntry(map, "mt", (short) 0x043a);
+        addLCIDMapEntry(map, "se", (short) 0x043b);
+        addLCIDMapEntry(map, "gd", (short) 0x043c);
+        addLCIDMapEntry(map, "ms", (short) 0x043e);
+        addLCIDMapEntry(map, "kk", (short) 0x043f);
+        addLCIDMapEntry(map, "ky", (short) 0x0440);
+        addLCIDMapEntry(map, "sw", (short) 0x0441);
+        addLCIDMapEntry(map, "tt", (short) 0x0444);
+        addLCIDMapEntry(map, "bn", (short) 0x0445);
+        addLCIDMapEntry(map, "pa", (short) 0x0446);
+        addLCIDMapEntry(map, "gu", (short) 0x0447);
+        addLCIDMapEntry(map, "ta", (short) 0x0449);
+        addLCIDMapEntry(map, "te", (short) 0x044a);
+        addLCIDMapEntry(map, "kn", (short) 0x044b);
+        addLCIDMapEntry(map, "ml", (short) 0x044c);
+        addLCIDMapEntry(map, "mr", (short) 0x044e);
+        addLCIDMapEntry(map, "sa", (short) 0x044f);
+        addLCIDMapEntry(map, "mn", (short) 0x0450);
+        addLCIDMapEntry(map, "cy", (short) 0x0452);
+        addLCIDMapEntry(map, "gl", (short) 0x0456);
+        addLCIDMapEntry(map, "dv", (short) 0x0465);
+        addLCIDMapEntry(map, "qu", (short) 0x046b);
+        addLCIDMapEntry(map, "mi", (short) 0x0481);
+        addLCIDMapEntry(map, "ar_IQ", (short) 0x0801);
+        addLCIDMapEntry(map, "zh_CN", (short) 0x0804);
+        addLCIDMapEntry(map, "de_CH", (short) 0x0807);
+        addLCIDMapEntry(map, "en_GB", (short) 0x0809);
+        addLCIDMapEntry(map, "es_MX", (short) 0x080a);
+        addLCIDMapEntry(map, "fr_BE", (short) 0x080c);
+        addLCIDMapEntry(map, "it_CH", (short) 0x0810);
+        addLCIDMapEntry(map, "nl_BE", (short) 0x0813);
+        addLCIDMapEntry(map, "no_NO_NY", (short) 0x0814);
+        addLCIDMapEntry(map, "pt_PT", (short) 0x0816);
+        addLCIDMapEntry(map, "ro_MD", (short) 0x0818);
+        addLCIDMapEntry(map, "ru_MD", (short) 0x0819);
+        addLCIDMapEntry(map, "sr_CS", (short) 0x081a);
+        addLCIDMapEntry(map, "sv_FI", (short) 0x081d);
+        addLCIDMapEntry(map, "az_AZ", (short) 0x082c);
+        addLCIDMapEntry(map, "se_SE", (short) 0x083b);
+        addLCIDMapEntry(map, "ga_IE", (short) 0x083c);
+        addLCIDMapEntry(map, "ms_BN", (short) 0x083e);
+        addLCIDMapEntry(map, "uz_UZ", (short) 0x0843);
+        addLCIDMapEntry(map, "qu_EC", (short) 0x086b);
+        addLCIDMapEntry(map, "ar_EG", (short) 0x0c01);
+        addLCIDMapEntry(map, "zh_HK", (short) 0x0c04);
+        addLCIDMapEntry(map, "de_AT", (short) 0x0c07);
+        addLCIDMapEntry(map, "en_AU", (short) 0x0c09);
+        addLCIDMapEntry(map, "fr_CA", (short) 0x0c0c);
+        addLCIDMapEntry(map, "sr_CS", (short) 0x0c1a);
+        addLCIDMapEntry(map, "se_FI", (short) 0x0c3b);
+        addLCIDMapEntry(map, "qu_PE", (short) 0x0c6b);
+        addLCIDMapEntry(map, "ar_LY", (short) 0x1001);
+        addLCIDMapEntry(map, "zh_SG", (short) 0x1004);
+        addLCIDMapEntry(map, "de_LU", (short) 0x1007);
+        addLCIDMapEntry(map, "en_CA", (short) 0x1009);
+        addLCIDMapEntry(map, "es_GT", (short) 0x100a);
+        addLCIDMapEntry(map, "fr_CH", (short) 0x100c);
+        addLCIDMapEntry(map, "hr_BA", (short) 0x101a);
+        addLCIDMapEntry(map, "ar_DZ", (short) 0x1401);
+        addLCIDMapEntry(map, "zh_MO", (short) 0x1404);
+        addLCIDMapEntry(map, "de_LI", (short) 0x1407);
+        addLCIDMapEntry(map, "en_NZ", (short) 0x1409);
+        addLCIDMapEntry(map, "es_CR", (short) 0x140a);
+        addLCIDMapEntry(map, "fr_LU", (short) 0x140c);
+        addLCIDMapEntry(map, "bs_BA", (short) 0x141a);
+        addLCIDMapEntry(map, "ar_MA", (short) 0x1801);
+        addLCIDMapEntry(map, "en_IE", (short) 0x1809);
+        addLCIDMapEntry(map, "es_PA", (short) 0x180a);
+        addLCIDMapEntry(map, "fr_MC", (short) 0x180c);
+        addLCIDMapEntry(map, "sr_BA", (short) 0x181a);
+        addLCIDMapEntry(map, "ar_TN", (short) 0x1c01);
+        addLCIDMapEntry(map, "en_ZA", (short) 0x1c09);
+        addLCIDMapEntry(map, "es_DO", (short) 0x1c0a);
+        addLCIDMapEntry(map, "sr_BA", (short) 0x1c1a);
+        addLCIDMapEntry(map, "ar_OM", (short) 0x2001);
+        addLCIDMapEntry(map, "en_JM", (short) 0x2009);
+        addLCIDMapEntry(map, "es_VE", (short) 0x200a);
+        addLCIDMapEntry(map, "ar_YE", (short) 0x2401);
+        addLCIDMapEntry(map, "es_CO", (short) 0x240a);
+        addLCIDMapEntry(map, "ar_SY", (short) 0x2801);
+        addLCIDMapEntry(map, "en_BZ", (short) 0x2809);
+        addLCIDMapEntry(map, "es_PE", (short) 0x280a);
+        addLCIDMapEntry(map, "ar_JO", (short) 0x2c01);
+        addLCIDMapEntry(map, "en_TT", (short) 0x2c09);
+        addLCIDMapEntry(map, "es_AR", (short) 0x2c0a);
+        addLCIDMapEntry(map, "ar_LB", (short) 0x3001);
+        addLCIDMapEntry(map, "en_ZW", (short) 0x3009);
+        addLCIDMapEntry(map, "es_EC", (short) 0x300a);
+        addLCIDMapEntry(map, "ar_KW", (short) 0x3401);
+        addLCIDMapEntry(map, "en_PH", (short) 0x3409);
+        addLCIDMapEntry(map, "es_CL", (short) 0x340a);
+        addLCIDMapEntry(map, "ar_AE", (short) 0x3801);
+        addLCIDMapEntry(map, "es_UY", (short) 0x380a);
+        addLCIDMapEntry(map, "ar_BH", (short) 0x3c01);
+        addLCIDMapEntry(map, "es_PY", (short) 0x3c0a);
+        addLCIDMapEntry(map, "ar_QA", (short) 0x4001);
+        addLCIDMapEntry(map, "es_BO", (short) 0x400a);
+        addLCIDMapEntry(map, "es_SV", (short) 0x440a);
+        addLCIDMapEntry(map, "es_HN", (short) 0x480a);
+        addLCIDMapEntry(map, "es_NI", (short) 0x4c0a);
+        addLCIDMapEntry(map, "es_PR", (short) 0x500a);
+
+        lcidMap = map;
+    }
+
+    private static short getLCIDFromLocale(Locale locale) {
+        // optimize for common case
+        if (locale.equals(Locale.US)) {
+            return US_LCID;
+        }
+
+        if (lcidMap == null) {
+            createLCIDMap();
+        }
+
+        String key = locale.toString();
+        while (!"".equals(key)) {
+            Short lcidObject = (Short) lcidMap.get(key);
+            if (lcidObject != null) {
+                return lcidObject.shortValue();
+            }
+            int pos = key.lastIndexOf('_');
+            if (pos < 1) {
+                return US_LCID;
+            }
+            key = key.substring(0, pos);
+        }
+
+        return US_LCID;
+    }
+
+    @Override
     public String getFamilyName(Locale locale) {
         if (locale == null) {
             return familyName;
         } else if (locale.equals(nameLocale) && localeFamilyName != null) {
             return localeFamilyName;
         } else {
-            short localeID = FontManager.getLCIDFromLocale(locale);
+            short localeID = getLCIDFromLocale(locale);
             String name = lookupName(localeID, FAMILY_NAME_ID);
             if (name == null) {
-               return familyName;
+                return familyName;
             } else {
                 return name;
             }
@@ -1353,6 +1591,7 @@ public class TrueTypeFont extends FileFont {
 
     /*  Used by the OpenType engine for mark positioning.
      */
+    @Override
     Point2D.Float getGlyphPoint(long pScalerContext,
                                 int glyphCode, int ptNumber) {
         try {
@@ -1414,6 +1653,7 @@ public class TrueTypeFont extends FileFont {
      * REMIND: consider unpacking the table into an array of booleans
      * for faster use.
      */
+    @Override
     public boolean useAAForPtSize(int ptsize) {
 
         char[] gasp = getGaspTable();
@@ -1433,12 +1673,15 @@ public class TrueTypeFont extends FileFont {
         }
     }
 
+    @Override
     public boolean hasSupplementaryChars() {
         return ((TrueTypeGlyphMapper)getMapper()).hasSupplementaryChars();
     }
 
+    @Override
     public String toString() {
         return "** TrueType Font: Family="+familyName+ " Name="+fullName+
             " style="+style+" fileName="+platName;
     }
+
 }
