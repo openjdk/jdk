@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,43 +21,31 @@
  * have any questions.
  */
 
-/*
- * @test
- * @bug 4329886
- * @summary Clone() on arrays compiled incorrectly
- * @author gafter jjg
- */
-
 import java.io.*;
 
-/** The qualifying type in the code for array.clone() should be the array type. */
-public class ArrayClone {
-    public static void main(String[] args) {
-        new ArrayClone().run();
+/*
+ * @test
+ * @bug 6855990
+ * @summary InstructionDetailWriter should support new 308 annotations attribute
+ */
+
+public class T6855990 {
+    public static void main(String[] args) throws Exception {
+        new T6855990().run();
     }
 
-    public void run() {
-        String[] args = { "-classpath", System.getProperty("test.classes", "."), "-v", "Test" };
+    public void run() throws Exception {
+        @Simple String[] args = { "-c", "-XDdetails:typeAnnotations", "T6855990" };
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         int rc = com.sun.tools.javap.Main.run(args, pw);
-        if (rc != 0)
-            throw new Error("javap failed; exit " + rc);
-
+        pw.close();
         String out = sw.toString();
         System.out.println(out);
-
-        for (String line: out.split("\n")) {
-            String match = "[ \t]+[0-9]+:[ \t]+invokevirtual[ \t]+#[0-9]+;[ \t]+// Method \"\\[Ljava/lang/String;\".clone:\\(\\)Ljava/lang/Object;";
-            if (line.matches(match))
-                return;
-        }
-        throw new Error("expected string not found in javap output");
+        if (out.indexOf("@Simple: LOCAL_VARIABLE") == -1)
+            throw new Exception("expected output not found");
     }
 }
 
-class Test {
-    public static void main(String[] args) {
-        args.clone();
-    }
-}
+@interface Simple { }
+

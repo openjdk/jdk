@@ -21,39 +21,24 @@
  * have any questions.
  */
 
-/*
+/**
  * @test
- * @bug 6843077
- * @summary compiler crashes when visiting inner classes
- * @author Mahmood Ali
- * @compile -source 1.7 InnerClass.java
+ * @bug     6862608
+ * @summary rich diagnostic sometimes contain wrong type variable numbering
+ * @author  mcimadamore
+ * @compile/fail/ref=T6862608a.out -XDrawDiagnostics -XDdiags=disambiguateTvars,where T6862608a.java
  */
 
-class InnerClass {
 
-    InnerClass() {}
-    InnerClass(Object o) {}
+import java.util.*;
 
-    private void a() {
-        new Object() {
-            public <R> void method() { }
-        };
+class T6862608a {
+
+    <T> Comparator<T> compound(Iterable<? extends Comparator<? super T>> it) {
+        return null;
     }
 
-    Object f1 = new InnerClass() {
-            <R> void method() { }
-        };
-
-    Object f2 = new InnerClass() {
-            <@A R> void method() { }
-        };
-
-    Object f3 = new InnerClass(null) {
-            <R> void method() { }
-        };
-
-    Object f4 = new InnerClass(null) {
-            <@A R> void method() { }
-        };
-    @interface A { }
+    public void test(List<Comparator<?>> x) {
+        Comparator<String> c3 = compound(x);
+    }
 }

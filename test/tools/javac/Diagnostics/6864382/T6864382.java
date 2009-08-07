@@ -21,39 +21,12 @@
  * have any questions.
  */
 
-/*
+/**
  * @test
- * @bug 6843077
- * @summary compiler crashes when visiting inner classes
- * @author Mahmood Ali
- * @compile -source 1.7 InnerClass.java
+ * @bug     6864382
+ * @summary NullPointerException when compiling a negative java source
+ * @author  mcimadamore
+ * @compile/fail/ref=T6864382.out -XDrawDiagnostics  T6864382.java
  */
 
-class InnerClass {
-
-    InnerClass() {}
-    InnerClass(Object o) {}
-
-    private void a() {
-        new Object() {
-            public <R> void method() { }
-        };
-    }
-
-    Object f1 = new InnerClass() {
-            <R> void method() { }
-        };
-
-    Object f2 = new InnerClass() {
-            <@A R> void method() { }
-        };
-
-    Object f3 = new InnerClass(null) {
-            <R> void method() { }
-        };
-
-    Object f4 = new InnerClass(null) {
-            <@A R> void method() { }
-        };
-    @interface A { }
-}
+class T6864382<T> extends T {}

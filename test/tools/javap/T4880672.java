@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,26 @@
  * have any questions.
  */
 
+
 /*
  * @test
- * @bug 4975569 6622215
- * @summary javap doesn't print new flag bits
+ * @bug 4880672
+ * @summary javap does not output inner interfaces of an interface
  */
 
 import java.io.*;
 import java.util.*;
 
-public class T4975569
+public class T4880672
 {
     public static void main(String... args) {
-        new T4975569().run();
+        new T4880672().run();
     }
 
     void run() {
-        verify("T4975569$Anno", "flags: ACC_INTERFACE, ACC_ABSTRACT, ACC_ANNOTATION");
-        verify("T4975569$E",    "flags: ACC_FINAL, ACC_SUPER, ACC_ENUM");
-        verify("T4975569$S",    "flags: ACC_BRIDGE, ACC_SYNTHETIC",
-                                "InnerClasses:\n       static");
-        verify("T4975569$V",    "void m(java.lang.String...)",
-                                "flags: ACC_VARARGS");
-        verify("T4975569$Prot", "InnerClasses:\n       protected");
-        //verify("T4975569$Priv", "InnerClasses");
+        verify("java.util.Map", "public interface java.util.Map$Entry");
+        verify("T4880672", "class T4880672$A$B extends java.lang.Object");
+        verify("C", ""); // must not give error if no InnerClasses attribute
         if (errors > 0)
             throw new Error(errors + " found.");
     }
@@ -68,27 +64,23 @@ public class T4975569
         String testClasses = System.getProperty("test.classes", ".");
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
-        String[] args = { "-v", "-classpath", testClasses, className };
+        String[] args = { "-XDinner", "-classpath", testClasses, className };
         int rc = com.sun.tools.javap.Main.run(args, out);
-        if (rc != 0)
-            throw new Error("javap failed. rc=" + rc);
         out.close();
         String output = sw.toString();
         System.out.println("class " + className);
         System.out.println(output);
+        if (rc != 0)
+            throw new Error("javap failed. rc=" + rc);
+        if (output.indexOf("Error:") != -1)
+            throw new Error("javap reported error.");
         return output;
     }
 
-    List x() { return null; };
-
-    class V { void m(String... args) { } }
-    enum E { e; }
-    @interface Anno { }
-    static class S extends T4975569 {
-        ArrayList x() { return null; }
+    class A {
+        class B { }
     }
-
-    protected class Prot { }
-    //private class Priv { int i; }
 }
+
+class C { }
 
