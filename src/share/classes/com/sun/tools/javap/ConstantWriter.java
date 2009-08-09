@@ -62,69 +62,69 @@ public class ConstantWriter extends BasicWriter {
     protected void writeConstantPool(ConstantPool constant_pool) {
         ConstantPool.Visitor<Integer, Void> v = new ConstantPool.Visitor<Integer,Void>() {
             public Integer visitClass(CONSTANT_Class_info info, Void p) {
-                print("#" + info.name_index + ";");
+                print("#" + info.name_index);
                 tab();
                 println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitDouble(CONSTANT_Double_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 2;
             }
 
             public Integer visitFieldref(CONSTANT_Fieldref_info info, Void p) {
-                print("#" + info.class_index + ".#" + info.name_and_type_index + ";");
+                print("#" + info.class_index + ".#" + info.name_and_type_index);
                 tab();
                 println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitFloat(CONSTANT_Float_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 1;
             }
 
             public Integer visitInteger(CONSTANT_Integer_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 1;
             }
 
             public Integer visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, Void p) {
-                print("#" + info.class_index + ".#" + info.name_and_type_index + ";");
+                print("#" + info.class_index + ".#" + info.name_and_type_index);
                 tab();
                 println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitLong(CONSTANT_Long_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 2;
             }
 
             public Integer visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
-                print("#" + info.name_index + ":#" + info.type_index + ";");
+                print("#" + info.name_index + ":#" + info.type_index);
                 tab();
                 println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitMethodref(CONSTANT_Methodref_info info, Void p) {
-                print("#" + info.class_index + ".#" + info.name_and_type_index + ";");
+                print("#" + info.class_index + ".#" + info.name_and_type_index);
                 tab();
                 println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitString(CONSTANT_String_info info, Void p) {
-                print("#" + info.string_index + ";");
+                print("#" + info.string_index);
                 tab();
                 println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitUtf8(CONSTANT_Utf8_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 1;
             }
 
