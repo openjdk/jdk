@@ -117,7 +117,7 @@ class CodeWriter extends BasicWriter {
     }
 
     public void writeInstr(Instruction instr) {
-        print(String.format("%4d: %-12s ", instr.getPC(), instr.getMnemonic()));
+        print(String.format("%4d: %-13s ", instr.getPC(), instr.getMnemonic()));
         instr.accept(instructionPrinter, null);
         println();
     }

@@ -134,10 +134,10 @@ public class ConstantWriter extends BasicWriter {
         int width = String.valueOf(constant_pool.size()).length() + 1;
         int cpx = 1;
         while (cpx < constant_pool.size()) {
-            print(String.format("const %" + width + "s", ("#" + cpx)));
+            print(String.format("%" + width + "s", ("#" + cpx)));
             try {
                 CPInfo cpInfo = constant_pool.get(cpx);
-                print(String.format(" = %-15s ", tagName(cpInfo.getTag())));
+                print(String.format(" = %-18s ", cpTagName(cpInfo)));
                 cpx += cpInfo.accept(v, null);
             } catch (ConstantPool.InvalidIndex ex) {
                 // should not happen
@@ -178,10 +178,15 @@ public class ConstantWriter extends BasicWriter {
         print(tagName(tag) + " " + stringValue(cpInfo));
     }
 
+    String cpTagName(CPInfo cpInfo) {
+        String n = cpInfo.getClass().getSimpleName();
+        return n.replace("CONSTANT_", "").replace("_info", "");
+    }
+
     String tagName(int tag) {
         switch (tag) {
             case CONSTANT_Utf8:
-                return "Asciz";
+                return "Utf8";
             case CONSTANT_Integer:
                 return "int";
             case CONSTANT_Float:
@@ -203,7 +208,7 @@ public class ConstantWriter extends BasicWriter {
             case CONSTANT_NameAndType:
                 return "NameAndType";
             default:
-                return "unknown tag";
+                return "(unknown tag)";
         }
     }
 
