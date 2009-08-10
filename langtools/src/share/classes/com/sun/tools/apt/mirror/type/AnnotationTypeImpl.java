@@ -36,7 +36,7 @@ import com.sun.tools.javac.code.Type;
 /**
  * Implementation of AnnotationType
  */
-
+@SuppressWarnings("deprecation")
 public class AnnotationTypeImpl extends InterfaceTypeImpl
                                 implements AnnotationType {
 

@@ -41,6 +41,7 @@ FILES_java = \
 	sun/net/NetProperties.java \
 	sun/net/NetHooks.java \
 	sun/net/util/IPAddressUtil.java \
+	sun/net/util/URLUtil.java \
 	sun/net/dns/ResolverConfiguration.java \
 	sun/net/dns/ResolverConfigurationImpl.java \
 	sun/net/ftp/FtpClient.java \

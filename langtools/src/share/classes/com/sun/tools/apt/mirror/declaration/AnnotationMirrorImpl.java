@@ -42,7 +42,7 @@ import com.sun.tools.javac.util.Pair;
 /**
  * Implementation of AnnotationMirror
  */
-
+@SuppressWarnings("deprecation")
 public class AnnotationMirrorImpl implements AnnotationMirror {
 
     protected final AptEnv env;

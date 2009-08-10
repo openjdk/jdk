@@ -25,20 +25,24 @@
 
 package com.sun.mirror.apt;
 
-
 import com.sun.mirror.util.SourcePosition;
-
 
 /**
  * A <tt>Messager</tt> provides the way for
  * an annotation processor to report error messages, warnings, and
  * other notices.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this interface is {@link
+ * javax.annotation.processing.Messager}.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @since 1.5
  */
-
+@Deprecated
+@SuppressWarnings("deprecation")
 public interface Messager {
 
     /**

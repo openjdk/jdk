@@ -41,7 +41,7 @@ import static com.sun.tools.javac.code.TypeTags.*;
 /**
  * Utilities for constructing type objects.
  */
-
+@SuppressWarnings("deprecation")
 public class TypeMaker {
 
     private final AptEnv env;
