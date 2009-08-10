@@ -117,7 +117,7 @@ class CodeWriter extends BasicWriter {
     }
 
     public void writeInstr(Instruction instr) {
-        print(String.format("%4d: %-12s ", instr.getPC(), instr.getMnemonic()));
+        print(String.format("%4d: %-13s ", instr.getPC(), instr.getMnemonic()));
         instr.accept(instructionPrinter, null);
         println();
     }
@@ -140,7 +140,7 @@ class CodeWriter extends BasicWriter {
         }
 
         public Void visitConstantPoolRef(Instruction instr, int index, Void p) {
-            print("#" + index + ";");
+            print("#" + index);
             tab();
             print("// ");
             printConstant(index);
@@ -148,7 +148,7 @@ class CodeWriter extends BasicWriter {
         }
 
         public Void visitConstantPoolRefAndValue(Instruction instr, int index, int value, Void p) {
-            print("#" + index + ",  " + value + ";");
+            print("#" + index + ",  " + value);
             tab();
             print("// ");
             printConstant(index);
@@ -170,7 +170,7 @@ class CodeWriter extends BasicWriter {
             print("{ // " + npairs);
             indent(+1);
             for (int i = 0; i < npairs; i++) {
-                print("\n" + matches[i] + ": " + (pc + offsets[i]) + ";");
+                print("\n" + matches[i] + ": " + (pc + offsets[i]));
             }
             print("\ndefault: " + (pc + default_) + " }");
             indent(-1);
@@ -182,7 +182,7 @@ class CodeWriter extends BasicWriter {
             print("{ //" + low + " to " + high);
             indent(+1);
             for (int i = 0; i < offsets.length; i++) {
-                print("\n" + (low + i) + ": " + (pc + offsets[i]) + ";");
+                print("\n" + (low + i) + ": " + (pc + offsets[i]));
             }
             print("\ndefault: " + (pc + default_) + " }");
             indent(-1);
