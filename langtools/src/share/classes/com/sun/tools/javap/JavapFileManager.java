@@ -44,6 +44,7 @@ import com.sun.tools.javac.util.Context;
 class JavapFileManager extends JavacFileManager {
     private JavapFileManager(Context context, Charset charset) {
         super(context, true, charset);
+        setIgnoreSymbolFile(true);
     }
 
     static JavapFileManager create(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log, Options options) {

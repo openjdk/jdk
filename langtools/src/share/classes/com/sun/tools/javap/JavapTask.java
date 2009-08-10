@@ -235,12 +235,6 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             }
         },
 
-        new Option(false, "-XDignore.symbol.file") {
-            void process(JavapTask task, String opt, String arg) {
-                task.options.ignoreSymbolFile = true;
-            }
-        },
-
         new Option(false, "-XDdetails") {
             void process(JavapTask task, String opt, String arg) {
                 task.options.details = EnumSet.allOf(InstructionDetailWriter.Kind.class);
@@ -476,9 +470,6 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             }
             throw new BadArgs("err.incompatible.options", sb);
         }
-
-        if (options.ignoreSymbolFile && fileManager instanceof JavapFileManager)
-            ((JavapFileManager) fileManager).setIgnoreSymbolFile(true);
 
         if ((classes == null || classes.size() == 0) &&
                 !(noArgs || options.help || options.version || options.fullVersion)) {

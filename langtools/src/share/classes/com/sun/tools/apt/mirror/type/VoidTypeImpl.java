@@ -34,7 +34,7 @@ import com.sun.tools.apt.mirror.AptEnv;
 /**
  * Implementation of VoidType.
  */
-
+@SuppressWarnings("deprecation")
 class VoidTypeImpl extends TypeMirrorImpl implements VoidType {
 
     VoidTypeImpl(AptEnv env) {

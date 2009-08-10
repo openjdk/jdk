@@ -88,5 +88,4 @@ public class Options {
 
     public boolean compat;             // bug-for-bug compatibility mode with old javap
     public boolean jsr277;
-    public boolean ignoreSymbolFile;   // file manager should ignore ct.sym
 }

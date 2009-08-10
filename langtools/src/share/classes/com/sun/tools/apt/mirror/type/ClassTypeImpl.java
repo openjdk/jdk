@@ -36,7 +36,7 @@ import com.sun.tools.javac.code.Type;
 /**
  * Implementation of ClassType
  */
-
+@SuppressWarnings("deprecation")
 public class ClassTypeImpl extends DeclaredTypeImpl implements ClassType {
 
     ClassTypeImpl(AptEnv env, Type.ClassType type) {

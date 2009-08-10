@@ -26,13 +26,10 @@
 package javax.swing;
 
 import java.awt.*;
-import java.awt.event.*;
 
 import java.beans.PropertyVetoException;
 import java.beans.PropertyChangeEvent;
-import java.util.EventListener;
 
-import javax.swing.border.Border;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
 import javax.swing.plaf.*;
@@ -40,7 +37,6 @@ import javax.swing.plaf.*;
 import javax.accessibility.*;
 
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 import java.lang.StringBuilder;
 import java.beans.PropertyChangeListener;
@@ -1459,19 +1455,22 @@ public class JInternalFrame extends JComponent implements
             SwingUtilities2.compositeRequestFocus(getDesktopIcon());
         }
         else {
-            // FocusPropertyChangeListener will eventually update
-            // lastFocusOwner. As focus requests are asynchronous
-            // lastFocusOwner may be accessed before it has been correctly
-            // updated. To avoid any problems, lastFocusOwner is immediately
-            // set, assuming the request will succeed.
-            lastFocusOwner = getMostRecentFocusOwner();
-            if (lastFocusOwner == null) {
-                // Make sure focus is restored somewhere, so that
-                // we don't leave a focused component in another frame while
-                // this frame is selected.
-                lastFocusOwner = getContentPane();
+            Component component = KeyboardFocusManager.getCurrentKeyboardFocusManager().getPermanentFocusOwner();
+            if ((component == null) || !SwingUtilities.isDescendingFrom(component, this)) {
+                // FocusPropertyChangeListener will eventually update
+                // lastFocusOwner. As focus requests are asynchronous
+                // lastFocusOwner may be accessed before it has been correctly
+                // updated. To avoid any problems, lastFocusOwner is immediately
+                // set, assuming the request will succeed.
+                setLastFocusOwner(getMostRecentFocusOwner());
+                if (lastFocusOwner == null) {
+                    // Make sure focus is restored somewhere, so that
+                    // we don't leave a focused component in another frame while
+                    // this frame is selected.
+                    setLastFocusOwner(getContentPane());
+                }
+                lastFocusOwner.requestFocus();
             }
-            lastFocusOwner.requestFocus();
         }
     }
 

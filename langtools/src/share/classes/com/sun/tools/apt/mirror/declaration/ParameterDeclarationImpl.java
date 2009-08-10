@@ -39,7 +39,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 /**
  * Implementation of ParameterDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class ParameterDeclarationImpl extends DeclarationImpl
                                       implements ParameterDeclaration
 {
