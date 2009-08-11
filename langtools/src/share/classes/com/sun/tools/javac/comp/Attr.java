@@ -1239,7 +1239,10 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 if (site.tag == CLASS) {
-                    if (site.getEnclosingType().tag == CLASS) {
+                    Type encl = site.getEnclosingType();
+                    while (encl != null && encl.tag == TYPEVAR)
+                        encl = encl.getUpperBound();
+                    if (encl.tag == CLASS) {
                         // we are calling a nested class
 
                         if (tree.meth.getTag() == JCTree.SELECT) {
@@ -1251,7 +1254,7 @@ public class Attr extends JCTree.Visitor {
                             // to the outer instance type of the class.
                             chk.checkRefType(qualifier.pos(),
                                              attribExpr(qualifier, localEnv,
-                                                        site.getEnclosingType()));
+                                                        encl));
                         } else if (methName == names._super) {
                             // qualifier omitted; check for existence
                             // of an appropriate implicit qualifier.
@@ -2042,7 +2045,7 @@ public class Attr extends JCTree.Visitor {
                 Symbol sym = (site.getUpperBound() != null)
                     ? selectSym(tree, capture(site.getUpperBound()), env, pt, pkind)
                     : null;
-                if (sym == null || isType(sym)) {
+                if (sym == null) {
                     log.error(pos, "type.var.cant.be.deref");
                     return syms.errSymbol;
                 } else {
