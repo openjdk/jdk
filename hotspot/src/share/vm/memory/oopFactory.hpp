@@ -90,7 +90,7 @@ class oopFactory: AllStatic {
 
   // Instance classes
   static klassOop        new_instanceKlass(int vtable_len, int itable_len, int static_field_size,
-                                           int nonstatic_oop_map_size, ReferenceType rt, TRAPS);
+                                           int nonstatic_oop_map_count, ReferenceType rt, TRAPS);
 
   // Methods
 private:
