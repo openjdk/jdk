@@ -25,6 +25,7 @@
 
 package sun.security.jgss.krb5;
 
+import com.sun.security.jgss.InquireType;
 import org.ietf.jgss.*;
 import sun.misc.HexDumpEncoder;
 import sun.security.jgss.GSSUtil;
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.security.Provider;
 import java.security.AccessController;
 import java.security.AccessControlContext;
+import java.security.Key;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import javax.crypto.Cipher;
@@ -1282,5 +1284,55 @@ class Krb5Context implements GSSContextSpi {
     GSSCaller getCaller() {
         // Currently used by InitialToken only
         return caller;
+    }
+
+    /**
+     * The session key returned by inquireSecContext(KRB5_INQ_SSPI_SESSION_KEY)
+     */
+    static class KerberosSessionKey implements Key {
+        private EncryptionKey key;
+
+        KerberosSessionKey(EncryptionKey key) {
+            this.key = key;
+        }
+
+        @Override
+        public String getAlgorithm() {
+            return Integer.toString(key.getEType());
+        }
+
+        @Override
+        public String getFormat() {
+            return "RAW";
+        }
+
+        @Override
+        public byte[] getEncoded() {
+            return key.getBytes().clone();
+        }
+
+        @Override
+        public String toString() {
+            return "Kerberos session key: etype: " + key.getEType() + "\n" +
+                    new sun.misc.HexDumpEncoder().encodeBuffer(key.getBytes());
+        }
+    }
+
+    /**
+     * Return the mechanism-specific attribute associated with {@code type}.
+     * Only KRB5_GET_SESSION_KEY is supported now.
+     */
+    public Object inquireSecContext(InquireType type)
+            throws GSSException {
+        if (type == InquireType.KRB5_GET_SESSION_KEY) {
+            if (key == null) {
+                throw new GSSException(GSSException.NO_CONTEXT, -1,
+                        "Session key not established.");
+            } else {
+                return new KerberosSessionKey(key);
+            }
+        }
+        throw new GSSException(GSSException.UNAVAILABLE, -1,
+                "Inquire type not supported.");
     }
 }
