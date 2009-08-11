@@ -1554,13 +1554,18 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes, true, tree.varargsElement != null);
                 assert sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous();
                 tree.constructor = sym;
-                tree.constructorType = checkMethod(clazztype,
-                                            tree.constructor,
-                                            localEnv,
-                                            tree.args,
-                                            argtypes,
-                                            typeargtypes,
-                                            localEnv.info.varArgs);
+                if (tree.constructor.kind > ERRONEOUS) {
+                    tree.constructorType =  syms.errType;
+                }
+                else {
+                    tree.constructorType = checkMethod(clazztype,
+                            tree.constructor,
+                            localEnv,
+                            tree.args,
+                            argtypes,
+                            typeargtypes,
+                            localEnv.info.varArgs);
+                }
             }
 
             if (tree.constructor != null && tree.constructor.kind == MTH)
