@@ -1247,14 +1247,18 @@ public class Types {
 
             @Override
             public Boolean visitClassType(ClassType t, Void ignored) {
-                if (!t.isParameterized())
-                    return true;
+                if (t.isCompound())
+                    return false;
+                else {
+                    if (!t.isParameterized())
+                        return true;
 
-                for (Type param : t.allparams()) {
-                    if (!param.isUnbound())
-                        return false;
+                    for (Type param : t.allparams()) {
+                        if (!param.isUnbound())
+                            return false;
+                    }
+                    return true;
                 }
-                return true;
             }
 
             @Override
