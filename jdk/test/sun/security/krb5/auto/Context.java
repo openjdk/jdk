@@ -41,6 +41,7 @@ import org.ietf.jgss.MessageProp;
 import org.ietf.jgss.Oid;
 import com.sun.security.jgss.ExtendedGSSContext;
 import com.sun.security.jgss.InquireType;
+import com.sun.security.jgss.AuthorizationDataEntry;
 
 /**
  * Context of a JGSS subject, encapsulating Subject and GSSContext.
@@ -288,6 +289,23 @@ public class Context {
                     throw new Exception("Session key cannot be null");
                 }
                 System.out.println("Session key is: " + k);
+                boolean[] flags = (boolean[])ex.inquireSecContext(
+                        InquireType.KRB5_GET_TKT_FLAGS);
+                if (flags == null) {
+                    throw new Exception("Ticket flags cannot be null");
+                }
+                System.out.println("Ticket flags is: " + Arrays.toString(flags));
+                String authTime = (String)ex.inquireSecContext(
+                        InquireType.KRB5_GET_AUTHTIME);
+                if (authTime == null) {
+                    throw new Exception("Auth time cannot be null");
+                }
+                System.out.println("AuthTime is: " + authTime);
+                if (!x.isInitiator()) {
+                    AuthorizationDataEntry[] ad = (AuthorizationDataEntry[])ex.inquireSecContext(
+                            InquireType.KRB5_GET_AUTHZ_DATA);
+                    System.out.println("AuthzData is: " + Arrays.toString(ad));
+                }
             }
         }
     }
