@@ -596,34 +596,56 @@ public class Lower extends TreeTranslator {
  * Symbol manipulation utilities
  *************************************************************************/
 
-    /** Report a conflict between a user symbol and a synthetic symbol.
-     */
-    private void duplicateError(DiagnosticPosition pos, Symbol sym) {
-        if (!sym.type.isErroneous()) {
-            log.error(pos, "synthetic.name.conflict", sym, sym.location());
-        }
-    }
-
     /** Enter a synthetic symbol in a given scope, but complain if there was already one there.
      *  @param pos           Position for error reporting.
      *  @param sym           The symbol.
      *  @param s             The scope.
      */
     private void enterSynthetic(DiagnosticPosition pos, Symbol sym, Scope s) {
-        if (sym.name != names.error && sym.name != names.empty) {
-            for (Scope.Entry e = s.lookup(sym.name); e.scope == s; e = e.next()) {
-                if (sym != e.sym && sym.kind == e.sym.kind) {
-                    // VM allows methods and variables with differing types
-                    if ((sym.kind & (MTH|VAR)) != 0 &&
-                        !types.erasure(sym.type).equals(types.erasure(e.sym.type)))
-                        continue;
-                    duplicateError(pos, e.sym);
-                    break;
-                }
-            }
-        }
         s.enter(sym);
     }
+
+    /** Check whether synthetic symbols generated during lowering conflict
+     *  with user-defined symbols.
+     *
+     *  @param translatedTrees lowered class trees
+     */
+    void checkConflicts(List<JCTree> translatedTrees) {
+        for (JCTree t : translatedTrees) {
+            t.accept(conflictsChecker);
+        }
+    }
+
+    JCTree.Visitor conflictsChecker = new TreeScanner() {
+
+        TypeSymbol currentClass;
+
+        @Override
+        public void visitMethodDef(JCMethodDecl that) {
+            chk.checkConflicts(that.pos(), that.sym, currentClass);
+            super.visitMethodDef(that);
+        }
+
+        @Override
+        public void visitVarDef(JCVariableDecl that) {
+            if (that.sym.owner.kind == TYP) {
+                chk.checkConflicts(that.pos(), that.sym, currentClass);
+            }
+            super.visitVarDef(that);
+        }
+
+        @Override
+        public void visitClassDef(JCClassDecl that) {
+            TypeSymbol prevCurrentClass = currentClass;
+            currentClass = that.sym;
+            try {
+                super.visitClassDef(that);
+            }
+            finally {
+                currentClass = prevCurrentClass;
+            }
+        }
+    };
 
     /** Look up a synthetic name in a given scope.
      *  @param scope        The scope.
@@ -3192,6 +3214,7 @@ public class Lower extends TreeTranslator {
                 makeAccessible(l.head);
             for (EnumMapping map : enumSwitchMap.values())
                 map.translate();
+            checkConflicts(this.translated.toList());
             translated = this.translated;
         } finally {
             // note that recursive invocations of this method fail hard
