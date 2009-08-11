@@ -71,7 +71,6 @@
 
 // forward declaration for class -- see below for definition
 class SuperTypeClosure;
-class OopMapBlock;
 class JNIid;
 class jniIdMapBase;
 class BreakpointInfo;
@@ -98,6 +97,29 @@ class FieldPrinter: public FieldClosure {
    void do_field(fieldDescriptor* fd);
 };
 #endif  // !PRODUCT
+
+// ValueObjs embedded in klass. Describes where oops are located in instances of
+// this klass.
+class OopMapBlock VALUE_OBJ_CLASS_SPEC {
+ public:
+  // Byte offset of the first oop mapped by this block.
+  jushort offset() const          { return _offset; }
+  void set_offset(jushort offset) { _offset = offset; }
+
+  // Number of oops in this block.
+  jushort count() const         { return _count; }
+  void set_count(jushort count) { _count = count; }
+
+  // sizeof(OopMapBlock) in HeapWords.
+  static const int size_in_words() {
+    return align_size_up(int(sizeof(OopMapBlock)), HeapWordSize) >>
+      LogHeapWordSize;
+  }
+
+ private:
+  jushort _offset;
+  jushort _count;
+};
 
 class instanceKlass: public Klass {
   friend class VMStructs;
@@ -191,7 +213,7 @@ class instanceKlass: public Klass {
   int             _nonstatic_field_size;
   int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
   int             _static_oop_field_size;// number of static oop fields in this klass
-  int             _nonstatic_oop_map_size;// number of nonstatic oop-map blocks allocated at end of this klass
+  int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
   bool            _rewritten;            // methods rewritten.
   bool            _has_nonstatic_fields; // for sizing with UseCompressedOops
@@ -424,8 +446,16 @@ class instanceKlass: public Klass {
   void set_source_debug_extension(symbolOop n){ oop_store_without_check((oop*) &_source_debug_extension, (oop) n); }
 
   // nonstatic oop-map blocks
-  int nonstatic_oop_map_size() const        { return _nonstatic_oop_map_size; }
-  void set_nonstatic_oop_map_size(int size) { _nonstatic_oop_map_size = size; }
+  static int nonstatic_oop_map_size(int oop_map_count) {
+    return oop_map_count * OopMapBlock::size_in_words();
+  }
+  int nonstatic_oop_map_count() const {
+    return _nonstatic_oop_map_size / OopMapBlock::size_in_words();
+  }
+  int nonstatic_oop_map_size() const { return _nonstatic_oop_map_size; }
+  void set_nonstatic_oop_map_size(int words) {
+    _nonstatic_oop_map_size = words;
+  }
 
   // RedefineClasses() support for previous versions:
   void add_previous_version(instanceKlassHandle ikh, BitMap *emcp_methods,
@@ -838,21 +868,6 @@ inline u2 instanceKlass::next_method_idnum() {
   }
 }
 
-
-// ValueObjs embedded in klass. Describes where oops are located in instances of this klass.
-
-class OopMapBlock VALUE_OBJ_CLASS_SPEC {
- private:
-  jushort _offset;    // Offset of first oop in oop-map block
-  jushort _length;    // Length of oop-map block
- public:
-  // Accessors
-  jushort offset() const          { return _offset; }
-  void set_offset(jushort offset) { _offset = offset; }
-
-  jushort length() const          { return _length; }
-  void set_length(jushort length) { _length = length; }
-};
 
 /* JNIid class for jfieldIDs only */
 class JNIid: public CHeapObj {
