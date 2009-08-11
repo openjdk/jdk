@@ -65,6 +65,7 @@ public class Check {
     private final Types types;
     private final JCDiagnostic.Factory diags;
     private final boolean skipAnnotations;
+    private boolean warnOnSyntheticConflicts;
     private final TreeInfo treeinfo;
 
     // The set of lint options currently in effect. It is initialized
@@ -99,6 +100,7 @@ public class Check {
         allowAnnotations = source.allowAnnotations();
         complexInference = options.get("-complexinference") != null;
         skipAnnotations = options.get("skipAnnotations") != null;
+        warnOnSyntheticConflicts = options.get("warnOnSyntheticConflicts") != null;
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
@@ -1707,6 +1709,35 @@ public class Check {
                     return;
         }
         checkCompatibleConcretes(pos, c);
+    }
+
+    void checkConflicts(DiagnosticPosition pos, Symbol sym, TypeSymbol c) {
+        for (Type ct = c.type; ct != Type.noType ; ct = types.supertype(ct)) {
+            for (Scope.Entry e = ct.tsym.members().lookup(sym.name); e.scope == ct.tsym.members(); e = e.next()) {
+                // VM allows methods and variables with differing types
+                if (sym.kind == e.sym.kind &&
+                    types.isSameType(types.erasure(sym.type), types.erasure(e.sym.type)) &&
+                    sym != e.sym &&
+                    (sym.flags() & Flags.SYNTHETIC) != (e.sym.flags() & Flags.SYNTHETIC) &&
+                    (sym.flags() & BRIDGE) == 0 && (e.sym.flags() & BRIDGE) == 0) {
+                    syntheticError(pos, (e.sym.flags() & SYNTHETIC) == 0 ? e.sym : sym);
+                    return;
+                }
+            }
+        }
+    }
+
+    /** Report a conflict between a user symbol and a synthetic symbol.
+     */
+    private void syntheticError(DiagnosticPosition pos, Symbol sym) {
+        if (!sym.type.isErroneous()) {
+            if (warnOnSyntheticConflicts) {
+                log.warning(pos, "synthetic.name.conflict", sym, sym.location());
+            }
+            else {
+                log.error(pos, "synthetic.name.conflict", sym, sym.location());
+            }
+        }
     }
 
     /** Check that class c does not implement directly or indirectly
