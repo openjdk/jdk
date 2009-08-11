@@ -45,12 +45,13 @@
 #
 security.provider.1=sun.security.provider.Sun
 security.provider.2=sun.security.rsa.SunRsaSign
-security.provider.3=com.sun.net.ssl.internal.ssl.Provider
-security.provider.4=com.sun.crypto.provider.SunJCE
-security.provider.5=sun.security.jgss.SunProvider
-security.provider.6=com.sun.security.sasl.Provider
-security.provider.7=org.jcp.xml.dsig.internal.dom.XMLDSigRI
-security.provider.8=sun.security.smartcardio.SunPCSC
+security.provider.3=sun.security.ec.SunEC
+security.provider.4=com.sun.net.ssl.internal.ssl.Provider
+security.provider.5=com.sun.crypto.provider.SunJCE
+security.provider.6=sun.security.jgss.SunProvider
+security.provider.7=com.sun.security.sasl.Provider
+security.provider.8=org.jcp.xml.dsig.internal.dom.XMLDSigRI
+security.provider.9=sun.security.smartcardio.SunPCSC
 
 #
 # Select the source of seed data for SecureRandom. By default an
