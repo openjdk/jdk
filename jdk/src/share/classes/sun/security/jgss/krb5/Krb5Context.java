@@ -1290,7 +1290,7 @@ class Krb5Context implements GSSContextSpi {
      * The session key returned by inquireSecContext(KRB5_INQ_SSPI_SESSION_KEY)
      */
     static class KerberosSessionKey implements Key {
-        private EncryptionKey key;
+        private final EncryptionKey key;
 
         KerberosSessionKey(EncryptionKey key) {
             this.key = key;
@@ -1320,19 +1320,46 @@ class Krb5Context implements GSSContextSpi {
 
     /**
      * Return the mechanism-specific attribute associated with {@code type}.
-     * Only KRB5_GET_SESSION_KEY is supported now.
      */
     public Object inquireSecContext(InquireType type)
             throws GSSException {
-        if (type == InquireType.KRB5_GET_SESSION_KEY) {
-            if (key == null) {
-                throw new GSSException(GSSException.NO_CONTEXT, -1,
-                        "Session key not established.");
-            } else {
+        if (!isEstablished()) {
+             throw new GSSException(GSSException.NO_CONTEXT, -1,
+                     "Security context not established.");
+        }
+        switch (type) {
+            case KRB5_GET_SESSION_KEY:
                 return new KerberosSessionKey(key);
-            }
+            case KRB5_GET_TKT_FLAGS:
+                return tktFlags.clone();
+            case KRB5_GET_AUTHZ_DATA:
+                if (isInitiator()) {
+                    throw new GSSException(GSSException.UNAVAILABLE, -1,
+                            "AuthzData not available on initiator side.");
+                } else {
+                    return (authzData==null)?null:authzData.clone();
+                }
+            case KRB5_GET_AUTHTIME:
+                return authTime;
         }
         throw new GSSException(GSSException.UNAVAILABLE, -1,
                 "Inquire type not supported.");
+    }
+
+    // Helpers for inquireSecContext
+    private boolean[] tktFlags;
+    private String authTime;
+    private com.sun.security.jgss.AuthorizationDataEntry[] authzData;
+
+    public void setTktFlags(boolean[] tktFlags) {
+        this.tktFlags = tktFlags;
+    }
+
+    public void setAuthTime(String authTime) {
+        this.authTime = authTime;
+    }
+
+    public void setAuthzData(com.sun.security.jgss.AuthorizationDataEntry[] authzData) {
+        this.authzData = authzData;
     }
 }

@@ -26,29 +26,43 @@
 package com.sun.security.jgss;
 
 /**
- * Attribute types that can be specified as an argument of
- * {@link com.sun.security.jgss.ExtendedGSSContext#inquireSecContext}
+ * Kerberos 5 AuthorizationData entry.
  */
-public enum InquireType {
+final public class AuthorizationDataEntry {
+
+    private final int type;
+    private final byte[] data;
+
     /**
-     * Attribute type for retrieving the session key of an
-     * established Kerberos 5 security context.
+     * Create an AuthorizationDataEntry object.
+     * @param type the ad-type
+     * @param data the ad-data, a copy of the data will be saved
+     * inside the object.
      */
-    KRB5_GET_SESSION_KEY,
+    public AuthorizationDataEntry(int type, byte[] data) {
+        this.type = type;
+        this.data = data.clone();
+    }
+
     /**
-     * Attribute type for retrieving the service ticket flags of an
-     * established Kerberos 5 security context.
+     * Get the ad-type field.
+     * @return ad-type
      */
-    KRB5_GET_TKT_FLAGS,
+    public int getType() {
+        return type;
+    }
+
     /**
-     * Attribute type for retrieving the authorization data in the
-     * service ticket of an established Kerberos 5 security context.
-     * Only supported on the acceptor side.
+     * Get a copy of the ad-data field.
+     * @return ad-data
      */
-    KRB5_GET_AUTHZ_DATA,
-    /**
-     * Attribute type for retrieving the authtime in the service ticket
-     * of an established Kerberos 5 security context.
-     */
-    KRB5_GET_AUTHTIME
+    public byte[] getData() {
+        return data.clone();
+    }
+
+    public String toString() {
+        return "AuthorizationDataEntry: type="+type+", data=" +
+                data.length + " bytes:\n" +
+                new sun.misc.HexDumpEncoder().encode(data);
+    }
 }
