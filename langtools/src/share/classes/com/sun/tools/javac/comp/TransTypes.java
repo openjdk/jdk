@@ -631,7 +631,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitAssignop(JCAssignOp tree) {
-        tree.lhs = translate(tree.lhs, tree.operator.type.getParameterTypes().head);
+        tree.lhs = translate(tree.lhs, null);
         tree.rhs = translate(tree.rhs, tree.operator.type.getParameterTypes().tail.head);
         tree.type = erasure(tree.type);
         result = tree;
