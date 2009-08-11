@@ -972,14 +972,11 @@ class NameClassPairEnumeration implements NamingEnumeration {
     }
 
     /*
-     * ctx will be closed when no longer needed by the enumeration.
+     * ctx will be set to null when no longer needed by the enumeration.
      */
-    public void close () {
+    public void close() {
         nodes = null;
-        if (ctx != null) {
-            ctx.close();
-            ctx = null;
-        }
+        ctx = null;
     }
 
     public boolean hasMore() {
