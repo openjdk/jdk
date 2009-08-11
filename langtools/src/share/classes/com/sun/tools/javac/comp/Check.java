@@ -1043,7 +1043,7 @@ public class Check {
      *  @param thrown     The list of thrown exceptions.
      *  @param handled    The list of handled exceptions.
      */
-    List<Type> unHandled(List<Type> thrown, List<Type> handled) {
+    List<Type> unhandled(List<Type> thrown, List<Type> handled) {
         List<Type> unhandled = List.nil();
         for (List<Type> l = thrown; l.nonEmpty(); l = l.tail)
             if (!isHandled(l.head, handled)) unhandled = unhandled.prepend(l.head);
@@ -1200,29 +1200,36 @@ public class Check {
                 m.owner.isSubClass(other.owner, types)) {
                 // allow limited interoperability with covariant returns
             } else {
-                typeError(TreeInfo.diagnosticPositionFor(m, tree),
-                          diags.fragment("override.incompatible.ret",
-                                         cannotOverride(m, other)),
+                log.error(TreeInfo.diagnosticPositionFor(m, tree),
+                          "override.incompatible.ret",
+                          cannotOverride(m, other),
                           mtres, otres);
                 return;
             }
         } else if (overrideWarner.warned) {
             warnUnchecked(TreeInfo.diagnosticPositionFor(m, tree),
-                          "prob.found.req",
-                          diags.fragment("override.unchecked.ret",
-                                              uncheckedOverrides(m, other)),
-                          mtres, otres);
+                    "override.unchecked.ret",
+                    uncheckedOverrides(m, other),
+                    mtres, otres);
         }
 
         // Error if overriding method throws an exception not reported
         // by overridden method.
         List<Type> otthrown = types.subst(ot.getThrownTypes(), otvars, mtvars);
-        List<Type> unhandled = unHandled(mt.getThrownTypes(), otthrown);
-        if (unhandled.nonEmpty()) {
+        List<Type> unhandledErased = unhandled(mt.getThrownTypes(), types.erasure(otthrown));
+        List<Type> unhandledUnerased = unhandled(mt.getThrownTypes(), otthrown);
+        if (unhandledErased.nonEmpty()) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       "override.meth.doesnt.throw",
                       cannotOverride(m, other),
-                      unhandled.head);
+                      unhandledUnerased.head);
+            return;
+        }
+        else if (unhandledUnerased.nonEmpty()) {
+            warnUnchecked(TreeInfo.diagnosticPositionFor(m, tree),
+                          "override.unchecked.thrown",
+                         cannotOverride(m, other),
+                         unhandledUnerased.head);
             return;
         }
 
