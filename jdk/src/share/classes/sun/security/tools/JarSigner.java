@@ -412,6 +412,16 @@ public class JarSigner {
         }
         storetype = KeyStoreUtil.niceStoreTypeName(storetype);
 
+        try {
+            if (signedjar != null && new File(signedjar).getCanonicalPath().equals(
+                    new File(jarfile).getCanonicalPath())) {
+                signedjar = null;
+            }
+        } catch (IOException ioe) {
+            // File system error?
+            // Just ignore it.
+        }
+
         if (P11KEYSTORE.equalsIgnoreCase(storetype) ||
                 KeyStoreUtil.isWindowsKeyStore(storetype)) {
             token = true;
