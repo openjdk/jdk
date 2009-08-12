@@ -327,13 +327,45 @@ public class WrappedPlainView extends BoxView implements TabExpander {
     /**
      * Return reasonable default values for the view dimensions.  The standard
      * text terminal size 80x24 is pretty suitable for the wrapped plain view.
+     *
+     * The size should not be larger than the component housing the view's
+     * container.
      */
     private float getDefaultSpan(int axis) {
+         Container host = getContainer();
+         Component parent = null;
+
+         if (host != null) {
+            parent = host.getParent();
+         }
+
          switch (axis) {
             case View.X_AXIS:
-                return 80 * metrics.getWidths()['M'];
+               int defaultWidth = 80 * metrics.getWidths()['M'];
+               int parentWidth = 0;
+
+               if (parent != null) {
+                  parentWidth = parent.getWidth();
+               }
+
+               if (defaultWidth > parentWidth) {
+                 return parentWidth;
+               }
+               return defaultWidth;
+
             case View.Y_AXIS:
-                return 24 * metrics.getHeight();
+               int defaultHeight = 24 * metrics.getHeight();
+               int parentHeight = 0;
+
+               if (parent != null) {
+                  parentHeight = parent.getHeight();
+               }
+
+               if (defaultHeight > parentHeight) {
+                 return parentHeight;
+               }
+               return defaultHeight;
+
             default:
                 throw new IllegalArgumentException("Invalid axis: " + axis);
         }
