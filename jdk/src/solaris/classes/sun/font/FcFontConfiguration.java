@@ -90,7 +90,7 @@ public class FcFontConfiguration extends FontConfiguration {
 
         setFontConfiguration();
         readFcInfo();
-        X11FontManager fm = X11FontManager.getInstance();
+        X11FontManager fm = (X11FontManager) fontManager;
         FontConfigManager fcm = fm.getFontConfigManager();
         if (fcCompFonts == null) {
             fcCompFonts = fcm.loadFontConfig();
@@ -187,7 +187,7 @@ public class FcFontConfiguration extends FontConfiguration {
     @Override
     public String[] getPlatformFontNames() {
         HashSet<String> nameSet = new HashSet<String>();
-        X11FontManager fm = X11FontManager.getInstance();
+        X11FontManager fm = (X11FontManager) fontManager;
         FontConfigManager fcm = fm.getFontConfigManager();
         FcCompFont[] fcCompFonts = fcm.loadFontConfig();
         for (int i=0; i<fcCompFonts.length; i++) {
@@ -228,7 +228,7 @@ public class FcFontConfiguration extends FontConfiguration {
     @Override
     public CompositeFontDescriptor[] get2DCompositeFontInfo() {
 
-        X11FontManager fm = X11FontManager.getInstance();
+        X11FontManager fm = (X11FontManager) fontManager;
         FontConfigManager fcm = fm.getFontConfigManager();
         FcCompFont[] fcCompFonts = fcm.loadFontConfig();
 
@@ -363,7 +363,7 @@ public class FcFontConfiguration extends FontConfiguration {
     private void writeFcInfo() {
         Properties props = new Properties();
         props.setProperty("version", fileVersion);
-        X11FontManager fm = X11FontManager.getInstance();
+        X11FontManager fm = (X11FontManager) fontManager;
         FontConfigManager fcm = fm.getFontConfigManager();
         FontConfigInfo fcInfo = fcm.getFontConfigInfo();
         props.setProperty("fcversion", Integer.toString(fcInfo.fcVersion));
@@ -424,7 +424,7 @@ public class FcFontConfiguration extends FontConfiguration {
             return;
         }
         Properties props = new Properties();
-        X11FontManager fm = X11FontManager.getInstance();
+        X11FontManager fm = (X11FontManager) fontManager;
         FontConfigManager fcm = fm.getFontConfigManager();
         try {
             FileInputStream fis = new FileInputStream(fcFile);
