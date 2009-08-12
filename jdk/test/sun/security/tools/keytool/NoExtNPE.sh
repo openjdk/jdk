@@ -48,6 +48,9 @@ case "$OS" in
   Linux )
     FILESEP="/"
     ;;
+  CYGWIN* )
+    FILESEP="/"
+    ;;
   Windows* )
     FILESEP="\\"
     ;;

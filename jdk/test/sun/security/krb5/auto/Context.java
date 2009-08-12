@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import com.sun.security.auth.module.Krb5LoginModule;
+import java.security.Key;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
@@ -38,6 +39,9 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
 import org.ietf.jgss.Oid;
+import com.sun.security.jgss.ExtendedGSSContext;
+import com.sun.security.jgss.InquireType;
+import com.sun.security.jgss.AuthorizationDataEntry;
 
 /**
  * Context of a JGSS subject, encapsulating Subject and GSSContext.
@@ -273,6 +277,34 @@ public class Context {
                 Map map = (Map) o;
                 for (Object k : map.keySet()) {
                     System.out.println("        " + k + ": " + map.get(k));
+                }
+            }
+        }
+        if (x != null && x instanceof ExtendedGSSContext) {
+            if (x.isEstablished()) {
+                ExtendedGSSContext ex = (ExtendedGSSContext)x;
+                Key k = (Key)ex.inquireSecContext(
+                        InquireType.KRB5_GET_SESSION_KEY);
+                if (k == null) {
+                    throw new Exception("Session key cannot be null");
+                }
+                System.out.println("Session key is: " + k);
+                boolean[] flags = (boolean[])ex.inquireSecContext(
+                        InquireType.KRB5_GET_TKT_FLAGS);
+                if (flags == null) {
+                    throw new Exception("Ticket flags cannot be null");
+                }
+                System.out.println("Ticket flags is: " + Arrays.toString(flags));
+                String authTime = (String)ex.inquireSecContext(
+                        InquireType.KRB5_GET_AUTHTIME);
+                if (authTime == null) {
+                    throw new Exception("Auth time cannot be null");
+                }
+                System.out.println("AuthTime is: " + authTime);
+                if (!x.isInitiator()) {
+                    AuthorizationDataEntry[] ad = (AuthorizationDataEntry[])ex.inquireSecContext(
+                            InquireType.KRB5_GET_AUTHZ_DATA);
+                    System.out.println("AuthzData is: " + Arrays.toString(ad));
                 }
             }
         }

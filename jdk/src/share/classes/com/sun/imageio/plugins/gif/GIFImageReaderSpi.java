@@ -60,7 +60,7 @@ public class GIFImageReaderSpi extends ImageReaderSpi {
               suffixes,
               MIMETypes,
               readerClassName,
-              STANDARD_INPUT_TYPE,
+              new Class[] { ImageInputStream.class },
               writerSpiNames,
               true,
               GIFStreamMetadata.nativeMetadataFormatName,

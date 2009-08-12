@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,7 @@
 
 /**
  * @test
- * @bug 4635230
- * @bug 6283345
- * @bug 6303830
+ * @bug 4635230 6283345 6303830 6824440
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
@@ -248,8 +246,14 @@ public class GenerationTests {
         System.out.println("* Generating signature-enveloping-hmac-sha1-40.xml");
         SignatureMethod hmacSha1 = fac.newSignatureMethod
             (SignatureMethod.HMAC_SHA1, new HMACParameterSpec(40));
-        test_create_signature_enveloping(sha1, hmacSha1, null,
-            getSecretKey("secret".getBytes("ASCII")), sks, false);
+        try {
+            test_create_signature_enveloping(sha1, hmacSha1, null,
+                getSecretKey("secret".getBytes("ASCII")), sks, false);
+        } catch (Exception e) {
+            if (!(e instanceof XMLSignatureException)) {
+                throw e;
+            }
+        }
         System.out.println();
     }
 

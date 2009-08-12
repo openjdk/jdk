@@ -40,7 +40,7 @@ import com.sun.tools.javac.code.TypeTags;
 /**
  * Implementation of FieldDeclaration
  */
-
+@SuppressWarnings("deprecation")
 class FieldDeclarationImpl extends MemberDeclarationImpl
                                   implements FieldDeclaration {
 

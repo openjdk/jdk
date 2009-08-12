@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  *
- * @bug 6638195
+ * @bug 6638195 6844297
  * @author Igor Kushnirskiy
  * @summary tests if EventQueueDelegate.Delegate is invoked.
  */
@@ -47,11 +47,22 @@ public class bug6638195 {
     }
 
     private static void runTest(MyEventQueueDelegate delegate) throws Exception {
+        // We need an empty runnable here, so the next event is
+        // processed with a new EventQueueDelegate. See 6844297
+        // for details
         EventQueue.invokeLater(
             new Runnable() {
                 public void run() {
                 }
             });
+        // The following event is expected to be processed by
+        // the EventQueueDelegate instance
+        EventQueue.invokeLater(
+            new Runnable() {
+                public void run() {
+                }
+            });
+        // Finally, proceed on the main thread
         final CountDownLatch latch = new CountDownLatch(1);
         EventQueue.invokeLater(
             new Runnable() {
@@ -60,7 +71,7 @@ public class bug6638195 {
                 }
             });
         latch.await();
-        if (! delegate.allInvoked()) {
+        if (!delegate.allInvoked()) {
             throw new RuntimeException("failed");
         }
     }
@@ -125,6 +136,7 @@ public class bug6638195 {
 
         return objectMap;
     }
+
     static class MyEventQueueDelegate implements EventQueueDelegate.Delegate {
         private volatile boolean getNextEventInvoked = false;
         private volatile boolean beforeDispatchInvoked = false;
