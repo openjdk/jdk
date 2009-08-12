@@ -83,6 +83,16 @@
     
     <!-- Standard property values, if not overriden by earlier settings. -->
     <property file="${make.dir}/build.properties"/> 
+
+    <!-- launcher.java is used in the launcher scripts provided to run
+	the tools' jar files.  If it has not already been set, then
+	default it to use ${target.java.home}, if available, otherwise
+	quietly default to simply use "java". -->
+    <condition property="launcher.java" 
+	value="${target.java.home}/bin/java" else="java">
+	<isset property="target.java.home"/>
+    </condition>
+
     
     <!-- Standard target to build deliverables for JDK build. -->
 
@@ -397,7 +407,7 @@
             <attribute name="classes.dir" default="${build.classes.dir}"/>
             <attribute name="gensrc.dir" default="${build.gensrc.dir}"/>
             <attribute name="lib.dir" default="${dist.lib.dir}"/>
-            <attribute name="java" default="java"/>
+            <attribute name="java" default="${launcher.java}"/>
             <attribute name="javac.bootclasspath" default="${build.bootstrap.dir}/classes"/>
             <attribute name="javac.java.home" default="${boot.java.home}"/>
             <attribute name="javac.source" default="${javac.source}"/>
