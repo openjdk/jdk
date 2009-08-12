@@ -3287,7 +3287,7 @@ class CommandLineFlags {
   product(uintx, SharedReadWriteSize,  12*M,                                \
           "Size of read-write space in permanent generation (in bytes)")    \
                                                                             \
-  product(uintx, SharedReadOnlySize,    8*M,                                \
+  product(uintx, SharedReadOnlySize,   10*M,                                \
           "Size of read-only space in permanent generation (in bytes)")     \
                                                                             \
   product(uintx, SharedMiscDataSize,    4*M,                                \
