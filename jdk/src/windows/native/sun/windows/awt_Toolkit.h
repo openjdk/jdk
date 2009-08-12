@@ -442,7 +442,7 @@ public:
 
  private:
     static JNIEnv *m_env;
-    static HANDLE m_thread;
+    static DWORD m_threadId;
  public:
     static void SetEnv(JNIEnv *env);
     static JNIEnv* GetEnv();
