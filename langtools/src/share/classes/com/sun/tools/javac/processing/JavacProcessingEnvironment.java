@@ -136,6 +136,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      */
     Source source;
 
+    private ClassLoader processorClassLoader;
+
     /**
      * JavacMessages object used for localization
      */
@@ -203,7 +205,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             JavaFileManager fileManager = context.get(JavaFileManager.class);
             try {
                 // If processorpath is not explicitly set, use the classpath.
-                ClassLoader processorCL = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
+                processorClassLoader = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
                     ? fileManager.getClassLoader(ANNOTATION_PROCESSOR_PATH)
                     : fileManager.getClassLoader(CLASS_PATH);
 
@@ -213,9 +215,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                  * provider mechanism to create the processor iterator.
                  */
                 if (processorNames != null) {
-                    processorIterator = new NameProcessIterator(processorNames, processorCL, log);
+                    processorIterator = new NameProcessIterator(processorNames, processorClassLoader, log);
                 } else {
-                    processorIterator = new ServiceIterator(processorCL, log);
+                    processorIterator = new ServiceIterator(processorClassLoader, log);
                 }
             } catch (SecurityException e) {
                 /*
@@ -1019,9 +1021,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     /**
      * Free resources related to annotation processing.
      */
-    public void close() {
+    public void close() throws IOException {
         filer.close();
         discoveredProcs = null;
+        if (processorClassLoader != null && processorClassLoader instanceof Closeable)
+            ((Closeable) processorClassLoader).close();
     }
 
     private List<ClassSymbol> getTopLevelClasses(List<? extends JCCompilationUnit> units) {
