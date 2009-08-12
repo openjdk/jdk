@@ -31,7 +31,7 @@
  -->
 
 <project name="langtools" default="build" basedir="..">
-    
+
     <!-- Force full debuginfo for javac if the debug.classfiles
     property is set.  This must be BEFORE the include of
     build.properties because it sets javac.debuglevel.  -->
@@ -49,8 +49,8 @@
 
     <!-- Use this location for customizations common to all OpenJDK workspaces -->
     <property file="${user.home}/.openjdk/build.properties"/>
-    
-    <!-- Convenient shorthands for standard locations within the workspace. -->    
+
+    <!-- Convenient shorthands for standard locations within the workspace. -->
     <property name="build.dir" location="build"/>
     <property name="build.bootstrap.dir" location="${build.dir}/bootstrap"/>
     <property name="build.coverage.dir" location="${build.dir}/coverage"/>
@@ -75,25 +75,25 @@
          The best file to check for across Solaris/Linux/Windows/MacOS is one of the
          executables; regrettably, that is OS-specific. -->
     <condition property="java.marker" value="bin/java">
-	<os family="unix"/>
+        <os family="unix"/>
     </condition>
     <condition property="java.marker" value="bin/java.exe">
-	<os family="windows"/>
+        <os family="windows"/>
     </condition>
-    
+
     <!-- Standard property values, if not overriden by earlier settings. -->
-    <property file="${make.dir}/build.properties"/> 
+    <property file="${make.dir}/build.properties"/>
 
     <!-- launcher.java is used in the launcher scripts provided to run
-	the tools' jar files.  If it has not already been set, then
-	default it to use ${target.java.home}, if available, otherwise
-	quietly default to simply use "java". -->
-    <condition property="launcher.java" 
-	value="${target.java.home}/bin/java" else="java">
-	<isset property="target.java.home"/>
+        the tools' jar files.  If it has not already been set, then
+        default it to use ${target.java.home}, if available, otherwise
+        quietly default to simply use "java". -->
+    <condition property="launcher.java"
+        value="${target.java.home}/bin/java" else="java">
+        <isset property="target.java.home"/>
     </condition>
 
-    
+
     <!-- Standard target to build deliverables for JDK build. -->
 
     <target name="build" depends="build-bootstrap-tools,build-all-classes">
@@ -107,13 +107,13 @@
         <jar file="${dist.lib.dir}/classes.jar" basedir="${build.classes.dir}"/>
         <zip file="${dist.lib.dir}/src.zip" basedir="${src.classes.dir}"/>
     </target>
-    
+
     <target name="build-bootstrap-tools" depends="build-bootstrap-javac,build-bootstrap-javadoc,build-bootstrap-doclets,build-bootstrap-javah"/>
-    
+
     <target name="build-all-tools" depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap,build-apt"/>
-    
+
     <target name="build-all-classes" depends="build-classes-javac,build-classes-javadoc,build-classes-doclets,build-classes-javah,build-classes-javap,build-classes-apt"/>
-  
+
     <!-- clean -->
 
     <target name="clean" description="Delete all generated files">
@@ -122,13 +122,11 @@
     </target>
 
     <!-- Additional targets for running tools on the build -->
-    
-    <!-- An alternative for the following would be to do a single jtreg run for all tests.
-         However, that would currently be slower, since we would have to run all the tests
-         with samevm="false", since not all test directories currently support samevm="true". -->
 
-    <target name="jtreg" depends="jtreg-javac,jtreg-javadoc,jtreg-doclets,jtreg-javah,jtreg-javap,jtreg-apt"/>
-    
+    <target name="jtreg" depends="build-all-tools,-def-jtreg">
+        <jtreg-tool name="all" tests="${jtreg.tests}"/>
+    </target>
+
     <target name="findbugs" depends="-def-findbugs,build-all-tools">
         <property name="findbugs.reportLevel" value="medium"/>
         <mkdir dir="${dist.findbugs.dir}"/>
@@ -170,52 +168,52 @@
         <delete file="${build.coverage.dir}/cobertura.ser"/>
         <cobertura-instrument todir="${build.coverage.dir}/classes"
             datafile="${build.coverage.dir}/cobertura.ser">
-            <fileset dir="${build.classes.dir}" 
+            <fileset dir="${build.classes.dir}"
                includes="**/*.class" excludes="**/resources/*.class"/>
         </cobertura-instrument>
-    </target>  
+    </target>
 
     <target name="coverage-report" depends="-def-cobertura">
         <mkdir dir="${dist.coverage.dir}"/>
-        <cobertura-report 
+        <cobertura-report
             srcdir="${src.classes.dir}"
             destdir="${dist.coverage.dir}"
             datafile="${build.coverage.dir}/cobertura.ser"/>
-        <cobertura-report 
-            format="xml" 
-            srcdir="${src.classes.dir}" 
+        <cobertura-report
+            format="xml"
+            srcdir="${src.classes.dir}"
             destdir="${dist.coverage.dir}"
             datafile="${build.coverage.dir}/cobertura.ser"/>
     </target>
-    
+
     <!-- javac targets -->
 
     <target name="build-bootstrap-javac" depends="-def-build-bootstrap-tool">
         <build-bootstrap-tool name="javac" includes="${javac.includes}"/>
     </target>
-    
+
     <target name="build-classes-javac" depends="build-bootstrap-javac">
         <build-classes name="javac" includes="${javac.includes}"/>
     </target>
-    
+
     <target name="build-javac" depends="build-bootstrap-javac">
         <build-tool name="javac" includes="${javac.includes}"/>
     </target>
-    
+
     <target name="javadoc-javac" depends="build-javac,-def-javadoc-tool">
         <javadoc-tool name="javac" includes="${javac.includes}" options="${javadoc.jls3.option}"/>
     </target>
-    
+
     <target name="jtreg-javac" depends="build-javac,-def-jtreg">
-        <jtreg-tool name="javac" samevm="true" tests="${javac.tests}"/>
+        <jtreg-tool name="javac" tests="${javac.tests}"/>
     </target>
-    
+
     <target name="findbugs-javac" depends="build-javac,-def-findbugs">
         <findbugs-tool name="javac"/>
     </target>
-    
+
     <target name="javac" depends="build-javac,jtreg-javac,findbugs-javac"/>
-    
+
     <!-- javadoc targets -->
 
     <target name="build-bootstrap-javadoc" depends="build-bootstrap-javac">
@@ -223,31 +221,31 @@
                               includes="${javadoc.includes}"
                               jarclasspath="javac.jar doclets.jar"/>
     </target>
-    
+
     <target name="build-classes-javadoc" depends="build-classes-javac">
         <build-classes name="javadoc" includes="${javadoc.includes}"/>
     </target>
-    
+
     <target name="build-javadoc" depends="build-javac">
         <build-tool name="javadoc"
                     includes="${javadoc.includes}"
                     jarclasspath="javac.jar doclets.jar"/>
     </target>
-    
+
     <target name="javadoc-javadoc" depends="build-javadoc,-def-javadoc-tool">
         <javadoc-tool name="javadoc" includes="${javadoc.includes}"/>
     </target>
-    
+
     <target name="jtreg-javadoc" depends="build-javadoc,-def-jtreg">
-        <jtreg-tool name="javadoc" samevm="false" tests="${javadoc.tests}"/>
+        <jtreg-tool name="javadoc" tests="${javadoc.tests}"/>
     </target>
-    
+
     <target name="findbugs-javadoc" depends="build-javadoc,-def-findbugs">
         <findbugs-tool name="javadoc"/>
     </target>
-    
+
     <target name="javadoc" depends="build-javadoc,jtreg-javadoc,findbugs-javadoc"/>
-    
+
     <!-- doclets targets -->
 
     <target name="build-bootstrap-doclets" depends="build-bootstrap-javadoc,-def-build-bootstrap-jar">
@@ -256,11 +254,11 @@
                               jarmainclass="com.sun.tools.javadoc.Main"
                               jarclasspath="javadoc.jar"/>
     </target>
-    
+
     <target name="build-classes-doclets" depends="build-classes-javadoc">
         <build-classes name="doclets" includes="${doclets.includes}"/>
     </target>
-    
+
     <target name="build-doclets" depends="build-javadoc">
         <!-- just jar, no bin for doclets -->
         <build-jar name="doclets"
@@ -269,17 +267,17 @@
     </target>
 
     <!-- (no javadoc for doclets) -->
-    
+
     <target name="jtreg-doclets" depends="build-doclets,-def-jtreg">
-        <jtreg-tool name="doclets" samevm="false" tests="${doclets.tests}"/>
+        <jtreg-tool name="doclets" tests="${doclets.tests}"/>
     </target>
-    
+
     <target name="findbugs-doclets" depends="build-doclets,-def-findbugs">
         <findbugs-tool name="doclets"/>
     </target>
-    
+
     <target name="doclets" depends="build-doclets,jtreg-doclets,findbugs-doclets"/>
-    
+
     <!-- javah targets -->
 
     <target name="build-bootstrap-javah" depends="build-bootstrap-javadoc">
@@ -287,29 +285,29 @@
                               includes="${javah.includes}"
                               jarclasspath="javadoc.jar doclets.jar javac.jar"/>
     </target>
-    
+
     <target name="build-javah" depends="build-javadoc">
         <build-tool name="javah"
                     includes="${javah.includes}"
                     jarclasspath="javadoc.jar doclets.jar javac.jar"/>
     </target>
-    
+
     <target name="build-classes-javah" depends="build-classes-javadoc">
         <build-classes name="javah" includes="${javah.includes}"/>
     </target>
-    
+
     <!-- (no javadoc for javah) -->
 
     <target name="jtreg-javah" depends="build-javah,-def-jtreg">
-        <jtreg-tool name="javah" samevm="true" tests="${javah.tests}"/>
+        <jtreg-tool name="javah" tests="${javah.tests}"/>
     </target>
-    
+
     <target name="findbugs-javah" depends="build-javah,-def-findbugs">
         <findbugs-tool name="javah"/>
     </target>
-    
+
     <target name="javah" depends="build-javah,jtreg-javah,findbugs-javah"/>
-    
+
     <!-- javap targets -->
 
     <target name="build-bootstrap-javap" depends="-def-build-bootstrap-tool">
@@ -317,85 +315,85 @@
                               includes="${javap.includes}"
                               jarmainclass="sun.tools.javap.Main"/>
     </target>
-    
+
     <target name="build-classes-javap" depends="build-classes-javac">
         <build-classes name="javap" includes="${javap.includes}"/>
     </target>
-    
+
     <target name="build-javap" depends="build-javac">
         <build-tool name="javap"
                     includes="${javap.includes}"
                     jarmainclass="com.sun.tools.javap.Main"
                     jarclasspath="javac.jar"/>
     </target>
-    
+
     <!-- (no javadoc for javap) -->
 
     <target name="jtreg-javap" depends="build-javap,-def-jtreg">
-        <jtreg-tool name="javap" samevm="true" tests="${javap.tests}"/>
+        <jtreg-tool name="javap" tests="${javap.tests}"/>
     </target>
-    
+
     <target name="findbugs-javap" depends="build-javap,-def-findbugs">
         <findbugs-tool name="javap"/>
     </target>
-    
+
     <target name="javap" depends="build-javap,jtreg-javap,findbugs-javap"/>
-    
+
     <!-- apt targets -->
-    
+
     <target name="build-bootstrap-apt" depends="build-bootstrap-javac">
         <build-bootstrap-tool name="apt"
                               includes="${apt.includes}"
                               jarclasspath="javac.jar"/>
     </target>
-    
+
     <target name="build-apt" depends="build-javac">
         <build-tool name="apt"
                     includes="${apt.includes}"
                     jarclasspath="javac.jar"/>
     </target>
-    
+
     <target name="build-classes-apt" depends="build-classes-javac">
         <build-classes name="apt" includes="${apt.includes}"/>
     </target>
-    
+
     <target name="javadoc-apt" depends="build-apt,-def-javadoc-tool">
         <javadoc-tool name="apt" includes="${apt.includes}"/>
     </target>
-    
-    
+
+
     <target name="jtreg-apt" depends="build-apt,-def-jtreg">
-        <jtreg-tool name="apt" samevm="true" tests="${apt.tests}"/>
+        <jtreg-tool name="apt" tests="${apt.tests}"/>
     </target>
-    
+
     <target name="findbugs-apt" depends="build-apt,-def-findbugs">
         <findbugs-tool name="apt"/>
     </target>
-    
+
     <target name="apt" depends="build-apt,jtreg-apt,findbugs-apt"/>
 
     <!-- Check targets -->
-    
+
     <target name="-check-boot.java.home" depends="-def-check">
         <check name="bootstrap java" property="boot.java.home" marker="${java.marker}"/>
     </target>
-    
+
     <target name="-check-target.java.home" depends="-def-check">
         <check name="target java" property="target.java.home" marker="${java.marker}"/>
     </target>
-    
+
     <target name="-check-cobertura.home" depends="-def-check">
         <check name="cobertura" property="cobertura.home" marker="cobertura.jar"/>
     </target>
-    
+
     <target name="-check-findbugs.home" depends="-def-check">
         <check name="findbugs" property="findbugs.home" marker="lib/findbugs.jar"/>
     </target>
-    
+
     <target name="-check-jtreg.home" depends="-def-check">
         <check name="jtreg" property="jtreg.home" marker="lib/jtreg.jar"/>
     </target>
-    
+
     <!-- Ant macro and preset defs -->
 
     <target name="-def-build-tool" depends="-def-build-jar">
@@ -435,8 +433,8 @@
                 <mkdir dir="@{bin.dir}"/>
                 <copy file="${src.bin.dir}/launcher.sh-template" tofile="@{bin.dir}/@{name}">
                     <filterset begintoken="#" endtoken="#">
-                        <filter token="PROGRAM" value="@{name}"/> 
-                        <filter token="TARGET_JAVA" value="@{java}"/> 
+                        <filter token="PROGRAM" value="@{name}"/>
+                        <filter token="TARGET_JAVA" value="@{java}"/>
                     </filterset>
                 </copy>
                 <chmod file="@{bin.dir}/@{name}" perm="ugo+rx"/>
@@ -477,7 +475,7 @@
                 <jar destfile="@{lib.dir}/@{name}.jar"
                      basedir="@{classes.dir}"
                      includes="@{includes}">
-                    <manifest>    
+                    <manifest>
                         <attribute name="Main-Class" value="@{jarmainclass}"/>
                         <attribute name="Class-Path" value="@{jarclasspath}"/>
                     </manifest>
@@ -540,7 +538,7 @@
                        includeAntRuntime="no"
                        source="@{javac.source}"
                        target="@{javac.target}"
-                       debug="${javac.debug}" 
+                       debug="${javac.debug}"
                        debuglevel="${javac.debuglevel}">
                     <compilerarg value="-J-Xbootclasspath/p:@{javac.bootclasspath}"/>
                     <compilerarg value="-Xbootclasspath/p:@{classes.dir}"/>
@@ -549,7 +547,7 @@
                     <compilerarg line="${javac.lint.opts}"/>
                 </javac>
                 <copy todir="@{classes.dir}">
-                    <fileset dir="${src.classes.dir}"> 
+                    <fileset dir="${src.classes.dir}">
                         <include name="@{includes}"/>
                         <exclude name="**/*.java"/>
                         <exclude name="**/*.properties"/>
@@ -560,7 +558,7 @@
             </sequential>
         </macrodef>
     </target>
-    
+
     <target name="-def-build-bootstrap-tool" depends="-check-boot.java.home,-def-build-tool">
         <presetdef name="build-bootstrap-tool">
             <build-tool
@@ -576,7 +574,7 @@
                 full.version="${bootstrap.full.version}"/>
         </presetdef>
     </target>
-    
+
     <target name="-def-build-bootstrap-jar" depends="-def-build-jar">
         <presetdef name="build-bootstrap-jar">
             <build-jar
@@ -590,7 +588,7 @@
                 full.version="${bootstrap.full.version}"/>
         </presetdef>
     </target>
-    
+
     <target name="-def-pcompile">
         <mkdir dir="${build.toolclasses.dir}"/>
         <javac fork="true"
@@ -599,10 +597,10 @@
                destdir="${build.toolclasses.dir}/"
                classpath="${ant.home}/lib/ant.jar"/>
         <taskdef name="pcompile"
-                 classname="CompilePropertiesTask" 
+                 classname="CompilePropertiesTask"
                  classpath="${build.toolclasses.dir}/"/>
     </target>
-    
+
     <target name="-def-javadoc-tool" depends="-check-target.java.home">
         <macrodef name="javadoc-tool">
             <attribute name="name"/>
@@ -614,14 +612,14 @@
                 <!-- Note: even with this default value, includes
          from src.classes.dir get javadoc'd; see packageset below -->
                 <property name="javadoc.packagenames" value="none"/> <!-- default, can be overridden per user or per project -->
-                <javadoc 
+                <javadoc
                     executable="${target.java.home}/bin/javadoc"
-                    destdir="${build.javadoc.dir}/@{name}" 
+                    destdir="${build.javadoc.dir}/@{name}"
                     source="@{source}"
-                    windowtitle="UNOFFICIAL" 
-                    failonerror="true" 
+                    windowtitle="UNOFFICIAL"
+                    failonerror="true"
                     use="true"
-                    author="false" 
+                    author="false"
                     version="false"
                     packagenames="${javadoc.packagenames}" >
                     <header><![CDATA[<strong>Unofficial Javadoc</strong> generated from developer sources for preview purposes only]]></header>
@@ -650,8 +648,8 @@
             </sequential>
         </macrodef>
     </target>
-    
-    <target name="-def-jtreg" unless="jtreg.defined" depends="-check-jtreg.home">
+
+    <target name="-def-jtreg" unless="jtreg.defined" depends="-check-jtreg.home,-check-target.java.home">
         <taskdef name="jtreg" classname="com.sun.javatest.regtest.Main$$Ant">
             <classpath>
                 <pathelement location="${jtreg.home}/lib/jtreg.jar"/>
@@ -662,7 +660,7 @@
             <attribute name="name"/>
             <attribute name="tests"/>
             <attribute name="jdk" default="${target.java.home}"/>
-            <attribute name="samevm" default="false"/>
+            <attribute name="samevm" default="true"/>
             <attribute name="verbose" default="summary"/>
             <attribute name="options" default=""/>
             <attribute name="keywords" default="-keywords:!ignore"/>
@@ -670,9 +668,9 @@
             <sequential>
                 <property name="coverage.options" value=""/>    <!-- default -->
                 <property name="coverage.classpath" value=""/>    <!-- default -->
-                <jtreg 
+                <jtreg
                     dir="${test.dir}"
-                    workDir="${build.jtreg.dir}/@{name}/work" 
+                    workDir="${build.jtreg.dir}/@{name}/work"
                     reportDir="${build.jtreg.dir}/@{name}/report"
                     jdk="@{jdk}"
                     samevm="@{samevm}" verbose="@{verbose}"
@@ -683,7 +681,7 @@
                     <arg line="@{options}"/>
                     <arg line="@{tests}"/>
                 </jtreg>
-                <!-- the next two properties are for convenience, when only 
+                <!-- the next two properties are for convenience, when only
                      a single instance of jtreg will be invoked. -->
                 <condition property="jtreg.passed">
                     <equals arg1="${jtreg.@{name}.result}" arg2="0"/>
@@ -701,9 +699,9 @@
                 <include name="lib/**/*.jar"/>
             </fileset>
         </path>
-	<taskdef classpathref="cobertura.classpath" resource="tasks.properties"/>
+        <taskdef classpathref="cobertura.classpath" resource="tasks.properties"/>
     </target>
-    
+
     <target name="-def-findbugs" unless="findbugs.defined" depends="-check-findbugs.home">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">
             <classpath>
@@ -716,7 +714,7 @@
             <attribute name="outputFile" default=""/>
             <attribute name="reportLevel" default="high"/>
             <sequential>
-                <findbugs 
+                <findbugs
                     home="${findbugs.home}"
                     output="@{output}"
                     outputFile="@{outputFile}"
@@ -737,7 +735,7 @@
         </macrodef>
         <property name="findbugs.defined" value="true"/>
     </target>
-    
+
     <target name="-def-check">
         <macrodef name="check">
             <attribute name="name"/>
@@ -763,7 +761,7 @@
     </target>
 
     <!-- standard JDK target -->
-    <target name="sanity" 
+    <target name="sanity"
         description="display settings of congiguration values">
         <echo level="info">ant.home = ${ant.home}</echo>
         <echo level="info">boot.java.home = ${boot.java.home}</echo>
@@ -779,15 +777,15 @@
 
     <target name="post-sanity" depends="-def-jtreg,sanity,build"
         description="perform basic validation after a standard build">
-        <jtreg 
+        <jtreg
             dir="make/test"
-            workDir="${build.jtreg.dir}/post-sanity/work" 
+            workDir="${build.jtreg.dir}/post-sanity/work"
             reportDir="${build.jtreg.dir}/post-sanity/report"
             jdk="${target.java.home}"
             verbose="summary"
             failonerror="false" resultproperty="jtreg.post-sanity.result">
         </jtreg>
-        
+
     </target>
 </project>
 
