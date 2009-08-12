@@ -3034,6 +3034,9 @@ class CommandLineFlags {
           "Wait for this many CI accesses to occur in all compiles before " \
           "beginning to throw OutOfMemoryErrors in each compile")           \
                                                                             \
+  notproduct(bool, CIObjectFactoryVerify, false,                            \
+          "enable potentially expensive verification in ciObjectFactory")   \
+                                                                            \
   /* Priorities */                                                          \
   product_pd(bool, UseThreadPriorities,  "Use native thread priorities")    \
                                                                             \
