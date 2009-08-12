@@ -42,10 +42,17 @@ import java.util.TreeSet;
  * are scanned; the postprocessing visitor is called after the
  * contained declarations are scanned.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this class is {@link
+ * javax.lang.model.util.SimpleElementVisitor6}.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @since 1.5
  */
+@Deprecated
+@SuppressWarnings("deprecation")
 class SourceOrderDeclScanner extends DeclarationScanner {
     static class SourceOrderComparator implements java.util.Comparator<Declaration> {
         SourceOrderComparator(){}

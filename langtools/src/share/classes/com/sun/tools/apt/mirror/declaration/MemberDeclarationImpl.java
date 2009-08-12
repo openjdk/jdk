@@ -40,7 +40,7 @@ import com.sun.tools.javac.code.Type;
 /**
  * Implementation of MemberDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public abstract class MemberDeclarationImpl extends DeclarationImpl
                                             implements MemberDeclaration {
 

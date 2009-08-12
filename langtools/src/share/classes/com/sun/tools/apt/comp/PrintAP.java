@@ -36,6 +36,7 @@ import com.sun.mirror.util.*;
 /**
  * Class used to implement "-print" option.
  */
+@SuppressWarnings("deprecation")
 public class PrintAP implements AnnotationProcessor {
 
 
