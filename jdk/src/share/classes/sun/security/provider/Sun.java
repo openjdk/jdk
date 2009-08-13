@@ -46,7 +46,7 @@ public final class Sun extends Provider {
 
     public Sun() {
         /* We are the SUN provider */
-        super("SUN", 1.6, INFO);
+        super("SUN", 1.7, INFO);
 
         // if there is no security manager installed, put directly into
         // the provider. Otherwise, create a temporary map and use a

@@ -51,7 +51,7 @@ public final class Provider extends java.security.Provider {
         " server mechanisms for: DIGEST-MD5, GSSAPI, CRAM-MD5)";
 
     public Provider() {
-        super("SunSASL", 1.5, info);
+        super("SunSASL", 1.7d, info);
 
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
