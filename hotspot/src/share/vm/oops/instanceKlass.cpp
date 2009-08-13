@@ -2223,7 +2223,8 @@ void instanceKlass::verify_class_klass_nonstatic_oop_maps(klassOop k) {
     int offset = java_lang_Class::klass_offset;
 
     OopMapBlock* map = ik->start_of_nonstatic_oop_maps();
-    guarantee(map->offset() == offset && map->count() == extra, "sanity");
+    guarantee(map->offset() == offset && map->count() == (unsigned int) extra,
+              "sanity");
   }
 }
 

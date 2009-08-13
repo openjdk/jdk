@@ -405,7 +405,7 @@ int instanceKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 klassOop
 instanceKlassKlass::allocate_instance_klass(int vtable_len, int itable_len,
                                             int static_field_size,
-                                            int nonstatic_oop_map_count,
+                                            unsigned nonstatic_oop_map_count,
                                             ReferenceType rt, TRAPS) {
 
   const int nonstatic_oop_map_size =
