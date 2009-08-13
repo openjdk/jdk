@@ -103,12 +103,12 @@ class FieldPrinter: public FieldClosure {
 class OopMapBlock VALUE_OBJ_CLASS_SPEC {
  public:
   // Byte offset of the first oop mapped by this block.
-  jushort offset() const          { return _offset; }
-  void set_offset(jushort offset) { _offset = offset; }
+  int offset() const          { return _offset; }
+  void set_offset(int offset) { _offset = offset; }
 
   // Number of oops in this block.
-  jushort count() const         { return _count; }
-  void set_count(jushort count) { _count = count; }
+  uint count() const         { return _count; }
+  void set_count(uint count) { _count = count; }
 
   // sizeof(OopMapBlock) in HeapWords.
   static const int size_in_words() {
@@ -117,8 +117,8 @@ class OopMapBlock VALUE_OBJ_CLASS_SPEC {
   }
 
  private:
-  jushort _offset;
-  jushort _count;
+  int  _offset;
+  uint _count;
 };
 
 class instanceKlass: public Klass {
@@ -446,10 +446,10 @@ class instanceKlass: public Klass {
   void set_source_debug_extension(symbolOop n){ oop_store_without_check((oop*) &_source_debug_extension, (oop) n); }
 
   // nonstatic oop-map blocks
-  static int nonstatic_oop_map_size(int oop_map_count) {
+  static int nonstatic_oop_map_size(unsigned int oop_map_count) {
     return oop_map_count * OopMapBlock::size_in_words();
   }
-  int nonstatic_oop_map_count() const {
+  unsigned int nonstatic_oop_map_count() const {
     return _nonstatic_oop_map_size / OopMapBlock::size_in_words();
   }
   int nonstatic_oop_map_size() const { return _nonstatic_oop_map_size; }

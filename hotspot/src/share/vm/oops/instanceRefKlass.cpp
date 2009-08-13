@@ -407,7 +407,7 @@ void instanceRefKlass::update_nonstatic_oop_maps(klassOop k) {
   // Check that the current map is (2,4) - currently points at field with
   // offset 2 (words) and has 4 map entries.
   debug_only(int offset = java_lang_ref_Reference::referent_offset);
-  debug_only(int count = ((java_lang_ref_Reference::discovered_offset -
+  debug_only(unsigned int count = ((java_lang_ref_Reference::discovered_offset -
     java_lang_ref_Reference::referent_offset)/heapOopSize) + 1);
 
   if (UseSharedSpaces) {

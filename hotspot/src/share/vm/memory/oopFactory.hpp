@@ -89,8 +89,10 @@ class oopFactory: AllStatic {
                                                     TRAPS);
 
   // Instance classes
-  static klassOop        new_instanceKlass(int vtable_len, int itable_len, int static_field_size,
-                                           int nonstatic_oop_map_count, ReferenceType rt, TRAPS);
+  static klassOop        new_instanceKlass(int vtable_len, int itable_len,
+                                           int static_field_size,
+                                           unsigned int nonstatic_oop_map_count,
+                                           ReferenceType rt, TRAPS);
 
   // Methods
 private:
