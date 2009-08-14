@@ -1306,13 +1306,18 @@ static instanceKlassHandle download_and_retry_class_load(
 instanceKlassHandle SystemDictionary::load_instance_class(symbolHandle class_name, Handle class_loader, TRAPS) {
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
   if (class_loader.is_null()) {
+
     // Search the shared system dictionary for classes preloaded into the
     // shared spaces.
     instanceKlassHandle k;
-    k = load_shared_class(class_name, class_loader, THREAD);
+    {
+      PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
+      k = load_shared_class(class_name, class_loader, THREAD);
+    }
 
     if (k.is_null()) {
       // Use VM class loader
+      PerfTraceTime vmtimer(ClassLoader::perf_sys_classload_time());
       k = ClassLoader::load_classfile(class_name, CHECK_(nh));
     }
 
@@ -1333,6 +1338,16 @@ instanceKlassHandle SystemDictionary::load_instance_class(symbolHandle class_nam
   } else {
     // Use user specified class loader to load class. Call loadClass operation on class_loader.
     ResourceMark rm(THREAD);
+
+    assert(THREAD->is_Java_thread(), "must be a JavaThread");
+    JavaThread* jt = (JavaThread*) THREAD;
+
+    PerfClassTraceTime vmtimer(ClassLoader::perf_app_classload_time(),
+                               ClassLoader::perf_app_classload_selftime(),
+                               ClassLoader::perf_app_classload_count(),
+                               jt->get_thread_stat()->perf_recursion_counts_addr(),
+                               jt->get_thread_stat()->perf_timers_addr(),
+                               PerfClassTraceTime::CLASS_LOAD);
 
     Handle s = java_lang_String::create_from_symbol(class_name, CHECK_(nh));
     // Translate to external class name format, i.e., convert '/' chars to '.'
