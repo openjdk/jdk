@@ -194,18 +194,36 @@ public class FontConfigManager {
             fontArr[i].style = i % 4; // depends on array order.
         }
         getFontConfig(getFCLocaleStr(), fcInfo, fontArr, includeFallbacks);
+        FontConfigFont anyFont = null;
         /* If don't find anything (eg no libfontconfig), then just return */
         for (int i = 0; i< fontArr.length; i++) {
             FcCompFont fci = fontArr[i];
             if (fci.firstFont == null) {
                 if (FontUtilities.isLogging()) {
                     Logger logger = FontUtilities.getLogger();
-                    logger.info("Fontconfig returned no fonts.");
+                    logger.info("Fontconfig returned no font for " +
+                                fontArr[i].fcName);
                 }
                 fontConfigFailed = true;
-                return;
+            } else if (anyFont == null) {
+                anyFont = fci.firstFont;
             }
         }
+
+        if (anyFont == null) {
+            if (FontUtilities.isLogging()) {
+                Logger logger = FontUtilities.getLogger();
+                logger.info("Fontconfig returned no fonts at all.");
+                return;
+            }
+        } else if (fontConfigFailed) {
+            for (int i = 0; i< fontArr.length; i++) {
+                if (fontArr[i].firstFont == null) {
+                    fontArr[i].firstFont = anyFont;
+                }
+            }
+        }
+
         fontConfigFonts = fontArr;
 
         if (FontUtilities.isLogging()) {
