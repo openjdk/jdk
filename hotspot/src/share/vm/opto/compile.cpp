@@ -1545,7 +1545,7 @@ void Compile::Optimize() {
   if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, NULL, true );
+      PhaseIdealLoop ideal_loop( igvn, true );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 1", 2);
       if (failing())  return;
@@ -1553,7 +1553,7 @@ void Compile::Optimize() {
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t3("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, NULL, false );
+      PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 2", 2);
       if (failing())  return;
@@ -1561,9 +1561,14 @@ void Compile::Optimize() {
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t4("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, NULL, false );
+      PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 3", 2);
+    }
+    if (!failing()) {
+      // Verify that last round of loop opts produced a valid graph
+      NOT_PRODUCT( TracePhase t2("idealLoopVerify", &_t_idealLoopVerify, TimeCompiler); )
+      PhaseIdealLoop::verify(igvn);
     }
   }
   if (failing())  return;
@@ -1597,12 +1602,20 @@ void Compile::Optimize() {
     while(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
-      PhaseIdealLoop ideal_loop( igvn, NULL, true );
+      PhaseIdealLoop ideal_loop( igvn, true );
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop iterations", 2);
       if (failing())  return;
     }
   }
+
+  {
+    // Verify that all previous optimizations produced a valid graph
+    // at least to this point, even if no loop optimizations were done.
+    NOT_PRODUCT( TracePhase t2("idealLoopVerify", &_t_idealLoopVerify, TimeCompiler); )
+    PhaseIdealLoop::verify(igvn);
+  }
+
   {
     NOT_PRODUCT( TracePhase t2("macroExpand", &_t_macroExpand, TimeCompiler); )
     PhaseMacroExpand  mex(igvn);
