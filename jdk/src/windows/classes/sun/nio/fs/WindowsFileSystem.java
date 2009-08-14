@@ -283,25 +283,15 @@ class WindowsFileSystem
             }
         }
 
-        // match in uppercase
-        StringBuilder sb = new StringBuilder(expr.length());
-        for (int i=0; i<expr.length(); i++) {
-            sb.append(Character.toUpperCase(expr.charAt(i)));
-        }
-        expr = sb.toString();
+        // match in unicode_case_insensitive
+        final Pattern pattern = Pattern.compile(expr,
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
         // return matcher
-        final Pattern pattern = Pattern.compile(expr);
         return new PathMatcher() {
             @Override
             public boolean matches(Path path) {
-                // match in uppercase
-                String s = path.toString();
-                StringBuilder sb = new StringBuilder(s.length());
-                for (int i=0; i<s.length(); i++) {
-                    sb.append( Character.toUpperCase(s.charAt(i)) );
-                }
-                return pattern.matcher(sb).matches();
+                return pattern.matcher(path.toString()).matches();
             }
         };
     }
