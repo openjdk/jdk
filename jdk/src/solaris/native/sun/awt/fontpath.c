@@ -1203,11 +1203,7 @@ Java_sun_font_FontConfigManager_getFontConfig
          * Inspect the returned fonts and the ones we like (adds enough glyphs)
          * are added to the arrays and we increment 'fontCount'.
          */
-        if (includeFallbacks) {
-            nfonts = fontset->nfont;
-        } else {
-            nfonts = 1;
-        }
+        nfonts = fontset->nfont;
         family   = (FcChar8**)calloc(nfonts, sizeof(FcChar8*));
         styleStr = (FcChar8**)calloc(nfonts, sizeof(FcChar8*));
         fullname = (FcChar8**)calloc(nfonts, sizeof(FcChar8*));
@@ -1249,7 +1245,7 @@ Java_sun_font_FontConfigManager_getFontConfig
              * adversely affects load time for minimal value-add.
              * This is still likely far more than we've had in the past.
              */
-            if (nfonts==10) {
+            if (j==10) {
                 minGlyphs = 50;
             }
             if (unionCharset == NULL) {
@@ -1268,6 +1264,9 @@ Java_sun_font_FontConfigManager_getFontConfig
             (*FcPatternGetString)(fontPattern, FC_FAMILY, 0, &family[j]);
             (*FcPatternGetString)(fontPattern, FC_STYLE, 0, &styleStr[j]);
             (*FcPatternGetString)(fontPattern, FC_FULLNAME, 0, &fullname[j]);
+            if (!includeFallbacks) {
+                break;
+            }
         }
 
         /* Once we get here 'fontCount' is the number of returned fonts
@@ -1309,6 +1308,8 @@ Java_sun_font_FontConfigManager_getFontConfig
                 }
                 if (includeFallbacks) {
                     (*env)->SetObjectArrayElement(env, fcFontArr, fn++,fcFont);
+                } else {
+                    break;
                 }
             }
         }
