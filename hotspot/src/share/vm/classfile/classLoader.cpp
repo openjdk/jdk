@@ -48,9 +48,26 @@ static canonicalize_fn_t CanonicalizeEntry  = NULL;
 PerfCounter*    ClassLoader::_perf_accumulated_time = NULL;
 PerfCounter*    ClassLoader::_perf_classes_inited = NULL;
 PerfCounter*    ClassLoader::_perf_class_init_time = NULL;
+PerfCounter*    ClassLoader::_perf_class_init_selftime = NULL;
+PerfCounter*    ClassLoader::_perf_classes_verified = NULL;
 PerfCounter*    ClassLoader::_perf_class_verify_time = NULL;
+PerfCounter*    ClassLoader::_perf_class_verify_selftime = NULL;
 PerfCounter*    ClassLoader::_perf_classes_linked = NULL;
 PerfCounter*    ClassLoader::_perf_class_link_time = NULL;
+PerfCounter*    ClassLoader::_perf_class_link_selftime = NULL;
+PerfCounter*    ClassLoader::_perf_class_parse_time = NULL;
+PerfCounter*    ClassLoader::_perf_class_parse_selftime = NULL;
+PerfCounter*    ClassLoader::_perf_sys_class_lookup_time = NULL;
+PerfCounter*    ClassLoader::_perf_shared_classload_time = NULL;
+PerfCounter*    ClassLoader::_perf_sys_classload_time = NULL;
+PerfCounter*    ClassLoader::_perf_app_classload_time = NULL;
+PerfCounter*    ClassLoader::_perf_app_classload_selftime = NULL;
+PerfCounter*    ClassLoader::_perf_app_classload_count = NULL;
+PerfCounter*    ClassLoader::_perf_define_appclasses = NULL;
+PerfCounter*    ClassLoader::_perf_define_appclass_time = NULL;
+PerfCounter*    ClassLoader::_perf_define_appclass_selftime = NULL;
+PerfCounter*    ClassLoader::_perf_app_classfile_bytes_read = NULL;
+PerfCounter*    ClassLoader::_perf_sys_classfile_bytes_read = NULL;
 PerfCounter*    ClassLoader::_sync_systemLoaderLockContentionRate = NULL;
 PerfCounter*    ClassLoader::_sync_nonSystemLoaderLockContentionRate = NULL;
 PerfCounter*    ClassLoader::_sync_JVMFindLoadedClassLockFreeCounter = NULL;
@@ -152,6 +169,9 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name) {
       hpi::close(file_handle);
       // construct ClassFileStream
       if (num_read == (size_t)st.st_size) {
+        if (UsePerfData) {
+          ClassLoader::perf_sys_classfile_bytes_read()->inc(num_read);
+        }
         return new ClassFileStream(buffer, st.st_size, _dir);    // Resource allocated
       }
     }
@@ -197,6 +217,9 @@ ClassFileStream* ClassPathZipEntry::open_stream(const char* name) {
       // read contents into resource array
       buffer     = NEW_RESOURCE_ARRAY(u1, filesize);
       if (!(*ReadEntry)(_zip, entry, buffer, filename)) return NULL;
+  }
+  if (UsePerfData) {
+    ClassLoader::perf_sys_classfile_bytes_read()->inc(filesize);
   }
   // return result
   return new ClassFileStream(buffer, filesize, _zip_name);    // Resource allocated
@@ -825,7 +848,9 @@ instanceKlassHandle ClassLoader::load_classfile(symbolHandle h_name, TRAPS) {
   ClassFileStream* stream = NULL;
   int classpath_index = 0;
   {
-    PerfTraceTime vmtimer(perf_accumulated_time());
+    PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
+                               ((JavaThread*) THREAD)->get_thread_stat()->perf_timers_addr(),
+                               PerfClassTraceTime::CLASS_LOAD);
     ClassPathEntry* e = _first_entry;
     while (e != NULL) {
       stream = e->open_stream(name);
@@ -890,11 +915,29 @@ void ClassLoader::initialize() {
     // jvmstat performance counters
     NEWPERFTICKCOUNTER(_perf_accumulated_time, SUN_CLS, "time");
     NEWPERFTICKCOUNTER(_perf_class_init_time, SUN_CLS, "classInitTime");
+    NEWPERFTICKCOUNTER(_perf_class_init_selftime, SUN_CLS, "classInitTime.self");
     NEWPERFTICKCOUNTER(_perf_class_verify_time, SUN_CLS, "classVerifyTime");
+    NEWPERFTICKCOUNTER(_perf_class_verify_selftime, SUN_CLS, "classVerifyTime.self");
     NEWPERFTICKCOUNTER(_perf_class_link_time, SUN_CLS, "classLinkedTime");
-
+    NEWPERFTICKCOUNTER(_perf_class_link_selftime, SUN_CLS, "classLinkedTime.self");
     NEWPERFEVENTCOUNTER(_perf_classes_inited, SUN_CLS, "initializedClasses");
     NEWPERFEVENTCOUNTER(_perf_classes_linked, SUN_CLS, "linkedClasses");
+    NEWPERFEVENTCOUNTER(_perf_classes_verified, SUN_CLS, "verifiedClasses");
+
+    NEWPERFTICKCOUNTER(_perf_class_parse_time, SUN_CLS, "parseClassTime");
+    NEWPERFTICKCOUNTER(_perf_class_parse_selftime, SUN_CLS, "parseClassTime.self");
+    NEWPERFTICKCOUNTER(_perf_sys_class_lookup_time, SUN_CLS, "lookupSysClassTime");
+    NEWPERFTICKCOUNTER(_perf_shared_classload_time, SUN_CLS, "sharedClassLoadTime");
+    NEWPERFTICKCOUNTER(_perf_sys_classload_time, SUN_CLS, "sysClassLoadTime");
+    NEWPERFTICKCOUNTER(_perf_app_classload_time, SUN_CLS, "appClassLoadTime");
+    NEWPERFTICKCOUNTER(_perf_app_classload_selftime, SUN_CLS, "appClassLoadTime.self");
+    NEWPERFEVENTCOUNTER(_perf_app_classload_count, SUN_CLS, "appClassLoadCount");
+    NEWPERFTICKCOUNTER(_perf_define_appclasses, SUN_CLS, "defineAppClasses");
+    NEWPERFTICKCOUNTER(_perf_define_appclass_time, SUN_CLS, "defineAppClassTime");
+    NEWPERFTICKCOUNTER(_perf_define_appclass_selftime, SUN_CLS, "defineAppClassTime.self");
+    NEWPERFBYTECOUNTER(_perf_app_classfile_bytes_read, SUN_CLS, "appClassBytes");
+    NEWPERFBYTECOUNTER(_perf_sys_classfile_bytes_read, SUN_CLS, "sysClassBytes");
+
 
     // The following performance counters are added for measuring the impact
     // of the bug fix of 6365597. They are mainly focused on finding out
