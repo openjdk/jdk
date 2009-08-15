@@ -2401,7 +2401,7 @@ class CSMarkOopClosure: public OopClosure {
         // Now process this portion of this one.
         int lim = MIN2(next_arr_ind, len);
         for (int j = arr_ind; j < lim; j++) {
-          do_oop(aobj->obj_at_addr<T>(j));
+          do_oop(aobj->objArrayOopDesc::obj_at_addr<T>(j));
         }
 
       } else {
