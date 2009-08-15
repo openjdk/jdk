@@ -749,7 +749,10 @@ char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
     assert(mode == UnscaledNarrowOop  ||
            mode == ZeroBasedNarrowOop ||
            mode == HeapBasedNarrowOop, "mode is invalid");
-
+    // Return specified base for the first request.
+    if (!FLAG_IS_DEFAULT(HeapBaseMinAddress) && (mode == UnscaledNarrowOop)) {
+      return (char*)HeapBaseMinAddress;
+    }
     const size_t total_size = heap_size + HeapBaseMinAddress;
     if (total_size <= OopEncodingHeapMax && (mode != HeapBasedNarrowOop)) {
       if (total_size <= NarrowOopHeapMax && (mode == UnscaledNarrowOop) &&
@@ -857,7 +860,7 @@ jint Universe::initialize_heap() {
         // Can't reserve heap below 4Gb.
         Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
       } else {
-        assert(Universe::narrow_oop_shift() == 0, "use unscaled narrow oop");
+        Universe::set_narrow_oop_shift(0);
         if (PrintCompressedOopsMode) {
           tty->print(", 32-bits Oops");
         }
