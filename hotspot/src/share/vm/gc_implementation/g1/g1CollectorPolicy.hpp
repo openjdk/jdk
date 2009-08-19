@@ -981,8 +981,6 @@ public:
   void set_should_initiate_conc_mark()  { _should_initiate_conc_mark = true; }
   void unset_should_initiate_conc_mark(){ _should_initiate_conc_mark = false; }
 
-  void checkpoint_conc_overhead();
-
   // If an expansion would be appropriate, because recent GC overhead had
   // exceeded the desired limit, return an amount to expand by.
   virtual size_t expansion_amount();

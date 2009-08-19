@@ -433,8 +433,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
   _total_counting_time(0.0),
   _total_rs_scrub_time(0.0),
 
-  _parallel_workers(NULL),
-  _cleanup_co_tracker(G1CLGroup)
+  _parallel_workers(NULL)
 {
   CMVerboseLevel verbose_level =
     (CMVerboseLevel) G1MarkingVerboseLevel;
@@ -823,18 +822,6 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   // when marking is on. So, it's also called at the end of the
   // initial-mark pause to update the heap end, if the heap expands
   // during it. No need to call it here.
-
-  guarantee( !_cleanup_co_tracker.enabled(), "invariant" );
-
-  size_t max_marking_threads =
-    MAX2((size_t) 1, parallel_marking_threads());
-  for (int i = 0; i < (int)_max_task_num; ++i) {
-    _tasks[i]->enable_co_tracker();
-    if (i < (int) max_marking_threads)
-      _tasks[i]->reset_co_tracker(marking_task_overhead());
-    else
-      _tasks[i]->reset_co_tracker(0.0);
-  }
 }
 
 // Checkpoint the roots into this generation from outside
@@ -845,7 +832,6 @@ void ConcurrentMark::checkpointRootsInitial() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   double start = os::elapsedTime();
-  GCOverheadReporter::recordSTWStart(start);
 
   G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
   g1p->record_concurrent_mark_init_start();
@@ -876,7 +862,6 @@ void ConcurrentMark::checkpointRootsInitial() {
   // Statistics.
   double end = os::elapsedTime();
   _init_times.add((end - start) * 1000.0);
-  GCOverheadReporter::recordSTWEnd(end);
 
   g1p->record_concurrent_mark_init_end();
 }
@@ -1035,7 +1020,6 @@ public:
 
     guarantee( (size_t)worker_i < _cm->active_tasks(), "invariant" );
     CMTask* the_task = _cm->task(worker_i);
-    the_task->start_co_tracker();
     the_task->record_start_time();
     if (!_cm->has_aborted()) {
       do {
@@ -1061,8 +1045,6 @@ public:
         double end_time2_sec = os::elapsedTime();
         double elapsed_time2_sec = end_time2_sec - start_time_sec;
 
-        the_task->update_co_tracker();
-
 #if 0
           gclog_or_tty->print_cr("CM: elapsed %1.4lf ms, sleep %1.4lf ms, "
                                  "overhead %1.4lf",
@@ -1079,7 +1061,6 @@ public:
     ConcurrentGCThread::stsLeave();
 
     double end_vtime = os::elapsedVTime();
-    the_task->update_co_tracker(true);
     _cm->update_accum_task_vtime(worker_i, end_vtime - start_vtime);
   }
 
@@ -1133,7 +1114,6 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   g1p->record_concurrent_mark_remark_start();
 
   double start = os::elapsedTime();
-  GCOverheadReporter::recordSTWStart(start);
 
   checkpointRootsFinalWork();
 
@@ -1173,11 +1153,6 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   _remark_weak_ref_times.add((now - mark_work_end) * 1000.0);
   _remark_times.add((now - start) * 1000.0);
 
-  GCOverheadReporter::recordSTWEnd(now);
-  for (int i = 0; i < (int)_max_task_num; ++i)
-    _tasks[i]->disable_co_tracker();
-  _cleanup_co_tracker.enable();
-  _cleanup_co_tracker.reset(cleanup_task_overhead());
   g1p->record_concurrent_mark_remark_end();
 }
 
@@ -1188,7 +1163,6 @@ class CalcLiveObjectsClosure: public HeapRegionClosure {
 
   CMBitMapRO* _bm;
   ConcurrentMark* _cm;
-  COTracker* _co_tracker;
   bool _changed;
   bool _yield;
   size_t _words_done;
@@ -1216,12 +1190,10 @@ class CalcLiveObjectsClosure: public HeapRegionClosure {
 public:
   CalcLiveObjectsClosure(bool final,
                          CMBitMapRO *bm, ConcurrentMark *cm,
-                         BitMap* region_bm, BitMap* card_bm,
-                         COTracker* co_tracker) :
+                         BitMap* region_bm, BitMap* card_bm) :
     _bm(bm), _cm(cm), _changed(false), _yield(true),
     _words_done(0), _tot_live(0), _tot_used(0),
-    _region_bm(region_bm), _card_bm(card_bm),
-    _final(final), _co_tracker(co_tracker),
+    _region_bm(region_bm), _card_bm(card_bm),_final(final),
     _regions_done(0), _start_vtime_sec(0.0)
   {
     _bottom_card_num =
@@ -1265,9 +1237,6 @@ public:
   }
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (_co_tracker != NULL)
-      _co_tracker->update();
-
     if (!_final && _regions_done == 0)
       _start_vtime_sec = os::elapsedVTime();
 
@@ -1396,12 +1365,6 @@ public:
         if (elapsed_vtime_sec > (10.0 / 1000.0)) {
           jlong sleep_time_ms =
             (jlong) (elapsed_vtime_sec * _cm->cleanup_sleep_factor() * 1000.0);
-#if 0
-          gclog_or_tty->print_cr("CL: elapsed %1.4lf ms, sleep %1.4lf ms, "
-                                 "overhead %1.4lf",
-                                 elapsed_vtime_sec * 1000.0, (double) sleep_time_ms,
-                                 _co_tracker->concOverhead(os::elapsedTime()));
-#endif
           os::sleep(Thread::current(), sleep_time_ms, false);
           _start_vtime_sec = end_vtime_sec;
         }
@@ -1421,15 +1384,11 @@ public:
 
 
 void ConcurrentMark::calcDesiredRegions() {
-  guarantee( _cleanup_co_tracker.enabled(), "invariant" );
-  _cleanup_co_tracker.start();
-
   _region_bm.clear();
   _card_bm.clear();
   CalcLiveObjectsClosure calccl(false /*final*/,
                                 nextMarkBitMap(), this,
-                                &_region_bm, &_card_bm,
-                                &_cleanup_co_tracker);
+                                &_region_bm, &_card_bm);
   G1CollectedHeap *g1h = G1CollectedHeap::heap();
   g1h->heap_region_iterate(&calccl);
 
@@ -1437,8 +1396,6 @@ void ConcurrentMark::calcDesiredRegions() {
     calccl.reset();
     g1h->heap_region_iterate(&calccl);
   } while (calccl.changed());
-
-  _cleanup_co_tracker.update(true);
 }
 
 class G1ParFinalCountTask: public AbstractGangTask {
@@ -1472,8 +1429,7 @@ public:
   void work(int i) {
     CalcLiveObjectsClosure calccl(true /*final*/,
                                   _bm, _g1h->concurrent_mark(),
-                                  _region_bm, _card_bm,
-                                  NULL /* CO tracker */);
+                                  _region_bm, _card_bm);
     calccl.no_yield();
     if (ParallelGCThreads > 0) {
       _g1h->heap_region_par_iterate_chunked(&calccl, i,
@@ -1663,13 +1619,10 @@ void ConcurrentMark::cleanup() {
                      /* prev marking */ true);
   }
 
-  _cleanup_co_tracker.disable();
-
   G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
   g1p->record_concurrent_mark_cleanup_start();
 
   double start = os::elapsedTime();
-  GCOverheadReporter::recordSTWStart(start);
 
   // Do counting once more with the world stopped for good measure.
   G1ParFinalCountTask g1_par_count_task(g1h, nextMarkBitMap(),
@@ -1774,7 +1727,6 @@ void ConcurrentMark::cleanup() {
   // Statistics.
   double end = os::elapsedTime();
   _cleanup_times.add((end - start) * 1000.0);
-  GCOverheadReporter::recordSTWEnd(end);
 
   // G1CollectedHeap::heap()->print();
   // gclog_or_tty->print_cr("HEAP GC TIME STAMP : %d",
@@ -2623,24 +2575,6 @@ void ConcurrentMark::registerCSetRegion(HeapRegion* hr) {
   HeapWord* region_end = hr->end();
   if (region_end > _min_finger)
     _should_gray_objects = true;
-}
-
-void ConcurrentMark::disable_co_trackers() {
-  if (has_aborted()) {
-    if (_cleanup_co_tracker.enabled())
-      _cleanup_co_tracker.disable();
-    for (int i = 0; i < (int)_max_task_num; ++i) {
-      CMTask* task = _tasks[i];
-      if (task->co_tracker_enabled())
-        task->disable_co_tracker();
-    }
-  } else {
-    guarantee( !_cleanup_co_tracker.enabled(), "invariant" );
-    for (int i = 0; i < (int)_max_task_num; ++i) {
-      CMTask* task = _tasks[i];
-      guarantee( !task->co_tracker_enabled(), "invariant" );
-    }
-  }
 }
 
 // abandon current marking iteration due to a Full GC
@@ -4018,7 +3952,6 @@ CMTask::CMTask(int task_id,
                CMTaskQueue* task_queue,
                CMTaskQueueSet* task_queues)
   : _g1h(G1CollectedHeap::heap()),
-    _co_tracker(G1CMGroup),
     _task_id(task_id), _cm(cm),
     _claimed(false),
     _nextMarkBitMap(NULL), _hash_seed(17),

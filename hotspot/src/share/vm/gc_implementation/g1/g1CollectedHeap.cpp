@@ -927,7 +927,6 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     TraceTime t(full ? "Full GC (System.gc())" : "Full GC", PrintGC, true, gclog_or_tty);
 
     double start = os::elapsedTime();
-    GCOverheadReporter::recordSTWStart(start);
     g1_policy()->record_full_collection_start();
 
     gc_prologue(true);
@@ -1049,7 +1048,6 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     }
 
     double end = os::elapsedTime();
-    GCOverheadReporter::recordSTWEnd(end);
     g1_policy()->record_full_collection_end();
 
 #ifdef TRACESPINNING
@@ -1609,9 +1607,6 @@ jint G1CollectedHeap::initialize() {
 
   // Do later initialization work for concurrent refinement.
   _cg1r->init();
-
-  const char* group_names[] = { "CR", "ZF", "CM", "CL" };
-  GCOverheadReporter::initGCOverheadReporter(4, group_names);
 
   return JNI_OK;
 }
@@ -2431,8 +2426,6 @@ void G1CollectedHeap::print_tracing_info() const {
   }
   g1_policy()->print_yg_surv_rate_info();
 
-  GCOverheadReporter::printGCOverhead();
-
   SpecializationStats::print();
 }
 
@@ -2669,7 +2662,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       // The elapsed time induced by the start time below deliberately elides
       // the possible verification above.
       double start_time_sec = os::elapsedTime();
-      GCOverheadReporter::recordSTWStart(start_time_sec);
       size_t start_used_bytes = used();
 
       g1_policy()->record_collection_pause_start(start_time_sec,
@@ -2798,7 +2790,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       double end_time_sec = os::elapsedTime();
       double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
       g1_policy()->record_pause_time_ms(pause_time_ms);
-      GCOverheadReporter::recordSTWEnd(end_time_sec);
       g1_policy()->record_collection_pause_end(abandoned);
 
       assert(regions_accounted_for(), "Region leakage.");

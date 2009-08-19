@@ -37,10 +37,6 @@
   develop(intx, G1MarkingOverheadPercent, 0,                                \
           "Overhead of concurrent marking")                                 \
                                                                             \
-  develop(bool, G1AccountConcurrentOverhead, false,                         \
-          "Whether soft real-time compliance in G1 will take into account"  \
-          "concurrent overhead")                                            \
-                                                                            \
   product(intx, G1YoungGenSize, 0,                                          \
           "Size of the G1 young generation, 0 is the adaptive policy")      \
                                                                             \
