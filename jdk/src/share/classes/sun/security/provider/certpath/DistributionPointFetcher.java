@@ -309,6 +309,16 @@ class DistributionPointFetcher {
         X500Name certIssuer = (X500Name) certImpl.getIssuerDN();
         X500Name crlIssuer = (X500Name) crlImpl.getIssuerDN();
 
+        // check the crl signature algorithm
+        try {
+            AlgorithmChecker.check(crl);
+        } catch (CertPathValidatorException cpve) {
+            if (debug != null) {
+                debug.println("CRL signature algorithm check failed: " + cpve);
+            }
+            return false;
+        }
+
         // if crlIssuer is set, verify that it matches the issuer of the
         // CRL and the CRL contains an IDP extension with the indirectCRL
         // boolean asserted. Otherwise, verify that the CRL issuer matches the
