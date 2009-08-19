@@ -32,10 +32,17 @@ package com.sun.mirror.apt;
  * cannot meaningfully be serialized because all of the annotation
  * processing tool's internal state would potentially be needed.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  This class has no direct
+ * analog in the standardized API because the different round model
+ * renders it unnecessary.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @since 1.5
  */
+@Deprecated
+@SuppressWarnings("deprecation")
 public abstract class RoundCompleteEvent extends java.util.EventObject {
     private RoundState rs;
 

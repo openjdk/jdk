@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,17 +37,12 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.LayoutManager;
 import java.awt.Rectangle;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Insets;
 import java.awt.Graphics;
 import java.awt.event.*;
-import java.io.Serializable;
-import java.awt.Toolkit;
-import java.awt.ComponentOrientation;
 
 /**
  * A default L&F implementation of ScrollPaneUI.
@@ -63,6 +58,7 @@ public class BasicScrollPaneUI
     protected ChangeListener viewportChangeListener;
     protected PropertyChangeListener spPropertyChangeListener;
     private MouseWheelListener mouseScrollListener;
+    private int oldExtent = Integer.MIN_VALUE;
 
     /**
      * PropertyChangeListener installed on the vertical scrollbar.
@@ -327,9 +323,13 @@ public class BasicScrollPaneUI
                             * leave it until someone claims.
                             */
                             value = Math.max(0, Math.min(max - extent, max - extent - viewPosition.x));
+                            if (oldExtent > extent) {
+                                value -= oldExtent - extent;
+                            }
                         }
                     }
                 }
+                oldExtent = extent;
                 hsb.setValues(value, extent, 0, max);
             }
 
@@ -1020,7 +1020,7 @@ public class BasicScrollPaneUI
 
             if (viewport != null) {
                 if (e.getSource() == viewport) {
-                    viewportStateChanged(e);
+                    syncScrollPaneWithViewport();
                 }
                 else {
                     JScrollBar hsb = scrollpane.getHorizontalScrollBar();
@@ -1076,11 +1076,6 @@ public class BasicScrollPaneUI
             }
             viewport.setViewPosition(p);
         }
-
-        private void viewportStateChanged(ChangeEvent e) {
-            syncScrollPaneWithViewport();
-        }
-
 
         //
         // PropertyChangeListener: This is installed on both the JScrollPane

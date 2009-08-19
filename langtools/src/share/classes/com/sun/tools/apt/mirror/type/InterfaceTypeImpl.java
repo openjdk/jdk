@@ -36,7 +36,7 @@ import com.sun.tools.javac.code.Type;
 /**
  * Implementation of InterfaceType
  */
-
+@SuppressWarnings("deprecation")
 public class InterfaceTypeImpl extends DeclaredTypeImpl
                                implements InterfaceType {
 

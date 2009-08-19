@@ -93,9 +93,7 @@ final class Filter {
 
         int filtOffset[] = new int[1];
 
-        for (filtOffset[0] = filterStart;
-             filtOffset[0] < filterEnd;
-             filtOffset[0]++) {
+        for (filtOffset[0] = filterStart; filtOffset[0] < filterEnd;) {
             switch (filter[filtOffset[0]]) {
             case '(':
                 filtOffset[0]++;
@@ -104,18 +102,21 @@ final class Filter {
                 case '&':
                     encodeComplexFilter(ber, filter,
                         LDAP_FILTER_AND, filtOffset, filterEnd);
+                    // filtOffset[0] has pointed to char after right paren
                     parens--;
                     break;
 
                 case '|':
                     encodeComplexFilter(ber, filter,
                         LDAP_FILTER_OR, filtOffset, filterEnd);
+                    // filtOffset[0] has pointed to char after right paren
                     parens--;
                     break;
 
                 case '!':
                     encodeComplexFilter(ber, filter,
                         LDAP_FILTER_NOT, filtOffset, filterEnd);
+                    // filtOffset[0] has pointed to char after right paren
                     parens--;
                     break;
 
@@ -143,8 +144,8 @@ final class Filter {
 
                     encodeSimpleFilter(ber, filter, filtOffset[0], nextOffset);
 
-                    // points to right parens; for loop will increment beyond parens
-                    filtOffset[0] = nextOffset;
+                    // points to the char after right paren.
+                    filtOffset[0] = nextOffset + 1;
 
                     parens--;
                     break;
@@ -170,9 +171,14 @@ final class Filter {
                 filtOffset[0] = filterEnd; // force break from outer
                 break;
             }
+
+            if (parens < 0) {
+                throw new InvalidSearchFilterException(
+                                                "Unbalanced parenthesis");
+            }
         }
 
-        if (parens > 0) {
+        if (parens != 0) {
             throw new InvalidSearchFilterException("Unbalanced parenthesis");
         }
 

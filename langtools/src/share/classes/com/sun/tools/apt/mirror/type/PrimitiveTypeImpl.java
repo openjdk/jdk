@@ -38,7 +38,7 @@ import static com.sun.mirror.type.PrimitiveType.Kind.*;
 /**
  * Implementation of PrimitiveType.
  */
-
+@SuppressWarnings("deprecation")
 class PrimitiveTypeImpl extends TypeMirrorImpl implements PrimitiveType {
 
     private final Kind kind;    // the kind of primitive

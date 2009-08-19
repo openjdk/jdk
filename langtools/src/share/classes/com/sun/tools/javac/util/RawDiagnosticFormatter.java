@@ -39,6 +39,11 @@ import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
  * The raw formatter will format a diagnostic according to one of two format patterns, depending on whether
  * or not the source name and position are set. This formatter provides a standardized, localize-independent
  * implementation of a diagnostic formatter; as such, this formatter is best suited for testing purposes.
+ *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
 public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
 

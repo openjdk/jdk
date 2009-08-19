@@ -529,6 +529,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @param  s   the string to be parsed.
      * @return the {@code double} value represented by the string
      *         argument.
+     * @throws NullPointerException  if the string is null
      * @throws NumberFormatException if the string does not contain
      *         a parsable {@code double}.
      * @see    java.lang.Double#valueOf(String)

@@ -40,7 +40,7 @@ import com.sun.tools.javac.code.TypeTags;
 /**
  * Implementation of AnnotationValue
  */
-
+@SuppressWarnings("deprecation")
 public class AnnotationValueImpl implements AnnotationValue {
 
     protected final AptEnv env;
