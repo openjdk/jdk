@@ -38,7 +38,7 @@ import java.util.Locale;
  * a character's category (lowercase letter, digit, etc.) and for converting
  * characters from uppercase to lowercase and vice versa.
  * <p>
- * Character information is based on the Unicode Standard, version 4.0.
+ * Character information is based on the Unicode Standard, version 5.1.0.
  * <p>
  * The methods and data of class <code>Character</code> are defined by
  * the information in the <i>UnicodeData</i> file that is part of the
