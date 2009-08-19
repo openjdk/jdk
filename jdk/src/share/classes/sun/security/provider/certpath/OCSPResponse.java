@@ -230,6 +230,11 @@ class OCSPResponse {
                 new DerInputStream(derIn.getOctetString());
 
             DerValue[]  seqTmp = basicOCSPResponse.getSequence(2);
+
+            if (seqTmp.length < 3) {
+                throw new IOException("Unexpected BasicOCSPResponse value");
+            }
+
             DerValue responseData = seqTmp[0];
 
             // Need the DER encoded ResponseData to verify the signature later
@@ -312,6 +317,9 @@ class OCSPResponse {
             // signatureAlgorithmId
             sigAlgId = AlgorithmId.parse(seqTmp[1]);
 
+            // check that the signature algorithm is not disabled.
+            AlgorithmChecker.check(sigAlgId);
+
             // signature
             byte[] signature = seqTmp[2].getBitString();
             X509CertImpl[] x509Certs = null;
@@ -344,6 +352,9 @@ class OCSPResponse {
                 // which was set locally.
                 } else if (cert.getIssuerX500Principal().equals(
                     responderCert.getSubjectX500Principal())) {
+
+                    // check the certificate algorithm
+                    AlgorithmChecker.check(cert);
 
                     // Check for the OCSPSigning key purpose
                     List<String> keyPurposes = cert.getExtendedKeyUsage();
