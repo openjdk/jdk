@@ -592,6 +592,8 @@
     <target name="-def-pcompile">
         <mkdir dir="${build.toolclasses.dir}"/>
         <javac fork="true"
+               source="${boot.javac.source}"
+               target="${boot.javac.target}"
                executable="${boot.java.home}/bin/javac"
                srcdir="${make.tools.dir}/CompileProperties"
                destdir="${build.toolclasses.dir}/"
