@@ -27,7 +27,7 @@
  *  @author Gordon Hirsch
  *
  *  @run build TestScaffold VMConnection TargetAdapter TargetListener
- *  @run compile -g -target 1.5 MethodCalls.java
+ *  @run compile -g MethodCalls.java
  *  @run compile -g MethodCallsReflection.java
  *  @run compile -g ControlFlow.java
  *  @run build StepTest
