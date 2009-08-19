@@ -29,6 +29,7 @@ import java.util.*;
 import com.sun.mirror.apt.*;
 import com.sun.mirror.declaration.AnnotationTypeDeclaration;
 
+@SuppressWarnings("deprecation")
 public class BootstrapAPF implements AnnotationProcessorFactory {
 
     static final Collection<String> supportedOptions =
