@@ -331,6 +331,9 @@ private:
 
     void RepositionSecurityWarning(JNIEnv *env);
 
+    static void SetLayered(HWND window, bool layered);
+    static bool IsLayered(HWND window);
+
 public:
     void UpdateSecurityWarningVisibility();
     static bool IsWarningWindow(HWND hWnd);
