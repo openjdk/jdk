@@ -1596,18 +1596,18 @@ void AwtToolkit::RegisterEmbedderProcessId(HWND embedder)
 }
 
 JNIEnv* AwtToolkit::m_env;
-HANDLE AwtToolkit::m_thread;
+DWORD AwtToolkit::m_threadId;
 
 void AwtToolkit::SetEnv(JNIEnv *env) {
     if (m_env != NULL) { // If already cashed (by means of embeddedInit() call).
         return;
     }
-    m_thread = GetCurrentThread();
+    m_threadId = GetCurrentThreadId();
     m_env = env;
 }
 
 JNIEnv* AwtToolkit::GetEnv() {
-    return (m_env == NULL || m_thread != GetCurrentThread()) ?
+    return (m_env == NULL || m_threadId != GetCurrentThreadId()) ?
         (JNIEnv*)JNU_GetEnv(jvm, JNI_VERSION_1_2) : m_env;
 }
 
