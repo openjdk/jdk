@@ -624,7 +624,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 }
 
                 if (eventLog.isLoggable(Level.FINER)) {
-                    eventLog.log(Level.FINER, "{0}", ev);
+                    eventLog.log(Level.FINER, "{0}", String.valueOf(ev));
                 }
 
                 // Check if input method consumes the event
@@ -1837,8 +1837,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             if (timeoutTaskLog.isLoggable(Level.FINER)) {
                 timeoutTaskLog.log(Level.FINER, "XToolkit.schedule(): current time={0}" +
                                    ";  interval={1}" +
-                                   ";  task being added={2}" + ";  tasks before addition={3}", new Object[] {
-                                   Long.valueOf(System.currentTimeMillis()), Long.valueOf(interval), task, timeoutTasks});
+                                   ";  task being added={2}" + ";  tasks before addition={3}",
+                                   new Object[] {Long.valueOf(System.currentTimeMillis()),
+                                                 Long.valueOf(interval), String.valueOf(task),
+                                                 String.valueOf(timeoutTasks)});
             }
 
             if (timeoutTasks == null) {
@@ -1883,7 +1885,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static void callTimeoutTasks() {
         if (timeoutTaskLog.isLoggable(Level.FINER)) {
             timeoutTaskLog.log(Level.FINER, "XToolkit.callTimeoutTasks(): current time={0}" +
-                               ";  tasks={1}",  new Object[] {Long.valueOf(System.currentTimeMillis()), timeoutTasks});
+                               ";  tasks={1}",
+                               new Object[] {Long.valueOf(System.currentTimeMillis()), String.valueOf(timeoutTasks)});
         }
 
         if (timeoutTasks == null || timeoutTasks.isEmpty()) {
@@ -1901,7 +1904,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
                 if (timeoutTaskLog.isLoggable(Level.FINER)) {
                     timeoutTaskLog.log(Level.FINER, "XToolkit.callTimeoutTasks(): current time={0}" +
-                                       ";  about to run task={1}", new Object[] {Long.valueOf(currentTime), task});
+                                       ";  about to run task={1}",
+                                       new Object[] {Long.valueOf(currentTime), String.valueOf(task)});
                 }
 
                 try {
@@ -2358,7 +2362,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             // Wait for selection notify for oops on win
             long event_number = getEventNumber();
             XAtom atom = XAtom.get("WM_S0");
-            eventLog.log(Level.FINER, "WM_S0 selection owner {0}", new Object[] {XlibWrapper.XGetSelectionOwner(getDisplay(), atom.getAtom())});
+            if (eventLog.isLoggable(Level.FINER)) {
+                eventLog.log(Level.FINER, "WM_S0 selection owner {0}",
+                             new Object[] {String.valueOf(XlibWrapper.XGetSelectionOwner(getDisplay(), atom.getAtom()))});
+            }
             XlibWrapper.XConvertSelection(getDisplay(), atom.getAtom(),
                                           XAtom.get("VERSION").getAtom(), oops.getAtom(),
                                           win.getWindow(), XConstants.CurrentTime);

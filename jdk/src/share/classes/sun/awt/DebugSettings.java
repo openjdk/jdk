@@ -129,7 +129,7 @@ final class DebugSettings {
 
         // echo the initial property settings to stdout
         if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "DebugSettings:\n{0}", this);
+            log.log(Level.FINE, "DebugSettings:\n{0}", String.valueOf(this));
         }
     }
 

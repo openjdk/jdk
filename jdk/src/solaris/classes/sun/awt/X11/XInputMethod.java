@@ -108,7 +108,10 @@ public class XInputMethod extends X11InputMethod {
             client = getParent(client);
             peer = (XComponentPeer)XToolkit.targetToPeer(client);
         }
-        log.log(Level.FINE, "Peer is {0}, client is {1}", new Object[] {peer, client});
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Peer is {0}, client is {1}",
+                    new Object[] {String.valueOf(peer), String.valueOf(client)});
+        }
 
         if (peer != null)
             return peer;

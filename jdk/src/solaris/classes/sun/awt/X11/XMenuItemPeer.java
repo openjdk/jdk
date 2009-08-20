@@ -43,8 +43,6 @@ public class XMenuItemPeer implements MenuItemPeer {
      *
      ************************************************/
 
-    private static Logger log = Logger.getLogger("sun.awt.X11.XMenuItemPeer");
-
     /*
      * Primary members
      */

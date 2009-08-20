@@ -401,7 +401,10 @@ final class XWM
     static boolean isCDE() {
 
         if (!XA_DT_SM_WINDOW_INFO.isInterned()) {
-            log.log(Level.FINER, "{0} is not interned", new Object[] {XA_DT_SM_WINDOW_INFO});
+            if (log.isLoggable(Level.FINER)) {
+                log.log(Level.FINER, "{0} is not interned",
+                        new Object[] {String.valueOf(XA_DT_SM_WINDOW_INFO)});
+            }
             return false;
         }
 
@@ -432,7 +435,10 @@ final class XWM
 
             /* Now check that this window has _DT_SM_STATE_INFO (ignore contents) */
             if (!XA_DT_SM_STATE_INFO.isInterned()) {
-                log.log(Level.FINER, "{0} is not interned", new Object[] {XA_DT_SM_STATE_INFO});
+                if (log.isLoggable(Level.FINER)) {
+                    log.log(Level.FINER, "{0} is not interned",
+                            new Object[] {String.valueOf(XA_DT_SM_STATE_INFO)});
+                }
                 return false;
             }
             WindowPropertyGetter getter2 =
@@ -596,7 +602,10 @@ final class XWM
          */
 
         if (!XA_ICEWM_WINOPTHINT.isInterned()) {
-            log.log(Level.FINER, "{0} is not interned", new Object[] {XA_ICEWM_WINOPTHINT});
+            if (log.isLoggable(Level.FINER)) {
+                log.log(Level.FINER, "{0} is not interned",
+                        String.valueOf(XA_ICEWM_WINOPTHINT));
+            }
             return false;
         }
 
@@ -629,7 +638,10 @@ final class XWM
      */
     static boolean isIceWM() {
         if (!XA_ICEWM_WINOPTHINT.isInterned()) {
-            log.log(Level.FINER, "{0} is not interned", new Object[] {XA_ICEWM_WINOPTHINT});
+            if (log.isLoggable(Level.FINER)) {
+                log.log(Level.FINER, "{0} is not interned",
+                        new Object[] {String.valueOf(XA_ICEWM_WINOPTHINT)});
+            }
             return false;
         }
 
@@ -1354,7 +1366,9 @@ final class XWM
         XNETProtocol net_protocol = getWM().getNETProtocol();
         if (net_protocol != null && net_protocol.active()) {
             Insets insets = getInsetsFromProp(window, XA_NET_FRAME_EXTENTS);
-            insLog.log(Level.FINE, "_NET_FRAME_EXTENTS: {0}", insets);
+            if (insLog.isLoggable(Level.FINE)) {
+                insLog.log(Level.FINE, "_NET_FRAME_EXTENTS: {0}", String.valueOf(insets));
+            }
 
             if (insets != null) {
                 return insets;
@@ -1495,7 +1509,10 @@ final class XWM
          *       [mwm, e!, kwin, fvwm2 ... ]
          */
         Insets correctWM = XWM.getInsetsFromExtents(window);
-        insLog.log(Level.FINER, "Got insets from property: {0}", correctWM);
+        if (insLog.isLoggable(Level.FINER)) {
+            insLog.log(Level.FINER, "Got insets from property: {0}",
+                       String.valueOf(correctWM));
+        }
 
         if (correctWM == null) {
             correctWM = new Insets(0,0,0,0);
@@ -1556,7 +1573,10 @@ final class XWM
                   }
                   case XWM.OTHER_WM:
                   default: {                /* this is very similar to the E! case above */
-                      insLog.log(Level.FINEST, "Getting correct insets for OTHER_WM/default, parent: {0}", parent);
+                      if (insLog.isLoggable(Level.FINEST)) {
+                          insLog.log(Level.FINEST, "Getting correct insets for OTHER_WM/default, parent: {0}",
+                                     String.valueOf(parent));
+                      }
                       syncTopLevelPos(parent, lwinAttr);
                       int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                                     window, lwinAttr.pData);
@@ -1583,8 +1603,11 @@ final class XWM
                           && lwinAttr.get_width()+2*lwinAttr.get_border_width() == pattr.get_width()
                           && lwinAttr.get_height()+2*lwinAttr.get_border_width() == pattr.get_height())
                       {
-                          insLog.log(Level.FINEST, "Double reparenting detected, pattr({2})={0}, lwinAttr({3})={1}",
-                                     new Object[] {lwinAttr, pattr, parent, window});
+                          if (insLog.isLoggable(Level.FINEST)) {
+                              insLog.log(Level.FINEST, "Double reparenting detected, pattr({2})={0}, lwinAttr({3})={1}",
+                                         new Object[] {String.valueOf(lwinAttr), String.valueOf(pattr),
+                                                       String.valueOf(parent), String.valueOf(window)});
+                          }
                           lwinAttr.set_x(pattr.get_x());
                           lwinAttr.set_y(pattr.get_y());
                           lwinAttr.set_border_width(lwinAttr.get_border_width()+pattr.get_border_width());
@@ -1611,8 +1634,11 @@ final class XWM
                        * widths and inner/outer distinction, so for the time
                        * being, just ignore it.
                        */
-                      insLog.log(Level.FINEST, "Attrs before calculation: pattr({2})={0}, lwinAttr({3})={1}",
-                                 new Object[] {lwinAttr, pattr, parent, window});
+                      if (insLog.isLoggable(Level.FINEST)) {
+                          insLog.log(Level.FINEST, "Attrs before calculation: pattr({2})={0}, lwinAttr({3})={1}",
+                                     new Object[] {String.valueOf(lwinAttr), String.valueOf(pattr),
+                                                   String.valueOf(parent), String.valueOf(window)});
+                      }
                       correctWM = new Insets(lwinAttr.get_y() + lwinAttr.get_border_width(),
                                              lwinAttr.get_x() + lwinAttr.get_border_width(),
                                              pattr.get_height() - (lwinAttr.get_y() + lwinAttr.get_height() + 2*lwinAttr.get_border_width()),
