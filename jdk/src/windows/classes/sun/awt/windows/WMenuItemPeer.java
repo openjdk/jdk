@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
-    private static final Logger log = Logger.getLogger("sun.awt.WMenuItemPeer");
+    private static final Logger log = Logger.getLogger("sun.awt.windows.WMenuItemPeer");
 
     static {
         initIDs();

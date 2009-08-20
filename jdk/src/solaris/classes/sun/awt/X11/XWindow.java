@@ -997,8 +997,10 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         Rectangle oldBounds = getBounds();
 
         super.handleConfigureNotifyEvent(xev);
-        insLog.log(Level.FINER, "Configure, {0}, event disabled: {1}",
-                   new Object[] {xev.get_xconfigure(), isEventDisabled(xev)});
+        if (insLog.isLoggable(Level.FINER)) {
+           insLog.log(Level.FINER, "Configure, {0}, event disabled: {1}",
+                      new Object[] {String.valueOf(xev.get_xconfigure()), isEventDisabled(xev)});
+        }
         if (isEventDisabled(xev)) {
             return;
         }
@@ -1017,7 +1019,9 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     public void handleMapNotifyEvent(XEvent xev) {
         super.handleMapNotifyEvent(xev);
-        log.log(Level.FINE, "Mapped {0}", new Object[] {this});
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Mapped {0}", new Object[] {String.valueOf(this)});
+        }
         if (isEventDisabled(xev)) {
             return;
         }
@@ -1333,10 +1337,16 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     void updateSizeHints(int x, int y, int width, int height) {
         long flags = XUtilConstants.PSize | (isLocationByPlatform() ? 0 : (XUtilConstants.PPosition | XUtilConstants.USPosition));
         if (!isResizable()) {
-            log.log(Level.FINER, "Window {0} is not resizable", new Object[] {this});
+            if (log.isLoggable(Level.FINER)) {
+                log.log(Level.FINER, "Window {0} is not resizable",
+                        new Object[] {String.valueOf(this)});
+            }
             flags |= XUtilConstants.PMinSize | XUtilConstants.PMaxSize;
         } else {
-            log.log(Level.FINER, "Window {0} is resizable", new Object[] {this});
+            if (keyEventLog.isLoggable(Level.FINER)) {
+                log.log(Level.FINER, "Window {0} is resizable",
+                        new Object[] {String.valueOf(this)});
+            }
         }
         setSizeHints(flags, x, y, width, height);
     }
@@ -1344,10 +1354,16 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     void updateSizeHints(int x, int y) {
         long flags = isLocationByPlatform() ? 0 : (XUtilConstants.PPosition | XUtilConstants.USPosition);
         if (!isResizable()) {
-            log.log(Level.FINER, "Window {0} is not resizable", new Object[] {this});
+            if (log.isLoggable(Level.FINER)) {
+                log.log(Level.FINER, "Window {0} is not resizable",
+                        new Object[] {String.valueOf(this)});
+            }
             flags |= XUtilConstants.PMinSize | XUtilConstants.PMaxSize | XUtilConstants.PSize;
         } else {
-            log.log(Level.FINER, "Window {0} is resizable", new Object[] {this});
+            if (log.isLoggable(Level.FINER)) {
+                log.log(Level.FINER, "Window {0} is resizable",
+                        new Object[] {String.valueOf(this)});
+            }
         }
         setSizeHints(flags, x, y, width, height);
     }

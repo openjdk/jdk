@@ -54,7 +54,11 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
 
     private void setInitialState(XWindowPeer window, int state) {
         XAtomList old_state = window.getNETWMState();
-        log.log(Level.FINE, "Current state of the window {0} is {1}", new Object[] {window, old_state});
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Current state of the window {0} is {1}",
+                    new Object[] {String.valueOf(window),
+                                  String.valueOf(old_state)});
+        }
         if ((state & Frame.MAXIMIZED_VERT) != 0) {
             old_state.add(XA_NET_WM_STATE_MAXIMIZED_VERT);
         } else {
@@ -65,7 +69,10 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
         } else {
             old_state.remove(XA_NET_WM_STATE_MAXIMIZED_HORZ);
         }
-        log.log(Level.FINE, "Setting initial state of the window {0} to {1}", new Object[] {window, old_state});
+        if (log.isLoggable(Level.FINE)) {
+            log.log(Level.FINE, "Setting initial state of the window {0} to {1}",
+                    new Object[] {String.valueOf(window), String.valueOf(old_state)});
+        }
         window.setNETWMState(old_state);
     }
 
@@ -180,7 +187,11 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
             req.set_data(1, state.getAtom());
             // Fix for 6735584: req.data[2] must be set to 0 when only one property is changed
             req.set_data(2, 0);
-            log.log(Level.FINE, "Setting _NET_STATE atom {0} on {1} for {2}", new Object[] {state, window, Boolean.valueOf(isAdd)});
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Setting _NET_STATE atom {0} on {1} for {2}",
+                                    new Object[] {String.valueOf(state), String.valueOf(window),
+                                                  Boolean.valueOf(isAdd)});
+            }
             XToolkit.awtLock();
             try {
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(),
@@ -212,13 +223,19 @@ final class XNETProtocol extends XProtocol implements XStateProtocol, XLayerProt
             requestState(window, state, set);
         } else {
             XAtomList net_wm_state = window.getNETWMState();
-            log.log(Level.FINE, "Current state on {0} is {1}", new Object[] {window, net_wm_state});
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Current state on {0} is {1}",
+                        new Object[] {String.valueOf(window), net_wm_state});
+            }
             if (!set) {
                 net_wm_state.remove(state);
             } else {
                 net_wm_state.add(state);
             }
-            log.log(Level.FINE, "Setting states on {0} to {1}", new Object[] {window, net_wm_state});
+            if (log.isLoggable(Level.FINE)) {
+                log.log(Level.FINE, "Setting states on {0} to {1}",
+                        new Object[] {String.valueOf(window), net_wm_state});
+            }
             window.setNETWMState(net_wm_state);
         }
         XToolkit.XSync();
