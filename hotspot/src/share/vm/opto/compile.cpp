@@ -2533,7 +2533,7 @@ bool Compile::final_graph_reshaping() {
 
   // If original bytecodes contained a mixture of floats and doubles
   // check if the optimizer has made it homogenous, item (3).
-  if( Use24BitFPMode && Use24BitFP &&
+  if( Use24BitFPMode && Use24BitFP && UseSSE == 0 &&
       frc.get_float_count() > 32 &&
       frc.get_double_count() == 0 &&
       (10 * frc.get_call_count() < frc.get_float_count()) ) {
