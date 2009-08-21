@@ -119,6 +119,7 @@ public class Attr extends JCTree.Visitor {
                  options.get("-relax") != null);
         useBeforeDeclarationWarning = options.get("useBeforeDeclarationWarning") != null;
         allowInvokedynamic = options.get("invokedynamic") != null;
+        enableSunApiLintControl = options.get("enableSunApiLintControl") != null;
     }
 
     /** Switch: relax some constraints for retrofit mode.
@@ -159,6 +160,12 @@ public class Attr extends JCTree.Visitor {
      * RFE: 6425594
      */
     boolean useBeforeDeclarationWarning;
+
+    /**
+     * Switch: allow lint infrastructure to control Sun proprietary
+     * API warnings.
+     */
+    boolean enableSunApiLintControl;
 
     /** Check kind and type of given tree against protokind and prototype.
      *  If check succeeds, store type in tree and return it.
@@ -2215,8 +2222,12 @@ public class Attr extends JCTree.Visitor {
                 sym.outermostClass() != env.info.scope.owner.outermostClass())
                 chk.warnDeprecated(tree.pos(), sym);
 
-            if ((sym.flags() & PROPRIETARY) != 0)
-                log.strictWarning(tree.pos(), "sun.proprietary", sym);
+            if ((sym.flags() & PROPRIETARY) != 0) {
+                if (enableSunApiLintControl)
+                  chk.warnSunApi(tree.pos(), "sun.proprietary", sym);
+                else
+                  log.strictWarning(tree.pos(), "sun.proprietary", sym);
+            }
 
             // Test (3): if symbol is a variable, check that its type and
             // kind are compatible with the prototype and protokind.
