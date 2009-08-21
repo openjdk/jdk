@@ -23,7 +23,6 @@
  * have any questions.
  */
 
-
 package com.sun.xml.internal.ws.handler;
 
 import com.sun.xml.internal.ws.api.WSBinding;
@@ -36,6 +35,7 @@ import com.sun.xml.internal.ws.binding.BindingImpl;
 
 import javax.xml.ws.handler.LogicalHandler;
 import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.handler.Handler;
 import javax.xml.ws.WebServiceException;
 import java.util.List;
 import java.util.ArrayList;
@@ -47,7 +47,6 @@ import java.util.ArrayList;
 public class ClientLogicalHandlerTube extends HandlerTube {
 
     private WSBinding binding;
-    private List<LogicalHandler> logicalHandlers;
 
     /**
      * Creates a new instance of LogicalHandlerTube
@@ -78,55 +77,11 @@ public class ClientLogicalHandlerTube extends HandlerTube {
         this.binding = that.binding;
     }
 
-    boolean isHandlerChainEmpty() {
-        return logicalHandlers.isEmpty();
-    }
-
-    /**
-     * Close SOAPHandlers first and then LogicalHandlers on Client
-     * Close LogicalHandlers first and then SOAPHandlers on Server
-     */
-    public void close(MessageContext msgContext) {
-        //assuming cousinTube is called if requestProcessingSucessful is true
-        if (requestProcessingSucessful) {
-            //cousinTube is null in XML/HTTP Binding
-            if (cousinTube != null) {
-                // Close SOAPHandlerTube
-                cousinTube.closeCall(msgContext);
-            }
-        }
-        if (processor != null)
-            closeLogicalHandlers(msgContext);
-
-    }
-
-    /**
-     * This is called from cousinTube.
-     * Close this Tubes's handlers.
-     */
-    public void closeCall(MessageContext msgContext) {
-        closeLogicalHandlers(msgContext);
-    }
-
-    //TODO:
-    private void closeLogicalHandlers(MessageContext msgContext) {
-        if (processor == null)
-            return;
-        if (remedyActionTaken) {
-            //Close only invoked handlers in the chain
-
-            //CLIENT-SIDE
-            processor.closeHandlers(msgContext, processor.getIndex(), 0);
-            processor.setIndex(-1);
-            //reset remedyActionTaken
-            remedyActionTaken = false;
-        } else {
-            //Close all handlers in the chain
-
-            //CLIENT-SIDE
-            processor.closeHandlers(msgContext, logicalHandlers.size() - 1, 0);
-
-        }
+    //should be overridden by DriverHandlerTubes
+    @Override
+    protected void initiateClosing(MessageContext mc) {
+      close(mc);
+      super.initiateClosing(mc);
     }
 
     public AbstractFilterTubeImpl copy(TubeCloner cloner) {
@@ -136,16 +91,16 @@ public class ClientLogicalHandlerTube extends HandlerTube {
     void setUpProcessor() {
         // Take a snapshot, User may change chain after invocation, Same chain
         // should be used for the entire MEP
-        logicalHandlers = new ArrayList<LogicalHandler>();
+        handlers = new ArrayList<Handler>();
         List<LogicalHandler> logicalSnapShot= ((BindingImpl) binding).getHandlerConfig().getLogicalHandlers();
         if (!logicalSnapShot.isEmpty()) {
-            logicalHandlers.addAll(logicalSnapShot);
+            handlers.addAll(logicalSnapShot);
             if (binding.getSOAPVersion() == null) {
                 processor = new XMLHandlerProcessor(this, binding,
-                        logicalHandlers);
+                        handlers);
             } else {
                 processor = new SOAPHandlerProcessor(true, this, binding,
-                        logicalHandlers);
+                        handlers);
             }
         }
     }
@@ -192,5 +147,9 @@ public class ClientLogicalHandlerTube extends HandlerTube {
             throw new WebServiceException(re);
 
         }
+    }
+    void closeHandlers(MessageContext mc) {
+        closeClientsideHandlers(mc);
+
     }
 }

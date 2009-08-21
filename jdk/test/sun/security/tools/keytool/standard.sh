@@ -24,6 +24,7 @@
 # @test
 # @summary (almost) all keytool behaviors
 # @author Weijun Wang
+# @run shell/timeout=600 standard.sh
 #
 # This test is always excecuted.
 #
@@ -43,11 +44,15 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
+  SunOS | Linux | CYGWIN* )
+    FS="/"
+    ;;
   Windows_* )
     FS="\\"
     ;;
   * )
-    FS="/"
+    echo "Unrecognized system!"
+    exit 1;
     ;;
 esac
 

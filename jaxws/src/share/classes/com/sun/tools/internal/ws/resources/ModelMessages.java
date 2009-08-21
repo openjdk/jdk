@@ -255,18 +255,6 @@ public final class ModelMessages {
         return localizer.localize(localizableMODEL_SAXPARSER_EXCEPTION(arg0, arg1));
     }
 
-    public static Localizable localizable_002F_002F_JAXWS() {
-        return messageFactory.getMessage("//JAXWS");
-    }
-
-    /**
-     *  2.0
-     *
-     */
-    public static String _002F_002F_JAXWS() {
-        return localizer.localize(localizable_002F_002F_JAXWS());
-    }
-
     public static Localizable localizableMODEL_DUPLICATE_FAULTMESSAGE(Object arg0) {
         return messageFactory.getMessage("model.duplicate.faultmessage", arg0);
     }
@@ -536,7 +524,9 @@ public final class ModelMessages {
     }
 
     /**
-     * Failed to generate Java signature: duplicate parameter names {0}. Use JAXWS binding customization to rename the wsdl:part "{1}"
+     * Failed to generate Java signature: duplicate parameter name "{0}". Try one of these
+     *  1. Use JAXWS binding customization to rename the wsdl:part "{1}"
+     *  2. Run wsimport with -extension switch.
      *
      */
     public static String MODEL_PARAMETER_NOTUNIQUE(Object arg0, Object arg1) {
@@ -637,6 +627,21 @@ public final class ModelMessages {
      */
     public static String MODEL_IMPORTER_INVALID_LITERAL(Object arg0) {
         return localizer.localize(localizableMODEL_IMPORTER_INVALID_LITERAL(arg0));
+    }
+
+    public static Localizable localizableMODEL_PARAMETER_NOTUNIQUE_WRAPPER(Object arg0, Object arg1) {
+        return messageFactory.getMessage("model.parameter.notunique.wrapper", arg0, arg1);
+    }
+
+    /**
+     * Failed to generate Java signature: duplicate parameter name "{0}". Try one of these
+     *  1. Use JAXWS binding customization to rename the wsdl:part "{1}"
+     *  2. Run wsimport with -extension switch.
+     *  3. This is wrapper style operation, to resolve parameter name conflict, you can also try disabling wrapper style by using <jaxws:enableWrapperStyle>false</jaxws:enableWrapperStyle> wsdl customization.
+     *
+     */
+    public static String MODEL_PARAMETER_NOTUNIQUE_WRAPPER(Object arg0, Object arg1) {
+        return localizer.localize(localizableMODEL_PARAMETER_NOTUNIQUE_WRAPPER(arg0, arg1));
     }
 
     public static Localizable localizableMODEL_SCHEMA_NOT_IMPLEMENTED(Object arg0) {

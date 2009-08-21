@@ -258,8 +258,10 @@ public class StreamWriterBufferCreator extends StreamBufferCreator implements XM
     }
 
     public void writeBinary(DataHandler dataHandler) throws XMLStreamException {
-        // TODO
-        throw new UnsupportedOperationException();
+        Base64Data d = new Base64Data();
+        d.set(dataHandler);
+        storeStructure(T_TEXT_AS_OBJECT);
+        storeContentObject(d);
     }
 
     public OutputStream writeBinary(String endpointURL) throws XMLStreamException {

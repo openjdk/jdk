@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: FastInfosetReflection.java,v 1.2 2006/06/06 18:46:01 sandoz Exp $
- * $Revision: 1.2 $
- * $Date: 2006/06/06 18:46:01 $
- */
 
 
 

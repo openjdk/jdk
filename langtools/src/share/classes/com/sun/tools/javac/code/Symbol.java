@@ -1197,21 +1197,9 @@ public abstract class Symbol implements Element {
          *  as possible implementations.
          */
         public MethodSymbol implementation(TypeSymbol origin, Types types, boolean checkResult) {
-            for (Type t = origin.type; t.tag == CLASS || t.tag == TYPEVAR; t = types.supertype(t)) {
-                while (t.tag == TYPEVAR)
-                    t = t.getUpperBound();
-                TypeSymbol c = t.tsym;
-                for (Scope.Entry e = c.members().lookup(name);
-                     e.scope != null;
-                     e = e.next()) {
-                    if (e.sym.kind == MTH) {
-                        MethodSymbol m = (MethodSymbol) e.sym;
-                        if (m.overrides(this, origin, types, checkResult) &&
-                            (m.flags() & SYNTHETIC) == 0)
-                            return m;
-                    }
-                }
-            }
+            MethodSymbol res = types.implementation(this, origin, types, checkResult);
+            if (res != null)
+                return res;
             // if origin is derived from a raw type, we might have missed
             // an implementation because we do not know enough about instantiations.
             // in this case continue with the supertype as origin.

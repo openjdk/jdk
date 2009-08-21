@@ -28,16 +28,24 @@ package com.sun.xml.internal.ws.api.pipe;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.addressing.WsaClientTube;
+import com.sun.xml.internal.ws.addressing.W3CWsaServerTube;
+import com.sun.xml.internal.ws.addressing.W3CWsaClientTube;
+import com.sun.xml.internal.ws.addressing.v200408.MemberSubmissionWsaServerTube;
+import com.sun.xml.internal.ws.addressing.v200408.MemberSubmissionWsaClientTube;
 import com.sun.xml.internal.ws.api.EndpointAddress;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.WSService;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.client.ClientPipelineHook;
+import com.sun.xml.internal.ws.api.model.SEIModel;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.pipe.helper.PipeAdapter;
 import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.binding.BindingImpl;
+import com.sun.xml.internal.ws.client.ClientSchemaValidationTube;
+import com.sun.xml.internal.ws.developer.SchemaValidationFeature;
 import com.sun.xml.internal.ws.handler.ClientLogicalHandlerTube;
+import com.sun.xml.internal.ws.handler.ClientMessageHandlerTube;
 import com.sun.xml.internal.ws.handler.ClientSOAPHandlerTube;
 import com.sun.xml.internal.ws.handler.HandlerTube;
 import com.sun.xml.internal.ws.protocol.soap.ClientMUTube;
@@ -57,33 +65,42 @@ import java.io.PrintStream;
 public class ClientTubeAssemblerContext {
 
     private final @NotNull EndpointAddress address;
-    private final @NotNull WSDLPort wsdlModel;
+    private final @Nullable WSDLPort wsdlModel;
+    private final @Nullable SEIModel seiModel;
     private final @NotNull WSService rootOwner;
     private final @NotNull WSBinding binding;
     private final @NotNull Container container;
     private @NotNull Codec codec;
 
-    public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @NotNull WSDLPort wsdlModel, @NotNull WSService rootOwner, @NotNull WSBinding binding) {
+    public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @Nullable WSDLPort wsdlModel, @NotNull WSService rootOwner, @NotNull WSBinding binding) {
         this(address, wsdlModel, rootOwner, binding, Container.NONE);
     }
 
-    public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @NotNull WSDLPort wsdlModel,
+    public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @Nullable WSDLPort wsdlModel,
+                                      @NotNull WSService rootOwner, @NotNull WSBinding binding,
+                                      @NotNull Container container) {
+        // WSBinding is actually BindingImpl
+        this(address, wsdlModel, rootOwner, binding, container, ((BindingImpl)binding).createCodec() );
+    }
+
+    public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @Nullable WSDLPort wsdlModel,
                                       @NotNull WSService rootOwner, @NotNull WSBinding binding,
                                       @NotNull Container container, Codec codec) {
+        this(address, wsdlModel, rootOwner, binding, container, codec, null);
+    }
+
+    public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @Nullable WSDLPort wsdlModel,
+                                      @NotNull WSService rootOwner, @NotNull WSBinding binding,
+                                      @NotNull Container container, Codec codec, SEIModel seiModel) {
         this.address = address;
         this.wsdlModel = wsdlModel;
         this.rootOwner = rootOwner;
         this.binding = binding;
         this.container = container;
         this.codec = codec;
+        this.seiModel = seiModel;
     }
 
-    public ClientTubeAssemblerContext(@NotNull EndpointAddress address, @NotNull WSDLPort wsdlModel,
-                                      @NotNull WSService rootOwner, @NotNull WSBinding binding,
-                                      @NotNull Container container) {
-        // WSBinding is actually BindingImpl
-        this(address, wsdlModel, rootOwner, binding, container, ((BindingImpl)binding).createCodec() );
-    }
 
     /**
      * The endpoint address. Always non-null. This parameter is taken separately
@@ -120,6 +137,16 @@ public class ClientTubeAssemblerContext {
     }
 
     /**
+     * The created pipeline will use seiModel to get java concepts for the endpoint
+     *
+     * @return Null if the service doesn't have SEI model e.g. Dispatch,
+     *         and otherwise non-null.
+     */
+    public @Nullable SEIModel getSEIModel() {
+        return seiModel;
+    }
+
+    /**
      * Returns the Container in which the client is running
      *
      * @return Container in which client is running
@@ -153,7 +180,11 @@ public class ClientTubeAssemblerContext {
      */
     public Tube createWsaTube(Tube next) {
         if (binding instanceof SOAPBinding && AddressingVersion.isEnabled(binding) && wsdlModel!=null)
-            return new WsaClientTube(wsdlModel, binding, next);
+            if(AddressingVersion.fromBinding(binding) == AddressingVersion.MEMBER) {
+                return new MemberSubmissionWsaClientTube(wsdlModel, binding, next);
+            } else {
+                return new W3CWsaClientTube(wsdlModel, binding, next);
+            }
         else
             return next;
     }
@@ -162,13 +193,18 @@ public class ClientTubeAssemblerContext {
      * Creates a {@link Tube} that invokes protocol and logical handlers.
      */
     public Tube createHandlerTube(Tube next) {
-        HandlerTube soapHandlerTube = null;
+        HandlerTube cousinHandlerTube = null;
         //XML/HTTP Binding can have only LogicalHandlerPipe
         if (binding instanceof SOAPBinding) {
-            soapHandlerTube = new ClientSOAPHandlerTube(binding, wsdlModel, next);
-            next = soapHandlerTube;
+            //Add MessageHandlerTube
+            HandlerTube messageHandlerTube = new ClientMessageHandlerTube(seiModel, binding, wsdlModel, next);
+            next = cousinHandlerTube = messageHandlerTube;
+
+            //Add SOAPHandlerTuber
+            HandlerTube soapHandlerTube = new ClientSOAPHandlerTube(binding, next, cousinHandlerTube);
+            next = cousinHandlerTube = soapHandlerTube;
         }
-        return new ClientLogicalHandlerTube(binding, next, soapHandlerTube);
+        return new ClientLogicalHandlerTube(binding, next, cousinHandlerTube);
     }
 
     /**
@@ -183,24 +219,26 @@ public class ClientTubeAssemblerContext {
     }
 
     /**
+     * creates a {@link Tube} that validates messages against schema
+     */
+    public Tube createValidationTube(Tube next) {
+        if (binding instanceof SOAPBinding && binding.isFeatureEnabled(SchemaValidationFeature.class) && wsdlModel!=null)
+            return new ClientSchemaValidationTube(binding, wsdlModel, next);
+        else
+            return next;
+    }
+
+    /**
      * Creates a transport pipe (for client), which becomes the terminal pipe.
      */
     public Tube createTransportTube() {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
-        // wsgen generates a WSDL with the address attribute that says "REPLACE_WITH_ACTUAL_URL".
-        // while it's technically correct to reject such address (since there's no transport registered
-        // with it), it's desirable to allow the user a benefit of doubt, and wait until the runtime
-        // to see if the user configures the endpoint address through request context.
+        // The application may configure the endpoint address through request context
+        // using {@link BindingProvider#ENDPOINT_ADDRESS_PROPERTY}. Let us
+        // defer the creation of actual transport until the service invocation,
         // DeferredTransportPipe is used for this purpose.
-        //
-        // Ideally, we shouldn't have @address at all for such cases, but due to the backward
-        // compatibility and the fact that this attribute is mandatory, we have no option but
-        // to check for REPLACE_WITH_ACTUAL_URL.
-        if(address.toString().equals("") || address.toString().equals("REPLACE_WITH_ACTUAL_URL"))
-            return new DeferredTransportPipe(cl,this);
-
-        return TransportTubeFactory.create(cl, this);
+        return new DeferredTransportPipe(cl,this);
     }
 
     /**

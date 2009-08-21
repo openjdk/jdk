@@ -29,6 +29,8 @@ import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.Fiber.CompletionCallback;
 import com.sun.xml.internal.ws.api.pipe.Tube;
 
+import javax.xml.ws.WebServiceException;
+
 /**
  * Invokes {@link Tube}line asynchronously for the client's async API(for e.g.: Dispatch#invokeAsync}
  * The concrete classes need to call {@link Stub#processAsync(Packet, RequestContext, CompletionCallback)} in
@@ -46,5 +48,18 @@ public abstract class AsyncInvoker implements Runnable {
     public void setReceiver(AsyncResponseImpl responseImpl) {
         this.responseImpl = responseImpl;
     }
+
+    public void run () {
+        try {
+            do_run();
+        }catch(WebServiceException e) {
+            throw e;
+        }catch(Throwable t) {
+            //Wrap it in WebServiceException
+            throw new WebServiceException(t);
+        }
+    }
+
+    public abstract void do_run();
 
 }

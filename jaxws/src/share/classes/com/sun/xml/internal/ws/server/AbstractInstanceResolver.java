@@ -199,35 +199,43 @@ abstract class AbstractInstanceResolver<T> extends InstanceResolver<T> {
     InjectionPlan<T,R> buildInjectionPlan(Class<? extends T> clazz, Class<R> resourceType, boolean isStatic) {
         List<InjectionPlan<T,R>> plan = new ArrayList<InjectionPlan<T,R>>();
 
-        for(Field field: clazz.getDeclaredFields()) {
-            Resource resource = field.getAnnotation(Resource.class);
-            if (resource != null) {
-                if(isInjectionPoint(resource, field.getType(),
-                    ServerMessages.localizableWRONG_FIELD_TYPE(field.getName()),resourceType)) {
+        Class<?> cl = clazz;
+        while(cl != Object.class) {
+            for(Field field: cl.getDeclaredFields()) {
+                Resource resource = field.getAnnotation(Resource.class);
+                if (resource != null) {
+                    if(isInjectionPoint(resource, field.getType(),
+                        ServerMessages.localizableWRONG_FIELD_TYPE(field.getName()),resourceType)) {
 
-                    if(isStatic && !Modifier.isStatic(field.getModifiers()))
-                        throw new WebServiceException(ServerMessages.STATIC_RESOURCE_INJECTION_ONLY(resourceType,field));
+                        if(isStatic && !Modifier.isStatic(field.getModifiers()))
+                            throw new WebServiceException(ServerMessages.STATIC_RESOURCE_INJECTION_ONLY(resourceType,field));
 
-                    plan.add(new FieldInjectionPlan<T,R>(field));
+                        plan.add(new FieldInjectionPlan<T,R>(field));
+                    }
                 }
             }
+            cl = cl.getSuperclass();
         }
 
-        for(Method method : clazz.getDeclaredMethods()) {
-            Resource resource = method.getAnnotation(Resource.class);
-            if (resource != null) {
-                Class[] paramTypes = method.getParameterTypes();
-                if (paramTypes.length != 1)
-                    throw new ServerRtException(ServerMessages.WRONG_NO_PARAMETERS(method));
-                if(isInjectionPoint(resource,paramTypes[0],
-                    ServerMessages.localizableWRONG_PARAMETER_TYPE(method.getName()),resourceType)) {
+        cl = clazz;
+        while(cl != Object.class) {
+            for(Method method : cl.getDeclaredMethods()) {
+                Resource resource = method.getAnnotation(Resource.class);
+                if (resource != null) {
+                    Class[] paramTypes = method.getParameterTypes();
+                    if (paramTypes.length != 1)
+                        throw new ServerRtException(ServerMessages.WRONG_NO_PARAMETERS(method));
+                    if(isInjectionPoint(resource,paramTypes[0],
+                        ServerMessages.localizableWRONG_PARAMETER_TYPE(method.getName()),resourceType)) {
 
-                    if(isStatic && !Modifier.isStatic(method.getModifiers()))
-                        throw new WebServiceException(ServerMessages.STATIC_RESOURCE_INJECTION_ONLY(resourceType,method));
+                        if(isStatic && !Modifier.isStatic(method.getModifiers()))
+                            throw new WebServiceException(ServerMessages.STATIC_RESOURCE_INJECTION_ONLY(resourceType,method));
 
-                    plan.add(new MethodInjectionPlan<T,R>(method));
+                        plan.add(new MethodInjectionPlan<T,R>(method));
+                    }
                 }
             }
+            cl = cl.getSuperclass();
         }
 
         return new Compositor<T,R>(plan);

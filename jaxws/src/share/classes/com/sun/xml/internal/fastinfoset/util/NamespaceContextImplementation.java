@@ -84,11 +84,16 @@ final public class NamespaceContextImplementation implements NamespaceContext {
                 final String declaredPrefix = prefixes[i];
 
                 // Check if prefix is out of scope
-                for (++i; i < namespacePosition; i++)
-                    if (declaredPrefix == prefixes[i])
-                        return null;
+                boolean isOutOfScope = false;
+                for (int j = i + 1; j < namespacePosition; j++)
+                    if (declaredPrefix == prefixes[j]) {
+                        isOutOfScope = true;
+                        break;
+                    }
 
-                return declaredPrefix;
+                if (!isOutOfScope) {
+                    return declaredPrefix;
+                }
             }
         }
 

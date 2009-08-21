@@ -23,9 +23,6 @@
  * have any questions.
  */
 
-/*
- * @(#)$Id:
- */
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;

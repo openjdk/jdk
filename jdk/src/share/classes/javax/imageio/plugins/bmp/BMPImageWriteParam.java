@@ -78,7 +78,7 @@ public class BMPImageWriteParam extends ImageWriteParam {
         super(locale);
 
         // Set compression types ("BI_RGB" denotes uncompressed).
-        compressionTypes = BMPConstants.compressionTypeNames;
+        compressionTypes = BMPConstants.compressionTypeNames.clone();
 
         // Set compression flag.
         canWriteCompressed = true;
