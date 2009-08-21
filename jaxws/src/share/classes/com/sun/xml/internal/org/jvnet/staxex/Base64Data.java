@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.org.jvnet.staxex;
 
 import javax.activation.DataHandler;
@@ -44,6 +45,7 @@ import java.io.OutputStream;
 public class Base64Data implements CharSequence, Cloneable {
 
     // either dataHandler or (data,dataLen,mimeType?) must be present
+    // (note that having both is allowed)
 
     private DataHandler dataHandler;
 
@@ -73,6 +75,7 @@ public class Base64Data implements CharSequence, Cloneable {
 
     /**
      * Clone constructor
+     * @param that needs to be cloned
      */
     public Base64Data(Base64Data that) {
         that.get();
@@ -92,8 +95,10 @@ public class Base64Data implements CharSequence, Cloneable {
     /**
      * Fills in the data object by a portion of the byte[].
      *
+     * @param data actual data
      * @param len
      *      data[0] to data[len-1] are treated as the data.
+     * @param mimeType MIME type
      * @param cloneByRef
      *      true if data[] can be cloned by reference
      */
@@ -108,8 +113,10 @@ public class Base64Data implements CharSequence, Cloneable {
     /**
      * Fills in the data object by a portion of the byte[].
      *
+     * @param data actual data bytes
      * @param len
      *      data[0] to data[len-1] are treated as the data.
+     * @param mimeType MIME type
      */
     public void set(byte[] data, int len, String mimeType) {
         set(data,len,mimeType,false);
@@ -120,6 +127,7 @@ public class Base64Data implements CharSequence, Cloneable {
      *
      * @param data
      *      this buffer may be owned directly by the unmarshaleld JAXB object.
+     * @param mimeType MIME type
      */
     public void set(byte[] data,String mimeType) {
         set(data,data.length,mimeType,false);
@@ -127,6 +135,8 @@ public class Base64Data implements CharSequence, Cloneable {
 
     /**
      * Fills in the data object by a {@link DataHandler}.
+     *
+     * @param data DataHandler for the data
      */
     public void set(DataHandler data) {
         assert data!=null;
@@ -135,7 +145,11 @@ public class Base64Data implements CharSequence, Cloneable {
     }
 
     /**
-     * Gets the raw data.
+     * Gets the raw data. If the returned DataHandler is {@link StreamingDataHandler},
+     * callees may need to downcast to take advantage of its capabilities.
+     *
+     * @see StreamingDataHandler
+     * @return DataHandler for the data
      */
     public DataHandler getDataHandler() {
         if(dataHandler==null){
@@ -162,6 +176,8 @@ public class Base64Data implements CharSequence, Cloneable {
 
     /**
      * Gets the byte[] of the exact length.
+     *
+     * @return byte[] for data
      */
     public byte[] getExact() {
         get();
@@ -175,6 +191,9 @@ public class Base64Data implements CharSequence, Cloneable {
 
     /**
      * Gets the data as an {@link InputStream}.
+     *
+     * @return data as InputStream
+     * @throws IOException if i/o error occurs
      */
     public InputStream getInputStream() throws IOException {
         if(dataHandler!=null)
@@ -186,6 +205,8 @@ public class Base64Data implements CharSequence, Cloneable {
     /**
      * Returns false if this object only has {@link DataHandler} and therefore
      * {@link #get()} operation is likely going to be expensive.
+     *
+     * @return false if it has only DataHandler
      */
     public boolean hasData() {
         return data!=null;
@@ -193,6 +214,8 @@ public class Base64Data implements CharSequence, Cloneable {
 
     /**
      * Gets the raw data. The size of the byte array maybe larger than the actual length.
+     *
+     * @return data as byte[], the array may be larger
      */
     public byte[] get() {
         if(data==null) {
@@ -212,7 +235,18 @@ public class Base64Data implements CharSequence, Cloneable {
         return data;
     }
 
+    /**
+     * Gets the length of the binary data counted in bytes.
+     *
+     * Note that if this object encapsulates {@link DataHandler},
+     * this method would have to read the whole thing into {@code byte[]}
+     * just to count the length, because {@link DataHandler}
+     * doesn't easily expose the length.
+     *
+     * @return no of bytes
+     */
     public int getDataLen() {
+        get();
         return dataLen;
     }
 

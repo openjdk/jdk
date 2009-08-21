@@ -54,12 +54,22 @@ public class XMLStreamReaderToContentHandler {
 
     // if true, when the conversion is completed, leave the cursor to the last
     // event that was fired (such as end element)
-    private boolean eagerQuit;
+    private final boolean eagerQuit;
 
     /**
      * If true, not start/endDocument event.
      */
-    private boolean fragment;
+    private final boolean fragment;
+
+    // array of the even length of the form { prefix0, uri0, prefix1, uri1, ... }
+    private final String[] inscopeNamespaces;
+
+    /**
+     * @see #XMLStreamReaderToContentHandler(XMLStreamReader, ContentHandler, boolean, boolean, String[])
+     */
+    public XMLStreamReaderToContentHandler(XMLStreamReader staxCore, ContentHandler saxCore, boolean eagerQuit, boolean fragment) {
+        this(staxCore, saxCore, eagerQuit, fragment, new String[0]);
+    }
 
     /**
      * Construct a new StAX to SAX adapter that will convert a StAX event
@@ -69,13 +79,21 @@ public class XMLStreamReaderToContentHandler {
      *                StAX event source
      * @param saxCore
      *                SAXevent sink
+     * @param eagerQuit
+     * @param fragment
+     * @param inscopeNamespaces
+     *                array of the even length of the form { prefix0, uri0, prefix1, uri1, ... }
      */
-    public XMLStreamReaderToContentHandler(XMLStreamReader staxCore, ContentHandler saxCore, boolean eagerQuit, boolean fragment) {
+    public XMLStreamReaderToContentHandler(XMLStreamReader staxCore, ContentHandler saxCore,
+            boolean eagerQuit, boolean fragment, String[] inscopeNamespaces) {
         this.staxStreamReader = staxCore;
         this.saxHandler = saxCore;
         this.eagerQuit = eagerQuit;
         this.fragment = fragment;
+        this.inscopeNamespaces = inscopeNamespaces;
+        assert inscopeNamespaces.length%2 == 0;
     }
+
 
     /*
      * @see StAXReaderToContentHandler#bridge()
@@ -99,6 +117,10 @@ public class XMLStreamReaderToContentHandler {
                 throw new IllegalStateException("The current event is not START_ELEMENT\n but " + event);
 
             handleStartDocument();
+
+            for(int i=0; i < inscopeNamespaces.length; i+=2) {
+                saxHandler.startPrefixMapping(inscopeNamespaces[i], inscopeNamespaces[i+1]);
+            }
 
             OUTER:
             do {
@@ -155,6 +177,10 @@ public class XMLStreamReaderToContentHandler {
 
                 event=staxStreamReader.next();
             } while (depth!=0);
+
+            for(int i=0; i < inscopeNamespaces.length; i+=2) {
+                saxHandler.endPrefixMapping(inscopeNamespaces[i]);
+            }
 
             handleEndDocument();
         } catch (SAXException e) {

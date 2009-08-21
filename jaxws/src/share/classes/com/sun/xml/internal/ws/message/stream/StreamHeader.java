@@ -181,8 +181,10 @@ public abstract class StreamHeader extends AbstractHeaderImpl {
     }
 
     public void writeTo(XMLStreamWriter w) throws XMLStreamException {
-        // TODO what about in-scope namespaces
-        _mark.writeToXMLStreamWriter(w);
+        if(_mark.getInscopeNamespaces().size() > 0)
+            _mark.writeToXMLStreamWriter(w,true);
+        else
+            _mark.writeToXMLStreamWriter(w);
     }
 
     public void writeTo(SOAPMessage saaj) throws SOAPException {

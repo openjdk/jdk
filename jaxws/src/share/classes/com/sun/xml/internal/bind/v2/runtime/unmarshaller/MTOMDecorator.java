@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import javax.activation.DataHandler;
@@ -78,7 +79,7 @@ final class MTOMDecorator implements XmlVisitor {
     }
 
     public void startElement(TagName tagName) throws SAXException {
-        if(tagName.local=="Include" && tagName.uri==WellKnownNamespace.XOP) {
+        if(tagName.local.equals("Include") && tagName.uri.equals(WellKnownNamespace.XOP)) {
             // found xop:Include
             String href = tagName.atts.getValue("href");
             DataHandler attachment = au.getAttachmentAsDataHandler(href);

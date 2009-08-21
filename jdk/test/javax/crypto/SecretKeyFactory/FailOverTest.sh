@@ -56,6 +56,11 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    NULL=/dev/null
+    PS=";"
+    FS="/"
+    ;;
   Windows* )
     NULL=NUL
     PS=";"
@@ -69,7 +74,7 @@ esac
 
 ${TESTJAVA}${FS}bin${FS}javac \
     -d . \
-    -classpath ${TESTSRC}${FS}P1.jar${PS}${TESTSRC}${FS}P2.jar \
+    -classpath "${TESTSRC}${FS}P1.jar${PS}${TESTSRC}${FS}P2.jar" \
     ${TESTSRC}${FS}FailOverTest.java
 
 if [ $? -ne 0 ]; then
@@ -77,7 +82,7 @@ if [ $? -ne 0 ]; then
 fi
 
 ${TESTJAVA}${FS}bin${FS}java \
-    -classpath ${TESTSRC}${FS}P1.jar${PS}${TESTSRC}${FS}P2.jar${PS}. \
+    -classpath "${TESTSRC}${FS}P1.jar${PS}${TESTSRC}${FS}P2.jar${PS}." \
     FailOverTest
 result=$?
 

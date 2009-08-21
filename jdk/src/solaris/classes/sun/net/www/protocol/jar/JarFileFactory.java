@@ -25,12 +25,14 @@
 
 package sun.net.www.protocol.jar;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.jar.*;
-import java.util.zip.ZipFile;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.jar.JarFile;
 import java.security.Permission;
+import sun.net.util.URLUtil;
 
 /* A factory for cached JAR file. This class is used to both retrieve
  * and cache Jar files.
@@ -41,13 +43,13 @@ import java.security.Permission;
 class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
     /* the url to file cache */
-    private static HashMap fileCache = new HashMap();
+    private static HashMap<String, JarFile> fileCache = new HashMap<String, JarFile>();
 
     /* the file to url cache */
-    private static HashMap urlCache = new HashMap();
+    private static HashMap<JarFile, URL> urlCache = new HashMap<JarFile, URL>();
 
     URLConnection getConnection(JarFile jarFile) throws IOException {
-        URL u = (URL)urlCache.get(jarFile);
+        URL u = urlCache.get(jarFile);
         if (u != null)
             return u.openConnection();
 
@@ -72,7 +74,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
                 synchronized (this) {
                     result = getCachedJarFile(url);
                     if (result == null) {
-                        fileCache.put(url, local_result);
+                        fileCache.put(URLUtil.urlNoFragString(url), local_result);
                         urlCache.put(local_result, url);
                         result = local_result;
                     } else {
@@ -97,15 +99,15 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
      * remove the JarFile from the cache
      */
     public void close(JarFile jarFile) {
-        URL urlRemoved = (URL) urlCache.remove(jarFile);
+        URL urlRemoved = urlCache.remove(jarFile);
         if( urlRemoved != null) {
-                fileCache.remove(urlRemoved);
+                fileCache.remove(URLUtil.urlNoFragString(urlRemoved));
         }
     }
 
 
     private JarFile getCachedJarFile(URL url) {
-        JarFile result = (JarFile)fileCache.get(url);
+        JarFile result = fileCache.get(URLUtil.urlNoFragString(url));
 
         /* if the JAR file is cached, the permission will always be there */
         if (result != null) {

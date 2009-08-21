@@ -51,7 +51,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.OutputStream;
-import java.util.Map;
 
 /**
  * {@link Header} whose physical data representation is a JAXB bean.
@@ -151,9 +150,16 @@ public final class JAXBHeader extends AbstractHeaderImpl {
     }
 
     public <T> T readAsJAXB(Unmarshaller unmarshaller) throws JAXBException {
-        JAXBResult r = new JAXBResult(unmarshaller);
-        bridge.marshal(jaxbObject,r);
-        return (T)r.getResult();
+        try {
+            JAXBResult r = new JAXBResult(unmarshaller);
+            // bridge marshals a fragment, so we need to add start/endDocument by ourselves
+            r.getHandler().startDocument();
+            bridge.marshal(jaxbObject,r);
+            r.getHandler().endDocument();
+            return (T)r.getResult();
+        } catch (SAXException e) {
+            throw new JAXBException(e);
+        }
     }
 
     public <T> T readAsJAXB(Bridge<T> bridge) throws JAXBException {

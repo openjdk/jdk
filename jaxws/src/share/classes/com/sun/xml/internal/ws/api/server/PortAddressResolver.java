@@ -59,4 +59,22 @@ public abstract class PortAddressResolver {
      *      is written as it is (without any patching).
      */
     public abstract @Nullable String getAddressFor(@NotNull QName serviceName, @NotNull String portName);
+
+    /**
+     * Gets the endpoint address for a WSDL port
+     *
+     * @param serviceName
+     *       WSDL service name(wsd:service in WSDL) for which address is needed. Always non-null.
+     * @param portName
+     *       WSDL port name(wsdl:port in WSDL) for which address is needed. Always non-null.
+     * @param currentAddress
+     *       Whatever current address specified for the port in the WSDL
+     * @return
+     *      The address needs to be put in WSDL for port element's location
+     *      attribute. Can be null. If it is null, existing port address
+     *      is written as it is (without any patching).
+     */
+    public @Nullable String getAddressFor(@NotNull QName serviceName, @NotNull String portName, String currentAddress) {
+        return getAddressFor(serviceName, portName);
+    }
 }

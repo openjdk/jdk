@@ -23,7 +23,6 @@
  * have any questions.
  */
 
-
 package com.sun.xml.internal.ws.binding;
 
 import com.sun.istack.internal.NotNull;
@@ -262,6 +261,14 @@ public final class WebServiceFeatureList implements WSFeatureList {
      */
     public void setParentFeaturedObject(@NotNull WSDLFeaturedObject parent) {
         this.parent = parent;
+    }
+
+    public static @Nullable <F extends WebServiceFeature> F getFeature(@NotNull WebServiceFeature[] features, @NotNull Class<F> featureType) {
+        for(WebServiceFeature f : features) {
+            if (f.getClass() == featureType)
+                return (F)f;
+        }
+        return null;
     }
 
     /**

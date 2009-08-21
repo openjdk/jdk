@@ -51,6 +51,7 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
 import sun.misc.FileURLMapper;
+import sun.net.util.URLUtil;
 
 /**
  * This class is used to maintain a search path of URLs for loading classes
@@ -80,7 +81,7 @@ public class URLClassPath {
     ArrayList<Loader> loaders = new ArrayList<Loader>();
 
     /* Map of each URL opened to its corresponding Loader */
-    HashMap<URL, Loader> lmap = new HashMap<URL, Loader>();
+    HashMap<String, Loader> lmap = new HashMap<String, Loader>();
 
     /* The jar protocol handler to use when creating new URLs */
     private URLStreamHandler jarHandler;
@@ -317,7 +318,8 @@ public class URLClassPath {
             // Skip this URL if it already has a Loader. (Loader
             // may be null in the case where URL has not been opened
             // but is referenced by a JAR index.)
-            if (lmap.containsKey(url)) {
+            String urlNoFragString = URLUtil.urlNoFragString(url);
+            if (lmap.containsKey(urlNoFragString)) {
                 continue;
             }
             // Otherwise, create a new Loader for the URL.
@@ -336,7 +338,7 @@ public class URLClassPath {
             }
             // Finally, add the Loader to the search path.
             loaders.add(loader);
-            lmap.put(url, loader);
+            lmap.put(urlNoFragString, loader);
         }
         return loaders.get(index);
     }
@@ -576,7 +578,7 @@ public class URLClassPath {
         private JarIndex index;
         private MetaIndex metaIndex;
         private URLStreamHandler handler;
-        private HashMap<URL, Loader> lmap;
+        private HashMap<String, Loader> lmap;
         private boolean closed = false;
 
         /*
@@ -584,7 +586,7 @@ public class URLClassPath {
          * a JAR file.
          */
         JarLoader(URL url, URLStreamHandler jarHandler,
-                  HashMap<URL, Loader> loaderMap)
+                  HashMap<String, Loader> loaderMap)
             throws IOException
         {
             super(new URL("jar", "", -1, url + "!/", jarHandler));
@@ -663,8 +665,9 @@ public class URLClassPath {
                                         try {
                                             URL jarURL = new URL(csu, jarfiles[i]);
                                             // If a non-null loader already exists, leave it alone.
-                                            if (!lmap.containsKey(jarURL)) {
-                                                lmap.put(jarURL, null);
+                                            String urlNoFragString = URLUtil.urlNoFragString(jarURL);
+                                            if (!lmap.containsKey(urlNoFragString)) {
+                                                lmap.put(urlNoFragString, null);
                                             }
                                         } catch (MalformedURLException e) {
                                             continue;
@@ -806,7 +809,7 @@ public class URLClassPath {
             if (index == null)
                 return null;
 
-            HashSet<URL> visited = new HashSet<URL>();
+            HashSet<String> visited = new HashSet<String>();
             return getResource(name, check, visited);
         }
 
@@ -818,7 +821,7 @@ public class URLClassPath {
          * non-existent resource
          */
         Resource getResource(final String name, boolean check,
-                             Set<URL> visited) {
+                             Set<String> visited) {
 
             Resource res;
             Object[] jarFiles;
@@ -843,7 +846,8 @@ public class URLClassPath {
 
                     try{
                         url = new URL(csu, jarName);
-                        if ((newLoader = (JarLoader)lmap.get(url)) == null) {
+                        String urlNoFragString = URLUtil.urlNoFragString(url);
+                        if ((newLoader = (JarLoader)lmap.get(urlNoFragString)) == null) {
                             /* no loader has been set up for this jar file
                              * before
                              */
@@ -867,7 +871,7 @@ public class URLClassPath {
                             }
 
                             /* put it in the global hashtable */
-                            lmap.put(url, newLoader);
+                            lmap.put(urlNoFragString, newLoader);
                         }
                     } catch (java.security.PrivilegedActionException pae) {
                         continue;
@@ -879,7 +883,7 @@ public class URLClassPath {
                     /* Note that the addition of the url to the list of visited
                      * jars incorporates a check for presence in the hashmap
                      */
-                    boolean visitedURL = !visited.add(url);
+                    boolean visitedURL = !visited.add(URLUtil.urlNoFragString(url));
                     if (!visitedURL) {
                         try {
                             newLoader.ensureOpen();

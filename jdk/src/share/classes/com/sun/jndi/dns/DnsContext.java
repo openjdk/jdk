@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -922,7 +922,7 @@ public class DnsContext extends ComponentDirContext {
 
     //---------- Debugging
 
-    public static boolean debug = false;
+    private static final boolean debug = false;
 
     private static final void dprint(String msg) {
         if (debug) {
@@ -972,14 +972,11 @@ class NameClassPairEnumeration implements NamingEnumeration {
     }
 
     /*
-     * ctx will be closed when no longer needed by the enumeration.
+     * ctx will be set to null when no longer needed by the enumeration.
      */
-    public void close () {
+    public void close() {
         nodes = null;
-        if (ctx != null) {
-            ctx.close();
-            ctx = null;
-        }
+        ctx = null;
     }
 
     public boolean hasMore() {
