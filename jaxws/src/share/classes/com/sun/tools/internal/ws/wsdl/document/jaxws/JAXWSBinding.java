@@ -232,15 +232,6 @@ public class JAXWSBinding extends ExtensionImpl {
         this.isProvider = isProvider;
     }
 
-    /* (non-Javadoc)
-     * @see Entity#getProperty(java.lang.String)
-     */
-    public Object getProperty(String key) {
-        if(key.equals(JAXWSBindingsConstants.JAXB_BINDINGS))
-            return jaxbBindings;
-        return null;
-    }
-
     /**
      * @return Returns the methodName.
      */

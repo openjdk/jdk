@@ -22,12 +22,12 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import javax.xml.namespace.QName;
 import javax.xml.bind.annotation.XmlIDREF;
 
-import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.runtime.Location;
 import com.sun.xml.internal.bind.v2.model.core.NonElement;
 import com.sun.xml.internal.bind.v2.model.core.TypeInfo;
@@ -50,7 +50,7 @@ class AnyTypeImpl<T,C> implements NonElement<T,C> {
     }
 
     public QName getTypeName() {
-        return name;
+        return ANYTYPE_NAME;
     }
 
     public T getType() {
@@ -79,5 +79,4 @@ class AnyTypeImpl<T,C> implements NonElement<T,C> {
         return true;
     }
 
-    private static final QName name = new QName(WellKnownNamespace.XML_SCHEMA,"anyType");
 }

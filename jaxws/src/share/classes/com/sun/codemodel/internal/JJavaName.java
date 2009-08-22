@@ -231,6 +231,7 @@ public class JJavaName {
               "(.*)basis","$1bases",
                "(.*)axis","$1axes",
                  "(.+)is","$1ises",
+                 "(.+)ss","$1sses",
                  "(.+)us","$1uses",
                   "(.+)s","$1s",
                "(.*)foot","$1feet",

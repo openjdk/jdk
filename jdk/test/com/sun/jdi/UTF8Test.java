@@ -29,7 +29,7 @@
  *  @author jjh
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g -source 1.5 UTF8Test.java
+ *  @run compile -g UTF8Test.java
  *  @run main UTF8Test
  */
 

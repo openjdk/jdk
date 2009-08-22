@@ -27,9 +27,7 @@ package com.sun.xml.internal.ws.addressing;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.addressing.model.ActionNotSupportedException;
-import com.sun.xml.internal.ws.addressing.model.MapRequiredException;
 import com.sun.xml.internal.ws.api.WSBinding;
-import com.sun.xml.internal.ws.api.message.HeaderList;
 import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
@@ -44,10 +42,13 @@ import javax.xml.ws.WebServiceException;
  * WsaClientTube appears in the Tubeline only if addressing is enabled.
  * This tube checks the validity of addressing headers in the incoming messages
  * based on the WSDL model.
- *
+ * @author Rama Pulavarthi
  * @author Arun Gupta
  */
-public final class WsaClientTube extends WsaTube {
+public class WsaClientTube extends WsaTube {
+    // capture if the request expects a reply so that it can be used to
+    // determine if its oneway for response validation.
+    protected boolean expectReply = true;
     public WsaClientTube(WSDLPort wsdlPort, WSBinding binding, Tube next) {
         super(wsdlPort, binding, next);
     }
@@ -61,20 +62,23 @@ public final class WsaClientTube extends WsaTube {
     }
 
     public @NotNull NextAction processRequest(Packet request) {
+        expectReply = request.expectReply;
         return doInvoke(next,request);
    }
 
     public @NotNull NextAction processResponse(Packet response) {
         // if one-way then, no validation
-        if (response.getMessage() != null)
+        if (response.getMessage() != null) {
             response = validateInboundHeaders(response);
+            response.addSatellite(new WsaPropertyBag(addressingVersion,soapVersion,response));
+        }
 
         return doReturnWith(response);
     }
 
 
     @Override
-    public void validateAction(Packet packet) {
+    protected void validateAction(Packet packet) {
         //There may not be a WSDL operation.  There may not even be a WSDL.
         //For instance this may be a RM CreateSequence message.
         WSDLBoundOperation wbo = getWSDLBoundOperation(packet);
@@ -91,14 +95,4 @@ public final class WsaClientTube extends WsaTube {
             throw new ActionNotSupportedException(gotA);
     }
 
-    @Override
-    protected void checkMandatoryHeaders(Packet packet, boolean foundAction, boolean foundTo, boolean foundMessageID, boolean foundRelatesTo) {
-        super.checkMandatoryHeaders(packet, foundAction, foundTo, foundMessageID, foundRelatesTo);
-
-//        if(!foundRelatesTo)
-//            // RelatesTo required as per
-//            // Table 5-3 of http://www.w3.org/TR/2006/WD-ws-addr-wsdl-20060216/#wsdl11requestresponse
-//            throw new MapRequiredException(addressingVersion.relatesToTag);
-
-    }
 }

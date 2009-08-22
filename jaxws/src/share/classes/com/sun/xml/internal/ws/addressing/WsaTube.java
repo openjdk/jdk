@@ -26,8 +26,8 @@
 package com.sun.xml.internal.ws.addressing;
 
 import com.sun.istack.internal.NotNull;
-import com.sun.xml.internal.ws.addressing.model.InvalidMapException;
-import com.sun.xml.internal.ws.addressing.model.MapRequiredException;
+import com.sun.xml.internal.ws.addressing.model.InvalidAddressingHeaderException;
+import com.sun.xml.internal.ws.addressing.model.MissingAddressingHeaderException;
 import com.sun.xml.internal.ws.api.SOAPVersion;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
@@ -50,7 +50,10 @@ import javax.xml.soap.SOAPFault;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.soap.AddressingFeature;
+import javax.xml.ws.soap.SOAPBinding;
 import java.util.Iterator;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * WS-Addressing processing code shared between client and server.
@@ -58,6 +61,7 @@ import java.util.Iterator;
  * <p>
  * This tube is used only when WS-Addressing is enabled.
  *
+ * @author Rama Pulavarthi
  * @author Arun Gupta
  */
 abstract class WsaTube extends AbstractFilterTubeImpl {
@@ -119,25 +123,27 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
      * a fault message and returns that. Otherwise
      * it will pass through the parameter 'packet' object to the return value.
      */
-    protected final Packet validateInboundHeaders(Packet packet) {
+    protected Packet validateInboundHeaders(Packet packet) {
         SOAPFault soapFault;
         FaultDetailHeader s11FaultDetailHeader;
 
         try {
-            checkCardinality(packet);
-
+            checkMessageAddressingProperties(packet);
             return packet;
-        } catch (InvalidMapException e) {
-            soapFault = helper.newInvalidMapFault(e, addressingVersion);
-            s11FaultDetailHeader = new FaultDetailHeader(addressingVersion, addressingVersion.problemHeaderQNameTag.getLocalPart(), e.getMapQName());
-        } catch (MapRequiredException e) {
-            soapFault = helper.newMapRequiredFault(e, addressingVersion);
-            s11FaultDetailHeader = new FaultDetailHeader(addressingVersion, addressingVersion.problemHeaderQNameTag.getLocalPart(), e.getMapQName());
+        } catch (InvalidAddressingHeaderException e) {
+            LOGGER.log(Level.WARNING,
+                    addressingVersion.getInvalidMapText()+", Problem header:" + e.getProblemHeader()+ ", Reason: "+ e.getSubsubcode(),e);
+            soapFault = helper.createInvalidAddressingHeaderFault(e, addressingVersion);
+            s11FaultDetailHeader = new FaultDetailHeader(addressingVersion, addressingVersion.problemHeaderQNameTag.getLocalPart(), e.getProblemHeader());
+        } catch (MissingAddressingHeaderException e) {
+            LOGGER.log(Level.WARNING,addressingVersion.getMapRequiredText()+", Problem header:"+ e.getMissingHeaderQName(),e);
+            soapFault = helper.newMapRequiredFault(e);
+            s11FaultDetailHeader = new FaultDetailHeader(addressingVersion, addressingVersion.problemHeaderQNameTag.getLocalPart(), e.getMissingHeaderQName());
         }
 
         if (soapFault != null) {
             // WS-A fault processing for one-way methods
-            if (packet.getMessage().isOneWay(wsdlPort)) {
+            if ((wsdlPort !=null)  && packet.getMessage().isOneWay(wsdlPort)) {
                 return packet.createServerResponse(null, wsdlPort, null, binding);
             }
 
@@ -146,11 +152,26 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
                 m.getHeaders().add(s11FaultDetailHeader);
             }
 
-            Packet response = packet.createServerResponse(m, wsdlPort, null,  binding);
-            return response;
+            return packet.createServerResponse(m, wsdlPort, null,  binding);
         }
 
         return packet;
+    }
+
+    /**
+     * This method checks all the WS-Addressing headers are valid and as per the spec definded rules.
+     * Mainly it checks the cardinality of the WSA headers and checks that mandatory headers exist.
+     * It also checks if the SOAPAction is equal to wsa:Action value when non-empty.
+     *
+     * Override this method if you need to additional checking of headers other than just existence of the headers.
+     * For ex: On server-side, check Anonymous and Non-Anonymous semantics in addition to checking cardinality.
+     *
+     * Override checkMandatoryHeaders(Packet p) to have different validation rules for different versions
+     *
+     * @param packet
+     */
+    protected void checkMessageAddressingProperties(Packet packet) {
+        checkCardinality(packet);
     }
 
     final boolean isAddressingEngagedOrRequired(Packet packet, WSBinding binding) {
@@ -187,7 +208,7 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
      * <li>an uknown WS-Addressing header is present</li>
      * </ul>
      */
-    public void checkCardinality(Packet packet) {
+    protected void checkCardinality(Packet packet) {
         Message message = packet.getMessage();
         if (message == null) {
             if (addressingRequired)
@@ -202,7 +223,7 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
             // no WS-A headers are found
             if (addressingRequired)
                 // if WS-A is required, then throw an exception looking for wsa:Action header
-                throw new MapRequiredException(addressingVersion.actionTag);
+                throw new MissingAddressingHeaderException(addressingVersion.actionTag,packet);
             else
                 // else no need to process
                 return;
@@ -284,7 +305,7 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
 
         // check for invalid cardinality first before checking for mandatory headers
         if (duplicateHeader != null) {
-            throw new InvalidMapException(duplicateHeader, addressingVersion.invalidCardinalityTag);
+            throw new InvalidAddressingHeaderException(duplicateHeader, addressingVersion.invalidCardinalityTag);
         }
 
         // WS-A is engaged if wsa:Action header is found
@@ -296,7 +317,16 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
         // Both wsa:Action and wsa:To MUST be present on request (for oneway MEP) and
         // response messages (for oneway and request/response MEP only)
         if (engaged || addressingRequired) {
-            checkMandatoryHeaders(packet, foundAction, foundTo, foundMessageId, foundRelatesTo);
+            // Check for mandatory headers always (even for Protocol messages).
+            // If it breaks any interop scenarios, Remove the comments.
+            /*
+            WSDLBoundOperation wbo = getWSDLBoundOperation(packet);
+            // no need to check for for non-application messages
+            if (wbo == null)
+                return;
+            */
+            checkMandatoryHeaders(packet, foundAction, foundTo, foundReplyTo,
+                    foundFaultTo, foundMessageId, foundRelatesTo);
         }
     }
 
@@ -306,18 +336,14 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
         // TODO: always in current role, this may not to be fixed.
         if (binding == null)
             return true;
+        return ((SOAPBinding)binding).getRoles().contains(header.getRole(soapVersion));
 
-
-        if (soapVersion == SOAPVersion.SOAP_11) {
-            // Rama: Why not checking for SOAP 1.1?
-            return true;
-        } else {
-            String role = header.getRole(soapVersion);
-            return (role.equals(SOAPVersion.SOAP_12.implicitRole));
-        }
     }
 
     protected final WSDLBoundOperation getWSDLBoundOperation(Packet packet) {
+        //we can find Req/Response or Oneway only with WSDLModel
+        if(wsdlPort == null)
+            return null;
         return packet.getMessage().getOperation(wsdlPort);
     }
 
@@ -326,21 +352,34 @@ abstract class WsaTube extends AbstractFilterTubeImpl {
         if (gotA == null)
             throw new WebServiceException(AddressingMessages.VALIDATION_SERVER_NULL_ACTION());
         if(packet.soapAction != null && !packet.soapAction.equals("\"\"") && !packet.soapAction.equals("\""+gotA+"\"")) {
-            throw new InvalidMapException(addressingVersion.actionTag, addressingVersion.actionMismatchTag);
+            throw new InvalidAddressingHeaderException(addressingVersion.actionTag, addressingVersion.actionMismatchTag);
         }
     }
 
     protected abstract void validateAction(Packet packet);
-    protected void checkMandatoryHeaders(
-        Packet packet, boolean foundAction, boolean foundTo, boolean foundMessageId, boolean foundRelatesTo) {
-        WSDLBoundOperation wbo = getWSDLBoundOperation(packet);
-        // no need to check for for non-application messages
-        if (wbo == null)
-            return;
 
+    /**
+     * This should be called only when Addressing is engaged.
+     *
+     * Checks only for presence of wsa:Action and validates that wsa:Action
+     * equals SOAPAction header when non-empty
+     * Should be overridden if other wsa headers need to be checked based on version.
+     *
+     * @param packet
+     * @param foundAction
+     * @param foundTo
+     * @param foundReplyTo
+     * @param foundFaultTo
+     * @param foundMessageId
+     * @param foundRelatesTo
+     */
+    protected void checkMandatoryHeaders(
+        Packet packet, boolean foundAction, boolean foundTo, boolean foundReplyTo,
+            boolean foundFaultTo, boolean foundMessageId, boolean foundRelatesTo) {
         // if no wsa:Action header is found
         if (!foundAction)
-            throw new MapRequiredException(addressingVersion.actionTag);
+            throw new MissingAddressingHeaderException(addressingVersion.actionTag,packet);
         validateSOAPAction(packet);
     }
+    private static final Logger LOGGER = Logger.getLogger(WsaTube.class.getName());
 }

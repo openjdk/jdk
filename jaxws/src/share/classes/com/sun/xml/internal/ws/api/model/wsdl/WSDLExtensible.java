@@ -53,7 +53,7 @@ public interface WSDLExtensible extends WSDLObject {
      *      The type of the extension to obtain. Must not be null.
      *
      * @return
-     *      Can be an empty collection but never null.
+     *      Can be an empty fromjava.collection but never null.
      */
     <T extends WSDLExtension> Iterable<T> getExtensions(Class<T> type);
 

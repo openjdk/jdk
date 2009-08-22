@@ -156,12 +156,14 @@ public abstract class GeneratorBase
         return comments;
     }
 
-    protected JDefinedClass getClass(String className, ClassType type) {
+    protected JDefinedClass getClass(String className, ClassType type) throws JClassAlreadyExistsException {
         JDefinedClass cls;
         try {
             cls = cm._class(className, type);
         } catch (JClassAlreadyExistsException e){
             cls = cm._getClass(className);
+            if(cls == null)
+                throw e;
         }
         return cls;
     }

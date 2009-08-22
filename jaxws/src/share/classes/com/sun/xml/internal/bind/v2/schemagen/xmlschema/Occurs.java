@@ -36,9 +36,9 @@ public interface Occurs
     public Occurs minOccurs(int value);
 
     @XmlAttribute
-    public Occurs maxOccurs(int value);
+    public Occurs maxOccurs(String value);
 
     @XmlAttribute
-    public Occurs maxOccurs(String value);
+    public Occurs maxOccurs(int value);
 
 }

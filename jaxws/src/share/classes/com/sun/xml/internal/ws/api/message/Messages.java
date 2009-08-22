@@ -31,10 +31,10 @@ import com.sun.xml.internal.bind.api.JAXBRIContext;
 import com.sun.xml.internal.bind.v2.runtime.MarshallerImpl;
 import com.sun.xml.internal.stream.buffer.XMLStreamBuffer;
 import com.sun.xml.internal.ws.api.SOAPVersion;
+import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.pipe.Tube;
 import com.sun.xml.internal.ws.api.pipe.Codecs;
-import com.sun.xml.internal.ws.encoding.StreamSOAPCodec;
 import com.sun.xml.internal.ws.fault.SOAPFaultBuilder;
 import com.sun.xml.internal.ws.message.AttachmentSetImpl;
 import com.sun.xml.internal.ws.message.DOMMessage;
@@ -48,6 +48,9 @@ import com.sun.xml.internal.ws.message.source.ProtocolSourceMessage;
 import com.sun.xml.internal.ws.streaming.XMLStreamReaderException;
 import com.sun.xml.internal.ws.streaming.XMLStreamReaderUtil;
 import com.sun.xml.internal.ws.util.DOMUtil;
+import com.sun.xml.internal.ws.addressing.WsaTubeHelper;
+import com.sun.xml.internal.ws.addressing.model.MissingAddressingHeaderException;
+import com.sun.xml.internal.ws.resources.AddressingMessages;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -302,6 +305,35 @@ public abstract class Messages {
         return new DOMMessage(ver,fault);
     }
 
+    /**
+     * @deprecated
+     *      Use {@link #createAddressingFaultMessage(WSBinding, Packet, QName)}
+     */
+    public static Message createAddressingFaultMessage(WSBinding binding, QName missingHeader) {
+        return createAddressingFaultMessage(binding,null,missingHeader);
+    }
+
+    /**
+     * Creates a fault {@link Message} that captures the code/subcode/subsubcode
+     * defined by WS-Addressing if one of the expected WS-Addressing headers is
+     * missing in the message
+     *
+     * @param binding WSBinding
+     * @param p
+     *      {@link Packet} that was missing a WS-Addressing header.
+     * @param missingHeader The missing WS-Addressing Header
+     * @return
+     *      A message representing SOAPFault that contains the WS-Addressing code/subcode/subsubcode.
+     */
+    public static Message createAddressingFaultMessage(WSBinding binding, Packet p, QName missingHeader) {
+        AddressingVersion av = binding.getAddressingVersion();
+        if(av == null) {
+            // Addressing is not enabled.
+            throw new WebServiceException(AddressingMessages.ADDRESSING_SHOULD_BE_ENABLED());
+        }
+        WsaTubeHelper helper = av.getWsaHelper(null,null,binding);
+        return create(helper.newMapRequiredFault(new MissingAddressingHeaderException(missingHeader,p)));
+    }
     /**
      * Creates a fault {@link Message} that captures the code/subcode/subsubcode
      * defined by WS-Addressing if wsa:Action is not supported.

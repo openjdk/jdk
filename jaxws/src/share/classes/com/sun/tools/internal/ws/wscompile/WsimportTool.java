@@ -24,7 +24,6 @@
  */
 
 
-
 package com.sun.tools.internal.ws.wscompile;
 
 import com.sun.codemodel.internal.CodeWriter;
@@ -42,6 +41,7 @@ import com.sun.tools.internal.ws.resources.WsdlMessages;
 import com.sun.tools.internal.xjc.util.NullStream;
 import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.util.ServiceFinder;
+import com.sun.istack.internal.tools.ParallelWorldClassLoader;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXParseException;
 
@@ -53,6 +53,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.net.Authenticator;
 
 /**
  * @author Vivek Pandey
@@ -75,7 +76,6 @@ public class WsimportTool {
         this.out = (logStream instanceof PrintStream)?(PrintStream)logStream:new PrintStream(logStream);
         this.container = container;
     }
-
 
     public boolean run(String[] args) {
         class Listener extends WsimportListener {
@@ -107,6 +107,11 @@ public class WsimportTool {
             }
 
             @Override
+            public void debug(SAXParseException exception) {
+                cer.debug(exception);
+            }
+
+            @Override
             public void info(SAXParseException exception) {
                 cer.info(exception);
             }
@@ -132,6 +137,13 @@ public class WsimportTool {
                 if (listener.isCanceled())
                     throw new AbortException();
             }
+
+            @Override
+            public void debug(SAXParseException exception){
+                if(options.debugMode){
+                    listener.debug(exception);
+                }
+            }
         };
 
         for (String arg : args) {
@@ -151,6 +163,11 @@ public class WsimportTool {
                 if( !options.quiet )
                     listener.message(WscompileMessages.WSIMPORT_PARSING_WSDL());
 
+                //set auth info
+                //if(options.authFile != null)
+                    Authenticator.setDefault(new DefaultAuthenticator(receiver, options.authFile));
+
+
                 WSDLModeler wsdlModeler = new WSDLModeler(options, receiver);
                 Model wsdlModel = wsdlModeler.buildModel();
                 if (wsdlModel == null) {
@@ -165,10 +182,13 @@ public class WsimportTool {
                 TJavaGeneratorExtension[] genExtn = ServiceFinder.find(TJavaGeneratorExtension.class).toArray();
                 CustomExceptionGenerator.generate(wsdlModel,  options, receiver);
                 SeiGenerator.generate(wsdlModel, options, receiver, genExtn);
+                if(receiver.hadError()){
+                    throw new AbortException();
+                }
                 ServiceGenerator.generate(wsdlModel, options, receiver);
                 CodeWriter cw = new WSCodeWriter(options.sourceDir, options);
                 if (options.verbose)
-                    cw = new ProgressCodeWriter(cw, System.out);
+                    cw = new ProgressCodeWriter(cw, out);
                 options.getCodeModel().build(cw);
             } catch(AbortException e){
                 //error might have been reported
@@ -177,7 +197,7 @@ public class WsimportTool {
             }
 
             if (!options.nocompile){
-                if(!compileGeneratedClasses(receiver)){
+                if(!compileGeneratedClasses(receiver, listener)){
                     listener.message(WscompileMessages.WSCOMPILE_COMPILATION_FAILED());
                     return false;
                 }
@@ -204,7 +224,20 @@ public class WsimportTool {
         this.options.entityResolver = resolver;
     }
 
-    protected boolean compileGeneratedClasses(ErrorReceiver receiver){
+    /*
+     * To take care of JDK6-JDK6u3, where 2.1 API classes are not there
+     */
+    private static boolean useBootClasspath(Class clazz) {
+        try {
+            ParallelWorldClassLoader.toJarUrl(clazz.getResource('/'+clazz.getName().replace('.','/')+".class"));
+            return true;
+        } catch(Exception e) {
+            return false;
+        }
+    }
+
+
+    protected boolean compileGeneratedClasses(ErrorReceiver receiver, WsimportListener listener){
         List<String> sourceFiles = new ArrayList<String>();
 
         for (File f : options.getGeneratedFiles()) {
@@ -216,19 +249,32 @@ public class WsimportTool {
         if (sourceFiles.size() > 0) {
             String classDir = options.destDir.getAbsolutePath();
             String classpathString = createClasspathString();
-            String[] args = new String[5 + (options.debug ? 1 : 0)
+            boolean bootCP = useBootClasspath(EndpointReference.class) || useBootClasspath(XmlSeeAlso.class);
+            String[] args = new String[4 + (bootCP ? 1 : 0) + (options.debug ? 1 : 0)
                     + sourceFiles.size()];
             args[0] = "-d";
             args[1] = classDir;
             args[2] = "-classpath";
             args[3] = classpathString;
-            args[4] = "-Xbootclasspath/p:"+JavaCompilerHelper.getJarFile(EndpointReference.class)+File.pathSeparator+JavaCompilerHelper.getJarFile(XmlSeeAlso.class);
-            int baseIndex = 5;
+            int baseIndex = 4;
+            if (bootCP) {
+                args[baseIndex++] = "-Xbootclasspath/p:"+JavaCompilerHelper.getJarFile(EndpointReference.class)+File.pathSeparator+JavaCompilerHelper.getJarFile(XmlSeeAlso.class);
+            }
+
             if (options.debug) {
                 args[baseIndex++] = "-g";
             }
             for (int i = 0; i < sourceFiles.size(); ++i) {
                 args[baseIndex + i] = sourceFiles.get(i);
+            }
+
+            listener.message(WscompileMessages.WSIMPORT_COMPILING_CODE());
+            if(options.verbose){
+                StringBuffer argstr = new StringBuffer();
+                for(String arg:args){
+                    argstr.append(arg).append(" ");
+                }
+                listener.message("javac "+ argstr.toString());
             }
 
             return JavaCompilerHelper.compile(args, out, receiver);
@@ -238,11 +284,16 @@ public class WsimportTool {
     }
 
     private String createClasspathString() {
-        return System.getProperty("java.class.path");
+        String classpathStr = System.getProperty("java.class.path");
+        for(String s: options.cmdlineJars) {
+            classpathStr = classpathStr+File.pathSeparator+new File(s);
+        }
+        return classpathStr;
     }
 
     protected void usage(Options options) {
         System.out.println(WscompileMessages.WSIMPORT_HELP(WSIMPORT));
+        System.out.println(WscompileMessages.WSIMPORT_USAGE_EXTENSIONS());
         System.out.println(WscompileMessages.WSIMPORT_USAGE_EXAMPLES());
     }
 }

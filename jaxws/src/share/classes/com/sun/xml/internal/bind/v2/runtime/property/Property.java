@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
@@ -34,6 +35,7 @@ import com.sun.xml.internal.bind.api.AccessorException;
 import com.sun.xml.internal.bind.v2.model.core.ID;
 import com.sun.xml.internal.bind.v2.model.core.PropertyInfo;
 import com.sun.xml.internal.bind.v2.model.core.PropertyKind;
+import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
@@ -125,4 +127,14 @@ public interface Property<BeanT> extends StructureLoaderBuilder {
      * to clean up any unnecessary references.
      */
     void wrapUp();
+
+
+
+    /**
+     * Provides more {@link RuntimePropertyInfo} information on the property.
+     *
+     * @return
+     *      null if RETAIN_REFERENCE_TO_INFO property is not set on the {@link JAXBContext}
+     */
+    public RuntimePropertyInfo getInfo();
 }

@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.text.MessageFormat;
@@ -56,7 +57,7 @@ enum Messages {
     SUPER_CLASS_HAS_WILDCARD, // 0 args
     INVALID_ATTRIBUTE_WILDCARD_TYPE, // 1 arg
     PROPERTY_MISSING_FROM_ORDER, // 1 arg
-    PROPERTY_ORDER_CONTAINS_UNUSED_ENTRY, // 1 arg
+    PROPERTY_ORDER_CONTAINS_UNUSED_ENTRY, // 2 args
 
     INVALID_XML_ENUM_VALUE, // 2 arg
     FAILED_TO_INITIALE_DATATYPE_FACTORY, // 0 args
@@ -72,7 +73,7 @@ enum Messages {
     SIMPLE_TYPE_IS_REQUIRED, // 1 arg
     PROPERTY_COLLISION, // 1 arg
     INVALID_IDREF, // 1 arg
-    INVALID_XML_ELEMENT_REF, // 0 arg
+    INVALID_XML_ELEMENT_REF, // 1 arg
     NO_XML_ELEMENT_DECL, // 2 args
     XML_ELEMENT_WRAPPER_ON_NON_COLLECTION, // 1 arg
 
@@ -84,20 +85,31 @@ enum Messages {
 
     INCOMPATIBLE_API_VERSION, // 2 args
     INCOMPATIBLE_API_VERSION_MUSTANG, // 2 args
+    RUNNING_WITH_1_0_RUNTIME, // 2 args
 
     MISSING_JAXB_PROPERTIES, // 1arg
     TRANSIENT_FIELD_NOT_BINDABLE, // 1 arg
     THERE_MUST_BE_VALUE_IN_XMLVALUE, // 1 arg
     UNMATCHABLE_ADAPTER, // 2 args
+    ANONYMOUS_ARRAY_ITEM, // 1 arg
 
     ACCESSORFACTORY_INSTANTIATION_EXCEPTION, // 2 arg
     ACCESSORFACTORY_ACCESS_EXCEPTION, // 2 arg
     CUSTOM_ACCESSORFACTORY_PROPERTY_ERROR, // 2 arg
     CUSTOM_ACCESSORFACTORY_FIELD_ERROR, // 2 arg
+        XMLGREGORIANCALENDAR_INVALID, // 1 arg
+        XMLGREGORIANCALENDAR_SEC, // 0 arg
+        XMLGREGORIANCALENDAR_MIN, // 0 arg
+        XMLGREGORIANCALENDAR_HR, // 0 arg
+        XMLGREGORIANCALENDAR_DAY, // 0 arg
+        XMLGREGORIANCALENDAR_MONTH, // 0 arg
+        XMLGREGORIANCALENDAR_YEAR, // 0 arg
+        XMLGREGORIANCALENDAR_TIMEZONE, // 0 arg
     ;
 
     private static final ResourceBundle rb = ResourceBundle.getBundle(Messages.class.getName());
 
+    @Override
     public String toString() {
         return format();
     }
