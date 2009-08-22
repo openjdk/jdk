@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import javax.xml.namespace.QName;
@@ -32,6 +33,7 @@ import com.sun.xml.internal.bind.v2.model.annotation.Locatable;
 import com.sun.xml.internal.bind.v2.model.core.ArrayInfo;
 import com.sun.xml.internal.bind.v2.model.core.NonElement;
 import com.sun.xml.internal.bind.v2.runtime.Location;
+import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationException;
 
 /**
  *
@@ -57,17 +59,22 @@ public class ArrayInfoImpl<TypeT,ClassDeclT,FieldT,MethodT>
                          Locatable upstream, TypeT arrayType) {
         super(builder, upstream);
         this.arrayType = arrayType;
-        this.itemType = builder.getTypeInfo(nav().getComponentType(arrayType), this);
+        TypeT componentType = nav().getComponentType(arrayType);
+        this.itemType = builder.getTypeInfo(componentType, this);
 
-        // TODO: check itemType.getTypeName()!=null and report an error
         QName n = itemType.getTypeName();
+        if(n==null) {
+            builder.reportError(new IllegalAnnotationException(Messages.ANONYMOUS_ARRAY_ITEM.format(
+                nav().getTypeName(componentType)),this));
+            n = new QName("#dummy"); // for error recovery
+        }
         this.typeName = calcArrayTypeName(n);
     }
 
     /**
      * Computes the type name of the array from that of the item type.
      */
-    public static final QName calcArrayTypeName(QName n) {
+    public static QName calcArrayTypeName(QName n) {
         String uri;
         if(n.getNamespaceURI().equals(WellKnownNamespace.XML_SCHEMA)) {
             TODO.checkSpec("this URI");

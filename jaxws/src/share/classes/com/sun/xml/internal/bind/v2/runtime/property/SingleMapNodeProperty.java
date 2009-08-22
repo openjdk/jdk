@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
@@ -236,14 +237,14 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
                 Object key = e.getKey();
                 if(key!=null) {
                     w.startElement(keyTag,key);
-                    w.childAsXsiType(key,fieldName,keyBeanInfo);
+                    w.childAsXsiType(key,fieldName,keyBeanInfo, false);
                     w.endElement();
                 }
 
                 Object value = e.getValue();
                 if(value!=null) {
                     w.startElement(valueTag,value);
-                    w.childAsXsiType(value,fieldName,valueBeanInfo);
+                    w.childAsXsiType(value,fieldName,valueBeanInfo, false);
                     w.endElement();
                 }
 

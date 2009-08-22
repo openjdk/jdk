@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.codemodel.internal;
 
 import java.util.ArrayList;
@@ -77,7 +78,8 @@ public class JCommentPart extends ArrayList<Object> {
      */
     protected void format( JFormatter f, String indent ) {
         if(!f.isPrinting()) {
-            // quickly pass the types to JFormatter
+            // quickly pass the types to JFormatter, as that's all we care.
+            // we don't need to worry about the exact formatting of text.
             for( Object o : this )
                 if(o instanceof JClass)
                     f.g((JClass)o);
@@ -97,12 +99,12 @@ public class JCommentPart extends ArrayList<Object> {
                 while( (idx=s.indexOf('\n'))!=-1 ) {
                     String line = s.substring(0,idx);
                     if(line.length()>0)
-                        f.p(line);
+                        f.p(escape(line));
                     s = s.substring(idx+1);
                     f.nl().p(indent);
                 }
                 if(s.length()!=0)
-                    f.p(s);
+                    f.p(escape(s));
             } else
             if(o instanceof JClass) {
                 // TODO: this doesn't print the parameterized type properly
@@ -116,5 +118,17 @@ public class JCommentPart extends ArrayList<Object> {
 
         if(!isEmpty())
             f.nl();
+    }
+
+    /**
+     * Escapes the appearance of the comment terminator.
+     */
+    private String escape(String s) {
+        while(true) {
+            int idx = s.indexOf("*/");
+            if(idx <0)   return s;
+
+            s = s.substring(0,idx+1)+"<!---->"+s.substring(idx+1);
+        }
     }
 }

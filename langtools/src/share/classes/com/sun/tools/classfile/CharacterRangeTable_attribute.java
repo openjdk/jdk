@@ -58,7 +58,7 @@ public class CharacterRangeTable_attribute  extends Attribute {
     }
 
     public CharacterRangeTable_attribute(int name_index, Entry[] character_range_table) {
-        super(name_index, character_range_table.length * Entry.length());
+        super(name_index, 2 + character_range_table.length * Entry.length());
         this.character_range_table = character_range_table;
     }
 

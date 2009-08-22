@@ -52,6 +52,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.sax.SAXResult;
 
 import com.sun.istack.internal.SAXException2;
+import com.sun.xml.internal.bind.CycleRecoverable;
 import com.sun.xml.internal.bind.api.AccessorException;
 import com.sun.xml.internal.bind.marshaller.NamespacePrefixMapper;
 import com.sun.xml.internal.bind.util.ValidationEventLocatorExImpl;
@@ -61,10 +62,10 @@ import com.sun.xml.internal.bind.v2.runtime.output.MTOMXmlOutput;
 import com.sun.xml.internal.bind.v2.runtime.output.NamespaceContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.output.Pcdata;
 import com.sun.xml.internal.bind.v2.runtime.output.XmlOutput;
+import com.sun.xml.internal.bind.v2.runtime.property.Property;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.IntData;
 import com.sun.xml.internal.bind.v2.util.CollisionCheckStack;
-import com.sun.xml.internal.bind.CycleRecoverable;
 
 import org.xml.sax.SAXException;
 
@@ -131,6 +132,9 @@ public final class XMLSerializer extends Coordinator {
 
     private NamespaceContextImpl.Element nse;
 
+    // Introduced based on Jersey requirements - to be able to retrieve marshalled name
+    ThreadLocal<Property> currentProperty = new ThreadLocal<Property>();
+
     /**
      * Set to true if a text is already written,
      * and we need to print ' ' for additional text methods.
@@ -181,7 +185,6 @@ public final class XMLSerializer extends Coordinator {
 
     public AttachmentMarshaller attachmentMarshaller;
 
-
     /*package*/ XMLSerializer( MarshallerImpl _owner ) {
         this.marshaller = _owner;
         this.grammar = marshaller.context;
@@ -192,11 +195,13 @@ public final class XMLSerializer extends Coordinator {
 
     /**
      * Gets the cached instance of {@link Base64Data}.
+     *
+     * @deprecated
+     *      {@link Base64Data} is no longer cached, so that
+     *      XMLStreamWriterEx impl can retain the data, like JAX-WS does.
      */
     public Base64Data getCachedBase64DataInstance() {
-        if(base64Data==null)
-            base64Data = new Base64Data();
-        return base64Data;
+        return new Base64Data();
     }
 
     /**
@@ -607,7 +612,7 @@ public final class XMLSerializer extends Coordinator {
      *      Used as a part of the error message in case anything goes wrong
      *      with 'o'.
      */
-    public final void childAsXsiType( Object child, String fieldName, JaxBeanInfo expected ) throws SAXException, IOException, XMLStreamException {
+    public final void childAsXsiType( Object child, String fieldName, JaxBeanInfo expected, boolean nillable) throws SAXException, IOException, XMLStreamException {
         if(child==null) {
             handleMissingObjectError(fieldName);
         } else {
@@ -658,12 +663,26 @@ public final class XMLSerializer extends Coordinator {
                 }
             }
             actual.serializeURIs(child,this);
+
+            if (nillable) {
+                getNamespaceContext().declareNamespace(WellKnownNamespace.XML_SCHEMA_INSTANCE,"xsi",true);
+            }
+
             endNamespaceDecls(child);
             if(!asExpected) {
                 attribute(WellKnownNamespace.XML_SCHEMA_INSTANCE,"type",
                     DatatypeConverter.printQName(actualTypeName,getNamespaceContext()));
             }
+
             actual.serializeAttributes(child,this);
+            boolean nilDefined = false;
+            if (actual instanceof AttributeAccessor) {
+                nilDefined = ((AttributeAccessor)actual).isNilIncluded();
+            }
+            if ((nillable) && (!nilDefined)) {
+                attribute(WellKnownNamespace.XML_SCHEMA_INSTANCE,"nil","true");
+            }
+
             endAttributes();
             actual.serializeBody(child,this);
 
@@ -1026,6 +1045,14 @@ public final class XMLSerializer extends Coordinator {
 
     protected ValidationEventLocator getLocation() {
         return getCurrentLocation(null);
+    }
+
+    /**
+     * May return null when the property hasn't been set.
+     * Introduced based on Jersey requirements.
+     */
+    public Property getCurrentProperty() {
+        return currentProperty.get();
     }
 
     /**

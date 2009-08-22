@@ -30,6 +30,7 @@ import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.pipe.Codec;
 import com.sun.xml.internal.ws.api.pipe.ContentType;
 import com.sun.xml.internal.ws.api.streaming.XMLStreamWriterFactory;
+import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.encoding.ContentTypeImpl;
 
 import javax.xml.stream.XMLStreamException;
@@ -47,6 +48,12 @@ public final class XMLCodec implements Codec {
     public static final String XML_TEXT_MIME_TYPE = "text/xml";
 
     private static final ContentType contentType = new ContentTypeImpl(XML_TEXT_MIME_TYPE);
+
+    private final WSBinding binding;
+
+    public XMLCodec(WSBinding binding) {
+        this.binding = binding;
+    }
 
     public String getMimeType() {
         return XML_APPLICATION_MIME_TYPE;
@@ -79,7 +86,7 @@ public final class XMLCodec implements Codec {
     }
 
     public void decode(InputStream in, String contentType, Packet packet) throws IOException {
-        Message message = XMLMessage.create(contentType, in);
+        Message message = XMLMessage.create(contentType, in, binding);
         packet.setMessage(message);
     }
 

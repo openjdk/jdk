@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class StandardMidiFileWriter extends MidiFileWriter {
     /**
      * MIDI parser types
      */
-    public static final int types[] = {
+    private static final int types[] = {
         MIDI_TYPE_0,
         MIDI_TYPE_1
     };

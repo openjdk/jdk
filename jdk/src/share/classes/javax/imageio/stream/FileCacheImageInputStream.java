@@ -62,6 +62,10 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
     /** The DisposerRecord that closes the underlying cache. */
     private final DisposerRecord disposerRecord;
 
+    /** The CloseAction that closes the stream in
+     *  the StreamCloser's shutdown hook                     */
+    private final StreamCloser.CloseAction closeAction;
+
     /**
      * Constructs a <code>FileCacheImageInputStream</code> that will read
      * from a given <code>InputStream</code>.
@@ -96,7 +100,9 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
         this.cacheFile =
             File.createTempFile("imageio", ".tmp", cacheDir);
         this.cache = new RandomAccessFile(cacheFile, "rw");
-        StreamCloser.addToQueue(this);
+
+        this.closeAction = StreamCloser.createCloseAction(this);
+        StreamCloser.addToQueue(closeAction);
 
         disposerRecord = new StreamDisposerRecord(cacheFile, cache);
         if (getClass() == FileCacheImageInputStream.class) {
@@ -242,7 +248,7 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
         stream = null;
         cache = null;
         cacheFile = null;
-        StreamCloser.removeFromQueue(this);
+        StreamCloser.removeFromQueue(closeAction);
     }
 
     /**

@@ -22,13 +22,14 @@
  */
 
 /* @test
- * @bug 4313887 6838333
+ * @bug 4313887 6838333 6865748
  * @summary Unit test for java.nio.file.Files for miscellenous cases not
  *   covered by other tests
  * @library ..
  */
 
 import java.nio.file.*;
+import java.nio.file.attribute.Attributes;
 import java.io.IOException;
 import java.util.*;
 
@@ -113,5 +114,29 @@ public class Misc {
             npeExpected();
         } catch (NullPointerException e) {
         }
+
+        SimpleFileVisitor<Path> visitor = new SimpleFileVisitor<Path>() { };
+        boolean ranTheGauntlet = false;
+        try { visitor.preVisitDirectory(null);
+        } catch (NullPointerException x0) {
+        try { visitor.preVisitDirectoryFailed(null, new IOException());
+        } catch (NullPointerException x1) {
+        try { visitor.preVisitDirectoryFailed(dir, null);
+        } catch (NullPointerException x2) {
+        try { visitor.visitFile(null, Attributes.readBasicFileAttributes(Paths.get(".")));
+        } catch (NullPointerException x3) {
+        try {  visitor.visitFile(dir, null);
+        } catch (NullPointerException x4) {
+        try { visitor.visitFileFailed(null, new IOException());
+        } catch (NullPointerException x5) {
+        try { visitor.visitFileFailed(dir, null);
+        } catch (NullPointerException x6) {
+        try { visitor.postVisitDirectory(null, new IOException());
+        } catch (NullPointerException x7) {
+            // if we get here then all visit* methods threw NPE as expected
+            ranTheGauntlet = true;
+        }}}}}}}}
+        if (!ranTheGauntlet)
+            throw new RuntimeException("A visit method did not throw NPE");
     }
 }

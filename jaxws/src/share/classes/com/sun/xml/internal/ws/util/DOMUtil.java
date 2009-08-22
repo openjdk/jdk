@@ -50,7 +50,7 @@ import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 
 /**
- * $author: JAXWS Development Team
+ * @author: JAXWS Development Team
  */
 public class DOMUtil {
 
@@ -135,11 +135,13 @@ public class DOMUtil {
     public static void writeTagWithAttributes(Element node, XMLStreamWriter writer) throws XMLStreamException {
         String nodePrefix = fixNull(node.getPrefix());
         String nodeNS = fixNull(node.getNamespaceURI());
+        //fix to work with DOM level 1 nodes.
+        String nodeLocalName = node.getLocalName()== null?node.getNodeName():node.getLocalName();
 
         // See if nodePrefix:nodeNS is declared in writer's NamespaceContext before writing start element
         // Writing start element puts nodeNS in NamespaceContext even though namespace declaration not written
         boolean prefixDecl = isPrefixDeclared(writer, nodeNS, nodePrefix);
-        writer.writeStartElement(nodePrefix, node.getLocalName(), nodeNS);
+        writer.writeStartElement(nodePrefix, nodeLocalName, nodeNS);
 
         if (node.hasAttributes()) {
             NamedNodeMap attrs = node.getAttributes();

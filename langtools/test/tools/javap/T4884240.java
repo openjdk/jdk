@@ -46,9 +46,9 @@ public class T4884240 {
         pw.close();
         String[] lines = sw.toString().split("\n");
         if (lines.length < 3
-            || !lines[0].startsWith("Classfile")
-            || !lines[1].startsWith("Last modified")
-            || !lines[2].startsWith("MD5")) {
+            || !lines[0].trim().startsWith("Classfile")
+            || !lines[1].trim().startsWith("Last modified")
+            || !lines[2].trim().startsWith("MD5")) {
             System.out.println(sw);
             throw new Exception("unexpected output");
         }

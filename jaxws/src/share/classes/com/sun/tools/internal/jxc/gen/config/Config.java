@@ -70,15 +70,10 @@ public class Config extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
+        case 4:
             {
-                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
-            }
-            break;
-        case 1:
-            {
-                if(($__uri == "" && $__local == "schema")) {
-                    NGCCHandler h = new Schema(this, super._source, $runtime, 3, baseDir);
+                if(($__uri == "" && $__local == "classes")) {
+                    NGCCHandler h = new Classes(this, super._source, $runtime, 34);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
@@ -97,10 +92,26 @@ public class Config extends NGCCHandler {
                 }
             }
             break;
+        case 1:
+            {
+                if(($__uri == "" && $__local == "schema")) {
+                    NGCCHandler h = new Schema(this, super._source, $runtime, 31, baseDir);
+                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    unexpectedEnterElement($__qname);
+                }
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
+            }
+            break;
         case 2:
             {
                 if(($__uri == "" && $__local == "schema")) {
-                    NGCCHandler h = new Schema(this, super._source, $runtime, 4, baseDir);
+                    NGCCHandler h = new Schema(this, super._source, $runtime, 32, baseDir);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
@@ -114,17 +125,6 @@ public class Config extends NGCCHandler {
                 if(($ai = $runtime.getAttributeIndex("","baseDir"))>=0) {
                     $runtime.consumeAttribute($ai);
                     $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    unexpectedEnterElement($__qname);
-                }
-            }
-            break;
-        case 4:
-            {
-                if(($__uri == "" && $__local == "classes")) {
-                    NGCCHandler h = new Classes(this, super._source, $runtime, 6);
-                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
                     unexpectedEnterElement($__qname);
@@ -145,11 +145,6 @@ public class Config extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 0:
-            {
-                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 1:
             {
                 if(($__uri == "" && $__local == "config")) {
@@ -159,6 +154,11 @@ public class Config extends NGCCHandler {
                 else {
                     unexpectedLeaveElement($__qname);
                 }
+            }
+            break;
+        case 0:
+            {
+                revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         case 2:
@@ -257,13 +257,6 @@ public class Config extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
-        case 6:
-            {
-                bd = $value;
-                $_ngcc_current_state = 5;
-                action1();
-            }
-            break;
         case 0:
             {
                 revertToParentFromText(this, super._cookie, $value);
@@ -283,29 +276,36 @@ public class Config extends NGCCHandler {
                 }
             }
             break;
+        case 6:
+            {
+                bd = $value;
+                $_ngcc_current_state = 5;
+                action1();
+            }
+            break;
         }
     }
 
     public void onChildCompleted(Object $__result__, int $__cookie__, boolean $__needAttCheck__)throws SAXException {
         switch($__cookie__) {
-        case 3:
-            {
-                _schema = ((Schema)$__result__);
-                action0();
-                $_ngcc_current_state = 1;
-            }
-            break;
-        case 4:
-            {
-                _schema = ((Schema)$__result__);
-                action0();
-                $_ngcc_current_state = 1;
-            }
-            break;
-        case 6:
+        case 34:
             {
                 classes = ((Classes)$__result__);
                 $_ngcc_current_state = 2;
+            }
+            break;
+        case 31:
+            {
+                _schema = ((Schema)$__result__);
+                action0();
+                $_ngcc_current_state = 1;
+            }
+            break;
+        case 32:
+            {
+                _schema = ((Schema)$__result__);
+                action0();
+                $_ngcc_current_state = 1;
             }
             break;
         }

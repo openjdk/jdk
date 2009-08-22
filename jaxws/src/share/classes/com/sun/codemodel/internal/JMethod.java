@@ -388,10 +388,11 @@ public class JMethod extends JGenerifiableImpl implements JDeclaration, JAnnotat
                 f.g(a).nl();
         }
 
-                // declare the generics parameters
+        f.g(mods);
+
+        // declare the generics parameters
                 super.declare(f);
 
-                f.g(mods);
                 if (!isConstructor())
                         f.g(type);
                 f.id(name).p('(').i();

@@ -50,7 +50,7 @@ public class LineNumberTable_attribute extends Attribute {
     }
 
     public LineNumberTable_attribute(int name_index, Entry[] line_number_table) {
-        super(name_index, line_number_table.length * Entry.length());
+        super(name_index, 2 + line_number_table.length * Entry.length());
         this.line_number_table_length = line_number_table.length;
         this.line_number_table = line_number_table;
     }

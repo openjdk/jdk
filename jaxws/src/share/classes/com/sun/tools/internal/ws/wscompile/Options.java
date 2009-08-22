@@ -24,7 +24,6 @@
  */
 
 
-
 package com.sun.tools.internal.ws.wscompile;
 
 import com.sun.tools.internal.ws.resources.WscompileMessages;
@@ -150,6 +149,10 @@ public class Options {
 
 
     public boolean debug = false;
+
+    /**
+     * -Xdebug - gives complete stack trace
+     */
     public boolean debugMode = false;
 
 
@@ -206,7 +209,7 @@ public class Options {
      * @exception BadCommandLineException
      *      thrown when there's a problem in the command-line arguments
      */
-    public final void parseArguments( String[] args ) throws BadCommandLineException {
+    public void parseArguments( String[] args ) throws BadCommandLineException {
 
         for (int i = 0; i < args.length; i++) {
             if(args[i].length()==0)

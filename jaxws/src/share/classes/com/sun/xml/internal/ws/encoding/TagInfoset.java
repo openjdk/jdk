@@ -59,6 +59,8 @@ public final class TagInfoset {
     /**
      * Namespace declarations on this tag. Read-only.
      *
+     * This is an array of the even length of the form { prefix0, uri0, prefix1, uri1, ... }.
+     *
      * URIs/prefixes can be null (StAX-style)
      */
     public final @NotNull String[] ns;
@@ -169,12 +171,15 @@ public final class TagInfoset {
      * Writes the start element event.
      */
     public void writeStart(XMLStreamWriter w) throws XMLStreamException {
-        // write start tag. Arrrgggghhh!!
+        // write start tag.
         if(prefix==null) {
             if(nsUri==null)
                 w.writeStartElement(localName);
-            else
-                w.writeStartElement(nsUri,localName);
+            else {
+                //fix Null prefix. otherwise throws XMLStreamException,
+                // if the namespace URI has not been bound to a prefix
+                w.writeStartElement("",localName,nsUri);
+            }
         } else {
             w.writeStartElement(prefix,localName,nsUri);
         }

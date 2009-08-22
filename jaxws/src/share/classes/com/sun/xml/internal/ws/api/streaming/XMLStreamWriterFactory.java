@@ -39,6 +39,7 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.logging.Logger;
 
 /**
  * Factory for {@link XMLStreamWriter}.
@@ -51,6 +52,8 @@ import java.lang.reflect.Method;
  */
 public abstract class XMLStreamWriterFactory {
 
+    private static final Logger LOGGER = Logger.getLogger(XMLStreamWriterFactory.class.getName());
+
     /**
      * Singleton instance.
      */
@@ -58,7 +61,17 @@ public abstract class XMLStreamWriterFactory {
 
 
     static {
-        XMLOutputFactory xof = XMLOutputFactory.newInstance();
+        XMLOutputFactory  xof = null;
+        if (Boolean.getBoolean(XMLStreamWriterFactory.class.getName()+".woodstox")) {
+            try {
+                xof = (XMLOutputFactory)Class.forName("com.ctc.wstx.stax.WstxOutputFactory").newInstance();
+            } catch (Exception e) {
+                // Ignore and fallback to default XMLOutputFactory
+            }
+        }
+        if (xof == null) {
+            xof = XMLOutputFactory.newInstance();
+        }
 
         XMLStreamWriterFactory f=null;
 
@@ -66,10 +79,16 @@ public abstract class XMLStreamWriterFactory {
         // in case someone hits an issue with pooling in the production system.
         if(!Boolean.getBoolean(XMLStreamWriterFactory.class.getName()+".noPool"))
             f = Zephyr.newInstance(xof);
-        if(f==null)
+        if(f==null) {
+            // is this Woodstox?
+            if(xof.getClass().getName().equals("com.ctc.wstx.stax.WstxOutputFactory"))
+                f = new NoLock(xof);
+        }
+        if (f == null)
             f = new Default(xof);
 
         theInstance = f;
+        LOGGER.fine("XMLStreamWriterFactory instance is = "+theInstance);
     }
 
     /**
@@ -301,5 +320,34 @@ public abstract class XMLStreamWriterFactory {
             if(r instanceof RecycleAware)
                 ((RecycleAware)r).onRecycled();
         }
+    }
+
+    /**
+     *
+     * For {@link javax.xml.stream.XMLOutputFactory} is thread safe.
+     */
+    public static final class NoLock extends XMLStreamWriterFactory {
+        private final XMLOutputFactory xof;
+
+        public NoLock(XMLOutputFactory xof) {
+            this.xof = xof;
+        }
+
+        public XMLStreamWriter doCreate(OutputStream out) {
+            return doCreate(out,"UTF-8");
+        }
+
+        public XMLStreamWriter doCreate(OutputStream out, String encoding) {
+            try {
+                return xof.createXMLStreamWriter(out,encoding);
+            } catch (XMLStreamException e) {
+                throw new XMLReaderException("stax.cantCreate",e);
+            }
+        }
+
+        public void doRecycle(XMLStreamWriter r) {
+            // no recycling
+        }
+
     }
 }

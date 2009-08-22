@@ -47,7 +47,14 @@ public enum ComplexTypeBindingMode {
      * If a complex type has falled back to the rest content and
      * it is not NOMOREEXTENSION.
      */
-    FALLBACK_REST
+    FALLBACK_REST,
+
+    /**
+     * If a complex type has fallen to the dummy property in order
+     * to override previously inherited content.
+     */
+    FALLBACK_EXTENSION
+
 //
 //    /**
 //     * If a complex type is derived by restriction from a complex type

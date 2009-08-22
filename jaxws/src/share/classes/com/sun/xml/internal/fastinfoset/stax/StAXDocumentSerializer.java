@@ -197,7 +197,7 @@ public class StAXDocumentSerializer extends Encoder
     public void writeStartElement(String namespaceURI, String localName)
         throws XMLStreamException
     {
-        writeStartElement(getPrefix(namespaceURI), localName, namespaceURI);
+        writeStartElement("", localName, namespaceURI);
     }
 
     public void writeStartElement(String prefix, String localName,
@@ -231,7 +231,7 @@ public class StAXDocumentSerializer extends Encoder
     public void writeEmptyElement(String namespaceURI, String localName)
         throws XMLStreamException
     {
-        writeEmptyElement(getPrefix(namespaceURI), localName, namespaceURI);
+        writeEmptyElement("", localName, namespaceURI);
     }
 
     public void writeEmptyElement(String prefix, String localName,
@@ -581,8 +581,15 @@ public class StAXDocumentSerializer extends Encoder
                 }
 
                 // If element's prefix is empty - apply default scope namespace
-                if (_currentPrefix.length() == 0 && _currentUri.length() == 0) {
-                    _currentUri = _nsContext.getNamespaceURI("");
+                if (_currentPrefix.length() == 0) {
+                    if (_currentUri.length() == 0) {
+                        _currentUri = _nsContext.getNamespaceURI("");
+                    } else {
+                        String tmpPrefix = getPrefix(_currentUri);
+                        if (tmpPrefix != null) {
+                            _currentPrefix = tmpPrefix;
+                        }
+                    }
                 }
 
                 encodeElementQualifiedNameOnThirdBit(_currentUri, _currentPrefix, _currentLocalName);
@@ -594,7 +601,7 @@ public class StAXDocumentSerializer extends Encoder
                     final String value = _attributesArray[i];
                     _attributesArray[i++] = null;
                     final boolean addToTable = isAttributeValueLengthMatchesLimit(value.length());
-                    encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable);
+                    encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable, false);
 
                     _b = EncodingConstants.TERMINATOR;
                     _terminate = true;
@@ -701,7 +708,7 @@ public class StAXDocumentSerializer extends Encoder
     public final void writeLowLevelAttributeValue(String value) throws IOException
     {
         final boolean addToTable = isAttributeValueLengthMatchesLimit(value.length());
-        encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable);
+        encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable, false);
     }
 
     public final void writeLowLevelStartNameLiteral(int type, String prefix, byte[] utf8LocalName,
