@@ -285,7 +285,6 @@
  * java.lang.NullPointerException NullPointerException} to be thrown.
  *
  * @since 1.4
- * @updated 1.7
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  */
