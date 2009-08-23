@@ -317,51 +317,71 @@ class SimpleAsynchronousDatagramChannelImpl
         return new WrappedMembershipKey(this, key);
     }
 
-    @Override
-    public <A> Future<Integer> send(ByteBuffer src,
-                                    SocketAddress target,
-                                    long timeout,
-                                    TimeUnit unit,
-                                    A attachment,
-                                    CompletionHandler<Integer,? super A> handler)
+    private <A> Future<Integer> implSend(ByteBuffer src,
+                                         SocketAddress target,
+                                         A attachment,
+                                         CompletionHandler<Integer,? super A> handler)
     {
-        if (timeout < 0L)
-            throw new IllegalArgumentException("Negative timeout");
-        if (unit == null)
-            throw new NullPointerException();
-
-        CompletedFuture<Integer,A> result;
+        int n = 0;
+        Throwable exc = null;
         try {
-            int n = dc.send(src, target);
-            result = CompletedFuture.withResult(this, n, attachment);
+            n = dc.send(src, target);
         } catch (IOException ioe) {
-            result = CompletedFuture.withFailure(this, ioe, attachment);
+            exc = ioe;
         }
-        Invoker.invoke(handler, result);
-        return result;
+        if (handler == null)
+            return CompletedFuture.withResult(n, exc);
+        Invoker.invoke(this, handler, attachment, n, exc);
+        return null;
     }
 
     @Override
-    public <A> Future<Integer> write(ByteBuffer src,
-                                     long timeout,
-                                     TimeUnit unit,
-                                     A attachment,
-                                     CompletionHandler<Integer,? super A> handler)
-    {
-        if (timeout < 0L)
-            throw new IllegalArgumentException("Negative timeout");
-        if (unit == null)
-            throw new NullPointerException();
+    public Future<Integer> send(ByteBuffer src, SocketAddress target) {
+        return implSend(src, target, null, null);
+    }
 
-        CompletedFuture<Integer,A> result;
+    @Override
+    public <A> void send(ByteBuffer src,
+                         SocketAddress target,
+                         A attachment,
+                         CompletionHandler<Integer,? super A> handler)
+    {
+        if (handler == null)
+            throw new NullPointerException("'handler' is null");
+        implSend(src, target, attachment, handler);
+    }
+
+    private <A> Future<Integer> implWrite(ByteBuffer src,
+                                          A attachment,
+                                          CompletionHandler<Integer,? super A> handler)
+    {
+        int n = 0;
+        Throwable exc = null;
         try {
-            int n = dc.write(src);
-            result = CompletedFuture.withResult(this, n, attachment);
+            n = dc.write(src);
         } catch (IOException ioe) {
-            result = CompletedFuture.withFailure(this, ioe, attachment);
+            exc = ioe;
         }
-        Invoker.invoke(handler, result);
-        return result;
+        if (handler == null)
+            return CompletedFuture.withResult(n, exc);
+        Invoker.invoke(this, handler, attachment, n, exc);
+        return null;
+
+    }
+
+    @Override
+    public Future<Integer> write(ByteBuffer src) {
+        return implWrite(src, null, null);
+    }
+
+    @Override
+    public <A> void write(ByteBuffer src,
+                          A attachment,
+                          CompletionHandler<Integer,? super A> handler)
+    {
+        if (handler == null)
+            throw new NullPointerException("'handler' is null");
+        implWrite(src, attachment, handler);
     }
 
     /**
@@ -390,12 +410,11 @@ class SimpleAsynchronousDatagramChannelImpl
         }
     }
 
-    @Override
-    public <A> Future<SocketAddress> receive(final ByteBuffer dst,
-                                             final long timeout,
-                                             final TimeUnit unit,
-                                             A attachment,
-                                             final CompletionHandler<SocketAddress,? super A> handler)
+    private <A> Future<SocketAddress> implReceive(final ByteBuffer dst,
+                                                  final long timeout,
+                                                  final TimeUnit unit,
+                                                  A attachment,
+                                                  final CompletionHandler<SocketAddress,? super A> handler)
     {
         if (dst.isReadOnly())
             throw new IllegalArgumentException("Read-only buffer");
@@ -406,10 +425,11 @@ class SimpleAsynchronousDatagramChannelImpl
 
         // complete immediately if channel closed
         if (!isOpen()) {
-            CompletedFuture<SocketAddress,A> result = CompletedFuture.withFailure(this,
-                new ClosedChannelException(), attachment);
-            Invoker.invoke(handler, result);
-            return result;
+            Throwable exc = new ClosedChannelException();
+            if (handler == null)
+                return CompletedFuture.withFailure(exc);
+            Invoker.invoke(this, handler, attachment, null, exc);
+            return null;
         }
 
         final AccessControlContext acc = (System.getSecurityManager() == null) ?
@@ -471,7 +491,7 @@ class SimpleAsynchronousDatagramChannelImpl
                         x = new AsynchronousCloseException();
                     result.setFailure(x);
                 }
-                Invoker.invokeUnchecked(handler, result);
+                Invoker.invokeUnchecked(result);
             }
         };
         try {
@@ -483,11 +503,27 @@ class SimpleAsynchronousDatagramChannelImpl
     }
 
     @Override
-    public <A> Future<Integer> read(final ByteBuffer dst,
-                                    final long timeout,
-                                    final TimeUnit unit,
-                                    A attachment,
-                                    final CompletionHandler<Integer,? super A> handler)
+    public Future<SocketAddress> receive(ByteBuffer dst) {
+        return implReceive(dst, 0L, TimeUnit.MILLISECONDS, null, null);
+    }
+
+    @Override
+    public <A> void receive(ByteBuffer dst,
+                            long timeout,
+                            TimeUnit unit,
+                            A attachment,
+                            CompletionHandler<SocketAddress,? super A> handler)
+    {
+        if (handler == null)
+            throw new NullPointerException("'handler' is null");
+        implReceive(dst, timeout, unit, attachment, handler);
+    }
+
+    private <A> Future<Integer> implRead(final ByteBuffer dst,
+                                         final long timeout,
+                                         final TimeUnit unit,
+                                         A attachment,
+                                         final CompletionHandler<Integer,? super A> handler)
     {
         if (dst.isReadOnly())
             throw new IllegalArgumentException("Read-only buffer");
@@ -495,17 +531,19 @@ class SimpleAsynchronousDatagramChannelImpl
             throw new IllegalArgumentException("Negative timeout");
         if (unit == null)
             throw new NullPointerException();
-        // another thread may disconnect before read is initiated
-        if (!dc.isConnected())
-            throw new NotYetConnectedException();
 
         // complete immediately if channel closed
         if (!isOpen()) {
-            CompletedFuture<Integer,A> result = CompletedFuture.withFailure(this,
-                new ClosedChannelException(), attachment);
-            Invoker.invoke(handler, result);
-            return result;
+            Throwable exc = new ClosedChannelException();
+            if (handler == null)
+                return CompletedFuture.withFailure(exc);
+            Invoker.invoke(this, handler, attachment, null, exc);
+            return null;
         }
+
+        // another thread may disconnect before read is initiated
+        if (!dc.isConnected())
+            throw new NotYetConnectedException();
 
         final PendingFuture<Integer,A> result =
             new PendingFuture<Integer,A>(this, handler, attachment);
@@ -563,7 +601,7 @@ class SimpleAsynchronousDatagramChannelImpl
                         x = new AsynchronousCloseException();
                     result.setFailure(x);
                 }
-                Invoker.invokeUnchecked(handler, result);
+                Invoker.invokeUnchecked(result);
             }
         };
         try {
@@ -572,6 +610,23 @@ class SimpleAsynchronousDatagramChannelImpl
             throw new ShutdownChannelGroupException();
         }
         return result;
+    }
+
+    @Override
+    public Future<Integer> read(ByteBuffer dst) {
+        return implRead(dst, 0L, TimeUnit.MILLISECONDS, null, null);
+    }
+
+    @Override
+    public <A> void read(ByteBuffer dst,
+                            long timeout,
+                            TimeUnit unit,
+                            A attachment,
+                            CompletionHandler<Integer,? super A> handler)
+    {
+        if (handler == null)
+            throw new NullPointerException("'handler' is null");
+        implRead(dst, timeout, unit, attachment, handler);
     }
 
     @Override
