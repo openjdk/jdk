@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,23 +61,14 @@ public final class PBEWithMD5AndTripleDESCipher extends CipherSpi {
      * Creates an instance of this cipher, and initializes its mode (CBC) and
      * padding (PKCS5).
      *
-     * Verify the SunJCE provider in the constructor.
-     *
      * @exception NoSuchAlgorithmException if the required cipher mode (CBC) is
      * unavailable
      * @exception NoSuchPaddingException if the required padding mechanism
      * (PKCS5Padding) is unavailable
-     * @exception SecurityException if fails to verify
-     * its own integrity
      */
     public PBEWithMD5AndTripleDESCipher()
         throws NoSuchAlgorithmException, NoSuchPaddingException
     {
-        if (!SunJCE.verifySelfIntegrity(this.getClass())) {
-            throw new SecurityException("The SunJCE provider may have " +
-                                        "been tampered.");
-        }
-
         // set the encapsulated cipher to do triple DES
         core = new PBECipherCore("DESede");
     }

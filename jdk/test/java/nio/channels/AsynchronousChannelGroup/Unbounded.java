@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6842687
  * @summary Unit test for AsynchronousChannelGroup
  */
 
@@ -51,8 +51,6 @@ public class Unbounded {
                 listener.accept((Void)null, this);
             }
             public void failed(Throwable exc, Void att) {
-            }
-            public void cancelled(Void att) {
             }
         });
         System.out.println("Listener created.");
@@ -96,8 +94,6 @@ public class Unbounded {
                         }
                     }
                     public void failed(Throwable exc, AsynchronousSocketChannel ch) {
-                    }
-                    public void cancelled(AsynchronousSocketChannel ch) {
                     }
                 });
         }

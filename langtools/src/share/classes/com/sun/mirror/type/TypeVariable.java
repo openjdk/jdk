@@ -35,11 +35,17 @@ import com.sun.mirror.declaration.*;
  * {@linkplain TypeParameterDeclaration type parameter} of a
  * type, method, or constructor.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this interface is {@link
+ * javax.lang.model.type.TypeVariable}.
+ *
  * @author Joe Darcy
  * @author Scott Seligman
  * @since 1.5
  */
-
+@Deprecated
+@SuppressWarnings("deprecation")
 public interface TypeVariable extends ReferenceType {
 
     /**

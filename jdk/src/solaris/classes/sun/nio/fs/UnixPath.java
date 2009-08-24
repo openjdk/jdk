@@ -65,9 +65,6 @@ class UnixPath
     // array of offsets of elements in path (created lazily)
     private volatile int[] offsets;
 
-    // file permissions (created lazily)
-    private volatile FilePermission[] perms;
-
     UnixPath(UnixFileSystem fs, byte[] path) {
         this.fs = fs;
         this.path = path;
@@ -768,45 +765,23 @@ class UnixPath
         }
     }
 
-    // create file permissions used for read and write checks
-    private void checkReadOrWrite(boolean checkRead) {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null)
-            return;
-        if (perms == null) {
-            synchronized (this) {
-                if (perms == null) {
-                    FilePermission[] p = new FilePermission[2];
-                    String pathForPermCheck = getPathForPermissionCheck();
-                    p[0] = new FilePermission(pathForPermCheck,
-                        SecurityConstants.FILE_READ_ACTION);
-                    p[1] = new FilePermission(pathForPermCheck,
-                        SecurityConstants.FILE_WRITE_ACTION);
-                    perms = p;
-                }
-            }
-        }
-        if (checkRead) {
-            sm.checkPermission(perms[0]);
-        } else {
-            sm.checkPermission(perms[1]);
-        }
-    }
 
     void checkRead() {
-        checkReadOrWrite(true);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+            sm.checkRead(getPathForPermissionCheck());
     }
 
     void checkWrite() {
-        checkReadOrWrite(false);
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null)
+            sm.checkWrite(getPathForPermissionCheck());
     }
 
     void checkDelete() {
         SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            // permission not cached
+        if (sm != null)
             sm.checkDelete(getPathForPermissionCheck());
-        }
     }
 
     @Override

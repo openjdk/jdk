@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,8 @@ public final class HmacPKCS12PBESHA1 extends MacSpi implements Cloneable {
 
     /**
      * Standard constructor, creates a new HmacSHA1 instance.
-     * Verify the SunJCE provider in the constructor.
-     *
-     * @exception SecurityException if fails to verify
-     * its own integrity
      */
     public HmacPKCS12PBESHA1() throws NoSuchAlgorithmException {
-        SunJCE.ensureIntegrity(this.getClass());
         this.hmac = new HmacCore(MessageDigest.getInstance("SHA1"),
                                  SHA1_BLOCK_LENGTH);
     }

@@ -25,8 +25,10 @@
 
 package sun.nio.ch;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.*;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -101,6 +103,33 @@ abstract class AsynchronousFileChannelImpl
 
     // -- file locking --
 
+    abstract <A> Future<FileLock> implLock(long position,
+                                           long size,
+                                           boolean shared,
+                                           A attachment,
+                                           CompletionHandler<FileLock,? super A> handler);
+
+    @Override
+    public final Future<FileLock> lock(long position,
+                                       long size,
+                                       boolean shared)
+
+    {
+        return implLock(position, size, shared, null, null);
+    }
+
+    @Override
+    public final <A> void lock(long position,
+                               long size,
+                               boolean shared,
+                               A attachment,
+                               CompletionHandler<FileLock,? super A> handler)
+    {
+        if (handler == null)
+            throw new NullPointerException("'handler' is null");
+        implLock(position, size, shared, attachment, handler);
+    }
+
     private volatile FileLockTable fileLockTable;
 
     final void ensureFileLockTableInitialized() throws IOException {
@@ -174,5 +203,51 @@ abstract class AsynchronousFileChannelImpl
         } finally {
             end();
         }
+    }
+
+
+    // -- reading and writing --
+
+    abstract <A> Future<Integer> implRead(ByteBuffer dst,
+                                         long position,
+                                         A attachment,
+                                         CompletionHandler<Integer,? super A> handler);
+
+    @Override
+    public final Future<Integer> read(ByteBuffer dst, long position) {
+        return implRead(dst, position, null, null);
+    }
+
+    @Override
+    public final <A> void read(ByteBuffer dst,
+                               long position,
+                               A attachment,
+                               CompletionHandler<Integer,? super A> handler)
+    {
+        if (handler == null)
+            throw new NullPointerException("'handler' is null");
+        implRead(dst, position, attachment, handler);
+    }
+
+    abstract <A> Future<Integer> implWrite(ByteBuffer src,
+                                           long position,
+                                           A attachment,
+                                           CompletionHandler<Integer,? super A> handler);
+
+
+    @Override
+    public final Future<Integer> write(ByteBuffer src, long position) {
+        return implWrite(src, position, null, null);
+    }
+
+    @Override
+    public final <A> void write(ByteBuffer src,
+                                long position,
+                                A attachment,
+                                CompletionHandler<Integer,? super A> handler)
+    {
+        if (handler == null)
+            throw new NullPointerException("'handler' is null");
+        implWrite(src, position, attachment, handler);
     }
 }

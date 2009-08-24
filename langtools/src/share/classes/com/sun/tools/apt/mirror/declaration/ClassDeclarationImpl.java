@@ -42,7 +42,7 @@ import com.sun.tools.javac.code.Symbol.*;
 /**
  * Implementation of ClassDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class ClassDeclarationImpl extends TypeDeclarationImpl
                                   implements ClassDeclaration {
 

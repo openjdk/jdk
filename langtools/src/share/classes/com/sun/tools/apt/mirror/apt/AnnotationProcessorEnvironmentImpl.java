@@ -47,6 +47,7 @@ import static com.sun.mirror.util.DeclarationVisitors.*;
 /*
  * Annotation Processor Environment implementation.
  */
+@SuppressWarnings("deprecation")
 public class AnnotationProcessorEnvironmentImpl implements AnnotationProcessorEnvironment {
 
     Collection<TypeDeclaration> spectypedecls;
