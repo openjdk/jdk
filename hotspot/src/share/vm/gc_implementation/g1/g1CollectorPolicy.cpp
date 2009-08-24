@@ -993,8 +993,6 @@ void G1CollectorPolicy::record_full_collection_end() {
   double full_gc_time_sec = end_sec - _cur_collection_start_sec;
   double full_gc_time_ms = full_gc_time_sec * 1000.0;
 
-  checkpoint_conc_overhead();
-
   _all_full_gc_times_ms->add(full_gc_time_ms);
 
   update_recent_gc_times(end_sec, full_gc_time_ms);
@@ -1164,7 +1162,6 @@ void G1CollectorPolicy::record_concurrent_mark_init_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_init_start_sec) * 1000.0;
   _concurrent_mark_init_times_ms->add(elapsed_time_ms);
-  checkpoint_conc_overhead();
   record_concurrent_mark_init_end_pre(elapsed_time_ms);
 
   _mmu_tracker->add_pause(_mark_init_start_sec, end_time_sec, true);
@@ -1178,7 +1175,6 @@ void G1CollectorPolicy::record_concurrent_mark_remark_start() {
 void G1CollectorPolicy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
-  checkpoint_conc_overhead();
   _concurrent_mark_remark_times_ms->add(elapsed_time_ms);
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
@@ -1210,7 +1206,6 @@ record_concurrent_mark_cleanup_end_work1(size_t freed_bytes,
 
 // The important thing about this is that it includes "os::elapsedTime".
 void G1CollectorPolicy::record_concurrent_mark_cleanup_end_work2() {
-  checkpoint_conc_overhead();
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_cleanup_start_sec)*1000.0;
   _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
@@ -1424,8 +1419,6 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
     // do that for any other surv rate groups too
   }
 #endif // PRODUCT
-
-  checkpoint_conc_overhead();
 
   if (in_young_gc_mode()) {
     last_pause_included_initial_mark = _should_initiate_conc_mark;
@@ -2524,19 +2517,6 @@ region_num_to_mbs(int length) {
   return buffer;
 }
 #endif // PRODUCT
-
-void
-G1CollectorPolicy::checkpoint_conc_overhead() {
-  double conc_overhead = 0.0;
-  if (G1AccountConcurrentOverhead)
-    conc_overhead = COTracker::totalPredConcOverhead();
-  _mmu_tracker->update_conc_overhead(conc_overhead);
-#if 0
-  gclog_or_tty->print(" CO %1.4lf TARGET %1.4lf",
-             conc_overhead, _mmu_tracker->max_gc_time());
-#endif
-}
-
 
 size_t G1CollectorPolicy::max_regions(int purpose) {
   switch (purpose) {
