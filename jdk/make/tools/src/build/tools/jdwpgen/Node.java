@@ -36,7 +36,7 @@ abstract class Node {
     int lineno;
     List<String> commentList = new ArrayList<String>();
     Node parent = null;
-    Context context;
+    Context context = null;
 
     static final int maxStructIndent = 5;
     static int structIndent = 0; // horrible hack
@@ -82,7 +82,7 @@ abstract class Node {
     }
 
     void indent(PrintWriter writer, int depth) {
-        for (int i = depth; i > 0; --i) {
+        for (int i = 0; i < depth; i++) {
             writer.print("    ");
         }
     }
@@ -195,6 +195,6 @@ abstract class Node {
         System.err.println(Main.specSource + ":" + lineno + ": " +
                            kind + " - " + errmsg);
         System.err.println();
-        System.exit(1);
+        throw new RuntimeException("Error: " + errmsg);
     }
 }
