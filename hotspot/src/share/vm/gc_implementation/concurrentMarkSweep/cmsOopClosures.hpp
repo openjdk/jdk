@@ -92,17 +92,50 @@ class MarkRefsIntoVerifyClosure: public OopsInGenClosure {
   }
 };
 
-// The non-parallel version (the parallel version appears further below).
-class PushAndMarkClosure: public OopClosure {
- private:
+// KlassRememberingOopClosure is used when marking of the permanent generation
+// is being done.  It adds fields to support revisiting of klasses
+// for class unloading.  _should_remember_klasses should be set to
+// indicate if klasses should be remembered.  Currently that is whenever
+// CMS class unloading is turned on.  The _revisit_stack is used
+// to save the klasses for later processing.
+class KlassRememberingOopClosure : public OopClosure {
+ protected:
   CMSCollector* _collector;
+  CMSMarkStack* _revisit_stack;
+  bool const    _should_remember_klasses;
+ public:
+  void check_remember_klasses() const PRODUCT_RETURN;
+  virtual const bool should_remember_klasses() const {
+    check_remember_klasses();
+    return _should_remember_klasses;
+  }
+  virtual void remember_klass(Klass* k);
+
+  KlassRememberingOopClosure(CMSCollector* collector,
+                             ReferenceProcessor* rp,
+                             CMSMarkStack* revisit_stack);
+};
+
+// Similar to KlassRememberingOopClosure for use when multiple
+// GC threads will execute the closure.
+
+class Par_KlassRememberingOopClosure : public KlassRememberingOopClosure {
+ public:
+  Par_KlassRememberingOopClosure(CMSCollector* collector,
+                                 ReferenceProcessor* rp,
+                                 CMSMarkStack* revisit_stack):
+    KlassRememberingOopClosure(collector, rp, revisit_stack) {}
+  virtual void remember_klass(Klass* k);
+};
+
+// The non-parallel version (the parallel version appears further below).
+class PushAndMarkClosure: public KlassRememberingOopClosure {
+ private:
   MemRegion     _span;
   CMSBitMap*    _bit_map;
   CMSBitMap*    _mod_union_table;
   CMSMarkStack* _mark_stack;
-  CMSMarkStack* _revisit_stack;
   bool          _concurrent_precleaning;
-  bool const    _should_remember_klasses;
  protected:
   DO_OOP_WORK_DEFN
  public:
@@ -122,10 +155,6 @@ class PushAndMarkClosure: public OopClosure {
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
-  virtual const bool should_remember_klasses() const {
-    return _should_remember_klasses;
-  }
-  virtual void remember_klass(Klass* k);
 };
 
 // In the parallel case, the revisit stack, the bit map and the
@@ -134,14 +163,11 @@ class PushAndMarkClosure: public OopClosure {
 // synchronization (for instance, via CAS). The marking stack
 // used in the non-parallel case above is here replaced with
 // an OopTaskQueue structure to allow efficient work stealing.
-class Par_PushAndMarkClosure: public OopClosure {
+class Par_PushAndMarkClosure: public Par_KlassRememberingOopClosure {
  private:
-  CMSCollector* _collector;
   MemRegion     _span;
   CMSBitMap*    _bit_map;
   OopTaskQueue* _work_queue;
-  CMSMarkStack* _revisit_stack;
-  bool const    _should_remember_klasses;
  protected:
   DO_OOP_WORK_DEFN
  public:
@@ -159,10 +185,6 @@ class Par_PushAndMarkClosure: public OopClosure {
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
-  virtual const bool should_remember_klasses() const {
-    return _should_remember_klasses;
-  }
-  virtual void remember_klass(Klass* k);
 };
 
 // The non-parallel version (the parallel version appears further below).
@@ -201,6 +223,12 @@ class MarkRefsIntoAndScanClosure: public OopsInGenClosure {
   void set_freelistLock(Mutex* m) {
     _freelistLock = m;
   }
+  virtual const bool should_remember_klasses() const {
+    return _pushAndMarkClosure.should_remember_klasses();
+  }
+  virtual void remember_klass(Klass* k) {
+    _pushAndMarkClosure.remember_klass(k);
+  }
 
  private:
   inline void do_yield_check();
@@ -234,6 +262,16 @@ class Par_MarkRefsIntoAndScanClosure: public OopsInGenClosure {
   inline void do_oop_nv(narrowOop* p) { Par_MarkRefsIntoAndScanClosure::do_oop_work(p); }
   bool do_header() { return true; }
   virtual const bool do_nmethods() const { return true; }
+  // When ScanMarkedObjectsAgainClosure is used,
+  // it passes [Par_]MarkRefsIntoAndScanClosure to oop_oop_iterate(),
+  // and this delegation is used.
+  virtual const bool should_remember_klasses() const {
+    return _par_pushAndMarkClosure.should_remember_klasses();
+  }
+  // See comment on should_remember_klasses() above.
+  virtual void remember_klass(Klass* k) {
+    _par_pushAndMarkClosure.remember_klass(k);
+  }
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
@@ -243,17 +281,14 @@ class Par_MarkRefsIntoAndScanClosure: public OopsInGenClosure {
 // This closure is used during the concurrent marking phase
 // following the first checkpoint. Its use is buried in
 // the closure MarkFromRootsClosure.
-class PushOrMarkClosure: public OopClosure {
+class PushOrMarkClosure: public KlassRememberingOopClosure {
  private:
-  CMSCollector*   _collector;
   MemRegion       _span;
   CMSBitMap*      _bitMap;
   CMSMarkStack*   _markStack;
-  CMSMarkStack*   _revisitStack;
   HeapWord* const _finger;
   MarkFromRootsClosure* const
                   _parent;
-  bool const      _should_remember_klasses;
  protected:
   DO_OOP_WORK_DEFN
  public:
@@ -268,10 +303,6 @@ class PushOrMarkClosure: public OopClosure {
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { PushOrMarkClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { PushOrMarkClosure::do_oop_work(p); }
-  virtual const bool should_remember_klasses() const {
-    return _should_remember_klasses;
-  }
-  virtual void remember_klass(Klass* k);
   // Deal with a stack overflow condition
   void handle_stack_overflow(HeapWord* lost);
  private:
@@ -282,20 +313,17 @@ class PushOrMarkClosure: public OopClosure {
 // This closure is used during the concurrent marking phase
 // following the first checkpoint. Its use is buried in
 // the closure Par_MarkFromRootsClosure.
-class Par_PushOrMarkClosure: public OopClosure {
+class Par_PushOrMarkClosure: public Par_KlassRememberingOopClosure {
  private:
-  CMSCollector*    _collector;
   MemRegion        _whole_span;
   MemRegion        _span;        // local chunk
   CMSBitMap*       _bit_map;
   OopTaskQueue*    _work_queue;
   CMSMarkStack*    _overflow_stack;
-  CMSMarkStack*    _revisit_stack;
   HeapWord*  const _finger;
   HeapWord** const _global_finger_addr;
   Par_MarkFromRootsClosure* const
                    _parent;
-  bool const       _should_remember_klasses;
  protected:
   DO_OOP_WORK_DEFN
  public:
@@ -312,10 +340,6 @@ class Par_PushOrMarkClosure: public OopClosure {
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { Par_PushOrMarkClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { Par_PushOrMarkClosure::do_oop_work(p); }
-  virtual const bool should_remember_klasses() const {
-    return _should_remember_klasses;
-  }
-  virtual void remember_klass(Klass* k);
   // Deal with a stack overflow condition
   void handle_stack_overflow(HeapWord* lost);
  private:
@@ -328,9 +352,8 @@ class Par_PushOrMarkClosure: public OopClosure {
 // processing phase of the CMS final checkpoint step, as
 // well as during the concurrent precleaning of the discovered
 // reference lists.
-class CMSKeepAliveClosure: public OopClosure {
+class CMSKeepAliveClosure: public KlassRememberingOopClosure {
  private:
-  CMSCollector* _collector;
   const MemRegion _span;
   CMSMarkStack* _mark_stack;
   CMSBitMap*    _bit_map;
@@ -340,14 +363,7 @@ class CMSKeepAliveClosure: public OopClosure {
  public:
   CMSKeepAliveClosure(CMSCollector* collector, MemRegion span,
                       CMSBitMap* bit_map, CMSMarkStack* mark_stack,
-                      bool cpc):
-    _collector(collector),
-    _span(span),
-    _bit_map(bit_map),
-    _mark_stack(mark_stack),
-    _concurrent_precleaning(cpc) {
-    assert(!_span.is_empty(), "Empty span could spell trouble");
-  }
+                      CMSMarkStack* revisit_stack, bool cpc);
   bool    concurrent_precleaning() const { return _concurrent_precleaning; }
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
@@ -355,9 +371,8 @@ class CMSKeepAliveClosure: public OopClosure {
   inline void do_oop_nv(narrowOop* p) { CMSKeepAliveClosure::do_oop_work(p); }
 };
 
-class CMSInnerParMarkAndPushClosure: public OopClosure {
+class CMSInnerParMarkAndPushClosure: public Par_KlassRememberingOopClosure {
  private:
-  CMSCollector* _collector;
   MemRegion     _span;
   OopTaskQueue* _work_queue;
   CMSBitMap*    _bit_map;
@@ -366,11 +381,8 @@ class CMSInnerParMarkAndPushClosure: public OopClosure {
  public:
   CMSInnerParMarkAndPushClosure(CMSCollector* collector,
                                 MemRegion span, CMSBitMap* bit_map,
-                                OopTaskQueue* work_queue):
-    _collector(collector),
-    _span(span),
-    _bit_map(bit_map),
-    _work_queue(work_queue) { }
+                                CMSMarkStack* revisit_stack,
+                                OopTaskQueue* work_queue);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { CMSInnerParMarkAndPushClosure::do_oop_work(p); }
@@ -380,9 +392,8 @@ class CMSInnerParMarkAndPushClosure: public OopClosure {
 // A parallel (MT) version of the above, used when
 // reference processing is parallel; the only difference
 // is in the do_oop method.
-class CMSParKeepAliveClosure: public OopClosure {
+class CMSParKeepAliveClosure: public Par_KlassRememberingOopClosure {
  private:
-  CMSCollector* _collector;
   MemRegion     _span;
   OopTaskQueue* _work_queue;
   CMSBitMap*    _bit_map;
@@ -394,7 +405,8 @@ class CMSParKeepAliveClosure: public OopClosure {
   DO_OOP_WORK_DEFN
  public:
   CMSParKeepAliveClosure(CMSCollector* collector, MemRegion span,
-                         CMSBitMap* bit_map, OopTaskQueue* work_queue);
+                         CMSBitMap* bit_map, CMSMarkStack* revisit_stack,
+                         OopTaskQueue* work_queue);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { CMSParKeepAliveClosure::do_oop_work(p); }

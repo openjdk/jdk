@@ -54,7 +54,12 @@ class OopClosure : public Closure {
 
   // In support of post-processing of weak links of KlassKlass objects;
   // see KlassKlass::oop_oop_iterate().
-  virtual const bool should_remember_klasses() const { return false;    }
+
+  virtual const bool should_remember_klasses() const {
+    assert(!must_remember_klasses(), "Should have overriden this method.");
+    return false;
+  }
+
   virtual void remember_klass(Klass* k) { /* do nothing */ }
 
   // If "true", invoke on nmethods (when scanning compiled frames).
@@ -74,6 +79,12 @@ class OopClosure : public Closure {
   // location without an intervening "major reset" (like the end of a GC).
   virtual bool idempotent() { return false; }
   virtual bool apply_to_weak_ref_discovered_field() { return false; }
+
+#ifdef ASSERT
+  static bool _must_remember_klasses;
+  static bool must_remember_klasses();
+  static void set_must_remember_klasses(bool v);
+#endif
 };
 
 // ObjectClosure is used for iterating through an object space
@@ -219,3 +230,38 @@ public:
   // correct length.
   virtual void do_tag(int tag) = 0;
 };
+
+#ifdef ASSERT
+// This class is used to flag phases of a collection that
+// can unload classes and which should override the
+// should_remember_klasses() and remember_klass() of OopClosure.
+// The _must_remember_klasses is set in the contructor and restored
+// in the destructor.  _must_remember_klasses is checked in assertions
+// in the OopClosure implementations of should_remember_klasses() and
+// remember_klass() and the expectation is that the OopClosure
+// implementation should not be in use if _must_remember_klasses is set.
+// Instances of RememberKlassesChecker can be place in
+// marking phases of collections which can do class unloading.
+// RememberKlassesChecker can be passed "false" to turn off checking.
+// It is used by CMS when CMS yields to a different collector.
+class RememberKlassesChecker: StackObj {
+ bool _state;
+ bool _skip;
+ public:
+  RememberKlassesChecker(bool checking_on) : _state(false), _skip(false) {
+    _skip = !(ClassUnloading && !UseConcMarkSweepGC ||
+              CMSClassUnloadingEnabled && UseConcMarkSweepGC);
+    if (_skip) {
+      return;
+    }
+    _state = OopClosure::must_remember_klasses();
+    OopClosure::set_must_remember_klasses(checking_on);
+  }
+  ~RememberKlassesChecker() {
+    if (_skip) {
+      return;
+    }
+    OopClosure::set_must_remember_klasses(_state);
+  }
+};
+#endif  // ASSERT
