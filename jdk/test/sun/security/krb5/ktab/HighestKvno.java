@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6867665
+ * @bug 6875033
  * @summary Problem with keytabs with multiple kvno's (key versions)
  */
 
@@ -223,9 +224,6 @@ public class HighestKvno {
         KeyTab ktab = KeyTab.getInstance("kt");
         PrincipalName pn = new PrincipalName("me@MAD.LOCAL");
         EncryptionKey[] keys = ktab.readServiceKeys(pn);
-        if (keys.length != 9) {
-            throw new Exception("Count error");
-        }
         if (keys[0].getKeyVersionNumber() != 5) {
             throw new Exception("Highest not first");
         }
