@@ -69,6 +69,20 @@ case "$OS" in
     CP="cp"
     CHMOD="chmod"
     ;;
+  CYGWIN* )
+    FS="/"
+    PS=";"
+    CP="cp"
+    CHMOD="chmod"
+    #
+    # javac does not like /cygdrive produced by `pwd`
+    #
+    TESTSRC=`cygpath -d ${TESTSRC}`
+    ;;
+  * )
+    echo "Unrecognized system!"
+    exit 1;
+    ;;
 esac
 
 # first make cert/key DBs writable

@@ -674,7 +674,6 @@ public final class Scanner implements Iterator<String> {
     }
 
     /**
-     * {@note new}
      * Constructs a new <code>Scanner</code> that produces values scanned
      * from the specified file. Bytes from the file are converted into
      * characters using the underlying platform's
@@ -694,7 +693,6 @@ public final class Scanner implements Iterator<String> {
     }
 
     /**
-     * {@note new}
      * Constructs a new <code>Scanner</code> that produces values scanned
      * from the specified file. Bytes from the file are converted into
      * characters using the specified charset.

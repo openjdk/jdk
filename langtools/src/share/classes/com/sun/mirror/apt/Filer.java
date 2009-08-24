@@ -51,11 +51,17 @@ import java.io.*;
  * be deleted.  Any subsequent attempt to create the same file during
  * a run will fail.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this interface is {@link
+ * javax.annotation.processing.Filer}.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @since 1.5
  */
-
+@Deprecated
+@SuppressWarnings("deprecation")
 public interface Filer {
 
     /**
@@ -140,7 +146,13 @@ public interface Filer {
 
     /**
      * Locations (subtrees within the file system) where new files are created.
+     *
+     * @deprecated All components of this API have been superseded by
+     * the standardized annotation processing API.  The replacement
+     * for the functionality of this enum is {@link
+     * javax.tools.StandardLocation}.
      */
+    @Deprecated
     enum Location {
         /** The location of new source files. */
         SOURCE_TREE,

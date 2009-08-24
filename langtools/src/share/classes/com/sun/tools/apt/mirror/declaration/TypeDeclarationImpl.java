@@ -40,7 +40,7 @@ import com.sun.tools.javac.util.Name;
 /**
  * Implementation of TypeDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class TypeDeclarationImpl extends MemberDeclarationImpl
                                  implements TypeDeclaration {
 
