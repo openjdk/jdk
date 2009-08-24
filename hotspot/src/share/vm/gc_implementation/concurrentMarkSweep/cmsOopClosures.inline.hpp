@@ -37,16 +37,25 @@ inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {
   }
 }
 
-inline void PushOrMarkClosure::remember_klass(Klass* k) {
-  if (!_revisitStack->push(oop(k))) {
+#ifndef PRODUCT
+void KlassRememberingOopClosure::check_remember_klasses() const {
+  assert(_should_remember_klasses == must_remember_klasses(),
+    "Should remember klasses in this context.");
+}
+#endif
+
+void KlassRememberingOopClosure::remember_klass(Klass* k) {
+  if (!_revisit_stack->push(oop(k))) {
     fatal("Revisit stack overflow in PushOrMarkClosure");
   }
+  check_remember_klasses();
 }
 
-inline void Par_PushOrMarkClosure::remember_klass(Klass* k) {
+void Par_KlassRememberingOopClosure::remember_klass(Klass* k) {
   if (!_revisit_stack->par_push(oop(k))) {
     fatal("Revisit stack overflow in PushOrMarkClosure");
   }
+  check_remember_klasses();
 }
 
 inline void PushOrMarkClosure::do_yield_check() {
