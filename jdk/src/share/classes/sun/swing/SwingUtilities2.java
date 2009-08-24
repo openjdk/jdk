@@ -1844,4 +1844,22 @@ public class SwingUtilities2 {
                                          boolean three) {
         return liesIn(rect, p, false, false, three);
     }
+
+    /**
+     * Returns the {@code JViewport} instance for the {@code component}
+     * or {@code null}.
+     *
+     * @return the {@code JViewport} instance for the {@code component}
+     * or {@code null}
+     * @throws NullPointerException if {@code component} is {@code null}
+     */
+    public static JViewport getViewport(Component component) {
+        do {
+            component = component.getParent();
+            if (component instanceof JViewport) {
+                return (JViewport) component;
+            }
+        } while(component instanceof JLayer);
+        return null;
+    }
 }

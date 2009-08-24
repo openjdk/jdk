@@ -303,9 +303,6 @@ public class LayerUI<V extends Component>
         if (l.getView() instanceof Scrollable) {
             return ((Scrollable)l.getView()).getScrollableTracksViewportHeight();
         }
-        if (l.getParent() instanceof JViewport) {
-            return (((JViewport)l.getParent()).getHeight() > l.getPreferredSize().height);
-        }
         return false;
     }
 
@@ -321,9 +318,6 @@ public class LayerUI<V extends Component>
     public boolean getScrollableTracksViewportWidth(JLayer<? extends V> l) {
         if (l.getView() instanceof Scrollable) {
             return ((Scrollable)l.getView()).getScrollableTracksViewportWidth();
-        }
-        if (l.getParent() instanceof JViewport) {
-            return (((JViewport)l.getParent()).getWidth() > l.getPreferredSize().width);
         }
         return false;
     }
