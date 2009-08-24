@@ -495,9 +495,6 @@ public final class JLayer<V extends Component>
         if (getUI() != null) {
             return getUI().getScrollableTracksViewportHeight(this);
         }
-        if (getParent() instanceof JViewport) {
-            return ((getParent()).getHeight() > getPreferredSize().height);
-        }
         return false;
     }
 
@@ -517,9 +514,6 @@ public final class JLayer<V extends Component>
     public boolean getScrollableTracksViewportWidth() {
         if (getUI() != null) {
             return getUI().getScrollableTracksViewportWidth(this);
-        }
-        if (getParent() instanceof JViewport) {
-            return ((getParent()).getWidth() > getPreferredSize().width);
         }
         return false;
     }

@@ -24,6 +24,8 @@
  */
 package javax.swing;
 
+import sun.swing.SwingUtilities2;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.*;
@@ -1323,8 +1325,8 @@ public class JEditorPane extends JTextComponent {
      */
     public Dimension getPreferredSize() {
         Dimension d = super.getPreferredSize();
-        if (getParent() instanceof JViewport) {
-            JViewport port = (JViewport)getParent();
+        JViewport port = SwingUtilities2.getViewport(this);
+        if (port != null) {
             TextUI ui = getUI();
             int prefWidth = d.width;
             int prefHeight = d.height;
@@ -1445,8 +1447,8 @@ public class JEditorPane extends JTextComponent {
      * match its own, false otherwise
      */
     public boolean getScrollableTracksViewportWidth() {
-        if (getParent() instanceof JViewport) {
-            JViewport port = (JViewport)getParent();
+        JViewport port = SwingUtilities2.getViewport(this);
+        if (port != null) {
             TextUI ui = getUI();
             int w = port.getWidth();
             Dimension min = ui.getMinimumSize(this);
@@ -1467,8 +1469,8 @@ public class JEditorPane extends JTextComponent {
      *          false otherwise
      */
     public boolean getScrollableTracksViewportHeight() {
-        if (getParent() instanceof JViewport) {
-            JViewport port = (JViewport)getParent();
+        JViewport port = SwingUtilities2.getViewport(this);
+        if (port != null) {
             TextUI ui = getUI();
             int h = port.getHeight();
             Dimension min = ui.getMinimumSize(this);
