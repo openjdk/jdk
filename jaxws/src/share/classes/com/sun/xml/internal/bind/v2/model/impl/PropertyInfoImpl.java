@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.util.Collection;
@@ -103,8 +104,6 @@ abstract class PropertyInfoImpl<T,C,F,M>
         }
         this.expectedMimeType = mt;
         this.inlineBinary = seed.hasAnnotation(XmlInlineBinaryData.class);
-        this.schemaType = Util.calcSchemaType(reader(),seed,parent.clazz,
-                getIndividualType(),this);
 
         T t = seed.getRawType();
 
@@ -147,6 +146,8 @@ abstract class PropertyInfoImpl<T,C,F,M>
         }
 
         this.id = calcId();
+        this.schemaType = Util.calcSchemaType(reader(),seed,parent.clazz,
+                getIndividualType(),this);
     }
 
 

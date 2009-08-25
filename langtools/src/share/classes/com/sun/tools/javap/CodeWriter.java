@@ -64,15 +64,18 @@ class CodeWriter extends BasicWriter {
         stackMapWriter = StackMapWriter.instance(context);
         localVariableTableWriter = LocalVariableTableWriter.instance(context);
         localVariableTypeTableWriter = LocalVariableTypeTableWriter.instance(context);
+        typeAnnotationWriter = TypeAnnotationWriter.instance(context);
         options = Options.instance(context);
     }
 
     void write(Code_attribute attr, ConstantPool constant_pool) {
-        println("  Code:");
+        println("Code:");
+        indent(+1);
         writeVerboseHeader(attr, constant_pool);
         writeInstrs(attr);
         writeExceptionTable(attr);
         attrWriter.write(attr, attr.attributes, constant_pool);
+        indent(-1);
     }
 
     public void writeVerboseHeader(Code_attribute attr, ConstantPool constant_pool) {
@@ -89,9 +92,9 @@ class CodeWriter extends BasicWriter {
             argCount = report(e);
         }
 
-        println("   Stack=" + attr.max_stack +
-                ", Locals=" + attr.max_locals +
-                ", Args_size=" + argCount);
+        println("stack=" + attr.max_stack +
+                ", locals=" + attr.max_locals +
+                ", args_size=" + argCount);
 
     }
 
@@ -114,8 +117,7 @@ class CodeWriter extends BasicWriter {
     }
 
     public void writeInstr(Instruction instr) {
-        print("   " + instr.getPC() + ":\t");
-        print(instr.getMnemonic());
+        print(String.format("%4d: %-13s ", instr.getPC(), instr.getMnemonic()));
         instr.accept(instructionPrinter, null);
         println();
     }
@@ -133,54 +135,62 @@ class CodeWriter extends BasicWriter {
         }
 
         public Void visitBranch(Instruction instr, int offset, Void p) {
-            print("\t" + (instr.getPC() + offset));
+            print((instr.getPC() + offset));
             return null;
         }
 
         public Void visitConstantPoolRef(Instruction instr, int index, Void p) {
-            print("\t#" + index + "; //");
+            print("#" + index);
+            tab();
+            print("// ");
             printConstant(index);
             return null;
         }
 
         public Void visitConstantPoolRefAndValue(Instruction instr, int index, int value, Void p) {
-            print("\t#" + index + ",  " + value + "; //");
+            print("#" + index + ",  " + value);
+            tab();
+            print("// ");
             printConstant(index);
             return null;
         }
 
         public Void visitLocal(Instruction instr, int index, Void p) {
-            print("\t" + index);
+            print(index);
             return null;
         }
 
         public Void visitLocalAndValue(Instruction instr, int index, int value, Void p) {
-            print("\t" + index + ", " + value);
+            print(index + ", " + value);
             return null;
         }
 
         public Void visitLookupSwitch(Instruction instr, int default_, int npairs, int[] matches, int[] offsets) {
             int pc = instr.getPC();
-            print("{ //" + npairs);
+            print("{ // " + npairs);
+            indent(+1);
             for (int i = 0; i < npairs; i++) {
-                print("\n\t\t" + matches[i] + ": " + (pc + offsets[i]) + ";");
+                print("\n" + matches[i] + ": " + (pc + offsets[i]));
             }
-            print("\n\t\tdefault: " + (pc + default_) + " }");
+            print("\ndefault: " + (pc + default_) + " }");
+            indent(-1);
             return null;
         }
 
         public Void visitTableSwitch(Instruction instr, int default_, int low, int high, int[] offsets) {
             int pc = instr.getPC();
             print("{ //" + low + " to " + high);
+            indent(+1);
             for (int i = 0; i < offsets.length; i++) {
-                print("\n\t\t" + (low + i) + ": " + (pc + offsets[i]) + ";");
+                print("\n" + (low + i) + ": " + (pc + offsets[i]));
             }
-            print("\n\t\tdefault: " + (pc + default_) + " }");
+            print("\ndefault: " + (pc + default_) + " }");
+            indent(-1);
             return null;
         }
 
         public Void visitValue(Instruction instr, int value, Void p) {
-            print("\t" + value);
+            print(value);
             return null;
         }
 
@@ -192,13 +202,13 @@ class CodeWriter extends BasicWriter {
 
     public void writeExceptionTable(Code_attribute attr) {
         if (attr.exception_table_langth > 0) {
-            println("  Exception table:");
-            println("   from   to  target type");
+            println("Exception table:");
+            indent(+1);
+            println(" from    to  target type");
             for (int i = 0; i < attr.exception_table.length; i++) {
                 Code_attribute.Exception_data handler = attr.exception_table[i];
-                printFixedWidthInt(handler.start_pc, 6);
-                printFixedWidthInt(handler.end_pc, 6);
-                printFixedWidthInt(handler.handler_pc, 6);
+                print(String.format(" %5d %5d %5d",
+                        handler.start_pc, handler.end_pc, handler.handler_pc));
                 print("   ");
                 int catch_type = handler.catch_type;
                 if (catch_type == 0) {
@@ -206,22 +216,15 @@ class CodeWriter extends BasicWriter {
                 } else {
                     print("Class ");
                     println(constantWriter.stringValue(catch_type));
-                    println("");
                 }
             }
+            indent(-1);
         }
 
     }
 
     private void printConstant(int index) {
         constantWriter.write(index);
-    }
-
-    private void printFixedWidthInt(int n, int width) {
-        String s = String.valueOf(n);
-        for (int i = s.length(); i < width; i++)
-            print(" ");
-        print(s);
     }
 
     private List<InstructionDetailWriter> getDetailWriters(Code_attribute attr) {
@@ -253,6 +256,11 @@ class CodeWriter extends BasicWriter {
             detailWriters.add(tryBlockWriter);
         }
 
+        if (options.details.contains(InstructionDetailWriter.Kind.TYPE_ANNOS)) {
+            typeAnnotationWriter.reset(attr);
+            detailWriters.add(typeAnnotationWriter);
+        }
+
         return detailWriters;
     }
 
@@ -261,6 +269,7 @@ class CodeWriter extends BasicWriter {
     private ConstantWriter constantWriter;
     private LocalVariableTableWriter localVariableTableWriter;
     private LocalVariableTypeTableWriter localVariableTypeTableWriter;
+    private TypeAnnotationWriter typeAnnotationWriter;
     private SourceWriter sourceWriter;
     private StackMapWriter stackMapWriter;
     private TryBlockWriter tryBlockWriter;

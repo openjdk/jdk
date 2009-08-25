@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSElementDecl;
@@ -53,10 +55,10 @@ public class ElementDecl extends DeclarationImpl implements XSElementDecl, Ref.T
         String _tns, String _name, boolean _anonymous,
 
         XmlString _defv, XmlString _fixedv,
-        boolean _nillable, boolean _abstract,
+        boolean _nillable, boolean _abstract, Boolean _form,
         Ref.Type _type, Ref.Element _substHead,
         int _substDisallowed, int _substExcluded,
-        List<IdentityConstraintImpl> idConstraints ) {
+        List<IdentityConstraintImpl> idConstraints) {
 
         super(owner,_annon,_loc,fa,_tns,_name,_anonymous);
 
@@ -64,6 +66,7 @@ public class ElementDecl extends DeclarationImpl implements XSElementDecl, Ref.T
         this.fixedValue = _fixedv;
         this.nillable = _nillable;
         this._abstract = _abstract;
+        this.form = _form;
         this.type = _type;
         this.substHead = _substHead;
         this.substDisallowed = _substDisallowed;
@@ -111,6 +114,11 @@ public class ElementDecl extends DeclarationImpl implements XSElementDecl, Ref.T
     private final List<XSIdentityConstraint> idConstraints;
     public List<XSIdentityConstraint> getIdentityConstraints() {
         return idConstraints;
+    }
+
+    private Boolean form;
+    public Boolean getForm() {
+        return form;
     }
 
 

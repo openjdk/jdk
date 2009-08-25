@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.XSFacet;
@@ -35,6 +37,8 @@ import org.xml.sax.Locator;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.util.List;
+import java.util.Collections;
 
 public class UnionSimpleTypeImpl extends SimpleTypeImpl implements XSUnionSimpleType
 {
@@ -83,8 +87,9 @@ public class UnionSimpleTypeImpl extends SimpleTypeImpl implements XSUnionSimple
 
     // union type by itself doesn't have any facet. */
     public XSFacet getFacet( String name ) { return null; }
+    public List<XSFacet> getFacets( String name ) { return Collections.EMPTY_LIST; }
 
-    public XSVariety getVariety() { return XSVariety.LIST; }
+    public XSVariety getVariety() { return XSVariety.UNION; }
 
     public XSSimpleType getPrimitiveType() { return null; }
 

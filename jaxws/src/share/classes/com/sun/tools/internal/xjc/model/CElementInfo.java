@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.model;
 
 import java.util.Collection;
@@ -44,6 +45,10 @@ import com.sun.tools.internal.xjc.model.nav.NType;
 import com.sun.tools.internal.xjc.model.nav.NavigatorImpl;
 import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
+import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIInlineBinaryData;
+import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIFactoryMethod;
+import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
+import com.sun.tools.internal.xjc.reader.Ring;
 import com.sun.xml.internal.bind.v2.model.core.ElementInfo;
 import com.sun.xml.internal.xsom.XSElementDecl;
 import com.sun.xml.internal.xsom.XmlString;
@@ -100,6 +105,11 @@ public final class CElementInfo extends AbstractCElement
     private CElementPropertyInfo property;
 
     /**
+     * Custom {@link #getSqueezedName() squeezed name}, if any.
+     */
+    private /*almost final*/ @Nullable String squeezedName;
+
+    /**
      * Creates an element in the given parent.
      *
      * <p>
@@ -143,10 +153,18 @@ public final class CElementInfo extends AbstractCElement
                 contentType.getExpectedMimeType(),
                 source,null,getLocator(),true);
         this.property.setAdapter(contentType.getAdapterUse());
+        BIInlineBinaryData.handle(source,property);
         property.getTypes().add(new CTypeRef(contentType.getInfo(),tagName,CTypeRef.getSimpleTypeName(source), true,defaultValue));
         this.type = NavigatorImpl.createParameterizedType(
             NavigatorImpl.theInstance.ref(JAXBElement.class),
             getContentInMemoryType() );
+
+        BIFactoryMethod factoryMethod = Ring.get(BGMBuilder.class).getBindInfo(source).get(BIFactoryMethod.class);
+        if(factoryMethod!=null) {
+            factoryMethod.markAsAcknowledged();
+            this.squeezedName = factoryMethod.name;
+        }
+
     }
 
     public final String getDefaultValue() {
@@ -208,6 +226,8 @@ public final class CElementInfo extends AbstractCElement
      */
     @XmlElement
     public String getSqueezedName() {
+        if(squeezedName!=null)  return squeezedName;
+
         StringBuilder b = new StringBuilder();
         CClassInfo s = getScope();
         if(s!=null)

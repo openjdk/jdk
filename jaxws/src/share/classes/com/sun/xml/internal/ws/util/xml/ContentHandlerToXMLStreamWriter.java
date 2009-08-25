@@ -175,13 +175,13 @@ public class ContentHandlerToXMLStreamWriter extends DefaultHandler {
     public void startPrefixMapping(String prefix, String uri)
         throws SAXException {
 
-        if (prefix.equals("xml")) {
-            return;
-        }
-
         // defend against parsers that pass null in for "xmlns" prefix
         if (prefix == null) {
             prefix = "";
+        }
+
+        if (prefix.equals("xml")) {
+            return;
         }
 
         prefixBindings.add(prefix);

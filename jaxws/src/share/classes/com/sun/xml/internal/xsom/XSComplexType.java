@@ -22,7 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom;
+
+import java.util.List;
 
 
 /**
@@ -98,4 +102,19 @@ public interface XSComplexType extends XSType, XSAttContainer
      *      if this component has not been redefined.
      */
     public XSComplexType getRedefinedBy();
+
+    /**
+     * Returns a list of direct subtypes of this complex type. If the type is not subtyped, returns empty list.
+     * Doesn't return null.
+     * Note that the complex type may be extended outside of the scope of the schemaset known to XSOM.
+     * @return
+     */
+    public List<XSComplexType> getSubtypes();
+
+    /**
+     * Returns a list of element declarations of this type.
+     * @return
+     */
+    public List<XSElementDecl> getElementDecls();
+
 }

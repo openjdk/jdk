@@ -66,11 +66,10 @@ import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.http.HTTPBinding;
 import javax.xml.ws.soap.SOAPBinding;
 import javax.xml.ws.soap.SOAPFaultException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -179,12 +178,12 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
         } catch (JAXBException e) {
             //TODO: i18nify
             throw new DeserializationException(DispatchMessages.INVALID_RESPONSE_DESERIALIZATION(),e);
-        } catch(RuntimeException e){
-            //it could be a WebServiceException or a ProtocolException or any RuntimeException
-            // resulting due to some internal bug.
+        } catch(WebServiceException e){
+            //it could be a WebServiceException or a ProtocolException
             throw e;
         } catch(Throwable e){
-            //its some other exception resulting from user error, wrap it in
+            // it could be a RuntimeException resulting due to some internal bug or
+            // its some other exception resulting from user error, wrap it in
             // WebServiceException
             throw new WebServiceException(e);
         }
@@ -197,12 +196,21 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
     }
 
     public final void invokeOneWay(T in) {
+        try {
+            checkNullAllowed(in, requestContext, binding, mode);
 
-        checkNullAllowed(in, requestContext, binding, mode);
-
-        Packet request = createPacket(in);
-        setProperties(request,false);
-        Packet response = process(request,requestContext,this);
+            Packet request = createPacket(in);
+            setProperties(request,false);
+            Packet response = process(request,requestContext,this);
+        } catch(WebServiceException e){
+            //it could be a WebServiceException or a ProtocolException
+            throw e;
+        } catch(Throwable e){
+            // it could be a RuntimeException resulting due to some internal bug or
+            // its some other exception resulting from user error, wrap it in
+            // WebServiceException
+            throw new WebServiceException(e);
+        }
     }
 
     void setProperties(Packet packet, boolean expectReply) {
@@ -310,11 +318,27 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
 
         final String path = (pathInfo != null) ? pathInfo : endpointURI.getPath();
         try {
-            final URI temp = new URI(null, null, path, query, fragment);
-            return endpointURI.resolve(temp).toURL().toExternalForm();
-        } catch (URISyntaxException e) {
-            throw new WebServiceException(DispatchMessages.INVALID_URI_PATH_QUERY(path ,query));
-        } catch (MalformedURLException e) {
+            //final URI temp = new URI(null, null, path, query, fragment);
+            //return endpointURI.resolve(temp).toURL().toExternalForm();
+            // Using the following HACK instead of the above to avoid double encoding of
+            // the query. Application's QUERY_STRING is encoded using URLEncoder.encode().
+            // If we use that query in URI's constructor, it is encoded again.
+            // URLEncoder's encoding is not the same as URI's encoding of the query.
+            // See {@link URL}
+            StringBuilder spec = new StringBuilder();
+            if (path != null) {
+                spec.append(path);
+            }
+            if (query != null) {
+                spec.append("?");
+                spec.append(query);
+            }
+            if (fragment != null) {
+                spec.append("#");
+                spec.append(fragment);
+            }
+            return new URL(endpointURI.toURL(), spec.toString()).toExternalForm();
+       } catch (MalformedURLException e) {
             throw new WebServiceException(DispatchMessages.INVALID_URI_RESOLUTION(path));
         }
     }
@@ -402,7 +426,7 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
             this.param = param;
         }
 
-        public void run () {
+        public void do_run () {
             checkNullAllowed(param, rc, binding, mode);
             Packet message = createPacket(param);
             resolveEndpointAddress(message, rc);
@@ -422,18 +446,25 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
                     } catch (JAXBException e) {
                         //TODO: i18nify
                         responseImpl.set(null, new DeserializationException(DispatchMessages.INVALID_RESPONSE_DESERIALIZATION(),e));
-                    } catch(RuntimeException e){
-                        //it could be a WebServiceException or a ProtocolException or any RuntimeException
-                        // resulting due to some internal bug.
+                    } catch(WebServiceException e){
+                        //it could be a WebServiceException or a ProtocolException
                         responseImpl.set(null, e);
                     } catch(Throwable e){
-                        //its some other exception resulting from user error, wrap it in
+                        // It could be any RuntimeException resulting due to some internal bug.
+                        // or its some other exception resulting from user error, wrap it in
                         // WebServiceException
                         responseImpl.set(null, new WebServiceException(e));
                     }
                 }
                 public void onCompletion(@NotNull Throwable error) {
-                    responseImpl.set(null, error);
+                    if (error instanceof WebServiceException) {
+                        responseImpl.set(null, error);
+
+                    } else {
+                        //its RuntimeException or some other exception resulting from user error, wrap it in
+                        // WebServiceException
+                        responseImpl.set(null, new WebServiceException(error));
+                    }
                 }
             };
             processAsync(message,rc, callback);

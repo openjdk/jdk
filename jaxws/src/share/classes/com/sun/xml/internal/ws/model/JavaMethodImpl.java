@@ -24,6 +24,7 @@
  */
 package com.sun.xml.internal.ws.model;
 
+import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.bind.api.TypeReference;
 import com.sun.xml.internal.ws.api.model.JavaMethod;
 import com.sun.xml.internal.ws.api.model.MEP;
@@ -32,7 +33,7 @@ import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
 import com.sun.xml.internal.ws.model.soap.SOAPBindingImpl;
 import com.sun.xml.internal.ws.model.wsdl.WSDLBoundOperationImpl;
 import com.sun.xml.internal.ws.model.wsdl.WSDLPortImpl;
-import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.Action;
@@ -47,6 +48,7 @@ import java.util.List;
  * @author Vivek Pandey
  */
 public final class JavaMethodImpl implements JavaMethod {
+
     private String inputAction;
     private String outputAction;
     private final List<CheckedExceptionImpl> exceptions = new ArrayList<CheckedExceptionImpl>();
@@ -162,6 +164,20 @@ public final class JavaMethodImpl implements JavaMethod {
     }
 
     /**
+     * @return soap:Body's first child name for request message.
+     */
+    public @Nullable QName getRequestPayloadName() {
+        return wsdlOperation.getReqPayloadName();
+    }
+
+    /**
+     * @return soap:Body's first child name for response message.
+     */
+    public @Nullable QName getResponsePayloadName() {
+        return (mep == MEP.ONE_WAY) ? null : wsdlOperation.getResPayloadName();
+    }
+
+    /**
      * @return returns unmodifiable list of request parameters
      */
     public List<ParameterImpl> getRequestParameters() {
@@ -252,14 +268,6 @@ public final class JavaMethodImpl implements JavaMethod {
         return null;
     }
 
-    public QName getPayloadName(){
-        if(payloadName != null)
-            return payloadName;
-        payloadName = wsdlOperation.getPayloadName();
-        return payloadName;
-    }
-
-    private QName payloadName;
 
     /**
      * @return a list of checked Exceptions thrown by this method

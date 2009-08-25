@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.generator.bean.field;
 
 import com.sun.tools.internal.xjc.generator.bean.ClassOutlineImpl;
@@ -48,7 +49,7 @@ final class ConstFieldRenderer implements FieldRenderer {
 
     public FieldOutline generate(ClassOutlineImpl outline, CPropertyInfo prop) {
         if(prop.defaultValue.compute(outline.parent())==null)
-            return fallback.generate(outline,prop);
+            return fallback.generate(outline, prop);
         else
             return new ConstField(outline,prop);
     }

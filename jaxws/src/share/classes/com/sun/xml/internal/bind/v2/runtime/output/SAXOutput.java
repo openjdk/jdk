@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.output;
 
 import java.io.IOException;
@@ -84,7 +85,15 @@ public class SAXOutput extends XmlOutputAbstractImpl {
             qname = localName;
         } else {
             nsUri = nsContext.getNamespaceURI(prefix);
-            qname = nsContext.getPrefix(prefix)+':'+localName;
+            String p = nsContext.getPrefix(prefix);
+            if(p.length()==0)
+                // this is more likely a bug in the application code (NamespacePrefixMapper implementation)
+                // this only happens when it tries to assign "" prefix to a non-"" URI,
+                // which is by itself violation of namespace rec. But let's just be safe.
+                // See http://forums.java.net/jive/thread.jspa?messageID=212598#212598
+                qname = localName;
+            else
+                qname = p +':'+localName;
         }
         atts.addAttribute( nsUri, localName, qname, "CDATA", value );
     }

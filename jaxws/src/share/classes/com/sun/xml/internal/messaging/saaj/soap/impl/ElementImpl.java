@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- *
- *
- *
- */
 
 
 package com.sun.xml.internal.messaging.saaj.soap.impl;
@@ -38,7 +33,6 @@ import java.util.logging.Logger;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
 
-import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 
@@ -63,6 +57,19 @@ public class ElementImpl
     protected static final Logger log =
         Logger.getLogger(LogDomainConstants.SOAP_IMPL_DOMAIN,
                          "com.sun.xml.internal.messaging.saaj.soap.impl.LocalStrings");
+
+    /**
+     * XML Information Set REC
+     * all namespace attributes (including those named xmlns,
+     * whose [prefix] property has no value) have a namespace URI of http://www.w3.org/2000/xmlns/
+     */
+    public final static String XMLNS_URI = "http://www.w3.org/2000/xmlns/".intern();
+
+    /**
+     * The XML Namespace ("http://www.w3.org/XML/1998/namespace"). This is
+     * the Namespace URI that is automatically mapped to the "xml" prefix.
+     */
+    public final static String XML_URI = "http://www.w3.org/XML/1998/namespace".intern();
 
     public ElementImpl(SOAPDocumentImpl ownerDoc, Name name) {
         super(
@@ -141,11 +148,11 @@ public class ElementImpl
     public String getNamespaceURI(String prefix) {
 
         if ("xmlns".equals(prefix)) {
-            return NamespaceContext.XMLNS_URI;
+            return XMLNS_URI;
         }
 
         if("xml".equals(prefix)) {
-            return NamespaceContext.XML_URI;
+            return XML_URI;
         }
 
         if ("".equals(prefix)) {
@@ -167,11 +174,11 @@ public class ElementImpl
                         }
                     }*/
                     if (((Element) currentAncestor).hasAttributeNS(
-                            NamespaceContext.XMLNS_URI, "xmlns")) {
+                            XMLNS_URI, "xmlns")) {
 
                         String uri =
                             ((Element) currentAncestor).getAttributeNS(
-                                NamespaceContext.XMLNS_URI, "xmlns");
+                                XMLNS_URI, "xmlns");
                         if ("".equals(uri))
                             return null;
                         else {
@@ -204,9 +211,9 @@ public class ElementImpl
                 //}
 
                 if (((Element) currentAncestor).hasAttributeNS(
-                        NamespaceContext.XMLNS_URI, prefix)) {
+                        XMLNS_URI, prefix)) {
                     return ((Element) currentAncestor).getAttributeNS(
-                               NamespaceContext.XMLNS_URI, prefix);
+                               XMLNS_URI, prefix);
                 }
 
                 currentAncestor = currentAncestor.getParentNode();
@@ -492,7 +499,7 @@ public class ElementImpl
 
         uri = uri.length() == 0 ? null : uri;
         if (qualifiedName.equals("xmlns")) {
-            uri = NamespaceContext.XMLNS_URI;
+            uri = XMLNS_URI;
         }
 
         if (uri == null) {
@@ -505,9 +512,9 @@ public class ElementImpl
     public SOAPElement addNamespaceDeclaration(String prefix, String uri)
         throws SOAPException {
         if (prefix.length() > 0) {
-            setAttributeNS(NamespaceContext.XMLNS_URI, "xmlns:" + prefix, uri);
+            setAttributeNS(XMLNS_URI, "xmlns:" + prefix, uri);
         } else {
-            setAttributeNS(NamespaceContext.XMLNS_URI, "xmlns", uri);
+            setAttributeNS(XMLNS_URI, "xmlns", uri);
         }
         //Fix for CR:6474641
         //tryToFindEncodingStyleAttributeName();
