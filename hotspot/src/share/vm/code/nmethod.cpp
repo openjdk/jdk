@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -966,7 +966,7 @@ ScopeDesc* nmethod::scope_desc_at(address pc) {
   PcDesc* pd = pc_desc_at(pc);
   guarantee(pd != NULL, "scope must be present");
   return new ScopeDesc(this, pd->scope_decode_offset(),
-                       pd->obj_decode_offset());
+                       pd->obj_decode_offset(), pd->should_reexecute());
 }
 
 
@@ -1932,7 +1932,7 @@ void nmethod::verify_interrupt_point(address call_site) {
   PcDesc* pd = pc_desc_at(ic->end_of_call());
   assert(pd != NULL, "PcDesc must exist");
   for (ScopeDesc* sd = new ScopeDesc(this, pd->scope_decode_offset(),
-                                     pd->obj_decode_offset());
+                                     pd->obj_decode_offset(), pd->should_reexecute());
        !sd->is_top(); sd = sd->sender()) {
     sd->verify();
   }
@@ -2181,7 +2181,7 @@ ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   PcDesc* p = pc_desc_near(begin+1);
   if (p != NULL && p->real_pc(this) <= end) {
     return new ScopeDesc(this, p->scope_decode_offset(),
-                         p->obj_decode_offset());
+                         p->obj_decode_offset(), p->should_reexecute());
   }
   return NULL;
 }
