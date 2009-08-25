@@ -113,14 +113,14 @@ class WindowsAsynchronousServerSocketChannelImpl
     /**
      * Task to initiate accept operation and to handle result.
      */
-    private class AcceptTask<A> implements Runnable, Iocp.ResultHandler {
+    private class AcceptTask implements Runnable, Iocp.ResultHandler {
         private final WindowsAsynchronousSocketChannelImpl channel;
         private final AccessControlContext acc;
-        private final PendingFuture<AsynchronousSocketChannel,A> result;
+        private final PendingFuture<AsynchronousSocketChannel,Object> result;
 
         AcceptTask(WindowsAsynchronousSocketChannelImpl channel,
                    AccessControlContext acc,
-                   PendingFuture<AsynchronousSocketChannel,A> result)
+                   PendingFuture<AsynchronousSocketChannel,Object> result)
         {
             this.channel = channel;
             this.acc = acc;
@@ -222,14 +222,14 @@ class WindowsAsynchronousServerSocketChannelImpl
             }
 
             // invoke completion handler
-            Invoker.invokeIndirectly(result.handler(), result);
+            Invoker.invokeIndirectly(result);
         }
 
         /**
          * Executed when the I/O has completed
          */
         @Override
-        public void completed(int bytesTransferred) {
+        public void completed(int bytesTransferred, boolean canInvokeDirect) {
             try {
                 // connection accept after group has shutdown
                 if (iocp.isShutdown()) {
@@ -269,7 +269,7 @@ class WindowsAsynchronousServerSocketChannelImpl
             }
 
             // invoke handler (but not directly)
-            Invoker.invokeIndirectly(result.handler(), result);
+            Invoker.invokeIndirectly(result);
         }
 
         @Override
@@ -283,19 +283,20 @@ class WindowsAsynchronousServerSocketChannelImpl
             } else {
                 result.setFailure(new AsynchronousCloseException());
             }
-            Invoker.invokeIndirectly(result.handler(), result);
+            Invoker.invokeIndirectly(result);
         }
     }
 
     @Override
-    public <A> Future<AsynchronousSocketChannel> accept(A attachment,
-        final CompletionHandler<AsynchronousSocketChannel,? super A> handler)
+    Future<AsynchronousSocketChannel> implAccept(Object attachment,
+        final CompletionHandler<AsynchronousSocketChannel,Object> handler)
     {
         if (!isOpen()) {
-            CompletedFuture<AsynchronousSocketChannel,A> result = CompletedFuture
-                .withFailure(this, new ClosedChannelException(), attachment);
-            Invoker.invokeIndirectly(handler, result);
-            return result;
+            Throwable exc = new ClosedChannelException();
+            if (handler == null)
+                return CompletedFuture.withFailure(exc);
+            Invoker.invokeIndirectly(this, handler, attachment, null, exc);
+            return null;
         }
         if (isAcceptKilled())
             throw new RuntimeException("Accept not allowed due to cancellation");
@@ -319,10 +320,10 @@ class WindowsAsynchronousServerSocketChannelImpl
             end();
         }
         if (ioe != null) {
-            CompletedFuture<AsynchronousSocketChannel,A> result =
-                CompletedFuture.withFailure(this, ioe, attachment);
-            Invoker.invokeIndirectly(handler, result);
-            return result;
+            if (handler == null)
+                return CompletedFuture.withFailure(ioe);
+            Invoker.invokeIndirectly(this, handler, attachment, null, ioe);
+            return null;
         }
 
         // need calling context when there is security manager as
@@ -331,20 +332,21 @@ class WindowsAsynchronousServerSocketChannelImpl
         AccessControlContext acc = (System.getSecurityManager() == null) ?
             null : AccessController.getContext();
 
-        PendingFuture<AsynchronousSocketChannel,A> result =
-            new PendingFuture<AsynchronousSocketChannel,A>(this, handler, attachment);
-        AcceptTask task = new AcceptTask<A>(ch, acc, result);
+        PendingFuture<AsynchronousSocketChannel,Object> result =
+            new PendingFuture<AsynchronousSocketChannel,Object>(this, handler, attachment);
+        AcceptTask task = new AcceptTask(ch, acc, result);
         result.setContext(task);
 
         // check and set flag to prevent concurrent accepting
         if (!accepting.compareAndSet(false, true))
             throw new AcceptPendingException();
 
-        // initiate accept. As I/O operations are tied to the initiating thread
-        // then it will only be invoked direcly if this thread is in the thread
-        // pool. If this thread is not in the thread pool when a task is
-        // submitted to initiate the accept.
-        Invoker.invokeOnThreadInThreadPool(this, task);
+        // initiate I/O
+        if (Iocp.supportsThreadAgnosticIo()) {
+            task.run();
+        } else {
+            Invoker.invokeOnThreadInThreadPool(this, task);
+        }
         return result;
     }
 

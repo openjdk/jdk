@@ -62,7 +62,7 @@ public final class SunProvider extends Provider {
 
     public SunProvider() {
         /* We are the Sun JGSS provider */
-        super("SunJGSS", 1.0, INFO);
+        super("SunJGSS", 1.7d, INFO);
 
         AccessController.doPrivileged(
                         new java.security.PrivilegedAction<Void>() {

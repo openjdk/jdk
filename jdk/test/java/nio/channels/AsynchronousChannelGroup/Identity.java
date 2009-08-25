@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6842687
  * @summary Unit test for AsynchronousChannelGroup
  */
 
@@ -90,13 +90,9 @@ public class Identity {
                     }
                     public void failed(Throwable exc, Void att) {
                     }
-                    public void cancelled(Void att) {
-                    }
                 });
             }
             public void failed(Throwable exc, Void att) {
-            }
-            public void cancelled(Void att) {
             }
         });
         int port = ((InetSocketAddress)(listener.getLocalAddress())).getPort();
@@ -140,9 +136,6 @@ public class Identity {
             }
             public void failed(Throwable exc, Integer groupId) {
                 fail(exc.getMessage());
-            }
-            public void cancelled(Integer groupId) {
-                fail("I/O operation was cancelled");
             }
         });
 
