@@ -104,12 +104,15 @@ public class Check {
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
+        boolean verboseSunApi = lint.isEnabled(LintCategory.SUNAPI);
         boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
 
         deprecationHandler = new MandatoryWarningHandler(log, verboseDeprecated,
                 enforceMandatoryWarnings, "deprecated");
         uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
                 enforceMandatoryWarnings, "unchecked");
+        sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
+                enforceMandatoryWarnings, "sunapi");
     }
 
     /** Switch: generics enabled?
@@ -137,6 +140,9 @@ public class Check {
      */
     private MandatoryWarningHandler uncheckedHandler;
 
+    /** A handler for messages about using Sun proprietary API.
+     */
+    private MandatoryWarningHandler sunApiHandler;
 
 /* *************************************************************************
  * Errors and Warnings
@@ -166,12 +172,22 @@ public class Check {
             uncheckedHandler.report(pos, msg, args);
     }
 
+    /** Warn about using Sun proprietary API.
+     *  @param pos        Position to be used for error reporting.
+     *  @param msg        A string describing the problem.
+     */
+    public void warnSunApi(DiagnosticPosition pos, String msg, Object... args) {
+        if (!lint.isSuppressed(LintCategory.SUNAPI))
+            sunApiHandler.report(pos, msg, args);
+    }
+
     /**
      * Report any deferred diagnostics.
      */
     public void reportDeferredDiagnostics() {
         deprecationHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
+        sunApiHandler.reportDeferredDiagnostic();
     }
 
 
