@@ -95,7 +95,7 @@ public class Main {
         javac = null;
         elements = null;
 
-        javac = (JavacTask)tool.getTask(null, null, null, null, null, null);
+        javac = (JavacTask)tool.getTask(null, fm, null, null, null, null);
         elements = javac.getElements();
 
         for (String name : packages) {
