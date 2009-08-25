@@ -146,10 +146,12 @@ public class WindowsAsynchronousFileChannelImpl
         // waits until all I/O operations have completed
         ioCache.close();
 
-        // disassociate from port and shutdown thread pool if not default
+        // disassociate from port
         iocp.disassociate(completionKey);
+
+        // for the non-default group close the port
         if (!isDefaultIocp)
-            iocp.shutdown();
+            iocp.detachFromThreadPool();
     }
 
     @Override
@@ -258,14 +260,18 @@ public class WindowsAsynchronousFileChannelImpl
             }
 
             // invoke completion handler
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
 
         @Override
-        public void completed(int bytesTransferred) {
+        public void completed(int bytesTransferred, boolean canInvokeDirect) {
             // release waiters and invoke completion handler
             result.setResult(fli);
-            Invoker.invoke(result.handler(), result);
+            if (canInvokeDirect) {
+                Invoker.invokeUnchecked(result);
+            } else {
+                Invoker.invoke(result);
+            }
         }
 
         @Override
@@ -279,16 +285,16 @@ public class WindowsAsynchronousFileChannelImpl
             } else {
                 result.setFailure(new AsynchronousCloseException());
             }
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
     }
 
     @Override
-    public <A> Future<FileLock> lock(long position,
-                                     long size,
-                                     boolean shared,
-                                     A attachment,
-                                     CompletionHandler<FileLock,? super A> handler)
+    <A> Future<FileLock> implLock(final long position,
+                                  final long size,
+                                  final boolean shared,
+                                  A attachment,
+                                  final CompletionHandler<FileLock,? super A> handler)
     {
         if (shared && !reading)
             throw new NonReadableChannelException();
@@ -298,10 +304,11 @@ public class WindowsAsynchronousFileChannelImpl
         // add to lock table
         FileLockImpl fli = addToFileLockTable(position, size, shared);
         if (fli == null) {
-            CompletedFuture<FileLock,A> result = CompletedFuture
-                .withFailure(this, new ClosedChannelException(), attachment);
-            Invoker.invoke(handler, result);
-            return result;
+            Throwable exc = new ClosedChannelException();
+            if (handler == null)
+                return CompletedFuture.withFailure(exc);
+            Invoker.invoke(this, handler, attachment, null, exc);
+            return null;
         }
 
         // create Future and task that will be invoked to acquire lock
@@ -310,13 +317,20 @@ public class WindowsAsynchronousFileChannelImpl
         LockTask lockTask = new LockTask<A>(position, fli, result);
         result.setContext(lockTask);
 
-        // initiate I/O (can only be done from thread in thread pool)
-        try {
-            Invoker.invokeOnThreadInThreadPool(this, lockTask);
-        } catch (ShutdownChannelGroupException e) {
-            // rollback
-            removeFromFileLockTable(fli);
-            throw e;
+        // initiate I/O
+        if (Iocp.supportsThreadAgnosticIo()) {
+            lockTask.run();
+        } else {
+            boolean executed = false;
+            try {
+                Invoker.invokeOnThreadInThreadPool(this, lockTask);
+                executed = true;
+            } finally {
+                if (!executed) {
+                    // rollback
+                    removeFromFileLockTable(fli);
+                }
+            }
         }
         return result;
     }
@@ -461,14 +475,14 @@ public class WindowsAsynchronousFileChannelImpl
             releaseBufferIfSubstituted();
 
             // invoke completion handler
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
 
         /**
          * Executed when the I/O has completed
          */
         @Override
-        public void completed(int bytesTransferred) {
+        public void completed(int bytesTransferred, boolean canInvokeDirect) {
             updatePosition(bytesTransferred);
 
             // return direct buffer to cache if substituted
@@ -476,14 +490,18 @@ public class WindowsAsynchronousFileChannelImpl
 
             // release waiters and invoke completion handler
             result.setResult(bytesTransferred);
-            Invoker.invoke(result.handler(), result);
+            if (canInvokeDirect) {
+                Invoker.invokeUnchecked(result);
+            } else {
+                Invoker.invoke(result);
+            }
         }
 
         @Override
         public void failed(int error, IOException x) {
             // if EOF detected asynchronously then it is reported as error
             if (error == ERROR_HANDLE_EOF) {
-                completed(-1);
+                completed(-1, false);
             } else {
                 // return direct buffer to cache if substituted
                 releaseBufferIfSubstituted();
@@ -494,16 +512,16 @@ public class WindowsAsynchronousFileChannelImpl
                 } else {
                     result.setFailure(new AsynchronousCloseException());
                 }
-                Invoker.invoke(result.handler(), result);
+                Invoker.invoke(result);
             }
         }
     }
 
     @Override
-    public <A> Future<Integer> read(ByteBuffer dst,
-                                    long position,
-                                    A attachment,
-                                    CompletionHandler<Integer,? super A> handler)
+    <A> Future<Integer> implRead(ByteBuffer dst,
+                                 long position,
+                                 A attachment,
+                                 CompletionHandler<Integer,? super A> handler)
     {
         if (!reading)
             throw new NonReadableChannelException();
@@ -514,10 +532,11 @@ public class WindowsAsynchronousFileChannelImpl
 
         // check if channel is closed
         if (!isOpen()) {
-            CompletedFuture<Integer,A> result = CompletedFuture
-                .withFailure(this, new ClosedChannelException(), attachment);
-            Invoker.invoke(handler, result);
-            return result;
+            Throwable exc = new ClosedChannelException();
+            if (handler == null)
+                return CompletedFuture.withFailure(exc);
+            Invoker.invoke(this, handler, attachment, null, exc);
+            return null;
         }
 
         int pos = dst.position();
@@ -527,10 +546,10 @@ public class WindowsAsynchronousFileChannelImpl
 
         // no space remaining
         if (rem == 0) {
-            CompletedFuture<Integer,A> result =
-                CompletedFuture.withResult(this, 0, attachment);
-            Invoker.invoke(handler, result);
-            return result;
+            if (handler == null)
+                return CompletedFuture.withResult(0);
+            Invoker.invoke(this, handler, attachment, 0, null);
+            return null;
         }
 
         // create Future and task that initiates read
@@ -539,8 +558,12 @@ public class WindowsAsynchronousFileChannelImpl
         ReadTask readTask = new ReadTask<A>(dst, pos, rem, position, result);
         result.setContext(readTask);
 
-        // initiate I/O (can only be done from thread in thread pool)
-        Invoker.invokeOnThreadInThreadPool(this, readTask);
+        // initiate I/O
+        if (Iocp.supportsThreadAgnosticIo()) {
+            readTask.run();
+        } else {
+            Invoker.invokeOnThreadInThreadPool(this, readTask);
+        }
         return result;
     }
 
@@ -639,14 +662,14 @@ public class WindowsAsynchronousFileChannelImpl
             }
 
             // invoke completion handler
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
 
         /**
          * Executed when the I/O has completed
          */
         @Override
-        public void completed(int bytesTransferred) {
+        public void completed(int bytesTransferred, boolean canInvokeDirect) {
             updatePosition(bytesTransferred);
 
             // return direct buffer to cache if substituted
@@ -654,7 +677,11 @@ public class WindowsAsynchronousFileChannelImpl
 
             // release waiters and invoke completion handler
             result.setResult(bytesTransferred);
-            Invoker.invoke(result.handler(), result);
+            if (canInvokeDirect) {
+                Invoker.invokeUnchecked(result);
+            } else {
+                Invoker.invoke(result);
+            }
         }
 
         @Override
@@ -668,15 +695,14 @@ public class WindowsAsynchronousFileChannelImpl
             } else {
                 result.setFailure(new AsynchronousCloseException());
             }
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
     }
 
-    @Override
-    public <A> Future<Integer> write(ByteBuffer src,
-                                     long position,
-                                     A attachment,
-                                     CompletionHandler<Integer,? super A> handler)
+    <A> Future<Integer> implWrite(ByteBuffer src,
+                                  long position,
+                                  A attachment,
+                                  CompletionHandler<Integer,? super A> handler)
     {
         if (!writing)
             throw new NonWritableChannelException();
@@ -685,10 +711,11 @@ public class WindowsAsynchronousFileChannelImpl
 
         // check if channel is closed
         if (!isOpen()) {
-            CompletedFuture<Integer,A> result = CompletedFuture
-                .withFailure(this, new ClosedChannelException(), attachment);
-            Invoker.invoke(handler, result);
-            return result;
+           Throwable exc = new ClosedChannelException();
+            if (handler == null)
+                return CompletedFuture.withFailure(exc);
+            Invoker.invoke(this, handler, attachment, null, exc);
+            return null;
         }
 
         int pos = src.position();
@@ -698,10 +725,10 @@ public class WindowsAsynchronousFileChannelImpl
 
         // nothing to write
         if (rem == 0) {
-            CompletedFuture<Integer,A> result =
-                CompletedFuture.withResult(this, 0, attachment);
-            Invoker.invoke(handler, result);
-            return result;
+            if (handler == null)
+                return CompletedFuture.withResult(0);
+            Invoker.invoke(this, handler, attachment, 0, null);
+            return null;
         }
 
         // create Future and task to initiate write
@@ -710,8 +737,12 @@ public class WindowsAsynchronousFileChannelImpl
         WriteTask writeTask = new WriteTask<A>(src, pos, rem, position, result);
         result.setContext(writeTask);
 
-        // initiate I/O (can only be done from thread in thread pool)
-        Invoker.invokeOnThreadInThreadPool(this, writeTask);
+        // initiate I/O
+        if (Iocp.supportsThreadAgnosticIo()) {
+            writeTask.run();
+        } else {
+            Invoker.invokeOnThreadInThreadPool(this, writeTask);
+        }
         return result;
     }
 

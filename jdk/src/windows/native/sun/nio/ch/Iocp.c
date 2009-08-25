@@ -58,6 +58,16 @@ Java_sun_nio_ch_Iocp_initIDs(JNIEnv* env, jclass this)
     completionStatus_overlapped = (*env)->GetFieldID(env, clazz, "overlapped", "J");
 }
 
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Iocp_osMajorVersion(JNIEnv* env, jclass this)
+{
+    OSVERSIONINFOEX ver;
+    ver.dwOSVersionInfoSize = sizeof(ver);
+    GetVersionEx((OSVERSIONINFO *) &ver);
+    return (ver.dwPlatformId == VER_PLATFORM_WIN32_NT) ?
+        (jint)(ver.dwMajorVersion) : (jint)0;
+}
+
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_Iocp_createIoCompletionPort(JNIEnv* env, jclass this,
     jlong handle, jlong existingPort, jint completionKey, jint concurrency)

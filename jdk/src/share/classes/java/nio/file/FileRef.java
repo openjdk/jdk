@@ -39,8 +39,6 @@ import java.io.IOException;
  * metadata or file attributes.
  *
  * @since 1.7
- * @see java.io.Inputs
- * @see java.io.Outputs
  * @see java.nio.file.attribute.Attributes
  * @see java.io.File#toPath
  */
