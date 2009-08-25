@@ -22,17 +22,14 @@
  * have any questions.
  */
 
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file and, per its terms, should not be removed:
- *
- * uncompr.c -- decompress a memory buffer
- * Copyright (C) 1995-1998 Jean-loup Gailly.
+/* uncompr.c -- decompress a memory buffer
+ * Copyright (C) 1995-2003 Jean-loup Gailly.
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+/* @(#) $Id$ */
+
+#define ZLIB_INTERNAL
 #include "zlib.h"
 
 /* ===========================================================================
@@ -77,7 +74,9 @@ int ZEXPORT uncompress (dest, destLen, source, sourceLen)
     err = inflate(&stream, Z_FINISH);
     if (err != Z_STREAM_END) {
         inflateEnd(&stream);
-        return err == Z_OK ? Z_BUF_ERROR : err;
+        if (err == Z_NEED_DICT || (err == Z_BUF_ERROR && stream.avail_in == 0))
+            return Z_DATA_ERROR;
+        return err;
     }
     *destLen = stream.total_out;
 

@@ -22,14 +22,8 @@
  * have any questions.
  */
 
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file and, per its terms, should not be removed:
- *
- * infcodes.h -- header to use infcodes.c
- * Copyright (C) 1995-1998 Mark Adler
+/* inffast.h -- header to use inffast.c
+ * Copyright (C) 1995-2003 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -38,19 +32,4 @@
    subject to change. Applications should only use zlib.h.
  */
 
-struct inflate_codes_state;
-typedef struct inflate_codes_state FAR inflate_codes_statef;
-
-extern inflate_codes_statef *inflate_codes_new OF((
-    uInt, uInt,
-    inflate_huft *, inflate_huft *,
-    z_streamp ));
-
-extern int inflate_codes OF((
-    inflate_blocks_statef *,
-    z_streamp ,
-    int));
-
-extern void inflate_codes_free OF((
-    inflate_codes_statef *,
-    z_streamp ));
+void inflate_fast OF((z_streamp strm, unsigned start));
