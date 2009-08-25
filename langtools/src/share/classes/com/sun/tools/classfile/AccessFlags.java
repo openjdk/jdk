@@ -76,6 +76,10 @@ public class AccessFlags {
         return (flags & mask) != 0;
     }
 
+    public int byteLength() {
+        return 2;
+    }
+
     private static final int[] classModifiers = {
         ACC_PUBLIC, ACC_FINAL, ACC_ABSTRACT, ACC_MODULE
     };

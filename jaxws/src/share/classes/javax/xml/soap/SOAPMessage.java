@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: SOAPMessage.java,v 1.22 2005/08/17 08:13:01 vj135062 Exp $
- * $Revision: 1.22 $
- * $Date: 2005/08/17 08:13:01 $
+ * $Id: SOAPMessage.java,v 1.23 2006/03/30 00:59:42 ofung Exp $
+ * $Revision: 1.23 $
+ * $Date: 2006/03/30 00:59:42 $
  */
 
 

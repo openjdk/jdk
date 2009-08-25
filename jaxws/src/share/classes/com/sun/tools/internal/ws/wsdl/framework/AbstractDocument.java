@@ -134,26 +134,11 @@ public abstract class AbstractDocument {
         }
     }
 
-    public void undefine(GloballyKnown e) {
-        Map map = getMap(e.getKind());
-        if (e.getName() == null)
-            return;
-        QName name =
-            new QName(e.getDefining().getTargetNamespaceURI(), e.getName());
-
-        if (map.containsKey(name)){
-            errReceiver.error(e.getLocator(), WsdlMessages.ENTITY_NOT_FOUND_BY_Q_NAME(e.getElementName().getLocalPart(), e.getElementName().getNamespaceURI()));
-            throw new AbortException();
-        } else{
-            map.remove(name);
-        }
-    }
-
     public GloballyKnown find(Kind k, QName name) {
         Map map = getMap(k);
         Object result = map.get(name);
         if (result == null){
-            errReceiver.error(new LocatorImpl(), WsdlMessages.ENTITY_NOT_FOUND_BY_Q_NAME(name.getLocalPart(), name.getNamespaceURI()));
+            errReceiver.error(null, WsdlMessages.ENTITY_NOT_FOUND_BY_Q_NAME(k.getName(), name, _systemId));
             throw new AbortException();
         }
         return (GloballyKnown) result;

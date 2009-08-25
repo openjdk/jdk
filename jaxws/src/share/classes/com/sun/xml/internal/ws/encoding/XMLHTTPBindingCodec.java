@@ -25,19 +25,20 @@
 
 package com.sun.xml.internal.ws.encoding;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 import com.sun.xml.internal.ws.api.SOAPVersion;
+import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.message.Packet;
-import com.sun.xml.internal.ws.api.message.Messages;
 import com.sun.xml.internal.ws.api.pipe.Codec;
 import com.sun.xml.internal.ws.api.pipe.ContentType;
 import com.sun.xml.internal.ws.client.ContentNegotiation;
+import com.sun.xml.internal.ws.developer.StreamingAttachmentFeature;
 import com.sun.xml.internal.ws.encoding.xml.XMLCodec;
 import com.sun.xml.internal.ws.encoding.xml.XMLMessage;
 import com.sun.xml.internal.ws.encoding.xml.XMLMessage.MessageDataSource;
 import com.sun.xml.internal.ws.encoding.xml.XMLMessage.UnknownContent;
 import com.sun.xml.internal.ws.encoding.xml.XMLMessage.XMLMultiPart;
 import com.sun.xml.internal.ws.resources.StreamingMessages;
+import com.sun.xml.internal.ws.util.ByteArrayBuffer;
 
 import javax.activation.DataSource;
 import javax.xml.ws.WebServiceException;
@@ -125,10 +126,10 @@ public final class XMLHTTPBindingCodec extends MimeCodec {
 
     private AcceptContentType _adaptingContentType = new AcceptContentType();
 
-    public XMLHTTPBindingCodec() {
-        super(SOAPVersion.SOAP_11);
+    public XMLHTTPBindingCodec(WSBinding binding) {
+        super(SOAPVersion.SOAP_11, binding);
 
-        xmlCodec = new XMLCodec();
+        xmlCodec = new XMLCodec(binding);
 
         fiCodec = getFICodec();
 
@@ -192,7 +193,7 @@ public final class XMLHTTPBindingCodec extends MimeCodec {
         if (contentType == null) {
             xmlCodec.decode(in, contentType, packet);
         } else if (isMultipartRelated(contentType)) {
-            packet.setMessage(new XMLMultiPart(contentType, in));
+            packet.setMessage(new XMLMultiPart(contentType, in, binding.getFeature(StreamingAttachmentFeature.class)));
         } else if(isFastInfoset(contentType)) {
             if (fiCodec == null) {
                 throw new RuntimeException(StreamingMessages.FASTINFOSET_NO_IMPLEMENTATION());
@@ -216,7 +217,7 @@ public final class XMLHTTPBindingCodec extends MimeCodec {
     }
 
     public MimeCodec copy() {
-        return new XMLHTTPBindingCodec();
+        return new XMLHTTPBindingCodec(binding);
     }
 
     private boolean isMultipartRelated(String contentType) {
@@ -274,7 +275,7 @@ public final class XMLHTTPBindingCodec extends MimeCodec {
             final boolean isFastInfoset = XMLMessage.isFastInfoset(
                     mds.getDataSource().getContentType());
             DataSource ds = transformDataSource(mds.getDataSource(),
-                    isFastInfoset, useFastInfosetForEncoding);
+                    isFastInfoset, useFastInfosetForEncoding, binding);
 
             InputStream is = ds.getInputStream();
             byte[] buf = new byte[1024];
@@ -313,23 +314,23 @@ public final class XMLHTTPBindingCodec extends MimeCodec {
     }
 
     public static DataSource transformDataSource(DataSource in,
-            boolean isFastInfoset, boolean useFastInfoset) {
+            boolean isFastInfoset, boolean useFastInfoset, WSBinding binding) {
         try {
             if (isFastInfoset && !useFastInfoset) {
                 // Convert from Fast Infoset to XML
-                Codec codec = new XMLHTTPBindingCodec();
+                Codec codec = new XMLHTTPBindingCodec(binding);
                 Packet p = new Packet();
                 codec.decode(in.getInputStream(), in.getContentType(), p);
 
                 p.getMessage().getAttachments();
                 codec.getStaticContentType(p);
 
-                ByteOutputStream bos = new ByteOutputStream();
+                ByteArrayBuffer bos = new ByteArrayBuffer();
                 ContentType ct = codec.encode(p, bos);
                 return XMLMessage.createDataSource(ct.getContentType(), bos.newInputStream());
             } else if (!isFastInfoset && useFastInfoset) {
                 // Convert from XML to Fast Infoset
-                Codec codec = new XMLHTTPBindingCodec();
+                Codec codec = new XMLHTTPBindingCodec(binding);
                 Packet p = new Packet();
                 codec.decode(in.getInputStream(), in.getContentType(), p);
 
@@ -337,7 +338,7 @@ public final class XMLHTTPBindingCodec extends MimeCodec {
                 p.getMessage().getAttachments();
                 codec.getStaticContentType(p);
 
-                ByteOutputStream bos = new ByteOutputStream();
+                ByteArrayBuffer bos = new ByteArrayBuffer();
                 com.sun.xml.internal.ws.api.pipe.ContentType ct = codec.encode(p, bos);
                 return XMLMessage.createDataSource(ct.getContentType(), bos.newInputStream());
             }

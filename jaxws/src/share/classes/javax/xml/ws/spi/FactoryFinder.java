@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,6 @@ class FactoryFinder {
         return newInstance(fallbackClassName, classLoader);
     }
 
-
     private static final String PLATFORM_DEFAULT_FACTORY_CLASS = "com.sun.xml.internal.ws.spi.ProviderImpl";
 
     /**
@@ -161,7 +160,7 @@ class FactoryFinder {
             if (s != null) {
                 int i = className.lastIndexOf('.');
                 if (i != -1) {
-                    s.checkPackageAccess(className.substring(0,i));
+                    s.checkPackageAccess(className.substring(0, i));
                 }
             }
 
@@ -176,4 +175,5 @@ class FactoryFinder {
             throw se;
         }
     }
+
 }

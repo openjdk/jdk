@@ -43,6 +43,8 @@ import javax.xml.XMLConstants;
  */
 public class XMLStreamReaderToXMLStreamWriter {
 
+    private static final int BUF_SIZE = 4096;
+
     protected XMLStreamReader in;
     protected XMLStreamWriter out;
 
@@ -126,11 +128,13 @@ public class XMLStreamReaderToXMLStreamWriter {
             in.getPIData());
     }
 
+
     protected void handleCharacters() throws XMLStreamException {
-        out.writeCharacters(
-            in.getTextCharacters(),
-            in.getTextStart(),
-            in.getTextLength() );
+        char[] buf = new char[BUF_SIZE];
+        for (int start=0,read=buf.length; read == buf.length; start+=buf.length) {
+            read = in.getTextCharacters(start, buf, 0, buf.length);
+            out.writeCharacters(buf, 0, read);
+        }
     }
 
     protected void handleEndElement() throws XMLStreamException {

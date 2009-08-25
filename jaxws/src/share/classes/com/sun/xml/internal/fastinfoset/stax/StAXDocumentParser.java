@@ -51,6 +51,7 @@ import com.sun.xml.internal.org.jvnet.fastinfoset.EncodingAlgorithmIndexes;
 import com.sun.xml.internal.org.jvnet.fastinfoset.FastInfosetException;
 import com.sun.xml.internal.fastinfoset.CommonResourceBundle;
 import com.sun.xml.internal.fastinfoset.org.apache.xerces.util.XMLChar;
+import com.sun.xml.internal.fastinfoset.util.DuplicateAttributeVerifier;
 import com.sun.xml.internal.org.jvnet.fastinfoset.stax.FastInfosetStreamReader;
 
 /**
@@ -151,11 +152,13 @@ public class StAXDocumentParser extends Decoder
         _manager = manager;
     }
 
+    @Override
     public void setInputStream(InputStream s) {
         super.setInputStream(s);
         reset();
     }
 
+    @Override
     public void reset() {
         super.reset();
         if (_internalState != INTERNAL_STATE_START_DOCUMENT &&
@@ -269,7 +272,7 @@ public class StAXDocumentParser extends Decoder
 
             // Process information item
             final int b = read();
-            switch(DecoderStateTables.EII[b]) {
+            switch(DecoderStateTables.EII(b)) {
                 case DecoderStateTables.EII_NO_AIIS_INDEX_SMALL:
                     processEII(_elementNameTable._array[b], false);
                     return _eventType;
@@ -351,17 +354,14 @@ public class StAXDocumentParser extends Decoder
                 }
                 case DecoderStateTables.CII_EA:
                 {
-                    if ((b & EncodingConstants.NISTRING_ADD_TO_TABLE_FLAG) > 0) {
-                        throw new EncodingAlgorithmException(CommonResourceBundle.getInstance().getString("message.addToTableNotSupported"));
-                    }
-
+                    final boolean addToTable = (b & EncodingConstants.CHARACTER_CHUNK_ADD_TO_TABLE_FLAG) > 0;
                     // Decode encoding algorithm integer
                     _algorithmId = (b & 0x02) << 6;
                     final int b2 = read();
                     _algorithmId |= (b2 & 0xFC) >> 2;
 
                     decodeOctetsOnSeventhBitOfNonIdentifyingStringOnThirdBit(b2);
-                    processCIIEncodingAlgorithm();
+                    processCIIEncodingAlgorithm(addToTable);
 
                     return _eventType = CHARACTERS;
                 }
@@ -817,9 +817,10 @@ public class StAXDocumentParser extends Decoder
         }
 
         try {
-            System.arraycopy(_characters, sourceStart, target,
-                    targetStart, length);
-            return length;
+            int bytesToCopy = Math.min(_charBufferLength, length);
+            System.arraycopy(_characters, _charactersOffset + sourceStart,
+                    target, targetStart, bytesToCopy);
+            return bytesToCopy;
         } catch (IndexOutOfBoundsException e) {
             throw new XMLStreamException(e);
         }
@@ -983,7 +984,7 @@ public class StAXDocumentParser extends Decoder
 
     public final int peekNext() throws XMLStreamException {
         try {
-            switch(DecoderStateTables.EII[peek(this)]) {
+            switch(DecoderStateTables.EII(peek(this))) {
                 case DecoderStateTables.EII_NO_AIIS_INDEX_SMALL:
                 case DecoderStateTables.EII_AIIS_INDEX_SMALL:
                 case DecoderStateTables.EII_INDEX_MEDIUM:
@@ -1213,7 +1214,7 @@ public class StAXDocumentParser extends Decoder
         _currentNamespaceAIIsEnd = _namespaceAIIsIndex;
 
         b = read();
-        switch(DecoderStateTables.EII[b]) {
+        switch(DecoderStateTables.EII(b)) {
             case DecoderStateTables.EII_NO_AIIS_INDEX_SMALL:
                 processEII(_elementNameTable._array[b], hasAttributes);
                 break;
@@ -1288,7 +1289,7 @@ public class StAXDocumentParser extends Decoder
         do {
             // AII qualified name
             b = read();
-            switch (DecoderStateTables.AII[b]) {
+            switch (DecoderStateTables.AII(b)) {
                 case DecoderStateTables.AII_INDEX_SMALL:
                     name = _attributeNameTable._array[b];
                     break;
@@ -1310,7 +1311,7 @@ public class StAXDocumentParser extends Decoder
                     name = processLiteralQualifiedName(
                             b & EncodingConstants.LITERAL_QNAME_PREFIX_NAMESPACE_NAME_MASK,
                             _attributeNameTable.getNext());
-                    name.createAttributeValues(_duplicateAttributeVerifier.MAP_SIZE);
+                    name.createAttributeValues(DuplicateAttributeVerifier.MAP_SIZE);
                     _attributeNameTable.add(name);
                     break;
                 case DecoderStateTables.AII_TERMINATOR_DOUBLE:
@@ -1332,7 +1333,7 @@ public class StAXDocumentParser extends Decoder
             _duplicateAttributeVerifier.checkForDuplicateAttribute(name.attributeHash, name.attributeId);
 
             b = read();
-            switch(DecoderStateTables.NISTRING[b]) {
+            switch(DecoderStateTables.NISTRING(b)) {
                 case DecoderStateTables.NISTRING_UTF8_SMALL_LENGTH:
                     _octetBufferLength = (b & EncodingConstants.OCTET_STRING_LENGTH_5TH_BIT_SMALL_MASK) + 1;
                     value = decodeUtf8StringAsString();
@@ -1415,17 +1416,14 @@ public class StAXDocumentParser extends Decoder
                 }
                 case DecoderStateTables.NISTRING_EA:
                 {
-                    if ((b & EncodingConstants.NISTRING_ADD_TO_TABLE_FLAG) > 0) {
-                        throw new EncodingAlgorithmException(CommonResourceBundle.getInstance().getString("message.addToTableNotSupported"));
-                    }
-
+                    final boolean addToTable = (b & EncodingConstants.NISTRING_ADD_TO_TABLE_FLAG) > 0;
                     // Decode encoding algorithm integer
                     _identifier = (b & 0x0F) << 4;
                     b = read();
                     _identifier |= (b & 0xF0) >> 4;
 
                     decodeOctetsOnFifthBitOfNonIdentifyingStringOnFirstBit(b);
-                    processAIIEncodingAlgorithm(name);
+                    processAIIEncodingAlgorithm(name, addToTable);
                     break;
                 }
                 case DecoderStateTables.NISTRING_INDEX_SMALL:
@@ -1596,7 +1594,7 @@ public class StAXDocumentParser extends Decoder
         ? decodeIdentifyingNonEmptyStringOnFirstBit(_v.otherURI) : "";
     }
 
-    protected final void processCIIEncodingAlgorithm() throws FastInfosetException, IOException {
+    protected final void processCIIEncodingAlgorithm(boolean addToTable) throws FastInfosetException, IOException {
         _algorithmData = _octetBuffer;
         _algorithmDataOffset = _octetBufferStart;
         _algorithmDataLength = _octetBufferLength;
@@ -1613,9 +1611,14 @@ public class StAXDocumentParser extends Decoder
             // reported, allows for support through handler if required.
             throw new EncodingAlgorithmException(CommonResourceBundle.getInstance().getString("message.identifiers10to31Reserved"));
         }
+
+        if (addToTable) {
+            convertEncodingAlgorithmDataToCharacters();
+            _characterContentChunkTable.add(_characters, _characters.length);
+        }
     }
 
-    protected final void processAIIEncodingAlgorithm(QualifiedName name) throws FastInfosetException, IOException {
+    protected final void processAIIEncodingAlgorithm(QualifiedName name, boolean addToTable) throws FastInfosetException, IOException {
         String URI = null;
         if (_identifier >= EncodingConstants.ENCODING_ALGORITHM_APPLICATION_START) {
             URI = _v.encodingAlgorithm.get(_identifier - EncodingConstants.ENCODING_ALGORITHM_APPLICATION_START);
@@ -1636,6 +1639,9 @@ public class StAXDocumentParser extends Decoder
         final byte[] data = new byte[_octetBufferLength];
         System.arraycopy(_octetBuffer, _octetBufferStart, data, 0, _octetBufferLength);
         _attributes.addAttributeWithAlgorithmData(name, URI, _identifier, data);
+        if (addToTable) {
+            _attributeValueTable.add(_attributes.getValue(_attributes.getIndex(name.qName)));
+        }
     }
 
     protected final void convertEncodingAlgorithmDataToCharacters() throws FastInfosetException, IOException {
@@ -1643,9 +1649,9 @@ public class StAXDocumentParser extends Decoder
         if (_algorithmId == EncodingAlgorithmIndexes.BASE64) {
             convertBase64AlorithmDataToCharacters(buffer);
         } else if (_algorithmId < EncodingConstants.ENCODING_ALGORITHM_BUILTIN_END) {
-            Object array = BuiltInEncodingAlgorithmFactory.table[_algorithmId].
+            Object array = BuiltInEncodingAlgorithmFactory.getAlgorithm(_algorithmId).
                     decodeFromBytes(_algorithmData, _algorithmDataOffset, _algorithmDataLength);
-            BuiltInEncodingAlgorithmFactory.table[_algorithmId].convertToCharacters(array,  buffer);
+            BuiltInEncodingAlgorithmFactory.getAlgorithm(_algorithmId).convertToCharacters(array,  buffer);
         } else if (_algorithmId == EncodingAlgorithmIndexes.CDATA) {
             _octetBufferOffset -= _octetBufferLength;
             decodeUtf8StringIntoCharBuffer();
@@ -1745,7 +1751,7 @@ public class StAXDocumentParser extends Decoder
     public boolean isBase64Follows() throws IOException {
         // Process information item
         int b = peek(this);
-        switch (DecoderStateTables.EII[b]) {
+        switch (DecoderStateTables.EII(b)) {
             case DecoderStateTables.CII_EA:
                 int algorithmId = (b & 0x02) << 6;
                 int b2 = peek2(this);

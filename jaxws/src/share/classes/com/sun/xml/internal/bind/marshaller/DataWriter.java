@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 //@@3RD PARTY CODE@@
 
 // DataWriter.java - XML writer for data-oriented files.

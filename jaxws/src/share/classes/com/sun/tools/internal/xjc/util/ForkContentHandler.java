@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.util;
 
 import org.xml.sax.Attributes;
@@ -34,7 +35,6 @@ import org.xml.sax.SAXException;
  * two ContentHandlers.
  *
  *
- * @version     $Id: ForkContentHandler.java,v 1.1 2005/05/23 17:04:58 kohsuke Exp $
  * @author  <a href="mailto:kohsuke.kawaguchi@sun.com">Kohsuke KAWAGUCHI</a>
  */
 public class ForkContentHandler implements ContentHandler {

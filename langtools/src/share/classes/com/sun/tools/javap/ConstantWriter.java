@@ -62,73 +62,88 @@ public class ConstantWriter extends BasicWriter {
     protected void writeConstantPool(ConstantPool constant_pool) {
         ConstantPool.Visitor<Integer, Void> v = new ConstantPool.Visitor<Integer,Void>() {
             public Integer visitClass(CONSTANT_Class_info info, Void p) {
-                println("#" + info.name_index + ";\t//  " + stringValue(info));
+                print("#" + info.name_index);
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitDouble(CONSTANT_Double_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 2;
             }
 
             public Integer visitFieldref(CONSTANT_Fieldref_info info, Void p) {
-                println("#" + info.class_index + ".#" + info.name_and_type_index + ";\t//  " + stringValue(info));
+                print("#" + info.class_index + ".#" + info.name_and_type_index);
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitFloat(CONSTANT_Float_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 1;
             }
 
             public Integer visitInteger(CONSTANT_Integer_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 1;
             }
 
             public Integer visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, Void p) {
-                println("#" + info.class_index + ".#" + info.name_and_type_index + ";\t//  " + stringValue(info));
+                print("#" + info.class_index + ".#" + info.name_and_type_index);
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitLong(CONSTANT_Long_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 2;
             }
 
             public Integer visitNameAndType(CONSTANT_NameAndType_info info, Void p) {
-                String tab = (options.compat ? "" : "\t"); // BUG 6622232 javap gets whitespace confused
-                println("#" + info.name_index + ":#" + info.type_index + ";" + tab + "//  " + stringValue(info));
+                print("#" + info.name_index + ":#" + info.type_index);
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitMethodref(CONSTANT_Methodref_info info, Void p) {
-                println("#" + info.class_index + ".#" + info.name_and_type_index + ";\t//  " + stringValue(info));
+                print("#" + info.class_index + ".#" + info.name_and_type_index);
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitString(CONSTANT_String_info info, Void p) {
-                println("#" + info.string_index + ";\t//  " + stringValue(info));
+                print("#" + info.string_index);
+                tab();
+                println("//  " + stringValue(info));
                 return 1;
             }
 
             public Integer visitUtf8(CONSTANT_Utf8_info info, Void p) {
-                println(stringValue(info) + ";");
+                println(stringValue(info));
                 return 1;
             }
 
         };
-        println("  Constant pool:");
+        println("Constant pool:");
+        indent(+1);
+        int width = String.valueOf(constant_pool.size()).length() + 1;
         int cpx = 1;
         while (cpx < constant_pool.size()) {
+            print(String.format("%" + width + "s", ("#" + cpx)));
             try {
                 CPInfo cpInfo = constant_pool.get(cpx);
-                print("const #" + cpx + " = " + tagName(cpInfo.getTag()) + "\t");
+                print(String.format(" = %-18s ", cpTagName(cpInfo)));
                 cpx += cpInfo.accept(v, null);
             } catch (ConstantPool.InvalidIndex ex) {
-                print("const #" + cpx); // should not happen
+                // should not happen
             }
         }
+        indent(-1);
     }
 
     protected void write(int cpx) {
@@ -163,10 +178,15 @@ public class ConstantWriter extends BasicWriter {
         print(tagName(tag) + " " + stringValue(cpInfo));
     }
 
+    String cpTagName(CPInfo cpInfo) {
+        String n = cpInfo.getClass().getSimpleName();
+        return n.replace("CONSTANT_", "").replace("_info", "");
+    }
+
     String tagName(int tag) {
         switch (tag) {
             case CONSTANT_Utf8:
-                return "Asciz";
+                return "Utf8";
             case CONSTANT_Integer:
                 return "int";
             case CONSTANT_Float:
@@ -188,7 +208,7 @@ public class ConstantWriter extends BasicWriter {
             case CONSTANT_NameAndType:
                 return "NameAndType";
             default:
-                return "unknown tag";
+                return "(unknown tag)";
         }
     }
 

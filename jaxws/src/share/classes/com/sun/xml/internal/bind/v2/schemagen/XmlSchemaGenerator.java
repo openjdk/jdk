@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.schemagen;
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ import java.util.logging.Logger;
 
 import javax.activation.MimeType;
 import javax.xml.bind.SchemaOutputResolver;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Result;
 import javax.xml.transform.stream.StreamResult;
@@ -54,6 +56,7 @@ import com.sun.xml.internal.bind.api.ErrorListener;
 import com.sun.xml.internal.bind.v2.TODO;
 import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.util.CollisionCheckStack;
+import com.sun.xml.internal.bind.v2.util.StackRecorder;
 import static com.sun.xml.internal.bind.v2.WellKnownNamespace.XML_SCHEMA;
 import com.sun.xml.internal.bind.v2.model.core.Adapter;
 import com.sun.xml.internal.bind.v2.model.core.ArrayInfo;
@@ -267,9 +270,27 @@ public final class XmlSchemaGenerator<T,C,F,M> {
     public void add( ElementInfo<T,C> elem ) {
         assert elem!=null;
 
+        boolean nillable = false; // default value
+
         QName name = elem.getElementName();
         Namespace n = getNamespace(name.getNamespaceURI());
-        n.elementDecls.put(name.getLocalPart(),n.new ElementWithType(true,elem.getContentType()));
+        ElementInfo ei;
+
+        if (elem.getScope() != null) { // (probably) never happens
+            ei = this.types.getElementInfo(elem.getScope().getClazz(), name);
+        } else {
+            ei = this.types.getElementInfo(null, name);
+        }
+
+        XmlElement xmlElem = ei.getProperty().readAnnotation(XmlElement.class);
+
+        if (xmlElem == null) {
+            nillable = false;
+        } else {
+            nillable = xmlElem.nillable();
+        }
+
+        n.elementDecls.put(name.getLocalPart(),n.new ElementWithType(nillable, elem.getContentType()));
 
         // search for foreign namespace references
         n.processForeignNamespaces(elem.getProperty());
@@ -403,6 +424,11 @@ public final class XmlSchemaGenerator<T,C,F,M> {
     public void write(SchemaOutputResolver resolver, ErrorListener errorListener) throws IOException {
         if(resolver==null)
             throw new IllegalArgumentException();
+
+        if(logger.isLoggable(Level.FINE)) {
+            // debug logging to see what's going on.
+            logger.log(Level.FINE,"Wrigin XML Schema for "+toString(),new StackRecorder());
+        }
 
         // make it fool-proof
         resolver = new FoolProofResolver(resolver);
@@ -1026,7 +1052,7 @@ public final class XmlSchemaGenerator<T,C,F,M> {
                         if(ep.isCollectionNillable()) {
                             e.nillable(true);
                         }
-                        writeOccurs(e,true,repeated);
+                        writeOccurs(e,!ep.isCollectionRequired(),repeated);
 
                         ComplexType p = e.complexType();
                         choice.write(p);
@@ -1180,10 +1206,7 @@ public final class XmlSchemaGenerator<T,C,F,M> {
             }
 
 
-            final Tree choice = Tree.makeGroup(GroupKind.CHOICE, children).makeRepeated(rp.isCollection()).makeOptional(rp.isCollection());
-            // it's a curious omission that XmlElementRef doesn't have required().
-            // instead right now a collection will make it [0,unbounded]
-
+            final Tree choice = Tree.makeGroup(GroupKind.CHOICE, children).makeRepeated(rp.isCollection()).makeOptional(!rp.isRequired());
 
             final QName ename = rp.getXmlName();
 
@@ -1251,6 +1274,16 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         public void addGlobalElement(TypeRef<T,C> tref) {
             elementDecls.put( tref.getTagName().getLocalPart(), new ElementWithType(false,tref.getTarget()) );
             addDependencyTo(tref.getTarget().getTypeName());
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder buf = new StringBuilder();
+            buf.append("[classes=").append(classes);
+            buf.append(",elementDecls=").append(elementDecls);
+            buf.append(",enums=").append(enums);
+            buf.append("]");
+            return super.toString();
         }
 
         /**
@@ -1336,6 +1369,18 @@ public final class XmlSchemaGenerator<T,C,F,M> {
         final Object o = navigator.asDecl(SwaRefAdapter.class);
         if (o == null) return false;
         return (o.equals(adapter.adapterType));
+    }
+
+    /**
+     * Debug information of what's in this {@link XmlSchemaGenerator}.
+     */
+    public String toString() {
+        StringBuilder buf = new StringBuilder();
+        for (Namespace ns : namespaces.values()) {
+            if(buf.length()>0)  buf.append(',');
+            buf.append(ns.uri).append('=').append(ns);
+        }
+        return super.toString()+'['+buf+']';
     }
 
     /**

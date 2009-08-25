@@ -27,6 +27,7 @@ package com.sun.xml.internal.ws.api.model.wsdl;
 
 
 import com.sun.istack.internal.NotNull;
+import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension;
 import com.sun.xml.internal.ws.api.wsdl.parser.XMLEntityResolver;
 import com.sun.xml.internal.ws.wsdl.parser.RuntimeWSDLParser;
@@ -118,7 +119,24 @@ public interface WSDLModel extends WSDLExtensible {
          * @throws org.xml.sax.SAXException
          */
         public static @NotNull WSDLModel parse(XMLEntityResolver.Parser wsdlEntityParser, XMLEntityResolver resolver, boolean isClientSide, WSDLParserExtension... extensions) throws IOException, XMLStreamException, SAXException {
-            return RuntimeWSDLParser.parse(wsdlEntityParser, resolver, isClientSide, extensions);
+            return RuntimeWSDLParser.parse(wsdlEntityParser, resolver, isClientSide, Container.NONE, extensions);
+        }
+
+        /**
+         * Parses WSDL from the given wsdlLoc and gives a {@link WSDLModel} built from it.
+         *
+         * @param wsdlEntityParser  Works like an entityResolver to resolve WSDLs
+         * @param resolver  {@link XMLEntityResolver}, works at XML infoset level
+         * @param isClientSide  true - its invoked on the client, false means its invoked on the server
+         * @param container - container in which the parser is run
+         * @param extensions var args of {@link com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension}s
+         * @return A {@link WSDLModel} built from the given wsdlLocation}
+         * @throws java.io.IOException
+         * @throws javax.xml.stream.XMLStreamException
+         * @throws org.xml.sax.SAXException
+         */
+        public static @NotNull WSDLModel parse(XMLEntityResolver.Parser wsdlEntityParser, XMLEntityResolver resolver, boolean isClientSide, @NotNull Container container, WSDLParserExtension... extensions) throws IOException, XMLStreamException, SAXException {
+            return RuntimeWSDLParser.parse(wsdlEntityParser, resolver, isClientSide, container, extensions);
         }
     }
 }

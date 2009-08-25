@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.model.impl;
 
 import java.io.IOException;
@@ -33,12 +34,14 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.JAXBException;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.bind.JAXBException;
 
 import com.sun.istack.internal.NotNull;
+import com.sun.xml.internal.bind.AccessorFactory;
+import com.sun.xml.internal.bind.AccessorFactoryImpl;
+import com.sun.xml.internal.bind.XmlAccessorFactory;
 import com.sun.xml.internal.bind.annotation.XmlLocation;
 import com.sun.xml.internal.bind.api.AccessorException;
 import com.sun.xml.internal.bind.v2.ClassFactory;
@@ -48,18 +51,15 @@ import com.sun.xml.internal.bind.v2.model.runtime.RuntimeClassInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeElement;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeValuePropertyInfo;
+import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationException;
 import com.sun.xml.internal.bind.v2.runtime.Location;
 import com.sun.xml.internal.bind.v2.runtime.Name;
 import com.sun.xml.internal.bind.v2.runtime.Transducer;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
-import com.sun.xml.internal.bind.AccessorFactory;
-import com.sun.xml.internal.bind.AccessorFactoryImpl;
 import com.sun.xml.internal.bind.v2.runtime.reflect.TransducedAccessor;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
-import com.sun.xml.internal.bind.XmlAccessorFactory;
-import com.sun.xml.internal.bind.v2.runtime.IllegalAnnotationException;
 
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
@@ -90,7 +90,8 @@ class RuntimeClassInfoImpl extends ClassInfoImpl<Type,Class,Field,Method>
         AccessorFactory accFactory = null;
 
         // user providing class to be used.
-        if (((RuntimeModelBuilder)builder).context.xmlAccessorFactorySupport){
+        JAXBContextImpl context = ((RuntimeModelBuilder) builder).context;
+        if (context!=null && context.xmlAccessorFactorySupport){
             factoryAnn = findXmlAccessorFactoryAnnotation(clazz);
 
             if (factoryAnn != null) {

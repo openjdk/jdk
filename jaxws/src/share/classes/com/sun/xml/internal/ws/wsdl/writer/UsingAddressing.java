@@ -22,9 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: UsingAddressing.java,v 1.1.2.3 2006/09/26 22:17:15 ramapulavarthi Exp $
- */
 
 package com.sun.xml.internal.ws.wsdl.writer;
 

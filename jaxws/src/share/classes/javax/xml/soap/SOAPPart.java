@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: SOAPPart.java,v 1.9 2005/06/21 17:32:45 mk125090 Exp $
- * $Revision: 1.9 $
- * $Date: 2005/06/21 17:32:45 $
+ * $Id: SOAPPart.java,v 1.10 2006/03/30 00:59:42 ofung Exp $
+ * $Revision: 1.10 $
+ * $Date: 2006/03/30 00:59:42 $
  */
 
 
