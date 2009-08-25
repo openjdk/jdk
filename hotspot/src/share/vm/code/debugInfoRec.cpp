@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,13 +292,16 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   int stream_offset = stream()->position();
   last_pd->set_scope_decode_offset(stream_offset);
 
+  // Record reexecute bit into pcDesc
+  last_pd->set_should_reexecute(reexecute);
+
   // serialize sender stream offest
   stream()->write_int(sender_stream_offset);
 
   // serialize scope
   jobject method_enc = (method == NULL)? NULL: method->encoding();
   stream()->write_int(oop_recorder()->find_index(method_enc));
-  stream()->write_bci_and_reexecute(bci, reexecute);
+  stream()->write_bci(bci);
   assert(method == NULL ||
          (method->is_native() && bci == 0) ||
          (!method->is_native() && 0 <= bci && bci < method->code_size()) ||
