@@ -78,6 +78,10 @@ public class Log extends AbstractLog {
      */
     public boolean emitWarnings;
 
+    /** Switch: suppress note messages.
+     */
+    public boolean suppressNotes;
+
     /** Print stack trace on errors?
      */
     public boolean dumpOnError;
@@ -121,6 +125,7 @@ public class Log extends AbstractLog {
         this.dumpOnError = options.get("-doe") != null;
         this.promptOnError = options.get("-prompt") != null;
         this.emitWarnings = options.get("-Xlint:none") == null;
+        this.suppressNotes = options.get("suppressNotes") != null;
         this.MaxErrors = getIntOption(options, "-Xmaxerrs", 100);
         this.MaxWarnings = getIntOption(options, "-Xmaxwarns", 100);
 
@@ -324,7 +329,7 @@ public class Log extends AbstractLog {
             // Print out notes only when we are permitted to report warnings
             // Notes are only generated at the end of a compilation, so should be small
             // in number.
-            if (emitWarnings || diagnostic.isMandatory()) {
+            if ((emitWarnings || diagnostic.isMandatory()) && !suppressNotes) {
                 writeDiagnostic(diagnostic);
             }
             break;
