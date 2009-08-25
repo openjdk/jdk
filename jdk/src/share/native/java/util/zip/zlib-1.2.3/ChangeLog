@@ -1,16 +1,390 @@
 
-		ChangeLog file for zlib
+                ChangeLog file for zlib
 
-Changes in 1.1.3.f-jdk (23 Apr 2003) by Sun Microsystems
-- Backport security fixes from zlib 1.1.4
-- Minor tweaks for 64 bit architectures
-- Remove warnings on Linux
-- Fix minor typos in comments in zlib.h
-- adler32.c was renamed to zadler32.c
-- crc32.c was renamed to zcrc32.c, with signed longs made unsigned.
-- Fixed bug in calculation of checksum in inflate.c
-- GPL headers added
-	
+Changes in 1.2.3 (18 July 2005)
+- Apply security vulnerability fixes to contrib/infback9 as well
+- Clean up some text files (carriage returns, trailing space)
+- Update testzlib, vstudio, masmx64, and masmx86 in contrib [Vollant]
+
+Changes in 1.2.2.4 (11 July 2005)
+- Add inflatePrime() function for starting inflation at bit boundary
+- Avoid some Visual C warnings in deflate.c
+- Avoid more silly Visual C warnings in inflate.c and inftrees.c for 64-bit
+  compile
+- Fix some spelling errors in comments [Betts]
+- Correct inflateInit2() error return documentation in zlib.h
+- Added zran.c example of compressed data random access to examples
+  directory, shows use of inflatePrime()
+- Fix cast for assignments to strm->state in inflate.c and infback.c
+- Fix zlibCompileFlags() in zutil.c to use 1L for long shifts [Oberhumer]
+- Move declarations of gf2 functions to right place in crc32.c [Oberhumer]
+- Add cast in trees.c t avoid a warning [Oberhumer]
+- Avoid some warnings in fitblk.c, gun.c, gzjoin.c in examples [Oberhumer]
+- Update make_vms.com [Zinser]
+- Initialize state->write in inflateReset() since copied in inflate_fast()
+- Be more strict on incomplete code sets in inflate_table() and increase
+  ENOUGH and MAXD -- this repairs a possible security vulnerability for
+  invalid inflate input.  Thanks to Tavis Ormandy and Markus Oberhumer for
+  discovering the vulnerability and providing test cases.
+- Add ia64 support to configure for HP-UX [Smith]
+- Add error return to gzread() for format or i/o error [Levin]
+- Use malloc.h for OS/2 [Necasek]
+
+Changes in 1.2.2.3 (27 May 2005)
+- Replace 1U constants in inflate.c and inftrees.c for 64-bit compile
+- Typecast fread() return values in gzio.c [Vollant]
+- Remove trailing space in minigzip.c outmode (VC++ can't deal with it)
+- Fix crc check bug in gzread() after gzungetc() [Heiner]
+- Add the deflateTune() function to adjust internal compression parameters
+- Add a fast gzip decompressor, gun.c, to examples (use of inflateBack)
+- Remove an incorrect assertion in examples/zpipe.c
+- Add C++ wrapper in infback9.h [Donais]
+- Fix bug in inflateCopy() when decoding fixed codes
+- Note in zlib.h how much deflateSetDictionary() actually uses
+- Remove USE_DICT_HEAD in deflate.c (would mess up inflate if used)
+- Add _WIN32_WCE to define WIN32 in zconf.in.h [Spencer]
+- Don't include stderr.h or errno.h for _WIN32_WCE in zutil.h [Spencer]
+- Add gzdirect() function to indicate transparent reads
+- Update contrib/minizip [Vollant]
+- Fix compilation of deflate.c when both ASMV and FASTEST [Oberhumer]
+- Add casts in crc32.c to avoid warnings [Oberhumer]
+- Add contrib/masmx64 [Vollant]
+- Update contrib/asm586, asm686, masmx86, testzlib, vstudio [Vollant]
+
+Changes in 1.2.2.2 (30 December 2004)
+- Replace structure assignments in deflate.c and inflate.c with zmemcpy to
+  avoid implicit memcpy calls (portability for no-library compilation)
+- Increase sprintf() buffer size in gzdopen() to allow for large numbers
+- Add INFLATE_STRICT to check distances against zlib header
+- Improve WinCE errno handling and comments [Chang]
+- Remove comment about no gzip header processing in FAQ
+- Add Z_FIXED strategy option to deflateInit2() to force fixed trees
+- Add updated make_vms.com [Coghlan], update README
+- Create a new "examples" directory, move gzappend.c there, add zpipe.c,
+  fitblk.c, gzlog.[ch], gzjoin.c, and zlib_how.html.
+- Add FAQ entry and comments in deflate.c on uninitialized memory access
+- Add Solaris 9 make options in configure [Gilbert]
+- Allow strerror() usage in gzio.c for STDC
+- Fix DecompressBuf in contrib/delphi/ZLib.pas [ManChesTer]
+- Update contrib/masmx86/inffas32.asm and gvmat32.asm [Vollant]
+- Use z_off_t for adler32_combine() and crc32_combine() lengths
+- Make adler32() much faster for small len
+- Use OS_CODE in deflate() default gzip header
+
+Changes in 1.2.2.1 (31 October 2004)
+- Allow inflateSetDictionary() call for raw inflate
+- Fix inflate header crc check bug for file names and comments
+- Add deflateSetHeader() and gz_header structure for custom gzip headers
+- Add inflateGetheader() to retrieve gzip headers
+- Add crc32_combine() and adler32_combine() functions
+- Add alloc_func, free_func, in_func, out_func to Z_PREFIX list
+- Use zstreamp consistently in zlib.h (inflate_back functions)
+- Remove GUNZIP condition from definition of inflate_mode in inflate.h
+  and in contrib/inflate86/inffast.S [Truta, Anderson]
+- Add support for AMD64 in contrib/inflate86/inffas86.c [Anderson]
+- Update projects/README.projects and projects/visualc6 [Truta]
+- Update win32/DLL_FAQ.txt [Truta]
+- Avoid warning under NO_GZCOMPRESS in gzio.c; fix typo [Truta]
+- Deprecate Z_ASCII; use Z_TEXT instead [Truta]
+- Use a new algorithm for setting strm->data_type in trees.c [Truta]
+- Do not define an exit() prototype in zutil.c unless DEBUG defined
+- Remove prototype of exit() from zutil.c, example.c, minigzip.c [Truta]
+- Add comment in zlib.h for Z_NO_FLUSH parameter to deflate()
+- Fix Darwin build version identification [Peterson]
+
+Changes in 1.2.2 (3 October 2004)
+- Update zlib.h comments on gzip in-memory processing
+- Set adler to 1 in inflateReset() to support Java test suite [Walles]
+- Add contrib/dotzlib [Ravn]
+- Update win32/DLL_FAQ.txt [Truta]
+- Update contrib/minizip [Vollant]
+- Move contrib/visual-basic.txt to old/ [Truta]
+- Fix assembler builds in projects/visualc6/ [Truta]
+
+Changes in 1.2.1.2 (9 September 2004)
+- Update INDEX file
+- Fix trees.c to update strm->data_type (no one ever noticed!)
+- Fix bug in error case in inflate.c, infback.c, and infback9.c [Brown]
+- Add "volatile" to crc table flag declaration (for DYNAMIC_CRC_TABLE)
+- Add limited multitasking protection to DYNAMIC_CRC_TABLE
+- Add NO_vsnprintf for VMS in zutil.h [Mozilla]
+- Don't declare strerror() under VMS [Mozilla]
+- Add comment to DYNAMIC_CRC_TABLE to use get_crc_table() to initialize
+- Update contrib/ada [Anisimkov]
+- Update contrib/minizip [Vollant]
+- Fix configure to not hardcode directories for Darwin [Peterson]
+- Fix gzio.c to not return error on empty files [Brown]
+- Fix indentation; update version in contrib/delphi/ZLib.pas and
+  contrib/pascal/zlibpas.pas [Truta]
+- Update mkasm.bat in contrib/masmx86 [Truta]
+- Update contrib/untgz [Truta]
+- Add projects/README.projects [Truta]
+- Add project for MS Visual C++ 6.0 in projects/visualc6 [Cadieux, Truta]
+- Update win32/DLL_FAQ.txt [Truta]
+- Update list of Z_PREFIX symbols in zconf.h [Randers-Pehrson, Truta]
+- Remove an unnecessary assignment to curr in inftrees.c [Truta]
+- Add OS/2 to exe builds in configure [Poltorak]
+- Remove err dummy parameter in zlib.h [Kientzle]
+
+Changes in 1.2.1.1 (9 January 2004)
+- Update email address in README
+- Several FAQ updates
+- Fix a big fat bug in inftrees.c that prevented decoding valid
+  dynamic blocks with only literals and no distance codes --
+  Thanks to "Hot Emu" for the bug report and sample file
+- Add a note to puff.c on no distance codes case.
+
+Changes in 1.2.1 (17 November 2003)
+- Remove a tab in contrib/gzappend/gzappend.c
+- Update some interfaces in contrib for new zlib functions
+- Update zlib version number in some contrib entries
+- Add Windows CE definition for ptrdiff_t in zutil.h [Mai, Truta]
+- Support shared libraries on Hurd and KFreeBSD [Brown]
+- Fix error in NO_DIVIDE option of adler32.c
+
+Changes in 1.2.0.8 (4 November 2003)
+- Update version in contrib/delphi/ZLib.pas and contrib/pascal/zlibpas.pas
+- Add experimental NO_DIVIDE #define in adler32.c
+    - Possibly faster on some processors (let me know if it is)
+- Correct Z_BLOCK to not return on first inflate call if no wrap
+- Fix strm->data_type on inflate() return to correctly indicate EOB
+- Add deflatePrime() function for appending in the middle of a byte
+- Add contrib/gzappend for an example of appending to a stream
+- Update win32/DLL_FAQ.txt [Truta]
+- Delete Turbo C comment in README [Truta]
+- Improve some indentation in zconf.h [Truta]
+- Fix infinite loop on bad input in configure script [Church]
+- Fix gzeof() for concatenated gzip files [Johnson]
+- Add example to contrib/visual-basic.txt [Michael B.]
+- Add -p to mkdir's in Makefile.in [vda]
+- Fix configure to properly detect presence or lack of printf functions
+- Add AS400 support [Monnerat]
+- Add a little Cygwin support [Wilson]
+
+Changes in 1.2.0.7 (21 September 2003)
+- Correct some debug formats in contrib/infback9
+- Cast a type in a debug statement in trees.c
+- Change search and replace delimiter in configure from % to # [Beebe]
+- Update contrib/untgz to 0.2 with various fixes [Truta]
+- Add build support for Amiga [Nikl]
+- Remove some directories in old that have been updated to 1.2
+- Add dylib building for Mac OS X in configure and Makefile.in
+- Remove old distribution stuff from Makefile
+- Update README to point to DLL_FAQ.txt, and add comment on Mac OS X
+- Update links in README
+
+Changes in 1.2.0.6 (13 September 2003)
+- Minor FAQ updates
+- Update contrib/minizip to 1.00 [Vollant]
+- Remove test of gz functions in example.c when GZ_COMPRESS defined [Truta]
+- Update POSTINC comment for 68060 [Nikl]
+- Add contrib/infback9 with deflate64 decoding (unsupported)
+- For MVS define NO_vsnprintf and undefine FAR [van Burik]
+- Add pragma for fdopen on MVS [van Burik]
+
+Changes in 1.2.0.5 (8 September 2003)
+- Add OF to inflateBackEnd() declaration in zlib.h
+- Remember start when using gzdopen in the middle of a file
+- Use internal off_t counters in gz* functions to properly handle seeks
+- Perform more rigorous check for distance-too-far in inffast.c
+- Add Z_BLOCK flush option to return from inflate at block boundary
+- Set strm->data_type on return from inflate
+    - Indicate bits unused, if at block boundary, and if in last block
+- Replace size_t with ptrdiff_t in crc32.c, and check for correct size
+- Add condition so old NO_DEFLATE define still works for compatibility
+- FAQ update regarding the Windows DLL [Truta]
+- INDEX update: add qnx entry, remove aix entry [Truta]
+- Install zlib.3 into mandir [Wilson]
+- Move contrib/zlib_dll_FAQ.txt to win32/DLL_FAQ.txt; update [Truta]
+- Adapt the zlib interface to the new DLL convention guidelines [Truta]
+- Introduce ZLIB_WINAPI macro to allow the export of functions using
+  the WINAPI calling convention, for Visual Basic [Vollant, Truta]
+- Update msdos and win32 scripts and makefiles [Truta]
+- Export symbols by name, not by ordinal, in win32/zlib.def [Truta]
+- Add contrib/ada [Anisimkov]
+- Move asm files from contrib/vstudio/vc70_32 to contrib/asm386 [Truta]
+- Rename contrib/asm386 to contrib/masmx86 [Truta, Vollant]
+- Add contrib/masm686 [Truta]
+- Fix offsets in contrib/inflate86 and contrib/masmx86/inffas32.asm
+  [Truta, Vollant]
+- Update contrib/delphi; rename to contrib/pascal; add example [Truta]
+- Remove contrib/delphi2; add a new contrib/delphi [Truta]
+- Avoid inclusion of the nonstandard <memory.h> in contrib/iostream,
+  and fix some method prototypes [Truta]
+- Fix the ZCR_SEED2 constant to avoid warnings in contrib/minizip
+  [Truta]
+- Avoid the use of backslash (\) in contrib/minizip [Vollant]
+- Fix file time handling in contrib/untgz; update makefiles [Truta]
+- Update contrib/vstudio/vc70_32 to comply with the new DLL guidelines
+  [Vollant]
+- Remove contrib/vstudio/vc15_16 [Vollant]
+- Rename contrib/vstudio/vc70_32 to contrib/vstudio/vc7 [Truta]
+- Update README.contrib [Truta]
+- Invert the assignment order of match_head and s->prev[...] in
+  INSERT_STRING [Truta]
+- Compare TOO_FAR with 32767 instead of 32768, to avoid 16-bit warnings
+  [Truta]
+- Compare function pointers with 0, not with NULL or Z_NULL [Truta]
+- Fix prototype of syncsearch in inflate.c [Truta]
+- Introduce ASMINF macro to be enabled when using an ASM implementation
+  of inflate_fast [Truta]
+- Change NO_DEFLATE to NO_GZCOMPRESS [Truta]
+- Modify test_gzio in example.c to take a single file name as a
+  parameter [Truta]
+- Exit the example.c program if gzopen fails [Truta]
+- Add type casts around strlen in example.c [Truta]
+- Remove casting to sizeof in minigzip.c; give a proper type
+  to the variable compared with SUFFIX_LEN [Truta]
+- Update definitions of STDC and STDC99 in zconf.h [Truta]
+- Synchronize zconf.h with the new Windows DLL interface [Truta]
+- Use SYS16BIT instead of __32BIT__ to distinguish between
+  16- and 32-bit platforms [Truta]
+- Use far memory allocators in small 16-bit memory models for
+  Turbo C [Truta]
+- Add info about the use of ASMV, ASMINF and ZLIB_WINAPI in
+  zlibCompileFlags [Truta]
+- Cygwin has vsnprintf [Wilson]
+- In Windows16, OS_CODE is 0, as in MSDOS [Truta]
+- In Cygwin, OS_CODE is 3 (Unix), not 11 (Windows32) [Wilson]
+
+Changes in 1.2.0.4 (10 August 2003)
+- Minor FAQ updates
+- Be more strict when checking inflateInit2's windowBits parameter
+- Change NO_GUNZIP compile option to NO_GZIP to cover deflate as well
+- Add gzip wrapper option to deflateInit2 using windowBits
+- Add updated QNX rule in configure and qnx directory [Bonnefoy]
+- Make inflate distance-too-far checks more rigorous
+- Clean up FAR usage in inflate
+- Add casting to sizeof() in gzio.c and minigzip.c
+
+Changes in 1.2.0.3 (19 July 2003)
+- Fix silly error in gzungetc() implementation [Vollant]
+- Update contrib/minizip and contrib/vstudio [Vollant]
+- Fix printf format in example.c
+- Correct cdecl support in zconf.in.h [Anisimkov]
+- Minor FAQ updates
+
+Changes in 1.2.0.2 (13 July 2003)
+- Add ZLIB_VERNUM in zlib.h for numerical preprocessor comparisons
+- Attempt to avoid warnings in crc32.c for pointer-int conversion
+- Add AIX to configure, remove aix directory [Bakker]
+- Add some casts to minigzip.c
+- Improve checking after insecure sprintf() or vsprintf() calls
+- Remove #elif's from crc32.c
+- Change leave label to inf_leave in inflate.c and infback.c to avoid
+  library conflicts
+- Remove inflate gzip decoding by default--only enable gzip decoding by
+  special request for stricter backward compatibility
+- Add zlibCompileFlags() function to return compilation information
+- More typecasting in deflate.c to avoid warnings
+- Remove leading underscore from _Capital #defines [Truta]
+- Fix configure to link shared library when testing
+- Add some Windows CE target adjustments [Mai]
+- Remove #define ZLIB_DLL in zconf.h [Vollant]
+- Add zlib.3 [Rodgers]
+- Update RFC URL in deflate.c and algorithm.txt [Mai]
+- Add zlib_dll_FAQ.txt to contrib [Truta]
+- Add UL to some constants [Truta]
+- Update minizip and vstudio [Vollant]
+- Remove vestigial NEED_DUMMY_RETURN from zconf.in.h
+- Expand use of NO_DUMMY_DECL to avoid all dummy structures
+- Added iostream3 to contrib [Schwardt]
+- Replace rewind() with fseek() for WinCE [Truta]
+- Improve setting of zlib format compression level flags
+    - Report 0 for huffman and rle strategies and for level == 0 or 1
+    - Report 2 only for level == 6
+- Only deal with 64K limit when necessary at compile time [Truta]
+- Allow TOO_FAR check to be turned off at compile time [Truta]
+- Add gzclearerr() function [Souza]
+- Add gzungetc() function
+
+Changes in 1.2.0.1 (17 March 2003)
+- Add Z_RLE strategy for run-length encoding [Truta]
+    - When Z_RLE requested, restrict matches to distance one
+    - Update zlib.h, minigzip.c, gzopen(), gzdopen() for Z_RLE
+- Correct FASTEST compilation to allow level == 0
+- Clean up what gets compiled for FASTEST
+- Incorporate changes to zconf.in.h [Vollant]
+    - Refine detection of Turbo C need for dummy returns
+    - Refine ZLIB_DLL compilation
+    - Include additional header file on VMS for off_t typedef
+- Try to use _vsnprintf where it supplants vsprintf [Vollant]
+- Add some casts in inffast.c
+- Enchance comments in zlib.h on what happens if gzprintf() tries to
+  write more than 4095 bytes before compression
+- Remove unused state from inflateBackEnd()
+- Remove exit(0) from minigzip.c, example.c
+- Get rid of all those darn tabs
+- Add "check" target to Makefile.in that does the same thing as "test"
+- Add "mostlyclean" and "maintainer-clean" targets to Makefile.in
+- Update contrib/inflate86 [Anderson]
+- Update contrib/testzlib, contrib/vstudio, contrib/minizip [Vollant]
+- Add msdos and win32 directories with makefiles [Truta]
+- More additions and improvements to the FAQ
+
+Changes in 1.2.0 (9 March 2003)
+- New and improved inflate code
+    - About 20% faster
+    - Does not allocate 32K window unless and until needed
+    - Automatically detects and decompresses gzip streams
+    - Raw inflate no longer needs an extra dummy byte at end
+    - Added inflateBack functions using a callback interface--even faster
+      than inflate, useful for file utilities (gzip, zip)
+    - Added inflateCopy() function to record state for random access on
+      externally generated deflate streams (e.g. in gzip files)
+    - More readable code (I hope)
+- New and improved crc32()
+    - About 50% faster, thanks to suggestions from Rodney Brown
+- Add deflateBound() and compressBound() functions
+- Fix memory leak in deflateInit2()
+- Permit setting dictionary for raw deflate (for parallel deflate)
+- Fix const declaration for gzwrite()
+- Check for some malloc() failures in gzio.c
+- Fix bug in gzopen() on single-byte file 0x1f
+- Fix bug in gzread() on concatenated file with 0x1f at end of buffer
+  and next buffer doesn't start with 0x8b
+- Fix uncompress() to return Z_DATA_ERROR on truncated input
+- Free memory at end of example.c
+- Remove MAX #define in trees.c (conflicted with some libraries)
+- Fix static const's in deflate.c, gzio.c, and zutil.[ch]
+- Declare malloc() and free() in gzio.c if STDC not defined
+- Use malloc() instead of calloc() in zutil.c if int big enough
+- Define STDC for AIX
+- Add aix/ with approach for compiling shared library on AIX
+- Add HP-UX support for shared libraries in configure
+- Add OpenUNIX support for shared libraries in configure
+- Use $cc instead of gcc to build shared library
+- Make prefix directory if needed when installing
+- Correct Macintosh avoidance of typedef Byte in zconf.h
+- Correct Turbo C memory allocation when under Linux
+- Use libz.a instead of -lz in Makefile (assure use of compiled library)
+- Update configure to check for snprintf or vsnprintf functions and their
+  return value, warn during make if using an insecure function
+- Fix configure problem with compile-time knowledge of HAVE_UNISTD_H that
+  is lost when library is used--resolution is to build new zconf.h
+- Documentation improvements (in zlib.h):
+    - Document raw deflate and inflate
+    - Update RFCs URL
+    - Point out that zlib and gzip formats are different
+    - Note that Z_BUF_ERROR is not fatal
+    - Document string limit for gzprintf() and possible buffer overflow
+    - Note requirement on avail_out when flushing
+    - Note permitted values of flush parameter of inflate()
+- Add some FAQs (and even answers) to the FAQ
+- Add contrib/inflate86/ for x86 faster inflate
+- Add contrib/blast/ for PKWare Data Compression Library decompression
+- Add contrib/puff/ simple inflate for deflate format description
+
+Changes in 1.1.4 (11 March 2002)
+- ZFREE was repeated on same allocation on some error conditions.
+  This creates a security problem described in
+  http://www.zlib.org/advisory-2002-03-11.txt
+- Returned incorrect error (Z_MEM_ERROR) on some invalid data
+- Avoid accesses before window for invalid distances with inflate window
+  less than 32K.
+- force windowBits > 8 to avoid a bug in the encoder for a window size
+  of 256 bytes. (A complete fix will be available in 1.1.5).
+
 Changes in 1.1.3 (9 July 1998)
 - fix "an inflate input buffer bug that shows up on rare but persistent
   occasions" (Mark)
@@ -166,7 +540,7 @@ Changes in 1.0.7 (20 Jan 1998)
 Changes in 1.0.6 (19 Jan 1998)
 - add functions gzprintf, gzputc, gzgetc, gztell, gzeof, gzseek, gzrewind and
   gzsetparams (thanks to Roland Giersig and Kevin Ruland for some of this code)
-- Fix a deflate bug occuring only with compression level 0 (thanks to
+- Fix a deflate bug occurring only with compression level 0 (thanks to
   Andy Buckler for finding this one).
 - In minigzip, pass transparently also the first byte for .Z files.
 - return Z_BUF_ERROR instead of Z_OK if output buffer full in uncompress()
@@ -184,13 +558,13 @@ Changes in 1.0.6 (19 Jan 1998)
 - added Makefile.nt (thanks to Stephen Williams)
 - added the unsupported "contrib" directory:
    contrib/asm386/ by Gilles Vollant <info@winimage.com>
-	386 asm code replacing longest_match().
+        386 asm code replacing longest_match().
    contrib/iostream/ by Kevin Ruland <kevin@rodin.wustl.edu>
         A C++ I/O streams interface to the zlib gz* functions
    contrib/iostream2/  by Tyge Løvset <Tyge.Lovset@cmr.no>
-	Another C++ I/O streams interface
+        Another C++ I/O streams interface
    contrib/untgz/  by "Pedro A. Aranda Guti\irrez" <paag@tid.es>
-	A very simple tar.gz file extractor using zlib
+        A very simple tar.gz file extractor using zlib
    contrib/visual-basic.txt by Carlos Rios <c_rios@sonda.cl>
         How to use compress(), uncompress() and the gz* functions from VB.
 - pass params -f (filtered data), -h (huffman only), -1 to -9 (compression
@@ -217,7 +591,7 @@ Changes in 1.0.6 (19 Jan 1998)
 - add NEED_DUMMY_RETURN for Borland
 - use variable z_verbose for tracing in debug mode (L. Peter Deutsch).
 - allow compilation with CC
-- defined STDC for OS/2 (David Charlap)	
+- defined STDC for OS/2 (David Charlap)
 - limit external names to 8 chars for MVS (Thomas Lund)
 - in minigzip.c, use static buffers only for 16-bit systems
 - fix suffix check for "minigzip -d foo.gz"
@@ -242,7 +616,7 @@ Changes in 1.0.5 (3 Jan 98)
 - Eliminate memory leaks on error conditions in inflate
 - Removed some vestigial code in inflate
 - Update web address in README
-  
+
 Changes in 1.0.4 (24 Jul 96)
 - In very rare conditions, deflate(s, Z_FINISH) could fail to produce an EOF
   bit, so the decompressor could decompress all the correct data but went
