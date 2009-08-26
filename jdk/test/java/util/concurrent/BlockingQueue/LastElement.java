@@ -32,44 +32,18 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class LastElement {
-    static volatile int passed = 0, failed = 0;
-
-    static void fail(String msg) {
-        failed++;
-        new Exception(msg).printStackTrace();
-    }
-
-    static void pass() {
-        passed++;
-    }
-
-    static void unexpected(Throwable t) {
-        failed++;
-        t.printStackTrace();
-    }
-
-    static void check(boolean condition, String msg) {
-        if (condition)
-            passed++;
-        else
-            fail(msg);
-    }
-
-    static void check(boolean condition) {
-        check(condition, "Assertion failure");
-    }
-
-    public static void main(String[] args) throws Throwable {
+    void test(String[] args) throws Throwable {
         testQueue(new LinkedBlockingQueue<Integer>());
-        // Uncomment when LinkedBlockingDeque is integrated
-        //testQueue(new LinkedBlockingDeque<Integer>());
-        testQueue(new ArrayBlockingQueue<Integer>(10));
+        testQueue(new LinkedBlockingDeque<Integer>());
+        testQueue(new ArrayBlockingQueue<Integer>(10, true));
+        testQueue(new ArrayBlockingQueue<Integer>(10, false));
+//         testQueue(new LinkedTransferQueue<Integer>());
 
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new Exception("Some tests failed");
     }
 
-    private static void testQueue(BlockingQueue<Integer> q) throws Throwable {
+    void testQueue(BlockingQueue<Integer> q) throws Throwable {
         Integer one = 1;
         Integer two = 2;
         Integer three = 3;
@@ -102,4 +76,21 @@ public class LastElement {
         catch (Throwable t) {unexpected(t);}
         check(q.isEmpty() && q.size() == 0);
     }
+
+    //--------------------- Infrastructure ---------------------------
+    volatile int passed = 0, failed = 0;
+    void pass() {passed++;}
+    void fail() {failed++; Thread.dumpStack();}
+    void fail(String msg) {System.err.println(msg); fail();}
+    void unexpected(Throwable t) {failed++; t.printStackTrace();}
+    void check(boolean cond) {if (cond) pass(); else fail();}
+    void equal(Object x, Object y) {
+        if (x == null ? y == null : x.equals(y)) pass();
+        else fail(x + " not equal to " + y);}
+    public static void main(String[] args) throws Throwable {
+        new LastElement().instanceMain(args);}
+    public void instanceMain(String[] args) throws Throwable {
+        try {test(args);} catch (Throwable t) {unexpected(t);}
+        System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
+        if (failed > 0) throw new AssertionError("Some tests failed");}
 }

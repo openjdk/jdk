@@ -1,4 +1,5 @@
 /*
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +22,11 @@
  */
 
 /*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file:
- *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/licenses/publicdomain
- */
-
-/*
  * @test
- * @bug 6805775 6815766
- * @run main OfferDrainToLoops 300
- * @summary Test concurrent offer vs. drainTo
+ * @bug 6316155 6595669 6871697 6868712
+ * @summary Test concurrent offer vs. remove
+ * @run main OfferRemoveLoops 300
+ * @author Martin Buchholz
  */
 
 import java.util.*;
@@ -43,11 +34,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
-public class OfferDrainToLoops {
+public class OfferRemoveLoops {
     final long testDurationMillisDefault = 10L * 1000L;
     final long testDurationMillis;
 
-    OfferDrainToLoops(String[] args) {
+    OfferRemoveLoops(String[] args) {
         testDurationMillis = (args.length > 0) ?
             Long.valueOf(args[0]) : testDurationMillisDefault;
     }
@@ -58,12 +49,14 @@ public class OfferDrainToLoops {
     }
 
     void test(String[] args) throws Throwable {
-        test(new LinkedBlockingQueue());
-        test(new LinkedBlockingQueue(2000));
-        test(new LinkedBlockingDeque());
-        test(new LinkedBlockingDeque(2000));
-        test(new ArrayBlockingQueue(2000));
-//         test(new LinkedTransferQueue());
+        testQueue(new LinkedBlockingQueue(10));
+        testQueue(new LinkedBlockingQueue());
+        testQueue(new LinkedBlockingDeque(10));
+        testQueue(new LinkedBlockingDeque());
+        testQueue(new ArrayBlockingQueue(10));
+        testQueue(new PriorityBlockingQueue(10));
+        testQueue(new ConcurrentLinkedQueue());
+//         testQueue(new LinkedTransferQueue());
     }
 
     Random getRandom() {
@@ -71,11 +64,13 @@ public class OfferDrainToLoops {
         // return ThreadLocalRandom.current();
     }
 
-    void test(final BlockingQueue q) throws Throwable {
+    void testQueue(final Queue q) throws Throwable {
         System.out.println(q.getClass().getSimpleName());
         final long testDurationNanos = testDurationMillis * 1000L * 1000L;
         final long quittingTimeNanos = System.nanoTime() + testDurationNanos;
         final long timeoutMillis = 10L * 1000L;
+        final int maxChunkSize = 1042;
+        final int maxQueueSize = 10 * maxChunkSize;
 
         /** Poor man's bounded buffer. */
         final AtomicLong approximateCount = new AtomicLong(0L);
@@ -102,31 +97,31 @@ public class OfferDrainToLoops {
 
         Thread offerer = new CheckedThread("offerer") {
             protected void realRun() {
+                final long chunkSize = getRandom().nextInt(maxChunkSize) + 2;
                 long c = 0;
                 for (long i = 0; ! quittingTime(i); i++) {
-                    if (q.offer(c)) {
-                        if ((++c % 1024) == 0) {
-                            approximateCount.getAndAdd(1024);
-                            while (approximateCount.get() > 10000)
+                    if (q.offer(Long.valueOf(c))) {
+                        if ((++c % chunkSize) == 0) {
+                            approximateCount.getAndAdd(chunkSize);
+                            while (approximateCount.get() > maxQueueSize)
                                 Thread.yield();
                         }
                     } else {
                         Thread.yield();
                     }}}};
 
-        Thread drainer = new CheckedThread("drainer") {
+        Thread remover = new CheckedThread("remover") {
             protected void realRun() {
-                final Random rnd = getRandom();
-                while (! quittingTime()) {
-                    List list = new ArrayList();
-                    int n = rnd.nextBoolean() ?
-                        q.drainTo(list) :
-                        q.drainTo(list, 100);
-                    approximateCount.getAndAdd(-n);
-                    equal(list.size(), n);
-                    for (int j = 0; j < n - 1; j++)
-                        equal((Long) list.get(j) + 1L, list.get(j + 1));
-                    Thread.yield();
+                final long chunkSize = getRandom().nextInt(maxChunkSize) + 2;
+                long c = 0;
+                for (long i = 0; ! quittingTime(i); i++) {
+                    if (q.remove(Long.valueOf(c))) {
+                        if ((++c % chunkSize) == 0) {
+                            approximateCount.getAndAdd(-chunkSize);
+                        }
+                    } else {
+                        Thread.yield();
+                    }
                 }
                 q.clear();
                 approximateCount.set(0); // Releases waiting offerer thread
@@ -139,19 +134,14 @@ public class OfferDrainToLoops {
                     switch (rnd.nextInt(3)) {
                     case 0: checkNotContainsNull(q); break;
                     case 1: q.size(); break;
-                    case 2:
-                        Long[] a = (Long[]) q.toArray(new Long[0]);
-                        int n = a.length;
-                        for (int j = 0; j < n - 1; j++) {
-                            check(a[j] < a[j+1]);
-                            check(a[j] != null);
-                        }
+                    case 2: checkNotContainsNull
+                            (Arrays.asList(q.toArray(new Long[0])));
                         break;
                     }
                     Thread.yield();
                 }}};
 
-        for (Thread thread : new Thread[] { offerer, drainer, scanner }) {
+        for (Thread thread : new Thread[] { offerer, remover, scanner }) {
             thread.join(timeoutMillis + testDurationMillis);
             if (thread.isAlive()) {
                 System.err.printf("Hung thread: %s%n", thread.getName());
@@ -176,7 +166,7 @@ public class OfferDrainToLoops {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
-        new OfferDrainToLoops(args).instanceMain(args);}
+        new OfferRemoveLoops(args).instanceMain(args);}
     public void instanceMain(String[] args) throws Throwable {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
