@@ -1,13 +1,13 @@
-T6723444.java:65:9: compiler.err.unreported.exception.need.to.catch.or.throw: X2
-T6723444.java:66:9: compiler.err.unreported.exception.need.to.catch.or.throw: X2
-T6723444.java:68:32: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
-T6723444.java:69:17: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
-T6723444.java:71:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
-T6723444.java:72:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
-T6723444.java:73:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
-T6723444.java:74:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
-T6723444.java:75:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
-T6723444.java:76:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
-T6723444.java:77:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
-T6723444.java:78:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:42:9: compiler.err.unreported.exception.need.to.catch.or.throw: X2
+T6723444.java:43:9: compiler.err.unreported.exception.need.to.catch.or.throw: X2
+T6723444.java:45:32: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:46:17: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:48:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:49:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:50:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:51:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:52:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:53:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:54:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
+T6723444.java:55:9: compiler.err.unreported.exception.need.to.catch.or.throw: java.lang.Throwable
 12 errors

@@ -1,4 +1,4 @@
-T6806876.java:34:32: compiler.warn.unchecked.generic.array.creation: java.lang.Number&java.lang.Comparable<? extends java.lang.Number&java.lang.Comparable<?>>[]
+T6806876.java:11:32: compiler.warn.unchecked.generic.array.creation: java.lang.Number&java.lang.Comparable<? extends java.lang.Number&java.lang.Comparable<?>>[]
 - compiler.err.warnings.and.werror
 1 error
 1 warning
