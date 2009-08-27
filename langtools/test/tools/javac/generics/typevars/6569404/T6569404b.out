@@ -1,2 +1,2 @@
-T6569404b.java:36:48: compiler.err.type.var.cant.be.deref
+T6569404b.java:13:48: compiler.err.type.var.cant.be.deref
 1 error
