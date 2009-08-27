@@ -9572,6 +9572,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     return comp.getPeer();
                 }
             }
+            // traversing the hierarchy up to the closest HW container;
+            // further traversing may return a component that is not actually
+            // a native sibling of this component and this kind of z-order
+            // request may not be allowed by the underlying system (6852051).
+            if (!cont.isLightweight()) {
+                break;
+            }
 
             indexAbove = cont.getSiblingIndexAbove();
             cont = cont.getContainer();
