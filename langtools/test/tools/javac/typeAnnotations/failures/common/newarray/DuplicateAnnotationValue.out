@@ -1,2 +1,2 @@
-DuplicateAnnotationValue.java:33:51: compiler.err.duplicate.annotation.member.value: value, A
+DuplicateAnnotationValue.java:10:51: compiler.err.duplicate.annotation.member.value: value, A
 1 error

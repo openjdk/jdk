@@ -1,2 +1,2 @@
-StaticFields.java:33:17: compiler.err.illegal.start.of.expr
+StaticFields.java:10:17: compiler.err.illegal.start.of.expr
 1 error
