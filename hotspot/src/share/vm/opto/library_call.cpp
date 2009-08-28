@@ -3894,6 +3894,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   assert(obj_size != NULL, "");
   Node* raw_obj = alloc_obj->in(1);
   assert(alloc_obj->is_CheckCastPP() && raw_obj->is_Proj() && raw_obj->in(0)->is_Allocate(), "");
+  assert(alloc_obj->as_CheckCastPP()->type() != TypeInstPtr::NOTNULL, "should be more precise than Object");
 
   if (ReduceBulkZeroing) {
     // We will be completely responsible for initializing this object -
@@ -4447,6 +4448,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     InitializeNode* init = alloc->initialization();
     assert(init->is_complete(), "we just did this");
     assert(dest->is_CheckCastPP(), "sanity");
+    assert(dest->as_CheckCastPP()->type() != TypeInstPtr::NOTNULL, "type should be more precise than Object");
     assert(dest->in(0)->in(0) == init, "dest pinned");
 
     // Cast to Object for arraycopy.
