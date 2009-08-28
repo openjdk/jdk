@@ -42,14 +42,16 @@ fi
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
-    PS=":"
     FS="/"
+    SCR=`pwd`
+    ;;
+  CYGWIN* )
+    FS="/"
+    SCR=`pwd | cygpath -d`
     ;;
   Windows* )
-    NULL=NUL
-    PS=";"
     FS="\\"
+    SCR=`pwd`
     ;;
   * )
     echo "Unrecognized system!"
