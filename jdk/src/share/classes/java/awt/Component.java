@@ -6665,6 +6665,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 Container parent = this.parent;
                 if (parent != null && parent.peer instanceof LightweightPeer) {
                     relocateComponent();
+                    if (!isRecursivelyVisible()) {
+                        peer.setVisible(false);
+                    }
                 }
             }
             invalidate();
