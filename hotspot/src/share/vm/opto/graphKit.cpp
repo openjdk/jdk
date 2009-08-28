@@ -622,11 +622,13 @@ BuildCutout::~BuildCutout() {
 
 //---------------------------PreserveReexecuteState----------------------------
 PreserveReexecuteState::PreserveReexecuteState(GraphKit* kit) {
+  assert(!kit->stopped(), "must call stopped() before");
   _kit    =    kit;
   _sp     =    kit->sp();
   _reexecute = kit->jvms()->_reexecute;
 }
 PreserveReexecuteState::~PreserveReexecuteState() {
+  if (_kit->stopped()) return;
   _kit->jvms()->_reexecute = _reexecute;
   _kit->set_sp(_sp);
 }
@@ -1123,7 +1125,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
     case T_OBJECT : {
       const Type *t = _gvn.type( value );
 
-      const TypeInstPtr* tp = t->isa_instptr();
+      const TypeOopPtr* tp = t->isa_oopptr();
       if (tp != NULL && !tp->klass()->is_loaded()
           // Only for do_null_check, not any of its siblings:
           && !assert_null && null_control == NULL) {
