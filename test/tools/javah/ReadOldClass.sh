@@ -43,13 +43,11 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
-    NULL=/dev/null
+  SunOS | Linux | CYGWIN* )
     PS=":"
     FS="/"
     ;;
   Windows* )
-    NULL=NUL
     PS=";"
     FS="\\"
     ;;
