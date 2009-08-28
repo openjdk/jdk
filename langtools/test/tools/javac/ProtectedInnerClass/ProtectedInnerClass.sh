@@ -53,12 +53,14 @@ echo "CLASSPATH=${CLASSPATH}"
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
     PS=":"
     FS="/"
     ;;
+  CYGWIN* ) 
+    PS=";" # native PS, not Cygwin PS
+    FS="/"
+    ;;
   Windows* )
-    NULL=NUL
     PS=";"
     FS="\\"
     ;;
