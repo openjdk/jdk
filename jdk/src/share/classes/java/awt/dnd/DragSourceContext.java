@@ -275,7 +275,7 @@ public class DragSourceContext
      *
      * @param c     the initial {@code Cursor} for this drag operation,
      *                       or {@code null} for the default cursor handling;
-     *                       see {@linkplain #defaultCursor class
+     *                       see {@linkplain Cursor class
      *                       level documentation} for more details
      *                       on the cursor handling during drag and drop
      *
