@@ -53,7 +53,7 @@ printf 'CLASSPATH="%s"' "${CLASSPATH}" >&2 ; echo >&2
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  CYGWIN* | Windows* )
+  Windows* )
     FS="\\"
     ;;
   * )
