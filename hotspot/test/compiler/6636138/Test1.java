@@ -45,7 +45,7 @@ public class Test1 {
         for (int i = 0; i < src.length; i++) {
             if (src[i] != ref[i]) {
                 System.out.println("Error: src and ref don't match at " + i);
-                System.exit(-1);
+                System.exit(97);
             }
         }
     }
