@@ -27,8 +27,12 @@ package com.sun.xml.internal.ws.client.sei;
 
 import com.sun.xml.internal.ws.api.model.Parameter;
 import com.sun.xml.internal.ws.model.ParameterImpl;
+import com.sun.xml.internal.bind.api.RawAccessor;
 
 import javax.xml.ws.Holder;
+import javax.xml.ws.WebServiceException;
+import javax.xml.namespace.QName;
+import javax.xml.bind.JAXBException;
 
 /**
  * Moves a Java value unmarshalled from a response message
@@ -82,7 +86,7 @@ abstract class ValueSetter {
     /**
      * Returns a {@link ValueSetter} suitable for the given {@link Parameter}.
      */
-    public static ValueSetter get(ParameterImpl p) {
+    static ValueSetter getSync(ParameterImpl p) {
         int idx = p.getIndex();
 
         if(idx==-1)
@@ -92,6 +96,7 @@ abstract class ValueSetter {
         else
             return new Param(idx);
     }
+
 
     private static final class ReturnValue extends ValueSetter {
         Object put(Object obj, Object[] args) {
@@ -125,4 +130,64 @@ abstract class ValueSetter {
             return null;
         }
     }
+
+    /**
+     * Singleton instance.
+     */
+    static final ValueSetter SINGLE_VALUE = new SingleValue();
+
+    /**
+     * Used in case of async invocation, where there is only one OUT parameter
+     */
+    private static final class SingleValue extends ValueSetter {
+        /**
+         * Set args[0] as the value
+         */
+        Object put(Object obj, Object[] args) {
+            args[0] = obj;
+            return null;
+        }
+    }
+
+    /**
+     * OUT parameters are set in async bean
+     */
+    static final class AsyncBeanValueSetter extends ValueSetter {
+
+        private final RawAccessor accessor;
+
+        AsyncBeanValueSetter(ParameterImpl p, Class wrapper) {
+            QName name = p.getName();
+            try {
+                accessor = p.getOwner().getJAXBContext().getElementPropertyAccessor(
+                            wrapper, name.getNamespaceURI(), name.getLocalPart() );
+            } catch (JAXBException e) {
+                    throw new WebServiceException(  // TODO: i18n
+                        wrapper+" do not have a property of the name "+name,e);
+            }
+        }
+
+        /**
+         * Sets the property in async bean instance
+         *
+         * @param obj property in async bean
+         * @param args args[0] contains async bean instance
+         * @return null always
+         */
+        Object put(Object obj, Object[] args) {
+            assert args != null;
+            assert args.length == 1;
+            assert args[0] != null;
+
+            Object bean = args[0];
+            try {
+                accessor.set(bean, obj);
+            } catch (Exception e) {
+                throw new WebServiceException(e);    // TODO:i18n
+            }
+            return null;
+        }
+
+    }
+
 }

@@ -131,10 +131,8 @@ public class SingleField extends AbstractFieldWithVar {
         JBlock body = $set.body();
         body.assign(JExpr._this().ref(ref()),castToImplType($value));
 
-        javadoc = prop.javadoc;
-        if(javadoc.length()==0)
-            javadoc = Messages.DEFAULT_SETTER_JAVADOC.format(nc.toVariableName(prop.getName(true)));
-        writer.javadoc().append(javadoc);
+        // setter always get the default javadoc. See issue #381
+        writer.javadoc().append(Messages.DEFAULT_SETTER_JAVADOC.format(nc.toVariableName(prop.getName(true))));
         writer.javadoc().addParam($value)
             .append("allowed object is\n")
             .append(possibleTypes);

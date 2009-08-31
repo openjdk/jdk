@@ -313,10 +313,41 @@ public class StreamReaderBufferCreator extends StreamBufferCreator {
         }
     }
 
+    /**
+     * A low level method a create a structure element explicitly. This is useful when xsb is
+     * created from a fragment's XMLStreamReader and inscope namespaces can be passed using
+     * this method. Note that there is no way to enumerate namespaces from XMLStreamReader.
+     *
+     * For e.g: Say the SOAP message is as follows
+     *
+     *  <S:Envelope xmlns:n1=".."><S:Body><ns2:A> ...
+     *
+     * when xsb is to be created using a reader that is at <ns2:A> tag, the inscope
+     * namespace like 'n1' can be passed using this method.
+     *
+     * WARNING: Instead of using this, try other methods(if you don't know what you are
+     * doing).
+     *
+     * @param ns an array of the even length of the form { prefix0, uri0, prefix1, uri1, ... }.
+     */
+    public void storeElement(String nsURI, String localName, String prefix, String[] ns) {
+        storeQualifiedName(T_ELEMENT_LN, prefix, nsURI, localName);
+        storeNamespaceAttributes(ns);
+    }
+
     private void storeNamespaceAttributes(XMLStreamReader reader) {
         int count = reader.getNamespaceCount();
         for (int i = 0; i < count; i++) {
             storeNamespaceAttribute(reader.getNamespacePrefix(i), reader.getNamespaceURI(i));
+        }
+    }
+
+    /**
+     * @param ns an array of the even length of the form { prefix0, uri0, prefix1, uri1, ... }.
+     */
+    private void storeNamespaceAttributes(String[] ns) {
+        for (int i = 0; i < ns.length; i=i+2) {
+            storeNamespaceAttribute(ns[i], ns[i+1]);
         }
     }
 

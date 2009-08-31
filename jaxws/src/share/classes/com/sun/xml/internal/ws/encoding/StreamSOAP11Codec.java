@@ -42,7 +42,7 @@ import java.util.List;
  */
 final class StreamSOAP11Codec extends StreamSOAPCodec {
     public static final String SOAP11_MIME_TYPE = "text/xml";
-    public static final String SOAP11_CONTENT_TYPE = SOAP11_MIME_TYPE+"; charset=utf-8";
+    public static final String SOAP11_CONTENT_TYPE = SOAP11_MIME_TYPE+";charset=\"utf-8\"";
 
     private static final List<String> expectedContentTypes = Collections.singletonList(SOAP11_MIME_TYPE);
 

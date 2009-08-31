@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import java.util.Collection;
@@ -91,8 +92,17 @@ public abstract class Loader {
         state.receiver = null;
     }
 
+    @SuppressWarnings({"StringEquality"})
     protected final void reportUnexpectedChildElement(TagName ea, boolean canRecover) throws SAXException {
-        reportError(Messages.UNEXPECTED_ELEMENT.format(ea.uri,ea.local,computeExpectedElements()), canRecover );
+        if(canRecover && !UnmarshallingContext.getInstance().parent.hasEventHandler())
+            // this error happens particurly often (when input documents contain a lot of unexpected elements to be ignored),
+            // so don't bother computing all the messages and etc if we know that
+            // there's no event handler to receive the error in the end. See #286
+            return;
+        if(ea.uri!=ea.uri.intern() || ea.local!=ea.local.intern())
+            reportError(Messages.UNINTERNED_STRINGS.format(), canRecover );
+        else
+            reportError(Messages.UNEXPECTED_ELEMENT.format(ea.uri,ea.local,computeExpectedElements()), canRecover );
     }
 
     /**
@@ -213,6 +223,9 @@ public abstract class Loader {
         reportError(e.getMessage(), e, canRecover );
     }
 
+    public static void handleGenericError(Error e) throws SAXException {
+        reportError(e.getMessage(), false);
+    }
 
     protected static void reportError(String msg, boolean canRecover) throws SAXException {
         reportError(msg, null, canRecover );

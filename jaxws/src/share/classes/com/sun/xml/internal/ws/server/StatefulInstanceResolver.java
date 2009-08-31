@@ -352,6 +352,7 @@ public final class StatefulInstanceResolver<T> extends AbstractMultiInstanceReso
         String key = reverseInstances.get(o);
         if(key==null)   return; // already unexported
         instances.remove(key);
+        reverseInstances.remove(o);
     }
 
     public T resolve(EndpointReference epr) {
@@ -405,9 +406,9 @@ public final class StatefulInstanceResolver<T> extends AbstractMultiInstanceReso
     /**
      * Timer that controls the instance time out. Lazily created.
      */
-    private static volatile Timer timer;
+    private volatile Timer timer;
 
-    private static synchronized void startTimer() {
+    private synchronized void startTimer() {
         if(timer==null)
             timer = new Timer("JAX-WS stateful web service timeout timer");
     }

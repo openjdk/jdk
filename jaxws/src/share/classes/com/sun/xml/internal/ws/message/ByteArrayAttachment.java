@@ -28,6 +28,8 @@ package com.sun.xml.internal.ws.message;
 import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.api.message.Attachment;
 import com.sun.xml.internal.ws.util.ByteArrayDataSource;
+import com.sun.xml.internal.ws.encoding.DataSourceStreamingDataHandler;
+
 import java.io.ByteArrayInputStream;
 
 import javax.activation.DataHandler;
@@ -36,8 +38,6 @@ import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.ws.WebServiceException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -85,7 +85,7 @@ public final class ByteArrayAttachment implements Attachment {
     }
 
     public DataHandler asDataHandler() {
-        return new DataHandler(new ByteArrayDataSource(data,start,len,getContentType()));
+        return new DataSourceStreamingDataHandler(new ByteArrayDataSource(data,start,len,getContentType()));
     }
 
     public Source asSource() {

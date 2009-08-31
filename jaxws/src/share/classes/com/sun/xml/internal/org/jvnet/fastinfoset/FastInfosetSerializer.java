@@ -102,10 +102,16 @@ public interface FastInfosetSerializer {
         "http://jvnet.org/fastinfoset/parser/properties/external-vocabularies";
 
     /**
-     * The default value for the limit on the size of character content chunks
+     * The default minimum size of the character content chunks,
      * that will be indexed.
      */
-    public final static int CHARACTER_CONTENT_CHUNK_SIZE_CONSTRAINT = 32;
+    public final static int MIN_CHARACTER_CONTENT_CHUNK_SIZE = 0;
+
+    /**
+     * The default maximum size of the character content chunks,
+     * that will be indexed.
+     */
+    public final static int MAX_CHARACTER_CONTENT_CHUNK_SIZE = 32;
 
     /**
      * The default value for limit on the size of indexed Map for attribute values
@@ -114,13 +120,17 @@ public interface FastInfosetSerializer {
     public static final int CHARACTER_CONTENT_CHUNK_MAP_MEMORY_CONSTRAINT = Integer.MAX_VALUE;
 
     /**
-     * The default value for the limit on the size of attribute values
-     * that will be indexed.
+     * The default minimum size of the attribute values, that will be indexed.
      */
-    public final static int ATTRIBUTE_VALUE_SIZE_CONSTRAINT = 32;
+    public final static int MIN_ATTRIBUTE_VALUE_SIZE = 0;
 
     /**
-     * The default value for limit on the size of indexed Map for character content chunks
+     * The default maximum size of the attribute values, that will be indexed.
+     */
+    public final static int MAX_ATTRIBUTE_VALUE_SIZE = 32;
+
+    /**
+     * The default value for limit on the size of indexed Map for attribute values
      * Limit is measured in bytes not in number of entries
      */
     public static final int ATTRIBUTE_VALUE_MAP_MEMORY_CONSTRAINT = Integer.MAX_VALUE;
@@ -217,21 +227,44 @@ public interface FastInfosetSerializer {
     public Map getRegisteredEncodingAlgorithms();
 
     /**
-     * Sets the limit on the size of character content chunks
+     * Gets the minimum size of character content chunks
      * that will be indexed.
      *
-     * @param size The character content chunk size limit. Any chunk less
-     * that a length of size limit will be indexed.
+     * @return The minimum character content chunk size.
      */
-    public void setCharacterContentChunkSizeLimit(int size);
+    public int getMinCharacterContentChunkSize();
 
     /**
-     * Gets the limit on the size of character content chunks
+     * Sets the minimum size of character content chunks
      * that will be indexed.
      *
-     * @return The character content chunk size limit.
+     * @param size the minimum character content chunk size.
      */
-    public int getCharacterContentChunkSizeLimit();
+    public void setMinCharacterContentChunkSize(int size);
+
+    /**
+     * Gets the maximum size of character content chunks
+     * that will be indexed.
+     *
+     * @return The maximum character content chunk size.
+     */
+    public int getMaxCharacterContentChunkSize();
+
+    /**
+     * Sets the maximum size of character content chunks
+     * that will be indexed.
+     *
+     * @param size the maximum character content chunk size.
+     */
+    public void setMaxCharacterContentChunkSize(int size);
+
+    /**
+     * Gets the limit on the memory size of Map of attribute values
+     * that will be indexed.
+     *
+     * @return The attribute value size limit.
+     */
+    public int getCharacterContentChunkMapMemoryLimit();
 
     /**
      * Sets the limit on the memory size of Map of attribute values
@@ -243,29 +276,44 @@ public interface FastInfosetSerializer {
     public void setCharacterContentChunkMapMemoryLimit(int size);
 
     /**
+     * Gets the minimum size of attribute values
+     * that will be indexed.
+     *
+     * @return The minimum attribute values size.
+     */
+    public int getMinAttributeValueSize();
+
+    /**
+     * Sets the minimum size of attribute values
+     * that will be indexed.
+     *
+     * @param size the minimum attribute values size.
+     */
+    public void setMinAttributeValueSize(int size);
+
+    /**
+     * Gets the maximum size of attribute values
+     * that will be indexed.
+     *
+     * @return The maximum attribute values size.
+     */
+    public int getMaxAttributeValueSize();
+
+    /**
+     * Sets the maximum size of attribute values
+     * that will be indexed.
+     *
+     * @param size the maximum attribute values size.
+     */
+    public void setMaxAttributeValueSize(int size);
+
+    /**
      * Gets the limit on the memory size of Map of attribute values
      * that will be indexed.
      *
      * @return The attribute value size limit.
      */
-    public int getCharacterContentChunkMapMemoryLimit();
-
-    /**
-     * Sets the limit on the size of attribute values
-     * that will be indexed.
-     *
-     * @param size The attribute value size limit. Any value less
-     * that a length of size limit will be indexed.
-     */
-    public void setAttributeValueSizeLimit(int size);
-
-    /**
-     * Gets the limit on the size of attribute values
-     * that will be indexed.
-     *
-     * @return The attribute value size limit.
-     */
-    public int getAttributeValueSizeLimit();
+    public int getAttributeValueMapMemoryLimit();
 
     /**
      * Sets the limit on the memory size of Map of attribute values
@@ -275,14 +323,6 @@ public interface FastInfosetSerializer {
      * that a length of size limit will be indexed.
      */
     public void setAttributeValueMapMemoryLimit(int size);
-
-    /**
-     * Gets the limit on the memory size of Map of attribute values
-     * that will be indexed.
-     *
-     * @return The attribute value size limit.
-     */
-    public int getAttributeValueMapMemoryLimit();
 
     /**
      * Set the external vocabulary that shall be used when serializing.

@@ -23,7 +23,6 @@
  * have any questions.
  */
 
-
 package com.sun.xml.internal.ws.developer;
 
 import java.lang.annotation.Documented;
@@ -90,4 +89,15 @@ public @interface MemberSubmissionAddressing {
      * <code>wsaw:UsingAddressing</code> element in the WSDL.
      */
     boolean required() default false;
+
+    /**
+     * Property to determine if the incoming messsages should be checked for conformance
+     * with MemberSubmission version of WS-Addressing.
+     *
+     * If Validation.LAX, then some WS-Adressing headers are not strictly checked.
+     */
+    public enum Validation { LAX, STRICT };
+
+    Validation validation() default Validation.LAX;
+
 }

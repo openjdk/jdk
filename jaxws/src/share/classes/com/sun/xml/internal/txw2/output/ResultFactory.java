@@ -58,6 +58,8 @@ public abstract class ResultFactory {
             return new DomSerializer((DOMResult) result);
         if (result instanceof StreamResult)
             return new StreamSerializer((StreamResult) result);
+        if (result instanceof TXWResult)
+            return new TXWSerializer(((TXWResult)result).getWriter());
 
         throw new UnsupportedOperationException("Unsupported Result type: " + result.getClass().getName());
     }

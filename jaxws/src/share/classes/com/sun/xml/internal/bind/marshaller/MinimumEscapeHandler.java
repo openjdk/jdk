@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * @(#)$Id: MinimumEscapeHandler.java,v 1.1 2005/04/15 20:03:47 kohsuke Exp $
- */
-
-
 package com.sun.xml.internal.bind.marshaller;
 
 import java.io.IOException;
@@ -52,23 +47,23 @@ public class MinimumEscapeHandler implements CharacterEscapeHandler {
         int limit = start+length;
         for (int i = start; i < limit; i++) {
             char c = ch[i];
-            if( c=='&' || c=='<' || c=='>' || (c=='\"' && isAttVal) ) {
+                if(c == '&' || c == '<' || c == '>' || c == '\r' || (c == '\"' && isAttVal) ) {
                 if(i!=start)
                     out.write(ch,start,i-start);
                 start = i+1;
                 switch (ch[i]) {
-                case '&' :
-                    out.write("&amp;");
-                    break;
-                case '<' :
-                    out.write("&lt;");
-                    break;
-                case '>' :
-                    out.write("&gt;");
-                    break;
-                case '\"' :
-                    out.write("&quot;");
-                    break;
+                    case '&':
+                        out.write("&amp;");
+                        break;
+                    case '<':
+                        out.write("&lt;");
+                        break;
+                    case '>':
+                        out.write("&gt;");
+                        break;
+                    case '\"':
+                        out.write("&quot;");
+                        break;
                 }
             }
         }
