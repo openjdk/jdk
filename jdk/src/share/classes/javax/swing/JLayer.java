@@ -408,7 +408,10 @@ public final class JLayer<V extends Component>
         if (layerEventMask != oldEventMask) {
             disableEvents(oldEventMask);
             enableEvents(eventMask);
-            eventController.updateAWTEventListener(this);
+            if (isDisplayable()) {
+                eventController.updateAWTEventListener(
+                        oldEventMask, layerEventMask);
+            }
         }
     }
 
@@ -549,20 +552,30 @@ public final class JLayer<V extends Component>
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         s.defaultReadObject();
-        if (getUI() != null) {
-            setUI(getUI());
+        if (layerUI != null) {
+            setUI(layerUI);
         }
-        if (getLayerEventMask() != 0) {
-            eventController.updateAWTEventListener(this);
+        if (eventMask != 0) {
+            eventController.updateAWTEventListener(0, eventMask);
         }
+    }
+
+    public void addNotify() {
+        eventController.updateAWTEventListener(0, eventMask);
+        super.addNotify();
+    }
+
+    public void removeNotify() {
+        eventController.updateAWTEventListener(eventMask, 0);
+        super.removeNotify();
     }
 
     /**
      * static AWTEventListener to be shared with all AbstractLayerUIs
      */
     private static class LayerEventController implements AWTEventListener {
-        private ArrayList<WeakReference<JLayer>> layerList =
-                new ArrayList<WeakReference<JLayer>>();
+        private ArrayList<Long> layerMaskList =
+                new ArrayList<Long>();
 
         private long currentEventMask;
 
@@ -586,37 +599,24 @@ public final class JLayer<V extends Component>
             }
         }
 
-        private boolean layerListContains(JLayer l) {
-            for (WeakReference<JLayer> layerWeakReference : layerList) {
-                if (layerWeakReference.get() == l) {
-                    return true;
-                }
+        private void updateAWTEventListener(long oldEventMask, long newEventMask) {
+            if (oldEventMask != 0) {
+                layerMaskList.remove(oldEventMask);
             }
-            return false;
-        }
-
-        private void updateAWTEventListener(JLayer layer) {
-            if (!layerListContains(layer) && layer.getLayerEventMask() != 0) {
-                layerList.add(new WeakReference<JLayer>(layer));
+            if (newEventMask != 0) {
+                layerMaskList.add(newEventMask);
             }
             long combinedMask = 0;
-            Iterator<WeakReference<JLayer>> it = layerList.iterator();
-            while (it.hasNext()) {
-                WeakReference<JLayer> weakRef = it.next();
-                JLayer currLayer = weakRef.get();
-                if (currLayer == null) {
-                    it.remove();
-                } else {
-                    combinedMask |= currLayer.getLayerEventMask();
-                }
+            for (Long mask : layerMaskList) {
+                combinedMask |= mask;
             }
             if (combinedMask == 0) {
                 removeAWTEventListener();
-                layerList.clear();
             } else if (getCurrentEventMask() != combinedMask) {
                 removeAWTEventListener();
                 addAWTEventListener(combinedMask);
             }
+            currentEventMask = combinedMask;
         }
 
         private long getCurrentEventMask() {
@@ -631,7 +631,7 @@ public final class JLayer<V extends Component>
                     return null;
                 }
             });
-            currentEventMask = eventMask;
+
         }
 
         private void removeAWTEventListener() {
@@ -642,7 +642,6 @@ public final class JLayer<V extends Component>
                     return null;
                 }
             });
-            currentEventMask = 0;
         }
 
         private boolean isEventEnabled(long eventMask, int id) {
