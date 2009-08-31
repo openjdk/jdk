@@ -60,7 +60,7 @@ final class RESTSourceDispatch extends DispatchImpl<Source> {
     Source toReturnValue(Packet response) {
         Message msg = response.getMessage();
         try {
-            return new StreamSource(XMLMessage.getDataSource(msg).getInputStream());
+            return new StreamSource(XMLMessage.getDataSource(msg, binding).getInputStream());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

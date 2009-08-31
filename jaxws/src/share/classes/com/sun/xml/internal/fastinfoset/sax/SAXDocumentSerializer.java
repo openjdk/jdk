@@ -430,9 +430,8 @@ public class SAXDocumentSerializer extends Encoder implements FastInfosetWriter 
         try {
             encodeTermination();
 
-            final boolean addToTable = isCharacterContentChunkLengthMatchesLimit(length, _v.characterContentChunk);
-            encodeFourBitCharacters(RestrictedAlphabet.NUMERIC_CHARACTERS_INDEX, NUMERIC_CHARACTERS_TABLE,
-                    ch, start, length, addToTable);
+            final boolean addToTable = isCharacterContentChunkLengthMatchesLimit(length);
+            encodeNumericFourBitCharacters(ch, start, length, addToTable);
         } catch (IOException e) {
             throw new SAXException(e);
         } catch (FastInfosetException e) {
@@ -448,9 +447,8 @@ public class SAXDocumentSerializer extends Encoder implements FastInfosetWriter 
         try {
             encodeTermination();
 
-            final boolean addToTable = isCharacterContentChunkLengthMatchesLimit(length, _v.characterContentChunk);
-            encodeFourBitCharacters(RestrictedAlphabet.DATE_TIME_CHARACTERS_INDEX, DATE_TIME_CHARACTERS_TABLE,
-                    ch, start, length, addToTable);
+            final boolean addToTable = isCharacterContentChunkLengthMatchesLimit(length);
+            encodeDateTimeFourBitCharacters(ch, start, length, addToTable);
         } catch (IOException e) {
             throw new SAXException(e);
         } catch (FastInfosetException e) {
@@ -466,7 +464,7 @@ public class SAXDocumentSerializer extends Encoder implements FastInfosetWriter 
         try {
             encodeTermination();
 
-            final boolean addToTable = isCharacterContentChunkLengthMatchesLimit(length, _v.characterContentChunk);
+            final boolean addToTable = isCharacterContentChunkLengthMatchesLimit(length);
             encodeAlphabetCharacters(alphabet, ch, start, length, addToTable);
         } catch (IOException e) {
             throw new SAXException(e);
@@ -518,6 +516,7 @@ public class SAXDocumentSerializer extends Encoder implements FastInfosetWriter 
 
     protected void encodeAttributes(Attributes atts) throws IOException, FastInfosetException {
         boolean addToTable;
+        boolean mustBeAddedToTable;
         String value;
         if (atts instanceof EncodingAlgorithmAttributes) {
             final EncodingAlgorithmAttributes eAtts = (EncodingAlgorithmAttributes)atts;
@@ -529,24 +528,21 @@ public class SAXDocumentSerializer extends Encoder implements FastInfosetWriter 
                     // If data is null then there is no algorithm data
                     if (data == null) {
                         value = eAtts.getValue(i);
-                        addToTable = eAtts.getToIndex(i) || isAttributeValueLengthMatchesLimit(value.length());
+                        addToTable = isAttributeValueLengthMatchesLimit(value.length());
+                        mustBeAddedToTable = eAtts.getToIndex(i);
 
                         alphabet = eAtts.getAlpababet(i);
-                        if (alphabet == null)
-                            encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable);
-                        else if (alphabet == RestrictedAlphabet.DATE_TIME_CHARACTERS)
-                            encodeNonIdentifyingStringOnFirstBit(
-                                    RestrictedAlphabet.DATE_TIME_CHARACTERS_INDEX,
-                                    DATE_TIME_CHARACTERS_TABLE,
-                                    value, addToTable);
-                        else if (alphabet == RestrictedAlphabet.DATE_TIME_CHARACTERS)
-                            encodeNonIdentifyingStringOnFirstBit(
-                                    RestrictedAlphabet.NUMERIC_CHARACTERS_INDEX,
-                                    NUMERIC_CHARACTERS_TABLE,
-                                    value, addToTable);
-                        else
-                            encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable);
-
+                        if (alphabet == null) {
+                            encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable, mustBeAddedToTable);
+                        } else if (alphabet == RestrictedAlphabet.DATE_TIME_CHARACTERS) {
+                            encodeDateTimeNonIdentifyingStringOnFirstBit(
+                                    value, addToTable, mustBeAddedToTable);
+                        } else if (alphabet == RestrictedAlphabet.NUMERIC_CHARACTERS) {
+                            encodeNumericNonIdentifyingStringOnFirstBit(
+                                    value, addToTable, mustBeAddedToTable);
+                        } else {
+                            encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable, mustBeAddedToTable);
+                        }
                     } else {
                         encodeNonIdentifyingStringOnFirstBit(eAtts.getAlgorithmURI(i),
                                 eAtts.getAlgorithmIndex(i), data);
@@ -558,7 +554,7 @@ public class SAXDocumentSerializer extends Encoder implements FastInfosetWriter 
                 if (encodeAttribute(atts.getURI(i), atts.getQName(i), atts.getLocalName(i))) {
                     value = atts.getValue(i);
                     addToTable = isAttributeValueLengthMatchesLimit(value.length());
-                    encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable);
+                    encodeNonIdentifyingStringOnFirstBit(value, _v.attributeValue, addToTable, false);
                 }
             }
         }

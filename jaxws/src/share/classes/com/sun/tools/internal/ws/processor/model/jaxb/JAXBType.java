@@ -71,11 +71,11 @@ public class JAXBType extends AbstractType{
     }
 
     public boolean isUnwrappable(){
-        return getJaxbMapping().getWrapperStyleDrilldown() != null;
+        return jaxbMapping != null && jaxbMapping.getWrapperStyleDrilldown() != null;
     }
 
     public boolean hasWrapperChildren(){
-        return (getWrapperChildren().size() > 0) ? true : false;
+        return wrapperChildren.size() > 0;
     }
 
     public boolean isLiteralType() {

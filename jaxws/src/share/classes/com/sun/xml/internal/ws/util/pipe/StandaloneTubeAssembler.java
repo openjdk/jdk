@@ -51,6 +51,7 @@ public class StandaloneTubeAssembler implements TubelineAssembler {
         }
         head = context.createWsaTube(head);
         head = context.createClientMUTube(head);
+        head = context.createValidationTube(head);
         return context.createHandlerTube(head);
     }
 
@@ -61,6 +62,7 @@ public class StandaloneTubeAssembler implements TubelineAssembler {
      */
     public Tube createServer(ServerTubeAssemblerContext context) {
         Tube head = context.getTerminalTube();
+        head = context.createValidationTube(head);
         head = context.createHandlerTube(head);
         head = context.createMonitoringTube(head);
         head = context.createServerMUTube(head);

@@ -71,6 +71,18 @@ public class BasicWriter {
         lineWriter.println();
     }
 
+    protected void indent(int delta) {
+        lineWriter.indent(delta);
+    }
+
+    protected void tab() {
+        lineWriter.tab();
+    }
+
+    protected void setPendingNewline(boolean b) {
+        lineWriter.pendingNewline = b;
+    }
+
     protected String report(AttributeException e) {
         out.println("Error: " + e.getMessage()); // i18n?
         return "???";
@@ -122,19 +134,30 @@ public class BasicWriter {
 
         protected LineWriter(Context context) {
             context.put(LineWriter.class, this);
+            Options options = Options.instance(context);
+            indentWidth = options.indentWidth;
+            tabColumn = options.tabColumn;
             out = context.get(PrintWriter.class);
             buffer = new StringBuilder();
         }
 
         protected void print(String s) {
+            if (pendingNewline) {
+                println();
+                pendingNewline = false;
+            }
             if (s == null)
                 s = "null";
             for (int i = 0; i < s.length(); i++) {
                 char c = s.charAt(i);
-                if (c == '\n') {
-                    println();
-                } else {
-                    buffer.append(c);
+                switch (c) {
+                    case '\n':
+                        println();
+                        break;
+                    default:
+                        if (buffer.length() == 0)
+                            indent();
+                        buffer.append(c);
                 }
             }
 
@@ -145,8 +168,31 @@ public class BasicWriter {
             buffer.setLength(0);
         }
 
+        protected void indent(int delta) {
+            indentCount += delta;
+        }
+
+        protected void tab() {
+            if (buffer.length() == 0)
+                indent();
+            space(indentCount * indentWidth + tabColumn - buffer.length());
+        }
+
+        private void indent() {
+            space(indentCount * indentWidth);
+        }
+
+        private void space(int n) {
+            for (int i = 0; i < n; i++)
+                buffer.append(' ');
+        }
+
         private PrintWriter out;
         private StringBuilder buffer;
+        private int indentCount;
+        private int indentWidth;
+        private int tabColumn;
+        private boolean pendingNewline;
     }
 }
 

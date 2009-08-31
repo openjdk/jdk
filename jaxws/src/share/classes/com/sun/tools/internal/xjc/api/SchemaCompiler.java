@@ -238,6 +238,10 @@ public interface SchemaCompiler {
      * then tweak settings on it. The updated settings will be used when the
      * {@link #bind()} method is invoked.
      *
+     * <p>
+     * The returned {@link Options} object is useful for example to specify
+     * command-line arguments.
+     *
      * @since 2.0.2
      * @deprecated
      *      This method is not really "deprecated" (in the sense of being removed

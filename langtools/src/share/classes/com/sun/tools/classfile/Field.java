@@ -50,6 +50,10 @@ public class Field {
         this.attributes = attributes;
     }
 
+    public int byteLength() {
+        return 6 + attributes.byteLength();
+    }
+
     public String getName(ConstantPool constant_pool) throws ConstantPoolException {
         return constant_pool.getUTF8Value(name_index);
     }

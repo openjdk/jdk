@@ -27,10 +27,9 @@
  * @summary Resizes right-oriented scroll pane
  * @author Sergey Malenkov
  * @library ..
- * @build SwingTest
- * @run main Test6526631
  */
 
+import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import javax.swing.JFrame;
 import javax.swing.JScrollBar;
@@ -38,15 +37,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JViewport;
 
-import static java.awt.ComponentOrientation.RIGHT_TO_LEFT;
-
 public class Test6526631 {
 
     private static final int COLS = 90;
     private static final int ROWS = 50;
     private static final int OFFSET = 10;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Throwable {
         SwingTest.start(Test6526631.class);
     }
 
@@ -55,7 +52,7 @@ public class Test6526631 {
 
     public Test6526631(JFrame frame) {
         this.pane = new JScrollPane(new JTextArea(ROWS, COLS));
-        this.pane.setComponentOrientation(RIGHT_TO_LEFT);
+        this.pane.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
         this.frame = frame;
         this.frame.add(this.pane);
     }
@@ -79,24 +76,24 @@ public class Test6526631 {
     public void validateThird() {
         JViewport viewport = this.pane.getViewport();
         JScrollBar scroller = this.pane.getHorizontalScrollBar();
-        if (!scroller.getComponentOrientation().equals(RIGHT_TO_LEFT)) {
-            throw new IllegalStateException("unexpected component orientation");
+        if (!scroller.getComponentOrientation().equals(ComponentOrientation.RIGHT_TO_LEFT)) {
+            throw new Error("unexpected component orientation");
         }
         int value = scroller.getValue();
         if (value != 0) {
-            throw new IllegalStateException("unexpected scroll value");
+            throw new Error("unexpected scroll value");
         }
         int extent = viewport.getExtentSize().width;
         if (extent != scroller.getVisibleAmount()) {
-            throw new IllegalStateException("unexpected visible amount");
+            throw new Error("unexpected visible amount");
         }
         int size = viewport.getViewSize().width;
         if (size != scroller.getMaximum()) {
-            throw new IllegalStateException("unexpected maximum");
+            throw new Error("unexpected maximum");
         }
         int pos = size - extent - value;
         if (pos != viewport.getViewPosition().x) {
-            throw new IllegalStateException("unexpected position");
+            throw new Error("unexpected position");
         }
     }
 }

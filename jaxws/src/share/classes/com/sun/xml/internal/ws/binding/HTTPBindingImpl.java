@@ -68,6 +68,6 @@ public class HTTPBindingImpl extends BindingImpl implements HTTPBinding {
         return new HandlerConfiguration(
                 Collections.<String>emptySet(),
                 Collections.<QName>emptySet(),
-                handlerChain,logicalHandlers,null,null);
+                handlerChain,logicalHandlers,null,null,null);
     }
 }

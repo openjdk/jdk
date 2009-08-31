@@ -631,7 +631,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitAssignop(JCAssignOp tree) {
-        tree.lhs = translate(tree.lhs, tree.operator.type.getParameterTypes().head);
+        tree.lhs = translate(tree.lhs, null);
         tree.rhs = translate(tree.rhs, tree.operator.type.getParameterTypes().tail.head);
         tree.type = erasure(tree.type);
         result = tree;
@@ -815,6 +815,23 @@ public class TransTypes extends TreeTranslator {
             push(tree);
             super.scan(tree);
             pop();
+        }
+
+        private boolean inClass = false;
+
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+           if (!inClass) {
+               // Do not recurse into nested and inner classes since
+               // TransTypes.visitClassDef makes an invocation for each class
+               // separately.
+               inClass = true;
+               try {
+                   super.visitClassDef(tree);
+               } finally {
+                   inClass = false;
+               }
+           }
         }
 
         private TypeAnnotationPosition resolveFrame(JCTree tree, JCTree frame,

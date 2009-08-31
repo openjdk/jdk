@@ -182,6 +182,18 @@ public final class AddressingMessages {
         return localizer.localize(localizableNULL_MESSAGE());
     }
 
+    public static Localizable localizableACTION_NOT_SUPPORTED_EXCEPTION(Object arg0) {
+        return messageFactory.getMessage("action.not.supported.exception", arg0);
+    }
+
+    /**
+     * Action: "{0}" not supported
+     *
+     */
+    public static String ACTION_NOT_SUPPORTED_EXCEPTION(Object arg0) {
+        return localizer.localize(localizableACTION_NOT_SUPPORTED_EXCEPTION(arg0));
+    }
+
     public static Localizable localizableNON_ANONYMOUS_RESPONSE_NULL_HEADERS(Object arg0) {
         return messageFactory.getMessage("nonAnonymous.response.nullHeaders", arg0);
     }
@@ -218,6 +230,18 @@ public final class AddressingMessages {
         return localizer.localize(localizableREPLY_TO_CANNOT_PARSE());
     }
 
+    public static Localizable localizableINVALID_ADDRESSING_HEADER_EXCEPTION(Object arg0, Object arg1) {
+        return messageFactory.getMessage("invalid.addressing.header.exception", arg0, arg1);
+    }
+
+    /**
+     * Invalid WS-Addressing header: "{0}",Reason: "{1}"
+     *
+     */
+    public static String INVALID_ADDRESSING_HEADER_EXCEPTION(Object arg0, Object arg1) {
+        return localizer.localize(localizableINVALID_ADDRESSING_HEADER_EXCEPTION(arg0, arg1));
+    }
+
     public static Localizable localizableWSAW_ANONYMOUS_PROHIBITED() {
         return messageFactory.getMessage("wsaw.anonymousProhibited");
     }
@@ -242,6 +266,18 @@ public final class AddressingMessages {
         return localizer.localize(localizableNULL_WSDL_PORT());
     }
 
+    public static Localizable localizableADDRESSING_SHOULD_BE_ENABLED() {
+        return messageFactory.getMessage("addressing.should.be.enabled.");
+    }
+
+    /**
+     * Addressing is not enabled
+     *
+     */
+    public static String ADDRESSING_SHOULD_BE_ENABLED() {
+        return localizer.localize(localizableADDRESSING_SHOULD_BE_ENABLED());
+    }
+
     public static Localizable localizableNULL_ADDRESSING_VERSION() {
         return messageFactory.getMessage("null.addressing.version");
     }
@@ -252,6 +288,18 @@ public final class AddressingMessages {
      */
     public static String NULL_ADDRESSING_VERSION() {
         return localizer.localize(localizableNULL_ADDRESSING_VERSION());
+    }
+
+    public static Localizable localizableMISSING_HEADER_EXCEPTION(Object arg0) {
+        return messageFactory.getMessage("missing.header.exception", arg0);
+    }
+
+    /**
+     * Missing WS-Addressing header: "{0}"
+     *
+     */
+    public static String MISSING_HEADER_EXCEPTION(Object arg0) {
+        return localizer.localize(localizableMISSING_HEADER_EXCEPTION(arg0));
     }
 
     public static Localizable localizableNULL_PACKET() {

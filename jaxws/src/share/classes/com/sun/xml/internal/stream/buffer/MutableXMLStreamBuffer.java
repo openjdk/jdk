@@ -61,7 +61,7 @@ public class MutableXMLStreamBuffer extends XMLStreamBuffer {
      * The default array size for the arrays used in internal representation
      * of the XML infoset.
      */
-    public static int DEFAULT_ARRAY_SIZE = 512;
+    public static final int DEFAULT_ARRAY_SIZE = 512;
 
     /**
      * Create a new MutableXMLStreamBuffer using the

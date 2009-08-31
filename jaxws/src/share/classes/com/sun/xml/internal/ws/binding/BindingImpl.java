@@ -34,6 +34,7 @@ import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.pipe.Codec;
 import com.sun.xml.internal.ws.client.HandlerConfiguration;
 import com.sun.xml.internal.ws.developer.MemberSubmissionAddressingFeature;
+import com.sun.xml.internal.ws.developer.BindingTypeFeature;
 
 import javax.xml.ws.WebServiceFeature;
 import javax.xml.ws.soap.AddressingFeature;
@@ -134,6 +135,13 @@ public abstract class BindingImpl implements WSBinding {
     }
 
     public static BindingImpl create(@NotNull BindingID bindingId, WebServiceFeature[] features) {
+        // Override the BindingID from the features
+        for(WebServiceFeature feature : features) {
+            if (feature instanceof BindingTypeFeature) {
+                BindingTypeFeature f = (BindingTypeFeature)feature;
+                bindingId = BindingID.parse(f.getBindingId());
+            }
+        }
         if (bindingId.equals(BindingID.XML_HTTP))
             return new HTTPBindingImpl();
         else
