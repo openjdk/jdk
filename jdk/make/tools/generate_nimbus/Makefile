@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,44 +24,49 @@
 #
 
 #
-# Create all the build tools
+# Makefile for building the Nimbus generator
 #
 
-BUILDDIR = ..
+BUILDDIR = ../..
+PACKAGE = build.tools.generatenimbus
+PRODUCT = tools
+PROGRAM = generatenimbus
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS =                   \
-  addjsum                   \
-  buildmetaindex            \
-  commentchecker            \
-  compile_font_config       \
-  compile_properties        \
-  dir_diff                  \
-  dtdbuilder                \
-  fontchecker               \
-  freetypecheck             \
-  generate_break_iterator   \
-  GenerateCharacter         \
-  generatecurrencydata      \
-  hasher_classes            \
-  jarreorder                \
-  jarsplit                  \
-  javazic                   \
-  jdwpgen                   \
-  makeclasslist             \
-  strip_properties          \
-  spp                       \
-  CharsetMapping
+BUILDTOOL_SOURCE_ROOT = $(BUILDDIR)/tools/src
+BUILDTOOL_MAIN        = $(PKGDIR)/Generator.java
 
-ifndef DISABLE_NIMBUS
-  SUBDIRS += generate_nimbus
-endif
 
-all build clean clobber::
-	$(SUBDIRS-loop)
+#
+# Files
+#
+
+SOURCE_FILES    = Generator.java \
+                  ObjectFactory.java \
+                  Paint.java \
+                  SynthModel.java \
+                  UIDefault.java \
+                  UIStyle.java
+TEMPLATE_FILES  = Defaults.template \
+                  PainterImpl.template \
+                  StateImpl.template
+TEMPLATE_DEST   = $(BUILDTOOLCLASSDIR)/$(PKGDIR)/resources
+
+
+#
+# Rules
+#
+
+all: $(TEMPLATE_DEST) $(BUILDTOOL_JAR_FILE)
+
+include $(BUILDDIR)/common/BuildToolJar.gmk
+
+$(TEMPLATE_DEST): $(TEMPLATE_FILES:%=$(SHARE_SRC)/classes/javax/swing/plaf/nimbus/%)
+	$(MKDIR) -p $@
+	$(RM) $(TEMPLATE_FILES:%=$@/%)
+	$(CP) $^ $@
+
+BUILDTOOL_MAIN_SOURCE_FILE = $(SOURCE_FILES:%=$(BUILDTOOL_SOURCE_ROOT)/$(PKGDIR)/%)
 
 clean clobber::
-	$(RM) -r $(BUILDTOOLCLASSDIR)
-	$(RM) -r $(BUILDTOOLJARDIR)
-	$(RM) -r $(BUILDTOOLBINDIR)
-
+	$(RM) -r $(TEMPLATE_DEST)
