@@ -2739,8 +2739,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
         _in_cset_fast_test = NULL;
         _in_cset_fast_test_base = NULL;
 
-        release_gc_alloc_regions(false /* totally */);
-
         cleanup_surviving_young_words();
 
         if (g1_policy()->in_young_gc_mode()) {
@@ -4132,6 +4130,7 @@ void G1CollectedHeap::evacuate_collection_set() {
     G1KeepAliveClosure keep_alive(this);
     JNIHandles::weak_oops_do(&is_alive, &keep_alive);
   }
+  release_gc_alloc_regions(false /* totally */);
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
   concurrent_g1_refine()->clear_hot_cache();
@@ -4265,12 +4264,18 @@ void G1CollectedHeap::dirtyCardsForYoungRegions(CardTableModRefBS* ct_bs, HeapRe
 class G1ParCleanupCTTask : public AbstractGangTask {
   CardTableModRefBS* _ct_bs;
   G1CollectedHeap* _g1h;
+  HeapRegion* volatile _so_head;
+  HeapRegion* volatile _su_head;
 public:
   G1ParCleanupCTTask(CardTableModRefBS* ct_bs,
-                     G1CollectedHeap* g1h) :
+                     G1CollectedHeap* g1h,
+                     HeapRegion* scan_only_list,
+                     HeapRegion* survivor_list) :
     AbstractGangTask("G1 Par Cleanup CT Task"),
     _ct_bs(ct_bs),
-    _g1h(g1h)
+    _g1h(g1h),
+    _so_head(scan_only_list),
+    _su_head(survivor_list)
   { }
 
   void work(int i) {
@@ -4278,22 +4283,64 @@ public:
     while (r = _g1h->pop_dirty_cards_region()) {
       clear_cards(r);
     }
+    // Redirty the cards of the scan-only and survivor regions.
+    dirty_list(&this->_so_head);
+    dirty_list(&this->_su_head);
   }
+
   void clear_cards(HeapRegion* r) {
     // Cards for Survivor and Scan-Only regions will be dirtied later.
     if (!r->is_scan_only() && !r->is_survivor()) {
       _ct_bs->clear(MemRegion(r->bottom(), r->end()));
     }
   }
+
+  void dirty_list(HeapRegion* volatile * head_ptr) {
+    HeapRegion* head;
+    do {
+      // Pop region off the list.
+      head = *head_ptr;
+      if (head != NULL) {
+        HeapRegion* r = (HeapRegion*)
+          Atomic::cmpxchg_ptr(head->get_next_young_region(), head_ptr, head);
+        if (r == head) {
+          assert(!r->isHumongous(), "Humongous regions shouldn't be on survivor list");
+          _ct_bs->dirty(MemRegion(r->bottom(), r->end()));
+        }
+      }
+    } while (*head_ptr != NULL);
+  }
 };
 
+
+#ifndef PRODUCT
+class G1VerifyCardTableCleanup: public HeapRegionClosure {
+  CardTableModRefBS* _ct_bs;
+public:
+  G1VerifyCardTableCleanup(CardTableModRefBS* ct_bs)
+    : _ct_bs(ct_bs)
+  { }
+  virtual bool doHeapRegion(HeapRegion* r)
+  {
+    MemRegion mr(r->bottom(), r->end());
+    if (r->is_scan_only() || r->is_survivor()) {
+      _ct_bs->verify_dirty_region(mr);
+    } else {
+      _ct_bs->verify_clean_region(mr);
+    }
+    return false;
+  }
+};
+#endif
 
 void G1CollectedHeap::cleanUpCardTable() {
   CardTableModRefBS* ct_bs = (CardTableModRefBS*) (barrier_set());
   double start = os::elapsedTime();
 
   // Iterate over the dirty cards region list.
-  G1ParCleanupCTTask cleanup_task(ct_bs, this);
+  G1ParCleanupCTTask cleanup_task(ct_bs, this,
+                                  _young_list->first_scan_only_region(),
+                                  _young_list->first_survivor_region());
   if (ParallelGCThreads > 0) {
     set_par_threads(workers()->total_workers());
     workers()->run_task(&cleanup_task);
@@ -4309,17 +4356,21 @@ void G1CollectedHeap::cleanUpCardTable() {
       }
       r->set_next_dirty_cards_region(NULL);
     }
+    // now, redirty the cards of the scan-only and survivor regions
+    // (it seemed faster to do it this way, instead of iterating over
+    // all regions and then clearing / dirtying as appropriate)
+    dirtyCardsForYoungRegions(ct_bs, _young_list->first_scan_only_region());
+    dirtyCardsForYoungRegions(ct_bs, _young_list->first_survivor_region());
   }
-  // now, redirty the cards of the scan-only and survivor regions
-  // (it seemed faster to do it this way, instead of iterating over
-  // all regions and then clearing / dirtying as appropriate)
-  dirtyCardsForYoungRegions(ct_bs, _young_list->first_scan_only_region());
-  dirtyCardsForYoungRegions(ct_bs, _young_list->first_survivor_region());
-
   double elapsed = os::elapsedTime() - start;
   g1_policy()->record_clear_ct_time( elapsed * 1000.0);
+#ifndef PRODUCT
+  if (G1VerifyCTCleanup || VerifyAfterGC) {
+    G1VerifyCardTableCleanup cleanup_verifier(ct_bs);
+    heap_region_iterate(&cleanup_verifier);
+  }
+#endif
 }
-
 
 void G1CollectedHeap::do_collection_pause_if_appropriate(size_t word_size) {
   if (g1_policy()->should_do_collection_pause(word_size)) {
