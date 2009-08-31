@@ -24,6 +24,7 @@
  */
 package org.jdesktop.synthdesigner.generator;
 
+import java.awt.Color;
 import org.jdesktop.swingx.designer.Canvas;
 import org.jdesktop.swingx.designer.font.Typeface;
 import org.jdesktop.swingx.designer.paint.Matte;
@@ -133,11 +134,7 @@ public class DefaultsGenerator {
 
     private static void writeColorPalette(StringBuilder uiDefaultInit, List<UIPaint> colors) {
         for (UIPaint color : colors) {
-            uiDefaultInit.append("        d.put(\"")
-                    .append(color.getName())
-                    .append("\",")
-                    .append(convertPaint(color.getValue()))
-                    .append(");\n");
+            writeMatte(color.getName(), (Matte)color.getValue(), uiDefaultInit);
         }
     }
 
@@ -255,12 +252,8 @@ public class DefaultsGenerator {
                             .append("));\n");
                     break;
                 case COLOR:
-                    uiDefaultInit.append("        d.put(\"")
-                            .append(prefix)
-                            .append(property.getName())
-                            .append("\", ")
-                            .append(convertPaint((Matte)property.getValue()))
-                            .append(");\n");
+                    writeMatte(prefix + property.getName(),
+                            (Matte) property.getValue(), uiDefaultInit);
                     break;
                 case FONT:
                     writeTypeFace(prefix.replace("\"", "\\\"") + property.getName(),
@@ -300,7 +293,7 @@ public class DefaultsGenerator {
 
     private static void writeMatte(String propertyName, Matte matte, StringBuilder uiDefaultInit) {
         if (matte==null) System.err.println("Error matte is NULL for ["+propertyName+"]");
-        uiDefaultInit.append("        d.put(\"")
+        uiDefaultInit.append("        addColor(d, \"")
                     .append(propertyName)
                     .append("\", ")
                     .append(convertPaint(matte))
@@ -605,27 +598,23 @@ public class DefaultsGenerator {
         return s.replace("\"", "\\\"");
     }
 
-    private static String convertPaint(PaintModel paint){
-        if (paint instanceof Matte){
-            Matte matte = (Matte)paint;
-            if (matte.isAbsolute()){
-                String colorParams = convert(matte.getColor());
-                if (matte.isUiResource()) {
-                    return "new ColorUIResource(" + colorParams + ")";
-                } else {
-                    return colorParams;
-                }
+    private static String convertPaint(PaintModel paint) {
+        if (paint instanceof Matte) {
+            Matte matte = (Matte) paint;
+            if (matte.isAbsolute()) {
+                Color c = matte.getColor();
+                return c.getRed()  + ", " + c.getGreen() + ", " +
+                       c.getBlue() + ", " + c.getAlpha();
             } else {
-                String s = "getDerivedColor(\"" +
-                            matte.getUiDefaultParentName()+"\","+
-                            matte.getHueOffset()+"f,"+matte.getSaturationOffset()+
-                            "f,"+matte.getBrightnessOffset()+"f,"+
-                            matte.getAlphaOffset();
-                if (matte.isUiResource()) {
-                    return s + ")";
-                } else {
-                    return s + ",false)";
+                String s = "\"" + matte.getUiDefaultParentName() + "\", " +
+                        matte.getHueOffset()        + "f, " +
+                        matte.getSaturationOffset() + "f, " +
+                        matte.getBrightnessOffset() + "f, " +
+                        matte.getAlphaOffset();
+                if (! matte.isUiResource()) {
+                    s += ", false";
                 }
+                return s;
             }
         } else {
             //TODO: What about gradients etc here?
