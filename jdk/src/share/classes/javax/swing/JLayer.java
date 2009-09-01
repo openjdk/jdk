@@ -178,7 +178,7 @@ public final class JLayer<V extends Component>
      * @return the {@code JLayer}'s view component
      *         or {@code null} if none exists
      *
-     * @see #setView(V)
+     * @see #setView(Component)
      */
     public V getView() {
         return view;
@@ -279,7 +279,7 @@ public final class JLayer<V extends Component>
      * @throws UnsupportedOperationException this method is not supported
      *
      * @see #setView(Component)
-     * @see #setGlassPane(Component)
+     * @see #setGlassPane(JPanel)
      */
     protected void addImpl(Component comp, Object constraints, int index) {
         throw new UnsupportedOperationException(
@@ -339,7 +339,7 @@ public final class JLayer<V extends Component>
      * @return false if {@code JLayer}'s {@code glassPane} is visible
      */
     public boolean isOptimizedDrawingEnabled() {
-        return !glassPane.isVisible();
+        return glassPane == null || !glassPane.isVisible();
     }
 
     /**
@@ -560,14 +560,20 @@ public final class JLayer<V extends Component>
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void addNotify() {
-        eventController.updateAWTEventListener(0, eventMask);
         super.addNotify();
+        eventController.updateAWTEventListener(0, eventMask);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void removeNotify() {
-        eventController.updateAWTEventListener(eventMask, 0);
         super.removeNotify();
+        eventController.updateAWTEventListener(eventMask, 0);
     }
 
     /**
