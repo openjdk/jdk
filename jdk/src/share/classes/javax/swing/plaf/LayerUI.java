@@ -222,6 +222,7 @@ public class LayerUI<V extends Component>
      * Returns an array of all the listeners which have been associated
      * with the named property.
      *
+     * @param propertyName  The name of the property being listened to
      * @return all of the {@code PropertyChangeListener}s associated with
      *         the named property; if no such listeners have been added or
      *         if {@code propertyName} is {@code null}, an empty
@@ -262,6 +263,7 @@ public class LayerUI<V extends Component>
     /**
      * Returns the preferred size of the viewport for a view component.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
      * @return the preferred size of the viewport for a view component
      * @see Scrollable#getPreferredScrollableViewportSize()
      */
@@ -277,6 +279,10 @@ public class LayerUI<V extends Component>
      * that display logical rows or columns in order to completely expose
      * one block of rows or columns, depending on the value of orientation.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
+     * @param visibleRect The view area visible within the viewport
+     * @param orientation Either SwingConstants.VERTICAL or SwingConstants.HORIZONTAL.
+     * @param direction Less than zero to scroll up/left, greater than zero for down/right.
      * @return the "block" increment for scrolling in the specified direction
      * @see Scrollable#getScrollableBlockIncrement(Rectangle, int, int)
      */
@@ -296,6 +302,7 @@ public class LayerUI<V extends Component>
      * determine the height of the layer, unless the preferred height
      * of the layer is smaller than the height of the viewport.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
      * @return whether the layer should track the height of the viewport
      * @see Scrollable#getScrollableTracksViewportHeight()
      */
@@ -311,6 +318,7 @@ public class LayerUI<V extends Component>
      * determine the width of the layer, unless the preferred width
      * of the layer is smaller than the width of the viewport.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
      * @return whether the layer should track the width of the viewport
      * @see Scrollable
      * @see LayerUI#getScrollableTracksViewportWidth(JLayer)
@@ -332,6 +340,10 @@ public class LayerUI<V extends Component>
      * Scrolling containers, like JScrollPane, will use this method
      * each time the user requests a unit scroll.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
+     * @param visibleRect The view area visible within the viewport
+     * @param orientation Either SwingConstants.VERTICAL or SwingConstants.HORIZONTAL.
+     * @param direction Less than zero to scroll up/left, greater than zero for down/right.
      * @return The "unit" increment for scrolling in the specified direction.
      *         This value should always be positive.
      * @see Scrollable#getScrollableUnitIncrement(Rectangle, int, int)
