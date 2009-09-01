@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,27 @@
 
 /*
  * @test
- * @bug     6476073
- * @summary Capture using super wildcard of type variables doesn't work
- * @compile T6476073.java
+ * @bug     6650759
+ * @summary Inference of formal type parameter (unused in formal parameters) is not performed
+ * @compile T6650759c.java
  */
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 
-public class T6476073 {
-    public static <B> void m(List<? super B> list,Collection<? super B> coll) {
-        m(list,coll);
-    }
+public class T6650759c {
+
+  static interface A {}
+
+  static interface B<X extends A> {}
+
+  static interface C<X extends A, Y extends B<X>> {}
+
+  public static <T extends A, U extends B<T>> Collection<C<T,U>> get(U u) {
+    return null;
+  }
+
+  public <T extends A, U extends B<T>> Collection<C<T,U>> test(U u) {
+    return Collections.unmodifiableCollection(get(u));
+  }
 }
