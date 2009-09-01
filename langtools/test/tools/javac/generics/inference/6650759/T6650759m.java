@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,25 @@
 
 /*
  * @test
- * @bug     6476073
- * @summary Capture using super wildcard of type variables doesn't work
- * @compile T6476073.java
+ * @bug     6650759
+ * @summary Inference of formal type parameter (unused in formal parameters) is not performed
+ * @compile/fail/ref=T6650759m.out T6650759m.java -XDrawDiagnostics
  */
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
-public class T6476073 {
-    public static <B> void m(List<? super B> list,Collection<? super B> coll) {
-        m(list,coll);
+class T6650759m {
+    <Z> List<? super Z> m(List<? extends List<? super Z>> ls) {
+        return ls.get(0);
+    }
+
+    void test() {
+        ArrayList<ArrayList<Integer>> lli = new ArrayList<ArrayList<Integer>>();
+        ArrayList<Integer> li = new ArrayList<Integer>();
+        li.add(2);
+        lli.add(li);
+        List<? super String> ls = m(lli); //here
+        ls.add("crash");
+        Integer i = li.get(1);
     }
 }

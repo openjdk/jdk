@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,23 @@
 
 /*
  * @test
- * @bug     6476073
- * @summary Capture using super wildcard of type variables doesn't work
- * @compile T6476073.java
+ * @bug     6650759
+ * @author  mcimadamore
+ * @summary Inference of formal type parameter (unused in formal parameters) is not performed
+ * @compile T6650759a.java
  */
 
-import java.util.Collection;
-import java.util.List;
+class T6650759a {
 
-public class T6476073 {
-    public static <B> void m(List<? super B> list,Collection<? super B> coll) {
-        m(list,coll);
+    public static interface Interface<T> { }
+    public static class IntegerInterface implements Interface<Integer> { }
+
+    <I extends Interface<T>, T> T getGenericValue(I test) { return null; }
+
+    void testSet(Integer test) { }
+
+    void test() {
+        Integer test = getGenericValue(new IntegerInterface());
+        testSet(getGenericValue(new IntegerInterface()));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,37 @@
 
 /*
  * @test
- * @bug     6476073
- * @summary Capture using super wildcard of type variables doesn't work
- * @compile T6476073.java
+ * @bug     6650759
+ * @summary Inference of formal type parameter (unused in formal parameters) is not performed
+ * @compile T6650759g.java
  */
 
-import java.util.Collection;
-import java.util.List;
+public class T6650759g {
 
-public class T6476073 {
-    public static <B> void m(List<? super B> list,Collection<? super B> coll) {
-        m(list,coll);
+    static abstract class A<X extends A<X>> {}
+
+    static abstract class B<X extends A<X>> {}
+
+    interface C<X, Y> {}
+
+    static abstract class D<X extends A<X>, Y extends B<X>> implements C<X, Y> {}
+
+    static class E extends A<E> {}
+
+    static class F extends B<E> {}
+
+    static void test(Iterable<E> data) {
+        m3(m2(data, m1(F.class)));
+    }
+
+    static <X extends A<X>, Y extends B<X>> D<X, Y> m1(Class<Y> c) {
+        return null;
+    }
+
+    static <U, V> Iterable<V> m2(Iterable<U> x1, C<? super U, ? extends V> x2) {
+        return null;
+    }
+
+    static void m3(Iterable<F> data) {
     }
 }
