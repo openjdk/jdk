@@ -48,6 +48,7 @@
  */
 static jfieldID findFirst_handle;
 static jfieldID findFirst_name;
+static jfieldID findFirst_attributes;
 
 static jfieldID findStream_handle;
 static jfieldID findStream_name;
@@ -134,6 +135,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     }
     findFirst_handle = (*env)->GetFieldID(env, clazz, "handle", "J");
     findFirst_name = (*env)->GetFieldID(env, clazz, "name", "Ljava/lang/String;");
+    findFirst_attributes = (*env)->GetFieldID(env, clazz, "attributes", "I");
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$FirstStream");
     if (clazz == NULL) {
@@ -371,6 +373,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstFile0(JNIEnv* env, jclass this,
             return;
         (*env)->SetLongField(env, obj, findFirst_handle, ptr_to_jlong(handle));
         (*env)->SetObjectField(env, obj, findFirst_name, name);
+        (*env)->SetIntField(env, obj, findFirst_attributes, data.dwFileAttributes);
     } else {
         throwWindowsException(env, GetLastError());
     }
@@ -387,7 +390,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstFile1(JNIEnv* env, jclass this,
     if (handle == INVALID_HANDLE_VALUE) {
         throwWindowsException(env, GetLastError());
     }
-        return ptr_to_jlong(handle);
+    return ptr_to_jlong(handle);
 }
 
 JNIEXPORT jstring JNICALL

@@ -30,8 +30,12 @@ package java.lang.annotation;
  * an annotation type that was added to the annotation type definition after
  * the annotation was compiled (or serialized).  This exception will not be
  * thrown if the new element has a default value.
+ * This exception can be thrown by the {@linkplain
+ * java.lang.reflect.AnnotatedElement API used to read annotations
+ * reflectively}.
  *
  * @author  Josh Bloch
+ * @see     java.lang.reflect.AnnotatedElement
  * @since 1.5
  */
 public class IncompleteAnnotationException extends RuntimeException {
