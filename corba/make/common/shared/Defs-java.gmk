@@ -55,9 +55,20 @@ else
     ADD_CLIENT_VM_OPTION = true
   endif
 endif
-JAVA_JVM_FLAGS =
+
+# Options for hotspot to turn off printing of options with fastdebug version
+#   and creating the hotspot.log file.
+JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS = \
+   -XX:-PrintVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-LogVMOutput
+
+# JVM options
+JAVA_JVM_FLAGS = $(JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS)
+
 ifeq ($(ADD_CLIENT_VM_OPTION), true)
   JAVA_JVM_FLAGS += -client
+endif
+ifdef USE_HOTSPOT_INTERPRETER_MODE
+  JAVA_JVM_FLAGS += -Xint
 endif
 
 # Various VM flags
@@ -100,7 +111,10 @@ JAVACFLAGS =
 ifeq ($(DEBUG_CLASSFILES),true)
   JAVACFLAGS += -g
 endif
-ifeq ($(COMPILER_WARNINGS_FATAL), true)
+ifeq ($(JAVAC_MAX_WARNINGS), true)
+  JAVACFLAGS  += -Xlint:all
+endif
+ifeq ($(JAVAC_WARNINGS_FATAL), true)
   JAVACFLAGS  += -Werror
 endif
 
@@ -108,7 +122,8 @@ NO_PROPRIETARY_API_WARNINGS = -XDignore.symbol.file=true
 JAVACFLAGS  += $(NO_PROPRIETARY_API_WARNINGS)
 
 # Add the source level
-LANGUAGE_VERSION = -source 7
+SOURCE_LANGUAGE_VERSION = 7
+LANGUAGE_VERSION = -source $(SOURCE_LANGUAGE_VERSION)
 JAVACFLAGS  += $(LANGUAGE_VERSION)
 
 # Add the class version we want
@@ -176,12 +191,17 @@ endif
 # The javac options supplied to the boot javac is limited. This compiler
 #   should only be used to build the 'make/tools' sources, which are not
 #   class files that end up in the classes directory.
-ifeq ($(COMPILER_WARNINGS_FATAL), true)
+ifeq ($(JAVAC_MAX_WARNINGS), true)
+  BOOT_JAVACFLAGS  += -Xlint:all
+endif
+ifeq ($(JAVAC_WARNINGS_FATAL), true)
   BOOT_JAVACFLAGS  += -Werror
 endif
+
 BOOT_SOURCE_LANGUAGE_VERSION = 6
 BOOT_TARGET_CLASS_VERSION = 6
 BOOT_JAVACFLAGS  += -encoding ascii -source $(BOOT_SOURCE_LANGUAGE_VERSION) -target $(BOOT_TARGET_CLASS_VERSION)
+BOOT_JAR_JFLAGS += $(JAR_JFLAGS)
 
 BOOT_JAVA_CMD      = $(BOOTDIR)/bin/java $(JAVA_TOOLS_FLAGS)
 BOOT_JAVAC_CMD     = $(BOOTDIR)/bin/javac $(JAVAC_JVM_FLAGS) $(BOOT_JAVACFLAGS)
