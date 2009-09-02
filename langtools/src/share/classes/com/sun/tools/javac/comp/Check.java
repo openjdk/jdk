@@ -60,8 +60,6 @@ public class Check {
     private final Log log;
     private final Symtab syms;
     private final Infer infer;
-    private final Target target;
-    private final Source source;
     private final Types types;
     private final JCDiagnostic.Factory diags;
     private final boolean skipAnnotations;
@@ -90,17 +88,19 @@ public class Check {
         this.types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Options options = Options.instance(context);
-        target = Target.instance(context);
-        source = Source.instance(context);
         lint = Lint.instance(context);
         treeinfo = TreeInfo.instance(context);
 
         Source source = Source.instance(context);
         allowGenerics = source.allowGenerics();
         allowAnnotations = source.allowAnnotations();
+        allowCovariantReturns = source.allowCovariantReturns();
         complexInference = options.get("-complexinference") != null;
         skipAnnotations = options.get("skipAnnotations") != null;
         warnOnSyntheticConflicts = options.get("warnOnSyntheticConflicts") != null;
+
+        Target target = Target.instance(context);
+        syntheticNameChar = target.syntheticNameChar();
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
@@ -123,9 +123,17 @@ public class Check {
      */
     boolean allowAnnotations;
 
+    /** Switch: covariant returns enabled?
+     */
+    boolean allowCovariantReturns;
+
     /** Switch: -complexinference option set?
      */
     boolean complexInference;
+
+    /** Character for synthetic names
+     */
+    char syntheticNameChar;
 
     /** A table mapping flat names of all compiled classes in this run to their
      *  symbols; maintained from outside.
@@ -343,7 +351,7 @@ public class Check {
         for (int i=1; ; i++) {
             Name flatname = names.
                 fromString("" + c.owner.enclClass().flatname +
-                           target.syntheticNameChar() + i +
+                           syntheticNameChar + i +
                            c.name);
             if (compiled.get(flatname) == null) return flatname;
         }
@@ -536,7 +544,7 @@ public class Check {
             while (args.nonEmpty()) {
                 if (args.head.tag == WILDCARD)
                     return typeTagError(pos,
-                                        log.getLocalizedString("type.req.exact"),
+                                        Log.getLocalizedString("type.req.exact"),
                                         args.head);
                 args = args.tail;
             }
@@ -794,8 +802,10 @@ public class Check {
                 this.specialized = false;
             };
 
+            @Override
             public void visitTree(JCTree tree) { /* no-op */ }
 
+            @Override
             public void visitVarDef(JCVariableDecl tree) {
                 if ((tree.mods.flags & ENUM) != 0) {
                     if (tree.init instanceof JCNewClass &&
@@ -867,10 +877,12 @@ public class Check {
      */
     class Validator extends JCTree.Visitor {
 
+        @Override
         public void visitTypeArray(JCArrayTypeTree tree) {
             validate(tree.elemtype, env);
         }
 
+        @Override
         public void visitTypeApply(JCTypeApply tree) {
             if (tree.type.tag == CLASS) {
                 List<Type> formals = tree.type.tsym.type.allparams();
@@ -930,6 +942,7 @@ public class Check {
             }
         }
 
+        @Override
         public void visitTypeParameter(JCTypeParameter tree) {
             validate(tree.bounds, env);
             checkClassBounds(tree.pos(), tree.type);
@@ -941,6 +954,7 @@ public class Check {
                 validate(tree.inner, env);
         }
 
+        @Override
         public void visitSelect(JCFieldAccess tree) {
             if (tree.type.tag == CLASS) {
                 visitSelectInternal(tree);
@@ -964,12 +978,14 @@ public class Check {
             }
         }
 
+        @Override
         public void visitAnnotatedType(JCAnnotatedType tree) {
             tree.underlyingType.accept(this);
         }
 
         /** Default visitor method: do nothing.
          */
+        @Override
         public void visitTree(JCTree tree) {
         }
 
@@ -1241,7 +1257,7 @@ public class Check {
         boolean resultTypesOK =
             types.returnTypeSubstitutable(mt, ot, otres, overrideWarner);
         if (!resultTypesOK) {
-            if (!source.allowCovariantReturns() &&
+            if (!allowCovariantReturns &&
                 m.owner != origin &&
                 m.owner.isSubClass(other.owner, types)) {
                 // allow limited interoperability with covariant returns
@@ -2349,6 +2365,7 @@ public class Check {
             this.expected = expected;
         }
 
+        @Override
         public void warnUnchecked() {
             boolean warned = this.warned;
             super.warnUnchecked();
