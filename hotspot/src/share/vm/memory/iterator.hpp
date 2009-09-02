@@ -25,6 +25,7 @@
 // The following classes are C++ `closures` for iterating over objects, roots and spaces
 
 class ReferenceProcessor;
+class DataLayout;
 
 // Closure provides abortability.
 
@@ -61,6 +62,12 @@ class OopClosure : public Closure {
   }
 
   virtual void remember_klass(Klass* k) { /* do nothing */ }
+
+  // In support of post-processing of weak references in
+  // ProfileData (MethodDataOop) objects; see, for example,
+  // VirtualCallData::oop_iterate().
+  virtual const bool should_remember_mdo() const { return false; }
+  virtual void remember_mdo(DataLayout* v) { /* do nothing */ }
 
   // If "true", invoke on nmethods (when scanning compiled frames).
   virtual const bool do_nmethods() const { return false; }

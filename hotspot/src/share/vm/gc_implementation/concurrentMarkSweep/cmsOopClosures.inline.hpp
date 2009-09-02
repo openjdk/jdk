@@ -51,11 +51,20 @@ void KlassRememberingOopClosure::remember_klass(Klass* k) {
   check_remember_klasses();
 }
 
+inline void PushOrMarkClosure::remember_mdo(DataLayout* v) {
+  // TBD
+}
+
+
 void Par_KlassRememberingOopClosure::remember_klass(Klass* k) {
   if (!_revisit_stack->par_push(oop(k))) {
-    fatal("Revisit stack overflow in PushOrMarkClosure");
+    fatal("Revisit stack overflow in Par_KlassRememberingOopClosure");
   }
   check_remember_klasses();
+}
+
+inline void Par_PushOrMarkClosure::remember_mdo(DataLayout* v) {
+  // TBD
 }
 
 inline void PushOrMarkClosure::do_yield_check() {

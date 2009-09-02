@@ -155,6 +155,12 @@ class PushAndMarkClosure: public KlassRememberingOopClosure {
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
+  // In support of class unloading
+  virtual const bool should_remember_mdo() const {
+    return false;
+    // return _should_remember_klasses;
+  }
+  virtual void remember_mdo(DataLayout* v);
 };
 
 // In the parallel case, the revisit stack, the bit map and the
@@ -185,6 +191,12 @@ class Par_PushAndMarkClosure: public Par_KlassRememberingOopClosure {
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
+  // In support of class unloading
+  virtual const bool should_remember_mdo() const {
+    return false;
+    // return _should_remember_klasses;
+  }
+  virtual void remember_mdo(DataLayout* v);
 };
 
 // The non-parallel version (the parallel version appears further below).
@@ -303,6 +315,13 @@ class PushOrMarkClosure: public KlassRememberingOopClosure {
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { PushOrMarkClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { PushOrMarkClosure::do_oop_work(p); }
+  // In support of class unloading
+  virtual const bool should_remember_mdo() const {
+    return false;
+    // return _should_remember_klasses;
+  }
+  virtual void remember_mdo(DataLayout* v);
+
   // Deal with a stack overflow condition
   void handle_stack_overflow(HeapWord* lost);
  private:
@@ -340,6 +359,13 @@ class Par_PushOrMarkClosure: public Par_KlassRememberingOopClosure {
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { Par_PushOrMarkClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { Par_PushOrMarkClosure::do_oop_work(p); }
+  // In support of class unloading
+  virtual const bool should_remember_mdo() const {
+    return false;
+    // return _should_remember_klasses;
+  }
+  virtual void remember_mdo(DataLayout* v);
+
   // Deal with a stack overflow condition
   void handle_stack_overflow(HeapWord* lost);
  private:
