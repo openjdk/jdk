@@ -56,11 +56,3 @@ ifndef USE_IMPLICITS
 %: %.sh
 endif
 
-#
-# If you are using RCS, you must set the variable USE_RCS at the make
-# command line. Otherwise we disable RCS.
-#
-ifndef USE_RCS
-%:: %,v
-%:: RCS/%,v
-endif
