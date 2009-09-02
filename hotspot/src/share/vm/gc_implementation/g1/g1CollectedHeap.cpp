@@ -5064,7 +5064,7 @@ bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
     return hr->is_in(p);
   }
 }
-#endif // PRODUCT
+#endif // !PRODUCT
 
 void G1CollectedHeap::g1_unimplemented() {
   // Unimplemented();

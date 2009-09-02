@@ -7632,6 +7632,14 @@ void Par_PushAndMarkClosure::do_oop(oop obj) {
 void Par_PushAndMarkClosure::do_oop(oop* p)       { Par_PushAndMarkClosure::do_oop_work(p); }
 void Par_PushAndMarkClosure::do_oop(narrowOop* p) { Par_PushAndMarkClosure::do_oop_work(p); }
 
+void PushAndMarkClosure::remember_mdo(DataLayout* v) {
+  // TBD
+}
+
+void Par_PushAndMarkClosure::remember_mdo(DataLayout* v) {
+  // TBD
+}
+
 void CMSPrecleanRefsYieldClosure::do_yield_work() {
   DEBUG_ONLY(RememberKlassesChecker mux(false);)
   Mutex* bml = _collector->bitMapLock();
