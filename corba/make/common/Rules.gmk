@@ -27,17 +27,9 @@
 #
 # Rules shared by all Java makefiles.
 #
-# Used to apply to source file $<, checks code conventions, issues warnings.
-define check-conventions
-  if [ "$(CONVENTION_WATCH)" = "true" ] ; then \
-    if [ "`$(CAT) -n -v -t $< | $(EGREP) -v '\@\(\#\)' | $(EGREP) '\^[MLI]'`" != "" ] ; then \
-      $(ECHO) "WARNING: File contains tabs, ^M, or ^L characters: $<"; \
-      if [ "$(CONVENTION_DETAILS)" = "true" ] ; then \
-        $(CAT) -n -v -t $< | $(EGREP) -v '\@\(\#\)' | $(EGREP) '\^[MLI]' ; \
-      fi; \
-    fi; \
-  fi
-endef
+
+# Used with wildcard to look into a java package for files (assumes max 5 deep)
+_WC_DIRS  = * */* */*/* */*/*/* */*/*/*/*
 
 # Make sure the default rule is all
 rules_default_rule: all
@@ -57,24 +49,16 @@ ALL_CLASSES_SRC = $(SHARE_SRC)/classes $(PLATFORM_SRC)/classes
 # If AUTO_FILES_PROPERTIES_DIRS used, automatically find properties files
 #
 ifdef AUTO_FILES_PROPERTIES_DIRS
-  AUTO_FILES_PROPERTIES_FILTERS1  = $(SCM_DIRs) 'X-*' '*-X-*' ',*'
-  AUTO_FILES_PROPERTIES_FILTERS1 += $(AUTO_PROPERTIES_PRUNE)
-  FILES_properties_find_filters1 = $(AUTO_FILES_PROPERTIES_FILTERS1:%=-name % -prune -o)
-  FILES_properties_auto1 := \
-     $(shell \
-        for dir in $(ALL_CLASSES_SRC) ; do \
-          if [ -d $$dir ] ; then \
-            ( $(CD) $$dir; \
-              for sdir in $(AUTO_FILES_PROPERTIES_DIRS); do \
-                if [ -d $$sdir ] ; then \
-                  $(FIND) $$sdir $(FILES_properties_find_filters1) \
-                                 -name '*.properties' -print ; \
-                fi ; \
-              done \
-            ); \
-          fi; \
-        done \
-      )
+  # Wildcard all possible properties files
+  _WC_PROP_FILES = $(patsubst %, %/*.properties, $(_WC_DIRS))
+  # Wildcard package directories for this Makefile
+  _AUTO_WC_PROP_FILES = $(foreach dir, $(AUTO_FILES_PROPERTIES_DIRS), \
+          $(patsubst %, $(dir)/%, $(_WC_PROP_FILES)) )
+  # Wildcard all source directories
+  _AUTO_WC_ALL_PROP_FILES1 = $(foreach dir, $(ALL_CLASSES_SRC), \
+          $(patsubst %, $(dir)/%,  $(_AUTO_WC_PROP_FILES)) )
+  # Find all files meeting this pattern
+  FILES_properties_auto1 := $(wildcard $(_AUTO_WC_ALL_PROP_FILES1))
 else
   FILES_properties_auto1 =
 endif # AUTO_FILES_PROPERTIES_DIRS
@@ -104,50 +88,25 @@ include $(TOPDIR)/make/common/internal/Resources.gmk
 #    might miss their generation.
 
 ifdef AUTO_FILES_JAVA_DIRS
-  # Filter out these files or directories
-  AUTO_FILES_JAVA_SOURCE_FILTERS1  = $(SCM_DIRs) 'X-*' '*-X-*' '*-template.java' ',*'
-  AUTO_FILES_JAVA_SOURCE_FILTERS2  = 
-  AUTO_FILES_JAVA_SOURCE_FILTERS1 += $(AUTO_JAVA_PRUNE)
-  AUTO_FILES_JAVA_SOURCE_FILTERS2 += $(AUTO_JAVA_PRUNE)
+  # Wildcard all possible java files
+  _WC_JAVA_FILES = $(patsubst %, %/*.java, $(_WC_DIRS))
+  # Wildcard package directories for this Makefile
+  _AUTO_WC_JAVA_FILES = $(foreach dir, $(AUTO_FILES_JAVA_DIRS), \
+          $(patsubst %, $(dir)/%, $(_WC_JAVA_FILES)) )
+  # Wildcard all source directories
+  _AUTO_WC_ALL_JAVA_FILES1 = $(foreach dir, $(ALL_CLASSES_SRC), \
+          $(patsubst %, $(dir)/%,  $(_AUTO_WC_JAVA_FILES)) )
+  # Find all files meeting this pattern
+  FILES_java_auto1 := $(wildcard $(_AUTO_WC_ALL_JAVA_FILES1))
 
-  # First list is the normal sources that should always be there,
-  #   by using the ':=', which means we do this processing once.
-  FILES_java_find_filters1 = $(AUTO_FILES_JAVA_SOURCE_FILTERS1:%=-name % -prune -o)
-  FILES_java_auto1 := \
-     $(shell \
-        for dir in $(ALL_CLASSES_SRC) ; do \
-          if [ -d $$dir ] ; then \
-            ( $(CD) $$dir; \
-              for sdir in $(AUTO_FILES_JAVA_DIRS); do \
-                if [ -d $$sdir ] ; then \
-                  $(FIND) $$sdir $(FILES_java_find_filters1) \
-                                 -name '*.java' -print ; \
-                fi ; \
-              done \
-            ); \
-          fi; \
-        done \
-      )
   # Second list is the generated sources that should be rare, but will likely
   #   show up late and we need to look for them at the last minute, so we
   #   cannot use the ':=' assigment here. But if this gets expanded multiple
   #   times, the if tests should make them relatively cheap.
-  FILES_java_find_filters2 = $(AUTO_FILES_JAVA_SOURCE_FILTERS2:%=-name % -prune -o)
-  FILES_java_auto2 = \
-     $(shell \
-        for dir in $(GENSRCDIR); do \
-          if [ -d $$dir ] ; then \
-            ( $(CD) $$dir; \
-              for sdir in $(AUTO_FILES_JAVA_DIRS); do \
-                if [ -d $$sdir ] ; then \
-                  $(FIND) $$sdir $(FILES_java_find_filters2) \
-                                 -name '*.java' -print ; \
-                fi ; \
-              done \
-            ); \
-          fi; \
-        done \
-      )
+  # Wildcard the generated source directories
+  _AUTO_WC_ALL_JAVA_FILES2 = $(patsubst %, $(GENSRCDIR)/%, $(_AUTO_WC_JAVA_FILES))
+  # Find all files meeting this pattern
+  FILES_java_auto2 = $(wildcard $(_AUTO_WC_ALL_JAVA_FILES2))
 else
   FILES_java_auto1 =
   FILES_java_auto2 =
@@ -162,7 +121,6 @@ JAVA_SOURCE_LIST=$(TEMPDIR)/.classes.list
 # Add a java source to the list
 define add-java-file
 $(ECHO) "$?" >> $(JAVA_SOURCE_LIST)
-$(check-conventions)
 endef
 
 $(CLASSDESTDIR)/%.class: $(GENSRCDIR)/%.java
@@ -197,11 +155,7 @@ JAVAC_PREFER_SOURCE = -Xprefer:source
 
 .compile.classlist : $(JAVA_SOURCE_LIST)
 	@$(MKDIR) -p $(CLASSDESTDIR)
-	@if [ `$(CAT) $(JAVA_SOURCE_LIST) | $(WC) -l` -ge 1 ] ; then \
-	  $(ECHO) "# Java sources to be compiled: (listed in file $(JAVA_SOURCE_LIST))"; \
-	  $(CAT) $(JAVA_SOURCE_LIST); \
-	  $(ECHO) "# Running javac:"; \
-	  $(ECHO) $(JAVAC_CMD) $(JAVAC_PREFER_SOURCE) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
+	if [ -s $(JAVA_SOURCE_LIST) ] ; then \
 	  $(JAVAC_CMD) $(JAVAC_PREFER_SOURCE) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
 	fi
 	@$(java-vm-cleanup)
@@ -220,10 +174,7 @@ endif
 packages.clean:
 ifeq ($(DONT_CLOBBER_CLASSES),false)
   ifdef AUTO_FILES_JAVA_DIRS
-	@for sdir in $(AUTO_FILES_JAVA_DIRS); do \
-	  $(ECHO) "$(RM) -r $(CLASSDESTDIR)/$$sdir"; \
-	  $(RM) -r $(CLASSDESTDIR)/$$sdir; \
-        done
+	$(RM) -r $(patsubst %, $(CLASSDESTDIR)/%, $(AUTO_FILES_JAVA_DIRS))
   else
 	$(RM) -r $(CLASSDESTDIR)/$(PKGDIR)
   endif
@@ -259,15 +210,13 @@ classheaders: classes $(CLASSHDR_DOTFILE)
 
 $(CLASSHDR_DOTFILE): $(CLASSES_export)
 	$(prep-target)
-	@$(ECHO) "# Running javah:"
 	$(JAVAH_CMD) -d $(CLASSHDRDIR)/ \
 		$(CLASSES.export) $(subst $$,\$$,$(EXPORTED_inner))
 	@$(java-vm-cleanup)
 	@$(TOUCH) $@
 
 classheaders.clean:
-	$(RM) $(CLASSHDR_DOTFILE)
-	$(RM) -r $(CLASSHDRDIR)
+	$(RM) -r $(CLASSHDRDIR) $(CLASSHDR_DOTFILE)
 
 else # FILES_export
 

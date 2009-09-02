@@ -1,5 +1,5 @@
 #
-# Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,29 @@
 #
 
 # Input: BUILDDIR PACKAGE PKGDIR PROGRAM BUILDTOOL_SOURCE_ROOT BUILDTOOL_MAIN
- 
+
+# All subdirectories under the package root for the tool (max depth 4)
+_WC_DIRS          = * */* */*/* */*/*/*
+
 BUILDTOOL_MAIN_SOURCE_FILE = $(BUILDTOOL_SOURCE_ROOT)/$(BUILDTOOL_MAIN)
 BUILDTOOL_MANIFEST_FILE    = $(BUILDTOOLCLASSDIR)/$(PROGRAM)_manifest.mf
 BUILDTOOL_JAR_FILE         = $(BUILDTOOLJARDIR)/$(PROGRAM).jar
-BUILDTOOL_ALL_FILES       := $(shell $(CD) $(BUILDTOOL_SOURCE_ROOT) \
-    && $(FIND) $(PKGDIR) $(SCM_DIRS_prune) -o -type f -print)
-BUILTTOOL_MAINCLASS = $(subst /,.,$(BUILDTOOL_MAIN:%.java=%))
+BUILTTOOL_MAINCLASS        = $(subst /,.,$(BUILDTOOL_MAIN:%.java=%))
 
-all build: $(BUILDTOOL_JAR_FILE) tool_info
+# Wildcard patterns that find all the sources for this build tool
+BUILDTOOL_WC_PATTERNS      = $(BUILDTOOL_SOURCE_ROOT)/$(PKGDIR)/*.java \
+    $(patsubst %, $(BUILDTOOL_SOURCE_ROOT)/$(PKGDIR)/%/*.java, $(_WC_DIRS))
+
+# Wildcard expansion that finds all the files
+BUILDTOOL_SRC_FILES       := $(wildcard $(BUILDTOOL_WC_PATTERNS))
+
+all build: $(BUILDTOOL_JAR_FILE)
 
 $(BUILDTOOL_MANIFEST_FILE): $(BUILDTOOL_MAIN_SOURCE_FILE)
 	@$(prep-target)
 	$(ECHO) "Main-Class: $(BUILTTOOL_MAINCLASS)" > $@
 
-$(BUILDTOOL_JAR_FILE): $(BUILDTOOL_MANIFEST_FILE) \
-    $(BUILDTOOL_ALL_FILES:%=$(BUILDTOOL_SOURCE_ROOT)/%)
+$(BUILDTOOL_JAR_FILE): $(BUILDTOOL_MANIFEST_FILE) $(BUILDTOOL_SRC_FILES)
 	@$(prep-target)
 	@$(MKDIR) -p $(BUILDTOOLCLASSDIR)
 	$(BOOT_JAVAC_CMD) -d $(BUILDTOOLCLASSDIR) \
@@ -49,23 +56,8 @@ $(BUILDTOOL_JAR_FILE): $(BUILDTOOL_MANIFEST_FILE) \
 	    $(JAR_JFLAGS) || $(RM) $@
 	@$(java-vm-cleanup)
 
-# Printing out a build tool information line
-define printBuildToolSetting
-if [ "$2" != "" ] ; then $(PRINTF) "%-25s %s\n" "$1:" "$2"; fi
-endef
-
-# Print out the build tool information
-tool_info:
-	@$(ECHO) "========================================================="
-	@$(call printBuildToolSetting,BUILDTOOL,$(PROGRAM))
-	@$(call printBuildToolSetting,PACKAGE,$(PACKAGE))
-	@$(call printBuildToolSetting,BUILDTOOL_SOURCE_ROOT,$(BUILDTOOL_SOURCE_ROOT))
-	@$(call printBuildToolSetting,BUILTTOOL_MAINCLASS,$(BUILTTOOL_MAINCLASS))
-	@$(call printBuildToolSetting,BUILDTOOL_JAR_FILE,$(BUILDTOOL_JAR_FILE))
-	@$(ECHO) "========================================================="
-
 clean clobber::
-	$(RM) -r $(BUILDTOOLCLASSDIR)/$(PKGDIR)
-	$(RM) $(BUILDTOOL_MANIFEST_FILE)
-	$(RM) $(BUILDTOOL_JAR_FILE)
+	$(RM) -r $(BUILDTOOLCLASSDIR)/$(PKGDIR) \
+                 $(BUILDTOOL_MANIFEST_FILE) \
+                 $(BUILDTOOL_JAR_FILE)
 
