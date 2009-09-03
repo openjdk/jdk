@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.reflect;
 
 import java.lang.reflect.Field;
@@ -42,11 +43,13 @@ import com.sun.xml.internal.bind.api.AccessorException;
 import com.sun.xml.internal.bind.api.JAXBRIContext;
 import com.sun.xml.internal.bind.v2.model.core.Adapter;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
+import com.sun.xml.internal.bind.v2.model.impl.RuntimeModelBuilder;
 import com.sun.xml.internal.bind.v2.runtime.reflect.opt.OptimizedAccessorFactory;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Receiver;
 import com.sun.xml.internal.bind.v2.runtime.unmarshaller.UnmarshallingContext;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
+import com.sun.istack.internal.Nullable;
 
 import org.xml.sax.SAXException;
 
@@ -84,10 +87,11 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
      *
      * @param context
      *      The {@link JAXBContextImpl} that owns the whole thing.
+     *      (See {@link RuntimeModelBuilder#context}.)
      * @return
      *      At least the implementation can return <tt>this</tt>.
      */
-    public Accessor<BeanT,ValueT> optimize(JAXBContextImpl context) {
+    public Accessor<BeanT,ValueT> optimize(@Nullable JAXBContextImpl context) {
         return this;
     }
 
@@ -156,6 +160,9 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
             set((BeanT)state.target,(ValueT)o);
         } catch (AccessorException e) {
             Loader.handleGenericException(e,true);
+        } catch (IllegalAccessError iae) {
+            // throw UnmarshalException instead IllegalAccesssError | Issue 475
+            Loader.handleGenericError(iae);
         }
     }
 
@@ -189,8 +196,6 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
 
         private static final Logger logger = Util.getClassLogger();
 
-        // TODO: revisit. this is a security hole because this method can be used by anyone
-        // to enable access to a field.
         public FieldReflection(Field f) {
             super((Class<ValueT>)f.getType());
             this.f = f;
@@ -198,6 +203,9 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
             int mod = f.getModifiers();
             if(!Modifier.isPublic(mod) || Modifier.isFinal(mod) || !Modifier.isPublic(f.getDeclaringClass().getModifiers())) {
                 try {
+                    // attempt to make it accessible, but do so in the security context of the calling application.
+                    // don't do this in the doPrivilege block, as that would create a security hole for anyone
+                    // to make any field accessible.
                     f.setAccessible(true);
                 } catch( SecurityException e ) {
                     if(!accessWarned)
@@ -231,7 +239,7 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
 
         @Override
         public Accessor<BeanT,ValueT> optimize(JAXBContextImpl context) {
-            if(context.fastBoot)
+            if(context!=null && context.fastBoot)
                 // let's not waste time on doing this for the sake of faster boot.
                 return this;
             Accessor<BeanT,ValueT> acc = OptimizedAccessorFactory.get(f);
@@ -343,7 +351,7 @@ public abstract class Accessor<BeanT,ValueT> implements Receiver {
             if(getter==null || setter==null)
                 // if we aren't complete, OptimizedAccessor won't always work
                 return this;
-            if(context.fastBoot)
+            if(context!=null && context.fastBoot)
                 // let's not waste time on doing this for the sake of faster boot.
                 return this;
 

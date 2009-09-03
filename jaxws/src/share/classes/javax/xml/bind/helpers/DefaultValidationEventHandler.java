@@ -48,7 +48,7 @@ import java.net.URL;
  * {@link javax.xml.bind.Marshaller}.
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li></ul>
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  * @see javax.xml.bind.Unmarshaller
  * @see javax.xml.bind.Validator
  * @see javax.xml.bind.ValidationEventHandler

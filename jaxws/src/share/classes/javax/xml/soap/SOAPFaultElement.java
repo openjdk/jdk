@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: SOAPFaultElement.java,v 1.4 2005/04/05 20:53:20 mk125090 Exp $
- * $Revision: 1.4 $
- * $Date: 2005/04/05 20:53:20 $
+ * $Id: SOAPFaultElement.java,v 1.5 2006/03/30 00:59:41 ofung Exp $
+ * $Revision: 1.5 $
+ * $Date: 2006/03/30 00:59:41 $
  */
 
 

@@ -198,6 +198,18 @@ public final class ClientMessages {
         return localizer.localize(localizableUNDEFINED_PORT_TYPE(arg0));
     }
 
+    public static Localizable localizableWSDL_CONTAINS_NO_SERVICE(Object arg0) {
+        return messageFactory.getMessage("wsdl.contains.no.service", arg0);
+    }
+
+    /**
+     * WSDL {0} contains no service definition.
+     *
+     */
+    public static String WSDL_CONTAINS_NO_SERVICE(Object arg0) {
+        return localizer.localize(localizableWSDL_CONTAINS_NO_SERVICE(arg0));
+    }
+
     public static Localizable localizableINVALID_SOAP_ACTION() {
         return messageFactory.getMessage("invalid.soap.action");
     }

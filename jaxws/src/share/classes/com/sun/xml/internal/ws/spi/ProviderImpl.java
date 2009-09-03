@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,15 @@ package com.sun.xml.internal.ws.spi;
 
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.WSService;
-import com.sun.xml.internal.ws.api.server.*;
-import com.sun.xml.internal.ws.api.server.Container;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.addressing.WSEndpointReference;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLService;
+import com.sun.xml.internal.ws.api.server.BoundEndpoint;
+import com.sun.xml.internal.ws.api.server.Container;
+import com.sun.xml.internal.ws.api.server.ContainerResolver;
+import com.sun.xml.internal.ws.api.server.Module;
+import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension;
 import com.sun.xml.internal.ws.client.WSServiceDelegate;
 import com.sun.xml.internal.ws.developer.MemberSubmissionEndpointReference;
@@ -51,7 +54,11 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.ws.*;
+import javax.xml.ws.Endpoint;
+import javax.xml.ws.EndpointReference;
+import javax.xml.ws.Service;
+import javax.xml.ws.WebServiceException;
+import javax.xml.ws.WebServiceFeature;
 import javax.xml.ws.spi.Provider;
 import javax.xml.ws.spi.ServiceDelegate;
 import javax.xml.ws.wsaddressing.W3CEndpointReference;
@@ -131,12 +138,12 @@ public class ProviderImpl extends Provider {
     }
 
     public W3CEndpointReference createW3CEndpointReference(String address, QName serviceName, QName portName, List<Element> metadata, String wsdlDocumentLocation, List<Element> referenceParameters) {
+        Container container = ContainerResolver.getInstance().getContainer();
         if (address == null) {
             if (serviceName == null || portName == null) {
                 throw new IllegalStateException(ProviderApiMessages.NULL_ADDRESS_SERVICE_ENDPOINT());
             } else {
                 //check if it is run in a Java EE Container and if so, get address using serviceName and portName
-                Container container = ContainerResolver.getInstance().getContainer();
                 Module module = container.getSPI(Module.class);
                 if (module != null) {
                     List<BoundEndpoint> beList = module.getBoundEndpoints();
@@ -168,7 +175,7 @@ public class ProviderImpl extends Provider {
 
                 URL wsdlLoc = new URL(wsdlDocumentLocation);
                 WSDLModelImpl wsdlDoc = RuntimeWSDLParser.parse(wsdlLoc, new StreamSource(wsdlLoc.toExternalForm()), er,
-                        false, ServiceFinder.find(WSDLParserExtension.class).toArray());
+                        false, container, ServiceFinder.find(WSDLParserExtension.class).toArray());
                 if (serviceName != null) {
                     WSDLService wsdlService = wsdlDoc.getService(serviceName);
                     if (wsdlService == null)

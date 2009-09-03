@@ -26,9 +26,7 @@
 package com.sun.xml.internal.ws.message;
 
 import com.sun.xml.internal.bind.api.Bridge;
-import com.sun.xml.internal.bind.api.BridgeContext;
 import com.sun.xml.internal.bind.unmarshaller.DOMScanner;
-import com.sun.xml.internal.messaging.saaj.packaging.mime.Header;
 import com.sun.xml.internal.ws.streaming.DOMStreamReader;
 import com.sun.xml.internal.ws.util.DOMUtil;
 import org.w3c.dom.Element;
@@ -47,7 +45,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 /**
- * {@link Header} implementation for a DOM.
+ * {@link com.sun.xml.internal.ws.api.message.Header} implementation for a DOM.
  *
  * @author Kohsuke Kawaguchi
  */

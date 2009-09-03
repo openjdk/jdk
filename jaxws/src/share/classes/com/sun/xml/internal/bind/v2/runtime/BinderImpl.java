@@ -151,6 +151,8 @@ public class BinderImpl<XmlNode> extends Binder<XmlNode> {
     }
 
     public XmlNode getXMLNode(Object jaxbObject) {
+        if(jaxbObject==null)
+            throw new IllegalArgumentException();
         AssociationMap.Entry<XmlNode> e = assoc.byPeer(jaxbObject);
         if(e==null)     return null;
         return e.element();

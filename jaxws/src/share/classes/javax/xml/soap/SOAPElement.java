@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: SOAPElement.java,v 1.19 2005/12/13 09:20:25 vj135062 Exp $
- * $Revision: 1.19 $
- * $Date: 2005/12/13 09:20:25 $
+ * $Id: SOAPElement.java,v 1.20 2006/03/30 00:59:40 ofung Exp $
+ * $Revision: 1.20 $
+ * $Date: 2006/03/30 00:59:40 $
  */
 
 

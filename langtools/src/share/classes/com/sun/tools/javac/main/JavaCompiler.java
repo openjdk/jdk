@@ -1207,6 +1207,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         return stopIfError(CompileState.FLOW, results);
     }
 
+    HashMap<Env<AttrContext>, Queue<Pair<Env<AttrContext>, JCClassDecl>>> desugaredEnvs =
+            new HashMap<Env<AttrContext>, Queue<Pair<Env<AttrContext>, JCClassDecl>>>();
+
     /**
      * Prepare attributed parse trees, in conjunction with their attribution contexts,
      * for source or code generation. If the file was not listed on the command line,
@@ -1222,10 +1225,17 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             return;
         }
 
+        if (compileStates.isDone(env, CompileState.LOWER)) {
+            results.addAll(desugaredEnvs.get(env));
+            return;
+        }
+
         /**
-         * As erasure (TransTypes) destroys information needed in flow analysis,
-         * including information in supertypes, we need to ensure that supertypes
-         * are processed through attribute and flow before subtypes are translated.
+         * Ensure that superclasses of C are desugared before C itself. This is
+         * required for two reasons: (i) as erasure (TransTypes) destroys
+         * information needed in flow analysis and (ii) as some checks carried
+         * out during lowering require that all synthetic fields/methods have
+         * already been added to C and its superclasses.
          */
         class ScanNested extends TreeScanner {
             Set<Env<AttrContext>> dependencies = new LinkedHashSet<Env<AttrContext>>();
@@ -1246,8 +1256,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         ScanNested scanner = new ScanNested();
         scanner.scan(env.tree);
         for (Env<AttrContext> dep: scanner.dependencies) {
-            if (!compileStates.isDone(dep, CompileState.FLOW))
-                flow(attribute(dep));
+        if (!compileStates.isDone(dep, CompileState.FLOW))
+            desugaredEnvs.put(dep, desugar(flow(attribute(dep))));
         }
 
         //We need to check for error another time as more classes might
@@ -1298,6 +1308,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 return;
 
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
+            compileStates.put(env, CompileState.TRANSTYPES);
 
             if (shouldStop(CompileState.LOWER))
                 return;
@@ -1315,6 +1326,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
             //translate out inner classes
             List<JCTree> cdefs = lower.translateTopLevelClass(env, env.tree, localMake);
+            compileStates.put(env, CompileState.LOWER);
 
             if (shouldStop(CompileState.LOWER))
                 return;
