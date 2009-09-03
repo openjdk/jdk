@@ -31,17 +31,18 @@ import javax.xml.bind.helpers.DefaultValidationEventHandler;
 import javax.xml.validation.ValidatorHandler;
 
 import com.sun.tools.internal.xjc.Options;
-import com.sun.tools.internal.xjc.SchemaCache;
 import com.sun.tools.internal.xjc.reader.Const;
 import com.sun.xml.internal.xsom.parser.AnnotationContext;
 import com.sun.xml.internal.xsom.parser.AnnotationParser;
 import com.sun.xml.internal.xsom.parser.AnnotationParserFactory;
+import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.XMLFilterImpl;
 
 /**
@@ -102,11 +103,22 @@ public class AnnotationParserFactoryImpl implements AnnotationParserFactory {
                             validator.setErrorHandler(errorHandler);
                             startForking(uri,localName,qName,atts,new ValidatorProtecter(validator));
                         }
+
+                        // check for xmime:expectedContentTypes attributes in annotations and report them
+                        for( int i=atts.getLength()-1; i>=0; i-- ) {
+                            if(atts.getURI(i).equals(WellKnownNamespace.XML_MIME_URI)
+                            && atts.getLocalName(i).equals(Const.EXPECTED_CONTENT_TYPES))
+                                errorHandler.warning(new SAXParseException(
+                                    com.sun.tools.internal.xjc.reader.xmlschema.Messages.format(
+                                        com.sun.tools.internal.xjc.reader.xmlschema.Messages.WARN_UNUSED_EXPECTED_CONTENT_TYPES),
+                                    getDocumentLocator()
+                                ));
+                        }
                     }
                 };
             }
 
-            public Object getResult( Object existing ) {
+            public BindInfo getResult( Object existing ) {
                 if(handler==null)
                     // interface contract violation.
                     // the getContentHandler method must have been called.

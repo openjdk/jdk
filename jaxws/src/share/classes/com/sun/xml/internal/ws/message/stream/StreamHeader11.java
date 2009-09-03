@@ -61,10 +61,10 @@ public class StreamHeader11 extends StreamHeader {
             final String namespaceURI = reader.getAttributeNamespace(i);
             final String value = reader.getAttributeValue(i);
 
-            if (namespaceURI == SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE) {
-                if (localName == SOAP_1_1_MUST_UNDERSTAND) {
+            if (SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE.equals(namespaceURI)) {
+                if (SOAP_1_1_MUST_UNDERSTAND.equals(localName)) {
                     _isMustUnderstand = Util.parseBool(value);
-                } else if (localName == SOAP_1_1_ROLE) {
+                } else if (SOAP_1_1_ROLE.equals(localName)) {
                     if (value != null && value.length() > 0) {
                         _role = value;
                     }

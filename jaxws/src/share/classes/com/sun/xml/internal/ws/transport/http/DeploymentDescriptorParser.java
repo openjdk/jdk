@@ -28,8 +28,8 @@ package com.sun.xml.internal.ws.transport.http;
 import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.WSBinding;
+import com.sun.xml.internal.ws.api.message.Packet;
 import com.sun.xml.internal.ws.api.server.Container;
-import com.sun.xml.internal.ws.api.server.InstanceResolver;
 import com.sun.xml.internal.ws.api.server.SDDocumentSource;
 import com.sun.xml.internal.ws.api.server.WSEndpoint;
 import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
@@ -74,7 +74,7 @@ import java.util.logging.Logger;
  * Parses {@code sun-jaxws.xml} into {@link WSEndpoint}.
  *
  * <p>
- * Since {@code sun-jaxws.xml} captures more information that what {@link WSEndpoint}
+ * Since {@code sun-jaxws.xml} captures more information than what {@link WSEndpoint}
  * represents (in particular URL pattern and name), this class
  * takes a parameterization 'A' so that the user of this parser can choose to
  * create another type that wraps {@link WSEndpoint}.
@@ -171,6 +171,8 @@ public class DeploymentDescriptorParser<A> {
         if (paths != null) {
             for (String path : paths) {
                 if (path.endsWith("/")) {
+                    if(path.endsWith("/CVS/") || path.endsWith("/.svn/"))
+                        continue;
                     collectDocs(path);
                 } else {
                     URL res = loader.getResource(path);
@@ -239,7 +241,7 @@ public class DeploymentDescriptorParser<A> {
             ensureNoContent(reader);
             WSEndpoint<?> endpoint = WSEndpoint.create(
                     implementorClass, !handlersSetInDD,
-                    InstanceResolver.createDefault(implementorClass).createInvoker(),
+                    null,
                     serviceName, portName, container, binding,
                     primaryWSDL, docs.values(), createEntityResolver(),false
             );
@@ -519,6 +521,7 @@ public class DeploymentDescriptorParser<A> {
                 name);
         }
     }
+
 
     /**
      * Loads the class of the given name.

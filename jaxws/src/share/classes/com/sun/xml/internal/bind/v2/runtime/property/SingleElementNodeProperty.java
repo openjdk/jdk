@@ -22,9 +22,11 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +35,6 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
 import com.sun.xml.internal.bind.api.AccessorException;
-import com.sun.xml.internal.bind.v2.util.QNameMap;
 import com.sun.xml.internal.bind.v2.model.core.PropertyKind;
 import com.sun.xml.internal.bind.v2.model.core.TypeRef;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeElementPropertyInfo;
@@ -43,12 +44,14 @@ import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.JaxBeanInfo;
 import com.sun.xml.internal.bind.v2.runtime.Name;
 import com.sun.xml.internal.bind.v2.runtime.XMLSerializer;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.ChildLoader;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader;
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.DefaultValueLoaderDecorator;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.ChildLoader;
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.DefaultValueLoaderDecorator;
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.Loader;
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader;
+import com.sun.xml.internal.bind.v2.util.QNameMap;
 
+import javax.xml.bind.JAXBElement;
 import org.xml.sax.SAXException;
 
 /**
@@ -111,7 +114,7 @@ final class SingleElementNodeProperty<BeanT,ValueT> extends PropertyImpl<BeanT> 
 
     public void serializeBody(BeanT o, XMLSerializer w, Object outerPeer) throws SAXException, AccessorException, IOException, XMLStreamException {
         ValueT v = acc.get(o);
-        if(v!=null) {
+        if (v!=null) {
             Class vtype = v.getClass();
             TagAndType tt=typeNames.get(vtype); // quick way that usually works
 
@@ -124,6 +127,7 @@ final class SingleElementNodeProperty<BeanT,ValueT> extends PropertyImpl<BeanT> 
                 }
             }
 
+            boolean addNilDecl = (o instanceof JAXBElement) && ((JAXBElement)o).isNil();
             if(tt==null) {
                 // actually this is an error, because the actual type was not a sub-type
                 // of any of the types specified in the annotations,
@@ -131,14 +135,13 @@ final class SingleElementNodeProperty<BeanT,ValueT> extends PropertyImpl<BeanT> 
                 // it's convenient to marshal this anyway (for example so that classes
                 // generated from simple types like String can be marshalled as expected.)
                 w.startElement(typeNames.values().iterator().next().tagName,null);
-                w.childAsXsiType(v,fieldName,w.grammar.getBeanInfo(Object.class));
+                w.childAsXsiType(v,fieldName,w.grammar.getBeanInfo(Object.class), addNilDecl && nillable);
             } else {
                 w.startElement(tt.tagName,null);
-                w.childAsXsiType(v,fieldName,tt.beanInfo);
+                w.childAsXsiType(v,fieldName,tt.beanInfo, addNilDecl && nillable);
             }
             w.endElement();
-        } else
-        if(nillable) {
+        } else if (nillable) {
             w.startElement(nullTagName,null);
             w.writeXsiNilTrue();
             w.endElement();
@@ -150,7 +153,9 @@ final class SingleElementNodeProperty<BeanT,ValueT> extends PropertyImpl<BeanT> 
 
         for (TypeRef<Type,Class> e : prop.getTypes()) {
             JaxBeanInfo bi = context.getOrCreate((RuntimeTypeInfo) e.getTarget());
-            Loader l = bi.getLoader(context,true);
+            // if the expected Java type is already final, type substitution won't really work anyway.
+            // this also traps cases like trying to substitute xsd:long element with xsi:type='xsd:int'
+            Loader l = bi.getLoader(context,!Modifier.isFinal(bi.jaxbType.getModifiers()));
             if(e.getDefaultValue()!=null)
                 l = new DefaultValueLoaderDecorator(l,e.getDefaultValue());
             if(nillable || chain.context.allNillable)

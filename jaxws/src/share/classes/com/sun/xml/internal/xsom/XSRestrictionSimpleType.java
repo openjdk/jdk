@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom;
 
 import java.util.Iterator;
@@ -40,6 +42,12 @@ public interface XSRestrictionSimpleType extends XSSimpleType {
     /** Iterates facets that are specified in this step of derivation. */
     public Iterator<XSFacet> iterateDeclaredFacets();
 
+    /**
+     * Gets all the facets that are declared on this restriction.
+     *
+     * @return
+     *      Can be empty but always non-null.
+     */
     public Collection<? extends XSFacet> getDeclaredFacets();
 
     /**

@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.property;
 
 import java.io.IOException;
@@ -150,7 +151,7 @@ abstract class ArrayElementProperty<BeanT,ListT,ItemT> extends ArrayERProperty<B
                         // for the purpose of simple type substitution, make it a non-error
 
                         w.startElement(typeMap.values().iterator().next().tagName,null);
-                        w.childAsXsiType(item,fieldName,w.grammar.getBeanInfo(Object.class));
+                        w.childAsXsiType(item,fieldName,w.grammar.getBeanInfo(Object.class), false);
                     } else {
                         w.startElement(tt.tagName,null);
                         serializeItem(tt.beanInfo,item,w);

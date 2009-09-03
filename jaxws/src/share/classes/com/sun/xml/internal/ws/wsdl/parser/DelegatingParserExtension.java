@@ -25,16 +25,7 @@
 
 package com.sun.xml.internal.ws.wsdl.parser;
 
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundPortType;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLFault;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLInput;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLMessage;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLOperation;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLOutput;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLPortType;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLService;
+import com.sun.xml.internal.ws.api.model.wsdl.*;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtension;
 import com.sun.xml.internal.ws.api.wsdl.parser.WSDLParserExtensionContext;
 
@@ -169,12 +160,12 @@ class DelegatingParserExtension extends WSDLParserExtension {
         core.bindingOperationOutputAttributes(operation, reader);
     }
 
-    public boolean bindingOperationFaultElements(WSDLBoundOperation operation, XMLStreamReader reader) {
-        return core.bindingOperationFaultElements(operation, reader);
+    public boolean bindingOperationFaultElements(WSDLBoundFault fault, XMLStreamReader reader) {
+        return core.bindingOperationFaultElements(fault, reader);
     }
 
-    public void bindingOperationFaultAttributes(WSDLBoundOperation operation, XMLStreamReader reader) {
-        core.bindingOperationFaultAttributes(operation, reader);
+    public void bindingOperationFaultAttributes(WSDLBoundFault fault, XMLStreamReader reader) {
+        core.bindingOperationFaultAttributes(fault, reader);
     }
 
     public void finished(WSDLParserExtensionContext context) {

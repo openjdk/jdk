@@ -22,29 +22,27 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: W3CAddressingWSDLGeneratorExtension.java,v 1.1.2.14 2007/03/15 07:22:13 ramapulavarthi Exp $
- */
 
 package com.sun.xml.internal.ws.wsdl.writer;
 
-import javax.xml.ws.Action;
-import javax.xml.ws.FaultAction;
-import javax.xml.ws.soap.AddressingFeature;
-
-import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.txw2.TypedXmlWriter;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.addressing.AddressingVersion;
 import com.sun.xml.internal.ws.api.model.CheckedException;
 import com.sun.xml.internal.ws.api.model.JavaMethod;
-import com.sun.xml.internal.ws.api.model.SEIModel;
-import com.sun.xml.internal.ws.api.server.Container;
-import com.sun.xml.internal.ws.api.wsdl.writer.WSDLGeneratorExtension;
 import com.sun.xml.internal.ws.api.wsdl.writer.WSDLGenExtnContext;
+import com.sun.xml.internal.ws.api.wsdl.writer.WSDLGeneratorExtension;
+
+import javax.xml.ws.Action;
+import javax.xml.ws.FaultAction;
+import javax.xml.ws.soap.AddressingFeature;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.logging.Logger;
 
 /**
  * @author Arun Gupta
+ * @author Rama Pulavarthi
  */
 public class W3CAddressingWSDLGeneratorExtension extends WSDLGeneratorExtension {
     private boolean enabled;
@@ -70,7 +68,36 @@ public class W3CAddressingWSDLGeneratorExtension extends WSDLGeneratorExtension 
         Action a = method.getSEIMethod().getAnnotation(Action.class);
         if (a != null && !a.input().equals("")) {
             addAttribute(input, a.input());
+        } else {
+            if (method.getBinding().getSOAPAction().equals("")) {
+                //hack: generate default action for interop with .Net3.0 when soapAction is non-empty
+                String defaultAction = getDefaultAction(method);
+                addAttribute(input, defaultAction);
+            }
         }
+    }
+
+    protected static final String getDefaultAction(JavaMethod method) {
+        String tns = method.getOwner().getTargetNamespace();
+        String delim = "/";
+        // TODO: is this the correct way to find the separator ?
+        try {
+            URI uri = new URI(tns);
+            if(uri.getScheme().equalsIgnoreCase("urn"))
+                delim = ":";
+        } catch (URISyntaxException e) {
+            LOGGER.warning("TargetNamespace of WebService is not a valid URI");
+        }
+        if (tns.endsWith(delim))
+            tns = tns.substring(0, tns.length() - 1);
+        //this assumes that fromjava case there won't be input name.
+        // if there is input name in future, then here name=inputName
+        //else use operation name as follows.
+        String name = (method.getMEP().isOneWay())?method.getOperationName():method.getOperationName()+"Request";
+
+        return new StringBuilder(tns).append(delim).append(
+                method.getOwner().getPortTypeName().getLocalPart()).append(
+                delim).append(name).toString();
     }
 
     @Override
@@ -124,4 +151,5 @@ public class W3CAddressingWSDLGeneratorExtension extends WSDLGeneratorExtension 
         }
         */
     }
+     private static final Logger LOGGER = Logger.getLogger(W3CAddressingWSDLGeneratorExtension.class.getName());
 }

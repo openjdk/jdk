@@ -35,11 +35,15 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.logging.Logger;
+import java.security.AccessController;
 
 /**
  * Factory for {@link XMLStreamReader}.
@@ -52,21 +56,20 @@ import java.net.URL;
  */
 public abstract class XMLStreamReaderFactory {
 
+    private static final Logger LOGGER = Logger.getLogger(XMLStreamReaderFactory.class.getName());
+
     /**
      * Singleton instance.
      */
     private static volatile @NotNull XMLStreamReaderFactory theInstance;
 
     static {
-        XMLInputFactory xif = XMLInputFactory.newInstance();
-        xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, true);
-        xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-
+        XMLInputFactory xif = getXMLInputFactory();
         XMLStreamReaderFactory f=null;
 
         // this system property can be used to disable the pooling altogether,
         // in case someone hits an issue with pooling in the production system.
-        if(!Boolean.getBoolean(XMLStreamReaderFactory.class.getName()+".noPool"))
+        if(!getProperty(XMLStreamReaderFactory.class.getName()+".noPool"))
             f = Zephyr.newInstance(xif);
 
         if(f==null) {
@@ -76,10 +79,29 @@ public abstract class XMLStreamReaderFactory {
         }
 
         if(f==null)
-            f = new Default(xif);
+            f = new Default();
 
         theInstance = f;
+        LOGGER.fine("XMLStreamReaderFactory instance is = "+theInstance);
     }
+
+    private static XMLInputFactory getXMLInputFactory() {
+        XMLInputFactory xif = null;
+        if (getProperty(XMLStreamReaderFactory.class.getName()+".woodstox")) {
+            try {
+                xif = (XMLInputFactory)Class.forName("com.ctc.wstx.stax.WstxInputFactory").newInstance();
+            } catch (Exception e) {
+                // Ignore and fallback to default XMLInputFactory
+            }
+        }
+        if (xif == null) {
+            xif = XMLInputFactory.newInstance();
+        }
+        xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, true);
+        xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        return xif;
+    }
+
 
     /**
      * Overrides the singleton {@link XMLStreamReaderFactory} instance that
@@ -117,6 +139,12 @@ public abstract class XMLStreamReaderFactory {
         return get().doCreate(systemId,in,rejectDTDs);
     }
 
+    public static XMLStreamReader create(@Nullable String systemId, InputStream in, @Nullable String encoding, boolean rejectDTDs) {
+        return (encoding == null)
+                ? create(systemId, in, rejectDTDs)
+                : get().doCreate(systemId,in,encoding,rejectDTDs);
+    }
+
     public static XMLStreamReader create(@Nullable String systemId, Reader reader, boolean rejectDTDs) {
         return get().doCreate(systemId,reader,rejectDTDs);
     }
@@ -151,6 +179,16 @@ public abstract class XMLStreamReaderFactory {
     // implementations
 
     public abstract XMLStreamReader doCreate(String systemId, InputStream in, boolean rejectDTDs);
+
+    private XMLStreamReader doCreate(String systemId, InputStream in, @NotNull String encoding, boolean rejectDTDs) {
+        Reader reader;
+        try {
+            reader = new InputStreamReader(in, encoding);
+        } catch(UnsupportedEncodingException ue) {
+            throw new XMLReaderException("stax.cantCreate", ue);
+        }
+        return doCreate(systemId, reader, rejectDTDs);
+    }
 
     public abstract XMLStreamReader doCreate(String systemId, Reader reader, boolean rejectDTDs);
 
@@ -200,10 +238,10 @@ public abstract class XMLStreamReaderFactory {
             // check if this is from Zephyr
             try {
                 Class<?> clazz = xif.createXMLStreamReader(new StringReader("<foo/>")).getClass();
-
-                if(!clazz.getName().startsWith("com.sun.xml.internal.stream."))
+                // JDK has different XMLStreamReader impl class. Even if we check for that,
+                // it doesn't have setInputSource(InputSource). Let it use Default
+                if(!(clazz.getName().startsWith("com.sun.xml.internal.stream.")) )
                     return null;    // nope
-
                 return new Zephyr(xif,clazz);
             } catch (NoSuchMethodException e) {
                 return null;    // this factory is not for zephyr
@@ -278,7 +316,11 @@ public abstract class XMLStreamReaderFactory {
             } catch (IllegalAccessException e) {
                 throw new XMLReaderException("stax.cantCreate",e);
             } catch (InvocationTargetException e) {
-                throw new XMLReaderException("stax.cantCreate",e);
+                Throwable cause = e.getCause();
+                if (cause == null) {
+                    cause = e;
+                }
+                throw new XMLReaderException("stax.cantCreate", cause);
             } catch (XMLStreamException e) {
                 throw new XMLReaderException("stax.cantCreate",e);
             }
@@ -295,21 +337,40 @@ public abstract class XMLStreamReaderFactory {
      * that can work with any {@link XMLInputFactory}.
      *
      * <p>
-     * {@link XMLInputFactory} is not required to be thread-safe, so the
-     * create method on this implementation is synchronized.
+     * {@link XMLInputFactory} is not required to be thread-safe, but
+     * if the create method on this implementation is synchronized,
+     * it may run into (see <a href="https://jax-ws.dev.java.net/issues/show_bug.cgi?id=555">
+     * race condition</a>). Hence, using a XMLInputFactory per theread.
      */
-    public static final class Default extends NoLock {
-        public Default(XMLInputFactory xif) {
-            super(xif);
+    public static final class Default extends XMLStreamReaderFactory {
+
+        private final ThreadLocal<XMLInputFactory> xif = new ThreadLocal<XMLInputFactory>() {
+            @Override
+            public XMLInputFactory initialValue() {
+                return getXMLInputFactory();
+            }
+        };
+
+        public XMLStreamReader doCreate(String systemId, InputStream in, boolean rejectDTDs) {
+            try {
+                return xif.get().createXMLStreamReader(systemId,in);
+            } catch (XMLStreamException e) {
+                throw new XMLReaderException("stax.cantCreate",e);
+            }
         }
 
-        public synchronized XMLStreamReader doCreate(String systemId, InputStream in, boolean rejectDTDs) {
-            return super.doCreate(systemId, in, rejectDTDs);
+        public XMLStreamReader doCreate(String systemId, Reader in, boolean rejectDTDs) {
+            try {
+                return xif.get().createXMLStreamReader(systemId,in);
+            } catch (XMLStreamException e) {
+                throw new XMLReaderException("stax.cantCreate",e);
+            }
         }
 
-        public synchronized XMLStreamReader doCreate(String systemId, Reader in, boolean rejectDTDs) {
-            return super.doCreate(systemId, in, rejectDTDs);
+        public void doRecycle(XMLStreamReader r) {
+            // there's no way to recycle with the default StAX API.
         }
+
     }
 
     /**
@@ -363,5 +424,17 @@ public abstract class XMLStreamReaderFactory {
         public XMLStreamReader doCreate(String systemId, Reader in, boolean rejectDTDs) {
             return super.doCreate(systemId, in, rejectDTDs);
         }
+    }
+
+    private static Boolean getProperty(final String prop) {
+        Boolean b = AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Boolean>() {
+                public Boolean run() {
+                    String value = System.getProperty(prop);
+                    return value != null ? Boolean.valueOf(value) : Boolean.FALSE;
+                }
+            }
+        );
+        return Boolean.FALSE;
     }
 }

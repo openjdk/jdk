@@ -402,7 +402,7 @@ import java.io.Reader;
  * </blockquote>
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
- * @version $Revision: 1.31 $ $Date: 2005/08/15 20:54:42 $
+ * @version $Revision: 1.32 $ $Date: 2005/08/18 15:18:26 $
  * @see JAXBContext
  * @see Marshaller
  * @see Validator

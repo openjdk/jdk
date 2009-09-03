@@ -25,16 +25,15 @@
 package com.sun.xml.internal.ws.model.wsdl;
 
 import com.sun.istack.internal.Nullable;
+import com.sun.istack.internal.NotNull;
 import com.sun.xml.internal.ws.api.model.ParameterBinding;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLOperation;
+import com.sun.xml.internal.ws.api.model.wsdl.*;
 
 import javax.jws.WebParam.Mode;
 import javax.jws.soap.SOAPBinding.Style;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Implementation of {@link WSDLBoundOperation}
@@ -63,6 +62,7 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
     private final Map<String, WSDLPartImpl> inParts;
     private final Map<String, WSDLPartImpl> outParts;
     private final Map<String, WSDLPartImpl> fltParts;
+    private final List<WSDLBoundFaultImpl> wsdlBoundFaults;
     private WSDLOperationImpl operation;
     private String soapAction;
     private ANONYMOUS anonymous;
@@ -85,6 +85,7 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
         inParts = new HashMap<String, WSDLPartImpl>();
         outParts = new HashMap<String, WSDLPartImpl>();
         fltParts = new HashMap<String, WSDLPartImpl>();
+        wsdlBoundFaults = new ArrayList<WSDLBoundFaultImpl>();
         this.owner = owner;
     }
 
@@ -100,14 +101,7 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
         this.soapAction = soapAction!=null?soapAction:"";
     }
 
-    /**
-     * Gets {@link com.sun.xml.internal.ws.api.model.wsdl.WSDLPart} for the given wsdl:input or wsdl:output part
-     *
-     * @param partName must be non-null
-     * @param mode     must be non-null
-     * @return null if no part is found
-     */
-    public WSDLPartImpl getPart(String partName, Mode mode){
+    public WSDLPartImpl getPart(String partName, Mode mode) {
         if(mode==Mode.IN){
             return inParts.get(partName);
         }else if(mode==Mode.OUT){
@@ -149,6 +143,25 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
     public Map<String, ParameterBinding> getFaultParts() {
         return faultParts;
     }
+
+    // TODO: what's the difference between this and inputParts/outputParts?
+    public Map<String,WSDLPart> getInParts() {
+        return Collections.<String,WSDLPart>unmodifiableMap(inParts);
+    }
+
+    public Map<String,WSDLPart> getOutParts() {
+        return Collections.<String,WSDLPart>unmodifiableMap(outParts);
+    }
+
+    @NotNull
+    public List<WSDLBoundFaultImpl> getFaults() {
+        return wsdlBoundFaults;
+    }
+
+    public void addFault(@NotNull WSDLBoundFaultImpl fault){
+        wsdlBoundFaults.add(fault);
+    }
+
 
     /**
      * Map of mime:content@part and the mime type from mime:content@type for wsdl:output
@@ -280,6 +293,11 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
         return operation;
     }
 
+
+    public WSDLBoundPortType getBoundPortType() {
+        return owner;
+    }
+
     public void setInputExplicitBodyParts(boolean b) {
         explicitInputSOAPBodyParts = b;
     }
@@ -297,32 +315,64 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
         this.style = style;
     }
 
-    public @Nullable QName getPayloadName() {
+    public @Nullable QName getReqPayloadName() {
+        if (emptyRequestPayload)
+            return null;
+
+        if (requestPayloadName != null)
+            return requestPayloadName;
+
         if(style.equals(Style.RPC)){
-            return name;
+            String ns = getRequestNamespace() != null ? getRequestNamespace() : name.getNamespaceURI();
+            requestPayloadName = new QName(ns, name.getLocalPart());
+            return requestPayloadName;
         }else{
-            if(emptyPayload)
-                return null;
-
-            if(payloadName != null)
-                return payloadName;
-
             QName inMsgName = operation.getInput().getMessage().getName();
             WSDLMessageImpl message = messages.get(inMsgName);
             for(WSDLPartImpl part:message.parts()){
                 ParameterBinding binding = getInputBinding(part.getName());
                 if(binding.isBody()){
-                    payloadName = part.getDescriptor().name();
-                    return payloadName;
+                    requestPayloadName = part.getDescriptor().name();
+                    return requestPayloadName;
                 }
             }
 
             //Its empty payload
-            emptyPayload = true;
+            emptyRequestPayload = true;
         }
         //empty body
         return null;
     }
+
+    public @Nullable QName getResPayloadName() {
+        if (emptyResponsePayload)
+            return null;
+
+        if (responsePayloadName != null)
+            return responsePayloadName;
+
+        if(style.equals(Style.RPC)){
+            String ns = getResponseNamespace() != null ? getResponseNamespace() : name.getNamespaceURI();
+            responsePayloadName = new QName(ns, name.getLocalPart()+"Response");
+            return responsePayloadName;
+        }else{
+            QName outMsgName = operation.getOutput().getMessage().getName();
+            WSDLMessageImpl message = messages.get(outMsgName);
+            for(WSDLPartImpl part:message.parts()){
+                ParameterBinding binding = getOutputBinding(part.getName());
+                if(binding.isBody()){
+                    responsePayloadName = part.getDescriptor().name();
+                    return responsePayloadName;
+                }
+            }
+
+            //Its empty payload
+            emptyResponsePayload = true;
+        }
+        //empty body
+        return null;
+    }
+
 
     private String reqNamespace;
     private String respNamespace;
@@ -334,7 +384,7 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
      * @see com.sun.xml.internal.ws.model.RuntimeModeler#processRpcMethod(com.sun.xml.internal.ws.model.JavaMethodImpl, String, javax.jws.WebMethod, String, java.lang.reflect.Method, javax.jws.WebService)
      */
     public String getRequestNamespace(){
-        return reqNamespace;
+        return (reqNamespace != null)?reqNamespace:name.getNamespaceURI();
     }
 
     public void setRequestNamespace(String ns){
@@ -349,7 +399,7 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
      *      * @see com.sun.xml.internal.ws.modeler.RuntimeModeler#processRpcMethod(com.sun.xml.internal.ws.model.JavaMethod, String, javax.jws.WebMethod, String, java.lang.reflect.Method, javax.jws.WebService)
      */
     public String getResponseNamespace(){
-        return respNamespace;
+        return (respNamespace!=null)?respNamespace:name.getNamespaceURI();
     }
 
     public void setResponseNamespace(String ns){
@@ -360,13 +410,18 @@ public final class WSDLBoundOperationImpl extends AbstractExtensibleImpl impleme
         return owner;
     }
 
-    private QName payloadName;
-    private boolean emptyPayload;
+    private QName requestPayloadName;
+    private QName responsePayloadName;
+    private boolean emptyRequestPayload;
+    private boolean emptyResponsePayload;
     private Map<QName, WSDLMessageImpl> messages;
 
     void freeze(WSDLModelImpl parent) {
         messages = parent.getMessages();
         operation = owner.getPortType().get(name.getLocalPart());
+        for(WSDLBoundFaultImpl bf : wsdlBoundFaults){
+            bf.freeze(this);
+        }
     }
 
     public void setAnonymous(ANONYMOUS anonymous) {

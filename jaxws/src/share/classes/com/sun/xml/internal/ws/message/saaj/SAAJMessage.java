@@ -26,15 +26,15 @@ package com.sun.xml.internal.ws.message.saaj;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.XMLStreamException2;
+import com.sun.istack.internal.Nullable;
+import com.sun.istack.internal.FragmentContentHandler;
 import com.sun.xml.internal.bind.api.Bridge;
 import com.sun.xml.internal.bind.unmarshaller.DOMScanner;
 import com.sun.xml.internal.ws.api.SOAPVersion;
-import com.sun.xml.internal.ws.api.message.Attachment;
-import com.sun.xml.internal.ws.api.message.AttachmentSet;
-import com.sun.xml.internal.ws.api.message.HeaderList;
-import com.sun.xml.internal.ws.api.message.Message;
-import com.sun.xml.internal.ws.api.message.Packet;
+import com.sun.xml.internal.ws.api.message.*;
 import com.sun.xml.internal.ws.message.AttachmentUnmarshallerImpl;
+import com.sun.xml.internal.ws.message.AbstractMessageImpl;
+import com.sun.xml.internal.ws.message.AttachmentSetImpl;
 import com.sun.xml.internal.ws.streaming.DOMStreamReader;
 import com.sun.xml.internal.ws.util.DOMUtil;
 import org.w3c.dom.Element;
@@ -42,6 +42,8 @@ import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.LocatorImpl;
 
 import javax.activation.DataHandler;
 import javax.xml.bind.JAXBException;
@@ -60,6 +62,7 @@ import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.ws.WebServiceException;
+import javax.xml.ws.soap.SOAPFaultException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -72,217 +75,287 @@ import java.util.Map;
  * {@link Message} implementation backed by {@link SOAPMessage}.
  *
  * @author Vivek Pandey
+ * @author Rama Pulavarthi
  */
 public class SAAJMessage extends Message {
+    // flag to switch between representations
+    private boolean parsedMessage;
+    // flag to check if Message API is exercised;
+    private boolean accessedMessage;
     private final SOAPMessage sm;
+
     private HeaderList headers;
-    private String payloadLocalName;
-    private String payloadNamspace;
     private List<Element> bodyParts;
     private Element payload;
 
-    private boolean parsedHeader;
+    private String payloadLocalName;
+    private String payloadNamespace;
+    private SOAPVersion soapVersion;
 
     public SAAJMessage(SOAPMessage sm) {
         this.sm = sm;
-
-        try {
-            Node body = sm.getSOAPBody();
-            //cature all the body elements
-            bodyParts = DOMUtil.getChildElements(body);
-
-            //we treat payload as the first body part
-            payload = bodyParts.size() > 0? bodyParts.get(0):null;
-            // hope this is correct. Caching the localname and namespace of the payload should be fine
-            // but what about if a Handler replaces the payload with something else? Weel, may be it
-            // will be error condition anyway
-            if (payload != null) {
-                payloadLocalName = payload.getLocalName();
-                payloadNamspace = payload.getNamespaceURI();
-            }
-        } catch (SOAPException e) {
-            throw new WebServiceException(e);
-        }
     }
 
     /**
      * This constructor is a convenience and called by the {@link #copy}
+     *
      * @param headers
      * @param sm
      */
     private SAAJMessage(HeaderList headers, AttachmentSet as, SOAPMessage sm) {
-        this(sm);
+        this.sm = sm;
+        this.parse();
+        if(headers == null)
+            headers = new HeaderList();
         this.headers = headers;
         this.attachmentSet = as;
     }
 
-    public boolean hasHeaders() {
-        return getHeaders().size() > 0;
+    private void parse() {
+        if (!parsedMessage) {
+            try {
+                access();
+                if (headers == null)
+                    headers = new HeaderList();
+                SOAPHeader header = sm.getSOAPHeader();
+                if (header != null) {
+                    Iterator iter = header.examineAllHeaderElements();
+                    while (iter.hasNext()) {
+                        headers.add(new SAAJHeader((SOAPHeaderElement) iter.next()));
+                    }
+                }
+                attachmentSet = new SAAJAttachmentSet(sm);
+
+                parsedMessage = true;
+            } catch (SOAPException e) {
+                throw new WebServiceException(e);
+            }
+        }
     }
 
-    /**
-     * Gets all the headers of this message.
-     *
-     * @return always return the same non-null object.
-     */
-    public HeaderList getHeaders() {
-        if (parsedHeader)
-            return headers;
-
-        if (headers == null)
-            headers = new HeaderList();
-
-        try {
-            SOAPHeader header = sm.getSOAPHeader();
-            if(header!=null) {
-                Iterator iter = header.examineAllHeaderElements();
-                while (iter.hasNext()) {
-                    headers.add(new SAAJHeader((SOAPHeaderElement) iter.next()));
+    private void access() {
+        if (!accessedMessage) {
+            try {
+                Node body = sm.getSOAPBody();
+                soapVersion = SOAPVersion.fromNsUri(body.getNamespaceURI());
+                //cature all the body elements
+                bodyParts = DOMUtil.getChildElements(body);
+                //we treat payload as the first body part
+                payload = bodyParts.size() > 0 ? bodyParts.get(0) : null;
+                // hope this is correct. Caching the localname and namespace of the payload should be fine
+                // but what about if a Handler replaces the payload with something else? Weel, may be it
+                // will be error condition anyway
+                if (payload != null) {
+                    payloadLocalName = payload.getLocalName();
+                    payloadNamespace = payload.getNamespaceURI();
                 }
+                accessedMessage = true;
+            } catch (SOAPException e) {
+                throw new WebServiceException(e);
             }
-            parsedHeader = true;
-        } catch (SOAPException e) {
-            e.printStackTrace();
         }
+    }
+
+    public boolean hasHeaders() {
+        parse();
+        return headers.size() > 0;
+    }
+
+    public @NotNull HeaderList getHeaders() {
+        parse();
         return headers;
     }
-
     /**
      * Gets the attachments of this message
      * (attachments live outside a message.)
      */
     @Override
-    @NotNull
-    public AttachmentSet getAttachments() {
-        if (attachmentSet == null)
-            attachmentSet = new SAAJAttachmentSet(sm);
+    public @NotNull AttachmentSet getAttachments() {
+        parse();
         return attachmentSet;
     }
 
+    /**
+     * Optimization hint for the derived class to check
+     * if we may have some attachments.
+     */
+    @Override
     protected boolean hasAttachments() {
-        return !getAttachments().isEmpty();
+        parse();
+        return attachmentSet!=null;
     }
 
-    /**
-     * Gets the local name of the payload element.
-     */
-    public String getPayloadLocalPart() {
+    public @Nullable String getPayloadLocalPart() {
+        access();
         return payloadLocalName;
     }
 
-    /**
-     * Gets the namespace URI of the payload element.
-     */
     public String getPayloadNamespaceURI() {
-        return payloadNamspace;
+        access();
+        return payloadNamespace;
     }
 
     public boolean hasPayload() {
-        return payloadNamspace!=null;
+        access();
+        return payloadNamespace != null;
     }
 
-    /**
-     * Consumes this message including the envelope.
-     * returns it as a {@link javax.xml.transform.Source} object.
-     */
     public Source readEnvelopeAsSource() {
         try {
-            SOAPEnvelope se = sm .getSOAPPart().getEnvelope();
-            return new DOMSource(se);
+            if (!parsedMessage) {
+                SOAPEnvelope se = sm.getSOAPPart().getEnvelope();
+                return new DOMSource(se);
+
+            } else {
+                SOAPMessage msg = soapVersion.saajMessageFactory.createMessage();
+                SOAPBody newBody = msg.getSOAPPart().getEnvelope().getBody();
+                for (Element part : bodyParts) {
+                    Node n = newBody.getOwnerDocument().importNode(part, true);
+                    newBody.appendChild(n);
+                }
+                for (Header header : headers) {
+                    header.writeTo(msg);
+                }
+                SOAPEnvelope se = msg.getSOAPPart().getEnvelope();
+                return new DOMSource(se);
+            }
         } catch (SOAPException e) {
             throw new WebServiceException(e);
         }
     }
 
-    /**
-     * Returns the payload as a {@link javax.xml.transform.Source} object.
-     *
-     * Can't really give all the body parts inside soapenv:Body as Source
-     * cant take only one part.
-     *
-     * <p/>
-     * This consumes the message.
-     */
+    public SOAPMessage readAsSOAPMessage() throws SOAPException {
+        if (!parsedMessage) {
+            return sm;
+        } else {
+            SOAPMessage msg = soapVersion.saajMessageFactory.createMessage();
+            SOAPBody newBody = msg.getSOAPPart().getEnvelope().getBody();
+            for (Element part : bodyParts) {
+                Node n = newBody.getOwnerDocument().importNode(part, true);
+                newBody.appendChild(n);
+            }
+            for (Header header : headers) {
+                header.writeTo(msg);
+            }
+            for (Attachment att : getAttachments()) {
+                AttachmentPart part = msg.createAttachmentPart();
+                part.setDataHandler(att.asDataHandler());
+                part.setContentId('<' + att.getContentId() + '>');
+                msg.addAttachmentPart(part);
+            }
+            msg.saveChanges();
+            return msg;
+        }
+    }
+
     public Source readPayloadAsSource() {
+        access();
         return (payload != null) ? new DOMSource(payload) : null;
     }
 
-    /**
-     * Creates the equivalent {@link javax.xml.soap.SOAPMessage} from this message.
-     * <p/>
-     * This consumes the message.
-     */
-    public SOAPMessage readAsSOAPMessage() {
-        return sm;
-    }
-
-    public SOAPMessage readAsSOAPMessage(Packet packet, boolean inbound) throws SOAPException {
-        return sm;
-    }
-
-    /**
-     * Reads the payload as a JAXB object by using the given unmarshaller.
-     * <p/>
-     * This consumes the message.
-     */
     public <T> T readPayloadAsJAXB(Unmarshaller unmarshaller) throws JAXBException {
-        try {
-            Node pn = sm.getSOAPBody().getFirstChild();
-            if (pn != null)
-                return (T) unmarshaller.unmarshal(pn);
-            return null;
-        } catch (SOAPException e) {
-            throw new WebServiceException(e);
+        access();
+        if (payload != null) {
+            if(hasAttachments())
+                unmarshaller.setAttachmentUnmarshaller(new AttachmentUnmarshallerImpl(getAttachments()));
+            return (T) unmarshaller.unmarshal(payload);
+
         }
+        return null;
     }
 
     public <T> T readPayloadAsJAXB(Bridge<T> bridge) throws JAXBException {
-        try {
-            Node pn = sm.getSOAPBody().getFirstChild();
-            if (pn != null)
-                return bridge.unmarshal(pn,
-                    new AttachmentUnmarshallerImpl(getAttachments()));
-            return null;
-        } catch (SOAPException e) {
-            throw new WebServiceException(e);
-        }
+        access();
+        if (payload != null)
+            return bridge.unmarshal(payload,hasAttachments()? new AttachmentUnmarshallerImpl(getAttachments()) : null);
+        return null;
     }
 
-    /**
-     * Reads the payload as a {@link javax.xml.stream.XMLStreamReader}
-     * <p/>
-     * This consumes the message.
-     */
     public XMLStreamReader readPayload() throws XMLStreamException {
-        if(payload==null)
-            return null;
-
-        DOMStreamReader dss = new DOMStreamReader();
-        dss.setCurrentNode(payload);
-        dss.nextTag();
-        assert dss.getEventType()==XMLStreamReader.START_ELEMENT;
-        return dss;
+        access();
+        if (payload != null) {
+            DOMStreamReader dss = new DOMStreamReader();
+            dss.setCurrentNode(payload);
+            dss.nextTag();
+            assert dss.getEventType() == XMLStreamReader.START_ELEMENT;
+            return dss;
+        }
+        return null;
     }
 
-    /**
-     * Writes the payload to StAX.
-     * <p/>
-     * This method writes just the payload of the message to the writer.
-     * This consumes the message.
-     */
-    public void writePayloadTo(XMLStreamWriter sw) {
+    public void writePayloadTo(XMLStreamWriter sw) throws XMLStreamException {
+        access();
         try {
-            for(Element part: bodyParts)
+            for (Element part : bodyParts)
                 DOMUtil.serializeNode(part, sw);
         } catch (XMLStreamException e) {
             throw new WebServiceException(e);
         }
     }
 
+    public void writeTo(XMLStreamWriter writer) throws XMLStreamException {
+        try {
+            writer.writeStartDocument();
+            if (!parsedMessage) {
+                DOMUtil.serializeNode(sm.getSOAPPart().getEnvelope(), writer);
+            } else {
+                SOAPEnvelope env = sm.getSOAPPart().getEnvelope();
+                DOMUtil.writeTagWithAttributes(env, writer);
+                if (hasHeaders()) {
+                    writer.writeStartElement(env.getPrefix(), "Header", env.getNamespaceURI());
+                    int len = headers.size();
+                    for (int i = 0; i < len; i++) {
+                        headers.get(i).writeTo(writer);
+                    }
+                    writer.writeEndElement();
+                }
+
+                DOMUtil.serializeNode(sm.getSOAPBody(), writer);
+                writer.writeEndElement();
+            }
+            writer.writeEndDocument();
+            writer.flush();
+        } catch (SOAPException ex) {
+            throw new XMLStreamException2(ex);
+            //for now. ask jaxws team what to do.
+        }
+    }
+
     public void writeTo(ContentHandler contentHandler, ErrorHandler errorHandler) throws SAXException {
+        String soapNsUri = soapVersion.nsUri;
+        if (!parsedMessage) {
+            DOMScanner ds = new DOMScanner();
+            ds.setContentHandler(contentHandler);
+            ds.scan(sm.getSOAPPart());
+        } else {
+            contentHandler.setDocumentLocator(NULL_LOCATOR);
+            contentHandler.startDocument();
+            contentHandler.startPrefixMapping("S", soapNsUri);
+            contentHandler.startElement(soapNsUri, "Envelope", "S:Envelope", EMPTY_ATTS);
+            if (hasHeaders()) {
+                contentHandler.startElement(soapNsUri, "Header", "S:Header", EMPTY_ATTS);
+                HeaderList headers = getHeaders();
+                int len = headers.size();
+                for (int i = 0; i < len; i++) {
+                    // shouldn't JDK be smart enough to use array-style indexing for this foreach!?
+                    headers.get(i).writeTo(contentHandler, errorHandler);
+                }
+                contentHandler.endElement(soapNsUri, "Header", "S:Header");
+            }
+            // write the body
+            contentHandler.startElement(soapNsUri, "Body", "S:Body", EMPTY_ATTS);
+            writePayloadTo(contentHandler, errorHandler, true);
+            contentHandler.endElement(soapNsUri, "Body", "S:Body");
+            contentHandler.endElement(soapNsUri, "Envelope", "S:Envelope");
+        }
+    }
+
+    private void writePayloadTo(ContentHandler contentHandler, ErrorHandler errorHandler, boolean fragment) throws SAXException {
+        if(fragment)
+            contentHandler = new FragmentContentHandler(contentHandler);
         DOMScanner ds = new DOMScanner();
         ds.setContentHandler(contentHandler);
-        ds.scan(sm.getSOAPPart());
+        ds.scan(payload);
     }
 
     /**
@@ -308,23 +381,27 @@ public class SAAJMessage extends Message {
      */
     public Message copy() {
         try {
-            SOAPBody sb = sm.getSOAPPart().getEnvelope().getBody();
-            SOAPMessage msg = SOAPVersion.fromNsUri(sb.getNamespaceURI()).saajMessageFactory.createMessage();
-            SOAPBody newBody = msg.getSOAPPart().getEnvelope().getBody();
-            for(Element part: bodyParts){
-                Node n = newBody.getOwnerDocument().importNode(part, true);
-                newBody.appendChild(n);
+            if (!parsedMessage) {
+                return new SAAJMessage(readAsSOAPMessage());
+            } else {
+                SOAPMessage msg = soapVersion.saajMessageFactory.createMessage();
+                SOAPBody newBody = msg.getSOAPPart().getEnvelope().getBody();
+                for (Element part : bodyParts) {
+                    Node n = newBody.getOwnerDocument().importNode(part, true);
+                    newBody.appendChild(n);
+                }
+                return new SAAJMessage(getHeaders(), getAttachments(), msg);
             }
-            return new SAAJMessage(getHeaders(), getAttachments(), msg);
         } catch (SOAPException e) {
             throw new WebServiceException(e);
         }
     }
-
+    private static final AttributesImpl EMPTY_ATTS = new AttributesImpl();
+    private static final LocatorImpl NULL_LOCATOR = new LocatorImpl();
 
     private class SAAJAttachment implements Attachment {
 
-        AttachmentPart ap;
+        final AttachmentPart ap;
 
         public SAAJAttachment(AttachmentPart part) {
             this.ap = part;
@@ -473,32 +550,6 @@ public class SAAJMessage extends Message {
         public void add(Attachment att) {
             attMap.put('<'+att.getContentId()+'>', att);
         }
-    }
-
-
-    public void writeTo( XMLStreamWriter writer ) throws XMLStreamException {
-        try {
-            writer.writeStartDocument();
-            SOAPEnvelope env = sm.getSOAPPart().getEnvelope();
-            DOMUtil.writeTagWithAttributes(env, writer);
-            if(hasHeaders()) {
-                writer.writeStartElement(env.getPrefix(),"Header",env.getNamespaceURI());
-                int len = headers.size();
-                for( int i=0; i<len; i++ ) {
-                    headers.get(i).writeTo(writer);
-                }
-                writer.writeEndElement();
-            }
-
-            DOMUtil.serializeNode(sm.getSOAPBody(),writer);
-            writer.writeEndElement();
-            writer.writeEndDocument();
-            writer.flush();
-        } catch (SOAPException ex) {
-            throw new XMLStreamException2(ex);
-            //for now. ask jaxws team what to do.
-        }
-
     }
 
 }

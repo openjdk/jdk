@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: GifDataContentHandler.java,v 1.2.2.1 2007/11/27 07:19:29 kumarjayanti Exp $
- * $Revision: 1.2.2.1 $
- * $Date: 2007/11/27 07:19:29 $
- */
 
 
 package com.sun.xml.internal.messaging.saaj.soap;
@@ -34,6 +29,7 @@ package com.sun.xml.internal.messaging.saaj.soap;
 import java.awt.datatransfer.DataFlavor;
 import java.io.*;
 import java.awt.*;
+
 import javax.activation.*;
 
 /**

@@ -73,12 +73,7 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     private static native void initIDs();
 
-    private static final boolean is98;
-
     static {
-        String osName = System.getProperty("os.name");
-        is98 = (osName != null && osName.startsWith("Windows 98"));
-
         initIDs();
     }
 
@@ -305,7 +300,6 @@ final class Win32ShellFolder2 extends ShellFolder {
             }, RuntimeException.class)
         );
         this.disposer.relativePIDL = relativePIDL;
-        getAbsolutePath();
         sun.java2d.Disposer.addRecord(this, disposer);
     }
 
@@ -616,11 +610,8 @@ final class Win32ShellFolder2 extends ShellFolder {
     public boolean isDirectory() {
         if (isDir == null) {
             // Folders with SFGAO_BROWSABLE have "shell extension" handlers and are
-            // not traversable in JFileChooser. An exception is "My Documents" on
-            // Windows 98.
-            if (hasAttribute(ATTRIB_FOLDER)
-                && (!hasAttribute(ATTRIB_BROWSABLE) ||
-                    (is98 && equals(Win32ShellFolderManager2.getPersonal())))) {
+            // not traversable in JFileChooser.
+            if (hasAttribute(ATTRIB_FOLDER) && !hasAttribute(ATTRIB_BROWSABLE)) {
                 isDir = Boolean.TRUE;
             } else if (isLink()) {
                 ShellFolder linkLocation = getLinkLocation(false);

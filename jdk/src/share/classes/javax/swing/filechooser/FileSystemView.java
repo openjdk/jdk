@@ -37,6 +37,8 @@ import java.util.Vector;
 import java.lang.ref.WeakReference;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import sun.awt.shell.*;
 
@@ -718,8 +720,13 @@ class WindowsFileSystemView extends FileSystemView {
         return isFileSystemRoot(dir);
     }
 
-    public boolean isFloppyDrive(File dir) {
-        String path = dir.getAbsolutePath();
+    public boolean isFloppyDrive(final File dir) {
+        String path = AccessController.doPrivileged(new PrivilegedAction<String>() {
+            public String run() {
+                return dir.getAbsolutePath();
+            }
+        });
+
         return (path != null && (path.equals("A:\\") || path.equals("B:\\")));
     }
 
