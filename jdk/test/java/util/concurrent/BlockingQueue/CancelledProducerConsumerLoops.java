@@ -75,10 +75,12 @@ public class CancelledProducerConsumerLoops {
    }
 
     static void oneRun(BlockingQueue<Integer> q, int npairs, int iters) throws Exception {
+        if (print)
+            System.out.printf("%-18s", q.getClass().getSimpleName());
         LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
         CyclicBarrier barrier = new CyclicBarrier(npairs * 2 + 1, timer);
-        Future[] prods = new Future[npairs];
-        Future[] cons = new Future[npairs];
+        Future<?>[] prods = new Future<?>[npairs];
+        Future<?>[] cons  = new Future<?>[npairs];
 
         for (int i = 0; i < npairs; ++i) {
             prods[i] = pool.submit(new Producer(q, barrier, iters));
@@ -119,21 +121,13 @@ public class CancelledProducerConsumerLoops {
 
     static void oneTest(int pairs, int iters) throws Exception {
 
-        if (print)
-            System.out.print("ArrayBlockingQueue      ");
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), pairs, iters);
-
-        if (print)
-            System.out.print("LinkedBlockingQueue     ");
         oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), pairs, iters);
-
-        if (print)
-            System.out.print("SynchronousQueue        ");
+        oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), pairs, iters);
+//         oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
         oneRun(new SynchronousQueue<Integer>(), pairs, iters / 8);
 
         /* PriorityBlockingQueue is unbounded
-        if (print)
-            System.out.print("PriorityBlockingQueue   ");
         oneRun(new PriorityBlockingQueue<Integer>(iters / 2 * pairs), pairs, iters / 4);
         */
     }
