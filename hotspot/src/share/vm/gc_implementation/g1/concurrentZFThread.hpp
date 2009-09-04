@@ -42,8 +42,6 @@ class ConcurrentZFThread: public ConcurrentGCThread {
   // Number of regions CFZ thread fills.
   static int _regions_filled;
 
-  COTracker _co_tracker;
-
   double _vtime_start;  // Initial virtual time.
 
   // These are static because the "print_summary_info" method is, and

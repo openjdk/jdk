@@ -297,15 +297,24 @@ class HeapRegion: public G1OffsetTableContigSpace {
   HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
              MemRegion mr, bool is_zeroed);
 
-  enum SomePublicConstants {
-    // HeapRegions are GrainBytes-aligned
-    // and have sizes that are multiples of GrainBytes.
-    LogOfHRGrainBytes = 20,
-    LogOfHRGrainWords = LogOfHRGrainBytes - LogHeapWordSize,
-    GrainBytes = 1 << LogOfHRGrainBytes,
-    GrainWords = 1 <<LogOfHRGrainWords,
-    MaxAge = 2, NoOfAges = MaxAge+1
-  };
+  static int LogOfHRGrainBytes;
+  static int LogOfHRGrainWords;
+  // The normal type of these should be size_t. However, they used to
+  // be members of an enum before and they are assumed by the
+  // compilers to be ints. To avoid going and fixing all their uses,
+  // I'm declaring them as ints. I'm not anticipating heap region
+  // sizes to reach anywhere near 2g, so using an int here is safe.
+  static int GrainBytes;
+  static int GrainWords;
+  static int CardsPerRegion;
+
+  // It sets up the heap region size (GrainBytes / GrainWords), as
+  // well as other related fields that are based on the heap region
+  // size (LogOfHRGrainBytes / LogOfHRGrainWords /
+  // CardsPerRegion). All those fields are considered constant
+  // throughout the JVM's execution, therefore they should only be set
+  // up once during initialization time.
+  static void setup_heap_region_size(uintx min_heap_size);
 
   enum ClaimValues {
     InitialClaimValue     = 0,
