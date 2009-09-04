@@ -114,6 +114,15 @@ class instanceKlass: public Klass {
     initialization_error                // error happened during initialization
   };
 
+  // smaller footprint for boolean flags
+  enum ClassFlags {
+    _noflags           = 0,             // initial value
+    _rewritten         = 0x00000001U,   // rewritten
+    _should_verify     = 0x00000002U,   // defineClass specified conditional verification
+    _has_nonstatic_fields = 0x00000004U, // for sizing with UseCompressedOops
+    _is_marked_dependent = 0x00000008U  // used for marking during flushing and deoptimization
+   };
+
  public:
   oop* oop_block_beg() const { return adr_array_klasses(); }
   oop* oop_block_end() const { return adr_methods_default_annotations() + 1; }
@@ -192,9 +201,7 @@ class instanceKlass: public Klass {
   int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
   int             _static_oop_field_size;// number of static oop fields in this klass
   int             _nonstatic_oop_map_size;// number of nonstatic oop-map blocks allocated at end of this klass
-  bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
-  bool            _rewritten;            // methods rewritten.
-  bool            _has_nonstatic_fields; // for sizing with UseCompressedOops
+  int             _class_flags;          // internal class state flags
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
   ClassState      _init_state;           // state of class
@@ -230,8 +237,8 @@ class instanceKlass: public Klass {
   friend class SystemDictionary;
 
  public:
-  bool has_nonstatic_fields() const        { return _has_nonstatic_fields; }
-  void set_has_nonstatic_fields(bool b)    { _has_nonstatic_fields = b; }
+  bool has_nonstatic_fields() const        { return (_class_flags & _has_nonstatic_fields) != 0; }
+  void set_has_nonstatic_fields()          { _class_flags |= _has_nonstatic_fields; }
 
   // field sizes
   int nonstatic_field_size() const         { return _nonstatic_field_size; }
@@ -338,11 +345,16 @@ class instanceKlass: public Klass {
   bool is_in_error_state() const           { return _init_state == initialization_error; }
   bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
   int  get_init_state()                    { return _init_state; } // Useful for debugging
-  bool is_rewritten() const                { return _rewritten; }
+  bool is_rewritten() const                { return (_class_flags & _rewritten) != 0; }
+
+  // defineClass specified verification
+  bool should_verify_class() const         { return (_class_flags & _should_verify) != 0; }
+  void set_should_verify_class()           { _class_flags |= _should_verify; }
 
   // marking
-  bool is_marked_dependent() const         { return _is_marked_dependent; }
-  void set_is_marked_dependent(bool value) { _is_marked_dependent = value; }
+  bool is_marked_dependent() const         { return (_class_flags & _is_marked_dependent) != 0; }
+  void set_is_marked_dependent()           { _class_flags |= _is_marked_dependent; }
+  void clear_is_marked_dependent()         { _class_flags &= ~_is_marked_dependent; }
 
   // initialization (virtuals from Klass)
   bool should_be_initialized() const;  // means that initialize should be called
@@ -715,7 +727,8 @@ private:
 #else
   void set_init_state(ClassState state) { _init_state = state; }
 #endif
-  void set_rewritten()                  { _rewritten = true; }
+  void clear_class_flags()              { _class_flags = _noflags; }
+  void set_rewritten()                  { _class_flags |= _rewritten; }
   void set_init_thread(Thread *thread)  { _init_thread = thread; }
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
