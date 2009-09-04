@@ -59,8 +59,10 @@ endif
 sponsors-build:
 ifeq ($(ARCH_DATA_MODEL), 32)
   ifeq ($(BUILD_SPONSORS), true)
+	@$(call MakeStart, sponsors, $(SPONSORS_BUILD_TARGETS))
 	($(CD) $(SPONSORS_TOPDIR)/make && \
-	 $(MAKE) $(SPONSORS_BUILD_TARGETS) $(SPONSORS_BUILD_ARGUMENTS))
+	  $(MAKE) $(SPONSORS_BUILD_TARGETS) $(SPONSORS_BUILD_ARGUMENTS))
+	@$(call MakeFinish, sponsors, $(SPONSORS_BUILD_TARGETS))
   endif
 endif
 

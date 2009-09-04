@@ -40,13 +40,17 @@ endif
 jaxws: jaxws-build
 jaxws-build:
 	$(MKDIR) -p $(JAXWS_OUTPUTDIR)
+	@$(call MakeStart, jaxws, all)
 	($(CD) $(JAXWS_TOPDIR)/make && \
 	 $(MAKE) $(JAXWS_BUILD_ARGUMENTS) all)
+	@$(call MakeFinish, jaxws, all)
 
 jaxws-clobber::
 	$(MKDIR) -p $(JAXWS_OUTPUTDIR)
+	@$(call MakeStart, jaxws, clobber)
 	($(CD) $(JAXWS_TOPDIR)/make &&  \
 	 $(MAKE) $(JAXWS_BUILD_ARGUMENTS) clobber)
+	@$(call MakeFinish, jaxws, clobber)
 
 .PHONY: jaxws jaxws-build jaxws-clobber
 

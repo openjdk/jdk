@@ -40,13 +40,17 @@ endif
 corba: corba-build
 corba-build:
 	$(MKDIR) -p $(CORBA_OUTPUTDIR)
+	@$(call MakeStart, corba, all)
 	($(CD) $(CORBA_TOPDIR)/make && \
 	 $(MAKE) $(CORBA_BUILD_ARGUMENTS) all)
+	@$(call MakeFinish, corba, all)
 
 corba-clobber::
 	$(MKDIR) -p $(CORBA_OUTPUTDIR)
+	@$(call MakeStart, corba, clobber)
 	($(CD) $(CORBA_TOPDIR)/make &&  \
 	 $(MAKE) $(CORBA_BUILD_ARGUMENTS) clobber)
+	@$(call MakeFinish, corba, clobber)
 
 .PHONY: corba corba-build corba-clobber 
 
