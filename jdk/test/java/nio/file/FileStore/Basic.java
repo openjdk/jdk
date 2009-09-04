@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6873621
  * @summary Unit test for java.nio.file.FileStore
  * @library ..
  */
@@ -67,6 +67,15 @@ public class Basic {
          * Test: File and FileStore attributes
          */
         assertTrue(store1.supportsFileAttributeView("basic"));
+        assertTrue(store1.supportsFileAttributeView(BasicFileAttributeView.class));
+        assertTrue(store1.supportsFileAttributeView("posix") ==
+            store1.supportsFileAttributeView(PosixFileAttributeView.class));
+        assertTrue(store1.supportsFileAttributeView("dos") ==
+            store1.supportsFileAttributeView(DosFileAttributeView.class));
+        assertTrue(store1.supportsFileAttributeView("acl") ==
+            store1.supportsFileAttributeView(AclFileAttributeView.class));
+        assertTrue(store1.supportsFileAttributeView("user") ==
+            store1.supportsFileAttributeView(UserDefinedFileAttributeView.class));
 
         /**
          * Test: Enumerate all FileStores

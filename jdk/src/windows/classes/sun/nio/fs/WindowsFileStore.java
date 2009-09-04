@@ -153,7 +153,7 @@ class WindowsFileStore
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
         if (type == null)
             throw new NullPointerException();
-        if (type == BasicFileAttributeView.class)
+        if (type == BasicFileAttributeView.class || type == DosFileAttributeView.class)
             return true;
         if (type == AclFileAttributeView.class || type == FileOwnerAttributeView.class)
             return ((volInfo.flags() & FILE_PERSISTENT_ACLS) != 0);
