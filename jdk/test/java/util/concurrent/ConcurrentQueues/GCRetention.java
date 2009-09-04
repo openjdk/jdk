@@ -41,8 +41,9 @@
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+// import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
@@ -69,20 +70,10 @@ public class GCRetention {
         queues.add(new PriorityBlockingQueue<Boolean>());
         queues.add(new PriorityQueue<Boolean>());
         queues.add(new LinkedList<Boolean>());
-
-        try {
-            queues.add((Queue<Boolean>)
-                       Class.forName("java.util.concurrent.LinkedTransferQueue")
-                       .newInstance());
-        } catch (IllegalAccessException e) {
-        } catch (InstantiationException e) {
-        } catch (ClassNotFoundException e) {
-            // OK; not yet added to JDK
-        }
+//         queues.add(new LinkedTransferQueue<Boolean>());
 
         // Following additional implementations are available from:
         // http://gee.cs.oswego.edu/dl/concurrency-interest/index.html
-        // queues.add(new LinkedTransferQueue<Boolean>());
         // queues.add(new SynchronizedLinkedListQueue<Boolean>());
 
         // Avoid "first fast, second slow" benchmark effect.

@@ -63,7 +63,8 @@ public class SingleProducerMultipleConsumerLoops {
         print = true;
 
         for (int i = 1; i <= maxConsumers; i += (i+1) >>> 1) {
-            System.out.println("Consumers:" + i);
+            System.out.println("----------------------------------------");
+            System.out.println("Consumers: " + i);
             oneTest(i, iters);
             Thread.sleep(100);
         }
@@ -73,28 +74,15 @@ public class SingleProducerMultipleConsumerLoops {
    }
 
     static void oneTest(int consumers, int iters) throws Exception {
-        if (print)
-            System.out.print("ArrayBlockingQueue      ");
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), consumers, iters);
-
-        if (print)
-            System.out.print("LinkedBlockingQueue     ");
         oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), consumers, iters);
-
-        if (print)
-            System.out.print("PriorityBlockingQueue   ");
+        oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), consumers, iters);
+//         oneRun(new LinkedTransferQueue<Integer>(), consumers, iters);
         oneRun(new PriorityBlockingQueue<Integer>(), consumers, iters);
-
-        if (print)
-            System.out.print("SynchronousQueue        ");
         oneRun(new SynchronousQueue<Integer>(), consumers, iters);
-
         if (print)
-            System.out.print("SynchronousQueue(fair)  ");
+            System.out.println("fair implementations:");
         oneRun(new SynchronousQueue<Integer>(true), consumers, iters);
-
-        if (print)
-            System.out.print("ArrayBlockingQueue(fair)");
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY, true), consumers, iters);
     }
 
@@ -163,6 +151,8 @@ public class SingleProducerMultipleConsumerLoops {
     }
 
     static void oneRun(BlockingQueue<Integer> q, int nconsumers, int iters) throws Exception {
+        if (print)
+            System.out.printf("%-18s", q.getClass().getSimpleName());
         LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
         CyclicBarrier barrier = new CyclicBarrier(nconsumers + 2, timer);
         pool.execute(new Producer(q, barrier, iters * nconsumers));
