@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,32 @@
 
 /*
  * @test
- * @bug 4491755 4785453
- * @summary Prob w/static inner class with same name as a regular class
- * @author gafter
- *
- * @run shell Driver.sh
+ * @bug     6650759
+ * @summary Inference of formal type parameter (unused in formal parameters) is not performed
+ * @compile T6650759j.java
  */
 
-// this is not a real source file, just the tags to run this test.
+public class T6650759j {
+
+    static abstract class A<X extends A<X>> {}
+
+    static abstract class B<X extends B<X, Y>, Y> extends A<X> {}
+
+    static abstract class C<X extends C<X, Y>, Y> extends B<X, Y> {}
+
+    interface D {}
+
+    static class E extends C<E, D> {}
+
+    static abstract class F<X extends F<X, Y>, Y extends A<Y>> extends A<X> {}
+
+    static class G extends F<G, E> {}
+
+    static <X extends F<X, Y>, Y extends A<Y>> X m(Iterable<X> it) {
+        return null;
+    }
+
+    static G test(Iterable<G> c) {
+        return m(c);
+    }
+}

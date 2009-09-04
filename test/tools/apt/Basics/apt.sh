@@ -33,12 +33,11 @@
 
 OS=`uname -s`;
 case "${OS}" in
-        Windows* | CYGWIN* )
-                SEP=";"
+        CYGWIN* )
+                DIFFOPTS="--strip-trailing-cr"
         ;;
 
 	* )
-	SEP=":"
 	;;
 esac
 
@@ -94,7 +93,7 @@ for i in ${ANNOTATION_FILES}
 do
 	printf "%s\n" "Testing annotations on source file ${i}"
 	${APT} @options ${i} 2> result.txt
-	diff ${TESTSRC}/golden.txt result.txt
+	diff ${DIFFOPTS} ${TESTSRC}/golden.txt result.txt
 
 	RESULT=$?
 	case "$RESULT" in
@@ -109,7 +108,7 @@ do
 	CLASS=`basename ${i} .java`
 	printf "%s\n" "Testing annotations on class file ${CLASS}"
 	${APT} @options1 ${CLASS} 2> result2.txt
-	diff ${TESTSRC}/golden.txt result2.txt
+	diff ${DIFFOPTS} ${TESTSRC}/golden.txt result2.txt
 
 	RESULT=$?
 	case "$RESULT" in

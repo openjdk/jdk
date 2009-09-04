@@ -1,3 +1,3 @@
-T6758789a.java:37:9: compiler.err.cant.apply.symbol: kindname.method, m1, compiler.misc.no.args, int, kindname.class, T6758789a, null
-T6758789a.java:38:9: compiler.err.cant.apply.symbol: kindname.method, m2, int, compiler.misc.no.args, kindname.class, T6758789a, null
+T6758789a.java:14:9: compiler.err.cant.apply.symbol: kindname.method, m1, compiler.misc.no.args, int, kindname.class, T6758789a, null
+T6758789a.java:15:9: compiler.err.cant.apply.symbol: kindname.method, m2, int, compiler.misc.no.args, kindname.class, T6758789a, null
 2 errors

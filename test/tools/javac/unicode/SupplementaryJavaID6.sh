@@ -75,6 +75,11 @@ case "$OS" in
     PS=";"
     FS="\\"
     ;;
+  CYGWIN* )
+    ENV=""
+    PS=";" # platform PS, not cygwin PS
+    FS="/"
+    ;;
   * )
     echo "Unrecognized system!"
     exit 1;

@@ -26,6 +26,7 @@
  * @bug     6399602
  * @summary Verify that files are created relative to sibling
  * @author  Peter von der Ah\u00e9
+ * @ignore 6877223 test ignored because of issues with File.toUri on Windows (6877206)
  */
 
 import java.io.File;

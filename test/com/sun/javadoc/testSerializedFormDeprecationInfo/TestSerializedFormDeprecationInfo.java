@@ -128,6 +128,7 @@ public class TestSerializedFormDeprecationInfo extends JavadocTester {
      */
     public static void main(String[] args) {
         TestSerializedFormDeprecationInfo tester = new TestSerializedFormDeprecationInfo();
+        tester.exactNewlineMatch = false;
         run(tester, ARGS1, TEST_CMNT_DEPR, TEST_NOCMNT);
         run(tester, ARGS2, TEST_NOCMNT, TEST_CMNT_DEPR);
         run(tester, ARGS3, TEST_NODEPR, TEST_NOCMNT_NODEPR);
