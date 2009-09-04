@@ -1,5 +1,5 @@
-T6665356.java:40:37: compiler.err.improperly.formed.type.param.missing
-T6665356.java:41:40: compiler.err.improperly.formed.type.inner.raw.param
-T6665356.java:49:23: compiler.err.improperly.formed.type.param.missing
-T6665356.java:50:25: compiler.err.improperly.formed.type.inner.raw.param
+T6665356.java:17:37: compiler.err.improperly.formed.type.param.missing
+T6665356.java:18:40: compiler.err.improperly.formed.type.inner.raw.param
+T6665356.java:26:23: compiler.err.improperly.formed.type.param.missing
+T6665356.java:27:25: compiler.err.improperly.formed.type.inner.raw.param
 4 errors
