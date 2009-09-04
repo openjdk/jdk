@@ -1,2 +1,2 @@
-DuplicateTypeAnnotation.java:34:32: compiler.err.duplicate.annotation
+DuplicateTypeAnnotation.java:11:32: compiler.err.duplicate.annotation
 1 error

@@ -1,0 +1,2 @@
+T6650759m.java:43:36: compiler.err.prob.found.req: (compiler.misc.incompatible.types), java.util.List<? super java.lang.Integer>, java.util.List<? super java.lang.String>
+1 error

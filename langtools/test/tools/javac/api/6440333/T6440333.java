@@ -26,6 +26,7 @@
  * @bug     6440333
  * @summary SimpleJavaFileObject.toString() generates URI with some extra message
  * @author  Peter von der Ah\u00e9
+ * @ignore 6877223 test ignored because of issues with File.toUri on Windows (6877206)
  * @library ../lib
  * @compile T6440333.java
  * @run main T6440333
@@ -42,6 +43,10 @@ public class T6440333 extends ToolTester {
         JavaFileObject fo = fm.getJavaFileObjects(src).iterator().next();
         String expect = src.getCanonicalFile().getPath().replace(File.separatorChar, '/');
         System.err.println("Expect " + expect);
+        // CURRENTLY, the following line fails on Windows because a file C:/w/jjg/...
+        // returns a URI file://C/w/jjg... which incorrectly encodes the drive letter
+        // in the URI authority.   This is against the spec that the authority is
+        // undefined and breaks the contract that new File(f.toURI()).equals(f.getAbsoluteFile())
         System.err.println("Got: " +  fo.toUri().getPath());
         if (!expect.equals(fo.toUri().getPath())) {
             throw new AssertionError();
