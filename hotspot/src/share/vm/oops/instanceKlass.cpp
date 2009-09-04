@@ -110,7 +110,7 @@ bool instanceKlass::verify_code(
   // 1) Verify the bytecodes
   Verifier::Mode mode =
     throw_verifyerror ? Verifier::ThrowException : Verifier::NoException;
-  return Verifier::verify(this_oop, mode, CHECK_false);
+  return Verifier::verify(this_oop, mode, this_oop->should_verify_class(), CHECK_false);
 }
 
 

@@ -257,9 +257,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                      Handle class_loader,
                                      Handle protection_domain,
                                      symbolHandle& parsed_name,
+                                     bool verify,
                                      TRAPS) {
     KlassHandle no_host_klass;
-    return parseClassFile(name, class_loader, protection_domain, no_host_klass, NULL, parsed_name, THREAD);
+    return parseClassFile(name, class_loader, protection_domain, no_host_klass, NULL, parsed_name, verify, THREAD);
   }
   instanceKlassHandle parseClassFile(symbolHandle name,
                                      Handle class_loader,
@@ -267,6 +268,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                      KlassHandle host_klass,
                                      GrowableArray<Handle>* cp_patches,
                                      symbolHandle& parsed_name,
+                                     bool verify,
                                      TRAPS);
 
   // Verifier checks

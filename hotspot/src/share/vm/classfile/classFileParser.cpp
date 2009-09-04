@@ -2547,6 +2547,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                                     KlassHandle host_klass,
                                                     GrowableArray<Handle>* cp_patches,
                                                     symbolHandle& parsed_name,
+                                                    bool verify,
                                                     TRAPS) {
   // So that JVMTI can cache class file in the state before retransformable agents
   // have modified it
@@ -2591,7 +2592,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
   instanceKlassHandle nullHandle;
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
-  _need_verify = Verifier::should_verify_for(class_loader());
+  _need_verify = Verifier::should_verify_for(class_loader(), verify);
 
   // Set the verify flag in stream
   cfs->set_verify(_need_verify);
@@ -3205,6 +3206,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
 
     // Fill in information already parsed
     this_klass->set_access_flags(access_flags);
+    if (verify) {
+      this_klass->set_should_verify_class();
+    }
     jint lh = Klass::instance_layout_helper(instance_size, false);
     this_klass->set_layout_helper(lh);
     assert(this_klass->oop_is_instance(), "layout is correct");
@@ -3213,7 +3217,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     //this_klass->set_super(super_klass());
     this_klass->set_class_loader(class_loader());
     this_klass->set_nonstatic_field_size(nonstatic_field_size);
-    this_klass->set_has_nonstatic_fields(has_nonstatic_fields);
+    if (has_nonstatic_fields) {
+       this_klass->set_has_nonstatic_fields();
+    }
     this_klass->set_static_oop_field_size(fac.static_oop_count);
     cp->set_pool_holder(this_klass());
     this_klass->set_constants(cp());
