@@ -88,8 +88,10 @@ endif
 hotspot-build::
 	$(MKDIR) -p $(HOTSPOT_OUTPUTDIR)
 	$(MKDIR) -p $(HOTSPOT_EXPORT_PATH)
+	@$(call MakeStart, hotspot, $(HOTSPOT_TARGET))
 	$(CD) $(HOTSPOT_TOPDIR)/make && \
 	    $(MAKE) $(HOTSPOT_BUILD_ARGUMENTS) $(HOTSPOT_TARGET)
+	@$(call MakeFinish, hotspot, $(HOTSPOT_TARGET))
 
 #####################
 # .PHONY

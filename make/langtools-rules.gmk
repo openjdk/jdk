@@ -35,13 +35,17 @@ LANGTOOLS_BUILD_ARGUMENTS = \
 langtools: langtools-build
 langtools-build:
 	$(MKDIR) -p $(LANGTOOLS_OUTPUTDIR)
+	@$(call MakeStart, langtools, all)
 	($(CD) $(LANGTOOLS_TOPDIR)/make && \
-	 $(MAKE) $(LANGTOOLS_BUILD_ARGUMENTS) all)
+	  $(MAKE) $(LANGTOOLS_BUILD_ARGUMENTS) all)
+	@$(call MakeFinish, langtools, all)
 
 langtools-clobber::
 	$(MKDIR) -p $(LANGTOOLS_OUTPUTDIR)
+	@$(call MakeStart, langtools, clobber)
 	($(CD) $(LANGTOOLS_TOPDIR)/make &&  \
-	 $(MAKE) $(LANGTOOLS_BUILD_ARGUMENTS) clobber)
+	  $(MAKE) $(LANGTOOLS_BUILD_ARGUMENTS) clobber)
+	@$(call MakeFinish, langtools, clobber)
 
 .PHONY: langtools langtools-build langtools-clobber
 
