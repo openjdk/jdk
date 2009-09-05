@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,6 +530,18 @@ public class AlgorithmId implements Serializable, DerEncoder {
         if (name.equalsIgnoreCase("SHA1withECDSA")
                 || name.equalsIgnoreCase("ECDSA")) {
             return AlgorithmId.sha1WithECDSA_oid;
+        }
+        if (name.equalsIgnoreCase("SHA224withECDSA")) {
+            return AlgorithmId.sha224WithECDSA_oid;
+        }
+        if (name.equalsIgnoreCase("SHA256withECDSA")) {
+            return AlgorithmId.sha256WithECDSA_oid;
+        }
+        if (name.equalsIgnoreCase("SHA384withECDSA")) {
+            return AlgorithmId.sha384WithECDSA_oid;
+        }
+        if (name.equalsIgnoreCase("SHA512withECDSA")) {
+            return AlgorithmId.sha512WithECDSA_oid;
         }
 
         // See if any of the installed providers supply a mapping from
