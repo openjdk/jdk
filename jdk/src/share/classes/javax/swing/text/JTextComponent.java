@@ -4815,7 +4815,18 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
                 new AttributedString(text, composedIndex, text.getEndIndex()));
     }
 
-    private boolean saveComposedText(int pos) {
+    /**
+     * Saves composed text around the specified position.
+     *
+     * The composed text (if any) around the specified position is saved
+     * in a backing store and removed from the document.
+     *
+     * @param pos  document position to identify the composed text location
+     * @return  {@code true} if the composed text exists and is saved,
+     *          {@code false} otherwise
+     * @see #restoreComposedText
+     */
+    protected boolean saveComposedText(int pos) {
         if (composedTextExists()) {
             int start = composedTextStart.getOffset();
             int len = composedTextEnd.getOffset() -
@@ -4830,7 +4841,15 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
         return false;
     }
 
-    private void restoreComposedText() {
+    /**
+     * Restores composed text previously saved by {@code saveComposedText}.
+     *
+     * The saved composed text is inserted back into the document. This method
+     * should be invoked only if {@code saveComposedText} returns {@code true}.
+     *
+     * @see #saveComposedText
+     */
+    protected void restoreComposedText() {
         Document doc = getDocument();
         try {
             doc.insertString(caret.getDot(),

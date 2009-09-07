@@ -1125,6 +1125,7 @@ public class JEditorPane extends JTextComponent {
      * @param content  the content to replace the selection with.  This
      *   value can be <code>null</code>
      */
+    @Override
     public void replaceSelection(String content) {
         if (! isEditable()) {
             UIManager.getLookAndFeel().provideErrorFeedback(JEditorPane.this);
@@ -1135,6 +1136,7 @@ public class JEditorPane extends JTextComponent {
             try {
                 Document doc = getDocument();
                 Caret caret = getCaret();
+                boolean composedTextSaved = saveComposedText(caret.getDot());
                 int p0 = Math.min(caret.getDot(), caret.getMark());
                 int p1 = Math.max(caret.getDot(), caret.getMark());
                 if (doc instanceof AbstractDocument) {
@@ -1149,6 +1151,9 @@ public class JEditorPane extends JTextComponent {
                         doc.insertString(p0, content, ((StyledEditorKit)kit).
                                          getInputAttributes());
                     }
+                }
+                if (composedTextSaved) {
+                    restoreComposedText();
                 }
             } catch (BadLocationException e) {
                 UIManager.getLookAndFeel().provideErrorFeedback(JEditorPane.this);
