@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.reader.xmlschema;
 
 import java.util.ArrayList;
@@ -58,9 +59,9 @@ final class DefaultParticleBinder extends ParticleBinder {
         if(checker.hasNameCollision()) {
             CReferencePropertyInfo prop = new CReferencePropertyInfo(
                 getCurrentBean().getBaseClass()==null?"Content":"Rest",
-                true, false, p,
+                true, false, false, p,
                 builder.getBindInfo(p).toCustomizationList(),
-                p.getLocator() );
+                p.getLocator(), false, false, false);
             RawTypeSetBuilder.build(p,false).addTo(prop);
             prop.javadoc = Messages.format( Messages.MSG_FALLBACK_JAVADOC,
                     checker.getCollisionInfo().toString() );
@@ -170,6 +171,12 @@ final class DefaultParticleBinder extends ParticleBinder {
         }
 
         public void modelGroup(XSModelGroup mg) {
+            // choice gets mapped to a property
+            if(mg.getCompositor()== XSModelGroup.Compositor.CHOICE && builder.getGlobalBinding().isChoiceContentPropertyEnabled()) {
+                mark(outerParticle);
+                return;
+            }
+
             for( XSParticle child : mg.getChildren() )
                 particle(child);
         }

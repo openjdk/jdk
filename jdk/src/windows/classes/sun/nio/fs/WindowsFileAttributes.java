@@ -246,8 +246,8 @@ class WindowsFileAttributes
         long lastWriteTime = unsafe.getLong(address + OFFSETOF_FIND_DATA_LASTWRITETIME);
         long size = ((long)(unsafe.getInt(address + OFFSETOF_FIND_DATA_SIZEHIGH)) << 32)
             + (unsafe.getInt(address + OFFSETOF_FIND_DATA_SIZELOW) & 0xFFFFFFFFL);
-        int reparseTag = ((fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) != 0) ?
-            + unsafe.getInt(address + OFFSETOF_FIND_DATA_RESERVED0) : 0;
+        int reparseTag = isReparsePoint(fileAttrs) ?
+            unsafe.getInt(address + OFFSETOF_FIND_DATA_RESERVED0) : 0;
         return new WindowsFileAttributes(fileAttrs,
                                          creationTime,
                                          lastAccessTime,
@@ -275,7 +275,7 @@ class WindowsFileAttributes
             int reparseTag = 0;
             int fileAttrs = unsafe
                 .getInt(address + OFFSETOF_FILE_INFORMATION_ATTRIBUTES);
-            if ((fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+            if (isReparsePoint(fileAttrs)) {
                 int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
                 NativeBuffer reparseBuffer = NativeBuffers.getNativeBuffer(size);
                 try {
@@ -299,6 +299,9 @@ class WindowsFileAttributes
         throws WindowsException
     {
         if (!ensureAccurateMetadata) {
+            WindowsException firstException = null;
+
+            // GetFileAttributesEx is the fastest way to read the attributes
             NativeBuffer buffer =
                 NativeBuffers.getNativeBuffer(SIZEOF_FILE_ATTRIBUTE_DATA);
             try {
@@ -308,10 +311,40 @@ class WindowsFileAttributes
                 // just return the attributes
                 int fileAttrs = unsafe
                     .getInt(address + OFFSETOF_FILE_ATTRIBUTE_DATA_ATTRIBUTES);
-                if ((fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
+                if (!isReparsePoint(fileAttrs))
                     return fromFileAttributeData(address, 0);
+            } catch (WindowsException x) {
+                if (x.lastError() != ERROR_SHARING_VIOLATION)
+                    throw x;
+                firstException = x;
             } finally {
                 buffer.release();
+            }
+
+            // For sharing violations, fallback to FindFirstFile if the file
+            // is not a root directory.
+            if (firstException != null) {
+                String search = path.getPathForWin32Calls();
+                char last = search.charAt(search.length() -1);
+                if (last == ':' || last == '\\')
+                    throw firstException;
+                buffer = getBufferForFindData();
+                try {
+                    long handle = FindFirstFile(search, buffer.address());
+                    FindClose(handle);
+                    WindowsFileAttributes attrs = fromFindData(buffer.address());
+                    // FindFirstFile does not follow sym links. Even if
+                    // followLinks is false, there isn't sufficient information
+                    // in the WIN32_FIND_DATA structure to know if the reparse
+                    // point is a sym link.
+                    if (attrs.isReparsePoint())
+                        throw firstException;
+                    return attrs;
+                } catch (WindowsException ignore) {
+                    throw firstException;
+                } finally {
+                    buffer.release();
+                }
             }
         }
 
@@ -325,7 +358,7 @@ class WindowsFileAttributes
     }
 
     /**
-     * Returns true if the attribtues are of the same file - both files must
+     * Returns true if the attributes are of the same file - both files must
      * be open.
      */
     static boolean isSameFile(WindowsFileAttributes attrs1,
@@ -335,6 +368,13 @@ class WindowsFileAttributes
         return (attrs1.volSerialNumber == attrs2.volSerialNumber) &&
                (attrs1.fileIndexHigh == attrs2.fileIndexHigh) &&
                (attrs1.fileIndexLow == attrs2.fileIndexLow);
+    }
+
+    /**
+     * Returns true if the attributes are of a file with a reparse point.
+     */
+    static boolean isReparsePoint(int attributes) {
+        return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
     }
 
     // package-private
@@ -387,7 +427,7 @@ class WindowsFileAttributes
 
     // package private
     boolean isReparsePoint() {
-        return (fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+        return isReparsePoint(fileAttrs);
     }
 
     boolean isDirectoryLink() {

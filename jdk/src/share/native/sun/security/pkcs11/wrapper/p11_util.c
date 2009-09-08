@@ -194,16 +194,14 @@ jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue)
     jclass jPKCS11ExceptionClass;
     jmethodID jConstructor;
     jthrowable jPKCS11Exception;
-    jlong jErrorCode;
+    jlong jErrorCode = 0L;
 
-    if (returnValue == CKR_OK) {
-        return 0L ;
-    } else {
+    if (returnValue != CKR_OK) {
+        jErrorCode = ckULongToJLong(returnValue);
         jPKCS11ExceptionClass = (*env)->FindClass(env, CLASS_PKCS11EXCEPTION);
         if (jPKCS11ExceptionClass != NULL) {
             jConstructor = (*env)->GetMethodID(env, jPKCS11ExceptionClass, "<init>", "(J)V");
             if (jConstructor != NULL) {
-                jErrorCode = ckULongToJLong(returnValue);
                 jPKCS11Exception = (jthrowable) (*env)->NewObject(env, jPKCS11ExceptionClass, jConstructor, jErrorCode);
                 if (jPKCS11Exception != NULL) {
                     (*env)->Throw(env, jPKCS11Exception);
@@ -211,8 +209,8 @@ jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue)
             }
         }
         (*env)->DeleteLocalRef(env, jPKCS11ExceptionClass);
-        return jErrorCode ;
     }
+    return jErrorCode ;
 }
 
 /*

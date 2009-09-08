@@ -288,23 +288,11 @@ public abstract class WSDLModelerBase implements Modeler {
     private boolean validateMimeContentPartNames(List<MIMEContent> mimeContents) {
         //validate mime:content(s) in the mime:part as per R2909
         for (MIMEContent mimeContent : mimeContents) {
-            String mimeContnetPart = null;
+            String mimeContnetPart;
+            mimeContnetPart = getMimeContentPartName(mimeContent);
             if(mimeContnetPart == null) {
-                mimeContnetPart = getMimeContentPartName(mimeContent);
-                if(mimeContnetPart == null) {
-                    warning(mimeContent, ModelerMessages.MIMEMODELER_INVALID_MIME_CONTENT_MISSING_PART_ATTRIBUTE(info.operation.getName().getLocalPart()));
-                    return false;
-                }
-            }else {
-                String newMimeContnetPart = getMimeContentPartName(mimeContent);
-                if(newMimeContnetPart == null) {
-                    warning(mimeContent, ModelerMessages.MIMEMODELER_INVALID_MIME_CONTENT_MISSING_PART_ATTRIBUTE(info.operation.getName().getLocalPart()));
-                    return false;
-                }else if(!newMimeContnetPart.equals(mimeContnetPart)) {
-                    //throw new ModelerException("mimemodeler.invalidMimeContent.differentPart");
-                    warning(mimeContent, ModelerMessages.MIMEMODELER_INVALID_MIME_CONTENT_DIFFERENT_PART());
-                    return false;
-                }
+                warning(mimeContent, ModelerMessages.MIMEMODELER_INVALID_MIME_CONTENT_MISSING_PART_ATTRIBUTE(info.operation.getName().getLocalPart()));
+                return false;
             }
         }
         return true;
@@ -386,6 +374,9 @@ public abstract class WSDLModelerBase implements Modeler {
     protected String getRequestNamespaceURI(SOAPBody body) {
         String namespaceURI = body.getNamespace();
         if (namespaceURI == null) {
+            if(options.isExtensionMode()){
+                return info.modelPort.getName().getNamespaceURI();
+            }
             // the WSDL document is invalid
             // at least, that's my interpretation of section 3.5 of the WSDL 1.1 spec!
             error(body, ModelerMessages.WSDLMODELER_INVALID_BINDING_OPERATION_INPUT_SOAP_BODY_MISSING_NAMESPACE(info.bindingOperation.getName()));
@@ -396,6 +387,9 @@ public abstract class WSDLModelerBase implements Modeler {
     protected String getResponseNamespaceURI(SOAPBody body) {
         String namespaceURI = body.getNamespace();
         if (namespaceURI == null) {
+            if(options.isExtensionMode()){
+                return info.modelPort.getName().getNamespaceURI();
+            }
             // the WSDL document is invalid
             // at least, that's my interpretation of section 3.5 of the WSDL 1.1 spec!
             error(body, ModelerMessages.WSDLMODELER_INVALID_BINDING_OPERATION_OUTPUT_SOAP_BODY_MISSING_NAMESPACE(info.bindingOperation.getName()));
@@ -703,14 +697,14 @@ public abstract class WSDLModelerBase implements Modeler {
         if(numPasses > 1)
             return;
         if(entity == null)
-            errReceiver.warning(NULL_LOCATOR, message);
+            errReceiver.warning(null, message);
         else
             errReceiver.warning(entity.getLocator(), message);
     }
 
     protected void error(Entity entity, String message){
         if(entity == null)
-            errReceiver.error(NULL_LOCATOR, message);
+            errReceiver.error(null, message);
         else
             errReceiver.error(entity.getLocator(), message);
         throw new AbortException();

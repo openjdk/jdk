@@ -23,9 +23,9 @@
  * have any questions.
  */
 /*
- * $Id: MessageFactory.java,v 1.10 2005/04/05 22:28:13 mk125090 Exp $
- * $Revision: 1.10 $
- * $Date: 2005/04/05 22:28:13 $
+ * $Id: MessageFactory.java,v 1.11 2006/03/30 00:59:38 ofung Exp $
+ * $Revision: 1.11 $
+ * $Date: 2006/03/30 00:59:38 $
  */
 
 

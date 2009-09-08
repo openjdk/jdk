@@ -28,6 +28,7 @@ import com.sun.tools.internal.ws.processor.generator.Names;
 import static com.sun.tools.internal.ws.processor.modeler.wsdl.WSDLModelerBase.getExtensionOfType;
 import com.sun.tools.internal.ws.wscompile.ErrorReceiver;
 import com.sun.tools.internal.ws.wscompile.WsimportOptions;
+import com.sun.tools.internal.ws.wscompile.Options;
 import com.sun.tools.internal.ws.wsdl.document.*;
 import com.sun.tools.internal.ws.wsdl.document.jaxws.JAXWSBinding;
 import com.sun.tools.internal.ws.wsdl.document.schema.SchemaKinds;
@@ -101,7 +102,7 @@ public class PseudoSchemaBuilder {
             is.setSystemId(sysId+(i + 1));
         }
         //add w3c EPR binding
-        if(!(options.noAddressingBbinding && options.isExtensionMode())){
+        if(!(options.noAddressingBbinding) && options.target.isLaterThan(Options.Target.V2_1)){
             InputSource is = new InputSource(new ByteArrayInputStream(w3ceprSchemaBinding.getBytes()));
             is.setSystemId(sysId+(++i +1));
             b.schemas.add(is);

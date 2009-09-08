@@ -35,11 +35,16 @@ package com.sun.mirror.declaration;
  * then it is customary, though not required, that they appear in the same
  * order as the constants listed in the detail section below.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this enum is {@link javax.lang.model.element.Modifier}.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  * @since 1.5
  */
-
+@Deprecated
+@SuppressWarnings("deprecation")
 public enum Modifier {
 
     // See JLS2 sections 8.1.1, 8.3.1, 8.4.3, 8.8.3, and 9.1.1.

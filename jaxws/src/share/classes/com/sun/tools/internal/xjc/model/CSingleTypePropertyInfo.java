@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.model;
 
 import java.util.Collections;
@@ -30,7 +31,6 @@ import java.util.List;
 import javax.activation.MimeType;
 import javax.xml.namespace.QName;
 
-import com.sun.xml.internal.bind.v2.WellKnownNamespace;
 import com.sun.xml.internal.bind.v2.model.core.ID;
 import com.sun.xml.internal.xsom.XSComponent;
 

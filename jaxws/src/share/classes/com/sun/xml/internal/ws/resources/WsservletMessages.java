@@ -542,16 +542,16 @@ public final class WsservletMessages {
         return localizer.localize(localizableSERVLET_HTML_NO_INFO_AVAILABLE());
     }
 
-    public static Localizable localizableSERVLET_HTML_INFORMATION_TABLE(Object arg0, Object arg1, Object arg2) {
-        return messageFactory.getMessage("servlet.html.information.table", arg0, arg1, arg2);
+    public static Localizable localizableSERVLET_HTML_INFORMATION_TABLE(Object arg0, Object arg1) {
+        return messageFactory.getMessage("servlet.html.information.table", arg0, arg1);
     }
 
     /**
-     * <table border="0"><tr><td>Address:</td><td>{0}</td></tr><tr><td>WSDL:</td><td><a href="{0}?wsdl">{0}?wsdl</a></td></tr><tr><td>Port QName:</td><td>{1}</td></tr><tr><td>Implementation class:</td><td>{2}</td></tr></table>
+     * <table border="0"><tr><td>Address:</td><td>{0}</td></tr><tr><td>WSDL:</td><td><a href="{0}?wsdl">{0}?wsdl</a></td></tr><tr><td>Implementation class:</td><td>{1}</td></tr></table>
      *
      */
-    public static String SERVLET_HTML_INFORMATION_TABLE(Object arg0, Object arg1, Object arg2) {
-        return localizer.localize(localizableSERVLET_HTML_INFORMATION_TABLE(arg0, arg1, arg2));
+    public static String SERVLET_HTML_INFORMATION_TABLE(Object arg0, Object arg1) {
+        return localizer.localize(localizableSERVLET_HTML_INFORMATION_TABLE(arg0, arg1));
     }
 
     public static Localizable localizableSERVLET_TRACE_WRITING_FAULT_RESPONSE() {
@@ -696,6 +696,18 @@ public final class WsservletMessages {
      */
     public static String ERROR_SERVLET_CAUGHT_THROWABLE_IN_INIT(Object arg0) {
         return localizer.localize(localizableERROR_SERVLET_CAUGHT_THROWABLE_IN_INIT(arg0));
+    }
+
+    public static Localizable localizableSERVLET_HTML_ENDPOINT_TABLE(Object arg0, Object arg1) {
+        return messageFactory.getMessage("servlet.html.endpoint.table", arg0, arg1);
+    }
+
+    /**
+     * <table border="0"><tr><td>Service Name:</td><td>{0}</td></tr><tr><td>Port Name:</td><td>{1}</td></tr></table>
+     *
+     */
+    public static String SERVLET_HTML_ENDPOINT_TABLE(Object arg0, Object arg1) {
+        return localizer.localize(localizableSERVLET_HTML_ENDPOINT_TABLE(arg0, arg1));
     }
 
     public static Localizable localizableERROR_SERVLET_CAUGHT_THROWABLE_WHILE_RECOVERING(Object arg0) {
@@ -1099,7 +1111,7 @@ public final class WsservletMessages {
     }
 
     /**
-     * Port Name
+     * Endpoint
      *
      */
     public static String SERVLET_HTML_COLUMN_HEADER_PORT_NAME() {

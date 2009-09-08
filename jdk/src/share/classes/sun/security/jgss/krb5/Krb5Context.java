@@ -25,6 +25,7 @@
 
 package sun.security.jgss.krb5;
 
+import com.sun.security.jgss.InquireType;
 import org.ietf.jgss.*;
 import sun.misc.HexDumpEncoder;
 import sun.security.jgss.GSSUtil;
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.security.Provider;
 import java.security.AccessController;
 import java.security.AccessControlContext;
+import java.security.Key;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import javax.crypto.Cipher;
@@ -1282,5 +1284,82 @@ class Krb5Context implements GSSContextSpi {
     GSSCaller getCaller() {
         // Currently used by InitialToken only
         return caller;
+    }
+
+    /**
+     * The session key returned by inquireSecContext(KRB5_INQ_SSPI_SESSION_KEY)
+     */
+    static class KerberosSessionKey implements Key {
+        private final EncryptionKey key;
+
+        KerberosSessionKey(EncryptionKey key) {
+            this.key = key;
+        }
+
+        @Override
+        public String getAlgorithm() {
+            return Integer.toString(key.getEType());
+        }
+
+        @Override
+        public String getFormat() {
+            return "RAW";
+        }
+
+        @Override
+        public byte[] getEncoded() {
+            return key.getBytes().clone();
+        }
+
+        @Override
+        public String toString() {
+            return "Kerberos session key: etype: " + key.getEType() + "\n" +
+                    new sun.misc.HexDumpEncoder().encodeBuffer(key.getBytes());
+        }
+    }
+
+    /**
+     * Return the mechanism-specific attribute associated with {@code type}.
+     */
+    public Object inquireSecContext(InquireType type)
+            throws GSSException {
+        if (!isEstablished()) {
+             throw new GSSException(GSSException.NO_CONTEXT, -1,
+                     "Security context not established.");
+        }
+        switch (type) {
+            case KRB5_GET_SESSION_KEY:
+                return new KerberosSessionKey(key);
+            case KRB5_GET_TKT_FLAGS:
+                return tktFlags.clone();
+            case KRB5_GET_AUTHZ_DATA:
+                if (isInitiator()) {
+                    throw new GSSException(GSSException.UNAVAILABLE, -1,
+                            "AuthzData not available on initiator side.");
+                } else {
+                    return (authzData==null)?null:authzData.clone();
+                }
+            case KRB5_GET_AUTHTIME:
+                return authTime;
+        }
+        throw new GSSException(GSSException.UNAVAILABLE, -1,
+                "Inquire type not supported.");
+    }
+
+    // Helpers for inquireSecContext
+    private boolean[] tktFlags;
+    private String authTime;
+    private com.sun.security.jgss.AuthorizationDataEntry[] authzData;
+
+    public void setTktFlags(boolean[] tktFlags) {
+        this.tktFlags = tktFlags;
+    }
+
+    public void setAuthTime(String authTime) {
+        this.authTime = authTime;
+    }
+
+    public void setAuthzData(com.sun.security.jgss.AuthorizationDataEntry[] authzData) {
+        this.authzData = authzData;
     }
 }

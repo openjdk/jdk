@@ -1,6 +1,5 @@
-
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -905,8 +904,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
         @Override
         public void sort() {
-            ShellFolder.getInvoker().invoke(new Callable<Void>() {
-                public Void call() throws Exception {
+            ShellFolder.invoke(new Callable<Void>() {
+                public Void call() {
                     DetailsTableRowSorter.super.sort();
                     return null;
                 }

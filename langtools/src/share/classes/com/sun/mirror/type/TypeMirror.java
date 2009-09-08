@@ -43,6 +43,11 @@ import com.sun.mirror.util.TypeVisitor;
  * There is no guarantee that any particular type will
  * always be represented by the same object.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this interface is {@link
+ * javax.lang.model.type.TypeMirror}.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  *
@@ -50,7 +55,8 @@ import com.sun.mirror.util.TypeVisitor;
  * @see Types
  * @since 1.5
  */
-
+@Deprecated
+@SuppressWarnings("deprecation")
 public interface TypeMirror {
 
     /**

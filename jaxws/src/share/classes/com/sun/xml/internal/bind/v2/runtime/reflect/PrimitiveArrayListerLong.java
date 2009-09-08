@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.reflect;
 
 import com.sun.xml.internal.bind.api.AccessorException;
@@ -83,7 +84,8 @@ final class PrimitiveArrayListerLong<BeanT> extends Lister<BeanT,long[],Long,Pri
                 System.arraycopy(buf,0,nb,0,buf.length);
                 buf = nb;
             }
-            buf[size++] = b;
+            if(b!=null)
+                buf[size++] = b;
         }
 
         long[] build() {

@@ -59,7 +59,7 @@ public class Engine {
     void addRunnable(Fiber fiber) {
         if(threadPool==null) {
             synchronized(this) {
-                threadPool = Executors.newFixedThreadPool(5, new DaemonThreadFactory());
+                threadPool = Executors.newCachedThreadPool(new DaemonThreadFactory());
             }
         }
         threadPool.execute(fiber);
@@ -79,12 +79,29 @@ public class Engine {
     }
 
     private static class DaemonThreadFactory implements ThreadFactory {
-        private final AtomicInteger threadNumber = new AtomicInteger(1);
+        static final AtomicInteger poolNumber = new AtomicInteger(1);
+        final ThreadGroup group;
+        final AtomicInteger threadNumber = new AtomicInteger(1);
+        final String namePrefix;
+
+        DaemonThreadFactory() {
+            SecurityManager s = System.getSecurityManager();
+            group = (s != null)? s.getThreadGroup() :
+                                 Thread.currentThread().getThreadGroup();
+            namePrefix = "jaxws-engine-" +
+                          poolNumber.getAndIncrement() +
+                         "-thread-";
+        }
 
         public Thread newThread(Runnable r) {
-            Thread daemonThread = new Thread(r, "JAXWS-Engine-"+threadNumber.getAndIncrement());
-            daemonThread.setDaemon(Boolean.TRUE);
-            return daemonThread;
+            Thread t = new Thread(group, r,
+                                  namePrefix + threadNumber.getAndIncrement(),
+                                  0);
+            if (!t.isDaemon())
+                t.setDaemon(true);
+            if (t.getPriority() != Thread.NORM_PRIORITY)
+                t.setPriority(Thread.NORM_PRIORITY);
+            return t;
         }
     }
 }

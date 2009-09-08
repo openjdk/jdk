@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,12 +56,8 @@ public final class DESCipher extends CipherSpi {
     /**
      * Creates an instance of DES cipher with default ECB mode and
      * PKCS5Padding.
-     *
-     * @exception SecurityException if this constructor fails to verify
-     * its own integrity
      */
     public DESCipher() {
-        SunJCE.ensureIntegrity(getClass());
         core = new CipherCore(new DESCrypt(), DESConstants.DES_BLOCK_SIZE);
     }
 

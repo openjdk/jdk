@@ -136,7 +136,7 @@ public class JarSigner {
     char[] keypass; // private key password
     String sigfile; // name of .SF file
     String sigalg; // name of signature algorithm
-    String digestalg = "SHA1"; // name of digest algorithm
+    String digestalg = "SHA-256"; // name of digest algorithm
     String signedjar; // output filename
     String tsaUrl; // location of the Timestamping Authority
     String tsaAlias; // alias for the Timestamping Authority's certificate
@@ -411,6 +411,16 @@ public class JarSigner {
             storetype = KeyStore.getDefaultType();
         }
         storetype = KeyStoreUtil.niceStoreTypeName(storetype);
+
+        try {
+            if (signedjar != null && new File(signedjar).getCanonicalPath().equals(
+                    new File(jarfile).getCanonicalPath())) {
+                signedjar = null;
+            }
+        } catch (IOException ioe) {
+            // File system error?
+            // Just ignore it.
+        }
 
         if (P11KEYSTORE.equalsIgnoreCase(storetype) ||
                 KeyStoreUtil.isWindowsKeyStore(storetype)) {
@@ -2205,7 +2215,7 @@ class SignatureFile {
                 if (keyAlgorithm.equalsIgnoreCase("DSA"))
                     digestAlgorithm = "SHA1";
                 else if (keyAlgorithm.equalsIgnoreCase("RSA"))
-                    digestAlgorithm = "SHA1";
+                    digestAlgorithm = "SHA256";
                 else {
                     throw new RuntimeException("private key is not a DSA or "
                                                + "RSA key");

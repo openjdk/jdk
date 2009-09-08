@@ -37,10 +37,10 @@ public interface Element
     public Element type(QName value);
 
     @XmlAttribute
-    public Element block(String value);
+    public Element block(String[] value);
 
     @XmlAttribute
-    public Element block(String[] value);
+    public Element block(String value);
 
     @XmlAttribute
     public Element nillable(boolean value);

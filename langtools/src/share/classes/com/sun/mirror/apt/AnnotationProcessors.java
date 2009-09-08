@@ -31,10 +31,16 @@ import java.util.*;
 /**
  * Utilities to create specialized annotation processors.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  There is no direct analog
+ * of the functionality of this class in the standardized API.
+ *
  * @since 1.5
  * @author Joseph D. Darcy
  * @author Scott Seligman
  */
+@Deprecated
+@SuppressWarnings("deprecation")
 public class AnnotationProcessors {
     static class NoOpAP implements AnnotationProcessor {
         NoOpAP() {}

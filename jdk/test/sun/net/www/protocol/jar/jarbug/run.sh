@@ -28,23 +28,54 @@
 # @summary various resource and classloading bugs related to jar files
 #set -x
 DEST=`pwd`
+
+OS=`uname -s`
+case "$OS" in
+  SunOS )
+    PS=":"
+    FS="/"
+    ;;
+  Linux )
+    PS=":"
+    FS="/"
+    ;;
+  Windows* )
+    PS=";"
+    FS="\\"
+    ;;
+  CYGWIN* )
+    PS=";"
+    FS="/"
+    #
+    # javac does not like /cygdrive produced by `pwd`.
+    #
+    DEST=`cygpath -d ${DEST}`
+    ;;
+  * )
+    echo "Unrecognized system!"
+    exit 1;
+    ;;
+esac
+
 #
 # build jar1 
 #
-mkdir ${DEST}/jar1
-cd ${TESTSRC}/etc/jar1 
-cp -r . ${DEST}/jar1
-${TESTJAVA}/bin/javac -d ${DEST}/jar1 ${TESTSRC}/src/jar1/LoadResourceBundle.java
-${TESTJAVA}/bin/javac -d ${DEST}/jar1 ${TESTSRC}/src/jar1/GetResource.java
-cd ${DEST}/jar1
-${TESTJAVA}/bin/jar cfM jar1.jar jar1 res1.txt
+mkdir -p ${DEST}${FS}jar1
+cd ${TESTSRC}${FS}etc${FS}jar1 
+cp -r . ${DEST}${FS}jar1
+${TESTJAVA}${FS}bin${FS}javac -d ${DEST}${FS}jar1 \
+    ${TESTSRC}${FS}src${FS}jar1${FS}LoadResourceBundle.java
+${TESTJAVA}${FS}bin${FS}javac -d ${DEST}${FS}jar1 \
+    ${TESTSRC}${FS}src${FS}jar1${FS}GetResource.java
+cd ${DEST}${FS}jar1
+${TESTJAVA}${FS}bin${FS}jar cfM jar1.jar jar1 res1.txt
 mv jar1.jar ..
 #
 # build the test sources and run them
 #
-${TESTJAVA}/bin/javac -d ${DEST} ${TESTSRC}/src/test/*.java
+${TESTJAVA}${FS}bin${FS}javac -d ${DEST} ${TESTSRC}${FS}src${FS}test${FS}*.java
 cd ${DEST}
-${TESTJAVA}/bin/java RunAllTests
+${TESTJAVA}${FS}bin${FS}java RunAllTests
 result=$?
 if [ "$result" -ne "0" ]; then
     exit 1

@@ -28,16 +28,21 @@ BUILDDIR = ../..
 include $(BUILDDIR)/common/Defs.gmk
 
 # Default name
-FT_TEST = $(BUILDTOOLBINDIR)/freetype_versioncheck$(EXE_SUFFIX)
+PROGRAM = freetype_versioncheck
+FT_OBJ = $(BUILDTOOLBINDIR)/$(PROGRAM).$(OBJECT_SUFFIX)
+FT_TEST = $(BUILDTOOLBINDIR)/$(PROGRAM)$(EXE_SUFFIX)
 
 # Used on openjdk only
 ifeq ($(OPENJDK),true)
 
 # Start with CFLAGS (which gets us the required -xarch setting on solaris)
 ifeq ($(PLATFORM), windows)
-  FT_OPTIONS  = /nologo $(CC_OBJECT_OUTPUT_FLAG)$(TEMPDIR)
+  FT_OPTIONS  = /nologo /c
   FREETYPE_DLL = $(FREETYPE_LIB_PATH)/freetype.dll
   FT_LD_OPTIONS  = $(FREETYPE_LIB_PATH)/freetype.lib
+ifdef MT
+  FT_LD_OPTIONS += /manifest
+endif
 else
   FT_OPTIONS  = $(CFLAGS)
   FT_LD_OPTIONS = -L$(FREETYPE_LIB_PATH)
@@ -55,15 +60,22 @@ FT_LD_OPTIONS += $(LFLAGS_$(COMPILER_VERSION))
 
 # Create test program
 all: $(FT_TEST)
-	@$(FT_TEST)
+	$(FT_TEST)
 
 # On windows we need to copy dll to test dir to ensure it will be found
 #   at runtime
 $(FT_TEST): freetypecheck.c
-	@$(prep-target)
-	@$(CC) $(FT_OPTIONS) $(CC_PROGRAM_OUTPUT_FLAG)$@ $< $(FT_LD_OPTIONS)
+	$(prep-target)
 ifeq ($(PLATFORM), windows)
-	@$(CP) $(FREETYPE_DLL) `dirname $@`
+	$(CC) $(FT_OPTIONS) $(CC_OBJECT_OUTPUT_FLAG)$(FT_OBJ) $<
+	$(LINK) $(FT_LD_OPTIONS) /OUT:$(FT_TEST) $(FT_OBJ)
+	$(CP) $(FREETYPE_DLL) $(@D)/
+ifdef MT
+	$(CP) $(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL) $(@D)/
+	$(MT) /manifest $(FT_TEST).manifest /outputresource:$(FT_TEST);#1
+endif
+else
+	@$(CC) $(FT_OPTIONS) $(CC_PROGRAM_OUTPUT_FLAG)$@ $< $(FT_LD_OPTIONS)
 endif
 
 else
