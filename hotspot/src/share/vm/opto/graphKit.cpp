@@ -1126,7 +1126,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
       const Type *t = _gvn.type( value );
 
       const TypeOopPtr* tp = t->isa_oopptr();
-      if (tp != NULL && !tp->klass()->is_loaded()
+      if (tp != NULL && tp->klass() != NULL && !tp->klass()->is_loaded()
           // Only for do_null_check, not any of its siblings:
           && !assert_null && null_control == NULL) {
         // Usually, any field access or invocation on an unloaded oop type
