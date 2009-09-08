@@ -63,7 +63,7 @@ public class FreeChunk extends VMObject {
 
    public long size() {
       if (VM.getVM().isCompressedOopsEnabled()) {
-        Mark mark = new Mark(sizeField.getValue(addr));
+        Mark mark = new Mark(addr.addOffsetTo(sizeField.getOffset()));
         return mark.getSize();
       } else {
         Address size = sizeField.getValue(addr);
@@ -83,7 +83,7 @@ public class FreeChunk extends VMObject {
 
    public boolean isFree() {
       if (VM.getVM().isCompressedOopsEnabled()) {
-        Mark mark = new Mark(sizeField.getValue(addr));
+        Mark mark = new Mark(addr.addOffsetTo(sizeField.getOffset()));
         return mark.isCmsFreeChunk();
       } else {
         Address prev = prevField.getValue(addr);
