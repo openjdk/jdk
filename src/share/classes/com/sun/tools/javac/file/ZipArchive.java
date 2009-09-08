@@ -122,6 +122,7 @@ public class ZipArchive implements Archive {
         zdir.close();
     }
 
+    @Override
     public String toString() {
         return "ZipArchive[" + zdir.getName() + "]";
     }
@@ -154,6 +155,7 @@ public class ZipArchive implements Archive {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
             return fileManager.getDecoder(fileManager.getEncodingName(), ignoreEncodingErrors);
         }
@@ -177,6 +179,7 @@ public class ZipArchive implements Archive {
         }
 
         @Deprecated
+        @Override
         public String getPath() {
             return zarch.zdir.getName() + "(" + entry + ")";
         }
@@ -235,9 +238,8 @@ public class ZipArchive implements Archive {
         }
 
         public URI toUri() {
-            String zipName = new File(getZipName()).toURI().normalize().getPath();
-            String entryName = getZipEntryName();
-            return URI.create("jar:" + zipName + "!" + entryName);
+            File zipFile = new File(getZipName());
+            return createJarUri(zipFile, entry.getName());
         }
 
         @Override

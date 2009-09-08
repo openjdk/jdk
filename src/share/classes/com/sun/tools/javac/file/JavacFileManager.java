@@ -26,6 +26,7 @@
 package com.sun.tools.javac.file;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -36,6 +37,7 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
@@ -77,7 +79,6 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 
-import java.io.Closeable;
 import static javax.tools.StandardLocation.*;
 import static com.sun.tools.javac.main.OptionName.*;
 
@@ -437,6 +438,7 @@ public class JavacFileManager implements StandardJavaFileManager {
             return Collections.emptySet();
         }
 
+        @Override
         public String toString() {
             return "MissingArchive[" + zipFileName + "]";
         }
@@ -654,10 +656,10 @@ public class JavacFileManager implements StandardJavaFileManager {
     private final ByteBufferCache byteBufferCache;
 
     CharsetDecoder getDecoder(String encodingName, boolean ignoreEncodingErrors) {
-        Charset charset = (this.charset == null)
+        Charset cs = (this.charset == null)
             ? Charset.forName(encodingName)
             : this.charset;
-        CharsetDecoder decoder = charset.newDecoder();
+        CharsetDecoder decoder = cs.newDecoder();
 
         CodingErrorAction action;
         if (ignoreEncodingErrors)
@@ -892,7 +894,7 @@ public class JavacFileManager implements StandardJavaFileManager {
         nullCheck(location);
         // validatePackageName(packageName);
         nullCheck(packageName);
-        if (!isRelativeUri(URI.create(relativeName))) // FIXME 6419701
+        if (!isRelativeUri(relativeName))
             throw new IllegalArgumentException("Invalid relative name: " + relativeName);
         RelativeFile name = packageName.length() == 0
             ? new RelativeFile(relativeName)
@@ -946,7 +948,7 @@ public class JavacFileManager implements StandardJavaFileManager {
         nullCheck(location);
         // validatePackageName(packageName);
         nullCheck(packageName);
-        if (!isRelativeUri(URI.create(relativeName))) // FIXME 6419701
+        if (!isRelativeUri(relativeName))
             throw new IllegalArgumentException("relativeName is invalid");
         RelativeFile name = packageName.length() == 0
             ? new RelativeFile(relativeName)
@@ -1085,6 +1087,15 @@ public class JavacFileManager implements StandardJavaFileManager {
         return first != '.' && first != '/';
     }
 
+    // Convenience method
+    protected static boolean isRelativeUri(String u) {
+        try {
+            return isRelativeUri(new URI(u));
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
     /**
      * Converts a relative file name to a relative URI.  This is
      * different from File.toURI as this method does not canonicalize
@@ -1099,7 +1110,7 @@ public class JavacFileManager implements StandardJavaFileManager {
     public static String getRelativeName(File file) {
         if (!file.isAbsolute()) {
             String result = file.getPath().replace(File.separatorChar, '/');
-            if (JavacFileManager.isRelativeUri(URI.create(result))) // FIXME 6419701
+            if (isRelativeUri(result))
                 return result;
         }
         throw new IllegalArgumentException("Invalid relative path: " + file);
