@@ -40,10 +40,10 @@ public class T4975569
         verify("T4975569$Anno", "flags: ACC_INTERFACE, ACC_ABSTRACT, ACC_ANNOTATION");
         verify("T4975569$E",    "flags: ACC_FINAL, ACC_SUPER, ACC_ENUM");
         verify("T4975569$S",    "flags: ACC_BRIDGE, ACC_SYNTHETIC",
-                                "InnerClasses: \n   static");
+                                "InnerClasses:\n       static");
         verify("T4975569$V",    "void m(java.lang.String...)",
                                 "flags: ACC_VARARGS");
-        verify("T4975569$Prot", "InnerClasses: \n   protected");
+        verify("T4975569$Prot", "InnerClasses:\n       protected");
         //verify("T4975569$Priv", "InnerClasses");
         if (errors > 0)
             throw new Error(errors + " found.");

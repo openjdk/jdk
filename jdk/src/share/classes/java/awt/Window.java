@@ -3743,16 +3743,58 @@ public class Window extends Container implements Accessible {
 
     // ****************** END OF MIXING CODE ********************************
 
-    // This method gets the window location/size as reported by the native
-    // system since the locally cached values may represent outdated data.
-    // NOTE: this method is invoked on the toolkit thread, and therefore
-    // is not supposed to become public/user-overridable.
+    /**
+     * Limit the given double value with the given range.
+     */
+    private static double limit(double value, double min, double max) {
+        value = Math.max(value, min);
+        value = Math.min(value, max);
+        return value;
+    }
+
+    /**
+     * Calculate the position of the security warning.
+     *
+     * This method gets the window location/size as reported by the native
+     * system since the locally cached values may represent outdated data.
+     *
+     * The method is used from the native code, or via AWTAccessor.
+     *
+     * NOTE: this method is invoked on the toolkit thread, and therefore is not
+     * supposed to become public/user-overridable.
+     */
     private Point2D calculateSecurityWarningPosition(double x, double y,
             double w, double h)
     {
-        return new Point2D.Double(
-                x + w * securityWarningAlignmentX + securityWarningPointX,
-                y + h * securityWarningAlignmentY + securityWarningPointY);
+        // The position according to the spec of SecurityWarning.setPosition()
+        double wx = x + w * securityWarningAlignmentX + securityWarningPointX;
+        double wy = y + h * securityWarningAlignmentY + securityWarningPointY;
+
+        // First, make sure the warning is not too far from the window bounds
+        wx = Window.limit(wx,
+                x - securityWarningWidth - 2,
+                x + w + 2);
+        wy = Window.limit(wy,
+                y - securityWarningHeight - 2,
+                y + h + 2);
+
+        // Now make sure the warning window is visible on the screen
+        GraphicsConfiguration graphicsConfig =
+            getGraphicsConfiguration_NoClientCode();
+        Rectangle screenBounds = graphicsConfig.getBounds();
+        Insets screenInsets =
+            Toolkit.getDefaultToolkit().getScreenInsets(graphicsConfig);
+
+        wx = Window.limit(wx,
+                screenBounds.x + screenInsets.left,
+                screenBounds.x + screenBounds.width - screenInsets.right
+                - securityWarningWidth);
+        wy = Window.limit(wy,
+                screenBounds.y + screenInsets.top,
+                screenBounds.y + screenBounds.height - screenInsets.bottom
+                - securityWarningHeight);
+
+        return new Point2D.Double(wx, wy);
     }
 
     static {

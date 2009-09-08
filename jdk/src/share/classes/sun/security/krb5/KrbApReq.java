@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,8 +294,6 @@ public class KrbApReq {
         apReqMessg.ticket.sname.setRealm(apReqMessg.ticket.realm);
         enc_ticketPart.cname.setRealm(enc_ticketPart.crealm);
 
-        Config.getInstance().resetDefaultRealm(apReqMessg.ticket.realm.toString());
-
         if (!authenticator.cname.equals(enc_ticketPart.cname))
             throw new KrbApErrException(Krb5.KRB_AP_ERR_BADMATCH);
 
@@ -358,12 +356,13 @@ public class KrbApReq {
                                 authenticator.cname,
                                 apReqMessg.ticket.sname,
                                 enc_ticketPart.key,
-                                null,
+                                enc_ticketPart.flags,
                                 enc_ticketPart.authtime,
                                 enc_ticketPart.starttime,
                                 enc_ticketPart.endtime,
                                 enc_ticketPart.renewTill,
-                                enc_ticketPart.caddr);
+                                enc_ticketPart.caddr,
+                                enc_ticketPart.authorizationData);
         if (DEBUG) {
             System.out.println(">>> KrbApReq: authenticate succeed.");
         }

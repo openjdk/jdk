@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272 6822643 6830721
+ * @bug 4607272 6822643 6830721 6842687
  * @summary Unit test for AsynchronousFileChannel
  */
 
@@ -190,12 +190,10 @@ public class Basic {
             if (fl == null)
                 throw new RuntimeException("Unable to acquire lock");
             try {
-                ch.lock(null, new CompletionHandler<FileLock,Void> () {
+                ch.lock((Void)null, new CompletionHandler<FileLock,Void> () {
                     public void completed(FileLock result, Void att) {
                     }
                     public void failed(Throwable exc, Void att) {
-                    }
-                    public void cancelled(Void att) {
                     }
                 });
                 throw new RuntimeException("OverlappingFileLockException expected");
@@ -217,7 +215,7 @@ public class Basic {
         ByteBuffer buf = ByteBuffer.allocateDirect(100);
         final CountDownLatch latch = new CountDownLatch(1);
 
-        ch.read(buf, 0L, null, new CompletionHandler<Integer,Void>() {
+        ch.read(buf, 0L, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer result, Void att) {
                 try {
                     Thread.currentThread().interrupt();
@@ -228,8 +226,6 @@ public class Basic {
                 }
             }
             public void failed(Throwable exc, Void att) {
-            }
-            public void cancelled(Void att) {
             }
         });
 
@@ -311,14 +307,12 @@ public class Basic {
                     final AtomicReference<Thread> invoker = new AtomicReference<Thread>();
                     final CountDownLatch latch = new CountDownLatch(1);
 
-                    ch.write(genBuffer(), 0L, null, new CompletionHandler<Integer,Void>() {
+                    ch.write(genBuffer(), 0L, (Void)null, new CompletionHandler<Integer,Void>() {
                         public void completed(Integer result, Void att) {
                             invoker.set(Thread.currentThread());
                             latch.countDown();
                         }
                         public void failed(Throwable exc, Void att) {
-                        }
-                        public void cancelled(Void att) {
                         }
                     });
                     await(latch);
@@ -338,7 +332,40 @@ public class Basic {
                 }
             } finally {
                 ch.close();
+                executor.shutdown();
             }
+        }
+
+
+        // test sharing a thread pool between many channels
+        ExecutorService executor = Executors
+            .newFixedThreadPool(1+rand.nextInt(10), threadFactory);
+        final int n = 50 + rand.nextInt(50);
+        AsynchronousFileChannel[] channels = new AsynchronousFileChannel[n];
+        try {
+            for (int i=0; i<n; i++) {
+                Set<StandardOpenOption> opts = EnumSet.of(WRITE);
+                channels[i] = AsynchronousFileChannel.open(file, opts, executor);
+                final CountDownLatch latch = new CountDownLatch(1);
+                channels[i].write(genBuffer(), 0L, (Void)null, new CompletionHandler<Integer,Void>() {
+                    public void completed(Integer result, Void att) {
+                        latch.countDown();
+                    }
+                    public void failed(Throwable exc, Void att) {
+                    }
+                });
+                await(latch);
+
+                // close ~half the channels
+                if (rand.nextBoolean())
+                    channels[i].close();
+            }
+        } finally {
+            // close remaining channels
+            for (int i=0; i<n; i++) {
+                if (channels[i] != null) channels[i].close();
+            }
+            executor.shutdown();
         }
     }
 
@@ -409,17 +436,7 @@ public class Basic {
                 .open(file, WRITE, SYNC);
 
             // start write operation
-            final CountDownLatch latch = new CountDownLatch(1);
-            Future<Integer> res = ch.write(genBuffer(), 0L, null,
-                new CompletionHandler<Integer,Void>() {
-                    public void completed(Integer result, Void att) {
-                    }
-                    public void failed(Throwable exc, Void att) {
-                    }
-                    public void cancelled(Void att) {
-                        latch.countDown();
-                    }
-            });
+            Future<Integer> res = ch.write(genBuffer(), 0L);
 
             // cancel operation
             boolean cancelled = res.cancel(mayInterruptIfRunning);
@@ -455,10 +472,6 @@ public class Basic {
             } catch (InterruptedException x) {
                 throw new RuntimeException(x);
             }
-
-            // check that cancelled method is invoked
-            if (cancelled)
-                await(latch);
 
             ch.close();
         }
@@ -547,8 +560,6 @@ public class Basic {
             }
             public void failed(Throwable exc, Long position) {
             }
-            public void cancelled(Long position) {
-            }
         });
 
         // wait for writes to complete
@@ -573,8 +584,6 @@ public class Basic {
                 }
             }
             public void failed(Throwable exc, Long position) {
-            }
-            public void cancelled(Long position) {
             }
         });
 

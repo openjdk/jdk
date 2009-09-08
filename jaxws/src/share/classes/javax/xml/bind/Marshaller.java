@@ -310,7 +310,7 @@ import java.io.File;
  * </blockquote>
  *
  * @author <ul><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
- * @version $Revision$ $Date$
+ * @version $Revision: 1.21 $ $Date: 2006/08/28 17:56:41 $
  * @see JAXBContext
  * @see Validator
  * @see Unmarshaller

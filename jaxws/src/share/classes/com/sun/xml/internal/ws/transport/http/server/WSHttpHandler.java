@@ -90,16 +90,8 @@ final class WSHttpHandler implements HttpHandler {
         try {
             logger.fine("Received HTTP request:"+msg.getRequestURI());
             String method = msg.getRequestMethod();
-            if (method.equals(GET_METHOD)) {
-                String queryString = msg.getRequestURI().getQuery();
-                logger.fine("Query String for request ="+queryString);
-                if (adapter.isMetadataQuery(queryString)) {
-                    adapter.publishWSDL(con,getRequestAddress(msg), msg.getRequestURI().getQuery());
-                } else {
-                    adapter.handle(con);
-                }
-            } else if (method.equals(POST_METHOD) || method.equals(HEAD_METHOD)
-                        || method.equals(PUT_METHOD) || method.equals(DELETE_METHOD)) {
+            if(method.equals(GET_METHOD) || method.equals(POST_METHOD) || method.equals(HEAD_METHOD)
+            || method.equals(PUT_METHOD) || method.equals(DELETE_METHOD)) {
                 adapter.handle(con);
             } else {
                 logger.warning(HttpserverMessages.UNEXPECTED_HTTP_METHOD(method));
@@ -144,9 +136,9 @@ final class WSHttpHandler implements HttpHandler {
         strBuf.append((msg instanceof HttpsExchange) ? "https" : "http");
         strBuf.append("://");
 
-        List<String> hostHeader = msg.getRequestHeaders().get("Host");
+        String hostHeader = msg.getRequestHeaders().getFirst("Host");
         if (hostHeader != null) {
-            strBuf.append(hostHeader.get(0));   // Uses Host header
+            strBuf.append(hostHeader);   // Uses Host header
         } else {
             strBuf.append(msg.getLocalAddress().getHostName());
             strBuf.append(":");

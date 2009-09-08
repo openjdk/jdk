@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333
+ * @bug 4313887 6838333 6867101
  * @summary Unit test for java.nio.file.Path for miscellenous methods not
  *   covered by other tests
  * @library ..
@@ -105,6 +105,28 @@ public class Misc {
         dir.checkAccess(AccessMode.READ);
         dir.checkAccess(AccessMode.WRITE);
         dir.checkAccess(AccessMode.READ, AccessMode.WRITE);
+
+        /**
+         * Test: Check access to all files in all root directories.
+         * (A useful test on Windows for special files such as pagefile.sys)
+         */
+        for (Path root: FileSystems.getDefault().getRootDirectories()) {
+            DirectoryStream<Path> stream;
+            try {
+                stream = root.newDirectoryStream();
+            } catch (IOException x) {
+                continue; // skip root directories that aren't accessible
+            }
+            try {
+                for (Path entry: stream) {
+                    try {
+                        entry.checkAccess();
+                    } catch (AccessDeniedException ignore) { }
+                }
+            } finally {
+                stream.close();
+            }
+        }
 
         /**
          * Test: File does not exist

@@ -38,6 +38,27 @@ public final class ServerMessages {
     private final static LocalizableMessageFactory messageFactory = new LocalizableMessageFactory("com.sun.xml.internal.ws.resources.server");
     private final static Localizer localizer = new Localizer();
 
+    public static Localizable localizableRUNTIME_PARSER_WSDL_INCORRECTSERVICE(Object arg0, Object arg1) {
+        return messageFactory.getMessage("runtime.parser.wsdl.incorrectservice", arg0, arg1);
+    }
+
+    /**
+     * could not get binding from WSDL! service: {0} not found in the WSDL {1}.
+     * It could be because service name does not match WSDL''s wsdl:service name:
+     *  1. service name is not there in deployment descriptor OR
+     *  2. Either there is a typo in deployment descriptor''s service name OR
+     *  3. The computed names from @WebService do not match wsdl:service name
+     * OR
+     *  1. There is an error while parsing the wsdl and Service with name {0} is not found in the WSDLModel.
+     * Suggest doing the following:
+     *  1. Add/Correct entries for service name in deployment descriptor OR
+     *  2. Specify targetNamespace, serviceName in @WebService on the endpoint class
+     *
+     */
+    public static String RUNTIME_PARSER_WSDL_INCORRECTSERVICE(Object arg0, Object arg1) {
+        return localizer.localize(localizableRUNTIME_PARSER_WSDL_INCORRECTSERVICE(arg0, arg1));
+    }
+
     public static Localizable localizableRUNTIME_PARSER_MISSING_ATTRIBUTE_NO_LINE() {
         return messageFactory.getMessage("runtime.parser.missing.attribute.no.line");
     }
@@ -122,16 +143,16 @@ public final class ServerMessages {
         return localizer.localize(localizableGENERATE_NON_STANDARD_WSDL());
     }
 
-    public static Localizable localizableDISPATCH_CANNOT_FIND_METHOD(Object arg0, Object arg1) {
-        return messageFactory.getMessage("dispatch.cannotFindMethod", arg0, arg1);
+    public static Localizable localizableDISPATCH_CANNOT_FIND_METHOD(Object arg0) {
+        return messageFactory.getMessage("dispatch.cannotFindMethod", arg0);
     }
 
     /**
-     * Cannot find dispatch method for {0} using "{1}"
+     * Cannot find dispatch method for {0}
      *
      */
-    public static String DISPATCH_CANNOT_FIND_METHOD(Object arg0, Object arg1) {
-        return localizer.localize(localizableDISPATCH_CANNOT_FIND_METHOD(arg0, arg1));
+    public static String DISPATCH_CANNOT_FIND_METHOD(Object arg0) {
+        return localizer.localize(localizableDISPATCH_CANNOT_FIND_METHOD(arg0));
     }
 
     public static Localizable localizableNO_CONTENT_TYPE() {
@@ -357,6 +378,18 @@ public final class ServerMessages {
         return localizer.localize(localizableNOT_HTTP_CONTEXT_TYPE(arg0));
     }
 
+    public static Localizable localizableRUNTIME_PARSER_WSDL_NOSERVICE_IN_WSDLMODEL(Object arg0) {
+        return messageFactory.getMessage("runtime.parser.wsdl.noservice.in.wsdlmodel", arg0);
+    }
+
+    /**
+     * There is an error in processing the WSDL {0} and no valid services are found.
+     *
+     */
+    public static String RUNTIME_PARSER_WSDL_NOSERVICE_IN_WSDLMODEL(Object arg0) {
+        return localizer.localize(localizableRUNTIME_PARSER_WSDL_NOSERVICE_IN_WSDLMODEL(arg0));
+    }
+
     public static Localizable localizablePORT_NAME_REQUIRED() {
         return messageFactory.getMessage("port.name.required");
     }
@@ -391,6 +424,18 @@ public final class ServerMessages {
      */
     public static String RUNTIME_PARSER_WSDL_MULTIPLEBINDING(Object arg0, Object arg1, Object arg2) {
         return localizer.localize(localizableRUNTIME_PARSER_WSDL_MULTIPLEBINDING(arg0, arg1, arg2));
+    }
+
+    public static Localizable localizableNON_UNIQUE_DISPATCH_QNAME(Object arg0, Object arg1) {
+        return messageFactory.getMessage("non.unique.dispatch.qname", arg0, arg1);
+    }
+
+    /**
+     * Non unique body parts! In a port, as per BP 1.1 R2710 operations must have unique operation signature on the wire for successful dispatch. Methods {0} have the same request body block {1}. Method dispatching may fail, runtime will try to dispatch using SOAPAction.
+     *
+     */
+    public static String NON_UNIQUE_DISPATCH_QNAME(Object arg0, Object arg1) {
+        return localizer.localize(localizableNON_UNIQUE_DISPATCH_QNAME(arg0, arg1));
     }
 
     public static Localizable localizableALREADY_HTTP_SERVER(Object arg0) {
@@ -439,6 +484,18 @@ public final class ServerMessages {
      */
     public static String RUNTIME_PARSER_WRONG_ELEMENT(Object arg0, Object arg1, Object arg2) {
         return localizer.localize(localizableRUNTIME_PARSER_WRONG_ELEMENT(arg0, arg1, arg2));
+    }
+
+    public static Localizable localizableRUNTIMEMODELER_INVALIDANNOTATION_ON_IMPL(Object arg0, Object arg1, Object arg2) {
+        return messageFactory.getMessage("runtimemodeler.invalidannotationOnImpl", arg0, arg1, arg2);
+    }
+
+    /**
+     * Invalid annotation: {0} on endpoint implementation class "{1}" - will be ignored. "{1}" is annotated with @WebService(endpointInterface="{2}"}, it MUST NOT be annotated with {0}, to fix it - put this annotation on the SEI {2}.
+     *
+     */
+    public static String RUNTIMEMODELER_INVALIDANNOTATION_ON_IMPL(Object arg0, Object arg1, Object arg2) {
+        return localizer.localize(localizableRUNTIMEMODELER_INVALIDANNOTATION_ON_IMPL(arg0, arg1, arg2));
     }
 
     public static Localizable localizableRUNTIME_PARSER_WSDL_NOSERVICE() {
@@ -536,6 +593,18 @@ public final class ServerMessages {
      */
     public static String RUNTIME_PARSER_CLASS_NOT_FOUND(Object arg0) {
         return localizer.localize(localizableRUNTIME_PARSER_CLASS_NOT_FOUND(arg0));
+    }
+
+    public static Localizable localizableUNSUPPORTED_CHARSET(Object arg0) {
+        return messageFactory.getMessage("unsupported.charset", arg0);
+    }
+
+    /**
+     * Unsupported charset "{0}" in the received message''s Content-Type
+     *
+     */
+    public static String UNSUPPORTED_CHARSET(Object arg0) {
+        return localizer.localize(localizableUNSUPPORTED_CHARSET(arg0));
     }
 
     public static Localizable localizableSTATIC_RESOURCE_INJECTION_ONLY(Object arg0, Object arg1) {

@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- *
- *
- *
- */
 
 
 package com.sun.xml.internal.messaging.saaj.soap;
@@ -151,7 +146,7 @@ public abstract class MessageImpl
      *      must be all lower case
      */
     private static boolean isSoap1_1Type(String primary, String sub) {
-        return primary.equals("text") && sub.equals("xml")
+        return primary.equalsIgnoreCase("text") && sub.equalsIgnoreCase("xml")
             || primary.equals("application")
                && sub.equals("fastinfoset");
     }
@@ -848,6 +843,7 @@ public abstract class MessageImpl
             }
         }
         attachments = f;
+       // needsSave();
     }
 
     public AttachmentPart createAttachmentPart() {

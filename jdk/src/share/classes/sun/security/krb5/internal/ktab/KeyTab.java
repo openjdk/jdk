@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.File;
+import java.util.Comparator;
 import java.util.StringTokenizer;
 
 /**
@@ -229,10 +230,11 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Reads the service key from the keytab file.
      * @param service the PrincipalName of the requested service.
-     * @return the last service key in the keytab
+     * @return the last service key in the keytab with the highest kvno
      */
     public EncryptionKey readServiceKey(PrincipalName service) {
         KeyTabEntry entry = null;
+        EncryptionKey key = null;
         if (entries != null) {
             // Find latest entry for this service that has an etype
             // that has been configured for use
@@ -240,9 +242,12 @@ public class KeyTab implements KeyTabConstants {
                 entry = entries.elementAt(i);
                 if (entry.service.match(service)) {
                     if (EType.isSupported(entry.keyType)) {
-                        return new EncryptionKey(entry.keyblock,
+                        if (key == null ||
+                                entry.keyVersion > key.getKeyVersionNumber()) {
+                            key = new EncryptionKey(entry.keyblock,
                                              entry.keyType,
                                              new Integer(entry.keyVersion));
+                        }
                     } else if (DEBUG) {
                         System.out.println("Found unsupported keytype (" +
                             entry.keyType + ") for " + service);
@@ -250,12 +255,13 @@ public class KeyTab implements KeyTabConstants {
                 }
             }
         }
-        return null;
+        return key;
     }
 
     /**
      * Reads all keys for a service from the keytab file that have
-     * etypes that have been configured for use.
+     * etypes that have been configured for use. If there are multiple
+     * keys with same etype, the one with the highest kvno is returned.
      * @param service the PrincipalName of the requested service
      * @return an array containing all the service keys
      */
@@ -288,49 +294,39 @@ public class KeyTab implements KeyTabConstants {
         size = keys.size();
         if (size == 0)
             return null;
-        EncryptionKey[] retVal = new EncryptionKey[size];
+        EncryptionKey[] retVal = keys.toArray(new EncryptionKey[size]);
 
         // Sort keys according to default_tkt_enctypes
-        int pos = 0;
-        EncryptionKey k;
         if (DEBUG) {
             System.out.println("Ordering keys wrt default_tkt_enctypes list");
         }
-        int[] etypes = EType.getDefaults("default_tkt_enctypes");
-        if (etypes == null || etypes == EType.getBuiltInDefaults()) {
-            // Either no supported types specified in default_tkt_enctypes
-            // or no default_tkt_enctypes entry at all. For both cases,
-            // just return supported keys in the order retrieved
-            for (int i = 0; i < size; i++) {
-                retVal[pos++] = keys.get(i);
-            }
-        } else {
-            for (int j = 0; j < etypes.length && pos < size; j++) {
-                int target = etypes[j];
-                for (int i = 0; i < size && pos < size; i++) {
-                    k = keys.get(i);
-                    if (k != null && k.getEType() == target) {
-                        if (DEBUG) {
-                            System.out.println(pos + ": " + k);
+
+        final int[] etypes = EType.getDefaults("default_tkt_enctypes");
+
+        // Sort the keys, k1 is preferred than k2 if:
+        // 1. k1's etype appears earlier in etypes than k2's
+        // 2. If same, k1's KVNO is higher
+        Arrays.sort(retVal, new Comparator<EncryptionKey>() {
+            @Override
+            public int compare(EncryptionKey o1, EncryptionKey o2) {
+                if (etypes != null && etypes != EType.getBuiltInDefaults()) {
+                    int o1EType = o1.getEType();
+                    int o2EType = o2.getEType();
+                    if (o1EType != o2EType) {
+                        for (int i=0; i<etypes.length; i++) {
+                            if (etypes[i] == o1EType) {
+                                return -1;
+                            } else if (etypes[i] == o2EType) {
+                                return 1;
+                            }
                         }
-                        retVal[pos++] = k;
-                        keys.set(i, null);  // Cleared from consideration
                     }
                 }
+                return o2.getKeyVersionNumber().intValue()
+                        - o1.getKeyVersionNumber().intValue();
             }
-            // copy the rest
-            for (int i = 0; i < size && pos < size; i++) {
-                k = keys.get(i);
-                if (k != null) {
-                    retVal[pos++] = k;
-                }
-            }
-        }
-        if (pos != size) {
-            throw new RuntimeException(
-                "Internal Error: did not copy all keys;expecting " + size +
-                    "; got " + pos);
-        }
+        });
+
         return retVal;
     }
 
@@ -403,11 +399,11 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Retrieves the key table entry with the specified service name.
      * @param service the service which may have an entry in the key table.
+     * @param keyType the etype to match, returns the 1st one if -1 provided
      * @return -1 if the entry is not found, else return the entry index
      * in the list.
      */
     private int retrieveEntry(PrincipalName service, int keyType) {
-        int found = -1;
         KeyTabEntry e;
         if (entries != null) {
             for (int i = 0; i < entries.size(); i++) {
@@ -418,7 +414,7 @@ public class KeyTab implements KeyTabConstants {
                 }
             }
         }
-        return found;
+        return -1;
     }
 
     /**
@@ -476,12 +472,29 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Removes an entry from the key table.
      * @param service the service <code>PrincipalName</code>.
+     * @param etype the etype to match, first one if -1 provided
+     * @return 1 if removed successfully, 0 otherwise
      */
-    public void deleteEntry(PrincipalName service) {
-        int result = retrieveEntry(service, -1);
+    public int deleteEntry(PrincipalName service, int etype) {
+        int result = retrieveEntry(service, etype);
         if (result != -1) {
             entries.removeElementAt(result);
+            return 1;
         }
+        return 0;
+    }
+
+    /**
+     * Removes an entry from the key table.
+     * @param service the service <code>PrincipalName</code>.
+     * @return number of entries removed
+     */
+    public int deleteEntry(PrincipalName service) {
+        int count = 0;
+        while (deleteEntry(service, -1) > 0) {
+            count++;
+        }
+        return count;
     }
 
     /**

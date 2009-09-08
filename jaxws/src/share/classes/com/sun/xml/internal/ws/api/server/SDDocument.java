@@ -32,6 +32,7 @@ import javax.xml.namespace.QName;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Set;
 
 /**
  * Represents an individual document that forms a {@link ServiceDefinition}.
@@ -67,6 +68,11 @@ public interface SDDocument {
      * Returns true if this document is schema.
      */
     boolean isSchema();
+
+    /**
+     * returns the referenced documents
+     */
+    Set<String> getImports();
 
     /**
      * Gets the system ID of the document where it's taken from. Generated documents
@@ -150,5 +156,11 @@ public interface SDDocument {
          * TODO: does this info need to be exposed?
          */
         boolean hasService();
+
+        /**
+         * All &lt;service> names that were in this WSDL, or empty set if there was none.
+         * Used for error diagnostics.
+         */
+        Set<QName> getAllServices();
     }
 }

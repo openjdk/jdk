@@ -26,11 +26,7 @@
 package com.sun.xml.internal.txw2.annotation;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
 import static java.lang.annotation.ElementType.METHOD;
-
-import com.sun.xml.internal.txw2.DatatypeWriter;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 

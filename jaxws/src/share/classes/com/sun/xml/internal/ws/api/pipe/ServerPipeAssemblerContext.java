@@ -79,6 +79,13 @@ public final class ServerPipeAssemblerContext extends ServerTubeAssemblerContext
     }
 
     /**
+     * creates a {@link Pipe} that validates messages against schema
+     */
+    public @NotNull Pipe createValidationPipe(@NotNull Pipe next) {
+       return PipeAdapter.adapt(super.createValidationTube(PipeAdapter.adapt(next)));
+    }
+
+    /**
      * Creates a {@link Pipe} that invokes protocol and logical handlers.
      */
     public @NotNull Pipe createHandlerPipe(@NotNull Pipe next) {

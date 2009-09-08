@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -76,12 +77,18 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 
+import java.io.Closeable;
 import static javax.tools.StandardLocation.*;
 import static com.sun.tools.javac.main.OptionName.*;
 
 /**
  * This class provides access to the source, class and other files
  * used by the compiler and related tools.
+ *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
 public class JavacFileManager implements StandardJavaFileManager {
 
@@ -126,6 +133,7 @@ public class JavacFileManager implements StandardJavaFileManager {
 
     protected boolean mmappedIO;
     protected boolean ignoreSymbolFile;
+    protected String classLoaderClass;
 
     /**
      * User provided charset (through javax.tools).
@@ -175,6 +183,7 @@ public class JavacFileManager implements StandardJavaFileManager {
 
         mmappedIO = options.get("mmappedIO") != null;
         ignoreSymbolFile = options.get("ignore.symbol.file") != null;
+        classLoaderClass = options.get("procloader");
     }
 
     public JavaFileObject getFileForInput(String name) {
@@ -742,8 +751,40 @@ public class JavacFileManager implements StandardJavaFileManager {
                 throw new AssertionError(e);
             }
         }
-        return new URLClassLoader(lb.toArray(new URL[lb.size()]),
-            getClass().getClassLoader());
+
+        URL[] urls = lb.toArray(new URL[lb.size()]);
+        ClassLoader thisClassLoader = getClass().getClassLoader();
+
+        // Bug: 6558476
+        // Ideally, ClassLoader should be Closeable, but before JDK7 it is not.
+        // On older versions, try the following, to get a closeable classloader.
+
+        // 1: Allow client to specify the class to use via hidden option
+        if (classLoaderClass != null) {
+            try {
+                Class<? extends ClassLoader> loader =
+                        Class.forName(classLoaderClass).asSubclass(ClassLoader.class);
+                Class<?>[] constrArgTypes = { URL[].class, ClassLoader.class };
+                Constructor<? extends ClassLoader> constr = loader.getConstructor(constrArgTypes);
+                return constr.newInstance(new Object[] { urls, thisClassLoader });
+            } catch (Throwable t) {
+                // ignore errors loading user-provided class loader, fall through
+            }
+        }
+
+        // 2: If URLClassLoader implements Closeable, use that.
+        if (Closeable.class.isAssignableFrom(URLClassLoader.class))
+            return new URLClassLoader(urls, thisClassLoader);
+
+        // 3: Try using private reflection-based CloseableURLClassLoader
+        try {
+            return new CloseableURLClassLoader(urls, thisClassLoader);
+        } catch (Throwable t) {
+            // ignore errors loading workaround class loader, fall through
+        }
+
+        // 4: If all else fails, use plain old standard URLClassLoader
+        return new URLClassLoader(urls, thisClassLoader);
     }
 
     public Iterable<JavaFileObject> list(Location location,

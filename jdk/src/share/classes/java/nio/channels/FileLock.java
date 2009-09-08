@@ -114,7 +114,6 @@ import java.io.IOException;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
- * @updated 1.7
  */
 
 public abstract class FileLock {
@@ -161,7 +160,7 @@ public abstract class FileLock {
     }
 
     /**
-     * {@note new} Initializes a new instance of this class.
+     * Initializes a new instance of this class.
      *
      * @param  channel
      *         The channel upon whose file this lock is held
@@ -199,7 +198,6 @@ public abstract class FileLock {
     }
 
     /**
-     * {@note revised}
      * Returns the file channel upon whose file this lock was acquired.
      *
      * <p> This method has been superseded by the {@link #acquiredBy acquiredBy}
@@ -213,7 +211,6 @@ public abstract class FileLock {
     }
 
     /**
-     * {@note new}
      * Returns the channel upon whose file this lock was acquired.
      *
      * @return  The channel upon whose file this lock was acquired.

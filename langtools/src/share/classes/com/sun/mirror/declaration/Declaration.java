@@ -44,6 +44,11 @@ import com.sun.mirror.util.*;
  * method.  There is no guarantee that any particular declaration will
  * always be represented by the same object.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this interface is {@link
+ * javax.lang.model.element.Element}.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  *
@@ -51,7 +56,8 @@ import com.sun.mirror.util.*;
  * @see TypeMirror
  * @since 1.5
  */
-
+@Deprecated
+@SuppressWarnings("deprecation")
 public interface Declaration {
 
     /**

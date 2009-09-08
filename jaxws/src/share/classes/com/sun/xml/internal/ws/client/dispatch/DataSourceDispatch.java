@@ -57,7 +57,7 @@ public class DataSourceDispatch extends DispatchImpl<DataSource> {
             case PAYLOAD:
                 throw new IllegalArgumentException("DataSource use is not allowed in Service.Mode.PAYLOAD\n");
             case MESSAGE:
-                return new Packet(XMLMessage.create(arg));
+                return new Packet(XMLMessage.create(arg, binding));
             default:
                 throw new WebServiceException("Unrecognized message mode");
         }
@@ -72,7 +72,7 @@ public class DataSourceDispatch extends DispatchImpl<DataSource> {
             // TODO Need to call hasUnconsumedDataSource()
             return hasDS.getDataSource();
         } else if (message instanceof PayloadSourceMessage) {
-            return XMLMessage.getDataSource(message);
+            return XMLMessage.getDataSource(message, binding);
         }
         return null;
     }

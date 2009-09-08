@@ -81,7 +81,7 @@ public interface Instrumentation {
      * an exception during execution, the JVM will still call the other registered
      * transformers in order. The same transformer may be added more than once,
      * but it is strongly discouraged -- avoid this by creating a new instance of
-     * tranformer class.
+     * transformer class.
      * <P>
      * This method is intended for use in instrumentation, as described in the
      * {@linkplain Instrumentation class specification}.
@@ -183,7 +183,7 @@ public interface Instrumentation {
      * <P>
      *
      * The order of transformation is described in the
-     * ({@link java.lang.instrument.ClassFileTransformer#transform transform} method.
+     * {@link java.lang.instrument.ClassFileTransformer#transform transform} method.
      * This same order is used in the automatic reapplication of retransformation
      * incapable transforms.
      * <P>
@@ -424,7 +424,7 @@ public interface Instrumentation {
      * classes or resources other than those to be defined by the bootstrap
      * class loader for the purpose of instrumentation.
      * Failure to observe this warning could result in unexpected
-     * behaviour that is difficult to diagnose. For example, suppose there is a
+     * behavior that is difficult to diagnose. For example, suppose there is a
      * loader L, and L's parent for delegation is the bootstrap class loader.
      * Furthermore, a method in class C, a class defined by L, makes reference to
      * a non-public accessor class C$1. If the JAR file contains a class C$1 then
@@ -475,9 +475,9 @@ public interface Instrumentation {
      * classes or resources other than those to be defined by the system class
      * loader for the purpose of instrumentation.
      * Failure to observe this warning could result in unexpected
-     * behaviour that is difficult to diagnose (see
+     * behavior that is difficult to diagnose (see
      * {@link #appendToBootstrapClassLoaderSearch
-     * appendToBootstrapClassLoaderSearch}.
+     * appendToBootstrapClassLoaderSearch}).
      *
      * <p> The system class loader supports adding a JAR file to be searched if
      * it implements a method named <code>appendToClassPathForInstrumentation</code>
@@ -485,7 +485,7 @@ public interface Instrumentation {
      * method is not required to have <code>public</code> access. The name of
      * the JAR file is obtained by invoking the {@link java.util.zip.ZipFile#getName
      * getName()} method on the <code>jarfile</code> and this is provided as the
-     * parameter to the <code>appendtoClassPathForInstrumentation</code> method.
+     * parameter to the <code>appendToClassPathForInstrumentation</code> method.
      *
      * <p> The <a href="http://java.sun.com/docs/books/vmspec/">Java Virtual Machine
      * Specification</a> specifies that a subsequent attempt to resolve a symbolic

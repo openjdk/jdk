@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom.impl;
 
 import com.sun.xml.internal.xsom.SCD;
@@ -58,6 +60,7 @@ import org.xml.sax.Locator;
 
 import javax.xml.namespace.NamespaceContext;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -285,6 +288,7 @@ public class SchemaSetImpl implements XSSchemaSet
         public XSListSimpleType getBaseListType() {return null;}
         public XSUnionSimpleType getBaseUnionType() {return null;}
         public XSFacet getFacet(String name) { return null; }
+        public List<XSFacet> getFacets( String name ) { return Collections.EMPTY_LIST; }
         public XSFacet getDeclaredFacet(String name) { return null; }
         public List<XSFacet> getDeclaredFacets(String name) { return Collections.EMPTY_LIST; }
 
@@ -362,5 +366,30 @@ public class SchemaSetImpl implements XSSchemaSet
                         XSParticle.UNBOUNDED, 0 )
                 })
                 ,null,1,1);
+        public List<XSComplexType> getSubtypes() {
+            ArrayList subtypeList = new ArrayList();
+            Iterator<XSComplexType> cTypes = getRoot().iterateComplexTypes();
+            while (cTypes.hasNext()) {
+                XSComplexType cType= cTypes.next();
+                XSType base = cType.getBaseType();
+                if ((base != null) && (base.equals(this))) {
+                    subtypeList.add(cType);
+                }
+            }
+            return subtypeList;
+        }
+
+        public List<XSElementDecl> getElementDecls() {
+            ArrayList declList = new ArrayList();
+            XSSchemaSet schemaSet = getRoot();
+            for (XSSchema sch : schemaSet.getSchemas()) {
+                for (XSElementDecl decl : sch.getElementDecls().values()) {
+                    if (decl.getType().equals(this)) {
+                        declList.add(decl);
+                    }
+                }
+            }
+            return declList;
+        }
     }
 }

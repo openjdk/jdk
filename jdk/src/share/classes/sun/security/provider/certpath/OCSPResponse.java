@@ -149,9 +149,9 @@ class OCSPResponse {
 
     private SingleResponse singleResponse;
 
-    // Maximum clock skew in milliseconds (10 minutes) allowed when checking
+    // Maximum clock skew in milliseconds (15 minutes) allowed when checking
     // validity of OCSP responses
-    private static final long MAX_CLOCK_SKEW = 600000;
+    private static final long MAX_CLOCK_SKEW = 900000;
 
     // an array of all of the CRLReasons (used in SingleResponse)
     private static CRLReason[] values = CRLReason.values();

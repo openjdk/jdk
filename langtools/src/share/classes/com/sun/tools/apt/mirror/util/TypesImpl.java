@@ -44,7 +44,7 @@ import com.sun.tools.javac.util.ListBuffer;
 /**
  * Implementation of Types utility methods for annotation processors
  */
-
+@SuppressWarnings("deprecation")
 public class TypesImpl implements Types {
 
     private final AptEnv env;

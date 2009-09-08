@@ -63,5 +63,5 @@ public abstract class MethodHandler {
      * @throws Throwable
      *      some faults are reported in terms of checked exceptions.
      */
-    public abstract Object invoke(Object proxy, Object[] args) throws WebServiceException, Throwable;
+    abstract Object invoke(Object proxy, Object[] args) throws WebServiceException, Throwable;
 }

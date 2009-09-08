@@ -193,10 +193,20 @@ public class Lint
         /**
          * Warn about unchecked operations on raw types.
          */
-        RAW("rawtypes");
+        RAW("rawtypes"),
+
+        /**
+         * Warn about Sun proprietary API that may be removed in a future release.
+         */
+        SUNAPI("sunapi", true);
 
         LintCategory(String option) {
+            this(option, false);
+        }
+
+        LintCategory(String option, boolean hidden) {
             this.option = option;
+            this.hidden = hidden;
             map.put(option, this);
         }
 
@@ -205,6 +215,7 @@ public class Lint
         }
 
         public final String option;
+        public final boolean hidden;
     };
 
     /**

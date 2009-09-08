@@ -41,12 +41,13 @@ import com.sun.tools.javac.util.Context;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-class JavapFileManager extends JavacFileManager {
+public class JavapFileManager extends JavacFileManager {
     private JavapFileManager(Context context, Charset charset) {
         super(context, true, charset);
+        setIgnoreSymbolFile(true);
     }
 
-    static JavapFileManager create(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log, Options options) {
+    public static JavapFileManager create(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log) {
         Context javac_context = new Context();
 
         if (dl != null)

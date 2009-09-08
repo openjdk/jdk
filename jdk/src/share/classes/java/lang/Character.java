@@ -38,7 +38,7 @@ import java.util.Locale;
  * a character's category (lowercase letter, digit, etc.) and for converting
  * characters from uppercase to lowercase and vice versa.
  * <p>
- * Character information is based on the Unicode Standard, version 4.0.
+ * Character information is based on the Unicode Standard, version 5.1.0.
  * <p>
  * The methods and data of class <code>Character</code> are defined by
  * the information in the <i>UnicodeData</i> file that is part of the
@@ -2784,8 +2784,13 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since  1.5
      */
     public static int toCodePoint(char high, char low) {
-        return ((high - MIN_HIGH_SURROGATE) << 10)
-            + (low - MIN_LOW_SURROGATE) + MIN_SUPPLEMENTARY_CODE_POINT;
+        // Optimized form of:
+        // return ((high - MIN_HIGH_SURROGATE) << 10)
+        //         + (low - MIN_LOW_SURROGATE)
+        //         + MIN_SUPPLEMENTARY_CODE_POINT;
+        return ((high << 10) + low) + (MIN_SUPPLEMENTARY_CODE_POINT
+                                       - (MIN_HIGH_SURROGATE << 10)
+                                       - MIN_LOW_SURROGATE);
     }
 
     /**
@@ -3071,9 +3076,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
     }
 
     static void toSurrogates(int codePoint, char[] dst, int index) {
-        int offset = codePoint - MIN_SUPPLEMENTARY_CODE_POINT;
-        dst[index+1] = (char)((offset & 0x3ff) + MIN_LOW_SURROGATE);
-        dst[index] = (char)((offset >>> 10) + MIN_HIGH_SURROGATE);
+        // We write elements "backwards" to guarantee all-or-nothing
+        dst[index+1] = (char)((codePoint & 0x3ff) + MIN_LOW_SURROGATE);
+        dst[index] = (char)((codePoint >>> 10)
+            + (MIN_HIGH_SURROGATE - (MIN_SUPPLEMENTARY_CODE_POINT >>> 10)));
     }
 
     /**

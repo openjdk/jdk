@@ -40,7 +40,7 @@ import com.sun.tools.javac.code.Symbol.*;
 /**
  * Implementation of TypeParameterDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class TypeParameterDeclarationImpl extends DeclarationImpl
                                           implements TypeParameterDeclaration
 {

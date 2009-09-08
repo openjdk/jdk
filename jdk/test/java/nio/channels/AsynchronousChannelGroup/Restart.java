@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6842687
  * @summary Unit test for AsynchronousChannelGroup
  * @build Restart
  * @run main/othervm -XX:-UseVMInterruptibleIO Restart
@@ -94,7 +94,7 @@ public class Restart {
         for (int i=0; i<count; i++) {
             final CountDownLatch latch = new CountDownLatch(1);
 
-            listener.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
+            listener.accept((Void)null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
                 public void completed(AsynchronousSocketChannel ch, Void att) {
                     try {
                         ch.close();
@@ -110,8 +110,6 @@ public class Restart {
                     }
                 }
                 public void failed(Throwable exc, Void att) {
-                }
-                public void cancelled(Void att) {
                 }
             });
 
