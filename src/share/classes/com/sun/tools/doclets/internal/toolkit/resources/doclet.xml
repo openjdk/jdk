@@ -44,7 +44,7 @@
         <PackageTags/>
         <PackageFooter/>
     </PackageDoc>
-    
+
     <AnnotationTypeDoc>
         <AnnotationTypeHeader/>
         <DeprecationInfo/>
@@ -52,7 +52,7 @@
         <AnnotationTypeDescription/>
         <AnnotationTypeTagInfo/>
         <MemberSummary>
-        	<AnnotationTypeRequiredMemberSummary/>
+                <AnnotationTypeRequiredMemberSummary/>
             <AnnotationTypeOptionalMemberSummary/>
         </MemberSummary>
         <AnnotationTypeRequiredMemberDetails>
@@ -77,16 +77,16 @@
                 <MemberFooter/>
             </AnnotationTypeOptionalMember>
             <Footer/>
-        </AnnotationTypeOptionalMemberDetails>        
+        </AnnotationTypeOptionalMemberDetails>
         <AnnotationTypeFooter/>
     </AnnotationTypeDoc>
-    
+
     <ClassDoc>
         <ClassHeader/>
         <ClassTree/>
         <TypeParamInfo/>
         <SuperInterfacesInfo/>
-        <ImplementedInterfacesInfo/>        
+        <ImplementedInterfacesInfo/>
         <SubClassInfo/>
         <SubInterfacesInfo/>
         <InterfaceUsageInfo/>
@@ -100,7 +100,7 @@
             <NestedClassesInheritedSummary/>
             <EnumConstantsSummary/>
             <FieldsSummary/>
-            <FieldsInheritedSummary/>  
+            <FieldsInheritedSummary/>
             <ConstructorsSummary/>
             <MethodsSummary/>
             <MethodsInheritedSummary/>
@@ -155,7 +155,7 @@
         </MethodDetails>
         <ClassFooter/>
     </ClassDoc>
-    
+
     <ConstantSummary>
         <Header/>
         <Contents/>
@@ -166,12 +166,12 @@
                     <ClassHeader/>
                     <ConstantMembers/>
                     <ClassFooter/>
-                </ClassConstantSummary>     
+                </ClassConstantSummary>
             </PackageConstantSummary>
-        </ConstantSummaries>    
+        </ConstantSummaries>
         <Footer/>
     </ConstantSummary>
-    
+
     <SerializedForm>
         <Header/>
         <SerializedFormSummaries>
