@@ -51,7 +51,7 @@ void CompactingPermGenGen::serialize_oops(SerializeOopClosure* soc) {
   soc->do_tag(arrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(constantPoolOopDesc));
   soc->do_tag(sizeof(constantPoolCacheOopDesc));
-  soc->do_tag(objArrayOopDesc::base_offset_in_bytes(T_BYTE));
+  soc->do_tag(objArrayOopDesc::base_offset_in_bytes());
   soc->do_tag(typeArrayOopDesc::base_offset_in_bytes(T_BYTE));
   soc->do_tag(sizeof(symbolOopDesc));
   soc->do_tag(sizeof(klassOopDesc));

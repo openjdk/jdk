@@ -37,6 +37,7 @@ InlineTree::InlineTree( Compile* c, const InlineTree *caller_tree, ciMethod* cal
     // Keep a private copy of the caller_jvms:
     _caller_jvms = new (C) JVMState(caller_jvms->method(), caller_tree->caller_jvms());
     _caller_jvms->set_bci(caller_jvms->bci());
+    assert(!caller_jvms->should_reexecute(), "there should be no reexecute bytecode with inlining");
   }
   assert(_caller_jvms->same_calls_as(caller_jvms), "consistent JVMS");
   assert((caller_tree == NULL ? 0 : caller_tree->inline_depth() + 1) == inline_depth(), "correct (redundant) depth parameter");
