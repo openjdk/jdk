@@ -38,6 +38,11 @@ class objArrayOopDesc : public arrayOopDesc {
   }
 
  public:
+  // Returns the offset of the first element.
+  static int base_offset_in_bytes() {
+    return arrayOopDesc::base_offset_in_bytes(T_OBJECT);
+  }
+
   // base is the address following the header.
   HeapWord* base() const      { return (HeapWord*) arrayOopDesc::base(T_OBJECT); }
 

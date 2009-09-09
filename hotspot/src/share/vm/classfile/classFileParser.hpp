@@ -61,7 +61,6 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                   int length,
                                   Handle class_loader,
                                   Handle protection_domain,
-                                  PerfTraceTime* vmtimer,
                                   symbolHandle class_name,
                                   TRAPS);
 

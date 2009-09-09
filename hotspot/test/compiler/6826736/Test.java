@@ -27,7 +27,7 @@
  * @bug 6826736
  * @summary CMS: core dump with -XX:+UseCompressedOops
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:+ScavengeALot -XX:+UseCompressedOops -XX:HeapBaseMinAddress=32g -XX:CompileThreshold=100 -XX:CompileOnly=Test.test -XX:-BlockLayoutRotateLoops -XX:LoopUnrollLimit=0 Test
+ * @run main/othervm/timeout=600 -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:+ScavengeALot -XX:+UseCompressedOops -XX:HeapBaseMinAddress=32g -XX:CompileThreshold=100 -XX:CompileOnly=Test.test -XX:-BlockLayoutRotateLoops -XX:LoopUnrollLimit=0 Test
  */
 
 public class Test {

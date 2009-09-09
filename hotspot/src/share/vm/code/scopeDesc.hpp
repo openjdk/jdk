@@ -39,7 +39,8 @@ class SimpleScopeDesc : public StackObj {
     DebugInfoReadStream buffer(code, pc_desc->scope_decode_offset());
     int ignore_sender = buffer.read_int();
     _method           = methodOop(buffer.read_oop());
-    _bci              = buffer.read_bci();
+    bool dummy_reexecute; //only methodOop and bci are needed!
+    _bci              = buffer.read_bci_and_reexecute(dummy_reexecute);
   }
 
   methodOop method() { return _method; }
@@ -60,8 +61,9 @@ class ScopeDesc : public ResourceObj {
   ScopeDesc(const nmethod* code, int decode_offset);
 
   // JVM state
-  methodHandle method() const { return _method; }
-  int          bci()    const { return _bci;    }
+  methodHandle method()   const { return _method; }
+  int          bci()      const { return _bci;    }
+  bool should_reexecute() const { return _reexecute; }
 
   GrowableArray<ScopeValue*>*   locals();
   GrowableArray<ScopeValue*>*   expressions();
@@ -86,6 +88,7 @@ class ScopeDesc : public ResourceObj {
   // JVM state
   methodHandle  _method;
   int           _bci;
+  bool          _reexecute;
 
   // Decoding offsets
   int _decode_offset;

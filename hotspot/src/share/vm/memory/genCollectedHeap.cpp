@@ -482,6 +482,10 @@ void GenCollectedHeap::do_collection(bool  full,
     for (int i = starting_level; i <= max_level; i++) {
       if (_gens[i]->should_collect(full, size, is_tlab)) {
         if (i == n_gens() - 1) {  // a major collection is to happen
+          if (!complete) {
+            // The full_collections increment was missed above.
+            increment_total_full_collections();
+          }
           pre_full_gc_dump();    // do any pre full gc dumps
         }
         // Timer for individual generations. Last argument is false: no CR
