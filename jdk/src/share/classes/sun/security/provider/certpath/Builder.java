@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
+import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.cert.*;
 import java.util.*;
 
 import javax.security.auth.x500.X500Principal;
 
+import sun.security.action.GetBooleanAction;
 import sun.security.util.Debug;
 import sun.security.x509.GeneralNames;
 import sun.security.x509.GeneralNameInterface;
@@ -64,9 +66,8 @@ public abstract class Builder {
      * Authority Information Access extension shall be enabled. Currently
      * disabled by default for compatibility reasons.
      */
-    final static boolean USE_AIA =
-        DistributionPointFetcher.getBooleanProperty
-            ("com.sun.security.enableAIAcaIssuers", false);
+    final static boolean USE_AIA = AccessController.doPrivileged
+        (new GetBooleanAction("com.sun.security.enableAIAcaIssuers"));
 
     /**
      * Initialize the builder with the input parameters.
