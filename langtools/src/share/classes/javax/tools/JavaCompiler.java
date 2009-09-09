@@ -228,6 +228,12 @@ public interface JavaCompiler extends Tool, OptionChecker {
      * <p>If a file manager is provided, it must be able to handle all
      * locations defined in {@link StandardLocation}.
      *
+     * <p>Note that annotation processing can process both the
+     * compilation units of source code to be compiled, passed with
+     * the {@code compilationUnits} parameter, as well as class
+     * files, whose names are passed with the {@code classes}
+     * parameter.
+     *
      * @param out a Writer for additional output from the compiler;
      * use {@code System.err} if {@code null}
      * @param fileManager a file manager; if {@code null} use the
@@ -236,8 +242,8 @@ public interface JavaCompiler extends Tool, OptionChecker {
      * null} use the compiler's default method for reporting
      * diagnostics
      * @param options compiler options, {@code null} means no options
-     * @param classes class names (for annotation processing), {@code
-     * null} means no class names
+     * @param classes names of classes to be processed by annotation
+     * processing, {@code null} means no class names
      * @param compilationUnits the compilation units to compile, {@code
      * null} means no compilation units
      * @return an object representing the compilation

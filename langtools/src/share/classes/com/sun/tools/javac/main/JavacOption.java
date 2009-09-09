@@ -25,11 +25,11 @@
 
 package com.sun.tools.javac.main;
 
+import java.io.PrintWriter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
-import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.Collection;
 
 /**
  * TODO: describe com.sun.tools.javac.main.JavacOption
@@ -106,9 +106,10 @@ public interface JavacOption {
          */
         ChoiceKind choiceKind;
 
-        /** The choices for this option, if any.
+        /** The choices for this option, if any, and whether or not the choices
+         *  are hidden
          */
-        Collection<String> choices;
+        Map<String,Boolean> choices;
 
         Option(OptionName name, String argsNameKey, String descrKey) {
             this.name = name;
@@ -123,10 +124,18 @@ public interface JavacOption {
         }
 
         Option(OptionName name, String descrKey, ChoiceKind choiceKind, String... choices) {
-            this(name, descrKey, choiceKind, Arrays.asList(choices));
+            this(name, descrKey, choiceKind, createChoices(choices));
         }
 
-        Option(OptionName name, String descrKey, ChoiceKind choiceKind, Collection<String> choices) {
+        private static Map<String,Boolean> createChoices(String... choices) {
+            Map<String,Boolean> map = new LinkedHashMap<String,Boolean>();
+            for (String c: choices)
+                map.put(c, true);
+            return map;
+        }
+
+        Option(OptionName name, String descrKey, ChoiceKind choiceKind,
+                Map<String,Boolean> choices) {
             this(name, null, descrKey);
             if (choiceKind == null || choices == null)
                 throw new NullPointerException();
@@ -153,10 +162,10 @@ public interface JavacOption {
             if (choices != null) {
                 String arg = option.substring(name.optionName.length());
                 if (choiceKind == ChoiceKind.ONEOF)
-                    return choices.contains(arg);
+                    return choices.keySet().contains(arg);
                 else {
                     for (String a: arg.split(",+")) {
-                        if (!choices.contains(a))
+                        if (!choices.keySet().contains(a))
                             return false;
                     }
                 }
@@ -181,10 +190,12 @@ public interface JavacOption {
             if (argsNameKey == null) {
                 if (choices != null) {
                     String sep = "{";
-                    for (String c: choices) {
-                        sb.append(sep);
-                        sb.append(c);
-                        sep = ",";
+                    for (Map.Entry<String,Boolean> e: choices.entrySet()) {
+                        if (!e.getValue()) {
+                            sb.append(sep);
+                            sb.append(e.getKey());
+                            sep = ",";
+                        }
                     }
                     sb.append("}");
                 }
@@ -209,8 +220,8 @@ public interface JavacOption {
                 if (choices != null) {
                     if (choiceKind == ChoiceKind.ONEOF) {
                         // some clients like to see just one of option+choice set
-                        for (String c: choices)
-                            options.remove(option + c);
+                        for (String s: choices.keySet())
+                            options.remove(option + s);
                         String opt = option + arg;
                         options.put(opt, opt);
                         // some clients like to see option (without trailing ":")
@@ -256,7 +267,7 @@ public interface JavacOption {
         XOption(OptionName name, String descrKey, ChoiceKind kind, String... choices) {
             super(name, descrKey, kind, choices);
         }
-        XOption(OptionName name, String descrKey, ChoiceKind kind, Collection<String> choices) {
+        XOption(OptionName name, String descrKey, ChoiceKind kind, Map<String,Boolean> choices) {
             super(name, descrKey, kind, choices);
         }
         @Override

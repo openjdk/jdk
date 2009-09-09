@@ -605,28 +605,41 @@ void TemplateInterpreter::ignore_safepoints() {
   }
 }
 
-// If deoptimization happens, this method returns the point where to continue in
-// interpreter. For calls (invokexxxx, newxxxx) the continuation is at next
-// bci and the top of stack is in eax/edx/FPU tos.
-// For putfield/getfield, put/getstatic, the continuation is at the same
-// bci and the TOS is on stack.
+//------------------------------------------------------------------------------------------------------------------------
+// Deoptimization support
 
-// Note: deopt_entry(type, 0) means reexecute bytecode
-//       deopt_entry(type, length) means continue at next bytecode
+// If deoptimization happens, this function returns the point of next bytecode to continue execution
+address TemplateInterpreter::deopt_continue_after_entry(methodOop method, address bcp, int callee_parameters, bool is_top_frame) {
+  return AbstractInterpreter::deopt_continue_after_entry(method, bcp, callee_parameters, is_top_frame);
+}
 
-address TemplateInterpreter::continuation_for(methodOop method, address bcp, int callee_parameters, bool is_top_frame, bool& use_next_mdp) {
+// If deoptimization happens, this function returns the point where the interpreter reexecutes
+// the bytecode.
+// Note: Bytecodes::_athrow (C1 only) and Bytecodes::_return are the special cases
+//       that do not return "Interpreter::deopt_entry(vtos, 0)"
+address TemplateInterpreter::deopt_reexecute_entry(methodOop method, address bcp) {
   assert(method->contains(bcp), "just checkin'");
   Bytecodes::Code code   = Bytecodes::java_code_at(bcp);
   if (code == Bytecodes::_return) {
-      // This is used for deopt during registration of finalizers
-      // during Object.<init>.  We simply need to resume execution at
-      // the standard return vtos bytecode to pop the frame normally.
-      // reexecuting the real bytecode would cause double registration
-      // of the finalizable object.
-      assert(is_top_frame, "must be on top");
-      return _normal_table.entry(Bytecodes::_return).entry(vtos);
+    // This is used for deopt during registration of finalizers
+    // during Object.<init>.  We simply need to resume execution at
+    // the standard return vtos bytecode to pop the frame normally.
+    // reexecuting the real bytecode would cause double registration
+    // of the finalizable object.
+    return _normal_table.entry(Bytecodes::_return).entry(vtos);
   } else {
-    return AbstractInterpreter::continuation_for(method, bcp, callee_parameters, is_top_frame, use_next_mdp);
+    return AbstractInterpreter::deopt_reexecute_entry(method, bcp);
+  }
+}
+
+// If deoptimization happens, the interpreter should reexecute this bytecode.
+// This function mainly helps the compilers to set up the reexecute bit.
+bool TemplateInterpreter::bytecode_should_reexecute(Bytecodes::Code code) {
+  if (code == Bytecodes::_return) {
+    //Yes, we consider Bytecodes::_return as a special case of reexecution
+    return true;
+  } else {
+    return AbstractInterpreter::bytecode_should_reexecute(code);
   }
 }
 

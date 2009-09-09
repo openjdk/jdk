@@ -384,9 +384,14 @@ public abstract class ClassLoader {
                     if (parent != null) {
                         c = parent.loadClass(name, false);
                     } else {
-                        c = findBootstrapClass0(name);
+                        c = findBootstrapClassOrNull(name);
                     }
                 } catch (ClassNotFoundException e) {
+                    // ClassNotFoundException thrown if class not found
+                    // from the non-null parent class loader
+                }
+
+                if (c == null) {
                     // If still not found, then invoke findClass in order
                     // to find the class.
                     c = findClass(name);
@@ -1008,22 +1013,29 @@ public abstract class ClassLoader {
         if (system == null) {
             if (!checkName(name))
                 throw new ClassNotFoundException(name);
-            return findBootstrapClass(name);
+            Class cls = findBootstrapClass(name);
+            if (cls == null) {
+                throw new ClassNotFoundException(name);
+            }
+            return cls;
         }
         return system.loadClass(name);
     }
 
-    private Class findBootstrapClass0(String name)
-        throws ClassNotFoundException
+    /**
+     * Returns a class loaded by the bootstrap class loader;
+     * or return null if not found.
+     */
+    private Class findBootstrapClassOrNull(String name)
     {
         check();
-        if (!checkName(name))
-            throw new ClassNotFoundException(name);
+        if (!checkName(name)) return null;
+
         return findBootstrapClass(name);
     }
 
-    private native Class findBootstrapClass(String name)
-        throws ClassNotFoundException;
+    // return null if not found
+    private native Class findBootstrapClass(String name);
 
     // Check to make sure the class loader has been initialized.
     private void check() {
