@@ -82,8 +82,8 @@ GMT:0,1::Europe/London:
 GMT Standard Time:0,1::Europe/London:
 Ekaterinburg:10,11::Asia/Yekaterinburg:
 Ekaterinburg Standard Time:10,11::Asia/Yekaterinburg:
-West Asia:10,11::Asia/Karachi:
-West Asia Standard Time:10,11::Asia/Karachi:
+West Asia:10,11:UZ:Asia/Tashkent:
+West Asia Standard Time:10,11:UZ:Asia/Tashkent:
 Central Asia:12,13::Asia/Dhaka:
 Central Asia Standard Time:12,13::Asia/Dhaka:
 N. Central Asia Standard Time:12,13::Asia/Novosibirsk:
@@ -146,8 +146,8 @@ South Africa:4,69::Africa/Harare:
 South Africa Standard Time:4,69::Africa/Harare:
 Atlantic:40,41::America/Halifax:
 Atlantic Standard Time:40,41::America/Halifax:
-SA Eastern:42,43::America/Buenos_Aires:
-SA Eastern Standard Time:42,43::America/Buenos_Aires:
+SA Eastern:42,43:GF:America/Cayenne:
+SA Eastern Standard Time:42,43:GF:America/Cayenne:
 Mid-Atlantic:44,45::Atlantic/South_Georgia:
 Mid-Atlantic Standard Time:44,45::Atlantic/South_Georgia:
 Azores:46,47::Atlantic/Azores:
@@ -160,21 +160,28 @@ New Zealand Standard Time:78,79::Pacific/Auckland:
 Tonga Standard Time:78,79::Pacific/Tongatapu:
 Arabian:8,9::Asia/Muscat:
 Arabian Standard Time:8,9::Asia/Muscat:
-Caucasus:8,9::GMT+0400:
-Caucasus Standard Time:8,9::GMT+0400:
+Caucasus:8,9:AM:Asia/Yerevan:
+Caucasus Standard Time:8,9:AM:Asia/Yerevan:
 GMT Standard Time:88,89::GMT:
 Greenwich:88,89::GMT:
 Greenwich Standard Time:88,89::GMT:
-Central Brazilian Standard Time:900,900:BR:America/Manaus:
-Central Standard Time (Mexico):901,901::America/Mexico_City:
-Georgian Standard Time:902,902:GE:Asia/Tbilisi:
-Mountain Standard Time (Mexico):903,903:MX:America/Chihuahua:
-Namibia Standard Time:904,904:NA:Africa/Windhoek:
-Pacific Standard Time (Mexico):905,905:MX:America/Tijuana:
-Western Brazilian Standard Time:906,906:BR:America/Rio_Branco:
-Azerbaijan Standard Time:907,907:AZ:Asia/Baku:
-Jordan Standard Time:908,908:JO:Asia/Amman:
-Middle East Standard Time:909,909:LB:Asia/Beirut:
-Armenian Standard Time:910,910:AM:Asia/Yerevan:
-Montevideo Standard Time:911,911:UY:America/Montevideo:
-Venezuela Standard Time:912,912::America/Caracas:
+Argentina Standard Time:900,900::America/Buenos_Aires:
+Azerbaijan Standard Time:901,901:AZ:Asia/Baku:
+Central Brazilian Standard Time:902,902:BR:America/Manaus:
+Central Standard Time (Mexico):903,903::America/Mexico_City:
+Georgian Standard Time:904,904:GE:Asia/Tbilisi:
+Jordan Standard Time:905,905:JO:Asia/Amman:
+Mauritius Standard Time:906,906:MU:Indian/Mauritius:
+Middle East Standard Time:907,907:LB:Asia/Beirut:
+Montevideo Standard Time:908,908:UY:America/Montevideo:
+Morocco Standard Time:909,909:MA:Africa/Casablanca:
+Mountain Standard Time (Mexico):910,910:MX:America/Chihuahua:
+Namibia Standard Time:911,911:NA:Africa/Windhoek:
+Pacific Standard Time (Mexico):912,912:MX:America/Tijuana:
+Pakistan Standard Time:913,913::Asia/Karachi:
+UTC:914,914::UTC:
+Venezuela Standard Time:915,915::America/Caracas:
+Kamchatka Standard Time:916,916:RU:Asia/Kamchatka:
+Paraguay Standard Time:917,917:PY:America/Asuncion:
+Western Brazilian Standard Time:918,918:BR:America/Rio_Branco:
+Armenian Standard Time:919,919:AM:Asia/Yerevan:

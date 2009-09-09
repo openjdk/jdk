@@ -22,6 +22,8 @@
 # have any questions.
 #
 # <pre>
+# This file is in the public domain, so clarified as of
+# 2009-05-17 by Arthur David Olson.
 
 # This data is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
@@ -696,8 +698,8 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 
 # From Rodrigo Severo (2008-06-24):
 # Just correcting the URL:
-# <a href="https://www.in.gov.br/imprensa/visualiza/index.jsp?jornal=3Ddo&secao=3D1&pagina=3D1&data=3D25/04/2008">
-# https://www.in.gov.br/imprensa/visualiza/index.jsp?jornal=3Ddo&secao=3D1&pagina=3D1&data=3D25/04/2008
+# <a href="https://www.in.gov.br/imprensa/visualiza/index.jsp?jornal=do&secao=1&pagina=1&data=25/04/2008">
+# https://www.in.gov.br/imprensa/visualiza/index.jsp?jornal=do&secao=1&pagina=1&data=25/04/2008
 # </a>
 #
 # As a result of the above Decree I believe the America/Rio_Branco

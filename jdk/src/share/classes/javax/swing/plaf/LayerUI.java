@@ -1,6 +1,26 @@
 /*
- * Copyright 2009 Sun Microsystems, Inc. All rights reserved.
- * SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
  */
 
 package javax.swing.plaf;
@@ -202,6 +222,7 @@ public class LayerUI<V extends Component>
      * Returns an array of all the listeners which have been associated
      * with the named property.
      *
+     * @param propertyName  The name of the property being listened to
      * @return all of the {@code PropertyChangeListener}s associated with
      *         the named property; if no such listeners have been added or
      *         if {@code propertyName} is {@code null}, an empty
@@ -242,6 +263,7 @@ public class LayerUI<V extends Component>
     /**
      * Returns the preferred size of the viewport for a view component.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
      * @return the preferred size of the viewport for a view component
      * @see Scrollable#getPreferredScrollableViewportSize()
      */
@@ -257,6 +279,10 @@ public class LayerUI<V extends Component>
      * that display logical rows or columns in order to completely expose
      * one block of rows or columns, depending on the value of orientation.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
+     * @param visibleRect The view area visible within the viewport
+     * @param orientation Either SwingConstants.VERTICAL or SwingConstants.HORIZONTAL.
+     * @param direction Less than zero to scroll up/left, greater than zero for down/right.
      * @return the "block" increment for scrolling in the specified direction
      * @see Scrollable#getScrollableBlockIncrement(Rectangle, int, int)
      */
@@ -276,15 +302,13 @@ public class LayerUI<V extends Component>
      * determine the height of the layer, unless the preferred height
      * of the layer is smaller than the height of the viewport.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
      * @return whether the layer should track the height of the viewport
      * @see Scrollable#getScrollableTracksViewportHeight()
      */
     public boolean getScrollableTracksViewportHeight(JLayer<? extends V> l) {
         if (l.getView() instanceof Scrollable) {
             return ((Scrollable)l.getView()).getScrollableTracksViewportHeight();
-        }
-        if (l.getParent() instanceof JViewport) {
-            return (((JViewport)l.getParent()).getHeight() > l.getPreferredSize().height);
         }
         return false;
     }
@@ -294,6 +318,7 @@ public class LayerUI<V extends Component>
      * determine the width of the layer, unless the preferred width
      * of the layer is smaller than the width of the viewport.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
      * @return whether the layer should track the width of the viewport
      * @see Scrollable
      * @see LayerUI#getScrollableTracksViewportWidth(JLayer)
@@ -301,9 +326,6 @@ public class LayerUI<V extends Component>
     public boolean getScrollableTracksViewportWidth(JLayer<? extends V> l) {
         if (l.getView() instanceof Scrollable) {
             return ((Scrollable)l.getView()).getScrollableTracksViewportWidth();
-        }
-        if (l.getParent() instanceof JViewport) {
-            return (((JViewport)l.getParent()).getWidth() > l.getPreferredSize().width);
         }
         return false;
     }
@@ -318,6 +340,10 @@ public class LayerUI<V extends Component>
      * Scrolling containers, like JScrollPane, will use this method
      * each time the user requests a unit scroll.
      *
+     * @param l the {@code JLayer} component where this UI delegate is being installed
+     * @param visibleRect The view area visible within the viewport
+     * @param orientation Either SwingConstants.VERTICAL or SwingConstants.HORIZONTAL.
+     * @param direction Less than zero to scroll up/left, greater than zero for down/right.
      * @return The "unit" increment for scrolling in the specified direction.
      *         This value should always be positive.
      * @see Scrollable#getScrollableUnitIncrement(Rectangle, int, int)
