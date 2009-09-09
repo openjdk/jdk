@@ -71,8 +71,8 @@ public abstract class XErrorHandler {
             return super.handleError(display, err);
         }
         // Shared instance
-        private static IgnoreBadWindowHandler theInstance = new IgnoreBadWindowHandler();
-        public static IgnoreBadWindowHandler getInstance() {
+        private static VerifyChangePropertyHandler theInstance = new VerifyChangePropertyHandler();
+        public static VerifyChangePropertyHandler getInstance() {
             return theInstance;
         }
     }
