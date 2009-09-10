@@ -426,7 +426,7 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
                 if (defaultConfig != null) {
                     configs = new GraphicsConfiguration[1];
                     configs[0] = defaultConfig;
-                    return configs;
+                    return configs.clone();
                 }
             }
         }
