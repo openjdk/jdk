@@ -266,6 +266,13 @@ Java_sun_awt_image_ImageRepresentation_setDiffICM(JNIEnv *env, jclass cls,
     jnewlut = (*env)->GetObjectField(env, jicm, g_ICMrgbID);
     mapSize = (*env)->GetIntField(env, jicm, g_ICMmapSizeID);
 
+    if (numLut < 0 || numLut > 256 || mapSize < 0 || mapSize > 256) {
+        /* Ether old or new ICM has a palette that exceeds capacity
+           of byte data type, so we have to convert the image data
+           to default representation.
+        */
+        return 0;
+    }
     srcLUT = (unsigned int *) (*env)->GetPrimitiveArrayCritical(env, jlut,
                                                                 NULL);
     if (srcLUT == NULL) {
