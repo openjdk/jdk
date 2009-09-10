@@ -260,10 +260,6 @@ void ConcurrentMarkThread::run() {
         }
       }
 
-      _sts.join();
-      _cm->disable_co_trackers();
-      _sts.leave();
-
       // we now want to allow clearing of the marking bitmap to be
       // suspended by a collection pause.
       _sts.join();
