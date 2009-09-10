@@ -196,10 +196,6 @@ public class BasicMenuUI extends BasicMenuItemUI
         return getHandler();
     }
 
-    protected MenuKeyListener createMenuKeyListener(JComponent c) {
-        return (MenuKeyListener)getHandler();
-    }
-
     public Dimension getMaximumSize(JComponent c) {
         if (((JMenu)menuItem).isTopLevelMenu() == true) {
             Dimension d = c.getPreferredSize();
@@ -401,8 +397,7 @@ public class BasicMenuUI extends BasicMenuItemUI
         public void stateChanged(ChangeEvent e) { }
     }
 
-    private class Handler extends BasicMenuItemUI.Handler implements
-            MenuKeyListener {
+    private class Handler extends BasicMenuItemUI.Handler {
         //
         // PropertyChangeListener
         //
@@ -585,45 +580,5 @@ public class BasicMenuUI extends BasicMenuItemUI
         }
         public void menuDragMouseExited(MenuDragMouseEvent e) {}
         public void menuDragMouseReleased(MenuDragMouseEvent e) {}
-
-
-        //
-        // MenuKeyListener
-        //
-        /**
-         * Open the Menu
-         */
-        public void menuKeyTyped(MenuKeyEvent e) {
-            if (!crossMenuMnemonic && BasicPopupMenuUI.getLastPopup() != null) {
-                // when crossMenuMnemonic is not set, we don't open a toplevel
-                // menu if another toplevel menu is already open
-                    return;
-                }
-
-            char key = Character.toLowerCase((char)menuItem.getMnemonic());
-            MenuElement path[] = e.getPath();
-            MenuSelectionManager manager = e.getMenuSelectionManager();
-            if (key == Character.toLowerCase(e.getKeyChar())) {
-                JPopupMenu popupMenu = ((JMenu)menuItem).getPopupMenu();
-                ArrayList<MenuElement> newList = new ArrayList<MenuElement>(Arrays.asList(path));
-                newList.add(popupMenu);
-                MenuElement subs[] = popupMenu.getSubElements();
-                MenuElement sub =
-                        BasicPopupMenuUI.findEnabledChild(subs, -1, true);
-                if(sub != null) {
-                    newList.add(sub);
-                }
-                MenuElement newPath[] = new MenuElement[0];
-                newPath = newList.toArray(newPath);
-                manager.setSelectedPath(newPath);
-                e.consume();
-            } else if (((JMenu)menuItem).isTopLevelMenu()
-                    && BasicPopupMenuUI.getLastPopup() == null) {
-                manager.clearSelectedPath();
-            }
-        }
-
-        public void menuKeyPressed(MenuKeyEvent e) {}
-        public void menuKeyReleased(MenuKeyEvent e) {}
     }
 }
