@@ -1833,6 +1833,13 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
         return JNI_FALSE;
     }
 
+    if (stepX > cinfo->image_width) {
+        stepX = cinfo->image_width;
+    }
+    if (stepY > cinfo->image_height) {
+        stepY = cinfo->image_height;
+    }
+
     /*
      * First get the source bands array and copy it to our local array
      * so we don't have to worry about pinning and unpinning it again.
