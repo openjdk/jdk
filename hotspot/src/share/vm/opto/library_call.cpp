@@ -3894,7 +3894,6 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   assert(obj_size != NULL, "");
   Node* raw_obj = alloc_obj->in(1);
   assert(alloc_obj->is_CheckCastPP() && raw_obj->is_Proj() && raw_obj->in(0)->is_Allocate(), "");
-  assert(alloc_obj->as_CheckCastPP()->type() != TypeInstPtr::NOTNULL, "should be more precise than Object");
 
   if (ReduceBulkZeroing) {
     // We will be completely responsible for initializing this object -
@@ -3904,19 +3903,10 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
     guarantee(alloc != NULL && alloc->maybe_set_complete(&_gvn), "");
   }
 
-  // Cast to Object for arraycopy.
-  // We can't use the original CheckCastPP since it should be moved
-  // after the arraycopy to prevent stores flowing above it.
-  Node* new_obj = new(C, 2) CheckCastPPNode(alloc_obj->in(0), raw_obj,
-                                            TypeInstPtr::NOTNULL);
-  new_obj = _gvn.transform(new_obj);
-  // Substitute in the locally valid dest_oop.
-  replace_in_map(alloc_obj, new_obj);
-
   // Copy the fastest available way.
   // TODO: generate fields copies for small objects instead.
   Node* src  = obj;
-  Node* dest = new_obj;
+  Node* dest = alloc_obj;
   Node* size = _gvn.transform(obj_size);
 
   // Exclude the header but include array length to copy by 8 bytes words.
@@ -3962,7 +3952,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
     int raw_adr_idx = Compile::AliasIdxRaw;
     post_barrier(control(),
                  memory(raw_adr_type),
-                 new_obj,
+                 alloc_obj,
                  no_particular_field,
                  raw_adr_idx,
                  no_particular_value,
@@ -3970,16 +3960,8 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
                  false);
   }
 
-  // Move the original CheckCastPP after arraycopy.
-  _gvn.hash_delete(alloc_obj);
-  alloc_obj->set_req(0, control());
-  // Replace raw memory edge with new CheckCastPP to have a live oop
-  // at safepoints instead of raw value.
-  assert(new_obj->is_CheckCastPP() && new_obj->in(1) == alloc_obj->in(1), "sanity");
-  alloc_obj->set_req(1, new_obj);    // cast to the original type
-  _gvn.hash_find_insert(alloc_obj);  // put back into GVN table
-  // Restore in the locally valid dest_oop.
-  replace_in_map(new_obj, alloc_obj);
+  // Do not let reads from the cloned object float above the arraycopy.
+  insert_mem_bar(Op_MemBarCPUOrder);
 }
 
 //------------------------inline_native_clone----------------------------
@@ -4448,17 +4430,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     InitializeNode* init = alloc->initialization();
     assert(init->is_complete(), "we just did this");
     assert(dest->is_CheckCastPP(), "sanity");
-    assert(dest->as_CheckCastPP()->type() != TypeInstPtr::NOTNULL, "type should be more precise than Object");
     assert(dest->in(0)->in(0) == init, "dest pinned");
-
-    // Cast to Object for arraycopy.
-    // We can't use the original CheckCastPP since it should be moved
-    // after the arraycopy to prevent stores flowing above it.
-    Node* new_obj = new(C, 2) CheckCastPPNode(dest->in(0), dest->in(1),
-                                              TypeInstPtr::NOTNULL);
-    dest = _gvn.transform(new_obj);
-    // Substitute in the locally valid dest_oop.
-    replace_in_map(original_dest, dest);
     adr_type = TypeRawPtr::BOTTOM;  // all initializations are into raw memory
     // From this point on, every exit path is responsible for
     // initializing any non-copied parts of the object to zero.
@@ -4788,18 +4760,6 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
   set_i_o(     _gvn.transform(result_i_o)    );
   set_memory(  _gvn.transform(result_memory), adr_type );
 
-  if (dest != original_dest) {
-    // Pin the "finished" array node after the arraycopy/zeroing operations.
-    _gvn.hash_delete(original_dest);
-    original_dest->set_req(0, control());
-    // Replace raw memory edge with new CheckCastPP to have a live oop
-    // at safepoints instead of raw value.
-    assert(dest->is_CheckCastPP() && dest->in(1) == original_dest->in(1), "sanity");
-    original_dest->set_req(1, dest);       // cast to the original type
-    _gvn.hash_find_insert(original_dest);  // put back into GVN table
-    // Restore in the locally valid dest_oop.
-    replace_in_map(dest, original_dest);
-  }
   // The memory edges above are precise in order to model effects around
   // array copies accurately to allow value numbering of field loads around
   // arraycopy.  Such field loads, both before and after, are common in Java
@@ -4810,7 +4770,9 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
   // The next memory barrier is added to avoid it. If the arraycopy can be
   // optimized away (which it can, sometimes) then we can manually remove
   // the membar also.
-  if (InsertMemBarAfterArraycopy)
+  //
+  // Do not let reads from the cloned object float above the arraycopy.
+  if (InsertMemBarAfterArraycopy || alloc != NULL)
     insert_mem_bar(Op_MemBarCPUOrder);
 }
 
