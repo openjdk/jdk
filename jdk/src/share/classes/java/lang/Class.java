@@ -565,8 +565,9 @@ public final
      *          represented by this object.
      */
     public String getName() {
+        String name = this.name;
         if (name == null)
-            name = getName0();
+            this.name = name = getName0();
         return name;
     }
 
