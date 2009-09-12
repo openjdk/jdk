@@ -68,10 +68,10 @@ default::
         @if not exist $(JvmtiOutDir) mkdir $(JvmtiOutDir)
 
 $(JvmtiGenClass): $(JvmtiGenSource)
-	$(COMPILE_JAVAC) -g -d $(JvmtiOutDir) $(JvmtiGenSource)
+	$(COMPILE_JAVAC) -d $(JvmtiOutDir) $(JvmtiGenSource)
 
 $(JvmtiEnvFillClass): $(JvmtiEnvFillSource)
-	@$(COMPILE_JAVAC) -g -d $(JvmtiOutDir) $(JvmtiEnvFillSource)
+	@$(COMPILE_JAVAC) -d $(JvmtiOutDir) $(JvmtiEnvFillSource)
 
 $(JvmtiOutDir)/jvmtiEnter.cpp: $(both) $(JvmtiSrcDir)/jvmtiEnter.xsl
 	@echo Generating $@
