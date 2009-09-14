@@ -637,7 +637,7 @@ public class ISO2022_JP
                             da[dp++] = (byte)(index >> 8);
                             da[dp++] = (byte)(index & 0xff);
                         } else {
-                            if (Surrogate.is(c) && sgp.parse(c, sa, sp, sl) < 0)
+                            if (Character.isSurrogate(c) && sgp.parse(c, sa, sp, sl) < 0)
                                 return sgp.error();
                             if (unmappableCharacterAction()
                                 == CodingErrorAction.REPLACE
@@ -655,7 +655,7 @@ public class ISO2022_JP
                                 }
                                 currentMode = replaceMode;
                             }
-                            if (Surrogate.is(c))
+                            if (Character.isSurrogate(c))
                                 return sgp.unmappableResult();
                             return CoderResult.unmappableForLength(1);
                         }
@@ -745,7 +745,7 @@ public class ISO2022_JP
                             dst.put((byte)(index >> 8));
                             dst.put((byte)(index & 0xff));
                         } else {
-                            if (Surrogate.is(c) && sgp.parse(c, src) < 0)
+                            if (Character.isSurrogate(c) && sgp.parse(c, src) < 0)
                                 return sgp.error();
                             if (unmappableCharacterAction() == CodingErrorAction.REPLACE
                                 && currentMode != replaceMode) {
@@ -762,7 +762,7 @@ public class ISO2022_JP
                                 }
                                 currentMode = replaceMode;
                             }
-                            if (Surrogate.is(c))
+                            if (Character.isSurrogate(c))
                                 return sgp.unmappableResult();
                             return CoderResult.unmappableForLength(1);
                         }

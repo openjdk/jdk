@@ -26,6 +26,9 @@
  * @bug 6746458
  * @summary Verify correct separate compilation of classes with extended identifiers.
  * @author jrose
+ * @ignore 6877225 test fails on Windows:
+ *      QuotedIdent.java:81: error while writing QuotedIdent.*86: PATH\QuotedIdent$*86.class
+ *      (The filename, directory name, or volume label syntax is incorrect)
  *
  * @library ..
  * @run main quid.QuotedIdent2

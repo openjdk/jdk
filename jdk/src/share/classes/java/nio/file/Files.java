@@ -133,10 +133,11 @@ public final class Files {
      * <p> This method walks a file tree rooted at a given starting file. The
      * file tree traversal is <em>depth-first</em> with the given {@link
      * FileVisitor} invoked for each file encountered. File tree traversal
-     * completes when all accessible files in the tree have been visited, a
-     * visitor returns a result of {@link FileVisitResult#TERMINATE TERMINATE},
-     * or the visitor terminates due to an uncaught {@code Error} or {@code
-     * RuntimeException}.
+     * completes when all accessible files in the tree have been visited, or a
+     * visit method returns a result of {@link FileVisitResult#TERMINATE
+     * TERMINATE}. Where a visit method terminates due an uncaught error or
+     * runtime exception then the traversal is terminated and the error or
+     * exception is propagated to the caller of this method.
      *
      * <p> For each file encountered this method attempts to gets its {@link
      * java.nio.file.attribute.BasicFileAttributes}. If the file is not a

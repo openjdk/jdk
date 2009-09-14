@@ -1,2 +1,2 @@
-T6722234a.java:35:9: compiler.err.cant.apply.symbol: kindname.method, m, compiler.misc.type.var: T, 1, compiler.misc.type.var: T, 2, kindname.class, T6722234a<compiler.misc.type.var: T, 1>, null
+T6722234a.java:12:9: compiler.err.cant.apply.symbol: kindname.method, m, compiler.misc.type.var: T, 1, compiler.misc.type.var: T, 2, kindname.class, T6722234a<compiler.misc.type.var: T, 1>, null
 1 error

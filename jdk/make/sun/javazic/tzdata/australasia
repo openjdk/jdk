@@ -22,6 +22,8 @@
 # have any questions.
 #
 # <pre>
+# This file is in the public domain, so clarified as of
+# 2009-05-17 by Arthur David Olson.
 
 # This file also includes Pacific islands.
 
@@ -447,6 +449,22 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 			-11:00	-	SST			# S=Samoa
 
 # Samoa
+
+# From Alexander Krivenyshev (2008-12-06):
+# The Samoa government (Western Samoa) may implement DST on the first Sunday of 
+# October 2009 (October 4, 2009) until the last Sunday of March 2010 (March 28, 
+# 2010). 
+# 
+# "Selected Committee reports to Cabinet on Daylight Saving Time",
+# Government of Samoa:
+# <a href="http://www.govt.ws/pr_article.cfm?pr_id=560">
+# http://www.govt.ws/pr_article.cfm?pr_id=560
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_samoa01.html">
+# http://www.worldtimezone.com/dst_news/dst_news_samoa01.html
+# </a>
+
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
 			-11:30	-	SAMT	1950		# Samoa Time
@@ -1141,6 +1159,27 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # From Paul Eggert (2007-07-23):
 # See "southeast Australia" above for 2008 and later.
 
+# From Steffen Thorsen (2009-04-28):
+# According to the official press release, South Australia's extended daylight 
+# saving period will continue with the same rules as used during the 2008-2009 
+# summer (southern hemisphere).
+# 
+# From
+# <a href="http://www.safework.sa.gov.au/uploaded_files/DaylightDatesSet.pdf">
+# http://www.safework.sa.gov.au/uploaded_files/DaylightDatesSet.pdf
+# </a>
+# The extended daylight saving period that South Australia has been trialling 
+# for over the last year is now set to be ongoing.
+# Daylight saving will continue to start on the first Sunday in October each 
+# year and finish on the first Sunday in April the following year.
+# Industrial Relations Minister, Paul Caica, says this provides South Australia 
+# with a consistent half hour time difference with NSW, Victoria, Tasmania and 
+# the ACT for all 52 weeks of the year...
+# 
+# We have a wrap-up here:
+# <a href="http://www.timeanddate.com/news/time/south-australia-extends-dst.html">
+# http://www.timeanddate.com/news/time/south-australia-extends-dst.html
+# </a>
 ###############################################################################
 
 # New Zealand

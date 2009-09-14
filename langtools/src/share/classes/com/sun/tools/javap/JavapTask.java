@@ -455,8 +455,19 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                     return EXIT_CMDERR;
             }
 
-            boolean ok = run();
-            return ok ? EXIT_OK : EXIT_ERROR;
+            try {
+                boolean ok = run();
+                return ok ? EXIT_OK : EXIT_ERROR;
+            } finally {
+                if (defaultFileManager != null) {
+                    try {
+                        defaultFileManager.close();
+                        defaultFileManager = null;
+                    } catch (IOException e) {
+                        throw new InternalError(e);
+                    }
+                }
+            }
         } catch (BadArgs e) {
             reportError(e.key, e.args);
             if (e.showUsage) {
@@ -856,7 +867,9 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     }
 
     private JavaFileManager getDefaultFileManager(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log) {
-        return JavapFileManager.create(dl, log);
+        if (defaultFileManager == null)
+            defaultFileManager = JavapFileManager.create(dl, log);
+        return defaultFileManager;
     }
 
     private JavaFileObject getClassFileObject(String className) throws IOException {
@@ -1004,6 +1017,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
     protected Context context;
     JavaFileManager fileManager;
+    JavaFileManager defaultFileManager;
     PrintWriter log;
     DiagnosticListener<? super JavaFileObject> diagnosticListener;
     List<String> classes;

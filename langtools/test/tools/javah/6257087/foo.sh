@@ -42,12 +42,15 @@ fi
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
     PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    PS=":"
+    FS="/"
+    DIFFOPTS="--strip-trailing-cr"
+    ;;
   Windows* )
-    NULL=NUL
     PS=";"
     FS="\\"
     ;;
@@ -57,9 +60,9 @@ case "$OS" in
     ;;
 esac
 
-"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d "${TC}" "${TS}${FS}foo.java" > ${NULL}
+"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d "${TC}" "${TS}${FS}foo.java" 
 "${TESTJAVA}${FS}bin${FS}javah" ${TESTTOOLVMOPTS} -classpath "${TC}" -d "${TC}" foo
-diff -c "${TS}${FS}foo_bar.h" "${TC}${FS}foo_bar.h"
+diff ${DIFFOPTS} -c "${TS}${FS}foo_bar.h" "${TC}${FS}foo_bar.h"
 result=$?
 
 if [ $result -eq 0 ]
