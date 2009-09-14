@@ -252,7 +252,7 @@ symbolHandle java_lang_String::as_symbol(Handle java_string, TRAPS) {
   typeArrayOop value  = java_lang_String::value(obj);
   int          offset = java_lang_String::offset(obj);
   int          length = java_lang_String::length(obj);
-  jchar* base = value->char_at_addr(offset);
+  jchar* base = (length == 0) ? NULL : value->char_at_addr(offset);
   symbolOop sym = SymbolTable::lookup_unicode(base, length, THREAD);
   return symbolHandle(THREAD, sym);
 }
@@ -261,7 +261,7 @@ symbolOop java_lang_String::as_symbol_or_null(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
   int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
-  jchar* base = value->char_at_addr(offset);
+  jchar* base = (length == 0) ? NULL : value->char_at_addr(offset);
   return SymbolTable::probe_unicode(base, length);
 }
 
