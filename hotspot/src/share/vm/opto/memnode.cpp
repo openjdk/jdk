@@ -2514,7 +2514,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
 //=============================================================================
 // Do we match on this edge? No memory edges
 uint StrCompNode::match_edge(uint idx) const {
-  return idx == 5 || idx == 6;
+  return idx == 2 || idx == 3; // StrComp (Binary str1 cnt1) (Binary str2 cnt2)
 }
 
 //------------------------------Ideal------------------------------------------
@@ -2524,9 +2524,10 @@ Node *StrCompNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
+//=============================================================================
 // Do we match on this edge? No memory edges
 uint StrEqualsNode::match_edge(uint idx) const {
-  return idx == 5 || idx == 6;
+  return idx == 2 || idx == 3; // StrEquals (Binary str1 str2) cnt
 }
 
 //------------------------------Ideal------------------------------------------
@@ -2539,7 +2540,7 @@ Node *StrEqualsNode::Ideal(PhaseGVN *phase, bool can_reshape){
 //=============================================================================
 // Do we match on this edge? No memory edges
 uint StrIndexOfNode::match_edge(uint idx) const {
-  return idx == 5 || idx == 6;
+  return idx == 2 || idx == 3; // StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)
 }
 
 //------------------------------Ideal------------------------------------------
@@ -2549,6 +2550,11 @@ Node *StrIndexOfNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
+//=============================================================================
+// Do we match on this edge? No memory edges
+uint AryEqNode::match_edge(uint idx) const {
+  return idx == 2 || idx == 3; // StrEquals ary1 ary2
+}
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies

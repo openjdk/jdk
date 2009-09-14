@@ -748,22 +748,15 @@ public:
 //------------------------------StrComp-------------------------------------
 class StrCompNode: public Node {
 public:
-  StrCompNode(Node *control,
-              Node* char_array_mem,
-              Node* value_mem,
-              Node* count_mem,
-              Node* offset_mem,
-              Node* s1, Node* s2): Node(control,
-                                        char_array_mem,
-                                        value_mem,
-                                        count_mem,
-                                        offset_mem,
-                                        s1, s2) {};
+  StrCompNode(Node* control, Node* char_array_mem,
+              Node* s1, Node* c1,
+              Node* s2, Node* c2): Node(control, char_array_mem,
+                                        s1, c1,
+                                        s2, c2) {};
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }
-  // a StrCompNode (conservatively) aliases with everything:
-  virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
+  virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -772,22 +765,13 @@ public:
 //------------------------------StrEquals-------------------------------------
 class StrEqualsNode: public Node {
 public:
-  StrEqualsNode(Node *control,
-                Node* char_array_mem,
-                Node* value_mem,
-                Node* count_mem,
-                Node* offset_mem,
-                Node* s1, Node* s2): Node(control,
-                                          char_array_mem,
-                                          value_mem,
-                                          count_mem,
-                                          offset_mem,
-                                          s1, s2) {};
+  StrEqualsNode(Node* control, Node* char_array_mem,
+                Node* s1, Node* s2, Node* c): Node(control, char_array_mem,
+                                                   s1, s2, c) {};
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
-  // a StrEqualsNode (conservatively) aliases with everything:
-  virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
+  virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -796,22 +780,15 @@ public:
 //------------------------------StrIndexOf-------------------------------------
 class StrIndexOfNode: public Node {
 public:
-  StrIndexOfNode(Node *control,
-                 Node* char_array_mem,
-                 Node* value_mem,
-                 Node* count_mem,
-                 Node* offset_mem,
-                 Node* s1, Node* s2): Node(control,
-                                           char_array_mem,
-                                           value_mem,
-                                           count_mem,
-                                           offset_mem,
-                                           s1, s2) {};
+  StrIndexOfNode(Node* control, Node* char_array_mem,
+                 Node* s1, Node* c1,
+                 Node* s2, Node* c2): Node(control, char_array_mem,
+                                           s1, c1,
+                                           s2, c2) {};
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }
-  // a StrIndexOfNode (conservatively) aliases with everything:
-  virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
+  virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -820,11 +797,13 @@ public:
 //------------------------------AryEq---------------------------------------
 class AryEqNode: public Node {
 public:
-  AryEqNode(Node *control, Node* s1, Node* s2): Node(control, s1, s2) {};
+  AryEqNode(Node* control, Node* char_array_mem,
+            Node* s1, Node* s2): Node(control, char_array_mem, s1, s2) {};
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
+  virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };

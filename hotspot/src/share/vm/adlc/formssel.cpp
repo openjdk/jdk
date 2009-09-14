@@ -828,11 +828,13 @@ uint InstructForm::oper_input_base(FormDict &globals) {
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
 
   if( _matrule->_rChild &&
-      ( strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
+      ( strcmp(_matrule->_rChild->_opType,"AryEq"     )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 )) {
-        // String.(compareTo/equals/indexOf) take 1 control and 4 memory edges.
-    return 5;
+        // String.(compareTo/equals/indexOf) and Arrays.equals
+        // take 1 control and 1 memory edges.
+    return 2;
   }
 
   // Check for handling of 'Memory' input/edge in the ideal world.
