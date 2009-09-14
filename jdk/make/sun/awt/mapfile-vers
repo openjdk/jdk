@@ -53,7 +53,6 @@ SUNWprivate_1.1 {
 		Java_sun_awt_image_GifImageDecoder_initIDs;
 		Java_sun_awt_image_GifImageDecoder_parseImage;
 		Java_sun_awt_image_ImageRepresentation_initIDs;
-		Java_sun_awt_image_ImageRepresentation_setBytePixels;
 		Java_sun_awt_image_ImageRepresentation_setDiffICM;
 		Java_sun_awt_image_ImageRepresentation_setICMpixels;
 		Java_sun_awt_image_ImagingLib_convolveBI;
