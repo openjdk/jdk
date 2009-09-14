@@ -458,6 +458,16 @@ private:
   // Post-Allocation peephole copy removal
   void post_allocate_copy_removal();
   Node *skip_copies( Node *c );
+  // Replace the old node with the current live version of that value
+  // and yank the old value if it's dead.
+  int replace_and_yank_if_dead( Node *old, OptoReg::Name nreg,
+                                Block *current_block, Node_List& value, Node_List& regnd ) {
+    Node* v = regnd[nreg];
+    assert(v->outcnt() != 0, "no dead values");
+    old->replace_by(v);
+    return yank_if_dead(old, current_block, &value, &regnd);
+  }
+
   int yank_if_dead( Node *old, Block *current_block, Node_List *value, Node_List *regnd );
   int elide_copy( Node *n, int k, Block *current_block, Node_List &value, Node_List &regnd, bool can_change_regs );
   int use_prior_register( Node *copy, uint idx, Node *def, Block *current_block, Node_List &value, Node_List &regnd );

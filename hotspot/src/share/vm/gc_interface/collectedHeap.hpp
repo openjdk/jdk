@@ -239,6 +239,9 @@ class CollectedHeap : public CHeapObj {
     return p == NULL || is_in_closed_subset(p);
   }
 
+  // XXX is_permanent() and is_in_permanent() should be better named
+  // to distinguish one from the other.
+
   // Returns "TRUE" if "p" is allocated as "permanent" data.
   // If the heap does not use "permanent" data, returns the same
   // value is_in_reserved() would return.
@@ -247,13 +250,17 @@ class CollectedHeap : public CHeapObj {
   // space). If you need the more conservative answer use is_permanent().
   virtual bool is_in_permanent(const void *p) const = 0;
 
+  bool is_in_permanent_or_null(const void *p) const {
+    return p == NULL || is_in_permanent(p);
+  }
+
   // Returns "TRUE" if "p" is in the committed area of  "permanent" data.
   // If the heap does not use "permanent" data, returns the same
   // value is_in() would return.
   virtual bool is_permanent(const void *p) const = 0;
 
-  bool is_in_permanent_or_null(const void *p) const {
-    return p == NULL || is_in_permanent(p);
+  bool is_permanent_or_null(const void *p) const {
+    return p == NULL || is_permanent(p);
   }
 
   // Returns "TRUE" if "p" is a method oop in the

@@ -1,7 +1,7 @@
-T6711619a.java:63:14: compiler.err.cant.resolve.args: kindname.method, a, , 
-T6711619a.java:64:14: compiler.err.cant.resolve.args: kindname.method, b, , 
-T6711619a.java:69:19: compiler.err.report.access: a, private, T6711619a.A
-T6711619a.java:70:19: compiler.err.report.access: b, private, T6711619a.B
-T6711619a.java:71:19: compiler.err.report.access: a, private, T6711619a.A
-T6711619a.java:72:19: compiler.err.report.access: b, private, T6711619a.B
+T6711619a.java:40:14: compiler.err.cant.resolve.args: kindname.method, a, , 
+T6711619a.java:41:14: compiler.err.cant.resolve.args: kindname.method, b, , 
+T6711619a.java:46:19: compiler.err.report.access: a, private, T6711619a.A
+T6711619a.java:47:19: compiler.err.report.access: b, private, T6711619a.B
+T6711619a.java:48:19: compiler.err.report.access: a, private, T6711619a.A
+T6711619a.java:49:19: compiler.err.report.access: b, private, T6711619a.B
 6 errors

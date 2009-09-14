@@ -29,6 +29,7 @@
  */
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
 public class T6729471
@@ -59,14 +60,22 @@ public class T6729471
         if (java_home.getName().equals("jre"))
             java_home = java_home.getParentFile();
         File rt_jar = new File(new File(new File(java_home, "jre"), "lib"), "rt.jar");
-        verify("jar:file:" + rt_jar + "!/java/util/Map.class",
+        try {
+            verify("jar:" + rt_jar.toURL() + "!/java/util/Map.class",
                 "public abstract boolean containsKey(java.lang.Object)");
+        } catch (MalformedURLException e) {
+            error(e.toString());
+        }
 
         // jar url: ct.sym, if it exists
         File ct_sym = new File(new File(java_home, "lib"), "ct.sym");
         if (ct_sym.exists()) {
-            verify("jar:file:" + ct_sym + "!/META-INF/sym/rt.jar/java/util/Map.class",
-                "public abstract boolean containsKey(java.lang.Object)");
+            try {
+                verify("jar:" + ct_sym.toURL() + "!/META-INF/sym/rt.jar/java/util/Map.class",
+                    "public abstract boolean containsKey(java.lang.Object)");
+            } catch (MalformedURLException e) {
+                error(e.toString());
+            }
         } else
             System.err.println("warning: ct.sym not found");
 

@@ -49,13 +49,13 @@ echo
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
-    PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    FS="/"
+    DIFFOPTS="--strip-trailing-cr"
+    ;;
   Windows* )
-    NULL=NUL
-    PS=";"
     FS="\\"
     ;;
   * )
@@ -98,7 +98,7 @@ fi
 
 # expected message
 cat "${TMP1}"
-diff -c "${TESTSRC}${FS}NoJavaLang.out" "${TMP1}"
+diff ${DIFFOPTS} -c "${TESTSRC}${FS}NoJavaLang.out" "${TMP1}"
 result=$?
 rm "${TMP1}"
 

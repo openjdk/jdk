@@ -51,7 +51,6 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
  private:
   ConcurrentG1Refine*              _cg1r;
 
-  COTracker                        _co_tracker;
   double                           _interval_ms;
 
   void decreaseInterval(int processing_time_ms) {
