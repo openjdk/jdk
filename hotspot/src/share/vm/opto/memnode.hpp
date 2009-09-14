@@ -582,12 +582,16 @@ public:
 // The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
 // Preceeding equivalent StoreCMs may be eliminated.
 class StoreCMNode : public StoreNode {
+ private:
+  int _oop_alias_idx;   // The alias_idx of OopStore
 public:
-  StoreCMNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store ) : StoreNode(c,mem,adr,at,val,oop_store) {}
+  StoreCMNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store, int oop_alias_idx ) : StoreNode(c,mem,adr,at,val,oop_store), _oop_alias_idx(oop_alias_idx) {}
   virtual int Opcode() const;
   virtual Node *Identity( PhaseTransform *phase );
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual BasicType memory_type() const { return T_VOID; } // unspecific
+  int oop_alias_idx() const { return _oop_alias_idx; }
 };
 
 //------------------------------LoadPLockedNode---------------------------------
