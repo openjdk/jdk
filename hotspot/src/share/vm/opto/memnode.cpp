@@ -2313,6 +2313,22 @@ Node *StoreCMNode::Identity( PhaseTransform *phase ) {
   return this;
 }
 
+//=============================================================================
+//------------------------------Ideal---------------------------------------
+Node *StoreCMNode::Ideal(PhaseGVN *phase, bool can_reshape){
+  Node* progress = StoreNode::Ideal(phase, can_reshape);
+  if (progress != NULL) return progress;
+
+  Node* my_store = in(MemNode::OopStore);
+  if (my_store->is_MergeMem()) {
+    Node* mem = my_store->as_MergeMem()->memory_at(oop_alias_idx());
+    set_req(MemNode::OopStore, mem);
+    return this;
+  }
+
+  return NULL;
+}
+
 //------------------------------Value-----------------------------------------
 const Type *StoreCMNode::Value( PhaseTransform *phase ) const {
   // Either input is TOP ==> the result is TOP
