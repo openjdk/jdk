@@ -473,6 +473,12 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
 // Can s1 and s2 be in a pack with s1 immediately preceding s2 and
 // s1 aligned at "align"
 bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
+
+  // Do not use superword for non-primitives
+  if((s1->is_Mem() && !is_java_primitive(s1->as_Mem()->memory_type())) ||
+     (s2->is_Mem() && !is_java_primitive(s2->as_Mem()->memory_type())))
+    return false;
+
   if (isomorphic(s1, s2)) {
     if (independent(s1, s2)) {
       if (!exists_at(s1, 0) && !exists_at(s2, 1)) {
