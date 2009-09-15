@@ -91,7 +91,17 @@ import sun.java2d.SunGraphicsEnvironment;
  * the nonmenu-related Abstract Window Toolkit components. Class
  * <code>Component</code> can also be extended directly to create a
  * lightweight component. A lightweight component is a component that is
- * not associated with a native opaque window.
+ * not associated with a native window. On the contrary, a heavyweight
+ * component is associated with a native window. The {@link #isLightweight()}
+ * method may be used to distinguish between the two kinds of the components.
+ * <p>
+ * Lightweight and heavyweight components may be mixed in a single component
+ * hierarchy. However, for correct operating of such a mixed hierarchy of
+ * components, the whole hierarchy must be valid. When the hierarchy gets
+ * invalidated, like after changing the bounds of components, or
+ * adding/removing components to/from containers, the whole hierarchy must be
+ * validated afterwards by means of the {@link Container#validate()} method
+ * invoked on the top-most invalid container of the hierarchy.
  * <p>
  * <h3>Serialization</h3>
  * It is important to note that only AWT listeners which conform
@@ -1489,9 +1499,14 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Shows or hides this component depending on the value of parameter
      * <code>b</code>.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @param b  if <code>true</code>, shows this component;
      * otherwise, hides this component
      * @see #isVisible
+     * @see #invalidate
      * @since JDK1.1
      */
     public void setVisible(boolean b) {
@@ -1750,10 +1765,15 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * Sets the font of this component.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @param f the font to become this component's font;
      *          if this parameter is <code>null</code> then this
      *          component will inherit the font of its parent
      * @see #getFont
+     * @see #invalidate
      * @since JDK1.0
      * @beaninfo
      *       bound: true
@@ -1827,8 +1847,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * Sets the locale of this component.  This is a bound property.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @param l the locale to become this component's locale
      * @see #getLocale
+     * @see #invalidate
      * @since JDK1.1
      */
     public void setLocale(Locale l) {
@@ -1948,12 +1973,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Moves this component to a new location. The top-left corner of
      * the new location is specified by the <code>x</code> and <code>y</code>
      * parameters in the coordinate space of this component's parent.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @param x the <i>x</i>-coordinate of the new location's
      *          top-left corner in the parent's coordinate space
      * @param y the <i>y</i>-coordinate of the new location's
      *          top-left corner in the parent's coordinate space
      * @see #getLocation
      * @see #setBounds
+     * @see #invalidate
      * @since JDK1.1
      */
     public void setLocation(int x, int y) {
@@ -1976,11 +2006,16 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Moves this component to a new location. The top-left corner of
      * the new location is specified by point <code>p</code>. Point
      * <code>p</code> is given in the parent's coordinate space.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @param p the point defining the top-left corner
      *          of the new location, given in the coordinate space of this
      *          component's parent
      * @see #getLocation
      * @see #setBounds
+     * @see #invalidate
      * @since JDK1.1
      */
     public void setLocation(Point p) {
@@ -2015,10 +2050,15 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Resizes this component so that it has width <code>width</code>
      * and height <code>height</code>.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @param width the new width of this component in pixels
      * @param height the new height of this component in pixels
      * @see #getSize
      * @see #setBounds
+     * @see #invalidate
      * @since JDK1.1
      */
     public void setSize(int width, int height) {
@@ -2040,10 +2080,15 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Resizes this component so that it has width <code>d.width</code>
      * and height <code>d.height</code>.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @param d the dimension specifying the new size
      *          of this component
      * @see #setSize
      * @see #setBounds
+     * @see #invalidate
      * @since JDK1.1
      */
     public void setSize(Dimension d) {
@@ -2086,6 +2131,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Moves and resizes this component. The new location of the top-left
      * corner is specified by <code>x</code> and <code>y</code>, and the
      * new size is specified by <code>width</code> and <code>height</code>.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @param x the new <i>x</i>-coordinate of this component
      * @param y the new <i>y</i>-coordinate of this component
      * @param width the new <code>width</code> of this component
@@ -2096,6 +2145,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #setLocation(Point)
      * @see #setSize(int, int)
      * @see #setSize(Dimension)
+     * @see #invalidate
      * @since JDK1.1
      */
     public void setBounds(int x, int y, int width, int height) {
@@ -2228,12 +2278,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * position is specified by <code>r.x</code> and <code>r.y</code>,
      * and its new size is specified by <code>r.width</code> and
      * <code>r.height</code>
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @param r the new bounding rectangle for this component
      * @see       #getBounds
      * @see       #setLocation(int, int)
      * @see       #setLocation(Point)
      * @see       #setSize(int, int)
      * @see       #setSize(Dimension)
+     * @see #invalidate
      * @since     JDK1.1
      */
     public void setBounds(Rectangle r) {
@@ -6618,8 +6673,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * native screen resource.
      * This method is called internally by the toolkit and should
      * not be called directly by programs.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      * @see       #isDisplayable
      * @see       #removeNotify
+     * @see #invalidate
      * @since JDK1.0
      */
     public void addNotify() {
@@ -8586,8 +8646,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * To set the orientation of an entire component
      * hierarchy, use
      * {@link #applyComponentOrientation applyComponentOrientation}.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      *
      * @see ComponentOrientation
+     * @see #invalidate
      *
      * @author Laura Werner, IBM
      * @beaninfo
@@ -8623,12 +8688,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Sets the <code>ComponentOrientation</code> property of this component
      * and all components contained within it.
+     * <p>
+     * This method changes layout-related information, and therefore,
+     * invalidates the component hierarchy.
+     *
      *
      * @param orientation the new component orientation of this component and
      *        the components contained within it.
      * @exception NullPointerException if <code>orientation</code> is null.
      * @see #setComponentOrientation
      * @see #getComponentOrientation
+     * @see #invalidate
      * @since 1.4
      */
     public void applyComponentOrientation(ComponentOrientation orientation) {
