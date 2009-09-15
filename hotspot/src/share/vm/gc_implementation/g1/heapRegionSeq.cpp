@@ -302,9 +302,9 @@ MemRegion HeapRegionSeq::shrink_by(size_t shrink_bytes,
     if (cur->isHumongous()) {
       return MemRegion(last_start, end);
     }
-    cur->reset_zero_fill();
     assert(cur == _regions.top(), "Should be top");
     if (!cur->is_empty()) break;
+    cur->reset_zero_fill();
     shrink_bytes -= cur->capacity();
     num_regions_deleted++;
     _regions.pop();
