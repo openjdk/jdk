@@ -195,7 +195,10 @@ class ZipFile implements ZipConstants, Closeable {
         if (charset == null)
             throw new NullPointerException("charset is null");
         this.zc = ZipCoder.get(charset);
+        long t0 = System.nanoTime();
         jzfile = open(name, mode, file.lastModified());
+        sun.misc.PerfCounter.getZipFileOpenTime().addElapsedTimeFrom(t0);
+        sun.misc.PerfCounter.getZipFileCount().increment();
         this.name = name;
         this.total = getTotal(jzfile);
     }
