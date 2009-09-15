@@ -333,7 +333,9 @@ public final class JLayer<V extends Component>
      * {@inheritDoc}
      */
     public void remove(Component comp) {
-        if (comp == getView()) {
+        if (comp == null) {
+            super.remove(comp);
+        } else if (comp == getView()) {
             setView(null);
         } else if (comp == getGlassPane()) {
             setGlassPane(null);
