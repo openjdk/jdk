@@ -72,36 +72,30 @@ Agent::get_monitor(jvmtiEnv *jvmti, JNIEnv *env, jobject object)
 {
     jvmtiError err;
     Monitor   *m;
+    jlong      tag;
 
-    /* We use tags to track these, the tag is the Monitor pointer */
-    err = jvmti->RawMonitorEnter(lock); {
-        check_jvmti_error(jvmti, err, "raw monitor enter");
-
-        /* The raw monitor enter/exit protects us from creating two
-         *   instances for the same object.
-         */
-        jlong tag;
-
-        m   = NULL;
-        tag = (jlong)0;
-        err = jvmti->GetTag(object, &tag);
-        check_jvmti_error(jvmti, err, "get tag");
-        /*LINTED*/
-        m = (Monitor *)(void *)(ptrdiff_t)tag;
-        if ( m == NULL ) {
-            m = new Monitor(jvmti, env, object);
-            /*LINTED*/
-            tag = (jlong)(ptrdiff_t)(void *)m;
-            err = jvmti->SetTag(object, tag);
-            check_jvmti_error(jvmti, err, "set tag");
-            /* Save monitor on list */
+    m   = NULL;
+    tag = (jlong)0;
+    err = jvmti->GetTag(object, &tag);
+    check_jvmti_error(jvmti, err, "get tag");
+    /*LINTED*/
+    m = (Monitor *)(void *)(ptrdiff_t)tag;
+    if ( m == NULL ) {
+        m = new Monitor(jvmti, env, object);
+        /* Save monitor on list */
+        if (monitor_count == monitor_list_size) {
+            monitor_list_size += monitor_list_grow_size;
             monitor_list = (Monitor**)realloc((void*)monitor_list,
-                                (monitor_count+1)*(int)sizeof(Monitor*));
-            monitor_list[monitor_count++] = m;
+                (monitor_list_size)*(int)sizeof(Monitor*));
         }
-    } err = jvmti->RawMonitorExit(lock);
-    check_jvmti_error(jvmti, err, "raw monitor exit");
-
+        monitor_list[monitor_count] = m;
+        m->set_slot(monitor_count);
+        monitor_count++;
+        /*LINTED*/
+        tag = (jlong)(ptrdiff_t)(void *)m;
+        err = jvmti->SetTag(object, tag);
+        check_jvmti_error(jvmti, err, "set tag");
+    }
     return m;
 }
 
@@ -112,12 +106,11 @@ Agent::Agent(jvmtiEnv *jvmti, JNIEnv *env, jthread thread)
 
     stdout_message("Agent created..\n");
     stdout_message("VMInit...\n");
-    /* Create a Monitor lock to use */
-    err = jvmti->CreateRawMonitor("waiters Agent lock", &lock);
-    check_jvmti_error(jvmti, err, "create raw monitor");
     /* Start monitor list */
     monitor_count = 0;
-    monitor_list  = (Monitor**)malloc((int)sizeof(Monitor*));
+    monitor_list_size = initial_monitor_list_size;
+    monitor_list = (Monitor**)
+        malloc(monitor_list_size*(int)sizeof(Monitor*));
 }
 
 Agent::~Agent()
@@ -134,9 +127,6 @@ void Agent::vm_death(jvmtiEnv *jvmti, JNIEnv *env)
         delete monitor_list[i];
     }
     free(monitor_list);
-    /* Destroy the Monitor lock to use */
-    err = jvmti->DestroyRawMonitor(lock);
-    check_jvmti_error(jvmti, err, "destroy raw monitor");
     /* Print death message */
     stdout_message("VMDeath...\n");
 }
@@ -215,8 +205,16 @@ void Agent::object_free(jvmtiEnv* jvmti, jlong tag)
     /* We just cast the tag to a C++ pointer and delete it.
      *   we know it can only be a Monitor *.
      */
-    Monitor *m;
+    Monitor   *m;
     /*LINTED*/
     m = (Monitor *)(ptrdiff_t)tag;
+    if (monitor_count > 1) {
+        /* Move the last element to this Monitor's slot */
+        int slot = m->get_slot();
+        Monitor *last = monitor_list[monitor_count-1];
+        monitor_list[slot] = last;
+        last->set_slot(slot);
+    }
+    monitor_count--;
     delete m;
 }
