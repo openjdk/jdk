@@ -188,7 +188,7 @@ public class LogRecord implements java.io.Serializable {
    }
 
     /**
-     * Get the source Logger name's
+     * Get the source Logger's name.
      *
      * @return source logger name (may be null)
      */
@@ -197,7 +197,7 @@ public class LogRecord implements java.io.Serializable {
     }
 
     /**
-     * Set the source Logger name.
+     * Set the source Logger's name.
      *
      * @param name   the source logger name (may be null)
      */
