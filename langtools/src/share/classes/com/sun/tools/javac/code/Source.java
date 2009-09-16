@@ -159,6 +159,12 @@ public enum Source {
     public boolean allowTypeAnnotations() {
         return compareTo(JDK1_7) >= 0;
     }
+    public boolean allowBinaryLiterals() {
+        return compareTo(JDK1_7) >= 0;
+    }
+    public boolean allowUnderscoresInLiterals() {
+        return compareTo(JDK1_7) >= 0;
+    }
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {
         case JDK1_2:
