@@ -3211,9 +3211,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
 
     // Fill in information already parsed
     this_klass->set_access_flags(access_flags);
-    if (verify) {
-      this_klass->set_should_verify_class();
-    }
+    this_klass->set_should_verify_class(verify);
     jint lh = Klass::instance_layout_helper(instance_size, false);
     this_klass->set_layout_helper(lh);
     assert(this_klass->oop_is_instance(), "layout is correct");
@@ -3222,9 +3220,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     //this_klass->set_super(super_klass());
     this_klass->set_class_loader(class_loader());
     this_klass->set_nonstatic_field_size(nonstatic_field_size);
-    if (has_nonstatic_fields) {
-       this_klass->set_has_nonstatic_fields();
-    }
+    this_klass->set_has_nonstatic_fields(has_nonstatic_fields);
     this_klass->set_static_oop_field_size(fac.static_oop_count);
     cp->set_pool_holder(this_klass());
     this_klass->set_constants(cp());

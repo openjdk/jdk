@@ -108,7 +108,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _static_field_size,                            int)                                   \
   nonstatic_field(instanceKlass,               _static_oop_field_size,                        int)                                   \
   nonstatic_field(instanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
-  nonstatic_field(instanceKlass,               _class_flags,                                  int)                                   \
+  nonstatic_field(instanceKlass,               _is_marked_dependent,                          bool)                                  \
   nonstatic_field(instanceKlass,               _minor_version,                                u2)                                    \
   nonstatic_field(instanceKlass,               _major_version,                                u2)                                    \
   nonstatic_field(instanceKlass,               _init_state,                                   instanceKlass::ClassState)             \
@@ -1245,7 +1245,6 @@ static inline uint64_t cast_uint64_t(size_t x)
    declare_integer_type(Bytecodes::Code)                                  \
    declare_integer_type(Generation::Name)                                 \
    declare_integer_type(instanceKlass::ClassState)                        \
-   declare_integer_type(instanceKlass::ClassFlags)                        \
    declare_integer_type(JavaThreadState)                                  \
    declare_integer_type(Location::Type)                                   \
    declare_integer_type(Location::Where)                                  \
@@ -1525,16 +1524,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(instanceKlass::being_initialized)                      \
   declare_constant(instanceKlass::fully_initialized)                      \
   declare_constant(instanceKlass::initialization_error)                   \
-                                                                          \
-  /*********************************/                                     \
-  /* instanceKlass ClassFlags enum */                                     \
-  /*********************************/                                     \
-                                                                          \
-  declare_constant(instanceKlass::_noflags)                               \
-  declare_constant(instanceKlass::_rewritten)                             \
-  declare_constant(instanceKlass::_should_verify)                         \
-  declare_constant(instanceKlass::_has_nonstatic_fields)                  \
-  declare_constant(instanceKlass::_is_marked_dependent)                   \
                                                                           \
   /*********************************/                                     \
   /* symbolOop - symbol max length */                                     \

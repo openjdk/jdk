@@ -455,9 +455,9 @@ instanceKlassKlass::allocate_instance_klass(int vtable_len, int itable_len,
     ik->set_inner_classes(NULL);
     ik->set_static_oop_field_size(0);
     ik->set_nonstatic_field_size(0);
+    ik->set_is_marked_dependent(false);
     ik->set_init_state(instanceKlass::allocated);
     ik->set_init_thread(NULL);
-    ik->clear_class_flags();
     ik->set_reference_type(rt);
     ik->set_oop_map_cache(NULL);
     ik->set_jni_ids(NULL);
