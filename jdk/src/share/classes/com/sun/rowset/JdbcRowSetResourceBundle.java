@@ -133,7 +133,7 @@ public class JdbcRowSetResourceBundle implements Serializable {
      * This method returns an enumerated handle of the keys
      * which correspond to values translated to various locales.
      *
-     * @returns an enumerated keys which have messages tranlated to
+     * @return an enumeration of keys which have messages tranlated to
      * corresponding locales.
      */
     public Enumeration getKeys() {
@@ -146,7 +146,7 @@ public class JdbcRowSetResourceBundle implements Serializable {
      * returns the corresponding value reading it
      * from the Resource Bundle loaded earlier.
      *
-     * @returns value in locale specific language
+     * @return value in locale specific language
      * according to the key passed.
      */
     public Object handleGetObject(String key) {
