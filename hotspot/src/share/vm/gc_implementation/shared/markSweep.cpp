@@ -69,6 +69,7 @@ void MarkSweep::follow_weak_klass_links() {
 }
 
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
+CodeBlobToOopClosure MarkSweep::follow_code_root_closure(&MarkSweep::follow_root_closure, /*do_marking=*/ true);
 
 void MarkSweep::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
 void MarkSweep::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }

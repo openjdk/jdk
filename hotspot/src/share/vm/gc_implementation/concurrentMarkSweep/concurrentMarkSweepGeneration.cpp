@@ -2857,9 +2857,12 @@ void CMSCollector::verify_after_remark_work_1() {
 
   gch->gen_process_strong_roots(_cmsGen->level(),
                                 true,   // younger gens are roots
+                                true,   // activate StrongRootsScope
                                 true,   // collecting perm gen
                                 SharedHeap::ScanningOption(roots_scanning_options()),
-                                NULL, &notOlder);
+                                &notOlder,
+                                true,   // walk code active on stacks
+                                NULL);
 
   // Now mark from the roots
   assert(_revisitStack.isEmpty(), "Should be empty");
@@ -2905,9 +2908,12 @@ void CMSCollector::verify_after_remark_work_2() {
   gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
   gch->gen_process_strong_roots(_cmsGen->level(),
                                 true,   // younger gens are roots
+                                true,   // activate StrongRootsScope
                                 true,   // collecting perm gen
                                 SharedHeap::ScanningOption(roots_scanning_options()),
-                                NULL, &notOlder);
+                                &notOlder,
+                                true,   // walk code active on stacks
+                                NULL);
 
   // Now mark from the roots
   assert(_revisitStack.isEmpty(), "Should be empty");
@@ -3503,9 +3509,12 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
     gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
     gch->gen_process_strong_roots(_cmsGen->level(),
                                   true,   // younger gens are roots
+                                  true,   // activate StrongRootsScope
                                   true,   // collecting perm gen
                                   SharedHeap::ScanningOption(roots_scanning_options()),
-                                  NULL, &notOlder);
+                                  &notOlder,
+                                  true,   // walk all of code cache if (so & SO_CodeCache)
+                                  NULL);
   }
 
   // Clear mod-union table; it will be dirtied in the prologue of
@@ -5015,9 +5024,15 @@ void CMSParRemarkTask::work(int i) {
   _timer.start();
   gch->gen_process_strong_roots(_collector->_cmsGen->level(),
                                 false,     // yg was scanned above
+                                false,     // this is parallel code
                                 true,      // collecting perm gen
                                 SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
-                                NULL, &par_mrias_cl);
+                                &par_mrias_cl,
+                                true,   // walk all of code cache if (so & SO_CodeCache)
+                                NULL);
+  assert(_collector->should_unload_classes()
+         || (_collector->CMSCollector::roots_scanning_options() & SharedHeap::SO_CodeCache),
+         "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
   _timer.stop();
   if (PrintCMSStatistics != 0) {
     gclog_or_tty->print_cr(
@@ -5398,7 +5413,6 @@ void CMSCollector::do_remark_parallel() {
 
   // Set up for parallel process_strong_roots work.
   gch->set_par_threads(n_workers);
-  gch->change_strong_roots_parity();
   // We won't be iterating over the cards in the card table updating
   // the younger_gen cards, so we shouldn't call the following else
   // the verification code as well as subsequent younger_refs_iterate
@@ -5429,8 +5443,10 @@ void CMSCollector::do_remark_parallel() {
   if (n_workers > 1) {
     // Make refs discovery MT-safe
     ReferenceProcessorMTMutator mt(ref_processor(), true);
+    GenCollectedHeap::StrongRootsScope srs(gch);
     workers->run_task(&tsk);
   } else {
+    GenCollectedHeap::StrongRootsScope srs(gch);
     tsk.work(0);
   }
   gch->set_par_threads(0);  // 0 ==> non-parallel.
@@ -5514,11 +5530,18 @@ void CMSCollector::do_remark_non_parallel() {
     verify_work_stacks_empty();
 
     gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
+    GenCollectedHeap::StrongRootsScope srs(gch);
     gch->gen_process_strong_roots(_cmsGen->level(),
                                   true,  // younger gens as roots
+                                  false, // use the local StrongRootsScope
                                   true,  // collecting perm gen
                                   SharedHeap::ScanningOption(roots_scanning_options()),
-                                  NULL, &mrias_cl);
+                                  &mrias_cl,
+                                  true,   // walk code active on stacks
+                                  NULL);
+    assert(should_unload_classes()
+           || (roots_scanning_options() & SharedHeap::SO_CodeCache),
+           "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
   }
   verify_work_stacks_empty();
   // Restore evacuated mark words, if any, used for overflow list links

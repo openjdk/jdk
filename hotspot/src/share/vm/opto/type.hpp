@@ -711,7 +711,10 @@ public:
     return make_from_klass_common(klass, false, false);
   }
   // Creates a singleton type given an object.
-  static const TypeOopPtr* make_from_constant(ciObject* o);
+  // If the object cannot be rendered as a constant,
+  // may return a non-singleton type.
+  // If require_constant, produce a NULL if a singleton is not possible.
+  static const TypeOopPtr* make_from_constant(ciObject* o, bool require_constant = false);
 
   // Make a generic (unclassed) pointer to an oop.
   static const TypeOopPtr* make(PTR ptr, int offset, int instance_id = InstanceBot);

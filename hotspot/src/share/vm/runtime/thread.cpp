@@ -683,14 +683,15 @@ bool Thread::claim_oops_do_par_case(int strong_roots_parity) {
   return false;
 }
 
-void Thread::oops_do(OopClosure* f) {
+void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   active_handles()->oops_do(f);
   // Do oop for ThreadShadow
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
 }
 
-void Thread::nmethods_do() {
+void Thread::nmethods_do(CodeBlobClosure* cf) {
+  // no nmethods in a generic thread...
 }
 
 void Thread::print_on(outputStream* st) const {
@@ -2316,12 +2317,12 @@ void JavaThread::gc_prologue() {
 }
 
 
-void JavaThread::oops_do(OopClosure* f) {
+void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // The ThreadProfiler oops_do is done from FlatProfiler::oops_do
   // since there may be more than one thread using each ThreadProfiler.
 
   // Traverse the GCHandles
-  Thread::oops_do(f);
+  Thread::oops_do(f, cf);
 
   assert( (!has_last_Java_frame() && java_call_counter() == 0) ||
           (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");
@@ -2347,7 +2348,7 @@ void JavaThread::oops_do(OopClosure* f) {
 
     // Traverse the execution stack
     for(StackFrameStream fst(this); !fst.is_done(); fst.next()) {
-      fst.current()->oops_do(f, fst.register_map());
+      fst.current()->oops_do(f, cf, fst.register_map());
     }
   }
 
@@ -2379,9 +2380,8 @@ void JavaThread::oops_do(OopClosure* f) {
   }
 }
 
-void JavaThread::nmethods_do() {
-  // Traverse the GCHandles
-  Thread::nmethods_do();
+void JavaThread::nmethods_do(CodeBlobClosure* cf) {
+  Thread::nmethods_do(cf);  // (super method is a no-op)
 
   assert( (!has_last_Java_frame() && java_call_counter() == 0) ||
           (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");
@@ -2389,7 +2389,7 @@ void JavaThread::nmethods_do() {
   if (has_last_Java_frame()) {
     // Traverse the execution stack
     for(StackFrameStream fst(this); !fst.is_done(); fst.next()) {
-      fst.current()->nmethods_do();
+      fst.current()->nmethods_do(cf);
     }
   }
 }
@@ -2463,7 +2463,7 @@ static void frame_verify(frame* f, const RegisterMap *map) { f->verify(map); }
 
 void JavaThread::verify() {
   // Verify oops in the thread.
-  oops_do(&VerifyOopClosure::verify_oop);
+  oops_do(&VerifyOopClosure::verify_oop, NULL);
 
   // Verify the stack frames.
   frames_do(frame_verify);
@@ -3602,14 +3602,14 @@ bool Threads::includes(JavaThread* p) {
 // uses the Threads_lock to gurantee this property. It also makes sure that
 // all threads gets blocked when exiting or starting).
 
-void Threads::oops_do(OopClosure* f) {
+void Threads::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {
-    p->oops_do(f);
+    p->oops_do(f, cf);
   }
-  VMThread::vm_thread()->oops_do(f);
+  VMThread::vm_thread()->oops_do(f, cf);
 }
 
-void Threads::possibly_parallel_oops_do(OopClosure* f) {
+void Threads::possibly_parallel_oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // Introduce a mechanism allowing parallel threads to claim threads as
   // root groups.  Overhead should be small enough to use all the time,
   // even in sequential code.
@@ -3618,12 +3618,12 @@ void Threads::possibly_parallel_oops_do(OopClosure* f) {
   int cp = SharedHeap::heap()->strong_roots_parity();
   ALL_JAVA_THREADS(p) {
     if (p->claim_oops_do(is_par, cp)) {
-      p->oops_do(f);
+      p->oops_do(f, cf);
     }
   }
   VMThread* vmt = VMThread::vm_thread();
   if (vmt->claim_oops_do(is_par, cp))
-    vmt->oops_do(f);
+    vmt->oops_do(f, cf);
 }
 
 #ifndef SERIALGC
@@ -3644,11 +3644,11 @@ void Threads::create_thread_roots_marking_tasks(GCTaskQueue* q) {
 }
 #endif // SERIALGC
 
-void Threads::nmethods_do() {
+void Threads::nmethods_do(CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {
-    p->nmethods_do();
+    p->nmethods_do(cf);
   }
-  VMThread::vm_thread()->nmethods_do();
+  VMThread::vm_thread()->nmethods_do(cf);
 }
 
 void Threads::gc_epilogue() {

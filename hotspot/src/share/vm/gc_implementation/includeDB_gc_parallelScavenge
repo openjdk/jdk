@@ -372,6 +372,7 @@ psScavenge.inline.hpp                   parallelScavengeHeap.hpp
 psScavenge.inline.hpp                   psPromotionManager.hpp
 psScavenge.inline.hpp                   psScavenge.hpp
 
+pcTasks.cpp                             codeCache.hpp
 pcTasks.cpp                             collectedHeap.hpp
 pcTasks.cpp                             fprofiler.hpp
 pcTasks.cpp                             jniHandles.hpp
@@ -391,6 +392,7 @@ pcTasks.hpp				gcTaskManager.hpp
 pcTasks.hpp				psTasks.hpp
 
 psTasks.cpp                             cardTableExtension.hpp
+psTasks.cpp                             codeCache.hpp
 psTasks.cpp                             fprofiler.hpp
 psTasks.cpp                             gcTaskManager.hpp
 psTasks.cpp                             iterator.hpp

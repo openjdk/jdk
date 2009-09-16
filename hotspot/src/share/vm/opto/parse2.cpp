@@ -1325,7 +1325,8 @@ void Parse::do_one_bytecode() {
           }
         }
       }
-      push_constant(constant);
+      bool pushed = push_constant(constant, true);
+      guarantee(pushed, "must be possible to push this constant");
     }
 
     break;

@@ -2639,15 +2639,21 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
   if (EnableInvokeDynamic && !EnableMethodHandles) {
     if (!FLAG_IS_DEFAULT(EnableMethodHandles)) {
-      warning("forcing EnableMethodHandles true to allow EnableInvokeDynamic");
+      warning("forcing EnableMethodHandles true because EnableInvokeDynamic is true");
     }
     EnableMethodHandles = true;
   }
   if (EnableMethodHandles && !AnonymousClasses) {
     if (!FLAG_IS_DEFAULT(AnonymousClasses)) {
-      warning("forcing AnonymousClasses true to enable EnableMethodHandles");
+      warning("forcing AnonymousClasses true because EnableMethodHandles is true");
     }
     AnonymousClasses = true;
+  }
+  if ((EnableMethodHandles || AnonymousClasses) && ScavengeRootsInCode == 0) {
+    if (!FLAG_IS_DEFAULT(ScavengeRootsInCode)) {
+      warning("forcing ScavengeRootsInCode non-zero because EnableMethodHandles or AnonymousClasses is true");
+    }
+    ScavengeRootsInCode = 1;
   }
 
   if (PrintGCDetails) {
