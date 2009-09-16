@@ -5707,7 +5707,7 @@ instruct loadUS2L_immI16(iRegL dst, memory mem, immI16 mask, iRegL tmp) %{
   effect(TEMP dst, TEMP tmp);
   ins_cost(MEMORY_REF_COST + 2*DEFAULT_COST);
 
-  size(3*4);
+  size((3+1)*4);  // set may use two instructions.
   format %{ "LDUH   $mem,$dst\t! ushort/char & 16-bit mask -> long\n\t"
             "SET    $mask,$tmp\n\t"
             "AND    $dst,$tmp,$dst" %}
@@ -5851,7 +5851,7 @@ instruct loadI2L_immI(iRegL dst, memory mem, immI mask, iRegL tmp) %{
   effect(TEMP dst, TEMP tmp);
   ins_cost(MEMORY_REF_COST + 2*DEFAULT_COST);
 
-  size(3*4);
+  size((3+1)*4);  // set may use two instructions.
   format %{ "LDUW   $mem,$dst\t! int & 32-bit mask -> long\n\t"
             "SET    $mask,$tmp\n\t"
             "AND    $dst,$tmp,$dst" %}

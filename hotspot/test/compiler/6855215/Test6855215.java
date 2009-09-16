@@ -19,49 +19,37 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
+ *
  */
 
 /**
  * @test
- * @bug 6636138
- * @summary SuperWord::co_locate_pack(Node_List* p) generates memory graph that leads to memory order violation.
+ * @bug 6855215
+ * @summary Calculation error (NaN) after about 1500 calculations
  *
- * @run main/othervm -server -Xbatch -XX:CompileOnly=Test1.init Test1
+ * @run main/othervm -Xbatch -XX:UseSSE=0 Test6855215
  */
 
-public class Test1 {
+public class Test6855215 {
+    private double m;
+    private double b;
 
-    public static void init(int src[], int [] dst, int[] ref) {
-        // initialize the arrays
-        for (int i =0; i<src.length; i++) {
-            src[i] =  i;
-            dst[i] = 2;      // yes, dst[i] needed(otherwise src[i] will be replaced with i)
-            ref[i] = src[i]; // src[i] depends on the store src[i]
-        }
+    public static double log10(double x) {
+        return Math.log(x) / Math.log(10);
     }
 
-    public static void verify(int src[], int[] ref) {
-        // check whether src and ref are equal
-        for (int i = 0; i < src.length; i++) {
-            if (src[i] != ref[i]) {
-                System.out.println("Error: src and ref don't match at " + i);
-                System.exit(97);
-            }
-        }
-    }
-
-    public static void test() {
-        int[] src = new int[34];
-        int[] dst = new int[34];
-        int[] ref = new int[34];
-
-        init(src, dst, ref);
-        verify(src, ref);
+    void calcMapping(double xmin, double xmax, double ymin, double ymax) {
+        m = (ymax - ymin) / (log10(xmax) - log10(xmin));
+        b = (log10(xmin) * ymax - log10(xmax) * ymin);
     }
 
     public static void main(String[] args) {
-        for (int i=0; i< 2000; i++) {
-            test();
+        Test6855215 c = new Test6855215();
+        for (int i = 0; i < 30000; i++) {
+            c.calcMapping(91, 121, 177, 34);
+            if (c.m != c.m) {
+                throw new InternalError();
+            }
         }
     }
 }
