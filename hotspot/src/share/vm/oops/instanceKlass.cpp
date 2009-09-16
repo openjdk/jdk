@@ -1397,18 +1397,18 @@ template <class T> void assert_nothing(T *p) {}
   /* Compute oopmap block range. The common case                         \
      is nonstatic_oop_map_size == 1. */                                  \
   OopMapBlock* map           = start_of_nonstatic_oop_maps();            \
-  OopMapBlock* const end_map = map + nonstatic_oop_map_size();           \
+  OopMapBlock* const end_map = map + nonstatic_oop_map_count();          \
   if (UseCompressedOops) {                                               \
     while (map < end_map) {                                              \
       InstanceKlass_SPECIALIZED_OOP_ITERATE(narrowOop,                   \
-        obj->obj_field_addr<narrowOop>(map->offset()), map->length(),    \
+        obj->obj_field_addr<narrowOop>(map->offset()), map->count(),     \
         do_oop, assert_fn)                                               \
       ++map;                                                             \
     }                                                                    \
   } else {                                                               \
     while (map < end_map) {                                              \
       InstanceKlass_SPECIALIZED_OOP_ITERATE(oop,                         \
-        obj->obj_field_addr<oop>(map->offset()), map->length(),          \
+        obj->obj_field_addr<oop>(map->offset()), map->count(),           \
         do_oop, assert_fn)                                               \
       ++map;                                                             \
     }                                                                    \
@@ -1418,19 +1418,19 @@ template <class T> void assert_nothing(T *p) {}
 #define InstanceKlass_OOP_MAP_REVERSE_ITERATE(obj, do_oop, assert_fn)    \
 {                                                                        \
   OopMapBlock* const start_map = start_of_nonstatic_oop_maps();          \
-  OopMapBlock* map             = start_map + nonstatic_oop_map_size();   \
+  OopMapBlock* map             = start_map + nonstatic_oop_map_count();  \
   if (UseCompressedOops) {                                               \
     while (start_map < map) {                                            \
       --map;                                                             \
       InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE(narrowOop,           \
-        obj->obj_field_addr<narrowOop>(map->offset()), map->length(),    \
+        obj->obj_field_addr<narrowOop>(map->offset()), map->count(),     \
         do_oop, assert_fn)                                               \
     }                                                                    \
   } else {                                                               \
     while (start_map < map) {                                            \
       --map;                                                             \
       InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE(oop,                 \
-        obj->obj_field_addr<oop>(map->offset()), map->length(),          \
+        obj->obj_field_addr<oop>(map->offset()), map->count(),           \
         do_oop, assert_fn)                                               \
     }                                                                    \
   }                                                                      \
@@ -1444,11 +1444,11 @@ template <class T> void assert_nothing(T *p) {}
      usually non-existent extra overhead of examining                    \
      all the maps. */                                                    \
   OopMapBlock* map           = start_of_nonstatic_oop_maps();            \
-  OopMapBlock* const end_map = map + nonstatic_oop_map_size();           \
+  OopMapBlock* const end_map = map + nonstatic_oop_map_count();          \
   if (UseCompressedOops) {                                               \
     while (map < end_map) {                                              \
       InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop,           \
-        obj->obj_field_addr<narrowOop>(map->offset()), map->length(),    \
+        obj->obj_field_addr<narrowOop>(map->offset()), map->count(),     \
         low, high,                                                       \
         do_oop, assert_fn)                                               \
       ++map;                                                             \
@@ -1456,7 +1456,7 @@ template <class T> void assert_nothing(T *p) {}
   } else {                                                               \
     while (map < end_map) {                                              \
       InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,                 \
-        obj->obj_field_addr<oop>(map->offset()), map->length(),          \
+        obj->obj_field_addr<oop>(map->offset()), map->count(),           \
         low, high,                                                       \
         do_oop, assert_fn)                                               \
       ++map;                                                             \
@@ -2217,14 +2217,15 @@ void instanceKlass::verify_class_klass_nonstatic_oop_maps(klassOop k) {
     first_time = false;
     const int extra = java_lang_Class::number_of_fake_oop_fields;
     guarantee(ik->nonstatic_field_size() == extra, "just checking");
-    guarantee(ik->nonstatic_oop_map_size() == 1, "just checking");
+    guarantee(ik->nonstatic_oop_map_count() == 1, "just checking");
     guarantee(ik->size_helper() == align_object_size(instanceOopDesc::header_size() + extra), "just checking");
 
     // Check that the map is (2,extra)
     int offset = java_lang_Class::klass_offset;
 
     OopMapBlock* map = ik->start_of_nonstatic_oop_maps();
-    guarantee(map->offset() == offset && map->length() == extra, "just checking");
+    guarantee(map->offset() == offset && map->count() == (unsigned int) extra,
+              "sanity");
   }
 }
 
