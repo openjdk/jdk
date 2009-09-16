@@ -53,14 +53,12 @@ class MarkRefsIntoClosure: public OopsInGenClosure {
  public:
   MarkRefsIntoClosure(MemRegion span, CMSBitMap* bitMap,
                       bool should_do_nmethods);
+  bool should_do_nmethods() { return _should_do_nmethods; }
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { MarkRefsIntoClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { MarkRefsIntoClosure::do_oop_work(p); }
   bool do_header() { return true; }
-  virtual const bool do_nmethods() const {
-    return _should_do_nmethods;
-  }
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
@@ -79,14 +77,12 @@ class MarkRefsIntoVerifyClosure: public OopsInGenClosure {
  public:
   MarkRefsIntoVerifyClosure(MemRegion span, CMSBitMap* verification_bm,
                             CMSBitMap* cms_bm, bool should_do_nmethods);
+  bool should_do_nmethods() { return _should_do_nmethods; }
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   inline void do_oop_nv(oop* p)       { MarkRefsIntoVerifyClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { MarkRefsIntoVerifyClosure::do_oop_work(p); }
   bool do_header() { return true; }
-  virtual const bool do_nmethods() const {
-    return _should_do_nmethods;
-  }
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }
@@ -194,7 +190,6 @@ class MarkRefsIntoAndScanClosure: public OopsInGenClosure {
   inline void do_oop_nv(oop* p)       { MarkRefsIntoAndScanClosure::do_oop_work(p); }
   inline void do_oop_nv(narrowOop* p) { MarkRefsIntoAndScanClosure::do_oop_work(p); }
   bool do_header() { return true; }
-  virtual const bool do_nmethods() const { return true; }
   Prefetch::style prefetch_style() {
     return Prefetch::do_read;
   }

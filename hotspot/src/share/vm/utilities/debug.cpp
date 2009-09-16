@@ -702,10 +702,13 @@ static void findref(intptr_t x) {
   tty->print_cr("Searching strong roots:");
   Universe::oops_do(&lookFor, false);
   JNIHandles::oops_do(&lookFor);   // Global (strong) JNI handles
-  Threads::oops_do(&lookFor);
+  Threads::oops_do(&lookFor, NULL);
   ObjectSynchronizer::oops_do(&lookFor);
   //FlatProfiler::oops_do(&lookFor);
   SystemDictionary::oops_do(&lookFor);
+
+  tty->print_cr("Searching code cache:");
+  CodeCache::oops_do(&lookFor);
 
   tty->print_cr("Done.");
 }

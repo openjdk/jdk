@@ -683,7 +683,7 @@ void emit_d32_reloc(CodeBuffer& cbuf,
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
-    assert(oop((intptr_t)d32)->is_oop() && oop((intptr_t)d32)->is_perm(), "cannot embed non-perm oops in code");
+    assert(oop((intptr_t)d32)->is_oop() && (ScavengeRootsInCode || !oop((intptr_t)d32)->is_scavengable()), "cannot embed scavengable oops in code");
   }
 #endif
   cbuf.relocate(cbuf.inst_mark(), rspec, format);
@@ -721,8 +721,8 @@ void emit_d64_reloc(CodeBuffer& cbuf,
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
-    assert(oop(d64)->is_oop() && oop(d64)->is_perm(),
-           "cannot embed non-perm oops in code");
+    assert(oop(d64)->is_oop() && (ScavengeRootsInCode || !oop(d64)->is_scavengable()),
+           "cannot embed scavengable oops in code");
   }
 #endif
   cbuf.relocate(cbuf.inst_mark(), rspec, format);

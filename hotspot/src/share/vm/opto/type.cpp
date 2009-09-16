@@ -2411,14 +2411,13 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass *klass, bool klass_
 
 //------------------------------make_from_constant-----------------------------
 // Make a java pointer from an oop constant
-const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o) {
+const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_constant) {
   if (o->is_method_data() || o->is_method()) {
     // Treat much like a typeArray of bytes, like below, but fake the type...
-    assert(o->has_encoding(), "must be a perm space object");
     const Type* etype = (Type*)get_const_basic_type(T_BYTE);
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
     ciKlass *klass = ciTypeArrayKlass::make((BasicType) T_BYTE);
-    assert(o->has_encoding(), "method data oops should be tenured");
+    assert(o->can_be_constant(), "method data oops should be tenured");
     const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
     return arr;
   } else {
@@ -2427,8 +2426,9 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o) {
     ciKlass *klass = o->klass();
     if (klass->is_instance_klass()) {
       // Element is an instance
-      if (!o->has_encoding()) {  // not a perm-space constant
-        // %%% remove this restriction by rewriting non-perm ConPNodes in a later phase
+      if (require_constant) {
+        if (!o->can_be_constant())  return NULL;
+      } else if (!o->should_be_constant()) {
         return TypeInstPtr::make(TypePtr::NotNull, klass, true, NULL, 0);
       }
       return TypeInstPtr::make(o);
@@ -2440,8 +2440,9 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o) {
       // We used to pass NotNull in here, asserting that the sub-arrays
       // are all not-null.  This is not true in generally, as code can
       // slam NULLs down in the subarrays.
-      if (!o->has_encoding()) {  // not a perm-space constant
-        // %%% remove this restriction by rewriting non-perm ConPNodes in a later phase
+      if (require_constant) {
+        if (!o->can_be_constant())  return NULL;
+      } else if (!o->should_be_constant()) {
         return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
       }
       const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
@@ -2453,8 +2454,9 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o) {
       const TypeAry* arr0 = TypeAry::make(etype, TypeInt::make(o->as_array()->length()));
       // We used to pass NotNull in here, asserting that the array pointer
       // is not-null. That was not true in general.
-      if (!o->has_encoding()) {  // not a perm-space constant
-        // %%% remove this restriction by rewriting non-perm ConPNodes in a later phase
+      if (require_constant) {
+        if (!o->can_be_constant())  return NULL;
+      } else if (!o->should_be_constant()) {
         return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
       }
       const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
@@ -2483,7 +2485,7 @@ intptr_t TypeOopPtr::get_con() const {
     ShouldNotReachHere();
   }
 
-  return (intptr_t)const_oop()->encoding();
+  return (intptr_t)const_oop()->constant_encoding();
 }
 
 
@@ -3338,14 +3340,19 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
       ciObject* o = const_oop();
       if( _ptr == Constant ) {
         if( tap->const_oop() != NULL && !o->equals(tap->const_oop()) ) {
+          xk = (klass() == tap->klass());
           ptr = NotNull;
           o = NULL;
           instance_id = InstanceBot;
+        } else {
+          xk = true;
         }
       } else if( above_centerline(_ptr) ) {
         o = tap->const_oop();
+        xk = true;
+      } else {
+        xk = this->_klass_is_exact;
       }
-      xk = true;
       return TypeAryPtr::make( ptr, o, tary, tap->_klass, xk, off, instance_id );
     }
     case NotNull:

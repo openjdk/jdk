@@ -379,7 +379,7 @@ void emit_d32_reloc(CodeBuffer &cbuf, int d32, RelocationHolder const& rspec,
         int format) {
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type && d32 != 0 && d32 != (int)Universe::non_oop_word()) {
-    assert(oop(d32)->is_oop() && oop(d32)->is_perm(), "cannot embed non-perm oops in code");
+    assert(oop(d32)->is_oop() && (ScavengeRootsInCode || !oop(d32)->is_scavengable()), "cannot embed scavengable oops in code");
   }
 #endif
   cbuf.relocate(cbuf.inst_mark(), rspec, format);
