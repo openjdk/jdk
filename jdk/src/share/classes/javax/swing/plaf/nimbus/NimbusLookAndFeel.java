@@ -40,6 +40,9 @@ import java.awt.Container;
 import java.awt.Graphics2D;
 import java.awt.LayoutManager;
 import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.*;
 import javax.swing.GrayFilter;
 import javax.swing.Icon;
 import javax.swing.JToolBar;
@@ -87,6 +90,8 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
      */
     private UIDefaults uiDefaults;
 
+    private DefaultsListener defaultsListener = new DefaultsListener();
+
     /**
      * Create a new NimbusLookAndFeel.
      */
@@ -115,8 +120,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
         defaults.uninitialize();
         // clear all cached images to free memory
         ImageCache.getInstance().flush();
-        // remove the listeners and things installed by NimbusStyle
-        NimbusStyle.uninitialize();
+        UIManager.getDefaults().removePropertyChangeListener(defaultsListener);
     }
 
     /**
@@ -513,6 +517,64 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
                 }
             }
             return obj;
+        }
+    }
+
+    private Map<String, Map<String, Object>> compiledDefaults = null;
+    private boolean defaultListenerAdded = false;
+
+    static String parsePrefix(String key) {
+        if (key == null) {
+            return null;
+        }
+        boolean inquotes = false;
+        for (int i = 0; i < key.length(); i++) {
+            char c = key.charAt(i);
+            if (c == '"') {
+                inquotes = !inquotes;
+            } else if ((c == '[' || c == '.') && !inquotes) {
+                return key.substring(0, i);
+            }
+        }
+        return null;
+    }
+
+    Map<String, Object> getDefaultsForPrefix(String prefix) {
+        if (compiledDefaults == null) {
+            compiledDefaults = new HashMap<String, Map<String, Object>>();
+            for (Map.Entry<Object, Object> entry: UIManager.getDefaults().entrySet()) {
+                if (entry.getKey() instanceof String) {
+                    addDefault((String) entry.getKey(), entry.getValue());
+                }
+            }
+            if (! defaultListenerAdded) {
+                UIManager.getDefaults().addPropertyChangeListener(defaultsListener);
+                defaultListenerAdded = true;
+            }
+        }
+        return compiledDefaults.get(prefix);
+    }
+
+    private void addDefault(String key, Object value) {
+        String prefix = parsePrefix(key);
+        if (prefix != null) {
+            Map<String, Object> keys = compiledDefaults.get(prefix);
+            if (keys == null) {
+                keys = new HashMap<String, Object>();
+                compiledDefaults.put(prefix, keys);
+            }
+            keys.put(key, value);
+        }
+    }
+
+    private class DefaultsListener implements PropertyChangeListener {
+        @Override public void propertyChange(PropertyChangeEvent ev) {
+            String key = ev.getPropertyName();
+            if ("UIDefaults".equals(key)) {
+                compiledDefaults = null;
+            } else {
+                addDefault(key, ev.getNewValue());
+            }
         }
     }
 }
