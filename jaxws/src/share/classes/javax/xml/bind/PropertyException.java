@@ -32,7 +32,7 @@ package javax.xml.bind;
  * setting a property.
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
- * @version $Revision: 1.2 $ $Date: 2004/06/14 21:23:04 $
+ * @version $Revision: 1.1 $ $Date: 2004/12/14 21:50:40 $
  * @see JAXBContext
  * @see Validator
  * @see Unmarshaller

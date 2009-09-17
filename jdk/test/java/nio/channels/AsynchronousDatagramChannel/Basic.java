@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4527345
+ * @bug 4527345 6842687
  * @summary Unit test for AsynchronousDatagramChannel
  */
 
@@ -66,13 +66,11 @@ public class Basic {
         // Test: datagram packet not received immediately
         dst.clear();
         final CountDownLatch latch = new CountDownLatch(1);
-        ch.receive(dst, null, new CompletionHandler<SocketAddress,Void>() {
+        ch.receive(dst, (Void)null, new CompletionHandler<SocketAddress,Void>() {
             public void completed(SocketAddress source, Void att) {
                 latch.countDown();
             }
             public void failed (Throwable exc, Void att) {
-            }
-            public void cancelled(Void att) {
             }
         });
         Thread.sleep(2000);
@@ -82,13 +80,11 @@ public class Basic {
         // Test: timeout
         dst.clear();
         final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
-        ch.receive(dst, 2, TimeUnit.SECONDS, null, new CompletionHandler<SocketAddress,Void>() {
+        ch.receive(dst, 2, TimeUnit.SECONDS, (Void)null, new CompletionHandler<SocketAddress,Void>() {
             public void completed(SocketAddress source, Void att) {
             }
             public void failed (Throwable exc, Void att) {
                 exception.set(exc);
-            }
-            public void cancelled(Void att) {
             }
         });
         Throwable result;
@@ -101,13 +97,11 @@ public class Basic {
         // AsynchronousCloseException
         dst = ByteBuffer.allocateDirect(100);
         exception.set(null);
-        ch.receive(dst, null, new CompletionHandler<SocketAddress,Void>() {
+        ch.receive(dst, (Void)null, new CompletionHandler<SocketAddress,Void>() {
             public void completed(SocketAddress source, Void att) {
             }
             public void failed (Throwable exc, Void att) {
                 exception.set(exc);
-            }
-            public void cancelled(Void att) {
             }
         });
         ch.close();
@@ -156,13 +150,11 @@ public class Basic {
         // Test: datagram packet not received immediately
         dst.clear();
         final CountDownLatch l1 = new CountDownLatch(1);
-        ch.read(dst, null, new CompletionHandler<Integer,Void>() {
+        ch.read(dst, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesRead, Void att) {
                 l1.countDown();
             }
             public void failed (Throwable exc, Void att) {
-            }
-            public void cancelled(Void att) {
             }
         });
         Thread.sleep(2000);
@@ -172,13 +164,11 @@ public class Basic {
         // Test: timeout
         dst.clear();
         final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
-        ch.read(dst, 2, TimeUnit.SECONDS, null, new CompletionHandler<Integer,Void>() {
+        ch.read(dst, 2, TimeUnit.SECONDS, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesRead, Void att) {
             }
             public void failed (Throwable exc, Void att) {
                 exception.set(exc);
-            }
-            public void cancelled(Void att) {
             }
         });
         Throwable result;
@@ -191,13 +181,11 @@ public class Basic {
         // AsynchronousCloseException
         dst.clear();
         exception.set(null);
-        ch.read(dst, null, new CompletionHandler<Integer,Void>() {
+        ch.read(dst, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesRead, Void att) {
             }
             public void failed (Throwable exc, Void att) {
                 exception.set(exc);
-            }
-            public void cancelled(Void att) {
             }
         });
         ch.close();
@@ -238,15 +226,13 @@ public class Basic {
         // Test: send datagram packet to reader and check completion handler
         // is invoked
         final CountDownLatch l2 = new CountDownLatch(1);
-        ch.send(ByteBuffer.wrap(msg), sa, null, new CompletionHandler<Integer,Void>() {
+        ch.send(ByteBuffer.wrap(msg), sa, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesSent, Void att) {
                 if (bytesSent != msg.length)
                     throw new RuntimeException("Unexpected number of bytes received");
                 l2.countDown();
             }
             public void failed (Throwable exc, Void att) {
-            }
-            public void cancelled(Void att) {
             }
         });
         l2.await(5, TimeUnit.SECONDS);
@@ -261,7 +247,7 @@ public class Basic {
         // Test: check that failed method is invoked
         ch.close();
         final CountDownLatch l3 = new CountDownLatch(1);
-        ch.send(ByteBuffer.wrap(msg), sa, null, new CompletionHandler<Integer,Void>() {
+        ch.send(ByteBuffer.wrap(msg), sa, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesSent, Void att) {
                 throw new RuntimeException("completed method invoked");
             }
@@ -271,8 +257,6 @@ public class Basic {
                 } else {
                     throw new RuntimeException(exc);
                 }
-            }
-            public void cancelled(Void att) {
             }
         });
         l3.await(5, TimeUnit.SECONDS);
@@ -315,15 +299,13 @@ public class Basic {
 
         // Test: write datagram and check completion handler is invoked
         final CountDownLatch l2 = new CountDownLatch(1);
-        ch.write(ByteBuffer.wrap(msg), null, new CompletionHandler<Integer,Void>() {
+        ch.write(ByteBuffer.wrap(msg), (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesSent, Void att) {
                 if (bytesSent != msg.length)
                     throw new RuntimeException("Unexpected number of bytes received");
                 l2.countDown();
             }
             public void failed (Throwable exc, Void att) {
-            }
-            public void cancelled(Void att) {
             }
         });
         l2.await(5, TimeUnit.SECONDS);
@@ -340,7 +322,7 @@ public class Basic {
         reader.close();
     }
 
-    static void cancelAndCheck(Future<?> result, CountDownLatch latch)
+    static void cancelAndCheck(Future<?> result)
         throws InterruptedException
     {
         boolean cancelled = result.cancel(false);
@@ -356,37 +338,22 @@ public class Basic {
         } catch (ExecutionException e) {
             throw new RuntimeException("Should not fail");
         }
-
-        // make sure that completion handler is invoked
-        latch.await();
     }
 
     // basic cancel tests
     static void doCancelTests() throws Exception {
         InetAddress lh = InetAddress.getLocalHost();
 
-        // timed and non-timed receive
+        // receive
         for (int i=0; i<2; i++) {
             AsynchronousDatagramChannel ch =
                 AsynchronousDatagramChannel.open().bind(new InetSocketAddress(0));
-            final CountDownLatch latch = new CountDownLatch(1);
-            long timeout = (i == 0) ? 0L : 60L;
-            Future<SocketAddress> remote = ch
-                .receive(ByteBuffer.allocate(100), timeout, TimeUnit.SECONDS, null,
-                    new CompletionHandler<SocketAddress,Void>() {
-                        public void completed(SocketAddress source, Void att) {
-                        }
-                        public void failed (Throwable exc, Void att) {
-                        }
-                        public void cancelled(Void att) {
-                            latch.countDown();
-                        }
-                    });
-            cancelAndCheck(remote, latch);
+            Future<SocketAddress> remote = ch.receive(ByteBuffer.allocate(100));
+            cancelAndCheck(remote);
             ch.close();
         }
 
-        // timed and non-timed read
+        // read
         for (int i=0; i<2; i++) {
             AsynchronousDatagramChannel ch =
                 AsynchronousDatagramChannel.open().bind(new InetSocketAddress(0));
@@ -394,18 +361,8 @@ public class Basic {
                 ((InetSocketAddress)(ch.getLocalAddress())).getPort()));
             final CountDownLatch latch = new CountDownLatch(1);
             long timeout = (i == 0) ? 0L : 60L;
-            Future<Integer> result = ch
-                .read(ByteBuffer.allocate(100), timeout, TimeUnit.SECONDS, null,
-                    new CompletionHandler<Integer,Void>() {
-                        public void completed(Integer bytesRead, Void att) {
-                        }
-                        public void failed (Throwable exc, Void att) {
-                        }
-                        public void cancelled(Void att) {
-                            latch.countDown();
-                        }
-                    });
-            cancelAndCheck(result, latch);
+            Future<Integer> result = ch.read(ByteBuffer.allocate(100));
+            cancelAndCheck(result);
             ch.close();
         }
     }

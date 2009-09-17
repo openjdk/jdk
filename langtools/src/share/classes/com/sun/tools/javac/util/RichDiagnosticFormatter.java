@@ -58,6 +58,11 @@ import static com.sun.tools.javac.util.RichDiagnosticFormatter.RichConfiguration
  * formatted and (iii) type-variable disambiguation - when the diagnostic refers
  * to two different type-variables with the same name, their representation is
  * disambiguated by appending an index to the type variable name.
+ *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
 public class RichDiagnosticFormatter extends
         ForwardingDiagnosticFormatter<JCDiagnostic, AbstractDiagnosticFormatter> {
@@ -202,6 +207,32 @@ public class RichDiagnosticFormatter extends
             }
         }
         return clauses.reverse();
+    }
+
+    private int indexOf(Type type, WhereClauseKind kind) {
+        int index = 1;
+        for (Type t : whereClauses.get(kind).keySet()) {
+            if (t.tsym == type.tsym) {
+                return index;
+            }
+            if (kind != WhereClauseKind.TYPEVAR ||
+                    t.toString().equals(type.toString())) {
+                index++;
+            }
+        }
+        return -1;
+    }
+
+    private boolean unique(TypeVar typevar) {
+        int found = 0;
+        for (Type t : whereClauses.get(WhereClauseKind.TYPEVAR).keySet()) {
+            if (t.toString().equals(typevar.toString())) {
+                found++;
+            }
+        }
+        if (found < 1)
+            throw new AssertionError("Missing type variable in where clause " + typevar);
+        return found == 1;
     }
     //where
     /**
@@ -361,33 +392,6 @@ public class RichDiagnosticFormatter extends
             }
         }
 
-        private int indexOf(Type type, WhereClauseKind kind) {
-            int index = 0;
-            boolean found = false;
-            for (Type t : whereClauses.get(kind).keySet()) {
-                if (t == type) {
-                    found = true;
-                    break;
-                }
-                index++;
-            }
-            if (!found)
-                throw new AssertionError("Missing symbol in where clause " + type);
-            return index + 1;
-        }
-
-        private boolean unique(TypeVar typevar) {
-            int found = 0;
-            for (Type t : whereClauses.get(WhereClauseKind.TYPEVAR).keySet()) {
-                if (t.toString().equals(typevar.toString())) {
-                    found++;
-                }
-            }
-            if (found < 1)
-                throw new AssertionError("Missing type variable in where clause " + typevar);
-            return found == 1;
-        }
-
         @Override
         protected String printMethodArgs(List<Type> args, boolean varArgs, Locale locale) {
             return super.printMethodArgs(args, varArgs, locale);
@@ -487,7 +491,7 @@ public class RichDiagnosticFormatter extends
 
         @Override
         public Void visitCapturedType(CapturedType t, Void ignored) {
-            if (!whereClauses.get(WhereClauseKind.CAPTURED).containsKey(t)) {
+            if (indexOf(t, WhereClauseKind.CAPTURED) == -1) {
                 String suffix = t.lower == syms.botType ? ".1" : "";
                 JCDiagnostic d = diags.fragment("where.captured"+ suffix, t, t.bound, t.lower, t.wildcard);
                 whereClauses.get(WhereClauseKind.CAPTURED).put(t, d);
@@ -501,7 +505,7 @@ public class RichDiagnosticFormatter extends
         @Override
         public Void visitClassType(ClassType t, Void ignored) {
             if (t.isCompound()) {
-                if (!whereClauses.get(WhereClauseKind.INTERSECTION).containsKey(t)) {
+                if (indexOf(t, WhereClauseKind.INTERSECTION) == -1) {
                     Type supertype = types.supertype(t);
                     List<Type> interfaces = types.interfaces(t);
                     JCDiagnostic d = diags.fragment("where.intersection", t, interfaces.prepend(supertype));
@@ -519,11 +523,17 @@ public class RichDiagnosticFormatter extends
 
         @Override
         public Void visitTypeVar(TypeVar t, Void ignored) {
-            if (!whereClauses.get(WhereClauseKind.TYPEVAR).containsKey(t)) {
+            if (indexOf(t, WhereClauseKind.TYPEVAR) == -1) {
+                //access the bound type and skip error types
                 Type bound = t.bound;
                 while ((bound instanceof ErrorType))
                     bound = ((ErrorType)bound).getOriginalType();
-                List<Type> bounds  = types.getBounds(t);
+                //retrieve the bound list - if the type variable
+                //has not been attributed the bound is not set
+                List<Type> bounds = bound != null ?
+                    types.getBounds(t) :
+                    List.<Type>nil();
+
                 nameSimplifier.addUsage(t.tsym);
 
                 boolean boundErroneous = bounds.head == null ||
@@ -569,7 +579,8 @@ public class RichDiagnosticFormatter extends
         @Override
         public Void visitMethodSymbol(MethodSymbol s, Void ignored) {
             visit(s.owner, null);
-            typePreprocessor.visit(s.type);
+            if (s.type != null)
+                typePreprocessor.visit(s.type);
             return null;
         }
     };

@@ -23,6 +23,8 @@
  CA 95054 USA or visit www.sun.com if you need additional information or
  have any questions.
 -->
+
+
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://java.sun.com/xml/ns/jaxb/xjc" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
   <xs:import schemaLocation="bindingfile.xsd"/>
   <xs:element name="serializable">

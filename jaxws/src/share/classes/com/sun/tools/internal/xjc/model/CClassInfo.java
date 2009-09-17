@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.model;
 
 import java.util.ArrayList;
@@ -41,10 +42,15 @@ import com.sun.codemodel.internal.JClass;
 import com.sun.codemodel.internal.JCodeModel;
 import com.sun.codemodel.internal.JPackage;
 import com.sun.istack.internal.Nullable;
+import com.sun.tools.internal.xjc.Language;
+import com.sun.tools.internal.xjc.Options;
 import com.sun.tools.internal.xjc.model.nav.NClass;
 import com.sun.tools.internal.xjc.model.nav.NType;
 import com.sun.tools.internal.xjc.outline.Aspect;
 import com.sun.tools.internal.xjc.outline.Outline;
+import com.sun.tools.internal.xjc.reader.Ring;
+import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
+import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIFactoryMethod;
 import com.sun.xml.internal.bind.v2.model.core.ClassInfo;
 import com.sun.xml.internal.bind.v2.model.core.Element;
 import com.sun.xml.internal.xsom.XSComponent;
@@ -82,6 +88,11 @@ public final class CClassInfo extends AbstractCElement implements ClassInfo<NTyp
      * @see #getTypeName()
      */
     private final QName typeName;
+
+    /**
+     * Custom {@link #getSqueezedName() squeezed name}, if any.
+     */
+    private /*almost final*/ @Nullable String squeezedName;
 
     /**
      * If this class also gets {@link XmlRootElement}, the class name.
@@ -136,6 +147,16 @@ public final class CClassInfo extends AbstractCElement implements ClassInfo<NTyp
         this.typeName = typeName;
         this.elementName = elementName;
 
+        Language schemaLanguage = model.options.getSchemaLanguage();
+        if ((schemaLanguage != null) &&
+            (schemaLanguage.equals(Language.XMLSCHEMA) || schemaLanguage.equals(Language.WSDL))) {
+            BIFactoryMethod factoryMethod = Ring.get(BGMBuilder.class).getBindInfo(source).get(BIFactoryMethod.class);
+            if(factoryMethod!=null) {
+                factoryMethod.markAsAcknowledged();
+                this.squeezedName = factoryMethod.name;
+            }
+        }
+
         model.add(this);
     }
 
@@ -182,7 +203,7 @@ public final class CClassInfo extends AbstractCElement implements ClassInfo<NTyp
      */
     public boolean inheritsAttributeWildcard() {
         for( CClassInfo c=getBaseClass(); c!=null; c=c.getBaseClass() ) {
-            if(hasAttributeWildcard)
+            if(c.hasAttributeWildcard)
                 return true;
         }
         return false;
@@ -215,6 +236,7 @@ public final class CClassInfo extends AbstractCElement implements ClassInfo<NTyp
      */
     @XmlElement
     public String getSqueezedName() {
+        if (squeezedName != null)  return squeezedName;
         return calcSqueezedName.onBean(this);
     }
 

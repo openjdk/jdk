@@ -23,7 +23,6 @@
  * have any questions.
  */
 
-
 package com.sun.xml.internal.messaging.saaj.util;
 
 import java.util.logging.Logger;

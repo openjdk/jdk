@@ -119,6 +119,7 @@ public class Attr extends JCTree.Visitor {
                  options.get("-relax") != null);
         useBeforeDeclarationWarning = options.get("useBeforeDeclarationWarning") != null;
         allowInvokedynamic = options.get("invokedynamic") != null;
+        enableSunApiLintControl = options.get("enableSunApiLintControl") != null;
     }
 
     /** Switch: relax some constraints for retrofit mode.
@@ -160,6 +161,12 @@ public class Attr extends JCTree.Visitor {
      */
     boolean useBeforeDeclarationWarning;
 
+    /**
+     * Switch: allow lint infrastructure to control Sun proprietary
+     * API warnings.
+     */
+    boolean enableSunApiLintControl;
+
     /** Check kind and type of given tree against protokind and prototype.
      *  If check succeeds, store type in tree and return it.
      *  If check fails, store errType in tree and return it.
@@ -177,6 +184,21 @@ public class Attr extends JCTree.Visitor {
         if (owntype.tag != ERROR && pt.tag != METHOD && pt.tag != FORALL) {
             if ((ownkind & ~pkind) == 0) {
                 owntype = chk.checkType(tree.pos(), owntype, pt);
+            } else {
+                log.error(tree.pos(), "unexpected.type",
+                          kindNames(pkind),
+                          kindName(ownkind));
+                owntype = types.createErrorType(owntype);
+            }
+        }
+        tree.type = owntype;
+        return owntype;
+    }
+
+    Type checkReturn(JCTree tree, Type owntype, int ownkind, int pkind, Type pt) {
+        if (owntype.tag != ERROR && pt.tag != METHOD && pt.tag != FORALL) {
+            if ((ownkind & ~pkind) == 0) {
+                owntype = chk.checkReturnType(tree.pos(), owntype, pt);
             } else {
                 log.error(tree.pos(), "unexpected.type",
                           kindNames(pkind),
@@ -406,7 +428,14 @@ public class Attr extends JCTree.Visitor {
     /** Derived visitor method: attribute a type tree.
      */
     Type attribType(JCTree tree, Env<AttrContext> env) {
-        Type result = attribTree(tree, env, TYP, Type.noType);
+        Type result = attribType(tree, env, Type.noType);
+        return result;
+    }
+
+    /** Derived visitor method: attribute a type tree.
+     */
+    Type attribType(JCTree tree, Env<AttrContext> env, Type pt) {
+        Type result = attribTree(tree, env, TYP, pt);
         return result;
     }
 
@@ -1239,7 +1268,10 @@ public class Attr extends JCTree.Visitor {
                 }
 
                 if (site.tag == CLASS) {
-                    if (site.getEnclosingType().tag == CLASS) {
+                    Type encl = site.getEnclosingType();
+                    while (encl != null && encl.tag == TYPEVAR)
+                        encl = encl.getUpperBound();
+                    if (encl.tag == CLASS) {
                         // we are calling a nested class
 
                         if (tree.meth.getTag() == JCTree.SELECT) {
@@ -1251,7 +1283,7 @@ public class Attr extends JCTree.Visitor {
                             // to the outer instance type of the class.
                             chk.checkRefType(qualifier.pos(),
                                              attribExpr(qualifier, localEnv,
-                                                        site.getEnclosingType()));
+                                                        encl));
                         } else if (methName == names._super) {
                             // qualifier omitted; check for existence
                             // of an appropriate implicit qualifier.
@@ -1347,7 +1379,7 @@ public class Attr extends JCTree.Visitor {
 
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
-            result = check(tree, capture(restype), VAL, pkind, pt);
+            result = checkReturn(tree, capture(restype), VAL, pkind, pt);
         }
         chk.validate(tree.typeargs, localEnv);
     }
@@ -1422,9 +1454,9 @@ public class Attr extends JCTree.Visitor {
 
         // Attribute clazz expression and store
         // symbol + type back into the attributed tree.
-        Type clazztype = chk.checkClassType(
-            tree.clazz.pos(), attribType(clazz, env), true);
+        Type clazztype = attribType(clazz, env);
         chk.validate(clazz, localEnv);
+        clazztype = chk.checkNewClassType(clazz.pos(), clazztype, true, pt);
         if (tree.encl != null) {
             // We have to work in this case to store
             // symbol + type back into the attributed tree.
@@ -1529,7 +1561,9 @@ public class Attr extends JCTree.Visitor {
                 //       ...
                 //     }
                 if (Resolve.isStatic(env)) cdef.mods.flags |= STATIC;
-
+                clazz = TreeInfo.isDiamond(tree) ?
+                    make.Type(clazztype)
+                    : clazz;
                 if (clazztype.tsym.isInterface()) {
                     cdef.implementing = List.of(clazz);
                 } else {
@@ -1554,13 +1588,18 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes, true, tree.varargsElement != null);
                 assert sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous();
                 tree.constructor = sym;
-                tree.constructorType = checkMethod(clazztype,
-                                            tree.constructor,
-                                            localEnv,
-                                            tree.args,
-                                            argtypes,
-                                            typeargtypes,
-                                            localEnv.info.varArgs);
+                if (tree.constructor.kind > ERRONEOUS) {
+                    tree.constructorType =  syms.errType;
+                }
+                else {
+                    tree.constructorType = checkMethod(clazztype,
+                            tree.constructor,
+                            localEnv,
+                            tree.args,
+                            argtypes,
+                            typeargtypes,
+                            localEnv.info.varArgs);
+                }
             }
 
             if (tree.constructor != null && tree.constructor.kind == MTH)
@@ -2037,7 +2076,7 @@ public class Attr extends JCTree.Visitor {
                 Symbol sym = (site.getUpperBound() != null)
                     ? selectSym(tree, capture(site.getUpperBound()), env, pt, pkind)
                     : null;
-                if (sym == null || isType(sym)) {
+                if (sym == null) {
                     log.error(pos, "type.var.cant.be.deref");
                     return syms.errSymbol;
                 } else {
@@ -2207,8 +2246,12 @@ public class Attr extends JCTree.Visitor {
                 sym.outermostClass() != env.info.scope.owner.outermostClass())
                 chk.warnDeprecated(tree.pos(), sym);
 
-            if ((sym.flags() & PROPRIETARY) != 0)
-                log.strictWarning(tree.pos(), "sun.proprietary", sym);
+            if ((sym.flags() & PROPRIETARY) != 0) {
+                if (enableSunApiLintControl)
+                  chk.warnSunApi(tree.pos(), "sun.proprietary", sym);
+                else
+                  log.strictWarning(tree.pos(), "sun.proprietary", sym);
+            }
 
             // Test (3): if symbol is a variable, check that its type and
             // kind are compatible with the prototype and protokind.
@@ -2503,7 +2546,7 @@ public class Attr extends JCTree.Visitor {
         if (clazztype.tag == CLASS) {
             List<Type> formals = clazztype.tsym.type.getTypeArguments();
 
-            if (actuals.length() == formals.length()) {
+            if (actuals.length() == formals.length() || actuals.isEmpty()) {
                 List<Type> a = actuals;
                 List<Type> f = formals;
                 while (a.nonEmpty()) {
@@ -2529,7 +2572,18 @@ public class Attr extends JCTree.Visitor {
                         clazzOuter = site;
                     }
                 }
-                owntype = new ClassType(clazzOuter, actuals, clazztype.tsym);
+                if (actuals.nonEmpty()) {
+                    owntype = new ClassType(clazzOuter, actuals, clazztype.tsym);
+                }
+                else if (TreeInfo.isDiamond(tree)) {
+                    //a type apply with no explicit type arguments - diamond operator
+                    //the result type is a forall F where F's tvars are the type-variables
+                    //that will be inferred when F is checked against the expected type
+                    List<Type> ftvars = clazztype.tsym.type.getTypeArguments();
+                    List<Type> new_tvars = types.newInstances(ftvars);
+                    clazztype = new ClassType(clazzOuter, new_tvars, clazztype.tsym);
+                    owntype = new ForAll(new_tvars, clazztype);
+                }
             } else {
                 if (formals.length() != 0) {
                     log.error(tree.pos(), "wrong.number.type.args",

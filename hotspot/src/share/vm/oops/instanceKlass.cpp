@@ -158,9 +158,6 @@ bool instanceKlass::link_class_impl(
   // timer handles recursion
   assert(THREAD->is_Java_thread(), "non-JavaThread in link_class_impl");
   JavaThread* jt = (JavaThread*)THREAD;
-  PerfTraceTimedEvent vmtimer(ClassLoader::perf_class_link_time(),
-                        ClassLoader::perf_classes_linked(),
-                        jt->get_thread_stat()->class_link_recursion_count_addr());
 
   // link super class before linking this class
   instanceKlassHandle super(THREAD, this_oop->super());
@@ -194,6 +191,15 @@ bool instanceKlass::link_class_impl(
     return true;
   }
 
+  // trace only the link time for this klass that includes
+  // the verification time
+  PerfClassTraceTime vmtimer(ClassLoader::perf_class_link_time(),
+                             ClassLoader::perf_class_link_selftime(),
+                             ClassLoader::perf_classes_linked(),
+                             jt->get_thread_stat()->perf_recursion_counts_addr(),
+                             jt->get_thread_stat()->perf_timers_addr(),
+                             PerfClassTraceTime::CLASS_LINK);
+
   // verification & rewriting
   {
     ObjectLocker ol(this_oop, THREAD);
@@ -203,12 +209,14 @@ bool instanceKlass::link_class_impl(
     if (!this_oop->is_linked()) {
       if (!this_oop->is_rewritten()) {
         {
-          assert(THREAD->is_Java_thread(), "non-JavaThread in link_class_impl");
-          JavaThread* jt = (JavaThread*)THREAD;
           // Timer includes any side effects of class verification (resolution,
           // etc), but not recursive entry into verify_code().
-          PerfTraceTime timer(ClassLoader::perf_class_verify_time(),
-                            jt->get_thread_stat()->class_verify_recursion_count_addr());
+          PerfClassTraceTime timer(ClassLoader::perf_class_verify_time(),
+                                   ClassLoader::perf_class_verify_selftime(),
+                                   ClassLoader::perf_classes_verified(),
+                                   jt->get_thread_stat()->perf_recursion_counts_addr(),
+                                   jt->get_thread_stat()->perf_timers_addr(),
+                                   PerfClassTraceTime::CLASS_VERIFY);
           bool verify_ok = verify_code(this_oop, throw_verifyerror, THREAD);
           if (!verify_ok) {
             return false;
@@ -350,9 +358,12 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     JavaThread* jt = (JavaThread*)THREAD;
     // Timer includes any side effects of class initialization (resolution,
     // etc), but not recursive entry into call_class_initializer().
-    PerfTraceTimedEvent timer(ClassLoader::perf_class_init_time(),
-                              ClassLoader::perf_classes_inited(),
-                              jt->get_thread_stat()->class_init_recursion_count_addr());
+    PerfClassTraceTime timer(ClassLoader::perf_class_init_time(),
+                             ClassLoader::perf_class_init_selftime(),
+                             ClassLoader::perf_classes_inited(),
+                             jt->get_thread_stat()->perf_recursion_counts_addr(),
+                             jt->get_thread_stat()->perf_timers_addr(),
+                             PerfClassTraceTime::CLASS_CLINIT);
     this_oop->call_class_initializer(THREAD);
   }
 
@@ -497,6 +508,7 @@ bool instanceKlass::implements_interface(klassOop k) const {
 objArrayOop instanceKlass::allocate_objArray(int n, int length, TRAPS) {
   if (length < 0) THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
   if (length > arrayOopDesc::max_array_length(T_OBJECT)) {
+    report_java_out_of_memory("Requested array size exceeds VM limit");
     THROW_OOP_0(Universe::out_of_memory_error_array_size());
   }
   int size = objArrayOopDesc::object_size(length);
@@ -1384,18 +1396,18 @@ template <class T> void assert_nothing(T *p) {}
   /* Compute oopmap block range. The common case                         \
      is nonstatic_oop_map_size == 1. */                                  \
   OopMapBlock* map           = start_of_nonstatic_oop_maps();            \
-  OopMapBlock* const end_map = map + nonstatic_oop_map_size();           \
+  OopMapBlock* const end_map = map + nonstatic_oop_map_count();          \
   if (UseCompressedOops) {                                               \
     while (map < end_map) {                                              \
       InstanceKlass_SPECIALIZED_OOP_ITERATE(narrowOop,                   \
-        obj->obj_field_addr<narrowOop>(map->offset()), map->length(),    \
+        obj->obj_field_addr<narrowOop>(map->offset()), map->count(),     \
         do_oop, assert_fn)                                               \
       ++map;                                                             \
     }                                                                    \
   } else {                                                               \
     while (map < end_map) {                                              \
       InstanceKlass_SPECIALIZED_OOP_ITERATE(oop,                         \
-        obj->obj_field_addr<oop>(map->offset()), map->length(),          \
+        obj->obj_field_addr<oop>(map->offset()), map->count(),           \
         do_oop, assert_fn)                                               \
       ++map;                                                             \
     }                                                                    \
@@ -1405,19 +1417,19 @@ template <class T> void assert_nothing(T *p) {}
 #define InstanceKlass_OOP_MAP_REVERSE_ITERATE(obj, do_oop, assert_fn)    \
 {                                                                        \
   OopMapBlock* const start_map = start_of_nonstatic_oop_maps();          \
-  OopMapBlock* map             = start_map + nonstatic_oop_map_size();   \
+  OopMapBlock* map             = start_map + nonstatic_oop_map_count();  \
   if (UseCompressedOops) {                                               \
     while (start_map < map) {                                            \
       --map;                                                             \
       InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE(narrowOop,           \
-        obj->obj_field_addr<narrowOop>(map->offset()), map->length(),    \
+        obj->obj_field_addr<narrowOop>(map->offset()), map->count(),     \
         do_oop, assert_fn)                                               \
     }                                                                    \
   } else {                                                               \
     while (start_map < map) {                                            \
       --map;                                                             \
       InstanceKlass_SPECIALIZED_OOP_REVERSE_ITERATE(oop,                 \
-        obj->obj_field_addr<oop>(map->offset()), map->length(),          \
+        obj->obj_field_addr<oop>(map->offset()), map->count(),           \
         do_oop, assert_fn)                                               \
     }                                                                    \
   }                                                                      \
@@ -1431,11 +1443,11 @@ template <class T> void assert_nothing(T *p) {}
      usually non-existent extra overhead of examining                    \
      all the maps. */                                                    \
   OopMapBlock* map           = start_of_nonstatic_oop_maps();            \
-  OopMapBlock* const end_map = map + nonstatic_oop_map_size();           \
+  OopMapBlock* const end_map = map + nonstatic_oop_map_count();          \
   if (UseCompressedOops) {                                               \
     while (map < end_map) {                                              \
       InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(narrowOop,           \
-        obj->obj_field_addr<narrowOop>(map->offset()), map->length(),    \
+        obj->obj_field_addr<narrowOop>(map->offset()), map->count(),     \
         low, high,                                                       \
         do_oop, assert_fn)                                               \
       ++map;                                                             \
@@ -1443,7 +1455,7 @@ template <class T> void assert_nothing(T *p) {}
   } else {                                                               \
     while (map < end_map) {                                              \
       InstanceKlass_SPECIALIZED_BOUNDED_OOP_ITERATE(oop,                 \
-        obj->obj_field_addr<oop>(map->offset()), map->length(),          \
+        obj->obj_field_addr<oop>(map->offset()), map->count(),           \
         low, high,                                                       \
         do_oop, assert_fn)                                               \
       ++map;                                                             \
@@ -2204,14 +2216,15 @@ void instanceKlass::verify_class_klass_nonstatic_oop_maps(klassOop k) {
     first_time = false;
     const int extra = java_lang_Class::number_of_fake_oop_fields;
     guarantee(ik->nonstatic_field_size() == extra, "just checking");
-    guarantee(ik->nonstatic_oop_map_size() == 1, "just checking");
+    guarantee(ik->nonstatic_oop_map_count() == 1, "just checking");
     guarantee(ik->size_helper() == align_object_size(instanceOopDesc::header_size() + extra), "just checking");
 
     // Check that the map is (2,extra)
     int offset = java_lang_Class::klass_offset;
 
     OopMapBlock* map = ik->start_of_nonstatic_oop_maps();
-    guarantee(map->offset() == offset && map->length() == extra, "just checking");
+    guarantee(map->offset() == offset && map->count() == (unsigned int) extra,
+              "sanity");
   }
 }
 

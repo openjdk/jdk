@@ -48,12 +48,18 @@ public final class BeanInfoFinder
     }
 
     private static boolean isValid(Class<?> type, Method method) {
-        return (method != null) && type.equals(method.getDeclaringClass());
+        return (method != null) && method.getDeclaringClass().isAssignableFrom(type);
     }
 
     @Override
-    protected BeanInfo instantiate(Class<?> type, String name) {
-        BeanInfo info = super.instantiate(type, name);
+    protected BeanInfo instantiate(Class<?> type, String prefix, String name) {
+        // this optimization will only use the BeanInfo search path
+        // if is has changed from the original
+        // or trying to get the ComponentBeanInfo
+        BeanInfo info = !DEFAULT.equals(prefix) || "ComponentBeanInfo".equals(name)
+                ? super.instantiate(type, prefix, name)
+                : null;
+
         if (info != null) {
             // make sure that the returned BeanInfo matches the class
             BeanDescriptor bd = info.getBeanDescriptor();
@@ -88,15 +94,5 @@ public final class BeanInfoFinder
             }
         }
         return null;
-    }
-
-    @Override
-    protected BeanInfo instantiate(Class<?> type, String prefix, String name) {
-        // this optimization will only use the BeanInfo search path
-        // if is has changed from the original
-        // or trying to get the ComponentBeanInfo
-        return !DEFAULT.equals(prefix) || "ComponentBeanInfo".equals(name)
-                ? super.instantiate(type, prefix, name)
-                : null;
     }
 }

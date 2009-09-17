@@ -31,6 +31,7 @@ import com.sun.xml.internal.ws.api.BindingID;
 import com.sun.xml.internal.ws.api.WSBinding;
 import com.sun.xml.internal.ws.api.message.Message;
 import com.sun.xml.internal.ws.api.message.Packet;
+import com.sun.xml.internal.ws.api.model.SEIModel;
 import com.sun.xml.internal.ws.api.model.wsdl.WSDLPort;
 import com.sun.xml.internal.ws.api.pipe.Codec;
 import com.sun.xml.internal.ws.api.pipe.Engine;
@@ -47,6 +48,7 @@ import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.WebServiceException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -342,6 +344,37 @@ public abstract class WSEndpoint<T> {
      */
     public abstract @Nullable ServiceDefinition getServiceDefinition();
 
+    /**
+     * Gets the list of {@link EndpointComponent} that are associated
+     * with this endpoint.
+     *
+     * <p>
+     * Components (such as codec, tube, handler, etc) who wish to provide
+     * some service to other components in the endpoint can iterate the
+     * registry and call its {@link EndpointComponent#getSPI(Class)} to
+     * establish a private contract between components.
+     * <p>
+     * Components who wish to subscribe to such a service can add itself
+     * to this set.
+     *
+     * @return
+     *      always return the same set.
+     */
+    public abstract @NotNull Set<EndpointComponent> getComponentRegistry();
+
+    /**
+     * Gets the {@link com.sun.xml.internal.ws.api.model.SEIModel} that represents the relationship
+     * between WSDL and Java SEI.
+     *
+     * <p>
+     * This method returns a non-null value if and only if this
+     * endpoint is ultimately serving an application through an SEI.
+     *
+     * @return
+     *      maybe null. See above for more discussion.
+     *      Always the same value.
+     */
+    public abstract @Nullable SEIModel getSEIModel();
 
 
     /**

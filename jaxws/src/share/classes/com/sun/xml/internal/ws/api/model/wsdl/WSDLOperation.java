@@ -64,7 +64,7 @@ public interface WSDLOperation extends WSDLObject, WSDLExtensible {
     boolean isOneWay();
 
     /**
-     * Gets the {link WSDLFault} corresponding to wsdl:fault of this operation.
+     * Gets the {@link WSDLFault} corresponding to wsdl:fault of this operation.
      */
     Iterable<? extends WSDLFault> getFaults();
 

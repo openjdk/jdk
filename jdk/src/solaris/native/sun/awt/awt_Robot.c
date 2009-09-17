@@ -51,9 +51,8 @@
 
 extern struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
 
-extern int32_t getNumButtons();
-
 static jint * masks;
+static jint num_buttons;
 
 static int32_t isXTestAvailable() {
     int32_t major_opcode, first_event, first_error;
@@ -164,34 +163,34 @@ static XImage *getWindowImage(Display * display, Window window,
 
 /*********************************************************************************************/
 
+// this should be called from XRobotPeer constructor
 JNIEXPORT void JNICALL
-Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls) {
+Java_sun_awt_X11_XRobotPeer_setup (JNIEnv * env, jclass cls, jint numberOfButtons) {
     int32_t xtestAvailable;
 
-// this should be called from XRobotPeer constructor
+    DTRACE_PRINTLN("RobotPeer: setup()");
+
+    num_buttons = numberOfButtons;
+
     jclass inputEventClazz = (*env)->FindClass(env, "java/awt/event/InputEvent");
     jmethodID getButtonDownMasksID = (*env)->GetStaticMethodID(env, inputEventClazz, "getButtonDownMasks", "()[I");
     jintArray obj = (jintArray)(*env)->CallStaticObjectMethod(env, inputEventClazz, getButtonDownMasksID);
-    jsize len = (*env)->GetArrayLength(env, obj);
     jint * tmp = (*env)->GetIntArrayElements(env, obj, JNI_FALSE);
 
-    masks  = (jint *)malloc(sizeof(jint)*len);
+    masks  = (jint *)malloc(sizeof(jint) * num_buttons);
     if (masks == (jint *) NULL) {
         JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), NULL);
         goto finally;
     }
 
     int i;
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < num_buttons; i++) {
         masks[i] = tmp[i];
     }
     (*env)->ReleaseIntArrayElements(env, obj, tmp, 0);
     (*env)->DeleteLocalRef(env, obj);
 
-    DTRACE_PRINTLN("RobotPeer: setup()");
-
     AWT_LOCK();
-
     xtestAvailable = isXTestAvailable();
     DTRACE_PRINTLN1("RobotPeer: XTest available = %d", xtestAvailable);
     if (!xtestAvailable) {
@@ -337,8 +336,6 @@ void mouseAction(JNIEnv *env,
                  Bool isMousePress)
 {
     AWT_LOCK();
-
-    int32_t num_buttons = getNumButtons(); //from XToolkit.c
 
     DTRACE_PRINTLN1("RobotPeer: mouseAction(%i)", buttonMask);
     DTRACE_PRINTLN1("RobotPeer: mouseAction, press = %d", isMousePress);

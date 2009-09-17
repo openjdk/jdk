@@ -351,6 +351,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
      */
     public static void main(String[] args) {
         TestHtmlDefinitionListTag tester = new TestHtmlDefinitionListTag();
+        tester.exactNewlineMatch = false;
         run(tester, ARGS1, TEST_ALL, NEGATED_TEST);
         run(tester, ARGS1, TEST_CMNT_DEPR, NEGATED_TEST);
         run(tester, ARGS2, TEST_ALL, NEGATED_TEST);

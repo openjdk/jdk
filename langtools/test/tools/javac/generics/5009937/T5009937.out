@@ -1,2 +1,2 @@
-T5009937.java:39:21: compiler.err.name.clash.same.erasure.no.override: m(T5009937<java.lang.Integer>), T5009937.B, m(T5009937<java.lang.String>), T5009937.A
+T5009937.java:16:21: compiler.err.name.clash.same.erasure.no.override: m(T5009937<java.lang.Integer>), T5009937.B, m(T5009937<java.lang.String>), T5009937.A
 1 error

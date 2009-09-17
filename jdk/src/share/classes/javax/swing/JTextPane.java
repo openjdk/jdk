@@ -170,6 +170,7 @@ public class JTextPane extends JEditorPane {
      *
      * @param content  the content to replace the selection with
      */
+    @Override
     public void replaceSelection(String content) {
         replaceSelection(content, true);
     }
@@ -183,6 +184,7 @@ public class JTextPane extends JEditorPane {
         if (doc != null) {
             try {
                 Caret caret = getCaret();
+                boolean composedTextSaved = saveComposedText(caret.getDot());
                 int p0 = Math.min(caret.getDot(), caret.getMark());
                 int p1 = Math.max(caret.getDot(), caret.getMark());
                 AttributeSet attr = getInputAttributes().copyAttributes();
@@ -196,6 +198,9 @@ public class JTextPane extends JEditorPane {
                     if (content != null && content.length() > 0) {
                         doc.insertString(p0, content, attr);
                     }
+                }
+                if (composedTextSaved) {
+                    restoreComposedText();
                 }
             } catch (BadLocationException e) {
                 UIManager.getLookAndFeel().provideErrorFeedback(JTextPane.this);

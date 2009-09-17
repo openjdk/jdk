@@ -49,7 +49,7 @@ public class ModuleMemberTable_attribute extends Attribute {
     }
 
     public ModuleMemberTable_attribute(int name_index, int[] package_member_table) {
-        super(name_index, 2 * package_member_table.length);
+        super(name_index, 2 + 2 * package_member_table.length);
         this.package_member_table = package_member_table;
     }
 

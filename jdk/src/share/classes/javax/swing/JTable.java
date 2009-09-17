@@ -718,9 +718,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #addNotify
      */
     protected void configureEnclosingScrollPane() {
-        Container p = getParent();
-        if (p instanceof JViewport) {
-            Container gp = p.getParent();
+        JViewport port = SwingUtilities2.getViewport(this);
+        if (port != null) {
+            Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
                 JScrollPane scrollPane = (JScrollPane)gp;
                 // Make certain we are the viewPort's view and not, for
@@ -750,9 +750,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * from configureEnclosingScrollPane() and updateUI() in a safe manor.
      */
     private void configureEnclosingScrollPaneUI() {
-        Container p = getParent();
-        if (p instanceof JViewport) {
-            Container gp = p.getParent();
+        JViewport port = SwingUtilities2.getViewport(this);
+        if (port != null) {
+            Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
                 JScrollPane scrollPane = (JScrollPane)gp;
                 // Make certain we are the viewPort's view and not, for
@@ -819,9 +819,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @since 1.3
      */
     protected void unconfigureEnclosingScrollPane() {
-        Container p = getParent();
-        if (p instanceof JViewport) {
-            Container gp = p.getParent();
+        JViewport port = SwingUtilities2.getViewport(this);
+        if (port != null) {
+            Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
                 JScrollPane scrollPane = (JScrollPane)gp;
                 // Make certain we are the viewPort's view and not, for
@@ -5215,9 +5215,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #getFillsViewportHeight
      */
     public boolean getScrollableTracksViewportHeight() {
+        JViewport port = SwingUtilities2.getViewport(this);
         return getFillsViewportHeight()
-               && getParent() instanceof JViewport
-               && (getParent().getHeight() > getPreferredSize().height);
+               && port != null
+               && port.getHeight() > getPreferredSize().height;
     }
 
     /**

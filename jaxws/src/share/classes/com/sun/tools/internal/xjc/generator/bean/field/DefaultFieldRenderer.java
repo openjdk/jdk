@@ -27,8 +27,12 @@ package com.sun.tools.internal.xjc.generator.bean.field;
 import java.util.ArrayList;
 
 import com.sun.tools.internal.xjc.generator.bean.ClassOutlineImpl;
+import com.sun.tools.internal.xjc.model.CElement;
 import com.sun.tools.internal.xjc.model.CPropertyInfo;
+import com.sun.tools.internal.xjc.model.CReferencePropertyInfo;
 import com.sun.tools.internal.xjc.outline.FieldOutline;
+import java.io.Serializable;
+import java.util.Set;
 
 /**
  * Default implementation of the FieldRendererFactory
@@ -64,7 +68,18 @@ final class DefaultFieldRenderer implements FieldRenderer {
         return decideRenderer(outline,prop).generate(outline,prop);
     }
 
-    private FieldRenderer decideRenderer(ClassOutlineImpl outline,CPropertyInfo prop) {
+    private FieldRenderer decideRenderer(ClassOutlineImpl outline, CPropertyInfo prop) {
+
+        if (prop instanceof CReferencePropertyInfo) {
+            CReferencePropertyInfo p = (CReferencePropertyInfo)prop;
+            if (p.isDummy()) {
+                return frf.getDummyList(outline.parent().getCodeModel().ref(ArrayList.class));
+            }
+            if (p.isContent() && (p.isMixedExtendedCust())) {
+                return frf.getContentList(outline.parent().getCodeModel().ref(ArrayList.class).narrow(Serializable.class));
+            }
+        }
+
         if(!prop.isCollection()) {
             // non-collection field
 

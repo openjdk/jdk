@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
 import java.lang.reflect.InvocationTargetException;
@@ -58,9 +59,9 @@ import com.sun.xml.internal.bind.v2.runtime.AssociationMap;
 import com.sun.xml.internal.bind.v2.runtime.Coordinator;
 import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.JaxBeanInfo;
+import com.sun.xml.internal.bind.v2.runtime.ElementBeanInfoImpl;
 
 import org.xml.sax.ErrorHandler;
-import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.LocatorImpl;
 
@@ -85,6 +86,17 @@ public final class UnmarshallingContext extends Coordinator
      * The currently active state.
      */
     private State current;
+
+    private static final LocatorEx DUMMY_INSTANCE;
+
+    static {
+        LocatorImpl loc = new LocatorImpl();
+        loc.setPublicId(null);
+        loc.setSystemId(null);
+        loc.setLineNumber(-1);
+        loc.setColumnNumber(-1);
+        DUMMY_INSTANCE = new LocatorExWrapper(loc);
+    }
 
     private @NotNull LocatorEx locator = DUMMY_INSTANCE;
 
@@ -160,6 +172,12 @@ public final class UnmarshallingContext extends Coordinator
     public @Nullable ClassResolver classResolver;
 
     /**
+     * User-supplied {@link ClassLoader} for converting name to {@link Class}.
+     * For backward compatibility, when null, use thread context classloader.
+     */
+    public @Nullable ClassLoader classLoader;
+
+    /**
      * State information for each element.
      */
     public final class State {
@@ -183,6 +201,30 @@ public final class UnmarshallingContext extends Coordinator
 
         /**
          * Hack for making JAXBElement unmarshalling work.
+         *
+         * <p>
+         * While the unmarshalling is in progress, the {@link #target} field stores the object being unmarshalled.
+         * This makes it convenient to keep track of the unmarshalling activity in context of XML infoset, but
+         * since there's only one {@link State} per element, this mechanism only works when there's one object
+         * per element, which breaks down when we have {@link JAXBElement}, since the presence of JAXBElement
+         * requires that we have two objects unmarshalled (a JAXBElement X and a value object Y bound to an XML type.)
+         *
+         * <p>
+         * So to make room for storing both, this {@link #backup} field is used. When we create X instance
+         * in the above example, we set that to {@code state.prev.target} and displace its old value to
+         * {@code state.prev.backup} (where Y goes to {@code state.target}.) Upon the completion of the unmarshalling
+         * of Y, we revert this.
+         *
+         * <p>
+         * While this attributes X incorrectly to its parent element, this preserves the parent/child
+         * relationship between unmarshalled objects and {@link State} parent/child relationship, and
+         * it thereby makes {@link Receiver} mechanism simpler.
+         *
+         * <p>
+         * Yes, I know this is a hack, and no, I'm not proud of it.
+         *
+         * @see ElementBeanInfoImpl.IntercepterLoader#startElement(State, TagName)
+         * @see ElementBeanInfoImpl.IntercepterLoader#intercept(State, Object)
          */
         public Object backup;
 
@@ -209,6 +251,8 @@ public final class UnmarshallingContext extends Coordinator
          */
         public final State prev;
         private State next;
+
+        public boolean nil = false;
 
         /**
          * Gets the context.
@@ -512,6 +556,13 @@ public final class UnmarshallingContext extends Coordinator
 
         // there was an error.
         throw new UnmarshalException((String)null);
+    }
+
+    void clearResult() {
+        if (isUnmarshalInProgress) {
+            throw new IllegalStateException();
+        }
+        result = null;
     }
 
     /**
@@ -970,6 +1021,7 @@ public final class UnmarshallingContext extends Coordinator
          * Receives the root element and determines how to start
          * unmarshalling.
          */
+        @Override
         public void childElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
             Loader loader = state.getContext().selectRootLoader(state,ea);
             if(loader!=null) {
@@ -1001,6 +1053,9 @@ public final class UnmarshallingContext extends Coordinator
             if(state.backup!=null) {
                 ((JAXBElement<Object>)state.backup).setValue(o);
                 o = state.backup;
+            }
+            if (state.nil) {
+                ((JAXBElement<Object>)o).setNil(true);
             }
             state.getContext().result = o;
         }
@@ -1126,14 +1181,32 @@ public final class UnmarshallingContext extends Coordinator
         return (UnmarshallingContext) Coordinator._getInstance();
     }
 
-    private static final LocatorEx DUMMY_INSTANCE;
+    /**
+     * Allows to access elements which are expected in current state.
+     * Useful for getting elements/attributes for current parent.
+     *
+     * @return
+     */
+    public Collection<QName> getCurrentExpectedElements() {
+        pushCoordinator();
+        try {
+            State s = getCurrentState();
+            Loader l = s.loader;
+            return l.getExpectedChildElements();
+        } finally {
+            popCoordinator();
+        }
+    }
 
-    static {
-        LocatorImpl loc = new LocatorImpl();
-        loc.setPublicId(null);
-        loc.setSystemId(null);
-        loc.setLineNumber(-1);
-        loc.setColumnNumber(-1);
-        DUMMY_INSTANCE = new LocatorExWrapper(loc);
+    /**
+     * Gets StructureLoader if used as loader.
+     * Useful when determining if element is mixed or not.
+     *
+     */
+    public StructureLoader getStructureLoader() {
+        if(current.loader instanceof StructureLoader)
+            return (StructureLoader)current.loader;
+
+        return null;
     }
 }

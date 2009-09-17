@@ -449,7 +449,7 @@ public class DoubleByte {
                     char c = sa[sp];
                     int bb = encodeChar(c);
                     if (bb == UNMAPPABLE_ENCODING) {
-                        if (Surrogate.is(c)) {
+                        if (Character.isSurrogate(c)) {
                             if (sgp().parse(c, sa, sp, sl) < 0)
                                 return sgp.error();
                             return sgp.unmappableResult();
@@ -484,7 +484,7 @@ public class DoubleByte {
                     char c = src.get();
                     int bb = encodeChar(c);
                     if (bb == UNMAPPABLE_ENCODING) {
-                        if (Surrogate.is(c)) {
+                        if (Character.isSurrogate(c)) {
                             if (sgp().parse(c, src) < 0)
                                 return sgp.error();
                             return sgp.unmappableResult();
@@ -659,7 +659,7 @@ public class DoubleByte {
                     char c = sa[sp];
                     int bb = encodeChar(c);
                     if (bb == UNMAPPABLE_ENCODING) {
-                        if (Surrogate.is(c)) {
+                        if (Character.isSurrogate(c)) {
                             if (sgp().parse(c, sa, sp, sl) < 0)
                                 return sgp.error();
                             return sgp.unmappableResult();
@@ -705,7 +705,7 @@ public class DoubleByte {
                     char c = src.get();
                     int bb = encodeChar(c);
                     if (bb == UNMAPPABLE_ENCODING) {
-                        if (Surrogate.is(c)) {
+                        if (Character.isSurrogate(c)) {
                             if (sgp().parse(c, src) < 0)
                                 return sgp.error();
                             return sgp.unmappableResult();

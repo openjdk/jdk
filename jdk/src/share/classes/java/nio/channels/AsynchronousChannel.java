@@ -34,7 +34,8 @@ import java.util.concurrent.Future;  // javadoc
  *
  * <ol>
  * <li><pre>{@link Future}&lt;V&gt; <em>operation</em>(<em>...</em>)</pre></li>
- * <li><pre>Future&lt;V&gt; <em>operation</em>(<em>...</em> A attachment, {@link CompletionHandler}&lt;V,? super A&gt handler)</pre></li>
+ * <li><pre>void <em>operation</em>(<em>...</em> A attachment, {@link
+ *   CompletionHandler}&lt;V,? super A&gt; handler)</pre></li>
  * </ol>
  *
  * where <i>operation</i> is the name of the I/O operation (read or write for
@@ -48,7 +49,7 @@ import java.util.concurrent.Future;  // javadoc
  * interface may be used to check if the operation has completed, wait for its
  * completion, and to retrieve the result. In the second form, a {@link
  * CompletionHandler} is invoked to consume the result of the I/O operation when
- * it completes, fails, or is cancelled.
+ * it completes or fails.
  *
  * <p> A channel that implements this interface is <em>asynchronously
  * closeable</em>: If an I/O operation is outstanding on the channel and the
@@ -63,33 +64,33 @@ import java.util.concurrent.Future;  // javadoc
  * <h4>Cancellation</h4>
  *
  * <p> The {@code Future} interface defines the {@link Future#cancel cancel}
- * method to cancel execution of a task.
+ * method to cancel execution. This causes all threads waiting on the result of
+ * the I/O operation to throw {@link java.util.concurrent.CancellationException}.
+ * Whether the underlying I/O operation can be cancelled is highly implementation
+ * specific and therefore not specified. Where cancellation leaves the channel,
+ * or the entity to which it is connected, in an inconsistent state, then the
+ * channel is put into an implementation specific <em>error state</em> that
+ * prevents further attempts to initiate I/O operations that are <i>similar</i>
+ * to the operation that was cancelled. For example, if a read operation is
+ * cancelled but the implementation cannot guarantee that bytes have not been
+ * read from the channel then it puts the channel into an error state; further
+ * attempts to initiate a {@code read} operation cause an unspecified runtime
+ * exception to be thrown. Similarly, if a write operation is cancelled but the
+ * implementation cannot guarantee that bytes have not been written to the
+ * channel then subsequent attempts to initiate a {@code write} will fail with
+ * an unspecified runtime exception.
  *
- * <p> Where the {@code cancel} method is invoked with the {@code
+ * <p> Where the {@link Future#cancel cancel} method is invoked with the {@code
  * mayInterruptIfRunning} parameter set to {@code true} then the I/O operation
- * may be interrupted by closing the channel. This will cause any other I/O
- * operations outstanding on the channel to complete with the exception {@link
- * AsynchronousCloseException}.
- *
- * <p> If a {@code CompletionHandler} is specified when initiating an I/O
- * operation, and the {@code cancel} method is invoked to cancel the I/O
- * operation before it completes, then the {@code CompletionHandler}'s {@link
- * CompletionHandler#cancelled cancelled} method is invoked.
- *
- * <p> If an implementation of this interface supports a means to cancel I/O
- * operations, and where cancellation may leave the channel, or the entity to
- * which it is connected, in an inconsistent state, then the channel is put into
- * an implementation specific <em>error state</em> that prevents further
- * attempts to initiate I/O operations on the channel. For example, if a read
- * operation is cancelled but the implementation cannot guarantee that bytes
- * have not been read from the channel then it puts the channel into error state
- * state; further attempts to initiate a {@code read} operation causes an
- * unspecified runtime exception to be thrown.
+ * may be interrupted by closing the channel. In that case all threads waiting
+ * on the result of the I/O operation throw {@code CancellationException} and
+ * any other I/O operations outstanding on the channel complete with the
+ * exception {@link AsynchronousCloseException}.
  *
  * <p> Where the {@code cancel} method is invoked to cancel read or write
- * operations then it recommended that all buffers used in the I/O operations be
- * discarded or care taken to ensure that the buffers are not accessed while the
- * channel remains open.
+ * operations then it is recommended that all buffers used in the I/O operations
+ * be discarded or care taken to ensure that the buffers are not accessed while
+ * the channel remains open.
  *
  *  @since 1.7
  */
@@ -102,7 +103,7 @@ public interface AsynchronousChannel
      *
      * <p> Any outstanding asynchronous operations upon this channel will
      * complete with the exception {@link AsynchronousCloseException}. After a
-     * channel is closed then further attempts to initiate asynchronous I/O
+     * channel is closed, further attempts to initiate asynchronous I/O
      * operations complete immediately with cause {@link ClosedChannelException}.
      *
      * <p>  This method otherwise behaves exactly as specified by the {@link

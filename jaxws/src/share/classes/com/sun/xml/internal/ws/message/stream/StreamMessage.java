@@ -47,18 +47,19 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.NamespaceSupport;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.stream.Location;
-import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.*;
 import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
 import javax.xml.ws.WebServiceException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * {@link Message} implementation backed by {@link XMLStreamReader}.
@@ -190,9 +191,38 @@ public final class StreamMessage extends AbstractMessageImpl {
     public Source readPayloadAsSource() {
         if(hasPayload()) {
             assert unconsumed();
-            return new StAXSource(reader, true);
+            return new StAXSource(reader, true, getInscopeNamespaces());
         } else
             return null;
+    }
+
+    /**
+     * There is no way to enumerate inscope namespaces for XMLStreamReader. That means
+     * namespaces declared in envelope, and body tags need to be computed using their
+     * {@link TagInfoset}s.
+     *
+     * @return array of the even length of the form { prefix0, uri0, prefix1, uri1, ... }
+     */
+    private String[] getInscopeNamespaces() {
+        NamespaceSupport nss = new NamespaceSupport();
+
+        nss.pushContext();
+        for(int i=0; i < envelopeTag.ns.length; i+=2) {
+            nss.declarePrefix(envelopeTag.ns[i], envelopeTag.ns[i+1]);
+        }
+
+        nss.pushContext();
+        for(int i=0; i < bodyTag.ns.length; i+=2) {
+            nss.declarePrefix(bodyTag.ns[i], bodyTag.ns[i+1]);
+        }
+
+        List<String> inscope = new ArrayList<String>();
+        for( Enumeration en = nss.getPrefixes(); en.hasMoreElements(); ) {
+            String prefix = (String)en.nextElement();
+            inscope.add(prefix);
+            inscope.add(nss.getURI(prefix));
+        }
+        return inscope.toArray(new String[inscope.size()]);
     }
 
     public Object readPayloadAsJAXB(Unmarshaller unmarshaller) throws JAXBException {
@@ -206,6 +236,7 @@ public final class StreamMessage extends AbstractMessageImpl {
             return unmarshaller.unmarshal(reader);
         } finally{
             unmarshaller.setAttachmentUnmarshaller(null);
+            XMLStreamReaderUtil.readRest(reader);
             XMLStreamReaderUtil.close(reader);
             XMLStreamReaderFactory.recycle(reader);
         }
@@ -217,6 +248,7 @@ public final class StreamMessage extends AbstractMessageImpl {
         assert unconsumed();
         T r = bridge.unmarshal(reader,
             hasAttachments() ? new AttachmentUnmarshallerImpl(getAttachments()) : null);
+        XMLStreamReaderUtil.readRest(reader);
         XMLStreamReaderUtil.close(reader);
         XMLStreamReaderFactory.recycle(reader);
         return r;
@@ -225,6 +257,8 @@ public final class StreamMessage extends AbstractMessageImpl {
     @Override
     public void consume() {
         assert unconsumed();
+        XMLStreamReaderUtil.readRest(reader);
+        XMLStreamReaderUtil.close(reader);
         XMLStreamReaderFactory.recycle(reader);
     }
 
@@ -259,7 +293,8 @@ public final class StreamMessage extends AbstractMessageImpl {
                 break;
             conv.bridge(reader,writer);
         }
-        reader.close();
+        XMLStreamReaderUtil.readRest(reader);
+        XMLStreamReaderUtil.close(reader);
         XMLStreamReaderFactory.recycle(reader);
     }
 
@@ -322,7 +357,8 @@ public final class StreamMessage extends AbstractMessageImpl {
 
                 conv.bridge();
             }
-            reader.close();
+            XMLStreamReaderUtil.readRest(reader);
+            XMLStreamReaderUtil.close(reader);
             XMLStreamReaderFactory.recycle(reader);
         } catch (XMLStreamException e) {
             Location loc = e.getLocation();
@@ -346,17 +382,31 @@ public final class StreamMessage extends AbstractMessageImpl {
                 //the boolean value tells the first body part is written.
                 //based on this we do the right thing
                 StreamReaderBufferCreator c = new StreamReaderBufferCreator(xsb);
+
+                // preserving inscope namespaces from envelope, and body. Other option
+                // would be to create a filtering XMLStreamReader from reader+envelopeTag+bodyTag
+                c.storeElement(envelopeTag.nsUri, envelopeTag.localName, envelopeTag.prefix, envelopeTag.ns);
+                c.storeElement(bodyTag.nsUri, bodyTag.localName, bodyTag.prefix, bodyTag.ns);
+
+                // Loop all the way for multi payload case
                 while(reader.getEventType() != XMLStreamConstants.END_DOCUMENT){
                     String name = reader.getLocalName();
                     String nsUri = reader.getNamespaceURI();
                     if(name.equals("Body") && nsUri.equals(soapVersion.nsUri) || (reader.getEventType() == XMLStreamConstants.END_DOCUMENT))
                         break;
                     c.create(reader);
+                    // Skip whitespaces in between payload and </Body> or between elements
+                    if (reader.isWhiteSpace()) {
+                        XMLStreamReaderUtil.nextElementContent(reader);
+                    }
                 }
+                XMLStreamReaderUtil.readRest(reader);
+                XMLStreamReaderUtil.close(reader);
                 XMLStreamReaderFactory.recycle(reader);
 
                 reader = xsb.readAsXMLStreamReader();
                 clone = xsb.readAsXMLStreamReader();
+
                 // advance to the start tag of the first element
                 proceedToRootElement(reader);
                 proceedToRootElement(clone);
@@ -374,6 +424,8 @@ public final class StreamMessage extends AbstractMessageImpl {
 
     private void proceedToRootElement(XMLStreamReader xsr) throws XMLStreamException {
         assert xsr.getEventType()==START_DOCUMENT;
+        xsr.nextTag();
+        xsr.nextTag();
         xsr.nextTag();
         assert xsr.getEventType()==START_ELEMENT;
     }

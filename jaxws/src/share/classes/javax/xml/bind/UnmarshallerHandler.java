@@ -55,7 +55,7 @@ import org.xml.sax.ContentHandler;
  * an object, s/he can still start a new round of unmarshalling.
  *
  * @author <ul><li>Kohsuke KAWAGUCHI, Sun Microsystems, Inc.</li></ul>
- * @version $Revision: 1.1 $ $Date: 2004/12/14 21:50:41 $
+ * @version $Revision: 1.2 $ $Date: 2006/03/08 16:55:17 $
  * @see Unmarshaller#getUnmarshallerHandler()
  * @since JAXB1.0
  */

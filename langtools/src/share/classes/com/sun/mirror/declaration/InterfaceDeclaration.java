@@ -40,12 +40,18 @@ import com.sun.mirror.type.InterfaceType;
  * represents an interface <i>type</i>.
  * See {@link TypeDeclaration} for more on this distinction.
  *
+ * @deprecated All components of this API have been superseded by the
+ * standardized annotation processing API.  The replacement for the
+ * functionality of this interface is included in {@link
+ * javax.lang.model.element.TypeElement}.
+ *
  * @author Joseph D. Darcy
  * @author Scott Seligman
  *
  * @see InterfaceType
  * @since 1.5
  */
-
+@Deprecated
+@SuppressWarnings("deprecation")
 public interface InterfaceDeclaration extends TypeDeclaration {
 }

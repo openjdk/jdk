@@ -136,7 +136,7 @@ public class JarSigner {
     char[] keypass; // private key password
     String sigfile; // name of .SF file
     String sigalg; // name of signature algorithm
-    String digestalg = "SHA1"; // name of digest algorithm
+    String digestalg = "SHA-256"; // name of digest algorithm
     String signedjar; // output filename
     String tsaUrl; // location of the Timestamping Authority
     String tsaAlias; // alias for the Timestamping Authority's certificate
@@ -411,6 +411,16 @@ public class JarSigner {
             storetype = KeyStore.getDefaultType();
         }
         storetype = KeyStoreUtil.niceStoreTypeName(storetype);
+
+        try {
+            if (signedjar != null && new File(signedjar).getCanonicalPath().equals(
+                    new File(jarfile).getCanonicalPath())) {
+                signedjar = null;
+            }
+        } catch (IOException ioe) {
+            // File system error?
+            // Just ignore it.
+        }
 
         if (P11KEYSTORE.equalsIgnoreCase(storetype) ||
                 KeyStoreUtil.isWindowsKeyStore(storetype)) {
@@ -1968,20 +1978,35 @@ public class JarSigner {
         String[] base64Digests = getDigests(ze, zf, digests, encoder);
 
         for (int i=0; i<digests.length; i++) {
-            String name = digests[i].getAlgorithm()+"-Digest";
-            String mfDigest = attrs.getValue(name);
-            if (mfDigest == null
-                && digests[i].getAlgorithm().equalsIgnoreCase("SHA")) {
-                // treat "SHA" and "SHA1" the same
-                mfDigest = attrs.getValue("SHA-Digest");
+            // The entry name to be written into attrs
+            String name = null;
+            try {
+                // Find if the digest already exists
+                AlgorithmId aid = AlgorithmId.get(digests[i].getAlgorithm());
+                for (Object key: attrs.keySet()) {
+                    if (key instanceof Attributes.Name) {
+                        String n = ((Attributes.Name)key).toString();
+                        if (n.toUpperCase(Locale.ENGLISH).endsWith("-DIGEST")) {
+                            String tmp = n.substring(0, n.length() - 7);
+                            if (AlgorithmId.get(tmp).equals(aid)) {
+                                name = n;
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (NoSuchAlgorithmException nsae) {
+                // Ignored. Writing new digest entry.
             }
-            if (mfDigest == null) {
-                // compute digest and add it to list of attributes
+
+            if (name == null) {
+                name = digests[i].getAlgorithm()+"-Digest";
                 attrs.putValue(name, base64Digests[i]);
                 update=true;
             } else {
                 // compare digests, and replace the one in the manifest
                 // if they are different
+                String mfDigest = attrs.getValue(name);
                 if (!mfDigest.equalsIgnoreCase(base64Digests[i])) {
                     attrs.putValue(name, base64Digests[i]);
                     update=true;
@@ -2205,7 +2230,7 @@ class SignatureFile {
                 if (keyAlgorithm.equalsIgnoreCase("DSA"))
                     digestAlgorithm = "SHA1";
                 else if (keyAlgorithm.equalsIgnoreCase("RSA"))
-                    digestAlgorithm = "SHA1";
+                    digestAlgorithm = "SHA256";
                 else {
                     throw new RuntimeException("private key is not a DSA or "
                                                + "RSA key");

@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.tools.internal.xjc.reader.xmlschema.bindinfo;
 
 import java.util.ArrayList;
@@ -78,6 +79,10 @@ public class ForkingFilter extends XMLFilterImpl {
     public void setDocumentLocator(Locator locator) {
         super.setDocumentLocator(locator);
         this.loc = locator;
+    }
+
+    public Locator getDocumentLocator() {
+        return loc;
     }
 
     public void startDocument() throws SAXException {

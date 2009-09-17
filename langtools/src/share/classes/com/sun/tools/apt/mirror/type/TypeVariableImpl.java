@@ -40,7 +40,7 @@ import com.sun.tools.javac.code.Type;
 /**
  * Implementation of TypeVariable
  */
-
+@SuppressWarnings("deprecation")
 public class TypeVariableImpl extends TypeMirrorImpl implements TypeVariable {
 
     protected Type.TypeVar type;

@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * @(#)$Id: ValidationEventLocatorExImpl.java,v 1.1 2005/04/15 20:03:50 kohsuke Exp $
- */
-
-
 package com.sun.xml.internal.bind.util;
 
 import javax.xml.bind.helpers.ValidationEventLocatorImpl;

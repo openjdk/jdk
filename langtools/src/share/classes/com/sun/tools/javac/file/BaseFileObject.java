@@ -29,6 +29,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.CharsetDecoder;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
@@ -36,6 +38,12 @@ import javax.tools.JavaFileObject;
 
 import static javax.tools.JavaFileObject.Kind.*;
 
+/**
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+*/
 public abstract class BaseFileObject implements JavaFileObject {
     protected BaseFileObject(JavacFileManager fileManager) {
         this.fileManager = fileManager;
@@ -87,7 +95,26 @@ public abstract class BaseFileObject implements JavaFileObject {
         return (lastDot == -1 ? fileName : fileName.substring(0, lastDot));
     }
 
+    protected static URI createJarUri(File jarFile, String entryName) {
+        URI jarURI = jarFile.toURI().normalize();
+        String separator = entryName.startsWith("/") ? "!" : "!/";
+        try {
+            // The jar URI convention appears to be not to re-encode the jarURI
+            return new URI("jar:" + jarURI + separator + entryName);
+        } catch (URISyntaxException e) {
+            throw new CannotCreateUriError(jarURI + separator + entryName, e);
+        }
+    }
+
+    /** Used when URLSyntaxException is thrown unexpectedly during
+     *  implementations of (Base)FileObject.toURI(). */
+    protected static class CannotCreateUriError extends Error {
+        private static final long serialVersionUID = 9101708840997613546L;
+        public CannotCreateUriError(String value, Throwable cause) {
+            super(value, cause);
+        }
+    }
+
     /** The file manager that created this JavaFileObject. */
     protected final JavacFileManager fileManager;
-
 }

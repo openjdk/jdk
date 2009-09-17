@@ -47,8 +47,8 @@ public class ArrayClone {
         String out = sw.toString();
         System.out.println(out);
 
-        for (String line: out.split("\n")) {
-            String match = "[ \t]+[0-9]+:[ \t]+invokevirtual[ \t]+#[0-9]+; //Method \"\\[Ljava/lang/String;\".clone:\\(\\)Ljava/lang/Object;";
+        for (String line: out.split("(\\n|\\r\\n?)")) {
+            String match = "[ \t]+[0-9]+:[ \t]+invokevirtual[ \t]+#[0-9]+[ \t]+// Method \"\\[Ljava/lang/String;\".clone:\\(\\)Ljava/lang/Object;";
             if (line.matches(match))
                 return;
         }

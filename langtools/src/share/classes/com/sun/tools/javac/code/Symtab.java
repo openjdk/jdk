@@ -193,7 +193,7 @@ public class Symtab {
 
     public void initType(Type type, String name, String bname) {
         initType(type, name);
-        boxedName[type.tag] = names.fromString("java.lang." + bname);
+            boxedName[type.tag] = names.fromString("java.lang." + bname);
     }
 
     /** The class symbol that owns all predefined symbols.
@@ -467,6 +467,7 @@ public class Symtab {
         synthesizeMHTypeIfMissing(invokeDynamicType);
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
+        synthesizeBoxTypeIfMissing(voidType);
 
         // Enter a synthetic class that is used to mark Sun
         // proprietary classes in ct.sym.  This class does not have a

@@ -1082,6 +1082,9 @@ class CommandLineFlags {
   product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
                                                                             \
+  product(bool, ForceFullGCJVMTIEpilogues, false,                           \
+          "Force 'Full GC' was done semantics for JVMTI GC epilogues")      \
+                                                                            \
   /* This option can change an EMCP method into an obsolete method. */      \
   /* This can affect tests that except specific methods to be EMCP. */      \
   /* This option should be used with caution. */                            \
@@ -1703,6 +1706,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, TLABStats, true,                                            \
           "Print various TLAB related information")                         \
+                                                                            \
+  product(bool, PrintRevisitStats, false,                                   \
+          "Print revisit (klass and MDO) stack related information")        \
                                                                             \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "Never act like a server-class machine")                          \
@@ -2924,12 +2930,6 @@ class CommandLineFlags {
           "how many entries we'll try to leave on the stack during "        \
           "parallel GC")                                                    \
                                                                             \
-  product(intx, DCQBarrierQueueBufferSize, 256,                             \
-          "Number of elements in a dirty card queue buffer")                \
-                                                                            \
-  product(intx, DCQBarrierProcessCompletedThreshold, 5,                     \
-          "Number of completed dirty card buffers to trigger processing.")  \
-                                                                            \
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \
           "Number of yellow zone (recoverable overflows) pages")            \
@@ -3036,6 +3036,9 @@ class CommandLineFlags {
   develop(intx, CIFireOOMAtDelay, -1,                                       \
           "Wait for this many CI accesses to occur in all compiles before " \
           "beginning to throw OutOfMemoryErrors in each compile")           \
+                                                                            \
+  notproduct(bool, CIObjectFactoryVerify, false,                            \
+          "enable potentially expensive verification in ciObjectFactory")   \
                                                                             \
   /* Priorities */                                                          \
   product_pd(bool, UseThreadPriorities,  "Use native thread priorities")    \
@@ -3287,7 +3290,7 @@ class CommandLineFlags {
   product(uintx, SharedReadWriteSize,  12*M,                                \
           "Size of read-write space in permanent generation (in bytes)")    \
                                                                             \
-  product(uintx, SharedReadOnlySize,    8*M,                                \
+  product(uintx, SharedReadOnlySize,   10*M,                                \
           "Size of read-only space in permanent generation (in bytes)")     \
                                                                             \
   product(uintx, SharedMiscDataSize,    4*M,                                \
@@ -3312,7 +3315,7 @@ class CommandLineFlags {
   product(bool, AnonymousClasses, false,                                    \
           "support sun.misc.Unsafe.defineAnonymousClass")                   \
                                                                             \
-  product(bool, EnableMethodHandles, false,                                 \
+  experimental(bool, EnableMethodHandles, false,                            \
           "support method handles (true by default under JSR 292)")         \
                                                                             \
   diagnostic(intx, MethodHandlePushLimit, 3,                                \
@@ -3327,7 +3330,7 @@ class CommandLineFlags {
   diagnostic(bool, OptimizeMethodHandles, true,                             \
           "when constructing method handles, try to improve them")          \
                                                                             \
-  product(bool, EnableInvokeDynamic, false,                                 \
+  experimental(bool, EnableInvokeDynamic, false,                            \
           "recognize the invokedynamic instruction")                        \
                                                                             \
   develop(bool, TraceInvokeDynamic, false,                                  \

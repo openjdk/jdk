@@ -38,6 +38,30 @@ public final class GeneratorMessages {
     private final static LocalizableMessageFactory messageFactory = new LocalizableMessageFactory("com.sun.tools.internal.ws.resources.generator");
     private final static Localizer localizer = new Localizer();
 
+    public static Localizable localizableGENERATOR_SERVICE_CLASS_ALREADY_EXIST(Object arg0, Object arg1) {
+        return messageFactory.getMessage("generator.service.classAlreadyExist", arg0, arg1);
+    }
+
+    /**
+     * Could not generate Service, class: {0} already exists. Rename wsdl:Service "{1}" using JAX-WS customization
+     *
+     */
+    public static String GENERATOR_SERVICE_CLASS_ALREADY_EXIST(Object arg0, Object arg1) {
+        return localizer.localize(localizableGENERATOR_SERVICE_CLASS_ALREADY_EXIST(arg0, arg1));
+    }
+
+    public static Localizable localizableGENERATOR_SEI_CLASS_ALREADY_EXIST(Object arg0, Object arg1) {
+        return messageFactory.getMessage("generator.sei.classAlreadyExist", arg0, arg1);
+    }
+
+    /**
+     * Could not generate SEI, class: {0} already exists. Rename wsdl:portType "{1}" using JAX-WS customization
+     *
+     */
+    public static String GENERATOR_SEI_CLASS_ALREADY_EXIST(Object arg0, Object arg1) {
+        return localizer.localize(localizableGENERATOR_SEI_CLASS_ALREADY_EXIST(arg0, arg1));
+    }
+
     public static Localizable localizableGENERATOR_NESTED_GENERATOR_ERROR(Object arg0) {
         return messageFactory.getMessage("generator.nestedGeneratorError", arg0);
     }

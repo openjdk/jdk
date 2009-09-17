@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import sun.net.NetHooks;
@@ -106,6 +107,29 @@ abstract class AsynchronousServerSocketChannelImpl
             closeLock.writeLock().unlock();
         }
         implClose();
+    }
+
+    /**
+     * Invoked by accept to accept connection
+     */
+    abstract Future<AsynchronousSocketChannel>
+        implAccept(Object attachment,
+                   CompletionHandler<AsynchronousSocketChannel,Object> handler);
+
+
+    @Override
+    public final Future<AsynchronousSocketChannel> accept() {
+        return implAccept(null, null);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public final <A> void accept(A attachment,
+                                 CompletionHandler<AsynchronousSocketChannel,? super A> handler)
+    {
+        if (handler == null)
+            throw new NullPointerException("'handler' is null");
+        implAccept(attachment, (CompletionHandler<AsynchronousSocketChannel,Object>)handler);
     }
 
     final boolean isAcceptKilled() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
     /**
      * ReferenceQueue of unreferenced WeakPCLs.
      */
-    private static ReferenceQueue<DesktopProperty> queue;
+    private static final ReferenceQueue<DesktopProperty> queue = new ReferenceQueue<DesktopProperty>();
 
     /**
      * PropertyChangeListener attached to the Toolkit.
@@ -58,7 +58,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
     /**
      * Key used to lookup value from desktop.
      */
-    private String key;
+    private final String key;
     /**
      * Value to return.
      */
@@ -66,17 +66,8 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
     /**
      * Fallback value in case we get null from desktop.
      */
-    private Object fallback;
+    private final Object fallback;
 
-    /**
-     * Toolkit.
-     */
-    private Toolkit toolkit;
-
-
-    static {
-        queue = new ReferenceQueue<DesktopProperty>();
-    }
 
     /**
      * Cleans up any lingering state held by unrefeernced
@@ -138,13 +129,10 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      *
      * @param key Key used in looking up desktop value.
      * @param fallback Value used if desktop property is null.
-     * @param toolkit Toolkit used to fetch property from, can be null
-     *        in which default will be used.
      */
-    public DesktopProperty(String key, Object fallback, Toolkit toolkit) {
+    public DesktopProperty(String key, Object fallback) {
         this.key = key;
         this.fallback = fallback;
-        this.toolkit = toolkit;
         // The only sure fire way to clear our references is to create a
         // Thread and wait for a reference to be added to the queue.
         // Because it is so rare that you will actually change the look
@@ -175,13 +163,14 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      * Returns the value from the desktop.
      */
     protected Object getValueFromDesktop() {
-        if (this.toolkit == null) {
-            this.toolkit = Toolkit.getDefaultToolkit();
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+
+        if (pcl == null) {
+            pcl = new WeakPCL(this, getKey(), UIManager.getLookAndFeel());
+            toolkit.addPropertyChangeListener(getKey(), pcl);
         }
-        Object value = toolkit.getDesktopProperty(getKey());
-        pcl = new WeakPCL(this, toolkit, getKey(), UIManager.getLookAndFeel());
-        toolkit.addPropertyChangeListener(getKey(), pcl);
-        return value;
+
+        return toolkit.getDesktopProperty(getKey());
     }
 
     /**
@@ -205,12 +194,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      * <code>createValue</code> will ask for the property again.
      */
     public void invalidate() {
-        if (pcl != null) {
-            toolkit.removePropertyChangeListener(getKey(), pcl);
-            toolkit = null;
-            pcl = null;
-            value = null;
-        }
+        value = null;
     }
 
     /**
@@ -271,13 +255,11 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
      */
     private static class WeakPCL extends WeakReference<DesktopProperty>
                                implements PropertyChangeListener {
-        private Toolkit kit;
         private String key;
         private LookAndFeel laf;
 
-        WeakPCL(DesktopProperty target, Toolkit kit, String key, LookAndFeel laf) {
+        WeakPCL(DesktopProperty target, String key, LookAndFeel laf) {
             super(target, queue);
-            this.kit = kit;
             this.key = key;
             this.laf = laf;
         }
@@ -297,7 +279,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
         }
 
         void dispose() {
-            kit.removePropertyChangeListener(key, this);
+            Toolkit.getDefaultToolkit().removePropertyChangeListener(key, this);
         }
     }
 }

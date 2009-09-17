@@ -30,7 +30,6 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 
-
 /**
  * Utility class for dealing with surrogates.
  *
@@ -41,39 +40,46 @@ public class Surrogate {
 
     private Surrogate() { }
 
-    // UTF-16 surrogate-character ranges
-    //
-    public static final char MIN_HIGH = '\uD800';
-    public static final char MAX_HIGH = '\uDBFF';
-    public static final char MIN_LOW  = '\uDC00';
-    public static final char MAX_LOW  = '\uDFFF';
-    public static final char MIN = MIN_HIGH;
-    public static final char MAX = MAX_LOW;
-
-    // Range of UCS-4 values that need surrogates in UTF-16
-    //
-    public static final int UCS4_MIN = 0x10000;
-    public static final int UCS4_MAX = (1 << 20) + UCS4_MIN - 1;
+    // TODO: Deprecate/remove the following redundant definitions
+    public static final char MIN_HIGH = Character.MIN_HIGH_SURROGATE;
+    public static final char MAX_HIGH = Character.MAX_HIGH_SURROGATE;
+    public static final char MIN_LOW  = Character.MIN_LOW_SURROGATE;
+    public static final char MAX_LOW  = Character.MAX_LOW_SURROGATE;
+    public static final char MIN      = Character.MIN_SURROGATE;
+    public static final char MAX      = Character.MAX_SURROGATE;
+    public static final int UCS4_MIN  = Character.MIN_SUPPLEMENTARY_CODE_POINT;
+    public static final int UCS4_MAX  = Character.MAX_CODE_POINT;
 
     /**
-     * Tells whether or not the given UTF-16 value is a high surrogate.
+     * Tells whether or not the given value is in the high surrogate range.
+     * Use of {@link Character#isHighSurrogate} is generally preferred.
      */
     public static boolean isHigh(int c) {
         return (MIN_HIGH <= c) && (c <= MAX_HIGH);
     }
 
     /**
-     * Tells whether or not the given UTF-16 value is a low surrogate.
+     * Tells whether or not the given value is in the low surrogate range.
+     * Use of {@link Character#isLowSurrogate} is generally preferred.
      */
     public static boolean isLow(int c) {
         return (MIN_LOW <= c) && (c <= MAX_LOW);
     }
 
     /**
-     * Tells whether or not the given UTF-16 value is a surrogate character,
+     * Tells whether or not the given value is in the surrogate range.
+     * Use of {@link Character#isSurrogate} is generally preferred.
      */
     public static boolean is(int c) {
         return (MIN <= c) && (c <= MAX);
+    }
+
+    /**
+     * Tells whether or not the given UCS-4 character is in the Basic
+     * Multilingual Plane, and can be represented using a single char.
+     */
+    public static boolean isBMP(int uc) {
+        return (int) (char) uc == uc;
     }
 
     /**
@@ -81,31 +87,33 @@ public class Surrogate {
      * surrogate pair in UTF-16.
      */
     public static boolean neededFor(int uc) {
-        return (uc >= UCS4_MIN) && (uc <= UCS4_MAX);
+        return Character.isSupplementaryCodePoint(uc);
     }
 
     /**
-     * Returns the high UTF-16 surrogate for the given UCS-4 character.
+     * Returns the high UTF-16 surrogate for the given supplementary UCS-4 character.
      */
     public static char high(int uc) {
-        assert neededFor(uc);
-        return (char)(0xd800 | (((uc - UCS4_MIN) >> 10) & 0x3ff));
+        assert Character.isSupplementaryCodePoint(uc);
+        return (char)((uc >> 10)
+                      + (Character.MIN_HIGH_SURROGATE
+                         - (Character.MIN_SUPPLEMENTARY_CODE_POINT >> 10)));
     }
 
     /**
-     * Returns the low UTF-16 surrogate for the given UCS-4 character.
+     * Returns the low UTF-16 surrogate for the given supplementary UCS-4 character.
      */
     public static char low(int uc) {
-        assert neededFor(uc);
-        return (char)(0xdc00 | ((uc - UCS4_MIN) & 0x3ff));
+        assert Character.isSupplementaryCodePoint(uc);
+        return (char)((uc & 0x3ff) + Character.MIN_LOW_SURROGATE);
     }
 
     /**
      * Converts the given surrogate pair into a 32-bit UCS-4 character.
      */
     public static int toUCS4(char c, char d) {
-        assert isHigh(c) && isLow(d);
-        return (((c & 0x3ff) << 10) | (d & 0x3ff)) + 0x10000;
+        assert Character.isHighSurrogate(c) && Character.isLowSurrogate(d);
+        return Character.toCodePoint(c, d);
     }
 
     /**
@@ -178,14 +186,14 @@ public class Surrogate {
          *           object
          */
         public int parse(char c, CharBuffer in) {
-            if (Surrogate.isHigh(c)) {
+            if (Character.isHighSurrogate(c)) {
                 if (!in.hasRemaining()) {
                     error = CoderResult.UNDERFLOW;
                     return -1;
                 }
                 char d = in.get();
-                if (Surrogate.isLow(d)) {
-                    character = toUCS4(c, d);
+                if (Character.isLowSurrogate(d)) {
+                    character = Character.toCodePoint(c, d);
                     isPair = true;
                     error = null;
                     return character;
@@ -193,7 +201,7 @@ public class Surrogate {
                 error = CoderResult.malformedForLength(1);
                 return -1;
             }
-            if (Surrogate.isLow(c)) {
+            if (Character.isLowSurrogate(c)) {
                 error = CoderResult.malformedForLength(1);
                 return -1;
             }
@@ -220,14 +228,14 @@ public class Surrogate {
          */
         public int parse(char c, char[] ia, int ip, int il) {
             assert (ia[ip] == c);
-            if (Surrogate.isHigh(c)) {
+            if (Character.isHighSurrogate(c)) {
                 if (il - ip < 2) {
                     error = CoderResult.UNDERFLOW;
                     return -1;
                 }
                 char d = ia[ip + 1];
-                if (Surrogate.isLow(d)) {
-                    character = toUCS4(c, d);
+                if (Character.isLowSurrogate(d)) {
+                    character = Character.toCodePoint(c, d);
                     isPair = true;
                     error = null;
                     return character;
@@ -235,7 +243,7 @@ public class Surrogate {
                 error = CoderResult.malformedForLength(1);
                 return -1;
             }
-            if (Surrogate.isLow(c)) {
+            if (Character.isLowSurrogate(c)) {
                 error = CoderResult.malformedForLength(1);
                 return -1;
             }
@@ -282,7 +290,7 @@ public class Surrogate {
          *           error() will return a descriptive result object
          */
         public int generate(int uc, int len, CharBuffer dst) {
-            if (uc <= 0xffff) {
+            if (Surrogate.isBMP(uc)) {
                 if (Surrogate.is(uc)) {
                     error = CoderResult.malformedForLength(len);
                     return -1;
@@ -294,12 +302,7 @@ public class Surrogate {
                 dst.put((char)uc);
                 error = null;
                 return 1;
-            }
-            if (uc < Surrogate.UCS4_MIN) {
-                error = CoderResult.malformedForLength(len);
-                return -1;
-            }
-            if (uc <= Surrogate.UCS4_MAX) {
+            } else if (Character.isSupplementaryCodePoint(uc)) {
                 if (dst.remaining() < 2) {
                     error = CoderResult.OVERFLOW;
                     return -1;
@@ -308,9 +311,10 @@ public class Surrogate {
                 dst.put(Surrogate.low(uc));
                 error = null;
                 return 2;
+            } else {
+                error = CoderResult.unmappableForLength(len);
+                return -1;
             }
-            error = CoderResult.unmappableForLength(len);
-            return -1;
         }
 
         /**
@@ -330,7 +334,7 @@ public class Surrogate {
          *           error() will return a descriptive result object
          */
         public int generate(int uc, int len, char[] da, int dp, int dl) {
-            if (uc <= 0xffff) {
+            if (Surrogate.isBMP(uc)) {
                 if (Surrogate.is(uc)) {
                     error = CoderResult.malformedForLength(len);
                     return -1;
@@ -342,12 +346,7 @@ public class Surrogate {
                 da[dp] = (char)uc;
                 error = null;
                 return 1;
-            }
-            if (uc < Surrogate.UCS4_MIN) {
-                error = CoderResult.malformedForLength(len);
-                return -1;
-            }
-            if (uc <= Surrogate.UCS4_MAX) {
+            } else if (Character.isSupplementaryCodePoint(uc)) {
                 if (dl - dp < 2) {
                     error = CoderResult.OVERFLOW;
                     return -1;
@@ -356,11 +355,11 @@ public class Surrogate {
                 da[dp + 1] = Surrogate.low(uc);
                 error = null;
                 return 2;
+            } else {
+                error = CoderResult.unmappableForLength(len);
+                return -1;
             }
-            error = CoderResult.unmappableForLength(len);
-            return -1;
         }
-
     }
 
 }

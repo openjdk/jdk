@@ -117,33 +117,32 @@ class Invoker {
      * Invoke handler without checking the thread identity or number of handlers
      * on the thread stack.
      */
-    @SuppressWarnings("unchecked")
     static <V,A> void invokeUnchecked(CompletionHandler<V,? super A> handler,
-                                      AbstractFuture<V,A> result)
+                                      A attachment,
+                                      V value,
+                                      Throwable exc)
     {
-        if (handler != null && !result.isCancelled()) {
-            Throwable exc = result.exception();
-            if (exc == null) {
-                handler.completed(result.value(), result.attachment());
-            } else {
-                handler.failed(exc, result.attachment());
-            }
-
-            // clear interrupt
-            Thread.interrupted();
+        if (exc == null) {
+            handler.completed(value, attachment);
+        } else {
+            handler.failed(exc, attachment);
         }
+
+        // clear interrupt
+        Thread.interrupted();
     }
 
-
     /**
-     * Invoke handler after incrementing the invoke count.
+     * Invoke handler assuming thread identity already checked
      */
     static <V,A> void invokeDirect(GroupAndInvokeCount myGroupAndInvokeCount,
                                    CompletionHandler<V,? super A> handler,
-                                   AbstractFuture<V,A> result)
+                                   A attachment,
+                                   V result,
+                                   Throwable exc)
     {
         myGroupAndInvokeCount.incrementInvokeCount();
-        invokeUnchecked(handler, result);
+        Invoker.invokeUnchecked(handler, attachment, result, exc);
     }
 
     /**
@@ -151,64 +150,64 @@ class Invoker {
      * thread pool then the handler is invoked directly, otherwise it is
      * invoked indirectly.
      */
-    static <V,A> void invoke(CompletionHandler<V,? super A> handler,
-                             AbstractFuture<V,A> result)
+    static <V,A> void invoke(AsynchronousChannel channel,
+                             CompletionHandler<V,? super A> handler,
+                             A attachment,
+                             V result,
+                             Throwable exc)
     {
-        if (handler != null) {
-            boolean invokeDirect = false;
-            boolean identityOkay = false;
-            GroupAndInvokeCount thisGroupAndInvokeCount = myGroupAndInvokeCount.get();
-            if (thisGroupAndInvokeCount != null) {
-                AsynchronousChannel channel = result.channel();
-                if ((thisGroupAndInvokeCount.group() == ((Groupable)channel).group()))
-                    identityOkay = true;
-                if (identityOkay &&
-                    (thisGroupAndInvokeCount.invokeCount() < maxHandlerInvokeCount))
-                {
-                    // group match
-                    invokeDirect = true;
-                }
+        boolean invokeDirect = false;
+        boolean identityOkay = false;
+        GroupAndInvokeCount thisGroupAndInvokeCount = myGroupAndInvokeCount.get();
+        if (thisGroupAndInvokeCount != null) {
+            if ((thisGroupAndInvokeCount.group() == ((Groupable)channel).group()))
+                identityOkay = true;
+            if (identityOkay &&
+                (thisGroupAndInvokeCount.invokeCount() < maxHandlerInvokeCount))
+            {
+                // group match
+                invokeDirect = true;
             }
-            if (invokeDirect) {
-                thisGroupAndInvokeCount.incrementInvokeCount();
-                invokeUnchecked(handler, result);
-            } else {
-                try {
-                    invokeIndirectly(handler, result);
-                } catch (RejectedExecutionException ree) {
-                    // channel group shutdown; fallback to invoking directly
-                    // if the current thread has the right identity.
-                    if (identityOkay) {
-                        invokeUnchecked(handler, result);
-                    } else {
-                        throw new ShutdownChannelGroupException();
-                    }
+        }
+        if (invokeDirect) {
+            invokeDirect(thisGroupAndInvokeCount, handler, attachment, result, exc);
+        } else {
+            try {
+                invokeIndirectly(channel, handler, attachment, result, exc);
+            } catch (RejectedExecutionException ree) {
+                // channel group shutdown; fallback to invoking directly
+                // if the current thread has the right identity.
+                if (identityOkay) {
+                    invokeDirect(thisGroupAndInvokeCount,
+                                 handler, attachment, result, exc);
+                } else {
+                    throw new ShutdownChannelGroupException();
                 }
             }
         }
     }
 
     /**
-     * Invokes the handler "indirectly" in the channel group's thread pool.
+     * Invokes the handler indirectly via the channel group's thread pool.
      */
-    static <V,A> void invokeIndirectly(final CompletionHandler<V,? super A> handler,
-                                       final AbstractFuture<V,A> result)
+    static <V,A> void invokeIndirectly(AsynchronousChannel channel,
+                                       final CompletionHandler<V,? super A> handler,
+                                       final A attachment,
+                                       final V result,
+                                       final Throwable exc)
     {
-        if (handler != null) {
-            AsynchronousChannel channel = result.channel();
-            try {
-                ((Groupable)channel).group().executeOnPooledThread(new Runnable() {
-                    public void run() {
-                        GroupAndInvokeCount thisGroupAndInvokeCount =
-                            myGroupAndInvokeCount.get();
-                        if (thisGroupAndInvokeCount != null)
-                            thisGroupAndInvokeCount.setInvokeCount(1);
-                        invokeUnchecked(handler, result);
-                    }
-                });
-            } catch (RejectedExecutionException ree) {
-                throw new ShutdownChannelGroupException();
-            }
+        try {
+            ((Groupable)channel).group().executeOnPooledThread(new Runnable() {
+                public void run() {
+                    GroupAndInvokeCount thisGroupAndInvokeCount =
+                        myGroupAndInvokeCount.get();
+                    if (thisGroupAndInvokeCount != null)
+                        thisGroupAndInvokeCount.setInvokeCount(1);
+                    invokeUnchecked(handler, attachment, result, exc);
+                }
+            });
+        } catch (RejectedExecutionException ree) {
+            throw new ShutdownChannelGroupException();
         }
     }
 
@@ -216,19 +215,19 @@ class Invoker {
      * Invokes the handler "indirectly" in the given Executor
      */
     static <V,A> void invokeIndirectly(final CompletionHandler<V,? super A> handler,
-                                       final AbstractFuture<V,A> result,
+                                       final A attachment,
+                                       final V value,
+                                       final Throwable exc,
                                        Executor executor)
     {
-        if (handler != null) {
-            try {
-                executor.execute(new Runnable() {
-                    public void run() {
-                        invokeUnchecked(handler, result);
-                    }
-                });
-            } catch (RejectedExecutionException ree) {
-                throw new ShutdownChannelGroupException();
-            }
+         try {
+            executor.execute(new Runnable() {
+                public void run() {
+                    invokeUnchecked(handler, attachment, value, exc);
+                }
+            });
+        } catch (RejectedExecutionException ree) {
+            throw new ShutdownChannelGroupException();
         }
     }
 
@@ -256,6 +255,54 @@ class Invoker {
             }
         } catch (RejectedExecutionException ree) {
             throw new ShutdownChannelGroupException();
+        }
+    }
+
+    /**
+     * Invoke handler with completed result. This method does not check the
+     * thread identity or the number of handlers on the thread stack.
+     */
+    static <V,A> void invokeUnchecked(PendingFuture<V,A> future) {
+        assert future.isDone();
+        CompletionHandler<V,? super A> handler = future.handler();
+        if (handler != null) {
+            invokeUnchecked(handler,
+                            future.attachment(),
+                            future.value(),
+                            future.exception());
+        }
+    }
+
+    /**
+     * Invoke handler with completed result. If the current thread is in the
+     * channel group's thread pool then the handler is invoked directly,
+     * otherwise it is invoked indirectly.
+     */
+    static <V,A> void invoke(PendingFuture<V,A> future) {
+        assert future.isDone();
+        CompletionHandler<V,? super A> handler = future.handler();
+        if (handler != null) {
+            invoke(future.channel(),
+                   handler,
+                   future.attachment(),
+                   future.value(),
+                   future.exception());
+        }
+    }
+
+    /**
+     * Invoke handler with completed result. The handler is invoked indirectly,
+     * via the channel group's thread pool.
+     */
+    static <V,A> void invokeIndirectly(PendingFuture<V,A> future) {
+        assert future.isDone();
+        CompletionHandler<V,? super A> handler = future.handler();
+        if (handler != null) {
+            invokeIndirectly(future.channel(),
+                             handler,
+                             future.attachment(),
+                             future.value(),
+                             future.exception());
         }
     }
 }

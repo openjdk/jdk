@@ -33,17 +33,16 @@
 
 OS=`uname -s`;
 case "${OS}" in
-        Windows* | CYGWIN* )
-                SEP=";"
+        CYGWIN* )
+                DIFFOPTS="--strip-trailing-cr"
         ;;
 
 	* )
-	SEP=":"
 	;;
 esac
 
 # Construct path to apt executable
-APT="${TESTJAVA}/bin/apt ${TESTTOOLVMOPTS}"
+APT="${TESTJAVA}/bin/apt ${TESTTOOLVMOPTS} -XDsuppress-tool-api-removal-message "
 
 printf "%s\n" "-classpath ${TESTCLASSES}"                    > options
 printf "%s\n" "-factorypath ./nullap.jar"                   >> options
@@ -57,6 +56,7 @@ printf "%s\n" "-sourcepath ${TESTSRC} "                     >> options1
 printf "%s\n" "-nocompile"                                  >> options1
 printf "%s\n" "-XListAnnotationTypes"                       >> options1
 printf "%s\n" "-XclassesAsDecls"                            >> options1
+
 
 # Construct path to javac executable
 JAVAC="${TESTJAVA}/bin/javac ${TESTTOOLVMOPTS} -source 1.5 -sourcepath ${TESTSRC} -classpath ${TESTJAVA}/lib/tools.jar -d . "
@@ -93,7 +93,7 @@ for i in ${ANNOTATION_FILES}
 do
 	printf "%s\n" "Testing annotations on source file ${i}"
 	${APT} @options ${i} 2> result.txt
-	diff ${TESTSRC}/golden.txt result.txt
+	diff ${DIFFOPTS} ${TESTSRC}/golden.txt result.txt
 
 	RESULT=$?
 	case "$RESULT" in
@@ -108,7 +108,7 @@ do
 	CLASS=`basename ${i} .java`
 	printf "%s\n" "Testing annotations on class file ${CLASS}"
 	${APT} @options1 ${CLASS} 2> result2.txt
-	diff ${TESTSRC}/golden.txt result2.txt
+	diff ${DIFFOPTS} ${TESTSRC}/golden.txt result2.txt
 
 	RESULT=$?
 	case "$RESULT" in

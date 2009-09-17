@@ -32,7 +32,6 @@
 #  @run shell JdbVarargsTest.sh
 
 classname=JdbVarargsTest
-compileOptions="-source 1.5 -target 1.5"
 createJavaFile()
 {
     cat <<EOF > $classname.java.1
