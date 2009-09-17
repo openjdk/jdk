@@ -40,13 +40,17 @@ endif
 jaxp: jaxp-build
 jaxp-build:
 	$(MKDIR) -p $(JAXP_OUTPUTDIR)
+	@$(call MakeStart, jaxp, all)
 	($(CD) $(JAXP_TOPDIR)/make && \
 	 $(MAKE) $(JAXP_BUILD_ARGUMENTS) all)
+	@$(call MakeFinish, jaxp, all)
 
 jaxp-clobber::
 	$(MKDIR) -p $(JAXP_OUTPUTDIR)
+	@$(call MakeStart, jaxp, clobber)
 	($(CD) $(JAXP_TOPDIR)/make &&  \
 	 $(MAKE) $(JAXP_BUILD_ARGUMENTS) clobber)
+	@$(call MakeFinish, jaxp, clobber)
 
 .PHONY: jaxp jaxp-build jaxp-clobber
 
