@@ -530,6 +530,7 @@ public class LogRecord implements java.io.Serializable {
         int depth = access.getStackTraceDepth(throwable);
 
         String logClassName = "java.util.logging.Logger";
+        String plogClassName = "sun.util.logging.PlatformLogger";
         boolean lookingForLogger = true;
         for (int ix = 0; ix < depth; ix++) {
             // Calling getStackTraceElement directly prevents the VM
@@ -539,15 +540,18 @@ public class LogRecord implements java.io.Serializable {
             String cname = frame.getClassName();
             if (lookingForLogger) {
                 // Skip all frames until we have found the first logger frame.
-                if (cname.equals(logClassName)) {
+                if (cname.equals(logClassName) || cname.startsWith(plogClassName)) {
                     lookingForLogger = false;
                 }
             } else {
-                if (!cname.equals(logClassName)) {
-                    // We've found the relevant frame.
-                    setSourceClassName(cname);
-                    setSourceMethodName(frame.getMethodName());
-                    return;
+                if (!cname.equals(logClassName) && !cname.startsWith(plogClassName)) {
+                    // skip reflection call
+                    if (!cname.startsWith("java.lang.reflect.") && !cname.startsWith("sun.reflect.")) {
+                       // We've found the relevant frame.
+                       setSourceClassName(cname);
+                       setSourceMethodName(frame.getMethodName());
+                       return;
+                    }
                 }
             }
         }
