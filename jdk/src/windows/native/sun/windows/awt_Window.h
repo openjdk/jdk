@@ -262,21 +262,16 @@ private:
                                        // from its hierarchy when shown. Currently applied to instances of
                                        // javax/swing/Popup$HeavyWeightWindow class.
 
+    // SetTranslucency() is the setter for the following two fields
     BYTE m_opacity;         // The opacity level. == 0xff by default (when opacity mode is disabled)
     BOOL m_opaque;          // Whether the window uses the perpixel translucency (false), or not (true).
 
     inline BYTE getOpacity() {
         return m_opacity;
     }
-    inline void setOpacity(BYTE opacity) {
-        m_opacity = opacity;
-    }
 
     inline BOOL isOpaque() {
         return m_opaque;
-    }
-    inline void setOpaque(BOOL opaque) {
-        m_opaque = opaque;
     }
 
     CRITICAL_SECTION contentBitmapCS;
@@ -284,10 +279,12 @@ private:
     UINT contentWidth;
     UINT contentHeight;
 
-    void SetTranslucency(BYTE opacity, BOOL opaque);
+    void SetTranslucency(BYTE opacity, BOOL opaque, BOOL setValues = TRUE,
+            BOOL useDefaultForOldValues = FALSE);
     void UpdateWindow(int width, int height, HBITMAP hBitmap);
     void UpdateWindowImpl(int width, int height, HBITMAP hBitmap);
     void RedrawWindow();
+    void DeleteContentBitmap();
 
     static UINT untrustedWindowsCounter;
 
@@ -331,6 +328,9 @@ private:
 
     void RepositionSecurityWarning(JNIEnv *env);
 
+    static void SetLayered(HWND window, bool layered);
+    static bool IsLayered(HWND window);
+
 public:
     void UpdateSecurityWarningVisibility();
     static bool IsWarningWindow(HWND hWnd);
@@ -348,6 +348,8 @@ protected:
     }
 
     UINT currentWmSizeState;
+
+    void EnableTranslucency(BOOL enable);
 
 private:
     int m_screenNum;

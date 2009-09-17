@@ -175,23 +175,6 @@ public class ParagraphView extends FlowView implements TabExpander {
     }
 
     /**
-     * Adjusts the given row if possible to fit within the
-     * layout span.  By default this will try to find the
-     * highest break weight possible nearest the end of
-     * the row.  If a forced break is encountered, the
-     * break will be positioned there.
-     * <p>
-     * This is meant for internal usage, and should not be used directly.
-     *
-     * @param r the row to adjust to the current layout
-     *          span
-     * @param desiredSpan the current layout span >= 0
-     * @param x the location r starts at
-     */
-    protected void adjustRow(Row r, int desiredSpan, int x) {
-    }
-
-    /**
      * Returns the next visual position for the cursor, in
      * either the east or west direction.
      * Overridden from <code>CompositeView</code>.
@@ -733,40 +716,12 @@ public class ParagraphView extends FlowView implements TabExpander {
      * @param axis  the minor axis
      * @param r     the input {@code SizeRequirements} object
      * @return      the new or adjusted {@code SizeRequirements} object
-     * @throw IllegalArgumentException  if the {@code axis} parameter is invalid
+     * @throws IllegalArgumentException  if the {@code axis} parameter is invalid
      */
     @Override
     protected SizeRequirements calculateMinorAxisRequirements(int axis,
                                                         SizeRequirements r) {
-        r = super.calculateMinorAxisRequirements(axis, r);
-
-        float min = 0;
-        float glue = 0;
-        int n = getLayoutViewCount();
-        for (int i = 0; i < n; i++) {
-            View v = getLayoutView(i);
-            float span = v.getMinimumSpan(axis);
-            if (v.getBreakWeight(axis, 0, v.getMaximumSpan(axis))
-                                                        > View.BadBreakWeight) {
-                // find the longest non-breakable fragments at the view edges
-                int p0 = v.getStartOffset();
-                int p1 = v.getEndOffset();
-                float start = findEdgeSpan(v, axis, p0, p0, p1);
-                float end = findEdgeSpan(v, axis, p1, p0, p1);
-                glue += start;
-                min = Math.max(min, Math.max(span, glue));
-                glue = end;
-            } else {
-                // non-breakable view
-                glue += span;
-                min = Math.max(min, glue);
-            }
-        }
-        r.minimum = Math.max(r.minimum, (int) min);
-        r.preferred = Math.max(r.minimum,  r.preferred);
-        r.maximum = Math.max(r.preferred, r.maximum);
-
-        return r;
+        return super.calculateMinorAxisRequirements(axis, r);
     }
 
     /**

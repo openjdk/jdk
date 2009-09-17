@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6842687
  * @summary Unit test for AsynchronousChannelGroup
  */
 
@@ -78,25 +78,21 @@ public class Identity {
         final AsynchronousServerSocketChannel listener =
             AsynchronousServerSocketChannel.open()
                 .bind(new InetSocketAddress(0));
-        listener.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
+        listener.accept((Void)null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
             public void completed(final AsynchronousSocketChannel ch, Void att) {
-                listener.accept(null, this);
+                listener.accept((Void)null, this);
 
                 final ByteBuffer buf = ByteBuffer.allocate(100);
-                ch.read(buf, null, new CompletionHandler<Integer,Void>() {
+                ch.read(buf, (Void)null, new CompletionHandler<Integer,Void>() {
                     public void completed(Integer bytesRead, Void att) {
                         buf.clear();
-                        ch.read(buf, null, this);
+                        ch.read(buf, (Void)null, this);
                     }
                     public void failed(Throwable exc, Void att) {
-                    }
-                    public void cancelled(Void att) {
                     }
                 });
             }
             public void failed(Throwable exc, Void att) {
-            }
-            public void cancelled(Void att) {
             }
         });
         int port = ((InetSocketAddress)(listener.getLocalAddress())).getPort();
@@ -140,9 +136,6 @@ public class Identity {
             }
             public void failed(Throwable exc, Integer groupId) {
                 fail(exc.getMessage());
-            }
-            public void cancelled(Integer groupId) {
-                fail("I/O operation was cancelled");
             }
         });
 

@@ -310,11 +310,11 @@ public class EUC_TW extends Charset implements HistoricallyNamedCharset
             int i = 0;
             while (i < cs.length()) {
                 char c = cs.charAt(i++);
-                if (Surrogate.isHigh(c)) {
+                if (Character.isHighSurrogate(c)) {
                     if (i == cs.length())
                         return false;
                     char low = cs.charAt(i++);
-                    if (!Surrogate.isLow(low) || toEUC(c, low, bb) == -1)
+                    if (!Character.isLowSurrogate(low) || toEUC(c, low, bb) == -1)
                         return false;
                 } else if (!canEncode(c)) {
                     return false;
@@ -361,14 +361,14 @@ public class EUC_TW extends Charset implements HistoricallyNamedCharset
                             // supplementary character encoding. given the use
                             // of supplementary characters is really rare, this
                             // is something worth doing.
-                            if (Surrogate.isHigh(c)) {
+                            if (Character.isHighSurrogate(c)) {
                                 if ((sp + 1) == sl)
                                     return CoderResult.UNDERFLOW;
-                                if (!Surrogate.isLow(sa[sp + 1]))
+                                if (!Character.isLowSurrogate(sa[sp + 1]))
                                     return CoderResult.malformedForLength(1);
                                 outSize = toEUC(c, sa[sp+1], bb);
                                     inSize = 2;
-                            } else if (Surrogate.isLow(c)) {
+                            } else if (Character.isLowSurrogate(c)) {
                                 return CoderResult.malformedForLength(1);
                             }
                         }
@@ -405,15 +405,15 @@ public class EUC_TW extends Charset implements HistoricallyNamedCharset
                     } else {
                         outSize = toEUC(c, bb);
                         if (outSize == -1) {
-                            if (Surrogate.isHigh(c)) {
+                            if (Character.isHighSurrogate(c)) {
                                 if (!src.hasRemaining())
                                     return CoderResult.UNDERFLOW;
                                 char c2 = src.get();
-                                if (!Surrogate.isLow(c2))
+                                if (!Character.isLowSurrogate(c2))
                                     return CoderResult.malformedForLength(1);
                                 outSize = toEUC(c, c2, bb);
                                 inSize = 2;
-                            } else if (Surrogate.isLow(c)) {
+                            } else if (Character.isLowSurrogate(c)) {
                                 return CoderResult.malformedForLength(1);
                             }
                         }

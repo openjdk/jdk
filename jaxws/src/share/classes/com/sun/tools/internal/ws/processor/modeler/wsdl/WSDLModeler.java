@@ -74,7 +74,7 @@ import java.io.IOException;
 public class WSDLModeler extends WSDLModelerBase {
 
     //map of wsdl:operation QName to <soapenv:Body> child, as per BP it must be unique in a port
-    private final Map<QName, QName> uniqueBodyBlocks = new HashMap<QName, QName>();
+    private final Map<QName, Operation> uniqueBodyBlocks = new HashMap<QName, Operation>();
     private final QName VOID_BODYBLOCK = new QName("");
     private ClassNameCollector classNameCollector;
     private final String explicitDefaultPackage;
@@ -334,11 +334,12 @@ public class WSDLModeler extends WSDLModelerBase {
                         || (!soapBinding.getTransport().equals(
                         SOAPConstants.URI_SOAP_TRANSPORT_HTTP) && !soapBinding.getTransport().equals(
                         SOAP12Constants.URI_SOAP_TRANSPORT_HTTP)))) {
-                    warning(wsdlPort, ModelerMessages.WSDLMODELER_WARNING_IGNORING_SOAP_BINDING_NON_HTTP_TRANSPORT(wsdlPort.getName()));
                     if (!options.isExtensionMode()) {
                         // cannot deal with non-HTTP ports
+                        warning(wsdlPort, ModelerMessages.WSDLMODELER_WARNING_IGNORING_SOAP_BINDING_NON_HTTP_TRANSPORT(wsdlPort.getName()));
                         return false;
                     }
+
                 }
 
                 /**
@@ -679,7 +680,12 @@ public class WSDLModeler extends WSDLModelerBase {
 
         if (soapStyle == SOAPStyle.RPC) {
             if (soapRequestBody.isEncoded()) {
-                error(soapRequestBody, ModelerMessages.WSDLMODELER_20_RPCENC_NOT_SUPPORTED());
+                if(options.isExtensionMode()){
+                    warning(soapRequestBody, ModelerMessages.WSDLMODELER_20_RPCENC_NOT_SUPPORTED());
+                    processNonSOAPOperation();
+                }else{
+                    error(soapRequestBody, ModelerMessages.WSDLMODELER_20_RPCENC_NOT_SUPPORTED());
+                }
             }
             return processLiteralSOAPOperation(StyleAndUse.RPC_LITERAL);
         }
@@ -815,18 +821,69 @@ public class WSDLModeler extends WSDLModelerBase {
         QName body = VOID_BODYBLOCK;
         QName opName = null;
 
+        Operation thatOp;
         if (bb.hasNext()) {
             body = bb.next().getName();
-            opName = uniqueBodyBlocks.get(body);
+            thatOp = uniqueBodyBlocks.get(body);
         } else {
             //there is no body block
             body = VOID_BODYBLOCK;
-            opName = uniqueBodyBlocks.get(VOID_BODYBLOCK);
+            thatOp = uniqueBodyBlocks.get(VOID_BODYBLOCK);
         }
-        if (opName != null) {
-            error(info.port, ModelerMessages.WSDLMODELER_NON_UNIQUE_BODY(info.port.getName(), info.operation.getName(), opName, body));
-        } else {
-            uniqueBodyBlocks.put(body, info.operation.getName());
+
+        if(thatOp != null){
+            if(options.isExtensionMode()){
+                warning(info.port, ModelerMessages.WSDLMODELER_NON_UNIQUE_BODY_WARNING(info.port.getName(), info.operation.getName(), thatOp.getName(), body));
+            }else{
+                error(info.port, ModelerMessages.WSDLMODELER_NON_UNIQUE_BODY_ERROR(info.port.getName(), info.operation.getName(), thatOp.getName(), body));
+            }
+        }else{
+            uniqueBodyBlocks.put(body, info.operation);
+        }
+
+        //Add additional headers
+        if (options.additionalHeaders) {
+            List<Parameter> additionalHeaders = new ArrayList<Parameter>();
+            if (inputMessage != null) {
+                for (MessagePart part : getAdditionHeaderParts(inputMessage, true)) {
+                    QName name = part.getDescriptor();
+                    JAXBType jaxbType = getJAXBType(part);
+                    Block block = new Block(name, jaxbType, part);
+                    Parameter param = ModelerUtils.createParameter(part.getName(), jaxbType, block);
+                    additionalHeaders.add(param);
+                    request.addHeaderBlock(block);
+                    request.addParameter(param);
+                    definitiveParameterList.add(param);
+                }
+            }
+
+            if (isRequestResponse && outputMessage != null) {
+                List<Parameter> outParams = new ArrayList<Parameter>();
+                for (MessagePart part : getAdditionHeaderParts(outputMessage, false)) {
+                    QName name = part.getDescriptor();
+                    JAXBType jaxbType = getJAXBType(part);
+                    Block block = new Block(name, jaxbType, part);
+                    Parameter param = ModelerUtils.createParameter(part.getName(), jaxbType, block);
+                    param.setMode(Mode.OUT);
+                    outParams.add(param);
+                    response.addHeaderBlock(block);
+                    response.addParameter(param);
+                }
+                for (Parameter outParam : outParams) {
+                    for (Parameter inParam : additionalHeaders) {
+                        if (inParam.getName().equals(outParam.getName()) &&
+                                inParam.getBlock().getName().equals(outParam.getBlock().getName())) {
+                            //it is INOUT
+                            inParam.setMode(Mode.INOUT);
+                            outParam.setMode(Mode.INOUT);
+                            break;
+                        }
+                    }
+                    if (outParam.isOUT()) {
+                        definitiveParameterList.add(outParam);
+                    }
+                }
+            }
         }
 
         // faults with duplicate names
@@ -847,6 +904,7 @@ public class WSDLModeler extends WSDLModelerBase {
 
         return info.operation;
     }
+
 
     private boolean validateParameterName(List<Parameter> params) {
         if (options.isExtensionMode())
@@ -1460,6 +1518,19 @@ public class WSDLModeler extends WSDLModelerBase {
         return null;
     }
 
+    private List<MessagePart> getAdditionHeaderParts(Message message, boolean isInput){
+        List<MessagePart> headerParts = new ArrayList<MessagePart>();
+        List<MessagePart> parts = message.getParts();
+        List<MessagePart> headers = getHeaderParts(isInput);
+
+        for(MessagePart part: headers){
+            if(parts.contains(part))
+                continue;
+            headerParts.add(part);
+        }
+        return headerParts;
+    }
+
     private List<MessagePart> getHeaderPartsFromMessage(Message message, boolean isInput) {
         List<MessagePart> headerParts = new ArrayList<MessagePart>();
         Iterator<MessagePart> parts = message.parts();
@@ -1488,19 +1559,6 @@ public class WSDLModeler extends WSDLModelerBase {
                 return headerMessage;
         }
         return null;
-    }
-
-    private List<MessagePart> getHeaderPartsNotFromMessage(Message message, boolean isInput) {
-        List<MessagePart> headerParts = new ArrayList<MessagePart>();
-        List<MessagePart> parts = message.getParts();
-        Iterator<MessagePart> headers = getHeaderParts(isInput).iterator();
-        while (headers.hasNext()) {
-            MessagePart part = headers.next();
-            if (!parts.contains(part)) {
-                headerParts.add(part);
-            }
-        }
-        return headerParts;
     }
 
     private List<MessagePart> getHeaderParts(boolean isInput) {
@@ -2247,6 +2305,10 @@ public class WSDLModeler extends WSDLModelerBase {
                 (QName) port.getProperty(
                         ModelProperties.PROPERTY_WSDL_PORT_TYPE_NAME);
         PortType pt = (PortType) document.find(Kinds.PORT_TYPE, portTypeName);
+        //populate the portType map here. We should get rid of all these properties
+        // lets not do it as it may break NB
+        //TODO: clean all these stuff part of NB RFE
+        port.portTypes.put(portTypeName, pt);
         JAXWSBinding jaxwsCust = (JAXWSBinding) getExtensionOfType(pt, JAXWSBinding.class);
         if (jaxwsCust != null && jaxwsCust.getClassName() != null) {
             CustomName name = jaxwsCust.getClassName();
@@ -2271,7 +2333,7 @@ public class WSDLModeler extends WSDLModelerBase {
     private void createJavaMethodForAsyncOperation(Port port, Operation operation,
                                                    JavaInterface intf) {
         String candidateName = getJavaNameForOperation(operation);
-        JavaMethod method = new JavaMethod(candidateName, errReceiver);
+        JavaMethod method = new JavaMethod(candidateName, options, errReceiver);
         Request request = operation.getRequest();
         Iterator requestBodyBlocks = request.getBodyBlocks();
         Block requestBlock =
@@ -2338,7 +2400,7 @@ public class WSDLModeler extends WSDLModelerBase {
             return;
         }
         String candidateName = getJavaNameForOperation(operation);
-        JavaMethod method = new JavaMethod(candidateName, errReceiver);
+        JavaMethod method = new JavaMethod(candidateName, options, errReceiver);
         Request request = operation.getRequest();
         Parameter returnParam = (Parameter) operation.getProperty(WSDL_RESULT_PARAMETER);
         if (returnParam != null) {
@@ -2718,7 +2780,7 @@ public class WSDLModeler extends WSDLModelerBase {
 
     private void reportError(Entity entity,
         String formattedMsg, Exception nestedException ) {
-        Locator locator = (entity == null)?NULL_LOCATOR:entity.getLocator();
+        Locator locator = (entity == null)?null:entity.getLocator();
 
         SAXParseException e = new SAXParseException2( formattedMsg,
             locator,

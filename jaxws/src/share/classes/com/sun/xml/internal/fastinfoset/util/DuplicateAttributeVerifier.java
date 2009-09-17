@@ -35,7 +35,7 @@ public class DuplicateAttributeVerifier {
 
     public int _currentIteration;
 
-    private static class Entry {
+    public static class Entry {
         private int iteration;
         private int value;
 

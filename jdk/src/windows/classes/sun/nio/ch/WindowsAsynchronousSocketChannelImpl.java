@@ -250,14 +250,14 @@ class WindowsAsynchronousSocketChannelImpl
                 closeChannel();
                 result.setFailure(toIOException(exc));
             }
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
 
         /**
          * Invoked by handler thread when connection established.
          */
         @Override
-        public void completed(int bytesTransferred) {
+        public void completed(int bytesTransferred, boolean canInvokeDirect) {
             Throwable exc = null;
             try {
                 begin();
@@ -276,7 +276,11 @@ class WindowsAsynchronousSocketChannelImpl
                 result.setFailure(toIOException(exc));
             }
 
-            Invoker.invoke(result.handler(), result);
+            if (canInvokeDirect) {
+                Invoker.invokeUnchecked(result);
+            } else {
+                Invoker.invoke(result);
+            }
         }
 
         /**
@@ -290,20 +294,21 @@ class WindowsAsynchronousSocketChannelImpl
             } else {
                 result.setFailure(new AsynchronousCloseException());
             }
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
     }
 
     @Override
-    public <A> Future<Void> connect(SocketAddress remote,
-                                    A attachment,
-                                    CompletionHandler<Void,? super A> handler)
+    <A> Future<Void> implConnect(SocketAddress remote,
+                                 A attachment,
+                                 CompletionHandler<Void,? super A> handler)
     {
         if (!isOpen()) {
-            CompletedFuture<Void,A> result = CompletedFuture
-                .withFailure(this, new ClosedChannelException(), attachment);
-            Invoker.invoke(handler, result);
-            return result;
+            Throwable exc = new ClosedChannelException();
+            if (handler == null)
+                return CompletedFuture.withFailure(exc);
+            Invoker.invoke(this, handler, attachment, null, exc);
+            return null;
         }
 
         InetSocketAddress isa = Net.checkAddress(remote);
@@ -337,10 +342,10 @@ class WindowsAsynchronousSocketChannelImpl
             try {
                 close();
             } catch (IOException ignore) { }
-            CompletedFuture<Void,A> result = CompletedFuture
-                .withFailure(this, bindException, attachment);
-            Invoker.invoke(handler, result);
-            return result;
+            if (handler == null)
+                return CompletedFuture.withFailure(bindException);
+            Invoker.invoke(this, handler, attachment, null, bindException);
+            return null;
         }
 
         // setup task
@@ -349,8 +354,12 @@ class WindowsAsynchronousSocketChannelImpl
         ConnectTask task = new ConnectTask<A>(isa, result);
         result.setContext(task);
 
-        // initiate I/O (can only be done from thread in thread pool)
-        Invoker.invokeOnThreadInThreadPool(this, task);
+        // initiate I/O
+        if (Iocp.supportsThreadAgnosticIo()) {
+            task.run();
+        } else {
+            Invoker.invokeOnThreadInThreadPool(this, task);
+        }
         return result;
     }
 
@@ -514,7 +523,7 @@ class WindowsAsynchronousSocketChannelImpl
             }
 
             // invoke completion handler
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
 
         /**
@@ -522,7 +531,7 @@ class WindowsAsynchronousSocketChannelImpl
          */
         @Override
         @SuppressWarnings("unchecked")
-        public void completed(int bytesTransferred) {
+        public void completed(int bytesTransferred, boolean canInvokeDirect) {
             if (bytesTransferred == 0) {
                 bytesTransferred = -1;  // EOF
             } else {
@@ -543,7 +552,11 @@ class WindowsAsynchronousSocketChannelImpl
                     result.setResult((V)Integer.valueOf(bytesTransferred));
                 }
             }
-            Invoker.invoke(result.handler(), result);
+            if (canInvokeDirect) {
+                Invoker.invokeUnchecked(result);
+            } else {
+                Invoker.invoke(result);
+            }
         }
 
         @Override
@@ -561,7 +574,7 @@ class WindowsAsynchronousSocketChannelImpl
                 enableReading();
                 result.setFailure(x);
             }
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
 
         /**
@@ -579,13 +592,14 @@ class WindowsAsynchronousSocketChannelImpl
             }
 
             // invoke handler without any locks
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
     }
 
     @Override
-    <V extends Number,A> Future<V> readImpl(ByteBuffer[] bufs,
-                                            boolean scatteringRead,
+    <V extends Number,A> Future<V> implRead(boolean isScatteringRead,
+                                            ByteBuffer dst,
+                                            ByteBuffer[] dsts,
                                             long timeout,
                                             TimeUnit unit,
                                             A attachment,
@@ -594,7 +608,14 @@ class WindowsAsynchronousSocketChannelImpl
         // setup task
         PendingFuture<V,A> result =
             new PendingFuture<V,A>(this, handler, attachment);
-        final ReadTask readTask = new ReadTask<V,A>(bufs, scatteringRead, result);
+        ByteBuffer[] bufs;
+        if (isScatteringRead) {
+            bufs = dsts;
+        } else {
+            bufs = new ByteBuffer[1];
+            bufs[0] = dst;
+        }
+        final ReadTask readTask = new ReadTask<V,A>(bufs, isScatteringRead, result);
         result.setContext(readTask);
 
         // schedule timeout
@@ -607,8 +628,12 @@ class WindowsAsynchronousSocketChannelImpl
             result.setTimeoutTask(timeoutTask);
         }
 
-        // initiate I/O (can only be done from thread in thread pool)
-        Invoker.invokeOnThreadInThreadPool(this, readTask);
+        // initiate I/O
+        if (Iocp.supportsThreadAgnosticIo()) {
+            readTask.run();
+        } else {
+            Invoker.invokeOnThreadInThreadPool(this, readTask);
+        }
         return result;
     }
 
@@ -710,7 +735,7 @@ class WindowsAsynchronousSocketChannelImpl
         }
 
         @Override
-        @SuppressWarnings("unchecked")
+        //@SuppressWarnings("unchecked")
         public void run() {
             long overlapped = 0L;
             boolean prepared = false;
@@ -759,7 +784,7 @@ class WindowsAsynchronousSocketChannelImpl
             }
 
             // invoke completion handler
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
 
         /**
@@ -767,7 +792,7 @@ class WindowsAsynchronousSocketChannelImpl
          */
         @Override
         @SuppressWarnings("unchecked")
-        public void completed(int bytesTransferred) {
+        public void completed(int bytesTransferred, boolean canInvokeDirect) {
             updateBuffers(bytesTransferred);
 
             // return direct buffer to cache if substituted
@@ -784,7 +809,11 @@ class WindowsAsynchronousSocketChannelImpl
                     result.setResult((V)Integer.valueOf(bytesTransferred));
                 }
             }
-            Invoker.invoke(result.handler(), result);
+            if (canInvokeDirect) {
+                Invoker.invokeUnchecked(result);
+            } else {
+                Invoker.invoke(result);
+            }
         }
 
         @Override
@@ -802,7 +831,7 @@ class WindowsAsynchronousSocketChannelImpl
                 enableWriting();
                 result.setFailure(x);
             }
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
 
         /**
@@ -820,13 +849,14 @@ class WindowsAsynchronousSocketChannelImpl
             }
 
             // invoke handler without any locks
-            Invoker.invoke(result.handler(), result);
+            Invoker.invoke(result);
         }
     }
 
     @Override
-    <V extends Number,A> Future<V> writeImpl(ByteBuffer[] bufs,
-                                             boolean gatheringWrite,
+    <V extends Number,A> Future<V> implWrite(boolean gatheringWrite,
+                                             ByteBuffer src,
+                                             ByteBuffer[] srcs,
                                              long timeout,
                                              TimeUnit unit,
                                              A attachment,
@@ -835,6 +865,13 @@ class WindowsAsynchronousSocketChannelImpl
         // setup task
         PendingFuture<V,A> result =
             new PendingFuture<V,A>(this, handler, attachment);
+        ByteBuffer[] bufs;
+        if (gatheringWrite) {
+            bufs = srcs;
+        } else {
+            bufs = new ByteBuffer[1];
+            bufs[0] = src;
+        }
         final WriteTask writeTask = new WriteTask<V,A>(bufs, gatheringWrite, result);
         result.setContext(writeTask);
 
@@ -849,7 +886,12 @@ class WindowsAsynchronousSocketChannelImpl
         }
 
         // initiate I/O (can only be done from thread in thread pool)
-        Invoker.invokeOnThreadInThreadPool(this, writeTask);
+        // initiate I/O
+        if (Iocp.supportsThreadAgnosticIo()) {
+            writeTask.run();
+        } else {
+            Invoker.invokeOnThreadInThreadPool(this, writeTask);
+        }
         return result;
     }
 

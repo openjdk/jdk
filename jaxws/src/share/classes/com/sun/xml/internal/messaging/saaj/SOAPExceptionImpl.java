@@ -22,11 +22,6 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-/*
- * $Id: SOAPExceptionImpl.java,v 1.3 2006/01/27 12:49:17 vj135062 Exp $
- * $Revision: 1.3 $
- * $Date: 2006/01/27 12:49:17 $
- */
 
 
 package com.sun.xml.internal.messaging.saaj;

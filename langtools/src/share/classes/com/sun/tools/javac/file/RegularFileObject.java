@@ -34,7 +34,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
@@ -42,6 +41,11 @@ import javax.tools.JavaFileObject;
 
 /**
  * A subclass of JavaFileObject representing regular files.
+ *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
 class RegularFileObject extends BaseFileObject {
 
@@ -68,6 +72,7 @@ class RegularFileObject extends BaseFileObject {
         return new FileInputStream(f);
     }
 
+    @Override
     protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
         return fileManager.getDecoder(fileManager.getEncodingName(), ignoreEncodingErrors);
     }
@@ -142,6 +147,7 @@ class RegularFileObject extends BaseFileObject {
     }
 
     @Deprecated
+    @Override
     public String getPath() {
         return f.getPath();
     }
@@ -196,11 +202,6 @@ class RegularFileObject extends BaseFileObject {
     }
 
     public URI toUri() {
-        try {
-            String path = f.getAbsolutePath().replace(File.separatorChar, '/');
-            return new URI("file://" + path).normalize();
-        } catch (URISyntaxException ex) {
-            return f.toURI();
-        }
+        return f.toURI().normalize();
     }
 }

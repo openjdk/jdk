@@ -53,7 +53,7 @@ printf 'CLASSPATH="%s"' "${CLASSPATH}" >&2 ; echo >&2
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  CYGWIN* | Windows* )
+  Windows* )
     FS="\\"
     ;;
   * )
@@ -75,7 +75,7 @@ grep "frame_type" "${JAVAPFILE}" > "${OUTFILE}"
 grep "offset_delta" "${JAVAPFILE}" >> "${OUTFILE}"
 grep "stack = " "${JAVAPFILE}" >> "${OUTFILE}"
 grep "locals = " "${JAVAPFILE}" >> "${OUTFILE}"
-diff "${OUTFILE}" "${TESTSRC}${FS}T6271292.out"
+diff -w "${OUTFILE}" "${TESTSRC}${FS}T6271292.out"
 result="$?"
 if [ "$result" -eq 0 ]
 then

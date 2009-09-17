@@ -115,12 +115,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
     private int depth = 0;
 
     /**
-     * Flag indicating if {@link #_namedNodeMap} is already split into
-     * {@link #_currentAttributes} and {@link Scope#currentNamespaces}.
-     */
-    boolean _needAttributesSplit;
-
-    /**
      * State of this reader. Any of the valid states defined in StAX'
      * XMLStreamConstants class.
      */
@@ -254,9 +248,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
      * to attributes-proper and namespace decls.
      */
     private void splitAttributes() {
-        if (!_needAttributesSplit) return;
-        _needAttributesSplit = false;
-
         // Clear attribute and namespace lists
         _currentAttributes.clear();
 
@@ -281,7 +272,8 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
         ensureNs(_current);
         for( int i=_currentAttributes.size()-1; i>=0; i-- ) {
             Attr a = _currentAttributes.get(i);
-            ensureNs(a);
+            if(fixNull(a.getNamespaceURI()).length()>0)
+                ensureNs(a);    // no need to declare "" for attributes in the default namespace
         }
     }
 
@@ -312,8 +304,10 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
                 return; // declared correctly
         }
 
-        // needs to be declared
+        if(prefix.equals("xml") || prefix.equals("xmlns"))
+            return; // implicitly declared namespaces
 
+        // needs to be declared
         scope.additionalNamespaces.add(prefix);
         scope.additionalNamespaces.add(uri);
     }
@@ -322,7 +316,7 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
      * Allocate new {@link Scope} for {@link #splitAttributes()}.
      */
     private Scope allocateScope() {
-        if(scopes.length==depth) {
+        if(scopes.length==++depth) {
             Scope[] newBuf = new Scope[scopes.length*2];
             System.arraycopy(scopes,0,newBuf,0,scopes.length);
             scopes = newBuf;
@@ -337,10 +331,8 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
     }
 
     public int getAttributeCount() {
-        if (_state == START_ELEMENT) {
-            splitAttributes();
+        if (_state == START_ELEMENT)
             return _currentAttributes.size();
-        }
         throw new IllegalStateException("DOMStreamReader: getAttributeCount() called in illegal state");
     }
 
@@ -349,8 +341,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
      */
     public String getAttributeLocalName(int index) {
         if (_state == START_ELEMENT) {
-            splitAttributes();
-
             String localName = _currentAttributes.get(index).getLocalName();
             return (localName != null) ? localName :
                 QName.valueOf(_currentAttributes.get(index).getNodeName()).getLocalPart();
@@ -363,8 +353,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
      */
     public QName getAttributeName(int index) {
         if (_state == START_ELEMENT) {
-            splitAttributes();
-
             Node attr = _currentAttributes.get(index);
             String localName = attr.getLocalName();
             if (localName != null) {
@@ -381,7 +369,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
 
     public String getAttributeNamespace(int index) {
         if (_state == START_ELEMENT) {
-            splitAttributes();
             String uri = _currentAttributes.get(index).getNamespaceURI();
             return fixNull(uri);
         }
@@ -390,7 +377,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
 
     public String getAttributePrefix(int index) {
         if (_state == START_ELEMENT) {
-            splitAttributes();
             String prefix = _currentAttributes.get(index).getPrefix();
             return fixNull(prefix);
         }
@@ -406,7 +392,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
 
     public String getAttributeValue(int index) {
         if (_state == START_ELEMENT) {
-            splitAttributes();
             return _currentAttributes.get(index).getNodeValue();
         }
         throw new IllegalStateException("DOMStreamReader: getAttributeValue() called in illegal state");
@@ -414,7 +399,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
 
     public String getAttributeValue(String namespaceURI, String localName) {
         if (_state == START_ELEMENT) {
-            splitAttributes();
             if (_namedNodeMap != null) {
                 Node attr = _namedNodeMap.getNamedItemNS(namespaceURI, localName);
                 return attr != null ? attr.getNodeValue() : null;
@@ -489,7 +473,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
      */
     private Scope getCheckedScope() {
         if (_state == START_ELEMENT || _state == END_ELEMENT) {
-            splitAttributes();
             return scopes[depth];
         }
         throw new IllegalStateException("DOMStreamReader: neither on START_ELEMENT nor END_ELEMENT");
@@ -532,7 +515,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
         }
 
         // check scopes
-        splitAttributes();
         String nsUri = scopes[depth].getNamespaceURI(prefix);
         if(nsUri!=null)    return nsUri;
 
@@ -562,7 +544,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
         }
 
         // check scopes
-        splitAttributes();
         String prefix = scopes[depth].getPrefix(nsUri);
         if(prefix!=null)    return prefix;
 
@@ -754,26 +735,29 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
     public int next() throws XMLStreamException {
         while(true) {
             int r = _next();
-            if(r!=CHARACTERS)   return r;
+            switch (r) {
+            case CHARACTERS:
+                // if we are currently at text node, make sure that this is a meaningful text node.
+                Node prev = _current.getPreviousSibling();
+                if(prev!=null && prev.getNodeType()==Node.TEXT_NODE)
+                    continue;   // nope. this is just a continuation of previous text that should be invisible
 
-            // if we are currently at text node, make sure that this is a meaningful text node.
-            Node prev = _current.getPreviousSibling();
-            if(prev!=null && prev.getNodeType()==Node.TEXT_NODE)
-                continue;   // nope. this is just a continuation of previous text that should be invisible
-
-            Text t = (Text)_current;
-            wholeText = t.getWholeText();
-            if(wholeText.length()==0)
-                continue;   // nope. this is empty text.
-            return CHARACTERS;
+                Text t = (Text)_current;
+                wholeText = t.getWholeText();
+                if(wholeText.length()==0)
+                    continue;   // nope. this is empty text.
+                return CHARACTERS;
+            case START_ELEMENT:
+                splitAttributes();
+                return START_ELEMENT;
+            default:
+                return r;
+            }
         }
     }
 
     private int _next() throws XMLStreamException {
         Node child;
-
-        // Indicate that attributes still need processing
-        _needAttributesSplit = true;
 
         switch (_state) {
             case END_DOCUMENT:
@@ -793,8 +777,6 @@ public final class DOMStreamReader implements XMLStreamReader, NamespaceContext 
                     return (_state = mapNodeTypeToState(_current.getNodeType()));
                 }
             case START_ELEMENT:
-                depth++;
-
                 child = _current.getFirstChild();
                 if (child == null) {
                     return (_state = END_ELEMENT);

@@ -48,6 +48,8 @@ if [ "$OS" = "Linux" ]; then
      CPU=i386
    fi
 else
+   LD_AUDIT_32=$STARTDIR/../src/os/solaris/proc/`uname -p`/libsaproc_audit.so
+   export LD_AUDIT_32
    SA_LIBPATH=$STARTDIR/../src/os/solaris/proc/`uname -p`:$STARTDIR/solaris/`uname -p`
    OPTIONS="-Dsa.library.path=$SA_LIBPATH -Dsun.jvm.hotspot.debugger.useProcDebugger"
    CPU=sparc

@@ -53,6 +53,7 @@ import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.validation.Schema;
 import javax.xml.validation.ValidatorHandler;
+import javax.xml.namespace.NamespaceContext;
 
 import com.sun.xml.internal.bind.DatatypeConverterImpl;
 import com.sun.xml.internal.bind.api.JAXBRIContext;
@@ -131,9 +132,6 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
      *      non-null if the marshaller is working inside {@link BinderImpl}.
      */
     public MarshallerImpl( JAXBContextImpl c, AssociationMap assoc ) {
-        // initialize datatype converter with ours
-        DatatypeConverter.setDatatypeConverter(DatatypeConverterImpl.theInstance);
-
         context = c;
         serializer = new XMLSerializer(this);
         c14nSupport = context.c14nSupport;
@@ -147,6 +145,16 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
 
     public JAXBContextImpl getContext() {
         return context;
+    }
+
+    /**
+     * Marshals to {@link OutputStream} with the given in-scope namespaces
+     * taken into account.
+     *
+     * @since 2.1.5
+     */
+    public void marshal(Object obj, OutputStream out, NamespaceContext inscopeNamespace) throws JAXBException {
+        write(obj, createWriter(out), new StAXPostInitAction(inscopeNamespace,serializer));
     }
 
     public void marshal(Object obj, XMLStreamWriter writer) throws JAXBException {
@@ -252,7 +260,7 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
                     if(obj==null)
                         serializer.writeXsiNilTrue();
                     else
-                        serializer.childAsXsiType(obj,"root",bi);
+                        serializer.childAsXsiType(obj,"root",bi, false);
                 }
                 serializer.endElement();
                 postwrite();
@@ -426,14 +434,18 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
 
         if(encoding.equals("UTF-8")) {
             Encoded[] table = context.getUTF8NameTable();
+            final UTF8XmlOutput out;
             if(isFormattedOutput())
-                return new IndentingUTF8XmlOutput(os,indent,table);
+                out = new IndentingUTF8XmlOutput(os,indent,table);
             else {
                 if(c14nSupport)
-                    return new C14nXmlOutput(os,table,context.c14nSupport);
+                    out = new C14nXmlOutput(os,table,context.c14nSupport);
                 else
-                    return new UTF8XmlOutput(os,table);
+                    out = new UTF8XmlOutput(os,table);
             }
+            if(header!=null)
+                out.setHeader(header);
+            return out;
         }
 
         try {

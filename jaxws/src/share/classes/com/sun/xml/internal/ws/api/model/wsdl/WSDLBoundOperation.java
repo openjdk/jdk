@@ -28,8 +28,9 @@ package com.sun.xml.internal.ws.api.model.wsdl;
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 
+import javax.jws.WebParam.Mode;
 import javax.xml.namespace.QName;
-import java.util.List;
+import java.util.Map;
 
 /**
  * Abstracts wsdl:binding/wsdl:operation. It can be used to determine the parts and their binding.
@@ -57,11 +58,48 @@ public interface WSDLBoundOperation extends WSDLObject, WSDLExtensible {
     @NotNull WSDLOperation getOperation();
 
     /**
+     * Gives the owner {@link WSDLBoundPortType}
+     */
+    @NotNull WSDLBoundPortType getBoundPortType();
+
+    /**
      * Gets the soapbinding:binding/operation/wsaw:Anonymous. A default value of OPTIONAL is returned.
      *
      * @return Anonymous value of the operation
      */
-    public ANONYMOUS getAnonymous();
+    ANONYMOUS getAnonymous();
 
     enum ANONYMOUS { optional, required, prohibited }
+
+    /**
+     * Gets {@link WSDLPart} for the given wsdl:input or wsdl:output part
+     *
+     * @return null if no part is found
+     */
+    @Nullable WSDLPart getPart(@NotNull String partName, @NotNull Mode mode);
+
+    /**
+     * Gets all inbound {@link WSDLPart} by its {@link WSDLPart#getName() name}.
+     */
+    @NotNull Map<String,WSDLPart> getInParts();
+
+    /**
+     * Gets all outbound {@link WSDLPart} by its {@link WSDLPart#getName() name}.
+     */
+    @NotNull Map<String,WSDLPart> getOutParts();
+
+    /**
+     * Gets all the {@link WSDLFault} bound to this operation.
+     */
+    @NotNull Iterable<? extends WSDLBoundFault> getFaults();
+
+    /**
+     * Gets the payload QName of the request message.
+     *
+     * <p>
+     * It's possible for an operation to define no body part, in which case
+     * this method returns null.
+     */
+    @Nullable QName getReqPayloadName();
+
 }

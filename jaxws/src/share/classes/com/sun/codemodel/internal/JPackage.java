@@ -98,32 +98,7 @@ public final class JPackage implements JDeclaration, JGenerable, JClassContainer
     JPackage(String name, JCodeModel cw) {
         this.owner = cw;
         if (name.equals(".")) {
-            String msg = "JPackage name . is not allowed";
-            throw new IllegalArgumentException(msg);
-        }
-
-        int dots = 1;
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            if (c == '.') {
-                dots++;
-                continue;
-            }
-            if (dots > 1) {
-                String msg = "JPackage name " + name + " missing identifier";
-                throw new IllegalArgumentException(msg);
-            } else if (dots == 1 && !Character.isJavaIdentifierStart(c)) {
-                String msg =
-                    "JPackage name " + name + " contains illegal " + "character for beginning of identifier: " + c;
-                throw new IllegalArgumentException(msg);
-            } else if (!Character.isJavaIdentifierPart(c)) {
-                String msg = "JPackage name " + name + "contains illegal " + "character: " + c;
-                throw new IllegalArgumentException(msg);
-            }
-            dots = 0;
-        }
-        if (!name.trim().equals("") && dots != 0) {
-            String msg = "JPackage name not allowed to end with .";
+            String msg = "Package name . is not allowed";
             throw new IllegalArgumentException(msg);
         }
 

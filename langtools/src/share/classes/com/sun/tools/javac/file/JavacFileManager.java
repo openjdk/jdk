@@ -26,6 +26,7 @@
 package com.sun.tools.javac.file;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -33,8 +34,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
@@ -82,6 +85,11 @@ import static com.sun.tools.javac.main.OptionName.*;
 /**
  * This class provides access to the source, class and other files
  * used by the compiler and related tools.
+ *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
 public class JavacFileManager implements StandardJavaFileManager {
 
@@ -126,6 +134,7 @@ public class JavacFileManager implements StandardJavaFileManager {
 
     protected boolean mmappedIO;
     protected boolean ignoreSymbolFile;
+    protected String classLoaderClass;
 
     /**
      * User provided charset (through javax.tools).
@@ -175,6 +184,7 @@ public class JavacFileManager implements StandardJavaFileManager {
 
         mmappedIO = options.get("mmappedIO") != null;
         ignoreSymbolFile = options.get("ignore.symbol.file") != null;
+        classLoaderClass = options.get("procloader");
     }
 
     public JavaFileObject getFileForInput(String name) {
@@ -428,6 +438,7 @@ public class JavacFileManager implements StandardJavaFileManager {
             return Collections.emptySet();
         }
 
+        @Override
         public String toString() {
             return "MissingArchive[" + zipFileName + "]";
         }
@@ -645,10 +656,10 @@ public class JavacFileManager implements StandardJavaFileManager {
     private final ByteBufferCache byteBufferCache;
 
     CharsetDecoder getDecoder(String encodingName, boolean ignoreEncodingErrors) {
-        Charset charset = (this.charset == null)
+        Charset cs = (this.charset == null)
             ? Charset.forName(encodingName)
             : this.charset;
-        CharsetDecoder decoder = charset.newDecoder();
+        CharsetDecoder decoder = cs.newDecoder();
 
         CodingErrorAction action;
         if (ignoreEncodingErrors)
@@ -742,8 +753,40 @@ public class JavacFileManager implements StandardJavaFileManager {
                 throw new AssertionError(e);
             }
         }
-        return new URLClassLoader(lb.toArray(new URL[lb.size()]),
-            getClass().getClassLoader());
+
+        URL[] urls = lb.toArray(new URL[lb.size()]);
+        ClassLoader thisClassLoader = getClass().getClassLoader();
+
+        // Bug: 6558476
+        // Ideally, ClassLoader should be Closeable, but before JDK7 it is not.
+        // On older versions, try the following, to get a closeable classloader.
+
+        // 1: Allow client to specify the class to use via hidden option
+        if (classLoaderClass != null) {
+            try {
+                Class<? extends ClassLoader> loader =
+                        Class.forName(classLoaderClass).asSubclass(ClassLoader.class);
+                Class<?>[] constrArgTypes = { URL[].class, ClassLoader.class };
+                Constructor<? extends ClassLoader> constr = loader.getConstructor(constrArgTypes);
+                return constr.newInstance(new Object[] { urls, thisClassLoader });
+            } catch (Throwable t) {
+                // ignore errors loading user-provided class loader, fall through
+            }
+        }
+
+        // 2: If URLClassLoader implements Closeable, use that.
+        if (Closeable.class.isAssignableFrom(URLClassLoader.class))
+            return new URLClassLoader(urls, thisClassLoader);
+
+        // 3: Try using private reflection-based CloseableURLClassLoader
+        try {
+            return new CloseableURLClassLoader(urls, thisClassLoader);
+        } catch (Throwable t) {
+            // ignore errors loading workaround class loader, fall through
+        }
+
+        // 4: If all else fails, use plain old standard URLClassLoader
+        return new URLClassLoader(urls, thisClassLoader);
     }
 
     public Iterable<JavaFileObject> list(Location location,
@@ -851,7 +894,7 @@ public class JavacFileManager implements StandardJavaFileManager {
         nullCheck(location);
         // validatePackageName(packageName);
         nullCheck(packageName);
-        if (!isRelativeUri(URI.create(relativeName))) // FIXME 6419701
+        if (!isRelativeUri(relativeName))
             throw new IllegalArgumentException("Invalid relative name: " + relativeName);
         RelativeFile name = packageName.length() == 0
             ? new RelativeFile(relativeName)
@@ -905,7 +948,7 @@ public class JavacFileManager implements StandardJavaFileManager {
         nullCheck(location);
         // validatePackageName(packageName);
         nullCheck(packageName);
-        if (!isRelativeUri(URI.create(relativeName))) // FIXME 6419701
+        if (!isRelativeUri(relativeName))
             throw new IllegalArgumentException("relativeName is invalid");
         RelativeFile name = packageName.length() == 0
             ? new RelativeFile(relativeName)
@@ -1044,6 +1087,15 @@ public class JavacFileManager implements StandardJavaFileManager {
         return first != '.' && first != '/';
     }
 
+    // Convenience method
+    protected static boolean isRelativeUri(String u) {
+        try {
+            return isRelativeUri(new URI(u));
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
     /**
      * Converts a relative file name to a relative URI.  This is
      * different from File.toURI as this method does not canonicalize
@@ -1058,7 +1110,7 @@ public class JavacFileManager implements StandardJavaFileManager {
     public static String getRelativeName(File file) {
         if (!file.isAbsolute()) {
             String result = file.getPath().replace(File.separatorChar, '/');
-            if (JavacFileManager.isRelativeUri(URI.create(result))) // FIXME 6419701
+            if (isRelativeUri(result))
                 return result;
         }
         throw new IllegalArgumentException("Invalid relative path: " + file);

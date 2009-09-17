@@ -50,7 +50,7 @@ public class ModuleExportTable_attribute extends Attribute {
     }
 
     public ModuleExportTable_attribute(int name_index, int[] export_type_table) {
-        super(name_index, 2 * export_type_table.length);
+        super(name_index, 2 + 2 * export_type_table.length);
         this.export_type_table = export_type_table;
     }
 

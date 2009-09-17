@@ -51,6 +51,7 @@ import com.sun.tools.internal.xjc.model.CNonElement;
 import com.sun.tools.internal.xjc.model.Model;
 import com.sun.tools.internal.xjc.model.TypeUse;
 import com.sun.tools.internal.xjc.model.TypeUseFactory;
+import com.sun.tools.internal.xjc.reader.Const;
 import com.sun.tools.internal.xjc.reader.Ring;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIConversion;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIEnum;
@@ -120,6 +121,13 @@ public final class SimpleTypeBuilder extends BindingComponent {
      * UGLY: Implemented as a Stack of XSComponent to fix a bug
      */
     public final Stack<XSComponent> refererStack = new Stack<XSComponent>();
+
+    /**
+     * Records what xmime:expectedContentTypes annotations we honored and processed,
+     * so that we can later check if the user had these annotations in the places
+     * where we didn't anticipate them.
+     */
+    private final Set<XSComponent> acknowledgedXmimeContentTypes = new HashSet<XSComponent>();
 
     /**
      * The type that was originally passed to this {@link SimpleTypeBuilder#build(XSSimpleType)}.
@@ -289,7 +297,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
         public TypeUse unionSimpleType(XSUnionSimpleType type) {
             boolean isCollection = false;
             for( int i=0; i<type.getMemberSize(); i++ )
-                if(type.getMember(i).getVariety()==XSVariety.LIST) {
+                if(type.getMember(i).getVariety()==XSVariety.LIST || type.getMember(i).getVariety()==XSVariety.UNION) {
                     isCollection = true;
                     break;
                 }
@@ -368,6 +376,15 @@ public final class SimpleTypeBuilder extends BindingComponent {
             }
         }
 
+
+//        // Issue 558 .. ugly fix; see https://wsit-docs.dev.java.net/releases/1-0-FCS/DataBinding5.html and https://jaxb.dev.java.net/issues/show_bug.cgi?id=558
+//        // need to check specification
+//        if (type.isSimpleType() && builder.getGlobalBinding().isSimpleTypeSubstitution() &&
+//                type.isGlobal() && type.getName() != null &&
+//                (type.getName().equals("unsignedInt") || type.getName().equals("unsignedShort") || type.getName().equals("unsignedByte"))) {
+//                // !type.getName().equals("anySimpleType") && !type.getName().equals("string")) {
+//            return (CNonElement) getClassSelector()._bindToClass(type, type.getSimpleBaseType(), false);
+//        }
 
         // if the type is built in, look for the default binding
         if(type.getTargetNamespace().equals(WellKnownNamespace.XML_SCHEMA)) {
@@ -584,6 +601,10 @@ public final class SimpleTypeBuilder extends BindingComponent {
                 break;
             }
         }
+        if(memberList.isEmpty()) {
+            getErrorReporter().error( loc, Messages.ERR_NO_ENUM_FACET );
+            return null;
+        }
 
         // use the name of the simple type as the name of the class.
         CClassInfoParent scope;
@@ -616,9 +637,14 @@ public final class SimpleTypeBuilder extends BindingComponent {
     private List<CEnumConstant> buildCEnumConstants(XSRestrictionSimpleType type, boolean needsToGenerateMemberName, Map<String, BIEnumMember> members, XSFacet[] errorRef) {
         List<CEnumConstant> memberList = new ArrayList<CEnumConstant>();
         int idx=1;
+        Set<String> enums = new HashSet<String>(); // to avoid duplicates. See issue #366
+
         for( XSFacet facet : type.getDeclaredFacets(XSFacet.FACET_ENUMERATION)) {
             String name=null;
-            String mdoc=null;
+            String mdoc=builder.getBindInfo(facet).getDocumentation();
+
+            if(!enums.add(facet.getValue().value))
+                continue;   // ignore the 2nd occasion
 
             if( needsToGenerateMemberName ) {
                 // generate names for all member names.
@@ -739,8 +765,9 @@ public final class SimpleTypeBuilder extends BindingComponent {
      */
     private TypeUse lookupBinaryTypeBinding() {
         XSComponent referer = getReferer();
-        String emt = referer.getForeignAttribute(XML_MIME_URI,"expectedContentTypes");
+        String emt = referer.getForeignAttribute(XML_MIME_URI, Const.EXPECTED_CONTENT_TYPES);
         if(emt!=null) {
+            acknowledgedXmimeContentTypes.add(referer);
             try {
                 // see http://www.xml.com/lpt/a/2004/07/21/dive.html
                 List<MimeTypeRange> types = MimeTypeRange.parseRanges(emt);
@@ -770,6 +797,10 @@ public final class SimpleTypeBuilder extends BindingComponent {
         }
         // default
         return CBuiltinLeafInfo.BASE64_BYTE_ARRAY;
+    }
+
+    public boolean isAcknowledgedXmimeContentTypes(XSComponent c) {
+        return acknowledgedXmimeContentTypes.contains(c);
     }
 
     /**

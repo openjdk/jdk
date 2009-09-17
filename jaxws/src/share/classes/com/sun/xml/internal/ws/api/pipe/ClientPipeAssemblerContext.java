@@ -79,6 +79,13 @@ public final class ClientPipeAssemblerContext extends ClientTubeAssemblerContext
     }
 
     /**
+     * creates a {@link Pipe} that validates messages against schema
+     */
+    public Pipe createValidationPipe(Pipe next) {
+        return PipeAdapter.adapt(super.createValidationTube(PipeAdapter.adapt(next)));
+    }
+
+    /**
      * Creates a {@link Pipe} that invokes protocol and logical handlers.
      */
     public Pipe createHandlerPipe(Pipe next) {

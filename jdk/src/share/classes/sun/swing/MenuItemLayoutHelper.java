@@ -84,7 +84,6 @@ public class MenuItemLayoutHelper {
     private int minTextOffset;
 
     private int leftTextExtraWidth;
-    private int rightTextExtraWidth;
 
     private Rectangle viewRect;
 
@@ -157,22 +156,12 @@ public class MenuItemLayoutHelper {
 
     private void calcExtraWidths() {
         leftTextExtraWidth = getLeftExtraWidth(text);
-        rightTextExtraWidth = getRightExtraWidth(text);
     }
 
     private int getLeftExtraWidth(String str) {
         int lsb = SwingUtilities2.getLeftSideBearing(mi, fm, str);
         if (lsb < 0) {
             return -lsb;
-        } else {
-            return 0;
-        }
-    }
-
-    private int getRightExtraWidth(String str) {
-        int rsb = SwingUtilities2.getRightSideBearing(mi, fm, str);
-        if (rsb > 0) {
-            return rsb;
         } else {
             return 0;
         }
@@ -313,7 +302,7 @@ public class MenuItemLayoutHelper {
                     verticalAlignment, horizontalAlignment,
                     verticalTextPosition, horizontalTextPosition,
                     viewRect, iconRect, textRect, gap);
-            textRect.width += leftTextExtraWidth + rightTextExtraWidth;
+            textRect.width += leftTextExtraWidth;
             Rectangle labelRect = iconRect.union(textRect);
             labelSize.height = labelRect.height;
             labelSize.width = labelRect.width;
@@ -718,10 +707,10 @@ public class MenuItemLayoutHelper {
     }
 
     private void alignRect(Rectangle rect, int alignment, int origWidth) {
-        if (alignment != SwingUtilities.LEFT) {
+        if (alignment == SwingConstants.RIGHT) {
             rect.x = rect.x + rect.width - origWidth;
-            rect.width = origWidth;
         }
+        rect.width = origWidth;
     }
 
     protected void layoutIconAndTextInLabelRect(LayoutResult lr) {
@@ -1119,10 +1108,6 @@ public class MenuItemLayoutHelper {
 
     public int getLeftTextExtraWidth() {
         return leftTextExtraWidth;
-    }
-
-    public int getRightTextExtraWidth() {
-        return rightTextExtraWidth;
     }
 
     /**

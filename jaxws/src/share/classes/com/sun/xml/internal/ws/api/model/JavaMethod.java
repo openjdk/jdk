@@ -29,6 +29,7 @@ import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.ws.api.model.soap.SOAPBinding;
 
+import javax.xml.namespace.QName;
 import java.lang.reflect.Method;
 
 /**
@@ -65,6 +66,7 @@ public interface JavaMethod {
      * @return Returns the java {@link Method}
      */
     @NotNull Method getMethod();
+
 
     /**
      * This should be used if you want to access annotations on WebMethod
@@ -118,5 +120,21 @@ public interface JavaMethod {
      * @see com.sun.xml.internal.ws.api.model.MEP#isOneWay()
      */
     @Nullable String getResponseMessageName();
+
+    /**
+     * Gives soap:Body's first child's name for request message.
+     *
+     * @return
+     *      null if this operation doesn't have any request parameter bound to the body.
+     */
+    @Nullable QName getRequestPayloadName();
+
+    /**
+     * Gives soap:Body's first child's name for response message.
+     *
+     * @return
+     *      null if this operation doesn't have any response parameter bound to the body.
+     */
+    @Nullable QName getResponsePayloadName();
 
 }

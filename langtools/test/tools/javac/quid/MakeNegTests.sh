@@ -77,7 +77,7 @@ expand() {
 }
 
 getcasestem() {
-  echo "$1" | sed 's/\.java$//;s/_BAD[0-9]*$//;s/$/_BAD/'
+  echo `basename $1` | sed 's/.*\///;s/\.java$//;s/_BAD[0-9]*$//;s/$/_BAD/'
 }
 
 testneg() {

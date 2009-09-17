@@ -1,0 +1,3 @@
+T6840059.java:15:9: compiler.err.cant.resolve.location.args: kindname.constructor, T6840059, , java.lang.String, kindname.class, T6840059
+T6840059.java:15:25: compiler.err.cant.resolve.location.args: kindname.constructor, T6840059, , , kindname.class, T6840059
+2 errors

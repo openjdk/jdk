@@ -223,6 +223,7 @@ uint TailJumpNode::match_edge(uint idx) const {
 JVMState::JVMState(ciMethod* method, JVMState* caller) {
   assert(method != NULL, "must be valid call site");
   _method = method;
+  _reexecute = Reexecute_Undefined;
   debug_only(_bci = -99);  // random garbage value
   debug_only(_map = (SafePointNode*)-1);
   _caller = caller;
@@ -237,6 +238,7 @@ JVMState::JVMState(ciMethod* method, JVMState* caller) {
 JVMState::JVMState(int stack_size) {
   _method = NULL;
   _bci = InvocationEntryBci;
+  _reexecute = Reexecute_Undefined;
   debug_only(_map = (SafePointNode*)-1);
   _caller = NULL;
   _depth  = 1;
@@ -269,6 +271,7 @@ bool JVMState::same_calls_as(const JVMState* that) const {
     if (p->_method != q->_method)    return false;
     if (p->_method == NULL)          return true;   // bci is irrelevant
     if (p->_bci    != q->_bci)       return false;
+    if (p->_reexecute != q->_reexecute)  return false;
     p = p->caller();
     q = q->caller();
     if (p == q)                      return true;
@@ -490,6 +493,8 @@ void JVMState::dump_spec(outputStream *st) const {
     if (!printed)
       _method->print_short_name(st);
     st->print(" @ bci:%d",_bci);
+    if(_reexecute == Reexecute_True)
+      st->print(" reexecute");
   } else {
     st->print(" runtime stub");
   }
@@ -509,8 +514,8 @@ void JVMState::dump_on(outputStream* st) const {
     }
     _map->dump(2);
   }
-  st->print("JVMS depth=%d loc=%d stk=%d mon=%d scalar=%d end=%d mondepth=%d sp=%d bci=%d method=",
-             depth(), locoff(), stkoff(), monoff(), scloff(), endoff(), monitor_depth(), sp(), bci());
+  st->print("JVMS depth=%d loc=%d stk=%d mon=%d scalar=%d end=%d mondepth=%d sp=%d bci=%d reexecute=%s method=",
+             depth(), locoff(), stkoff(), monoff(), scloff(), endoff(), monitor_depth(), sp(), bci(), should_reexecute()?"true":"false");
   if (_method == NULL) {
     st->print_cr("(none)");
   } else {
@@ -537,6 +542,7 @@ void dump_jvms(JVMState* jvms) {
 JVMState* JVMState::clone_shallow(Compile* C) const {
   JVMState* n = has_method() ? new (C) JVMState(_method, _caller) : new (C) JVMState(0);
   n->set_bci(_bci);
+  n->_reexecute = _reexecute;
   n->set_locoff(_locoff);
   n->set_stkoff(_stkoff);
   n->set_monoff(_monoff);

@@ -60,11 +60,10 @@ public class Check {
     private final Log log;
     private final Symtab syms;
     private final Infer infer;
-    private final Target target;
-    private final Source source;
     private final Types types;
     private final JCDiagnostic.Factory diags;
     private final boolean skipAnnotations;
+    private boolean warnOnSyntheticConflicts;
     private final TreeInfo treeinfo;
 
     // The set of lint options currently in effect. It is initialized
@@ -89,25 +88,31 @@ public class Check {
         this.types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Options options = Options.instance(context);
-        target = Target.instance(context);
-        source = Source.instance(context);
         lint = Lint.instance(context);
         treeinfo = TreeInfo.instance(context);
 
         Source source = Source.instance(context);
         allowGenerics = source.allowGenerics();
         allowAnnotations = source.allowAnnotations();
+        allowCovariantReturns = source.allowCovariantReturns();
         complexInference = options.get("-complexinference") != null;
         skipAnnotations = options.get("skipAnnotations") != null;
+        warnOnSyntheticConflicts = options.get("warnOnSyntheticConflicts") != null;
+
+        Target target = Target.instance(context);
+        syntheticNameChar = target.syntheticNameChar();
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
+        boolean verboseSunApi = lint.isEnabled(LintCategory.SUNAPI);
         boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
 
         deprecationHandler = new MandatoryWarningHandler(log, verboseDeprecated,
                 enforceMandatoryWarnings, "deprecated");
         uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
                 enforceMandatoryWarnings, "unchecked");
+        sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
+                enforceMandatoryWarnings, "sunapi");
     }
 
     /** Switch: generics enabled?
@@ -118,9 +123,17 @@ public class Check {
      */
     boolean allowAnnotations;
 
+    /** Switch: covariant returns enabled?
+     */
+    boolean allowCovariantReturns;
+
     /** Switch: -complexinference option set?
      */
     boolean complexInference;
+
+    /** Character for synthetic names
+     */
+    char syntheticNameChar;
 
     /** A table mapping flat names of all compiled classes in this run to their
      *  symbols; maintained from outside.
@@ -135,6 +148,9 @@ public class Check {
      */
     private MandatoryWarningHandler uncheckedHandler;
 
+    /** A handler for messages about using Sun proprietary API.
+     */
+    private MandatoryWarningHandler sunApiHandler;
 
 /* *************************************************************************
  * Errors and Warnings
@@ -164,12 +180,22 @@ public class Check {
             uncheckedHandler.report(pos, msg, args);
     }
 
+    /** Warn about using Sun proprietary API.
+     *  @param pos        Position to be used for error reporting.
+     *  @param msg        A string describing the problem.
+     */
+    public void warnSunApi(DiagnosticPosition pos, String msg, Object... args) {
+        if (!lint.isSuppressed(LintCategory.SUNAPI))
+            sunApiHandler.report(pos, msg, args);
+    }
+
     /**
      * Report any deferred diagnostics.
      */
     public void reportDeferredDiagnostics() {
         deprecationHandler.reportDeferredDiagnostic();
         uncheckedHandler.reportDeferredDiagnostic();
+        sunApiHandler.reportDeferredDiagnostic();
     }
 
 
@@ -325,7 +351,7 @@ public class Check {
         for (int i=1; ; i++) {
             Name flatname = names.
                 fromString("" + c.owner.enclClass().flatname +
-                           target.syntheticNameChar() + i +
+                           syntheticNameChar + i +
                            c.name);
             if (compiled.get(flatname) == null) return flatname;
         }
@@ -344,8 +370,6 @@ public class Check {
     Type checkType(DiagnosticPosition pos, Type found, Type req) {
         if (req.tag == ERROR)
             return req;
-        if (found.tag == FORALL)
-            return instantiatePoly(pos, (ForAll)found, req, convertWarner(pos, found, req));
         if (req.tag == NONE)
             return found;
         if (types.isAssignable(found, req, convertWarner(pos, found, req)))
@@ -363,11 +387,38 @@ public class Check {
         return typeError(pos, diags.fragment("incompatible.types"), found, req);
     }
 
+    Type checkReturnType(DiagnosticPosition pos, Type found, Type req) {
+        if (found.tag == FORALL) {
+            try {
+                return instantiatePoly(pos, (ForAll) found, req, convertWarner(pos, found, req));
+            } catch (Infer.NoInstanceException ex) {
+                if (ex.isAmbiguous) {
+                    JCDiagnostic d = ex.getDiagnostic();
+                    log.error(pos,
+                            "undetermined.type" + (d != null ? ".1" : ""),
+                            found, d);
+                    return types.createErrorType(req);
+                } else {
+                    JCDiagnostic d = ex.getDiagnostic();
+                    return typeError(pos,
+                            diags.fragment("incompatible.types" + (d != null ? ".1" : ""), d),
+                            found, req);
+                }
+            } catch (Infer.InvalidInstanceException ex) {
+                JCDiagnostic d = ex.getDiagnostic();
+                log.error(pos, "invalid.inferred.types", ((ForAll)found).tvars, d);
+                return types.createErrorType(req);
+            }
+        } else {
+            return checkType(pos, found, req);
+        }
+    }
+
     /** Instantiate polymorphic type to some prototype, unless
      *  prototype is `anyPoly' in which case polymorphic type
      *  is returned unchanged.
      */
-    Type instantiatePoly(DiagnosticPosition pos, ForAll t, Type pt, Warner warn) {
+    Type instantiatePoly(DiagnosticPosition pos, ForAll t, Type pt, Warner warn) throws Infer.NoInstanceException {
         if (pt == Infer.anyPoly && complexInference) {
             return t;
         } else if (pt == Infer.anyPoly || pt.tag == NONE) {
@@ -376,28 +427,9 @@ public class Check {
         } else if (pt.tag == ERROR) {
             return pt;
         } else {
-            try {
-                return infer.instantiateExpr(t, pt, warn);
-            } catch (Infer.NoInstanceException ex) {
-                if (ex.isAmbiguous) {
-                    JCDiagnostic d = ex.getDiagnostic();
-                    log.error(pos,
-                              "undetermined.type" + (d!=null ? ".1" : ""),
-                              t, d);
-                    return types.createErrorType(pt);
-                } else {
-                    JCDiagnostic d = ex.getDiagnostic();
-                    return typeError(pos,
-                                     diags.fragment("incompatible.types" + (d!=null ? ".1" : ""), d),
-                                     t, pt);
-                }
-            } catch (Infer.InvalidInstanceException ex) {
-                JCDiagnostic d = ex.getDiagnostic();
-                log.error(pos, "invalid.inferred.types", t.tvars, d);
-                return types.createErrorType(pt);
-            }
+            return infer.instantiateExpr(t, pt, warn);
         }
-    }
+     }
 
     /** Check that a given type can be cast to a given target type.
      *  Return the result of the cast.
@@ -512,12 +544,35 @@ public class Check {
             while (args.nonEmpty()) {
                 if (args.head.tag == WILDCARD)
                     return typeTagError(pos,
-                                        log.getLocalizedString("type.req.exact"),
+                                        Log.getLocalizedString("type.req.exact"),
                                         args.head);
                 args = args.tail;
             }
         }
         return t;
+    }
+
+    /** Check that type is a valid type for a new expression. If the type contains
+     * some uninferred type variables, instantiate them exploiting the expected
+     * type.
+     *
+     *  @param pos           Position to be used for error reporting.
+     *  @param t             The type to be checked.
+     *  @param noBounds    True if type bounds are illegal here.
+     *  @param pt          Expected type (used with diamond operator)
+     */
+    Type checkNewClassType(DiagnosticPosition pos, Type t, boolean noBounds, Type pt) {
+        if (t.tag == FORALL) {
+            try {
+                t = instantiatePoly(pos, (ForAll)t, pt, Warner.noWarnings);
+            }
+            catch (Infer.NoInstanceException ex) {
+                JCDiagnostic d = ex.getDiagnostic();
+                log.error(pos, "cant.apply.diamond", t.getTypeArguments(), d);
+                return types.createErrorType(pt);
+            }
+        }
+        return checkClassType(pos, t, noBounds);
     }
 
     /** Check that type is a reifiable class, interface or array type.
@@ -747,8 +802,10 @@ public class Check {
                 this.specialized = false;
             };
 
+            @Override
             public void visitTree(JCTree tree) { /* no-op */ }
 
+            @Override
             public void visitVarDef(JCVariableDecl tree) {
                 if ((tree.mods.flags & ENUM) != 0) {
                     if (tree.init instanceof JCNewClass &&
@@ -820,10 +877,12 @@ public class Check {
      */
     class Validator extends JCTree.Visitor {
 
+        @Override
         public void visitTypeArray(JCArrayTypeTree tree) {
             validate(tree.elemtype, env);
         }
 
+        @Override
         public void visitTypeApply(JCTypeApply tree) {
             if (tree.type.tag == CLASS) {
                 List<Type> formals = tree.type.tsym.type.allparams();
@@ -872,7 +931,8 @@ public class Check {
                 }
 
                 checkCapture(tree);
-
+            }
+            if (tree.type.tag == CLASS || tree.type.tag == FORALL) {
                 // Check that this type is either fully parameterized, or
                 // not parameterized at all.
                 if (tree.type.getEnclosingType().isRaw())
@@ -882,6 +942,7 @@ public class Check {
             }
         }
 
+        @Override
         public void visitTypeParameter(JCTypeParameter tree) {
             validate(tree.bounds, env);
             checkClassBounds(tree.pos(), tree.type);
@@ -893,6 +954,7 @@ public class Check {
                 validate(tree.inner, env);
         }
 
+        @Override
         public void visitSelect(JCFieldAccess tree) {
             if (tree.type.tag == CLASS) {
                 visitSelectInternal(tree);
@@ -916,12 +978,14 @@ public class Check {
             }
         }
 
+        @Override
         public void visitAnnotatedType(JCAnnotatedType tree) {
             tree.underlyingType.accept(this);
         }
 
         /** Default visitor method: do nothing.
          */
+        @Override
         public void visitTree(JCTree tree) {
         }
 
@@ -1041,7 +1105,7 @@ public class Check {
      *  @param thrown     The list of thrown exceptions.
      *  @param handled    The list of handled exceptions.
      */
-    List<Type> unHandled(List<Type> thrown, List<Type> handled) {
+    List<Type> unhandled(List<Type> thrown, List<Type> handled) {
         List<Type> unhandled = List.nil();
         for (List<Type> l = thrown; l.nonEmpty(); l = l.tail)
             if (!isHandled(l.head, handled)) unhandled = unhandled.prepend(l.head);
@@ -1193,34 +1257,41 @@ public class Check {
         boolean resultTypesOK =
             types.returnTypeSubstitutable(mt, ot, otres, overrideWarner);
         if (!resultTypesOK) {
-            if (!source.allowCovariantReturns() &&
+            if (!allowCovariantReturns &&
                 m.owner != origin &&
                 m.owner.isSubClass(other.owner, types)) {
                 // allow limited interoperability with covariant returns
             } else {
-                typeError(TreeInfo.diagnosticPositionFor(m, tree),
-                          diags.fragment("override.incompatible.ret",
-                                         cannotOverride(m, other)),
+                log.error(TreeInfo.diagnosticPositionFor(m, tree),
+                          "override.incompatible.ret",
+                          cannotOverride(m, other),
                           mtres, otres);
                 return;
             }
         } else if (overrideWarner.warned) {
             warnUnchecked(TreeInfo.diagnosticPositionFor(m, tree),
-                          "prob.found.req",
-                          diags.fragment("override.unchecked.ret",
-                                              uncheckedOverrides(m, other)),
-                          mtres, otres);
+                    "override.unchecked.ret",
+                    uncheckedOverrides(m, other),
+                    mtres, otres);
         }
 
         // Error if overriding method throws an exception not reported
         // by overridden method.
         List<Type> otthrown = types.subst(ot.getThrownTypes(), otvars, mtvars);
-        List<Type> unhandled = unHandled(mt.getThrownTypes(), otthrown);
-        if (unhandled.nonEmpty()) {
+        List<Type> unhandledErased = unhandled(mt.getThrownTypes(), types.erasure(otthrown));
+        List<Type> unhandledUnerased = unhandled(mt.getThrownTypes(), otthrown);
+        if (unhandledErased.nonEmpty()) {
             log.error(TreeInfo.diagnosticPositionFor(m, tree),
                       "override.meth.doesnt.throw",
                       cannotOverride(m, other),
-                      unhandled.head);
+                      unhandledUnerased.head);
+            return;
+        }
+        else if (unhandledUnerased.nonEmpty()) {
+            warnUnchecked(TreeInfo.diagnosticPositionFor(m, tree),
+                          "override.unchecked.thrown",
+                         cannotOverride(m, other),
+                         unhandledUnerased.head);
             return;
         }
 
@@ -1707,6 +1778,35 @@ public class Check {
                     return;
         }
         checkCompatibleConcretes(pos, c);
+    }
+
+    void checkConflicts(DiagnosticPosition pos, Symbol sym, TypeSymbol c) {
+        for (Type ct = c.type; ct != Type.noType ; ct = types.supertype(ct)) {
+            for (Scope.Entry e = ct.tsym.members().lookup(sym.name); e.scope == ct.tsym.members(); e = e.next()) {
+                // VM allows methods and variables with differing types
+                if (sym.kind == e.sym.kind &&
+                    types.isSameType(types.erasure(sym.type), types.erasure(e.sym.type)) &&
+                    sym != e.sym &&
+                    (sym.flags() & Flags.SYNTHETIC) != (e.sym.flags() & Flags.SYNTHETIC) &&
+                    (sym.flags() & BRIDGE) == 0 && (e.sym.flags() & BRIDGE) == 0) {
+                    syntheticError(pos, (e.sym.flags() & SYNTHETIC) == 0 ? e.sym : sym);
+                    return;
+                }
+            }
+        }
+    }
+
+    /** Report a conflict between a user symbol and a synthetic symbol.
+     */
+    private void syntheticError(DiagnosticPosition pos, Symbol sym) {
+        if (!sym.type.isErroneous()) {
+            if (warnOnSyntheticConflicts) {
+                log.warning(pos, "synthetic.name.conflict", sym, sym.location());
+            }
+            else {
+                log.error(pos, "synthetic.name.conflict", sym, sym.location());
+            }
+        }
     }
 
     /** Check that class c does not implement directly or indirectly
@@ -2265,6 +2365,7 @@ public class Check {
             this.expected = expected;
         }
 
+        @Override
         public void warnUnchecked() {
             boolean warned = this.warned;
             super.warnUnchecked();

@@ -23,12 +23,10 @@
  * have any questions.
  */
 
-
 package com.sun.xml.internal.ws.developer;
 
 import com.sun.xml.internal.ws.api.FeatureConstructor;
 
-import javax.xml.ws.soap.AddressingFeature;
 import javax.xml.ws.WebServiceFeature;
 
 /**
@@ -77,11 +75,30 @@ public class MemberSubmissionAddressingFeature extends WebServiceFeature {
      * for the <code>required</code> attribute on the
      * <code>wsaw:UsingAddressing</code> element.
      */
-    @FeatureConstructor({"enabled","required"})
     public MemberSubmissionAddressingFeature(boolean enabled, boolean required) {
         this.enabled = enabled;
         this.required = required;
     }
+
+    /**
+     * Create an <code>MemberSubmissionAddressingFeature</code>
+     *
+     * @param enabled specifies whether this feature should
+     * be enabled or not.
+     * @param required specifies the value that will be used
+     * for the <code>required</code> attribute on the
+     * <code>wsaw:UsingAddressing</code> element.
+     * @param validation specifies the value that will be used
+     * for validation for the incoming messages. If LAX, messages are not strictly checked for conformance with  the spec.
+     */
+    @FeatureConstructor({"enabled","required","validation"})
+    public MemberSubmissionAddressingFeature(boolean enabled, boolean required, MemberSubmissionAddressing.Validation validation) {
+        this.enabled = enabled;
+        this.required = required;
+        this.validation = validation;
+    }
+
+
 
     public String getID() {
         return ID;
@@ -93,5 +110,15 @@ public class MemberSubmissionAddressingFeature extends WebServiceFeature {
 
     public void setRequired(boolean required) {
         this.required = required;
+    }
+
+    private MemberSubmissionAddressing.Validation validation = MemberSubmissionAddressing.Validation.LAX;
+    public void setValidation(MemberSubmissionAddressing.Validation validation) {
+        this.validation = validation;
+
+    }
+
+    public MemberSubmissionAddressing.Validation getValidation() {
+        return validation;
     }
 }

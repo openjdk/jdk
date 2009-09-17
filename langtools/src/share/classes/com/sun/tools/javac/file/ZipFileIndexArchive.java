@@ -44,6 +44,12 @@ import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.util.List;
 
+/**
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
+ */
 public class ZipFileIndexArchive implements Archive {
 
     private final ZipFileIndex zfIndex;
@@ -66,7 +72,7 @@ public class ZipFileIndexArchive implements Archive {
     public JavaFileObject getFileObject(RelativeDirectory subdirectory, String file) {
         RelativeFile fullZipFileName = new RelativeFile(subdirectory, file);
         ZipFileIndex.Entry entry = zfIndex.getZipIndexEntry(fullZipFileName);
-        JavaFileObject ret = new ZipFileIndexFileObject(fileManager, zfIndex, entry, zfIndex.getZipFile().getPath());
+        JavaFileObject ret = new ZipFileIndexFileObject(fileManager, zfIndex, entry, zfIndex.getZipFile());
         return ret;
     }
 
@@ -78,6 +84,7 @@ public class ZipFileIndexArchive implements Archive {
         zfIndex.close();
     }
 
+    @Override
     public String toString() {
         return "ZipFileIndexArchive[" + zfIndex + "]";
     }
@@ -105,10 +112,10 @@ public class ZipFileIndexArchive implements Archive {
 
         /** The name of the zip file where this entry resides.
          */
-        String zipName;
+        File zipName;
 
 
-        ZipFileIndexFileObject(JavacFileManager fileManager, ZipFileIndex zfIndex, ZipFileIndex.Entry entry, String zipFileName) {
+        ZipFileIndexFileObject(JavacFileManager fileManager, ZipFileIndex zfIndex, ZipFileIndex.Entry entry, File zipFileName) {
             super(fileManager);
             this.name = entry.getFileName();
             this.zfIndex = zfIndex;
@@ -124,6 +131,7 @@ public class ZipFileIndexArchive implements Archive {
             return inputStream;
         }
 
+        @Override
         protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
             return fileManager.getDecoder(fileManager.getEncodingName(), ignoreEncodingErrors);
         }
@@ -151,6 +159,7 @@ public class ZipFileIndexArchive implements Archive {
 
         /** @deprecated see bug 6410637 */
         @Deprecated
+        @Override
         public String getPath() {
             return zipName + "(" + entry.getName() + ")";
         }
@@ -177,7 +186,7 @@ public class ZipFileIndexArchive implements Archive {
         }
 
         public String getZipName() {
-            return zipName;
+            return zipName.getPath();
         }
 
         public String getZipEntryName() {
@@ -185,9 +194,10 @@ public class ZipFileIndexArchive implements Archive {
         }
 
         public URI toUri() {
-            String zipName = new File(getZipName()).toURI().normalize().getPath();
-            String entryName = getZipEntryName();
-            return URI.create("jar:" + zipName + "!" + entryName);
+            if (zfIndex.symbolFilePrefix != null)
+                return createJarUri(zipName, zfIndex.symbolFilePrefix.path + entry.getName());
+            else
+                return createJarUri(zipName, entry.getName());
         }
 
         private byte[] read() throws IOException {

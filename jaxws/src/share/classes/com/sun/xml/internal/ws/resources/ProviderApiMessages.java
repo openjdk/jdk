@@ -50,6 +50,18 @@ public final class ProviderApiMessages {
         return localizer.localize(localizableNULL_ADDRESS_SERVICE_ENDPOINT());
     }
 
+    public static Localizable localizableNO_WSDL_NO_PORT(Object arg0) {
+        return messageFactory.getMessage("no.wsdl.no.port", arg0);
+    }
+
+    /**
+     * WSDL Metadata not available to create the proxy, either Service instance or ServiceEndpointInterface {0} should have WSDL information
+     *
+     */
+    public static String NO_WSDL_NO_PORT(Object arg0) {
+        return localizer.localize(localizableNO_WSDL_NO_PORT(arg0));
+    }
+
     public static Localizable localizableNULL_SERVICE() {
         return messageFactory.getMessage("null.service");
     }

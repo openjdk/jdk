@@ -37,7 +37,7 @@ import com.sun.tools.javac.code.Symbol.*;
 /**
  * Implementation of EnumDeclaration
  */
-
+@SuppressWarnings("deprecation")
 public class EnumDeclarationImpl extends ClassDeclarationImpl
                                  implements EnumDeclaration {
 

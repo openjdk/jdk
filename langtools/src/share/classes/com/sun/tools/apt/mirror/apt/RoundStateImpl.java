@@ -28,6 +28,7 @@ package com.sun.tools.apt.mirror.apt;
 import com.sun.mirror.apt.RoundState;
 import java.util.Map;
 
+@SuppressWarnings("deprecation")
 public class RoundStateImpl implements RoundState {
     private final boolean finalRound;
     private final boolean errorRaised;

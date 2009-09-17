@@ -690,6 +690,8 @@ AwtFrame::Show()
     if (locationByPlatform) {
          moveToDefaultLocation();
     }
+    EnableTranslucency(TRUE);
+
     BOOL autoRequestFocus = IsAutoRequestFocus();
 
     if (m_iconic) {

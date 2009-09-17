@@ -62,7 +62,7 @@ import java.util.Map;
 
 @XmlRootElement(name = "EndpointReference", namespace = MemberSubmissionEndpointReference.MSNS)
 @XmlType(name = "EndpointReferenceType", namespace = MemberSubmissionEndpointReference.MSNS)
-public class MemberSubmissionEndpointReference extends EndpointReference implements MemberSubmissionAddressingConstants {
+public final class MemberSubmissionEndpointReference extends EndpointReference implements MemberSubmissionAddressingConstants {
 
     private final static JAXBContext msjc = MemberSubmissionEndpointReference.getMSJaxbContext();
 
@@ -105,7 +105,7 @@ public class MemberSubmissionEndpointReference extends EndpointReference impleme
     public void writeTo(Result result) {
         try {
             Marshaller marshaller = MemberSubmissionEndpointReference.msjc.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
+            //marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
             marshaller.marshal(this, result);
         } catch (JAXBException e) {
             throw new WebServiceException("Error marshalling W3CEndpointReference. ", e);

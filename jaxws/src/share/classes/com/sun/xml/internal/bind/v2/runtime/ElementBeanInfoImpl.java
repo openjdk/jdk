@@ -22,6 +22,7 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
 package com.sun.xml.internal.bind.v2.runtime;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ import com.sun.xml.internal.bind.api.AccessorException;
 import com.sun.xml.internal.bind.v2.model.core.PropertyKind;
 import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.model.runtime.RuntimeElementInfo;
+import com.sun.xml.internal.bind.v2.model.runtime.RuntimePropertyInfo;
 import com.sun.xml.internal.bind.v2.runtime.property.Property;
 import com.sun.xml.internal.bind.v2.runtime.property.PropertyFactory;
 import com.sun.xml.internal.bind.v2.runtime.property.UnmarshallerChain;
@@ -136,7 +138,7 @@ public final class ElementBeanInfoImpl extends JaxBeanInfo<JAXBElement> {
                     if(value==null) {
                         target.writeXsiNilTrue();
                     } else {
-                        target.childAsXsiType(value,"value",tbi);
+                        target.childAsXsiType(value,"value",tbi, false);
                     }
                     target.endElement();
                 } else {
@@ -172,6 +174,11 @@ public final class ElementBeanInfoImpl extends JaxBeanInfo<JAXBElement> {
 
             public void wrapUp() {
             }
+
+            public RuntimePropertyInfo getInfo() {
+                return property.getInfo();
+            }
+
         };
     }
 
@@ -223,6 +230,10 @@ public final class ElementBeanInfoImpl extends JaxBeanInfo<JAXBElement> {
             JAXBElement e = (JAXBElement)state.target;
             state.target = state.backup;
             state.backup = null;
+
+            if (state.nil) {
+                e.setNil(true);
+            }
 
             if(o!=null)
                 // if the value is a leaf type, it's often already set to the element

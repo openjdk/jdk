@@ -22,6 +22,8 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
+
+
 package com.sun.xml.internal.xsom;
 
 import java.util.List;
@@ -140,4 +142,15 @@ public interface XSElementDecl extends XSDeclaration, XSTerm
 
     XmlString getDefaultValue();
     XmlString getFixedValue();
+
+    /**
+     * Used for javadoc schema generation
+     *
+     * @return
+     *    null if form attribute not present,
+     *    true if form attribute present and set to qualified,
+     *    false if form attribute present and set to unqualified.
+     */
+
+    Boolean getForm();
 }

@@ -364,6 +364,7 @@ void AwtDialog::Show()
     if (locationByPlatform) {
          moveToDefaultLocation();
     }
+    EnableTranslucency(TRUE);
     if (IsFocusableWindow() && (IsAutoRequestFocus() || IsFocusedWindowModalBlocker())) {
         ::ShowWindow(GetHWnd(), SW_SHOW);
     } else {

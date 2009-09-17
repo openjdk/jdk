@@ -171,7 +171,7 @@ public class SingleByte
                 char c = sa[sp];
                 int b = encode(c);
                 if (b == UNMAPPABLE_ENCODING) {
-                    if (Surrogate.is(c)) {
+                    if (Character.isSurrogate(c)) {
                         if (sgp == null)
                             sgp = new Surrogate.Parser();
                         if (sgp.parse(c, sa, sp, sl) < 0)
@@ -194,7 +194,7 @@ public class SingleByte
                     char c = src.get();
                     int b = encode(c);
                     if (b == UNMAPPABLE_ENCODING) {
-                        if (Surrogate.is(c)) {
+                        if (Character.isSurrogate(c)) {
                             if (sgp == null)
                                 sgp = new Surrogate.Parser();
                             if (sgp.parse(c, src) < 0)
@@ -243,8 +243,8 @@ public class SingleByte
                     dst[dp++] = (byte)b;
                     continue;
                 }
-                if (Surrogate.isHigh(c) && sp < sl &&
-                    Surrogate.isLow(src[sp])) {
+                if (Character.isHighSurrogate(c) && sp < sl &&
+                    Character.isLowSurrogate(src[sp])) {
                     if (len > dst.length) {
                         sl++;
                         len--;
