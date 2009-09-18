@@ -296,7 +296,7 @@ void Type::Initialize_shared(Compile* current) {
                                            false, 0, oopDesc::mark_offset_in_bytes());
   TypeInstPtr::KLASS   = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass(),
                                            false, 0, oopDesc::klass_offset_in_bytes());
-  TypeOopPtr::BOTTOM  = TypeOopPtr::make(TypePtr::BotPTR, OffsetBot);
+  TypeOopPtr::BOTTOM  = TypeOopPtr::make(TypePtr::BotPTR, OffsetBot, TypeOopPtr::InstanceBot);
 
   TypeNarrowOop::NULL_PTR = TypeNarrowOop::make( TypePtr::NULL_PTR );
   TypeNarrowOop::BOTTOM   = TypeNarrowOop::make( TypeInstPtr::BOTTOM );
@@ -492,8 +492,13 @@ bool Type::is_nan()    const {
 bool Type::interface_vs_oop(const Type *t) const {
   bool result = false;
 
-  const TypeInstPtr* this_inst = this->isa_instptr();
-  const TypeInstPtr*    t_inst =    t->isa_instptr();
+  const TypePtr* this_ptr = this->make_ptr(); // In case it is narrow_oop
+  const TypePtr*    t_ptr =    t->make_ptr();
+  if( this_ptr == NULL || t_ptr == NULL )
+    return result;
+
+  const TypeInstPtr* this_inst = this_ptr->isa_instptr();
+  const TypeInstPtr*    t_inst =    t_ptr->isa_instptr();
   if( this_inst && this_inst->is_loaded() && t_inst && t_inst->is_loaded() ) {
     bool this_interface = this_inst->klass()->is_interface();
     bool    t_interface =    t_inst->klass()->is_interface();
@@ -2249,7 +2254,7 @@ const TypeOopPtr *TypeOopPtr::make(PTR ptr,
 const Type *TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
-  return make(ptr, _offset);
+  return make(ptr, _offset, _instance_id);
 }
 
 //-----------------------------cast_to_instance_id----------------------------
@@ -2319,8 +2324,10 @@ const Type *TypeOopPtr::xmeet( const Type *t ) const {
       if (ptr == Null)  return TypePtr::make(AnyPtr, ptr, offset);
       // else fall through:
     case TopPTR:
-    case AnyNull:
-      return make(ptr, offset);
+    case AnyNull: {
+      int instance_id = meet_instance_id(InstanceTop);
+      return make(ptr, offset, instance_id);
+    }
     case BotPTR:
     case NotNull:
       return TypePtr::make(AnyPtr, ptr, offset);
@@ -2593,7 +2600,7 @@ bool TypeOopPtr::singleton(void) const {
 
 //------------------------------add_offset-------------------------------------
 const TypePtr *TypeOopPtr::add_offset( intptr_t offset ) const {
-  return make( _ptr, xadd_offset(offset) );
+  return make( _ptr, xadd_offset(offset), _instance_id);
 }
 
 //------------------------------meet_instance_id--------------------------------
@@ -2696,6 +2703,7 @@ const TypeOopPtr *TypeInstPtr::cast_to_instance_id(int instance_id) const {
 const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst) const {
     int off = meet_offset(tinst->offset());
     PTR ptr = meet_ptr(tinst->ptr());
+    int instance_id = meet_instance_id(tinst->instance_id());
 
     const TypeInstPtr *loaded    = is_loaded() ? this  : tinst;
     const TypeInstPtr *unloaded  = is_loaded() ? tinst : this;
@@ -2716,7 +2724,7 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst) const {
       assert(loaded->ptr() != TypePtr::Null, "insanity check");
       //
       if(      loaded->ptr() == TypePtr::TopPTR ) { return unloaded; }
-      else if (loaded->ptr() == TypePtr::AnyNull) { return TypeInstPtr::make( ptr, unloaded->klass() ); }
+      else if (loaded->ptr() == TypePtr::AnyNull) { return TypeInstPtr::make( ptr, unloaded->klass(), false, NULL, off, instance_id ); }
       else if (loaded->ptr() == TypePtr::BotPTR ) { return TypeInstPtr::BOTTOM; }
       else if (loaded->ptr() == TypePtr::Constant || loaded->ptr() == TypePtr::NotNull) {
         if (unloaded->ptr() == TypePtr::BotPTR  ) { return TypeInstPtr::BOTTOM;  }
