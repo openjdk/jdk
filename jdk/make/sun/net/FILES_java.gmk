@@ -123,8 +123,7 @@ FILES_java = \
 	sun/net/idn/UCharacterEnums.java \
 	sun/net/idn/UCharacterDirection.java \
 	sun/net/idn/StringPrepDataReader.java \
-	sun/net/idn/StringPrep.java \
-	sun/net/www/protocol/http/InMemoryCookieStore.java
+	sun/net/idn/StringPrep.java
 
 ifeq ($(PLATFORM), windows)
     FILES_java += sun/net/www/protocol/http/NTLMAuthSequence.java 
