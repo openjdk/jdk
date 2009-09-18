@@ -21,6 +21,9 @@
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
 #
+# <pre>
+# This file is in the public domain, so clarified as of
+# 2009-05-17 by Arthur David Olson.
 #
 # TZ zone descriptions
 #
@@ -123,7 +126,7 @@ BR	-0640-06952	America/Eirunepe	W Amazonas
 BR	-0958-06748	America/Rio_Branco	Acre
 BS	+2505-07721	America/Nassau
 BT	+2728+08939	Asia/Thimphu
-BW	-2545+02555	Africa/Gaborone
+BW	-2439+02555	Africa/Gaborone
 BY	+5354+02734	Europe/Minsk
 BZ	+1730-08812	America/Belize
 CA	+4734-05243	America/St_Johns	Newfoundland Time, including SE Labrador
@@ -307,7 +310,7 @@ MY	+0310+10142	Asia/Kuala_Lumpur	peninsular Malaysia
 MY	+0133+11020	Asia/Kuching	Sabah & Sarawak
 MZ	-2558+03235	Africa/Maputo
 NA	-2234+01706	Africa/Windhoek
-NC	-2216+16530	Pacific/Noumea
+NC	-2216+16627	Pacific/Noumea
 NE	+1331+00207	Africa/Niamey
 NF	-2903+16758	Pacific/Norfolk
 NG	+0627+00324	Africa/Lagos
@@ -387,7 +390,7 @@ TK	-0922-17114	Pacific/Fakaofo
 TL	-0833+12535	Asia/Dili
 TM	+3757+05823	Asia/Ashgabat
 TN	+3648+01011	Africa/Tunis
-TO	-2110+17510	Pacific/Tongatapu
+TO	-2110-17510	Pacific/Tongatapu
 TR	+4101+02858	Europe/Istanbul
 TT	+1039-06131	America/Port_of_Spain
 TV	-0831+17913	Pacific/Funafuti
@@ -431,7 +434,7 @@ US	+211825-1575130	Pacific/Honolulu	Hawaii
 UY	-3453-05611	America/Montevideo
 UZ	+3940+06648	Asia/Samarkand	west Uzbekistan
 UZ	+4120+06918	Asia/Tashkent	east Uzbekistan
-VA	+4154+01227	Europe/Vatican
+VA	+415408+0122711	Europe/Vatican
 VC	+1309-06114	America/St_Vincent
 VE	+1030-06656	America/Caracas
 VG	+1827-06437	America/Tortola

@@ -23,6 +23,12 @@
 # have any questions.
 #
 
+# @test
+# @bug 4491755 4785453
+# @summary Prob w/static inner class with same name as a regular class
+# @author gafter
+#
+# @run shell Driver.sh
 
 if [ "${TESTSRC}" = "" ]
 then
@@ -47,14 +53,10 @@ echo "CLASSPATH=${CLASSPATH}"
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
-    NULL=/dev/null
-    PS=":"
+  SunOS | Linux | CYGWIN* )
     FS="/"
     ;;
   Windows* )
-    NULL=NUL
-    PS=";"
     FS="\\"
     ;;
   * )

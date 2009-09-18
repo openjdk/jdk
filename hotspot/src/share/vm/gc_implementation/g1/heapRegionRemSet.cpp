@@ -57,10 +57,6 @@ class PerRegionTable: public CHeapObj {
 
 #endif // _MSC_VER
 
-  enum SomePrivateConstants {
-    CardsPerRegion = HeapRegion::GrainBytes >> CardTableModRefBS::card_shift
-  };
-
 protected:
   // We need access in order to union things into the base table.
   BitMap* bm() { return &_bm; }
@@ -76,7 +72,7 @@ protected:
 #if PRT_COUNT_OCCUPIED
     _occupied(0),
 #endif
-    _bm(CardsPerRegion, false /* in-resource-area */)
+    _bm(HeapRegion::CardsPerRegion, false /* in-resource-area */)
   {}
 
   static void free(PerRegionTable* prt) {
@@ -144,7 +140,8 @@ protected:
       CardIdx_t from_card = (CardIdx_t)
           hw_offset >> (CardTableModRefBS::card_shift - LogHeapWordSize);
 
-      assert(0 <= from_card && from_card < CardsPerRegion, "Must be in range.");
+      assert(0 <= from_card && from_card < HeapRegion::CardsPerRegion,
+             "Must be in range.");
       add_card_work(from_card, par);
     }
   }
@@ -631,7 +628,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
         uintptr_t(from_hr->bottom())
           >> CardTableModRefBS::card_shift;
       CardIdx_t card_index = from_card - from_hr_bot_card_index;
-      assert(0 <= card_index && card_index < PosParPRT::CardsPerRegion,
+      assert(0 <= card_index && card_index < HeapRegion::CardsPerRegion,
              "Must be in range.");
       if (G1HRRSUseSparseTable &&
           _sparse_table.add_card(from_hrs_ind, card_index)) {
@@ -922,7 +919,7 @@ size_t OtherRegionsTable::occ_fine() const {
 }
 
 size_t OtherRegionsTable::occ_coarse() const {
-  return (_n_coarse_entries * PosParPRT::CardsPerRegion);
+  return (_n_coarse_entries * HeapRegion::CardsPerRegion);
 }
 
 size_t OtherRegionsTable::occ_sparse() const {
@@ -1049,7 +1046,8 @@ bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const
       uintptr_t(hr->bottom()) >> CardTableModRefBS::card_shift;
     assert(from_card >= hr_bot_card_index, "Inv");
     CardIdx_t card_index = from_card - hr_bot_card_index;
-    assert(0 <= card_index && card_index < PosParPRT::CardsPerRegion, "Must be in range.");
+    assert(0 <= card_index && card_index < HeapRegion::CardsPerRegion,
+           "Must be in range.");
     return _sparse_table.contains_card(hr_ind, card_index);
   }
 
@@ -1176,7 +1174,7 @@ void HeapRegionRemSetIterator::initialize(const HeapRegionRemSet* hrrs) {
   _is = Sparse;
   // Set these values so that we increment to the first region.
   _coarse_cur_region_index = -1;
-  _coarse_cur_region_cur_card = (PosParPRT::CardsPerRegion-1);;
+  _coarse_cur_region_cur_card = (HeapRegion::CardsPerRegion-1);;
 
   _cur_region_cur_card = 0;
 
@@ -1195,7 +1193,7 @@ bool HeapRegionRemSetIterator::coarse_has_next(size_t& card_index) {
   // Go to the next card.
   _coarse_cur_region_cur_card++;
   // Was the last the last card in the current region?
-  if (_coarse_cur_region_cur_card == PosParPRT::CardsPerRegion) {
+  if (_coarse_cur_region_cur_card == HeapRegion::CardsPerRegion) {
     // Yes: find the next region.  This may leave _coarse_cur_region_index
     // Set to the last index, in which case there are no more coarse
     // regions.
@@ -1232,7 +1230,7 @@ bool HeapRegionRemSetIterator::fine_has_next(size_t& card_index) {
       _fine_cur_prt->_bm.get_next_one_offset(_cur_region_cur_card + 1);
   }
   while (!fine_has_next()) {
-    if (_cur_region_cur_card == PosParPRT::CardsPerRegion) {
+    if (_cur_region_cur_card == (size_t) HeapRegion::CardsPerRegion) {
       _cur_region_cur_card = 0;
       _fine_cur_prt = _fine_cur_prt->next();
     }
@@ -1255,7 +1253,7 @@ bool HeapRegionRemSetIterator::fine_has_next(size_t& card_index) {
 bool HeapRegionRemSetIterator::fine_has_next() {
   return
     _fine_cur_prt != NULL &&
-    _cur_region_cur_card < PosParPRT::CardsPerRegion;
+    _cur_region_cur_card < (size_t) HeapRegion::CardsPerRegion;
 }
 
 bool HeapRegionRemSetIterator::has_next(size_t& card_index) {

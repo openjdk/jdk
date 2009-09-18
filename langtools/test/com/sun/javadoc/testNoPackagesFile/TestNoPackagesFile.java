@@ -52,7 +52,7 @@ public class TestNoPackagesFile extends JavadocTester {
         TestNoPackagesFile tester = new TestNoPackagesFile();
         run(tester, ARGS, NO_TEST, NO_TEST);
         if ((new java.io.File(BUG_ID + FS + "packages.html")).exists()) {
-            throw new Error("Test Fails: packages file should not be " +                "generated anymore.");
+            throw new Error("Test Fails: packages file should not be " +                "generated anymore.");
         } else {
             System.out.println("Test passes:  packages.html not found.");
         }

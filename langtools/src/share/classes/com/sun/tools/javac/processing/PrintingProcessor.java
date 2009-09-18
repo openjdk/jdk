@@ -48,7 +48,8 @@ import java.util.*;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
+// TODO: Change to version 7 based visitors when available
+@SupportedSourceVersion(SourceVersion.RELEASE_7)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 
@@ -374,6 +375,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 for(TypeParameterElement tpe: typeParams) {
                     if (!first)
                         writer.print(", ");
+                    printAnnotationsInline(tpe);
                     writer.print(tpe.toString());
                     first = false;
                 }

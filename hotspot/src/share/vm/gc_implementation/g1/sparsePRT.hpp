@@ -172,10 +172,6 @@ class RSHashTableIter VALUE_OBJ_CLASS_SPEC {
   RSHashTable* _rsht;
   size_t _heap_bot_card_ind;
 
-  enum SomePrivateConstants {
-    CardsPerRegion = HeapRegion::GrainBytes >> CardTableModRefBS::card_shift
-  };
-
   // If the bucket list pointed to by _bl_ind contains a card, sets
   // _bl_ind to the index of that entry, and returns the card.
   // Otherwise, returns SparseEntry::NullEntry.

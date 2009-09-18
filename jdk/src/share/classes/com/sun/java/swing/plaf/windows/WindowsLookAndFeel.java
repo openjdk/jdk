@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         new StringUIClientPropertyKey(
             "WindowsLookAndFeel.generateHiResDisabledIcon");
 
-    private Toolkit toolkit;
     private boolean updatePending = false;
 
     private boolean useSystemFontSettings = true;
@@ -149,7 +148,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
     public void initialize() {
         super.initialize();
-        toolkit = Toolkit.getDefaultToolkit();
 
         // Set the flag which determines which version of Windows should
         // be rendered. This flag only need to be set once.
@@ -470,80 +468,61 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
         Object ControlBackgroundColor = new DesktopProperty(
                                                        "win.3d.backgroundColor",
-                                                        table.get("control"),
-                                                       toolkit);
+                                                        table.get("control"));
         Object ControlLightColor      = new DesktopProperty(
                                                        "win.3d.lightColor",
-                                                        table.get("controlHighlight"),
-                                                       toolkit);
+                                                        table.get("controlHighlight"));
         Object ControlHighlightColor  = new DesktopProperty(
                                                        "win.3d.highlightColor",
-                                                        table.get("controlLtHighlight"),
-                                                       toolkit);
+                                                        table.get("controlLtHighlight"));
         Object ControlShadowColor     = new DesktopProperty(
                                                        "win.3d.shadowColor",
-                                                        table.get("controlShadow"),
-                                                       toolkit);
+                                                        table.get("controlShadow"));
         Object ControlDarkShadowColor = new DesktopProperty(
                                                        "win.3d.darkShadowColor",
-                                                        table.get("controlDkShadow"),
-                                                       toolkit);
+                                                        table.get("controlDkShadow"));
         Object ControlTextColor       = new DesktopProperty(
                                                        "win.button.textColor",
-                                                        table.get("controlText"),
-                                                       toolkit);
+                                                        table.get("controlText"));
         Object MenuBackgroundColor    = new DesktopProperty(
                                                        "win.menu.backgroundColor",
-                                                        table.get("menu"),
-                                                       toolkit);
+                                                        table.get("menu"));
         Object MenuBarBackgroundColor = new DesktopProperty(
                                                        "win.menubar.backgroundColor",
-                                                        table.get("menu"),
-                                                       toolkit);
+                                                        table.get("menu"));
         Object MenuTextColor          = new DesktopProperty(
                                                        "win.menu.textColor",
-                                                        table.get("menuText"),
-                                                       toolkit);
+                                                        table.get("menuText"));
         Object SelectionBackgroundColor = new DesktopProperty(
                                                        "win.item.highlightColor",
-                                                        table.get("textHighlight"),
-                                                       toolkit);
+                                                        table.get("textHighlight"));
         Object SelectionTextColor     = new DesktopProperty(
                                                        "win.item.highlightTextColor",
-                                                        table.get("textHighlightText"),
-                                                       toolkit);
+                                                        table.get("textHighlightText"));
         Object WindowBackgroundColor  = new DesktopProperty(
                                                        "win.frame.backgroundColor",
-                                                        table.get("window"),
-                                                       toolkit);
+                                                        table.get("window"));
         Object WindowTextColor        = new DesktopProperty(
                                                        "win.frame.textColor",
-                                                        table.get("windowText"),
-                                                       toolkit);
+                                                        table.get("windowText"));
         Object WindowBorderWidth      = new DesktopProperty(
                                                        "win.frame.sizingBorderWidth",
-                                                       Integer.valueOf(1),
-                                                       toolkit);
+                                                       Integer.valueOf(1));
         Object TitlePaneHeight        = new DesktopProperty(
                                                        "win.frame.captionHeight",
-                                                       Integer.valueOf(18),
-                                                       toolkit);
+                                                       Integer.valueOf(18));
         Object TitleButtonWidth       = new DesktopProperty(
                                                        "win.frame.captionButtonWidth",
-                                                       Integer.valueOf(16),
-                                                       toolkit);
+                                                       Integer.valueOf(16));
         Object TitleButtonHeight      = new DesktopProperty(
                                                        "win.frame.captionButtonHeight",
-                                                       Integer.valueOf(16),
-                                                       toolkit);
+                                                       Integer.valueOf(16));
         Object InactiveTextColor      = new DesktopProperty(
                                                        "win.text.grayedTextColor",
-                                                        table.get("textInactiveText"),
-                                                       toolkit);
+                                                        table.get("textInactiveText"));
         Object ScrollbarBackgroundColor = new DesktopProperty(
                                                        "win.scrollbar.backgroundColor",
-                                                        table.get("scrollbar"),
-                                                       toolkit);
+                                                        table.get("scrollbar"));
 
         Object TextBackground         = new XPColorValue(Part.EP_EDIT, null, Prop.FILLCOLOR,
                                                          WindowBackgroundColor);
@@ -566,32 +545,22 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         Object ToolTipFont = sansSerifPlain12;
         Object IconFont = ControlFont;
 
-        Object scrollBarWidth = new DesktopProperty("win.scrollbar.width",
-                                                    Integer.valueOf(16), toolkit);
+        Object scrollBarWidth = new DesktopProperty("win.scrollbar.width", Integer.valueOf(16));
 
-        Object menuBarHeight = new DesktopProperty("win.menu.height",
-                                                   null, toolkit);
+        Object menuBarHeight = new DesktopProperty("win.menu.height", null);
 
-        Object hotTrackingOn = new DesktopProperty("win.item.hotTrackingOn",
-                                                   true, toolkit);
+        Object hotTrackingOn = new DesktopProperty("win.item.hotTrackingOn", true);
 
-        Object showMnemonics = new DesktopProperty("win.menu.keyboardCuesOn",
-                                                     Boolean.TRUE, toolkit);
+        Object showMnemonics = new DesktopProperty("win.menu.keyboardCuesOn", Boolean.TRUE);
 
         if (useSystemFontSettings) {
-            MenuFont = getDesktopFontValue("win.menu.font", MenuFont, toolkit);
-            FixedControlFont = getDesktopFontValue("win.ansiFixed.font",
-                                                   FixedControlFont, toolkit);
-            ControlFont = getDesktopFontValue("win.defaultGUI.font",
-                                              ControlFont, toolkit);
-            MessageFont = getDesktopFontValue("win.messagebox.font",
-                                              MessageFont, toolkit);
-            WindowFont = getDesktopFontValue("win.frame.captionFont",
-                                             WindowFont, toolkit);
-            IconFont    = getDesktopFontValue("win.icon.font",
-                                              IconFont, toolkit);
-            ToolTipFont = getDesktopFontValue("win.tooltip.font", ToolTipFont,
-                                              toolkit);
+            MenuFont = getDesktopFontValue("win.menu.font", MenuFont);
+            FixedControlFont = getDesktopFontValue("win.ansiFixed.font", FixedControlFont);
+            ControlFont = getDesktopFontValue("win.defaultGUI.font", ControlFont);
+            MessageFont = getDesktopFontValue("win.messagebox.font", MessageFont);
+            WindowFont = getDesktopFontValue("win.frame.captionFont", WindowFont);
+            IconFont    = getDesktopFontValue("win.icon.font", IconFont);
+            ToolTipFont = getDesktopFontValue("win.tooltip.font", ToolTipFont);
 
             /* Put the desktop AA settings in the defaults.
              * JComponent.setUI() retrieves this and makes it available
@@ -605,26 +574,14 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                 new FontDesktopProperty(SunToolkit.DESKTOPFONTHINTS);
         }
         if (useSystemFontSizeSettings) {
-            MenuFont = new WindowsFontSizeProperty("win.menu.font.height",
-                                  toolkit, Font.DIALOG, Font.PLAIN, 12);
-            FixedControlFont = new WindowsFontSizeProperty(
-                       "win.ansiFixed.font.height", toolkit, Font.MONOSPACED,
+            MenuFont = new WindowsFontSizeProperty("win.menu.font.height", Font.DIALOG, Font.PLAIN, 12);
+            FixedControlFont = new WindowsFontSizeProperty("win.ansiFixed.font.height", Font.MONOSPACED,
                        Font.PLAIN, 12);
-            ControlFont = new WindowsFontSizeProperty(
-                        "win.defaultGUI.font.height", toolkit, Font.DIALOG,
-                        Font.PLAIN, 12);
-            MessageFont = new WindowsFontSizeProperty(
-                              "win.messagebox.font.height",
-                              toolkit, Font.DIALOG, Font.PLAIN, 12);
-            WindowFont = new WindowsFontSizeProperty(
-                             "win.frame.captionFont.height", toolkit,
-                             Font.DIALOG, Font.BOLD, 12);
-            ToolTipFont = new WindowsFontSizeProperty(
-                              "win.tooltip.font.height", toolkit, Font.SANS_SERIF,
-                              Font.PLAIN, 12);
-            IconFont    = new WindowsFontSizeProperty(
-                              "win.icon.font.height", toolkit, Font.DIALOG,
-                              Font.PLAIN, 12);
+            ControlFont = new WindowsFontSizeProperty("win.defaultGUI.font.height", Font.DIALOG, Font.PLAIN, 12);
+            MessageFont = new WindowsFontSizeProperty("win.messagebox.font.height", Font.DIALOG, Font.PLAIN, 12);
+            WindowFont = new WindowsFontSizeProperty("win.frame.captionFont.height", Font.DIALOG, Font.BOLD, 12);
+            ToolTipFont = new WindowsFontSizeProperty("win.tooltip.font.height", Font.SANS_SERIF, Font.PLAIN, 12);
+            IconFont    = new WindowsFontSizeProperty("win.icon.font.height", Font.DIALOG, Font.PLAIN, 12);
         }
 
 
@@ -752,8 +709,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             // DeskTop.
             "Desktop.background", new DesktopProperty(
                                                  "win.desktop.backgroundColor",
-                                                  table.get("desktop"),
-                                                 toolkit),
+                                                  table.get("desktop")),
             "Desktop.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
                    "ctrl F5", "restore",
@@ -819,7 +775,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "FileChooser.filesOfTypeLabelMnemonic", Integer.valueOf(KeyEvent.VK_T),
             "FileChooser.usesSingleFilePane", Boolean.TRUE,
             "FileChooser.noPlacesBar", new DesktopProperty("win.comdlg.noPlacesBar",
-                                                           Boolean.FALSE, toolkit),
+                                                           Boolean.FALSE),
             "FileChooser.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
                      "ESCAPE", "cancelSelection",
@@ -861,36 +817,28 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "InternalFrame.resizeIconShadow", ControlShadowColor,
             "InternalFrame.activeBorderColor", new DesktopProperty(
                                                        "win.frame.activeBorderColor",
-                                                       table.get("windowBorder"),
-                                                       toolkit),
+                                                       table.get("windowBorder")),
             "InternalFrame.inactiveBorderColor", new DesktopProperty(
                                                        "win.frame.inactiveBorderColor",
-                                                       table.get("windowBorder"),
-                                                       toolkit),
+                                                       table.get("windowBorder")),
             "InternalFrame.activeTitleBackground", new DesktopProperty(
                                                         "win.frame.activeCaptionColor",
-                                                         table.get("activeCaption"),
-                                                        toolkit),
+                                                         table.get("activeCaption")),
             "InternalFrame.activeTitleGradient", new DesktopProperty(
                                                         "win.frame.activeCaptionGradientColor",
-                                                         table.get("activeCaption"),
-                                                        toolkit),
+                                                         table.get("activeCaption")),
             "InternalFrame.activeTitleForeground", new DesktopProperty(
                                                         "win.frame.captionTextColor",
-                                                         table.get("activeCaptionText"),
-                                                        toolkit),
+                                                         table.get("activeCaptionText")),
             "InternalFrame.inactiveTitleBackground", new DesktopProperty(
                                                         "win.frame.inactiveCaptionColor",
-                                                         table.get("inactiveCaption"),
-                                                        toolkit),
+                                                         table.get("inactiveCaption")),
             "InternalFrame.inactiveTitleGradient", new DesktopProperty(
                                                         "win.frame.inactiveCaptionGradientColor",
-                                                         table.get("inactiveCaption"),
-                                                        toolkit),
+                                                         table.get("inactiveCaption")),
             "InternalFrame.inactiveTitleForeground", new DesktopProperty(
                                                         "win.frame.inactiveCaptionTextColor",
-                                                         table.get("inactiveCaptionText"),
-                                                        toolkit),
+                                                         table.get("inactiveCaptionText")),
 
             "InternalFrame.maximizeIcon",
                 WindowsIconFactory.createFrameMaximizeIcon(),
@@ -1529,12 +1477,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
             // *** ToolTip
             "ToolTip.font", ToolTipFont,
-            "ToolTip.background", new DesktopProperty(
-                                           "win.tooltip.backgroundColor",
-                                            table.get("info"), toolkit),
-            "ToolTip.foreground", new DesktopProperty(
-                                           "win.tooltip.textColor",
-                                            table.get("infoText"), toolkit),
+            "ToolTip.background", new DesktopProperty("win.tooltip.backgroundColor", table.get("info")),
+            "ToolTip.foreground", new DesktopProperty("win.tooltip.textColor", table.get("infoText")),
 
         // *** ToolTipManager
             "ToolTipManager.enableToolTipMode", "activeApplication",
@@ -1798,10 +1742,9 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * represented in the current encoding this will return null and
      * turn off the use of system fonts.
      */
-    private Object getDesktopFontValue(String fontName, Object backup,
-                                       Toolkit kit) {
+    private Object getDesktopFontValue(String fontName, Object backup) {
         if (useSystemFontSettings) {
-            return new WindowsFontProperty(fontName, backup, kit);
+            return new WindowsFontProperty(fontName, backup);
         }
         return null;
     }
@@ -1989,7 +1932,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
     public void uninitialize() {
         super.uninitialize();
-        toolkit = null;
 
         if (WindowsPopupMenuUI.mnemonicListener != null) {
             MenuSelectionManager.defaultManager().
@@ -2309,8 +2251,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      * is returned, it is mapped to 'Microsoft Sans Serif'.
      */
     private static class WindowsFontProperty extends DesktopProperty {
-        WindowsFontProperty(String key, Object backup, Toolkit kit) {
-            super(key, backup, kit);
+        WindowsFontProperty(String key, Object backup) {
+            super(key, backup);
         }
 
         public void invalidate(LookAndFeel laf) {
@@ -2372,9 +2314,9 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         private int fontSize;
         private int fontStyle;
 
-        WindowsFontSizeProperty(String key, Toolkit toolkit, String fontName,
+        WindowsFontSizeProperty(String key, String fontName,
                                 int fontStyle, int fontSize) {
-            super(key, null, toolkit);
+            super(key, null);
             this.fontName = fontName;
             this.fontSize = fontSize;
             this.fontStyle = fontStyle;
@@ -2508,7 +2450,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
     private class TriggerDesktopProperty extends DesktopProperty {
         TriggerDesktopProperty(String key) {
-            super(key, null, toolkit);
+            super(key, null);
             // This call adds a property change listener for the property,
             // which triggers a call to updateUI(). The value returned
             // is not interesting here.

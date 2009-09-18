@@ -35,12 +35,6 @@ concurrentGCThread.cpp                  systemDictionary.hpp
 
 concurrentGCThread.hpp                  thread.hpp
 
-coTracker.hpp                           globalDefinitions.hpp
-coTracker.hpp                           numberSeq.hpp
-
-coTracker.cpp                           coTracker.hpp
-coTracker.cpp                           os.hpp
-
 allocationStats.cpp                     allocationStats.hpp
 allocationStats.cpp                     ostream.hpp
 
@@ -53,13 +47,6 @@ gcAdaptivePolicyCounters.hpp            gcPolicyCounters.hpp
 
 gcAdaptivePolicyCounters.cpp            resourceArea.hpp
 gcAdaptivePolicyCounters.cpp            gcAdaptivePolicyCounters.hpp
-
-gcOverheadReporter.cpp                  allocation.inline.hpp
-gcOverheadReporter.cpp                  concurrentGCThread.hpp
-gcOverheadReporter.cpp                  coTracker.hpp
-gcOverheadReporter.cpp                  gcOverheadReporter.hpp
-gcOverheadReporter.cpp                  ostream.hpp
-gcOverheadReporter.cpp                  thread_<os_family>.inline.hpp
 
 gSpaceCounters.cpp                      generation.hpp
 gSpaceCounters.cpp                      resourceArea.hpp

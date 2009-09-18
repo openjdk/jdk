@@ -57,12 +57,16 @@ EXPECTED_JAVAH_OUT_FILE=SubClassConsts.out
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
     PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    PS=":"
+    FS="/"
+    DIFFOPTS="--strip-trailing-cr"
+    EXPECTED_JAVAH_OUT_FILE=SubClassConsts.win
+    ;;
   Windows* )
-    NULL=NUL
     PS=";"
     FS="\\"
     EXPECTED_JAVAH_OUT_FILE=SubClassConsts.win
@@ -85,7 +89,7 @@ cp "${TESTSRC}${FS}SubClassConsts.java" .
 
 "${TESTJAVA}${FS}bin${FS}javah" ${TESTTOOLVMOPTS} SubClassConsts
 
-cmp  "${TESTSRC}${FS}${EXPECTED_JAVAH_OUT_FILE}" "${GENERATED_HEADER_FILE}"
+diff ${DIFFOPTS} "${TESTSRC}${FS}${EXPECTED_JAVAH_OUT_FILE}" "${GENERATED_HEADER_FILE}"
 result=$?
 rm ${GENERATED_HEADER_FILE}
 

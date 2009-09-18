@@ -75,7 +75,7 @@ public class T6627362 {
 
         StringWriter sw = new StringWriter();
         javap(new PrintWriter(sw, true), jpArgs);
-        check(sw.toString(), "//Method java/lang/System.arraycopy:(Ljava/lang/Object;ILjava/lang/Object;II)V");
+        check(sw.toString(), "// Method java/lang/System.arraycopy:(Ljava/lang/Object;ILjava/lang/Object;II)V");
         callValues();
     }
 
@@ -86,26 +86,13 @@ public class T6627362 {
     }
 
     void javap(PrintWriter out, String... args) throws Exception {
-        // for now, we have to exec javap
-        File javaHome = new File(System.getProperty("java.home"));
-        if (javaHome.getName().equals("jre"))
-            javaHome = javaHome.getParentFile();
-        File javap = new File(new File(javaHome, "bin"), "javap");
-        String[] cmd = new String[args.length + 1];
-        cmd[0] = javap.getPath();
-        System.arraycopy(args, 0, cmd, 1, args.length);
-        Process p = new ProcessBuilder(cmd).redirectErrorStream(true).start();
-        p.getOutputStream().close();
-        BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        String line;
-        while ((line = in.readLine()) != null)
-            out.println(line);
-        int rc = p.waitFor();
+        int rc = com.sun.tools.javap.Main.run(args, out);
         if (rc != 0)
             throw new Error("javap failed: " + Arrays.asList(args) + ": " + rc);
     }
 
     void check(String s, String require) {
+        System.out.println("Checking:\n" + s);
         if (s.indexOf(require) == -1) {
             System.err.println("Can't find " + require);
             errors++;
