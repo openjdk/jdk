@@ -32,7 +32,7 @@ import java.security.*;
 import java.security.cert.*;
 import javax.security.auth.x500.X500Principal;
 
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetBooleanAction;
 import sun.security.util.Debug;
 import sun.security.util.DerOutputStream;
 import sun.security.x509.*;
@@ -62,28 +62,8 @@ class DistributionPointFetcher {
      * extension shall be enabled. Currently disabled by default for
      * compatibility and legal reasons.
      */
-    private final static boolean USE_CRLDP =
-        getBooleanProperty("com.sun.security.enableCRLDP", false);
-
-    /**
-     * Return the value of the boolean System property propName.
-     */
-    public static boolean getBooleanProperty(String propName,
-            boolean defaultValue) {
-        // if set, require value of either true or false
-        String b = AccessController.doPrivileged(
-                new GetPropertyAction(propName));
-        if (b == null) {
-            return defaultValue;
-        } else if (b.equalsIgnoreCase("false")) {
-            return false;
-        } else if (b.equalsIgnoreCase("true")) {
-            return true;
-        } else {
-            throw new RuntimeException("Value of " + propName
-            + " must either be 'true' or 'false'");
-        }
-    }
+    private final static boolean USE_CRLDP = AccessController.doPrivileged
+        (new GetBooleanAction("com.sun.security.enableCRLDP"));
 
     // singleton instance
     private static final DistributionPointFetcher INSTANCE =
