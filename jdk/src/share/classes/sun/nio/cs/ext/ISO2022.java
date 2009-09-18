@@ -515,7 +515,7 @@ abstract class ISO2022
             try {
                 while (sp < sl) {
                     char c = sa[sp];
-                    if (Surrogate.is(c)) {
+                    if (Character.isSurrogate(c)) {
                         if (sgp.parse(c, sa, sp, sl) < 0)
                             return sgp.error();
                         return sgp.unmappableResult();
@@ -576,7 +576,7 @@ abstract class ISO2022
             try {
                 while (src.hasRemaining()) {
                     char inputChar = src.get();
-                    if (Surrogate.is(inputChar)) {
+                    if (Character.isSurrogate(inputChar)) {
                         if (sgp.parse(inputChar, src) < 0)
                             return sgp.error();
                         return sgp.unmappableResult();

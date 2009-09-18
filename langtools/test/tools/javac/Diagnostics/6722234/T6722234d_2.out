@@ -1,3 +1,3 @@
-T6722234d.java:41:20: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.intersection.type: 1, T6722234d.A
+T6722234d.java:18:20: compiler.err.prob.found.req: (compiler.misc.incompatible.types), compiler.misc.intersection.type: 1, T6722234d.A
 - compiler.misc.where.description.intersection: compiler.misc.intersection.type: 1,{(compiler.misc.where.intersection: compiler.misc.intersection.type: 1, Object,I1,I2)}
 1 error
