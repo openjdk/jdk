@@ -71,12 +71,12 @@ of proxies.</P>
 	<LI><P>HTTP</P>
 	<P>The following proxy settings are used by the HTTP protocol handler.</P>
 	<UL>
-		<LI><P><B>http.proxyHost</FONT></B> (default: &lt;none&gt;)<BR>
+		<LI><P><B>http.proxyHost</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server 
 		</P>
 		<LI><P><B>http.proxyPort</B> (default: 80)<BR>
 	        The port number of the proxy server.</P>
-		<LI><P><B>http.nonProxyHosts</B> (default: &lt;none&gt;)<BR>
+		<LI><P><B>http.nonProxyHosts</B> (default:  localhost|127.*|[::1])<BR>
 	        Indicates the hosts that should be accessed without going
 	        through the proxy. Typically this defines internal hosts.
 	        The value of this property is a list of hosts,
@@ -86,7 +86,8 @@ of proxies.</P>
 		will indicate that every hosts in the foo.com domain and the
 		localhost should be accessed directly even if a proxy server is
 		specified.</P>
-	</UL>
+                <P>The default value excludes all common variations of the loopback address.</P>
+        </UL>
 	<LI><P>HTTPS<BR>This is HTTP over SSL, a secure version of HTTP
 	mainly used when confidentiality (like on payment sites) is needed.</P>
 	<P>The following proxy settings are used by the HTTPS protocol handler.</P>
@@ -107,7 +108,7 @@ of proxies.</P>
 		</P>
 		<LI><P><B>ftp.proxyPort</B> (default: 80)<BR>
 	        The port number of the proxy server.</P>
-		<LI><P><B>ftp.nonProxyHosts</B> (default: &lt;none&gt;)<BR>
+		<LI><P><B>ftp.nonProxyHosts</B> (default: localhost|127.*|[::1])<BR>
 	        Indicates the hosts that should be accessed without going
 	        through the proxy. Typically this defines internal hosts.
 	        The value of this property is a list of hosts, separated by
@@ -117,6 +118,7 @@ of proxies.</P>
 		will indicate that every hosts in the foo.com domain and the
 		localhost should be accessed directly even if a proxy server is
 		specified.</P>
+                <P>The default value excludes all common variations of the loopback address.</P>
 	</UL>
 	<LI><P>SOCKS<BR>This is another type of proxy. It allows for lower
 	level type of tunneling since it works at the TCP level. In effect,

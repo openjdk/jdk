@@ -1324,12 +1324,12 @@ FindBootStrapClass(JNIEnv *env, const char* classname)
 {
    if (findBootClass == NULL) {
        findBootClass = (FindClassFromBootLoader_t *)dlsym(RTLD_DEFAULT,
-          "JVM_FindClassFromClassLoader");
+          "JVM_FindClassFromBootLoader");
        if (findBootClass == NULL) {
            JLI_ReportErrorMessage(DLL_ERROR4,
-               "JVM_FindClassFromClassLoader");
+               "JVM_FindClassFromBootLoader");
            return NULL;
        }
    }
-   return findBootClass(env, classname, JNI_FALSE, (jobject)NULL, JNI_FALSE);
+   return findBootClass(env, classname);
 }
