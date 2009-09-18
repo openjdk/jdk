@@ -62,6 +62,12 @@ import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
+import static sun.net.www.protocol.http.AuthScheme.BASIC;
+import static sun.net.www.protocol.http.AuthScheme.DIGEST;
+import static sun.net.www.protocol.http.AuthScheme.NTLM;
+import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
+import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
+import static sun.net.www.protocol.http.AuthScheme.UNKNOWN;
 
 /**
  * A class to represent an HTTP connection to a remote object.
@@ -231,9 +237,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     boolean             needToCheck = true;
     private boolean doingNTLM2ndStage = false; /* doing the 2nd stage of an NTLM server authentication */
     private boolean doingNTLMp2ndStage = false; /* doing the 2nd stage of an NTLM proxy authentication */
-    /* try auth without calling Authenticator */
-    private boolean tryTransparentNTLMServer = NTLMAuthentication.supportsTransparentAuth();
-    private boolean tryTransparentNTLMProxy = NTLMAuthentication.supportsTransparentAuth();
+
+    /* try auth without calling Authenticator. Used for transparent NTLM authentication */
+    private boolean tryTransparentNTLMServer = true;
+    private boolean tryTransparentNTLMProxy = true;
+
     /* Used by Windows specific code */
     Object authObj;
 
@@ -1270,7 +1278,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     String raw = srvHdr.raw();
                     if (!doingNTLM2ndStage) {
                         if ((serverAuthentication != null)&&
-                            !(serverAuthentication instanceof NTLMAuthentication)) {
+                            serverAuthentication.getAuthScheme() != NTLM) {
                             if (serverAuthentication.isAuthorizationStale (raw)) {
                                 /* we can retry with the current credentials */
                                 disconnectInternal();
@@ -1523,8 +1531,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      */
     private AuthenticationInfo
         resetProxyAuthentication(AuthenticationInfo proxyAuthentication, AuthenticationHeader auth) {
-        if ((proxyAuthentication != null )&& ! (proxyAuthentication instanceof
-                                                        NTLMAuthentication)) {
+        if ((proxyAuthentication != null )&&
+             proxyAuthentication.getAuthScheme() != NTLM) {
             String raw = auth.raw();
             if (proxyAuthentication.isAuthorizationStale (raw)) {
                 /* we can retry with the current credentials */
@@ -1776,28 +1784,31 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             HeaderParser p = authhdr.headerParser();
             String realm = p.findValue("realm");
             String scheme = authhdr.scheme();
-            char schemeID;
+            AuthScheme authScheme = UNKNOWN;
             if ("basic".equalsIgnoreCase(scheme)) {
-                schemeID = BasicAuthentication.BASIC_AUTH;
+                authScheme = BASIC;
             } else if ("digest".equalsIgnoreCase(scheme)) {
-                schemeID = DigestAuthentication.DIGEST_AUTH;
+                authScheme = DIGEST;
             } else if ("ntlm".equalsIgnoreCase(scheme)) {
-                schemeID = NTLMAuthentication.NTLM_AUTH;
+                authScheme = NTLM;
                 doingNTLMp2ndStage = true;
             } else if ("Kerberos".equalsIgnoreCase(scheme)) {
-                schemeID = NegotiateAuthentication.KERBEROS_AUTH;
+                authScheme = KERBEROS;
                 doingNTLMp2ndStage = true;
             } else if ("Negotiate".equalsIgnoreCase(scheme)) {
-                schemeID = NegotiateAuthentication.NEGOTIATE_AUTH;
+                authScheme = NEGOTIATE;
                 doingNTLMp2ndStage = true;
-            } else {
-                schemeID = 0;
             }
+
             if (realm == null)
                 realm = "";
-            ret = AuthenticationInfo.getProxyAuth(host, port, realm, schemeID);
+            ret = AuthenticationInfo.getProxyAuth(host,
+                                                  port,
+                                                  realm,
+                                                  authScheme);
             if (ret == null) {
-                if (schemeID == BasicAuthentication.BASIC_AUTH) {
+                switch (authScheme) {
+                case BASIC:
                     InetAddress addr = null;
                     try {
                         final String finalHost = host;
@@ -1818,9 +1829,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     if (a != null) {
                         ret = new BasicAuthentication(true, host, port, realm, a);
                     }
-                } else if (schemeID == DigestAuthentication.DIGEST_AUTH) {
-                    PasswordAuthentication a =
-                        privilegedRequestPasswordAuthentication(
+                    break;
+                case DIGEST:
+                    a = privilegedRequestPasswordAuthentication(
                                     host, null, port, url.getProtocol(),
                                     realm, scheme, url, RequestorType.PROXY);
                     if (a != null) {
@@ -1829,29 +1840,49 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         ret = new DigestAuthentication(true, host, port, realm,
                                                             scheme, a, params);
                     }
-                } else if (schemeID == NTLMAuthentication.NTLM_AUTH) {
-                    PasswordAuthentication a = null;
-                    if (!tryTransparentNTLMProxy) {
-                        a = privilegedRequestPasswordAuthentication(
-                                            host, null, port, url.getProtocol(),
-                                            "", scheme, url, RequestorType.PROXY);
-                    }
-                    /* If we are not trying transparent authentication then
-                     * we need to have a PasswordAuthentication instance. For
-                     * transparent authentication (Windows only) the username
-                     * and password will be picked up from the current logged
-                     * on users credentials.
-                    */
-                    if (tryTransparentNTLMProxy ||
-                          (!tryTransparentNTLMProxy && a != null)) {
-                        ret = new NTLMAuthentication(true, host, port, a);
-                    }
+                    break;
+                case NTLM:
+                    if (NTLMAuthenticationProxy.proxy.supported) {
+                        /* tryTransparentNTLMProxy will always be true the first
+                         * time around, but verify that the platform supports it
+                         * otherwise don't try. */
+                        if (tryTransparentNTLMProxy) {
+                            tryTransparentNTLMProxy =
+                                    NTLMAuthenticationProxy.proxy.supportsTransparentAuth;
+                        }
+                        a = null;
+                        if (tryTransparentNTLMProxy) {
+                            HttpCapture.finest("Trying Transparent NTLM authentication");
+                        } else {
+                            a = privilegedRequestPasswordAuthentication(
+                                                host, null, port, url.getProtocol(),
+                                                "", scheme, url, RequestorType.PROXY);
+                        }
+                        /* If we are not trying transparent authentication then
+                         * we need to have a PasswordAuthentication instance. For
+                         * transparent authentication (Windows only) the username
+                         * and password will be picked up from the current logged
+                         * on users credentials.
+                        */
+                        if (tryTransparentNTLMProxy ||
+                              (!tryTransparentNTLMProxy && a != null)) {
+                            ret = NTLMAuthenticationProxy.proxy.create(true, host, port, a);
+                        }
 
-                    tryTransparentNTLMProxy = false;
-                } else if (schemeID == NegotiateAuthentication.NEGOTIATE_AUTH) {
+                        /* set to false so that we do not try again */
+                        tryTransparentNTLMProxy = false;
+                    }
+                    break;
+                case NEGOTIATE:
                     ret = new NegotiateAuthentication(new HttpCallerInfo(authhdr.getHttpCallerInfo(), "Negotiate"));
-                } else if (schemeID == NegotiateAuthentication.KERBEROS_AUTH) {
+                    break;
+                case KERBEROS:
                     ret = new NegotiateAuthentication(new HttpCallerInfo(authhdr.getHttpCallerInfo(), "Kerberos"));
+                    break;
+                case UNKNOWN:
+                    HttpCapture.finest("Unknown/Unsupported authentication scheme: " + scheme);
+                default:
+                    throw new AssertionError("should not reach here");
                 }
             }
             // For backwards compatibility, we also try defaultAuth
@@ -1896,27 +1927,26 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             HeaderParser p = authhdr.headerParser();
             String realm = p.findValue("realm");
             String scheme = authhdr.scheme();
-            char schemeID;
+            AuthScheme authScheme = UNKNOWN;
             if ("basic".equalsIgnoreCase(scheme)) {
-                schemeID = BasicAuthentication.BASIC_AUTH;
+                authScheme = BASIC;
             } else if ("digest".equalsIgnoreCase(scheme)) {
-                schemeID = DigestAuthentication.DIGEST_AUTH;
+                authScheme = DIGEST;
             } else if ("ntlm".equalsIgnoreCase(scheme)) {
-                schemeID = NTLMAuthentication.NTLM_AUTH;
+                authScheme = NTLM;
                 doingNTLM2ndStage = true;
             } else if ("Kerberos".equalsIgnoreCase(scheme)) {
-                schemeID = NegotiateAuthentication.KERBEROS_AUTH;
+                authScheme = KERBEROS;
                 doingNTLM2ndStage = true;
             } else if ("Negotiate".equalsIgnoreCase(scheme)) {
-                schemeID = NegotiateAuthentication.NEGOTIATE_AUTH;
+                authScheme = NEGOTIATE;
                 doingNTLM2ndStage = true;
-            } else {
-                schemeID = 0;
             }
+
             domain = p.findValue ("domain");
             if (realm == null)
                 realm = "";
-            ret = AuthenticationInfo.getServerAuth(url, realm, schemeID);
+            ret = AuthenticationInfo.getServerAuth(url, realm, authScheme);
             InetAddress addr = null;
             if (ret == null) {
                 try {
@@ -1931,13 +1961,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 port = url.getDefaultPort();
             }
             if (ret == null) {
-                if (schemeID == NegotiateAuthentication.KERBEROS_AUTH) {
+                switch(authScheme) {
+                case KERBEROS:
                     ret = new NegotiateAuthentication(new HttpCallerInfo(authhdr.getHttpCallerInfo(), "Kerberos"));
-                }
-                if (schemeID == NegotiateAuthentication.NEGOTIATE_AUTH) {
+                    break;
+                case NEGOTIATE:
                     ret = new NegotiateAuthentication(new HttpCallerInfo(authhdr.getHttpCallerInfo(), "Negotiate"));
-                }
-                if (schemeID == BasicAuthentication.BASIC_AUTH) {
+                    break;
+                case BASIC:
                     PasswordAuthentication a =
                         privilegedRequestPasswordAuthentication(
                             url.getHost(), addr, port, url.getProtocol(),
@@ -1945,45 +1976,60 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     if (a != null) {
                         ret = new BasicAuthentication(false, url, realm, a);
                     }
-                }
-
-                if (schemeID == DigestAuthentication.DIGEST_AUTH) {
-                    PasswordAuthentication a =
-                        privilegedRequestPasswordAuthentication(
+                    break;
+                case DIGEST:
+                    a = privilegedRequestPasswordAuthentication(
                             url.getHost(), addr, port, url.getProtocol(),
                             realm, scheme, url, RequestorType.SERVER);
                     if (a != null) {
                         digestparams = new DigestAuthentication.Parameters();
                         ret = new DigestAuthentication(false, url, realm, scheme, a, digestparams);
                     }
-                }
+                    break;
+                case NTLM:
+                    if (NTLMAuthenticationProxy.proxy.supported) {
+                        URL url1;
+                        try {
+                            url1 = new URL (url, "/"); /* truncate the path */
+                        } catch (Exception e) {
+                            url1 = url;
+                        }
 
-                if (schemeID == NTLMAuthentication.NTLM_AUTH) {
-                    URL url1;
-                    try {
-                        url1 = new URL (url, "/"); /* truncate the path */
-                    } catch (Exception e) {
-                        url1 = url;
-                    }
-                    PasswordAuthentication a = null;
-                    if (!tryTransparentNTLMServer) {
-                        a = privilegedRequestPasswordAuthentication(
-                            url.getHost(), addr, port, url.getProtocol(),
-                            "", scheme, url, RequestorType.SERVER);
-                    }
+                        /* tryTransparentNTLMServer will always be true the first
+                         * time around, but verify that the platform supports it
+                         * otherwise don't try. */
+                        if (tryTransparentNTLMServer) {
+                            tryTransparentNTLMServer =
+                                    NTLMAuthenticationProxy.proxy.supportsTransparentAuth;
+                        }
+                        a = null;
+                        if (tryTransparentNTLMServer) {
+                            HttpCapture.finest("Trying Transparent NTLM authentication");
+                        } else {
+                            a = privilegedRequestPasswordAuthentication(
+                                url.getHost(), addr, port, url.getProtocol(),
+                                "", scheme, url, RequestorType.SERVER);
+                        }
 
-                    /* If we are not trying transparent authentication then
-                     * we need to have a PasswordAuthentication instance. For
-                     * transparent authentication (Windows only) the username
-                     * and password will be picked up from the current logged
-                     * on users credentials.
-                     */
-                    if (tryTransparentNTLMServer ||
-                          (!tryTransparentNTLMServer && a != null)) {
-                        ret = new NTLMAuthentication(false, url1, a);
-                    }
+                        /* If we are not trying transparent authentication then
+                         * we need to have a PasswordAuthentication instance. For
+                         * transparent authentication (Windows only) the username
+                         * and password will be picked up from the current logged
+                         * on users credentials.
+                         */
+                        if (tryTransparentNTLMServer ||
+                              (!tryTransparentNTLMServer && a != null)) {
+                            ret = NTLMAuthenticationProxy.proxy.create(false, url1, a);
+                        }
 
-                    tryTransparentNTLMServer = false;
+                        /* set to false so that we do not try again */
+                        tryTransparentNTLMServer = false;
+                    }
+                    break;
+                case UNKNOWN:
+                    HttpCapture.finest("Unknown/Unsupported authentication scheme: " + scheme);
+                default:
+                    throw new AssertionError("should not reach here");
                 }
             }
 

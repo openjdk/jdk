@@ -86,9 +86,11 @@ FILES_java = \
 	sun/net/www/protocol/http/AuthCache.java \
 	sun/net/www/protocol/http/AuthCacheImpl.java \
 	sun/net/www/protocol/http/AuthCacheValue.java \
+	sun/net/www/protocol/http/AuthScheme.java \
 	sun/net/www/protocol/http/BasicAuthentication.java \
 	sun/net/www/protocol/http/DigestAuthentication.java \
 	sun/net/www/protocol/http/NTLMAuthentication.java \
+	sun/net/www/protocol/http/NTLMAuthenticationProxy.java \
 	sun/net/www/protocol/http/NegotiateAuthentication.java \
 	sun/net/www/protocol/http/NegotiatorImpl.java \
 	sun/net/www/protocol/http/NegotiateCallbackHandler.java \

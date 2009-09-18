@@ -34,7 +34,10 @@ import sun.misc.BASE64Encoder;
 import java.net.URL;
 import java.io.IOException;
 import java.net.Authenticator.RequestorType;
-
+import java.lang.reflect.Constructor;
+import sun.net.www.http.HttpCapture;
+import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
+import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
 
 /**
  * NegotiateAuthentication:
@@ -48,9 +51,6 @@ class NegotiateAuthentication extends AuthenticationInfo {
     private static final long serialVersionUID = 100L;
 
     final private HttpCallerInfo hci;
-
-    static final char NEGOTIATE_AUTH = 'S';
-    static final char KERBEROS_AUTH = 'K';
 
     // These maps are used to manage the GSS availability for diffrent
     // hosts. The key for both maps is the host name.
@@ -68,11 +68,10 @@ class NegotiateAuthentication extends AuthenticationInfo {
     * @param hci a schemed object.
     */
     public NegotiateAuthentication(HttpCallerInfo hci) {
-        super(RequestorType.PROXY==hci.authType?
-                    PROXY_AUTHENTICATION:SERVER_AUTHENTICATION,
-                hci.scheme.equalsIgnoreCase("Negotiate")?
-                    NEGOTIATE_AUTH:KERBEROS_AUTH,
-                hci.url, "");
+        super(RequestorType.PROXY==hci.authType ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
+              hci.scheme.equalsIgnoreCase("Negotiate") ? NEGOTIATE : KERBEROS,
+              hci.url,
+              "");
         this.hci = hci;
     }
 
@@ -249,13 +248,42 @@ abstract class Negotiator {
         // The current implementation will make sure NegotiatorImpl is not
         // directly referenced when compiling, thus smooth the way of building
         // the J2SE platform where HttpURLConnection is a bootstrap class.
+        //
+        // Makes NegotiatorImpl, and the security classes it references, a
+        // runtime dependency rather than a static one.
 
-        Class clazz = Class.forName("sun.net.www.protocol.http.NegotiatorImpl");
-        java.lang.reflect.Constructor c = clazz.getConstructor(HttpCallerInfo.class);
-        return (Negotiator) (c.newInstance(hci));
+        Class clazz;
+        Constructor c;
+        try {
+            clazz = Class.forName("sun.net.www.protocol.http.NegotiatorImpl", true, null);
+            c = clazz.getConstructor(HttpCallerInfo.class);
+        } catch (ClassNotFoundException cnfe) {
+            log(cnfe);
+            throw cnfe;
+        } catch (ReflectiveOperationException roe) {
+            // if the class is there then something seriously wrong if
+            // the constructor is not.
+            throw new AssertionError(roe);
+        }
+
+        try {
+            return (Negotiator) (c.newInstance(hci));
+        } catch (ReflectiveOperationException roe) {
+            log(roe);
+            Throwable t = roe.getCause();
+            if (t != null && t instanceof Exception)
+                log((Exception)t);
+            throw roe;
+        }
     }
 
     abstract byte[] firstToken() throws IOException;
 
     abstract byte[] nextToken(byte[] in) throws IOException;
+
+    static void log(Exception e) {
+        if (HttpCapture.isLoggable("FINEST")) {
+            HttpCapture.finest("NegotiateAuthentication: " + e);
+        }
+    }
 }
