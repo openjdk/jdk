@@ -156,6 +156,7 @@ JAVAC_PREFER_SOURCE = -Xprefer:source
 .compile.classlist : $(JAVA_SOURCE_LIST)
 	@$(MKDIR) -p $(CLASSDESTDIR)
 	if [ -s $(JAVA_SOURCE_LIST) ] ; then \
+          $(CAT) $(JAVA_SOURCE_LIST); \
 	  $(JAVAC_CMD) $(JAVAC_PREFER_SOURCE) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
 	fi
 	@$(java-vm-cleanup)
