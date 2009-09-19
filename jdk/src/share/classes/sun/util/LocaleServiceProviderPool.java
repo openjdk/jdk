@@ -39,8 +39,8 @@ import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 import java.util.spi.LocaleServiceProvider;
+import sun.util.logging.PlatformLogger;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
 
@@ -122,8 +122,13 @@ public final class LocaleServiceProviderPool {
                 }
             });
         }  catch (PrivilegedActionException e) {
-            Logger.getLogger("sun.util.LocaleServiceProviderPool").config(e.toString());
+            config(e.toString());
         }
+    }
+
+    private static void config(String message) {
+        PlatformLogger logger = PlatformLogger.getLogger("sun.util.LocaleServiceProviderPool");
+        logger.config(message);
     }
 
     /**
@@ -337,7 +342,7 @@ public final class LocaleServiceProviderPool {
                     if (providersObj != null) {
                         return providersObj;
                     } else if (isObjectProvider) {
-                        Logger.getLogger("sun.util.LocaleServiceProviderPool").config(
+                        config(
                             "A locale sensitive service provider returned null for a localized objects,  which should not happen.  provider: " + lsp + " locale: " + requested);
                     }
                 }
