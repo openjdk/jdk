@@ -28,9 +28,6 @@
 # Rules shared by all Java makefiles.
 #
 
-# Used with wildcard to look into a java package for files (assumes max 5 deep)
-_WC_DIRS  = * */* */*/* */*/*/* */*/*/*/*
-
 # Make sure the default rule is all
 rules_default_rule: all
 
@@ -49,16 +46,24 @@ ALL_CLASSES_SRC = $(SHARE_SRC)/classes $(PLATFORM_SRC)/classes
 # If AUTO_FILES_PROPERTIES_DIRS used, automatically find properties files
 #
 ifdef AUTO_FILES_PROPERTIES_DIRS
-  # Wildcard all possible properties files
-  _WC_PROP_FILES = $(patsubst %, %/*.properties, $(_WC_DIRS))
-  # Wildcard package directories for this Makefile
-  _AUTO_WC_PROP_FILES = $(foreach dir, $(AUTO_FILES_PROPERTIES_DIRS), \
-          $(patsubst %, $(dir)/%, $(_WC_PROP_FILES)) )
-  # Wildcard all source directories
-  _AUTO_WC_ALL_PROP_FILES1 = $(foreach dir, $(ALL_CLASSES_SRC), \
-          $(patsubst %, $(dir)/%,  $(_AUTO_WC_PROP_FILES)) )
-  # Find all files meeting this pattern
-  FILES_properties_auto1 := $(wildcard $(_AUTO_WC_ALL_PROP_FILES1))
+  AUTO_FILES_PROPERTIES_FILTERS1  = $(SCM_DIRs) 'X-*' '*-X-*' ',*'
+  AUTO_FILES_PROPERTIES_FILTERS1 += $(AUTO_PROPERTIES_PRUNE)
+  FILES_properties_find_filters1 = $(AUTO_FILES_PROPERTIES_FILTERS1:%=-name % -prune -o)
+  FILES_properties_auto1 := \
+     $(shell \
+        for dir in $(ALL_CLASSES_SRC) ; do \
+          if [ -d $$dir ] ; then \
+            ( $(CD) $$dir; \
+              for sdir in $(AUTO_FILES_PROPERTIES_DIRS); do \
+                if [ -d $$sdir ] ; then \
+                  $(FIND) $$sdir $(FILES_properties_find_filters1) \
+                                 -name '*.properties' -print ; \
+                fi ; \
+              done \
+            ); \
+          fi; \
+        done \
+      )
 else
   FILES_properties_auto1 =
 endif # AUTO_FILES_PROPERTIES_DIRS
@@ -88,25 +93,50 @@ include $(TOPDIR)/make/common/internal/Resources.gmk
 #    might miss their generation.
 
 ifdef AUTO_FILES_JAVA_DIRS
-  # Wildcard all possible java files
-  _WC_JAVA_FILES = $(patsubst %, %/*.java, $(_WC_DIRS))
-  # Wildcard package directories for this Makefile
-  _AUTO_WC_JAVA_FILES = $(foreach dir, $(AUTO_FILES_JAVA_DIRS), \
-          $(patsubst %, $(dir)/%, $(_WC_JAVA_FILES)) )
-  # Wildcard all source directories
-  _AUTO_WC_ALL_JAVA_FILES1 = $(foreach dir, $(ALL_CLASSES_SRC), \
-          $(patsubst %, $(dir)/%,  $(_AUTO_WC_JAVA_FILES)) )
-  # Find all files meeting this pattern
-  FILES_java_auto1 := $(wildcard $(_AUTO_WC_ALL_JAVA_FILES1))
+  # Filter out these files or directories
+  AUTO_FILES_JAVA_SOURCE_FILTERS1  = $(SCM_DIRs) 'X-*' '*-X-*' '*-template.java' ',*'
+  AUTO_FILES_JAVA_SOURCE_FILTERS2  = 
+  AUTO_FILES_JAVA_SOURCE_FILTERS1 += $(AUTO_JAVA_PRUNE)
+  AUTO_FILES_JAVA_SOURCE_FILTERS2 += $(AUTO_JAVA_PRUNE)
 
+  # First list is the normal sources that should always be there,
+  #   by using the ':=', which means we do this processing once.
+  FILES_java_find_filters1 = $(AUTO_FILES_JAVA_SOURCE_FILTERS1:%=-name % -prune -o)
+  FILES_java_auto1 := \
+     $(shell \
+        for dir in $(ALL_CLASSES_SRC) ; do \
+          if [ -d $$dir ] ; then \
+            ( $(CD) $$dir; \
+              for sdir in $(AUTO_FILES_JAVA_DIRS); do \
+                if [ -d $$sdir ] ; then \
+                  $(FIND) $$sdir $(FILES_java_find_filters1) \
+                                 -name '*.java' -print ; \
+                fi ; \
+              done \
+            ); \
+          fi; \
+        done \
+      )
   # Second list is the generated sources that should be rare, but will likely
   #   show up late and we need to look for them at the last minute, so we
   #   cannot use the ':=' assigment here. But if this gets expanded multiple
   #   times, the if tests should make them relatively cheap.
-  # Wildcard the generated source directories
-  _AUTO_WC_ALL_JAVA_FILES2 = $(patsubst %, $(GENSRCDIR)/%, $(_AUTO_WC_JAVA_FILES))
-  # Find all files meeting this pattern
-  FILES_java_auto2 = $(wildcard $(_AUTO_WC_ALL_JAVA_FILES2))
+  FILES_java_find_filters2 = $(AUTO_FILES_JAVA_SOURCE_FILTERS2:%=-name % -prune -o)
+  FILES_java_auto2 = \
+     $(shell \
+        for dir in $(GENSRCDIR); do \
+          if [ -d $$dir ] ; then \
+            ( $(CD) $$dir; \
+              for sdir in $(AUTO_FILES_JAVA_DIRS); do \
+                if [ -d $$sdir ] ; then \
+                  $(FIND) $$sdir $(FILES_java_find_filters2) \
+                                 -name '*.java' -print ; \
+                fi ; \
+              done \
+            ); \
+          fi; \
+        done \
+      )
 else
   FILES_java_auto1 =
   FILES_java_auto2 =
@@ -156,7 +186,7 @@ JAVAC_PREFER_SOURCE = -Xprefer:source
 .compile.classlist : $(JAVA_SOURCE_LIST)
 	@$(MKDIR) -p $(CLASSDESTDIR)
 	if [ -s $(JAVA_SOURCE_LIST) ] ; then \
-          $(CAT) $(JAVA_SOURCE_LIST); \
+	  $(CAT) $(JAVA_SOURCE_LIST); \
 	  $(JAVAC_CMD) $(JAVAC_PREFER_SOURCE) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
 	fi
 	@$(java-vm-cleanup)
