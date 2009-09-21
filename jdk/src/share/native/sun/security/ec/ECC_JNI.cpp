@@ -24,7 +24,7 @@
  */
 
 #include <jni.h>
-#include "ecc_impl.h"
+#include "impl/ecc_impl.h"
 
 #define ILLEGAL_STATE_EXCEPTION "java/lang/IllegalStateException"
 #define INVALID_ALGORITHM_PARAMETER_EXCEPTION \
