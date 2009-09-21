@@ -250,15 +250,23 @@ public class SwingUtilities2 {
      * Returns the left side bearing of the first character of string. The
      * left side bearing is calculated from the passed in
      * FontMetrics.  If the passed in String is less than one
-     * character, this will throw a StringIndexOutOfBoundsException exception.
+     * character {@code 0} is returned.
      *
      * @param c JComponent that will display the string
      * @param fm FontMetrics used to measure the String width
      * @param string String to get the left side bearing for.
+     * @throws NullPointerException if {@code string} is {@code null}
+     *
+     * @return the left side bearing of the first character of string
+     * or {@code 0} if the string is empty
      */
     public static int getLeftSideBearing(JComponent c, FontMetrics fm,
                                          String string) {
-        return getLeftSideBearing(c, fm, string.charAt(0));
+        int res = 0;
+        if (!string.isEmpty()) {
+            res = getLeftSideBearing(c, fm, string.charAt(0));
+        }
+        return res;
     }
 
     /**
