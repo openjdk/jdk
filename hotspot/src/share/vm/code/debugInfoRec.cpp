@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,6 +280,7 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
 void DebugInformationRecorder::describe_scope(int         pc_offset,
                                               ciMethod*   method,
                                               int         bci,
+                                              bool        reexecute,
                                               DebugToken* locals,
                                               DebugToken* expressions,
                                               DebugToken* monitors) {
@@ -290,6 +291,9 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   // update the stream offset of current pc desc
   int stream_offset = stream()->position();
   last_pd->set_scope_decode_offset(stream_offset);
+
+  // Record reexecute bit into pcDesc
+  last_pd->set_should_reexecute(reexecute);
 
   // serialize sender stream offest
   stream()->write_int(sender_stream_offset);

@@ -44,7 +44,6 @@ TEST_ROOT := $(shell pwd)
 # Default bundle of all test results (passed or not)
 JPRT_ARCHIVE_BUNDLE=$(TEST_ROOT)/JPRT_ARCHIVE_BUNDLE.zip
 
-# Default home for JTREG
 ifeq ($(PLATFORM), windows)
   SLASH_JAVA = J:
 else
@@ -52,8 +51,12 @@ else
 endif
 
 # Default JTREG to run
-JT_HOME = $(SLASH_JAVA)/svc/jct-tools3.2.2_02
-JTREG = $(JT_HOME)/$(JT_PLATFORM)/bin/jtreg
+ifdef JPRT_JTREG_HOME
+  JTREG_HOME = $(JPRT_JTREG_HOME)
+else
+  JTREG_HOME = $(SLASH_JAVA)/re/jtreg/4.0/promoted/latest/binaries/jtreg
+endif
+JTREG = $(JTREG_HOME)/$(JT_PLATFORM)/bin/jtreg
 
 # Default JDK for JTREG
 ifdef JPRT_JAVA_HOME
@@ -63,7 +66,12 @@ else
 endif
 
 # Default JDK to test
-TESTJAVA = $(SLASH_JAVA)/re/jdk/1.7.0/promoted/latest/binaries/$(PLATFORM)-$(ARCH)
+ifdef JPRT_IMPORT_PRODUCT_HOME
+  TESTJAVA = $(JPRT_IMPORT_PRODUCT_HOME)
+else
+  TESTJAVA = $(SLASH_JAVA)/re/jdk/1.7.0/promoted/latest/binaries/$(PLATFORM)-$(ARCH)
+endif
+
 TESTBOOTCLASSPATH = $(PRODUCT_HOME)/dist/lib/classes.jar
 
 # The test directories to run
@@ -73,41 +81,40 @@ TESTDIRS = $(DEFAULT_TESTDIRS)
 # Root of all test results
 TEST_OUTPUT_DIR = $(TEST_ROOT)/o_$(PLATFORM)-$(ARCH)
 
-# Export this setting and pass it in.
-JAVA_TOOL_OPTIONS = -Djava.awt.headless=true
-export JAVA_TOOL_OPTIONS
-
 # Default make rule
-all javac javadoc javah javap apt: clean check jtreg-tests $(JPRT_ARCHIVE_BUNDLE)
+all apt javac javadoc javah javap: clean check jtreg-tests $(JPRT_ARCHIVE_BUNDLE)
 	@echo "Testing completed successfully"
 
 # for use with JPRT -testrule
 all:		TESTDIRS = .
-javac fastjavac: TESTDIRS = tools/javac
+apt:		TESTDIRS = tools/apt
+javac: 		TESTDIRS = tools/javac
 javadoc:	TESTDIRS = tools/javadoc com/sun/javadoc
 javah:		TESTDIRS = tools/javah
 javap:		TESTDIRS = tools/javap
-apt:		TESTDIRS = tools/apt
-
-fastjavac:	SAMEVM = -samevm
 
 # Check to make sure these directories exist
 check: $(JT_HOME) $(PRODUCT_HOME) $(JTREG)
 
 # Run the tests
 jtreg-tests: FRC
-	ls /opt/jprt /opt/jprt/jdk*
 	@echo "Using export JAVA_TOOL_OPTIONS=$(JAVA_TOOL_OPTIONS)"
 	@rm -f -r $(TEST_OUTPUT_DIR)/JTwork $(TEST_OUTPUT_DIR)/JTreport
 	@mkdir -p $(TEST_OUTPUT_DIR)
-	JT_JAVA=$(JT_JAVA) $(JTREG) -k:\!ignore -a -v:fail,error $(SAMEVM) \
+	JT_JAVA=$(JT_JAVA) $(JTREG) \
+	  -a -samevm -k:\!ignore -v:fail,error,nopass \
           -r:$(TEST_OUTPUT_DIR)/JTreport \
           -w:$(TEST_OUTPUT_DIR)/JTwork \
           -jdk:$(TESTJAVA) \
 	  -Xbootclasspath/p:$(TESTBOOTCLASSPATH) \
-          $(JAVA_TOOL_OPTIONS:%=-vmoption:%) \
           $(JAVA_ARGS:%=-vmoption:%) \
-          $(TESTDIRS)
+          $(TESTDIRS) \
+	|| ( status=$$? ; \
+		echo ; echo "Summary of test failures" ; \
+		cat $(TEST_OUTPUT_DIR)/JTreport/text/summary.txt | \
+			grep -v 'Not run' | grep -v 'Passed' ; \
+		echo ; \
+		exit $$status )
 
 # Bundle up the results
 $(JPRT_ARCHIVE_BUNDLE): FRC

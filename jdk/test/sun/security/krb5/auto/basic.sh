@@ -43,6 +43,10 @@ case "$OS" in
     FS="\\"
     SEP=";"
     ;;
+  CYGWIN* )
+    FS="/"
+    SEP=";"
+    ;;
   * )
     FS="/"
     SEP=":"

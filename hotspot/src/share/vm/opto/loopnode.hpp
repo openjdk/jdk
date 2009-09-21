@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,6 +442,9 @@ class PhaseIdealLoop : public PhaseTransform {
   uint *_preorders;
   uint _max_preorder;
 
+  const PhaseIdealLoop* _verify_me;
+  bool _verify_only;
+
   // Allocate _preorders[] array
   void allocate_preorders() {
     _max_preorder = C->unique()+8;
@@ -497,6 +500,12 @@ class PhaseIdealLoop : public PhaseTransform {
   Node_Array _dom_lca_tags;
   void   init_dom_lca_tags();
   void   clear_dom_lca_tags();
+
+  // Helper for debugging bad dominance relationships
+  bool verify_dominance(Node* n, Node* use, Node* LCA, Node* early);
+
+  Node* compute_lca_of_uses(Node* n, Node* early, bool verify = false);
+
   // Inline wrapper for frequent cases:
   // 1) only one use
   // 2) a use is the same as the current LCA passed as 'n1'
@@ -511,6 +520,7 @@ class PhaseIdealLoop : public PhaseTransform {
     return find_non_split_ctrl(n);
   }
   Node *dom_lca_for_get_late_ctrl_internal( Node *lca, Node *n, Node *tag );
+
   // true if CFG node d dominates CFG node n
   bool is_dominator(Node *d, Node *n);
 
@@ -621,9 +631,9 @@ private:
   IdealLoopTree *sort( IdealLoopTree *loop, IdealLoopTree *innermost );
 
   // Place Data nodes in some loop nest
-  void build_loop_early( VectorSet &visited, Node_List &worklist, Node_Stack &nstack, const PhaseIdealLoop *verify_me );
-  void build_loop_late ( VectorSet &visited, Node_List &worklist, Node_Stack &nstack, const PhaseIdealLoop *verify_me );
-  void build_loop_late_post ( Node* n, const PhaseIdealLoop *verify_me );
+  void build_loop_early( VectorSet &visited, Node_List &worklist, Node_Stack &nstack );
+  void build_loop_late ( VectorSet &visited, Node_List &worklist, Node_Stack &nstack );
+  void build_loop_late_post ( Node* n );
 
   // Array of immediate dominance info for each CFG node indexed by node idx
 private:
@@ -662,6 +672,19 @@ private:
   // Is safept not required by an outer loop?
   bool is_deleteable_safept(Node* sfpt);
 
+  // Perform verification that the graph is valid.
+  PhaseIdealLoop( PhaseIterGVN &igvn) :
+    PhaseTransform(Ideal_Loop),
+    _igvn(igvn),
+    _dom_lca_tags(C->comp_arena()),
+    _verify_me(NULL),
+    _verify_only(true) {
+    build_and_optimize(false);
+  }
+
+  // build the loop tree and perform any requested optimizations
+  void build_and_optimize(bool do_split_if);
+
 public:
   // Dominators for the sea of nodes
   void Dominators();
@@ -671,7 +694,32 @@ public:
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
 
   // Compute the Ideal Node to Loop mapping
-  PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify_me, bool do_split_ifs );
+  PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs) :
+    PhaseTransform(Ideal_Loop),
+    _igvn(igvn),
+    _dom_lca_tags(C->comp_arena()),
+    _verify_me(NULL),
+    _verify_only(false) {
+    build_and_optimize(do_split_ifs);
+  }
+
+  // Verify that verify_me made the same decisions as a fresh run.
+  PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify_me) :
+    PhaseTransform(Ideal_Loop),
+    _igvn(igvn),
+    _dom_lca_tags(C->comp_arena()),
+    _verify_me(verify_me),
+    _verify_only(false) {
+    build_and_optimize(false);
+  }
+
+  // Build and verify the loop tree without modifying the graph.  This
+  // is useful to verify that all inputs properly dominate their uses.
+  static void verify(PhaseIterGVN& igvn) {
+#ifdef ASSERT
+    PhaseIdealLoop v(igvn);
+#endif
+  }
 
   // True if the method has at least 1 irreducible loop
   bool _has_irreducible_loops;

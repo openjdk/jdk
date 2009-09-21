@@ -49,6 +49,9 @@ class InterpreterRuntime: AllStatic {
   static ConstantPoolCacheEntry* cache_entry(JavaThread *thread)            { return cache_entry_at(thread, Bytes::get_native_u2(bcp(thread) + 1)); }
   static void      note_trap(JavaThread *thread, int reason, TRAPS);
 
+  // Inner work method for Interpreter's frequency counter overflow
+  static nmethod* frequency_counter_overflow_inner(JavaThread* thread, address branch_bcp);
+
  public:
   // Constants
   static void    ldc           (JavaThread* thread, bool wide);

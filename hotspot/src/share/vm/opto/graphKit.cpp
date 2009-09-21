@@ -620,6 +620,16 @@ BuildCutout::~BuildCutout() {
   assert(kit->stopped(), "cutout code must stop, throw, return, etc.");
 }
 
+//---------------------------PreserveReexecuteState----------------------------
+PreserveReexecuteState::PreserveReexecuteState(GraphKit* kit) {
+  _kit    =    kit;
+  _sp     =    kit->sp();
+  _reexecute = kit->jvms()->_reexecute;
+}
+PreserveReexecuteState::~PreserveReexecuteState() {
+  _kit->jvms()->_reexecute = _reexecute;
+  _kit->set_sp(_sp);
+}
 
 //------------------------------clone_map--------------------------------------
 // Implementation of PreserveJVMState
@@ -738,6 +748,18 @@ bool GraphKit::dead_locals_are_killed() {
 
 #endif //ASSERT
 
+// Helper function for enforcing certain bytecodes to reexecute if
+// deoptimization happens
+static bool should_reexecute_implied_by_bytecode(JVMState *jvms) {
+  ciMethod* cur_method = jvms->method();
+  int       cur_bci   = jvms->bci();
+  if (cur_method != NULL && cur_bci != InvocationEntryBci) {
+    Bytecodes::Code code = cur_method->java_code_at_bci(cur_bci);
+    return Interpreter::bytecode_should_reexecute(code);
+  } else
+    return false;
+}
+
 // Helper function for adding JVMState and debug information to node
 void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   // Add the safepoint edges to the call (or other safepoint).
@@ -780,6 +802,13 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   // do not scribble on the input jvms
   JVMState* out_jvms = youngest_jvms->clone_deep(C);
   call->set_jvms(out_jvms); // Start jvms list for call node
+
+  // For a known set of bytecodes, the interpreter should reexecute them if
+  // deoptimization happens. We set the reexecute state for them here
+  if (out_jvms->is_reexecute_undefined() && //don't change if already specified
+      should_reexecute_implied_by_bytecode(out_jvms)) {
+    out_jvms->set_should_reexecute(true); //NOTE: youngest_jvms not changed
+  }
 
   // Presize the call:
   debug_only(uint non_debug_edges = call->req());

@@ -188,14 +188,18 @@ public class TestElementsAnnotatedWith extends AbstractProcessor {
             // Copy the bytes over
             System.out.println((new File(".")).getAbsolutePath());
             InputStream io = new BufferedInputStream(new FileInputStream(new File(".", "Foo.class")));
-            int datum = io.read();
-            while(datum != -1) {
-                os.write(datum);
-                datum = io.read();
+            try {
+                int datum = io.read();
+                while(datum != -1) {
+                    os.write(datum);
+                    datum = io.read();
+                }
+            } finally {
+                io.close();
             }
             os.close();
-        } catch (IOException io) {
-            throw new RuntimeException(io);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
 
 

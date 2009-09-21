@@ -25,6 +25,7 @@
 
 package sun.nio.fs;
 
+import java.nio.file.attribute.*;
 import java.io.IOException;
 
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -72,27 +73,39 @@ class SolarisFileStore
     }
 
     @Override
-    public boolean supportsFileAttributeView(String name) {
-        if (name.equals("acl")) {
+    public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
+        if (type == AclFileAttributeView.class) {
             // lookup fstypes.properties
             FeatureStatus status = checkIfFeaturePresent("nfsv4acl");
-            if (status == FeatureStatus.PRESENT)
-                return true;
-            if (status == FeatureStatus.NOT_PRESENT)
-                return false;
-            // AclFileAttributeView available on ZFS
-            return (type().equals("zfs"));
+            switch (status) {
+                case PRESENT     : return true;
+                case NOT_PRESENT : return false;
+                default :
+                    // AclFileAttributeView available on ZFS
+                    return (type().equals("zfs"));
+            }
         }
-        if (name.equals("user")) {
+        if (type == UserDefinedFileAttributeView.class) {
             // lookup fstypes.properties
             FeatureStatus status = checkIfFeaturePresent("xattr");
-            if (status == FeatureStatus.PRESENT)
-                return true;
-            if (status == FeatureStatus.NOT_PRESENT)
-                return false;
-            return xattrEnabled;
+            switch (status) {
+                case PRESENT     : return true;
+                case NOT_PRESENT : return false;
+                default :
+                    // UserDefinedFileAttributeView available if extended
+                    // attributes supported
+                    return xattrEnabled;
+            }
         }
+        return super.supportsFileAttributeView(type);
+    }
 
+    @Override
+    public boolean supportsFileAttributeView(String name) {
+        if (name.equals("acl"))
+            return supportsFileAttributeView(AclFileAttributeView.class);
+        if (name.equals("user"))
+            return supportsFileAttributeView(UserDefinedFileAttributeView.class);
         return super.supportsFileAttributeView(name);
     }
 

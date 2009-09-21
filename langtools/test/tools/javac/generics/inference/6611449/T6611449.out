@@ -1,5 +1,5 @@
-T6611449.java:41:9: compiler.err.cant.resolve.location.args: kindname.constructor, T6611449, , int, kindname.class, T6611449<S>
-T6611449.java:42:9: compiler.err.cant.resolve.location.args: kindname.constructor, T6611449, , int,int, kindname.class, T6611449<S>
-T6611449.java:43:9: compiler.err.cant.apply.symbol: kindname.method, m1, T, int, kindname.class, T6611449<S>, null
-T6611449.java:44:9: compiler.err.cant.apply.symbol: kindname.method, m2, T,T, int,int, kindname.class, T6611449<S>, null
+T6611449.java:18:9: compiler.err.cant.resolve.location.args: kindname.constructor, T6611449, , int, kindname.class, T6611449<S>
+T6611449.java:19:9: compiler.err.cant.resolve.location.args: kindname.constructor, T6611449, , int,int, kindname.class, T6611449<S>
+T6611449.java:20:9: compiler.err.cant.apply.symbol: kindname.method, m1, T, int, kindname.class, T6611449<S>, null
+T6611449.java:21:9: compiler.err.cant.apply.symbol: kindname.method, m2, T,T, int,int, kindname.class, T6611449<S>, null
 4 errors

@@ -1,2 +1,2 @@
-StaticMethods.java:32:22: compiler.err.annotation.type.not.applicable
+StaticMethods.java:9:22: compiler.err.annotation.type.not.applicable
 1 error

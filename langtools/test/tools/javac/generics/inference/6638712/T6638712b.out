@@ -1,2 +1,2 @@
-T6638712b.java:37:21: compiler.err.invalid.inferred.types: T, (compiler.misc.inferred.do.not.conform.to.bounds: T6638712b<java.lang.Integer>, T6638712b<java.lang.String>)
+T6638712b.java:14:21: compiler.err.prob.found.req: (compiler.misc.incompatible.types.1: (compiler.misc.no.conforming.instance.exists: T, T, java.lang.String)), <T>T, java.lang.String
 1 error
