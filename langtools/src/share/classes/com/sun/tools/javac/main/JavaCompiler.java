@@ -813,6 +813,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         } catch (Abort ex) {
             if (devVerbose)
                 ex.printStackTrace();
+        } finally {
+            if (procEnvImpl != null)
+                procEnvImpl.close();
         }
     }
 
@@ -936,7 +939,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     /**
      * Object to handle annotation processing.
      */
-    JavacProcessingEnvironment procEnvImpl = null;
+    private JavacProcessingEnvironment procEnvImpl = null;
 
     /**
      * Check if we should process annotations.
@@ -947,7 +950,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      * @param processors user provided annotation processors to bypass
      * discovery, {@code null} means that no processors were provided
      */
-    public void initProcessAnnotations(Iterable<? extends Processor> processors) {
+    public void initProcessAnnotations(Iterable<? extends Processor> processors)
+                throws IOException {
         // Process annotations if processing is not disabled and there
         // is at least one Processor available.
         Options options = Options.instance(context);
@@ -974,7 +978,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     // TODO: called by JavacTaskImpl
-    public JavaCompiler processAnnotations(List<JCCompilationUnit> roots) throws IOException {
+    public JavaCompiler processAnnotations(List<JCCompilationUnit> roots)
+            throws IOException {
         return processAnnotations(roots, List.<String>nil());
     }
 
@@ -1061,10 +1066,14 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                         return this;
                 }
             }
-            JavaCompiler c = procEnvImpl.doProcessing(context, roots, classSymbols, pckSymbols);
-            if (c != this)
-                annotationProcessingOccurred = c.annotationProcessingOccurred = true;
-            return c;
+            try {
+                JavaCompiler c = procEnvImpl.doProcessing(context, roots, classSymbols, pckSymbols);
+                if (c != this)
+                    annotationProcessingOccurred = c.annotationProcessingOccurred = true;
+                return c;
+            } finally {
+                procEnvImpl.close();
+            }
         } catch (CompletionFailure ex) {
             log.error("cant.access", ex.sym, ex.getDetailValue());
             return this;

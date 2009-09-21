@@ -910,7 +910,16 @@ void PhaseCFG::verify( ) const {
               !(b->head()->is_Loop() && n->is_Phi()) &&
               // See (+++) comment in reg_split.cpp
               !(n->jvms() != NULL && n->jvms()->is_monitor_use(k)) ) {
-            assert( b->find_node(def) < j, "uses must follow definitions" );
+            bool is_loop = false;
+            if (n->is_Phi()) {
+              for( uint l = 1; l < def->req(); l++ ) {
+                if (n == def->in(l)) {
+                  is_loop = true;
+                  break; // Some kind of loop
+                }
+              }
+            }
+            assert( is_loop || b->find_node(def) < j, "uses must follow definitions" );
           }
           if( def->is_SafePointScalarObject() ) {
             assert(_bbs[def->_idx] == b, "SafePointScalarObject Node should be at the same block as its SafePoint node");

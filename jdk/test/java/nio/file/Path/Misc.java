@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6866804
+ * @bug 4313887 6838333 6867101
  * @summary Unit test for java.nio.file.Path for miscellenous methods not
  *   covered by other tests
  * @library ..

@@ -157,6 +157,10 @@ protected:
     }
   }
 
+  // The routine that performs the actual work of refining a dirty
+  // card.
+  void concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i);
+
 protected:
   template <class T> void write_ref_nv(HeapRegion* from, T* p);
   template <class T> void par_write_ref_nv(HeapRegion* from, T* p, int tid);

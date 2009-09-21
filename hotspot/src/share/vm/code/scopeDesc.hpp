@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,16 +52,17 @@ class SimpleScopeDesc : public StackObj {
 class ScopeDesc : public ResourceObj {
  public:
   // Constructor
-  ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset);
+  ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute);
 
   // Calls above, giving default value of "serialized_null" to the
   // "obj_decode_offset" argument.  (We don't use a default argument to
   // avoid a .hpp-.hpp dependency.)
-  ScopeDesc(const nmethod* code, int decode_offset);
+  ScopeDesc(const nmethod* code, int decode_offset, bool reexecute);
 
   // JVM state
-  methodHandle method() const { return _method; }
-  int          bci()    const { return _bci;    }
+  methodHandle method()   const { return _method; }
+  int          bci()      const { return _bci;    }
+  bool should_reexecute() const { return _reexecute; }
 
   GrowableArray<ScopeValue*>*   locals();
   GrowableArray<ScopeValue*>*   expressions();
@@ -86,6 +87,7 @@ class ScopeDesc : public ResourceObj {
   // JVM state
   methodHandle  _method;
   int           _bci;
+  bool          _reexecute;
 
   // Decoding offsets
   int _decode_offset;

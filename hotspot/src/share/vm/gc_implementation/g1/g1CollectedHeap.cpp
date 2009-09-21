@@ -25,6 +25,8 @@
 #include "incls/_precompiled.incl"
 #include "incls/_g1CollectedHeap.cpp.incl"
 
+size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
+
 // turn it on so that the contents of the young list (scan-only /
 // to-be-collected) are printed at "strategic" points before / during
 // / after the collection --- this is useful for debugging
@@ -927,7 +929,6 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     TraceTime t(full ? "Full GC (System.gc())" : "Full GC", PrintGC, true, gclog_or_tty);
 
     double start = os::elapsedTime();
-    GCOverheadReporter::recordSTWStart(start);
     g1_policy()->record_full_collection_start();
 
     gc_prologue(true);
@@ -1049,7 +1050,6 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     }
 
     double end = os::elapsedTime();
-    GCOverheadReporter::recordSTWEnd(end);
     g1_policy()->record_full_collection_end();
 
 #ifdef TRACESPINNING
@@ -1396,6 +1396,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   if (_process_strong_tasks == NULL || !_process_strong_tasks->valid()) {
     vm_exit_during_initialization("Failed necessary allocation.");
   }
+
+  _humongous_object_threshold_in_words = HeapRegion::GrainWords / 2;
+
   int n_queues = MAX2((int)ParallelGCThreads, 1);
   _task_queues = new RefToScanQueueSet(n_queues);
 
@@ -1548,9 +1551,10 @@ jint G1CollectedHeap::initialize() {
   const size_t max_region_idx = ((size_t)1 << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
 
-  const size_t cards_per_region = HeapRegion::GrainBytes >> CardTableModRefBS::card_shift;
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
-  guarantee(cards_per_region < max_cards_per_region, "too many cards per region");
+  guarantee(HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
+  guarantee((size_t) HeapRegion::CardsPerRegion < max_cards_per_region,
+            "too many cards per region");
 
   _bot_shared = new G1BlockOffsetSharedArray(_reserved,
                                              heap_word_size(init_byte_size));
@@ -1591,7 +1595,7 @@ jint G1CollectedHeap::initialize() {
 
   JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
-                                                G1DirtyCardQueueMax,
+                                                G1UpdateBufferQueueMaxLength,
                                                 Shared_DirtyCardQ_lock);
 
   if (G1DeferredRSUpdate) {
@@ -1609,9 +1613,6 @@ jint G1CollectedHeap::initialize() {
 
   // Do later initialization work for concurrent refinement.
   _cg1r->init();
-
-  const char* group_names[] = { "CR", "ZF", "CM", "CL" };
-  GCOverheadReporter::initGCOverheadReporter(4, group_names);
 
   return JNI_OK;
 }
@@ -1637,6 +1638,9 @@ size_t G1CollectedHeap::capacity() const {
 
 void G1CollectedHeap::iterate_dirty_card_closure(bool concurrent,
                                                  int worker_i) {
+  // Clean cards in the hot card cache
+  concurrent_g1_refine()->clean_up_cache(worker_i, g1_rem_set());
+
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   int n_completed_buffers = 0;
   while (dcqs.apply_closure_to_completed_buffer(worker_i, 0, true)) {
@@ -1645,9 +1649,6 @@ void G1CollectedHeap::iterate_dirty_card_closure(bool concurrent,
   g1_policy()->record_update_rs_processed_buffers(worker_i,
                                                   (double) n_completed_buffers);
   dcqs.clear_n_completed_buffers();
-  // Finish up the queue...
-  if (worker_i == 0) concurrent_g1_refine()->clean_up_cache(worker_i,
-                                                            g1_rem_set());
   assert(!dcqs.completed_buffers_exist_dirty(), "Completed buffers exist!");
 }
 
@@ -2414,8 +2415,6 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 void G1CollectedHeap::print_tracing_info() const {
-  concurrent_g1_refine()->print_final_card_counts();
-
   // We'll overload this to mean "trace GC pause statistics."
   if (TraceGen0Time || TraceGen1Time) {
     // The "G1CollectorPolicy" is keeping track of these stats, so delegate
@@ -2432,8 +2431,6 @@ void G1CollectedHeap::print_tracing_info() const {
     ConcurrentZFThread::print_summary_info();
   }
   g1_policy()->print_yg_surv_rate_info();
-
-  GCOverheadReporter::printGCOverhead();
 
   SpecializationStats::print();
 }
@@ -2671,7 +2668,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       // The elapsed time induced by the start time below deliberately elides
       // the possible verification above.
       double start_time_sec = os::elapsedTime();
-      GCOverheadReporter::recordSTWStart(start_time_sec);
       size_t start_used_bytes = used();
 
       g1_policy()->record_collection_pause_start(start_time_sec,
@@ -2749,8 +2745,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
         _in_cset_fast_test = NULL;
         _in_cset_fast_test_base = NULL;
 
-        release_gc_alloc_regions(false /* totally */);
-
         cleanup_surviving_young_words();
 
         if (g1_policy()->in_young_gc_mode()) {
@@ -2800,7 +2794,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       double end_time_sec = os::elapsedTime();
       double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
       g1_policy()->record_pause_time_ms(pause_time_ms);
-      GCOverheadReporter::recordSTWEnd(end_time_sec);
       g1_policy()->record_collection_pause_end(abandoned);
 
       assert(regions_accounted_for(), "Region leakage.");
@@ -2844,6 +2837,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
 
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
+  }
+  if (G1SummarizeRSetStats &&
+      (G1SummarizeRSetStatsPeriod > 0) &&
+      (total_collections() % G1SummarizeRSetStatsPeriod == 0)) {
+    g1_rem_set()->print_summary_info();
   }
 }
 
@@ -4106,6 +4104,8 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
   concurrent_g1_refine()->set_use_cache(false);
+  concurrent_g1_refine()->clear_hot_cache_claimed_index();
+
   int n_workers = (ParallelGCThreads > 0 ? workers()->total_workers() : 1);
   set_par_threads(n_workers);
   G1ParTask g1_par_task(this, n_workers, _task_queues);
@@ -4136,8 +4136,10 @@ void G1CollectedHeap::evacuate_collection_set() {
     G1KeepAliveClosure keep_alive(this);
     JNIHandles::weak_oops_do(&is_alive, &keep_alive);
   }
+  release_gc_alloc_regions(false /* totally */);
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
+  concurrent_g1_refine()->clear_hot_cache();
   concurrent_g1_refine()->set_use_cache(true);
 
   finalize_for_evac_failure();
@@ -4268,12 +4270,18 @@ void G1CollectedHeap::dirtyCardsForYoungRegions(CardTableModRefBS* ct_bs, HeapRe
 class G1ParCleanupCTTask : public AbstractGangTask {
   CardTableModRefBS* _ct_bs;
   G1CollectedHeap* _g1h;
+  HeapRegion* volatile _so_head;
+  HeapRegion* volatile _su_head;
 public:
   G1ParCleanupCTTask(CardTableModRefBS* ct_bs,
-                     G1CollectedHeap* g1h) :
+                     G1CollectedHeap* g1h,
+                     HeapRegion* scan_only_list,
+                     HeapRegion* survivor_list) :
     AbstractGangTask("G1 Par Cleanup CT Task"),
     _ct_bs(ct_bs),
-    _g1h(g1h)
+    _g1h(g1h),
+    _so_head(scan_only_list),
+    _su_head(survivor_list)
   { }
 
   void work(int i) {
@@ -4281,22 +4289,64 @@ public:
     while (r = _g1h->pop_dirty_cards_region()) {
       clear_cards(r);
     }
+    // Redirty the cards of the scan-only and survivor regions.
+    dirty_list(&this->_so_head);
+    dirty_list(&this->_su_head);
   }
+
   void clear_cards(HeapRegion* r) {
     // Cards for Survivor and Scan-Only regions will be dirtied later.
     if (!r->is_scan_only() && !r->is_survivor()) {
       _ct_bs->clear(MemRegion(r->bottom(), r->end()));
     }
   }
+
+  void dirty_list(HeapRegion* volatile * head_ptr) {
+    HeapRegion* head;
+    do {
+      // Pop region off the list.
+      head = *head_ptr;
+      if (head != NULL) {
+        HeapRegion* r = (HeapRegion*)
+          Atomic::cmpxchg_ptr(head->get_next_young_region(), head_ptr, head);
+        if (r == head) {
+          assert(!r->isHumongous(), "Humongous regions shouldn't be on survivor list");
+          _ct_bs->dirty(MemRegion(r->bottom(), r->end()));
+        }
+      }
+    } while (*head_ptr != NULL);
+  }
 };
 
+
+#ifndef PRODUCT
+class G1VerifyCardTableCleanup: public HeapRegionClosure {
+  CardTableModRefBS* _ct_bs;
+public:
+  G1VerifyCardTableCleanup(CardTableModRefBS* ct_bs)
+    : _ct_bs(ct_bs)
+  { }
+  virtual bool doHeapRegion(HeapRegion* r)
+  {
+    MemRegion mr(r->bottom(), r->end());
+    if (r->is_scan_only() || r->is_survivor()) {
+      _ct_bs->verify_dirty_region(mr);
+    } else {
+      _ct_bs->verify_clean_region(mr);
+    }
+    return false;
+  }
+};
+#endif
 
 void G1CollectedHeap::cleanUpCardTable() {
   CardTableModRefBS* ct_bs = (CardTableModRefBS*) (barrier_set());
   double start = os::elapsedTime();
 
   // Iterate over the dirty cards region list.
-  G1ParCleanupCTTask cleanup_task(ct_bs, this);
+  G1ParCleanupCTTask cleanup_task(ct_bs, this,
+                                  _young_list->first_scan_only_region(),
+                                  _young_list->first_survivor_region());
   if (ParallelGCThreads > 0) {
     set_par_threads(workers()->total_workers());
     workers()->run_task(&cleanup_task);
@@ -4312,17 +4362,21 @@ void G1CollectedHeap::cleanUpCardTable() {
       }
       r->set_next_dirty_cards_region(NULL);
     }
+    // now, redirty the cards of the scan-only and survivor regions
+    // (it seemed faster to do it this way, instead of iterating over
+    // all regions and then clearing / dirtying as appropriate)
+    dirtyCardsForYoungRegions(ct_bs, _young_list->first_scan_only_region());
+    dirtyCardsForYoungRegions(ct_bs, _young_list->first_survivor_region());
   }
-  // now, redirty the cards of the scan-only and survivor regions
-  // (it seemed faster to do it this way, instead of iterating over
-  // all regions and then clearing / dirtying as appropriate)
-  dirtyCardsForYoungRegions(ct_bs, _young_list->first_scan_only_region());
-  dirtyCardsForYoungRegions(ct_bs, _young_list->first_survivor_region());
-
   double elapsed = os::elapsedTime() - start;
   g1_policy()->record_clear_ct_time( elapsed * 1000.0);
+#ifndef PRODUCT
+  if (G1VerifyCTCleanup || VerifyAfterGC) {
+    G1VerifyCardTableCleanup cleanup_verifier(ct_bs);
+    heap_region_iterate(&cleanup_verifier);
+  }
+#endif
 }
-
 
 void G1CollectedHeap::do_collection_pause_if_appropriate(size_t word_size) {
   if (g1_policy()->should_do_collection_pause(word_size)) {
@@ -5016,7 +5070,7 @@ bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
     return hr->is_in(p);
   }
 }
-#endif // PRODUCT
+#endif // !PRODUCT
 
 void G1CollectedHeap::g1_unimplemented() {
   // Unimplemented();

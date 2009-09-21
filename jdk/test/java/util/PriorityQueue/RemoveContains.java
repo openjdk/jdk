@@ -69,6 +69,7 @@ public class RemoveContains {
         test(new ArrayBlockingQueue<String>(10));
         test(new LinkedBlockingQueue<String>(10));
         test(new LinkedBlockingDeque<String>(10));
+//         test(new LinkedTransferQueue<String>());
         test(new ArrayDeque<String>(10));
 
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);

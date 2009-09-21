@@ -37,21 +37,7 @@
 
 G1MMUTracker::G1MMUTracker(double time_slice, double max_gc_time) :
   _time_slice(time_slice),
-  _max_gc_time(max_gc_time),
-  _conc_overhead_time_sec(0.0) { }
-
-void
-G1MMUTracker::update_conc_overhead(double conc_overhead) {
-  double conc_overhead_time_sec = _time_slice * conc_overhead;
-  if (conc_overhead_time_sec > 0.9 * _max_gc_time) {
-    // We are screwed, as we only seem to have <10% of the soft
-    // real-time goal available for pauses. Let's admit defeat and
-    // allow something more generous as a pause target.
-    conc_overhead_time_sec = 0.75 * _max_gc_time;
-  }
-
-  _conc_overhead_time_sec = conc_overhead_time_sec;
-}
+  _max_gc_time(max_gc_time) { }
 
 G1MMUTrackerQueue::G1MMUTrackerQueue(double time_slice, double max_gc_time) :
   G1MMUTracker(time_slice, max_gc_time),
@@ -128,7 +114,7 @@ double G1MMUTrackerQueue::longest_pause_internal(double current_time) {
 
   while( 1 ) {
     double gc_time =
-      calculate_gc_time(current_time + target_time) + _conc_overhead_time_sec;
+      calculate_gc_time(current_time + target_time);
     double diff = target_time + gc_time - _max_gc_time;
     if (!is_double_leq_0(diff)) {
       target_time -= diff;

@@ -48,12 +48,14 @@ echo "CLASSPATH=${CLASSPATH}"
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
     PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    PS=";" # Platform PS, not Cygwin PS
+    FS="/"
+    ;;
   Windows* )
-    NULL=NUL
     PS=";"
     FS="\\"
     ;;
@@ -69,7 +71,7 @@ cp "${TESTSRC}${FS}$1.java" .
 "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -g -d . -classpath .${PS}${TESTSRC} $1.java 2> ${TMP1}
 result=$?
 if [ $result -ne 0 ]; then exit $result; fi
-if strings $1.class | grep clinit; then
+if "${TESTJAVA}${FS}bin${FS}javap" $1.class | grep clinit; then
   echo "Failed"
   exit 1;
 else

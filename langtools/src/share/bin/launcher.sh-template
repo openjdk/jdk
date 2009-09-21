@@ -45,7 +45,7 @@ if [ "$LANGTOOLS_USE_BOOTCLASSPATH" != "no" ]; then
 fi
 
 # tools currently assumes that assertions are enabled in the launcher
-ea=-ea:com.sun.tools
+ea=-ea:com.sun.tools...
 
 # Any parameters starting with -J are passed to the JVM.
 # All other parameters become parameters of #PROGRAM#.

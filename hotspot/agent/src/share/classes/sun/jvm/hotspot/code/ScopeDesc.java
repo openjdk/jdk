@@ -41,6 +41,7 @@ public class ScopeDesc {
   private NMethod code;
   private Method  method;
   private int     bci;
+  private boolean reexecute;
   /** Decoding offsets */
   private int     decodeOffset;
   private int     senderDecodeOffset;
@@ -51,10 +52,11 @@ public class ScopeDesc {
   private List    objects; // ArrayList<ScopeValue>
 
 
-  public ScopeDesc(NMethod code, int decodeOffset) {
+  public ScopeDesc(NMethod code, int decodeOffset, boolean reexecute) {
     this.code = code;
     this.decodeOffset = decodeOffset;
     this.objects      = decodeObjectValues(DebugInformationRecorder.SERIALIZED_NULL);
+    this.reexecute    = reexecute;
 
     // Decode header
     DebugInfoReadStream stream  = streamAt(decodeOffset);
@@ -68,10 +70,11 @@ public class ScopeDesc {
     monitorsDecodeOffset    = stream.readInt();
   }
 
-  public ScopeDesc(NMethod code, int decodeOffset, int objectDecodeOffset) {
+  public ScopeDesc(NMethod code, int decodeOffset, int objectDecodeOffset, boolean reexecute) {
     this.code = code;
     this.decodeOffset = decodeOffset;
     this.objects      = decodeObjectValues(objectDecodeOffset);
+    this.reexecute    = reexecute;
 
     // Decode header
     DebugInfoReadStream stream  = streamAt(decodeOffset);
@@ -85,9 +88,10 @@ public class ScopeDesc {
     monitorsDecodeOffset    = stream.readInt();
   }
 
-  public NMethod getNMethod() { return code; }
-  public Method getMethod() { return method; }
-  public int    getBCI()    { return bci;    }
+  public NMethod getNMethod()   { return code; }
+  public Method getMethod()     { return method; }
+  public int    getBCI()        { return bci;    }
+  public boolean getReexecute() { return reexecute;}
 
   /** Returns a List&lt;ScopeValue&gt; */
   public List getLocals() {
@@ -115,7 +119,7 @@ public class ScopeDesc {
       return null;
     }
 
-    return new ScopeDesc(code, senderDecodeOffset);
+    return new ScopeDesc(code, senderDecodeOffset, false);
   }
 
   /** Returns where the scope was decoded */
@@ -149,7 +153,8 @@ public class ScopeDesc {
   public void printValueOn(PrintStream tty) {
     tty.print("ScopeDesc for ");
     method.printValueOn(tty);
-    tty.println(" @bci " + bci);
+    tty.print(" @bci " + bci);
+    tty.println(" reexecute=" + reexecute);
   }
 
   // FIXME: add more accessors
@@ -157,7 +162,6 @@ public class ScopeDesc {
   //--------------------------------------------------------------------------------
   // Internals only below this point
   //
-
   private DebugInfoReadStream streamAt(int decodeOffset) {
     return new DebugInfoReadStream(code, decodeOffset, objects);
   }
