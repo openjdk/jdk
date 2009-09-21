@@ -3231,6 +3231,12 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
       this_klass->set_has_final_method();
     }
     this_klass->set_method_ordering(method_ordering());
+    // The instanceKlass::_methods_jmethod_ids cache and the
+    // instanceKlass::_methods_cached_itable_indices cache are
+    // both managed on the assumption that the initial cache
+    // size is equal to the number of methods in the class. If
+    // that changes, then instanceKlass::idnum_can_increment()
+    // has to be changed accordingly.
     this_klass->set_initial_method_idnum(methods->length());
     this_klass->set_name(cp->klass_name_at(this_class_index));
     if (LinkWellKnownClasses || is_anonymous())  // I am well known to myself
