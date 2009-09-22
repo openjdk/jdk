@@ -29,15 +29,15 @@ package sun.util.logging;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
-import java.util.logging.Logger;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import sun.misc.JavaLangAccess;
 import sun.misc.SharedSecrets;
 
@@ -493,6 +493,7 @@ public class PlatformLogger {
         private static final Method getLoggerMethod;
         private static final Method setLevelMethod;
         private static final Method getLevelMethod;
+        private static final Method isLoggableMethod;
         private static final Method logMethod;
         private static final Method logThrowMethod;
         private static final Method logParamsMethod;
@@ -505,6 +506,7 @@ public class PlatformLogger {
             getLoggerMethod = getMethod(loggerClass, "getLogger", String.class);
             setLevelMethod = getMethod(loggerClass, "setLevel", levelClass);
             getLevelMethod = getMethod(loggerClass, "getLevel");
+            isLoggableMethod = getMethod(loggerClass, "isLoggable", levelClass);
             logMethod = getMethod(loggerClass, "log", levelClass, String.class);
             logThrowMethod = getMethod(loggerClass, "log", levelClass, String.class, Throwable.class);
             logParamsMethod = getMethod(loggerClass, "log", levelClass, String.class, Object[].class);
@@ -607,6 +609,10 @@ public class PlatformLogger {
         void setLevel(int newLevel) {
             levelValue = newLevel;
             invoke(setLevelMethod, javaLogger, levelObjects.get(newLevel));
+        }
+
+        public boolean isLoggable(int level) {
+            return (Boolean) invoke(isLoggableMethod, javaLogger, levelObjects.get(level));
         }
     }
 
