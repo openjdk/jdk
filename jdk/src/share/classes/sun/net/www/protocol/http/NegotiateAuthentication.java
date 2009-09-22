@@ -30,12 +30,12 @@ import java.util.HashMap;
 import sun.net.www.HeaderParser;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
+import sun.util.logging.PlatformLogger;
 
 import java.net.URL;
 import java.io.IOException;
 import java.net.Authenticator.RequestorType;
 import java.lang.reflect.Constructor;
-import sun.net.www.http.HttpCapture;
 import static sun.net.www.protocol.http.AuthScheme.NEGOTIATE;
 import static sun.net.www.protocol.http.AuthScheme.KERBEROS;
 
@@ -258,7 +258,7 @@ abstract class Negotiator {
             clazz = Class.forName("sun.net.www.protocol.http.NegotiatorImpl", true, null);
             c = clazz.getConstructor(HttpCallerInfo.class);
         } catch (ClassNotFoundException cnfe) {
-            log(cnfe);
+            finest(cnfe);
             throw cnfe;
         } catch (ReflectiveOperationException roe) {
             // if the class is there then something seriously wrong if
@@ -269,10 +269,10 @@ abstract class Negotiator {
         try {
             return (Negotiator) (c.newInstance(hci));
         } catch (ReflectiveOperationException roe) {
-            log(roe);
+            finest(roe);
             Throwable t = roe.getCause();
             if (t != null && t instanceof Exception)
-                log((Exception)t);
+                finest((Exception)t);
             throw roe;
         }
     }
@@ -281,9 +281,8 @@ abstract class Negotiator {
 
     abstract byte[] nextToken(byte[] in) throws IOException;
 
-    static void log(Exception e) {
-        if (HttpCapture.isLoggable("FINEST")) {
-            HttpCapture.finest("NegotiateAuthentication: " + e);
-        }
+    static void finest(Exception e) {
+        PlatformLogger logger = HttpURLConnection.getHttpLogger();
+        logger.finest("NegotiateAuthentication: " + e);
     }
 }
