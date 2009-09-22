@@ -317,10 +317,6 @@ public final
      * Returns an array of length 0 if the underlying method declares
      * no exceptions in its {@code throws} clause.
      *
-     * <p>If an exception type is a parameterized type, the {@code Type}
-     * object returned for it must accurately reflect the actual type
-     * parameters used in the source code.
-     *
      * <p>If an exception type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
      *
