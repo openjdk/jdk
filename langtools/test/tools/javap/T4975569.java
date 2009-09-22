@@ -65,6 +65,7 @@ public class T4975569
     int errors;
 
     String javap(String className) {
+        String newline = System.getProperty("line.separator");
         String testClasses = System.getProperty("test.classes", ".");
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
@@ -73,7 +74,7 @@ public class T4975569
         if (rc != 0)
             throw new Error("javap failed. rc=" + rc);
         out.close();
-        String output = sw.toString();
+        String output = sw.toString().replaceAll(newline, "\n");
         System.out.println("class " + className);
         System.out.println(output);
         return output;

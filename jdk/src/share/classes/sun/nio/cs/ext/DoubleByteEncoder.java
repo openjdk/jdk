@@ -95,7 +95,7 @@ public abstract class DoubleByteEncoder
         try {
             while (sp < sl) {
                 char c = sa[sp];
-                if (Surrogate.is(c)) {
+                if (Character.isSurrogate(c)) {
                     if (sgp.parse(c, sa, sp, sl) < 0)
                         return sgp.error();
                     if (sl - sp < 2)
@@ -153,7 +153,7 @@ public abstract class DoubleByteEncoder
         try {
             while (src.hasRemaining()) {
                 char c = src.get();
-                if (Surrogate.is(c)) {
+                if (Character.isSurrogate(c)) {
                     int surr;
                     if ((surr = sgp.parse(c, src)) < 0)
                         return sgp.error();

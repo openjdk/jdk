@@ -27,6 +27,7 @@ package com.sun.tools.javac.jvm;
 
 import java.io.*;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.CharBuffer;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -2614,7 +2615,11 @@ public class ClassReader implements Completer {
         }
 
         public URI toUri() {
-            return URI.create(name.toString());
+            try {
+                return new URI(null, name.toString(), null);
+            } catch (URISyntaxException e) {
+                throw new CannotCreateUriError(name.toString(), e);
+            }
         }
 
         @Override

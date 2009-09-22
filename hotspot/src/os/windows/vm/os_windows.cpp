@@ -616,12 +616,13 @@ julong os::available_memory() {
 }
 
 julong os::win32::available_memory() {
-  // FIXME: GlobalMemoryStatus() may return incorrect value if total memory
-  // is larger than 4GB
-  MEMORYSTATUS ms;
-  GlobalMemoryStatus(&ms);
+  // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
+  // value if total memory is larger than 4GB
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
 
-  return (julong)ms.dwAvailPhys;
+  return (julong)ms.ullAvailPhys;
 }
 
 julong os::physical_memory() {
@@ -1579,16 +1580,17 @@ void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
   st->print(" %dk page", os::vm_page_size()>>10);
 
-  // FIXME: GlobalMemoryStatus() may return incorrect value if total memory
-  // is larger than 4GB
-  MEMORYSTATUS ms;
-  GlobalMemoryStatus(&ms);
+  // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
+  // value if total memory is larger than 4GB
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
 
   st->print(", physical %uk", os::physical_memory() >> 10);
   st->print("(%uk free)", os::available_memory() >> 10);
 
-  st->print(", swap %uk", ms.dwTotalPageFile >> 10);
-  st->print("(%uk free)", ms.dwAvailPageFile >> 10);
+  st->print(", swap %uk", ms.ullTotalPageFile >> 10);
+  st->print("(%uk free)", ms.ullAvailPageFile >> 10);
   st->cr();
 }
 
@@ -3135,11 +3137,13 @@ void os::win32::initialize_system_info() {
   _processor_level = si.wProcessorLevel;
   _processor_count = si.dwNumberOfProcessors;
 
-  MEMORYSTATUS ms;
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+
   // also returns dwAvailPhys (free physical memory bytes), dwTotalVirtual, dwAvailVirtual,
   // dwMemoryLoad (% of memory in use)
-  GlobalMemoryStatus(&ms);
-  _physical_memory = ms.dwTotalPhys;
+  GlobalMemoryStatusEx(&ms);
+  _physical_memory = ms.ullTotalPhys;
 
   OSVERSIONINFO oi;
   oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);

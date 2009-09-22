@@ -27,7 +27,6 @@ package sun.swing;
 
 import java.security.*;
 import java.lang.reflect.*;
-import java.lang.ref.SoftReference;
 import java.awt.*;
 import static java.awt.RenderingHints.*;
 import java.awt.event.*;
@@ -78,17 +77,23 @@ public class SwingUtilities2 {
     public static final Object LAF_STATE_KEY =
             new StringBuffer("LookAndFeel State");
 
-    // Most of applications use 10 or less fonts simultaneously
-    private static final int STRONG_BEARING_CACHE_SIZE = 10;
-    // Strong cache for the left and right side bearings
-    // for STRONG_BEARING_CACHE_SIZE most recently used fonts.
-    private static BearingCacheEntry[] strongBearingCache =
-            new BearingCacheEntry[STRONG_BEARING_CACHE_SIZE];
-    // Next index to insert an entry into the strong bearing cache
-    private static int strongBearingCacheNextIndex = 0;
-    // Soft cache for the left and right side bearings
-    private static Set<SoftReference<BearingCacheEntry>> softBearingCache =
-            new HashSet<SoftReference<BearingCacheEntry>>();
+    // Maintain a cache of CACHE_SIZE fonts and the left side bearing
+     // of the characters falling into the range MIN_CHAR_INDEX to
+     // MAX_CHAR_INDEX. The values in fontCache are created as needed.
+     private static LSBCacheEntry[] fontCache;
+     // Windows defines 6 font desktop properties, we will therefore only
+     // cache the metrics for 6 fonts.
+     private static final int CACHE_SIZE = 6;
+     // nextIndex in fontCache to insert a font into.
+     private static int nextIndex;
+     // LSBCacheEntry used to search in fontCache to see if we already
+     // have an entry for a particular font
+     private static LSBCacheEntry searchKey;
+
+     // getLeftSideBearing will consult all characters that fall in the
+     // range MIN_CHAR_INDEX to MAX_CHAR_INDEX.
+     private static final int MIN_CHAR_INDEX = (int)'W';
+     private static final int MAX_CHAR_INDEX = (int)'W' + 1;
 
     public static final FontRenderContext DEFAULT_FRC =
         new FontRenderContext(null, false, false);
@@ -183,6 +188,10 @@ public class SwingUtilities2 {
     private static final Object charsBufferLock = new Object();
     private static char[] charsBuffer = new char[CHAR_BUFFER_SIZE];
 
+    static {
+        fontCache = new LSBCacheEntry[CACHE_SIZE];
+    }
+
     /**
      * checks whether TextLayout is required to handle characters.
      *
@@ -226,7 +235,9 @@ public class SwingUtilities2 {
 
     /**
      * Returns the left side bearing of the first character of string. The
-     * left side bearing is calculated from the passed in FontMetrics.
+     * left side bearing is calculated from the passed in
+     * FontMetrics.  If the passed in String is less than one
+     * character, this will throw a StringIndexOutOfBoundsException exception.
      *
      * @param c JComponent that will display the string
      * @param fm FontMetrics used to measure the String width
@@ -234,14 +245,11 @@ public class SwingUtilities2 {
      */
     public static int getLeftSideBearing(JComponent c, FontMetrics fm,
                                          String string) {
-        if ((string == null) || (string.length() == 0)) {
-            return 0;
-        }
         return getLeftSideBearing(c, fm, string.charAt(0));
     }
 
     /**
-     * Returns the left side bearing of the specified character. The
+     * Returns the left side bearing of the first character of string. The
      * left side bearing is calculated from the passed in FontMetrics.
      *
      * @param c JComponent that will display the string
@@ -250,105 +258,37 @@ public class SwingUtilities2 {
      */
     public static int getLeftSideBearing(JComponent c, FontMetrics fm,
                                          char firstChar) {
-        return getBearing(c, fm, firstChar, true);
-    }
+        int charIndex = (int) firstChar;
+        if (charIndex < MAX_CHAR_INDEX && charIndex >= MIN_CHAR_INDEX) {
+            byte[] lsbs = null;
 
-    /**
-     * Returns the right side bearing of the last character of string. The
-     * right side bearing is calculated from the passed in FontMetrics.
-     *
-     * @param c JComponent that will display the string
-     * @param fm FontMetrics used to measure the String width
-     * @param string String to get the right side bearing for.
-     */
-    public static int getRightSideBearing(JComponent c, FontMetrics fm,
-                                          String string) {
-        if ((string == null) || (string.length() == 0)) {
-            return 0;
-        }
-        return getRightSideBearing(c, fm, string.charAt(string.length() - 1));
-    }
-
-    /**
-     * Returns the right side bearing of the specified character. The
-     * right side bearing is calculated from the passed in FontMetrics.
-     *
-     * @param c JComponent that will display the string
-     * @param fm FontMetrics used to measure the String width
-     * @param lastChar Character to get the right side bearing for.
-     */
-    public static int getRightSideBearing(JComponent c, FontMetrics fm,
-                                         char lastChar) {
-        return getBearing(c, fm, lastChar, false);
-    }
-
-    /* Calculates the left and right side bearing for a character.
-     * Strongly caches bearings for STRONG_BEARING_CACHE_SIZE
-     * most recently used Fonts and softly caches as many as GC allows.
-     */
-    private static int getBearing(JComponent comp, FontMetrics fm, char c,
-                                  boolean isLeftBearing) {
-        if (fm == null) {
-            if (comp == null) {
-                return 0;
-            } else {
-                fm = comp.getFontMetrics(comp.getFont());
-            }
-        }
-        synchronized (SwingUtilities2.class) {
-            BearingCacheEntry entry = null;
-            BearingCacheEntry searchKey = new BearingCacheEntry(fm);
-            // See if we already have an entry in the strong cache
-            for (BearingCacheEntry cacheEntry : strongBearingCache) {
-                if (searchKey.equals(cacheEntry)) {
-                    entry = cacheEntry;
-                    break;
+            FontRenderContext frc = getFontRenderContext(c, fm);
+            Font font = fm.getFont();
+            synchronized (SwingUtilities2.class) {
+                LSBCacheEntry entry = null;
+                if (searchKey == null) {
+                    searchKey = new LSBCacheEntry(frc, font);
+                } else {
+                    searchKey.reset(frc, font);
                 }
-            }
-            // See if we already have an entry in the soft cache
-            if (entry == null) {
-                Iterator<SoftReference<BearingCacheEntry>> iter =
-                        softBearingCache.iterator();
-                while (iter.hasNext()) {
-                    BearingCacheEntry cacheEntry = iter.next().get();
-                    if (cacheEntry == null) {
-                        // Remove discarded soft reference from the cache
-                        iter.remove();
-                        continue;
-                    }
+                // See if we already have an entry for this pair
+                for (LSBCacheEntry cacheEntry : fontCache) {
                     if (searchKey.equals(cacheEntry)) {
                         entry = cacheEntry;
-                        putEntryInStrongCache(entry);
                         break;
                     }
                 }
+                if (entry == null) {
+                    // No entry for this pair, add it.
+                    entry = searchKey;
+                    fontCache[nextIndex] = searchKey;
+                    searchKey = null;
+                    nextIndex = (nextIndex + 1) % CACHE_SIZE;
+                }
+                return entry.getLeftSideBearing(firstChar);
             }
-            if (entry == null) {
-                // No entry, add it
-                entry = searchKey;
-                cacheEntry(entry);
-            }
-            return (isLeftBearing)
-                    ? entry.getLeftSideBearing(c)
-                    : entry.getRightSideBearing(c);
         }
-    }
-
-    private synchronized static void cacheEntry(BearingCacheEntry entry) {
-        // Move the oldest entry from the strong cache into the soft cache
-        BearingCacheEntry oldestEntry =
-                strongBearingCache[strongBearingCacheNextIndex];
-        if (oldestEntry != null) {
-            softBearingCache.add(new SoftReference<BearingCacheEntry>(oldestEntry));
-        }
-        // Put entry in the strong cache
-        putEntryInStrongCache(entry);
-    }
-
-    private synchronized static void putEntryInStrongCache(BearingCacheEntry entry) {
-        strongBearingCache[strongBearingCacheNextIndex] = entry;
-        strongBearingCacheNextIndex = (strongBearingCacheNextIndex + 1)
-                % STRONG_BEARING_CACHE_SIZE;
+        return 0;
     }
 
     /**
@@ -1063,99 +1003,72 @@ public class SwingUtilities2 {
     }
 
     /**
-     * BearingCacheEntry is used to cache left and right character bearings
-     * for a particular <code>Font</code> and <code>FontRenderContext</code>.
+     * LSBCacheEntry is used to cache the left side bearing (lsb) for
+     * a particular <code>Font</code> and <code>FontRenderContext</code>.
+     * This only caches characters that fall in the range
+     * <code>MIN_CHAR_INDEX</code> to <code>MAX_CHAR_INDEX</code>.
      */
-    private static class BearingCacheEntry {
-        private FontMetrics fontMetrics;
-        private Font font;
-        private FontRenderContext frc;
-        private Map<Character, Short> cache;
-        // Used for the creation of a GlyphVector
+    private static class LSBCacheEntry {
+        // Used to indicate a particular entry in lsb has not been set.
+        private static final byte UNSET = Byte.MAX_VALUE;
+        // Used in creating a GlyphVector to get the lsb
         private static final char[] oneChar = new char[1];
 
-        public BearingCacheEntry(FontMetrics fontMetrics) {
-            this.fontMetrics = fontMetrics;
-            this.font = fontMetrics.getFont();
-            this.frc = fontMetrics.getFontRenderContext();
-            this.cache = new HashMap<Character, Short>();
-            assert (font != null && frc != null);
+        private byte[] lsbCache;
+        private Font font;
+        private FontRenderContext frc;
+
+
+        public LSBCacheEntry(FontRenderContext frc, Font font) {
+            lsbCache = new byte[MAX_CHAR_INDEX - MIN_CHAR_INDEX];
+            reset(frc, font);
+
+        }
+
+        public void reset(FontRenderContext frc, Font font) {
+            this.font = font;
+            this.frc = frc;
+            for (int counter = lsbCache.length - 1; counter >= 0; counter--) {
+                lsbCache[counter] = UNSET;
+            }
         }
 
         public int getLeftSideBearing(char aChar) {
-            Short bearing = cache.get(aChar);
-            if (bearing == null) {
-                bearing = calcBearing(aChar);
-                cache.put(aChar, bearing);
+            int index = aChar - MIN_CHAR_INDEX;
+            assert (index >= 0 && index < (MAX_CHAR_INDEX - MIN_CHAR_INDEX));
+            byte lsb = lsbCache[index];
+            if (lsb == UNSET) {
+                oneChar[0] = aChar;
+                GlyphVector gv = font.createGlyphVector(frc, oneChar);
+                lsb = (byte) gv.getGlyphPixelBounds(0, frc, 0f, 0f).x;
+                if (lsb < 0) {
+                    /* HRGB/HBGR LCD glyph images will always have a pixel
+                     * on the left used in colour fringe reduction.
+                     * Text rendering positions this correctly but here
+                     * we are using the glyph image to adjust that position
+                     * so must account for it.
+                     */
+                    Object aaHint = frc.getAntiAliasingHint();
+                    if (aaHint == VALUE_TEXT_ANTIALIAS_LCD_HRGB ||
+                            aaHint == VALUE_TEXT_ANTIALIAS_LCD_HBGR) {
+                        lsb++;
+                    }
+                }
+                lsbCache[index] = lsb;
             }
-            return ((0xFF00 & bearing) >>> 8) - 127;
-        }
+            return lsb;
 
-        public int getRightSideBearing(char aChar) {
-            Short bearing = cache.get(aChar);
-            if (bearing == null) {
-                bearing = calcBearing(aChar);
-                cache.put(aChar, bearing);
-            }
-            return (0xFF & bearing) - 127;
-        }
 
-        /* Calculates left and right side bearings for a character.
-         * Makes an assumption that bearing is a value between -127 and +127.
-         * Stores LSB and RSB as single two-byte number (short):
-         * LSB is the high byte, RSB is the low byte.
-         */
-        private short calcBearing(char aChar) {
-            oneChar[0] = aChar;
-            GlyphVector gv = font.createGlyphVector(frc, oneChar);
-            Rectangle pixelBounds = gv.getGlyphPixelBounds(0, frc, 0f, 0f);
-
-            // Get bearings
-            int lsb = pixelBounds.x;
-            int rsb = pixelBounds.width - fontMetrics.charWidth(aChar);
-
-            /* HRGB/HBGR LCD glyph images will always have a pixel
-             * on the left and a pixel on the right
-             * used in colour fringe reduction.
-             * Text rendering positions this correctly but here
-             * we are using the glyph image to adjust that position
-             * so must account for it.
-             */
-            if (lsb < 0) {
-                 Object aaHint = frc.getAntiAliasingHint();
-                 if (aaHint == VALUE_TEXT_ANTIALIAS_LCD_HRGB ||
-                     aaHint == VALUE_TEXT_ANTIALIAS_LCD_HBGR) {
-                     lsb++;
-                 }
-            }
-            if (rsb > 0) {
-                 Object aaHint = frc.getAntiAliasingHint();
-                 if (aaHint == VALUE_TEXT_ANTIALIAS_LCD_HRGB ||
-                     aaHint == VALUE_TEXT_ANTIALIAS_LCD_HBGR) {
-                     rsb--;
-                 }
-            }
-
-            // Make sure that LSB and RSB are valid (see 6472972)
-            if (lsb < -127 || lsb > 127) {
-                lsb = 0;
-            }
-            if (rsb < -127 || rsb > 127) {
-                rsb = 0;
-            }
-
-            int bearing = ((lsb + 127) << 8) + (rsb + 127);
-            return (short)bearing;
         }
 
         public boolean equals(Object entry) {
             if (entry == this) {
                 return true;
             }
-            if (!(entry instanceof BearingCacheEntry)) {
+            if (!(entry instanceof LSBCacheEntry)) {
                 return false;
             }
-            BearingCacheEntry oEntry = (BearingCacheEntry)entry;
+            LSBCacheEntry oEntry = (LSBCacheEntry) entry;
             return (font.equals(oEntry.font) &&
                     frc.equals(oEntry.frc));
         }
@@ -1172,7 +1085,6 @@ public class SwingUtilities2 {
         }
     }
 
-
     /*
      * here goes the fix for 4856343 [Problem with applet interaction
      * with system selection clipboard]
@@ -1181,36 +1093,34 @@ public class SwingUtilities2 {
      * are to be performed
      */
 
-
     /**
-     * checks the security permissions for accessing system clipboard
-     *
-     * for untrusted context (see isTrustedContext) checks the
-     * permissions for the current event being handled
-     *
-     */
-    public static boolean canAccessSystemClipboard() {
-        boolean canAccess = false;
-        if (!GraphicsEnvironment.isHeadless()) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm == null) {
-                canAccess = true;
-            } else {
-                try {
-                    sm.checkSystemClipboardAccess();
-                    canAccess = true;
-                } catch (SecurityException e) {
-                }
-                if (canAccess && ! isTrustedContext()) {
-                    canAccess = canCurrentEventAccessSystemClipboard(true);
-                }
-            }
-        }
-        return canAccess;
-    }
-
+    * checks the security permissions for accessing system clipboard
+    *
+    * for untrusted context (see isTrustedContext) checks the
+    * permissions for the current event being handled
+    *
+    */
+   public static boolean canAccessSystemClipboard() {
+       boolean canAccess = false;
+       if (!GraphicsEnvironment.isHeadless()) {
+           SecurityManager sm = System.getSecurityManager();
+           if (sm == null) {
+               canAccess = true;
+           } else {
+               try {
+                   sm.checkSystemClipboardAccess();
+                   canAccess = true;
+               } catch (SecurityException e) {
+               }
+               if (canAccess && ! isTrustedContext()) {
+                   canAccess = canCurrentEventAccessSystemClipboard(true);
+               }
+           }
+       }
+       return canAccess;
+   }
     /**
-     * Returns true if EventQueue.getCurrentEvent() has the permissions to
+    * Returns true if EventQueue.getCurrentEvent() has the permissions to
      * access the system clipboard
      */
     public static boolean canCurrentEventAccessSystemClipboard() {
@@ -1843,5 +1753,23 @@ public class SwingUtilities2 {
     public static Section liesInVertical(Rectangle rect, Point p,
                                          boolean three) {
         return liesIn(rect, p, false, false, three);
+    }
+
+    /**
+     * Returns the {@code JViewport} instance for the {@code component}
+     * or {@code null}.
+     *
+     * @return the {@code JViewport} instance for the {@code component}
+     * or {@code null}
+     * @throws NullPointerException if {@code component} is {@code null}
+     */
+    public static JViewport getViewport(Component component) {
+        do {
+            component = component.getParent();
+            if (component instanceof JViewport) {
+                return (JViewport) component;
+            }
+        } while(component instanceof JLayer);
+        return null;
     }
 }

@@ -32,12 +32,11 @@
 
 OS=`uname -s`;
 case "${OS}" in
-        Windows* | CYGWIN* )
-                SEP=";"
+        CYGWIN* )
+                DIFFOPTS="--strip-trailing-cr"
         ;;
 
 	* )
-	SEP=":"
 	;;
 esac
 
@@ -88,7 +87,7 @@ done
 # check for mutliple methods and no static initializer
 
 ${APT} -XclassesAsDecls -cp ${TESTCLASSES} -print Aggregate > aggregate.txt
-diff aggregate.txt ${TESTSRC}/goldenAggregate.txt
+diff ${DIFFOPTS} aggregate.txt ${TESTSRC}/goldenAggregate.txt
 
 RESULT=$?
 case "$RESULT" in

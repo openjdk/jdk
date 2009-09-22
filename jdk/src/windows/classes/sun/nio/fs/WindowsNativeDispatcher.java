@@ -180,10 +180,12 @@ class WindowsNativeDispatcher {
     static class FirstFile {
         private long handle;
         private String name;
+        private int attributes;
 
         private FirstFile() { }
         public long handle()    { return handle; }
         public String name()    { return name; }
+        public int attributes() { return attributes; }
     }
     private static native void FindFirstFile0(long lpFileName, FirstFile obj)
         throws WindowsException;

@@ -1,2 +1,2 @@
-T6638712d.java:39:9: compiler.err.cant.apply.symbol: kindname.method, m, U,java.util.List<java.util.List<U>>, int,java.util.List<java.util.List<java.lang.String>>, kindname.class, T6638712d, null
+T6638712d.java:16:9: compiler.err.cant.apply.symbol: kindname.method, m, U,java.util.List<java.util.List<U>>, int,java.util.List<java.util.List<java.lang.String>>, kindname.class, T6638712d, null
 1 error

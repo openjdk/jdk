@@ -114,7 +114,7 @@ public abstract class SimpleEUCEncoder
             while (sp < sl) {
                 boolean allZeroes = true;
                 char inputChar = sa[sp];
-                if (Surrogate.is(inputChar)) {
+                if (Character.isSurrogate(inputChar)) {
                     if (sgp.parse(inputChar, sa, sp, sl) < 0)
                         return sgp.error();
                     return sgp.unmappableResult();
@@ -194,7 +194,7 @@ public abstract class SimpleEUCEncoder
             while (src.hasRemaining()) {
                 char inputChar = src.get();
                 boolean allZeroes = true;
-                if (Surrogate.is(inputChar)) {
+                if (Character.isSurrogate(inputChar)) {
                     if (sgp.parse(inputChar, src) < 0)
                         return sgp.error();
                     return sgp.unmappableResult();

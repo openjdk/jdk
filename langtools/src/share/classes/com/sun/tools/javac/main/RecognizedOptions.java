@@ -38,9 +38,9 @@ import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.util.Collection;
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import javax.lang.model.SourceVersion;
 
@@ -598,14 +598,14 @@ public class RecognizedOptions {
     };
     }
 
-    private static Collection<String> getXLintChoices() {
-        Collection<String> choices = new LinkedHashSet<String>();
-        choices.add("all");
+    private static Map<String,Boolean> getXLintChoices() {
+        Map<String,Boolean> choices = new LinkedHashMap<String,Boolean>();
+        choices.put("all", false);
         for (Lint.LintCategory c : Lint.LintCategory.values())
-            choices.add(c.option);
+            choices.put(c.option, c.hidden);
         for (Lint.LintCategory c : Lint.LintCategory.values())
-            choices.add("-" + c.option);
-        choices.add("none");
+            choices.put("-" + c.option, c.hidden);
+        choices.put("none", false);
         return choices;
     }
 

@@ -33,6 +33,7 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import javax.tools.JavaFileObject;
 
 public class T6440333 extends ToolTester {
@@ -40,10 +41,10 @@ public class T6440333 extends ToolTester {
         File path = test_src.getCanonicalFile();
         File src = new File(new File(path, "."), "T6440333.java");
         JavaFileObject fo = fm.getJavaFileObjects(src).iterator().next();
-        String expect = src.getCanonicalFile().getPath().replace(File.separatorChar, '/');
+        URI expect = src.getCanonicalFile().toURI();
         System.err.println("Expect " + expect);
-        System.err.println("Got: " +  fo.toUri().getPath());
-        if (!expect.equals(fo.toUri().getPath())) {
+        System.err.println("Found  " + fo.toUri());
+        if (!expect.equals(fo.toUri())) {
             throw new AssertionError();
         }
     }

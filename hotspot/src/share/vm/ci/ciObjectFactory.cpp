@@ -219,24 +219,27 @@ ciObject* ciObjectFactory::get(oop key) {
   ASSERT_IN_VM;
 
 #ifdef ASSERT
-  oop last = NULL;
-  for (int j = 0; j< _ci_objects->length(); j++) {
-    oop o = _ci_objects->at(j)->get_oop();
-    assert(last < o, "out of order");
-    last = o;
+  if (CIObjectFactoryVerify) {
+    oop last = NULL;
+    for (int j = 0; j< _ci_objects->length(); j++) {
+      oop o = _ci_objects->at(j)->get_oop();
+      assert(last < o, "out of order");
+      last = o;
+    }
   }
 #endif // ASSERT
   int len = _ci_objects->length();
   int index = find(key, _ci_objects);
 #ifdef ASSERT
-  for (int i=0; i<_ci_objects->length(); i++) {
-    if (_ci_objects->at(i)->get_oop() == key) {
-      assert(index == i, " bad lookup");
+  if (CIObjectFactoryVerify) {
+    for (int i=0; i<_ci_objects->length(); i++) {
+      if (_ci_objects->at(i)->get_oop() == key) {
+        assert(index == i, " bad lookup");
+      }
     }
   }
 #endif
   if (!is_found_at(index, key, _ci_objects)) {
-
     // Check in the non-perm area before putting it in the list.
     NonPermObject* &bucket = find_non_perm(key);
     if (bucket != NULL) {
@@ -539,11 +542,13 @@ void ciObjectFactory::insert(int index, ciObject* obj, GrowableArray<ciObject*>*
     objects->at_put(index, obj);
   }
 #ifdef ASSERT
-  oop last = NULL;
-  for (int j = 0; j< objects->length(); j++) {
-    oop o = objects->at(j)->get_oop();
-    assert(last < o, "out of order");
-    last = o;
+  if (CIObjectFactoryVerify) {
+    oop last = NULL;
+    for (int j = 0; j< objects->length(); j++) {
+      oop o = objects->at(j)->get_oop();
+      assert(last < o, "out of order");
+      last = o;
+    }
   }
 #endif // ASSERT
 }

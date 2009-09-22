@@ -379,7 +379,8 @@ void LIR_Assembler::record_non_safepoint_debug_info() {
     ValueStack* s = nth_oldest(vstack, n, s_bci);
     if (s == NULL)  break;
     IRScope* scope = s->scope();
-    debug_info->describe_scope(pc_offset, scope->method(), s_bci);
+    //Always pass false for reexecute since these ScopeDescs are never used for deopt
+    debug_info->describe_scope(pc_offset, scope->method(), s_bci, false/*reexecute*/);
   }
 
   debug_info->end_non_safepoint(pc_offset);

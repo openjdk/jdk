@@ -94,7 +94,14 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _summary(new Summary()),
   _abandoned_summary(new AbandonedSummary()),
 
+#ifndef PRODUCT
   _cur_clear_ct_time_ms(0.0),
+  _min_clear_cc_time_ms(-1.0),
+  _max_clear_cc_time_ms(-1.0),
+  _cur_clear_cc_time_ms(0.0),
+  _cum_clear_cc_time_ms(0.0),
+  _num_cc_clears(0L),
+#endif
 
   _region_num_young(0),
   _region_num_tenured(0),
@@ -194,6 +201,11 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _survivors_age_table(true)
 
 {
+  // Set up the region size and associated fields. Given that the
+  // policy is created before the heap, we have to set this up here,
+  // so it's done as soon as possible.
+  HeapRegion::setup_heap_region_size(Arguments::min_heap_size());
+
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
 
@@ -986,8 +998,6 @@ void G1CollectorPolicy::record_full_collection_end() {
   double full_gc_time_sec = end_sec - _cur_collection_start_sec;
   double full_gc_time_ms = full_gc_time_sec * 1000.0;
 
-  checkpoint_conc_overhead();
-
   _all_full_gc_times_ms->add(full_gc_time_ms);
 
   update_recent_gc_times(end_sec, full_gc_time_ms);
@@ -1157,7 +1167,6 @@ void G1CollectorPolicy::record_concurrent_mark_init_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_init_start_sec) * 1000.0;
   _concurrent_mark_init_times_ms->add(elapsed_time_ms);
-  checkpoint_conc_overhead();
   record_concurrent_mark_init_end_pre(elapsed_time_ms);
 
   _mmu_tracker->add_pause(_mark_init_start_sec, end_time_sec, true);
@@ -1171,7 +1180,6 @@ void G1CollectorPolicy::record_concurrent_mark_remark_start() {
 void G1CollectorPolicy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
-  checkpoint_conc_overhead();
   _concurrent_mark_remark_times_ms->add(elapsed_time_ms);
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
@@ -1203,7 +1211,6 @@ record_concurrent_mark_cleanup_end_work1(size_t freed_bytes,
 
 // The important thing about this is that it includes "os::elapsedTime".
 void G1CollectorPolicy::record_concurrent_mark_cleanup_end_work2() {
-  checkpoint_conc_overhead();
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_cleanup_start_sec)*1000.0;
   _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
@@ -1417,8 +1424,6 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
     // do that for any other surv rate groups too
   }
 #endif // PRODUCT
-
-  checkpoint_conc_overhead();
 
   if (in_young_gc_mode()) {
     last_pause_included_initial_mark = _should_initiate_conc_mark;
@@ -1648,6 +1653,15 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
         print_stats(1, "Object Copying", obj_copy_time);
       }
     }
+#ifndef PRODUCT
+    print_stats(1, "Cur Clear CC", _cur_clear_cc_time_ms);
+    print_stats(1, "Cum Clear CC", _cum_clear_cc_time_ms);
+    print_stats(1, "Min Clear CC", _min_clear_cc_time_ms);
+    print_stats(1, "Max Clear CC", _max_clear_cc_time_ms);
+    if (_num_cc_clears > 0) {
+      print_stats(1, "Avg Clear CC", _cum_clear_cc_time_ms / ((double)_num_cc_clears));
+    }
+#endif
     print_stats(1, "Other", other_time_ms);
     for (int i = 0; i < _aux_num; ++i) {
       if (_cur_aux_times_set[i]) {
@@ -2508,19 +2522,6 @@ region_num_to_mbs(int length) {
   return buffer;
 }
 #endif // PRODUCT
-
-void
-G1CollectorPolicy::checkpoint_conc_overhead() {
-  double conc_overhead = 0.0;
-  if (G1AccountConcurrentOverhead)
-    conc_overhead = COTracker::totalPredConcOverhead();
-  _mmu_tracker->update_conc_overhead(conc_overhead);
-#if 0
-  gclog_or_tty->print(" CO %1.4lf TARGET %1.4lf",
-             conc_overhead, _mmu_tracker->max_gc_time());
-#endif
-}
-
 
 size_t G1CollectorPolicy::max_regions(int purpose) {
   switch (purpose) {

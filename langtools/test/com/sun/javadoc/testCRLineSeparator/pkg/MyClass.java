@@ -21,4 +21,11 @@
  * have any questions.
  */
 
-package pkg;/** * Line 1 * Line 2 */public class MyClass {}
+package pkg;
+
+/**
+ * Line 1
+ * Line 2
+ */
+public class MyClass {}
+
