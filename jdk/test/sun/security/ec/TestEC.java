@@ -53,7 +53,7 @@ public class TestEC {
         long start = System.currentTimeMillis();
         new TestECDH().main(p);
         new TestECDSA().main(p);
-        //new TestCurves().main(p);
+        new TestCurves().main(p);
         new TestKeyFactory().main(p);
         new TestECGenSpec().main(p);
         new ReadPKCS12().main(p);

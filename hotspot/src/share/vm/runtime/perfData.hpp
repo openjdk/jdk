@@ -868,6 +868,10 @@ class PerfDataManager : AllStatic {
   {counter = PerfDataManager::create_counter(counter_ns, counter_name, \
                                              PerfData::U_Events,CHECK);}
 
+#define NEWPERFBYTECOUNTER(counter, counter_ns, counter_name)  \
+  {counter = PerfDataManager::create_counter(counter_ns, counter_name, \
+                                             PerfData::U_Bytes,CHECK);}
+
 // Utility Classes
 
 /*

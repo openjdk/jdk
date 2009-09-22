@@ -133,7 +133,11 @@ endif
 
 # Do we build the source and openjdk binary plug bundles?
 BUNDLE_RULES = $(JDK_TOPDIR)/make/closed/bundles.gmk
-BUNDLE_RULES_AVAILABLE := $(call MkExists,$(BUNDLE_RULES))
+ifeq ($(SKIP_BUNDLES_BUILD), true)
+  BUNDLE_RULES_AVAILABLE := false
+else 
+  BUNDLE_RULES_AVAILABLE := $(call MkExists,$(BUNDLE_RULES))
+endif
 
 # Current things we do NOT build for OPENJDK
 ifdef OPENJDK

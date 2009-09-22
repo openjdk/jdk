@@ -872,6 +872,7 @@ classFileParser.cpp                     signature.hpp
 classFileParser.cpp                     symbolOop.hpp
 classFileParser.cpp                     symbolTable.hpp
 classFileParser.cpp                     systemDictionary.hpp
+classFileParser.cpp                     threadService.hpp
 classFileParser.cpp                     timer.hpp
 classFileParser.cpp                     universe.inline.hpp
 classFileParser.cpp                     verificationType.hpp
@@ -924,6 +925,7 @@ classLoader.cpp                         os_<os_family>.inline.hpp
 classLoader.cpp                         symbolOop.hpp
 classLoader.cpp                         systemDictionary.hpp
 classLoader.cpp                         threadCritical.hpp
+classLoader.cpp                         threadService.hpp
 classLoader.cpp                         timer.hpp
 classLoader.cpp                         universe.inline.hpp
 classLoader.cpp                         vmSymbols.hpp
@@ -2682,6 +2684,7 @@ markOop.inline.hpp                      klassOop.hpp
 markOop.inline.hpp                      markOop.hpp
 
 markSweep.cpp                           compileBroker.hpp
+markSweep.cpp                           methodDataOop.hpp
 
 markSweep.hpp                           collectedHeap.hpp
 
@@ -4019,6 +4022,7 @@ systemDictionary.cpp                    placeholders.hpp
 systemDictionary.cpp                    resolutionErrors.hpp
 systemDictionary.cpp                    signature.hpp
 systemDictionary.cpp                    systemDictionary.hpp
+systemDictionary.cpp                    threadService.hpp
 systemDictionary.cpp                    typeArrayKlass.hpp
 systemDictionary.cpp                    vmSymbols.hpp
 

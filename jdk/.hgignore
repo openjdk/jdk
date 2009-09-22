@@ -1,3 +1,6 @@
 ^build/
 ^dist/
 ^nbproject/private/
+^make/netbeans/.*/nbproject/private/
+^make/netbeans/.*/build/
+^make/netbeans/.*/dist/

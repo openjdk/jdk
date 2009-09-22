@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6842687
  * @summary Unit test for java.nio.channels.AsynchronousFileChannel
  * @build CustomThreadPool MyThreadFactory
  * @run main/othervm -Djava.nio.channels.DefaultThreadPool.threadFactory=MyThreadFactory CustomThreadPool
@@ -50,8 +50,6 @@ public class CustomThreadPool {
                     invoker.set(Thread.currentThread());
                 }
                 public void failed(Throwable exc, AtomicReference<Thread> invoker) {
-                }
-                public void cancelled(AtomicReference<Thread> invoker) {
                 }
             });
         Thread t;

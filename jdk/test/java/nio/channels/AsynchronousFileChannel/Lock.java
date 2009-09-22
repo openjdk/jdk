@@ -23,7 +23,7 @@
 
 
 /* @test
- * @bug 4607272 6814948
+ * @bug 4607272 6814948 6842687
  * @summary Unit test for AsynchronousFileChannel#lock method
  */
 
@@ -97,7 +97,7 @@ public class Lock {
         slave.lock(0, 10, false);
 
         // this VM acquires lock on non-overlapping range
-        fl = ch.lock(10, 10, false, null, null).get();
+        fl = ch.lock(10, 10, false).get();
         fl.release();
 
         // done

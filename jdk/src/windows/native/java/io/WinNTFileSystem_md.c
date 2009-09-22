@@ -51,19 +51,163 @@ static struct {
     jfieldID path;
 } ids;
 
+/**
+ * GetFinalPathNameByHandle is available on Windows Vista and newer
+ */
+typedef BOOL (WINAPI* GetFinalPathNameByHandleProc) (HANDLE, LPWSTR, DWORD, DWORD);
+static GetFinalPathNameByHandleProc GetFinalPathNameByHandle_func;
+
 JNIEXPORT void JNICALL
 Java_java_io_WinNTFileSystem_initIDs(JNIEnv *env, jclass cls)
 {
+    HANDLE handle;
     jclass fileClass = (*env)->FindClass(env, "java/io/File");
     if (!fileClass) return;
     ids.path =
              (*env)->GetFieldID(env, fileClass, "path", "Ljava/lang/String;");
+    handle = LoadLibrary("kernel32");
+    if (handle != NULL) {
+        GetFinalPathNameByHandle_func = (GetFinalPathNameByHandleProc)
+            GetProcAddress(handle, "GetFinalPathNameByHandleW");
+    }
 }
 
 /* -- Path operations -- */
 
 extern int wcanonicalize(const WCHAR *path, WCHAR *out, int len);
 extern int wcanonicalizeWithPrefix(const WCHAR *canonicalPrefix, const WCHAR *pathWithCanonicalPrefix, WCHAR *out, int len);
+
+/**
+ * Retrieves the fully resolved (final) path for the given path or NULL
+ * if the function fails.
+ */
+static WCHAR* getFinalPath(const WCHAR *path)
+{
+    HANDLE h;
+    WCHAR *result;
+    DWORD error;
+
+    /* Need Windows Vista or newer to get the final path */
+    if (GetFinalPathNameByHandle_func == NULL)
+        return NULL;
+
+    h = CreateFileW(path,
+                    FILE_READ_ATTRIBUTES,
+                    FILE_SHARE_DELETE |
+                        FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    NULL,
+                    OPEN_EXISTING,
+                    FILE_FLAG_BACKUP_SEMANTICS,
+                    NULL);
+    if (h == INVALID_HANDLE_VALUE)
+        return NULL;
+
+    /**
+     * Allocate a buffer for the resolved path. For a long path we may need
+     * to allocate a larger buffer.
+     */
+    result = (WCHAR*)malloc(MAX_PATH * sizeof(WCHAR));
+    if (result != NULL) {
+        DWORD len = (*GetFinalPathNameByHandle_func)(h, result, MAX_PATH, 0);
+        if (len >= MAX_PATH) {
+            /* retry with a buffer of the right size */
+            result = (WCHAR*)realloc(result, (len+1) * sizeof(WCHAR));
+            if (result != NULL) {
+                len = (*GetFinalPathNameByHandle_func)(h, result, len, 0);
+            } else {
+                len = 0;
+            }
+        }
+        if (len > 0) {
+            /**
+             * Strip prefix (should be \\?\ or \\?\UNC)
+             */
+            if (result[0] == L'\\' && result[1] == L'\\' &&
+                result[2] == L'?' && result[3] == L'\\')
+            {
+                int isUnc = (result[4] == L'U' &&
+                             result[5] == L'N' &&
+                             result[6] == L'C');
+                int prefixLen = (isUnc) ? 7 : 4;
+                /* actual result length (includes terminator) */
+                int resultLen = len - prefixLen + (isUnc ? 1 : 0) + 1;
+
+                /* copy result without prefix into new buffer */
+                WCHAR *tmp = (WCHAR*)malloc(resultLen * sizeof(WCHAR));
+                if (tmp == NULL) {
+                    len = 0;
+                } else {
+                    WCHAR *p = result;
+                    p += prefixLen;
+                    if (isUnc) {
+                        WCHAR *p2 = tmp;
+                        p2[0] = L'\\';
+                        p2++;
+                        wcscpy(p2, p);
+                    } else {
+                        wcscpy(tmp, p);
+                    }
+                    free(result);
+                    result = tmp;
+                }
+            }
+        }
+
+        /* unable to get final path */
+        if (len == 0 && result != NULL) {
+            free(result);
+            result = NULL;
+        }
+    }
+
+    error = GetLastError();
+    if (CloseHandle(h))
+        SetLastError(error);
+    return result;
+}
+
+/**
+ * Retrieves file information for the specified file. If the file is
+ * symbolic link then the information on fully resolved target is
+ * returned.
+ */
+static BOOL getFileInformation(const WCHAR *path,
+                               BY_HANDLE_FILE_INFORMATION *finfo)
+{
+    BOOL result;
+    DWORD error;
+    HANDLE h = CreateFileW(path,
+                           FILE_READ_ATTRIBUTES,
+                           FILE_SHARE_DELETE |
+                               FILE_SHARE_READ | FILE_SHARE_WRITE,
+                           NULL,
+                           OPEN_EXISTING,
+                           FILE_FLAG_BACKUP_SEMANTICS,
+                           NULL);
+    if (h == INVALID_HANDLE_VALUE)
+        return FALSE;
+    result = GetFileInformationByHandle(h, finfo);
+    error = GetLastError();
+    if (CloseHandle(h))
+        SetLastError(error);
+    return result;
+}
+
+/**
+ * If the given attributes are the attributes of a reparse point, then
+ * read and return the attributes of the final target.
+ */
+DWORD getFinalAttributesIfReparsePoint(WCHAR *path, DWORD a)
+{
+    if ((a != INVALID_FILE_ATTRIBUTES) &&
+        ((a & FILE_ATTRIBUTE_REPARSE_POINT) != 0))
+    {
+        BY_HANDLE_FILE_INFORMATION finfo;
+        BOOL res = getFileInformation(path, &finfo);
+        a = (res) ? finfo.dwFileAttributes : INVALID_FILE_ATTRIBUTES;
+    }
+    return a;
+}
 
 JNIEXPORT jstring JNICALL
 Java_java_io_WinNTFileSystem_canonicalize0(JNIEnv *env, jobject this,
@@ -202,12 +346,15 @@ Java_java_io_WinNTFileSystem_getBooleanAttributes(JNIEnv *env, jobject this,
         return rv;
     if (!isReservedDeviceNameW(pathbuf)) {
         if (GetFileAttributesExW(pathbuf, GetFileExInfoStandard, &wfad)) {
-            rv = (java_io_FileSystem_BA_EXISTS
-                  | ((wfad.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                     ? java_io_FileSystem_BA_DIRECTORY
-                     : java_io_FileSystem_BA_REGULAR)
-                  | ((wfad.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)
-                     ? java_io_FileSystem_BA_HIDDEN : 0));
+            DWORD a = getFinalAttributesIfReparsePoint(pathbuf, wfad.dwFileAttributes);
+            if (a != INVALID_FILE_ATTRIBUTES) {
+                rv = (java_io_FileSystem_BA_EXISTS
+                    | ((a & FILE_ATTRIBUTE_DIRECTORY)
+                        ? java_io_FileSystem_BA_DIRECTORY
+                        : java_io_FileSystem_BA_REGULAR)
+                    | ((a & FILE_ATTRIBUTE_HIDDEN)
+                        ? java_io_FileSystem_BA_HIDDEN : 0));
+            }
         } else { /* pagefile.sys is a special case */
             if (GetLastError() == ERROR_SHARING_VIOLATION) {
                 rv = java_io_FileSystem_BA_EXISTS;
@@ -234,6 +381,7 @@ JNICALL Java_java_io_WinNTFileSystem_checkAccess(JNIEnv *env, jobject this,
     if (pathbuf == NULL)
         return JNI_FALSE;
     attr = GetFileAttributesW(pathbuf);
+    attr = getFinalAttributesIfReparsePoint(pathbuf, attr);
     free(pathbuf);
     if (attr == INVALID_FILE_ATTRIBUTES)
         return JNI_FALSE;
@@ -272,6 +420,20 @@ Java_java_io_WinNTFileSystem_setPermission(JNIEnv *env, jobject this,
     if (pathbuf == NULL)
         return JNI_FALSE;
     a = GetFileAttributesW(pathbuf);
+
+    /* if reparse point, get final target */
+    if ((a != INVALID_FILE_ATTRIBUTES) &&
+        ((a & FILE_ATTRIBUTE_REPARSE_POINT) != 0))
+    {
+        WCHAR *fp = getFinalPath(pathbuf);
+        if (fp == NULL) {
+            a = INVALID_FILE_ATTRIBUTES;
+        } else {
+            free(pathbuf);
+            pathbuf = fp;
+            a = GetFileAttributesW(pathbuf);
+        }
+    }
     if (a != INVALID_FILE_ATTRIBUTES) {
         if (enable)
             a =  a & ~FILE_ATTRIBUTE_READONLY;
@@ -305,7 +467,7 @@ Java_java_io_WinNTFileSystem_getLastModifiedTime(JNIEnv *env, jobject this,
                     /* Open existing or fail */
                     OPEN_EXISTING,
                     /* Backup semantics for directories */
-                    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS,
+                    FILE_FLAG_BACKUP_SEMANTICS,
                     /* No template file */
                     NULL);
     if (h != INVALID_HANDLE_VALUE) {
@@ -332,7 +494,16 @@ Java_java_io_WinNTFileSystem_getLength(JNIEnv *env, jobject this, jobject file)
     if (GetFileAttributesExW(pathbuf,
                              GetFileExInfoStandard,
                              &wfad)) {
-        rv = wfad.nFileSizeHigh * ((jlong)MAXDWORD + 1) + wfad.nFileSizeLow;
+        if ((wfad.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0) {
+            rv = wfad.nFileSizeHigh * ((jlong)MAXDWORD + 1) + wfad.nFileSizeLow;
+        } else {
+            /* file is a reparse point so read attributes of final target */
+            BY_HANDLE_FILE_INFORMATION finfo;
+            if (getFileInformation(pathbuf, &finfo)) {
+                rv = finfo.nFileSizeHigh * ((jlong)MAXDWORD + 1) +
+                    finfo.nFileSizeLow;
+            }
+        }
     } else {
         if (GetLastError() == ERROR_SHARING_VIOLATION) {
             /* The error is "share violation", which means the file/dir
@@ -360,31 +531,29 @@ Java_java_io_WinNTFileSystem_createFileExclusively(JNIEnv *env, jclass cls,
     if (pathbuf == NULL)
         return JNI_FALSE;
     h = CreateFileW(
-        pathbuf,                             /* Wide char path name */
-        GENERIC_READ | GENERIC_WRITE,  /* Read and write permission */
+        pathbuf,                              /* Wide char path name */
+        GENERIC_READ | GENERIC_WRITE,         /* Read and write permission */
         FILE_SHARE_READ | FILE_SHARE_WRITE,   /* File sharing flags */
-        NULL,                                /* Security attributes */
-        CREATE_NEW,                         /* creation disposition */
-        FILE_ATTRIBUTE_NORMAL,              /* flags and attributes */
+        NULL,                                 /* Security attributes */
+        CREATE_NEW,                           /* creation disposition */
+        FILE_ATTRIBUTE_NORMAL |
+            FILE_FLAG_OPEN_REPARSE_POINT,     /* flags and attributes */
         NULL);
 
     if (h == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
         if ((error != ERROR_FILE_EXISTS) && (error != ERROR_ALREADY_EXISTS)) {
-
-            // If a directory by the named path already exists,
-            // return false (behavior of solaris and linux) instead of
-            // throwing an exception
-            DWORD fattr = GetFileAttributesW(pathbuf);
-            if ((fattr == INVALID_FILE_ATTRIBUTES) ||
-                    (fattr & ~FILE_ATTRIBUTE_DIRECTORY)) {
+            // return false rather than throwing an exception when there is
+            // an existing file.
+            DWORD a = GetFileAttributesW(pathbuf);
+            if (a == INVALID_FILE_ATTRIBUTES) {
                 SetLastError(error);
                 JNU_ThrowIOExceptionWithLastError(env, "Could not open file");
             }
          }
          free(pathbuf);
          return JNI_FALSE;
-    }
+        }
     free(pathbuf);
     CloseHandle(h);
     return JNI_TRUE;
@@ -396,9 +565,9 @@ removeFileOrDirectory(const jchar *path)
     /* Returns 0 on success */
     DWORD a;
 
-    SetFileAttributesW(path, 0);
+    SetFileAttributesW(path, FILE_ATTRIBUTE_NORMAL);
     a = GetFileAttributesW(path);
-    if (a == ((DWORD)-1)) {
+    if (a == INVALID_FILE_ATTRIBUTES) {
         return 1;
     } else if (a & FILE_ATTRIBUTE_DIRECTORY) {
         return !RemoveDirectoryW(path);
@@ -578,8 +747,13 @@ Java_java_io_WinNTFileSystem_setLastModifiedTime(JNIEnv *env, jobject this,
     HANDLE h;
     if (pathbuf == NULL)
         return JNI_FALSE;
-    h = CreateFileW(pathbuf, GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
-                    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS, 0);
+    h = CreateFileW(pathbuf,
+                    FILE_WRITE_ATTRIBUTES,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    NULL,
+                    OPEN_EXISTING,
+                    FILE_FLAG_BACKUP_SEMANTICS,
+                    0);
     if (h != INVALID_HANDLE_VALUE) {
         LARGE_INTEGER modTime;
         FILETIME t;
@@ -607,6 +781,21 @@ Java_java_io_WinNTFileSystem_setReadOnly(JNIEnv *env, jobject this,
     if (pathbuf == NULL)
         return JNI_FALSE;
     a = GetFileAttributesW(pathbuf);
+
+    /* if reparse point, get final target */
+    if ((a != INVALID_FILE_ATTRIBUTES) &&
+        ((a & FILE_ATTRIBUTE_REPARSE_POINT) != 0))
+    {
+        WCHAR *fp = getFinalPath(pathbuf);
+        if (fp == NULL) {
+            a = INVALID_FILE_ATTRIBUTES;
+        } else {
+            free(pathbuf);
+            pathbuf = fp;
+            a = GetFileAttributesW(pathbuf);
+        }
+    }
+
     if (a != INVALID_FILE_ATTRIBUTES) {
         if (SetFileAttributesW(pathbuf, a | FILE_ATTRIBUTE_READONLY))
         rv = JNI_TRUE;

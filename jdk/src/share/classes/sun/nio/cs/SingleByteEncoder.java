@@ -84,7 +84,7 @@ public abstract class SingleByteEncoder
         try {
             while (sp < sl) {
                 char c = sa[sp];
-                if (Surrogate.is(c)) {
+                if (Character.isSurrogate(c)) {
                     if (sgp.parse(c, sa, sp, sl) < 0)
                         return sgp.error();
                     return sgp.unmappableResult();
@@ -117,7 +117,7 @@ public abstract class SingleByteEncoder
         try {
             while (src.hasRemaining()) {
                 char c = src.get();
-                if (Surrogate.is(c)) {
+                if (Character.isSurrogate(c)) {
                     if (sgp.parse(c, src) < 0)
                         return sgp.error();
                     return sgp.unmappableResult();

@@ -688,10 +688,9 @@ ThreadStatistics::ThreadStatistics() {
   _contended_enter_count = 0;
   _monitor_wait_count = 0;
   _sleep_count = 0;
-  _class_init_recursion_count = 0;
-  _class_verify_recursion_count = 0;
   _count_pending_reset = false;
   _timer_pending_reset = false;
+  memset((void*) _perf_recursion_counts, 0, sizeof(_perf_recursion_counts));
 }
 
 ThreadSnapshot::ThreadSnapshot(JavaThread* thread) {

@@ -388,9 +388,9 @@ abstract class ISO2022
 
     protected static class Encoder extends CharsetEncoder {
         private final Surrogate.Parser sgp = new Surrogate.Parser();
-        private final byte SS2 = (byte)0x8e;
-        private final byte PLANE2 = (byte)0xA2;
-        private final byte PLANE3 = (byte)0xA3;
+        public static final byte SS2 = (byte)0x8e;
+        public static final byte PLANE2 = (byte)0xA2;
+        public static final byte PLANE3 = (byte)0xA3;
         private final byte MSB = (byte)0x80;
 
         protected final byte maximumDesignatorLength = 4;
@@ -515,7 +515,7 @@ abstract class ISO2022
             try {
                 while (sp < sl) {
                     char c = sa[sp];
-                    if (Surrogate.is(c)) {
+                    if (Character.isSurrogate(c)) {
                         if (sgp.parse(c, sa, sp, sl) < 0)
                             return sgp.error();
                         return sgp.unmappableResult();
@@ -576,7 +576,7 @@ abstract class ISO2022
             try {
                 while (src.hasRemaining()) {
                     char inputChar = src.get();
-                    if (Surrogate.is(inputChar)) {
+                    if (Character.isSurrogate(inputChar)) {
                         if (sgp.parse(inputChar, src) < 0)
                             return sgp.error();
                         return sgp.unmappableResult();

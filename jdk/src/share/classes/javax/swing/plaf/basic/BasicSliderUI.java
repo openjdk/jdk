@@ -1507,7 +1507,8 @@ public class BasicSliderUI extends SliderUI{
                     propertyName == "paintTicks" ||
                     propertyName == "paintTrack" ||
                     propertyName == "font" ||
-                    propertyName == "paintLabels") {
+                    propertyName == "paintLabels" ||
+                    propertyName == "Slider.paintThumbArrowShape") {
                 checkedLabelBaselines = false;
                 calculateGeometry();
                 slider.repaint();

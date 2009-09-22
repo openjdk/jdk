@@ -39,7 +39,6 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
   _next(next),
   _cg1r(cg1r),
   _vtime_accum(0.0),
-  _co_tracker(G1CRGroup),
   _interval_ms(5.0)
 {
   create_and_start();
@@ -76,9 +75,6 @@ void ConcurrentG1RefineThread::run() {
   _vtime_start = os::elapsedVTime();
   wait_for_universe_init();
 
-  _co_tracker.enable();
-  _co_tracker.start();
-
   while (!_should_terminate) {
     DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
     // Wait for completed log buffers to exist.
@@ -104,17 +100,17 @@ void ConcurrentG1RefineThread::run() {
     double start_vtime_sec; // only used when G1SmoothConcRefine is on
     int prev_buffer_num; // only used when G1SmoothConcRefine is on
     // This thread activation threshold
-    int threshold = DCQBarrierProcessCompletedThreshold * _worker_id;
+    int threshold = G1UpdateBufferQueueProcessingThreshold * _worker_id;
     // Next thread activation threshold
-    int next_threshold = threshold + DCQBarrierProcessCompletedThreshold;
-    int deactivation_threshold = MAX2<int>(threshold - DCQBarrierProcessCompletedThreshold / 2, 0);
+    int next_threshold = threshold + G1UpdateBufferQueueProcessingThreshold;
+    int deactivation_threshold = MAX2<int>(threshold - G1UpdateBufferQueueProcessingThreshold / 2, 0);
 
     if (G1SmoothConcRefine) {
       lower_limit = 0;
       start_vtime_sec = os::elapsedVTime();
       prev_buffer_num = (int) dcqs.completed_buffers_num();
     } else {
-      lower_limit = DCQBarrierProcessCompletedThreshold / 4; // For now.
+      lower_limit = G1UpdateBufferQueueProcessingThreshold / 4; // For now.
     }
     while (dcqs.apply_closure_to_completed_buffer(_worker_id + _worker_id_offset, lower_limit)) {
       double end_vtime_sec;
@@ -147,7 +143,6 @@ void ConcurrentG1RefineThread::run() {
         }
         break;
       }
-      _co_tracker.update(false);
 
       // Check if we need to activate the next thread.
       if (curr_buffer_num > next_threshold && _next != NULL && !_next->is_active()) {
@@ -168,7 +163,6 @@ void ConcurrentG1RefineThread::run() {
       }
       n_logs++;
     }
-    _co_tracker.update(false);
     _sts.leave();
 
     if (os::supports_vtime()) {
@@ -177,9 +171,6 @@ void ConcurrentG1RefineThread::run() {
       _vtime_accum = 0.0;
     }
   }
-  _sts.join();
-  _co_tracker.update(true);
-  _sts.leave();
   assert(_should_terminate, "just checking");
 
   terminate();
