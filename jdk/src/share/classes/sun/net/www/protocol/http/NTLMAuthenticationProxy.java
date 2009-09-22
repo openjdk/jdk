@@ -28,7 +28,7 @@ import java.net.URL;
 import java.net.PasswordAuthentication;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import sun.net.www.http.HttpCapture;
+import sun.util.logging.PlatformLogger;
 
 /**
  * Proxy class for loading NTLMAuthentication, so as to remove static
@@ -59,7 +59,7 @@ class NTLMAuthenticationProxy {
         try {
             return threeArgCtr.newInstance(isProxy, url, pw);
         } catch (ReflectiveOperationException roe) {
-            log(roe);
+            finest(roe);
         }
 
         return null;
@@ -72,7 +72,7 @@ class NTLMAuthenticationProxy {
         try {
             return fiveArgCtr.newInstance(isProxy, host, port, pw);
         } catch (ReflectiveOperationException roe) {
-            log(roe);
+            finest(roe);
         }
 
         return null;
@@ -86,7 +86,7 @@ class NTLMAuthenticationProxy {
         try {
             return (Boolean)method.invoke(null);
         } catch (ReflectiveOperationException roe) {
-            log(roe);
+            finest(roe);
         }
 
         return false;
@@ -116,7 +116,7 @@ class NTLMAuthenticationProxy {
                                                    fiveArg);
             }
         } catch (ClassNotFoundException cnfe) {
-            log(cnfe);
+            finest(cnfe);
         } catch (ReflectiveOperationException roe) {
             throw new AssertionError(roe);
         }
@@ -124,9 +124,8 @@ class NTLMAuthenticationProxy {
         return null;
     }
 
-    static void log(Exception e) {
-        if (HttpCapture.isLoggable("FINEST")) {
-            HttpCapture.finest("NTLMAuthenticationProxy: " + e);
-        }
+    static void finest(Exception e) {
+        PlatformLogger logger = HttpURLConnection.getHttpLogger();
+        logger.finest("NTLMAuthenticationProxy: " + e);
     }
 }
