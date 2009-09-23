@@ -2612,8 +2612,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
     }
 
     /**
-     * Returns a hash code for this <code>Character</code>.
-     * @return  a hash code value for this object.
+     * Returns a hash code for this {@code Character}; equal to the result
+     * of invoking {@code charValue()}.
+     *
+     * @return a hash code value for this {@code Character}
      */
     public int hashCode() {
         return (int)value;
