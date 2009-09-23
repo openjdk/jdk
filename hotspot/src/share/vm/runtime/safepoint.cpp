@@ -769,9 +769,23 @@ void ThreadSafepointState::examine_state_of_thread() {
   // to grab the Threads_lock which we own here, so a thread cannot be
   // resumed during safepoint synchronization.
 
-  // We check with locking because another thread that has not yet
-  // synchronized may be trying to suspend this one.
-  bool is_suspended = _thread->is_any_suspended_with_lock();
+  // We check to see if this thread is suspended without locking to
+  // avoid deadlocking with a third thread that is waiting for this
+  // thread to be suspended. The third thread can notice the safepoint
+  // that we're trying to start at the beginning of its SR_lock->wait()
+  // call. If that happens, then the third thread will block on the
+  // safepoint while still holding the underlying SR_lock. We won't be
+  // able to get the SR_lock and we'll deadlock.
+  //
+  // We don't need to grab the SR_lock here for two reasons:
+  // 1) The suspend flags are both volatile and are set with an
+  //    Atomic::cmpxchg() call so we should see the suspended
+  //    state right away.
+  // 2) We're being called from the safepoint polling loop; if
+  //    we don't see the suspended state on this iteration, then
+  //    we'll come around again.
+  //
+  bool is_suspended = _thread->is_ext_suspended();
   if (is_suspended) {
     roll_forward(_at_safepoint);
     return;
