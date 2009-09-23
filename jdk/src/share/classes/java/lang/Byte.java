@@ -378,7 +378,10 @@ public final class Byte extends Number implements Comparable<Byte> {
     }
 
     /**
-     * Returns a hash code for this {@code Byte}.
+     * Returns a hash code for this {@code Byte}; equal to the result
+     * of invoking {@code intValue()}.
+     *
+     * @return a hash code value for this {@code Byte}
      */
     public int hashCode() {
         return (int)value;

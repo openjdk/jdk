@@ -383,7 +383,10 @@ public final class Short extends Number implements Comparable<Short> {
     }
 
     /**
-     * Returns a hash code for this {@code Short}.
+     * Returns a hash code for this {@code Short}; equal to the result
+     * of invoking {@code intValue()}.
+     *
+     * @return a hash code value for this {@code Short}
      */
     public int hashCode() {
         return (int)value;
