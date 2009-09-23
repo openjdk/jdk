@@ -423,7 +423,25 @@ public final class Short extends Number implements Comparable<Short> {
      * @since   1.2
      */
     public int compareTo(Short anotherShort) {
-        return this.value - anotherShort.value;
+        return compare(this.value, anotherShort.value);
+    }
+
+    /**
+     * Compares two {@code short} values numerically.
+     * The value returned is identical to what would be returned by:
+     * <pre>
+     *    Short.valueOf(x).compareTo(Short.valueOf(y))
+     * </pre>
+     *
+     * @param  x the first {@code short} to compare
+     * @param  y the second {@code short} to compare
+     * @return the value {@code 0} if {@code x == y};
+     *         a value less than {@code 0} if {@code x < y}; and
+     *         a value greater than {@code 0} if {@code x > y}
+     * @since 1.7
+     */
+    public static int compare(short x, short y) {
+        return x - y;
     }
 
     /**
