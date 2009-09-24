@@ -95,7 +95,7 @@ public class SourcePositionImpl implements SourcePosition {
     public String toString() {
         // Backwards compatibility hack. ZipFileObjects use the format
         // zipfile(zipentry) but javadoc has been using zipfile/zipentry
-        String fn = filename.toString();
+        String fn = filename.getName();
         if (fn.endsWith(")")) {
             int paren = fn.lastIndexOf("(");
             if (paren != -1)

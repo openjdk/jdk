@@ -95,7 +95,7 @@ public class SymbolArchive extends ZipArchive {
 
         @Override
         protected String inferBinaryName(Iterable<? extends File> path) {
-            String entryName = getZipEntryName();
+            String entryName = entry.getName();
             String prefix = ((SymbolArchive) zarch).prefix.path;
             if (entryName.startsWith(prefix))
                 entryName = entryName.substring(prefix.length());
