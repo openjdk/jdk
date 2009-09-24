@@ -23,6 +23,7 @@
  */
 
 class ReferenceProcessor;
+class DataLayout;
 
 // MarkSweep takes care of global mark-compact garbage collection for a
 // GenCollectedHeap using a four-phase pointer forwarding algorithm.  All
@@ -63,6 +64,9 @@ class MarkSweep : AllStatic {
    public:
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
+    virtual const bool do_nmethods() const { return true; }
+    virtual const bool should_remember_mdo() const { return true; }
+    virtual void remember_mdo(DataLayout* p) { MarkSweep::revisit_mdo(p); }
   };
 
   class FollowStackClosure: public VoidClosure {
@@ -101,6 +105,7 @@ class MarkSweep : AllStatic {
   friend class KeepAliveClosure;
   friend class VM_MarkSweep;
   friend void marksweep_init();
+  friend class DataLayout;
 
   //
   // Vars
@@ -110,6 +115,8 @@ class MarkSweep : AllStatic {
   static GrowableArray<oop>*             _marking_stack;
   // Stack for live klasses to revisit at end of marking phase
   static GrowableArray<Klass*>*          _revisit_klass_stack;
+  // Set (stack) of MDO's to revisit at end of marking phase
+  static GrowableArray<DataLayout*>*    _revisit_mdo_stack;
 
   // Space for storing/restoring mark word
   static GrowableArray<markOop>*         _preserved_mark_stack;
@@ -154,6 +161,10 @@ class MarkSweep : AllStatic {
 
   // Class unloading. Update subklass/sibling/implementor links at end of marking phase.
   static void follow_weak_klass_links();
+
+  // Class unloading. Clear weak refs in MDO's (ProfileData)
+  // at the end of the marking phase.
+  static void follow_mdo_weak_refs();
 
   // Debugging
   static void trace(const char* msg) PRODUCT_RETURN;
@@ -212,7 +223,10 @@ class MarkSweep : AllStatic {
 #endif
 
   // Call backs for class unloading
-  static void revisit_weak_klass_link(Klass* k);  // Update subklass/sibling/implementor links at end of marking.
+  // Update subklass/sibling/implementor links at end of marking.
+  static void revisit_weak_klass_link(Klass* k);
+  // For weak refs clearing in MDO's
+  static void revisit_mdo(DataLayout* p);
 };
 
 class PreservedMark VALUE_OBJ_CLASS_SPEC {

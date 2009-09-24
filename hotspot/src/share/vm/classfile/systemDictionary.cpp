@@ -970,6 +970,7 @@ klassOop SystemDictionary::parse_stream(symbolHandle class_name,
                                                              host_klass,
                                                              cp_patches,
                                                              parsed_name,
+                                                             true,
                                                              THREAD);
 
 
@@ -1025,6 +1026,7 @@ klassOop SystemDictionary::resolve_from_stream(symbolHandle class_name,
                                                Handle class_loader,
                                                Handle protection_domain,
                                                ClassFileStream* st,
+                                               bool verify,
                                                TRAPS) {
 
   // Classloaders that support parallelism, e.g. bootstrap classloader,
@@ -1055,6 +1057,7 @@ klassOop SystemDictionary::resolve_from_stream(symbolHandle class_name,
                                                              class_loader,
                                                              protection_domain,
                                                              parsed_name,
+                                                             verify,
                                                              THREAD);
 
   const char* pkg = "java/";
