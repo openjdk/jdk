@@ -1558,13 +1558,12 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive,
 // the (strong) marking phase, and then again when walking
 // the code cache contents during the weak roots processing
 // phase. The two uses are distinguished by means of the
-// do_nmethods() method in the closure "f" below -- which
-// answers "yes" in the first case, and "no" in the second
+// 'do_strong_roots_only' flag, which is true in the first
 // case. We want to walk the weak roots in the nmethod
 // only in the second case. The weak roots in the nmethod
 // are the oops in the ExceptionCache and the InlineCache
 // oops.
-void nmethod::oops_do(OopClosure* f) {
+void nmethod::oops_do(OopClosure* f, bool do_strong_roots_only) {
   // make sure the oops ready to receive visitors
   assert(!is_zombie() && !is_unloaded(),
          "should not call follow on zombie or unloaded nmethod");
@@ -1582,7 +1581,7 @@ void nmethod::oops_do(OopClosure* f) {
 
   // Compiled code
   f->do_oop((oop*) &_method);
-  if (!f->do_nmethods()) {
+  if (!do_strong_roots_only) {
     // weak roots processing phase -- update ExceptionCache oops
     ExceptionCache* ec = exception_cache();
     while(ec != NULL) {

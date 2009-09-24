@@ -2852,7 +2852,7 @@ void CMSCollector::verify_after_remark_work_1() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
   // Mark from roots one level into CMS
-  MarkRefsIntoClosure notOlder(_span, verification_mark_bm(), true /* nmethods */);
+  MarkRefsIntoClosure notOlder(_span, verification_mark_bm());
   gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
 
   gch->gen_process_strong_roots(_cmsGen->level(),
@@ -2904,7 +2904,7 @@ void CMSCollector::verify_after_remark_work_2() {
 
   // Mark from roots one level into CMS
   MarkRefsIntoVerifyClosure notOlder(_span, verification_mark_bm(),
-                                     markBitMap(), true /* nmethods */);
+                                     markBitMap());
   gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
   gch->gen_process_strong_roots(_cmsGen->level(),
                                 true,   // younger gens are roots
@@ -3490,8 +3490,10 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
   FalseClosure falseClosure;
   // In the case of a synchronous collection, we will elide the
   // remark step, so it's important to catch all the nmethod oops
-  // in this step; hence the last argument to the constrcutor below.
-  MarkRefsIntoClosure notOlder(_span, &_markBitMap, !asynch /* nmethods */);
+  // in this step.
+  // The final 'true' flag to gen_process_strong_roots will ensure this.
+  // If 'async' is true, we can relax the nmethod tracing.
+  MarkRefsIntoClosure notOlder(_span, &_markBitMap);
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
   verify_work_stacks_empty();
@@ -6441,10 +6443,9 @@ void CMSMarkStack::expand() {
 // generation then this will lose younger_gen cards!
 
 MarkRefsIntoClosure::MarkRefsIntoClosure(
-  MemRegion span, CMSBitMap* bitMap, bool should_do_nmethods):
+  MemRegion span, CMSBitMap* bitMap):
     _span(span),
-    _bitMap(bitMap),
-    _should_do_nmethods(should_do_nmethods)
+    _bitMap(bitMap)
 {
     assert(_ref_processor == NULL, "deliberately left NULL");
     assert(_bitMap->covers(_span), "_bitMap/_span mismatch");
@@ -6465,12 +6466,11 @@ void MarkRefsIntoClosure::do_oop(narrowOop* p) { MarkRefsIntoClosure::do_oop_wor
 
 // A variant of the above, used for CMS marking verification.
 MarkRefsIntoVerifyClosure::MarkRefsIntoVerifyClosure(
-  MemRegion span, CMSBitMap* verification_bm, CMSBitMap* cms_bm,
-  bool should_do_nmethods):
+  MemRegion span, CMSBitMap* verification_bm, CMSBitMap* cms_bm):
     _span(span),
     _verification_bm(verification_bm),
-    _cms_bm(cms_bm),
-    _should_do_nmethods(should_do_nmethods) {
+    _cms_bm(cms_bm)
+{
     assert(_ref_processor == NULL, "deliberately left NULL");
     assert(_verification_bm->covers(_span), "_verification_bm/_span mismatch");
 }
