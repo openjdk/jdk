@@ -286,10 +286,10 @@
                               jarclasspath="javadoc.jar doclets.jar javac.jar"/>
     </target>
 
-    <target name="build-javah" depends="build-javadoc">
+    <target name="build-javah" depends="build-javac">
         <build-tool name="javah"
                     includes="${javah.includes}"
-                    jarclasspath="javadoc.jar doclets.jar javac.jar"/>
+                    jarclasspath="javac.jar"/>
     </target>
 
     <target name="build-classes-javah" depends="build-classes-javadoc">
