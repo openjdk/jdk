@@ -1,12 +1,11 @@
+#!/bin/sh
 #
-# Copyright 2000 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Sun designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Sun in the LICENSE file that accompanied this code.
+# published by the Free Software Foundation.
 #
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,7 +20,24 @@
 # Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
-# 
+#
 
-pack.pragma.start=\#pragma pack(4)\n
-pack.pragma.end=\#pragma pack()\n
+jdk=${1:-/opt/jdk/1.6.0}
+javah=${jdk}/bin/javah
+rtjar=${jdk}/jre/lib/rt.jar
+
+# compile test
+mkdir -p build/compareTest
+/opt/jdk/1.7.0/bin/javac -classpath build/classes -d build/compareTest test/tools/javah/compareTest/*.java
+
+# run test
+/opt/jdk/1.7.0/bin/java -classpath build/compareTest:build/classes CompareTest $javah $rtjar 2>&1 | tee CompareTest.out
+
+# show diffs for tests that failed
+grep 'error:' CompareTest.out | sed -e 's|.*new/||' -e 's/\.h$//' -e 's|_|.|g' > CompareTest.classes.fail
+
+for i in $(cat CompareTest.classes.fail) ; do 
+	/opt/jdk/1.7.0/bin/java -classpath compareTest:build/classes CompareTest $javah $rtjar $i 
+	diff -r old new 
+done 
+
