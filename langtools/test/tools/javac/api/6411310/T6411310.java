@@ -37,7 +37,7 @@ import static javax.tools.StandardLocation.PLATFORM_CLASS_PATH;
 import static javax.tools.StandardLocation.CLASS_PATH;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 
-// Limited test while we wait for 6419926
+// Limited test while we wait for 6419926: 6419926 is now closed
 
 public class T6411310 extends ToolTester {
 
@@ -45,8 +45,11 @@ public class T6411310 extends ToolTester {
         JavaFileObject file = fm.getJavaFileForInput(PLATFORM_CLASS_PATH,
                                                      "java.lang.Object",
                                                      CLASS);
-        if (!file.getName().equals("Object.class"))
+        String fileName = file.getName();
+        if (!fileName.matches(".*java/lang/Object.class\\)?")) {
+            System.err.println(fileName);
             throw new AssertionError(file);
+        }
     }
 
     public static void main(String... args) throws IOException {
