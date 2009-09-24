@@ -67,15 +67,15 @@ public class SourcePositionImpl implements SourcePosition {
     public String toString() {
         int ln = line();
         return (ln == Position.NOPOS)
-                ? sourcefile.toString()
-                : sourcefile + ":" + ln;
+                ? sourcefile.getName()
+                : sourcefile.getName() + ":" + ln;
     }
 
     /**
      * {@inheritDoc}
      */
     public File file() {
-        return new File(sourcefile.toString());
+        return new File(sourcefile.toUri());
     }
 
     /**
