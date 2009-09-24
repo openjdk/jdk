@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6877357
+ * @bug 6877357 6885166
  * @summary IPv6 address does not work
  */
 
@@ -57,6 +57,7 @@ public class IPv6 {
         PrintStream out = new PrintStream(new FileOutputStream("ipv6.conf"));
         out.println("[libdefaults]");
         out.println("default_realm = V6");
+        out.println("kdc_timeout = 1");
         out.println("[realms]");
         out.println("V6 = {");
         for (String[] hp: kdcs) {
@@ -95,10 +96,12 @@ public class IPv6 {
         po.flush();
 
         System.setOut(oldout);
-        String[] lines = new String(bo.toByteArray()).split("\n");
+        BufferedReader br = new BufferedReader(new StringReader(
+                new String(bo.toByteArray())));
         int cc = 0;
         Pattern r = Pattern.compile(".*KrbKdcReq send: kdc=(.*) UDP:(\\d+),.*");
-        for (String line: lines) {
+        String line;
+        while ((line = br.readLine()) != null) {
             Matcher m = r.matcher(line.subSequence(0, line.length()));
             if (m.matches()) {
                 System.out.println("------------------");
