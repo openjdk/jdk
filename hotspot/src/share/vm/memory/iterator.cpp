@@ -68,8 +68,8 @@ void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
   }
 }
 
-void CodeBlobToOopClosure::do_newly_marked_nmethod(CodeBlob* cb) {
-  cb->oops_do(_cl);
+void CodeBlobToOopClosure::do_newly_marked_nmethod(nmethod* nm) {
+  nm->oops_do(_cl, /*do_strong_roots_only=*/ true);
 }
 
 void CodeBlobToOopClosure::do_code_blob(CodeBlob* cb) {

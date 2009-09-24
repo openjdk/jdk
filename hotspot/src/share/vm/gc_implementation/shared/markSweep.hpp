@@ -64,7 +64,6 @@ class MarkSweep : AllStatic {
    public:
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
-    virtual const bool do_nmethods() const { return true; }
     virtual const bool should_remember_mdo() const { return true; }
     virtual void remember_mdo(DataLayout* p) { MarkSweep::revisit_mdo(p); }
   };

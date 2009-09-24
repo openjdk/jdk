@@ -25,6 +25,7 @@
 // The following classes are C++ `closures` for iterating over objects, roots and spaces
 
 class CodeBlob;
+class nmethod;
 class ReferenceProcessor;
 class DataLayout;
 
@@ -69,9 +70,6 @@ class OopClosure : public Closure {
   // VirtualCallData::oop_iterate().
   virtual const bool should_remember_mdo() const { return false; }
   virtual void remember_mdo(DataLayout* v) { /* do nothing */ }
-
-  // If "true", invoke on nmethods (when scanning compiled frames).
-  virtual const bool do_nmethods() const { return false; }
 
   // The methods below control how object iterations invoking this closure
   // should be performed:
@@ -190,7 +188,7 @@ class CodeBlobClosure : public Closure {
 class MarkingCodeBlobClosure : public CodeBlobClosure {
  public:
   // Called for each code blob, but at most once per unique blob.
-  virtual void do_newly_marked_nmethod(CodeBlob* cb) = 0;
+  virtual void do_newly_marked_nmethod(nmethod* nm) = 0;
 
   virtual void do_code_blob(CodeBlob* cb);
     // = { if (!nmethod(cb)->test_set_oops_do_mark())  do_newly_marked_nmethod(cb); }
@@ -213,7 +211,7 @@ class CodeBlobToOopClosure: public MarkingCodeBlobClosure {
   OopClosure* _cl;
   bool _do_marking;
 public:
-  virtual void do_newly_marked_nmethod(CodeBlob* cb);
+  virtual void do_newly_marked_nmethod(nmethod* cb);
     // = { cb->oops_do(_cl); }
   virtual void do_code_blob(CodeBlob* cb);
     // = { if (_do_marking)  super::do_code_blob(cb); else cb->oops_do(_cl); }
