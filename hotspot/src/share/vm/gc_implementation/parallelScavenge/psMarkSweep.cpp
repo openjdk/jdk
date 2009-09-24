@@ -482,6 +482,9 @@ void PSMarkSweep::allocate_stacks() {
 
   int size = SystemDictionary::number_of_classes() * 2;
   _revisit_klass_stack = new (ResourceObj::C_HEAP) GrowableArray<Klass*>(size, true);
+  // (#klass/k)^2, for k ~ 10 appears a better setting, but this will have to do for
+  // now until we investigate a more optimal setting.
+  _revisit_mdo_stack   = new (ResourceObj::C_HEAP) GrowableArray<DataLayout*>(size*2, true);
 }
 
 
@@ -495,6 +498,7 @@ void PSMarkSweep::deallocate_stacks() {
 
   delete _marking_stack;
   delete _revisit_klass_stack;
+  delete _revisit_mdo_stack;
 }
 
 void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
@@ -544,6 +548,10 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   // Update subklass/sibling/implementor links of live klasses
   follow_weak_klass_links();
+  assert(_marking_stack->is_empty(), "just drained");
+
+  // Visit memoized mdo's and clear unmarked weak refs
+  follow_mdo_weak_refs();
   assert(_marking_stack->is_empty(), "just drained");
 
   // Visit symbol and interned string tables and delete unmarked oops

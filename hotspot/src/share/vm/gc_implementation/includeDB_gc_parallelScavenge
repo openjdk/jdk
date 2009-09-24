@@ -253,10 +253,11 @@ psParallelCompact.cpp			gcCause.hpp
 psParallelCompact.cpp			gcLocker.inline.hpp
 psParallelCompact.cpp                   gcTaskManager.hpp
 psParallelCompact.cpp			isGCActiveMark.hpp
+psParallelCompact.cpp			management.hpp
+psParallelCompact.cpp			memoryService.hpp
+psParallelCompact.cpp			methodDataOop.hpp
 psParallelCompact.cpp			oop.inline.hpp
 psParallelCompact.cpp			oop.pcgc.inline.hpp
-psParallelCompact.cpp			memoryService.hpp
-psParallelCompact.cpp			management.hpp
 psParallelCompact.cpp			parallelScavengeHeap.inline.hpp
 psParallelCompact.cpp			pcTasks.hpp
 psParallelCompact.cpp			psMarkSweep.hpp
