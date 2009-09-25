@@ -2547,6 +2547,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
                                                     KlassHandle host_klass,
                                                     GrowableArray<Handle>* cp_patches,
                                                     symbolHandle& parsed_name,
+                                                    bool verify,
                                                     TRAPS) {
   // So that JVMTI can cache class file in the state before retransformable agents
   // have modified it
@@ -2591,7 +2592,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
   instanceKlassHandle nullHandle;
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
-  _need_verify = Verifier::should_verify_for(class_loader());
+  _need_verify = Verifier::should_verify_for(class_loader(), verify);
 
   // Set the verify flag in stream
   cfs->set_verify(_need_verify);
@@ -3210,6 +3211,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
 
     // Fill in information already parsed
     this_klass->set_access_flags(access_flags);
+    this_klass->set_should_verify_class(verify);
     jint lh = Klass::instance_layout_helper(instance_size, false);
     this_klass->set_layout_helper(lh);
     assert(this_klass->oop_is_instance(), "layout is correct");
@@ -3229,6 +3231,12 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
       this_klass->set_has_final_method();
     }
     this_klass->set_method_ordering(method_ordering());
+    // The instanceKlass::_methods_jmethod_ids cache and the
+    // instanceKlass::_methods_cached_itable_indices cache are
+    // both managed on the assumption that the initial cache
+    // size is equal to the number of methods in the class. If
+    // that changes, then instanceKlass::idnum_can_increment()
+    // has to be changed accordingly.
     this_klass->set_initial_method_idnum(methods->length());
     this_klass->set_name(cp->klass_name_at(this_class_index));
     if (LinkWellKnownClasses || is_anonymous())  // I am well known to myself

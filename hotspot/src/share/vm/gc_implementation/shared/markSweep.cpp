@@ -73,7 +73,6 @@ void MarkSweep::follow_weak_klass_links() {
   follow_stack();
 }
 
-#if ( defined(COMPILER1) || defined(COMPILER2) )
 void MarkSweep::revisit_mdo(DataLayout* p) {
   _revisit_mdo_stack->push(p);
 }
@@ -92,7 +91,6 @@ void MarkSweep::follow_mdo_weak_refs() {
   }
   follow_stack();
 }
-#endif //  ( COMPILER1 || COMPILER2 )
 
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 

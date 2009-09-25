@@ -24,7 +24,7 @@
 
 # top.make is included in the Makefile in the build directories.
 # It DOES NOT include the vm dependency info in order to be faster.
-# It's main job is to implement the incremental form of make lists.
+# Its main job is to implement the incremental form of make lists.
 # It also:
 #   -builds and runs adlc via adlc.make
 #   -generates JVMTI source and docs via jvmti.make (JSR-163)
@@ -112,7 +112,7 @@ vm_build_preliminaries:  checks $(Incremental_Lists) $(AD_Files_If_Required) jvm
 # make makeDeps: (and zap the cached db files to force a nonincremental run)
 
 $(GENERATED)/$(MakeDepsClass): $(MakeDepsSources)
-	@$(COMPILE.JAVAC) -classpath $(GAMMADIR)/src/share/tools/MakeDeps -g -d $(GENERATED) $(MakeDepsSources)
+	@$(COMPILE.JAVAC) -classpath $(GAMMADIR)/src/share/tools/MakeDeps -d $(GENERATED) $(MakeDepsSources)
 	@echo Removing $(Incremental_Lists) to force regeneration.
 	@rm -f $(Incremental_Lists)
 	@$(CDG) echo >$(Cached_plat)
