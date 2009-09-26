@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package com.sun.tools.javap; //javax.tools;
+package com.sun.tools.javah; //javax.tools;
 
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -49,29 +49,26 @@ import javax.tools.Tool;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public interface DisassemblerTool extends Tool, OptionChecker {
+public interface NativeHeaderTool extends Tool, OptionChecker {
 
     /**
-     * Creates a future for a disassembly task with the given
+     * Creates a future for a native header task with the given
      * components and arguments.  The task might not have
-     * completed as described in the DissemblerTask interface.
+     * completed as described in the NativeHeaderTask interface.
      *
      * <p>If a file manager is provided, it must be able to handle all
      * locations defined in {@link StandardLocation}.
      *
-     * @param out a Writer for additional output from the compiler;
+     * @param out a Writer for additional output from the task;
      * use {@code System.err} if {@code null}
      * @param fileManager a file manager; if {@code null} use the
-     * compiler's standard filemanager
+     * task's standard filemanager
      * @param diagnosticListener a diagnostic listener; if {@code
      * null} use the compiler's default method for reporting
      * diagnostics
-     * @param options compiler options, {@code null} means no options
-     * @param classes class names (for annotation processing), {@code
-     * null} means no class names
-     * @param compilationUnits the compilation units to compile, {@code
-     * null} means no compilation units
-     * @return an object representing the compilation
+     * @param options task options, {@code null} means no options
+     * @param classes class names for which native headers should be generated
+     * @return an object representing the task to be done
      * @throws RuntimeException if an unrecoverable error
      * occurred in a user supplied component.  The
      * {@linkplain Throwable#getCause() cause} will be the error in
@@ -80,7 +77,7 @@ public interface DisassemblerTool extends Tool, OptionChecker {
      * compilation units are of other kind than
      * {@linkplain JavaFileObject.Kind#SOURCE source}
      */
-    DisassemblerTask getTask(Writer out,
+    NativeHeaderTask getTask(Writer out,
                             JavaFileManager fileManager,
                             DiagnosticListener<? super JavaFileObject> diagnosticListener,
                             Iterable<String> options,
@@ -97,7 +94,7 @@ public interface DisassemblerTool extends Tool, OptionChecker {
      * The standard file manager must be usable with other tools.
      *
      * @param diagnosticListener a diagnostic listener for non-fatal
-     * diagnostics; if {@code null} use the compiler's default method
+     * diagnostics; if {@code null} use the tool's default method
      * for reporting diagnostics
      * @param locale the locale to apply when formatting diagnostics;
      * {@code null} means the {@linkplain Locale#getDefault() default locale}.
@@ -111,7 +108,7 @@ public interface DisassemblerTool extends Tool, OptionChecker {
         Charset charset);
 
     /**
-     * Interface representing a future for a disassembly task.  The
+     * Interface representing a future for a native header task.  The
      * task has not yet started.  To start the task, call
      * the {@linkplain #call call} method.
      *
@@ -119,7 +116,7 @@ public interface DisassemblerTool extends Tool, OptionChecker {
      * task can be configured, for example, by calling the
      * {@linkplain #setLocale setLocale} method.
      */
-    interface DisassemblerTask extends Callable<Boolean> {
+    interface NativeHeaderTask extends Callable<Boolean> {
 
         /**
          * Set the locale to be applied when formatting diagnostics and
@@ -132,11 +129,11 @@ public interface DisassemblerTool extends Tool, OptionChecker {
         void setLocale(Locale locale);
 
         /**
-         * Performs this compilation task.  The compilation may only
+         * Performs this native header task.  The task may only
          * be performed once.  Subsequent calls to this method throw
          * IllegalStateException.
          *
-         * @return true if and only all the files compiled without errors;
+         * @return true if and only all the files were processed without errors;
          * false otherwise
          *
          * @throws RuntimeException if an unrecoverable error occurred
