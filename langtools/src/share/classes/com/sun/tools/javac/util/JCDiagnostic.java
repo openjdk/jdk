@@ -32,7 +32,6 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
-import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
 
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
@@ -354,15 +353,6 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     }
 
     /**
-     * Get the name of the source file referred to by this diagnostic.
-     * @return the name of the source referred to with this diagnostic, or null if none
-     */
-    public String getSourceName() {
-        JavaFileObject s = getSource();
-        return s == null ? null : JavacFileManager.getJavacFileName(s);
-    }
-
-    /**
      * Get the source referred to by this diagnostic.
      * @return the source referred to with this diagnostic, or null if none
      */
@@ -437,6 +427,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     /**
      * Return the standard presentation of this diagnostic.
      */
+    @Override
     public String toString() {
         return defaultFormatter.format(this,Locale.getDefault());
     }
