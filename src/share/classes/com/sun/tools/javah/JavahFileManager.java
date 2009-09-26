@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,36 +26,38 @@
 package com.sun.tools.javah;
 
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
+
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.Context;
 
 /**
- *  Main entry point.
+ *  javah's implementation of JavaFileManager.
  *
  *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
  *  you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class Main {
-    /**
-     * Main entry point for the launcher.
-     * Note: This method calls System.exit.
-     * @param args command line arguments
-     */
-    public static void main(String[] args) {
-        JavahTask t = new JavahTask();
-        int rc = t.run(args);
-        System.exit(rc);
+class JavahFileManager extends JavacFileManager {
+    private JavahFileManager(Context context, Charset charset) {
+        super(context, true, charset);
+        setIgnoreSymbolFile(true);
     }
 
-    /**
-     * Entry point that does <i>not</i> call System.exit.
-     * @param args command line arguments
-     * @param out output stream
-     * @return an exit code. 0 means success, non-zero means an error occurred.
-     */
-    public static int run(String[] args, PrintWriter out) {
-        JavahTask t = new JavahTask();
-        t.setLog(out);
-        return t.run(args);
+    static JavahFileManager create(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log) {
+        Context javac_context = new Context();
+
+        if (dl != null)
+            javac_context.put(DiagnosticListener.class, dl);
+        javac_context.put(com.sun.tools.javac.util.Log.outKey, log);
+
+        return new JavahFileManager(javac_context, null);
+    }
+
+    void setIgnoreSymbolFile(boolean b) {
+        ignoreSymbolFile = b;
     }
 }
