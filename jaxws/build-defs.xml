@@ -61,9 +61,13 @@
         <mkdir dir="${build.classes.dir}"/>
         <copy todir="${build.classes.dir}">
             <fileset dir="${primary.src.dir}"
-                     includes="**/*.xsd, **/*.default"
-                     excludes="**/*.java, **/*.package.html, **/*.properties"/>
+                     includes="**/*.xsd, **/*.default, **/*.properties"
+                     excludes="**/*.java, **/*.package.html"/>
         </copy>
+        <replaceregexp match="#(.*)$" replace="#" flags="gm">
+            <fileset dir="${build.classes.dir}" includes="**/*.properties"/>
+        </replaceregexp>
+
         <mkdir dir="${build.classes.dir}/META-INF/services"/>
         <copy todir="${build.classes.dir}/META-INF/services"
               file="${primary.src.dir}/com/sun/tools/etc/META-INF/services/com.sun.mirror.apt.AnnotationProcessorFactory"/>
