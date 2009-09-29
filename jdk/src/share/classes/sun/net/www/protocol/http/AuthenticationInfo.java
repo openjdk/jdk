@@ -85,6 +85,11 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
             AuthCacheValue.Type.Server:
             AuthCacheValue.Type.Proxy;
     }
+
+    AuthScheme getAuthScheme() {
+        return authScheme;
+    }
+
     public String getHost() {
         return host;
     }
@@ -151,7 +156,7 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
     }
 
     //public String toString () {
-        //return ("{"+type+":"+authType+":"+protocol+":"+host+":"+port+":"+realm+":"+path+"}");
+        //return ("{"+type+":"+authScheme+":"+protocol+":"+host+":"+port+":"+realm+":"+path+"}");
     //}
 
     // REMIND:  This cache just grows forever.  We should put in a bounded
@@ -160,8 +165,8 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
     /** The type (server/proxy) of authentication this is.  Used for key lookup */
     char type;
 
-    /** The authentication type (basic/digest). Also used for key lookup */
-    char authType;
+    /** The authentication scheme (basic/digest). Also used for key lookup */
+    AuthScheme authScheme;
 
     /** The protocol/scheme (i.e. http or https ). Need to keep the caches
      *  logically separate for the two protocols. This field is only used
@@ -183,9 +188,9 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
     String path;
 
     /** Use this constructor only for proxy entries */
-    AuthenticationInfo(char type, char authType, String host, int port, String realm) {
+    AuthenticationInfo(char type, AuthScheme authScheme, String host, int port, String realm) {
         this.type = type;
-        this.authType = authType;
+        this.authScheme = authScheme;
         this.protocol = "";
         this.host = host.toLowerCase();
         this.port = port;
@@ -206,9 +211,9 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
      * Constructor used to limit the authorization to the path within
      * the URL. Use this constructor for origin server entries.
      */
-    AuthenticationInfo(char type, char authType, URL url, String realm) {
+    AuthenticationInfo(char type, AuthScheme authScheme, URL url, String realm) {
         this.type = type;
-        this.authType = authType;
+        this.authScheme = authScheme;
         this.protocol = url.getProtocol().toLowerCase();
         this.host = url.getHost().toLowerCase();
         this.port = url.getPort();
@@ -264,12 +269,12 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
      * In this case we do not use the path because the protection space
      * is identified by the host:port:realm only
      */
-    static AuthenticationInfo getServerAuth(URL url, String realm, char atype) {
+    static AuthenticationInfo getServerAuth(URL url, String realm, AuthScheme scheme) {
         int port = url.getPort();
         if (port == -1) {
             port = url.getDefaultPort();
         }
-        String key = SERVER_AUTHENTICATION + ":" + atype + ":" + url.getProtocol().toLowerCase()
+        String key = SERVER_AUTHENTICATION + ":" + scheme + ":" + url.getProtocol().toLowerCase()
                      + ":" + url.getHost().toLowerCase() + ":" + port + ":" + realm;
         AuthenticationInfo cached = getAuth(key, null);
         if ((cached == null) && requestIsInProgress (key)) {
@@ -308,8 +313,8 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
      * Used in response to a challenge. Note, the protocol field is always
      * blank for proxies.
      */
-    static AuthenticationInfo getProxyAuth(String host, int port, String realm, char atype) {
-        String key = PROXY_AUTHENTICATION + ":" + atype + "::" + host.toLowerCase()
+    static AuthenticationInfo getProxyAuth(String host, int port, String realm, AuthScheme scheme) {
+        String key = PROXY_AUTHENTICATION + ":" + scheme + "::" + host.toLowerCase()
                         + ":" + port + ":" + realm;
         AuthenticationInfo cached = (AuthenticationInfo) cache.get(key, null);
         if ((cached == null) && requestIsInProgress (key)) {
@@ -409,7 +414,7 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
         // This must be kept in sync with the getXXXAuth() methods in this
         // class.
         if (includeRealm) {
-            return type + ":" + authType + ":" + protocol + ":"
+            return type + ":" + authScheme + ":" + protocol + ":"
                         + host + ":" + port + ":" + realm;
         } else {
             return type + ":" + protocol + ":" + host + ":" + port;

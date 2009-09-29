@@ -110,7 +110,7 @@ bool instanceKlass::verify_code(
   // 1) Verify the bytecodes
   Verifier::Mode mode =
     throw_verifyerror ? Verifier::ThrowException : Verifier::NoException;
-  return Verifier::verify(this_oop, mode, CHECK_false);
+  return Verifier::verify(this_oop, mode, this_oop->should_verify_class(), CHECK_false);
 }
 
 
@@ -967,33 +967,78 @@ JNIid* instanceKlass::jni_id_for(int offset) {
 
 
 // Lookup or create a jmethodID.
-// This code can be called by the VM thread.  For this reason it is critical that
-// there are no blocking operations (safepoints) while the lock is held -- or a
-// deadlock can occur.
-jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHandle method_h) {
+// This code is called by the VMThread and JavaThreads so the
+// locking has to be done very carefully to avoid deadlocks
+// and/or other cache consistency problems.
+//
+jmethodID instanceKlass::get_jmethod_id(instanceKlassHandle ik_h, methodHandle method_h) {
   size_t idnum = (size_t)method_h->method_idnum();
   jmethodID* jmeths = ik_h->methods_jmethod_ids_acquire();
   size_t length = 0;
   jmethodID id = NULL;
-  // array length stored in first element, other elements offset by one
-  if (jmeths == NULL ||                         // If there is no jmethodID array,
-      (length = (size_t)jmeths[0]) <= idnum ||  // or if it is too short,
-      (id = jmeths[idnum+1]) == NULL) {         // or if this jmethodID isn't allocated
 
-    // Do all the safepointing things (allocations) before grabbing the lock.
-    // These allocations will have to be freed if they are unused.
+  // We use a double-check locking idiom here because this cache is
+  // performance sensitive. In the normal system, this cache only
+  // transitions from NULL to non-NULL which is safe because we use
+  // release_set_methods_jmethod_ids() to advertise the new cache.
+  // A partially constructed cache should never be seen by a racing
+  // thread. We also use release_store_ptr() to save a new jmethodID
+  // in the cache so a partially constructed jmethodID should never be
+  // seen either. Cache reads of existing jmethodIDs proceed without a
+  // lock, but cache writes of a new jmethodID requires uniqueness and
+  // creation of the cache itself requires no leaks so a lock is
+  // generally acquired in those two cases.
+  //
+  // If the RedefineClasses() API has been used, then this cache can
+  // grow and we'll have transitions from non-NULL to bigger non-NULL.
+  // Cache creation requires no leaks and we require safety between all
+  // cache accesses and freeing of the old cache so a lock is generally
+  // acquired when the RedefineClasses() API has been used.
 
-    // Allocate a new array of methods.
+  if (jmeths != NULL) {
+    // the cache already exists
+    if (!ik_h->idnum_can_increment()) {
+      // the cache can't grow so we can just get the current values
+      get_jmethod_id_length_value(jmeths, idnum, &length, &id);
+    } else {
+      // cache can grow so we have to be more careful
+      if (Threads::number_of_threads() == 0 ||
+          SafepointSynchronize::is_at_safepoint()) {
+        // we're single threaded or at a safepoint - no locking needed
+        get_jmethod_id_length_value(jmeths, idnum, &length, &id);
+      } else {
+        MutexLocker ml(JmethodIdCreation_lock);
+        get_jmethod_id_length_value(jmeths, idnum, &length, &id);
+      }
+    }
+  }
+  // implied else:
+  // we need to allocate a cache so default length and id values are good
+
+  if (jmeths == NULL ||   // no cache yet
+      length <= idnum ||  // cache is too short
+      id == NULL) {       // cache doesn't contain entry
+
+    // This function can be called by the VMThread so we have to do all
+    // things that might block on a safepoint before grabbing the lock.
+    // Otherwise, we can deadlock with the VMThread or have a cache
+    // consistency issue. These vars keep track of what we might have
+    // to free after the lock is dropped.
+    jmethodID  to_dealloc_id     = NULL;
+    jmethodID* to_dealloc_jmeths = NULL;
+
+    // may not allocate new_jmeths or use it if we allocate it
     jmethodID* new_jmeths = NULL;
     if (length <= idnum) {
-      // A new array will be needed (unless some other thread beats us to it)
+      // allocate a new cache that might be used
       size_t size = MAX2(idnum+1, (size_t)ik_h->idnum_allocated_count());
       new_jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1);
       memset(new_jmeths, 0, (size+1)*sizeof(jmethodID));
-      new_jmeths[0] =(jmethodID)size;  // array size held in the first element
+      // cache size is stored in element[0], other elements offset by one
+      new_jmeths[0] = (jmethodID)size;
     }
 
-    // Allocate a new method ID.
+    // allocate a new jmethodID that might be used
     jmethodID new_id = NULL;
     if (method_h->is_old() && !method_h->is_obsolete()) {
       // The method passed in is old (but not obsolete), we need to use the current version
@@ -1007,53 +1052,101 @@ jmethodID instanceKlass::jmethod_id_for_impl(instanceKlassHandle ik_h, methodHan
       new_id = JNIHandles::make_jmethod_id(method_h);
     }
 
-    if (Threads::number_of_threads() == 0 || SafepointSynchronize::is_at_safepoint()) {
-      // No need and unsafe to lock the JmethodIdCreation_lock at safepoint.
-      id = get_jmethod_id(ik_h, idnum, new_id, new_jmeths);
+    if (Threads::number_of_threads() == 0 ||
+        SafepointSynchronize::is_at_safepoint()) {
+      // we're single threaded or at a safepoint - no locking needed
+      id = get_jmethod_id_fetch_or_update(ik_h, idnum, new_id, new_jmeths,
+                                          &to_dealloc_id, &to_dealloc_jmeths);
     } else {
       MutexLocker ml(JmethodIdCreation_lock);
-      id = get_jmethod_id(ik_h, idnum, new_id, new_jmeths);
+      id = get_jmethod_id_fetch_or_update(ik_h, idnum, new_id, new_jmeths,
+                                          &to_dealloc_id, &to_dealloc_jmeths);
+    }
+
+    // The lock has been dropped so we can free resources.
+    // Free up either the old cache or the new cache if we allocated one.
+    if (to_dealloc_jmeths != NULL) {
+      FreeHeap(to_dealloc_jmeths);
+    }
+    // free up the new ID since it wasn't needed
+    if (to_dealloc_id != NULL) {
+      JNIHandles::destroy_jmethod_id(to_dealloc_id);
     }
   }
   return id;
 }
 
 
-jmethodID instanceKlass::get_jmethod_id(instanceKlassHandle ik_h, size_t idnum,
-                                        jmethodID new_id, jmethodID* new_jmeths) {
-  // Retry lookup after we got the lock or ensured we are at safepoint
-  jmethodID* jmeths = ik_h->methods_jmethod_ids_acquire();
-  jmethodID  id                = NULL;
-  jmethodID  to_dealloc_id     = NULL;
-  jmethodID* to_dealloc_jmeths = NULL;
-  size_t     length;
+// Common code to fetch the jmethodID from the cache or update the
+// cache with the new jmethodID. This function should never do anything
+// that causes the caller to go to a safepoint or we can deadlock with
+// the VMThread or have cache consistency issues.
+//
+jmethodID instanceKlass::get_jmethod_id_fetch_or_update(
+            instanceKlassHandle ik_h, size_t idnum, jmethodID new_id,
+            jmethodID* new_jmeths, jmethodID* to_dealloc_id_p,
+            jmethodID** to_dealloc_jmeths_p) {
+  assert(new_id != NULL, "sanity check");
+  assert(to_dealloc_id_p != NULL, "sanity check");
+  assert(to_dealloc_jmeths_p != NULL, "sanity check");
+  assert(Threads::number_of_threads() == 0 ||
+         SafepointSynchronize::is_at_safepoint() ||
+         JmethodIdCreation_lock->owned_by_self(), "sanity check");
 
-  if (jmeths == NULL || (length = (size_t)jmeths[0]) <= idnum) {
+  // reacquire the cache - we are locked, single threaded or at a safepoint
+  jmethodID* jmeths = ik_h->methods_jmethod_ids_acquire();
+  jmethodID  id     = NULL;
+  size_t     length = 0;
+
+  if (jmeths == NULL ||                         // no cache yet
+      (length = (size_t)jmeths[0]) <= idnum) {  // cache is too short
     if (jmeths != NULL) {
-      // We have grown the array: copy the existing entries, and delete the old array
+      // copy any existing entries from the old cache
       for (size_t index = 0; index < length; index++) {
         new_jmeths[index+1] = jmeths[index+1];
       }
-      to_dealloc_jmeths = jmeths; // using the new jmeths, deallocate the old one
+      *to_dealloc_jmeths_p = jmeths;  // save old cache for later delete
     }
     ik_h->release_set_methods_jmethod_ids(jmeths = new_jmeths);
   } else {
+    // fetch jmethodID (if any) from the existing cache
     id = jmeths[idnum+1];
-    to_dealloc_jmeths = new_jmeths; // using the old jmeths, deallocate the new one
+    *to_dealloc_jmeths_p = new_jmeths;  // save new cache for later delete
   }
   if (id == NULL) {
+    // No matching jmethodID in the existing cache or we have a new
+    // cache or we just grew the cache. This cache write is done here
+    // by the first thread to win the foot race because a jmethodID
+    // needs to be unique once it is generally available.
     id = new_id;
-    jmeths[idnum+1] = id;  // install the new method ID
-  } else {
-    to_dealloc_id = new_id; // the new id wasn't used, mark it for deallocation
-  }
 
-  // Free up unneeded or no longer needed resources
-  FreeHeap(to_dealloc_jmeths);
-  if (to_dealloc_id != NULL) {
-    JNIHandles::destroy_jmethod_id(to_dealloc_id);
+    // The jmethodID cache can be read while unlocked so we have to
+    // make sure the new jmethodID is complete before installing it
+    // in the cache.
+    OrderAccess::release_store_ptr(&jmeths[idnum+1], id);
+  } else {
+    *to_dealloc_id_p = new_id; // save new id for later delete
   }
   return id;
+}
+
+
+// Common code to get the jmethodID cache length and the jmethodID
+// value at index idnum if there is one.
+//
+void instanceKlass::get_jmethod_id_length_value(jmethodID* cache,
+       size_t idnum, size_t *length_p, jmethodID* id_p) {
+  assert(cache != NULL, "sanity check");
+  assert(length_p != NULL, "sanity check");
+  assert(id_p != NULL, "sanity check");
+
+  // cache size is stored in element[0], other elements offset by one
+  *length_p = (size_t)cache[0];
+  if (*length_p <= idnum) {  // cache is too short
+    *id_p = NULL;
+  } else {
+    *id_p = cache[idnum+1];  // fetch jmethodID (if any)
+  }
 }
 
 
@@ -1063,7 +1156,7 @@ jmethodID instanceKlass::jmethod_id_or_null(methodOop method) {
   jmethodID* jmeths = methods_jmethod_ids_acquire();
   size_t length;                                // length assigned as debugging crumb
   jmethodID id = NULL;
-  if (jmeths != NULL &&                         // If there is a jmethodID array,
+  if (jmeths != NULL &&                         // If there is a cache
       (length = (size_t)jmeths[0]) > idnum) {   // and if it is long enough,
     id = jmeths[idnum+1];                       // Look up the id (may be NULL)
   }
@@ -1074,18 +1167,35 @@ jmethodID instanceKlass::jmethod_id_or_null(methodOop method) {
 // Cache an itable index
 void instanceKlass::set_cached_itable_index(size_t idnum, int index) {
   int* indices = methods_cached_itable_indices_acquire();
-  if (indices == NULL ||                         // If there is no index array,
-      ((size_t)indices[0]) <= idnum) {           // or if it is too short
-    // Lock before we allocate the array so we don't leak
+  int* to_dealloc_indices = NULL;
+
+  // We use a double-check locking idiom here because this cache is
+  // performance sensitive. In the normal system, this cache only
+  // transitions from NULL to non-NULL which is safe because we use
+  // release_set_methods_cached_itable_indices() to advertise the
+  // new cache. A partially constructed cache should never be seen
+  // by a racing thread. Cache reads and writes proceed without a
+  // lock, but creation of the cache itself requires no leaks so a
+  // lock is generally acquired in that case.
+  //
+  // If the RedefineClasses() API has been used, then this cache can
+  // grow and we'll have transitions from non-NULL to bigger non-NULL.
+  // Cache creation requires no leaks and we require safety between all
+  // cache accesses and freeing of the old cache so a lock is generally
+  // acquired when the RedefineClasses() API has been used.
+
+  if (indices == NULL || idnum_can_increment()) {
+    // we need a cache or the cache can grow
     MutexLocker ml(JNICachedItableIndex_lock);
-    // Retry lookup after we got the lock
+    // reacquire the cache to see if another thread already did the work
     indices = methods_cached_itable_indices_acquire();
     size_t length = 0;
-    // array length stored in first element, other elements offset by one
+    // cache size is stored in element[0], other elements offset by one
     if (indices == NULL || (length = (size_t)indices[0]) <= idnum) {
       size_t size = MAX2(idnum+1, (size_t)idnum_allocated_count());
       int* new_indices = NEW_C_HEAP_ARRAY(int, size+1);
-      // Copy the existing entries, if any
+      new_indices[0] = (int)size;
+      // copy any existing entries
       size_t i;
       for (i = 0; i < length; i++) {
         new_indices[i+1] = indices[i+1];
@@ -1095,15 +1205,32 @@ void instanceKlass::set_cached_itable_index(size_t idnum, int index) {
         new_indices[i+1] = -1;
       }
       if (indices != NULL) {
-        FreeHeap(indices);  // delete any old indices
+        // We have an old cache to delete so save it for after we
+        // drop the lock.
+        to_dealloc_indices = indices;
       }
       release_set_methods_cached_itable_indices(indices = new_indices);
+    }
+
+    if (idnum_can_increment()) {
+      // this cache can grow so we have to write to it safely
+      indices[idnum+1] = index;
     }
   } else {
     CHECK_UNHANDLED_OOPS_ONLY(Thread::current()->clear_unhandled_oops());
   }
-  // This is a cache, if there is a race to set it, it doesn't matter
-  indices[idnum+1] = index;
+
+  if (!idnum_can_increment()) {
+    // The cache cannot grow and this JNI itable index value does not
+    // have to be unique like a jmethodID. If there is a race to set it,
+    // it doesn't matter.
+    indices[idnum+1] = index;
+  }
+
+  if (to_dealloc_indices != NULL) {
+    // we allocated a new cache so free the old one
+    FreeHeap(to_dealloc_indices);
+  }
 }
 
 
@@ -2299,6 +2426,11 @@ void instanceKlass::set_init_state(ClassState state) {
 
 // Add an information node that contains weak references to the
 // interesting parts of the previous version of the_class.
+// This is also where we clean out any unused weak references.
+// Note that while we delete nodes from the _previous_versions
+// array, we never delete the array itself until the klass is
+// unloaded. The has_been_redefined() query depends on that fact.
+//
 void instanceKlass::add_previous_version(instanceKlassHandle ikh,
        BitMap* emcp_methods, int emcp_method_count) {
   assert(Thread::current()->is_VM_thread(),

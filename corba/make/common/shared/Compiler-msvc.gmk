@@ -48,11 +48,17 @@ ifeq ($(PLATFORM), windows)
   NMAKE          = MFLAGS= MAKEFLAGS= $(COMPILER_PATH)nmake -nologo
 
   # Compiler version and type (Always get word after "Version")
-  CC_VER  := $(shell $(CC) 2>&1 | $(HEAD) -n 1 | $(SED) 's/.*\(Version.*\)/\1/' | $(NAWK) '{print $$2}')
-  
+  ifndef CC_VER
+    CC_VER  := $(shell $(CC) 2>&1 | $(HEAD) -n 1 | $(SED) 's/.*\(Version.*\)/\1/' | $(NAWK) '{print $$2}')
+    export CC_VER
+  endif
+
   # SDK-64 and MSVC6 put REBASE.EXE in a different places - go figure...
   ifeq ($(ARCH_DATA_MODEL), 32)
-    LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
+    ifndef LINK_VER
+      LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
+      export LINK_VER
+    endif
     CC_MAJORVER :=$(call MajorVersion,$(CC_VER))
     ifeq ($(CC_MAJORVER), 13)
       # This should be: CC_VER=13.10.3077 LINK_VER=7.10.3077
@@ -93,7 +99,10 @@ ifeq ($(PLATFORM), windows)
     endif
   else
     # else ARCH_DATA_MODEL is 64
-    LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
+    ifndef LINK_VER
+      LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
+      export LINK_VER
+    endif
     CC_MAJORVER :=$(call MajorVersion,$(CC_VER))
     CC_MINORVER :=$(call MinorVersion,$(CC_VER))
     CC_MICROVER :=$(call MicroVersion,$(CC_VER))

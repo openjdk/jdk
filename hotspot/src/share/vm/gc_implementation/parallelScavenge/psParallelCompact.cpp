@@ -2752,7 +2752,6 @@ PSParallelCompact::revisit_weak_klass_link(ParCompactionManager* cm, Klass* k) {
   cm->revisit_klass_stack()->push(k);
 }
 
-#if ( defined(COMPILER1) || defined(COMPILER2) )
 void PSParallelCompact::revisit_mdo(ParCompactionManager* cm, DataLayout* p) {
   cm->revisit_mdo_stack()->push(p);
 }
@@ -2778,7 +2777,6 @@ void PSParallelCompact::follow_mdo_weak_refs() {
     follow_stack(cm);
   }
 }
-#endif //  ( COMPILER1 || COMPILER2 )
 
 
 #ifdef VALIDATE_MARK_SWEEP
