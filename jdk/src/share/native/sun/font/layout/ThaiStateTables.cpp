@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 1999-2003 - All Rights Reserved
  *
  * WARNING: THIS FILE IS MACHINE GENERATED. DO NOT HAND EDIT IT UNLESS
@@ -34,6 +35,8 @@
 
 #include "LETypes.h"
 #include "ThaiShaping.h"
+
+U_NAMESPACE_BEGIN
 
 const le_uint8 ThaiShaping::classTable[] = {
     //       0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F
@@ -105,3 +108,5 @@ const ThaiShaping::StateTransition ThaiShaping::thaiStateTable[][ThaiShaping::cl
     /*50*/ {{ 0, tA}, { 1, tA}, {18, tA}, {35, tA}, { 0, tA}, { 0, tS}, { 0, tS}, { 0, tA}, { 0, tR}, { 0, tR}, { 0, tR}, {51, tC}, { 0, tR}, { 0, tC}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}},
     /*51*/ {{ 0, tA}, { 1, tA}, {18, tA}, {35, tA}, { 0, tA}, { 0, tS}, { 0, tA}, { 0, tA}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}, { 0, tR}}
 };
+
+U_NAMESPACE_END

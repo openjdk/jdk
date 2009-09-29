@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 1998-2003 - All Rights Reserved
  *
  */
@@ -34,6 +35,8 @@
 #include "OpenTypeTables.h"
 #include "Features.h"
 #include "LESwaps.h"
+
+U_NAMESPACE_BEGIN
 
 const FeatureTable *FeatureListTable::getFeatureTable(le_uint16 featureIndex, LETag *featureTag) const
 {
@@ -79,3 +82,5 @@ const FeatureTable *FeatureListTable::getFeatureTable(LETag featureTag) const
     return 0;
 #endif
 }
+
+U_NAMESPACE_END
