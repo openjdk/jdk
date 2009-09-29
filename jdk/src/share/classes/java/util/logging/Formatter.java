@@ -52,7 +52,7 @@ public abstract class Formatter {
      * Format the given log record and return the formatted string.
      * <p>
      * The resulting formatted String will normally include a
-     * localized and formated version of the LogRecord's message field.
+     * localized and formatted version of the LogRecord's message field.
      * It is recommended to use the {@link Formatter#formatMessage}
      * convenience method to localize and format the message field.
      *
@@ -66,7 +66,7 @@ public abstract class Formatter {
      * Return the header string for a set of formatted records.
      * <p>
      * This base class returns an empty string, but this may be
-     * overriden by subclasses.
+     * overridden by subclasses.
      *
      * @param   h  The target handler (can be null)
      * @return  header string
@@ -79,7 +79,7 @@ public abstract class Formatter {
      * Return the tail string for a set of formatted records.
      * <p>
      * This base class returns an empty string, but this may be
-     * overriden by subclasses.
+     * overridden by subclasses.
      *
      * @param   h  The target handler (can be null)
      * @return  tail string

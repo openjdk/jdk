@@ -1435,7 +1435,17 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
                 // inherits it automatically.
-                containing = ((ClassWriterImpl) this).getClassDoc();
+                if (this instanceof ClassWriterImpl) {
+                    containing = ((ClassWriterImpl) this).getClassDoc();
+                } else if (!containing.isPublic()){
+                    configuration.getDocletSpecificMsg().warning(
+                        see.position(), "doclet.see.class_or_package_not_accessible",
+                        tagName, containing.qualifiedName());
+                } else {
+                    configuration.getDocletSpecificMsg().warning(
+                        see.position(), "doclet.see.class_or_package_not_found",
+                        tagName, seetext);
+                }
             }
             if (configuration.currentcd != containing) {
                 refMemName = containing.name() + "." + refMemName;

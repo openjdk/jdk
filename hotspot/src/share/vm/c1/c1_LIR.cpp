@@ -567,8 +567,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_rem:
     case lir_sqrt:
     case lir_abs:
-    case lir_log:
-    case lir_log10:
     case lir_logic_and:
     case lir_logic_or:
     case lir_logic_xor:
@@ -644,13 +642,16 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
     case lir_tan:
     case lir_sin:
-    case lir_cos: {
+    case lir_cos:
+    case lir_log:
+    case lir_log10: {
       assert(op->as_Op2() != NULL, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
 
-      // sin and cos need two temporary fpu stack slots, so register
-      // two temp operands.  Register input operand as temp to
-      // guarantee that they do not overlap
+      // On x86 tan/sin/cos need two temporary fpu stack slots and
+      // log/log10 need one so handle opr2 and tmp as temp inputs.
+      // Register input operand as temp to guarantee that it doesn't
+      // overlap with the input.
       assert(op2->_info == NULL, "not used");
       assert(op2->_opr1->is_valid(), "used");
       do_input(op2->_opr1); do_temp(op2->_opr1);

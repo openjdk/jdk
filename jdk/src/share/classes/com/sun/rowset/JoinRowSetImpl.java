@@ -3737,7 +3737,6 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
     * Returns a result set containing the original value of the current
     * row only.
     *
-    * @return the original result set of the row
     * @throws SQLException if there is no current row
     * @see #setOriginalRow
     */

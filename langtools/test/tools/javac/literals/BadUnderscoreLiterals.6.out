@@ -1,0 +1,21 @@
+BadUnderscoreLiterals.java:14:17: compiler.err.unsupported.underscore: 1.6
+BadUnderscoreLiterals.java:18:15: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:22:19: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:25:14: compiler.err.unsupported.binary.lit: 1.6
+BadUnderscoreLiterals.java:25:16: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:26:17: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:29:16: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:30:17: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:33:17: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:34:18: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:35:19: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:36:19: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:37:18: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:38:19: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:41:19: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:42:20: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:43:21: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:44:22: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:45:21: compiler.err.illegal.underscore
+BadUnderscoreLiterals.java:46:22: compiler.err.illegal.underscore
+20 errors
