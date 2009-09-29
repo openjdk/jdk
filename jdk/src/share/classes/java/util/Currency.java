@@ -35,12 +35,12 @@ import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import sun.util.LocaleServiceProviderPool;
+import sun.util.logging.PlatformLogger;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
 
@@ -244,7 +244,7 @@ public final class Currency implements Serializable {
                         }
                     }
                 } catch (IOException e) {
-                    log(Level.INFO, "currency.properties is ignored because of an IOException", e);
+                    info("currency.properties is ignored because of an IOException", e);
                 }
                 return null;
             }
@@ -686,7 +686,7 @@ public final class Currency implements Serializable {
                 .append("The entry in currency.properties for ")
                 .append(ctry).append(" is ignored because of the invalid country code.")
                 .toString();
-            log(Level.INFO, message, null);
+            info(message, null);
             return;
         }
 
@@ -698,7 +698,7 @@ public final class Currency implements Serializable {
                 .append(ctry)
                 .append(" is ignored because the value format is not recognized.")
                 .toString();
-            log(Level.INFO, message, null);
+            info(message, null);
             return;
         }
 
@@ -726,13 +726,13 @@ public final class Currency implements Serializable {
         setMainTableEntry(ctry.charAt(0), ctry.charAt(1), entry);
     }
 
-    private static void log(Level level, String message, Throwable t) {
-        Logger logger = Logger.getLogger("java.util.Currency");
-        if (logger.isLoggable(level)) {
+    private static void info(String message, Throwable t) {
+        PlatformLogger logger = PlatformLogger.getLogger("java.util.Currency");
+        if (logger.isLoggable(PlatformLogger.INFO)) {
             if (t != null) {
-                logger.log(level, message, t);
+                logger.info(message, t);
             } else {
-                logger.log(level, message);
+                logger.info(message);
             }
         }
     }

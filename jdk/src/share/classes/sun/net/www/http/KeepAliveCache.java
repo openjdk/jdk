@@ -25,12 +25,11 @@
 
 package sun.net.www.http;
 
-import java.io.InputStream;
 import java.io.IOException;
 import java.io.NotSerializableException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.net.URL;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A class that implements a cache of idle Http connections for keep-alive
@@ -39,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Dave Brown
  */
 public class KeepAliveCache
-    extends ConcurrentHashMap<KeepAliveKey, ClientVector>
+    extends HashMap<KeepAliveKey, ClientVector>
     implements Runnable {
     private static final long serialVersionUID = -2937172892064557949L;
 
@@ -163,8 +162,8 @@ public class KeepAliveCache
      * Errs on the side of caution (leave connections idle for a relatively
      * short time).
      */
+    @Override
     public void run() {
-        int total_cache;
         do {
             try {
                 Thread.sleep(LIFETIME);
@@ -311,6 +310,7 @@ class KeepAliveKey {
     /**
      * Determine whether or not two objects of this type are equal
      */
+    @Override
     public boolean equals(Object obj) {
         if ((obj instanceof KeepAliveKey) == false)
             return false;
@@ -325,6 +325,7 @@ class KeepAliveKey {
      * The hashCode() for this object is the string hashCode() of
      * concatenation of the protocol, host name and port.
      */
+    @Override
     public int hashCode() {
         String str = protocol+host+port;
         return this.obj == null? str.hashCode() :

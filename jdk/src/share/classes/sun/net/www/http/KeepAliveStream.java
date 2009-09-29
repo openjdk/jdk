@@ -25,10 +25,7 @@
 
 package sun.net.www.http;
 
-import java.net.URL;
-import java.net.HttpURLConnection;
 import java.io.*;
-import java.util.StringTokenizer;
 import sun.net.ProgressSource;
 import sun.net.www.MeteredStream;
 
@@ -50,9 +47,8 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
     // has this KeepAliveStream been put on the queue for asynchronous cleanup.
     protected boolean queuedForCleanup = false;
 
-    private static KeepAliveStreamCleaner queue = new KeepAliveStreamCleaner();
-    private static Thread cleanerThread = null;
-    private static boolean startCleanupThread;
+    private static final KeepAliveStreamCleaner queue = new KeepAliveStreamCleaner();
+    private static Thread cleanerThread; // null
 
     /**
      * Constructor
@@ -155,43 +151,46 @@ class KeepAliveStream extends MeteredStream implements Hurryable {
         }
     }
 
-    private static synchronized void queueForCleanup(KeepAliveCleanerEntry kace) {
-        if(queue != null && !kace.getQueuedForCleanup()) {
-            if (!queue.offer(kace)) {
-                kace.getHttpClient().closeServer();
-                return;
-            }
-
-            kace.setQueuedForCleanup();
-        }
-
-        startCleanupThread = (cleanerThread == null);
-        if (!startCleanupThread) {
-            if (!cleanerThread.isAlive()) {
-                startCleanupThread = true;
-            }
-        }
-
-        if (startCleanupThread) {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    // We want to create the Keep-Alive-SocketCleaner in the
-                    // system threadgroup
-                    ThreadGroup grp = Thread.currentThread().getThreadGroup();
-                    ThreadGroup parent = null;
-                    while ((parent = grp.getParent()) != null) {
-                        grp = parent;
-                    }
-
-                    cleanerThread = new Thread(grp, queue, "Keep-Alive-SocketCleaner");
-                    cleanerThread.setDaemon(true);
-                    cleanerThread.setPriority(Thread.MAX_PRIORITY - 2);
-                    cleanerThread.start();
-                    return null;
+    private static void queueForCleanup(KeepAliveCleanerEntry kace) {
+        synchronized(queue) {
+            if(!kace.getQueuedForCleanup()) {
+                if (!queue.offer(kace)) {
+                    kace.getHttpClient().closeServer();
+                    return;
                 }
-            });
-        }
+
+                kace.setQueuedForCleanup();
+                queue.notifyAll();
+            }
+
+            boolean startCleanupThread = (cleanerThread == null);
+            if (!startCleanupThread) {
+                if (!cleanerThread.isAlive()) {
+                    startCleanupThread = true;
+                }
+            }
+
+            if (startCleanupThread) {
+                java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<Void>() {
+                    public Void run() {
+                        // We want to create the Keep-Alive-SocketCleaner in the
+                        // system threadgroup
+                        ThreadGroup grp = Thread.currentThread().getThreadGroup();
+                        ThreadGroup parent = null;
+                        while ((parent = grp.getParent()) != null) {
+                            grp = parent;
+                        }
+
+                        cleanerThread = new Thread(grp, queue, "Keep-Alive-SocketCleaner");
+                        cleanerThread.setDaemon(true);
+                        cleanerThread.setPriority(Thread.MAX_PRIORITY - 2);
+                        cleanerThread.start();
+                        return null;
+                    }
+                });
+            }
+        } // queue
     }
 
     protected long remainingToRead() {

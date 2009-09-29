@@ -1,14 +1,25 @@
 README:
-  This file should be located at the top of the jaxws Mercurial repository.
+  
+  This file should be located at the top of the Mercurial repository.
 
   See http://openjdk.java.net/ for more information about the OpenJDK.
 
   See ../README-builds.html for complete details on build machine requirements.
 
 Simple Build Instructions:
-
+  This repository can be loaded as a NetBeans project, built with ant, or
+  built with GNU make, e.g.
+    ant
+       -OR-
     cd make && gnumake
      
-  The files that will be imported into the jdk build will be in the "dist"
-  directory.
+  The built files that will be imported into the jdk build will be in the 
+  "dist" directory.
+  Help information is available by running "ant -projecthelp" or "make help".
+
+Drop Repository:
+  This repository builds sources from a created "drop" source directory.
+  These files will normally be copied from a shared directory area or
+  downloaded from a public website.
+  See the ant build script (build.xml) for more details.
 

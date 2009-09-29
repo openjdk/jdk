@@ -1031,7 +1031,8 @@ void ArchDesc::initBaseOpTypes() {
 //---------------------------addSUNcopyright-------------------------------
 // output SUN copyright info
 void ArchDesc::addSunCopyright(char* legal, int size, FILE *fp) {
-  fwrite(legal, size, 1, fp);
+  size_t count = fwrite(legal, 1, size, fp);
+  assert(count == (size_t) size, "copyright info truncated");
   fprintf(fp,"\n");
   fprintf(fp,"// Machine Generated File.  Do Not Edit!\n");
   fprintf(fp,"\n");
