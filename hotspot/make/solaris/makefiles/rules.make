@@ -122,11 +122,19 @@ endif
 endif
 endif
 
+COMPILE.JAVAC += $(BOOTSTRAP_JAVAC_FLAGS)
+
 SUM = /usr/bin/sum
 
 # 'gmake MAKE_VERBOSE=y' gives all the gory details.
 QUIETLY$(MAKE_VERBOSE)  = @
 RUN.JAR$(MAKE_VERBOSE) += >/dev/null
+
+# Settings for javac
+BOOT_SOURCE_LANGUAGE_VERSION = 6
+BOOT_TARGET_CLASS_VERSION = 6
+JAVAC_FLAGS = -g -encoding ascii
+BOOTSTRAP_JAVAC_FLAGS = $(JAVAC_FLAGS) -source $(BOOT_SOURCE_LANGUAGE_VERSION) -target $(BOOT_TARGET_CLASS_VERSION)
 
 # With parallel makes, print a message at the end of compilation.
 ifeq    ($(findstring j,$(MFLAGS)),j)

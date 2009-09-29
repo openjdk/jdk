@@ -69,8 +69,10 @@ class CloseableURLClassLoader
                 if (l.getClass().getName().equals("sun.misc.URLClassPath$JarLoader")) {
                     Field jarField = l.getClass().getDeclaredField("jar");
                     JarFile jar = (JarFile) getField(l, jarField);
-                    //System.err.println("CloseableURLClassLoader: closing " + jar);
-                    jar.close();
+                    if (jar != null) {
+                        //System.err.println("CloseableURLClassLoader: closing " + jar);
+                        jar.close();
+                    }
                 }
             }
         } catch (Throwable t) {

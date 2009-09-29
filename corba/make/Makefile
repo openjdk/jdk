@@ -141,12 +141,12 @@ $(CLASSES_JAR):
 
 #----- src.zip
 
-SRC_ZIP_FILES = $(shell $(FIND) $(SRC_CLASSES_DIR) \( -name SCCS -o -name \*-template \) -prune -o -type f -print )
+SRC_ZIP_FILES = $(shell $(FIND) $(SRC_CLASSES_DIR) \( -name \*-template \) -prune -o -type f -print )
 
 SRC_ZIP = $(LIB_DIR)/src.zip
 $(SRC_ZIP): $(SRC_ZIP_FILES)
 	abs_src_zip=`cd $(@D) ; pwd`/$(@F) ; \
-	( cd $(SRC_CLASSES_DIR) ; $(FIND) . \( -name SCCS -o -name \*-template \) -prune -o -type f -print | $(ZIP) -q $$abs_src_zip -@ ) ; \
+	( cd $(SRC_CLASSES_DIR) ; $(FIND) . \( -name \*-template \) -prune -o -type f -print | $(ZIP) -q $$abs_src_zip -@ ) ; \
 	( cd $(GENSRC_DIR) ; $(FIND) . -type f -print | $(ZIP) -q $$abs_src_zip -@ ) ;
 
 #----- bin.zip
