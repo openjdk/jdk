@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import javax.swing.plaf.FontUIResource;
 import sun.awt.motif.MFontConfiguration;
@@ -25,6 +24,7 @@ import sun.font.FcFontConfiguration;
 import sun.font.FontAccess;
 import sun.font.FontUtilities;
 import sun.font.NativeFont;
+import sun.util.logging.PlatformLogger;
 
 /**
  * The X11 implementation of {@link FontManager}.
@@ -369,7 +369,7 @@ public class X11FontManager extends SunFontManager {
                             String sVal = (String) fontNameMap.get(fontID);
 
                             if (FontUtilities.debugFonts()) {
-                                Logger logger = FontUtilities.getLogger();
+                                PlatformLogger logger = FontUtilities.getLogger();
                                 logger.info("file=" + fileName +
                                             " xlfd=" + fontPart);
                                 logger.info("fontID=" + fontID +

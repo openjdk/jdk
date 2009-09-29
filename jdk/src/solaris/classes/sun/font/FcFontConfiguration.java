@@ -35,7 +35,6 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.logging.Logger;
 import java.util.Properties;
 import java.util.Scanner;
 import sun.awt.FontConfiguration;
@@ -48,6 +47,7 @@ import sun.font.FontConfigManager.FontConfigInfo;
 import sun.font.FontConfigManager.FcCompFont;
 import sun.font.FontConfigManager.FontConfigFont;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.util.logging.PlatformLogger;
 
 public class FcFontConfiguration extends FontConfiguration {
 
@@ -99,14 +99,11 @@ public class FcFontConfiguration extends FontConfiguration {
                     writeFcInfo();
                 } catch (Exception e) {
                     if (FontUtilities.debugFonts()) {
-                        Logger logger =
-                            Logger.getLogger("sun.awt.FontConfiguration");
-                        logger.warning("Exception writing fcInfo " + e);
+                        warning("Exception writing fcInfo " + e);
                     }
                 }
             } else if (FontUtilities.debugFonts()) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("Failed to get info from libfontconfig");
+                warning("Failed to get info from libfontconfig");
             }
         } else {
             fcm.populateFontConfig(fcCompFonts);
@@ -329,8 +326,7 @@ public class FcFontConfiguration extends FontConfiguration {
             }
         } catch (Exception e) {
             if (FontUtilities.debugFonts()) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("Exception identifying Linux distro.");
+                warning("Exception identifying Linux distro.");
             }
         }
     }
@@ -402,13 +398,11 @@ public class FcFontConfiguration extends FontConfiguration {
             boolean renamed = tempFile.renameTo(fcInfoFile);
             if (!renamed && FontUtilities.debugFonts()) {
                 System.out.println("rename failed");
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("Failed renaming file to "+ getFcInfoFile());
+                warning("Failed renaming file to "+ getFcInfoFile());
             }
         } catch (Exception e) {
             if (FontUtilities.debugFonts()) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("IOException writing to "+ getFcInfoFile());
+                warning("IOException writing to "+ getFcInfoFile());
             }
         }
     }
@@ -432,8 +426,7 @@ public class FcFontConfiguration extends FontConfiguration {
             fis.close();
         } catch (IOException e) {
             if (FontUtilities.debugFonts()) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning("IOException reading from "+fcFile.toString());
+                warning("IOException reading from "+fcFile.toString());
             }
             return;
         }
@@ -455,10 +448,7 @@ public class FcFontConfiguration extends FontConfiguration {
                 }
             } catch (Exception e) {
                 if (FontUtilities.debugFonts()) {
-                    Logger logger =
-                        Logger.getLogger("sun.awt.FontConfiguration");
-                    logger.warning("Exception parsing version " +
-                                   fcVersionStr);
+                    warning("Exception parsing version " + fcVersionStr);
                 }
                 return;
             }
@@ -521,9 +511,13 @@ public class FcFontConfiguration extends FontConfiguration {
             fcCompFonts = fci;
         } catch (Throwable t) {
             if (FontUtilities.debugFonts()) {
-                Logger logger = Logger.getLogger("sun.awt.FontConfiguration");
-                logger.warning(t.toString());
+                warning(t.toString());
             }
         }
+    }
+
+    private static void warning(String msg) {
+        PlatformLogger logger = PlatformLogger.getLogger("sun.awt.FontConfiguration");
+        logger.warning(msg);
     }
 }

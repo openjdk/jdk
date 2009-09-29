@@ -30,7 +30,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 
 /**
  * This class is to let AWT shutdown automatically when a user is done
@@ -363,7 +363,7 @@ public final class AWTAutoShutdown implements Runnable {
         }
     }
 
-    final void dumpPeers(final Logger aLog) {
+    final void dumpPeers(final PlatformLogger aLog) {
         synchronized (activationLock) {
             synchronized (mainLock) {
                 aLog.fine("Mapped peers:");

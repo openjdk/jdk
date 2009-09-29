@@ -36,15 +36,14 @@ import java.awt.peer.ComponentPeer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 
 import sun.awt.CausedFocusEvent;
 import sun.awt.SunToolkit;
 import sun.awt.KeyboardFocusManagerPeerImpl;
 
 public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
-    private static final Logger focusLog = Logger.getLogger("sun.awt.X11.focus.XKeyboardFocusManagerPeer");
+    private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.awt.X11.focus.XKeyboardFocusManagerPeer");
 
     private static Object lock = new Object() {};
     private static Component currentFocusOwner;
@@ -82,7 +81,7 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
     }
 
     public static void setCurrentNativeFocusedWindow(Window win) {
-        if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Setting current native focused window " + win);
+        if (focusLog.isLoggable(PlatformLogger.FINER)) focusLog.finer("Setting current native focused window " + win);
         XWindowPeer from = null, to = null;
 
         synchronized(lock) {

@@ -25,10 +25,10 @@
 package sun.awt.X11;
 
 import sun.misc.Unsafe;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 class UnsafeXDisposerRecord implements sun.java2d.DisposerRecord {
-    private static final Logger log = Logger.getLogger("sun.awt.X11.UnsafeXDisposerRecord");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.UnsafeXDisposerRecord");
     private static Unsafe unsafe = XlibWrapper.unsafe;
     final long[] unsafe_ptrs, x_ptrs;
     final String name;
@@ -59,11 +59,11 @@ class UnsafeXDisposerRecord implements sun.java2d.DisposerRecord {
         XToolkit.awtLock();
         try {
             if (!disposed) {
-                if (XlibWrapper.isBuildInternal && "Java2D Disposer".equals(Thread.currentThread().getName()) && log.isLoggable(Level.WARNING)) {
+                if (XlibWrapper.isBuildInternal && "Java2D Disposer".equals(Thread.currentThread().getName()) && log.isLoggable(PlatformLogger.WARNING)) {
                     if (place != null) {
-                        log.log(Level.WARNING, name + " object was not disposed before finalization!", place);
+                        log.warning(name + " object was not disposed before finalization!", place);
                     } else {
-                        log.log(Level.WARNING, name + " object was not disposed before finalization!");
+                        log.warning(name + " object was not disposed before finalization!");
                     }
                 }
 

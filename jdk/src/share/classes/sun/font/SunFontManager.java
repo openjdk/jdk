@@ -47,14 +47,13 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.plaf.FontUIResource;
 import sun.awt.AppContext;
 import sun.awt.FontConfiguration;
 import sun.awt.SunToolkit;
 import sun.java2d.FontSupport;
+import sun.util.logging.PlatformLogger;
 
 /**
  * The base implementation of the {@link FontManager} interface. It implements
@@ -473,7 +472,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                         }
 
                         if (FontUtilities.debugFonts()) {
-                            Logger logger = FontUtilities.getLogger();
+                            PlatformLogger logger = FontUtilities.getLogger();
                             logger.info("JRE font directory: " + jreFontDirName);
                             logger.info("Extra font path: " + extraFontPath);
                             logger.info("Debug font path: " + dbgFontPath);
@@ -1615,7 +1614,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
     }
 
     private void logPlatformFontInfo() {
-        Logger logger = FontUtilities.getLogger();
+        PlatformLogger logger = FontUtilities.getLogger();
         for (int i=0; i< pathDirs.length;i++) {
             logger.info("fontdir="+pathDirs[i]);
         }
@@ -2997,7 +2996,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             registeredFontFiles.add(fullName);
 
             if (FontUtilities.debugFonts()
-                && FontUtilities.getLogger().isLoggable(Level.INFO)) {
+                && FontUtilities.getLogger().isLoggable(PlatformLogger.INFO)) {
                 String message = "Registering font " + fullName;
                 String[] natNames = getNativeNames(fullName, null);
                 if (natNames == null) {

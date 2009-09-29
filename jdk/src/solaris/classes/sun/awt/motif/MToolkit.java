@@ -43,7 +43,6 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import java.util.Map;
 import java.util.Iterator;
-import java.util.logging.*;
 
 import sun.awt.AppContext;
 import sun.awt.AWTAutoShutdown;
@@ -74,10 +73,11 @@ import sun.misc.PerformanceLogger;
 import sun.misc.Unsafe;
 
 import sun.security.action.GetBooleanAction;
+import sun.util.logging.PlatformLogger;
 
 public class MToolkit extends UNIXToolkit implements Runnable {
 
-    private static final Logger log = Logger.getLogger("sun.awt.motif.MToolkit");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.motif.MToolkit");
 
     // the system clipboard - CLIPBOARD selection
     //X11Clipboard clipboard;
@@ -617,8 +617,8 @@ public class MToolkit extends UNIXToolkit implements Runnable {
     protected Boolean lazilyLoadDynamicLayoutSupportedProperty(String name) {
         boolean nativeDynamic = isDynamicLayoutSupportedNative();
 
-        if (log.isLoggable(Level.FINER)) {
-            log.log(Level.FINER, "nativeDynamic == " + nativeDynamic);
+        if (log.isLoggable(PlatformLogger.FINER)) {
+            log.finer("nativeDynamic == " + nativeDynamic);
         }
 
         return Boolean.valueOf(nativeDynamic);

@@ -31,11 +31,10 @@ import java.awt.peer.*;
 import java.awt.event.ActionEvent;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import sun.util.logging.PlatformLogger;
 
 class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
-    private static final Logger log = Logger.getLogger("sun.awt.WMenuItemPeer");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.WMenuItemPeer");
 
     static {
         initIDs();
@@ -166,8 +165,8 @@ class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
                         ResourceBundle rb = ResourceBundle.getBundle("sun.awt.windows.awtLocalization");
                         return Font.decode(rb.getString("menuFont"));
                     } catch (MissingResourceException e) {
-                        if (log.isLoggable(Level.FINE)) {
-                            log.log(Level.FINE, "WMenuItemPeer: " + e.getMessage()+". Using default MenuItem font.", e);
+                        if (log.isLoggable(PlatformLogger.FINE)) {
+                            log.fine("WMenuItemPeer: " + e.getMessage()+". Using default MenuItem font.", e);
                         }
                         return new Font("SanSerif", Font.PLAIN, 11);
                     }

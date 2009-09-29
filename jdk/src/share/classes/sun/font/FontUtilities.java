@@ -31,12 +31,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.security.AccessController;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.plaf.FontUIResource;
 
 import sun.security.action.GetPropertyAction;
+import sun.util.logging.PlatformLogger;
 
 /**
  * A collection of utility methods.
@@ -139,7 +138,7 @@ public final class FontUtilities {
     public static final int MAX_LAYOUT_CHARCODE = 0x206F;
 
     private static boolean debugFonts = false;
-    private static Logger logger = null;
+    private static PlatformLogger logger = null;
     private static boolean logging;
 
     static {
@@ -149,17 +148,17 @@ public final class FontUtilities {
 
         if (debugLevel != null && !debugLevel.equals("false")) {
             debugFonts = true;
-            logger = Logger.getLogger("sun.java2d");
+            logger = PlatformLogger.getLogger("sun.java2d");
             if (debugLevel.equals("warning")) {
-                logger.setLevel(Level.WARNING);
+                logger.setLevel(PlatformLogger.WARNING);
             } else if (debugLevel.equals("severe")) {
-                logger.setLevel(Level.SEVERE);
+                logger.setLevel(PlatformLogger.SEVERE);
             }
         }
 
         if (debugFonts) {
-            logger = Logger.getLogger("sun.java2d", null);
-            logging = logger.getLevel() != Level.OFF;
+            logger = PlatformLogger.getLogger("sun.java2d");
+            logging = logger.isEnabled();
         }
 
     }
@@ -298,7 +297,7 @@ public final class FontUtilities {
         return false;
     }
 
-    public static Logger getLogger() {
+    public static PlatformLogger getLogger() {
         return logger;
     }
 

@@ -55,8 +55,6 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.FontConfiguration;
@@ -80,7 +78,6 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
 
     public static boolean isOpenSolaris;
     private static Font defaultFont;
-    protected static Logger logger = null;
 
     public SunGraphicsEnvironment() {
         java.security.AccessController.doPrivileged(
