@@ -58,6 +58,14 @@
 
     <!-- Special build area preparation. -->
     <target name="-drop-build-prep" depends="init, -init-src-dirs">
+        <mkdir dir="${build.classes.dir}"/>
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${primary.src.dir}"
+                     includes="**/*.properties"/>
+        </copy>
+        <replaceregexp match="#(.*)$" replace="#" flags="gm">
+            <fileset dir="${build.classes.dir}" includes="**/*.properties"/>
+        </replaceregexp>
     </target>
 
     <!-- Try to get drop sources, set property use.orig.src.dir if no drops. -->
