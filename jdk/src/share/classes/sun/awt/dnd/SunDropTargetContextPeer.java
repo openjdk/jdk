@@ -48,7 +48,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Arrays;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -99,7 +99,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
 
     protected static final Object _globalLock = new Object();
 
-    private static final Logger dndLog = Logger.getLogger("sun.awt.dnd.SunDropTargetContextPeer");
+    private static final PlatformLogger dndLog = PlatformLogger.getLogger("sun.awt.dnd.SunDropTargetContextPeer");
 
     /*
      * a primitive mechanism for advertising intra-JVM Transferables
@@ -845,8 +845,8 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
 
         void registerEvent(SunDropTargetEvent e) {
             handler.lock();
-            if (!eventSet.add(e) && dndLog.isLoggable(Level.FINE)) {
-                dndLog.log(Level.FINE, "Event is already registered: " + e);
+            if (!eventSet.add(e) && dndLog.isLoggable(PlatformLogger.FINE)) {
+                dndLog.fine("Event is already registered: " + e);
             }
             handler.unlock();
         }

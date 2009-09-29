@@ -26,10 +26,10 @@
 package sun.font;
 
 import java.util.Locale;
-import java.util.logging.Logger;
 
 import sun.awt.SunHints;
 import sun.awt.SunToolkit;
+import sun.util.logging.PlatformLogger;
 
 /**
  * Small utility class to manage FontConfig.
@@ -200,7 +200,7 @@ public class FontConfigManager {
             FcCompFont fci = fontArr[i];
             if (fci.firstFont == null) {
                 if (FontUtilities.isLogging()) {
-                    Logger logger = FontUtilities.getLogger();
+                    PlatformLogger logger = FontUtilities.getLogger();
                     logger.info("Fontconfig returned no font for " +
                                 fontArr[i].fcName);
                 }
@@ -212,7 +212,7 @@ public class FontConfigManager {
 
         if (anyFont == null) {
             if (FontUtilities.isLogging()) {
-                Logger logger = FontUtilities.getLogger();
+                PlatformLogger logger = FontUtilities.getLogger();
                 logger.info("Fontconfig returned no fonts at all.");
                 return;
             }
@@ -228,7 +228,7 @@ public class FontConfigManager {
 
         if (FontUtilities.isLogging()) {
 
-            Logger logger = FontUtilities.getLogger();
+            PlatformLogger logger = FontUtilities.getLogger();
 
             long t1 = System.nanoTime();
             logger.info("Time spent accessing fontconfig="

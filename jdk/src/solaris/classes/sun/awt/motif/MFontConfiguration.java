@@ -30,10 +30,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.logging.Logger;
 import java.util.Properties;
 import java.util.Scanner;
 import sun.awt.FontConfiguration;
@@ -44,17 +44,17 @@ import sun.font.SunFontManager;
 import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
 import sun.java2d.SunGraphicsEnvironment;
-import java.nio.charset.Charset;
+import sun.util.logging.PlatformLogger;
 
 public class MFontConfiguration extends FontConfiguration {
 
     private static FontConfiguration fontConfig = null;
-    private static Logger logger;
+    private static PlatformLogger logger;
 
     public MFontConfiguration(SunFontManager fm) {
         super(fm);
         if (FontUtilities.debugFonts()) {
-            logger = Logger.getLogger("sun.awt.FontConfiguration");
+            logger = PlatformLogger.getLogger("sun.awt.FontConfiguration");
         }
         initTables();
     }
@@ -65,7 +65,7 @@ public class MFontConfiguration extends FontConfiguration {
                               boolean preferPropFonts) {
         super(fm, preferLocaleFonts, preferPropFonts);
         if (FontUtilities.debugFonts()) {
-            logger = Logger.getLogger("sun.awt.FontConfiguration");
+            logger = PlatformLogger.getLogger("sun.awt.FontConfiguration");
         }
         initTables();
     }

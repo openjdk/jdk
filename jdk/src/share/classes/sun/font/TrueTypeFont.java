@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Locale;
-import java.util.logging.Level;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
@@ -405,7 +404,7 @@ public class TrueTypeFont extends FileFont {
             }
         } catch (FontFormatException e) {
             if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger().log(Level.SEVERE,
+                FontUtilities.getLogger().severe(
                                        "While reading " + platName, e);
             }
             bread = -1; // signal EOF
@@ -426,7 +425,7 @@ public class TrueTypeFont extends FileFont {
              * file are handled as a FontFormatException.
              */
             if (FontUtilities.isLogging()) {
-                FontUtilities.getLogger().log(Level.SEVERE,
+                FontUtilities.getLogger().severe(
                                        "While reading " + platName, e);
             }
             if (bread == 0) {

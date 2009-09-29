@@ -41,7 +41,6 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import java.util.*;
-import java.util.logging.*;
 
 import sun.awt.motif.MFontConfiguration;
 import sun.font.FcFontConfiguration;
@@ -51,6 +50,7 @@ import sun.font.NativeFont;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.UnixSurfaceManagerFactory;
+import sun.util.logging.PlatformLogger;
 
 /**
  * This is an implementation of a GraphicsEnvironment object for the
@@ -63,8 +63,8 @@ import sun.java2d.UnixSurfaceManagerFactory;
 public class X11GraphicsEnvironment
     extends SunGraphicsEnvironment
 {
-    private static final Logger log = Logger.getLogger("sun.awt.X11GraphicsEnvironment");
-    private static final Logger screenLog = Logger.getLogger("sun.awt.screen.X11GraphicsEnvironment");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11GraphicsEnvironment");
+    private static final PlatformLogger screenLog = PlatformLogger.getLogger("sun.awt.screen.X11GraphicsEnvironment");
 
     private static Boolean xinerState;
 
@@ -284,8 +284,8 @@ public class X11GraphicsEnvironment
             // pRunningXinerama() simply returns a global boolean variable,
             // so there is no need to synchronize here
             xinerState = Boolean.valueOf(pRunningXinerama());
-            if (screenLog.isLoggable(Level.FINER)) {
-                screenLog.log(Level.FINER, "Running Xinerama: " + xinerState);
+            if (screenLog.isLoggable(PlatformLogger.FINER)) {
+                screenLog.finer("Running Xinerama: " + xinerState);
             }
         }
         return xinerState.booleanValue();
@@ -368,24 +368,24 @@ public class X11GraphicsEnvironment
             (unionRect.width / 2) + unionRect.x < center.x + 1 &&
             (unionRect.height / 2) + unionRect.y < center.y + 1) {
 
-            if (screenLog.isLoggable(Level.FINER)) {
-                screenLog.log(Level.FINER, "Video Wall: center point is at center of all displays.");
+            if (screenLog.isLoggable(PlatformLogger.FINER)) {
+                screenLog.finer("Video Wall: center point is at center of all displays.");
             }
             return unionRect;
         }
 
         // next, check if at center of one monitor
         if (centerMonitorRect != null) {
-            if (screenLog.isLoggable(Level.FINER)) {
-                screenLog.log(Level.FINER, "Center point at center of a particular " +
-                                           "monitor, but not of the entire virtual display.");
+            if (screenLog.isLoggable(PlatformLogger.FINER)) {
+                screenLog.finer("Center point at center of a particular " +
+                                "monitor, but not of the entire virtual display.");
             }
             return centerMonitorRect;
         }
 
         // otherwise, the center is at some weird spot: return unionRect
-        if (screenLog.isLoggable(Level.FINER)) {
-            screenLog.log(Level.FINER, "Center point is somewhere strange - return union of all bounds.");
+        if (screenLog.isLoggable(PlatformLogger.FINER)) {
+            screenLog.finer("Center point is somewhere strange - return union of all bounds.");
         }
         return unionRect;
     }

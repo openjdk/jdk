@@ -37,7 +37,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.logging.Logger;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -51,6 +50,7 @@ import sun.font.CompositeFontDescriptor;
 import sun.font.SunFontManager;
 import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
+import sun.util.logging.PlatformLogger;
 
 /**
  * Provides the definitions of the five logical fonts: Serif, SansSerif,
@@ -66,7 +66,7 @@ public abstract class FontConfiguration {
     protected static Locale startupLocale = null;
     protected static Hashtable localeMap = null;
     private static FontConfiguration fontConfig;
-    private static Logger logger;
+    private static PlatformLogger logger;
     protected static boolean isProperties = true;
 
     protected SunFontManager fontManager;
@@ -83,7 +83,7 @@ public abstract class FontConfiguration {
      */
     public FontConfiguration(SunFontManager fm) {
         if (FontUtilities.debugFonts() && logger == null) {
-            logger = Logger.getLogger("sun.awt.FontConfiguration");
+            logger = PlatformLogger.getLogger("sun.awt.FontConfiguration");
         }
         fontManager = fm;
         setOsNameAndVersion();  /* static initialization */
@@ -366,7 +366,7 @@ public abstract class FontConfiguration {
         stringTable = new StringBuilder(4096);
 
         if (verbose && logger == null) {
-            logger = Logger.getLogger("sun.awt.FontConfiguration");
+            logger = PlatformLogger.getLogger("sun.awt.FontConfiguration");
         }
         new PropertiesHandler().load(in);
 
