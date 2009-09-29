@@ -37,6 +37,8 @@
 #include "GlyphIterator.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 le_uint32 AlternateSubstitutionSubtable::process(GlyphIterator *glyphIterator, const LEGlyphFilter *filter) const
 {
     // NOTE: For now, we'll just pick the first alternative...
@@ -64,3 +66,5 @@ le_uint32 AlternateSubstitutionSubtable::process(GlyphIterator *glyphIterator, c
 
     return 0;
 }
+
+U_NAMESPACE_END

@@ -35,6 +35,8 @@
 #include "LEGlyphStorage.h"
 #include "ThaiShaping.h"
 
+U_NAMESPACE_BEGIN
+
 enum {
     CH_SPACE        = 0x0020,
     CH_YAMAKKAN     = 0x0E4E,
@@ -248,9 +250,8 @@ le_uint8 ThaiShaping::doTransition (StateTransition transition, LEUnicode currCh
      return transition.nextState;
 }
 
-le_uint8 ThaiShaping::getNextState(LEUnicode ch, le_uint8 prevState, le_int32 inputIndex,
-    le_uint8 glyphSet, LEUnicode errorChar,
-    le_uint8 &charClass, LEUnicode *output, LEGlyphStorage &glyphStorage, le_int32 &outputIndex)
+le_uint8 ThaiShaping::getNextState(LEUnicode ch, le_uint8 prevState, le_int32 inputIndex, le_uint8 glyphSet, LEUnicode errorChar,
+                              le_uint8 &charClass, LEUnicode *output, LEGlyphStorage &glyphStorage, le_int32 &outputIndex)
 {
     StateTransition transition;
 
@@ -327,3 +328,5 @@ le_int32 ThaiShaping::compose(const LEUnicode *input, le_int32 offset, le_int32 
 
     return outputIndex;
 }
+
+U_NAMESPACE_END

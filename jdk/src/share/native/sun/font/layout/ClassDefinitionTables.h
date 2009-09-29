@@ -32,8 +32,15 @@
 #ifndef __CLASSDEFINITIONTABLES_H
 #define __CLASSDEFINITIONTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
+
+U_NAMESPACE_BEGIN
 
 struct ClassDefinitionTable
 {
@@ -69,4 +76,5 @@ struct ClassDefFormat2Table : ClassDefinitionTable
     le_bool hasGlyphClass(le_int32 glyphClass) const;
 };
 
+U_NAMESPACE_END
 #endif

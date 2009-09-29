@@ -34,6 +34,8 @@
 #include "OpenTypeUtilities.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 //
 // Finds the high bit by binary searching
 // through the bits in n.
@@ -192,3 +194,7 @@ void OpenTypeUtilities::sort(le_uint16 *array, le_int32 count)
         array[i + 1] = v;
     }
 }
+
+
+
+U_NAMESPACE_END
