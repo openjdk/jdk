@@ -36,6 +36,8 @@
 #include "LEGlyphStorage.h"
 #include "MPreFixups.h"
 
+U_NAMESPACE_BEGIN
+
 #define initFeatureTag LE_INIT_FEATURE_TAG
 #define nuktFeatureTag LE_NUKT_FEATURE_TAG
 #define akhnFeatureTag LE_AKHN_FEATURE_TAG
@@ -71,7 +73,7 @@
 #define distFeatureMask 0x00020000UL
 #define initFeatureMask 0x00010000UL
 
-class ReorderingOutput {
+class ReorderingOutput : public UMemory {
 private:
     le_int32   fOutIndex;
     LEUnicode *fOutChars;
@@ -187,8 +189,7 @@ public:
         fOutIndex += 1;
     }
 
-    le_bool noteMatra(const IndicClassTable *classTable, LEUnicode matra, le_uint32 matraIndex,
-        FeatureMask matraFeatures, le_bool wordStart)
+    le_bool noteMatra(const IndicClassTable *classTable, LEUnicode matra, le_uint32 matraIndex, FeatureMask matraFeatures, le_bool wordStart)
     {
         IndicClassTable::CharClass matraClass = classTable->getCharClass(matra);
 
@@ -219,13 +220,12 @@ public:
         return FALSE;
     }
 
-    void noteVowelModifier(const IndicClassTable *classTable, LEUnicode vowelModifier,
-        le_uint32 vowelModifierIndex, FeatureMask vowelModifierFeatures)
+    void noteVowelModifier(const IndicClassTable *classTable, LEUnicode vowelModifier, le_uint32 vowelModifierIndex, FeatureMask vowelModifierFeatures)
     {
         IndicClassTable::CharClass vmClass = classTable->getCharClass(vowelModifier);
 
         fVMIndex = vowelModifierIndex;
-        fVMFeatures = vowelModifierFeatures;
+        fVMFeatures  = vowelModifierFeatures;
 
         if (IndicClassTable::isVowelModifier(vmClass)) {
            switch (vmClass & CF_POS_MASK) {
@@ -244,13 +244,12 @@ public:
         }
     }
 
-    void noteStressMark(const IndicClassTable *classTable, LEUnicode stressMark,
-        le_uint32 stressMarkIndex, FeatureMask stressMarkFeatures)
+    void noteStressMark(const IndicClassTable *classTable, LEUnicode stressMark, le_uint32 stressMarkIndex, FeatureMask stressMarkFeatures)
     {
        IndicClassTable::CharClass smClass = classTable->getCharClass(stressMark);
 
         fSMIndex = stressMarkIndex;
-        fSMFeatures = stressMarkFeatures;
+        fSMFeatures  = stressMarkFeatures;
 
         if (IndicClassTable::isStressMark(smClass)) {
             switch (smClass & CF_POS_MASK) {
@@ -360,9 +359,7 @@ enum
 };
 
 // TODO: Find better names for these!
-#define tagArray4 (nuktFeatureMask | akhnFeatureMask | vatuFeatureMask | presFeatureMask | \
-    blwsFeatureMask | abvsFeatureMask | pstsFeatureMask | halnFeatureMask | \
-    blwmFeatureMask | abvmFeatureMask | distFeatureMask)
+#define tagArray4 (nuktFeatureMask | akhnFeatureMask | vatuFeatureMask | presFeatureMask | blwsFeatureMask | abvsFeatureMask | pstsFeatureMask | halnFeatureMask | blwmFeatureMask | abvmFeatureMask | distFeatureMask)
 #define tagArray3 (pstfFeatureMask | tagArray4)
 #define tagArray2 (halfFeatureMask | tagArray3)
 #define tagArray1 (blwfFeatureMask | tagArray2)
@@ -415,8 +412,7 @@ const FeatureMap *IndicReordering::getFeatureMap(le_int32 &count)
     return featureMap;
 }
 
-le_int32 IndicReordering::findSyllable(const IndicClassTable *classTable,
-    const LEUnicode *chars, le_int32 prev, le_int32 charCount)
+le_int32 IndicReordering::findSyllable(const IndicClassTable *classTable, const LEUnicode *chars, le_int32 prev, le_int32 charCount)
 {
     le_int32 cursor = prev;
     le_int8 state = 0;
@@ -752,3 +748,5 @@ void IndicReordering::adjustMPres(MPreFixups *mpreFixups, LEGlyphStorage &glyphS
         delete mpreFixups;
     }
 }
+
+U_NAMESPACE_END

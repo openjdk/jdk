@@ -25,7 +25,8 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 2003 - All Rights Reserved
+ *
+ * (C) Copyright IBM Corp. 2002 - All Rights Reserved
  *
  */
 
@@ -36,6 +37,9 @@
 #include "ExtensionSubtables.h"
 #include "GlyphIterator.h"
 #include "LESwaps.h"
+
+U_NAMESPACE_BEGIN
+
 
 // FIXME: should look at the format too... maybe have a sub-class for it?
 le_uint32 ExtensionSubtable::process(const LookupProcessor *lookupProcessor, le_uint16 lookupType,
@@ -52,3 +56,5 @@ le_uint32 ExtensionSubtable::process(const LookupProcessor *lookupProcessor, le_
 
     return 0;
 }
+
+U_NAMESPACE_END
