@@ -24,7 +24,6 @@
  */
 
 /*
- *
  * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  * This file is a modification of the ICU file IndicReordering.h
@@ -35,80 +34,60 @@
 #ifndef __KHMERREORDERING_H
 #define __KHMERREORDERING_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
+
+U_NAMESPACE_BEGIN
 
 class LEGlyphStorage;
 
 // Vocabulary
-
-// Base ->
-//     A consonant or an independent vowel in its full (not
-//     subscript) form. It is the center of the syllable, it can be
-//     souranded by coeng (subscript) consonants, vowels, split
-//     vowels, signs... but there is only one base in a syllable, it
-//     has to be coded as the first character of the syllable.
-// split vowel ->
-//     vowel that has two parts placed separately (e.g. Before and
-//     after the consonant).  Khmer language has five of them. Khmer
-//     split vowels either have one part before the base and one after
-//     the base or they have a part before the base and a part above
-//     the base.  The first part of all Khmer split vowels is the same
-//     character, identical to the glyph of Khmer dependent vowel SRA
-//     EI
-// coeng ->
-//     modifier used in Khmer to construct coeng (subscript)
-//     consonants differently than indian languages, the coeng
-//     modifies the consonant that follows it, not the one preceding
-//     it Each consonant has two forms, the base form and the
-//     subscript form the base form is the normal one (using the
-//     consonants code-point), the subscript form is displayed when
-//     the combination coeng + consonant is encountered.
-// Consonant of type 1 ->
-//     A consonant which has subscript for that only occupies space
-//     under a base consonant
-// Consonant of type 2 ->
-//     Its subscript form occupies space under and before the base
-//     (only one, RO)
-// Consonant of Type 3 ->
-//     Its subscript form occupies space under and after the base
-//     (KHO, CHHO, THHO, BA, YO, SA)
-// Consonant shifter ->
-//     Khmer has to series of consonants. The same dependent vowel has
-//     different sounds if it is attached to a consonant of the first
-//     series or a consonant of the second series Most consonants have
-//     an equivalent in the other series, but some of theme exist only
-//     in one series (for example SA). If we want to use the consonant
-//     SA with a vowel sound that can only be done with a vowel sound
-//     that corresponds to a vowel accompanying a consonant of the
-//     other series, then we need to use a consonant shifter: TRIISAP
-//     or MUSIKATOAN x17C9 y x17CA. TRIISAP changes a first series
-//     consonant to second series sound and MUSIKATOAN a second series
-//     consonant to have a first series vowel sound.  Consonant
-//     shifter are both normally supercript marks, but, when they are
-//     followed by a superscript, they change shape and take the form
-//     of subscript dependent vowel SRA U.  If they are in the same
-//     syllable as a coeng consonant, Unicode 3.0 says that they
-//     should be typed before the coeng. Unicode 4.0 breaks the
-//     standard and says that it should be placed after the coeng
-//     consonant.
-// Dependent vowel ->
-//     In khmer dependent vowels can be placed above, below, before or
-//     after the base Each vowel has its own position. Only one vowel
-//     per syllable is allowed.
-// Signs ->
-//     Khmer has above signs and post signs. Only one above sign
-//     and/or one post sign are Allowed in a syllable.
+//     Base ->         A consonant or an independent vowel in its full (not subscript) form. It is the
+//                     center of the syllable, it can be souranded by coeng (subscript) consonants, vowels,
+//                     split vowels, signs... but there is only one base in a syllable, it has to be coded as
+//                     the first character of the syllable.
+//     split vowel --> vowel that has two parts placed separately (e.g. Before and after the consonant).
+//                     Khmer language has five of them. Khmer split vowels either have one part before the
+//                     base and one after the base or they have a part before the base and a part above the base.
+//                     The first part of all Khmer split vowels is the same character, identical to
+//                     the glyph of Khmer dependent vowel SRA EI
+//     coeng -->  modifier used in Khmer to construct coeng (subscript) consonants
+//                Differently than indian languages, the coeng modifies the consonant that follows it,
+//                not the one preceding it  Each consonant has two forms, the base form and the subscript form
+//                the base form is the normal one (using the consonants code-point), the subscript form is
+//                displayed when the combination coeng + consonant is encountered.
+//     Consonant of type 1 -> A consonant which has subscript for that only occupies space under a base consonant
+//     Consonant of type 2.-> Its subscript form occupies space under and before the base (only one, RO)
+//     Consonant of Type 3 -> Its subscript form occupies space under and after the base (KHO, CHHO, THHO, BA, YO, SA)
+//     Consonant shifter -> Khmer has to series of consonants. The same dependent vowel has different sounds
+//                          if it is attached to a consonant of the first series or a consonant of the second series
+//                          Most consonants have an equivalent in the other series, but some of theme exist only in
+//                          one series (for example SA). If we want to use the consonant SA with a vowel sound that
+//                          can only be done with a vowel sound that corresponds to a vowel accompanying a consonant
+//                          of the other series, then we need to use a consonant shifter: TRIISAP or MUSIKATOAN
+//                          x17C9 y x17CA. TRIISAP changes a first series consonant to second series sound and
+//                          MUSIKATOAN a second series consonant to have a first series vowel sound.
+//                          Consonant shifter are both normally supercript marks, but, when they are followed by a
+//                          superscript, they change shape and take the form of subscript dependent vowel SRA U.
+//                          If they are in the same syllable as a coeng consonant, Unicode 3.0 says that they
+//                          should be typed before the coeng. Unicode 4.0 breaks the standard and says that it should
+//                          be placed after the coeng consonant.
+//     Dependent vowel ->   In khmer dependent vowels can be placed above, below, before or after the base
+//                          Each vowel has its own position. Only one vowel per syllable is allowed.
+//     Signs            ->  Khmer has above signs and post signs. Only one above sign and/or one post sign are
+//                          Allowed in a syllable.
+//
 //
 
-// This list must include all types of components that can be used
-// inside a syllable
-struct KhmerClassTable
+struct KhmerClassTable    // This list must include all types of components that can be used inside a syllable
 {
-    // order is important here! This order must be the same that is
-    // found in each horizontal line in the statetable for Khmer (file
-    // KhmerReordering.cpp).
-    enum CharClassValues
+    enum CharClassValues  // order is important here! This order must be the same that is found in each horizontal
+                          // line in the statetable for Khmer (file KhmerReordering.cpp).
     {
         CC_RESERVED             =  0,
         CC_CONSONANT            =  1, // consonant of type 1 or independent vowel
@@ -116,8 +95,7 @@ struct KhmerClassTable
         CC_CONSONANT3           =  3, // Consonant of type 3
         CC_ZERO_WIDTH_NJ_MARK   =  4, // Zero Width non joiner character (0x200C)
         CC_CONSONANT_SHIFTER    =  5,
-        CC_ROBAT                =  6, // Khmer special diacritic accent
-                                      // -treated differently in state table
+        CC_ROBAT                =  6, // Khmer special diacritic accent -treated differently in state table
         CC_COENG                =  7, // Subscript consonant combining character
         CC_DEPENDENT_VOWEL      =  8,
         CC_SIGN_ABOVE           =  9,
@@ -131,10 +109,8 @@ struct KhmerClassTable
         CF_CLASS_MASK    = 0x0000FFFF,
 
         CF_CONSONANT     = 0x01000000,  // flag to speed up comparing
-        CF_SPLIT_VOWEL   = 0x02000000,  // flag for a split vowel -> the first part
-                                        // is added in front of the syllable
-        CF_DOTTED_CIRCLE = 0x04000000,  // add a dotted circle if a character with
-                                        // this flag is the first in a syllable
+        CF_SPLIT_VOWEL   = 0x02000000,  // flag for a split vowel -> the first part is added in front of the syllable
+        CF_DOTTED_CIRCLE = 0x04000000,  // add a dotted circle if a character with this flag is the first in a syllable
         CF_COENG         = 0x08000000,  // flag to speed up comparing
         CF_SHIFTER       = 0x10000000,  // flag to speed up comparing
         CF_ABOVE_VOWEL   = 0x20000000,  // flag to speed up comparing
@@ -161,10 +137,10 @@ struct KhmerClassTable
 };
 
 
-class KhmerReordering {
+class KhmerReordering /* not : public UObject because all methods are static */ {
 public:
-    static le_int32 reorder(const LEUnicode *theChars, le_int32 charCount,
-        le_int32 scriptCode, LEUnicode *outChars, LEGlyphStorage &glyphStorage);
+    static le_int32 reorder(const LEUnicode *theChars, le_int32 charCount, le_int32 scriptCode,
+        LEUnicode *outChars, LEGlyphStorage &glyphStorage);
 
     static const FeatureMap *getFeatureMap(le_int32 &count);
 
@@ -172,8 +148,10 @@ private:
     // do not instantiate
     KhmerReordering();
 
-    static le_int32 findSyllable(const KhmerClassTable *classTable,
-        const LEUnicode *chars, le_int32 prev, le_int32 charCount);
+    static le_int32 findSyllable(const KhmerClassTable *classTable, const LEUnicode *chars, le_int32 prev, le_int32 charCount);
+
 };
 
+
+U_NAMESPACE_END
 #endif

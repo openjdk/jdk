@@ -35,6 +35,8 @@
 #include "OpenTypeUtilities.h"
 #include "IndicReordering.h"
 
+U_NAMESPACE_BEGIN
+
 // Split matra table indices
 #define _x1  (1 << CF_INDEX_SHIFT)
 #define _x2  (2 << CF_INDEX_SHIFT)
@@ -385,3 +387,5 @@ le_int32 IndicReordering::getWorstCaseExpansion(le_int32 scriptCode)
 
     return classTable->getWorstCaseExpansion();
 }
+
+U_NAMESPACE_END

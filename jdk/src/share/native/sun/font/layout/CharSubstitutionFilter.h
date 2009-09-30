@@ -35,6 +35,8 @@
 #include "LETypes.h"
 #include "LEGlyphFilter.h"
 
+U_NAMESPACE_BEGIN
+
 class LEFontInstance;
 
 /**
@@ -43,7 +45,7 @@ class LEFontInstance;
  *
  * @internal
  */
-class CharSubstitutionFilter : public LEGlyphFilter
+class CharSubstitutionFilter : public UMemory, public LEGlyphFilter
 {
 private:
     /**
@@ -98,4 +100,7 @@ public:
     le_bool accept(LEGlyphID glyph) const;
 };
 
+U_NAMESPACE_END
 #endif
+
+

@@ -24,7 +24,6 @@
  */
 
 /*
- *
  **********************************************************************
  *   Copyright (C) 1998-2005, International Business Machines
  *   Corporation and others.  All Rights Reserved.
@@ -34,6 +33,10 @@
 #include "LETypes.h"
 #include "LEInsertionList.h"
 #include "LEGlyphStorage.h"
+
+U_NAMESPACE_BEGIN
+
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(LEGlyphStorage)
 
 LEGlyphStorage::LEGlyphStorage()
     : fGlyphCount(0), fGlyphs(NULL), fCharIndices(NULL), fPositions(NULL),
@@ -603,3 +606,6 @@ le_bool LEGlyphStorage::applyInsertion(le_int32 atPosition, le_int32 count, LEGl
 
     return FALSE;
 }
+
+U_NAMESPACE_END
+
