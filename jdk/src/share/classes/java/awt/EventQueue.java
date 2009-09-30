@@ -843,7 +843,8 @@ public class EventQueue {
 
     final void initDispatchThread() {
         synchronized (this) {
-            if (dispatchThread == null && !threadGroup.isDestroyed()) {
+            AppContext appContext = AppContext.getAppContext();
+            if (dispatchThread == null && !threadGroup.isDestroyed() && !appContext.isDisposed()) {
                 dispatchThread = (EventDispatchThread)
                     AccessController.doPrivileged(new PrivilegedAction() {
                         public Object run() {
