@@ -234,6 +234,13 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Mangle the unused parts of all spaces in the heap
   void gen_mangle_unused_area() PRODUCT_RETURN;
+
+  // Call these in sequential code around the processing of strong roots.
+  class ParStrongRootsScope : public MarkingCodeBlobClosure::MarkScope {
+  public:
+    ParStrongRootsScope();
+    ~ParStrongRootsScope();
+  };
 };
 
 inline size_t ParallelScavengeHeap::set_alignment(size_t& var, size_t val)

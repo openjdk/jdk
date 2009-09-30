@@ -379,7 +379,7 @@ void emit_d32_reloc(CodeBuffer &cbuf, int d32, RelocationHolder const& rspec,
         int format) {
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type && d32 != 0 && d32 != (int)Universe::non_oop_word()) {
-    assert(oop(d32)->is_oop() && oop(d32)->is_perm(), "cannot embed non-perm oops in code");
+    assert(oop(d32)->is_oop() && (ScavengeRootsInCode || !oop(d32)->is_scavengable()), "cannot embed scavengable oops in code");
   }
 #endif
   cbuf.relocate(cbuf.inst_mark(), rspec, format);
@@ -3701,458 +3701,6 @@ encode %{
     }
   %}
 
-  enc_class enc_String_Compare(eDIRegP str1, eSIRegP str2, regXD tmp1, regXD tmp2,
-                        eAXRegI tmp3, eBXRegI tmp4, eCXRegI result) %{
-    Label ECX_GOOD_LABEL, LENGTH_DIFF_LABEL,
-          POP_LABEL, DONE_LABEL, CONT_LABEL,
-          WHILE_HEAD_LABEL;
-    MacroAssembler masm(&cbuf);
-
-    XMMRegister tmp1Reg   = as_XMMRegister($tmp1$$reg);
-    XMMRegister tmp2Reg   = as_XMMRegister($tmp2$$reg);
-
-    // Get the first character position in both strings
-    //         [8] char array, [12] offset, [16] count
-    int value_offset  = java_lang_String::value_offset_in_bytes();
-    int offset_offset = java_lang_String::offset_offset_in_bytes();
-    int count_offset  = java_lang_String::count_offset_in_bytes();
-    int base_offset   = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-    masm.movptr(rax, Address(rsi, value_offset));
-    masm.movl(rcx, Address(rsi, offset_offset));
-    masm.lea(rax, Address(rax, rcx, Address::times_2, base_offset));
-    masm.movptr(rbx, Address(rdi, value_offset));
-    masm.movl(rcx, Address(rdi, offset_offset));
-    masm.lea(rbx, Address(rbx, rcx, Address::times_2, base_offset));
-
-    // Compute the minimum of the string lengths(rsi) and the
-    // difference of the string lengths (stack)
-
-    if (VM_Version::supports_cmov()) {
-      masm.movl(rdi, Address(rdi, count_offset));
-      masm.movl(rsi, Address(rsi, count_offset));
-      masm.movl(rcx, rdi);
-      masm.subl(rdi, rsi);
-      masm.push(rdi);
-      masm.cmovl(Assembler::lessEqual, rsi, rcx);
-    } else {
-      masm.movl(rdi, Address(rdi, count_offset));
-      masm.movl(rcx, Address(rsi, count_offset));
-      masm.movl(rsi, rdi);
-      masm.subl(rdi, rcx);
-      masm.push(rdi);
-      masm.jccb(Assembler::lessEqual, ECX_GOOD_LABEL);
-      masm.movl(rsi, rcx);
-      // rsi holds min, rcx is unused
-    }
-
-    // Is the minimum length zero?
-    masm.bind(ECX_GOOD_LABEL);
-    masm.testl(rsi, rsi);
-    masm.jcc(Assembler::zero, LENGTH_DIFF_LABEL);
-
-    // Load first characters
-    masm.load_unsigned_short(rcx, Address(rbx, 0));
-    masm.load_unsigned_short(rdi, Address(rax, 0));
-
-    // Compare first characters
-    masm.subl(rcx, rdi);
-    masm.jcc(Assembler::notZero,  POP_LABEL);
-    masm.decrementl(rsi);
-    masm.jcc(Assembler::zero, LENGTH_DIFF_LABEL);
-
-    {
-      // Check after comparing first character to see if strings are equivalent
-      Label LSkip2;
-      // Check if the strings start at same location
-      masm.cmpptr(rbx,rax);
-      masm.jccb(Assembler::notEqual, LSkip2);
-
-      // Check if the length difference is zero (from stack)
-      masm.cmpl(Address(rsp, 0), 0x0);
-      masm.jcc(Assembler::equal,  LENGTH_DIFF_LABEL);
-
-      // Strings might not be equivalent
-      masm.bind(LSkip2);
-    }
-
-   // Advance to next character
-    masm.addptr(rax, 2);
-    masm.addptr(rbx, 2);
-
-    if (UseSSE42Intrinsics) {
-      // With SSE4.2, use double quad vector compare
-      Label COMPARE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_TAIL;
-      // Setup to compare 16-byte vectors
-      masm.movl(rdi, rsi);
-      masm.andl(rsi, 0xfffffff8); // rsi holds the vector count
-      masm.andl(rdi, 0x00000007); // rdi holds the tail count
-      masm.testl(rsi, rsi);
-      masm.jccb(Assembler::zero, COMPARE_TAIL);
-
-      masm.lea(rax, Address(rax, rsi, Address::times_2));
-      masm.lea(rbx, Address(rbx, rsi, Address::times_2));
-      masm.negl(rsi);
-
-      masm.bind(COMPARE_VECTORS);
-      masm.movdqu(tmp1Reg, Address(rax, rsi, Address::times_2));
-      masm.movdqu(tmp2Reg, Address(rbx, rsi, Address::times_2));
-      masm.pxor(tmp1Reg, tmp2Reg);
-      masm.ptest(tmp1Reg, tmp1Reg);
-      masm.jccb(Assembler::notZero, VECTOR_NOT_EQUAL);
-      masm.addl(rsi, 8);
-      masm.jcc(Assembler::notZero, COMPARE_VECTORS);
-      masm.jmpb(COMPARE_TAIL);
-
-      // Mismatched characters in the vectors
-      masm.bind(VECTOR_NOT_EQUAL);
-      masm.lea(rax, Address(rax, rsi, Address::times_2));
-      masm.lea(rbx, Address(rbx, rsi, Address::times_2));
-      masm.movl(rdi, 8);
-
-      // Compare tail (< 8 chars), or rescan last vectors to
-      // find 1st mismatched characters
-      masm.bind(COMPARE_TAIL);
-      masm.testl(rdi, rdi);
-      masm.jccb(Assembler::zero, LENGTH_DIFF_LABEL);
-      masm.movl(rsi, rdi);
-      // Fallthru to tail compare
-    }
-
-    //Shift rax, and rbx, to the end of the arrays, negate min
-    masm.lea(rax, Address(rax, rsi, Address::times_2, 0));
-    masm.lea(rbx, Address(rbx, rsi, Address::times_2, 0));
-    masm.negl(rsi);
-
-    // Compare the rest of the characters
-    masm.bind(WHILE_HEAD_LABEL);
-    masm.load_unsigned_short(rcx, Address(rbx, rsi, Address::times_2, 0));
-    masm.load_unsigned_short(rdi, Address(rax, rsi, Address::times_2, 0));
-    masm.subl(rcx, rdi);
-    masm.jccb(Assembler::notZero, POP_LABEL);
-    masm.incrementl(rsi);
-    masm.jcc(Assembler::notZero, WHILE_HEAD_LABEL);
-
-    // Strings are equal up to min length.  Return the length difference.
-    masm.bind(LENGTH_DIFF_LABEL);
-    masm.pop(rcx);
-    masm.jmpb(DONE_LABEL);
-
-    // Discard the stored length difference
-    masm.bind(POP_LABEL);
-    masm.addptr(rsp, 4);
-
-    // That's it
-    masm.bind(DONE_LABEL);
-  %}
-
- enc_class enc_String_Equals(eDIRegP str1, eSIRegP str2, regXD tmp1, regXD tmp2,
-                       eBXRegI tmp3, eCXRegI tmp4, eAXRegI result) %{
-    Label RET_TRUE, RET_FALSE, DONE, COMPARE_VECTORS, COMPARE_CHAR;
-    MacroAssembler masm(&cbuf);
-
-    XMMRegister tmp1Reg   = as_XMMRegister($tmp1$$reg);
-    XMMRegister tmp2Reg   = as_XMMRegister($tmp2$$reg);
-
-    int value_offset  = java_lang_String::value_offset_in_bytes();
-    int offset_offset = java_lang_String::offset_offset_in_bytes();
-    int count_offset  = java_lang_String::count_offset_in_bytes();
-    int base_offset   = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-    // does source == target string?
-    masm.cmpptr(rdi, rsi);
-    masm.jcc(Assembler::equal, RET_TRUE);
-
-    // get and compare counts
-    masm.movl(rcx, Address(rdi, count_offset));
-    masm.movl(rax, Address(rsi, count_offset));
-    masm.cmpl(rcx, rax);
-    masm.jcc(Assembler::notEqual, RET_FALSE);
-    masm.testl(rax, rax);
-    masm.jcc(Assembler::zero, RET_TRUE);
-
-    // get source string offset and value
-    masm.movptr(rbx, Address(rsi, value_offset));
-    masm.movl(rax, Address(rsi, offset_offset));
-    masm.leal(rsi, Address(rbx, rax, Address::times_2, base_offset));
-
-    // get compare string offset and value
-    masm.movptr(rbx, Address(rdi, value_offset));
-    masm.movl(rax, Address(rdi, offset_offset));
-    masm.leal(rdi, Address(rbx, rax, Address::times_2, base_offset));
-
-    // Set byte count
-    masm.shll(rcx, 1);
-    masm.movl(rax, rcx);
-
-    if (UseSSE42Intrinsics) {
-      // With SSE4.2, use double quad vector compare
-      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
-      // Compare 16-byte vectors
-      masm.andl(rcx, 0xfffffff0);  // vector count (in bytes)
-      masm.andl(rax, 0x0000000e);  // tail count (in bytes)
-      masm.testl(rcx, rcx);
-      masm.jccb(Assembler::zero, COMPARE_TAIL);
-      masm.lea(rdi, Address(rdi, rcx, Address::times_1));
-      masm.lea(rsi, Address(rsi, rcx, Address::times_1));
-      masm.negl(rcx);
-
-      masm.bind(COMPARE_WIDE_VECTORS);
-      masm.movdqu(tmp1Reg, Address(rdi, rcx, Address::times_1));
-      masm.movdqu(tmp2Reg, Address(rsi, rcx, Address::times_1));
-      masm.pxor(tmp1Reg, tmp2Reg);
-      masm.ptest(tmp1Reg, tmp1Reg);
-      masm.jccb(Assembler::notZero, RET_FALSE);
-      masm.addl(rcx, 16);
-      masm.jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
-      masm.bind(COMPARE_TAIL);
-      masm.movl(rcx, rax);
-      // Fallthru to tail compare
-    }
-
-    // Compare 4-byte vectors
-    masm.andl(rcx, 0xfffffffc);  // vector count (in bytes)
-    masm.andl(rax, 0x00000002);  // tail char (in bytes)
-    masm.testl(rcx, rcx);
-    masm.jccb(Assembler::zero, COMPARE_CHAR);
-    masm.lea(rdi, Address(rdi, rcx, Address::times_1));
-    masm.lea(rsi, Address(rsi, rcx, Address::times_1));
-    masm.negl(rcx);
-
-    masm.bind(COMPARE_VECTORS);
-    masm.movl(rbx, Address(rdi, rcx, Address::times_1));
-    masm.cmpl(rbx, Address(rsi, rcx, Address::times_1));
-    masm.jccb(Assembler::notEqual, RET_FALSE);
-    masm.addl(rcx, 4);
-    masm.jcc(Assembler::notZero, COMPARE_VECTORS);
-
-    // Compare trailing char (final 2 bytes), if any
-    masm.bind(COMPARE_CHAR);
-    masm.testl(rax, rax);
-    masm.jccb(Assembler::zero, RET_TRUE);
-    masm.load_unsigned_short(rbx, Address(rdi, 0));
-    masm.load_unsigned_short(rcx, Address(rsi, 0));
-    masm.cmpl(rbx, rcx);
-    masm.jccb(Assembler::notEqual, RET_FALSE);
-
-    masm.bind(RET_TRUE);
-    masm.movl(rax, 1);   // return true
-    masm.jmpb(DONE);
-
-    masm.bind(RET_FALSE);
-    masm.xorl(rax, rax); // return false
-
-    masm.bind(DONE);
-    %}
-
- enc_class enc_String_IndexOf(eSIRegP str1, eDIRegP str2, regXD tmp1, eAXRegI tmp2,
-                        eCXRegI tmp3, eDXRegI tmp4, eBXRegI result) %{
-    // SSE4.2 version
-    Label LOAD_SUBSTR, PREP_FOR_SCAN, SCAN_TO_SUBSTR,
-          SCAN_SUBSTR, RET_NEG_ONE, RET_NOT_FOUND, CLEANUP, DONE;
-    MacroAssembler masm(&cbuf);
-
-    XMMRegister tmp1Reg   = as_XMMRegister($tmp1$$reg);
-
-    // Get the first character position in both strings
-    //         [8] char array, [12] offset, [16] count
-    int value_offset  = java_lang_String::value_offset_in_bytes();
-    int offset_offset = java_lang_String::offset_offset_in_bytes();
-    int count_offset  = java_lang_String::count_offset_in_bytes();
-    int base_offset   = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-    // Get counts for string and substr
-    masm.movl(rdx, Address(rsi, count_offset));
-    masm.movl(rax, Address(rdi, count_offset));
-    // Check for substr count > string count
-    masm.cmpl(rax, rdx);
-    masm.jcc(Assembler::greater, RET_NEG_ONE);
-
-    // Start the indexOf operation
-    // Get start addr of string
-    masm.movptr(rbx, Address(rsi, value_offset));
-    masm.movl(rcx, Address(rsi, offset_offset));
-    masm.lea(rsi, Address(rbx, rcx, Address::times_2, base_offset));
-    masm.push(rsi);
-
-    // Get start addr of substr
-    masm.movptr(rbx, Address(rdi, value_offset));
-    masm.movl(rcx, Address(rdi, offset_offset));
-    masm.lea(rdi, Address(rbx, rcx, Address::times_2, base_offset));
-    masm.push(rdi);
-    masm.push(rax);
-    masm.jmpb(PREP_FOR_SCAN);
-
-    // Substr count saved at sp
-    // Substr saved at sp+4
-    // String saved at sp+8
-
-    // Prep to load substr for scan
-    masm.bind(LOAD_SUBSTR);
-    masm.movptr(rdi, Address(rsp, 4));
-    masm.movl(rax, Address(rsp, 0));
-
-    // Load substr
-    masm.bind(PREP_FOR_SCAN);
-    masm.movdqu(tmp1Reg, Address(rdi, 0));
-    masm.addl(rdx, 8);        // prime the loop
-    masm.subptr(rsi, 16);
-
-    // Scan string for substr in 16-byte vectors
-    masm.bind(SCAN_TO_SUBSTR);
-    masm.subl(rdx, 8);
-    masm.addptr(rsi, 16);
-    masm.pcmpestri(tmp1Reg, Address(rsi, 0), 0x0d);
-    masm.jcc(Assembler::above, SCAN_TO_SUBSTR);     // CF == 0 && ZF == 0
-    masm.jccb(Assembler::aboveEqual, RET_NOT_FOUND); // CF == 0
-
-    // Fallthru: found a potential substr
-
-    // Make sure string is still long enough
-    masm.subl(rdx, rcx);
-    masm.cmpl(rdx, rax);
-    masm.jccb(Assembler::negative, RET_NOT_FOUND);
-    // Compute start addr of substr
-    masm.lea(rsi, Address(rsi, rcx, Address::times_2));
-    masm.movptr(rbx, rsi);
-
-    // Compare potential substr
-    masm.addl(rdx, 8);        // prime the loop
-    masm.addl(rax, 8);
-    masm.subptr(rsi, 16);
-    masm.subptr(rdi, 16);
-
-    // Scan 16-byte vectors of string and substr
-    masm.bind(SCAN_SUBSTR);
-    masm.subl(rax, 8);
-    masm.subl(rdx, 8);
-    masm.addptr(rsi, 16);
-    masm.addptr(rdi, 16);
-    masm.movdqu(tmp1Reg, Address(rdi, 0));
-    masm.pcmpestri(tmp1Reg, Address(rsi, 0), 0x0d);
-    masm.jcc(Assembler::noOverflow, LOAD_SUBSTR);   // OF == 0
-    masm.jcc(Assembler::positive, SCAN_SUBSTR);     // SF == 0
-
-    // Compute substr offset
-    masm.movptr(rsi, Address(rsp, 8));
-    masm.subptr(rbx, rsi);
-    masm.shrl(rbx, 1);
-    masm.jmpb(CLEANUP);
-
-    masm.bind(RET_NEG_ONE);
-    masm.movl(rbx, -1);
-    masm.jmpb(DONE);
-
-    masm.bind(RET_NOT_FOUND);
-    masm.movl(rbx, -1);
-
-    masm.bind(CLEANUP);
-    masm.addptr(rsp, 12);
-
-    masm.bind(DONE);
-  %}
-
-  enc_class enc_Array_Equals(eDIRegP ary1, eSIRegP ary2, regXD tmp1, regXD tmp2,
-                             eBXRegI tmp3, eDXRegI tmp4, eAXRegI result) %{
-    Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_VECTORS, COMPARE_CHAR;
-    MacroAssembler masm(&cbuf);
-
-    XMMRegister tmp1Reg   = as_XMMRegister($tmp1$$reg);
-    XMMRegister tmp2Reg   = as_XMMRegister($tmp2$$reg);
-    Register ary1Reg      = as_Register($ary1$$reg);
-    Register ary2Reg      = as_Register($ary2$$reg);
-    Register tmp3Reg      = as_Register($tmp3$$reg);
-    Register tmp4Reg      = as_Register($tmp4$$reg);
-    Register resultReg    = as_Register($result$$reg);
-
-    int length_offset  = arrayOopDesc::length_offset_in_bytes();
-    int base_offset    = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-    // Check the input args
-    masm.cmpptr(ary1Reg, ary2Reg);
-    masm.jcc(Assembler::equal, TRUE_LABEL);
-    masm.testptr(ary1Reg, ary1Reg);
-    masm.jcc(Assembler::zero, FALSE_LABEL);
-    masm.testptr(ary2Reg, ary2Reg);
-    masm.jcc(Assembler::zero, FALSE_LABEL);
-
-    // Check the lengths
-    masm.movl(tmp4Reg, Address(ary1Reg, length_offset));
-    masm.movl(resultReg, Address(ary2Reg, length_offset));
-    masm.cmpl(tmp4Reg, resultReg);
-    masm.jcc(Assembler::notEqual, FALSE_LABEL);
-    masm.testl(resultReg, resultReg);
-    masm.jcc(Assembler::zero, TRUE_LABEL);
-
-    // Load array addrs
-    masm.lea(ary1Reg, Address(ary1Reg, base_offset));
-    masm.lea(ary2Reg, Address(ary2Reg, base_offset));
-
-    // Set byte count
-    masm.shll(tmp4Reg, 1);
-    masm.movl(resultReg, tmp4Reg);
-
-    if (UseSSE42Intrinsics) {
-      // With SSE4.2, use double quad vector compare
-      Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
-      // Compare 16-byte vectors
-      masm.andl(tmp4Reg, 0xfffffff0);    // vector count (in bytes)
-      masm.andl(resultReg, 0x0000000e);  // tail count (in bytes)
-      masm.testl(tmp4Reg, tmp4Reg);
-      masm.jccb(Assembler::zero, COMPARE_TAIL);
-      masm.lea(ary1Reg, Address(ary1Reg, tmp4Reg, Address::times_1));
-      masm.lea(ary2Reg, Address(ary2Reg, tmp4Reg, Address::times_1));
-      masm.negl(tmp4Reg);
-
-      masm.bind(COMPARE_WIDE_VECTORS);
-      masm.movdqu(tmp1Reg, Address(ary1Reg, tmp4Reg, Address::times_1));
-      masm.movdqu(tmp2Reg, Address(ary2Reg, tmp4Reg, Address::times_1));
-      masm.pxor(tmp1Reg, tmp2Reg);
-      masm.ptest(tmp1Reg, tmp1Reg);
-
-      masm.jccb(Assembler::notZero, FALSE_LABEL);
-      masm.addl(tmp4Reg, 16);
-      masm.jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
-      masm.bind(COMPARE_TAIL);
-      masm.movl(tmp4Reg, resultReg);
-      // Fallthru to tail compare
-    }
-
-    // Compare 4-byte vectors
-    masm.andl(tmp4Reg, 0xfffffffc);    // vector count (in bytes)
-    masm.andl(resultReg, 0x00000002);  // tail char (in bytes)
-    masm.testl(tmp4Reg, tmp4Reg);
-    masm.jccb(Assembler::zero, COMPARE_CHAR);
-    masm.lea(ary1Reg, Address(ary1Reg, tmp4Reg, Address::times_1));
-    masm.lea(ary2Reg, Address(ary2Reg, tmp4Reg, Address::times_1));
-    masm.negl(tmp4Reg);
-
-    masm.bind(COMPARE_VECTORS);
-    masm.movl(tmp3Reg, Address(ary1Reg, tmp4Reg, Address::times_1));
-    masm.cmpl(tmp3Reg, Address(ary2Reg, tmp4Reg, Address::times_1));
-    masm.jccb(Assembler::notEqual, FALSE_LABEL);
-    masm.addl(tmp4Reg, 4);
-    masm.jcc(Assembler::notZero, COMPARE_VECTORS);
-
-    // Compare trailing char (final 2 bytes), if any
-    masm.bind(COMPARE_CHAR);
-    masm.testl(resultReg, resultReg);
-    masm.jccb(Assembler::zero, TRUE_LABEL);
-    masm.load_unsigned_short(tmp3Reg, Address(ary1Reg, 0));
-    masm.load_unsigned_short(tmp4Reg, Address(ary2Reg, 0));
-    masm.cmpl(tmp3Reg, tmp4Reg);
-    masm.jccb(Assembler::notEqual, FALSE_LABEL);
-
-    masm.bind(TRUE_LABEL);
-    masm.movl(resultReg, 1);   // return true
-    masm.jmpb(DONE);
-
-    masm.bind(FALSE_LABEL);
-    masm.xorl(resultReg, resultReg); // return false
-
-    // That's it
-    masm.bind(DONE);
-  %}
 
   enc_class enc_pop_rdx() %{
     emit_opcode(cbuf,0x5A);
@@ -12718,48 +12266,64 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlag
   ins_pipe( pipe_slow );
 %}
 
-instruct string_compare(eDIRegP str1, eSIRegP str2, regXD tmp1, regXD tmp2,
-                        eAXRegI tmp3, eBXRegI tmp4, eCXRegI result, eFlagsReg cr) %{
-  match(Set result (StrComp str1 str2));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, KILL tmp3, KILL tmp4, KILL cr);
-  //ins_cost(300);
+instruct string_compare(eDIRegP str1, eCXRegI cnt1, eSIRegP str2, eBXRegI cnt2,
+                        eAXRegI result, regXD tmp1, regXD tmp2, eFlagsReg cr) %{
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
-  format %{ "String Compare $str1,$str2 -> $result    // KILL EAX, EBX" %}
-  ins_encode( enc_String_Compare(str1, str2, tmp1, tmp2, tmp3, tmp4, result) );
+  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+  %}
   ins_pipe( pipe_slow );
 %}
 
 // fast string equals
-instruct string_equals(eDIRegP str1, eSIRegP str2, regXD tmp1, regXD tmp2,
-                       eBXRegI tmp3, eCXRegI tmp4, eAXRegI result, eFlagsReg cr) %{
-  match(Set result (StrEquals str1 str2));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, KILL tmp3, KILL tmp4, KILL cr);
+instruct string_equals(eDIRegP str1, eSIRegP str2, eCXRegI cnt, eAXRegI result,
+                       regXD tmp1, regXD tmp2, eBXRegI tmp3, eFlagsReg cr) %{
+  match(Set result (StrEquals (Binary str1 str2) cnt));
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
 
-  format %{ "String Equals $str1,$str2 -> $result    // KILL EBX, ECX" %}
-  ins_encode( enc_String_Equals(tmp1, tmp2, str1, str2, tmp3, tmp4, result) );
+  format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp1, $tmp2, $tmp3" %}
+  ins_encode %{
+    __ char_arrays_equals(false, $str1$$Register, $str2$$Register,
+                          $cnt$$Register, $result$$Register, $tmp3$$Register,
+                          $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+  %}
   ins_pipe( pipe_slow );
 %}
 
-instruct string_indexof(eSIRegP str1, eDIRegP str2, regXD tmp1, eAXRegI tmp2,
-                        eCXRegI tmp3, eDXRegI tmp4, eBXRegI result, eFlagsReg cr) %{
+instruct string_indexof(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, eAXRegI cnt2,
+                        eBXRegI result, regXD tmp1, eCXRegI tmp2, eFlagsReg cr) %{
   predicate(UseSSE42Intrinsics);
-  match(Set result (StrIndexOf str1 str2));
-  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, KILL tmp2, KILL tmp3, KILL tmp4, KILL cr);
+  match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp2, KILL cr);
 
-  format %{ "String IndexOf $str1,$str2 -> $result    // KILL EAX, ECX, EDX" %}
-  ins_encode( enc_String_IndexOf(str1, str2, tmp1, tmp2, tmp3, tmp4, result) );
+  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp2, $tmp1" %}
+  ins_encode %{
+    __ string_indexof($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$XMMRegister, $tmp2$$Register);
+  %}
   ins_pipe( pipe_slow );
 %}
 
 // fast array equals
-instruct array_equals(eDIRegP ary1, eSIRegP ary2, regXD tmp1, regXD tmp2, eBXRegI tmp3,
-                      eDXRegI tmp4, eAXRegI result, eFlagsReg cr) %{
+instruct array_equals(eDIRegP ary1, eSIRegP ary2, eAXRegI result,
+                      regXD tmp1, regXD tmp2, eCXRegI tmp3, eBXRegI tmp4, eFlagsReg cr)
+%{
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
   //ins_cost(300);
 
-  format %{ "Array Equals $ary1,$ary2 -> $result    // KILL EBX, EDX" %}
-  ins_encode( enc_Array_Equals(ary1, ary2, tmp1, tmp2, tmp3, tmp4, result) );
+  format %{ "Array Equals $ary1,$ary2 -> $result   // KILL $tmp1, $tmp2, $tmp3, $tmp4" %}
+  ins_encode %{
+    __ char_arrays_equals(true, $ary1$$Register, $ary2$$Register,
+                          $tmp3$$Register, $result$$Register, $tmp4$$Register,
+                          $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+  %}
   ins_pipe( pipe_slow );
 %}
 
