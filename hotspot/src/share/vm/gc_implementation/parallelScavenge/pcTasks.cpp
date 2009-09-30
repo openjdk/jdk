@@ -39,12 +39,13 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
+  CodeBlobToOopClosure mark_and_push_in_blobs(&mark_and_push_closure, /*do_marking=*/ true);
 
   if (_java_thread != NULL)
-    _java_thread->oops_do(&mark_and_push_closure);
+    _java_thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
 
   if (_vm_thread != NULL)
-    _vm_thread->oops_do(&mark_and_push_closure);
+    _vm_thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
 
   // Do the real work
   cm->drain_marking_stacks(&mark_and_push_closure);
@@ -78,7 +79,8 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
     case threads:
     {
       ResourceMark rm;
-      Threads::oops_do(&mark_and_push_closure);
+      CodeBlobToOopClosure each_active_code_blob(&mark_and_push_closure, /*do_marking=*/ true);
+      Threads::oops_do(&mark_and_push_closure, &each_active_code_blob);
     }
     break;
 
@@ -104,6 +106,11 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
 
     case vm_symbols:
       vmSymbols::oops_do(&mark_and_push_closure);
+      break;
+
+    case code_cache:
+      // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
+      //CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure(&mark_and_push_closure));
       break;
 
     default:

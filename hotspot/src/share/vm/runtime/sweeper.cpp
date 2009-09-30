@@ -34,6 +34,17 @@ jint      NMethodSweeper::_locked_seen = 0;
 jint      NMethodSweeper::_not_entrant_seen_on_stack = 0;
 bool      NMethodSweeper::_rescan = false;
 
+class MarkActivationClosure: public CodeBlobClosure {
+public:
+  virtual void do_code_blob(CodeBlob* cb) {
+    // If we see an activation belonging to a non_entrant nmethod, we mark it.
+    if (cb->is_nmethod() && ((nmethod*)cb)->is_not_entrant()) {
+      ((nmethod*)cb)->mark_as_seen_on_stack();
+    }
+  }
+};
+static MarkActivationClosure mark_activation_closure;
+
 void NMethodSweeper::sweep() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be executed at a safepoint");
   if (!MethodFlushing) return;
@@ -57,7 +68,7 @@ void NMethodSweeper::sweep() {
     if (PrintMethodFlushing) {
       tty->print_cr("### Sweep: stack traversal %d", _traversals);
     }
-    Threads::nmethods_do();
+    Threads::nmethods_do(&mark_activation_closure);
 
     // reset the flags since we started a scan from the beginning.
     _rescan = false;
