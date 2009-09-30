@@ -2371,8 +2371,9 @@ void G1CollectedHeap::verify(bool allow_dirty,
       gclog_or_tty->print_cr("Heap:");
       print_on(gclog_or_tty, true /* extended */);
       gclog_or_tty->print_cr("");
-      if (VerifyDuringGC && G1VerifyConcMarkPrintReachable) {
-        concurrent_mark()->print_prev_bitmap_reachable();
+      if (VerifyDuringGC && G1VerifyDuringGCPrintReachable) {
+        concurrent_mark()->print_reachable(use_prev_marking,
+                                           "failed-verification");
       }
       gclog_or_tty->flush();
     }
