@@ -4111,14 +4111,14 @@ public class Container extends Component {
                 mixingLog.fine("this = " + this);
             }
 
-            if (!isMixingNeeded()) {
-                return;
-            }
-
             boolean isLightweight = isLightweight();
 
             if (isLightweight && isRecursivelyVisibleUpToHeavyweightContainer()) {
                 recursiveShowHeavyweightChildren();
+            }
+
+            if (!isMixingNeeded()) {
+                return;
             }
 
             if (!isLightweight || (isLightweight && hasHeavyweightDescendants())) {
