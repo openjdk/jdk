@@ -668,7 +668,7 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   __ add(obj.result(), offset.result(), addr);
 
   if (type == objectType) {  // Write-barrier needed for Object fields.
-    pre_barrier(obj.result(), false, NULL);
+    pre_barrier(addr, false, NULL);
   }
 
   if (type == objectType)
