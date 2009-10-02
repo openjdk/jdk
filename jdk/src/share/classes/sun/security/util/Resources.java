@@ -46,18 +46,145 @@ public class Resources extends java.util.ListResourceBundle {
         {"*******************************************\n\n",
                 "*******************************************\n\n"},
 
-        // keytool
+        // keytool: Help part
+        {" [OPTION]...", " [OPTION]..."},
+        {"Options:", "Options:"},
+        {"Use \"keytool -help\" for all available commands",
+                 "Use \"keytool -help\" for all available commands"},
+        {"Key and Certificate Management Tool",
+                 "Key and Certificate Management Tool"},
+        {"Commands:", "Commands:"},
+        {"Use \"keytool -command_name -help\" for usage of command_name",
+                "Use \"keytool -command_name -help\" for usage of command_name"},
+        // keytool: help: commands
+        {"Generates a certificate request",
+                "Generates a certificate request"}, //-certreq
+        {"Changes an entry's alias",
+                "Changes an entry's alias"}, //-changealias
+        {"Deletes an entry",
+                "Deletes an entry"}, //-delete
+        {"Exports certificate",
+                "Exports certificate"}, //-exportcert
+        {"Generates a key pair",
+                "Generates a key pair"}, //-genkeypair
+        {"Generates a secret key",
+                "Generates a secret key"}, //-genseckey
+        {"Generates certificate from a certificate request",
+                "Generates certificate from a certificate request"}, //-gencert
+        {"Imports entries from a JDK 1.1.x-style identity database",
+                "Imports entries from a JDK 1.1.x-style identity database"}, //-identitydb
+        {"Imports a certificate or a certificate chain",
+                "Imports a certificate or a certificate chain"}, //-importcert
+        {"Imports one or all entries from another keystore",
+                "Imports one or all entries from another keystore"}, //-importkeystore
+        {"Clones a key entry",
+                "Clones a key entry"}, //-keyclone
+        {"Changes the key password of an entry",
+                "Changes the key password of an entry"}, //-keypasswd
+        {"Lists entries in a keystore",
+                "Lists entries in a keystore"}, //-list
+        {"Prints the content of a certificate",
+                "Prints the content of a certificate"}, //-printcert
+        {"Prints the content of a certificate request",
+                "Prints the content of a certificate request"}, //-printcertreq
+        {"Generates a self-signed certificate",
+                "Generates a self-signed certificate"}, //-selfcert
+        {"Changes the store password of a keystore",
+                "Changes the store password of a keystore"}, //-storepasswd
+        // keytool: help: options
+        {"alias name of the entry to process",
+                "alias name of the entry to process"}, //-alias
+        {"destination alias",
+                "destination alias"}, //-destalias
+        {"destination key password",
+                "destination key password"}, //-destkeypass
+        {"destination keystore name",
+                "destination keystore name"}, //-destkeystore
+        {"destination keystore password protected",
+                "destination keystore password protected"}, //-destprotected
+        {"destination keystore provider name",
+                "destination keystore provider name"}, //-destprovidername
+        {"destination keystore password",
+                "destination keystore password"}, //-deststorepass
+        {"destination keystore type",
+                "destination keystore type"}, //-deststoretype
+        {"distinguished name",
+                "distinguished name"}, //-dname
+        {"X.509 extension",
+                "X.509 extension"}, //-ext
+        {"output file name",
+                "output file name"}, //-file
+        {"input file name",
+                "input file name"}, //-file
+        {"input file name",
+                "input file name"}, //-infile
+        {"key algorithm name",
+                "key algorithm name"}, //-keyalg
+        {"key password",
+                "key password"}, //-keypass
+        {"key bit size",
+                "key bit size"}, //-keysize
+        {"keystore name",
+                "keystore name"}, //-keystore
+        {"new password",
+                "new password"}, //-new
+        {"do not prompt",
+                "do not prompt"}, //-noprompt
+        {"output file name",
+                "output file name"}, //-outfile
+        {"password through protected mechanism",
+                "password through protected mechanism"}, //-protected
+        {"provider argument",
+                "provider argument"}, //-providerarg
+        {"provider class name",
+                "provider class name"}, //-providerclass
+        {"provider name",
+                "provider name"}, //-providername
+        {"provider classpath",
+                "provider classpath"}, //-providerpath
+        {"output in RFC style",
+                "output in RFC style"}, //-rfc
+        {"signature algorithm name",
+                "signature algorithm name"}, //-sigalg
+        {"source alias",
+                "source alias"}, //-srcalias
+        {"source keystore password",
+                "source keystore password"}, //-srckeypass
+        {"source keystore name",
+                "source keystore name"}, //-srckeystore
+        {"source keystore password protected",
+                "source keystore password protected"}, //-srcprotected
+        {"source keystore provider name",
+                "source keystore provider name"}, //-srcprovidername
+        {"source keystore password",
+                "source keystore password"}, //-srcstorepass
+        {"source keystore type",
+                "source keystore type"}, //-srcstoretype
+        {"SSL server host and port",
+                "SSL server host and port"}, //-sslserver
+        {"certificate validity start date/time",
+                "certificate validity start date/time"}, //-startdate
+        {"keystore password",
+                "keystore password"}, //-storepass
+        {"keystore type",
+                "keystore type"}, //-storetype
+        {"trust certificates from cacerts",
+                "trust certificates from cacerts"}, //-trustcacerts
+        {"verbose output",
+                "verbose output"}, //-v
+        {"validity number of days",
+                "validity number of days"}, //-validity
+        // keytool: Running part
         {"keytool error: ", "keytool error: "},
         {"Illegal option:  ", "Illegal option:  "},
         {"Illegal value: ", "Illegal value: "},
-        {"Try keytool -help","Try keytool -help"},
         {"Command option <flag> needs an argument.", "Command option {0} needs an argument."},
         {"Warning:  Different store and key passwords not supported for PKCS12 KeyStores. Ignoring user-specified <command> value.",
                 "Warning:  Different store and key passwords not supported for PKCS12 KeyStores. Ignoring user-specified {0} value."},
         {"-keystore must be NONE if -storetype is {0}",
                 "-keystore must be NONE if -storetype is {0}"},
-        {"Too may retries, program terminated",
-                 "Too may retries, program terminated"},
+        {"Too many retries, program terminated",
+                 "Too many retries, program terminated"},
         {"-storepasswd and -keypasswd commands not supported if -storetype is {0}",
                 "-storepasswd and -keypasswd commands not supported if -storetype is {0}"},
         {"-keypasswd commands not supported if -storetype is PKCS12",
@@ -77,7 +204,6 @@ public class Resources extends java.util.ListResourceBundle {
                 "Validity must be greater than zero"},
         {"provName not a provider", "{0} not a provider"},
         {"Usage error: no command provided", "Usage error: no command provided"},
-        {"Usage error, <arg> is not a legal command", "Usage error, {0} is not a legal command"},
         {"Source keystore file exists, but is empty: ", "Source keystore file exists, but is empty: "},
         {"Please specify -srckeystore", "Please specify -srckeystore"},
         {"Must not specify both -v and -rfc with 'list' command",
@@ -279,7 +405,6 @@ public class Resources extends java.util.ListResourceBundle {
                 "Secret Key not generated, alias <{0}> already exists"},
         {"Please provide -keysize for secret key generation",
                 "Please provide -keysize for secret key generation"},
-        {"keytool usage:\n", "keytool usage:\n"},
 
         {"Extensions: ", "Extensions: "},
         {"(Empty value)", "(Empty value)"},
@@ -296,139 +421,6 @@ public class Resources extends java.util.ListResourceBundle {
                  "This extension cannot be marked as critical. "},
         {"Odd number of hex digits found: ", "Odd number of hex digits found: "},
         {"command {0} is ambiguous:", "command {0} is ambiguous:"},
-
-        {"-certreq     [-v] [-protected]",
-                "-certreq     [-v] [-protected]"},
-        {"\t     [-alias <alias>] [-sigalg <sigalg>]",
-                "\t     [-alias <alias>] [-sigalg <sigalg>]"},
-        {"\t     [-dname <dname>]", "\t     [-dname <dname>]"},
-        {"\t     [-file <csr_file>] [-keypass <keypass>]",
-                "\t     [-file <csr_file>] [-keypass <keypass>]"},
-        {"\t     [-keystore <keystore>] [-storepass <storepass>]",
-                "\t     [-keystore <keystore>] [-storepass <storepass>]"},
-        {"\t     [-storetype <storetype>] [-providername <name>]",
-                "\t     [-storetype <storetype>] [-providername <name>]"},
-        {"\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ...",
-                "\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."},
-        {"\t     [-providerpath <pathlist>]",
-                "\t     [-providerpath <pathlist>]"},
-        {"-delete      [-v] [-protected] -alias <alias>",
-                "-delete      [-v] [-protected] -alias <alias>"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        //{"-export      [-v] [-rfc] [-protected]",
-        //       "-export      [-v] [-rfc] [-protected]"},
-        {"-exportcert  [-v] [-rfc] [-protected]",
-                "-exportcert  [-v] [-rfc] [-protected]"},
-        {"\t     [-alias <alias>] [-file <cert_file>]",
-                "\t     [-alias <alias>] [-file <cert_file>]"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        //{"-genkey      [-v] [-protected]",
-        //        "-genkey      [-v] [-protected]"},
-        {"-genkeypair  [-v] [-protected]",
-                "-genkeypair  [-v] [-protected]"},
-        {"\t     [-alias <alias>]", "\t     [-alias <alias>]"},
-        {"\t     [-keyalg <keyalg>] [-keysize <keysize>]",
-                "\t     [-keyalg <keyalg>] [-keysize <keysize>]"},
-        {"\t     [-sigalg <sigalg>] [-dname <dname>]",
-                "\t     [-sigalg <sigalg>] [-dname <dname>]"},
-        {"\t     [-startdate <startdate>]",
-                "\t     [-startdate <startdate>]"},
-        {"\t     [-validity <valDays>] [-keypass <keypass>]",
-                "\t     [-validity <valDays>] [-keypass <keypass>]"},
-        /** rest is same as -certreq starting from -keystore **/
-        {"-gencert     [-v] [-rfc] [-protected]",
-                "-gencert     [-v] [-rfc] [-protected]"},
-        {"\t     [-infile <infile>] [-outfile <outfile>]",
-                 "\t     [-infile <infile>] [-outfile <outfile>]"},
-        {"\t     [-sigalg <sigalg>]",
-                "\t     [-sigalg <sigalg>]"},
-        {"\t     [-ext <key>[:critical][=<value>]]...",
-                "\t     [-ext <key>[:critical][=<value>]]..."},
-
-        {"-genseckey   [-v] [-protected]",
-                "-genseckey   [-v] [-protected]"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        {"-help", "-help"},
-        //{"-identitydb  [-v] [-protected]",
-        //      "-identitydb  [-v] [-protected]"},
-        //{"\t     [-file <idb_file>]", "\t     [-file <idb_file>]"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        //{"-import      [-v] [-noprompt] [-trustcacerts] [-protected]",
-        //       "-import      [-v] [-noprompt] [-trustcacerts] [-protected]"},
-        {"-importcert  [-v] [-noprompt] [-trustcacerts] [-protected]",
-                "-importcert  [-v] [-noprompt] [-trustcacerts] [-protected]"},
-        {"\t     [-alias <alias>]", "\t     [-alias <alias>]"},
-        {"\t     [-alias <alias>] [-keypass <keypass>]",
-            "\t     [-alias <alias>] [-keypass <keypass>]"},
-        {"\t     [-file <cert_file>] [-keypass <keypass>]",
-                "\t     [-file <cert_file>] [-keypass <keypass>]"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        {"-importkeystore [-v] ",
-                "-importkeystore [-v] "},
-        {"\t     [-srckeystore <srckeystore>] [-destkeystore <destkeystore>]",
-                "\t     [-srckeystore <srckeystore>] [-destkeystore <destkeystore>]"},
-        {"\t     [-srcstoretype <srcstoretype>] [-deststoretype <deststoretype>]",
-                "\t     [-srcstoretype <srcstoretype>] [-deststoretype <deststoretype>]"},
-        {"\t     [-srcprotected] [-destprotected]",
-                "\t     [-srcprotected] [-destprotected]"},
-        {"\t     [-srcstorepass <srcstorepass>] [-deststorepass <deststorepass>]",
-                "\t     [-srcstorepass <srcstorepass>] [-deststorepass <deststorepass>]"},
-        {"\t     [-srcprovidername <srcprovidername>]\n\t     [-destprovidername <destprovidername>]",  // line too long, split to 2
-                 "\t     [-srcprovidername <srcprovidername>]\n\t     [-destprovidername <destprovidername>]"},
-        {"\t     [-srcalias <srcalias> [-destalias <destalias>]",
-                "\t     [-srcalias <srcalias> [-destalias <destalias>]"},
-        {"\t       [-srckeypass <srckeypass>] [-destkeypass <destkeypass>]]",
-                "\t       [-srckeypass <srckeypass>] [-destkeypass <destkeypass>]]"},
-        {"\t     [-noprompt]", "\t     [-noprompt]"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        {"-changealias [-v] [-protected] -alias <alias> -destalias <destalias>",
-                "-changealias [-v] [-protected] -alias <alias> -destalias <destalias>"},
-        {"\t     [-keypass <keypass>]", "\t     [-keypass <keypass>]"},
-
-        //{"-keyclone    [-v] [-protected]",
-        //      "-keyclone    [-v] [-protected]"},
-        //{"\t     [-alias <alias>] -dest <dest_alias>",
-        //      "\t     [-alias <alias>] -dest <dest_alias>"},
-        //{"\t     [-keypass <keypass>] [-new <new_keypass>]",
-        //      "\t     [-keypass <keypass>] [-new <new_keypass>]"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        {"-keypasswd   [-v] [-alias <alias>]",
-                "-keypasswd   [-v] [-alias <alias>]"},
-        {"\t     [-keypass <old_keypass>] [-new <new_keypass>]",
-                "\t     [-keypass <old_keypass>] [-new <new_keypass>]"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        {"-list        [-v | -rfc] [-protected]",
-                "-list        [-v | -rfc] [-protected]"},
-        {"\t     [-alias <alias>]", "\t     [-alias <alias>]"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        {"-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]",
-                "-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]"},
-        {"-printcertreq   [-v] [-file <cert_file>]",
-                 "-printcertreq   [-v] [-file <cert_file>]"},
-        {"No certificate from the SSL server",
-                "No certificate from the SSL server"},
-
-        //{"-selfcert    [-v] [-protected]",
-        //      "-selfcert    [-v] [-protected]"},
-        {"\t     [-alias <alias>]", "\t     [-alias <alias>]"},
-        //{"\t     [-dname <dname>] [-validity <valDays>]",
-        //      "\t     [-dname <dname>] [-validity <valDays>]"},
-        //{"\t     [-keypass <keypass>] [-sigalg <sigalg>]",
-        //      "\t     [-keypass <keypass>] [-sigalg <sigalg>]"},
-        /** rest is same as -certreq starting from -keystore **/
-
-        {"-storepasswd [-v] [-new <new_storepass>]",
-                "-storepasswd [-v] [-new <new_storepass>]"},
-        /** rest is same as -certreq starting from -keystore **/
 
         // policytool
         {"Warning: A public key for alias 'signers[i]' does not exist.  Make sure a KeyStore is properly configured.",
@@ -679,3 +671,4 @@ public class Resources extends java.util.ListResourceBundle {
         return contents;
     }
 }
+
