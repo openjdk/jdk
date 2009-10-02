@@ -543,7 +543,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
 #endif
 
     guarantee( parallel_marking_threads() > 0, "peace of mind" );
-    _parallel_workers = new WorkGang("Parallel Marking Threads",
+    _parallel_workers = new WorkGang("G1 Parallel Marking Threads",
                                      (int) parallel_marking_threads(), false, true);
     if (_parallel_workers == NULL)
       vm_exit_during_initialization("Failed necessary allocation.");
@@ -2635,6 +2635,10 @@ void ConcurrentMark::print_summary_info() {
                 cmThread()->vtime_accum(),
                 cmThread()->vtime_mark_accum(),
                 cmThread()->vtime_count_accum());
+}
+
+void ConcurrentMark::print_worker_threads_on(outputStream* st) const {
+  _parallel_workers->print_worker_threads_on(st);
 }
 
 // Closures

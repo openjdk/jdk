@@ -723,6 +723,8 @@ public:
 
   void print_summary_info();
 
+  void print_worker_threads_on(outputStream* st) const;
+
   // The following indicate whether a given verbose level has been
   // set. Notice that anything above stats is conditional to
   // _MARKING_VERBOSE_ having been set to 1

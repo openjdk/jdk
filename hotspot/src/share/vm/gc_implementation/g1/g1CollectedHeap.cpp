@@ -2383,27 +2383,18 @@ void G1CollectedHeap::print_on_extended(outputStream* st) const {
   _hrs->iterate(&blk);
 }
 
-class PrintOnThreadsClosure : public ThreadClosure {
-  outputStream* _st;
-public:
-  PrintOnThreadsClosure(outputStream* st) : _st(st) { }
-  virtual void do_thread(Thread *t) {
-    t->print_on(_st);
-  }
-};
-
 void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   if (ParallelGCThreads > 0) {
-    workers()->print_worker_threads();
+    workers()->print_worker_threads_on(st);
   }
-  st->print("\"G1 concurrent mark GC Thread\" ");
-  _cmThread->print();
+
+  _cmThread->print_on(st);
   st->cr();
-  st->print("\"G1 concurrent refinement GC Threads\" ");
-  PrintOnThreadsClosure p(st);
-  _cg1r->threads_do(&p);
-  st->cr();
-  st->print("\"G1 zero-fill GC Thread\" ");
+
+  _cm->print_worker_threads_on(st);
+
+  _cg1r->print_worker_threads_on(st);
+
   _czft->print_on(st);
   st->cr();
 }
