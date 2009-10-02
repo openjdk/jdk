@@ -352,6 +352,15 @@ public final class KeyTool {
             }
 
             /*
+             * Check modifiers
+             */
+            String modifier = null;
+            int pos = flags.indexOf(':');
+            if (pos > 0) {
+                modifier = flags.substring(pos+1);
+                flags = flags.substring(0, pos);
+            }
+            /*
              * command modes
              */
             boolean isCommand = false;
@@ -387,18 +396,18 @@ public final class KeyTool {
                 ksfname = args[++i];
             } else if (collator.compare(flags, "-storepass") == 0 ||
                     collator.compare(flags, "-deststorepass") == 0) {
-                storePass = args[++i].toCharArray();
+                storePass = getPass(modifier, args[++i]);
                 passwords.add(storePass);
             } else if (collator.compare(flags, "-storetype") == 0 ||
                     collator.compare(flags, "-deststoretype") == 0) {
                 storetype = args[++i];
             } else if (collator.compare(flags, "-srcstorepass") == 0) {
-                srcstorePass = args[++i].toCharArray();
+                srcstorePass = getPass(modifier, args[++i]);
                 passwords.add(srcstorePass);
             } else if (collator.compare(flags, "-srcstoretype") == 0) {
                 srcstoretype = args[++i];
             } else if (collator.compare(flags, "-srckeypass") == 0) {
-                srckeyPass = args[++i].toCharArray();
+                srckeyPass = getPass(modifier, args[++i]);
                 passwords.add(srckeyPass);
             } else if (collator.compare(flags, "-srcprovidername") == 0) {
                 srcProviderName = args[++i];
@@ -408,13 +417,13 @@ public final class KeyTool {
             } else if (collator.compare(flags, "-providerpath") == 0) {
                 pathlist = args[++i];
             } else if (collator.compare(flags, "-keypass") == 0) {
-                keyPass = args[++i].toCharArray();
+                keyPass = getPass(modifier, args[++i]);
                 passwords.add(keyPass);
             } else if (collator.compare(flags, "-new") == 0) {
-                newPass = args[++i].toCharArray();
+                newPass = getPass(modifier, args[++i]);
                 passwords.add(newPass);
             } else if (collator.compare(flags, "-destkeypass") == 0) {
-                destKeyPass = args[++i].toCharArray();
+                destKeyPass = getPass(modifier, args[++i]);
                 passwords.add(destKeyPass);
             } else if (collator.compare(flags, "-alias") == 0 ||
                     collator.compare(flags, "-srcalias") == 0) {
@@ -3842,6 +3851,61 @@ public final class KeyTool {
                 rb.getString("Command option <flag> needs an argument.")).format(source));
         tinyHelp();
     }
+
+    private char[] getPass(String modifier, String arg) {
+        char[] output = getPassWithModifier(modifier, arg);
+        if (output != null) return output;
+        tinyHelp();
+        return null;    // Useless, tinyHelp() already exits.
+    }
+
+    // This method also used by JarSigner
+    public static char[] getPassWithModifier(String modifier, String arg) {
+        if (modifier == null) {
+            return arg.toCharArray();
+        } else if (collator.compare(modifier, "env") == 0) {
+            String value = System.getenv(arg);
+            if (value == null) {
+                System.err.println(rb.getString(
+                        "Cannot find environment variable: ") + arg);
+                return null;
+            } else {
+                return value.toCharArray();
+            }
+        } else if (collator.compare(modifier, "file") == 0) {
+            try {
+                URL url = null;
+                try {
+                    url = new URL(arg);
+                } catch (java.net.MalformedURLException mue) {
+                    File f = new File(arg);
+                    if (f.exists()) {
+                        url = f.toURI().toURL();
+                    } else {
+                        System.err.println(rb.getString(
+                                "Cannot find file: ") + arg);
+                        return null;
+                    }
+                }
+                BufferedReader br = new BufferedReader(new InputStreamReader(
+                            url.openStream()));
+                String value = br.readLine();
+                br.close();
+                if (value == null) {
+                    return new char[0];
+                } else {
+                    return value.toCharArray();
+                }
+            } catch (IOException ioe) {
+                System.err.println(ioe);
+                return null;
+            }
+        } else {
+            System.err.println(rb.getString("Unknown password type: ") +
+                    modifier);
+            return null;
+        }
+    }
 }
 
 // This class is exactly the same as com.sun.tools.javac.util.Pair,
@@ -3881,3 +3945,4 @@ class Pair<A, B> {
         return new Pair<A,B>(a,b);
     }
 }
+
