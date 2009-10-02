@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.math.BigInteger;
 import java.util.Arrays;
+import sun.security.krb5.internal.util.KerberosString;
 /**
  * Implements the ASN.1 KRBError type.
  *
@@ -97,7 +98,7 @@ public class KRBError implements java.io.Serializable {
 
     // pre-auth info
     private int etype = 0;
-    private byte[] salt = null;
+    private String salt = null;
     private byte[] s2kparams = null;
 
     private static boolean DEBUG = Krb5.DEBUG;
@@ -334,8 +335,8 @@ public class KRBError implements java.io.Serializable {
     }
 
     // access pre-auth info
-    public final byte[] getSalt() {
-        return ((salt == null) ? null : salt.clone());
+    public final String getSalt() {
+        return salt;
     }
 
     // access pre-auth info
@@ -415,7 +416,8 @@ public class KRBError implements java.io.Serializable {
         if (der.getData().available() >0) {
             if ((der.getData().peekByte() & 0x1F) == 0x0B) {
                 subDer = der.getData().getDerValue();
-                eText = subDer.getData().getGeneralString();
+                eText = new KerberosString(subDer.getData().getDerValue())
+                        .toString();
             }
         }
         if (der.getData().available() >0) {
@@ -515,7 +517,7 @@ public class KRBError implements java.io.Serializable {
 
         if (eText != null) {
             temp = new DerOutputStream();
-            temp.putGeneralString(eText);
+            temp.putDerValue(new KerberosString(eText).toDerValue());
             bytes.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x0B), temp);
         }
         if (eData != null) {

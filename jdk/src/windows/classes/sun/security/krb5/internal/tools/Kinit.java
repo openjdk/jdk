@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,15 +252,15 @@ public class Kinit {
                 }
                 KRBError error = ke.getError();
                 int etype = error.getEType();
-                byte[] salt = error.getSalt();
+                String salt = error.getSalt();
                 byte[] s2kparams = error.getParams();
                 if (useKeytab) {
-                    as_req = new KrbAsReq(skeys, true, etype, salt, s2kparams,
-                                        opt, principal, sname,
+                    as_req = new KrbAsReq(skeys, true, etype, salt,
+                                        s2kparams, opt, principal, sname,
                                         null, null, null, null, addresses, null);
                 } else {
-                    as_req = new KrbAsReq(psswd, true, etype, salt, s2kparams,
-                                        opt, principal, sname,
+                    as_req = new KrbAsReq(psswd, true, etype, salt,
+                                        s2kparams, opt, principal, sname,
                                         null, null, null, null, addresses, null);
                 }
                 as_rep = sendASRequest(as_req, useKeytab, realm, psswd, skeys);
