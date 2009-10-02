@@ -76,6 +76,7 @@ import sun.security.util.DerValue;
 import sun.security.x509.*;
 
 import static java.security.KeyStore.*;
+import static sun.security.tools.KeyTool.Command.*;
 
 /**
  * This tool manages keystores.
@@ -92,7 +93,7 @@ import static java.security.KeyStore.*;
 public final class KeyTool {
 
     private boolean debug = false;
-    private int command = -1;
+    private Command command = null;
     private String sigAlgName = null;
     private String keyAlgName = null;
     private boolean verbose = false;
@@ -146,24 +147,132 @@ public final class KeyTool {
 
     private List <String> v3ext = new ArrayList <String> ();
 
-    private static final int CERTREQ = 1;
-    private static final int CHANGEALIAS = 2;
-    private static final int DELETE = 3;
-    private static final int EXPORTCERT = 4;
-    private static final int GENKEYPAIR = 5;
-    private static final int GENSECKEY = 6;
-    // there is no HELP
-    private static final int IDENTITYDB = 7;
-    private static final int IMPORTCERT = 8;
-    private static final int IMPORTKEYSTORE = 9;
-    private static final int KEYCLONE = 10;
-    private static final int KEYPASSWD = 11;
-    private static final int LIST = 12;
-    private static final int PRINTCERT = 13;
-    private static final int SELFCERT = 14;
-    private static final int STOREPASSWD = 15;
-    private static final int GENCERT = 16;
-    private static final int PRINTCERTREQ = 17;
+    enum Command {
+        CERTREQ("Generates a certificate request",
+            "-alias", "-sigalg", "-file", "-keypass", "-keystore",
+            "-storepass", "-storetype", "-providername", "-providerclass",
+            "-providerarg", "-providerpath", "-v", "-protected"),
+        CHANGEALIAS("Changes an entry's alias",
+            "-alias", "-destalias", "-keypass", "-keystore", "-storepass",
+            "-storetype", "-providername", "-providerclass", "-providerarg",
+            "-providerpath", "-v", "-protected"),
+        DELETE("Deletes an entry",
+            "-alias", "-keystore", "-storepass", "-storetype",
+            "-providername", "-providerclass", "-providerarg",
+            "-providerpath", "-v", "-protected"),
+        EXPORTCERT("Exports certificate",
+            "-rfc", "-alias", "-file", "-keystore", "-storepass",
+            "-storetype", "-providername", "-providerclass", "-providerarg",
+            "-providerpath", "-v", "-protected"),
+        GENKEYPAIR("Generates a key pair",
+            "-alias", "-keyalg", "-keysize", "-sigalg", "-destalias",
+            "-startdate", "-ext", "-validity", "-keypass", "-keystore",
+            "-storepass", "-storetype", "-providername", "-providerclass",
+            "-providerarg", "-providerpath", "-v", "-protected"),
+        GENSECKEY("Generates a secret key",
+            "-alias", "-keypass", "-keyalg", "-keysize", "-keystore",
+            "-storepass", "-storetype", "-providername", "-providerclass",
+            "-providerarg", "-providerpath", "-v", "-protected"),
+        GENCERT("Generates certificate from a certificate request",
+            "-rfc", "-infile", "-outfile", "-alias", "-sigalg",
+            "-startdate", "-ext", "-validity", "-keypass", "-keystore",
+            "-storepass", "-storetype", "-providername", "-providerclass",
+            "-providerarg", "-providerpath", "-v", "-protected"),
+        IDENTITYDB("Imports entries from a JDK 1.1.x-style identity database",
+            "-file", "-storetype", "-keystore", "-storepass", "-providername",
+            "-providerclass", "-providerarg", "-providerpath", "-v"),
+        IMPORTCERT("Imports a certificate or a certificate chain",
+            "-noprompt", "-trustcacerts", "-protected", "-alias", "-file",
+            "-keypass", "-keystore", "-storepass", "-storetype",
+            "-providername", "-providerclass", "-providerarg",
+            "-providerpath", "-v"),
+        IMPORTKEYSTORE("Imports one or all entries from another keystore",
+            "-srckeystore", "-destkeystore", "-srcstoretype",
+            "-deststoretype", "-srcstorepass", "-deststorepass",
+            "-srcprotected", "-srcprovidername", "-destprovidername",
+            "-srcalias", "-destalias", "-srckeypass", "-destkeypass",
+            "-noprompt", "-providerclass", "-providerarg", "-providerpath",
+            "-v"),
+        KEYCLONE("Clones a key entry",
+            "-alias", "-destalias", "-keypass", "-new", "-storetype",
+            "-keystore", "-storepass", "-providername", "-providerclass",
+            "-providerarg", "-providerpath", "-v"),
+        KEYPASSWD("Changes the key password of an entry",
+            "-alias", "-keypass", "-new", "-keystore", "-storepass",
+            "-storetype", "-providername", "-providerclass", "-providerarg",
+            "-providerpath", "-v"),
+        LIST("Lists entries in a keystore",
+            "-rfc", "-alias", "-keystore", "-storepass", "-storetype",
+            "-providername", "-providerclass", "-providerarg",
+            "-providerpath", "-v", "-protected"),
+        PRINTCERT("Prints the content of a certificate",
+            "-rfc", "-file", "-sslserver", "-v"),
+        PRINTCERTREQ("Prints the content of a certificate request",
+            "-file", "-v"),
+        SELFCERT("Generates a self-signed certificate",
+            "-alias", "-sigalg", "-dname", "-startdate", "-validity", "-keypass",
+            "-storetype", "-keystore", "-storepass", "-providername",
+            "-providerclass", "-providerarg", "-providerpath", "-v"),
+        STOREPASSWD("Changes the store password of a keystore",
+            "-new", "-keystore", "-storepass", "-storetype", "-providername",
+            "-providerclass", "-providerarg", "-providerpath", "-v");
+
+        final String description;
+        final String[] options;
+        Command(String d, String... o) {
+            description = d;
+            options = o;
+        }
+        @Override
+        public String toString() {
+            return "-" + name().toLowerCase(Locale.ENGLISH);
+        }
+    };
+
+    private static String[][] options = {
+        // name, arg, description
+        {"-alias", "<alias>", "alias name of the entry to process"},
+        {"-destalias", "<destalias>", "destination alias"},
+        {"-destkeypass", "<arg>", "destination key password"},
+        {"-destkeystore", "<destkeystore>", "destination keystore name"},
+        {"-destprotected", null, "destination keystore password protected"},
+        {"-destprovidername", "<destprovidername>", "destination keystore provider name"},
+        {"-deststorepass", "<arg>", "destination keystore password"},
+        {"-deststoretype", "<deststoretype>", "destination keystore type"},
+        {"-dname", "<dname>", "distinguished name"},
+        {"-ext", "<value>", "X.509 extension"},
+        {"-file", "<filename>", "output file name"},
+        {"-file", "<filename>", "input file name"},
+        {"-infile", "<filename>", "input file name"},
+        {"-keyalg", "<keyalg>", "key algorithm name"},
+        {"-keypass", "<arg>", "key password"},
+        {"-keysize", "<keysize>", "key bit size"},
+        {"-keystore", "<keystore>", "keystore name"},
+        {"-new", "<arg>", "new password"},
+        {"-noprompt", null, "do not prompt"},
+        {"-outfile", "<filename>", "output file name"},
+        {"-protected", null, "password through protected mechanism"},
+        {"-providerarg", "<arg>", "provider argument"},
+        {"-providerclass", "<providerclass>", "provider class name"},
+        {"-providername", "<providername>", "provider name"},
+        {"-providerpath", "<pathlist>", "provider classpath"},
+        {"-rfc", null, "output in RFC style"},
+        {"-sigalg", "<sigalg>", "signature algorithm name"},
+        {"-srcalias", "<srcalias>", "source alias"},
+        {"-srckeypass", "<arg>", "source keystore password"},
+        {"-srckeystore", "<srckeystore>", "source keystore name"},
+        {"-srcprotected", null, "source keystore password protected"},
+        {"-srcprovidername", "<srcprovidername>", "source keystore provider name"},
+        {"-srcstorepass", "<arg>", "source keystore password"},
+        {"-srcstoretype", "<srcstoretype>", "source keystore type"},
+        {"-sslserver", "<server[:port]>", "SSL server host and port"},
+        {"-startdate", "<startdate>", "certificate validity start date/time"},
+        {"-storepass", "<arg>", "keystore password"},
+        {"-storetype", "<storetype>", "keystore type"},
+        {"-trustcacerts", null, "trust certificates from cacerts"},
+        {"-v", null, "verbose output"},
+        {"-validity", "<valDays>", "validity number of days"},
+    };
 
     private static final Class[] PARAM_STRING = { String.class };
 
@@ -192,7 +301,7 @@ public final class KeyTool {
     private void run(String[] args, PrintStream out) throws Exception {
         try {
             parseArgs(args);
-            if (command != -1) {
+            if (command != null) {
                 doCommands(out);
             }
         } catch (Exception e) {
@@ -224,59 +333,50 @@ public final class KeyTool {
      */
     void parseArgs(String[] args) {
 
-        if (args.length == 0) {
-            usage();
-            return;
-        }
-
         int i=0;
+        boolean help = args.length == 0;
 
         for (i=0; (i < args.length) && args[i].startsWith("-"); i++) {
 
             String flags = args[i];
+
+            // Check if the last option needs an arg
+            if (i == args.length - 1) {
+                for (String[] option: options) {
+                    // Only options with an arg need to be checked
+                    if (collator.compare(flags, option[0]) == 0) {
+                        if (option[1] != null) errorNeedArgument(flags);
+                        break;
+                    }
+                }
+            }
+
             /*
              * command modes
              */
-            if (collator.compare(flags, "-certreq") == 0) {
-                command = CERTREQ;
-            } else if (collator.compare(flags, "-delete") == 0) {
-                command = DELETE;
-            } else if (collator.compare(flags, "-export") == 0 ||
-                    collator.compare(flags, "-exportcert") == 0) {
+            boolean isCommand = false;
+            for (Command c: Command.values()) {
+                if (collator.compare(flags, c.toString()) == 0) {
+                    command = c;
+                    isCommand = true;
+                    break;
+                }
+            }
+
+            if (isCommand) {
+                // already recognized as a command
+            } else if (collator.compare(flags, "-export") == 0) {
                 command = EXPORTCERT;
-            } else if (collator.compare(flags, "-genkey") == 0 ||
-                    collator.compare(flags, "-genkeypair") == 0) {
+            } else if (collator.compare(flags, "-genkey") == 0) {
                 command = GENKEYPAIR;
-            } else if (collator.compare(flags, "-help") == 0) {
-                usage();
-                return;
-            } else if (collator.compare(flags, "-identitydb") == 0) { // obsolete
-                command = IDENTITYDB;
-            } else if (collator.compare(flags, "-import") == 0 ||
-                    collator.compare(flags, "-importcert") == 0) {
+            } else if (collator.compare(flags, "-import") == 0) {
                 command = IMPORTCERT;
-            } else if (collator.compare(flags, "-keyclone") == 0) { // obsolete
-                command = KEYCLONE;
-            } else if (collator.compare(flags, "-changealias") == 0) {
-                command = CHANGEALIAS;
-            } else if (collator.compare(flags, "-keypasswd") == 0) {
-                command = KEYPASSWD;
-            } else if (collator.compare(flags, "-list") == 0) {
-                command = LIST;
-            } else if (collator.compare(flags, "-printcert") == 0) {
-                command = PRINTCERT;
-            } else if (collator.compare(flags, "-selfcert") == 0) {     // obsolete
-                command = SELFCERT;
-            } else if (collator.compare(flags, "-storepasswd") == 0) {
-                command = STOREPASSWD;
-            } else if (collator.compare(flags, "-importkeystore") == 0) {
-                command = IMPORTKEYSTORE;
-            } else if (collator.compare(flags, "-genseckey") == 0) {
-                command = GENSECKEY;
-            } else if (collator.compare(flags, "-gencert") == 0) {
-                command = GENCERT;
-            } else if (collator.compare(flags, "-printcertreq") == 0) {
-                command = PRINTCERTREQ;
+            }
+            /*
+             * Help
+             */
+            else if (collator.compare(flags, "-help") == 0) {
+                help = true;
             }
 
             /*
@@ -284,101 +384,74 @@ public final class KeyTool {
              */
             else if (collator.compare(flags, "-keystore") == 0 ||
                     collator.compare(flags, "-destkeystore") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                ksfname = args[i];
+                ksfname = args[++i];
             } else if (collator.compare(flags, "-storepass") == 0 ||
                     collator.compare(flags, "-deststorepass") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                storePass = args[i].toCharArray();
+                storePass = args[++i].toCharArray();
                 passwords.add(storePass);
             } else if (collator.compare(flags, "-storetype") == 0 ||
                     collator.compare(flags, "-deststoretype") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                storetype = args[i];
+                storetype = args[++i];
             } else if (collator.compare(flags, "-srcstorepass") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                srcstorePass = args[i].toCharArray();
+                srcstorePass = args[++i].toCharArray();
                 passwords.add(srcstorePass);
             } else if (collator.compare(flags, "-srcstoretype") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                srcstoretype = args[i];
+                srcstoretype = args[++i];
             } else if (collator.compare(flags, "-srckeypass") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                srckeyPass = args[i].toCharArray();
+                srckeyPass = args[++i].toCharArray();
                 passwords.add(srckeyPass);
             } else if (collator.compare(flags, "-srcprovidername") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                srcProviderName = args[i];
+                srcProviderName = args[++i];
             } else if (collator.compare(flags, "-providername") == 0 ||
                     collator.compare(flags, "-destprovidername") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                providerName = args[i];
+                providerName = args[++i];
             } else if (collator.compare(flags, "-providerpath") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                pathlist = args[i];
+                pathlist = args[++i];
             } else if (collator.compare(flags, "-keypass") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                keyPass = args[i].toCharArray();
+                keyPass = args[++i].toCharArray();
                 passwords.add(keyPass);
             } else if (collator.compare(flags, "-new") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                newPass = args[i].toCharArray();
+                newPass = args[++i].toCharArray();
                 passwords.add(newPass);
             } else if (collator.compare(flags, "-destkeypass") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                destKeyPass = args[i].toCharArray();
+                destKeyPass = args[++i].toCharArray();
                 passwords.add(destKeyPass);
             } else if (collator.compare(flags, "-alias") == 0 ||
                     collator.compare(flags, "-srcalias") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                alias = args[i];
+                alias = args[++i];
             } else if (collator.compare(flags, "-dest") == 0 ||
                     collator.compare(flags, "-destalias") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                dest = args[i];
+                dest = args[++i];
             } else if (collator.compare(flags, "-dname") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                dname = args[i];
+                dname = args[++i];
             } else if (collator.compare(flags, "-keysize") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                keysize = Integer.parseInt(args[i]);
+                keysize = Integer.parseInt(args[++i]);
             } else if (collator.compare(flags, "-keyalg") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                keyAlgName = args[i];
+                keyAlgName = args[++i];
             } else if (collator.compare(flags, "-sigalg") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                sigAlgName = args[i];
+                sigAlgName = args[++i];
             } else if (collator.compare(flags, "-startdate") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                startDate = args[i];
+                startDate = args[++i];
             } else if (collator.compare(flags, "-validity") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                validity = Long.parseLong(args[i]);
+                validity = Long.parseLong(args[++i]);
             } else if (collator.compare(flags, "-ext") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                v3ext.add(args[i]);
+                v3ext.add(args[++i]);
             } else if (collator.compare(flags, "-file") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                filename = args[i];
+                filename = args[++i];
             } else if (collator.compare(flags, "-infile") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                infilename = args[i];
+                infilename = args[++i];
             } else if (collator.compare(flags, "-outfile") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                outfilename = args[i];
+                outfilename = args[++i];
             } else if (collator.compare(flags, "-sslserver") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                sslserver = args[i];
+                sslserver = args[++i];
             } else if (collator.compare(flags, "-srckeystore") == 0) {
-                if (++i == args.length) errorNeedArgument(flags);
-                srcksfname = args[i];
+                srcksfname = args[++i];
             } else if ((collator.compare(flags, "-provider") == 0) ||
                         (collator.compare(flags, "-providerclass") == 0)) {
-                if (++i == args.length) errorNeedArgument(flags);
                 if (providers == null) {
                     providers = new HashSet<Pair <String, String>> (3);
                 }
-                String providerClass = args[i];
+                String providerClass = args[++i];
                 String providerArg = null;
 
                 if (args.length > (i+1)) {
@@ -418,19 +491,24 @@ public final class KeyTool {
         }
 
         if (i<args.length) {
-            MessageFormat form = new MessageFormat
-                (rb.getString("Usage error, <arg> is not a legal command"));
-            Object[] source = {args[i]};
-            throw new RuntimeException(form.format(source));
+            System.err.println(rb.getString("Illegal option:  ") + args[i]);
+            tinyHelp();
         }
 
-        if (command == -1) {
-            System.err.println(rb.getString("Usage error: no command provided"));
-            tinyHelp();
+        if (command == null) {
+            if (help) {
+                usage();
+            } else {
+                System.err.println(rb.getString("Usage error: no command provided"));
+                tinyHelp();
+            }
+        } else if (help) {
+            usage();
+            command = null;
         }
     }
 
-    boolean isKeyStoreRelated(int cmd) {
+    boolean isKeyStoreRelated(Command cmd) {
         return cmd != PRINTCERT && cmd != PRINTCERTREQ;
     }
 
@@ -2600,7 +2678,7 @@ public final class KeyTool {
         do {
             if (maxRetry-- < 0) {
                 throw new RuntimeException(rb.getString(
-                        "Too may retries, program terminated"));
+                        "Too many retries, program terminated"));
             }
             commonName = inputString(in,
                     rb.getString("What is your first and last name?"),
@@ -3086,7 +3164,7 @@ public final class KeyTool {
         do {
             if (maxRetry-- < 0) {
                 throw new RuntimeException(rb.getString(
-                        "Too may retries, program terminated"));
+                        "Too many retries, program terminated"));
             }
             System.err.print(prompt);
             System.err.flush();
@@ -3258,7 +3336,8 @@ public final class KeyTool {
         int nmatch = 0;
         for (int i = 0; i<list.length; i++) {
             String one = list[i];
-            if (one.toLowerCase().startsWith(s.toLowerCase())) {
+            if (one.toLowerCase(Locale.ENGLISH)
+                    .startsWith(s.toLowerCase(Locale.ENGLISH))) {
                 match[nmatch++] = i;
             } else {
                 StringBuffer sb = new StringBuffer();
@@ -3368,9 +3447,9 @@ public final class KeyTool {
             // Honoring requested extensions
             if (reqex != null) {
                 for(String extstr: extstrs) {
-                    if (extstr.toLowerCase().startsWith("honored=")) {
+                    if (extstr.toLowerCase(Locale.ENGLISH).startsWith("honored=")) {
                         List<String> list = Arrays.asList(
-                                extstr.toLowerCase().substring(8).split(","));
+                                extstr.toLowerCase(Locale.ENGLISH).substring(8).split(","));
                         // First check existence of "all"
                         if (list.contains("all")) {
                             ext = reqex;    // we know ext was null
@@ -3687,227 +3766,69 @@ public final class KeyTool {
      * Prints the usage of this tool.
      */
     private void usage() {
-        System.err.println(rb.getString("keytool usage:\n"));
+        if (command != null) {
+            System.err.println("keytool " + command +
+                    rb.getString(" [OPTION]..."));
+            System.err.println();
+            System.err.println(rb.getString(command.description));
+            System.err.println();
+            System.err.println(rb.getString("Options:"));
+            System.err.println();
 
-        System.err.println(rb.getString
-                ("-certreq     [-v] [-protected]"));
-        System.err.println(rb.getString
-                ("\t     [-alias <alias>] [-sigalg <sigalg>]"));
-        System.err.println(rb.getString
-                ("\t     [-dname <dname>]"));
-        System.err.println(rb.getString
-                ("\t     [-file <csr_file>] [-keypass <keypass>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
+            // Left and right sides of the options list
+            String[] left = new String[command.options.length];
+            String[] right = new String[command.options.length];
 
-        System.err.println(rb.getString
-                ("-changealias [-v] [-protected] -alias <alias> -destalias <destalias>"));
-        System.err.println(rb.getString
-                ("\t     [-keypass <keypass>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
+            // Check if there's an unknown option
+            boolean found = false;
 
-        System.err.println(rb.getString
-                ("-delete      [-v] [-protected] -alias <alias>"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-exportcert  [-v] [-rfc] [-protected]"));
-        System.err.println(rb.getString
-                ("\t     [-alias <alias>] [-file <cert_file>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-genkeypair  [-v] [-protected]"));
-        System.err.println(rb.getString
-                ("\t     [-alias <alias>]"));
-        System.err.println(rb.getString
-                ("\t     [-keyalg <keyalg>] [-keysize <keysize>]"));
-        System.err.println(rb.getString
-                ("\t     [-sigalg <sigalg>] [-dname <dname>]"));
-        System.err.println(rb.getString
-                ("\t     [-startdate <startdate>]"));
-        System.err.println(rb.getString
-                ("\t     [-ext <key>[:critical][=<value>]]..."));
-        System.err.println(rb.getString
-                ("\t     [-validity <valDays>] [-keypass <keypass>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-gencert     [-v] [-rfc] [-protected]"));
-        System.err.println(rb.getString
-                ("\t     [-infile <infile>] [-outfile <outfile>]"));
-        System.err.println(rb.getString
-                ("\t     [-alias <alias>]"));
-        System.err.println(rb.getString
-                ("\t     [-dname <dname>]"));
-        System.err.println(rb.getString
-                ("\t     [-sigalg <sigalg>]"));
-        System.err.println(rb.getString
-                ("\t     [-startdate <startdate>]"));
-        System.err.println(rb.getString
-                ("\t     [-ext <key>[:critical][=<value>]]..."));
-        System.err.println(rb.getString
-                ("\t     [-validity <valDays>] [-keypass <keypass>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-genseckey   [-v] [-protected]"));
-        System.err.println(rb.getString
-                ("\t     [-alias <alias>] [-keypass <keypass>]"));
-        System.err.println(rb.getString
-                ("\t     [-keyalg <keyalg>] [-keysize <keysize>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
-
-        System.err.println(rb.getString("-help"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-importcert  [-v] [-noprompt] [-trustcacerts] [-protected]"));
-        System.err.println(rb.getString
-                ("\t     [-alias <alias>]"));
-        System.err.println(rb.getString
-                ("\t     [-file <cert_file>] [-keypass <keypass>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-importkeystore [-v] "));
-        System.err.println(rb.getString
-                ("\t     [-srckeystore <srckeystore>] [-destkeystore <destkeystore>]"));
-        System.err.println(rb.getString
-                ("\t     [-srcstoretype <srcstoretype>] [-deststoretype <deststoretype>]"));
-        System.err.println(rb.getString
-                ("\t     [-srcstorepass <srcstorepass>] [-deststorepass <deststorepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-srcprotected] [-destprotected]"));
-        System.err.println(rb.getString
-                ("\t     [-srcprovidername <srcprovidername>]\n\t     [-destprovidername <destprovidername>]"));
-        System.err.println(rb.getString
-                ("\t     [-srcalias <srcalias> [-destalias <destalias>]"));
-        System.err.println(rb.getString
-                ("\t       [-srckeypass <srckeypass>] [-destkeypass <destkeypass>]]"));
-        System.err.println(rb.getString
-                ("\t     [-noprompt]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-keypasswd   [-v] [-alias <alias>]"));
-        System.err.println(rb.getString
-                ("\t     [-keypass <old_keypass>] [-new <new_keypass>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-list        [-v | -rfc] [-protected]"));
-        System.err.println(rb.getString
-                ("\t     [-alias <alias>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-printcert   [-v] [-rfc] [-file <cert_file> | -sslserver <host[:port]>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-printcertreq   [-v] [-file <cert_file>]"));
-        System.err.println();
-
-        System.err.println(rb.getString
-                ("-storepasswd [-v] [-new <new_storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-keystore <keystore>] [-storepass <storepass>]"));
-        System.err.println(rb.getString
-                ("\t     [-storetype <storetype>] [-providername <name>]"));
-        System.err.println(rb.getString
-                ("\t     [-providerclass <provider_class_name> [-providerarg <arg>]] ..."));
-        System.err.println(rb.getString
-                ("\t     [-providerpath <pathlist>]"));
+            // Length of left side of options list
+            int lenLeft = 0;
+            for (int j=0; j<left.length; j++) {
+                for (String[] opt: options) {
+                    if (collator.compare(opt[0], command.options[j]) == 0) {
+                        left[j] = opt[0];
+                        if (opt[1] != null) left[j] += " " + opt[1];
+                        if (left[j].length() > lenLeft) {
+                            lenLeft = left[j].length();
+                        }
+                        right[j] = rb.getString(opt[2]);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    throw new RuntimeException("ERROR: CANNOT FIND " + command.options[j]);
+                }
+            }
+            for (int j=0; j<left.length; j++) {
+                System.err.printf(" %-" + lenLeft + "s  %s\n",
+                        left[j], right[j]);
+            }
+            System.err.println();
+            System.err.println(rb.getString(
+                    "Use \"keytool -help\" for all available commands"));
+        } else {
+            System.err.println(rb.getString(
+                    "Key and Certificate Management Tool"));
+            System.err.println();
+            System.err.println(rb.getString("Commands:"));
+            System.err.println();
+            for (Command c: Command.values()) {
+                if (c != IDENTITYDB
+                        && c != KEYCLONE
+                        && c != SELFCERT) {     // Deprecated commands
+                    System.err.printf(" %-20s%s\n", c, rb.getString(c.description));
+                }
+            }
+            System.err.println();
+            System.err.println(rb.getString(
+                    "Use \"keytool -command_name -help\" for usage of command_name"));
+        }
     }
 
     private void tinyHelp() {
-        System.err.println(rb.getString("Try keytool -help"));
-
-        // do not drown user with the help lines.
+        usage();
         if (debug) {
             throw new RuntimeException("NO BIG ERROR, SORRY");
         } else {
