@@ -569,13 +569,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // ever evacuated into this region.  If we evacuate, allocate, and
   // then evacuate we are in deep doodoo.
   void note_end_of_copying() {
-    assert(top() >= _next_top_at_mark_start,
-           "Increase only");
-    // Survivor regions will be scanned on the start of concurrent
-    // marking.
-    if (!is_survivor()) {
-      _next_top_at_mark_start = top();
-    }
+    assert(top() >= _next_top_at_mark_start, "Increase only");
+    _next_top_at_mark_start = top();
   }
 
   // Returns "false" iff no object in the region was allocated when the
