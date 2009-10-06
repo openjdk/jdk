@@ -87,6 +87,8 @@ import sun.awt.FontConfiguration;
 import sun.awt.FontDescriptor;
 import sun.awt.PlatformFont;
 import sun.awt.SunToolkit;
+import sun.font.FontManagerFactory;
+import sun.font.FontUtilities;
 
 import java.nio.charset.*;
 import java.nio.CharBuffer;
@@ -1077,7 +1079,7 @@ public class PSPrinterJob extends RasterPrinterJob {
             }
 
             int styleMask = font.getStyle() |
-                sun.font.FontManager.getFont2D(font).getStyle();
+                FontUtilities.getFont2D(font).getStyle();
 
             String style = FontConfiguration.getStyleString(styleMask);
 

@@ -32,11 +32,18 @@
 #ifndef __CONTEXTUALGLYPHSUBSTITUTIONPROCESSOR_H
 #define __CONTEXTUALGLYPHSUBSTITUTIONPROCESSOR_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "MorphTables.h"
 #include "SubtableProcessor.h"
 #include "StateTableProcessor.h"
 #include "ContextualGlyphSubstitution.h"
+
+U_NAMESPACE_BEGIN
 
 class LEGlyphStorage;
 
@@ -52,6 +59,20 @@ public:
     ContextualGlyphSubstitutionProcessor(const MorphSubtableHeader *morphSubtableHeader);
     virtual ~ContextualGlyphSubstitutionProcessor();
 
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 2.8
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 2.8
+     */
+    static UClassID getStaticClassID();
+
 private:
     ContextualGlyphSubstitutionProcessor();
 
@@ -62,6 +83,8 @@ protected:
     le_int32 markGlyph;
 
     const ContextualGlyphSubstitutionHeader *contextualGlyphSubstitutionHeader;
+
 };
 
+U_NAMESPACE_END
 #endif

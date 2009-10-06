@@ -28,11 +28,9 @@
 package sun.awt.X11;
 
 import sun.misc.Unsafe;
-import java.util.logging.*;
 
 public class XQueryTree {
         private static Unsafe unsafe = XlibWrapper.unsafe;
-    private static final Logger log = Logger.getLogger("sun.awt.X11.XQueryTree");
         private boolean __executed = false;
         long _w;
         long root_ptr = unsafe.allocateMemory(Native.getLongSize());

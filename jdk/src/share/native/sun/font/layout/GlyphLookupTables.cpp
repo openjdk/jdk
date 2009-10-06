@@ -35,6 +35,8 @@
 #include "GlyphLookupTables.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 le_bool GlyphLookupTableHeader::coversScript(LETag scriptTag) const
 {
     const ScriptListTable *scriptListTable = (const ScriptListTable *) ((char *)this + SWAPW(scriptListOffset));
@@ -51,3 +53,5 @@ le_bool GlyphLookupTableHeader::coversScriptAndLanguage(LETag scriptTag, LETag l
     // Note: don't have to SWAPW langSysTable->featureCount to check for non-zero.
     return langSysTable != NULL && langSysTable->featureCount != 0;
 }
+
+U_NAMESPACE_END

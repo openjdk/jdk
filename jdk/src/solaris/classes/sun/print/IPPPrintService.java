@@ -661,9 +661,10 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 }
             }
         } else if (category == OrientationRequested.class) {
-            if (flavor.equals(DocFlavor.INPUT_STREAM.POSTSCRIPT) ||
-                flavor.equals(DocFlavor.URL.POSTSCRIPT) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.POSTSCRIPT)) {
+            if ((flavor != null) &&
+                (flavor.equals(DocFlavor.INPUT_STREAM.POSTSCRIPT) ||
+                 flavor.equals(DocFlavor.URL.POSTSCRIPT) ||
+                 flavor.equals(DocFlavor.BYTE_ARRAY.POSTSCRIPT))) {
                 return null;
             }
 

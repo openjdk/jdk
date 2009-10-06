@@ -25,17 +25,23 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004. All Rights Reserved.
+ * (C) Copyright IBM Corp. 1998-2005. All Rights Reserved.
  *
  * WARNING: THIS FILE IS MACHINE GENERATED. DO NOT HAND EDIT IT UNLESS
  * YOU REALLY KNOW WHAT YOU'RE DOING.
- *
  */
 
 #ifndef __LESCRIPTS_H
 #define __LESCRIPTS_H
 
 #include "LETypes.h"
+/**
+ * \file
+ * \brief C++ API: Constants for Unicode script values
+ */
+
+
+U_NAMESPACE_BEGIN
 
 /**
  * Constants for Unicode script values, generated using
@@ -104,4 +110,5 @@ enum ScriptCodes {
     scriptCodeCount = 55
 };
 
+U_NAMESPACE_END
 #endif

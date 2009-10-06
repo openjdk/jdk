@@ -30,14 +30,14 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import sun.awt.SunToolkit;
 import sun.awt.X11GraphicsConfig;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 /**
 * A simple vertical scroll bar.
 */
 abstract class XScrollbar {
 
-    private static Logger log = Logger.getLogger("sun.awt.X11.XScrollbar");
+    private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XScrollbar");
     /**
      * The thread that asynchronously tells the scrollbar to scroll.
      * @see #startScrolling
@@ -118,7 +118,7 @@ abstract class XScrollbar {
     abstract protected void rebuildArrows();
 
     public void setSize(int width, int height) {
-        if (log.isLoggable(Level.FINER)) log.finer("Setting scroll bar " + this + " size to " + width + "x" + height);
+        if (log.isLoggable(PlatformLogger.FINER)) log.finer("Setting scroll bar " + this + " size to " + width + "x" + height);
         this.width = width;
         this.height = height;
     }
@@ -164,7 +164,7 @@ abstract class XScrollbar {
      * @param paintAll paint the whole scrollbar if true, just the thumb is false
      */
     void paint(Graphics g, Color colors[], boolean paintAll) {
-        if (log.isLoggable(Level.FINER)) log.finer("Painting scrollbar " + this);
+        if (log.isLoggable(PlatformLogger.FINER)) log.finer("Painting scrollbar " + this);
 
         boolean useBufferedImage = false;
         Graphics2D g2 = null;
@@ -454,7 +454,7 @@ abstract class XScrollbar {
             return;
         }
 
-        if (log.isLoggable(Level.FINER)) {
+        if (log.isLoggable(PlatformLogger.FINER)) {
              String type;
              switch (id) {
                 case MouseEvent.MOUSE_PRESSED:

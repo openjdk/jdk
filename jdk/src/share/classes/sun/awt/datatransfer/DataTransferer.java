@@ -89,7 +89,7 @@ import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
@@ -222,7 +222,7 @@ public abstract class DataTransferer {
      */
     private static DataTransferer transferer;
 
-    private static final Logger dtLog = Logger.getLogger("sun.awt.datatransfer.DataTransfer");
+    private static final PlatformLogger dtLog = PlatformLogger.getLogger("sun.awt.datatransfer.DataTransfer");
 
     static {
         Class tCharArrayClass = null, tByteArrayClass = null;
@@ -382,9 +382,9 @@ public abstract class DataTransferer {
      * "text".
      */
     public static boolean doesSubtypeSupportCharset(DataFlavor flavor) {
-        if (dtLog.isLoggable(Level.FINE)) {
+        if (dtLog.isLoggable(PlatformLogger.FINE)) {
             if (!"text".equals(flavor.getPrimaryType())) {
-                dtLog.log(Level.FINE, "Assertion (\"text\".equals(flavor.getPrimaryType())) failed");
+                dtLog.fine("Assertion (\"text\".equals(flavor.getPrimaryType())) failed");
             }
         }
 

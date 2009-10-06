@@ -39,12 +39,11 @@ import java.awt.peer.ComponentPeer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 
 public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManagerPeer {
 
-    private static final Logger focusLog = Logger.getLogger("sun.awt.focus.KeyboardFocusManagerPeerImpl");
+    private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.awt.focus.KeyboardFocusManagerPeerImpl");
 
     private static AWTAccessor.KeyboardFocusManagerAccessor kfmAccessor =
         AWTAccessor.getKeyboardFocusManagerAccessor();
@@ -64,7 +63,8 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
     public void clearGlobalFocusOwner(Window activeWindow) {
         if (activeWindow != null) {
             Component focusOwner = activeWindow.getFocusOwner();
-            if (focusLog.isLoggable(Level.FINE)) focusLog.fine("Clearing global focus owner " + focusOwner);
+            if (focusLog.isLoggable(PlatformLogger.FINE))
+                focusLog.fine("Clearing global focus owner " + focusOwner);
             if (focusOwner != null) {
                 FocusEvent fl = new CausedFocusEvent(focusOwner, FocusEvent.FOCUS_LOST, false, null,
                                                      CausedFocusEvent.Cause.CLEAR_GLOBAL_FOCUS_OWNER);
@@ -130,14 +130,16 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
             FocusEvent fl = new CausedFocusEvent(currentOwner, FocusEvent.FOCUS_LOST,
                                                  false, lightweightChild, cause);
 
-            if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Posting focus event: " + fl);
+            if (focusLog.isLoggable(PlatformLogger.FINER))
+                focusLog.finer("Posting focus event: " + fl);
             SunToolkit.postPriorityEvent(fl);
         }
 
         FocusEvent fg = new CausedFocusEvent(lightweightChild, FocusEvent.FOCUS_GAINED,
                                              false, currentOwner, cause);
 
-        if (focusLog.isLoggable(Level.FINER)) focusLog.finer("Posting focus event: " + fg);
+        if (focusLog.isLoggable(PlatformLogger.FINER))
+            focusLog.finer("Posting focus event: " + fg);
         SunToolkit.postPriorityEvent(fg);
         return true;
     }
