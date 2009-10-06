@@ -107,7 +107,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   // are saved in register windows - I's and L's in the caller's frame and O's in the stub frame
   // (as the stub's I's) when the runtime routine called by the stub creates its frame.
   int i;
-  // Always make the frame size 16 bytr aligned.
+  // Always make the frame size 16 byte aligned.
   int frame_size = round_to(additional_frame_words + register_save_size, 16);
   // OopMap frame size is in c2 stack slots (sizeof(jint)) not bytes or words
   int frame_size_in_slots = frame_size / sizeof(jint);
@@ -201,15 +201,14 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   __ stx(G5, SP, ccr_offset+STACK_BIAS);
   __ stxfsr(SP, fsr_offset+STACK_BIAS);
 
-  // Save all the FP registers
+  // Save all the FP registers: 32 doubles (32 floats correspond to the 2 halves of the first 16 doubles)
   int offset = d00_offset;
-  for( int i=0; i<64; i+=2 ) {
+  for( int i=0; i<FloatRegisterImpl::number_of_registers; i+=2 ) {
     FloatRegister f = as_FloatRegister(i);
     __ stf(FloatRegisterImpl::D,  f, SP, offset+STACK_BIAS);
+    // Record as callee saved both halves of double registers (2 float registers).
     map->set_callee_saved(VMRegImpl::stack2reg(offset>>2), f->as_VMReg());
-    if (true) {
-      map->set_callee_saved(VMRegImpl::stack2reg((offset + sizeof(float))>>2), f->as_VMReg()->next());
-    }
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + sizeof(float))>>2), f->as_VMReg()->next());
     offset += sizeof(double);
   }
 
@@ -224,7 +223,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 void RegisterSaver::restore_live_registers(MacroAssembler* masm) {
 
   // Restore all the FP registers
-  for( int i=0; i<64; i+=2 ) {
+  for( int i=0; i<FloatRegisterImpl::number_of_registers; i+=2 ) {
     __ ldf(FloatRegisterImpl::D, SP, d00_offset+i*sizeof(float)+STACK_BIAS, as_FloatRegister(i));
   }
 
