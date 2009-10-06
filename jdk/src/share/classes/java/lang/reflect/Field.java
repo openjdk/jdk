@@ -58,12 +58,12 @@ import sun.reflect.annotation.AnnotationParser;
 public final
 class Field extends AccessibleObject implements Member {
 
-    private Class               clazz;
+    private Class<?>            clazz;
     private int                 slot;
     // This is guaranteed to be interned by the VM in the 1.4
     // reflection implementation
     private String              name;
-    private Class               type;
+    private Class<?>            type;
     private int                 modifiers;
     // Generics and annotations support
     private transient String    signature;
@@ -81,8 +81,8 @@ class Field extends AccessibleObject implements Member {
 
     // More complicated security check cache needed here than for
     // Class.newInstance() and Constructor.newInstance()
-    private Class securityCheckCache;
-    private Class securityCheckTargetClassCache;
+    private Class<?> securityCheckCache;
+    private Class<?> securityCheckTargetClassCache;
 
     // Generics infrastructure
 
@@ -112,9 +112,9 @@ class Field extends AccessibleObject implements Member {
      * instantiation of these objects in Java code from the java.lang
      * package via sun.reflect.LangReflectAccess.
      */
-    Field(Class declaringClass,
+    Field(Class<?> declaringClass,
           String name,
-          Class type,
+          Class<?> type,
           int modifiers,
           int slot,
           String signature,
@@ -964,10 +964,10 @@ class Field extends AccessibleObject implements Member {
     private void doSecurityCheck(Object obj) throws IllegalAccessException {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-                Class caller = Reflection.getCallerClass(4);
-                Class targetClass = ((obj == null || !Modifier.isProtected(modifiers))
-                                     ? clazz
-                                     : obj.getClass());
+                Class<?> caller = Reflection.getCallerClass(4);
+                Class<?> targetClass = ((obj == null || !Modifier.isProtected(modifiers))
+                                        ? clazz
+                                        : obj.getClass());
 
                 synchronized (this) {
                     if ((securityCheckCache == caller)
@@ -987,10 +987,10 @@ class Field extends AccessibleObject implements Member {
     /*
      * Utility routine to paper over array type names
      */
-    static String getTypeName(Class type) {
+    static String getTypeName(Class<?> type) {
         if (type.isArray()) {
             try {
-                Class cl = type;
+                Class<?> cl = type;
                 int dimensions = 0;
                 while (cl.isArray()) {
                     dimensions++;
@@ -1025,9 +1025,9 @@ class Field extends AccessibleObject implements Member {
         return AnnotationParser.toArray(declaredAnnotations());
     }
 
-    private transient Map<Class, Annotation> declaredAnnotations;
+    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
-    private synchronized  Map<Class, Annotation> declaredAnnotations() {
+    private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
             declaredAnnotations = AnnotationParser.parseAnnotations(
                 annotations, sun.misc.SharedSecrets.getJavaLangAccess().

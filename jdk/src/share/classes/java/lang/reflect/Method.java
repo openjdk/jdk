@@ -61,14 +61,14 @@ import java.util.Map;
 public final
     class Method extends AccessibleObject implements GenericDeclaration,
                                                      Member {
-    private Class               clazz;
+    private Class<?>            clazz;
     private int                 slot;
     // This is guaranteed to be interned by the VM in the 1.4
     // reflection implementation
     private String              name;
-    private Class               returnType;
-    private Class[]             parameterTypes;
-    private Class[]             exceptionTypes;
+    private Class<?>            returnType;
+    private Class<?>[]          parameterTypes;
+    private Class<?>[]          exceptionTypes;
     private int                 modifiers;
     // Generics and annotations support
     private transient String              signature;
@@ -85,8 +85,8 @@ public final
 
     // More complicated security check cache needed here than for
     // Class.newInstance() and Constructor.newInstance()
-    private Class securityCheckCache;
-    private Class securityCheckTargetClassCache;
+    private Class<?> securityCheckCache;
+    private Class<?> securityCheckTargetClassCache;
 
    // Generics infrastructure
 
@@ -114,11 +114,11 @@ public final
      * instantiation of these objects in Java code from the java.lang
      * package via sun.reflect.LangReflectAccess.
      */
-    Method(Class declaringClass,
+    Method(Class<?> declaringClass,
            String name,
-           Class[] parameterTypes,
-           Class returnType,
-           Class[] checkedExceptions,
+           Class<?>[] parameterTypes,
+           Class<?> returnType,
+           Class<?>[] checkedExceptions,
            int modifiers,
            int slot,
            String signature,
@@ -355,8 +355,8 @@ public final
                 if (!returnType.equals(other.getReturnType()))
                     return false;
                 /* Avoid unnecessary cloning */
-                Class[] params1 = parameterTypes;
-                Class[] params2 = other.parameterTypes;
+                Class<?>[] params1 = parameterTypes;
+                Class<?>[] params2 = other.parameterTypes;
                 if (params1.length == params2.length) {
                     for (int i = 0; i < params1.length; i++) {
                         if (params1[i] != params2[i])
@@ -410,14 +410,14 @@ public final
             sb.append(Field.getTypeName(getReturnType()) + " ");
             sb.append(Field.getTypeName(getDeclaringClass()) + ".");
             sb.append(getName() + "(");
-            Class[] params = parameterTypes; // avoid clone
+            Class<?>[] params = parameterTypes; // avoid clone
             for (int j = 0; j < params.length; j++) {
                 sb.append(Field.getTypeName(params[j]));
                 if (j < (params.length - 1))
                     sb.append(",");
             }
             sb.append(")");
-            Class[] exceptions = exceptionTypes; // avoid clone
+            Class<?>[] exceptions = exceptionTypes; // avoid clone
             if (exceptions.length > 0) {
                 sb.append(" throws ");
                 for (int k = 0; k < exceptions.length; k++) {
@@ -590,10 +590,10 @@ public final
     {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-                Class caller = Reflection.getCallerClass(1);
-                Class targetClass = ((obj == null || !Modifier.isProtected(modifiers))
-                                     ? clazz
-                                     : obj.getClass());
+                Class<?> caller = Reflection.getCallerClass(1);
+                Class<?> targetClass = ((obj == null || !Modifier.isProtected(modifiers))
+                                        ? clazz
+                                        : obj.getClass());
 
                 boolean cached;
                 synchronized (this) {
@@ -702,9 +702,9 @@ public final
         return AnnotationParser.toArray(declaredAnnotations());
     }
 
-    private transient Map<Class, Annotation> declaredAnnotations;
+    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
-    private synchronized  Map<Class, Annotation> declaredAnnotations() {
+    private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
             declaredAnnotations = AnnotationParser.parseAnnotations(
                 annotations, sun.misc.SharedSecrets.getJavaLangAccess().
@@ -731,7 +731,7 @@ public final
     public Object getDefaultValue() {
         if  (annotationDefault == null)
             return null;
-        Class memberType = AnnotationType.invocationHandlerReturnType(
+        Class<?> memberType = AnnotationType.invocationHandlerReturnType(
             getReturnType());
         Object result = AnnotationParser.parseMemberValue(
             memberType, ByteBuffer.wrap(annotationDefault),
