@@ -102,7 +102,7 @@ public abstract class BootClassLoaderHook {
     public static File[] getBootstrapPaths() {
         BootClassLoaderHook hook = getHook();
         if (hook != null) {
-            return hook.getBootstrapPaths();
+            return hook.getAdditionalBootstrapPaths();
         } else {
             return EMPTY_FILE_ARRAY;
         }
