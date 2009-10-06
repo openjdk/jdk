@@ -715,7 +715,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * <ul>
      * <li>JFileChooser.CANCEL_OPTION
      * <li>JFileChooser.APPROVE_OPTION
-     * <li>JFileCHooser.ERROR_OPTION if an error occurs or the
+     * <li>JFileChooser.ERROR_OPTION if an error occurs or the
      *                  dialog is dismissed
      * </ul>
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
@@ -724,6 +724,11 @@ public class JFileChooser extends JComponent implements Accessible {
      */
     public int showDialog(Component parent, String approveButtonText)
         throws HeadlessException {
+        if (dialog != null) {
+            // Prevent to show second instance of dialog if the previous one still exists
+            return JFileChooser.ERROR_OPTION;
+        }
+
         if(approveButtonText != null) {
             setApproveButtonText(approveButtonText);
             setDialogType(CUSTOM_DIALOG);
