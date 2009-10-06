@@ -540,14 +540,12 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 
 }
 
-// Helper class mostly to avoid passing masm everywhere, and handle store
-// displacement overflow logic for LP64
+// Helper class mostly to avoid passing masm everywhere, and handle
+// store displacement overflow logic.
 class AdapterGenerator {
   MacroAssembler *masm;
-#ifdef _LP64
   Register Rdisp;
   void set_Rdisp(Register r)  { Rdisp = r; }
-#endif // _LP64
 
   void patch_callers_callsite();
   void tag_c2i_arg(frame::Tag t, Register base, int st_off, Register scratch);
@@ -558,15 +556,18 @@ class AdapterGenerator {
     return st_off - Interpreter::stackElementSize() + Interpreter::value_offset_in_bytes();
   }
 
-#ifdef _LP64
-  // On _LP64 argument slot values are loaded first into a register
-  // because they might not fit into displacement.
-  Register arg_slot(const int st_off);
-  Register next_arg_slot(const int st_off);
-#else
-  int arg_slot(const int st_off)      { return arg_offset(st_off); }
-  int next_arg_slot(const int st_off) { return next_arg_offset(st_off); }
-#endif // _LP64
+  int tag_offset(const int st_off) { return st_off + Interpreter::tag_offset_in_bytes(); }
+  int next_tag_offset(const int st_off) {
+    return st_off - Interpreter::stackElementSize() + Interpreter::tag_offset_in_bytes();
+  }
+
+  // Argument slot values may be loaded first into a register because
+  // they might not fit into displacement.
+  RegisterOrConstant arg_slot(const int st_off);
+  RegisterOrConstant next_arg_slot(const int st_off);
+
+  RegisterOrConstant tag_slot(const int st_off);
+  RegisterOrConstant next_tag_slot(const int st_off);
 
   // Stores long into offset pointed to by base
   void store_c2i_long(Register r, Register base,
@@ -656,44 +657,42 @@ void AdapterGenerator::patch_callers_callsite() {
 void AdapterGenerator::tag_c2i_arg(frame::Tag t, Register base, int st_off,
                  Register scratch) {
   if (TaggedStackInterpreter) {
-    int tag_off = st_off + Interpreter::tag_offset_in_bytes();
-#ifdef _LP64
-    Register tag_slot = Rdisp;
-    __ set(tag_off, tag_slot);
-#else
-    int tag_slot = tag_off;
-#endif // _LP64
+    RegisterOrConstant slot = tag_slot(st_off);
     // have to store zero because local slots can be reused (rats!)
     if (t == frame::TagValue) {
-      __ st_ptr(G0, base, tag_slot);
+      __ st_ptr(G0, base, slot);
     } else if (t == frame::TagCategory2) {
-      __ st_ptr(G0, base, tag_slot);
-      int next_tag_off  = st_off - Interpreter::stackElementSize() +
-                                   Interpreter::tag_offset_in_bytes();
-#ifdef _LP64
-      __ set(next_tag_off, tag_slot);
-#else
-      tag_slot = next_tag_off;
-#endif // _LP64
-      __ st_ptr(G0, base, tag_slot);
+      __ st_ptr(G0, base, slot);
+      __ st_ptr(G0, base, next_tag_slot(st_off));
     } else {
       __ mov(t, scratch);
-      __ st_ptr(scratch, base, tag_slot);
+      __ st_ptr(scratch, base, slot);
     }
   }
 }
 
-#ifdef _LP64
-Register AdapterGenerator::arg_slot(const int st_off) {
-  __ set( arg_offset(st_off), Rdisp);
-  return Rdisp;
+
+RegisterOrConstant AdapterGenerator::arg_slot(const int st_off) {
+  RegisterOrConstant roc(arg_offset(st_off));
+  return __ ensure_simm13_or_reg(roc, Rdisp);
 }
 
-Register AdapterGenerator::next_arg_slot(const int st_off){
-  __ set( next_arg_offset(st_off), Rdisp);
-  return Rdisp;
+RegisterOrConstant AdapterGenerator::next_arg_slot(const int st_off) {
+  RegisterOrConstant roc(next_arg_offset(st_off));
+  return __ ensure_simm13_or_reg(roc, Rdisp);
 }
-#endif // _LP64
+
+
+RegisterOrConstant AdapterGenerator::tag_slot(const int st_off) {
+  RegisterOrConstant roc(tag_offset(st_off));
+  return __ ensure_simm13_or_reg(roc, Rdisp);
+}
+
+RegisterOrConstant AdapterGenerator::next_tag_slot(const int st_off) {
+  RegisterOrConstant roc(next_tag_offset(st_off));
+  return __ ensure_simm13_or_reg(roc, Rdisp);
+}
+
 
 // Stores long into offset pointed to by base
 void AdapterGenerator::store_c2i_long(Register r, Register base,
@@ -1052,9 +1051,7 @@ void AdapterGenerator::gen_i2c_adapter(
 
     // Load in argument order going down.
     const int ld_off = (total_args_passed-i)*Interpreter::stackElementSize();
-#ifdef _LP64
     set_Rdisp(G1_scratch);
-#endif // _LP64
 
     VMReg r_1 = regs[i].first();
     VMReg r_2 = regs[i].second();
@@ -1074,7 +1071,7 @@ void AdapterGenerator::gen_i2c_adapter(
 #ifdef _LP64
         // In V9, longs are given 2 64-bit slots in the interpreter, but the
         // data is passed in only 1 slot.
-        Register slot = (sig_bt[i]==T_LONG) ?
+        RegisterOrConstant slot = (sig_bt[i] == T_LONG) ?
               next_arg_slot(ld_off) : arg_slot(ld_off);
         __ ldx(Gargs, slot, r);
 #else
@@ -1092,7 +1089,7 @@ void AdapterGenerator::gen_i2c_adapter(
         // data is passed in only 1 slot.  This code also handles longs that
         // are passed on the stack, but need a stack-to-stack move through a
         // spare float register.
-        Register slot = (sig_bt[i]==T_LONG || sig_bt[i] == T_DOUBLE) ?
+        RegisterOrConstant slot = (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) ?
               next_arg_slot(ld_off) : arg_slot(ld_off);
         __ ldf(FloatRegisterImpl::D, Gargs, slot, r_1->as_FloatRegister());
 #else
@@ -1109,8 +1106,9 @@ void AdapterGenerator::gen_i2c_adapter(
       // Convert stack slot to an SP offset
       int st_off = reg2offset(regs[i].first()) + STACK_BIAS;
       // Store down the shuffled stack word.  Target address _is_ aligned.
-      if (!r_2->is_valid()) __ stf(FloatRegisterImpl::S, r_1->as_FloatRegister(), SP, st_off);
-      else                  __ stf(FloatRegisterImpl::D, r_1->as_FloatRegister(), SP, st_off);
+      RegisterOrConstant slot = __ ensure_simm13_or_reg(st_off, Rdisp);
+      if (!r_2->is_valid()) __ stf(FloatRegisterImpl::S, r_1->as_FloatRegister(), SP, slot);
+      else                  __ stf(FloatRegisterImpl::D, r_1->as_FloatRegister(), SP, slot);
     }
   }
   bool made_space = false;
