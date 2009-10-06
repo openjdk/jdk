@@ -43,6 +43,8 @@ import sun.awt.windows.WFontConfiguration;
 import sun.awt.windows.WPrinterJob;
 import sun.awt.windows.WToolkit;
 import sun.font.FontManager;
+import sun.font.FontManagerFactory;
+import sun.font.SunFontManager;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.WindowsSurfaceManagerFactory;
@@ -68,7 +70,6 @@ public class Win32GraphicsEnvironment
         // setup flags before initializing native layer
         WindowsFlags.initFlags();
         initDisplayWrapper();
-        eudcFontFileName = getEUDCFontFile();
 
         // Install correct surface manager factory.
         SurfaceManagerFactory.setInstance(new WindowsSurfaceManagerFactory());
@@ -211,14 +212,6 @@ public class Win32GraphicsEnvironment
  * ----END DISPLAY CHANGE SUPPORT----
  */
 
-    /* Used on Windows to obtain from the windows registry the name
-     * of a file containing the system EUFC font. If running in one of
-     * the locales for which this applies, and one is defined, the font
-     * defined by this file is appended to all composite fonts as a
-     * fallback component.
-     */
-    private static native String getEUDCFontFile();
-
     /**
      * Whether registerFontFile expects absolute or relative
      * font file names.
@@ -226,114 +219,6 @@ public class Win32GraphicsEnvironment
     protected boolean useAbsoluteFontFileNames() {
         return false;
     }
-
-    /* Unlike the shared code version, this expects a base file name -
-     * not a full path name.
-     * The font configuration file has base file names and the FontConfiguration
-     * class reports these back to the GraphicsEnvironment, so these
-     * are the componentFileNames of CompositeFonts.
-     */
-    protected void registerFontFile(String fontFileName, String[] nativeNames,
-                                    int fontRank, boolean defer) {
-
-        // REMIND: case compare depends on platform
-        if (registeredFontFiles.contains(fontFileName)) {
-            return;
-        }
-        registeredFontFiles.add(fontFileName);
-
-        int fontFormat;
-        if (ttFilter.accept(null, fontFileName)) {
-            fontFormat = FontManager.FONTFORMAT_TRUETYPE;
-        } else if (t1Filter.accept(null, fontFileName)) {
-            fontFormat = FontManager.FONTFORMAT_TYPE1;
-        } else {
-            /* on windows we don't use/register native fonts */
-            return;
-        }
-
-        if (fontPath == null) {
-            fontPath = getPlatformFontPath(noType1Font);
-        }
-
-        /* Look in the JRE font directory first.
-         * This is playing it safe as we would want to find fonts in the
-         * JRE font directory ahead of those in the system directory
-         */
-        String tmpFontPath = jreFontDirName+File.pathSeparator+fontPath;
-        StringTokenizer parser = new StringTokenizer(tmpFontPath,
-                                                     File.pathSeparator);
-
-        boolean found = false;
-        try {
-            while (!found && parser.hasMoreTokens()) {
-                String newPath = parser.nextToken();
-                boolean ujr = newPath.equals(jreFontDirName);
-                File theFile = new File(newPath, fontFileName);
-                if (theFile.canRead()) {
-                    found = true;
-                    String path = theFile.getAbsolutePath();
-                    if (defer) {
-                        FontManager.registerDeferredFont(fontFileName, path,
-                                                         nativeNames,
-                                                         fontFormat, ujr,
-                                                         fontRank);
-                    } else {
-                        FontManager.registerFontFile(path, nativeNames,
-                                                     fontFormat, ujr,
-                                                     fontRank);
-                    }
-                    break;
-                }
-            }
-        } catch (NoSuchElementException e) {
-            System.err.println(e);
-        }
-        if (!found) {
-            addToMissingFontFileList(fontFileName);
-        }
-    }
-
-    /* register only TrueType/OpenType fonts
-     * Because these need to be registed just for use when printing,
-     * we defer the actual registration and the static initialiser
-     * for the printing class makes the call to registerJREFontsForPrinting()
-     */
-    static String fontsForPrinting = null;
-    protected void registerJREFontsWithPlatform(String pathName) {
-        fontsForPrinting = pathName;
-    }
-
-    public static void registerJREFontsForPrinting() {
-        final String pathName;
-        synchronized (Win32GraphicsEnvironment.class) {
-            GraphicsEnvironment.getLocalGraphicsEnvironment();
-            if (fontsForPrinting == null) {
-                return;
-            }
-            pathName = fontsForPrinting;
-            fontsForPrinting = null;
-        }
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                public Object run() {
-                    File f1 = new File(pathName);
-                    String[] ls = f1.list(new TTFilter());
-                    if (ls == null) {
-                        return null;
-                    }
-                    for (int i=0; i <ls.length; i++ ) {
-                        File fontFile = new File(f1, ls[i]);
-                        registerFontWithPlatform(fontFile.getAbsolutePath());
-                    }
-                    return null;
-                }
-         });
-    }
-
-    protected static native void registerFontWithPlatform(String fontName);
-
-    protected static native void deRegisterFontWithPlatform(String fontName);
 
     protected GraphicsDevice makeScreenDevice(int screennum) {
         GraphicsDevice device = null;
@@ -348,7 +233,7 @@ public class Win32GraphicsEnvironment
 
     // Implements SunGraphicsEnvironment.createFontConfiguration.
     protected FontConfiguration createFontConfiguration() {
-       FontConfiguration fc = new WFontConfiguration(this);
+       FontConfiguration fc = new WFontConfiguration(SunFontManager.getInstance());
        fc.init();
        return fc;
     }
@@ -356,7 +241,12 @@ public class Win32GraphicsEnvironment
     public FontConfiguration createFontConfiguration(boolean preferLocaleFonts,
                                                      boolean preferPropFonts) {
 
-        return new WFontConfiguration(this, preferLocaleFonts,preferPropFonts);
+        return new WFontConfiguration(SunFontManager.getInstance(),
+                preferLocaleFonts,preferPropFonts);
+    }
+
+    public boolean isDisplayLocal() {
+        return true;
     }
 
     @Override
@@ -392,11 +282,6 @@ public class Win32GraphicsEnvironment
      */
     private static void dwmCompositionChanged(boolean enabled) {
         isDWMCompositionEnabled = enabled;
-    }
-
-    @Override
-    public boolean isDisplayLocal() {
-        return true;
     }
 
     /**

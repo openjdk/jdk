@@ -34,12 +34,12 @@ import java.util.Locale;
 import java.util.Arrays;
 import com.sun.java.swing.plaf.motif.*;
 import javax.swing.plaf.ComponentUI;
-import java.util.logging.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.util.logging.PlatformLogger;
 
 class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListener, ItemListener, KeyEventDispatcher, XChoicePeerListener {
-    private static final Logger log = Logger.getLogger("sun.awt.X11.XFileDialogPeer");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XFileDialogPeer");
 
     FileDialog  target;
 

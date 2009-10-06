@@ -32,10 +32,17 @@
 #ifndef __STATETABLEPROCESSOR_H
 #define __STATETABLEPROCESSOR_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "MorphTables.h"
 #include "MorphStateTables.h"
 #include "SubtableProcessor.h"
+
+U_NAMESPACE_BEGIN
 
 class LEGlyphStorage;
 
@@ -72,4 +79,5 @@ private:
     StateTableProcessor &operator=(const StateTableProcessor &other); // forbid copying of this class
 };
 
+U_NAMESPACE_END
 #endif

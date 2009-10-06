@@ -32,8 +32,15 @@
 #ifndef __SCRIPTANDLANGUAGE_H
 #define __SCRIPTANDLANGUAGE_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
+
+U_NAMESPACE_BEGIN
 
 typedef TagAndOffsetRecord LangSysRecord;
 
@@ -65,4 +72,6 @@ struct ScriptListTable
     const LangSysTable  *findLanguage(LETag scriptTag, LETag languageTag, le_bool exactMatch = FALSE) const;
 };
 
+U_NAMESPACE_END
 #endif
+

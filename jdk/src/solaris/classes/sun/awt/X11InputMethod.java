@@ -57,7 +57,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -68,7 +68,7 @@ import java.util.regex.Pattern;
  * @author JavaSoft International
  */
 public abstract class X11InputMethod extends InputMethodAdapter {
-    private static final Logger log = Logger.getLogger("sun.awt.X11InputMethod");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11InputMethod");
     /*
      * The following XIM* values must be the same as those defined in
      * Xlib.h
@@ -324,8 +324,8 @@ public abstract class X11InputMethod extends InputMethodAdapter {
             return;
 
         if (lastXICFocussedComponent != null){
-            if (log.isLoggable(Level.FINE)) log.log(Level.FINE, "XICFocused {0}, AWTFocused {1}", new Object[] {
-                lastXICFocussedComponent, awtFocussedComponent});
+            if (log.isLoggable(PlatformLogger.FINE)) log.fine("XICFocused {0}, AWTFocused {1}",
+                                                              lastXICFocussedComponent, awtFocussedComponent);
         }
 
         if (pData == 0) {
