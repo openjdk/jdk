@@ -295,12 +295,6 @@ do {                          \
 } while (0)
 #endif // _MARKING_STATS_
 
-// Some extra guarantees that I like to also enable in optimised mode
-// when debugging. If you want to enable them, comment out the assert
-// macro and uncomment out the guaratee macro
-// #define tmp_guarantee_CM(expr, str) guarantee(expr, str)
-#define tmp_guarantee_CM(expr, str) assert(expr, str)
-
 typedef enum {
   no_verbose  = 0,   // verbose turned off
   stats_verbose,     // only prints stats at the end of marking
@@ -485,15 +479,15 @@ protected:
 
   // Returns the task with the given id
   CMTask* task(int id) {
-    guarantee( 0 <= id && id < (int) _active_tasks, "task id not within "
-               "active bounds" );
+    assert(0 <= id && id < (int) _active_tasks,
+           "task id not within active bounds");
     return _tasks[id];
   }
 
   // Returns the task queue with the given id
   CMTaskQueue* task_queue(int id) {
-    guarantee( 0 <= id && id < (int) _active_tasks, "task queue id not within "
-               "active bounds" );
+    assert(0 <= id && id < (int) _active_tasks,
+           "task queue id not within active bounds");
     return (CMTaskQueue*) _task_queues->queue(id);
   }
 
@@ -961,8 +955,7 @@ public:
 
   // It scans an object and visits its children.
   void scan_object(oop obj) {
-    tmp_guarantee_CM( _nextMarkBitMap->isMarked((HeapWord*) obj),
-                      "invariant" );
+    assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
 
     if (_cm->verbose_high())
       gclog_or_tty->print_cr("[%d] we're scanning object "PTR_FORMAT,
@@ -1001,14 +994,13 @@ public:
 
   // moves the local finger to a new location
   inline void move_finger_to(HeapWord* new_finger) {
-    tmp_guarantee_CM( new_finger >= _finger && new_finger < _region_limit,
-                   "invariant" );
+    assert(new_finger >= _finger && new_finger < _region_limit, "invariant");
     _finger = new_finger;
   }
 
   // moves the region finger to a new location
   inline void move_region_finger_to(HeapWord* new_finger) {
-    tmp_guarantee_CM( new_finger < _cm->finger(), "invariant" );
+    assert(new_finger < _cm->finger(), "invariant");
     _region_finger = new_finger;
   }
 
