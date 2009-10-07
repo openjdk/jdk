@@ -207,7 +207,7 @@ bool GenericTaskQueue<E>::push_slow(E t, uint dirty_n_elems) {
     // Actually means 0, so do the push.
     uint localBot = _bottom;
     _elems[localBot] = t;
-    _bottom = increment_index(localBot);
+    OrderAccess::release_store(&_bottom, increment_index(localBot));
     return true;
   }
   return false;
@@ -485,7 +485,7 @@ template<class E> inline bool GenericTaskQueue<E>::push(E t) {
   assert((dirty_n_elems >= 0) && (dirty_n_elems < N), "n_elems out of range.");
   if (dirty_n_elems < max_elems()) {
     _elems[localBot] = t;
-    _bottom = increment_index(localBot);
+    OrderAccess::release_store(&_bottom, increment_index(localBot));
     return true;
   } else {
     return push_slow(t, dirty_n_elems);
