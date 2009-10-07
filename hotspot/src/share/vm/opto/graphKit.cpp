@@ -620,6 +620,18 @@ BuildCutout::~BuildCutout() {
   assert(kit->stopped(), "cutout code must stop, throw, return, etc.");
 }
 
+//---------------------------PreserveReexecuteState----------------------------
+PreserveReexecuteState::PreserveReexecuteState(GraphKit* kit) {
+  assert(!kit->stopped(), "must call stopped() before");
+  _kit    =    kit;
+  _sp     =    kit->sp();
+  _reexecute = kit->jvms()->_reexecute;
+}
+PreserveReexecuteState::~PreserveReexecuteState() {
+  if (_kit->stopped()) return;
+  _kit->jvms()->_reexecute = _reexecute;
+  _kit->set_sp(_sp);
+}
 
 //------------------------------clone_map--------------------------------------
 // Implementation of PreserveJVMState
@@ -738,6 +750,18 @@ bool GraphKit::dead_locals_are_killed() {
 
 #endif //ASSERT
 
+// Helper function for enforcing certain bytecodes to reexecute if
+// deoptimization happens
+static bool should_reexecute_implied_by_bytecode(JVMState *jvms) {
+  ciMethod* cur_method = jvms->method();
+  int       cur_bci   = jvms->bci();
+  if (cur_method != NULL && cur_bci != InvocationEntryBci) {
+    Bytecodes::Code code = cur_method->java_code_at_bci(cur_bci);
+    return Interpreter::bytecode_should_reexecute(code);
+  } else
+    return false;
+}
+
 // Helper function for adding JVMState and debug information to node
 void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   // Add the safepoint edges to the call (or other safepoint).
@@ -780,6 +804,13 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   // do not scribble on the input jvms
   JVMState* out_jvms = youngest_jvms->clone_deep(C);
   call->set_jvms(out_jvms); // Start jvms list for call node
+
+  // For a known set of bytecodes, the interpreter should reexecute them if
+  // deoptimization happens. We set the reexecute state for them here
+  if (out_jvms->is_reexecute_undefined() && //don't change if already specified
+      should_reexecute_implied_by_bytecode(out_jvms)) {
+    out_jvms->set_should_reexecute(true); //NOTE: youngest_jvms not changed
+  }
 
   // Presize the call:
   debug_only(uint non_debug_edges = call->req());
@@ -1057,7 +1088,7 @@ Node* GraphKit::load_array_length(Node* array) {
     alen = _gvn.transform( new (C, 3) LoadRangeNode(0, immutable_memory(), r_adr, TypeInt::POS));
   } else {
     alen = alloc->Ideal_length();
-    Node* ccast = alloc->make_ideal_length(_gvn.type(array)->is_aryptr(), &_gvn);
+    Node* ccast = alloc->make_ideal_length(_gvn.type(array)->is_oopptr(), &_gvn);
     if (ccast != alen) {
       alen = _gvn.transform(ccast);
     }
@@ -1094,8 +1125,8 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
     case T_OBJECT : {
       const Type *t = _gvn.type( value );
 
-      const TypeInstPtr* tp = t->isa_instptr();
-      if (tp != NULL && !tp->klass()->is_loaded()
+      const TypeOopPtr* tp = t->isa_oopptr();
+      if (tp != NULL && tp->klass() != NULL && !tp->klass()->is_loaded()
           // Only for do_null_check, not any of its siblings:
           && !assert_null && null_control == NULL) {
         // Usually, any field access or invocation on an unloaded oop type

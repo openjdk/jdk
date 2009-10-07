@@ -25,7 +25,7 @@
  * @test
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
- *      6464154 6523983 6206031 4960438 6631352 6631966
+ *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm Basic
  * @author Martin Buchholz
@@ -302,6 +302,14 @@ public class Basic {
                 printUTF8(val == null ? "null" : val);
             } else if (action.equals("System.getenv()")) {
                 printUTF8(getenvAsString(System.getenv()));
+            } else if (action.equals("ArrayOOME")) {
+                Object dummy;
+                switch(new Random().nextInt(3)) {
+                case 0: dummy = new Integer[Integer.MAX_VALUE]; break;
+                case 1: dummy = new double[Integer.MAX_VALUE];  break;
+                case 2: dummy = new byte[Integer.MAX_VALUE][];  break;
+                default: throw new InternalError();
+                }
             } else if (action.equals("pwd")) {
                 printUTF8(new File(System.getProperty("user.dir"))
                           .getCanonicalPath());
@@ -1470,6 +1478,22 @@ public class Basic {
 
                 pb.directory(dir);
             }
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // OOME in child allocating maximally sized array
+        // Test for hotspot/jvmti bug 6850957
+        //----------------------------------------------------------------
+        try {
+            List<String> list = new ArrayList<String>(javaChildArgs);
+            list.add(1, String.format("-XX:OnOutOfMemoryError=%s -version",
+                                      javaExe));
+            list.add("ArrayOOME");
+            ProcessResults r = run(new ProcessBuilder(list));
+            check(r.out().contains("java.lang.OutOfMemoryError:"));
+            check(r.out().contains(javaExe));
+            check(r.err().contains(System.getProperty("java.version")));
+            equal(r.exitValue(), 1);
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------

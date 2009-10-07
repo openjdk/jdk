@@ -378,7 +378,10 @@ public final class Byte extends Number implements Comparable<Byte> {
     }
 
     /**
-     * Returns a hash code for this {@code Byte}.
+     * Returns a hash code for this {@code Byte}; equal to the result
+     * of invoking {@code intValue()}.
+     *
+     * @return a hash code value for this {@code Byte}
      */
     public int hashCode() {
         return (int)value;
@@ -415,7 +418,25 @@ public final class Byte extends Number implements Comparable<Byte> {
      * @since   1.2
      */
     public int compareTo(Byte anotherByte) {
-        return this.value - anotherByte.value;
+        return compare(this.value, anotherByte.value);
+    }
+
+    /**
+     * Compares two {@code byte} values numerically.
+     * The value returned is identical to what would be returned by:
+     * <pre>
+     *    Byte.valueOf(x).compareTo(Byte.valueOf(y))
+     * </pre>
+     *
+     * @param  x the first {@code byte} to compare
+     * @param  y the second {@code byte} to compare
+     * @return the value {@code 0} if {@code x == y};
+     *         a value less than {@code 0} if {@code x < y}; and
+     *         a value greater than {@code 0} if {@code x > y}
+     * @since 1.7
+     */
+    public static int compare(byte x, byte y) {
+        return x - y;
     }
 
     /**

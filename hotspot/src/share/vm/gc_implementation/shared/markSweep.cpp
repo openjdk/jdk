@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 GrowableArray<oop>*     MarkSweep::_marking_stack       = NULL;
 GrowableArray<Klass*>*  MarkSweep::_revisit_klass_stack = NULL;
+GrowableArray<DataLayout*>*  MarkSweep::_revisit_mdo_stack = NULL;
 
 GrowableArray<oop>*     MarkSweep::_preserved_oop_stack = NULL;
 GrowableArray<markOop>* MarkSweep::_preserved_mark_stack= NULL;
@@ -62,8 +63,31 @@ void MarkSweep::revisit_weak_klass_link(Klass* k) {
 void MarkSweep::follow_weak_klass_links() {
   // All klasses on the revisit stack are marked at this point.
   // Update and follow all subklass, sibling and implementor links.
+  if (PrintRevisitStats) {
+    gclog_or_tty->print_cr("#classes in system dictionary = %d", SystemDictionary::number_of_classes());
+    gclog_or_tty->print_cr("Revisit klass stack length = %d", _revisit_klass_stack->length());
+  }
   for (int i = 0; i < _revisit_klass_stack->length(); i++) {
     _revisit_klass_stack->at(i)->follow_weak_klass_links(&is_alive,&keep_alive);
+  }
+  follow_stack();
+}
+
+void MarkSweep::revisit_mdo(DataLayout* p) {
+  _revisit_mdo_stack->push(p);
+}
+
+void MarkSweep::follow_mdo_weak_refs() {
+  // All strongly reachable oops have been marked at this point;
+  // we can visit and clear any weak references from MDO's which
+  // we memoized during the strong marking phase.
+  assert(_marking_stack->is_empty(), "Marking stack should be empty");
+  if (PrintRevisitStats) {
+    gclog_or_tty->print_cr("#classes in system dictionary = %d", SystemDictionary::number_of_classes());
+    gclog_or_tty->print_cr("Revisit MDO stack length = %d", _revisit_mdo_stack->length());
+  }
+  for (int i = 0; i < _revisit_mdo_stack->length(); i++) {
+    _revisit_mdo_stack->at(i)->follow_weak_refs(&is_alive);
   }
   follow_stack();
 }

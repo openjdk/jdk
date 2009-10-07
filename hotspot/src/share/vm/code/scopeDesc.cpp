@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,19 @@
 # include "incls/_scopeDesc.cpp.incl"
 
 
-ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset) {
+ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute) {
   _code          = code;
   _decode_offset = decode_offset;
   _objects       = decode_object_values(obj_decode_offset);
+  _reexecute     = reexecute;
   decode_body();
 }
 
-ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset) {
+ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, bool reexecute) {
   _code          = code;
   _decode_offset = decode_offset;
   _objects       = decode_object_values(DebugInformationRecorder::serialized_null);
+  _reexecute     = reexecute;
   decode_body();
 }
 
@@ -45,6 +47,7 @@ ScopeDesc::ScopeDesc(const ScopeDesc* parent) {
   _code          = parent->_code;
   _decode_offset = parent->_sender_decode_offset;
   _objects       = parent->_objects;
+  _reexecute     = false; //reexecute only applies to the first scope
   decode_body();
 }
 
@@ -66,6 +69,7 @@ void ScopeDesc::decode_body() {
     _sender_decode_offset = stream->read_int();
     _method = methodHandle((methodOop) stream->read_oop());
     _bci    = stream->read_bci();
+
     // decode offsets for body and sender
     _locals_decode_offset      = stream->read_int();
     _expressions_decode_offset = stream->read_int();
@@ -170,6 +174,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     st->print("ScopeDesc[%d]@" PTR_FORMAT " ", _decode_offset, _code->instructions_begin());
     st->print_cr(" offset:     %d",    _decode_offset);
     st->print_cr(" bci:        %d",    bci());
+    st->print_cr(" reexecute:  %s",    should_reexecute() ? "true" : "false");
     st->print_cr(" locals:     %d",    _locals_decode_offset);
     st->print_cr(" stack:      %d",    _expressions_decode_offset);
     st->print_cr(" monitor:    %d",    _monitors_decode_offset);

@@ -990,8 +990,8 @@ void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
 // (5) We know there is no dependence cycle, so there in no other case;
 // (6) Finally, all memory ops in another single pack should be moved in the same direction.
 //
-// To schedule a load pack: the memory edge of every loads in the pack must be
-// the same as the memory edge of the last executed load in the pack
+// To schedule a load pack, we use the memory state of either the first or the last load in
+// the pack, based on the dependence constraint.
 void SuperWord::co_locate_pack(Node_List* pk) {
   if (pk->at(0)->is_Store()) {
     MemNode* first     = executed_first(pk)->as_Mem();
@@ -1076,15 +1076,32 @@ void SuperWord::co_locate_pack(Node_List* pk) {
       current = my_mem->as_Mem();
     } // end while
   } else if (pk->at(0)->is_Load()) { //load
-    // all use the memory state that the last executed load uses
-    LoadNode* last_load  = executed_last(pk)->as_Load();
-    Node* last_mem       = last_load->in(MemNode::Memory);
-    _igvn.hash_delete(last_mem);
-    // Give each load same memory state as last
+    // all loads in the pack should have the same memory state. By default,
+    // we use the memory state of the last load. However, if any load could
+    // not be moved down due to the dependence constraint, we use the memory
+    // state of the first load.
+    Node* last_mem  = executed_last(pk)->in(MemNode::Memory);
+    Node* first_mem = executed_first(pk)->in(MemNode::Memory);
+    bool schedule_last = true;
+    for (uint i = 0; i < pk->size(); i++) {
+      Node* ld = pk->at(i);
+      for (Node* current = last_mem; current != ld->in(MemNode::Memory);
+           current=current->in(MemNode::Memory)) {
+        assert(current != first_mem, "corrupted memory graph");
+        if(current->is_Mem() && !independent(current, ld)){
+          schedule_last = false; // a later store depends on this load
+          break;
+        }
+      }
+    }
+
+    Node* mem_input = schedule_last ? last_mem : first_mem;
+    _igvn.hash_delete(mem_input);
+    // Give each load the same memory state
     for (uint i = 0; i < pk->size(); i++) {
       LoadNode* ld = pk->at(i)->as_Load();
       _igvn.hash_delete(ld);
-      ld->set_req(MemNode::Memory, last_mem);
+      ld->set_req(MemNode::Memory, mem_input);
       _igvn._worklist.push(ld);
     }
   }

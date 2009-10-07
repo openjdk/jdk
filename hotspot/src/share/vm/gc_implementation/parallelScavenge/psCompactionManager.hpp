@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ class ParCompactionManager : public CHeapObj {
 
 #if 1  // does this happen enough to need a per thread stack?
   GrowableArray<Klass*>*        _revisit_klass_stack;
+  GrowableArray<DataLayout*>*   _revisit_mdo_stack;
 #endif
   static ParMarkBitMap* _mark_bitmap;
 
@@ -154,6 +155,7 @@ class ParCompactionManager : public CHeapObj {
 #if 1
   // Probably stays as a growable array
   GrowableArray<Klass*>* revisit_klass_stack() { return _revisit_klass_stack; }
+  GrowableArray<DataLayout*>* revisit_mdo_stack() { return _revisit_mdo_stack; }
 #endif
 
   // Save oop for later processing.  Must not fail.

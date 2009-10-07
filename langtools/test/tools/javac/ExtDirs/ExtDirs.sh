@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 1999-2004 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,14 @@ echo "CLASSPATH=${CLASSPATH}"
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
     PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    PS=";" # native PS, not Cygwin PS
+    FS="/"
+    ;;
   Windows* )
-    NULL=NUL
     PS=";"
     FS="\\"
     ;;

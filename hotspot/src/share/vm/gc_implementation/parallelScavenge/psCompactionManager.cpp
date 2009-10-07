@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,16 @@ ParCompactionManager::ParCompactionManager() :
   int size =
     (SystemDictionary::number_of_classes() * 2) * 2 / ParallelGCThreads;
   _revisit_klass_stack = new (ResourceObj::C_HEAP) GrowableArray<Klass*>(size, true);
+  // From some experiments (#klass/k)^2 for k = 10 seems a better fit, but this will
+  // have to do for now until we are able to investigate a more optimal setting.
+  _revisit_mdo_stack = new (ResourceObj::C_HEAP) GrowableArray<DataLayout*>(size*2, true);
 
 }
 
 ParCompactionManager::~ParCompactionManager() {
   delete _overflow_stack;
   delete _revisit_klass_stack;
+  delete _revisit_mdo_stack;
   // _manager_array and _stack_array are statics
   // shared with all instances of ParCompactionManager
   // should not be deallocated.
@@ -195,6 +199,7 @@ ParCompactionManager::gc_thread_compaction_manager(int index) {
 void ParCompactionManager::reset() {
   for(uint i=0; i<ParallelGCThreads+1; i++) {
     manager_array(i)->revisit_klass_stack()->clear();
+    manager_array(i)->revisit_mdo_stack()->clear();
   }
 }
 
@@ -296,6 +301,7 @@ void ParCompactionManager::drain_region_stacks() {
 
 #ifdef ASSERT
 bool ParCompactionManager::stacks_have_been_allocated() {
-  return (revisit_klass_stack()->data_addr() != NULL);
+  return (revisit_klass_stack()->data_addr() != NULL &&
+          revisit_mdo_stack()->data_addr() != NULL);
 }
 #endif

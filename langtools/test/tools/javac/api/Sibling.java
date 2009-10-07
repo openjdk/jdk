@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,9 @@ public class Sibling {
                                                             "foo.bar.baz.Test",
                                                             CLASS,
                                                             sibling);
-        String name =
-            new File("Test.class").getAbsolutePath().replace(File.separatorChar, '/');
-        if (!classFile.toUri().getPath().equals(name))
-            throw new AssertionError("Expected " + name + ", got " +
-                                     classFile.toUri().getPath());
+        File file = new File("Test.class").getAbsoluteFile();
+        if (!classFile.toUri().equals(file.toURI()))
+            throw new AssertionError("Expected " + file.toURI() + ", got " +
+                                     classFile.toUri());
     }
 }

@@ -1581,7 +1581,7 @@ public class Window extends Container implements Accessible {
         if (exclusionType == Dialog.ModalExclusionType.TOOLKIT_EXCLUDE) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPermission(SecurityConstants.TOOLKIT_MODALITY_PERMISSION);
+                sm.checkPermission(SecurityConstants.AWT.TOOLKIT_MODALITY_PERMISSION);
             }
         }
         modalExclusionType = exclusionType;
@@ -2129,7 +2129,7 @@ public class Window extends Container implements Accessible {
     public final void setAlwaysOnTop(boolean alwaysOnTop) throws SecurityException {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
         }
 
         boolean oldAlwaysOnTop;

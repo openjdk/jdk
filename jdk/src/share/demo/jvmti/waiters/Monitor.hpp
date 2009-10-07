@@ -35,6 +35,7 @@ class Monitor {
 
   private:
     char     name[64];
+    int      slot;
     unsigned contends;
     unsigned waits;
     unsigned timeouts;
@@ -42,6 +43,8 @@ class Monitor {
   public:
     Monitor(jvmtiEnv *jvmti, JNIEnv *env, jobject object);
     ~Monitor();
+    int get_slot();
+    void set_slot(int i);
     void contended();
     void waited();
     void timeout();

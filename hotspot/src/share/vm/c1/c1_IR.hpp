@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,15 +239,20 @@ class IRScopeDebugInfo: public CompilationResourceObj {
   GrowableArray<MonitorValue*>* monitors()    { return _monitors;    }
   IRScopeDebugInfo*             caller()      { return _caller;      }
 
-  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset) {
+  //Whether we should reexecute this bytecode for deopt
+  bool should_reexecute();
+
+  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool topmost) {
     if (caller() != NULL) {
       // Order is significant:  Must record caller first.
-      caller()->record_debug_info(recorder, pc_offset);
+      caller()->record_debug_info(recorder, pc_offset, false/*topmost*/);
     }
     DebugToken* locvals = recorder->create_scope_values(locals());
     DebugToken* expvals = recorder->create_scope_values(expressions());
     DebugToken* monvals = recorder->create_monitor_values(monitors());
-    recorder->describe_scope(pc_offset, scope()->method(), bci(), locvals, expvals, monvals);
+    // reexecute allowed only for the topmost frame
+    bool      reexecute = topmost ? should_reexecute() : false;
+    recorder->describe_scope(pc_offset, scope()->method(), bci(), reexecute, locvals, expvals, monvals);
   }
 };
 

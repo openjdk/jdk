@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,14 @@ public abstract class JavadocTester {
      * The current run of javadoc
      */
     private static int javadocRunNum = 0;
+
+    /**
+     * Whether or not to match newlines exactly.
+     * Set this value to false if the match strings
+     * contain text from javadoc comments containing
+     * non-platform newlines.
+     */
+    protected boolean exactNewlineMatch = true;
 
     /**
      * Construct a JavadocTester.
@@ -419,14 +427,21 @@ public abstract class JavadocTester {
     /**
      * Search for the string in the given file and return true
      * if the string was found.
+     * If exactNewlineMatch is false, newlines will be normalized
+     * before the comparison.
      *
      * @param fileString    the contents of the file to search through
      * @param stringToFind  the string to search for
      * @return              true if the string was found
      */
     private boolean findString(String fileString, String stringToFind) {
-        return fileString.indexOf(stringToFind) >= 0;
+        if (exactNewlineMatch) {
+            return fileString.indexOf(stringToFind) >= 0;
+        } else {
+            return fileString.replace(NL, "\n").indexOf(stringToFind.replace(NL, "\n")) >= 0;
+        }
     }
+
 
     /**
      * Return the standard output.

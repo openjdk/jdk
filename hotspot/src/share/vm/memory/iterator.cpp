@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 # include "incls/_precompiled.incl"
 # include "incls/_iterator.cpp.incl"
 
+#ifdef ASSERT
+bool OopClosure::_must_remember_klasses = false;
+#endif
+
 void ObjectToOopClosure::do_object(oop obj) {
   obj->oop_iterate(_cl);
 }
@@ -32,3 +36,13 @@ void ObjectToOopClosure::do_object(oop obj) {
 void VoidClosure::do_void() {
   ShouldNotCallThis();
 }
+
+#ifdef ASSERT
+bool OopClosure::must_remember_klasses() {
+  return _must_remember_klasses;
+}
+void OopClosure::set_must_remember_klasses(bool v) {
+  _must_remember_klasses = v;
+}
+#endif
+

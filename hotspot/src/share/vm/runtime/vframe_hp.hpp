@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 class compiledVFrame: public javaVFrame {
  public:
   // JVM state
-  methodOop                    method()         const;
-  int                          bci()            const;
-  StackValueCollection*        locals()         const;
-  StackValueCollection*        expressions()    const;
-  GrowableArray<MonitorInfo*>* monitors()       const;
+  methodOop                    method()             const;
+  int                          bci()                const;
+  bool                         should_reexecute()   const;
+  StackValueCollection*        locals()             const;
+  StackValueCollection*        expressions()        const;
+  GrowableArray<MonitorInfo*>* monitors()           const;
 
   void set_locals(StackValueCollection* values) const;
 

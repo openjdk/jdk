@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ else
   fi
 fi
 
+LD_AUDIT_64=$STARTDIR/../src/os/solaris/proc/$CPU/libsaproc_audit.so
+export LD_AUDIT_64
 SA_LIBPATH=$STARTDIR/../src/os/solaris/proc/$CPU:$STARTDIR/solaris/$CPU
 
 OPTIONS="-Dsa.library.path=$SA_LIBPATH -Dsun.jvm.hotspot.debugger.useProcDebugger"

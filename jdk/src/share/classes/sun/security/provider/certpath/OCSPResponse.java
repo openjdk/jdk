@@ -28,17 +28,16 @@ package sun.security.provider.certpath;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CRLReason;
 import java.security.cert.X509Certificate;
-import java.security.cert.PKIXParameters;
-import javax.security.auth.x500.X500Principal;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Iterator;
 import sun.misc.HexDumpEncoder;
 import sun.security.x509.*;
 import sun.security.util.*;
@@ -113,32 +112,29 @@ import sun.security.util.*;
  * @author      Ram Marti
  */
 
-class OCSPResponse {
+public final class OCSPResponse {
 
-    // Certificate status CHOICE
-    public static final int CERT_STATUS_GOOD = 0;
-    public static final int CERT_STATUS_REVOKED = 1;
-    public static final int CERT_STATUS_UNKNOWN = 2;
+    public enum ResponseStatus {
+        SUCCESSFUL,            // Response has valid confirmations
+        MALFORMED_REQUEST,     // Illegal confirmation request
+        INTERNAL_ERROR,        // Internal error in issuer
+        TRY_LATER,             // Try again later
+        UNUSED,                // is not used
+        SIG_REQUIRED,          // Must sign the request
+        UNAUTHORIZED           // Request unauthorized
+    };
+    private static ResponseStatus[] rsvalues = ResponseStatus.values();
 
     private static final Debug DEBUG = Debug.getInstance("certpath");
     private static final boolean dump = false;
-    private static final ObjectIdentifier OCSP_BASIC_RESPONSE_OID;
-    private static final ObjectIdentifier OCSP_NONCE_EXTENSION_OID;
-    static {
-        ObjectIdentifier tmp1 = null;
-        ObjectIdentifier tmp2 = null;
-        try {
-            tmp1 = new ObjectIdentifier("1.3.6.1.5.5.7.48.1.1");
-            tmp2 = new ObjectIdentifier("1.3.6.1.5.5.7.48.1.2");
-        } catch (Exception e) {
-            // should not happen; log and exit
-        }
-        OCSP_BASIC_RESPONSE_OID = tmp1;
-        OCSP_NONCE_EXTENSION_OID = tmp2;
-    }
+    private static final ObjectIdentifier OCSP_BASIC_RESPONSE_OID =
+        ObjectIdentifier.newInternal(new int[] { 1, 3, 6, 1, 5, 5, 7, 48, 1, 1});
+    private static final ObjectIdentifier OCSP_NONCE_EXTENSION_OID =
+        ObjectIdentifier.newInternal(new int[] { 1, 3, 6, 1, 5, 5, 7, 48, 1, 2});
 
-    // OCSP response status code
-    private static final int OCSP_RESPONSE_OK = 0;
+    private static final int CERT_STATUS_GOOD = 0;
+    private static final int CERT_STATUS_REVOKED = 1;
+    private static final int CERT_STATUS_UNKNOWN = 2;
 
     // ResponderID CHOICE tags
     private static final int NAME_TAG = 1;
@@ -147,7 +143,8 @@ class OCSPResponse {
     // Object identifier for the OCSPSigning key purpose
     private static final String KP_OCSP_SIGNING_OID = "1.3.6.1.5.5.7.3.9";
 
-    private SingleResponse singleResponse;
+    private final ResponseStatus responseStatus;
+    private final Map<CertId, SingleResponse> singleResponseMap;
 
     // Maximum clock skew in milliseconds (15 minutes) allowed when checking
     // validity of OCSP responses
@@ -159,300 +156,289 @@ class OCSPResponse {
     /*
      * Create an OCSP response from its ASN.1 DER encoding.
      */
-    // used by OCSPChecker
-    OCSPResponse(byte[] bytes, PKIXParameters params,
+    OCSPResponse(byte[] bytes, Date dateCheckedAgainst,
         X509Certificate responderCert)
         throws IOException, CertPathValidatorException {
 
-        try {
-            int responseStatus;
-            ObjectIdentifier  responseType;
-            int version;
-            CertificateIssuerName responderName = null;
-            Date producedAtDate;
-            AlgorithmId sigAlgId;
-            byte[] ocspNonce;
+        // OCSPResponse
+        if (dump) {
+            HexDumpEncoder hexEnc = new HexDumpEncoder();
+            System.out.println("OCSPResponse bytes are...");
+            System.out.println(hexEnc.encode(bytes));
+        }
+        DerValue der = new DerValue(bytes);
+        if (der.tag != DerValue.tag_Sequence) {
+            throw new IOException("Bad encoding in OCSP response: " +
+                "expected ASN.1 SEQUENCE tag.");
+        }
+        DerInputStream derIn = der.getData();
 
-            // OCSPResponse
-            if (dump) {
-                HexDumpEncoder hexEnc = new HexDumpEncoder();
-                System.out.println("OCSPResponse bytes are...");
-                System.out.println(hexEnc.encode(bytes));
-            }
-            DerValue der = new DerValue(bytes);
-            if (der.tag != DerValue.tag_Sequence) {
-                throw new IOException("Bad encoding in OCSP response: " +
-                    "expected ASN.1 SEQUENCE tag.");
-            }
-            DerInputStream derIn = der.getData();
+        // responseStatus
+        int status = derIn.getEnumerated();
+        if (status >= 0 && status < rsvalues.length) {
+            responseStatus = rsvalues[status];
+        } else {
+            // unspecified responseStatus
+            throw new IOException("Unknown OCSPResponse status: " + status);
+        }
+        if (DEBUG != null) {
+            DEBUG.println("OCSP response status: " + responseStatus);
+        }
+        if (responseStatus != ResponseStatus.SUCCESSFUL) {
+            // no need to continue, responseBytes are not set.
+            singleResponseMap = Collections.emptyMap();
+            return;
+        }
 
-            // responseStatus
-            responseStatus = derIn.getEnumerated();
+        // responseBytes
+        der = derIn.getDerValue();
+        if (!der.isContextSpecific((byte)0)) {
+            throw new IOException("Bad encoding in responseBytes element " +
+                "of OCSP response: expected ASN.1 context specific tag 0.");
+        }
+        DerValue tmp = der.data.getDerValue();
+        if (tmp.tag != DerValue.tag_Sequence) {
+            throw new IOException("Bad encoding in responseBytes element " +
+                "of OCSP response: expected ASN.1 SEQUENCE tag.");
+        }
+
+        // responseType
+        derIn = tmp.data;
+        ObjectIdentifier responseType = derIn.getOID();
+        if (responseType.equals(OCSP_BASIC_RESPONSE_OID)) {
             if (DEBUG != null) {
-                DEBUG.println("OCSP response: " +
-                    responseToText(responseStatus));
+                DEBUG.println("OCSP response type: basic");
             }
-            if (responseStatus != OCSP_RESPONSE_OK) {
-                throw new CertPathValidatorException(
-                    "OCSP Response Failure: " +
-                        responseToText(responseStatus));
+        } else {
+            if (DEBUG != null) {
+                DEBUG.println("OCSP response type: " + responseType);
             }
+            throw new IOException("Unsupported OCSP response type: " +
+                responseType);
+        }
 
-            // responseBytes
-            der = derIn.getDerValue();
-            if (! der.isContextSpecific((byte)0)) {
-                throw new IOException("Bad encoding in responseBytes element " +
-                    "of OCSP response: expected ASN.1 context specific tag 0.");
-            };
-            DerValue tmp = der.data.getDerValue();
-            if (tmp.tag != DerValue.tag_Sequence) {
-                throw new IOException("Bad encoding in responseBytes element " +
-                    "of OCSP response: expected ASN.1 SEQUENCE tag.");
-            }
+        // BasicOCSPResponse
+        DerInputStream basicOCSPResponse =
+            new DerInputStream(derIn.getOctetString());
 
-            // responseType
-            derIn = tmp.data;
-            responseType = derIn.getOID();
-            if (responseType.equals(OCSP_BASIC_RESPONSE_OID)) {
-                if (DEBUG != null) {
-                    DEBUG.println("OCSP response type: basic");
+        DerValue[] seqTmp = basicOCSPResponse.getSequence(2);
+        if (seqTmp.length < 3) {
+            throw new IOException("Unexpected BasicOCSPResponse value");
+        }
+
+        DerValue responseData = seqTmp[0];
+
+        // Need the DER encoded ResponseData to verify the signature later
+        byte[] responseDataDer = seqTmp[0].toByteArray();
+
+        // tbsResponseData
+        if (responseData.tag != DerValue.tag_Sequence) {
+            throw new IOException("Bad encoding in tbsResponseData " +
+                "element of OCSP response: expected ASN.1 SEQUENCE tag.");
+        }
+        DerInputStream seqDerIn = responseData.data;
+        DerValue seq = seqDerIn.getDerValue();
+
+        // version
+        if (seq.isContextSpecific((byte)0)) {
+            // seq[0] is version
+            if (seq.isConstructed() && seq.isContextSpecific()) {
+                //System.out.println ("version is available");
+                seq = seq.data.getDerValue();
+                int version = seq.getInteger();
+                if (seq.data.available() != 0) {
+                    throw new IOException("Bad encoding in version " +
+                        " element of OCSP response: bad format");
                 }
-            } else {
-                if (DEBUG != null) {
-                    DEBUG.println("OCSP response type: " + responseType);
-                }
-                throw new IOException("Unsupported OCSP response type: " +
-                    responseType);
-            }
-
-            // BasicOCSPResponse
-            DerInputStream basicOCSPResponse =
-                new DerInputStream(derIn.getOctetString());
-
-            DerValue[]  seqTmp = basicOCSPResponse.getSequence(2);
-
-            if (seqTmp.length < 3) {
-                throw new IOException("Unexpected BasicOCSPResponse value");
-            }
-
-            DerValue responseData = seqTmp[0];
-
-            // Need the DER encoded ResponseData to verify the signature later
-            byte[] responseDataDer = seqTmp[0].toByteArray();
-
-            // tbsResponseData
-            if (responseData.tag != DerValue.tag_Sequence) {
-                throw new IOException("Bad encoding in tbsResponseData " +
-                    " element of OCSP response: expected ASN.1 SEQUENCE tag.");
-            }
-            DerInputStream seqDerIn = responseData.data;
-            DerValue seq = seqDerIn.getDerValue();
-
-            // version
-            if (seq.isContextSpecific((byte)0)) {
-                // seq[0] is version
-                if (seq.isConstructed() && seq.isContextSpecific()) {
-                    //System.out.println ("version is available");
-                    seq = seq.data.getDerValue();
-                    version = seq.getInteger();
-                    if (seq.data.available() != 0) {
-                        throw new IOException("Bad encoding in version " +
-                            " element of OCSP response: bad format");
-                    }
-                    seq = seqDerIn.getDerValue();
-                }
-            }
-
-            // responderID
-            short tag = (byte)(seq.tag & 0x1f);
-            if (tag == NAME_TAG) {
-                responderName = new CertificateIssuerName(seq.getData());
-                if (DEBUG != null) {
-                    DEBUG.println("OCSP Responder name: " + responderName);
-                }
-            } else if (tag == KEY_TAG) {
-                // Ignore, for now
-            } else {
-                throw new IOException("Bad encoding in responderID element " +
-                    "of OCSP response: expected ASN.1 context specific tag 0 " +
-                    "or 1");
-            }
-
-            // producedAt
-            seq = seqDerIn.getDerValue();
-            producedAtDate = seq.getGeneralizedTime();
-
-            // responses
-            DerValue[] singleResponseDer = seqDerIn.getSequence(1);
-            // Examine only the first response
-            singleResponse = new SingleResponse(singleResponseDer[0]);
-
-            // responseExtensions
-            if (seqDerIn.available() > 0) {
                 seq = seqDerIn.getDerValue();
-                if (seq.isContextSpecific((byte)1)) {
-                    DerValue[]  responseExtDer = seq.data.getSequence(3);
-                    Extension[] responseExtension =
-                        new Extension[responseExtDer.length];
-                    for (int i = 0; i < responseExtDer.length; i++) {
-                        responseExtension[i] = new Extension(responseExtDer[i]);
-                        if (DEBUG != null) {
-                            DEBUG.println("OCSP extension: " +
-                                responseExtension[i]);
-                        }
-                        if ((responseExtension[i].getExtensionId()).equals(
-                            OCSP_NONCE_EXTENSION_OID)) {
-                            ocspNonce =
-                                responseExtension[i].getExtensionValue();
+            }
+        }
 
-                        } else if (responseExtension[i].isCritical())  {
-                            throw new IOException(
-                                "Unsupported OCSP critical extension: " +
-                                responseExtension[i].getExtensionId());
-                        }
+        // responderID
+        short tag = (byte)(seq.tag & 0x1f);
+        if (tag == NAME_TAG) {
+            if (DEBUG != null) {
+                X500Name responderName = new X500Name(seq.getData());
+                DEBUG.println("OCSP Responder name: " + responderName);
+            }
+        } else if (tag == KEY_TAG) {
+            // Ignore, for now
+        } else {
+            throw new IOException("Bad encoding in responderID element of " +
+                "OCSP response: expected ASN.1 context specific tag 0 or 1");
+        }
+
+        // producedAt
+        seq = seqDerIn.getDerValue();
+        if (DEBUG != null) {
+            Date producedAtDate = seq.getGeneralizedTime();
+            DEBUG.println("OCSP response produced at: " + producedAtDate);
+        }
+
+        // responses
+        DerValue[] singleResponseDer = seqDerIn.getSequence(1);
+        singleResponseMap
+            = new HashMap<CertId, SingleResponse>(singleResponseDer.length);
+        if (DEBUG != null) {
+            DEBUG.println("OCSP number of SingleResponses: "
+                + singleResponseDer.length);
+        }
+        for (int i = 0; i < singleResponseDer.length; i++) {
+            SingleResponse singleResponse
+                = new SingleResponse(singleResponseDer[i]);
+            singleResponseMap.put(singleResponse.getCertId(), singleResponse);
+        }
+
+        // responseExtensions
+        if (seqDerIn.available() > 0) {
+            seq = seqDerIn.getDerValue();
+            if (seq.isContextSpecific((byte)1)) {
+                DerValue[] responseExtDer = seq.data.getSequence(3);
+                for (int i = 0; i < responseExtDer.length; i++) {
+                    Extension responseExtension
+                        = new Extension(responseExtDer[i]);
+                    if (DEBUG != null) {
+                        DEBUG.println("OCSP extension: " + responseExtension);
+                    }
+                    if (responseExtension.getExtensionId().equals(
+                        OCSP_NONCE_EXTENSION_OID)) {
+                        /*
+                        ocspNonce =
+                            responseExtension[i].getExtensionValue();
+                         */
+                    } else if (responseExtension.isCritical())  {
+                        throw new IOException(
+                            "Unsupported OCSP critical extension: " +
+                            responseExtension.getExtensionId());
                     }
                 }
             }
+        }
 
-            // signatureAlgorithmId
-            sigAlgId = AlgorithmId.parse(seqTmp[1]);
+        // signatureAlgorithmId
+        AlgorithmId sigAlgId = AlgorithmId.parse(seqTmp[1]);
 
-            // check that the signature algorithm is not disabled.
-            AlgorithmChecker.check(sigAlgId);
+        // signature
+        byte[] signature = seqTmp[2].getBitString();
+        X509CertImpl[] x509Certs = null;
 
-            // signature
-            byte[] signature = seqTmp[2].getBitString();
-            X509CertImpl[] x509Certs = null;
-
-            // if seq[3] is available , then it is a sequence of certificates
-            if (seqTmp.length > 3) {
-                // certs are available
-                DerValue seqCert = seqTmp[3];
-                if (! seqCert.isContextSpecific((byte)0)) {
-                    throw new IOException("Bad encoding in certs element " +
-                    "of OCSP response: expected ASN.1 context specific tag 0.");
-                }
-                DerValue[] certs = (seqCert.getData()).getSequence(3);
-                x509Certs = new X509CertImpl[certs.length];
+        // if seq[3] is available , then it is a sequence of certificates
+        if (seqTmp.length > 3) {
+            // certs are available
+            DerValue seqCert = seqTmp[3];
+            if (!seqCert.isContextSpecific((byte)0)) {
+                throw new IOException("Bad encoding in certs element of " +
+                    "OCSP response: expected ASN.1 context specific tag 0.");
+            }
+            DerValue[] certs = seqCert.getData().getSequence(3);
+            x509Certs = new X509CertImpl[certs.length];
+            try {
                 for (int i = 0; i < certs.length; i++) {
                     x509Certs[i] = new X509CertImpl(certs[i].toByteArray());
                 }
+            } catch (CertificateException ce) {
+                throw new IOException("Bad encoding in X509 Certificate", ce);
             }
+        }
 
-            // Check whether the cert returned by the responder is trusted
-            if (x509Certs != null && x509Certs[0] != null) {
-                X509CertImpl cert = x509Certs[0];
+        // Check whether the cert returned by the responder is trusted
+        if (x509Certs != null && x509Certs[0] != null) {
+            X509CertImpl cert = x509Certs[0];
 
-                // First check if the cert matches the responder cert which
-                // was set locally.
-                if (cert.equals(responderCert)) {
-                    // cert is trusted, now verify the signed response
+            // First check if the cert matches the responder cert which
+            // was set locally.
+            if (cert.equals(responderCert)) {
+                // cert is trusted, now verify the signed response
 
-                // Next check if the cert was issued by the responder cert
-                // which was set locally.
-                } else if (cert.getIssuerX500Principal().equals(
-                    responderCert.getSubjectX500Principal())) {
+            // Next check if the cert was issued by the responder cert
+            // which was set locally.
+            } else if (cert.getIssuerX500Principal().equals(
+                responderCert.getSubjectX500Principal())) {
 
-                    // check the certificate algorithm
-                    AlgorithmChecker.check(cert);
-
-                    // Check for the OCSPSigning key purpose
+                // Check for the OCSPSigning key purpose
+                try {
                     List<String> keyPurposes = cert.getExtendedKeyUsage();
                     if (keyPurposes == null ||
                         !keyPurposes.contains(KP_OCSP_SIGNING_OID)) {
-                        if (DEBUG != null) {
-                            DEBUG.println("Responder's certificate is not " +
-                                "valid for signing OCSP responses.");
-                        }
                         throw new CertPathValidatorException(
                             "Responder's certificate not valid for signing " +
                             "OCSP responses");
                     }
+                } catch (CertificateParsingException cpe) {
+                    // assume cert is not valid for signing
+                    throw new CertPathValidatorException(
+                        "Responder's certificate not valid for signing " +
+                        "OCSP responses", cpe);
+                }
 
-                    // check the validity
-                    try {
-                        Date dateCheckedAgainst = params.getDate();
-                        if (dateCheckedAgainst == null) {
-                            cert.checkValidity();
-                        } else {
-                            cert.checkValidity(dateCheckedAgainst);
-                        }
-                    } catch (GeneralSecurityException e) {
-                        if (DEBUG != null) {
-                            DEBUG.println("Responder's certificate is not " +
-                                "within the validity period.");
-                        }
-                        throw new CertPathValidatorException(
-                            "Responder's certificate not within the " +
-                            "validity period");
-                    }
-
-                    // check for revocation
-                    //
-                    // A CA may specify that an OCSP client can trust a
-                    // responder for the lifetime of the responder's
-                    // certificate. The CA does so by including the
-                    // extension id-pkix-ocsp-nocheck.
-                    //
-                    Extension noCheck =
-                            cert.getExtension(PKIXExtensions.OCSPNoCheck_Id);
-                    if (noCheck != null) {
-                        if (DEBUG != null) {
-                            DEBUG.println("Responder's certificate includes " +
-                                "the extension id-pkix-ocsp-nocheck.");
-                        }
+                // check the validity
+                try {
+                    if (dateCheckedAgainst == null) {
+                        cert.checkValidity();
                     } else {
-                        // we should do the revocating checking of the
-                        // authorized responder in a future update.
+                        cert.checkValidity(dateCheckedAgainst);
                     }
+                } catch (GeneralSecurityException e) {
+                    throw new CertPathValidatorException(
+                        "Responder's certificate not within the " +
+                        "validity period", e);
+                }
 
-                    // verify the signature
-                    try {
-                        cert.verify(responderCert.getPublicKey());
-                        responderCert = cert;
-                        // cert is trusted, now verify the signed response
-
-                    } catch (GeneralSecurityException e) {
-                        responderCert = null;
+                // check for revocation
+                //
+                // A CA may specify that an OCSP client can trust a
+                // responder for the lifetime of the responder's
+                // certificate. The CA does so by including the
+                // extension id-pkix-ocsp-nocheck.
+                //
+                Extension noCheck =
+                    cert.getExtension(PKIXExtensions.OCSPNoCheck_Id);
+                if (noCheck != null) {
+                    if (DEBUG != null) {
+                        DEBUG.println("Responder's certificate includes " +
+                            "the extension id-pkix-ocsp-nocheck.");
                     }
                 } else {
-                    if (DEBUG != null) {
-                        DEBUG.println("Responder's certificate is not " +
-                            "authorized to sign OCSP responses.");
-                    }
-                    throw new CertPathValidatorException(
-                        "Responder's certificate not authorized to sign " +
-                        "OCSP responses");
+                    // we should do the revocation checking of the
+                    // authorized responder in a future update.
                 }
-            }
 
-            // Confirm that the signed response was generated using the public
-            // key from the trusted responder cert
-            if (responderCert != null) {
+                // verify the signature
+                try {
+                    cert.verify(responderCert.getPublicKey());
+                    responderCert = cert;
+                    // cert is trusted, now verify the signed response
 
-                if (! verifyResponse(responseDataDer, responderCert,
-                    sigAlgId, signature, params)) {
-                    if (DEBUG != null) {
-                        DEBUG.println("Error verifying OCSP Responder's " +
-                            "signature");
-                    }
-                    throw new CertPathValidatorException(
-                        "Error verifying OCSP Responder's signature");
+                } catch (GeneralSecurityException e) {
+                    responderCert = null;
                 }
             } else {
-                // Need responder's cert in order to verify the signature
-                if (DEBUG != null) {
-                    DEBUG.println("Unable to verify OCSP Responder's " +
-                        "signature");
-                }
                 throw new CertPathValidatorException(
-                    "Unable to verify OCSP Responder's signature");
+                    "Responder's certificate is not authorized to sign " +
+                    "OCSP responses");
             }
-        } catch (CertPathValidatorException cpve) {
-            throw cpve;
-        } catch (Exception e) {
-            throw new CertPathValidatorException(e);
         }
+
+        // Confirm that the signed response was generated using the public
+        // key from the trusted responder cert
+        if (responderCert != null) {
+            if (!verifyResponse(responseDataDer, responderCert,
+                sigAlgId, signature)) {
+                throw new CertPathValidatorException(
+                    "Error verifying OCSP Responder's signature");
+            }
+        } else {
+            // Need responder's cert in order to verify the signature
+            throw new CertPathValidatorException(
+                "Unable to verify OCSP Responder's signature");
+        }
+    }
+
+    /**
+     * Returns the OCSP ResponseStatus.
+     */
+    ResponseStatus getResponseStatus() {
+        return responseStatus;
     }
 
     /*
@@ -460,11 +446,10 @@ class OCSPResponse {
      * The responder's cert is implicitly trusted.
      */
     private boolean verifyResponse(byte[] responseData, X509Certificate cert,
-        AlgorithmId sigAlgId, byte[] signBytes, PKIXParameters params)
-        throws SignatureException {
+        AlgorithmId sigAlgId, byte[] signBytes)
+        throws CertPathValidatorException {
 
         try {
-
             Signature respSignature = Signature.getInstance(sigAlgId.getName());
             respSignature.initVerify(cert);
             respSignature.update(responseData);
@@ -483,92 +468,33 @@ class OCSPResponse {
                 return false;
             }
         } catch (InvalidKeyException ike) {
-            throw new SignatureException(ike);
-
+            throw new CertPathValidatorException(ike);
         } catch (NoSuchAlgorithmException nsae) {
-            throw new SignatureException(nsae);
+            throw new CertPathValidatorException(nsae);
+        } catch (SignatureException se) {
+            throw new CertPathValidatorException(se);
         }
     }
 
-    /*
-     * Return the revocation status code for a given certificate.
+    /**
+     * Returns the SingleResponse of the specified CertId, or null if
+     * there is no response for that CertId.
      */
-    // used by OCSPChecker
-    int getCertStatus(SerialNumber sn) {
-        // ignore serial number for now; if we support multiple
-        // requests/responses then it will be used
-        return singleResponse.getStatus();
-    }
-
-    // used by OCSPChecker
-    CertId getCertId() {
-        return singleResponse.getCertId();
-    }
-
-    Date getRevocationTime() {
-        return singleResponse.getRevocationTime();
-    }
-
-    CRLReason getRevocationReason() {
-        return singleResponse.getRevocationReason();
-    }
-
-    Map<String, java.security.cert.Extension> getSingleExtensions() {
-        return singleResponse.getSingleExtensions();
-    }
-
-    /*
-     * Map an OCSP response status code to a string.
-     */
-    static private String responseToText(int status) {
-        switch (status)  {
-        case 0:
-            return "Successful";
-        case 1:
-            return "Malformed request";
-        case 2:
-            return "Internal error";
-        case 3:
-            return "Try again later";
-        case 4:
-            return "Unused status code";
-        case 5:
-            return "Request must be signed";
-        case 6:
-            return "Request is unauthorized";
-        default:
-            return ("Unknown status code: " + status);
-        }
-    }
-
-    /*
-     * Map a certificate's revocation status code to a string.
-     */
-    // used by OCSPChecker
-    static String certStatusToText(int certStatus) {
-        switch (certStatus)  {
-        case 0:
-            return "Good";
-        case 1:
-            return "Revoked";
-        case 2:
-            return "Unknown";
-        default:
-            return ("Unknown certificate status code: " + certStatus);
-        }
+    SingleResponse getSingleResponse(CertId certId) {
+        return singleResponseMap.get(certId);
     }
 
     /*
      * A class representing a single OCSP response.
      */
-    private class SingleResponse {
-        private CertId certId;
-        private int certStatus;
-        private Date thisUpdate;
-        private Date nextUpdate;
-        private Date revocationTime;
-        private CRLReason revocationReason = CRLReason.UNSPECIFIED;
-        private HashMap<String, java.security.cert.Extension> singleExtensions;
+    final static class SingleResponse implements OCSP.RevocationStatus {
+        private final CertId certId;
+        private final CertStatus certStatus;
+        private final Date thisUpdate;
+        private final Date nextUpdate;
+        private final Date revocationTime;
+        private final CRLReason revocationReason;
+        private final Map<String, java.security.cert.Extension> singleExtensions;
 
         private SingleResponse(DerValue der) throws IOException {
             if (der.tag != DerValue.tag_Sequence) {
@@ -579,35 +505,48 @@ class OCSPResponse {
             certId = new CertId(tmp.getDerValue().data);
             DerValue derVal = tmp.getDerValue();
             short tag = (byte)(derVal.tag & 0x1f);
-            if (tag ==  CERT_STATUS_GOOD) {
-                certStatus = CERT_STATUS_GOOD;
-            } else if (tag == CERT_STATUS_REVOKED) {
-                certStatus = CERT_STATUS_REVOKED;
+            if (tag ==  CERT_STATUS_REVOKED) {
+                certStatus = CertStatus.REVOKED;
                 revocationTime = derVal.data.getGeneralizedTime();
                 if (derVal.data.available() != 0) {
-                    int reason = derVal.getEnumerated();
-                    // if reason out-of-range just leave as UNSPECIFIED
-                    if (reason >= 0 && reason < values.length) {
-                        revocationReason = values[reason];
+                    DerValue dv = derVal.data.getDerValue();
+                    tag = (byte)(dv.tag & 0x1f);
+                    if (tag == 0) {
+                        int reason = dv.data.getEnumerated();
+                        // if reason out-of-range just leave as UNSPECIFIED
+                        if (reason >= 0 && reason < values.length) {
+                            revocationReason = values[reason];
+                        } else {
+                            revocationReason = CRLReason.UNSPECIFIED;
+                        }
+                    } else {
+                        revocationReason = CRLReason.UNSPECIFIED;
                     }
+                } else {
+                    revocationReason = CRLReason.UNSPECIFIED;
                 }
                 // RevokedInfo
                 if (DEBUG != null) {
                     DEBUG.println("Revocation time: " + revocationTime);
                     DEBUG.println("Revocation reason: " + revocationReason);
                 }
-
-            } else if (tag == CERT_STATUS_UNKNOWN) {
-                certStatus = CERT_STATUS_UNKNOWN;
-
             } else {
-                throw new IOException("Invalid certificate status");
+                revocationTime = null;
+                revocationReason = CRLReason.UNSPECIFIED;
+                if (tag == CERT_STATUS_GOOD) {
+                    certStatus = CertStatus.GOOD;
+                } else if (tag == CERT_STATUS_UNKNOWN) {
+                    certStatus = CertStatus.UNKNOWN;
+                } else {
+                    throw new IOException("Invalid certificate status");
+                }
             }
 
             thisUpdate = tmp.getGeneralizedTime();
 
             if (tmp.available() == 0)  {
                 // we are done
+                nextUpdate = null;
             } else {
                 derVal = tmp.getDerValue();
                 tag = (byte)(derVal.tag & 0x1f);
@@ -621,6 +560,8 @@ class OCSPResponse {
                         derVal = tmp.getDerValue();
                         tag = (byte)(derVal.tag & 0x1f);
                     }
+                } else {
+                    nextUpdate = null;
                 }
             }
             // singleExtensions
@@ -638,7 +579,11 @@ class OCSPResponse {
                             DEBUG.println("OCSP single extension: " + ext);
                         }
                     }
+                } else {
+                    singleExtensions = Collections.emptyMap();
                 }
+            } else {
+                singleExtensions = Collections.emptyMap();
             }
 
             long now = System.currentTimeMillis();
@@ -668,7 +613,7 @@ class OCSPResponse {
         /*
          * Return the certificate's revocation status code
          */
-        private int getStatus() {
+        @Override public CertStatus getCertStatus() {
             return certStatus;
         }
 
@@ -676,28 +621,28 @@ class OCSPResponse {
             return certId;
         }
 
-        private Date getRevocationTime() {
-            return revocationTime;
+        @Override public Date getRevocationTime() {
+            return (Date) revocationTime.clone();
         }
 
-        private CRLReason getRevocationReason() {
+        @Override public CRLReason getRevocationReason() {
             return revocationReason;
         }
 
-        private Map<String, java.security.cert.Extension> getSingleExtensions() {
-            return singleExtensions;
+        @Override
+        public Map<String, java.security.cert.Extension> getSingleExtensions() {
+            return Collections.unmodifiableMap(singleExtensions);
         }
 
         /**
          * Construct a string representation of a single OCSP response.
          */
-        public String toString() {
+        @Override public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("SingleResponse:  \n");
             sb.append(certId);
-            sb.append("\nCertStatus: "+ certStatusToText(getCertStatus(null)) +
-                "\n");
-            if (certStatus == CERT_STATUS_REVOKED) {
+            sb.append("\nCertStatus: "+ certStatus + "\n");
+            if (certStatus == CertStatus.REVOKED) {
                 sb.append("revocationTime is " + revocationTime + "\n");
                 sb.append("revocationReason is " + revocationReason + "\n");
             }

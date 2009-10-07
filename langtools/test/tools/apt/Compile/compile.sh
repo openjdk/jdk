@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,12 @@ TestFile() {
 
 OS=`uname -s`;
 case "${OS}" in
-        Windows* | CYGWIN* )
+        Windows* )
+                SEP=";"
+        ;;
+
+        CYGWIN* )
+		DIFFOPTS="--strip-trailing-cr"
                 SEP=";"
         ;;
 
@@ -150,7 +155,7 @@ ${APT} @options2 2> output
 
 TestNoFile "HelloWorld.class"
 
-diff output ${TESTSRC}/golden.txt
+diff ${DIFFOPTS} output ${TESTSRC}/golden.txt
 
 RESULT=$?
 case "$RESULT" in
@@ -180,7 +185,7 @@ printf "%s\n" "-cp ${TESTCLASSES}"          >> options3
 printf "%s\n" "HelloAnnotation.java"        >> options3
 ${APT} @options3 2> output
 
-diff output ${TESTSRC}/goldenWarn.txt
+diff ${DIFFOPTS} output ${TESTSRC}/goldenWarn.txt
 
 RESULT=$?
 case "$RESULT" in
@@ -485,7 +490,7 @@ printf "%s\n" "-d ./class"             >> options8
 printf "%s\n" "${TESTSRC}/Dummy1.java" >> options8
 ${APT} @options8 > multiRoundOutput 2> multiRoundError
 
-diff multiRoundOutput  ${TESTSRC}/goldenFactory.txt
+diff ${DIFFOPTS} multiRoundOutput  ${TESTSRC}/goldenFactory.txt
 
 RESULT=$?
 case "$RESULT" in

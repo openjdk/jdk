@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,19 +176,6 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
 
       for (; cur.lessThan(limit);) {
          Address klassOop = cur.getAddressAt(addressSize);
-         // FIXME: need to do a better job here.
-         // can I use bitMap here?
-         if (klassOop == null) {
-            //Find the object size using Printezis bits and skip over
-            System.err.println("Finding object size using Printezis bits and skipping over...");
-            long size = collector().blockSizeUsingPrintezisBits(cur);
-            if (size == -1) {
-              System.err.println("Printezis bits not set...");
-              break;
-            }
-            cur = cur.addOffsetTo(adjustObjectSizeInBytes(size));
-         }
-
          if (FreeChunk.indicatesFreeChunk(cur)) {
             if (! cur.equals(regionStart)) {
                res.add(new MemRegion(regionStart, cur));
@@ -200,12 +187,21 @@ public class CompactibleFreeListSpace extends CompactibleSpace {
             }
             // note that fc.size() gives chunk size in heap words
             cur = cur.addOffsetTo(chunkSize * addressSize);
-            System.err.println("Free chunk in CMS heap, size="+chunkSize * addressSize);
             regionStart = cur;
          } else if (klassOop != null) {
             Oop obj = heap.newOop(cur.addOffsetToAsOopHandle(0));
             long objectSize = obj.getObjectSize();
             cur = cur.addOffsetTo(adjustObjectSizeInBytes(objectSize));
+         } else {
+            // FIXME: need to do a better job here.
+            // can I use bitMap here?
+            //Find the object size using Printezis bits and skip over
+            long size = collector().blockSizeUsingPrintezisBits(cur);
+            if (size == -1) {
+              System.err.println("Printezis bits not set...");
+              break;
+            }
+            cur = cur.addOffsetTo(adjustObjectSizeInBytes(size));
          }
       }
       return res;

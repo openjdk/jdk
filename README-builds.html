@@ -38,12 +38,17 @@
             <ul>
                 <li><a href="#introduction">Introduction</a></li>
                 <li><a href="#MBE">Minimum Build Environments</a></li>
-                <li><a href="#SDBE">Specific Developer Build Environments</a></li>
+                <li><a href="#SDBE">Specific Developer Build Environments</a>
                     <ul>
                         <li><a href="#fedora">Fedora Linux</a> </li>
                         <li><a href="#centos">CentOS Linux</a> </li>
-                        <li><a href="#ubuntu">Ubuntu Linux</a> </li>
+		        <li><a href="#debian">Debian GNU/Linux</a></li>
+			<li><a href="#ubuntu">Ubuntu Linux</a> </li>
+		        <li><a href="#opensuse">OpenSUSE</a></li>
+		        <li><a href="#mandriva">Mandriva</a></li>
+		        <li><a href="#opensolaris">OpenSolaris</a></li>
                     </ul>
+		</li>
                 <li><a href="#directories">Source Directory Structure</a> </li>
                 <li><a href="#building">Build Information</a>
                     <ul>
@@ -68,7 +73,6 @@
                             </li>
                             <li><a href="#zip">Zip and Unzip</a> </li>
                             <li><a href="#freetype">FreeType2 Fonts</a> </li>
-                            <li><a href="#jibx">JIBX Libraries</a> </li>
                             <li>Linux and Solaris:
                                 <ul>
                                     <li><a href="#cups">CUPS Include files</a> </li>
@@ -210,24 +214,59 @@
             we will try to provide what information we have available to us.
         </blockquote>
         <!-- ------------------------------------------------------ -->
-        <h3><a name="fedora">Fedora 9</a></h3>
+        <h3><a name="fedora">Fedora</a></h3>
         <blockquote>
-            After installing
-            <a href="http://www.fedoraproject.org/">Fedora 9</a>
-            you need to make sure you have
-            the "Software Development" bundle installed, plus the
-            following packages:
-            <blockquote>
-                <ul>
-                    <li>cups devel: Cups Development Package</li>
-                    <li>freetype 2.3+ devel: Freetype 2.3 Development Package</li>
-                    <li>hg: Mercurial, if you need to clone or manage source repositories</li>
-                    <li>ksh: May be needed when using <tt>webrev</tt></li>
-                </ul>
+	  <h4>Fedora 9</h4>
+	  <p>
+	    <blockquote>
+              After installing <a href="http://fedoraproject.org">Fedora</a> 9 
+	      you need to install several build dependencies. The simplest
+	      way to do it is to execute the following commands as user 
+	      <tt>root</tt>:
+	      <p/>
+	      <code>yum-builddep java-openjdk</code>
+	      <p/>
+	      <code>yum install gcc gcc-c++</code>
+	      <p/>
+	      In addition, it's necessary to set a few environment variables for the build:
+
+	      <p/>
+	      <code>export LANG=C ALT_BOOTDIR=/usr/lib/jvm/java-openjdk</code>
             </blockquote>
-            <p>
-            Always a good idea to do a complete Software Update/Refresh
-            after you get all the packages installed.
+	  <h4>Fedora 10</h4>
+	  <p>
+	    <blockquote>
+              After installing <a href="http://fedoraproject.org">Fedora</a> 10 
+	      you need to install several build dependencies. The simplest
+	      way to do it is to execute the following commands as user 
+	      <tt>root</tt>:
+	      <p/>
+	      <code>yum-builddep java-1.6.0-openjdk</code>
+	      <p/>
+	      <code>yum install gcc gcc-c++</code>
+	      <p/>
+	      In addition, it's necessary to set a few environment variables for the build:
+
+	      <p/>
+	      <code>export LANG=C ALT_BOOTDIR=/usr/lib/jvm/java-openjdk</code>
+            </blockquote>
+	  <h4>Fedora 11</h4>
+	  <p>
+	    <blockquote>
+              After installing <a href="http://fedoraproject.org">Fedora</a> 11 
+	      you need to install several build dependencies. The simplest
+	      way to do it is to execute the following commands as user 
+	      <tt>root</tt>:
+	      <p/>
+	      <code>yum-builddep java-1.6.0-openjdk</code>
+	      <p/>
+	      <code>yum install gcc gcc-c++</code>
+	      <p/>
+	      In addition, it's necessary to set a few environment variables for the build:
+
+	      <p/>
+	      <code>export LANG=C ALT_BOOTDIR=/usr/lib/jvm/java-openjdk</code>
+             </blockquote>
         </blockquote>
         <!-- ------------------------------------------------------ -->
         <h3><a name="centos">CentOS 5.2</a></h3>
@@ -270,145 +309,146 @@
             it's needed.
         </blockquote>
         <!-- ------------------------------------------------------ -->
-        <h3><a name="ubuntu">Ubuntu</a></h3>
+        <h3><a name="debian">Debian</a></h3>
         <blockquote>
-            In addition to needing the Bootstrap JDK and the Binary Plugs, 
-            when building on Ubuntu you will need to
-            make sure certain packages are installed.
-            In particular, certain X11 packages, make, m4, gawk, gcc 4, 
-            binutils, cups, freetype
-            and alsa.
-            <!-- ------------------------------------------------------ -->
-            <h4>Ubuntu 6.06</h4>
+            <h4>Debian 5.0 (Lenny)</h4>
             <p>
-            The following list of packages for Ubuntu 6.06 is a working set that
-            does appear to work. 
-            <p>
-            <b>Note that it's quite possible that some of these
-                packages are not required, so anyone discovering that some of the
-                packages listed below are NOT required,
-                please let the
-                OpenJDK
-            team know.</b>
-            <p>
-            All the packages below can be installed with the
-            Synaptic Package manager provided with the base Ubuntu 6.06 release.
-            <blockquote>
-                <ul>
-                    <li>binutils (2.16.1cvs20060117-1ubuntu2.1)</li>
-                    <li>cpp (4:4.0.3-1)</li>
-                    <li>cpp-4.0 (4.0.3-1ubuntu5)</li>
-                    <li>libfreetype6-dev</li>
-                    <li>g++ (4:4.0.3-1)</li>
-                    <li>g++-4.0 (4.0.3-1ubuntu5)</li>
-                    <li>gawk (1:3.1.5-2build1)</li>
-                    <li>gcc (4:4.0.3-1)</li>
-                    <li>gcc-4.0 (4.0.3-1ubuntu5)</li>
-                    <li>libasound2-dev (1.0.10-2ubuntu4)</li>
-                    <li>libc6 (2.3.6-0ubuntu20) to 2.3.6-0ubuntu20.4</li>
-                    <li>libc6-dev (2.3.6-0ubuntu20.4)</li>
-                    <li>libc6-i686 (2.3.6-0ubuntu20) to 2.3.6-0ubuntu20.4</li>
-                    <li>libcupsys2-dev (1.2.2-0ubuntu0.6.06)</li>
-                    <li>libgcrypt11-dev (1.2.2-1)</li>
-                    <li>libgnutls-dev (1.2.9-2ubuntu1.1)</li>
-                    <li>libgnutls12 (1.2.9-2ubuntu1) to 1.2.9-2ubuntu1.1</li>
-                    <li>libgpg-error-dev (1.1-4)</li>
-                    <li>libice-dev (2:1.0.0-0ubuntu2)</li>
-                    <li>liblockfile1 (1.06.1)</li>
-                    <li>libopencdk8-dev (0.5.7-2)</li>
-                    <li>libpopt-dev (1.7-5)</li>
-                    <li>libsm-dev (2:1.0.0-0ubuntu2)</li>
-                    <li>libstdc++6-4.0-dev (4.0.3-1ubuntu5)</li>
-                    <li>libtasn1-2-dev (0.2.17-1ubuntu1)</li>
-                    <li>libx11-dev (2:1.0.0-0ubuntu9)</li>
-                    <li>libxau-dev (1:1.0.0-0ubuntu4)</li>
-                    <li>libxaw-headers (2:1.0.1-0ubuntu3)</li>
-                    <li>libxaw7-dev (2:1.0.1-0ubuntu3)</li>
-                    <li>libxdmcp-dev (1:1.0.0-0ubuntu2)</li>
-                    <li>libxext-dev (2:1.0.0-0ubuntu4)</li>
-                    <li>libxi-dev (2:1.0.0-0ubuntu3) </li>
-                    <li>libxmu-dev (2:1.0.0-0ubuntu3)</li>
-                    <li>libxmu-headers (2:1.0.0-0ubuntu3)</li>
-                    <li>libxmuu-dev (2:1.0.0-0ubuntu3)</li>
-                    <li>libxp-dev (6.8.2-11ubuntu2)</li>
-                    <li>libxpm-dev (1:3.5.4.2-0ubuntu3)</li>
-                    <li>libxrandr-dev (1:1.1.0.2-0ubuntu4)</li>
-                    <li>libxt-dev (1:1.0.0-0ubuntu3)</li>
-                    <li>libxtrap-dev (2:1.0.0-0ubuntu2)</li>
-                    <li>libxtst-dev (2:1.0.1-0ubuntu2)</li>
-                    <li>libxv-dev (2:1.0.1-0ubuntu3)</li>
-                    <li>linux-kernel-headers (2.6.11.2-0ubuntu18)</li>
-                    <li>m4 (1.4.4-1)</li>
-                    <li>make (3.80+3.81.b4-1)</li>
-                    <li>ssl-cert (1.0.13)</li>
-                    <li>x-dev (7.0.4-0ubuntu2)</li>
-                    <li>x11proto-core-dev (7.0.4-0ubuntu2)</li>
-                    <li>x11proto-input-dev (1.3.2-0ubuntu2)</li>
-                    <li>x11proto-kb-dev (1.0.2-0ubuntu2)</li>
-                    <li>x11proto-randr-dev (1.1.2-0ubuntu2)</li>
-                    <li>x11proto-record-dev (1.13.2-0ubuntu2)</li>
-                    <li>x11proto-trap-dev (3.4.3-0ubuntu2)</li>
-                    <li>x11proto-video-dev (2.2.2-0ubuntu2)</li>
-                    <li>x11proto-xext-dev (7.0.2-0ubuntu2)</li>
-                    <li>xlibs-dev (7.0.0-0ubuntu45)</li>
-                    <li>zlib1g-dev (1:1.2.3-6ubuntu4)</li>
-                </ul>
-            </blockquote>
-            <!-- ------------------------------------------------------ -->
-            <h4>Ubuntu 7.04</h4>
-            <p>
-            Using the Synaptic Package Manager, download the following
-            packages (double indented packages are automatically aquired
-            due to package dependencies):
-            <blockquote>
-                <ul>
-                    <li>build-essential</li>
-                    <ul>
-                        <li>dpkg-dev</li>
-                        <li>g++</li>
-                        <li>g++-4.1</li>
-                        <li>libc6-dev</li>
-                        <li>libstdc++6.4.1-dev</li>
-                        <li>linux-libc-dev</li>
-                    </ul>
-                    <li>gawk</li>
-                    <li>m4</li>
-                    <li>libasound2-dev</li>
-                    <li>libcupsys2-dev</li>
-                    <ul>
-                        <li>libgcrypt11-dev</li>
-                        <li>lgnutls-dev</li>
-                        <li>libgpg-error-dev</li>
-                        <li>liblzo-dev</li>
-                        <li>libopencdk8-dev</li>
-                        <li>libpopt-dev</li>
-                        <li>libtasn1-3-dev</li>
-                        <li>zlib1g-dev</li>
-                    </ul>
-                    <li>sun-java6-jdk</li>
-                    <ul>
-                        <li>java-common</li>
-                        <li>libltdl3</li>
-                        <li>odbcinst1debian1</li>
-                        <li>sun-java6-bin</li>
-                        <li>sun-java6-jre</li>
-                        <li>unixodbc</li>
-                    </ul>
-                    <li>xlibs-dev</li>
-                    <ul>
-                        <li>(many)</li>
-                    </ul>
-                    <li>x11proto-print-dev</li>
-                    <li>libxaw7-dev</li>
-                    <ul>
-                        <li>libxaw-headers</li>
-                    </ul>
-                    <li>libxp-dev</li>
-                    <li>libfreetype6-dev</li>
-                </ul>
-            </blockquote>
+	      <blockquote>
+		After installing <a href="http://debian.org">Debian</a> 5 
+		you need to install several build dependencies. 
+		The simplest way to install the build dependencies is to 
+		execute the following commands as user <tt>root</tt>:
+		<p/>
+		<code>aptitude build-dep openjdk-6</code>
+		<p/>
+		<code>aptitude install openjdk-6-jdk libmotif-dev</code>
+		<p/>
+		In addition, it's necessary to set a few environment variables for the build:
+		<p/>
+		<code>export LANG=C ALT_BOOTDIR=/usr/lib/jvm/java-6-openjdk</code>
+	      </blockquote>
         </blockquote>
-        <!-- ------------------------------------------------------ -->
+        <!-- ====================================================== -->
+	<h3><a name="ubuntu">Ubuntu</a></h3>
+        <blockquote>
+            <h4>Ubuntu 8.04</h4>
+            <p>
+	      <blockquote>
+		After installing <a href="http://ubuntu.org">Ubuntu</a> 8.04 
+		you need to install several build dependencies. 
+		<p/>
+		First, you need to enable the universe repository in the 
+		Software Sources application and reload the repository 
+		information. The Software Sources application is available 
+		under the System/Administration menu. 
+		<p/>
+		The simplest way to install the build dependencies is to 
+		execute the following commands:
+		<p/>
+		<code>sudo aptitude build-dep openjdk-6</code>
+		<p/>
+		<code>sudo aptitude install openjdk-6-jdk</code>
+		<p/>
+		In addition, it's necessary to set a few environment variables for the build:
+		<p/>
+		<code>export LANG=C ALT_BOOTDIR=/usr/lib/jvm/java-6-openjdk</code>
+              </blockquote>
+           <h4>Ubuntu 8.10</h4>
+            <p>
+	      <blockquote>
+		After installing <a href="http://ubuntu.org">Ubuntu</a> 8.10 
+		you need to install several build dependencies. The simplest
+		way to do it is to execute the following commands:
+		<p/>
+		<code>sudo aptitude build-dep openjdk-6</code>
+		<p/>
+		<code>sudo aptitude install openjdk-6-jdk</code>
+		<p/>
+		In addition, it's necessary to set a few environment variables for the build:
+		<p/>
+		<code>export LANG=C ALT_BOOTDIR=/usr/lib/jvm/java-6-openjdk</code>
+             </blockquote>
+           <h4>Ubuntu 9.04</h4>
+            <p>
+	      <blockquote>
+		After installing <a href="http://ubuntu.org">Ubuntu</a> 9.04 
+		you need to install several build dependencies. The simplest
+		way to do it is to execute the following commands:
+		<p/>
+		<code>sudo aptitude build-dep openjdk-6</code>
+		<p/>
+		<code>sudo aptitude install openjdk-6-jdk</code>
+		<p/>
+		In addition, it's necessary to set a few environment variables for the build:
+		<p/>
+		<code>export LANG=C ALT_BOOTDIR=/usr/lib/jvm/java-6-openjdk</code>
+             </blockquote>
+        </blockquote>
+        <!-- ====================================================== -->
+        <h3><a name="opensuse">OpenSUSE</a></h3>
+        <blockquote>
+            <h4>OpenSUSE 11.1</h4>
+            <p>
+	      <blockquote>
+		After installing <a href="http://opensuse.org">OpenSUSE</a> 11.1 
+		you need to install several build dependencies. 
+		The simplest way to install the build dependencies is to 
+		execute the following commands:
+		<p/>
+		<code>sudo zypper source-install -d java-1_6_0-openjdk</code>
+		<p/>
+		<code>sudo zypper install make</code>
+		<p/>
+		In addition, it is necessary to set a few environment variables for the build:
+		<p/>
+		<code>export LANG=C ALT_BOOTDIR=/usr/lib/jvm/java-1.6.0-openjdk</code>
+		<p/>
+		Finally, you need to unset the <code>JAVA_HOME</code> environment variable:
+		<p/>
+		<code>export -n JAVA_HOME</code>
+	      </blockquote>
+	</blockquote>
+        <!-- ====================================================== -->
+        <h3><a name="mandriva">Mandriva</a></h3>
+        <blockquote>
+            <h4>Mandriva Linux One 2009 Spring</h4>
+            <p>
+	      <blockquote>
+		After installing <a href="http://mandriva.org">Mandriva</a> Linux One 2009 Spring 
+		you need to install several build dependencies. 
+		The simplest way to install the build dependencies is to 
+		execute the following commands as user <tt>root</tt>:
+		<p/>
+		<code>urpmi java-1.6.0-openjdk-devel ant make gcc gcc-c++ freetype-devel zip unzip libcups2-devel libxrender1-devel libalsa2-devel libstc++-static-devel libxtst6-devel libxi-devel</code>
+                <p/>
+		In addition, it is necessary to set a few environment variables for the build:
+		<p/>
+		<code>export LANG=C ALT_BOOTDIR=/usr/lib/jvm/java-1.6.0-openjdk</code>
+	      </blockquote>
+        </blockquote>
+        <!-- ====================================================== -->
+        <h3><a name="opensolaris">OpenSolaris</a></h3>
+        <blockquote>
+            <h4>OpenSolaris 2009.06</h4>
+            <p>
+	      <blockquote>
+		After installing <a href="http://opensolaris.org">OpenSolaris</a> 2009.06 
+		you need to install several build dependencies. 
+		The simplest way to install the build dependencies is to 
+		execute the following commands:
+		<p/>
+		<code>pfexec pkg install SUNWgmake SUNWj6dev SUNWant sunstudioexpress SUNWcups SUNWzip SUNWunzip SUNWxwhl SUNWxorg-headers SUNWaudh SUNWfreetype2</code>
+                <p/>
+		In addition, it is necessary to set a few environment variables for the build:
+		<p/>
+		<code>export LANG=C ALT_COMPILER_PATH=/opt/SunStudioExpress/bin/ ALT_CUPS_HEADERS_PATH=/usr/include/</code>
+		<p/>
+		Finally, you need to make sure that the build process can find the Sun Studio compilers:
+		<p/>
+		<code>export PATH=$PATH:/opt/SunStudioExpress/bin/</code>
+	      </blockquote>
+        </blockquote>
+        <!-- ------------------------------------------------------ -->  
         <hr>
         <h2><a name="directories">Source Directory Structure</a></h2>
         <blockquote>
@@ -597,11 +637,6 @@
                     package</a>.
                 </li>
                 <li>
-                    Install the
-                    <a href="#jibx">JIBX Libraries</a>, set
-                    <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>.
-                </li>
-                <li>
                     Install
                     <a href="#ant">Ant</a>, 
                     make sure it is in your PATH.
@@ -668,11 +703,6 @@
                 </li>
                 <li>
                     Install the <a href="#xrender">XRender Include files</a>.
-                </li>
-                <li>
-                    Install the
-                    <a href="#jibx">JIBX Libraries</a>, set
-                    <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>.
                 </li>
                 <li>
                     Install
@@ -768,11 +798,6 @@
                 <li>
                     Install 
                     <a href="#dxsdk">Microsoft DirectX SDK</a>.
-                </li>
-                <li>
-                    Install the
-                    <a href="#jibx">JIBX Libraries</a>, set
-                    <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>.
                 </li>
                 <li>
                     Install
@@ -901,27 +926,6 @@
                 cacerts file that will get placed in your build.
                 By default an empty cacerts file is provided and that should be
                 fine for most JDK developers.
-            </blockquote>
-            <!-- ------------------------------------------------------ -->
-            <h4><a name="jibx">JIBX</a></h4>
-            <blockquote>
-                JIBX libraries version 1.1.5 is required for building the OpenJDK.
-                Namely, the following JAR files from the JIBX distribution package
-                are required:
-                <ul>
-                    <li>bcel.jar
-                    <li>jibx-bind.jar
-                    <li>jibx-run.jar
-                    <li>xpp3.jar
-                </ul>
-                <p>
-                You can download the package from the
-                <a href="http://jibx.sourceforge.net" target="_blank">JIBX site</a>.
-                <p>
-                You will need to set the
-                <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>
-                environment variable to refer to place where the JAR files,
-                above, are located.
             </blockquote>
             <!-- ------------------------------------------------------ -->
             <h4><a name="compilers">Compilers</a></h4>
@@ -1495,12 +1499,6 @@
                     The location of the <a href="#cacerts">cacerts</a> file.
                     The default will refer to 
                     <tt>jdk/src/share/lib/security/cacerts</tt>.
-                </dd>
-                <dt><tt><a name="ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt></dt>
-                <dd>
-                    The location of the <a href="#jibx">JIBX libraries</a> file.
-                    The default value is
-                    <tt>$(ALT_SLASH_JAVA)/devtools/share/jibx/lib</tt>.
                 </dd>
                 <dt><a name="ALT_CUPS_HEADERS_PATH"><tt>ALT_CUPS_HEADERS_PATH</tt></a> </dt>
                 <dd>

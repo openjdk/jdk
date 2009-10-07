@@ -71,7 +71,6 @@
 
 // forward declaration for class -- see below for definition
 class SuperTypeClosure;
-class OopMapBlock;
 class JNIid;
 class jniIdMapBase;
 class BreakpointInfo;
@@ -98,6 +97,29 @@ class FieldPrinter: public FieldClosure {
    void do_field(fieldDescriptor* fd);
 };
 #endif  // !PRODUCT
+
+// ValueObjs embedded in klass. Describes where oops are located in instances of
+// this klass.
+class OopMapBlock VALUE_OBJ_CLASS_SPEC {
+ public:
+  // Byte offset of the first oop mapped by this block.
+  int offset() const          { return _offset; }
+  void set_offset(int offset) { _offset = offset; }
+
+  // Number of oops in this block.
+  uint count() const         { return _count; }
+  void set_count(uint count) { _count = count; }
+
+  // sizeof(OopMapBlock) in HeapWords.
+  static const int size_in_words() {
+    return align_size_up(int(sizeof(OopMapBlock)), HeapWordSize) >>
+      LogHeapWordSize;
+  }
+
+ private:
+  int  _offset;
+  uint _count;
+};
 
 class instanceKlass: public Klass {
   friend class VMStructs;
@@ -191,10 +213,11 @@ class instanceKlass: public Klass {
   int             _nonstatic_field_size;
   int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
   int             _static_oop_field_size;// number of static oop fields in this klass
-  int             _nonstatic_oop_map_size;// number of nonstatic oop-map blocks allocated at end of this klass
+  int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
   bool            _rewritten;            // methods rewritten.
   bool            _has_nonstatic_fields; // for sizing with UseCompressedOops
+  bool            _should_verify_class;  // allow caching of preverification
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
   ClassState      _init_state;           // state of class
@@ -340,6 +363,10 @@ class instanceKlass: public Klass {
   int  get_init_state()                    { return _init_state; } // Useful for debugging
   bool is_rewritten() const                { return _rewritten; }
 
+  // defineClass specified verification
+  bool should_verify_class() const         { return _should_verify_class; }
+  void set_should_verify_class(bool value) { _should_verify_class = value; }
+
   // marking
   bool is_marked_dependent() const         { return _is_marked_dependent; }
   void set_is_marked_dependent(bool value) { _is_marked_dependent = value; }
@@ -424,12 +451,24 @@ class instanceKlass: public Klass {
   void set_source_debug_extension(symbolOop n){ oop_store_without_check((oop*) &_source_debug_extension, (oop) n); }
 
   // nonstatic oop-map blocks
-  int nonstatic_oop_map_size() const        { return _nonstatic_oop_map_size; }
-  void set_nonstatic_oop_map_size(int size) { _nonstatic_oop_map_size = size; }
+  static int nonstatic_oop_map_size(unsigned int oop_map_count) {
+    return oop_map_count * OopMapBlock::size_in_words();
+  }
+  unsigned int nonstatic_oop_map_count() const {
+    return _nonstatic_oop_map_size / OopMapBlock::size_in_words();
+  }
+  int nonstatic_oop_map_size() const { return _nonstatic_oop_map_size; }
+  void set_nonstatic_oop_map_size(int words) {
+    _nonstatic_oop_map_size = words;
+  }
 
   // RedefineClasses() support for previous versions:
   void add_previous_version(instanceKlassHandle ikh, BitMap *emcp_methods,
          int emcp_method_count);
+  // If the _previous_versions array is non-NULL, then this klass
+  // has been redefined at least once even if we aren't currently
+  // tracking a previous version.
+  bool has_been_redefined() const { return _previous_versions != NULL; }
   bool has_previous_version() const;
   void init_previous_versions() {
     _previous_versions = NULL;
@@ -471,9 +510,14 @@ class instanceKlass: public Klass {
   void set_bootstrap_method(oop mh)                   { oop_store(&_bootstrap_method, mh); }
 
   // jmethodID support
-  static jmethodID get_jmethod_id(instanceKlassHandle ik_h, size_t idnum,
-                                  jmethodID new_id, jmethodID* new_jmeths);
-  static jmethodID jmethod_id_for_impl(instanceKlassHandle ik_h, methodHandle method_h);
+  static jmethodID get_jmethod_id(instanceKlassHandle ik_h,
+                     methodHandle method_h);
+  static jmethodID get_jmethod_id_fetch_or_update(instanceKlassHandle ik_h,
+                     size_t idnum, jmethodID new_id, jmethodID* new_jmeths,
+                     jmethodID* to_dealloc_id_p,
+                     jmethodID** to_dealloc_jmeths_p);
+  static void get_jmethod_id_length_value(jmethodID* cache, size_t idnum,
+                size_t *length_p, jmethodID* id_p);
   jmethodID jmethod_id_or_null(methodOop method);
 
   // cached itable index support
@@ -719,6 +763,11 @@ private:
   void set_init_thread(Thread *thread)  { _init_thread = thread; }
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
+  // The RedefineClasses() API can cause new method idnums to be needed
+  // which will cause the caches to grow. Safety requires different
+  // cache management logic if the caches can grow instead of just
+  // going from NULL to non-NULL.
+  bool idnum_can_increment() const      { return has_been_redefined(); }
   jmethodID* methods_jmethod_ids_acquire() const
          { return (jmethodID*)OrderAccess::load_ptr_acquire(&_methods_jmethod_ids); }
   void release_set_methods_jmethod_ids(jmethodID* jmeths)
@@ -838,21 +887,6 @@ inline u2 instanceKlass::next_method_idnum() {
   }
 }
 
-
-// ValueObjs embedded in klass. Describes where oops are located in instances of this klass.
-
-class OopMapBlock VALUE_OBJ_CLASS_SPEC {
- private:
-  jushort _offset;    // Offset of first oop in oop-map block
-  jushort _length;    // Length of oop-map block
- public:
-  // Accessors
-  jushort offset() const          { return _offset; }
-  void set_offset(jushort offset) { _offset = offset; }
-
-  jushort length() const          { return _length; }
-  void set_length(jushort length) { _length = length; }
-};
 
 /* JNIid class for jfieldIDs only */
 class JNIid: public CHeapObj {

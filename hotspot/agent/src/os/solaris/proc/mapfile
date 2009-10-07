@@ -1,7 +1,7 @@
 #
 
 #
-# Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ SUNWprivate_1.1 {
 		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_resume0;
 		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_suspend0;
 		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_writeBytesToProcess0;
+                # this is needed by saproc_audit.c to redirect opens in libproc.so
+                libsaproc_open;
 local:
 	*;
 };

@@ -193,11 +193,17 @@ findPid()
 {
     # Return 0 if $1 is the pid of a running process.
     if [ -z "$isWin98" ] ; then
-        #   Never use plain 'ps', which requires a "controlling terminal"
-        #     and will fail  with a "ps: no controlling terminal" error.
-        #     Running under 'rsh' will cause this ps error.
-        # cygwin ps puts an I in column 1 for some reason.
-        $psCmd -e | $grep '^I* *'"$1 " > $devnull 2>&1
+        if [ "$osname" = SunOS ] ; then
+            #Solaris and OpenSolaris use pgrep and not ps in psCmd
+            findPidCmd="$psCmd"
+        else
+            #   Never use plain 'ps', which requires a "controlling terminal"
+            #     and will fail  with a "ps: no controlling terminal" error.
+            #     Running under 'rsh' will cause this ps error.
+            # cygwin ps puts an I in column 1 for some reason.
+            findPidCmd="$psCmd -e"
+        fi
+	$findPidCmd | $grep '^I* *'"$1 " > $devnull 2>&1
         return $?
     fi
 
@@ -292,7 +298,17 @@ EOF
          # On linux, core files take a long time, and can leave
          # zombie processes
          if [ "$osname" = SunOS ] ; then
-             psCmd="/usr/ucb/ps -axwww"
+             #Experiments show Solaris '/usr/ucb/ps -axwww' and
+             #'/usr/bin/pgrep -f -l' provide the same small amount of the
+             #argv string (PRARGSZ=80 in /usr/include/sys/procfs.h)
+             # 1) This seems to have been working OK in ShellScaffold.
+             # 2) OpenSolaris does not provide /usr/ucb/ps, so use pgrep
+             #    instead
+             #The alternative would be to use /usr/bin/pargs [pid] to get
+             #all the args for a process, splice them back into one
+             #long string, then grep.
+             UU=`/usr/bin/id -un`
+             psCmd="pgrep -f -l -U $UU"
          else
              ulimit -c 0
              # See bug 6238593.

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ inline void Atomic::inc_ptr(volatile void*     dest) { (void)add_ptr(1, dest); }
 inline void Atomic::dec    (volatile jint*     dest) { (void)add    (-1, dest); }
 inline void Atomic::dec_ptr(volatile intptr_t* dest) { (void)add_ptr(-1, dest); }
 inline void Atomic::dec_ptr(volatile void*     dest) { (void)add_ptr(-1, dest); }
+
+inline jlong Atomic::load(volatile jlong* src) { return *src; }
 
 #ifdef _GNU_SOURCE
 

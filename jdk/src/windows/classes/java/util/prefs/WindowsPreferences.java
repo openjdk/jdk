@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.StringTokenizer;
 import java.io.ByteArrayOutputStream;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 
 /**
  * Windows registry based implementation of  <tt>Preferences</tt>.
@@ -48,7 +48,7 @@ class WindowsPreferences extends AbstractPreferences{
     /**
      * Logger for error messages
      */
-    private static Logger logger;
+    private static PlatformLogger logger;
 
     /**
      * Windows registry path to <tt>Preferences</tt>'s root nodes.
@@ -1102,9 +1102,9 @@ class WindowsPreferences extends AbstractPreferences{
         // assert false;
     }
 
-    private static synchronized Logger logger() {
+    private static synchronized PlatformLogger logger() {
         if (logger == null) {
-            logger = Logger.getLogger("java.util.prefs");
+            logger = PlatformLogger.getLogger("java.util.prefs");
         }
         return logger;
     }

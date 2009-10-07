@@ -102,7 +102,8 @@ public class HttpTransaction {
         if (rspheaders != null) {
             buf.append (rspheaders.toString()).append("\r\n");
         }
-        buf.append ("Body: ").append (new String(rspbody)).append("\r\n");
+        String rbody = rspbody == null? "": new String (rspbody);
+        buf.append ("Body: ").append (rbody).append("\r\n");
         return new String (buf);
     }
 
