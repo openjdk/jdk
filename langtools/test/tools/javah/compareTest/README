@@ -1,0 +1,16 @@
+test/tools/javah/compareTest/README
+
+This directory contains a program for comparing the output of new javah against the
+output of JDK 6 or other older versions of javah.
+
+It cannot be run automatically because of the need for the older version of javah
+to compare against.
+
+The test works by scanning a jar file, such as rt.jar, looking for all files with
+native methods.  It then runs both the old and new versions of javah on those
+classes with native methods, and verifies that the results are character-for-character
+identical.
+
+To run the test, build langtools, then execute the script in the root langtools 
+directory, providing the location of the JDK to be tested. The default is
+/opt/jdk/1.6.0.

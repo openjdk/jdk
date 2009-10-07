@@ -48,7 +48,7 @@ public class T6705935 {
                                         "java.lang",
                                         Collections.singleton(JavaFileObject.Kind.CLASS),
                                         false)) {
-            String p = ((BaseFileObject)fo).getPath();
+            String p = fo.getName();
             int bra = p.indexOf("(");
             int ket = p.indexOf(")");
             //System.err.println(bra + "," + ket + "," + p.length());
