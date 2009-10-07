@@ -746,7 +746,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *          base&nbsp;10.
      */
     public String toString() {
-        return String.valueOf(value);
+        return toString(value);
     }
 
     /**
