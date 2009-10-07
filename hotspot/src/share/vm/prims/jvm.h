@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,15 +390,10 @@ JVM_FindClassFromClassLoader(JNIEnv *env, const char *name, jboolean init,
                              jobject loader, jboolean throwError);
 
 /*
- * Find a class from a boot class loader. Throw ClassNotFoundException
- * or NoClassDefFoundError depending on the value of the last
- * argument. This is the same as FindClassFromClassLoader but provided
- * as a convenience method exported correctly on all platforms for
- * JSR 277 launcher class loading.
+ * Find a class from a boot class loader. Returns NULL if class not found.
  */
 JNIEXPORT jclass JNICALL
-JVM_FindClassFromBootLoader(JNIEnv *env, const char *name,
-                            jboolean throwError);
+JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
 
 /*
  * Find a class from a given class.
@@ -421,6 +416,17 @@ JNIEXPORT jclass JNICALL
 JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader,
                           const jbyte *buf, jsize len, jobject pd,
                           const char *source);
+
+/* Define a class with a source with conditional verification (added HSX 14)
+ * -Xverify:all will verify anyway, -Xverify:none will not verify,
+ * -Xverify:remote (default) will obey this conditional
+ * i.e. true = should_verify_class
+ */
+JNIEXPORT jclass JNICALL
+JVM_DefineClassWithSourceCond(JNIEnv *env, const char *name,
+                              jobject loader, const jbyte *buf,
+                              jsize len, jobject pd, const char *source,
+                              jboolean verify);
 
 /* Define a class with a source (MLVM) */
 JNIEXPORT jclass JNICALL

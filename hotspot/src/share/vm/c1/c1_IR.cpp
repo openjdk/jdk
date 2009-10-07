@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,6 +208,15 @@ int IRScope::top_scope_bci() const {
   return scope->caller_bci();
 }
 
+bool IRScopeDebugInfo::should_reexecute() {
+  ciMethod* cur_method = scope()->method();
+  int       cur_bci    = bci();
+  if (cur_method != NULL && cur_bci != SynchronizationEntryBCI) {
+    Bytecodes::Code code = cur_method->java_code_at_bci(cur_bci);
+    return Interpreter::bytecode_should_reexecute(code);
+  } else
+    return false;
+}
 
 
 // Implementation of CodeEmitInfo
@@ -253,7 +262,7 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, bool lock_stack_only)
 void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_offset) {
   // record the safepoint before recording the debug info for enclosing scopes
   recorder->add_safepoint(pc_offset, _oop_map->deep_copy());
-  _scope_debug_info->record_debug_info(recorder, pc_offset);
+  _scope_debug_info->record_debug_info(recorder, pc_offset, true/*topmost*/);
   recorder->end_safepoint(pc_offset);
 }
 

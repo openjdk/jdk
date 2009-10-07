@@ -28,8 +28,6 @@ package sun.security.provider.certpath;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.PrivilegedAction;
-import java.security.Security;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathParameters;
 import java.security.cert.CertPathValidatorException;
@@ -49,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
 import javax.security.auth.x500.X500Principal;
+import sun.security.action.GetBooleanSecurityPropertyAction;
 import sun.security.util.Debug;
 
 /**
@@ -67,7 +66,8 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
     private List<PKIXCertPathChecker> userCheckers;
     private String sigProvider;
     private BasicChecker basicChecker;
-    private String ocspProperty;
+    private boolean ocspEnabled = false;
+    private boolean onlyEECert = false;
 
     /**
      * Default constructor.
@@ -253,13 +253,12 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
 
         if (pkixParam.isRevocationEnabled()) {
             // Examine OCSP security property
-            ocspProperty = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-                    public String run() {
-                        return
-                            Security.getProperty(OCSPChecker.OCSP_ENABLE_PROP);
-                    }
-                });
+            ocspEnabled = AccessController.doPrivileged(
+                new GetBooleanSecurityPropertyAction
+                    (OCSPChecker.OCSP_ENABLE_PROP));
+            onlyEECert = AccessController.doPrivileged(
+                new GetBooleanSecurityPropertyAction
+                    ("com.sun.security.onlyCheckRevocationOfEECert"));
         }
     }
 
@@ -303,15 +302,15 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
         if (pkixParam.isRevocationEnabled()) {
 
             // Use OCSP if it has been enabled
-            if ("true".equalsIgnoreCase(ocspProperty)) {
+            if (ocspEnabled) {
                 OCSPChecker ocspChecker =
-                    new OCSPChecker(cpOriginal, pkixParam);
+                    new OCSPChecker(cpOriginal, pkixParam, onlyEECert);
                 certPathCheckers.add(ocspChecker);
             }
 
             // Always use CRLs
-            CrlRevocationChecker revocationChecker =
-                new CrlRevocationChecker(anchor, pkixParam, certList);
+            CrlRevocationChecker revocationChecker = new
+                CrlRevocationChecker(anchor, pkixParam, certList, onlyEECert);
             certPathCheckers.add(revocationChecker);
         }
 

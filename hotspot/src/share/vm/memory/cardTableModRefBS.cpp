@@ -253,8 +253,16 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     }
 #endif
     // The guard page is always committed and should not be committed over.
-    HeapWord* const new_end_for_commit = MIN2(new_end_aligned,
-                                              _guard_region.start());
+    // "guarded" is used for assertion checking below and recalls the fact
+    // that the would-be end of the new committed region would have
+    // penetrated the guard page.
+    HeapWord* new_end_for_commit = new_end_aligned;
+
+    DEBUG_ONLY(bool guarded = false;)
+    if (new_end_for_commit > _guard_region.start()) {
+      new_end_for_commit = _guard_region.start();
+      DEBUG_ONLY(guarded = true;)
+    }
 
     if (new_end_for_commit > cur_committed.end()) {
       // Must commit new pages.
@@ -302,7 +310,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     // not the aligned up expanded region.
     // jbyte* const end = byte_after(new_region.last());
     jbyte* const end = (jbyte*) new_end_for_commit;
-    assert((end >= byte_after(new_region.last())) || collided,
+    assert((end >= byte_after(new_region.last())) || collided || guarded,
       "Expect to be beyond new region unless impacting another region");
     // do nothing if we resized downward.
 #ifdef ASSERT
@@ -651,6 +659,29 @@ public:
 void CardTableModRefBS::verify_clean_region(MemRegion mr) {
   GuaranteeNotModClosure blk(this);
   non_clean_card_iterate_work(mr, &blk, false);
+}
+
+// To verify a MemRegion is entirely dirty this closure is passed to
+// dirty_card_iterate. If the region is dirty do_MemRegion will be
+// invoked only once with a MemRegion equal to the one being
+// verified.
+class GuaranteeDirtyClosure: public MemRegionClosure {
+  CardTableModRefBS* _ct;
+  MemRegion _mr;
+  bool _result;
+public:
+  GuaranteeDirtyClosure(CardTableModRefBS* ct, MemRegion mr)
+    : _ct(ct), _mr(mr), _result(false) {}
+  void do_MemRegion(MemRegion mr) {
+    _result = _mr.equals(mr);
+  }
+  bool result() const { return _result; }
+};
+
+void CardTableModRefBS::verify_dirty_region(MemRegion mr) {
+  GuaranteeDirtyClosure blk(this, mr);
+  dirty_card_iterate(mr, &blk);
+  guarantee(blk.result(), "Non-dirty cards in region that should be dirty");
 }
 #endif
 

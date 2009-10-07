@@ -34,16 +34,28 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.SecretKey;
-import java.security.Security;
-import java.security.Provider;
 import java.security.GeneralSecurityException;
 import javax.crypto.spec.IvParameterSpec;
 import sun.security.krb5.KrbCryptoException;
-import sun.security.krb5.internal.Krb5;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import sun.security.action.GetPropertyAction;
 
 public final class Des {
+
+    // RFC 3961 demands that UTF-8 encoding be used in DES's
+    // string-to-key function. For historical reasons, some
+    // implementations use a locale-specific encoding. Even
+    // so, when the client and server use different locales,
+    // they must agree on a common value, normally the one
+    // used when the password is set/reset.
+    //
+    // The following system property is provided to perform the
+    // string-to-key encoding. When set, the specified charset
+    // name is used. Otherwise, the system default charset.
+
+    private final static String CHARSET =
+            java.security.AccessController.doPrivileged(
+            new GetPropertyAction("sun.security.krb5.msinterop.des.s2kcharset"));
 
     private static final long[] bad_keys = {
         0x0101010101010101L, 0xfefefefefefefefeL,
@@ -226,7 +238,11 @@ public final class Des {
 
         // Convert password to byte array
         try {
-            cbytes = (new String(passwdChars)).getBytes();
+            if (CHARSET == null) {
+                cbytes = (new String(passwdChars)).getBytes();
+            } else {
+                cbytes = (new String(passwdChars)).getBytes(CHARSET);
+            }
         } catch (Exception e) {
             // clear-up sensitive information
             if (cbytes != null) {

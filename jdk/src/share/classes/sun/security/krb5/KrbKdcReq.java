@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,11 @@ public abstract class KrbKdcReq {
                 send(realm,tempKdc,useTCP);
                 break;
             } catch (Exception e) {
+                if (DEBUG) {
+                    System.out.println(">>> KrbKdcReq send: error trying " +
+                            tempKdc);
+                    e.printStackTrace(System.out);
+                }
                 savedException = e;
             }
         }
@@ -179,10 +184,36 @@ public abstract class KrbKdcReq {
         /*
          * Get port number for this KDC.
          */
-        StringTokenizer strTok = new StringTokenizer(tempKdc, ":");
-        String kdc = strTok.nextToken();
-        if (strTok.hasMoreTokens()) {
-            String portStr = strTok.nextToken();
+        String kdc = null;
+        String portStr = null;
+
+        if (tempKdc.charAt(0) == '[') {     // Explicit IPv6 in []
+            int pos = tempKdc.indexOf(']', 1);
+            if (pos == -1) {
+                throw new IOException("Illegal KDC: " + tempKdc);
+            }
+            kdc = tempKdc.substring(1, pos);
+            if (pos != tempKdc.length() - 1) {  // with port number
+                if (tempKdc.charAt(pos+1) != ':') {
+                    throw new IOException("Illegal KDC: " + tempKdc);
+                }
+                portStr = tempKdc.substring(pos+2);
+            }
+        } else {
+            int colon = tempKdc.indexOf(':');
+            if (colon == -1) {      // Hostname or IPv4 host only
+                kdc = tempKdc;
+            } else {
+                int nextColon = tempKdc.indexOf(':', colon+1);
+                if (nextColon > 0) {    // >=2 ":", IPv6 with no port
+                    kdc = tempKdc;
+                } else {                // 1 ":", hostname or IPv4 with port
+                    kdc = tempKdc.substring(0, colon);
+                    portStr = tempKdc.substring(colon+1);
+                }
+            }
+        }
+        if (portStr != null) {
             int tempPort = parsePositiveIntString(portStr);
             if (tempPort > 0)
                 port = tempPort;

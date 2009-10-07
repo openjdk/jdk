@@ -999,24 +999,20 @@ public class SwingUtilities implements SwingConstants
                 textR.height = (int) v.getPreferredSpan(View.Y_AXIS);
             } else {
                 textR.width = SwingUtilities2.stringWidth(c, fm, text);
-
-                // Take into account the left and right side bearings.
-                // This gives more space than it is actually needed,
-                // but there are two reasons:
-                // 1. If we set the width to the actual bounds,
-                //    all callers would have to account for the bearings
-                //    themselves. NOTE: all pref size calculations don't do it.
-                // 2. You can do a drawString at the returned location
-                //    and the text won't be clipped.
                 lsb = SwingUtilities2.getLeftSideBearing(c, fm, text);
                 if (lsb < 0) {
+                    // If lsb is negative, add it to the width and later
+                    // adjust the x location. This gives more space than is
+                    // actually needed.
+                    // This is done like this for two reasons:
+                    // 1. If we set the width to the actual bounds all
+                    //    callers would have to account for negative lsb
+                    //    (pref size calculations ONLY look at width of
+                    //    textR)
+                    // 2. You can do a drawString at the returned location
+                    //    and the text won't be clipped.
                     textR.width -= lsb;
                 }
-                rsb = SwingUtilities2.getRightSideBearing(c, fm, text);
-                if (rsb > 0) {
-                    textR.width += rsb;
-                }
-
                 if (textR.width > availTextWidth) {
                     text = SwingUtilities2.clipString(c, fm, text,
                                                       availTextWidth);

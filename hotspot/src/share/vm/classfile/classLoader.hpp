@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,9 +149,26 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_accumulated_time;
   static PerfCounter* _perf_classes_inited;
   static PerfCounter* _perf_class_init_time;
+  static PerfCounter* _perf_class_init_selftime;
+  static PerfCounter* _perf_classes_verified;
   static PerfCounter* _perf_class_verify_time;
+  static PerfCounter* _perf_class_verify_selftime;
   static PerfCounter* _perf_classes_linked;
   static PerfCounter* _perf_class_link_time;
+  static PerfCounter* _perf_class_link_selftime;
+  static PerfCounter* _perf_class_parse_time;
+  static PerfCounter* _perf_class_parse_selftime;
+  static PerfCounter* _perf_sys_class_lookup_time;
+  static PerfCounter* _perf_shared_classload_time;
+  static PerfCounter* _perf_sys_classload_time;
+  static PerfCounter* _perf_app_classload_time;
+  static PerfCounter* _perf_app_classload_selftime;
+  static PerfCounter* _perf_app_classload_count;
+  static PerfCounter* _perf_define_appclasses;
+  static PerfCounter* _perf_define_appclass_time;
+  static PerfCounter* _perf_define_appclass_selftime;
+  static PerfCounter* _perf_app_classfile_bytes_read;
+  static PerfCounter* _perf_sys_classfile_bytes_read;
 
   static PerfCounter* _sync_systemLoaderLockContentionRate;
   static PerfCounter* _sync_nonSystemLoaderLockContentionRate;
@@ -196,12 +213,29 @@ class ClassLoader: AllStatic {
   static void print_bootclasspath();
 
   // Timing
-  static PerfCounter* perf_accumulated_time()  { return _perf_accumulated_time; }
-  static PerfCounter* perf_classes_inited()    { return _perf_classes_inited; }
-  static PerfCounter* perf_class_init_time()   { return _perf_class_init_time; }
-  static PerfCounter* perf_class_verify_time() { return _perf_class_verify_time; }
-  static PerfCounter* perf_classes_linked()    { return _perf_classes_linked; }
-  static PerfCounter* perf_class_link_time() { return _perf_class_link_time; }
+  static PerfCounter* perf_accumulated_time()         { return _perf_accumulated_time; }
+  static PerfCounter* perf_classes_inited()           { return _perf_classes_inited; }
+  static PerfCounter* perf_class_init_time()          { return _perf_class_init_time; }
+  static PerfCounter* perf_class_init_selftime()      { return _perf_class_init_selftime; }
+  static PerfCounter* perf_classes_verified()         { return _perf_classes_verified; }
+  static PerfCounter* perf_class_verify_time()        { return _perf_class_verify_time; }
+  static PerfCounter* perf_class_verify_selftime()    { return _perf_class_verify_selftime; }
+  static PerfCounter* perf_classes_linked()           { return _perf_classes_linked; }
+  static PerfCounter* perf_class_link_time()          { return _perf_class_link_time; }
+  static PerfCounter* perf_class_link_selftime()      { return _perf_class_link_selftime; }
+  static PerfCounter* perf_class_parse_time()         { return _perf_class_parse_time; }
+  static PerfCounter* perf_class_parse_selftime()     { return _perf_class_parse_selftime; }
+  static PerfCounter* perf_sys_class_lookup_time()    { return _perf_sys_class_lookup_time; }
+  static PerfCounter* perf_shared_classload_time()    { return _perf_shared_classload_time; }
+  static PerfCounter* perf_sys_classload_time()       { return _perf_sys_classload_time; }
+  static PerfCounter* perf_app_classload_time()       { return _perf_app_classload_time; }
+  static PerfCounter* perf_app_classload_selftime()   { return _perf_app_classload_selftime; }
+  static PerfCounter* perf_app_classload_count()      { return _perf_app_classload_count; }
+  static PerfCounter* perf_define_appclasses()        { return _perf_define_appclasses; }
+  static PerfCounter* perf_define_appclass_time()     { return _perf_define_appclass_time; }
+  static PerfCounter* perf_define_appclass_selftime() { return _perf_define_appclass_selftime; }
+  static PerfCounter* perf_app_classfile_bytes_read() { return _perf_app_classfile_bytes_read; }
+  static PerfCounter* perf_sys_classfile_bytes_read() { return _perf_sys_classfile_bytes_read; }
 
   // Record how often system loader lock object is contended
   static PerfCounter* sync_systemLoaderLockContentionRate() {
@@ -307,3 +341,118 @@ class ClassLoader: AllStatic {
   static int  compile_the_world_counter() { return _compile_the_world_counter; }
 #endif //PRODUCT
 };
+
+// PerfClassTraceTime is used to measure time for class loading related events.
+// This class tracks cumulative time and exclusive time for specific event types.
+// During the execution of one event, other event types (e.g. class loading and
+// resolution) as well as recursive calls of the same event type could happen.
+// Only one elapsed timer (cumulative) and one thread-local self timer (exclusive)
+// (i.e. only one event type) are active at a time even multiple PerfClassTraceTime
+// instances have been created as multiple events are happening.
+class PerfClassTraceTime {
+  public:
+    enum {
+       CLASS_LOAD   = 0,
+       PARSE_CLASS  = 1,
+       CLASS_LINK   = 2,
+       CLASS_VERIFY = 3,
+       CLASS_CLINIT = 4,
+       DEFINE_CLASS = 5,
+       EVENT_TYPE_COUNT = 6
+    };
+  protected:
+    // _t tracks time from initialization to destruction of this timer instance
+    // including time for all other event types, and recursive calls of this type.
+    // When a timer is called recursively, the elapsedTimer _t would not be used.
+    elapsedTimer     _t;
+    PerfLongCounter* _timep;
+    PerfLongCounter* _selftimep;
+    PerfLongCounter* _eventp;
+    // pointer to thread-local recursion counter and timer array
+    // The thread_local timers track cumulative time for specific event types
+    // exclusive of time for other event types, but including recursive calls
+    // of the same type.
+    int*             _recursion_counters;
+    elapsedTimer*    _timers;
+    int              _event_type;
+    int              _prev_active_event;
+
+  public:
+
+    inline PerfClassTraceTime(PerfLongCounter* timep,     /* counter incremented with inclusive time */
+                              PerfLongCounter* selftimep, /* counter incremented with exclusive time */
+                              PerfLongCounter* eventp,    /* event counter */
+                              int* recursion_counters,    /* thread-local recursion counter array */
+                              elapsedTimer* timers,       /* thread-local timer array */
+                              int type                    /* event type */ ) :
+        _timep(timep), _selftimep(selftimep), _eventp(eventp), _recursion_counters(recursion_counters), _timers(timers), _event_type(type) {
+      initialize();
+    }
+
+    inline PerfClassTraceTime(PerfLongCounter* timep,     /* counter incremented with inclusive time */
+                              elapsedTimer* timers,       /* thread-local timer array */
+                              int type                    /* event type */ ) :
+        _timep(timep), _selftimep(NULL), _eventp(NULL), _recursion_counters(NULL), _timers(timers), _event_type(type) {
+      initialize();
+    }
+
+    void initialize() {
+      if (!UsePerfData) return;
+
+      if (_eventp != NULL) {
+        // increment the event counter
+        _eventp->inc();
+      }
+
+      // stop the current active thread-local timer to measure inclusive time
+      _prev_active_event = -1;
+      for (int i=0; i < EVENT_TYPE_COUNT; i++) {
+         if (_timers[i].is_active()) {
+           assert(_prev_active_event == -1, "should have only one active timer");
+           _prev_active_event = i;
+           _timers[i].stop();
+         }
+      }
+
+      if (_recursion_counters == NULL || (_recursion_counters[_event_type])++ == 0) {
+        // start the inclusive timer if not recursively called
+        _t.start();
+      }
+
+      // start thread-local timer of the given event type
+      if (!_timers[_event_type].is_active()) {
+        _timers[_event_type].start();
+      }
+    }
+
+    inline void suspend() { _t.stop(); _timers[_event_type].stop(); }
+    inline void resume()  { _t.start(); _timers[_event_type].start(); }
+
+    ~PerfClassTraceTime() {
+      if (!UsePerfData) return;
+
+      // stop the thread-local timer as the event completes
+      // and resume the thread-local timer of the event next on the stack
+      _timers[_event_type].stop();
+      jlong selftime = _timers[_event_type].ticks();
+
+      if (_prev_active_event >= 0) {
+        _timers[_prev_active_event].start();
+      }
+
+      if (_recursion_counters != NULL && --(_recursion_counters[_event_type]) > 0) return;
+
+      // increment the counters only on the leaf call
+      _t.stop();
+      _timep->inc(_t.ticks());
+      if (_selftimep != NULL) {
+        _selftimep->inc(selftime);
+      }
+      // add all class loading related event selftime to the accumulated time counter
+      ClassLoader::perf_accumulated_time()->inc(selftime);
+
+      // reset the timer
+      _timers[_event_type].reset();
+    }
+};
+

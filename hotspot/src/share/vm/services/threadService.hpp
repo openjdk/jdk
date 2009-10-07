@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,9 +120,8 @@ private:
   bool         _timer_pending_reset;
 
   // Keep accurate times for potentially recursive class operations
-  int          _class_init_recursion_count;
-  int          _class_verify_recursion_count;
-  int          _class_link_recursion_count;
+  int           _perf_recursion_counts[6];
+  elapsedTimer  _perf_timers[6];
 
   // utility functions
   void  check_and_reset_count()            {
@@ -165,9 +164,8 @@ public:
   void reset_count_stat()                  { _count_pending_reset = true; }
   void reset_time_stat()                   { _timer_pending_reset = true; }
 
-  int* class_init_recursion_count_addr()   { return &_class_init_recursion_count; }
-  int* class_verify_recursion_count_addr() { return &_class_verify_recursion_count; }
-  int* class_link_recursion_count_addr()   { return &_class_link_recursion_count; }
+  int* perf_recursion_counts_addr()        { return _perf_recursion_counts; }
+  elapsedTimer* perf_timers_addr()         { return _perf_timers; }
 };
 
 // Thread snapshot to represent the thread state and statistics

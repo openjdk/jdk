@@ -28,6 +28,23 @@
 # not contain rules.
 #
 
+# Indicate that we are visiting a separate repo or component 
+define MakeStart
+$(PRINTF) "\n\n%s\n%s\n##### %-60.60s #####\n%s\n" \
+"########################################################################" \
+"########################################################################" \
+"Entering $1 for target $2" \
+"########################################################################"
+endef
+
+define MakeFinish
+$(PRINTF) "%s\n##### %-60.60s #####\n%s\n%s\n\n" \
+"########################################################################" \
+"Leaving $1 for target $2" \
+"########################################################################" \
+"########################################################################"
+endef
+
 ifdef OPENJDK
   ifneq ($(OPENJDK),true)
     x:=$(error "OPENJDK (if defined) can only be set to true")
@@ -133,7 +150,11 @@ endif
 
 # Do we build the source and openjdk binary plug bundles?
 BUNDLE_RULES = $(JDK_TOPDIR)/make/closed/bundles.gmk
-BUNDLE_RULES_AVAILABLE := $(call MkExists,$(BUNDLE_RULES))
+ifeq ($(SKIP_BUNDLES_BUILD), true)
+  BUNDLE_RULES_AVAILABLE := false
+else 
+  BUNDLE_RULES_AVAILABLE := $(call MkExists,$(BUNDLE_RULES))
+endif
 
 # Current things we do NOT build for OPENJDK
 ifdef OPENJDK

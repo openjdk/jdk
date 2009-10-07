@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ public class NMethod extends CodeBlob {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(pd != null, "scope must be present");
     }
-    return new ScopeDesc(this, pd.getScopeDecodeOffset());
+    return new ScopeDesc(this, pd.getScopeDecodeOffset(), pd.getReexecute());
   }
 
   /** This is only for use by the debugging system, and is only
@@ -291,7 +291,7 @@ public class NMethod extends CodeBlob {
   public ScopeDesc getScopeDescNearDbg(Address pc) {
     PCDesc pd = getPCDescNearDbg(pc);
     if (pd == null) return null;
-    return new ScopeDesc(this, pd.getScopeDecodeOffset());
+    return new ScopeDesc(this, pd.getScopeDecodeOffset(), pd.getReexecute());
   }
 
   public Map/*<Address, PcDesc>*/ getSafepoints() {

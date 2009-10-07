@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ class Atomic : AllStatic {
   static void store    (jlong    store_value, volatile jlong*    dest);
   static void store_ptr(intptr_t store_value, volatile intptr_t* dest);
   static void store_ptr(void*    store_value, volatile void*     dest);
+
+  static jlong load(volatile jlong* src);
 
   // Atomically add to a location, return updated value
   static jint     add    (jint     add_value, volatile jint*     dest);

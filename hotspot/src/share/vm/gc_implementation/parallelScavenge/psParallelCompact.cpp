@@ -2378,7 +2378,10 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
   // Update subklass/sibling/implementor links of live klasses
   // revisit_klass_stack is used in follow_weak_klass_links().
-  follow_weak_klass_links(cm);
+  follow_weak_klass_links();
+
+  // Revisit memoized MDO's and clear any unmarked weak refs
+  follow_mdo_weak_refs();
 
   // Visit symbol and interned string tables and delete unmarked oops
   SymbolTable::unlink(is_alive_closure());
@@ -2721,17 +2724,25 @@ void PSParallelCompact::follow_stack(ParCompactionManager* cm) {
 }
 
 void
-PSParallelCompact::follow_weak_klass_links(ParCompactionManager* serial_cm) {
+PSParallelCompact::follow_weak_klass_links() {
   // All klasses on the revisit stack are marked at this point.
   // Update and follow all subklass, sibling and implementor links.
-  for (uint i = 0; i < ParallelGCThreads+1; i++) {
+  if (PrintRevisitStats) {
+    gclog_or_tty->print_cr("#classes in system dictionary = %d", SystemDictionary::number_of_classes());
+  }
+  for (uint i = 0; i < ParallelGCThreads + 1; i++) {
     ParCompactionManager* cm = ParCompactionManager::manager_array(i);
     KeepAliveClosure keep_alive_closure(cm);
-    for (int i = 0; i < cm->revisit_klass_stack()->length(); i++) {
-      cm->revisit_klass_stack()->at(i)->follow_weak_klass_links(
+    int length = cm->revisit_klass_stack()->length();
+    if (PrintRevisitStats) {
+      gclog_or_tty->print_cr("Revisit klass stack[%d] length = %d", i, length);
+    }
+    for (int j = 0; j < length; j++) {
+      cm->revisit_klass_stack()->at(j)->follow_weak_klass_links(
         is_alive_closure(),
         &keep_alive_closure);
     }
+    // revisit_klass_stack is cleared in reset()
     follow_stack(cm);
   }
 }
@@ -2740,6 +2751,33 @@ void
 PSParallelCompact::revisit_weak_klass_link(ParCompactionManager* cm, Klass* k) {
   cm->revisit_klass_stack()->push(k);
 }
+
+void PSParallelCompact::revisit_mdo(ParCompactionManager* cm, DataLayout* p) {
+  cm->revisit_mdo_stack()->push(p);
+}
+
+void PSParallelCompact::follow_mdo_weak_refs() {
+  // All strongly reachable oops have been marked at this point;
+  // we can visit and clear any weak references from MDO's which
+  // we memoized during the strong marking phase.
+  if (PrintRevisitStats) {
+    gclog_or_tty->print_cr("#classes in system dictionary = %d", SystemDictionary::number_of_classes());
+  }
+  for (uint i = 0; i < ParallelGCThreads + 1; i++) {
+    ParCompactionManager* cm = ParCompactionManager::manager_array(i);
+    GrowableArray<DataLayout*>* rms = cm->revisit_mdo_stack();
+    int length = rms->length();
+    if (PrintRevisitStats) {
+      gclog_or_tty->print_cr("Revisit MDO stack[%d] length = %d", i, length);
+    }
+    for (int j = 0; j < length; j++) {
+      rms->at(j)->follow_weak_refs(is_alive_closure());
+    }
+    // revisit_mdo_stack is cleared in reset()
+    follow_stack(cm);
+  }
+}
+
 
 #ifdef VALIDATE_MARK_SWEEP
 

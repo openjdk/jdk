@@ -1942,7 +1942,7 @@ int JavaThread::java_suspend_self() {
 
   MutexLockerEx ml(SR_lock(), Mutex::_no_safepoint_check_flag);
 
-  assert(!this->is_any_suspended(),
+  assert(!this->is_ext_suspended(),
     "a thread trying to self-suspend should not already be suspended");
 
   if (this->is_suspend_equivalent()) {

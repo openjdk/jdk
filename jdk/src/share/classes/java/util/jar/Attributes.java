@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.Collection;
 import java.util.AbstractSet;
 import java.util.Iterator;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 import java.util.Comparator;
 import sun.misc.ASCIICaseInsensitiveComparator;
 
@@ -419,7 +419,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
             }
             try {
                 if ((putValue(name, value) != null) && (!lineContinued)) {
-                    Logger.getLogger("java.util.jar").warning(
+                    PlatformLogger.getLogger("java.util.jar").warning(
                                      "Duplicate name in Manifest: " + name
                                      + ".\n"
                                      + "Ensure that the manifest does not "

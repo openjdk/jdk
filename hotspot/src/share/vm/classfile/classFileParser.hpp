@@ -61,7 +61,6 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                   int length,
                                   Handle class_loader,
                                   Handle protection_domain,
-                                  PerfTraceTime* vmtimer,
                                   symbolHandle class_name,
                                   TRAPS);
 
@@ -126,10 +125,13 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                        int runtime_invisible_annotations_length, TRAPS);
 
   // Final setup
-  int  compute_oop_map_size(instanceKlassHandle super, int nonstatic_oop_count,
-                            int first_nonstatic_oop_offset);
-  void fill_oop_maps(instanceKlassHandle k, int nonstatic_oop_map_count,
-                     u2* nonstatic_oop_offsets, u2* nonstatic_oop_length);
+  unsigned int compute_oop_map_count(instanceKlassHandle super,
+                                     unsigned int nonstatic_oop_count,
+                                     int first_nonstatic_oop_offset);
+  void fill_oop_maps(instanceKlassHandle k,
+                     unsigned int nonstatic_oop_map_count,
+                     int* nonstatic_oop_offsets,
+                     unsigned int* nonstatic_oop_counts);
   void set_precomputed_flags(instanceKlassHandle k);
   objArrayHandle compute_transitive_interfaces(instanceKlassHandle super,
                                                objArrayHandle local_ifs, TRAPS);
@@ -258,9 +260,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                      Handle class_loader,
                                      Handle protection_domain,
                                      symbolHandle& parsed_name,
+                                     bool verify,
                                      TRAPS) {
     KlassHandle no_host_klass;
-    return parseClassFile(name, class_loader, protection_domain, no_host_klass, NULL, parsed_name, THREAD);
+    return parseClassFile(name, class_loader, protection_domain, no_host_klass, NULL, parsed_name, verify, THREAD);
   }
   instanceKlassHandle parseClassFile(symbolHandle name,
                                      Handle class_loader,
@@ -268,6 +271,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                      KlassHandle host_klass,
                                      GrowableArray<Handle>* cp_patches,
                                      symbolHandle& parsed_name,
+                                     bool verify,
                                      TRAPS);
 
   // Verifier checks

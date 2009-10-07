@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,8 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
     PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
-  // cm->allocate_stacks();
   assert(cm->stacks_have_been_allocated(),
-    "Stack space has not been allocated");
+         "Stack space has not been allocated");
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
 
   switch (_root_type) {
@@ -129,9 +128,8 @@ void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
     PrintGCDetails && TraceParallelOldGCTasks, true, gclog_or_tty));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
-  // cm->allocate_stacks();
   assert(cm->stacks_have_been_allocated(),
-    "Stack space has not been allocated");
+         "Stack space has not been allocated");
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
   PSParallelCompact::FollowStackClosure follow_stack_closure(cm);
   _rp_task.work(_work_id, *PSParallelCompact::is_alive_closure(),

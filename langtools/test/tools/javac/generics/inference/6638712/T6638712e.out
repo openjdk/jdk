@@ -1,2 +1,2 @@
-T6638712e.java:40:27: compiler.err.invalid.inferred.types: X, (compiler.misc.inferred.do.not.conform.to.params: T6638712e.Foo<? super java.lang.Object,? extends java.lang.Boolean>, T6638712e.Foo<java.lang.Boolean,java.lang.Boolean>)
+T6638712e.java:17:27: compiler.err.prob.found.req: (compiler.misc.incompatible.types.1: (compiler.misc.no.conforming.instance.exists: X, T6638712e.Foo<X,java.lang.String>, T6638712e.Foo<java.lang.Object,java.lang.String>)), <X>T6638712e.Foo<X,java.lang.String>, T6638712e.Foo<java.lang.Object,java.lang.String>
 1 error

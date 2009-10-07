@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ int PhaseChaitin::yank_if_dead( Node *old, Block *current_block, Node_List *valu
       value->map(old_reg,NULL);  // Yank from value/regnd maps
       regnd->map(old_reg,NULL);  // This register's value is now unknown
     }
+    assert(old->req() <= 2, "can't handle more inputs");
     Node *tmp = old->req() > 1 ? old->in(1) : NULL;
     old->disconnect_inputs(NULL);
     if( !tmp ) break;
@@ -530,6 +531,16 @@ void PhaseChaitin::post_allocate_copy_removal() {
       // Do not change from int to pointer
       Node *val = skip_copies(n);
 
+      // Clear out a dead definition before starting so that the
+      // elimination code doesn't have to guard against it.  The
+      // definition could in fact be a kill projection with a count of
+      // 0 which is safe but since those are uninteresting for copy
+      // elimination just delete them as well.
+      if (regnd[nreg] != NULL && regnd[nreg]->outcnt() == 0) {
+        regnd.map(nreg, NULL);
+        value.map(nreg, NULL);
+      }
+
       uint n_ideal_reg = n->ideal_reg();
       if( is_single_register(n_ideal_reg) ) {
         // If Node 'n' does not change the value mapped by the register,
@@ -537,8 +548,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
         // mapping so 'n' will go dead.
         if( value[nreg] != val ) {
           if (eliminate_copy_of_constant(val, n, b, value, regnd, nreg, OptoReg::Bad)) {
-            n->replace_by(regnd[nreg]);
-            j -= yank_if_dead(n,b,&value,&regnd);
+            j -= replace_and_yank_if_dead(n, nreg, b, value, regnd);
           } else {
             // Update the mapping: record new Node defined by the register
             regnd.map(nreg,n);
@@ -546,10 +556,9 @@ void PhaseChaitin::post_allocate_copy_removal() {
             // Node after skipping all copies.
             value.map(nreg,val);
           }
-        } else if( !may_be_copy_of_callee(n) && regnd[nreg]->outcnt() != 0 ) {
+        } else if( !may_be_copy_of_callee(n) ) {
           assert( n->is_Copy(), "" );
-          n->replace_by(regnd[nreg]);
-          j -= yank_if_dead(n,b,&value,&regnd);
+          j -= replace_and_yank_if_dead(n, nreg, b, value, regnd);
         }
       } else {
         // If the value occupies a register pair, record same info
@@ -565,18 +574,16 @@ void PhaseChaitin::post_allocate_copy_removal() {
         }
         if( value[nreg] != val || value[nreg_lo] != val ) {
           if (eliminate_copy_of_constant(val, n, b, value, regnd, nreg, nreg_lo)) {
-            n->replace_by(regnd[nreg]);
-            j -= yank_if_dead(n,b,&value,&regnd);
+            j -= replace_and_yank_if_dead(n, nreg, b, value, regnd);
           } else {
             regnd.map(nreg   , n );
             regnd.map(nreg_lo, n );
             value.map(nreg   ,val);
             value.map(nreg_lo,val);
           }
-        } else if( !may_be_copy_of_callee(n) && regnd[nreg]->outcnt() != 0 ) {
+        } else if( !may_be_copy_of_callee(n) ) {
           assert( n->is_Copy(), "" );
-          n->replace_by(regnd[nreg]);
-          j -= yank_if_dead(n,b,&value,&regnd);
+          j -= replace_and_yank_if_dead(n, nreg, b, value, regnd);
         }
       }
 

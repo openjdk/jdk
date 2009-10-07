@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,7 +314,6 @@ class nmethod : public CodeBlob {
   bool is_java_method() const                     { return !method()->is_native(); }
   bool is_native_method() const                   { return method()->is_native(); }
   bool is_osr_method() const                      { return _entry_bci != InvocationEntryBci; }
-  bool is_osr_only_method() const                 { return is_osr_method(); }
 
   bool is_compiled_by_c1() const;
   bool is_compiled_by_c2() const;

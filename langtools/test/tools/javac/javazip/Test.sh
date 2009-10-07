@@ -1,7 +1,7 @@
 #! /bin/sh -f
 
 #
-# Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,14 +42,16 @@ fi
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
-    PS=":"
     FS="/"
+    SCR=`pwd`
+    ;;
+  CYGWIN* )
+    FS="/"
+    SCR=`pwd | cygpath -d`
     ;;
   Windows* )
-    NULL=NUL
-    PS=";"
     FS="\\"
+    SCR=`pwd`
     ;;
   * )
     echo "Unrecognized system!"

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,9 @@ void GenMarkSweep::allocate_stacks() {
 
   int size = SystemDictionary::number_of_classes() * 2;
   _revisit_klass_stack = new (ResourceObj::C_HEAP) GrowableArray<Klass*>(size, true);
+  // (#klass/k)^2 for k ~ 10 appears to be a better fit, but this will have to do for
+  // now until we have had a chance to investigate a more optimal setting.
+  _revisit_mdo_stack   = new (ResourceObj::C_HEAP) GrowableArray<DataLayout*>(2*size, true);
 
 #ifdef VALIDATE_MARK_SWEEP
   if (ValidateMarkSweep) {
@@ -206,6 +209,7 @@ void GenMarkSweep::deallocate_stacks() {
 
   delete _marking_stack;
   delete _revisit_klass_stack;
+  delete _revisit_mdo_stack;
 
 #ifdef VALIDATE_MARK_SWEEP
   if (ValidateMarkSweep) {
@@ -260,6 +264,10 @@ void GenMarkSweep::mark_sweep_phase1(int level,
 
   // Update subklass/sibling/implementor links of live klasses
   follow_weak_klass_links();
+  assert(_marking_stack->is_empty(), "just drained");
+
+  // Visit memoized MDO's and clear any unmarked weak refs
+  follow_mdo_weak_refs();
   assert(_marking_stack->is_empty(), "just drained");
 
   // Visit symbol and interned string tables and delete unmarked oops

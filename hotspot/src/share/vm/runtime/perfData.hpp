@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -867,6 +867,10 @@ class PerfDataManager : AllStatic {
 #define NEWPERFEVENTCOUNTER(counter, counter_ns, counter_name)  \
   {counter = PerfDataManager::create_counter(counter_ns, counter_name, \
                                              PerfData::U_Events,CHECK);}
+
+#define NEWPERFBYTECOUNTER(counter, counter_ns, counter_name)  \
+  {counter = PerfDataManager::create_counter(counter_ns, counter_name, \
+                                             PerfData::U_Bytes,CHECK);}
 
 // Utility Classes
 
