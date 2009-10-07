@@ -256,7 +256,6 @@ JNIEXPORT void JNICALL Java_sun_awt_shell_Win32ShellFolderManager2_uninitializeC
 static IShellIcon* getIShellIcon(IShellFolder* pIShellFolder) {
     // http://msdn.microsoft.com/library/en-us/shellcc/platform/Shell/programmersguide/shell_int/shell_int_programming/std_ifaces.asp
     HRESULT hres;
-    HICON hIcon = NULL;
     IShellIcon* pIShellIcon;
     if (pIShellFolder != NULL) {
         hres = pIShellFolder->QueryInterface(IID_IShellIcon, (void**)&pIShellIcon);
@@ -965,89 +964,40 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
 
 /*
  * Class:     sun_awt_shell_Win32ShellFolder2
- * Method:    getFileChooserBitmapBits
- * Signature: ()[I
+ * Method:    getStandardViewButton0
+ * Signature: (I)[I
  */
-JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getFileChooserBitmapBits
-    (JNIEnv* env, jclass cls)
+JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getStandardViewButton0
+    (JNIEnv* env, jclass cls, jint iconIndex)
 {
-    HBITMAP hBitmap = NULL;
-    BITMAP bm;
-    HINSTANCE libComCtl32;
-    HINSTANCE libShell32;
+    jintArray result = NULL;
 
-    libShell32 = LoadLibrary(TEXT("shell32.dll"));
-    if (libShell32 != NULL) {
-        hBitmap = (HBITMAP)LoadImage(libShell32,
-                    IS_WINVISTA ? TEXT("IDB_TB_SH_DEF_16") : MAKEINTRESOURCE(216),
-                    IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+    // Create a toolbar
+    HWND hWndToolbar = ::CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
+        0, 0, 0, 0, 0,
+        NULL, NULL, NULL, NULL);
 
-        if (hBitmap == NULL) {
-            // version of shell32.dll doesn't match OS version.
-            // So we either are in a Vista Compatibility Mode
-            // or shell32.dll was copied from OS of another version
-            hBitmap = (HBITMAP)LoadImage(libShell32,
-                    IS_WINVISTA ? MAKEINTRESOURCE(216) : TEXT("IDB_TB_SH_DEF_16"),
-                    IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+    if (hWndToolbar != NULL) {
+        SendMessage(hWndToolbar, TB_LOADIMAGES, (WPARAM)IDB_VIEW_SMALL_COLOR, (LPARAM)HINST_COMMCTRL);
+
+        HIMAGELIST hImageList = (HIMAGELIST) SendMessage(hWndToolbar, TB_GETIMAGELIST, 0, 0);
+
+        if (hImageList != NULL) {
+            HICON hIcon = ImageList_GetIcon(hImageList, iconIndex, ILD_TRANSPARENT);
+
+            if (hIcon != NULL) {
+                result = Java_sun_awt_shell_Win32ShellFolder2_getIconBits(env, cls, ptr_to_jlong(hIcon), 16);
+
+                DestroyIcon(hIcon);
+            }
+
+            ImageList_Destroy(hImageList);
         }
-    }
-    if (hBitmap == NULL) {
-        libComCtl32 = LoadLibrary(TEXT("comctl32.dll"));
-        if (libComCtl32 != NULL) {
-            hBitmap = (HBITMAP)LoadImage(libComCtl32, MAKEINTRESOURCE(124),
-                                         IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
-        }
-    }
-    if (hBitmap == NULL) {
-        return NULL;
+
+        DestroyWindow(hWndToolbar);
     }
 
-    GetObject(hBitmap, sizeof(bm), (LPSTR)&bm);
-
-    // Get the screen DC
-    HDC dc = GetDC(NULL);
-    if (dc == NULL) {
-        return NULL;
-    }
-
-    // Set up BITMAPINFO
-    BITMAPINFO bmi;
-    memset(&bmi, 0, sizeof(BITMAPINFO));
-    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.bmiHeader.biWidth = bm.bmWidth;
-    bmi.bmiHeader.biHeight = -bm.bmHeight;
-    bmi.bmiHeader.biPlanes = 1;
-    bmi.bmiHeader.biBitCount = 32;
-    bmi.bmiHeader.biCompression = BI_RGB;
-    // Extract the color bitmap
-    int numPixels = bm.bmWidth * bm.bmHeight;
-    //long colorBits[192 * 16];
-    long *colorBits = (long*)safe_Malloc(numPixels * sizeof(long));
-    if (GetDIBits(dc, hBitmap, 0, bm.bmHeight, colorBits, &bmi, DIB_RGB_COLORS) == 0) {
-        return NULL;
-    }
-
-    // Release DC
-    ReleaseDC(NULL, dc);
-
-    // The color of the first pixel defines the transparency, according
-    // to the documentation for LR_LOADTRANSPARENT at
-    // http://msdn.microsoft.com/library/psdk/winui/resource_9fhi.htm
-    long transparent = colorBits[0];
-    for (int i=0; i < numPixels; i++) {
-        if (colorBits[i] != transparent) {
-            colorBits[i] |= 0xff000000;
-        }
-    }
-
-    // Create java array
-    jintArray bits = env->NewIntArray(numPixels);
-    // Copy values to java array
-    env->SetIntArrayRegion(bits, 0, numPixels, colorBits);
-    // Fix 4745575 GDI Resource Leak
-    ::DeleteObject(hBitmap);
-    ::FreeLibrary(libComCtl32);
-    return bits;
+    return result;
 }
 
 /*

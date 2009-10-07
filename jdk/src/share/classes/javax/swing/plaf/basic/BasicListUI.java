@@ -2371,8 +2371,9 @@ public class BasicListUI extends ListUI
             JList src = (JList)e.getSource();
             ListModel model = src.getModel();
 
-            if (model.getSize() == 0 || e.isAltDown() || e.isControlDown() || e.isMetaDown() ||
-                isNavigationKey(e)) {
+            if (model.getSize() == 0 || e.isAltDown() ||
+                    BasicGraphicsUtils.isMenuShortcutKeyDown(e) ||
+                    isNavigationKey(e)) {
                 // Nothing to select
                 return;
             }
@@ -2665,7 +2666,7 @@ public class BasicListUI extends ListUI
                 if (row != -1 && DragRecognitionSupport.mousePressed(e)) {
                     dragPressDidSelection = false;
 
-                    if (e.isControlDown()) {
+                    if (BasicGraphicsUtils.isMenuShortcutKeyDown(e)) {
                         // do nothing for control - will be handled on release
                         // or when drag starts
                         return;
@@ -2717,7 +2718,7 @@ public class BasicListUI extends ListUI
                     anchorSelected = list.isSelectedIndex(anchorIndex);
                 }
 
-                if (e.isControlDown()) {
+                if (BasicGraphicsUtils.isMenuShortcutKeyDown(e)) {
                     if (e.isShiftDown()) {
                         if (anchorSelected) {
                             list.addSelectionInterval(anchorIndex, row);
@@ -2742,7 +2743,7 @@ public class BasicListUI extends ListUI
         }
 
         public void dragStarting(MouseEvent me) {
-            if (me.isControlDown()) {
+            if (BasicGraphicsUtils.isMenuShortcutKeyDown(me)) {
                 int row = SwingUtilities2.loc2IndexFileList(list, me.getPoint());
                 list.addSelectionInterval(row, row);
             }
@@ -2758,7 +2759,7 @@ public class BasicListUI extends ListUI
                 return;
             }
 
-            if (e.isShiftDown() || e.isControlDown()) {
+            if (e.isShiftDown() || BasicGraphicsUtils.isMenuShortcutKeyDown(e)) {
                 return;
             }
 
