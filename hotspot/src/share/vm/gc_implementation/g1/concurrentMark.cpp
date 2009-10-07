@@ -3416,13 +3416,6 @@ void CMTask::drain_region_stack(BitMapClosure* bc) {
       _region_finger = NULL;
     }
 
-    // We only push regions on the region stack during evacuation
-    // pauses. So if we come out the above iteration because we region
-    // stack is empty, it will remain empty until the next yield
-    // point. So, the guarantee below is safe.
-    guarantee( has_aborted() || _cm->region_stack_empty(),
-               "only way to exit the loop" );
-
     if (_cm->verbose_low())
       gclog_or_tty->print_cr("[%d] drained region stack, size = %d",
                              _task_id, _cm->region_stack_size());
