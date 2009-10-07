@@ -54,7 +54,6 @@ import java.net.SocketPermission;
 import java.net.NetPermission;
 import java.util.PropertyPermission;
 import java.util.concurrent.atomic.AtomicReference;
-import java.awt.AWTPermission;
 /*
 import javax.security.auth.AuthPermission;
 import javax.security.auth.kerberos.ServicePermission;
@@ -1023,8 +1022,6 @@ public class PolicyFile extends java.security.Policy {
             return new NetPermission(name, actions);
         } else if (claz.equals(AllPermission.class)) {
             return SecurityConstants.ALL_PERMISSION;
-        } else if (claz.equals(AWTPermission.class)) {
-            return new AWTPermission(name, actions);
 /*
         } else if (claz.equals(ReflectPermission.class)) {
             return new ReflectPermission(name, actions);

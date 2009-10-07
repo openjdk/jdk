@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4417152 4481572 6248930 6725399
+ * @bug 4417152 4481572 6248930 6725399 6884800
  * @summary Test Channels basic functionality
  */
 
@@ -225,8 +225,7 @@ public class Basic {
     private static void testNewInputStream(File blah) throws Exception {
         FileInputStream fis = new FileInputStream(blah);
         FileChannel fc = fis.getChannel();
-        ReadableByteChannel rbc = (ReadableByteChannel)fc;
-        InputStream is = Channels.newInputStream(rbc);
+        InputStream is = Channels.newInputStream(fc);
         int messageSize = message.length() * ITERATIONS * 3 + 1;
         byte bb[] = new byte[messageSize];
 
@@ -234,8 +233,13 @@ public class Basic {
         int totalRead = 0;
         while (bytesRead != -1) {
             totalRead += bytesRead;
+            long rem = Math.min(fc.size() - totalRead, (long)Integer.MAX_VALUE);
+            if (is.available() != (int)rem)
+                throw new RuntimeException("available not useful or not maximally useful");
             bytesRead = is.read(bb, totalRead, messageSize - totalRead);
         }
+        if (is.available() != 0)
+           throw new RuntimeException("available() should return 0 at EOF");
 
         String result = new String(bb, 0, totalRead, encoding);
         int len = message.length();

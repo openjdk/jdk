@@ -629,7 +629,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @see java.lang.Double#toString(double)
      */
     public String toString() {
-        return String.valueOf(value);
+        return toString(value);
     }
 
     /**

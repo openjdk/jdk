@@ -244,13 +244,6 @@ class NTLMAuthentication extends AuthenticationInfo {
         }
     }
 
-    /* This is a no-op for NTLM, because there is no authentication information
-     * provided by the server to the client
-     */
-    public void checkResponse (String header, String method, URL url) throws IOException {
-    }
-
-
     private void copybytes (byte[] dest, int destpos, String src, String enc) {
         try {
             byte[] x = src.getBytes(enc);

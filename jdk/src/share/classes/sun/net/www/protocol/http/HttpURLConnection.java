@@ -390,7 +390,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
              * request.
              */
             if (!failedOnce)
-                requests.prepend(method + " " + http.getURLFile()+" "  +
+                requests.prepend(method + " " + getRequestURI()+" "  +
                                  httpVersion, null);
             if (!getUseCaches()) {
                 requests.setIfNotSet ("Cache-Control", "no-cache");
@@ -1546,10 +1546,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (proxyAuthentication.isAuthorizationStale (raw)) {
                 /* we can retry with the current credentials */
                 String value;
-                if (tunnelState() == TunnelState.SETUP &&
-                      proxyAuthentication instanceof DigestAuthentication) {
-                    value = ((DigestAuthentication)proxyAuthentication)
-                            .getHeaderValue(connectRequestURI(url), HTTP_CONNECT);
+                if (proxyAuthentication instanceof DigestAuthentication) {
+                    DigestAuthentication digestProxy = (DigestAuthentication)
+                        proxyAuthentication;
+                    if (tunnelState() == TunnelState.SETUP) {
+                        value = digestProxy.getHeaderValue(connectRequestURI(url), HTTP_CONNECT);
+                    } else {
+                        value = digestProxy.getHeaderValue(getRequestURI(), method);
+                    }
                 } else {
                     value = proxyAuthentication.getHeaderValue(url, method);
                 }
@@ -1765,10 +1769,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                               http.getProxyPortUsed());
         if (pauth != null && pauth.supportsPreemptiveAuthorization()) {
             String value;
-            if (tunnelState() == TunnelState.SETUP &&
-                    pauth instanceof DigestAuthentication) {
-                value = ((DigestAuthentication)pauth)
+            if (pauth instanceof DigestAuthentication) {
+                DigestAuthentication digestProxy = (DigestAuthentication) pauth;
+                if (tunnelState() == TunnelState.SETUP) {
+                    value = digestProxy
                         .getHeaderValue(connectRequestURI(url), HTTP_CONNECT);
+                } else {
+                    value = digestProxy.getHeaderValue(getRequestURI(), method);
+                }
             } else {
                 value = pauth.getHeaderValue(url, method);
             }
@@ -2075,17 +2083,23 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         try {
             if (!needToCheck)
                 return;
-            if (validateProxy && currentProxyCredentials != null) {
+            if ((validateProxy && currentProxyCredentials != null) &&
+                (currentProxyCredentials instanceof DigestAuthentication)) {
                 String raw = responses.findValue ("Proxy-Authentication-Info");
                 if (inClose || (raw != null)) {
-                    currentProxyCredentials.checkResponse (raw, method, url);
+                    DigestAuthentication da = (DigestAuthentication)
+                        currentProxyCredentials;
+                    da.checkResponse (raw, method, getRequestURI());
                     currentProxyCredentials = null;
                 }
             }
-            if (validateServer && currentServerCredentials != null) {
+            if ((validateServer && currentServerCredentials != null) &&
+                (currentServerCredentials instanceof DigestAuthentication)) {
                 String raw = responses.findValue ("Authentication-Info");
                 if (inClose || (raw != null)) {
-                    currentServerCredentials.checkResponse (raw, method, url);
+                    DigestAuthentication da = (DigestAuthentication)
+                        currentServerCredentials;
+                    da.checkResponse (raw, method, url);
                     currentServerCredentials = null;
                 }
             }
@@ -2097,6 +2111,23 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             connected = false;
             throw e;
         }
+    }
+
+   /* The request URI used in the request line for this request.
+    * Also, needed for digest authentication
+    */
+
+    String requestURI = null;
+
+    String getRequestURI() {
+        if (requestURI == null) {
+            try {
+                requestURI = http.getURLFile();
+            } catch (IOException e) {
+                requestURI = "";
+            }
+        }
+        return requestURI;
     }
 
     /* Tells us whether to follow a redirect.  If so, it
@@ -2160,13 +2191,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
 
             setProxiedClient (url, proxyHost, proxyPort);
-            requests.set(0, method + " " + http.getURLFile()+" "  +
+            requests.set(0, method + " " + getRequestURI()+" "  +
                              httpVersion, null);
             connected = true;
         } else {
             // maintain previous headers, just change the name
             // of the file we're getting
             url = locUrl;
+            requestURI = null; // force it to be recalculated
             if (method.equals("POST") && !Boolean.getBoolean("http.strictPostRedirect") && (stat!=307)) {
                 /* The HTTP/1.1 spec says that a redirect from a POST
                  * *should not* be immediately turned into a GET, and
@@ -2204,7 +2236,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                  * CacheResponse.
                  */
                 if (http != null) {
-                    requests.set(0, method + " " + http.getURLFile()+" "  +
+                    requests.set(0, method + " " + getRequestURI()+" "  +
                                  httpVersion, null);
                     int port = url.getPort();
                     String host = url.getHost();

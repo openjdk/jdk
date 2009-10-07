@@ -125,9 +125,16 @@ public class B4933582 implements HttpCallback {
         firstTime = args[0].equals ("first");
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
-        AuthCacheValue.setAuthCache (new CacheImpl());
+        CacheImpl cache;
         try {
-            server = new HttpServer (new B4933582(), 1, 10, 5009);
+            if (firstTime) {
+                server = new HttpServer (new B4933582(), 1, 10, 0);
+                cache = new CacheImpl (server.getLocalPort());
+            } else {
+                cache = new CacheImpl ();
+                server = new HttpServer(new B4933582(), 1, 10, cache.getPort());
+            }
+            AuthCacheValue.setAuthCache (cache);
             System.out.println ("Server: listening on port: " + server.getLocalPort());
             client ("http://localhost:"+server.getLocalPort()+"/d1/foo.html");
         } catch (Exception e) {
@@ -172,8 +179,15 @@ public class B4933582 implements HttpCallback {
 
     static class CacheImpl extends AuthCacheImpl {
         HashMap map;
+        int port; // need to store the port number the server is using
+
         CacheImpl () throws IOException {
+            this (-1);
+        }
+
+        CacheImpl (int port) throws IOException {
             super();
+            this.port = port;
             File src = new File ("cache.ser");
             if (src.exists()) {
                 ObjectInputStream is = new ObjectInputStream (
@@ -181,6 +195,8 @@ public class B4933582 implements HttpCallback {
                 );
                 try {
                     map = (HashMap)is.readObject ();
+                    this.port = (Integer)is.readObject ();
+                    System.out.println ("read port from file " + port);
                 } catch (ClassNotFoundException e) {
                     assert false;
                 }
@@ -190,6 +206,10 @@ public class B4933582 implements HttpCallback {
                 map = new HashMap();
             }
             setMap (map);
+        }
+
+        int getPort () {
+            return port;
         }
 
         private void writeMap () {
@@ -203,6 +223,8 @@ public class B4933582 implements HttpCallback {
                         new FileOutputStream (dst)
                 );
                 os.writeObject(map);
+                os.writeObject(port);
+                System.out.println ("wrote port " + port);
                 os.close();
             } catch (IOException e) {}
         }
