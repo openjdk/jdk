@@ -985,10 +985,12 @@ void PhaseChaitin::Simplify( ) {
     uint lo_score = _hi_degree;
     double score = lrgs(lo_score).score();
     double area = lrgs(lo_score)._area;
+    double cost = lrgs(lo_score)._cost;
+    bool bound = lrgs(lo_score)._is_bound;
 
     // Find cheapest guy
     debug_only( int lo_no_simplify=0; );
-    for( uint i = _hi_degree; i; i = lrgs(i)._next ) {
+    for( uint i = lrgs(lo_score)._next; i; i = lrgs(i)._next ) {
       assert( !(*_ifg->_yanked)[i], "" );
       // It's just vaguely possible to move hi-degree to lo-degree without
       // going through a just-lo-degree stage: If you remove a double from
@@ -1002,17 +1004,27 @@ void PhaseChaitin::Simplify( ) {
       debug_only( if( lrgs(i)._was_lo ) lo_no_simplify=i; );
       double iscore = lrgs(i).score();
       double iarea = lrgs(i)._area;
+      double icost = lrgs(i)._cost;
+      bool ibound = lrgs(i)._is_bound;
 
       // Compare cost/area of i vs cost/area of lo_score.  Smaller cost/area
       // wins.  Ties happen because all live ranges in question have spilled
       // a few times before and the spill-score adds a huge number which
       // washes out the low order bits.  We are choosing the lesser of 2
       // evils; in this case pick largest area to spill.
+      // Ties also happen when live ranges are defined and used only inside
+      // one block. In which case their area is 0 and score set to max.
+      // In such case choose bound live range over unbound to free registers
+      // or with smaller cost to spill.
       if( iscore < score ||
-          (iscore == score && iarea > area && lrgs(lo_score)._was_spilled2) ) {
+          (iscore == score && iarea > area && lrgs(lo_score)._was_spilled2) ||
+          (iscore == score && iarea == area &&
+           ( (ibound && !bound) || ibound == bound && (icost < cost) )) ) {
         lo_score = i;
         score = iscore;
         area = iarea;
+        cost = icost;
+        bound = ibound;
       }
     }
     LRG *lo_lrg = &lrgs(lo_score);
