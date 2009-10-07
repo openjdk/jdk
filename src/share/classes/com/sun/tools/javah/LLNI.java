@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,49 +26,65 @@
 
 package com.sun.tools.javah;
 
-import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.Hashtable;
-import com.sun.javadoc.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
- /*
-  * @author  Sucheta Dambalkar(Revised)
-  */
+import java.util.Set;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVisitor;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.SimpleTypeVisitor6;
+
+/*
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own
+ * risk.  This code and its internal interfaces are subject to change
+ * or deletion without notice.</b></p>
+ *
+ * @author  Sucheta Dambalkar(Revised)
+ */
 public class LLNI extends Gen {
 
-    protected final char  pathChar = File.separatorChar;
     protected final char  innerDelim = '$';     /* For inner classes */
-    protected Hashtable<Object, Object>   doneHandleTypes;
-    MemberDoc []fields;
-    MemberDoc [] methods;
+    protected Set<String>  doneHandleTypes;
+    List<VariableElement> fields;
+    List<ExecutableElement> methods;
     private boolean       doubleAlign;
     private int           padFieldNum = 0;
 
-
-    LLNI(boolean doubleAlign, RootDoc root) {
-        super(root);
+    LLNI(boolean doubleAlign, Util util) {
+        super(util);
         this.doubleAlign = doubleAlign;
     }
-
 
     protected String getIncludes() {
         return "";
     }
 
-    protected void write(OutputStream o, ClassDoc clazz)
-        throws ClassNotFoundException {
-        String cname     = mangleClassName(clazz.qualifiedName());
+    protected void write(OutputStream o, TypeElement clazz) throws Util.Exit {
+        String cname     = mangleClassName(clazz.getQualifiedName().toString());
         PrintWriter pw   = wrapWriter(o);
-        fields = clazz.fields();
-        methods = clazz.methods();
+        fields = ElementFilter.fieldsIn(clazz.getEnclosedElements());
+        methods = ElementFilter.methodsIn(clazz.getEnclosedElements());
         generateDeclsForClass(pw, clazz, cname);
+        // FIXME check if errors occurred on the PrintWriter and throw exception if so
     }
 
     protected void generateDeclsForClass(PrintWriter pw,
-                                         ClassDoc clazz, String cname)
-        throws ClassNotFoundException {
-        doneHandleTypes  = new Hashtable<Object, Object>();
+            TypeElement clazz, String cname) throws Util.Exit {
+        doneHandleTypes  = new HashSet<String>();
         /* The following handle types are predefined in "typedefs.h". Suppress
            inclusion in the output by generating them "into the blue" here. */
         genHandleType(null, "java.lang.Class");
@@ -79,7 +95,7 @@ public class LLNI extends Gen {
         genHandleType(null, "java.lang.ThreadGroup");
         genHandleType(null, "java.lang.Throwable");
 
-        pw.println("/* LLNI Header for class " + clazz.qualifiedName() + " */" + lineSep);
+        pw.println("/* LLNI Header for class " + clazz.getQualifiedName() + " */" + lineSep);
         pw.println("#ifndef _Included_" + cname);
         pw.println("#define _Included_" + cname);
         pw.println("#include \"typedefs.h\"");
@@ -94,8 +110,8 @@ public class LLNI extends Gen {
 
     protected void genHandleType(PrintWriter pw, String clazzname) {
         String cname = mangleClassName(clazzname);
-        if (!doneHandleTypes.containsKey(cname)) {
-            doneHandleTypes.put(cname, cname);
+        if (!doneHandleTypes.contains(cname)) {
+            doneHandleTypes.add(cname);
             if (pw != null) {
                 pw.println("#ifndef DEFINED_" + cname);
                 pw.println("    #define DEFINED_" + cname);
@@ -107,31 +123,29 @@ public class LLNI extends Gen {
 
     protected String mangleClassName(String s) {
         return s.replace('.', '_')
-            .replace(pathChar, '_')
+            .replace('/', '_')
             .replace(innerDelim, '_');
     }
 
-    protected void forwardDecls(PrintWriter pw, ClassDoc clazz)
-        throws ClassNotFoundException {
-        ClassDoc clazzfield = null;
-
-        if (clazz.qualifiedName().equals("java.lang.Object"))
+    protected void forwardDecls(PrintWriter pw, TypeElement clazz) {
+        TypeElement object = elems.getTypeElement("java.lang.Object");
+        if (clazz.equals(object))
             return;
-        genHandleType(pw, clazz.qualifiedName());
-        ClassDoc superClass = clazz.superclass();
 
-        if(superClass != null){
-            String superClassName = superClass.qualifiedName();
+        genHandleType(pw, clazz.getQualifiedName().toString());
+        TypeElement superClass = (TypeElement) (types.asElement(clazz.getSuperclass()));
+
+        if (superClass != null) {
+            String superClassName = superClass.getQualifiedName().toString();
             forwardDecls(pw, superClass);
         }
 
-        for (int i = 0; i < fields.length; i++) {
-            FieldDoc field = (FieldDoc)fields[i];
+        for (VariableElement field: fields) {
 
-            if (!field.isStatic()) {
-                Type t = field.type();
-                String tname = t.qualifiedTypeName();
-                TypeSignature newTypeSig = new TypeSignature(root);
+            if (!field.getModifiers().contains(Modifier.STATIC)) {
+                TypeMirror t = types.erasure(field.asType());
+                TypeSignature newTypeSig = new TypeSignature(elems);
+                String tname = newTypeSig.qualifiedTypeName(t);
                 String sig = newTypeSig.getTypeSignature(tname);
 
                 if (sig.charAt(0) != '[')
@@ -139,13 +153,12 @@ public class LLNI extends Gen {
             }
         }
 
-        for (int i = 0; i < methods.length; i++) {
-            MethodDoc method = (MethodDoc)methods[i];
+        for (ExecutableElement method: methods) {
 
-            if (method.isNative()) {
-                Type retType = method.returnType();
-                String typesig = method.signature();
-                TypeSignature newTypeSig = new TypeSignature(root);
+            if (method.getModifiers().contains(Modifier.NATIVE)) {
+                TypeMirror retType = types.erasure(method.getReturnType());
+                String typesig = signature(method);
+                TypeSignature newTypeSig = new TypeSignature(elems);
                 String sig = newTypeSig.getTypeSignature(typesig, retType);
 
                 if (sig.charAt(0) != '[')
@@ -173,10 +186,9 @@ public class LLNI extends Gen {
     }
 
     protected void structSectionForClass(PrintWriter pw,
-                                         ClassDoc jclazz, String cname)
-        throws ClassNotFoundException {
+                                         TypeElement jclazz, String cname) {
 
-        String jname = jclazz.qualifiedName();
+        String jname = jclazz.getQualifiedName().toString();
 
         if (cname.equals("java_lang_Object")) {
             pw.println("/* struct java_lang_Object is defined in typedefs.h. */");
@@ -207,8 +219,8 @@ public class LLNI extends Gen {
         public boolean bottomMost;
         public boolean printedOne = false;
 
-        FieldDefsRes(ClassDoc clazz, FieldDefsRes parent, boolean bottomMost) {
-            this.className = clazz.qualifiedName();
+        FieldDefsRes(TypeElement clazz, FieldDefsRes parent, boolean bottomMost) {
+            this.className = clazz.getQualifiedName().toString();
             this.parent = parent;
             this.bottomMost = bottomMost;
             int byteSize = 0;
@@ -218,9 +230,8 @@ public class LLNI extends Gen {
     }
 
     /* Returns "true" iff added a field. */
-    private boolean doField(FieldDefsRes res, FieldDoc field,
-                            String cname, boolean padWord)
-        throws ClassNotFoundException {
+    private boolean doField(FieldDefsRes res, VariableElement field,
+                            String cname, boolean padWord) {
 
         String fieldDef = addStructMember(field, cname, padWord);
         if (fieldDef != null) {
@@ -242,16 +253,14 @@ public class LLNI extends Gen {
         return false;
     }
 
-    private int doTwoWordFields(FieldDefsRes res, ClassDoc clazz,
-                                int offset, String cname, boolean padWord)
-        throws ClassNotFoundException {
+    private int doTwoWordFields(FieldDefsRes res, TypeElement clazz,
+                                int offset, String cname, boolean padWord) {
         boolean first = true;
-        FieldDoc[] fields = clazz.fields();
+        List<VariableElement> fields = ElementFilter.fieldsIn(clazz.getEnclosedElements());
 
-        for (int i = 0; i <fields.length; i++) {
-            FieldDoc field = fields[i];
-            String tc =field.type().typeName();
-            boolean twoWords = (tc.equals("long") || tc.equals("double"));
+        for (VariableElement field: fields) {
+            TypeKind tk = field.asType().getKind();
+            boolean twoWords = (tk == TypeKind.LONG || tk == TypeKind.DOUBLE);
             if (twoWords && doField(res, field, cname, first && padWord)) {
                 offset += 8; first = false;
             }
@@ -259,22 +268,21 @@ public class LLNI extends Gen {
         return offset;
     }
 
-    protected String fieldDefs(ClassDoc clazz, String cname)
-        throws ClassNotFoundException {
+    String fieldDefs(TypeElement clazz, String cname) {
         FieldDefsRes res = fieldDefs(clazz, cname, true);
         return res.s;
     }
 
-    protected FieldDefsRes fieldDefs(ClassDoc clazz, String cname,
-                                     boolean bottomMost)
-        throws ClassNotFoundException {
+    FieldDefsRes fieldDefs(TypeElement clazz, String cname,
+                                     boolean bottomMost){
         FieldDefsRes res;
         int offset;
         boolean didTwoWordFields = false;
-        ClassDoc superclazz = clazz.superclass();
+
+        TypeElement superclazz = (TypeElement) types.asElement(clazz.getSuperclass());
 
         if (superclazz != null) {
-            String supername = superclazz.qualifiedName();
+            String supername = superclazz.getQualifiedName().toString();
             res = new FieldDefsRes(clazz,
                                    fieldDefs(superclazz, cname, false),
                                    bottomMost);
@@ -284,18 +292,17 @@ public class LLNI extends Gen {
             offset = 0;
         }
 
-        FieldDoc[] fields = clazz.fields();
+        List<VariableElement> fields = ElementFilter.fieldsIn(clazz.getEnclosedElements());
 
-        for (int i = 0; i < fields.length; i++) {
-            FieldDoc field = fields[i];
+        for (VariableElement field: fields) {
 
             if (doubleAlign && !didTwoWordFields && (offset % 8) == 0) {
                 offset = doTwoWordFields(res, clazz, offset, cname, false);
                 didTwoWordFields = true;
             }
 
-            String tc = field.type().typeName();
-            boolean twoWords = (tc.equals("long") ||tc.equals("double"));
+            TypeKind tk = field.asType().getKind();
+            boolean twoWords = (tk == TypeKind.LONG || tk == TypeKind.DOUBLE);
 
             if (!doubleAlign || !twoWords) {
                 if (doField(res, field, cname, false)) offset += 4;
@@ -313,19 +320,19 @@ public class LLNI extends Gen {
     }
 
     /* OVERRIDE: This method handles instance fields */
-    protected String addStructMember(FieldDoc member, String cname,
-                                     boolean padWord)
-        throws ClassNotFoundException {
+    protected String addStructMember(VariableElement member, String cname,
+                                     boolean padWord) {
         String res = null;
 
-        if (member.isStatic()) {
+        if (member.getModifiers().contains(Modifier.STATIC)) {
             res = addStaticStructMember(member, cname);
             //   if (res == null) /* JNI didn't handle it, print comment. */
             //  res = "    /* Inaccessible static: " + member + " */" + lineSep;
         } else {
+            TypeMirror mt = types.erasure(member.asType());
             if (padWord) res = "    java_int padWord" + padFieldNum++ + ";" + lineSep;
-            res = "    " + llniType(member.type(), false, false) + " " + llniFieldName(member);
-            if (isLongOrDouble(member.type())) res = res + "[2]";
+            res = "    " + llniType(mt, false, false) + " " + llniFieldName(member);
+            if (isLongOrDouble(mt)) res = res + "[2]";
             res = res + ";" + lineSep;
         }
         return res;
@@ -337,36 +344,42 @@ public class LLNI extends Gen {
     /*
      * This method only handles static final fields.
      */
-    protected String addStaticStructMember(FieldDoc field, String cname)
-        throws ClassNotFoundException {
+    protected String addStaticStructMember(VariableElement field, String cname) {
         String res = null;
         Object exp = null;
 
-        if (!field.isStatic())
+        if (!field.getModifiers().contains(Modifier.STATIC))
             return res;
-        if (!field.isFinal())
+        if (!field.getModifiers().contains(Modifier.FINAL))
             return res;
 
-        exp = field.constantValue();
+        exp = field.getConstantValue();
 
         if (exp != null) {
             /* Constant. */
 
-            String     cn     = cname + "_" + field.name();
+            String     cn     = cname + "_" + field.getSimpleName();
             String     suffix = null;
             long           val = 0;
             /* Can only handle int, long, float, and double fields. */
-            if (exp instanceof Integer) {
+            if (exp instanceof Byte
+                || exp instanceof Short
+                || exp instanceof Integer) {
                 suffix = "L";
-                val = ((Integer)exp).intValue();
+                val = ((Number)exp).intValue();
             }
-            if (exp instanceof Long) {
+            else if (exp instanceof Long) {
                 // Visual C++ supports the i64 suffix, not LL
                 suffix = isWindows ? "i64" : "LL";
                 val = ((Long)exp).longValue();
             }
-            if (exp instanceof Float)  suffix = "f";
-            if (exp instanceof Double) suffix = "";
+            else if (exp instanceof Float)  suffix = "f";
+            else if (exp instanceof Double) suffix = "";
+            else if (exp instanceof Character) {
+                suffix = "L";
+                Character ch = (Character) exp;
+                val = ((int) ch) & 0xffff;
+            }
             if (suffix != null) {
                 // Some compilers will generate a spurious warning
                 // for the integer constants for Integer.MIN_VALUE
@@ -376,9 +389,12 @@ public class LLNI extends Gen {
                     res = "    #undef  " + cn + lineSep
                         + "    #define " + cn
                         + " (" + (val + 1) + suffix + "-1)" + lineSep;
+                } else if (suffix.equals("L") || suffix.endsWith("LL")) {
+                    res = "    #undef  " + cn + lineSep
+                        + "    #define " + cn + " " + val + suffix + lineSep;
                 } else {
                     res = "    #undef  " + cn + lineSep
-                        + "    #define " + cn + " "+ exp.toString() + suffix + lineSep;
+                        + "    #define " + cn + " " + exp + suffix + lineSep;
                 }
             }
         }
@@ -386,8 +402,8 @@ public class LLNI extends Gen {
     }
 
     protected void methodSectionForClass(PrintWriter pw,
-                                         ClassDoc clazz, String cname)
-        throws ClassNotFoundException {
+            TypeElement clazz, String cname)
+            throws Util.Exit {
         String methods = methodDecls(clazz, cname);
 
         if (methods.length() != 0) {
@@ -402,81 +418,77 @@ public class LLNI extends Gen {
         }
     }
 
-    protected String methodDecls(ClassDoc clazz, String cname)
-        throws ClassNotFoundException {
+    protected String methodDecls(TypeElement clazz, String cname) throws Util.Exit {
 
         String res = "";
-        for (int i = 0; i < methods.length; i++) {
-            MethodDoc method = (MethodDoc)methods[i];
-            if (method.isNative())
+        for (ExecutableElement method: methods) {
+            if (method.getModifiers().contains(Modifier.NATIVE))
                 res = res + methodDecl(method, clazz, cname);
         }
         return res;
     }
 
-    protected String methodDecl(MethodDoc method,
-                                ClassDoc clazz, String cname)
-        throws ClassNotFoundException {
+    protected String methodDecl(ExecutableElement method,
+                                TypeElement clazz, String cname)
+    throws Util.Exit {
         String res = null;
 
-        Type retType = method.returnType();
-        String typesig = method.signature();
-        TypeSignature newTypeSig = new TypeSignature(root);
+        TypeMirror retType = types.erasure(method.getReturnType());
+        String typesig = signature(method);
+        TypeSignature newTypeSig = new TypeSignature(elems);
         String sig = newTypeSig.getTypeSignature(typesig, retType);
         boolean longName = needLongName(method, clazz);
 
         if (sig.charAt(0) != '(')
-            Util.error("invalid.method.signature", sig);
+            util.error("invalid.method.signature", sig);
 
 
         res = "JNIEXPORT " + jniType(retType) + " JNICALL" + lineSep + jniMethodName(method, cname, longName)
             + "(JNIEnv *, " + cRcvrDecl(method, cname);
-        Parameter[] params = method.parameters();
-        Type argTypes[] = new Type[params.length];
-        for(int p = 0; p <  params.length; p++){
-            argTypes[p] =  params[p].type();
+        List<? extends VariableElement> params = method.getParameters();
+        List<TypeMirror> argTypes = new ArrayList<TypeMirror>();
+        for (VariableElement p: params){
+            argTypes.add(types.erasure(p.asType()));
         }
 
         /* It would have been nice to include the argument names in the
            declaration, but there seems to be a bug in the "BinaryField"
            class, causing the getArguments() method to return "null" for
            most (non-constructor) methods. */
-        for (int i = 0; i < argTypes.length; i++)
-            res = res + ", " + jniType(argTypes[i]);
+        for (TypeMirror argType: argTypes)
+            res = res + ", " + jniType(argType);
         res = res + ");" + lineSep;
         return res;
     }
 
-    protected final boolean needLongName(MethodDoc method,
-                                         ClassDoc clazz)
-        throws ClassNotFoundException {
-        String methodName = method.name();
-        for (int i = 0; i < methods.length; i++) {
-            MethodDoc memberMethod = (MethodDoc) methods[i];
+    protected final boolean needLongName(ExecutableElement method,
+                                         TypeElement clazz) {
+        Name methodName = method.getSimpleName();
+        for (ExecutableElement memberMethod: methods) {
             if ((memberMethod != method) &&
-                memberMethod.isNative() && (methodName == memberMethod.name()))
+                memberMethod.getModifiers().contains(Modifier.NATIVE) &&
+                    (methodName.equals(memberMethod.getSimpleName())))
                 return true;
         }
         return false;
     }
 
-    protected final String jniMethodName(MethodDoc method, String cname,
+    protected final String jniMethodName(ExecutableElement method, String cname,
                                          boolean longName) {
-        String res = "Java_" + cname + "_" + method.name();
+        String res = "Java_" + cname + "_" + method.getSimpleName();
 
         if (longName) {
-            Type mType =  method.returnType();
-            Parameter[] params = method.parameters();
-            Type argTypes[] = new Type[params.length];
-            for(int p = 0; p <  params.length; p++){
-                argTypes[p] =  params[p].type();
+            TypeMirror mType =  types.erasure(method.getReturnType());
+            List<? extends VariableElement> params = method.getParameters();
+            List<TypeMirror> argTypes = new ArrayList<TypeMirror>();
+            for (VariableElement param: params) {
+                argTypes.add(types.erasure(param.asType()));
             }
 
             res = res + "__";
-            for (int i = 0; i < argTypes.length; i++){
-                Type t = argTypes[i];
-                String tname = t.typeName();
-                TypeSignature newTypeSig = new TypeSignature(root);
+            for (TypeMirror t: argTypes) {
+                String tname = t.toString();
+                TypeSignature newTypeSig = new TypeSignature(elems);
                 String sig = newTypeSig.getTypeSignature(tname);
                 res = res + nameToIdentifier(sig);
             }
@@ -484,88 +496,143 @@ public class LLNI extends Gen {
         return res;
     }
 
-    protected final String jniType(Type t) {
-        String elmT =t.typeName();
-        if (t.dimension().indexOf("[]") != -1) {
-            if(elmT.equals("boolean"))return "jbooleanArray";
-            else if(elmT.equals("byte"))return "jbyteArray";
-            else if(elmT.equals("char"))return "jcharArray";
-            else if(elmT.equals("short"))return "jshortArray";
-            else if(elmT.equals("int"))return "jintArray";
-            else if(elmT.equals("long"))return "jlongArray";
-            else if(elmT.equals("float"))return "jfloatArray";
-            else if(elmT.equals("double"))return "jdoubleArray";
-            else if((t.dimension().indexOf("[][]") != -1) || (t.asClassDoc() != null))  return "jobjectArray";
-        } else {
-            if(elmT.equals("void"))return "void";
-            else if(elmT.equals("boolean"))return "jboolean";
-            else if(elmT.equals("byte"))return "jbyte";
-            else if(elmT.equals("char"))return "jchar";
-            else if(elmT.equals("short"))return "jshort";
-            else if(elmT.equals("int"))return "jint";
-            else if(elmT.equals("long"))return "jlong";
-            else if(elmT.equals("float"))return "jfloat";
-            else if(elmT.equals("double"))return "jdouble";
-            else if (t.asClassDoc() != null) {
-                if (elmT.equals("String"))
+    // copied from JNI.java
+    protected final String jniType(TypeMirror t) throws Util.Exit {
+        TypeElement throwable = elems.getTypeElement("java.lang.Throwable");
+        TypeElement jClass = elems.getTypeElement("java.lang.Class");
+        TypeElement jString = elems.getTypeElement("java.lang.String");
+        Element tclassDoc = types.asElement(t);
+
+        switch (t.getKind()) {
+            case ARRAY: {
+                TypeMirror ct = ((ArrayType) t).getComponentType();
+                switch (ct.getKind()) {
+                    case BOOLEAN:  return "jbooleanArray";
+                    case BYTE:     return "jbyteArray";
+                    case CHAR:     return "jcharArray";
+                    case SHORT:    return "jshortArray";
+                    case INT:      return "jintArray";
+                    case LONG:     return "jlongArray";
+                    case FLOAT:    return "jfloatArray";
+                    case DOUBLE:   return "jdoubleArray";
+                    case ARRAY:
+                    case DECLARED: return "jobjectArray";
+                    default: throw new Error(ct.toString());
+                }
+            }
+
+            case VOID:     return "void";
+            case BOOLEAN:  return "jboolean";
+            case BYTE:     return "jbyte";
+            case CHAR:     return "jchar";
+            case SHORT:    return "jshort";
+            case INT:      return "jint";
+            case LONG:     return "jlong";
+            case FLOAT:    return "jfloat";
+            case DOUBLE:   return "jdouble";
+
+            case DECLARED: {
+                if (tclassDoc.equals(jString))
                     return "jstring";
-                else if (t.asClassDoc().subclassOf(root.classNamed("java.lang.Class")))
+                else if (types.isAssignable(t, throwable.asType()))
+                    return "jthrowable";
+                else if (types.isAssignable(t, jClass.asType()))
                     return "jclass";
                 else
                     return "jobject";
             }
         }
-        Util.bug("jni.unknown.type");
+
+        util.bug("jni.unknown.type");
         return null; /* dead code. */
     }
 
-    protected String llniType(Type t, boolean handleize, boolean longDoubleOK) {
+    protected String llniType(TypeMirror t, boolean handleize, boolean longDoubleOK) {
         String res = null;
-        String elmt = t.typeName();
-        if (t.dimension().indexOf("[]") != -1) {
-            if((t.dimension().indexOf("[][]") != -1)
-               || (t.asClassDoc() != null)) res = "IArrayOfRef";
-            else if(elmt.equals("boolean")) res =  "IArrayOfBoolean";
-            else if(elmt.equals("byte")) res =  "IArrayOfByte";
-            else if(elmt.equals("char")) res =  "IArrayOfChar";
-            else if(elmt.equals("int")) res =  "IArrayOfInt";
-            else if(elmt.equals("long")) res =  "IArrayOfLong";
-            else if(elmt.equals("float")) res =  "IArrayOfFloat";
-            else if(elmt.equals("double")) res =  "IArrayOfDouble";
-            if (!handleize) res = "DEREFERENCED_" + res;
-        } else {
-            if(elmt.equals("void")) res =  "void";
-            else if( (elmt.equals("boolean")) || (elmt.equals("byte"))
-                     ||(elmt.equals("char")) || (elmt.equals("short"))
-                     || (elmt.equals("int")))   res = "java_int";
-            else   if(elmt.equals("long")) res = longDoubleOK
-                                               ? "java_long" : "val32 /* java_long */";
-            else   if(elmt.equals("float")) res =  "java_float";
-            else   if(elmt.equals("double")) res =  res = longDoubleOK
-                                                 ? "java_double" : "val32 /* java_double */";
-            else if(t.asClassDoc() != null) {
-                res = "I" +  mangleClassName(t.asClassDoc().qualifiedName());
+
+        switch (t.getKind()) {
+            case ARRAY: {
+                TypeMirror ct = ((ArrayType) t).getComponentType();
+                switch (ct.getKind()) {
+                    case BOOLEAN:  res = "IArrayOfBoolean"; break;
+                    case BYTE:     res = "IArrayOfByte";    break;
+                    case CHAR:     res = "IArrayOfChar";    break;
+                    case SHORT:    res = "IArrayOfShort";   break;
+                    case INT:      res = "IArrayOfInt";     break;
+                    case LONG:     res = "IArrayOfLong";    break;
+                    case FLOAT:    res = "IArrayOfFloat";   break;
+                    case DOUBLE:   res = "IArrayOfDouble";  break;
+                    case ARRAY:
+                    case DECLARED: res = "IArrayOfRef";     break;
+                    default: throw new Error(ct.getKind() + " " + ct);
+                }
                 if (!handleize) res = "DEREFERENCED_" + res;
+                break;
             }
+
+            case VOID:
+                res = "void";
+                break;
+
+            case BOOLEAN:
+            case BYTE:
+            case CHAR:
+            case SHORT:
+            case INT:
+                res = "java_int" ;
+                break;
+
+            case LONG:
+                res = longDoubleOK ? "java_long" : "val32 /* java_long */";
+                break;
+
+            case FLOAT:
+                res =  "java_float";
+                break;
+
+            case DOUBLE:
+                res = longDoubleOK ? "java_double" : "val32 /* java_double */";
+                break;
+
+            case DECLARED:
+                TypeElement e  = (TypeElement) types.asElement(t);
+                res = "I" +  mangleClassName(e.getQualifiedName().toString());
+                if (!handleize) res = "DEREFERENCED_" + res;
+                break;
+
+            default:
+                throw new Error(t.getKind() + " " + t); // FIXME
         }
+
         return res;
     }
 
-    protected final String cRcvrDecl(MemberDoc field, String cname) {
-        return (field.isStatic() ? "jclass" : "jobject");
+    protected final String cRcvrDecl(Element field, String cname) {
+        return (field.getModifiers().contains(Modifier.STATIC) ? "jclass" : "jobject");
     }
 
     protected String maskName(String s) {
         return "LLNI_mask(" + s + ")";
     }
 
-    protected String llniFieldName(MemberDoc field) {
-        return maskName(field.name());
+    protected String llniFieldName(VariableElement field) {
+        return maskName(field.getSimpleName().toString());
     }
 
-    protected final boolean isLongOrDouble(Type t) {
-        String tc = t.typeName();
-        return (tc.equals("long") || tc.equals("double"));
+    protected final boolean isLongOrDouble(TypeMirror t) {
+        TypeVisitor<Boolean,Void> v = new SimpleTypeVisitor6<Boolean,Void>() {
+            public Boolean defaultAction(TypeMirror t, Void p){
+                return false;
+            }
+            public Boolean visitArray(ArrayType t, Void p) {
+                return visit(t.getComponentType(), p);
+            }
+            public Boolean visitPrimitive(PrimitiveType t, Void p) {
+                TypeKind tk = t.getKind();
+                return (tk == TypeKind.LONG || tk == TypeKind.DOUBLE);
+            }
+        };
+        return v.visit(t, null);
     }
 
     /* Do unicode to ansi C identifier conversion.
@@ -602,3 +669,4 @@ public class LLNI extends Gen {
             return false;
     }
 }
+

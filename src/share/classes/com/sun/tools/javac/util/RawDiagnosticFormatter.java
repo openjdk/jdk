@@ -30,6 +30,7 @@ import java.util.Locale;
 
 import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.*;
 import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.file.BaseFileObject;
 import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
 
 import static com.sun.tools.javac.api.DiagnosticFormatter.PositionKind.*;
@@ -109,6 +110,8 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
         String s;
         if (arg instanceof Formattable)
             s = arg.toString();
+        else if (arg instanceof BaseFileObject)
+            s = ((BaseFileObject) arg).getShortName();
         else
             s = super.formatArgument(diag, arg, null);
         if (arg instanceof JCDiagnostic)
