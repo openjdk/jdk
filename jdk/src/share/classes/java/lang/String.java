@@ -2995,7 +2995,7 @@ public final class String
      * @see     java.lang.Integer#toString(int, int)
      */
     public static String valueOf(int i) {
-        return Integer.toString(i, 10);
+        return Integer.toString(i);
     }
 
     /**
@@ -3009,7 +3009,7 @@ public final class String
      * @see     java.lang.Long#toString(long)
      */
     public static String valueOf(long l) {
-        return Long.toString(l, 10);
+        return Long.toString(l);
     }
 
     /**
