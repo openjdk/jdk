@@ -24,6 +24,8 @@
 
 // The following classes are C++ `closures` for iterating over objects, roots and spaces
 
+class CodeBlob;
+class nmethod;
 class ReferenceProcessor;
 class DataLayout;
 
@@ -68,9 +70,6 @@ class OopClosure : public Closure {
   // VirtualCallData::oop_iterate().
   virtual const bool should_remember_mdo() const { return false; }
   virtual void remember_mdo(DataLayout* v) { /* do nothing */ }
-
-  // If "true", invoke on nmethods (when scanning compiled frames).
-  virtual const bool do_nmethods() const { return false; }
 
   // The methods below control how object iterations invoking this closure
   // should be performed:
@@ -173,6 +172,51 @@ class CompactibleSpaceClosure : public StackObj {
  public:
   // Called for each compactible space
   virtual void do_space(CompactibleSpace* s) = 0;
+};
+
+
+// CodeBlobClosure is used for iterating through code blobs
+// in the code cache or on thread stacks
+
+class CodeBlobClosure : public Closure {
+ public:
+  // Called for each code blob.
+  virtual void do_code_blob(CodeBlob* cb) = 0;
+};
+
+
+class MarkingCodeBlobClosure : public CodeBlobClosure {
+ public:
+  // Called for each code blob, but at most once per unique blob.
+  virtual void do_newly_marked_nmethod(nmethod* nm) = 0;
+
+  virtual void do_code_blob(CodeBlob* cb);
+    // = { if (!nmethod(cb)->test_set_oops_do_mark())  do_newly_marked_nmethod(cb); }
+
+  class MarkScope : public StackObj {
+  protected:
+    bool _active;
+  public:
+    MarkScope(bool activate = true);
+      // = { if (active) nmethod::oops_do_marking_prologue(); }
+    ~MarkScope();
+      // = { if (active) nmethod::oops_do_marking_epilogue(); }
+  };
+};
+
+
+// Applies an oop closure to all ref fields in code blobs
+// iterated over in an object iteration.
+class CodeBlobToOopClosure: public MarkingCodeBlobClosure {
+  OopClosure* _cl;
+  bool _do_marking;
+public:
+  virtual void do_newly_marked_nmethod(nmethod* cb);
+    // = { cb->oops_do(_cl); }
+  virtual void do_code_blob(CodeBlob* cb);
+    // = { if (_do_marking)  super::do_code_blob(cb); else cb->oops_do(_cl); }
+  CodeBlobToOopClosure(OopClosure* cl, bool do_marking)
+    : _cl(cl), _do_marking(do_marking) {}
 };
 
 

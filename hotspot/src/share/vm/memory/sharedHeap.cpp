@@ -100,12 +100,27 @@ void SharedHeap::change_strong_roots_parity() {
          "Not in range.");
 }
 
-void SharedHeap::process_strong_roots(bool collecting_perm_gen,
+SharedHeap::StrongRootsScope::StrongRootsScope(SharedHeap* outer, bool activate)
+  : MarkScope(activate)
+{
+  if (_active) {
+    outer->change_strong_roots_parity();
+  }
+}
+
+SharedHeap::StrongRootsScope::~StrongRootsScope() {
+  // nothing particular
+}
+
+void SharedHeap::process_strong_roots(bool activate_scope,
+                                      bool collecting_perm_gen,
                                       ScanningOption so,
                                       OopClosure* roots,
+                                      CodeBlobClosure* code_roots,
                                       OopsInGenClosure* perm_blk) {
+  StrongRootsScope srs(this, activate_scope);
   // General strong roots.
-  if (n_par_threads() == 0) change_strong_roots_parity();
+  assert(_strong_roots_parity != 0, "must have called prologue code");
   if (!_process_strong_tasks->is_task_claimed(SH_PS_Universe_oops_do)) {
     Universe::oops_do(roots);
     ReferenceProcessor::oops_do(roots);
@@ -117,9 +132,9 @@ void SharedHeap::process_strong_roots(bool collecting_perm_gen,
     JNIHandles::oops_do(roots);
   // All threads execute this; the individual threads are task groups.
   if (ParallelGCThreads > 0) {
-    Threads::possibly_parallel_oops_do(roots);
+    Threads::possibly_parallel_oops_do(roots, code_roots);
   } else {
-    Threads::oops_do(roots);
+    Threads::oops_do(roots, code_roots);
   }
   if (!_process_strong_tasks-> is_task_claimed(SH_PS_ObjectSynchronizer_oops_do))
     ObjectSynchronizer::oops_do(roots);
@@ -156,11 +171,29 @@ void SharedHeap::process_strong_roots(bool collecting_perm_gen,
   }
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_CodeCache_oops_do)) {
-     if (so & SO_CodeCache) {
-       CodeCache::oops_do(roots);
-     }
+    if (so & SO_CodeCache) {
+      // (Currently, CMSCollector uses this to do intermediate-strength collections.)
+      assert(collecting_perm_gen, "scanning all of code cache");
+      assert(code_roots != NULL, "must supply closure for code cache");
+      if (code_roots != NULL) {
+        CodeCache::blobs_do(code_roots);
+      }
+    } else if (so & (SO_SystemClasses|SO_AllClasses)) {
+      if (!collecting_perm_gen) {
+        // If we are collecting from class statics, but we are not going to
+        // visit all of the CodeCache, collect from the non-perm roots if any.
+        // This makes the code cache function temporarily as a source of strong
+        // roots for oops, until the next major collection.
+        //
+        // If collecting_perm_gen is true, we require that this phase will call
+        // CodeCache::do_unloading.  This will kill off nmethods with expired
+        // weak references, such as stale invokedynamic targets.
+        CodeCache::scavenge_root_nmethods_do(code_roots);
+      }
+    }
     // Verify if the code cache contents are in the perm gen
-    NOT_PRODUCT(CodeCache::oops_do(&assert_is_perm_closure));
+    NOT_PRODUCT(CodeBlobToOopClosure assert_code_is_perm(&assert_is_perm_closure, /*do_marking=*/ false));
+    NOT_PRODUCT(CodeCache::asserted_non_scavengable_nmethods_do(&assert_code_is_perm));
   }
 
   // Roots that should point only into permanent generation.
@@ -220,11 +253,12 @@ public:
 // just skip adjusting any shared entries in the string table.
 
 void SharedHeap::process_weak_roots(OopClosure* root_closure,
+                                    CodeBlobClosure* code_roots,
                                     OopClosure* non_root_closure) {
   // Global (weak) JNI handles
   JNIHandles::weak_oops_do(&always_true, root_closure);
 
-  CodeCache::oops_do(non_root_closure);
+  CodeCache::blobs_do(code_roots);
   SymbolTable::oops_do(root_closure);
   if (UseSharedSpaces && !DumpSharedSpaces) {
     SkipAdjustingSharedStrings skip_closure(root_closure);
