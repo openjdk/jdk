@@ -133,12 +133,12 @@ void InstructionPrinter::print_object(Value obj) {
       ciMethod* m = (ciMethod*)value;
       output()->print("<method %s.%s>", m->holder()->name()->as_utf8(), m->name()->as_utf8());
     } else {
-      output()->print("<object 0x%x>", value->encoding());
+      output()->print("<object 0x%x>", value->constant_encoding());
     }
   } else if (type->as_InstanceConstant() != NULL) {
-    output()->print("<instance 0x%x>", type->as_InstanceConstant()->value()->encoding());
+    output()->print("<instance 0x%x>", type->as_InstanceConstant()->value()->constant_encoding());
   } else if (type->as_ArrayConstant() != NULL) {
-    output()->print("<array 0x%x>", type->as_ArrayConstant()->value()->encoding());
+    output()->print("<array 0x%x>", type->as_ArrayConstant()->value()->constant_encoding());
   } else if (type->as_ClassConstant() != NULL) {
     ciInstanceKlass* klass = type->as_ClassConstant()->value();
     if (!klass->is_loaded()) {

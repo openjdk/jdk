@@ -216,6 +216,7 @@ class IdealKit: public StackObj {
                 Node* adr,
                 Node* val,
                 Node* oop_store,
+                int oop_adr_idx,
                 BasicType bt,
                 int adr_idx);
 
