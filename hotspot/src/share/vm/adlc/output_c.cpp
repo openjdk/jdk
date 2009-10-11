@@ -721,8 +721,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "  }\n");
   fprintf(fp_cpp, "#endif\n\n");
 #endif
-  fprintf(fp_cpp, "  assert(this, \"NULL pipeline info\")\n");
-  fprintf(fp_cpp, "  assert(pred, \"NULL predecessor pipline info\")\n\n");
+  fprintf(fp_cpp, "  assert(this, \"NULL pipeline info\");\n");
+  fprintf(fp_cpp, "  assert(pred, \"NULL predecessor pipline info\");\n\n");
   fprintf(fp_cpp, "  if (pred->hasFixedLatency())\n    return (pred->fixedLatency());\n\n");
   fprintf(fp_cpp, "  // If this is not an operand, then assume a dependence with 0 latency\n");
   fprintf(fp_cpp, "  if (opnd > _read_stage_count)\n    return (0);\n\n");

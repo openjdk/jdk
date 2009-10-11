@@ -127,7 +127,7 @@ void DictionaryEntry::add_protection_domain(oop protection_domain) {
 
 
 bool Dictionary::do_unloading(BoolObjectClosure* is_alive) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint")
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   bool class_was_unloaded = false;
   int  index = 0; // Defined here for portability! Do not move
 

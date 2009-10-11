@@ -106,7 +106,7 @@ VM_Operation* VMOperationQueue::queue_drain(int prio) {
   // restore queue to empty state
   _queue[prio]->set_next(_queue[prio]);
   _queue[prio]->set_prev(_queue[prio]);
-  assert(queue_empty(prio), "drain corrupted queue")
+  assert(queue_empty(prio), "drain corrupted queue");
 #ifdef DEBUG
   int len = 0;
   VM_Operation* cur;

@@ -7975,7 +7975,7 @@ class FPU_State {
       case 2: return "special";
       case 3: return "empty";
     }
-    ShouldNotReachHere()
+    ShouldNotReachHere();
     return NULL;
   }
 

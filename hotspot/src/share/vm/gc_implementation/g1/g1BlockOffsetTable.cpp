@@ -517,7 +517,7 @@ void G1BlockOffsetArray::alloc_block_work2(HeapWord** threshold_, size_t* index_
   assert(blk_start != NULL && blk_end > blk_start,
          "phantom block");
   assert(blk_end > threshold, "should be past threshold");
-  assert(blk_start <= threshold, "blk_start should be at or before threshold")
+  assert(blk_start <= threshold, "blk_start should be at or before threshold");
   assert(pointer_delta(threshold, blk_start) <= N_words,
          "offset should be <= BlockOffsetSharedArray::N");
   assert(Universe::heap()->is_in_reserved(blk_start),
