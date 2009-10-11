@@ -1534,7 +1534,8 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive,
             }
           }
           ic->set_to_clean();
-          assert(ic->cached_oop() == NULL, "cached oop in IC should be cleared")
+          assert(ic->cached_oop() == NULL,
+                 "cached oop in IC should be cleared");
         }
       }
     }

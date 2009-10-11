@@ -457,7 +457,7 @@ void TemplateInterpreterGenerator::set_entry_points(Bytecodes::Code code) {
 
 void TemplateInterpreterGenerator::set_wide_entry_point(Template* t, address& wep) {
   assert(t->is_valid(), "template must exist");
-  assert(t->tos_in() == vtos, "only vtos tos_in supported for wide instructions")
+  assert(t->tos_in() == vtos, "only vtos tos_in supported for wide instructions");
   wep = __ pc(); generate_and_dispatch(t);
 }
 

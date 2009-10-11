@@ -1231,7 +1231,7 @@ void Compile::Fill_buffer() {
         if (is_sfn && !is_mcall && padding == 0 && current_offset == last_call_offset ) {
           padding = nop_size;
         }
-        assert( labels_not_set || padding == 0, "instruction should already be aligned")
+        assert( labels_not_set || padding == 0, "instruction should already be aligned");
 
         if(padding > 0) {
           assert((padding % nop_size) == 0, "padding is not a multiple of NOP size");

@@ -899,7 +899,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
   int nof_methods = methods()->length();
   HandleMark hm;
   KlassHandle klass = _klass;
-  assert(nof_methods > 0, "at least one method must exist for interface to be in vtable")
+  assert(nof_methods > 0, "at least one method must exist for interface to be in vtable");
   Handle interface_loader (THREAD, instanceKlass::cast(interf_h())->class_loader());
   int ime_num = 0;
 

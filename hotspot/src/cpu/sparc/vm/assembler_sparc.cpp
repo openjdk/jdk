@@ -4082,7 +4082,7 @@ static int EnqueueCodeSize = 128 DEBUG_ONLY( + 256); // Instructions?
 // make it work.
 static void check_index(int ind) {
   assert(0 <= ind && ind <= 64*K && ((ind % oopSize) == 0),
-         "Invariants.")
+         "Invariants.");
 }
 
 static void generate_satb_log_enqueue(bool with_frame) {

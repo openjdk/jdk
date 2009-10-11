@@ -3277,7 +3277,7 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, size_t region_idx)
     if (status == ParMarkBitMap::incomplete) {
       // The last obj that starts in the source region does not end in the
       // region.
-      assert(closure.source() < end_addr, "sanity")
+      assert(closure.source() < end_addr, "sanity");
       HeapWord* const obj_beg = closure.source();
       HeapWord* const range_end = MIN2(obj_beg + closure.words_remaining(),
                                        src_space_top);
