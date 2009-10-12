@@ -1757,25 +1757,36 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    // should be synchronized on awtLock
     private int dropTargetCount = 0;
 
-    public synchronized void addDropTarget() {
-        if (dropTargetCount == 0) {
-            long window = getWindow();
-            if (window != 0) {
-                XDropTargetRegistry.getRegistry().registerDropSite(window);
+    public void addDropTarget() {
+        XToolkit.awtLock();
+        try {
+            if (dropTargetCount == 0) {
+                long window = getWindow();
+                if (window != 0) {
+                    XDropTargetRegistry.getRegistry().registerDropSite(window);
+                }
             }
+            dropTargetCount++;
+        } finally {
+            XToolkit.awtUnlock();
         }
-        dropTargetCount++;
     }
 
-    public synchronized void removeDropTarget() {
-        dropTargetCount--;
-        if (dropTargetCount == 0) {
-            long window = getWindow();
-            if (window != 0) {
-                XDropTargetRegistry.getRegistry().unregisterDropSite(window);
+    public void removeDropTarget() {
+        XToolkit.awtLock();
+        try {
+            dropTargetCount--;
+            if (dropTargetCount == 0) {
+                long window = getWindow();
+                if (window != 0) {
+                    XDropTargetRegistry.getRegistry().unregisterDropSite(window);
+                }
             }
+        } finally {
+            XToolkit.awtUnlock();
         }
     }
     void addRootPropertyEventDispatcher() {
@@ -1838,13 +1849,18 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
-    protected synchronized void updateDropTarget() {
-        if (dropTargetCount > 0) {
-            long window = getWindow();
-            if (window != 0) {
-                XDropTargetRegistry.getRegistry().unregisterDropSite(window);
-                XDropTargetRegistry.getRegistry().registerDropSite(window);
+    protected void updateDropTarget() {
+        XToolkit.awtLock();
+        try {
+            if (dropTargetCount > 0) {
+                long window = getWindow();
+                if (window != 0) {
+                    XDropTargetRegistry.getRegistry().unregisterDropSite(window);
+                    XDropTargetRegistry.getRegistry().registerDropSite(window);
+                }
             }
+        } finally {
+            XToolkit.awtUnlock();
         }
     }
 
