@@ -74,6 +74,7 @@ Include_DBs/CORE        = $(VM)/includeDB_core   $(Include_DBs/GC) \
 Include_DBs/COMPILER1   = $(Include_DBs/CORE) $(VM)/includeDB_compiler1
 Include_DBs/COMPILER2   = $(Include_DBs/CORE) $(VM)/includeDB_compiler2
 Include_DBs/TIERED      = $(Include_DBs/CORE) $(VM)/includeDB_compiler1 $(VM)/includeDB_compiler2
+Include_DBs/ZERO        = $(Include_DBs/CORE) $(VM)/includeDB_zero
 Include_DBs = $(Include_DBs/$(TYPE))
 
 Cached_plat = $(GENERATED)/platform.current

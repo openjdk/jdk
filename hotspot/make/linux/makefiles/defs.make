@@ -37,6 +37,17 @@ else
   ARCH_DATA_MODEL ?= 32
 endif
 
+# zero
+ifeq ($(ZERO_BUILD), true)
+  ifeq ($(ARCH_DATA_MODEL), 64)
+    MAKE_ARGS      += LP64=1
+  endif
+  PLATFORM         = linux-zero
+  VM_PLATFORM      = linux_$(subst i386,i486,$(ZERO_LIBARCH))
+  HS_ARCH          = zero
+  ARCH             = zero
+endif
+
 # ia64
 ifeq ($(ARCH), ia64)
   ARCH_DATA_MODEL = 64
@@ -97,17 +108,19 @@ EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjsig.so
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.so
-ifeq ($(ARCH_DATA_MODEL), 32)
-  EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjsig.so
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.so 
-  EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so
-  EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar 
-else
-  ifeq ($(ARCH),ia64)
-    else
-      EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so
-      EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar
+ifneq ($(ZERO_BUILD), true)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
+    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
+    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjsig.so
+    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.so 
+    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so
+    EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar 
+  else
+    ifeq ($(ARCH),ia64)
+      else
+        EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so
+        EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar
     endif
+  endif
 endif
