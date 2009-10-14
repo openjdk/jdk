@@ -3016,7 +3016,7 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
 
     // return true if the same array
     __ cmp(ary1_reg, ary2_reg);
-    __ br(Assembler::equal, true, Assembler::pn, Ldone);
+    __ brx(Assembler::equal, true, Assembler::pn, Ldone);
     __ delayed()->add(G0, 1, result_reg); // equal
 
     __ br_null(ary1_reg, true, Assembler::pn, Ldone);
