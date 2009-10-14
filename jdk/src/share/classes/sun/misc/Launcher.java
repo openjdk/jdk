@@ -50,8 +50,6 @@ import java.security.CodeSource;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
 import sun.net.www.ParseUtil;
-import sun.jkernel.Bundle;
-import sun.jkernel.DownloadManager;
 
 /**
  * This class is used by the system to launch the main application.
@@ -248,12 +246,7 @@ public class Launcher {
         }
 
         protected Class findClass(String name) throws ClassNotFoundException {
-            if (VM.isBootedKernelVM()) {
-                // Check for download before we look for it.  If
-                // DownloadManager ends up downloading it, it will add it to
-                // our search path before we proceed to the findClass().
-                DownloadManager.getBootClassPathEntryForClass(name);
-            }
+            BootClassLoaderHook.preLoadClass(name);
             return super.findClass(name);
         }
 
@@ -321,9 +314,7 @@ public class Launcher {
         public Class loadClass(String name, boolean resolve)
             throws ClassNotFoundException
         {
-            if (VM.isBootedKernelVM()) {
-                DownloadManager.getBootClassPathEntryForClass(name);
-            }
+            BootClassLoaderHook.preLoadClass(name);
             int i = name.lastIndexOf('.');
             if (i != -1) {
                 SecurityManager sm = System.getSecurityManager();
@@ -421,19 +412,17 @@ public class Launcher {
             }
 
             bootstrapClassPath = new URLClassPath(urls, factory);
-            if (VM.isBootedKernelVM()) {
-                final File[] additionalBootStrapPaths =
-                    DownloadManager.getAdditionalBootStrapPaths();
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        for (int i=0; i<additionalBootStrapPaths.length; i++) {
-                            bootstrapClassPath.addURL(
-                                getFileURL(additionalBootStrapPaths[i]));
-                        }
-                        return null;
+            final File[] additionalBootStrapPaths =
+                BootClassLoaderHook.getBootstrapPaths();
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    for (int i=0; i<additionalBootStrapPaths.length; i++) {
+                        bootstrapClassPath.addURL(
+                            getFileURL(additionalBootStrapPaths[i]));
                     }
-                });
-            }
+                    return null;
+                }
+            });
         }
         return bootstrapClassPath;
     }

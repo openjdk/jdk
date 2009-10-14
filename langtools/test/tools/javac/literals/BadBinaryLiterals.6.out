@@ -1,0 +1,8 @@
+BadBinaryLiterals.java:10:17: compiler.err.unsupported.binary.lit: 1.6
+BadBinaryLiterals.java:11:24: compiler.err.expected: ';'
+BadBinaryLiterals.java:13:21: compiler.err.int.number.too.large: 111111111111111111111111111111111
+BadBinaryLiterals.java:15:21: compiler.err.int.number.too.large: 11111111111111111111111111111111111111111111111111111111111111111
+BadBinaryLiterals.java:16:27: compiler.err.expected: ';'
+BadBinaryLiterals.java:17:27: compiler.err.expected: ';'
+BadBinaryLiterals.java:17:30: compiler.err.expected: token.identifier
+7 errors

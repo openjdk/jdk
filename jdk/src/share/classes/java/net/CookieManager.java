@@ -157,7 +157,7 @@ public class CookieManager extends CookieHandler
 
         // if not specify CookieStore to use, use default one
         if (store == null) {
-            cookieJar = new sun.net.www.protocol.http.InMemoryCookieStore();
+            cookieJar = new InMemoryCookieStore();
         } else {
             cookieJar = store;
         }

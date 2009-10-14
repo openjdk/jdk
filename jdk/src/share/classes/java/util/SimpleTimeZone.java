@@ -1372,7 +1372,7 @@ public class SimpleTimeZone extends TimeZone {
                 throw new IllegalArgumentException(
                         "Illegal start month " + startMonth);
             }
-            if (startTime < 0 || startTime >= millisPerDay) {
+            if (startTime < 0 || startTime > millisPerDay) {
                 throw new IllegalArgumentException(
                         "Illegal start time " + startTime);
             }
@@ -1419,7 +1419,7 @@ public class SimpleTimeZone extends TimeZone {
                 throw new IllegalArgumentException(
                         "Illegal end month " + endMonth);
             }
-            if (endTime < 0 || endTime >= millisPerDay) {
+            if (endTime < 0 || endTime > millisPerDay) {
                 throw new IllegalArgumentException(
                         "Illegal end time " + endTime);
             }

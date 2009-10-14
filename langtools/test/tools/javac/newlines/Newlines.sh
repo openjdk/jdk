@@ -1,5 +1,5 @@
 #
-# Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,14 +50,10 @@ echo "CLASSPATH=${CLASSPATH}"
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
-    NULL=/dev/null
-    PS=":"
+  SunOS | Linux | CYGWIN* )
     FS="/"
     ;;
   Windows* )
-    NULL=NUL
-    PS=";"
     FS="\\"
     ;;
   * )

@@ -42,6 +42,8 @@
 #include "LEGlyphStorage.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 void MorphTableHeader::process(LEGlyphStorage &glyphStorage) const
 {
     const ChainHeader *chainHeader = chains;
@@ -114,3 +116,5 @@ void MorphSubtableHeader::process(LEGlyphStorage &glyphStorage) const
         delete processor;
     }
 }
+
+U_NAMESPACE_END

@@ -182,12 +182,11 @@ SUNWprivate_1.1 {
         Java_java_awt_ScrollPane_initIDs;
         Java_java_awt_TextField_initIDs;
         Java_java_awt_TrayIcon_initIDs;
-        Java_sun_font_FontManager_getFontConfig;
-        Java_sun_font_FontManager_getFontConfigVersion;
-        Java_sun_font_FontManager_getFontConfigAASettings;
-	Java_sun_font_FontManager_getFontPath;
-	Java_sun_font_FontManager_setNativeFontPath;
-	Java_sun_font_FontManager_populateFontFileNameMap;
+        Java_sun_font_FontConfigManager_getFontConfig;
+        Java_sun_font_FontConfigManager_getFontConfigAASettings;
+        Java_sun_font_FontConfigManager_getFontConfigVersion;
+	Java_sun_awt_X11FontManager_getFontPath;
+	Java_sun_font_X11FontManager_setNativeFontPath;
         Java_sun_awt_X11GraphicsEnvironment_initDisplay;
         Java_sun_awt_X11GraphicsEnvironment_initGLX;
         Java_sun_awt_X11GraphicsEnvironment_checkShmExt;

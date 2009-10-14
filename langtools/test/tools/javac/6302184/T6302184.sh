@@ -1,7 +1,7 @@
 #! /bin/sh -f
 
 #
-# Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,13 @@ fi
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
-    PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    FS="/"
+    DIFFOPTS="--strip-trailing-cr"
+    ;;
   Windows* )
-    NULL=NUL
-    PS=";"
     FS="\\"
     ;;
   * )
@@ -57,8 +57,8 @@ case "$OS" in
     ;;
 esac
 
-"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -cp ${TC} -encoding iso-8859-1 -XD-printsource ${TS}${FS}T6302184.java 2>&1 > ${NULL}
-diff -c ${TC}${FS}T6302184.java ${TS}${FS}T6302184.out
+"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -cp ${TC} -encoding iso-8859-1 -XD-printsource ${TS}${FS}T6302184.java 2>&1
+diff ${DIFFOPTS} -c ${TC}${FS}T6302184.java ${TS}${FS}T6302184.out
 result=$?
 
 

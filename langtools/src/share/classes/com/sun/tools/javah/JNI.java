@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,95 +27,98 @@ package com.sun.tools.javah;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.Vector;
-import java.util.Enumeration;
-import com.sun.javadoc.*;
+import java.util.ArrayList;
+import java.util.List;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 
 
 /**
  * Header file generator for JNI.
  *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own
+ * risk.  This code and its internal interfaces are subject to change
+ * or deletion without notice.</b></p>
+ *
  * @author  Sucheta Dambalkar(Revised)
  */
-
 public class JNI extends Gen {
-
-    public JNI(RootDoc root){
-        super(root);
+    JNI(Util util) {
+        super(util);
     }
 
     public String getIncludes() {
         return "#include <jni.h>";
     }
 
-    public void write(OutputStream o, ClassDoc clazz)
-        throws ClassNotFoundException {
-
-        String cname = Mangle.mangle(clazz.qualifiedName(), Mangle.Type.CLASS);
+    public void write(OutputStream o, TypeElement clazz) throws Util.Exit {
+        String cname = mangler.mangle(clazz.getQualifiedName(), Mangle.Type.CLASS);
         PrintWriter pw = wrapWriter(o);
         pw.println(guardBegin(cname));
         pw.println(cppGuardBegin());
 
         /* Write statics. */
-        FieldDoc[] classfields = getAllFields(clazz);
+        List<VariableElement> classfields = getAllFields(clazz);
 
-        for (int i = 0; i < classfields.length; i++) {
-            if (!classfields[i].isStatic())
+        for (VariableElement v: classfields) {
+            if (!v.getModifiers().contains(Modifier.STATIC))
                 continue;
             String s = null;
-            s = defineForStatic(clazz, classfields[i]);
+            s = defineForStatic(clazz, v);
             if (s != null) {
                 pw.println(s);
             }
         }
 
         /* Write methods. */
-        MethodDoc[] classmethods = clazz.methods();
-        for (int i = 0; i < classmethods.length; i++) {
-            if(classmethods[i].isNative()){
-                MethodDoc md = classmethods[i];
-                Type mtr = classmethods[i].returnType();
-                String sig = md.signature();
-                TypeSignature newtypesig = new TypeSignature(root);
-                String methodName = md.name();
+        List<ExecutableElement> classmethods = ElementFilter.methodsIn(clazz.getEnclosedElements());
+        for (ExecutableElement md: classmethods) {
+            if(md.getModifiers().contains(Modifier.NATIVE)){
+                TypeMirror mtr = types.erasure(md.getReturnType());
+                String sig = signature(md);
+                TypeSignature newtypesig = new TypeSignature(elems);
+                CharSequence methodName = md.getSimpleName();
                 boolean longName = false;
-                for (int j = 0; j < classmethods.length; j++) {
-                    if ((classmethods[j] != md)
-                        && (methodName.equals(classmethods[j].name()))
-                        && (classmethods[j].isNative()))
+                for (ExecutableElement md2: classmethods) {
+                    if ((md2 != md)
+                        && (methodName.equals(md2.getSimpleName()))
+                        && (md2.getModifiers().contains(Modifier.NATIVE)))
                         longName = true;
 
                 }
                 pw.println("/*");
                 pw.println(" * Class:     " + cname);
                 pw.println(" * Method:    " +
-                           Mangle.mangle(methodName, Mangle.Type.FIELDSTUB));
+                           mangler.mangle(methodName, Mangle.Type.FIELDSTUB));
                 pw.println(" * Signature: " + newtypesig.getTypeSignature(sig, mtr));
                 pw.println(" */");
                 pw.println("JNIEXPORT " + jniType(mtr) +
                            " JNICALL " +
-                           Mangle.mangleMethod(md, root,clazz,
+                           mangler.mangleMethod(md, clazz,
                                                (longName) ?
                                                Mangle.Type.METHOD_JNI_LONG :
                                                Mangle.Type.METHOD_JNI_SHORT));
                 pw.print("  (JNIEnv *, ");
-                Parameter[] paramargs = md.parameters();
-                Type []args =new Type[ paramargs.length];
-                for(int p = 0; p < paramargs.length; p++){
-                    args[p] = paramargs[p].type();
+                List<? extends VariableElement> paramargs = md.getParameters();
+                List<TypeMirror> args = new ArrayList<TypeMirror>();
+                for (VariableElement p: paramargs) {
+                    args.add(types.erasure(p.asType()));
                 }
-                if (md.isStatic())
+                if (md.getModifiers().contains(Modifier.STATIC))
                     pw.print("jclass");
                 else
                     pw.print("jobject");
-                if (args.length > 0)
-                    pw.print(", ");
 
-                for (int j = 0; j < args.length; j++) {
-                    pw.print(jniType(args[j]));
-                    if (j != (args.length - 1)) {
-                        pw.print(", ");
-                    }
+                for (TypeMirror arg: args) {
+                    pw.print(", ");
+                    pw.print(jniType(arg));
                 }
                 pw.println(");" + lineSep);
             }
@@ -125,42 +128,54 @@ public class JNI extends Gen {
     }
 
 
-    protected final String jniType(Type t){
+    protected final String jniType(TypeMirror t) throws Util.Exit {
+        TypeElement throwable = elems.getTypeElement("java.lang.Throwable");
+        TypeElement jClass = elems.getTypeElement("java.lang.Class");
+        TypeElement jString = elems.getTypeElement("java.lang.String");
+        Element tclassDoc = types.asElement(t);
 
-        String elmT = t.typeName();
-        ClassDoc throwable = root.classNamed("java.lang.Throwable");
-        ClassDoc jClass = root.classNamed("java.lang.Class");
-        ClassDoc tclassDoc = t.asClassDoc();
 
-        if((t.dimension()).indexOf("[]") != -1){
-            if((t.dimension().indexOf("[][]") != -1)
-               || (tclassDoc != null))  return "jobjectArray";
-            else if(elmT.equals("boolean"))return  "jbooleanArray";
-            else if(elmT.equals("byte"))return  "jbyteArray";
-            else if(elmT.equals("char"))return  "jcharArray";
-            else if(elmT.equals("short"))return  "jshortArray";
-            else if(elmT.equals("int"))return  "jintArray";
-            else if(elmT.equals("long"))return  "jlongArray";
-            else if(elmT.equals("float"))return  "jfloatArray";
-            else if(elmT.equals("double"))return  "jdoubleArray";
-        }else{
-            if(elmT.equals("void"))return  "void";
-            else if(elmT.equals("String"))return  "jstring";
-            else if(elmT.equals("boolean"))return  "jboolean";
-            else if(elmT.equals("byte"))return  "jbyte";
-            else if(elmT.equals("char"))return  "jchar";
-            else if(elmT.equals("short"))return  "jshort";
-            else if(elmT.equals("int"))return  "jint";
-            else if(elmT.equals("long"))return  "jlong";
-            else if(elmT.equals("float"))return  "jfloat";
-            else if(elmT.equals("double"))return  "jdouble";
-            else  if(tclassDoc  != null){
-                if(tclassDoc.subclassOf(throwable)) return "jthrowable";
-                else if(tclassDoc.subclassOf(jClass)) return "jclass";
-                else return "jobject";
+        switch (t.getKind()) {
+            case ARRAY: {
+                TypeMirror ct = ((ArrayType) t).getComponentType();
+                switch (ct.getKind()) {
+                    case BOOLEAN:  return "jbooleanArray";
+                    case BYTE:     return "jbyteArray";
+                    case CHAR:     return "jcharArray";
+                    case SHORT:    return "jshortArray";
+                    case INT:      return "jintArray";
+                    case LONG:     return "jlongArray";
+                    case FLOAT:    return "jfloatArray";
+                    case DOUBLE:   return "jdoubleArray";
+                    case ARRAY:
+                    case DECLARED: return "jobjectArray";
+                    default: throw new Error(ct.toString());
+                }
+            }
+
+            case VOID:     return "void";
+            case BOOLEAN:  return "jboolean";
+            case BYTE:     return "jbyte";
+            case CHAR:     return "jchar";
+            case SHORT:    return "jshort";
+            case INT:      return "jint";
+            case LONG:     return "jlong";
+            case FLOAT:    return "jfloat";
+            case DOUBLE:   return "jdouble";
+
+            case DECLARED: {
+                if (tclassDoc.equals(jString))
+                    return "jstring";
+                else if (types.isAssignable(t, throwable.asType()))
+                    return "jthrowable";
+                else if (types.isAssignable(t, jClass.asType()))
+                    return "jclass";
+                else
+                    return "jobject";
             }
         }
-        Util.bug("jni.unknown.type");
+
+        util.bug("jni.unknown.type");
         return null; /* dead code. */
     }
 }

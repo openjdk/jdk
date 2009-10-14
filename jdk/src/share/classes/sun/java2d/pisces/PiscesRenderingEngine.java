@@ -171,9 +171,9 @@ public class PiscesRenderingEngine extends RenderingEngine {
         float lw;
         if (thin) {
             if (antialias) {
-                lw = 0.5f;
+                lw = userSpaceLineWidth(at, 0.5f);
             } else {
-                lw = 1.0f;
+                lw = userSpaceLineWidth(at, 1.0f);
             }
         } else {
             lw = bs.getLineWidth();
@@ -187,6 +187,72 @@ public class PiscesRenderingEngine extends RenderingEngine {
                  bs.getDashArray(),
                  bs.getDashPhase(),
                  lsink);
+    }
+
+    private float userSpaceLineWidth(AffineTransform at, float lw) {
+
+        double widthScale;
+
+        if ((at.getType() & (AffineTransform.TYPE_GENERAL_TRANSFORM |
+                            AffineTransform.TYPE_GENERAL_SCALE)) != 0) {
+            widthScale = Math.sqrt(at.getDeterminant());
+        } else {
+            /* First calculate the "maximum scale" of this transform. */
+            double A = at.getScaleX();       // m00
+            double C = at.getShearX();       // m01
+            double B = at.getShearY();       // m10
+            double D = at.getScaleY();       // m11
+
+            /*
+             * Given a 2 x 2 affine matrix [ A B ] such that
+             *                             [ C D ]
+             * v' = [x' y'] = [Ax + Cy, Bx + Dy], we want to
+             * find the maximum magnitude (norm) of the vector v'
+             * with the constraint (x^2 + y^2 = 1).
+             * The equation to maximize is
+             *     |v'| = sqrt((Ax+Cy)^2+(Bx+Dy)^2)
+             * or  |v'| = sqrt((AA+BB)x^2 + 2(AC+BD)xy + (CC+DD)y^2).
+             * Since sqrt is monotonic we can maximize |v'|^2
+             * instead and plug in the substitution y = sqrt(1 - x^2).
+             * Trigonometric equalities can then be used to get
+             * rid of most of the sqrt terms.
+             */
+
+            double EA = A*A + B*B;          // x^2 coefficient
+            double EB = 2*(A*C + B*D);      // xy coefficient
+            double EC = C*C + D*D;          // y^2 coefficient
+
+            /*
+             * There is a lot of calculus omitted here.
+             *
+             * Conceptually, in the interests of understanding the
+             * terms that the calculus produced we can consider
+             * that EA and EC end up providing the lengths along
+             * the major axes and the hypot term ends up being an
+             * adjustment for the additional length along the off-axis
+             * angle of rotated or sheared ellipses as well as an
+             * adjustment for the fact that the equation below
+             * averages the two major axis lengths.  (Notice that
+             * the hypot term contains a part which resolves to the
+             * difference of these two axis lengths in the absence
+             * of rotation.)
+             *
+             * In the calculus, the ratio of the EB and (EA-EC) terms
+             * ends up being the tangent of 2*theta where theta is
+             * the angle that the long axis of the ellipse makes
+             * with the horizontal axis.  Thus, this equation is
+             * calculating the length of the hypotenuse of a triangle
+             * along that axis.
+             */
+
+            double hypot = Math.sqrt(EB*EB + (EA-EC)*(EA-EC));
+            /* sqrt omitted, compare to squared limits below. */
+            double widthsquared = ((EA + EC + hypot)/2.0);
+
+            widthScale = Math.sqrt(widthsquared);
+        }
+
+        return (float) (lw / widthScale);
     }
 
     void strokeTo(Shape src,

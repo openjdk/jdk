@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,7 @@ public class ZipArchive implements Archive {
         zdir.close();
     }
 
+    @Override
     public String toString() {
         return "ZipArchive[" + zdir.getName() + "]";
     }
@@ -146,49 +147,37 @@ public class ZipArchive implements Archive {
             this.entry = entry;
         }
 
+        public URI toUri() {
+            File zipFile = new File(zarch.zdir.getName());
+            return createJarUri(zipFile, entry.getName());
+        }
+
+        @Override
+        public String getName() {
+            return zarch.zdir.getName() + "(" + entry.getName() + ")";
+        }
+
+        @Override
+        public String getShortName() {
+            return new File(zarch.zdir.getName()).getName() + "(" + entry + ")";
+        }
+
+        @Override
+        public JavaFileObject.Kind getKind() {
+            return getKind(entry.getName());
+        }
+
+        @Override
         public InputStream openInputStream() throws IOException {
             return zarch.zdir.getInputStream(entry);
         }
 
+        @Override
         public OutputStream openOutputStream() throws IOException {
             throw new UnsupportedOperationException();
         }
 
-        protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
-            return fileManager.getDecoder(fileManager.getEncodingName(), ignoreEncodingErrors);
-        }
-
-        public Writer openWriter() throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Deprecated
-        public String getName() {
-            return name;
-        }
-
-        public boolean isNameCompatible(String cn, JavaFileObject.Kind k) {
-            cn.getClass();
-            // null check
-            if (k == Kind.OTHER && getKind() != k) {
-                return false;
-            }
-            return name.equals(cn + k.extension);
-        }
-
-        @Deprecated
-        public String getPath() {
-            return zarch.zdir.getName() + "(" + entry + ")";
-        }
-
-        public long getLastModified() {
-            return entry.getTime();
-        }
-
-        public boolean delete() {
-            throw new UnsupportedOperationException();
-        }
-
+        @Override
         public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
             CharBuffer cb = fileManager.getCachedContent(this);
             if (cb == null) {
@@ -213,6 +202,42 @@ public class ZipArchive implements Archive {
         }
 
         @Override
+        public Writer openWriter() throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getLastModified() {
+            return entry.getTime();
+        }
+
+        @Override
+        public boolean delete() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
+            return fileManager.getDecoder(fileManager.getEncodingName(), ignoreEncodingErrors);
+        }
+
+        @Override
+        protected String inferBinaryName(Iterable<? extends File> path) {
+            String entryName = entry.getName();
+            return removeExtension(entryName).replace('/', '.');
+        }
+
+        @Override
+        public boolean isNameCompatible(String cn, JavaFileObject.Kind k) {
+            cn.getClass();
+            // null check
+            if (k == Kind.OTHER && getKind() != k) {
+                return false;
+            }
+            return name.equals(cn + k.extension);
+        }
+
+        @Override
         public boolean equals(Object other) {
             if (!(other instanceof ZipFileObject)) {
                 return false;
@@ -224,26 +249,6 @@ public class ZipArchive implements Archive {
         @Override
         public int hashCode() {
             return zarch.zdir.hashCode() + name.hashCode();
-        }
-
-        public String getZipName() {
-            return zarch.zdir.getName();
-        }
-
-        public String getZipEntryName() {
-            return entry.getName();
-        }
-
-        public URI toUri() {
-            String zipName = new File(getZipName()).toURI().normalize().getPath();
-            String entryName = getZipEntryName();
-            return URI.create("jar:" + zipName + "!" + entryName);
-        }
-
-        @Override
-        protected String inferBinaryName(Iterable<? extends File> path) {
-            String entryName = getZipEntryName();
-            return removeExtension(entryName).replace('/', '.');
         }
     }
 

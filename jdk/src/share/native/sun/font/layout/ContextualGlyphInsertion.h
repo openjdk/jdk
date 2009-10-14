@@ -32,11 +32,18 @@
 #ifndef __CONTEXTUALGLYPHINSERTION_H
 #define __CONTEXTUALGLYPHINSERTION_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LayoutTables.h"
 #include "StateTables.h"
 #include "MorphTables.h"
 #include "MorphStateTables.h"
+
+U_NAMESPACE_BEGIN
 
 struct ContextualGlyphInsertionHeader : MorphStateTableHeader
 {
@@ -60,4 +67,5 @@ struct LigatureSubstitutionStateEntry : StateEntry
     ByteOffset markedInsertionListOffset;
 };
 
+U_NAMESPACE_END
 #endif

@@ -60,7 +60,12 @@ public class AnnotationDescImpl implements AnnotationDesc {
      */
     public AnnotationTypeDoc annotationType() {
         ClassSymbol atsym = (ClassSymbol)annotation.type.tsym;
-        return (AnnotationTypeDoc)env.getClassDoc(atsym);
+        if (annotation.type.isErroneous()) {
+            env.warning(null, "javadoc.class_not_found", annotation.type.toString());
+            return new AnnotationTypeDocImpl(env, atsym);
+        } else {
+            return (AnnotationTypeDoc)env.getClassDoc(atsym);
+        }
     }
 
     /**

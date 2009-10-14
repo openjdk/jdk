@@ -37,7 +37,8 @@ import java.awt.dnd.InvalidDnDOperationException;
 
 import java.util.*;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
+
 import sun.awt.ComponentAccessor;
 
 import sun.awt.dnd.SunDragSourceContextPeer;
@@ -52,8 +53,8 @@ import sun.awt.SunToolkit;
  */
 public final class XDragSourceContextPeer
     extends SunDragSourceContextPeer implements XDragSourceProtocolListener {
-    private static final Logger logger =
-        Logger.getLogger("sun.awt.X11.xembed.xdnd.XDragSourceContextPeer");
+    private static final PlatformLogger logger =
+        PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDragSourceContextPeer");
 
     /* The events selected on the root window when the drag begins. */
     private static final int ROOT_EVENT_MASK = (int)XConstants.ButtonMotionMask |
@@ -542,7 +543,7 @@ public final class XDragSourceContextPeer
             return false;
         }
 
-        if (logger.isLoggable(Level.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.FINEST)) {
             logger.finest("        proxyModeSourceWindow=" +
                           getProxyModeSourceWindow() +
                           " ev=" + ev);

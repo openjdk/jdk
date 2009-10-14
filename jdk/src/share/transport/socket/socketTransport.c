@@ -134,15 +134,16 @@ setOptions(int fd)
 
 static jdwpTransportError
 handshake(int fd, jlong timeout) {
-    char *hello = "JDWP-Handshake";
+    const char *hello = "JDWP-Handshake";
     char b[16];
-    int rv, received, i;
+    int rv, helloLen, received;
 
     if (timeout > 0) {
         dbgsysConfigureBlocking(fd, JNI_FALSE);
     }
+    helloLen = (int)strlen(hello);
     received = 0;
-    while (received < (int)strlen(hello)) {
+    while (received < helloLen) {
         int n;
         char *buf;
         if (timeout > 0) {
@@ -154,7 +155,7 @@ handshake(int fd, jlong timeout) {
         }
         buf = b;
         buf += received;
-        n = dbgsysRecv(fd, buf, (int)strlen(hello)-received, 0);
+        n = dbgsysRecv(fd, buf, helloLen-received, 0);
         if (n == 0) {
             setLastError(0, "handshake failed - connection prematurally closed");
             return JDWPTRANSPORT_ERROR_IO_ERROR;
@@ -167,20 +168,19 @@ handshake(int fd, jlong timeout) {
     if (timeout > 0) {
         dbgsysConfigureBlocking(fd, JNI_TRUE);
     }
-    for (i=0; i<(int)strlen(hello); i++) {
-        if (b[i] != hello[i]) {
-            char msg[64];
-            strcpy(msg, "handshake failed - received >");
-            strncat(msg, b, strlen(hello));
-            strcat(msg, "< - excepted >");
-            strcat(msg, hello);
-            strcat(msg, "<");
-            setLastError(0, msg);
-            return JDWPTRANSPORT_ERROR_IO_ERROR;
-        }
+    if (strncmp(b, hello, received) != 0) {
+        char msg[80+2*16];
+        b[received] = '\0';
+        /*
+         * We should really use snprintf here but it's not available on Windows.
+         * We can't use jio_snprintf without linking the transport against the VM.
+         */
+        sprintf(msg, "handshake failed - received >%s< - expected >%s<", b, hello);
+        setLastError(0, msg);
+        return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
 
-    if (dbgsysSend(fd, hello, (int)strlen(hello), 0) != (int)strlen(hello)) {
+    if (dbgsysSend(fd, (char*)hello, helloLen, 0) != helloLen) {
         RETURN_IO_ERROR("send failed during handshake");
     }
     return JDWPTRANSPORT_ERROR_NONE;

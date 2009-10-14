@@ -315,6 +315,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         new BigDecimal(BigInteger.ZERO, 0, 15, 1),
     };
 
+    // Half of Long.MIN_VALUE & Long.MAX_VALUE.
+    private static final long HALF_LONG_MAX_VALUE = Long.MAX_VALUE / 2;
+    private static final long HALF_LONG_MIN_VALUE = Long.MIN_VALUE / 2;
+
     // Constants
     /**
      * The value 0, with a scale of 0.
@@ -1455,10 +1459,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             } else if (roundingMode == ROUND_FLOOR) {   // Towards -infinity
                 increment = (qsign < 0);
             } else {
-                if (isLongDivision || ldivisor != INFLATED)
-                    cmpFracHalf = longCompareMagnitude(2 * r, ldivisor);
-                else
+                if (isLongDivision || ldivisor != INFLATED) {
+                    if (r <= HALF_LONG_MIN_VALUE || r > HALF_LONG_MAX_VALUE) {
+                        cmpFracHalf = 1;    // 2 * r can't fit into long
+                    } else {
+                        cmpFracHalf = longCompareMagnitude(2 * r, ldivisor);
+                    }
+                } else {
                     cmpFracHalf = mr.compareHalf(mdivisor);
+                }
                 if (cmpFracHalf < 0)
                     increment = false;     // We're closer to higher digit
                 else if (cmpFracHalf > 0)  // We're closer to lower digit

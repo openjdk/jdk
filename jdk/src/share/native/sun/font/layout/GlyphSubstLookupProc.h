@@ -24,13 +24,17 @@
  */
 
 /*
- *
  * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  */
 
 #ifndef __GLYPHSUBSTITUTIONLOOKUPPROCESSOR_H
 #define __GLYPHSUBSTITUTIONLOOKUPPROCESSOR_H
+
+/**
+ * \file
+ * \internal
+ */
 
 #include "LETypes.h"
 #include "LEGlyphFilter.h"
@@ -43,12 +47,13 @@
 #include "GlyphIterator.h"
 #include "LookupProcessor.h"
 
+U_NAMESPACE_BEGIN
+
 class GlyphSubstitutionLookupProcessor : public LookupProcessor
 {
 public:
     GlyphSubstitutionLookupProcessor(const GlyphSubstitutionTableHeader *glyphSubstitutionTableHeader,
-        LETag scriptTag, LETag languageTag, const LEGlyphFilter *filter,
-        const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder);
+        LETag scriptTag, LETag languageTag, const LEGlyphFilter *filter, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder);
 
     virtual ~GlyphSubstitutionLookupProcessor();
 
@@ -65,4 +70,5 @@ private:
     GlyphSubstitutionLookupProcessor &operator=(const GlyphSubstitutionLookupProcessor &other); // forbid copying of this class
 };
 
+U_NAMESPACE_END
 #endif

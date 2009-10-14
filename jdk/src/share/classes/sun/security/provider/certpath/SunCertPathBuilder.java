@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
+import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Principal;
@@ -44,6 +45,7 @@ import java.util.LinkedList;
 import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
+import sun.security.action.GetBooleanSecurityPropertyAction;
 import sun.security.x509.X500Name;
 import sun.security.x509.PKIXExtensions;
 import sun.security.util.Debug;
@@ -85,6 +87,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
     private PublicKey finalPublicKey;
     private X509CertSelector targetSel;
     private List<CertStore> orderedCertStores;
+    private boolean onlyEECert = false;
 
     /**
      * Create an instance of <code>SunCertPathBuilder</code>.
@@ -97,6 +100,9 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         } catch (CertificateException e) {
             throw new CertPathBuilderException(e);
         }
+        onlyEECert = AccessController.doPrivileged(
+            new GetBooleanSecurityPropertyAction
+                ("com.sun.security.onlyCheckRevocationOfEECert"));
     }
 
     /**
@@ -256,7 +262,6 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
 
     /*
      * Private build reverse method.
-     *
      */
     private void buildReverse(List<List<Vertex>> adjacencyList,
         LinkedList<X509Certificate> certPathList) throws Exception
@@ -296,7 +301,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
             currentState.updateState(anchor);
             // init the crl checker
             currentState.crlChecker =
-                new CrlRevocationChecker(null, buildParams);
+                new CrlRevocationChecker(null, buildParams, null, onlyEECert);
             try {
                 depthFirstSearchReverse(null, currentState,
                 new ReverseBuilder(buildParams, targetSubjectDN), adjacencyList,
@@ -341,10 +346,12 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         adjacencyList.add(new LinkedList<Vertex>());
 
         // init the crl checker
-        currentState.crlChecker = new CrlRevocationChecker(null, buildParams);
+        currentState.crlChecker
+            = new CrlRevocationChecker(null, buildParams, null, onlyEECert);
 
         depthFirstSearchForward(targetSubjectDN, currentState,
-          new ForwardBuilder(buildParams, targetSubjectDN, searchAllCertStores),
+          new ForwardBuilder
+              (buildParams, targetSubjectDN, searchAllCertStores, onlyEECert),
           adjacencyList, certPathList);
     }
 
@@ -486,8 +493,8 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                     userCheckers.add(mustCheck, basicChecker);
                     mustCheck++;
                     if (buildParams.isRevocationEnabled()) {
-                        userCheckers.add(mustCheck,
-                            new CrlRevocationChecker(anchor, buildParams));
+                        userCheckers.add(mustCheck, new CrlRevocationChecker
+                            (anchor, buildParams, null, onlyEECert));
                         mustCheck++;
                     }
                 }
