@@ -795,7 +795,6 @@ public abstract class JComponent extends Container implements Serializable,
      * @see java.awt.Container#paint
      */
     protected void paintChildren(Graphics g) {
-        boolean isJComponent;
         Graphics sg = g;
 
         synchronized(getTreeLock()) {
@@ -826,12 +825,21 @@ public abstract class JComponent extends Container implements Serializable,
                 }
             }
             boolean printing = getFlag(IS_PRINTING);
+            final Window window = SwingUtilities.getWindowAncestor(this);
+            final boolean isWindowOpaque = window == null || window.isOpaque();
             for (; i >= 0 ; i--) {
                 Component comp = getComponent(i);
-                isJComponent = (comp instanceof JComponent);
-                if (comp != null &&
-                    (isJComponent || isLightweightComponent(comp)) &&
-                    (comp.isVisible() == true)) {
+                if (comp == null) {
+                    continue;
+                }
+
+                final boolean isJComponent = comp instanceof JComponent;
+
+                // Enable painting of heavyweights in non-opaque windows.
+                // See 6884960
+                if ((!isWindowOpaque || isJComponent ||
+                            isLightweightComponent(comp)) && comp.isVisible())
+                {
                     Rectangle cr;
 
                     cr = comp.getBounds(tmpRect);
@@ -887,6 +895,8 @@ public abstract class JComponent extends Container implements Serializable,
                                     }
                                 }
                             } else {
+                                // The component is either lightweight, or
+                                // heavyweight in a non-opaque window
                                 if (!printing) {
                                     comp.paint(cg);
                                 }
