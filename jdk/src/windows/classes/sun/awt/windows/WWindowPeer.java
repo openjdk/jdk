@@ -510,6 +510,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
     private native int getScreenImOn();
 
+    // Used in Win32GraphicsDevice.
+    public final native void setFullScreenExclusiveModeState(boolean state);
+
 /*
  * ----END DISPLAY CHANGE SUPPORT----
  */
