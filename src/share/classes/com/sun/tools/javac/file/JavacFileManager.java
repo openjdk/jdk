@@ -968,7 +968,7 @@ public class JavacFileManager implements StandardJavaFileManager {
             } else {
                 File siblingDir = null;
                 if (sibling != null && sibling instanceof RegularFileObject) {
-                    siblingDir = ((RegularFileObject)sibling).f.getParentFile();
+                    siblingDir = ((RegularFileObject)sibling).file.getParentFile();
                 }
                 return new RegularFileObject(this, new File(siblingDir, fileName.basename()));
             }

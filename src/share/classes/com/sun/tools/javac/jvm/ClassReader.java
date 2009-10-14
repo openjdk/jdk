@@ -2632,10 +2632,20 @@ public class ClassReader implements Completer {
             return true; // fail-safe mode
         }
 
+        /**
+         * Check if two file objects are equal.
+         * SourceFileObjects are just placeholder objects for the value of a
+         * SourceFile attribute, and do not directly represent specific files.
+         * Two SourceFileObjects are equal if their names are equal.
+         */
         @Override
         public boolean equals(Object other) {
+            if (this == other)
+                return true;
+
             if (!(other instanceof SourceFileObject))
                 return false;
+
             SourceFileObject o = (SourceFileObject) other;
             return name.equals(o.name);
         }
