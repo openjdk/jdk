@@ -64,8 +64,8 @@ public final
 
     private Class<T>            clazz;
     private int                 slot;
-    private Class[]             parameterTypes;
-    private Class[]             exceptionTypes;
+    private Class<?>[]          parameterTypes;
+    private Class<?>[]          exceptionTypes;
     private int                 modifiers;
     // Generics and annotations support
     private transient String    signature;
@@ -80,11 +80,7 @@ public final
     // always succeed (it is not affected by the granting or revoking
     // of permissions); we speed up the check in the common case by
     // remembering the last Class for which the check succeeded.
-    private volatile Class securityCheckCache;
-
-    // Modifiers that can be applied to a constructor in source code
-    private static final int LANGUAGE_MODIFIERS =
-        Modifier.PUBLIC         | Modifier.PROTECTED    | Modifier.PRIVATE;
+    private volatile Class<?> securityCheckCache;
 
     // Generics infrastructure
     // Accessor for factory
@@ -117,8 +113,8 @@ public final
      * package via sun.reflect.LangReflectAccess.
      */
     Constructor(Class<T> declaringClass,
-                Class[] parameterTypes,
-                Class[] checkedExceptions,
+                Class<?>[] parameterTypes,
+                Class<?>[] checkedExceptions,
                 int modifiers,
                 int slot,
                 String signature,
@@ -279,10 +275,6 @@ public final
      * Returns an array of length 0 if the underlying method declares
      * no exceptions in its {@code throws} clause.
      *
-     * <p>If an exception type is a parameterized type, the {@code Type}
-     * object returned for it must accurately reflect the actual type
-     * parameters used in the source code.
-     *
      * <p>If an exception type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
      *
@@ -315,11 +307,11 @@ public final
      */
     public boolean equals(Object obj) {
         if (obj != null && obj instanceof Constructor) {
-            Constructor other = (Constructor)obj;
+            Constructor<?> other = (Constructor<?>)obj;
             if (getDeclaringClass() == other.getDeclaringClass()) {
                 /* Avoid unnecessary cloning */
-                Class[] params1 = parameterTypes;
-                Class[] params2 = other.parameterTypes;
+                Class<?>[] params1 = parameterTypes;
+                Class<?>[] params2 = other.parameterTypes;
                 if (params1.length == params2.length) {
                     for (int i = 0; i < params1.length; i++) {
                         if (params1[i] != params2[i])
@@ -359,20 +351,20 @@ public final
     public String toString() {
         try {
             StringBuffer sb = new StringBuffer();
-            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            int mod = getModifiers() & Modifier.constructorModifiers();
             if (mod != 0) {
                 sb.append(Modifier.toString(mod) + " ");
             }
             sb.append(Field.getTypeName(getDeclaringClass()));
             sb.append("(");
-            Class[] params = parameterTypes; // avoid clone
+            Class<?>[] params = parameterTypes; // avoid clone
             for (int j = 0; j < params.length; j++) {
                 sb.append(Field.getTypeName(params[j]));
                 if (j < (params.length - 1))
                     sb.append(",");
             }
             sb.append(")");
-            Class[] exceptions = exceptionTypes; // avoid clone
+            Class<?>[] exceptions = exceptionTypes; // avoid clone
             if (exceptions.length > 0) {
                 sb.append(" throws ");
                 for (int k = 0; k < exceptions.length; k++) {
@@ -423,7 +415,7 @@ public final
     public String toGenericString() {
         try {
             StringBuilder sb = new StringBuilder();
-            int mod = getModifiers() & LANGUAGE_MODIFIERS;
+            int mod = getModifiers() & Modifier.constructorModifiers();
             if (mod != 0) {
                 sb.append(Modifier.toString(mod) + " ");
             }
@@ -460,7 +452,7 @@ public final
                 sb.append(" throws ");
                 for (int k = 0; k < exceptions.length; k++) {
                     sb.append((exceptions[k] instanceof Class)?
-                              ((Class)exceptions[k]).getName():
+                              ((Class<?>)exceptions[k]).getName():
                               exceptions[k].toString());
                     if (k < (exceptions.length - 1))
                         sb.append(",");
@@ -526,7 +518,7 @@ public final
     {
         if (!override) {
             if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-                Class caller = Reflection.getCallerClass(2);
+                Class<?> caller = Reflection.getCallerClass(2);
                 if (securityCheckCache != caller) {
                     Reflection.ensureMemberAccess(caller, clazz, null, modifiers);
                     securityCheckCache = caller;
@@ -633,9 +625,9 @@ public final
         return AnnotationParser.toArray(declaredAnnotations());
     }
 
-    private transient Map<Class, Annotation> declaredAnnotations;
+    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
-    private synchronized  Map<Class, Annotation> declaredAnnotations() {
+    private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
             declaredAnnotations = AnnotationParser.parseAnnotations(
                 annotations, sun.misc.SharedSecrets.getJavaLangAccess().

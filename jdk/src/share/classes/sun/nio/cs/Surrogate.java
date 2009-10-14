@@ -51,21 +51,24 @@ public class Surrogate {
     public static final int UCS4_MAX  = Character.MAX_CODE_POINT;
 
     /**
-     * Tells whether or not the given UTF-16 value is a high surrogate.
+     * Tells whether or not the given value is in the high surrogate range.
+     * Use of {@link Character#isHighSurrogate} is generally preferred.
      */
     public static boolean isHigh(int c) {
         return (MIN_HIGH <= c) && (c <= MAX_HIGH);
     }
 
     /**
-     * Tells whether or not the given UTF-16 value is a low surrogate.
+     * Tells whether or not the given value is in the low surrogate range.
+     * Use of {@link Character#isLowSurrogate} is generally preferred.
      */
     public static boolean isLow(int c) {
         return (MIN_LOW <= c) && (c <= MAX_LOW);
     }
 
     /**
-     * Tells whether or not the given UTF-16 value is a surrogate character,
+     * Tells whether or not the given value is in the surrogate range.
+     * Use of {@link Character#isSurrogate} is generally preferred.
      */
     public static boolean is(int c) {
         return (MIN <= c) && (c <= MAX);
@@ -88,7 +91,7 @@ public class Surrogate {
     }
 
     /**
-     * Returns the high UTF-16 surrogate for the given UCS-4 character.
+     * Returns the high UTF-16 surrogate for the given supplementary UCS-4 character.
      */
     public static char high(int uc) {
         assert Character.isSupplementaryCodePoint(uc);
@@ -98,7 +101,7 @@ public class Surrogate {
     }
 
     /**
-     * Returns the low UTF-16 surrogate for the given UCS-4 character.
+     * Returns the low UTF-16 surrogate for the given supplementary UCS-4 character.
      */
     public static char low(int uc) {
         assert Character.isSupplementaryCodePoint(uc);

@@ -375,6 +375,12 @@ JNIEXPORT void JNICALL
 JVM_ResolveClass(JNIEnv *env, jclass cls);
 
 /*
+ * Find a class from a boot class loader. Returns NULL if class not found.
+ */
+JNIEXPORT jclass JNICALL
+JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
+
+/*
  * Find a class from a given class loader. Throw ClassNotFoundException
  * or NoClassDefFoundError depending on the value of the last
  * argument.

@@ -40,6 +40,8 @@
 #include "GlyphIterator.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 LEGlyphID MarkToMarkPositioningSubtable::findMark2Glyph(GlyphIterator *glyphIterator) const
 {
     if (glyphIterator->findMark2Glyph()) {
@@ -88,7 +90,7 @@ le_int32 MarkToMarkPositioningSubtable::process(GlyphIterator *glyphIterator, co
     const AnchorTable *anchorTable = (const AnchorTable *) ((char *) mark2Array + anchorTableOffset);
     LEPoint mark2Anchor, markAdvance, pixels;
 
-    if (anchorTableOffset == 0) { // jb4729
+    if (anchorTableOffset == 0) {
         // this seems to mean that the marks don't attach...
         return 0;
     }
@@ -111,9 +113,10 @@ le_int32 MarkToMarkPositioningSubtable::process(GlyphIterator *glyphIterator, co
         fontInstance->getGlyphAdvance(mark2Glyph, pixels);
         fontInstance->pixelsToUnits(pixels, mark2Advance);
 
-        glyphIterator->setCurrGlyphPositionAdjustment(anchorDiffX - mark2Advance.fX,
-            anchorDiffY - mark2Advance.fY, -markAdvance.fX, -markAdvance.fY);
+        glyphIterator->setCurrGlyphPositionAdjustment(anchorDiffX - mark2Advance.fX, anchorDiffY - mark2Advance.fY, -markAdvance.fX, -markAdvance.fY);
     }
 
     return 1;
 }
+
+U_NAMESPACE_END

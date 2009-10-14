@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class ArrayClone {
         String out = sw.toString();
         System.out.println(out);
 
-        for (String line: out.split("\n")) {
+        for (String line: out.split("(\\n|\\r\\n?)")) {
             String match = "[ \t]+[0-9]+:[ \t]+invokevirtual[ \t]+#[0-9]+[ \t]+// Method \"\\[Ljava/lang/String;\".clone:\\(\\)Ljava/lang/Object;";
             if (line.matches(match))
                 return;

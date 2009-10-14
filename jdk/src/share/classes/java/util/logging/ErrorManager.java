@@ -28,7 +28,7 @@ package java.util.logging;
 
 /**
  * ErrorManager objects can be attached to Handlers to process
- * any error that occur on a Handler during Logging.
+ * any error that occurs on a Handler during Logging.
  * <p>
  * When processing logging output, if a Handler encounters problems
  * then rather than throwing an Exception back to the issuer of
@@ -72,7 +72,7 @@ public class ErrorManager {
     /**
      * The error method is called when a Handler failure occurs.
      * <p>
-     * This method may be overriden in subclasses.  The default
+     * This method may be overridden in subclasses.  The default
      * behavior in this base class is that the first call is
      * reported to System.err, and subsequent calls are ignored.
      *

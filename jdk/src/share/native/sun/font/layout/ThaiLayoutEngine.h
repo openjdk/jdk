@@ -39,6 +39,8 @@
 
 #include "ThaiShaping.h"
 
+U_NAMESPACE_BEGIN
+
 class LEGlyphStorage;
 
 /**
@@ -66,8 +68,7 @@ public:
      *
      * @internal
      */
-    ThaiLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode,
-        le_int32 languageCode, le_int32 typoFlags);
+    ThaiLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags);
 
     /**
      * The destructor, virtual for correct polymorphic invocation.
@@ -75,6 +76,20 @@ public:
      * @internal
      */
     virtual ~ThaiLayoutEngine();
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 2.8
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 2.8
+     */
+    static UClassID getStaticClassID();
 
 protected:
     /**
@@ -109,10 +124,8 @@ protected:
      * @param offset - the index of the first character to process
      * @param count - the number of characters to process
      * @param max - the number of characters in the input context
-     * @param rightToLeft - <code>TRUE</code> if the text is in a
-     *    right to left directional run
-     * @param glyphStorage - the glyph storage object. The glyph and
-     *    char index arrays will be set.
+     * @param rightToLeft - <code>TRUE</code> if the text is in a right to left directional run
+     * @param glyphStorage - the glyph storage object. The glyph and char index arrays will be set.
      *
      * Output parameters:
      * @param success - set to an error code if the operation fails
@@ -123,10 +136,11 @@ protected:
      *
      * @internal
      */
-    virtual le_int32 computeGlyphs(const LEUnicode chars[], le_int32 offset,
-        le_int32 count, le_int32 max, le_bool rightToLeft,
+    virtual le_int32 computeGlyphs(const LEUnicode chars[], le_int32 offset, le_int32 count, le_int32 max, le_bool rightToLeft,
         LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
 };
 
+U_NAMESPACE_END
 #endif
+

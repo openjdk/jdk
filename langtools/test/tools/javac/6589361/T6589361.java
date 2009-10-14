@@ -23,8 +23,9 @@ public class T6589361 {
             set.add(JavaFileObject.Kind.CLASS);
             Iterable<JavaFileObject> files = fm.list(StandardLocation.PLATFORM_CLASS_PATH, "java.lang", set, false);
             for (JavaFileObject file : files) {
-
-                if (file.toString().contains("java" + File.separator + "lang" + File.separator + "Object.class")) {
+                // Note: Zip/Jar entry names use '/', not File.separator, but just to be sure,
+                // we normalize the filename as well.
+                if (file.getName().replace(File.separatorChar, '/').contains("java/lang/Object.class")) {
                     String str = fm.inferBinaryName(StandardLocation.CLASS_PATH, file);
                     if (!str.equals("java.lang.Object")) {
                         throw new AssertionError("Error in JavacFileManager.inferBinaryName method!");
@@ -40,7 +41,7 @@ public class T6589361 {
                 fm.close();
             }
         }
-        throw new AssertionError("Could not fing java/lang/Object.class while compiling");
+        throw new AssertionError("Could not find java/lang/Object.class while compiling");
     }
 
 }

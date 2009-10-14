@@ -30,7 +30,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 
 /**
  * This class is to let AWT shutdown automatically when a user is done
@@ -154,14 +154,17 @@ public final class AWTAutoShutdown implements Runnable {
 
     /**
      * Add a specified thread to the set of busy event dispatch threads.
-     * If this set already contains the specified thread, the call leaves
-     * this set unchanged and returns silently.
+     * If this set already contains the specified thread or the thread is null,
+     * the call leaves this set unchanged and returns silently.
      *
      * @param thread thread to be added to this set, if not present.
      * @see     AWTAutoShutdown#notifyThreadFree
      * @see     AWTAutoShutdown#isReadyToShutdown
      */
     public void notifyThreadBusy(final Thread thread) {
+        if (thread == null) {
+            return;
+        }
         synchronized (activationLock) {
             synchronized (mainLock) {
                 if (blockerThread == null) {
@@ -177,14 +180,17 @@ public final class AWTAutoShutdown implements Runnable {
 
     /**
      * Remove a specified thread from the set of busy event dispatch threads.
-     * If this set doesn't contain the specified thread, the call leaves
-     * this set unchanged and returns silently.
+     * If this set doesn't contain the specified thread or the thread is null,
+     * the call leaves this set unchanged and returns silently.
      *
      * @param thread thread to be removed from this set, if present.
      * @see     AWTAutoShutdown#notifyThreadBusy
      * @see     AWTAutoShutdown#isReadyToShutdown
      */
     public void notifyThreadFree(final Thread thread) {
+        if (thread == null) {
+            return;
+        }
         synchronized (activationLock) {
             synchronized (mainLock) {
                 busyThreadSet.remove(thread);
@@ -363,7 +369,7 @@ public final class AWTAutoShutdown implements Runnable {
         }
     }
 
-    final void dumpPeers(final Logger aLog) {
+    final void dumpPeers(final PlatformLogger aLog) {
         synchronized (activationLock) {
             synchronized (mainLock) {
                 aLog.fine("Mapped peers:");

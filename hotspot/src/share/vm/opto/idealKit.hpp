@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,6 +216,7 @@ class IdealKit: public StackObj {
                 Node* adr,
                 Node* val,
                 Node* oop_store,
+                int oop_adr_idx,
                 BasicType bt,
                 int adr_idx);
 

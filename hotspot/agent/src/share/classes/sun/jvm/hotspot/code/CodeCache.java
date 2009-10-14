@@ -33,6 +33,7 @@ import sun.jvm.hotspot.utilities.*;
 
 public class CodeCache {
   private static AddressField       heapField;
+  private static AddressField       scavengeRootNMethodsField;
   private static VirtualConstructor virtualConstructor;
 
   private CodeHeap heap;
@@ -49,6 +50,7 @@ public class CodeCache {
     Type type = db.lookupType("CodeCache");
 
     heapField = type.getAddressField("_heap");
+    scavengeRootNMethodsField = type.getAddressField("_scavenge_root_nmethods");
 
     virtualConstructor = new VirtualConstructor(db);
     // Add mappings for all possible CodeBlob subclasses
@@ -65,6 +67,10 @@ public class CodeCache {
 
   public CodeCache() {
     heap = (CodeHeap) VMObjectFactory.newObject(CodeHeap.class, heapField.getValue());
+  }
+
+  public NMethod scavengeRootMethods() {
+    return (NMethod) VMObjectFactory.newObject(NMethod.class, scavengeRootNMethodsField.getValue());
   }
 
   public boolean contains(Address p) {

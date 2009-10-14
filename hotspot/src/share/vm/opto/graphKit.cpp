@@ -1450,7 +1450,7 @@ void GraphKit::post_barrier(Node* ctl,
 
     case BarrierSet::CardTableModRef:
     case BarrierSet::CardTableExtension:
-      write_barrier_post(store, obj, adr, val, use_precise);
+      write_barrier_post(store, obj, adr, adr_idx, val, use_precise);
       break;
 
     case BarrierSet::ModRef:
@@ -3165,6 +3165,7 @@ void GraphKit::sync_kit(IdealKit& ideal) {
 void GraphKit::write_barrier_post(Node* oop_store,
                                   Node* obj,
                                   Node* adr,
+                                  uint  adr_idx,
                                   Node* val,
                                   bool use_precise) {
   // No store check needed if we're storing a NULL or an old object
@@ -3214,7 +3215,7 @@ void GraphKit::write_barrier_post(Node* oop_store,
     __ store(__ ctrl(), card_adr, zero, bt, adr_type);
   } else {
     // Specialized path for CM store barrier
-    __ storeCM(__ ctrl(), card_adr, zero, oop_store, bt, adr_type);
+    __ storeCM(__ ctrl(), card_adr, zero, oop_store, adr_idx, bt, adr_type);
   }
 
   // Final sync IdealKit and GraphKit.
@@ -3314,6 +3315,7 @@ void GraphKit::g1_write_barrier_pre(Node* obj,
 void GraphKit::g1_mark_card(IdealKit& ideal,
                             Node* card_adr,
                             Node* oop_store,
+                            uint oop_alias_idx,
                             Node* index,
                             Node* index_adr,
                             Node* buffer,
@@ -3323,7 +3325,7 @@ void GraphKit::g1_mark_card(IdealKit& ideal,
   Node* no_base = __ top();
   BasicType card_bt = T_BYTE;
   // Smash zero into card. MUST BE ORDERED WRT TO STORE
-  __ storeCM(__ ctrl(), card_adr, zero, oop_store, card_bt, Compile::AliasIdxRaw);
+  __ storeCM(__ ctrl(), card_adr, zero, oop_store, oop_alias_idx, card_bt, Compile::AliasIdxRaw);
 
   //  Now do the queue work
   __ if_then(index, BoolTest::ne, zero); {
@@ -3435,13 +3437,13 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
         Node* card_val = __ load(__ ctrl(), card_adr, TypeInt::INT, T_BYTE, Compile::AliasIdxRaw);
 
         __ if_then(card_val, BoolTest::ne, zero); {
-          g1_mark_card(ideal, card_adr, oop_store, index, index_adr, buffer, tf);
+          g1_mark_card(ideal, card_adr, oop_store, alias_idx, index, index_adr, buffer, tf);
         } __ end_if();
       } __ end_if();
     } __ end_if();
   } else {
     // Object.clone() instrinsic uses this path.
-    g1_mark_card(ideal, card_adr, oop_store, index, index_adr, buffer, tf);
+    g1_mark_card(ideal, card_adr, oop_store, alias_idx, index, index_adr, buffer, tf);
   }
 
   // Final sync IdealKit and GraphKit.

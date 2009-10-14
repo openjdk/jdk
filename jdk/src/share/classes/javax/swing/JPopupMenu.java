@@ -412,7 +412,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(
-                        SecurityConstants.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
+                    SecurityConstants.AWT.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
             }
         } catch (SecurityException se) {
             // There is no permission to show popups over the task bar

@@ -25,17 +25,22 @@
 
 package sun.net.www.protocol.http;
 
-import java.util.Arrays;
-import java.util.StringTokenizer;
-import java.util.Random;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.PasswordAuthentication;
+import java.net.UnknownHostException;
+import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
 
 import sun.net.www.HeaderParser;
-
-import java.io.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
-import java.security.*;
-import java.net.*;
 
 /**
  * NTLMAuthentication:
@@ -65,8 +70,6 @@ import java.net.*;
 
 class NTLMAuthentication extends AuthenticationInfo {
     private static final long serialVersionUID = -2403849171106437142L;
-
-    static char NTLM_AUTH = 'N';
 
     private byte[] type1;
     private byte[] type3;
@@ -142,7 +145,10 @@ class NTLMAuthentication extends AuthenticationInfo {
      * from a system property: "http.auth.ntlm.domain".
      */
     public NTLMAuthentication(boolean isProxy, URL url, PasswordAuthentication pw) {
-        super(isProxy?PROXY_AUTHENTICATION:SERVER_AUTHENTICATION, NTLM_AUTH, url, "");
+        super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
+                AuthScheme.NTLM,
+                url,
+                "");
         init (pw);
     }
 
@@ -166,7 +172,11 @@ class NTLMAuthentication extends AuthenticationInfo {
     */
     public NTLMAuthentication(boolean isProxy, String host, int port,
                                 PasswordAuthentication pw) {
-        super(isProxy?PROXY_AUTHENTICATION:SERVER_AUTHENTICATION, NTLM_AUTH,host, port, "");
+        super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
+                AuthScheme.NTLM,
+                host,
+                port,
+                "");
         init (pw);
     }
 
@@ -233,13 +243,6 @@ class NTLMAuthentication extends AuthenticationInfo {
             return false;
         }
     }
-
-    /* This is a no-op for NTLM, because there is no authentication information
-     * provided by the server to the client
-     */
-    public void checkResponse (String header, String method, URL url) throws IOException {
-    }
-
 
     private void copybytes (byte[] dest, int destpos, String src, String enc) {
         try {

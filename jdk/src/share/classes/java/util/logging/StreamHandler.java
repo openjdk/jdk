@@ -220,7 +220,7 @@ public class StreamHandler extends Handler {
      * <p>
      * This method checks if the <tt>LogRecord</tt> has an appropriate level and
      * whether it satisfies any <tt>Filter</tt>.  It will also return false if
-     * no output stream has been assigned yet or the LogRecord is Null.
+     * no output stream has been assigned yet or the LogRecord is null.
      * <p>
      * @param record  a <tt>LogRecord</tt>
      * @return true if the <tt>LogRecord</tt> would be logged.

@@ -21,8 +21,10 @@
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
 #
+# <pre>
+# This file is in the public domain, so clarified as of
+# 2009-05-17 by Arthur David Olson.
 # ISO 3166 alpha-2 country codes
-#
 #
 # From Paul Eggert (2006-09-27):
 #

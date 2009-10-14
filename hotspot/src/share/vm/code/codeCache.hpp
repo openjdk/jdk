@@ -45,8 +45,13 @@ class CodeCache : AllStatic {
   static int _number_of_blobs;
   static int _number_of_nmethods_with_dependencies;
   static bool _needs_cache_clean;
+  static nmethod* _scavenge_root_nmethods;  // linked via nm->scavenge_root_link()
 
   static void verify_if_often() PRODUCT_RETURN;
+
+  static void mark_scavenge_root_nmethods() PRODUCT_RETURN;
+  static void verify_perm_nmethods(CodeBlobClosure* f_or_null) PRODUCT_RETURN;
+
  public:
 
   // Initialization
@@ -61,6 +66,7 @@ class CodeCache : AllStatic {
   static void flush();                              // flushes all CodeBlobs
   static bool contains(void *p);                    // returns whether p is included
   static void blobs_do(void f(CodeBlob* cb));       // iterates over all CodeBlobs
+  static void blobs_do(CodeBlobClosure* f);         // iterates over all CodeBlobs
   static void nmethods_do(void f(nmethod* nm));     // iterates over all nmethods
 
   // Lookup
@@ -106,12 +112,24 @@ class CodeCache : AllStatic {
   static void do_unloading(BoolObjectClosure* is_alive,
                            OopClosure* keep_alive,
                            bool unloading_occurred);
-  static void oops_do(OopClosure* f);
+  static void oops_do(OopClosure* f) {
+    CodeBlobToOopClosure oopc(f, /*do_marking=*/ false);
+    blobs_do(&oopc);
+  }
+  static void asserted_non_scavengable_nmethods_do(CodeBlobClosure* f = NULL) PRODUCT_RETURN;
+  static void scavenge_root_nmethods_do(CodeBlobClosure* f);
+
+  static nmethod* scavenge_root_nmethods()          { return _scavenge_root_nmethods; }
+  static void set_scavenge_root_nmethods(nmethod* nm) { _scavenge_root_nmethods = nm; }
+  static void add_scavenge_root_nmethod(nmethod* nm);
+  static void drop_scavenge_root_nmethod(nmethod* nm);
+  static void prune_scavenge_root_nmethods();
 
   // Printing/debugging
   static void print()   PRODUCT_RETURN;          // prints summary
   static void print_internals();
   static void verify();                          // verifies the code cache
+  static void print_trace(const char* event, CodeBlob* cb, int size = 0) PRODUCT_RETURN;
 
   // The full limits of the codeCache
   static address  low_bound()                    { return (address) _heap->low_boundary(); }

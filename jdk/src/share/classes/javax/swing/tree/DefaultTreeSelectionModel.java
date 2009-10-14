@@ -1067,10 +1067,13 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
     }
 
     /**
-      * Notifies listeners of a change in path. changePaths should contain
-      * instances of PathPlaceHolder.
-      */
-    protected void notifyPathChange(Vector<PathPlaceHolder> changedPaths,
+     * Notifies listeners of a change in path. changePaths should contain
+     * instances of PathPlaceHolder.
+     *
+     * @deprecated As of JDK version 1.7
+     */
+    @Deprecated
+    protected void notifyPathChange(Vector changedPaths,
                                     TreePath oldLeadSelection) {
         int                    cPathCount = changedPaths.size();
         boolean[]              newness = new boolean[cPathCount];
@@ -1078,7 +1081,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
         PathPlaceHolder        placeholder;
 
         for(int counter = 0; counter < cPathCount; counter++) {
-            placeholder = changedPaths.elementAt(counter);
+            placeholder = (PathPlaceHolder) changedPaths.elementAt(counter);
             newness[counter] = placeholder.isNew;
             paths[counter] = placeholder.path;
         }

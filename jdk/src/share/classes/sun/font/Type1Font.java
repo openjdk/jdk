@@ -635,7 +635,7 @@ public class Type1Font extends FileFont {
 
     protected synchronized FontScaler getScaler() {
         if (scaler == null) {
-            scaler = FontManager.getScaler(this, 0, false, fileSize);
+            scaler = FontScaler.getScaler(this, 0, false, fileSize);
         }
 
         return scaler;
@@ -652,7 +652,7 @@ public class Type1Font extends FileFont {
         try {
             return getScaler().getNumGlyphs();
         } catch (FontScalerException e) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             return getNumGlyphs();
         }
     }
@@ -661,7 +661,7 @@ public class Type1Font extends FileFont {
         try {
             return getScaler().getMissingGlyphCode();
         } catch (FontScalerException e) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             return getMissingGlyphCode();
         }
     }
@@ -670,7 +670,7 @@ public class Type1Font extends FileFont {
         try {
             return getScaler().getGlyphCode(charCode);
         } catch (FontScalerException e) {
-            scaler = FontManager.getNullScaler();
+            scaler = FontScaler.getNullScaler();
             return getGlyphCode(charCode);
         }
     }
@@ -679,5 +679,4 @@ public class Type1Font extends FileFont {
         return "** Type1 Font: Family="+familyName+ " Name="+fullName+
             " style="+style+" fileName="+platName;
     }
-
 }

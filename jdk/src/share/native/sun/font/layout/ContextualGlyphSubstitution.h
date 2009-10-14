@@ -32,10 +32,17 @@
 #ifndef __CONTEXTUALGLYPHSUBSTITUTION_H
 #define __CONTEXTUALGLYPHSUBSTITUTION_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LayoutTables.h"
 #include "StateTables.h"
 #include "MorphTables.h"
+
+U_NAMESPACE_BEGIN
 
 struct ContextualGlyphSubstitutionHeader : MorphStateTableHeader
 {
@@ -55,4 +62,5 @@ struct ContextualGlyphSubstitutionStateEntry : StateEntry
     WordOffset currOffset;
 };
 
+U_NAMESPACE_END
 #endif

@@ -35,15 +35,14 @@ package sun.awt.X11;
 import java.util.*;
 import java.awt.*;
 import sun.awt.XSettings;
-import java.util.logging.*;
-
+import sun.util.logging.PlatformLogger;
 
 
 class XAWTXSettings extends XSettings implements XMSelectionListener {
 
     private final XAtom xSettingsPropertyAtom = XAtom.get("_XSETTINGS_SETTINGS");
 
-    private static Logger log = Logger.getLogger("sun.awt.X11.XAWTXSettings");
+    private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XAWTXSettings");
 
     /* The maximal length of the property data. */
     public static final long MAX_LENGTH = 1000000;
@@ -56,7 +55,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
     }
 
     void initXSettings() {
-        if (log.isLoggable(Level.FINE)) log.fine("Initializing XAWT XSettings");
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("Initializing XAWT XSettings");
         settings = new XMSelection("_XSETTINGS");
         settings.addSelectionListener(this);
         initPerScreenXSettings();
@@ -67,12 +66,12 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
     }
 
     public void ownerDeath(int screen, XMSelection sel, long deadOwner) {
-        if (log.isLoggable(Level.FINE)) log.fine("Owner " + deadOwner + " died for selection " + sel + " screen "+ screen);
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("Owner " + deadOwner + " died for selection " + sel + " screen "+ screen);
     }
 
 
     public void ownerChanged(int screen, XMSelection sel, long newOwner, long data, long timestamp) {
-        if (log.isLoggable(Level.FINE)) log.fine("New Owner "+ newOwner + " for selection = " + sel + " screen " +screen );
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("New Owner "+ newOwner + " for selection = " + sel + " screen " +screen );
     }
 
     public void selectionChanged(int screen, XMSelection sel, long owner , XPropertyEvent event) {
@@ -81,7 +80,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
     }
 
     void initPerScreenXSettings() {
-        if (log.isLoggable(Level.FINE)) log.fine("Updating Per XSettings changes");
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("Updating Per XSettings changes");
 
         /*
          * As toolkit cannot yet cope with per-screen desktop properties,
@@ -115,7 +114,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
     }
 
     private Map getUpdatedSettings(final long owner) {
-        if (log.isLoggable(Level.FINE)) log.fine("owner =" + owner);
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("owner =" + owner);
         if (0 == owner) {
             return null;
         }
@@ -129,13 +128,13 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
                 int status = getter.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
                 if (status != XConstants.Success || getter.getData() == 0) {
-                    if (log.isLoggable(Level.FINE)) log.fine("OH OH : getter failed  status = " + status );
+                    if (log.isLoggable(PlatformLogger.FINE)) log.fine("OH OH : getter failed  status = " + status );
                     settings = null;
                 }
 
                 long ptr = getter.getData();
 
-                if (log.isLoggable(Level.FINE)) log.fine("noItems = " + getter.getNumberOfItems());
+                if (log.isLoggable(PlatformLogger.FINE)) log.fine("noItems = " + getter.getNumberOfItems());
                 byte array[] = Native.toBytes(ptr,getter.getNumberOfItems());
                 if (array != null) {
                     settings = update(array);

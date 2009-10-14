@@ -33,12 +33,7 @@ SUNWprivate_1.1 {
                 isNullScalerContext;
                 Java_sun_font_NullFontScaler_getNullScalerContext;
                 Java_sun_font_NullFontScaler_getGlyphImage;
-                Java_sun_font_FontManager_getPlatformFontVar;
-                Java_sun_font_FontManager_initIDs;
-                Java_sun_font_FontManager_getFont2D;
-                Java_sun_font_FontManager_setFont2D;
-                Java_sun_font_FontManager_isCreatedFont;
-                Java_sun_font_FontManager_setCreatedFont;
+                Java_sun_font_SunFontManager_initIDs;
                 Java_sun_font_StrikeCache_getGlyphCacheDescription;
                 Java_sun_font_StrikeCache_freeIntPointer;
                 Java_sun_font_StrikeCache_freeLongPointer;

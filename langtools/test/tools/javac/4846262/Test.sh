@@ -1,7 +1,7 @@
 #!/bin/sh -f
 
 #
-# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,13 @@ fi
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux )
-    NULL=/dev/null
-    PS=":"
     FS="/"
     ;;
+  CYGWIN* )
+    FS="/"
+    DIFFOPTS="--strip-trailing-cr"
+    ;;
   Windows* )
-    NULL=NUL
-    PS=";"
     FS="\\"
     ;;
   * )
@@ -68,7 +68,7 @@ rm -f Test.java Test.out
 
 "${TESTJAVA}${FS}bin${FS}native2ascii" ${TESTTOOLVMOPTS} -encoding IBM1047 Test.tmp Test.out
 
-diff -c "${TESTSRC}${FS}Test.out" Test.out
+diff ${DIFFOPTS} -c "${TESTSRC}${FS}Test.out" Test.out
 result=$?
 
 if [ $result -eq o ]

@@ -1,2 +1,2 @@
-InvalidLocation.java:32:33: compiler.err.annotation.type.not.applicable
+InvalidLocation.java:9:33: compiler.err.annotation.type.not.applicable
 1 error

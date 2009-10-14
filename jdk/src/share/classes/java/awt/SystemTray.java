@@ -490,7 +490,7 @@ public class SystemTray {
     static void checkSystemTrayAllowed() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.ACCESS_SYSTEM_TRAY_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.ACCESS_SYSTEM_TRAY_PERMISSION);
         }
     }
 

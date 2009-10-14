@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,34 @@
 
 package com.sun.tools.javah;
 
-import com.sun.javadoc.*;
-import java.io.*;
 import java.util.*;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.NoType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.TypeVisitor;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.SimpleTypeVisitor6;
 
 /**
  * Returns internal type signature.
+ *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own
+ * risk.  This code and its internal interfaces are subject to change
+ * or deletion without notice.</b></p>
  *
  * @author Sucheta Dambalkar
  */
 
 public class TypeSignature{
 
-    RootDoc root  = null;
+    Elements elems;
 
     /* Signature Characters */
 
@@ -56,8 +71,8 @@ public class TypeSignature{
 
 
 
-    public TypeSignature(RootDoc root){
-        this.root = root;
+    public TypeSignature(Elements elems){
+        this.elems = elems;
     }
 
     /*
@@ -70,16 +85,15 @@ public class TypeSignature{
     /*
      * Returns the type signature of a method according to JVM specs
      */
-    public String getTypeSignature(String javasignature, Type returnType){
-
+    public String getTypeSignature(String javasignature, TypeMirror returnType){
         String signature = null; //Java type signature.
         String typeSignature = null; //Internal type signature.
-        Vector<Object> params = new Vector<Object>(); //List of parameters.
+        List<String> params = new ArrayList<String>(); //List of parameters.
         String paramsig = null; //Java parameter signature.
         String paramJVMSig = null; //Internal parameter signature.
         String returnSig = null; //Java return type signature.
         String returnJVMType = null; //Internal return type signature.
-        String dimension = null; //Array dimension.
+        int dimensions = 0; //Array dimension.
 
         int startIndex = -1;
         int endIndex = -1;
@@ -87,28 +101,27 @@ public class TypeSignature{
         int i = 0;
 
         // Gets the actual java signature without parentheses.
-        if(javasignature != null){
+        if (javasignature != null) {
             startIndex = javasignature.indexOf("(");
             endIndex = javasignature.indexOf(")");
         }
 
-        if(((startIndex != -1) && (endIndex != -1))
-           &&(startIndex+1 < javasignature.length())
-           &&(endIndex < javasignature.length())) {
-
+        if (((startIndex != -1) && (endIndex != -1))
+            &&(startIndex+1 < javasignature.length())
+            &&(endIndex < javasignature.length())) {
             signature = javasignature.substring(startIndex+1, endIndex);
         }
 
         // Separates parameters.
-        if(signature != null){
-            if(signature.indexOf(",") != -1){
+        if (signature != null) {
+            if (signature.indexOf(",") != -1) {
                 st = new StringTokenizer(signature, ",");
-                if(st != null){
+                if (st != null) {
                     while (st.hasMoreTokens()) {
                         params.add(st.nextToken());
                     }
                 }
-            }else {
+            } else {
                 params.add(signature);
             }
         }
@@ -117,10 +130,10 @@ public class TypeSignature{
         typeSignature = "(";
 
         // Gets indivisual internal parameter signature.
-        while(params.isEmpty() != true){
-            paramsig =((String)params.remove(i)).trim();
+        while (params.isEmpty() != true) {
+            paramsig = params.remove(i).trim();
             paramJVMSig  = getParamJVMSignature(paramsig);
-            if(paramJVMSig != null){
+            if (paramJVMSig != null) {
                 typeSignature += paramJVMSig;
             }
         }
@@ -130,36 +143,30 @@ public class TypeSignature{
         // Get internal return type signature.
 
         returnJVMType = "";
-        if(returnType != null){
-            dimension = returnType.dimension();
+        if (returnType != null) {
+            dimensions = dimensions(returnType);
         }
 
-        if(dimension != null){
-
-            //Gets array dimension of return type.
-            while(dimension.indexOf("[]") != -1){
-                returnJVMType += "[";
-                int stindex = dimension.indexOf("]") + 1;
-                if(stindex <= dimension.length()){
-                    dimension = dimension.substring(stindex);
-                }else dimension = "";
-            }
+        //Gets array dimension of return type.
+        while (dimensions-- > 0) {
+            returnJVMType += "[";
         }
-        if(returnType != null){
-            returnSig = returnType.qualifiedTypeName();
+        if (returnType != null) {
+            returnSig = qualifiedTypeName(returnType);
             returnJVMType += getComponentType(returnSig);
-        }else {
+        } else {
             System.out.println("Invalid return type.");
         }
 
         typeSignature += returnJVMType;
+
         return typeSignature;
     }
 
     /*
      * Returns internal signature of a parameter.
      */
-    private String getParamJVMSignature(String paramsig){
+    private String getParamJVMSignature(String paramsig) {
         String paramJVMSig = "";
         String componentType ="";
 
@@ -206,12 +213,13 @@ public class TypeSignature{
             else if(componentType.equals("double"))  JVMSig += SIG_DOUBLE ;
             else {
                 if(!componentType.equals("")){
-                    ClassDoc classNameDoc = root.classNamed(componentType);
+                    TypeElement classNameDoc = elems.getTypeElement(componentType);
 
                     if(classNameDoc == null){
-                        System.out.println("Invalid class type");
+                        System.out.println("Invalid class type for " + componentType);
+                        new Exception().printStackTrace();
                     }else {
-                        String classname = classNameDoc.qualifiedName();
+                        String classname = classNameDoc.getQualifiedName().toString();
                         String newclassname = classname.replace('.', '/');
                         JVMSig += "L";
                         JVMSig += newclassname;
@@ -221,5 +229,44 @@ public class TypeSignature{
             }
         }
         return JVMSig;
+    }
+
+    int dimensions(TypeMirror t) {
+        if (t.getKind() != TypeKind.ARRAY)
+            return 0;
+        return 1 + dimensions(((ArrayType) t).getComponentType());
+    }
+
+
+    String qualifiedTypeName(TypeMirror type) {
+        TypeVisitor<Name, Void> v = new SimpleTypeVisitor6<Name, Void>() {
+            @Override
+            public Name visitArray(ArrayType t, Void p) {
+                return t.getComponentType().accept(this, p);
+            }
+
+            @Override
+            public Name visitDeclared(DeclaredType t, Void p) {
+                return ((TypeElement) t.asElement()).getQualifiedName();
+            }
+
+            @Override
+            public Name visitPrimitive(PrimitiveType t, Void p) {
+                return elems.getName(t.toString());
+            }
+
+            @Override
+            public Name visitNoType(NoType t, Void p) {
+                if (t.getKind() == TypeKind.VOID)
+                    return elems.getName("void");
+                return defaultAction(t, p);
+            }
+
+            @Override
+            public Name visitTypeVariable(TypeVariable t, Void p) {
+                return t.getUpperBound().accept(this, p);
+            }
+        };
+        return v.visit(type).toString();
     }
 }
