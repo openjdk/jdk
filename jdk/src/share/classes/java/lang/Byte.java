@@ -201,7 +201,7 @@ public final class Byte extends Number implements Comparable<Byte> {
      */
     public static Byte valueOf(String s, int radix)
         throws NumberFormatException {
-        return new Byte(parseByte(s, radix));
+        return valueOf(parseByte(s, radix));
     }
 
     /**
@@ -277,7 +277,7 @@ public final class Byte extends Number implements Comparable<Byte> {
         if (i < MIN_VALUE || i > MAX_VALUE)
             throw new NumberFormatException(
                     "Value " + i + " out of range from input " + nm);
-        return (byte)i;
+        return valueOf((byte)i);
     }
 
     /**
@@ -374,7 +374,7 @@ public final class Byte extends Number implements Comparable<Byte> {
      *          base&nbsp;10.
      */
     public String toString() {
-        return String.valueOf((int)value);
+        return Integer.toString((int)value);
     }
 
     /**

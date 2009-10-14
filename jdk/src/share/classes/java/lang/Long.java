@@ -761,7 +761,7 @@ public final class Long extends Number implements Comparable<Long> {
      *          base&nbsp;10.
      */
     public String toString() {
-        return String.valueOf(value);
+        return toString(value);
     }
 
     /**
