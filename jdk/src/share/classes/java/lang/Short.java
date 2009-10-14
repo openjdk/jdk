@@ -170,7 +170,7 @@ public final class Short extends Number implements Comparable<Short> {
      */
     public static Short valueOf(String s, int radix)
         throws NumberFormatException {
-        return new Short(parseShort(s, radix));
+        return valueOf(parseShort(s, radix));
     }
 
     /**
@@ -282,7 +282,7 @@ public final class Short extends Number implements Comparable<Short> {
         if (i < MIN_VALUE || i > MAX_VALUE)
             throw new NumberFormatException(
                     "Value " + i + " out of range from input " + nm);
-        return (short)i;
+        return valueOf((short)i);
     }
 
     /**
@@ -379,7 +379,7 @@ public final class Short extends Number implements Comparable<Short> {
      *          base&nbsp;10.
      */
     public String toString() {
-        return String.valueOf((int)value);
+        return Integer.toString((int)value);
     }
 
     /**
