@@ -1080,31 +1080,39 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         updateSecurityWarningVisibility();
     }
 
+    @Override
+    public void setFullScreenExclusiveModeState(boolean state) {
+        super.setFullScreenExclusiveModeState(state);
+        updateSecurityWarningVisibility();
+    }
+
     public void updateSecurityWarningVisibility() {
         if (warningWindow == null) {
             return;
         }
 
-        boolean show = false;
-
-        int state = getWMState();
-
         if (!isVisible()) {
             return; // The warning window should already be hidden.
         }
 
-        // getWMState() always returns 0 (Withdrawn) for simple windows. Hence
-        // we ignore the state for such windows.
-        if (isVisible() && (state == XUtilConstants.NormalState || isSimpleWindow())) {
-            if (XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow() ==
-                    getTarget())
-            {
-                show = true;
-            }
+        boolean show = false;
 
-            if (isMouseAbove() || warningWindow.isMouseAbove())
-            {
-                show = true;
+        if (!isFullScreenExclusiveMode()) {
+            int state = getWMState();
+
+            // getWMState() always returns 0 (Withdrawn) for simple windows. Hence
+            // we ignore the state for such windows.
+            if (isVisible() && (state == XUtilConstants.NormalState || isSimpleWindow())) {
+                if (XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow() ==
+                        getTarget())
+                {
+                    show = true;
+                }
+
+                if (isMouseAbove() || warningWindow.isMouseAbove())
+                {
+                    show = true;
+                }
             }
         }
 

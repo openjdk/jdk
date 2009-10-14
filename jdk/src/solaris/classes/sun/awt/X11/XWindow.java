@@ -1510,4 +1510,24 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         return new XAtomList();
     }
 
+    /**
+     * Indicates if the window is currently in the FSEM.
+     * Synchronization: state lock.
+     */
+    private boolean fullScreenExclusiveModeState = false;
+
+    // Implementation of the X11ComponentPeer
+    @Override
+    public void setFullScreenExclusiveModeState(boolean state) {
+        synchronized (getStateLock()) {
+            fullScreenExclusiveModeState = state;
+        }
+    }
+
+    public final boolean isFullScreenExclusiveMode() {
+        synchronized (getStateLock()) {
+            return fullScreenExclusiveModeState;
+        }
+    }
+
 }
