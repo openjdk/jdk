@@ -578,11 +578,17 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
     }
 
+    public final Graphics getTranslucentGraphics() {
+        synchronized (getStateLock()) {
+            return isOpaque ? null : painter.getBackBuffer(false).getGraphics();
+        }
+    }
+
     @Override
     public Graphics getGraphics() {
         synchronized (getStateLock()) {
             if (!isOpaque) {
-                return painter.getBackBuffer(false).getGraphics();
+                return getTranslucentGraphics();
             }
         }
         return super.getGraphics();

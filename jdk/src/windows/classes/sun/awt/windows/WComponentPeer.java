@@ -551,8 +551,34 @@ public abstract class WComponentPeer extends WObjectPeer
     final static Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
 
     public Graphics getGraphics() {
+        if (isDisposed()) {
+            return null;
+        }
+
+        Component target = (Component)getTarget();
+        Window window = SunToolkit.getContainingWindow(target);
+        if (window != null && !window.isOpaque()) {
+            // Non-opaque windows do not support heavyweight children.
+            // Redirect all painting to the Window's Graphics instead.
+            // The caller is responsible for calling the
+            // WindowPeer.updateWindow() after painting has finished.
+            int x = 0, y = 0;
+            for (Component c = target; c != window; c = c.getParent()) {
+                x += c.getX();
+                y += c.getY();
+            }
+
+            Graphics g =
+                ((WWindowPeer)window.getPeer()).getTranslucentGraphics();
+
+            g.translate(x, y);
+            g.clipRect(0, 0, target.getWidth(), target.getHeight());
+
+            return g;
+        }
+
         SurfaceData surfaceData = this.surfaceData;
-        if (!isDisposed() && surfaceData != null) {
+        if (surfaceData != null) {
             /* Fix for bug 4746122. Color and Font shouldn't be null */
             Color bgColor = background;
             if (bgColor == null) {
