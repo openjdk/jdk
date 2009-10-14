@@ -990,7 +990,7 @@ void PhaseChaitin::Simplify( ) {
 
     // Find cheapest guy
     debug_only( int lo_no_simplify=0; );
-    for( uint i = lrgs(lo_score)._next; i; i = lrgs(i)._next ) {
+    for( uint i = _hi_degree; i; i = lrgs(i)._next ) {
       assert( !(*_ifg->_yanked)[i], "" );
       // It's just vaguely possible to move hi-degree to lo-degree without
       // going through a just-lo-degree stage: If you remove a double from
