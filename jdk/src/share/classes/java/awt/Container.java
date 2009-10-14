@@ -4092,16 +4092,29 @@ public class Container extends Component {
         }
     }
 
-    /*
+    /**
+     * Checks if the container and its direct lightweight containers are
+     * visible.
+     *
      * Consider the heavyweight container hides or shows the HW descendants
      * automatically. Therefore we care of LW containers' visibility only.
+     *
+     * This method MUST be invoked under the TreeLock.
      */
-    private boolean isRecursivelyVisibleUpToHeavyweightContainer() {
+    final boolean isRecursivelyVisibleUpToHeavyweightContainer() {
         if (!isLightweight()) {
             return true;
         }
-        return isVisible() && (getContainer() == null ||
-             getContainer().isRecursivelyVisibleUpToHeavyweightContainer());
+
+        for (Container cont = getContainer();
+                cont != null && cont.isLightweight();
+                cont = cont.getContainer())
+        {
+            if (!cont.isVisible()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

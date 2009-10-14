@@ -6720,12 +6720,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     }
                 }
             } else {
-                // It's native.  If the parent is lightweight it
-                // will need some help.
-                Container parent = this.parent;
-                if (parent != null && parent.peer instanceof LightweightPeer) {
+                // It's native. If the parent is lightweight it will need some
+                // help.
+                Container parent = getContainer();
+                if (parent != null && parent.isLightweight()) {
                     relocateComponent();
-                    if (!isRecursivelyVisible()) {
+                    if (!parent.isRecursivelyVisibleUpToHeavyweightContainer())
+                    {
                         peer.setVisible(false);
                     }
                 }
