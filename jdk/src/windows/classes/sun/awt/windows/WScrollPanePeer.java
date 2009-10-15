@@ -29,11 +29,11 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.peer.ScrollPanePeer;
 import sun.awt.PeerEvent;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
 
-    private static final Logger log = Logger.getLogger("sun.awt.windows.WScrollPanePeer");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.windows.WScrollPanePeer");
 
     int scrollbarWidth;
     int scrollbarHeight;
@@ -159,8 +159,8 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
         }
 
         public PeerEvent coalesceEvents(PeerEvent newEvent) {
-            if (log.isLoggable(Level.FINEST)) {
-                log.log(Level.FINEST, "ScrollEvent coalesced: " + newEvent);
+            if (log.isLoggable(PlatformLogger.FINEST)) {
+                log.finest("ScrollEvent coalesced: " + newEvent);
             }
             if (newEvent instanceof ScrollEvent) {
                 return newEvent;
@@ -204,8 +204,8 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
             } else if (orient == Adjustable.HORIZONTAL) {
                 adj = (ScrollPaneAdjustable)sp.getHAdjustable();
             } else {
-                if (log.isLoggable(Level.FINE)) {
-                    log.log(Level.FINE, "Assertion failed: unknown orient");
+                if (log.isLoggable(PlatformLogger.FINE)) {
+                    log.fine("Assertion failed: unknown orient");
                 }
             }
 
@@ -231,8 +231,8 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
                   newpos = this.pos;
                   break;
               default:
-                  if (log.isLoggable(Level.FINE)) {
-                      log.log(Level.FINE, "Assertion failed: unknown type");
+                  if (log.isLoggable(PlatformLogger.FINE)) {
+                      log.fine("Assertion failed: unknown type");
                   }
                   return;
             }
@@ -258,10 +258,10 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
             {
                 hwAncestor = hwAncestor.getParent();
             }
-            if (log.isLoggable(Level.FINE)) {
+            if (log.isLoggable(PlatformLogger.FINE)) {
                 if (hwAncestor == null) {
-                    log.log(Level.FINE, "Assertion (hwAncestor != null) failed, " +
-                            "couldn't find heavyweight ancestor of scroll pane child");
+                    log.fine("Assertion (hwAncestor != null) failed, " +
+                             "couldn't find heavyweight ancestor of scroll pane child");
                 }
             }
             WComponentPeer hwPeer = (WComponentPeer)hwAncestor.getPeer();

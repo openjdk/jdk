@@ -41,8 +41,12 @@ class FileTreeWalker {
     private final boolean detectCycles;
     private final LinkOption[] linkOptions;
     private final FileVisitor<? super Path> visitor;
+    private final int maxDepth;
 
-    FileTreeWalker(Set<FileVisitOption> options, FileVisitor<? super Path> visitor) {
+    FileTreeWalker(Set<FileVisitOption> options,
+                   FileVisitor<? super Path> visitor,
+                   int maxDepth)
+    {
         boolean fl = false;
         boolean dc = false;
         for (FileVisitOption option: options) {
@@ -58,18 +62,15 @@ class FileTreeWalker {
         this.linkOptions = (fl) ? new LinkOption[0] :
             new LinkOption[] { LinkOption.NOFOLLOW_LINKS };
         this.visitor = visitor;
+        this.maxDepth = maxDepth;
     }
 
     /**
      * Walk file tree starting at the given file
      */
-    void walk(Path start, int maxDepth) {
-        // don't use attributes of starting file as they may be stale
-        if (start instanceof BasicFileAttributesHolder) {
-            ((BasicFileAttributesHolder)start).invalidate();
-        }
+    void walk(Path start) {
         FileVisitResult result = walk(start,
-                                      maxDepth,
+                                      0,
                                       new ArrayList<AncestorDirectory>());
         if (result == null) {
             throw new NullPointerException("Visitor returned 'null'");
@@ -89,12 +90,15 @@ class FileTreeWalker {
                                  List<AncestorDirectory> ancestors)
     {
         // depth check
-        if (depth-- < 0)
+        if (depth > maxDepth)
             return FileVisitResult.CONTINUE;
 
         // if attributes are cached then use them if possible
         BasicFileAttributes attrs = null;
-        if (file instanceof BasicFileAttributesHolder) {
+        if ((depth > 0) &&
+            (file instanceof BasicFileAttributesHolder) &&
+            (System.getSecurityManager() == null))
+        {
             BasicFileAttributes cached = ((BasicFileAttributesHolder)file).get();
             if (!followLinks || !cached.isSymbolicLink())
                 attrs = cached;
@@ -120,6 +124,10 @@ class FileTreeWalker {
                     }
                 }
             } catch (SecurityException x) {
+                // If access to starting file is denied then SecurityException
+                // is thrown, otherwise the file is ignored.
+                if (depth == 0)
+                    throw x;
                 return FileVisitResult.CONTINUE;
             }
         }
@@ -196,7 +204,7 @@ class FileTreeWalker {
                 try {
                     for (Path entry: stream) {
                         inAction = true;
-                        result = walk(entry, depth, ancestors);
+                        result = walk(entry, depth+1, ancestors);
                         inAction = false;
 
                         // returning null will cause NPE to be thrown

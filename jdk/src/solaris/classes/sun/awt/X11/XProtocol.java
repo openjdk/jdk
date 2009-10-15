@@ -25,12 +25,12 @@
 
 package sun.awt.X11;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import java.util.*;
 
 class XProtocol {
-    private final static Logger log = Logger.getLogger("sun.awt.X11.XProtocol");
+    private final static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XProtocol");
 
     private Map<XAtom, XAtomList> atomToList = new HashMap<XAtom, XAtomList>();
     private Map<XAtom, Long> atomToAnchor = new HashMap<XAtom, Long>();
@@ -54,7 +54,7 @@ class XProtocol {
         } finally {
             if (firstCheck) {
                 firstCheck = false;
-                log.log(Level.FINE, "{0}:{1} supports {2}", new Object[] {this, listName, protocols});
+                log.fine("{0}:{1} supports {2}", this, listName, protocols);
             }
         }
     }

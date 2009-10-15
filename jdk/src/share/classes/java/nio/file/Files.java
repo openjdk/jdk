@@ -223,7 +223,7 @@ public final class Files {
     {
         if (maxDepth < 0)
             throw new IllegalArgumentException("'maxDepth' is negative");
-        new FileTreeWalker(options, visitor).walk(start, maxDepth);
+        new FileTreeWalker(options, visitor, maxDepth).walk(start);
     }
 
     /**

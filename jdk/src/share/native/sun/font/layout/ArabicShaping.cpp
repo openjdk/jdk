@@ -35,6 +35,8 @@
 #include "LEGlyphStorage.h"
 #include "ClassDefinitionTables.h"
 
+U_NAMESPACE_BEGIN
+
 // This table maps Unicode joining types to
 // ShapeTypes.
 const ArabicShaping::ShapeType ArabicShaping::shapeTypes[] =
@@ -102,9 +104,7 @@ ArabicShaping::ShapeType ArabicShaping::getShapeType(LEUnicode c)
 #define markFeatureMask 0x00040000UL
 #define mkmkFeatureMask 0x00020000UL
 
-#define ISOL_FEATURES (isolFeatureMask | ligaFeatureMask | msetFeatureMask | \
-    markFeatureMask | ccmpFeatureMask | rligFeatureMask | caltFeatureMask | \
-    dligFeatureMask | cswhFeatureMask | cursFeatureMask | kernFeatureMask | mkmkFeatureMask)
+#define ISOL_FEATURES (isolFeatureMask | ligaFeatureMask | msetFeatureMask | markFeatureMask | ccmpFeatureMask | rligFeatureMask | caltFeatureMask | dligFeatureMask | cswhFeatureMask | cursFeatureMask | kernFeatureMask | mkmkFeatureMask)
 
 #define SHAPE_MASK 0xF0000000UL
 
@@ -226,3 +226,5 @@ void ArabicShaping::shape(const LEUnicode *chars, le_int32 offset, le_int32 char
         adjustTags(erout, 2, glyphStorage);
     }
 }
+
+U_NAMESPACE_END

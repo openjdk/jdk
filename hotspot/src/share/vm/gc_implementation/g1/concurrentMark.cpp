@@ -746,10 +746,11 @@ void ConcurrentMark::checkpointRootsInitialPre() {
   // clear the mark bitmap (no grey objects to start with)
   _nextMarkBitMap->clearAll();
   PrintReachableClosure prcl(_nextMarkBitMap);
-  g1h->process_strong_roots(
+  g1h->process_strong_roots(true,    // activate StrongRootsScope
                             false,   // fake perm gen collection
                             SharedHeap::SO_AllClasses,
                             &prcl, // Regular roots
+                            NULL,  // do not visit active blobs
                             &prcl    // Perm Gen Roots
                             );
   // The root iteration above "consumed" dirty cards in the perm gen.
@@ -852,9 +853,11 @@ void ConcurrentMark::checkpointRootsInitial() {
   g1h->set_marking_started();
   g1h->rem_set()->prepare_for_younger_refs_iterate(false);
 
-  g1h->process_strong_roots(false,   // fake perm gen collection
+  g1h->process_strong_roots(true,    // activate StrongRootsScope
+                            false,   // fake perm gen collection
                             SharedHeap::SO_AllClasses,
                             &notOlder, // Regular roots
+                            NULL,     // do not visit active blobs
                             &older    // Perm Gen Roots
                             );
   checkpointRootsInitialPost();
@@ -1915,7 +1918,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   g1h->ensure_parsability(false);
 
   if (ParallelGCThreads > 0) {
-    g1h->change_strong_roots_parity();
+    G1CollectedHeap::StrongRootsScope srs(g1h);
     // this is remark, so we'll use up all available threads
     int active_workers = ParallelGCThreads;
     set_phase(active_workers, false);
@@ -1932,7 +1935,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
     SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
     guarantee( satb_mq_set.completed_buffers_num() == 0, "invariant" );
   } else {
-    g1h->change_strong_roots_parity();
+    G1CollectedHeap::StrongRootsScope srs(g1h);
     // this is remark, so we'll use up all available threads
     int active_workers = 1;
     set_phase(active_workers, false);

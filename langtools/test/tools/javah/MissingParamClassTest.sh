@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -77,10 +77,7 @@ GENERATED_HEADER_FILE=ParamClassTest.h
 rm -f ParamClassTest.class MissingParamClassException.class ParamClassTest.h
 rm -f ${TMP1}
 
-cp ${TESTSRC}${FS}ParamClassTest.java .
-cp ${TESTSRC}${FS}MissingParamClassException.java .
-
-"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d . "${TESTSRC}${FS}ParamClassTest.java"
+"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d . "${TESTSRC}${FS}ParamClassTest.java" "${TESTSRC}${FS}MissingParamClassException.java"
 
 # Before running javah remove dependent class file
 rm -f MissingParamClassException.class 
@@ -88,15 +85,12 @@ rm -f MissingParamClassException.class
 "${TESTJAVA}${FS}bin${FS}javah" ${TESTTOOLVMOPTS} ParamClassTest 2>${TMP1}
 
 if [ -f $GENERATED_HEADER_FILE ]; then
-     echo "Failed"
-     exit 1
+     echo "1-- Failed: $GENERATED_HEADER_FILE found"
+     rc=1
 fi
-if [ ! -f ${TMP1} ]; then
-     echo "Failed"
-     exit 1
-else
-     echo "Passed"
-     exit 0
+if [ ! -s ${TMP1} ]; then
+     echo "1-- Failed: ${TMP1} is empty"
+     rc=1
 fi
 
 # Clean out work dir
@@ -104,7 +98,9 @@ rm -f MissingParamClassException.class ParamClassTest.class
 rm -f $GENERATED_HEADER_FILE $TMP1 
 
 # Re-compile everything
-"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS}  -d . ${TESTSRC}${FS}ParamClassTest.java
+
+"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d . "${TESTSRC}${FS}ParamClassTest.java" "${TESTSRC}${FS}MissingParamClassException.java"
+
 
 # Before re-run of javah remove dependent class file Param.class 
 rm -f Param.class
@@ -112,13 +108,17 @@ rm -f Param.class
 "${TESTJAVA}${FS}bin${FS}javah" ${TESTTOOLVMOPTS} ParamClassTest 2>${TMP1}
 
 if [ -f $GENERATED_HEADER_FILE ]; then
-     echo "Failed"
-     exit 1
+     echo "2-- Failed: $GENERATED_HEADER_FILE found"
+     rc=1
 fi
-if [ ! -f ${TMP1} ]; then
-     echo "Failed"
-     exit 1
+if [ ! -s ${TMP1} ]; then
+     echo "2-- Failed: ${TMP1} is empty"
+     rc=1
+fi
+
+if [ "$rc" = "" ]; then
+    echo Passed
 else
-     echo "Passed"
-     exit 0
+    echo Failed
+    exit 1
 fi

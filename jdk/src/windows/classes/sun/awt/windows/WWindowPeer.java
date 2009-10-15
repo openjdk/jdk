@@ -35,7 +35,7 @@ import java.lang.reflect.*;
 
 import java.util.*;
 import java.util.List;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import sun.awt.*;
 
@@ -45,8 +45,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
        DisplayChangedListener
 {
 
-    private static final Logger log = Logger.getLogger("sun.awt.windows.WWindowPeer");
-    private static final Logger screenLog = Logger.getLogger("sun.awt.windows.screen.WWindowPeer");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.windows.WWindowPeer");
+    private static final PlatformLogger screenLog = PlatformLogger.getLogger("sun.awt.windows.screen.WWindowPeer");
 
     // we can't use WDialogPeer as blocker may be an instance of WPrintDialogPeer that
     // extends WWindowPeer, not WDialogPeer
@@ -440,8 +440,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
     public void updateGC() {
         int scrn = getScreenImOn();
-        if (screenLog.isLoggable(Level.FINER)) {
-            log.log(Level.FINER, "Screen number: " + scrn);
+        if (screenLog.isLoggable(PlatformLogger.FINER)) {
+            log.finer("Screen number: " + scrn);
         }
 
         // get current GD
@@ -465,9 +465,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         // is now mostly on.
         winGraphicsConfig = (Win32GraphicsConfig)newDev
                             .getDefaultConfiguration();
-        if (screenLog.isLoggable(Level.FINE)) {
+        if (screenLog.isLoggable(PlatformLogger.FINE)) {
             if (winGraphicsConfig == null) {
-                screenLog.log(Level.FINE, "Assertion (winGraphicsConfig != null) failed");
+                screenLog.fine("Assertion (winGraphicsConfig != null) failed");
             }
         }
 
@@ -709,9 +709,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
             TranslucentWindowPainter currentPainter = painter;
             if (currentPainter != null) {
                 currentPainter.updateWindow(repaint);
-            } else if (log.isLoggable(Level.FINER)) {
-                log.log(Level.FINER,
-                        "Translucent window painter is null in updateWindow");
+            } else if (log.isLoggable(PlatformLogger.FINER)) {
+                log.finer("Translucent window painter is null in updateWindow");
             }
         }
     }
@@ -745,8 +744,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         public void propertyChange(PropertyChangeEvent e) {
             boolean isDisposed = (Boolean)e.getNewValue();
             if (isDisposed != true) {
-                if (log.isLoggable(Level.FINE)) {
-                    log.log(Level.FINE, " Assertion (newValue != true) failed for AppContext.GUI_DISPOSED ");
+                if (log.isLoggable(PlatformLogger.FINE)) {
+                    log.fine(" Assertion (newValue != true) failed for AppContext.GUI_DISPOSED ");
                 }
             }
             AppContext appContext = AppContext.getAppContext();

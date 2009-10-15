@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 1998-2003 - All Rights Reserved
  *
  */
@@ -34,6 +35,8 @@
 #include "OpenTypeUtilities.h"
 #include "ScriptAndLanguage.h"
 #include "LESwaps.h"
+
+U_NAMESPACE_BEGIN
 
 const LangSysTable *ScriptTable::findLanguage(LETag languageTag, le_bool exactMatch) const
 {
@@ -79,3 +82,5 @@ const LangSysTable *ScriptListTable::findLanguage(LETag scriptTag, LETag languag
 
     return scriptTable->findLanguage(languageTag, exactMatch);
 }
+
+U_NAMESPACE_END

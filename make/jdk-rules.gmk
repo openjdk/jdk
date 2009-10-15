@@ -98,12 +98,16 @@ $(JDK_JAVA_EXE):: jdk-build
 
 jdk: jdk-build
 jdk-build:
+	@$(call MakeStart, jdk, $(JDK_BUILD_TARGETS))
 	( $(CD) $(JDK_TOPDIR)/make && \
 	  $(MAKE) $(JDK_BUILD_TARGETS) $(JDK_BUILD_ARGUMENTS) ; )
+	@$(call MakeFinish, jdk, $(JDK_BUILD_TARGETS))
 
 jdk-clobber::
+	@$(call MakeStart, jdk, $(JDK_CLOBBER_TARGETS))
 	( $(CD) $(JDK_TOPDIR)/make && \
 	  $(MAKE) $(JDK_CLOBBER_TARGETS) $(JDK_BUILD_ARGUMENTS) ; )
+	@$(call MakeFinish, jdk, $(JDK_CLOBBER_TARGETS))
 
 jdk-sanity::
 	( $(CD) $(JDK_TOPDIR)/make && \
@@ -111,13 +115,17 @@ jdk-sanity::
 
 compare-images: compare-image
 compare-image:
+	@$(call MakeStart, jdk, compare-image)
 	( $(CD) $(JDK_TOPDIR)/make && \
 	  $(MAKE) ALT_OUTPUTDIR=$(ABS_OUTPUTDIR) compare-image )
+	@$(call MakeFinish, jdk, compare-image)
 
 compare-images-clobber: compare-image-clobber
 compare-image-clobber:
+	@$(call MakeStart, jdk, compare-image-clobber)
 	( $(CD) $(JDK_TOPDIR)/make && \
 	  $(MAKE) ALT_OUTPUTDIR=$(ABS_OUTPUTDIR) compare-image-clobber )
+	@$(call MakeFinish, jdk, compare-image-clobber)
 
 .PHONY: jdk jdk-build jdk-clobber jdk-sanity 
 

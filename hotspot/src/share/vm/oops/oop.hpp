@@ -330,6 +330,7 @@ class oopDesc {
 
   bool is_perm() const;
   bool is_perm_or_null() const;
+  bool is_scavengable() const;
   bool is_shared() const;
   bool is_shared_readonly() const;
   bool is_shared_readwrite() const;

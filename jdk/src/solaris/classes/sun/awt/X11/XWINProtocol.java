@@ -27,11 +27,10 @@
 package sun.awt.X11;
 
 import java.awt.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 
 class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
-    final static Logger log = Logger.getLogger("sun.awt.X11.XWINProtocol");
+    final static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XWINProtocol");
 
 /* Gnome WM spec  */
     XAtom XA_WIN_SUPPORTING_WM_CHECK = XAtom.get("_WIN_SUPPORTING_WM_CHECK");
@@ -64,7 +63,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
             req.set_format(32);
             req.set_data(0, (WIN_STATE_MAXIMIZED_HORIZ | WIN_STATE_MAXIMIZED_VERT));
             req.set_data(1, win_state);
-            if (log.isLoggable(Level.FINE)) log.fine("Sending WIN_STATE to root to change the state to " + win_state);
+            if (log.isLoggable(PlatformLogger.FINE)) log.fine("Sending WIN_STATE to root to change the state to " + win_state);
             try {
                 XToolkit.awtLock();
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(),
@@ -112,7 +111,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
                 win_state &= ~WIN_STATE_MAXIMIZED_HORIZ;
             }
             if ((old_win_state ^ win_state) != 0) {
-                if (log.isLoggable(Level.FINE)) log.fine("Setting WIN_STATE on " + window + " to change the state to " + win_state);
+                if (log.isLoggable(PlatformLogger.FINE)) log.fine("Setting WIN_STATE on " + window + " to change the state to " + win_state);
                 XA_WIN_STATE.setCard32Property(window, win_state);
             }
         }
@@ -157,7 +156,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
             req.set_data(0, layer == LAYER_NORMAL ? WIN_LAYER_NORMAL : WIN_LAYER_ONTOP);
             req.set_data(1, 0);
             req.set_data(2, 0);
-            if (log.isLoggable(Level.FINE)) log.fine("Setting layer " + layer + " by root message : " + req);
+            if (log.isLoggable(PlatformLogger.FINE)) log.fine("Setting layer " + layer + " by root message : " + req);
             XToolkit.awtLock();
             try {
                 XlibWrapper.XSendEvent(XToolkit.getDisplay(),
@@ -172,7 +171,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
             }
             req.dispose();
         } else {
-            if (log.isLoggable(Level.FINE)) log.fine("Setting layer property to " + layer);
+            if (log.isLoggable(PlatformLogger.FINE)) log.fine("Setting layer property to " + layer);
             XA_WIN_LAYER.setCard32Property(window, layer == LAYER_NORMAL ? WIN_LAYER_NORMAL : WIN_LAYER_ONTOP);
         }
     }
@@ -198,7 +197,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
         }
         WinWindow = checkAnchor(XA_WIN_SUPPORTING_WM_CHECK, XAtom.XA_CARDINAL);
         supportChecked = true;
-        if (log.isLoggable(Level.FINE)) log.fine("### " + this + " is active: " + (WinWindow != 0));
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("### " + this + " is active: " + (WinWindow != 0));
     }
 
     boolean active() {
@@ -207,13 +206,13 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
     }
     boolean doStateProtocol() {
         boolean res = active() && checkProtocol(XA_WIN_PROTOCOLS, XA_WIN_STATE);
-        if (log.isLoggable(Level.FINE)) log.fine("### " + this + " supports state: " + res);
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("### " + this + " supports state: " + res);
         return res;
     }
 
     boolean doLayerProtocol() {
         boolean res = active() && checkProtocol(XA_WIN_PROTOCOLS, XA_WIN_LAYER);
-        if (log.isLoggable(Level.FINE)) log.fine("### " + this + " supports layer: " + res);
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("### " + this + " supports layer: " + res);
         return res;
     }
 }

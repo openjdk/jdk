@@ -25,9 +25,8 @@
 
 package sun.net.www.http;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.io.IOException;
+import java.util.LinkedList;
 import sun.net.NetProperties;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -44,7 +43,9 @@ import java.security.PrivilegedAction;
  */
 
 @SuppressWarnings("serial")  // never serialized
-public class KeepAliveStreamCleaner extends LinkedBlockingQueue<KeepAliveCleanerEntry> implements Runnable
+class KeepAliveStreamCleaner
+    extends LinkedList<KeepAliveCleanerEntry>
+    implements Runnable
 {
     // maximum amount of remaining data that we will try to cleanup
     protected static int MAX_DATA_REMAINING = 512;
@@ -78,23 +79,39 @@ public class KeepAliveStreamCleaner extends LinkedBlockingQueue<KeepAliveCleaner
     }
 
 
-    public KeepAliveStreamCleaner()
-    {
-        super(MAX_CAPACITY);
+    @Override
+    public boolean offer(KeepAliveCleanerEntry e) {
+        if (size() >= MAX_CAPACITY)
+            return false;
+
+        return super.offer(e);
     }
 
-    public KeepAliveStreamCleaner(int capacity)
-    {
-        super(capacity);
-    }
-
+    @Override
     public void run()
     {
         KeepAliveCleanerEntry kace = null;
 
         do {
             try {
-                kace = poll((long)TIMEOUT, TimeUnit.MILLISECONDS);
+                synchronized(this) {
+                    long before = System.currentTimeMillis();
+                    long timeout = TIMEOUT;
+                    while ((kace = poll()) == null) {
+                        this.wait(timeout);
+
+                        long after = System.currentTimeMillis();
+                        long elapsed = after - before;
+                        if (elapsed > timeout) {
+                            /* one last try */
+                            kace = poll();
+                            break;
+                        }
+                        before = after;
+                        timeout -= elapsed;
+                    }
+                }
+
                 if(kace == null)
                     break;
 

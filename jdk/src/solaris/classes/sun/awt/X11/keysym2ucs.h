@@ -67,8 +67,7 @@ tojava package sun.awt.X11;
 tojava import java.util.Hashtable;
 tojava import sun.misc.Unsafe;
 tojava
-tojava import java.util.logging.Level;
-tojava import java.util.logging.Logger;
+tojava import sun.util.logging.PlatformLogger;
 tojava
 tojava public class XKeysym {
 tojava
@@ -108,7 +107,7 @@ tojava     // Another use for reverse lookup: query keyboard state, for some key
 tojava     static Hashtable<Integer, Long> javaKeycode2KeysymHash = new Hashtable<Integer, Long>();
 tojava     static long keysym_lowercase = unsafe.allocateMemory(Native.getLongSize());
 tojava     static long keysym_uppercase = unsafe.allocateMemory(Native.getLongSize());
-tojava     private static Logger keyEventLog = Logger.getLogger("sun.awt.X11.kye.XKeysym");
+tojava     private static PlatformLogger keyEventLog = PlatformLogger.getLogger("sun.awt.X11.kye.XKeysym");
 tojava     public static char convertKeysym( long ks, int state ) {
 tojava
 tojava         /* First check for Latin-1 characters (1:1 mapping) */

@@ -51,6 +51,7 @@ import java.util.Vector;
 import java.util.Hashtable;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import sun.misc.BootClassLoaderHook;
 import sun.misc.ClassFileTransformer;
 import sun.misc.CompoundEnumeration;
 import sun.misc.Resource;
@@ -58,7 +59,6 @@ import sun.misc.URLClassPath;
 import sun.misc.VM;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
-import sun.jkernel.DownloadManager;
 
 /**
  * A class loader is an object that is responsible for loading classes. The
@@ -380,16 +380,28 @@ public abstract class ClassLoader {
             // First, check if the class has already been loaded
             Class c = findLoadedClass(name);
             if (c == null) {
+                long t0 = System.nanoTime();
                 try {
                     if (parent != null) {
                         c = parent.loadClass(name, false);
                     } else {
-                        c = findBootstrapClass0(name);
+                        c = findBootstrapClassOrNull(name);
                     }
                 } catch (ClassNotFoundException e) {
+                    // ClassNotFoundException thrown if class not found
+                    // from the non-null parent class loader
+                }
+
+                if (c == null) {
                     // If still not found, then invoke findClass in order
                     // to find the class.
+                    long t1 = System.nanoTime();
                     c = findClass(name);
+
+                    // this is the defining class loader; record the stats
+                    sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);
+                    sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);
+                    sun.misc.PerfCounter.getFindClasses().increment();
                 }
             }
             if (resolve) {
@@ -1008,22 +1020,29 @@ public abstract class ClassLoader {
         if (system == null) {
             if (!checkName(name))
                 throw new ClassNotFoundException(name);
-            return findBootstrapClass(name);
+            Class cls = findBootstrapClass(name);
+            if (cls == null) {
+                throw new ClassNotFoundException(name);
+            }
+            return cls;
         }
         return system.loadClass(name);
     }
 
-    private Class findBootstrapClass0(String name)
-        throws ClassNotFoundException
+    /**
+     * Returns a class loaded by the bootstrap class loader;
+     * or return null if not found.
+     */
+    private Class findBootstrapClassOrNull(String name)
     {
         check();
-        if (!checkName(name))
-            throw new ClassNotFoundException(name);
+        if (!checkName(name)) return null;
+
         return findBootstrapClass(name);
     }
 
-    private native Class findBootstrapClass(String name)
-        throws ClassNotFoundException;
+    // return null if not found
+    private native Class findBootstrapClass(String name);
 
     // Check to make sure the class loader has been initialized.
     private void check() {
@@ -1281,21 +1300,7 @@ public abstract class ClassLoader {
      * Find resources from the VM's built-in classloader.
      */
     private static URL getBootstrapResource(String name) {
-        try {
-            // If this is a known JRE resource, ensure that its bundle is
-            // downloaded.  If it isn't known, we just ignore the download
-            // failure and check to see if we can find the resource anyway
-            // (which is possible if the boot class path has been modified).
-            if (sun.misc.VM.isBootedKernelVM()) {
-                sun.jkernel.DownloadManager.getBootClassPathEntryForResource(
-                    name);
-            }
-        } catch (NoClassDefFoundError e) {
-            // This happens while Java itself is being compiled; DownloadManager
-            // isn't accessible when this code is first invoked.  It isn't an
-            // issue, as if we can't find DownloadManager, we can safely assume
-            // that additional code is not available for download.
-        }
+        BootClassLoaderHook.preLoadResource(name);
         URLClassPath ucp = getBootstrapClassPath();
         Resource res = ucp.getResource(name);
         return res != null ? res.getURL() : null;
@@ -1812,24 +1817,7 @@ public abstract class ClassLoader {
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.
     static void loadLibrary(Class fromClass, String name,
                             boolean isAbsolute) {
-        try {
-            if (VM.isBootedKernelVM() && !DownloadManager.isJREComplete() &&
-                    !DownloadManager.isCurrentThreadDownloading()) {
-                DownloadManager.downloadFile("bin/" +
-                    System.mapLibraryName(name));
-                // it doesn't matter if the downloadFile call returns false --
-                // it probably just means that this is a user library, as
-                // opposed to a JRE library
-            }
-        } catch (IOException e) {
-            throw new UnsatisfiedLinkError("Error downloading library " +
-                                                name + ": " + e);
-        } catch (NoClassDefFoundError e) {
-            // This happens while Java itself is being compiled; DownloadManager
-            // isn't accessible when this code is first invoked.  It isn't an
-            // issue, as if we can't find DownloadManager, we can safely assume
-            // that additional code is not available for download.
-        }
+        BootClassLoaderHook.preLoadLibrary(name);
         ClassLoader loader =
             (fromClass == null) ? null : fromClass.getClassLoader();
         if (sys_paths == null) {

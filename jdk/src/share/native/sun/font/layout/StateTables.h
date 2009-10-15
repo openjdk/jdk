@@ -32,8 +32,15 @@
 #ifndef __STATETABLES_H
 #define __STATETABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LayoutTables.h"
+
+U_NAMESPACE_BEGIN
 
 struct StateTableHeader
 {
@@ -78,4 +85,6 @@ struct StateEntry
     le_int16    flags;
 };
 
+U_NAMESPACE_END
 #endif
+

@@ -933,7 +933,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       // description.
       RedefineVerifyMark rvm(&the_class, &scratch_class, state);
       Verifier::verify(
-        scratch_class, Verifier::ThrowException, THREAD);
+        scratch_class, Verifier::ThrowException, true, THREAD);
     }
 
     if (HAS_PENDING_EXCEPTION) {
@@ -959,7 +959,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       // verify what we have done during constant pool merging
       {
         RedefineVerifyMark rvm(&the_class, &scratch_class, state);
-        Verifier::verify(scratch_class, Verifier::ThrowException, THREAD);
+        Verifier::verify(scratch_class, Verifier::ThrowException, true, THREAD);
       }
 
       if (HAS_PENDING_EXCEPTION) {

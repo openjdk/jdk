@@ -33,7 +33,7 @@ import java.util.Set;
 import java.util.HashMap;
 import java.util.WeakHashMap;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 /**
  * This class is used to aid in keeping track of DisplayChangedListeners and
@@ -54,7 +54,7 @@ import java.util.logging.*;
  * screen to another on a system equipped with multiple displays.
  */
 public class SunDisplayChanger {
-    private static final Logger log = Logger.getLogger("sun.awt.multiscreen.SunDisplayChanger");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.multiscreen.SunDisplayChanger");
 
     // Create a new synchronizedMap with initial capacity of one listener.
     // It is asserted that the most common case is to have one GraphicsDevice
@@ -68,13 +68,13 @@ public class SunDisplayChanger {
      * notified when the display is changed.
      */
     public void add(DisplayChangedListener theListener) {
-        if (log.isLoggable(Level.FINE)) {
+        if (log.isLoggable(PlatformLogger.FINE)) {
             if (theListener == null) {
-                log.log(Level.FINE, "Assertion (theListener != null) failed");
+                log.fine("Assertion (theListener != null) failed");
             }
         }
-        if (log.isLoggable(Level.FINER)) {
-            log.log(Level.FINER, "Adding listener: " + theListener);
+        if (log.isLoggable(PlatformLogger.FINER)) {
+            log.finer("Adding listener: " + theListener);
         }
         listeners.put(theListener, null);
     }
@@ -83,13 +83,13 @@ public class SunDisplayChanger {
      * Remove the given DisplayChangeListener from this SunDisplayChanger.
      */
     public void remove(DisplayChangedListener theListener) {
-        if (log.isLoggable(Level.FINE)) {
+        if (log.isLoggable(PlatformLogger.FINE)) {
             if (theListener == null) {
-                log.log(Level.FINE, "Assertion (theListener != null) failed");
+                log.fine("Assertion (theListener != null) failed");
             }
         }
-        if (log.isLoggable(Level.FINER)) {
-            log.log(Level.FINER, "Removing listener: " + theListener);
+        if (log.isLoggable(PlatformLogger.FINER)) {
+            log.finer("Removing listener: " + theListener);
         }
         listeners.remove(theListener);
     }
@@ -99,8 +99,8 @@ public class SunDisplayChanger {
      * taken place by calling their displayChanged() methods.
      */
     public void notifyListeners() {
-        if (log.isLoggable(Level.FINEST)) {
-            log.log(Level.FINEST, "notifyListeners");
+        if (log.isLoggable(PlatformLogger.FINEST)) {
+            log.finest("notifyListeners");
         }
     // This method is implemented by making a clone of the set of listeners,
     // and then iterating over the clone.  This is because during the course
@@ -126,8 +126,8 @@ public class SunDisplayChanger {
             DisplayChangedListener current =
              (DisplayChangedListener) itr.next();
             try {
-                if (log.isLoggable(Level.FINEST)) {
-                    log.log(Level.FINEST, "displayChanged for listener: " + current);
+                if (log.isLoggable(PlatformLogger.FINEST)) {
+                    log.finest("displayChanged for listener: " + current);
                 }
                 current.displayChanged();
             } catch (IllegalComponentStateException e) {
@@ -146,7 +146,7 @@ public class SunDisplayChanger {
      * taken place by calling their paletteChanged() methods.
      */
     public void notifyPaletteChanged() {
-        if (log.isLoggable(Level.FINEST)) {
+        if (log.isLoggable(PlatformLogger.FINEST)) {
             log.finest("notifyPaletteChanged");
         }
     // This method is implemented by making a clone of the set of listeners,
@@ -172,8 +172,8 @@ public class SunDisplayChanger {
             DisplayChangedListener current =
              (DisplayChangedListener) itr.next();
             try {
-                if (log.isLoggable(Level.FINEST)) {
-                    log.log(Level.FINEST, "paletteChanged for listener: " + current);
+                if (log.isLoggable(PlatformLogger.FINEST)) {
+                    log.finest("paletteChanged for listener: " + current);
                 }
                 current.paletteChanged();
             } catch (IllegalComponentStateException e) {

@@ -29,8 +29,7 @@ import java.awt.Event;
 import java.awt.Component;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import sun.util.logging.PlatformLogger;
 import java.util.Arrays;
 
 /**
@@ -55,7 +54,7 @@ import java.util.Arrays;
  * @since 1.1
  */
 public abstract class InputEvent extends ComponentEvent {
-    private static final Logger log = Logger.getLogger("java.awt.event.InputEvent");
+    private static final PlatformLogger logger = PlatformLogger.getLogger("java.awt.event.InputEvent");
 
     /**
      * The Shift key modifier constant.
@@ -344,8 +343,8 @@ public abstract class InputEvent extends ComponentEvent {
                     sm.checkSystemClipboardAccess();
                     b = true;
                 } catch (SecurityException se) {
-                    if (log.isLoggable(Level.FINE)) {
-                        log.log(Level.FINE, "InputEvent.canAccessSystemClipboard() got SecurityException ", se);
+                    if (logger.isLoggable(PlatformLogger.FINE)) {
+                        logger.fine("InputEvent.canAccessSystemClipboard() got SecurityException ", se);
                     }
                 }
             } else {

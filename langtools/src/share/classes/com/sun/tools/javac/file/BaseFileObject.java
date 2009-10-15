@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.CharsetDecoder;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
+import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 
 import static javax.tools.JavaFileObject.Kind.*;
@@ -49,32 +50,14 @@ public abstract class BaseFileObject implements JavaFileObject {
         this.fileManager = fileManager;
     }
 
-    public JavaFileObject.Kind getKind() {
-        String n = getName();
-        if (n.endsWith(CLASS.extension))
-            return CLASS;
-        else if (n.endsWith(SOURCE.extension))
-            return SOURCE;
-        else if (n.endsWith(HTML.extension))
-            return HTML;
-        else
-            return OTHER;
-    }
+    /** Return a short name for the object, such as for use in raw diagnostics
+     */
+    public abstract String getShortName();
 
     @Override
     public String toString() {
-        return getPath();
+        return getClass().getSimpleName() + "[" + getName() + "]";
     }
-
-    /** @deprecated see bug 6410637 */
-    @Deprecated
-    public String getPath() {
-        return getName();
-    }
-
-    /** @deprecated see bug 6410637 */
-    @Deprecated
-    abstract public String getName();
 
     public NestingKind getNestingKind() { return null; }
 
@@ -89,6 +72,17 @@ public abstract class BaseFileObject implements JavaFileObject {
     }
 
     protected abstract String inferBinaryName(Iterable<? extends File> path);
+
+    protected static JavaFileObject.Kind getKind(String filename) {
+        if (filename.endsWith(CLASS.extension))
+            return CLASS;
+        else if (filename.endsWith(SOURCE.extension))
+            return SOURCE;
+        else if (filename.endsWith(HTML.extension))
+            return HTML;
+        else
+            return OTHER;
+    }
 
     protected static String removeExtension(String fileName) {
         int lastDot = fileName.lastIndexOf(".");
@@ -113,6 +107,17 @@ public abstract class BaseFileObject implements JavaFileObject {
         public CannotCreateUriError(String value, Throwable cause) {
             super(value, cause);
         }
+    }
+
+    /** Return the last component of a presumed hierarchical URI.
+     *  From the scheme specific part of the URI, it returns the substring
+     *  after the last "/" if any, or everything if no "/" is found.
+     */
+    public static String getSimpleName(FileObject fo) {
+        URI uri = fo.toUri();
+        String s = uri.getSchemeSpecificPart();
+        return s.substring(s.lastIndexOf("/") + 1); // safe when / not found
+
     }
 
     /** The file manager that created this JavaFileObject. */

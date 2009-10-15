@@ -95,6 +95,7 @@ CodeHeap * CodeCache::_heap = new CodeHeap();
 int CodeCache::_number_of_blobs = 0;
 int CodeCache::_number_of_nmethods_with_dependencies = 0;
 bool CodeCache::_needs_cache_clean = false;
+nmethod* CodeCache::_scavenge_root_nmethods = NULL;
 
 
 CodeBlob* CodeCache::first() {
@@ -148,10 +149,7 @@ CodeBlob* CodeCache::allocate(int size) {
     }
   }
   verify_if_often();
-  if (PrintCodeCache2) {        // Need to add a new flag
-      ResourceMark rm;
-      tty->print_cr("CodeCache allocation:  addr: " INTPTR_FORMAT ", size: 0x%x\n", cb, size);
-  }
+  print_trace("allocation", cb, size);
   return cb;
 }
 
@@ -159,10 +157,7 @@ void CodeCache::free(CodeBlob* cb) {
   assert_locked_or_safepoint(CodeCache_lock);
   verify_if_often();
 
-  if (PrintCodeCache2) {        // Need to add a new flag
-      ResourceMark rm;
-      tty->print_cr("CodeCache free:  addr: " INTPTR_FORMAT ", size: 0x%x\n", cb, cb->size());
-  }
+  print_trace("free", cb);
   if (cb->is_nmethod() && ((nmethod *)cb)->has_dependencies()) {
     _number_of_nmethods_with_dependencies--;
   }
@@ -260,14 +255,148 @@ void CodeCache::do_unloading(BoolObjectClosure* is_alive,
   }
 }
 
-void CodeCache::oops_do(OopClosure* f) {
+void CodeCache::blobs_do(CodeBlobClosure* f) {
   assert_locked_or_safepoint(CodeCache_lock);
   FOR_ALL_ALIVE_BLOBS(cb) {
-    cb->oops_do(f);
+    f->do_code_blob(cb);
+
+#ifdef ASSERT
+    if (cb->is_nmethod())
+      ((nmethod*)cb)->verify_scavenge_root_oops();
+#endif //ASSERT
   }
 }
 
+// Walk the list of methods which might contain non-perm oops.
+void CodeCache::scavenge_root_nmethods_do(CodeBlobClosure* f) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  debug_only(mark_scavenge_root_nmethods());
+
+  for (nmethod* cur = scavenge_root_nmethods(); cur != NULL; cur = cur->scavenge_root_link()) {
+    debug_only(cur->clear_scavenge_root_marked());
+    assert(cur->scavenge_root_not_marked(), "");
+    assert(cur->on_scavenge_root_list(), "else shouldn't be on this list");
+
+    bool is_live = (!cur->is_zombie() && !cur->is_unloaded());
+#ifndef PRODUCT
+    if (TraceScavenge) {
+      cur->print_on(tty, is_live ? "scavenge root" : "dead scavenge root"); tty->cr();
+    }
+#endif //PRODUCT
+    if (is_live)
+      // Perform cur->oops_do(f), maybe just once per nmethod.
+      f->do_code_blob(cur);
+  }
+
+  // Check for stray marks.
+  debug_only(verify_perm_nmethods(NULL));
+}
+
+void CodeCache::add_scavenge_root_nmethod(nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  nm->set_on_scavenge_root_list();
+  nm->set_scavenge_root_link(_scavenge_root_nmethods);
+  set_scavenge_root_nmethods(nm);
+  print_trace("add_scavenge_root", nm);
+}
+
+void CodeCache::drop_scavenge_root_nmethod(nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  print_trace("drop_scavenge_root", nm);
+  nmethod* last = NULL;
+  nmethod* cur = scavenge_root_nmethods();
+  while (cur != NULL) {
+    nmethod* next = cur->scavenge_root_link();
+    if (cur == nm) {
+      if (last != NULL)
+            last->set_scavenge_root_link(next);
+      else  set_scavenge_root_nmethods(next);
+      nm->set_scavenge_root_link(NULL);
+      nm->clear_on_scavenge_root_list();
+      return;
+    }
+    last = cur;
+    cur = next;
+  }
+  assert(false, "should have been on list");
+}
+
+void CodeCache::prune_scavenge_root_nmethods() {
+  assert_locked_or_safepoint(CodeCache_lock);
+  debug_only(mark_scavenge_root_nmethods());
+
+  nmethod* last = NULL;
+  nmethod* cur = scavenge_root_nmethods();
+  while (cur != NULL) {
+    nmethod* next = cur->scavenge_root_link();
+    debug_only(cur->clear_scavenge_root_marked());
+    assert(cur->scavenge_root_not_marked(), "");
+    assert(cur->on_scavenge_root_list(), "else shouldn't be on this list");
+
+    if (!cur->is_zombie() && !cur->is_unloaded()
+        && cur->detect_scavenge_root_oops()) {
+      // Keep it.  Advance 'last' to prevent deletion.
+      last = cur;
+    } else {
+      // Prune it from the list, so we don't have to look at it any more.
+      print_trace("prune_scavenge_root", cur);
+      cur->set_scavenge_root_link(NULL);
+      cur->clear_on_scavenge_root_list();
+      if (last != NULL)
+            last->set_scavenge_root_link(next);
+      else  set_scavenge_root_nmethods(next);
+    }
+    cur = next;
+  }
+
+  // Check for stray marks.
+  debug_only(verify_perm_nmethods(NULL));
+}
+
+#ifndef PRODUCT
+void CodeCache::asserted_non_scavengable_nmethods_do(CodeBlobClosure* f) {
+  // While we are here, verify the integrity of the list.
+  mark_scavenge_root_nmethods();
+  for (nmethod* cur = scavenge_root_nmethods(); cur != NULL; cur = cur->scavenge_root_link()) {
+    assert(cur->on_scavenge_root_list(), "else shouldn't be on this list");
+    cur->clear_scavenge_root_marked();
+  }
+  verify_perm_nmethods(f);
+}
+
+// Temporarily mark nmethods that are claimed to be on the non-perm list.
+void CodeCache::mark_scavenge_root_nmethods() {
+  FOR_ALL_ALIVE_BLOBS(cb) {
+    if (cb->is_nmethod()) {
+      nmethod *nm = (nmethod*)cb;
+      assert(nm->scavenge_root_not_marked(), "clean state");
+      if (nm->on_scavenge_root_list())
+        nm->set_scavenge_root_marked();
+    }
+  }
+}
+
+// If the closure is given, run it on the unlisted nmethods.
+// Also make sure that the effects of mark_scavenge_root_nmethods is gone.
+void CodeCache::verify_perm_nmethods(CodeBlobClosure* f_or_null) {
+  FOR_ALL_ALIVE_BLOBS(cb) {
+    bool call_f = (f_or_null != NULL);
+    if (cb->is_nmethod()) {
+      nmethod *nm = (nmethod*)cb;
+      assert(nm->scavenge_root_not_marked(), "must be already processed");
+      if (nm->on_scavenge_root_list())
+        call_f = false;  // don't show this one to the client
+      nm->verify_scavenge_root_oops();
+    } else {
+      call_f = false;   // not an nmethod
+    }
+    if (call_f)  f_or_null->do_code_blob(cb);
+  }
+}
+#endif //PRODUCT
+
 void CodeCache::gc_prologue() {
+  assert(!nmethod::oops_do_marking_is_active(), "oops_do_marking_epilogue must be called");
 }
 
 
@@ -285,6 +414,8 @@ void CodeCache::gc_epilogue() {
     cb->fix_oop_relocations();
   }
   set_needs_cache_clean(false);
+  prune_scavenge_root_nmethods();
+  assert(!nmethod::oops_do_marking_is_active(), "oops_do_marking_prologue must be called");
 }
 
 
@@ -505,6 +636,14 @@ void CodeCache::verify() {
 void CodeCache::verify_if_often() {
   if (VerifyCodeCacheOften) {
     _heap->verify();
+  }
+}
+
+void CodeCache::print_trace(const char* event, CodeBlob* cb, int size) {
+  if (PrintCodeCache2) {  // Need to add a new flag
+    ResourceMark rm;
+    if (size == 0)  size = cb->size();
+    tty->print_cr("CodeCache %s:  addr: " INTPTR_FORMAT ", size: 0x%x", event, cb, size);
   }
 }
 

@@ -36,7 +36,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import java.util.EmptyStackException;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
 import sun.awt.AWTAutoShutdown;
@@ -153,7 +153,7 @@ public class EventQueue {
 
     private final String name = "AWT-EventQueue-" + nextThreadNum();
 
-    private static final Logger eventLog = Logger.getLogger("java.awt.event.EventQueue");
+    private static final PlatformLogger eventLog = PlatformLogger.getLogger("java.awt.event.EventQueue");
 
     static {
         AWTAccessor.setEventQueueAccessor(
@@ -707,8 +707,8 @@ public class EventQueue {
      * @since           1.2
      */
     public synchronized void push(EventQueue newEventQueue) {
-        if (eventLog.isLoggable(Level.FINE)) {
-            eventLog.log(Level.FINE, "EventQueue.push(" + newEventQueue + ")");
+        if (eventLog.isLoggable(PlatformLogger.FINE)) {
+            eventLog.fine("EventQueue.push(" + newEventQueue + ")");
         }
 
         if (nextQueue != null) {
@@ -722,8 +722,8 @@ public class EventQueue {
                 try {
                     newEventQueue.postEventPrivate(getNextEvent());
                 } catch (InterruptedException ie) {
-                    if (eventLog.isLoggable(Level.FINE)) {
-                        eventLog.log(Level.FINE, "Interrupted push", ie);
+                    if (eventLog.isLoggable(PlatformLogger.FINE)) {
+                        eventLog.fine("Interrupted push", ie);
                     }
                 }
             }
@@ -766,8 +766,8 @@ public class EventQueue {
      * @since           1.2
      */
     protected void pop() throws EmptyStackException {
-        if (eventLog.isLoggable(Level.FINE)) {
-            eventLog.log(Level.FINE, "EventQueue.pop(" + this + ")");
+        if (eventLog.isLoggable(PlatformLogger.FINE)) {
+            eventLog.fine("EventQueue.pop(" + this + ")");
         }
 
         // To prevent deadlock, we lock on the previous EventQueue before
@@ -790,8 +790,8 @@ public class EventQueue {
                 try {
                     previousQueue.postEventPrivate(getNextEvent());
                 } catch (InterruptedException ie) {
-                    if (eventLog.isLoggable(Level.FINE)) {
-                        eventLog.log(Level.FINE, "Interrupted pop", ie);
+                    if (eventLog.isLoggable(PlatformLogger.FINE)) {
+                        eventLog.fine("Interrupted pop", ie);
                     }
                 }
             }

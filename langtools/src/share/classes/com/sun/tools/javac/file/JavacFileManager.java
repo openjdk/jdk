@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1114,36 +1114,6 @@ public class JavacFileManager implements StandardJavaFileManager {
                 return result;
         }
         throw new IllegalArgumentException("Invalid relative path: " + file);
-    }
-
-    @SuppressWarnings("deprecation") // bug 6410637
-    public static String getJavacFileName(FileObject file) {
-        if (file instanceof BaseFileObject)
-            return ((BaseFileObject)file).getPath();
-        URI uri = file.toUri();
-        String scheme = uri.getScheme();
-        if (scheme == null || scheme.equals("file") || scheme.equals("jar"))
-            return uri.getPath();
-        else
-            return uri.toString();
-    }
-
-    @SuppressWarnings("deprecation") // bug 6410637
-    public static String getJavacBaseFileName(FileObject file) {
-        if (file instanceof BaseFileObject)
-            return ((BaseFileObject)file).getName();
-        URI uri = file.toUri();
-        String scheme = uri.getScheme();
-        if (scheme == null || scheme.equals("file") || scheme.equals("jar")) {
-            String path = uri.getPath();
-            if (path == null)
-                return null;
-            if (scheme != null && scheme.equals("jar"))
-                path = path.substring(path.lastIndexOf('!') + 1);
-            return path.substring(path.lastIndexOf('/') + 1);
-        } else {
-            return uri.toString();
-        }
     }
 
     private static <T> T nullCheck(T o) {

@@ -133,6 +133,7 @@ class LibraryCallKit : public GraphKit {
     return generate_method_call(method_id, true, false);
   }
 
+  Node* make_string_method_node(int opcode, Node* str1, Node* cnt1, Node* str2, Node* cnt2);
   bool inline_string_compareTo();
   bool inline_string_indexOf();
   Node* string_indexOf(Node* string_object, ciTypeArray* target_array, jint offset, jint cache_i, jint md2_i);
@@ -796,6 +797,64 @@ Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
 }
 
 
+//------------------------------make_string_method_node------------------------
+// Helper method for String intrinsic finctions.
+Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* cnt1, Node* str2, Node* cnt2) {
+  const int value_offset  = java_lang_String::value_offset_in_bytes();
+  const int count_offset  = java_lang_String::count_offset_in_bytes();
+  const int offset_offset = java_lang_String::offset_offset_in_bytes();
+
+  Node* no_ctrl = NULL;
+
+  ciInstanceKlass* klass = env()->String_klass();
+  const TypeInstPtr* string_type =
+        TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+
+  const TypeAryPtr* value_type =
+        TypeAryPtr::make(TypePtr::NotNull,
+                         TypeAry::make(TypeInt::CHAR,TypeInt::POS),
+                         ciTypeArrayKlass::make(T_CHAR), true, 0);
+
+  // Get start addr of string and substring
+  Node* str1_valuea  = basic_plus_adr(str1, str1, value_offset);
+  Node* str1_value   = make_load(no_ctrl, str1_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
+  Node* str1_offseta = basic_plus_adr(str1, str1, offset_offset);
+  Node* str1_offset  = make_load(no_ctrl, str1_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  Node* str1_start   = array_element_address(str1_value, str1_offset, T_CHAR);
+
+  // Pin loads from String::equals() argument since it could be NULL.
+  Node* str2_ctrl = (opcode == Op_StrEquals) ? control() : no_ctrl;
+  Node* str2_valuea  = basic_plus_adr(str2, str2, value_offset);
+  Node* str2_value   = make_load(str2_ctrl, str2_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
+  Node* str2_offseta = basic_plus_adr(str2, str2, offset_offset);
+  Node* str2_offset  = make_load(str2_ctrl, str2_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  Node* str2_start   = array_element_address(str2_value, str2_offset, T_CHAR);
+
+  Node* result = NULL;
+  switch (opcode) {
+  case Op_StrIndexOf:
+    result = new (C, 6) StrIndexOfNode(control(), memory(TypeAryPtr::CHARS),
+                                       str1_start, cnt1, str2_start, cnt2);
+    break;
+  case Op_StrComp:
+    result = new (C, 6) StrCompNode(control(), memory(TypeAryPtr::CHARS),
+                                    str1_start, cnt1, str2_start, cnt2);
+    break;
+  case Op_StrEquals:
+    result = new (C, 5) StrEqualsNode(control(), memory(TypeAryPtr::CHARS),
+                                      str1_start, str2_start, cnt1);
+    break;
+  default:
+    ShouldNotReachHere();
+    return NULL;
+  }
+
+  // All these intrinsics have checks.
+  C->set_has_split_ifs(true); // Has chance for split-if optimization
+
+  return _gvn.transform(result);
+}
+
 //------------------------------inline_string_compareTo------------------------
 bool LibraryCallKit::inline_string_compareTo() {
 
@@ -824,16 +883,16 @@ bool LibraryCallKit::inline_string_compareTo() {
   ciInstanceKlass* klass = env()->String_klass();
   const TypeInstPtr* string_type =
     TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
+  Node* no_ctrl = NULL;
 
-  Node* compare =
-    _gvn.transform(new (C, 7) StrCompNode(
-                        control(),
-                        memory(TypeAryPtr::CHARS),
-                        memory(string_type->add_offset(value_offset)),
-                        memory(string_type->add_offset(count_offset)),
-                        memory(string_type->add_offset(offset_offset)),
-                        receiver,
-                        argument));
+  // Get counts for string and argument
+  Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
+  Node* receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+
+  Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
+  Node* argument_cnt  = make_load(no_ctrl, argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+
+  Node* compare = make_string_method_node(Op_StrComp, receiver, receiver_cnt, argument, argument_cnt);
   push(compare);
   return true;
 }
@@ -865,45 +924,71 @@ bool LibraryCallKit::inline_string_equals() {
     return true;
   }
 
+  // paths (plus control) merge
+  RegionNode* region = new (C, 5) RegionNode(5);
+  Node* phi = new (C, 5) PhiNode(region, TypeInt::BOOL);
+
+  // does source == target string?
+  Node* cmp = _gvn.transform(new (C, 3) CmpPNode(receiver, argument));
+  Node* bol = _gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::eq));
+
+  Node* if_eq = generate_slow_guard(bol, NULL);
+  if (if_eq != NULL) {
+    // receiver == argument
+    phi->init_req(2, intcon(1));
+    region->init_req(2, if_eq);
+  }
+
   // get String klass for instanceOf
   ciInstanceKlass* klass = env()->String_klass();
 
-  // two paths (plus control) merge
-  RegionNode* region = new (C, 3) RegionNode(3);
-  Node* phi = new (C, 3) PhiNode(region, TypeInt::BOOL);
+  if (!stopped()) {
+    Node* inst = gen_instanceof(argument, makecon(TypeKlassPtr::make(klass)));
+    Node* cmp  = _gvn.transform(new (C, 3) CmpINode(inst, intcon(1)));
+    Node* bol  = _gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::ne));
 
-  Node* inst = gen_instanceof(argument, makecon(TypeKlassPtr::make(klass)));
-  Node* cmp  = _gvn.transform(new (C, 3) CmpINode(inst, intcon(1)));
-  Node* bol  = _gvn.transform(new (C, 2) BoolNode(cmp, BoolTest::eq));
+    Node* inst_false = generate_guard(bol, NULL, PROB_MIN);
+    //instanceOf == true, fallthrough
 
-  IfNode* iff = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
-
-  Node* if_true  = _gvn.transform(new (C, 1) IfTrueNode(iff));
-  set_control(if_true);
+    if (inst_false != NULL) {
+      phi->init_req(3, intcon(0));
+      region->init_req(3, inst_false);
+    }
+  }
 
   const TypeInstPtr* string_type =
     TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
 
-  // instanceOf == true
-  Node* equals =
-    _gvn.transform(new (C, 7) StrEqualsNode(
-                        control(),
-                        memory(TypeAryPtr::CHARS),
-                        memory(string_type->add_offset(value_offset)),
-                        memory(string_type->add_offset(count_offset)),
-                        memory(string_type->add_offset(offset_offset)),
-                        receiver,
-                        argument));
+  Node* no_ctrl = NULL;
+  Node* receiver_cnt;
+  Node* argument_cnt;
 
-  phi->init_req(1, _gvn.transform(equals));
-  region->init_req(1, if_true);
+  if (!stopped()) {
+    // Get counts for string and argument
+    Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
+    receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
 
-  //instanceOf == false, fallthrough
-  Node* if_false = _gvn.transform(new (C, 1) IfFalseNode(iff));
-  set_control(if_false);
+    // Pin load from argument string since it could be NULL.
+    Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
+    argument_cnt  = make_load(control(), argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
 
-  phi->init_req(2, _gvn.transform(intcon(0)));
-  region->init_req(2, if_false);
+    // Check for receiver count != argument count
+    Node* cmp = _gvn.transform( new(C, 3) CmpINode(receiver_cnt, argument_cnt) );
+    Node* bol = _gvn.transform( new(C, 2) BoolNode(cmp, BoolTest::ne) );
+    Node* if_ne = generate_slow_guard(bol, NULL);
+    if (if_ne != NULL) {
+      phi->init_req(4, intcon(0));
+      region->init_req(4, if_ne);
+    }
+  }
+
+  // Check for count == 0 is done by mach node StrEquals.
+
+  if (!stopped()) {
+    Node* equals = make_string_method_node(Op_StrEquals, receiver, receiver_cnt, argument, argument_cnt);
+    phi->init_req(1, equals);
+    region->init_req(1, control());
+  }
 
   // post merge
   set_control(_gvn.transform(region));
@@ -924,10 +1009,8 @@ bool LibraryCallKit::inline_array_equals() {
   Node *argument1 = pop();
 
   Node* equals =
-    _gvn.transform(new (C, 3) AryEqNode(control(),
-                                        argument1,
-                                        argument2)
-                   );
+    _gvn.transform(new (C, 4) AryEqNode(control(), memory(TypeAryPtr::CHARS),
+                                        argument1, argument2) );
   push(equals);
   return true;
 }
@@ -1108,19 +1191,40 @@ bool LibraryCallKit::inline_string_indexOf() {
       return true;
     }
 
+    // Make the merge point
+    RegionNode* result_rgn = new (C, 3) RegionNode(3);
+    Node*       result_phi = new (C, 3) PhiNode(result_rgn, TypeInt::INT);
+    Node* no_ctrl  = NULL;
+
     ciInstanceKlass* klass = env()->String_klass();
     const TypeInstPtr* string_type =
       TypeInstPtr::make(TypePtr::BotPTR, klass, false, NULL, 0);
 
-    result =
-      _gvn.transform(new (C, 7)
-                     StrIndexOfNode(control(),
-                                    memory(TypeAryPtr::CHARS),
-                                    memory(string_type->add_offset(value_offset)),
-                                    memory(string_type->add_offset(count_offset)),
-                                    memory(string_type->add_offset(offset_offset)),
-                                    receiver,
-                                    argument));
+    // Get counts for string and substr
+    Node* source_cnta = basic_plus_adr(receiver, receiver, count_offset);
+    Node* source_cnt  = make_load(no_ctrl, source_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+
+    Node* substr_cnta = basic_plus_adr(argument, argument, count_offset);
+    Node* substr_cnt  = make_load(no_ctrl, substr_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+
+    // Check for substr count > string count
+    Node* cmp = _gvn.transform( new(C, 3) CmpINode(substr_cnt, source_cnt) );
+    Node* bol = _gvn.transform( new(C, 2) BoolNode(cmp, BoolTest::gt) );
+    Node* if_gt = generate_slow_guard(bol, NULL);
+    if (if_gt != NULL) {
+      result_phi->init_req(2, intcon(-1));
+      result_rgn->init_req(2, if_gt);
+    }
+
+    if (!stopped()) {
+      result = make_string_method_node(Op_StrIndexOf, receiver, source_cnt, argument, substr_cnt);
+      result_phi->init_req(1, result);
+      result_rgn->init_req(1, control());
+    }
+    set_control(_gvn.transform(result_rgn));
+    record_for_igvn(result_rgn);
+    result = _gvn.transform(result_phi);
+
   } else { //Use LibraryCallKit::string_indexOf
     // don't intrinsify is argument isn't a constant string.
     if (!argument->is_Con()) {
@@ -3903,19 +4007,10 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
     guarantee(alloc != NULL && alloc->maybe_set_complete(&_gvn), "");
   }
 
-  // Cast to Object for arraycopy.
-  // We can't use the original CheckCastPP since it should be moved
-  // after the arraycopy to prevent stores flowing above it.
-  Node* new_obj = new(C, 2) CheckCastPPNode(alloc_obj->in(0), raw_obj,
-                                            TypeInstPtr::NOTNULL);
-  new_obj = _gvn.transform(new_obj);
-  // Substitute in the locally valid dest_oop.
-  replace_in_map(alloc_obj, new_obj);
-
   // Copy the fastest available way.
   // TODO: generate fields copies for small objects instead.
   Node* src  = obj;
-  Node* dest = new_obj;
+  Node* dest = alloc_obj;
   Node* size = _gvn.transform(obj_size);
 
   // Exclude the header but include array length to copy by 8 bytes words.
@@ -3961,7 +4056,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
     int raw_adr_idx = Compile::AliasIdxRaw;
     post_barrier(control(),
                  memory(raw_adr_type),
-                 new_obj,
+                 alloc_obj,
                  no_particular_field,
                  raw_adr_idx,
                  no_particular_value,
@@ -3969,16 +4064,8 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
                  false);
   }
 
-  // Move the original CheckCastPP after arraycopy.
-  _gvn.hash_delete(alloc_obj);
-  alloc_obj->set_req(0, control());
-  // Replace raw memory edge with new CheckCastPP to have a live oop
-  // at safepoints instead of raw value.
-  assert(new_obj->is_CheckCastPP() && new_obj->in(1) == alloc_obj->in(1), "sanity");
-  alloc_obj->set_req(1, new_obj);    // cast to the original type
-  _gvn.hash_find_insert(alloc_obj);  // put back into GVN table
-  // Restore in the locally valid dest_oop.
-  replace_in_map(new_obj, alloc_obj);
+  // Do not let reads from the cloned object float above the arraycopy.
+  insert_mem_bar(Op_MemBarCPUOrder);
 }
 
 //------------------------inline_native_clone----------------------------
@@ -4448,15 +4535,6 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     assert(init->is_complete(), "we just did this");
     assert(dest->is_CheckCastPP(), "sanity");
     assert(dest->in(0)->in(0) == init, "dest pinned");
-
-    // Cast to Object for arraycopy.
-    // We can't use the original CheckCastPP since it should be moved
-    // after the arraycopy to prevent stores flowing above it.
-    Node* new_obj = new(C, 2) CheckCastPPNode(dest->in(0), dest->in(1),
-                                              TypeInstPtr::NOTNULL);
-    dest = _gvn.transform(new_obj);
-    // Substitute in the locally valid dest_oop.
-    replace_in_map(original_dest, dest);
     adr_type = TypeRawPtr::BOTTOM;  // all initializations are into raw memory
     // From this point on, every exit path is responsible for
     // initializing any non-copied parts of the object to zero.
@@ -4786,18 +4864,6 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
   set_i_o(     _gvn.transform(result_i_o)    );
   set_memory(  _gvn.transform(result_memory), adr_type );
 
-  if (dest != original_dest) {
-    // Pin the "finished" array node after the arraycopy/zeroing operations.
-    _gvn.hash_delete(original_dest);
-    original_dest->set_req(0, control());
-    // Replace raw memory edge with new CheckCastPP to have a live oop
-    // at safepoints instead of raw value.
-    assert(dest->is_CheckCastPP() && dest->in(1) == original_dest->in(1), "sanity");
-    original_dest->set_req(1, dest);       // cast to the original type
-    _gvn.hash_find_insert(original_dest);  // put back into GVN table
-    // Restore in the locally valid dest_oop.
-    replace_in_map(dest, original_dest);
-  }
   // The memory edges above are precise in order to model effects around
   // array copies accurately to allow value numbering of field loads around
   // arraycopy.  Such field loads, both before and after, are common in Java
@@ -4808,7 +4874,9 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
   // The next memory barrier is added to avoid it. If the arraycopy can be
   // optimized away (which it can, sometimes) then we can manually remove
   // the membar also.
-  if (InsertMemBarAfterArraycopy)
+  //
+  // Do not let reads from the cloned object float above the arraycopy.
+  if (InsertMemBarAfterArraycopy || alloc != NULL)
     insert_mem_bar(Op_MemBarCPUOrder);
 }
 

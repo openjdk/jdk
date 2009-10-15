@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2563,38 +2563,73 @@ public class ClassReader implements Completer {
             this.flatname = flatname;
         }
 
-        public InputStream openInputStream() {
-            throw new UnsupportedOperationException();
+        @Override
+        public URI toUri() {
+            try {
+                return new URI(null, name.toString(), null);
+            } catch (URISyntaxException e) {
+                throw new CannotCreateUriError(name.toString(), e);
+            }
         }
 
-        public OutputStream openOutputStream() {
-            throw new UnsupportedOperationException();
-        }
-
-        public Reader openReader() {
-            throw new UnsupportedOperationException();
-        }
-
-        public Writer openWriter() {
-            throw new UnsupportedOperationException();
-        }
-
-        /** @deprecated see bug 6410637 */
-        @Deprecated
+        @Override
         public String getName() {
             return name.toString();
         }
 
+        @Override
+        public String getShortName() {
+            return getName();
+        }
+
+        @Override
+        public JavaFileObject.Kind getKind() {
+            return getKind(getName());
+        }
+
+        @Override
+        public InputStream openInputStream() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public OutputStream openOutputStream() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CharBuffer getCharContent(boolean ignoreEncodingErrors) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Reader openReader(boolean ignoreEncodingErrors) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Writer openWriter() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public long getLastModified() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public boolean delete() {
             throw new UnsupportedOperationException();
         }
 
-        public CharBuffer getCharContent(boolean ignoreEncodingErrors) {
-            throw new UnsupportedOperationException();
+        @Override
+        protected String inferBinaryName(Iterable<? extends File> path) {
+            return flatname.toString();
+        }
+
+        @Override
+        public boolean isNameCompatible(String simpleName, JavaFileObject.Kind kind) {
+            return true; // fail-safe mode
         }
 
         @Override
@@ -2608,28 +2643,6 @@ public class ClassReader implements Completer {
         @Override
         public int hashCode() {
             return name.hashCode();
-        }
-
-        public boolean isNameCompatible(String simpleName, JavaFileObject.Kind kind) {
-            return true; // fail-safe mode
-        }
-
-        public URI toUri() {
-            try {
-                return new URI(null, name.toString(), null);
-            } catch (URISyntaxException e) {
-                throw new CannotCreateUriError(name.toString(), e);
-            }
-        }
-
-        @Override
-        public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected String inferBinaryName(Iterable<? extends File> path) {
-            return flatname.toString();
         }
     }
 }

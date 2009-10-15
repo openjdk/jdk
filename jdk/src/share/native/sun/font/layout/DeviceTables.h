@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  */
@@ -32,10 +33,15 @@
 #ifndef __DEVICETABLES_H
 #define __DEVICETABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
-#include "GlyphIterator.h"
-#include "GlyphPositionAdjustments.h"
+
+U_NAMESPACE_BEGIN
 
 struct DeviceTable
 {
@@ -52,5 +58,7 @@ private:
     static const le_uint16 fieldBits[];
 };
 
-
+U_NAMESPACE_END
 #endif
+
+

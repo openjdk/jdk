@@ -296,7 +296,7 @@ void Type::Initialize_shared(Compile* current) {
                                            false, 0, oopDesc::mark_offset_in_bytes());
   TypeInstPtr::KLASS   = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass(),
                                            false, 0, oopDesc::klass_offset_in_bytes());
-  TypeOopPtr::BOTTOM  = TypeOopPtr::make(TypePtr::BotPTR, OffsetBot);
+  TypeOopPtr::BOTTOM  = TypeOopPtr::make(TypePtr::BotPTR, OffsetBot, TypeOopPtr::InstanceBot);
 
   TypeNarrowOop::NULL_PTR = TypeNarrowOop::make( TypePtr::NULL_PTR );
   TypeNarrowOop::BOTTOM   = TypeNarrowOop::make( TypeInstPtr::BOTTOM );
@@ -492,8 +492,13 @@ bool Type::is_nan()    const {
 bool Type::interface_vs_oop(const Type *t) const {
   bool result = false;
 
-  const TypeInstPtr* this_inst = this->isa_instptr();
-  const TypeInstPtr*    t_inst =    t->isa_instptr();
+  const TypePtr* this_ptr = this->make_ptr(); // In case it is narrow_oop
+  const TypePtr*    t_ptr =    t->make_ptr();
+  if( this_ptr == NULL || t_ptr == NULL )
+    return result;
+
+  const TypeInstPtr* this_inst = this_ptr->isa_instptr();
+  const TypeInstPtr*    t_inst =    t_ptr->isa_instptr();
   if( this_inst && this_inst->is_loaded() && t_inst && t_inst->is_loaded() ) {
     bool this_interface = this_inst->klass()->is_interface();
     bool    t_interface =    t_inst->klass()->is_interface();
@@ -2236,12 +2241,12 @@ TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int 
 
 //------------------------------make-------------------------------------------
 const TypeOopPtr *TypeOopPtr::make(PTR ptr,
-                                   int offset) {
+                                   int offset, int instance_id) {
   assert(ptr != Constant, "no constant generic pointers");
   ciKlass*  k = ciKlassKlass::make();
   bool      xk = false;
   ciObject* o = NULL;
-  return (TypeOopPtr*)(new TypeOopPtr(OopPtr, ptr, k, xk, o, offset, InstanceBot))->hashcons();
+  return (TypeOopPtr*)(new TypeOopPtr(OopPtr, ptr, k, xk, o, offset, instance_id))->hashcons();
 }
 
 
@@ -2249,7 +2254,7 @@ const TypeOopPtr *TypeOopPtr::make(PTR ptr,
 const Type *TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
-  return make(ptr, _offset);
+  return make(ptr, _offset, _instance_id);
 }
 
 //-----------------------------cast_to_instance_id----------------------------
@@ -2319,8 +2324,10 @@ const Type *TypeOopPtr::xmeet( const Type *t ) const {
       if (ptr == Null)  return TypePtr::make(AnyPtr, ptr, offset);
       // else fall through:
     case TopPTR:
-    case AnyNull:
-      return make(ptr, offset);
+    case AnyNull: {
+      int instance_id = meet_instance_id(InstanceTop);
+      return make(ptr, offset, instance_id);
+    }
     case BotPTR:
     case NotNull:
       return TypePtr::make(AnyPtr, ptr, offset);
@@ -2330,7 +2337,8 @@ const Type *TypeOopPtr::xmeet( const Type *t ) const {
 
   case OopPtr: {                 // Meeting to other OopPtrs
     const TypeOopPtr *tp = t->is_oopptr();
-    return make( meet_ptr(tp->ptr()), meet_offset(tp->offset()) );
+    int instance_id = meet_instance_id(tp->instance_id());
+    return make( meet_ptr(tp->ptr()), meet_offset(tp->offset()), instance_id );
   }
 
   case InstPtr:                  // For these, flip the call around to cut down
@@ -2410,14 +2418,13 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass *klass, bool klass_
 
 //------------------------------make_from_constant-----------------------------
 // Make a java pointer from an oop constant
-const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o) {
+const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_constant) {
   if (o->is_method_data() || o->is_method()) {
     // Treat much like a typeArray of bytes, like below, but fake the type...
-    assert(o->has_encoding(), "must be a perm space object");
     const Type* etype = (Type*)get_const_basic_type(T_BYTE);
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
     ciKlass *klass = ciTypeArrayKlass::make((BasicType) T_BYTE);
-    assert(o->has_encoding(), "method data oops should be tenured");
+    assert(o->can_be_constant(), "method data oops should be tenured");
     const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
     return arr;
   } else {
@@ -2426,8 +2433,9 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o) {
     ciKlass *klass = o->klass();
     if (klass->is_instance_klass()) {
       // Element is an instance
-      if (!o->has_encoding()) {  // not a perm-space constant
-        // %%% remove this restriction by rewriting non-perm ConPNodes in a later phase
+      if (require_constant) {
+        if (!o->can_be_constant())  return NULL;
+      } else if (!o->should_be_constant()) {
         return TypeInstPtr::make(TypePtr::NotNull, klass, true, NULL, 0);
       }
       return TypeInstPtr::make(o);
@@ -2439,8 +2447,9 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o) {
       // We used to pass NotNull in here, asserting that the sub-arrays
       // are all not-null.  This is not true in generally, as code can
       // slam NULLs down in the subarrays.
-      if (!o->has_encoding()) {  // not a perm-space constant
-        // %%% remove this restriction by rewriting non-perm ConPNodes in a later phase
+      if (require_constant) {
+        if (!o->can_be_constant())  return NULL;
+      } else if (!o->should_be_constant()) {
         return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
       }
       const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
@@ -2452,8 +2461,9 @@ const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o) {
       const TypeAry* arr0 = TypeAry::make(etype, TypeInt::make(o->as_array()->length()));
       // We used to pass NotNull in here, asserting that the array pointer
       // is not-null. That was not true in general.
-      if (!o->has_encoding()) {  // not a perm-space constant
-        // %%% remove this restriction by rewriting non-perm ConPNodes in a later phase
+      if (require_constant) {
+        if (!o->can_be_constant())  return NULL;
+      } else if (!o->should_be_constant()) {
         return TypeAryPtr::make(TypePtr::NotNull, arr0, klass, true, 0);
       }
       const TypeAryPtr* arr = TypeAryPtr::make(TypePtr::Constant, o, arr0, klass, true, 0);
@@ -2482,7 +2492,7 @@ intptr_t TypeOopPtr::get_con() const {
     ShouldNotReachHere();
   }
 
-  return (intptr_t)const_oop()->encoding();
+  return (intptr_t)const_oop()->constant_encoding();
 }
 
 
@@ -2590,7 +2600,7 @@ bool TypeOopPtr::singleton(void) const {
 
 //------------------------------add_offset-------------------------------------
 const TypePtr *TypeOopPtr::add_offset( intptr_t offset ) const {
-  return make( _ptr, xadd_offset(offset) );
+  return make( _ptr, xadd_offset(offset), _instance_id);
 }
 
 //------------------------------meet_instance_id--------------------------------
@@ -2693,6 +2703,7 @@ const TypeOopPtr *TypeInstPtr::cast_to_instance_id(int instance_id) const {
 const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst) const {
     int off = meet_offset(tinst->offset());
     PTR ptr = meet_ptr(tinst->ptr());
+    int instance_id = meet_instance_id(tinst->instance_id());
 
     const TypeInstPtr *loaded    = is_loaded() ? this  : tinst;
     const TypeInstPtr *unloaded  = is_loaded() ? tinst : this;
@@ -2713,7 +2724,7 @@ const TypeInstPtr *TypeInstPtr::xmeet_unloaded(const TypeInstPtr *tinst) const {
       assert(loaded->ptr() != TypePtr::Null, "insanity check");
       //
       if(      loaded->ptr() == TypePtr::TopPTR ) { return unloaded; }
-      else if (loaded->ptr() == TypePtr::AnyNull) { return TypeInstPtr::make( ptr, unloaded->klass() ); }
+      else if (loaded->ptr() == TypePtr::AnyNull) { return TypeInstPtr::make( ptr, unloaded->klass(), false, NULL, off, instance_id ); }
       else if (loaded->ptr() == TypePtr::BotPTR ) { return TypeInstPtr::BOTTOM; }
       else if (loaded->ptr() == TypePtr::Constant || loaded->ptr() == TypePtr::NotNull) {
         if (unloaded->ptr() == TypePtr::BotPTR  ) { return TypeInstPtr::BOTTOM;  }
@@ -2801,7 +2812,7 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
 
   case OopPtr: {                // Meeting to OopPtrs
     // Found a OopPtr type vs self-InstPtr type
-    const TypePtr *tp = t->is_oopptr();
+    const TypeOopPtr *tp = t->is_oopptr();
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
     switch (tp->ptr()) {
@@ -2812,8 +2823,10 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
                   (ptr == Constant ? const_oop() : NULL), offset, instance_id);
     }
     case NotNull:
-    case BotPTR:
-      return TypeOopPtr::make(ptr, offset);
+    case BotPTR: {
+      int instance_id = meet_instance_id(tp->instance_id());
+      return TypeOopPtr::make(ptr, offset, instance_id);
+    }
     default: typerr(t);
     }
   }
@@ -3259,7 +3272,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
 
   case OopPtr: {                // Meeting to OopPtrs
     // Found a OopPtr type vs self-AryPtr type
-    const TypePtr *tp = t->is_oopptr();
+    const TypeOopPtr *tp = t->is_oopptr();
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
     switch (tp->ptr()) {
@@ -3270,8 +3283,10 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
                   _ary, _klass, _klass_is_exact, offset, instance_id);
     }
     case BotPTR:
-    case NotNull:
-      return TypeOopPtr::make(ptr, offset);
+    case NotNull: {
+      int instance_id = meet_instance_id(tp->instance_id());
+      return TypeOopPtr::make(ptr, offset, instance_id);
+    }
     default: ShouldNotReachHere();
     }
   }
@@ -3333,14 +3348,19 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
       ciObject* o = const_oop();
       if( _ptr == Constant ) {
         if( tap->const_oop() != NULL && !o->equals(tap->const_oop()) ) {
+          xk = (klass() == tap->klass());
           ptr = NotNull;
           o = NULL;
           instance_id = InstanceBot;
+        } else {
+          xk = true;
         }
       } else if( above_centerline(_ptr) ) {
         o = tap->const_oop();
+        xk = true;
+      } else {
+        xk = this->_klass_is_exact;
       }
-      xk = true;
       return TypeAryPtr::make( ptr, o, tary, tap->_klass, xk, off, instance_id );
     }
     case NotNull:

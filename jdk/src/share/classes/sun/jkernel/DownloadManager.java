@@ -31,6 +31,7 @@ import java.util.concurrent.*;
 import java.util.jar.*;
 import java.util.zip.*;
 import sun.misc.Launcher;
+import sun.misc.BootClassLoaderHook;
 
 /**
  * Handles the downloading of additional JRE components.  The bootstrap class
@@ -39,7 +40,7 @@ import sun.misc.Launcher;
  *
  *@author Ethan Nicholas
  */
-public class DownloadManager {
+public class DownloadManager extends BootClassLoaderHook {
     public static final String KERNEL_DOWNLOAD_URL_PROPERTY =
             "kernel.download.url";
     public static final String KERNEL_DOWNLOAD_ENABLED_PROPERTY =
@@ -1023,7 +1024,8 @@ public class DownloadManager {
 
     /**
      * Returns <code>true</code> if the current thread is in the process of
-     * downloading a bundle.  This is called by ClassLoader.loadLibrary(), so
+     * downloading a bundle.  This is called by DownloadManager.loadLibrary()
+     * that is called by System.loadLibrary(), so
      * that when we run into a library required by the download process itself,
      * we don't call back into DownloadManager in an attempt to download it
      * (which would lead to infinite recursion).
@@ -1614,6 +1616,77 @@ public class DownloadManager {
 
     static native int getCurrentProcessId();
 
+    private DownloadManager() {
+    }
+
+    // Invoked by jkernel VM after the VM is initialized
+    static void setBootClassLoaderHook() {
+        if (!isJREComplete()) {
+            sun.misc.BootClassLoaderHook.setHook(new DownloadManager());
+        }
+    }
+
+    // Implementation of the BootClassLoaderHook interface
+    public String loadBootstrapClass(String name) {
+        // Check for download before we look for it.  If
+        // DownloadManager ends up downloading it, it will add it to
+        // our search path before we proceed to the findClass().
+        return DownloadManager.getBootClassPathEntryForClass(name);
+    }
+
+    public boolean loadLibrary(String name) {
+       try {
+            if (!DownloadManager.isJREComplete() &&
+                    !DownloadManager.isCurrentThreadDownloading()) {
+                return DownloadManager.downloadFile("bin/" +
+                    System.mapLibraryName(name));
+                // it doesn't matter if the downloadFile call returns false --
+                // it probably just means that this is a user library, as
+                // opposed to a JRE library
+            }
+        } catch (IOException e) {
+            throw new UnsatisfiedLinkError("Error downloading library " +
+                                                name + ": " + e);
+        } catch (NoClassDefFoundError e) {
+            // This happens while Java itself is being compiled; DownloadManager
+            // isn't accessible when this code is first invoked.  It isn't an
+            // issue, as if we can't find DownloadManager, we can safely assume
+            // that additional code is not available for download.
+        }
+        return false;
+    }
+
+    public boolean prefetchFile(String name) {
+        try {
+            return sun.jkernel.DownloadManager.downloadFile(name);
+        } catch (IOException ioe) {
+            return false;
+        }
+    }
+
+    public String getBootstrapResource(String name) {
+        try {
+            // If this is a known JRE resource, ensure that its bundle is
+            // downloaded.  If it isn't known, we just ignore the download
+            // failure and check to see if we can find the resource anyway
+            // (which is possible if the boot class path has been modified).
+            return DownloadManager.getBootClassPathEntryForResource(name);
+        } catch (NoClassDefFoundError e) {
+            // This happens while Java itself is being compiled; DownloadManager
+            // isn't accessible when this code is first invoked.  It isn't an
+            // issue, as if we can't find DownloadManager, we can safely assume
+            // that additional code is not available for download.
+            return null;
+        }
+    }
+
+    public File[] getAdditionalBootstrapPaths() {
+        return DownloadManager.getAdditionalBootStrapPaths();
+    }
+
+    public boolean isCurrentThreadPrefetching() {
+        return DownloadManager.isCurrentThreadDownloading();
+    }
 
     public static void main(String[] arg) throws Exception {
         AccessController.checkPermission(new AllPermission());

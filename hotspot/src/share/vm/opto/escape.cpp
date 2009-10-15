@@ -439,6 +439,11 @@ static Node* get_addp_base(Node *addp) {
   Node *base = addp->in(AddPNode::Base)->uncast();
   if (base->is_top()) { // The AddP case #3 and #6.
     base = addp->in(AddPNode::Address)->uncast();
+    while (base->is_AddP()) {
+      // Case #6 (unsafe access) may have several chained AddP nodes.
+      assert(base->in(AddPNode::Base)->is_top(), "expected unsafe access address only");
+      base = base->in(AddPNode::Address)->uncast();
+    }
     assert(base->Opcode() == Op_ConP || base->Opcode() == Op_ThreadLocal ||
            base->Opcode() == Op_CastX2P || base->is_DecodeN() ||
            (base->is_Mem() && base->bottom_type() == TypeRawPtr::NOTNULL) ||
@@ -519,12 +524,15 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   // inlining) which was not eliminated during parsing since the exactness
   // of the allocation type was not propagated to the subclass type check.
   //
+  // Or the type 't' could be not related to 'base_t' at all.
+  // It could happened when CHA type is different from MDO type on a dead path
+  // (for example, from instanceof check) which is not collapsed during parsing.
+  //
   // Do nothing for such AddP node and don't process its users since
   // this code branch will go away.
   //
   if (!t->is_known_instance() &&
-      !t->klass()->equals(base_t->klass()) &&
-      t->klass()->is_subtype_of(base_t->klass())) {
+      !base_t->klass()->is_subtype_of(t->klass())) {
      return false; // bail out
   }
 

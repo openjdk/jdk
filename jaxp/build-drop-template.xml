@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<!--
+ Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Sun designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Sun in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ CA 95054 USA or visit www.sun.com if you need additional information or
+ have any questions.
+-->
+
+<project name="@DROP@-drop" default="all" basedir=".">
+
+    <!-- Locations of master drop bundles. -->
+    <property name="@DROP@.master.bundle.copy"
+              value="${@DROP@.master.bundle.dir}/${@DROP@.bundle.name}"/>
+    <property name="@DROP@.master.bundle.url"
+              value="${@DROP@.master.bundle.url.base}/${@DROP@.bundle.name}"/>
+
+    <!-- Location where the copied bundle lands. -->
+    <property name="@DROP@.bundle.copy"
+              value="${drop.dir}/bundles/${@DROP@.bundle.name}"/>
+
+    <!-- Root of exploded area. -->
+    <property name="@DROP@.root.dir" value="${drop.dir}/@DROP@"/>
+    <property name="@DROP@.src.dir" value="${@DROP@.root.dir}/src"/>
+
+    <!-- To see if the drop areas are ready. (ignoring bundles) -->
+    <target name="-@DROP@-ready">
+        <condition property="@DROP@.ready">
+            <and>
+                <available file="${@DROP@.root.dir}" type="dir"/>
+                <available file="${@DROP@.root.dir}/PATCHED" type="file"/>
+            </and>
+        </condition>
+    </target>
+
+    <!-- Copy over bundles from some shared master area. -->
+    <condition property="@DROP@.master.bundle.copy.exists">
+        <available file="${@DROP@.master.bundle.copy}" type="file"/>
+    </condition>
+    <target name="-@DROP@-copy-bundle"
+	    depends="init, -@DROP@-ready"
+            if="@DROP@.master.bundle.copy.exists"
+            unless="@DROP@.ready">
+        <echo message="Copying from ${@DROP@.master.bundle.copy}"/>
+        <dirname property="@DROP@.bundle.dirname" file="${@DROP@.bundle.copy}"/>
+        <mkdir dir="${@DROP@.bundle.dirname}"/>
+        <delete file="${@DROP@.bundle.copy}.temp"/>
+        <delete file="${@DROP@.bundle.copy}"/>
+        <copy file="${@DROP@.master.bundle.copy}" tofile="${@DROP@.bundle.copy}.temp"/>
+        <move file="${@DROP@.bundle.copy}.temp" tofile="${@DROP@.bundle.copy}"/>
+        <property name="@DROP@.master.bundle.found" value="true"/>
+    </target>
+
+    <!-- Determine if the master url download should be used. -->
+    <target name="-@DROP@-url-should-be-used" unless="@DROP@.url.should.be.used">
+        <condition property="@DROP@.url.should.be.used">
+            <and>
+                <http url="${@DROP@.master.bundle.url.base}"/>
+                <not>
+                    <isset property="@DROP@.master.bundle.copy.exists"/>
+                </not>
+            </and>
+        </condition>
+    </target>
+
+    <!-- Download bundles from a url. -->
+    <target name="-@DROP@-url-bundle"
+	    depends="init, -@DROP@-ready, -@DROP@-url-should-be-used"
+            if="@DROP@.url.should.be.used"
+            unless="@DROP@.ready">
+        <echo message="Downloading from ${@DROP@.master.bundle.url}"/>
+        <dirname property="@DROP@.bundle.dirname" file="${@DROP@.bundle.copy}"/>
+        <mkdir dir="${@DROP@.bundle.dirname}"/>
+        <delete file="${@DROP@.bundle.copy}.temp"/>
+        <delete file="${@DROP@.bundle.copy}"/>
+        <get src="${@DROP@.master.bundle.url}" dest="${@DROP@.bundle.copy}.temp"/>
+        <move file="${@DROP@.bundle.copy}.temp" tofile="${@DROP@.bundle.copy}"/>
+        <property name="@DROP@.master.bundle.found" value="true"/>
+    </target>
+    
+    <!-- Fill in the drop zones, but just when needed. -->
+    <target name="@DROP@-update"
+            depends="init, 
+		     -@DROP@-copy-bundle,
+		     -@DROP@-url-bundle,
+                     -@DROP@-ready"
+            if="@DROP@.master.bundle.found"
+            unless="@DROP@.ready">
+        <delete dir="${@DROP@.root.dir}"/>
+        <delete dir="${@DROP@.root.dir}-temp"/>
+        <mkdir dir="${@DROP@.root.dir}-temp"/>
+        <unzip src="${@DROP@.bundle.copy}" dest="${@DROP@.root.dir}-temp"/>
+        <move file="${@DROP@.root.dir}-temp" tofile="${@DROP@.root.dir}"/>
+        <touch>
+            <fileset dir="${@DROP@.root.dir}"/>
+        </touch>
+        <condition property="patch.utility" value="gpatch" else="patch">
+            <os name="SunOS"/>
+        </condition>
+        <apply executable="${patch.utility}"
+		   dir="${@DROP@.root.dir}"
+	           parallel="false"
+	           failonerror="true"
+	           verbose="true">
+            <arg value="-l"/>
+            <arg value="-p0"/>
+            <arg value="-i"/>
+            <filelist dir="${patches.dir}/@DROP@" files="${@DROP@.patch.list}"/>
+        </apply>
+        <echo file="${@DROP@.root.dir}/PATCHED"
+	      message="Patches have been applied."/>
+    </target>
+
+</project>
