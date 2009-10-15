@@ -374,7 +374,8 @@ class Thread: public ThreadShadow {
 
   // GC support
   // Apply "f->do_oop" to all root oops in "this".
-  void oops_do(OopClosure* f);
+  // Apply "cf->do_code_blob" (if !NULL) to all code blobs active in frames
+  void oops_do(OopClosure* f, CodeBlobClosure* cf);
 
   // Handles the parallel case for the method below.
 private:
@@ -398,7 +399,7 @@ public:
   }
 
   // Sweeper support
-  void nmethods_do();
+  void nmethods_do(CodeBlobClosure* cf);
 
   // Tells if adr belong to this thread. This is used
   // for checking if a lock is owned by the running thread.
@@ -967,11 +968,6 @@ class JavaThread: public Thread {
     return (_suspend_flags & _ext_suspended) != 0;
   }
 
-  // legacy method that checked for either external suspension or vm suspension
-  bool is_any_suspended() const {
-    return is_ext_suspended();
-  }
-
   bool is_external_suspend_with_lock() const {
     MutexLockerEx ml(SR_lock(), Mutex::_no_safepoint_check_flag);
     return is_external_suspend();
@@ -997,10 +993,6 @@ class JavaThread: public Thread {
     return ret;
   }
 
-  bool is_any_suspended_with_lock() const {
-    MutexLockerEx ml(SR_lock(), Mutex::_no_safepoint_check_flag);
-    return is_any_suspended();
-  }
   // utility methods to see if we are doing some kind of suspension
   bool is_being_ext_suspended() const            {
     MutexLockerEx ml(SR_lock(), Mutex::_no_safepoint_check_flag);
@@ -1238,10 +1230,10 @@ class JavaThread: public Thread {
   void frames_do(void f(frame*, const RegisterMap*));
 
   // Memory operations
-  void oops_do(OopClosure* f);
+  void oops_do(OopClosure* f, CodeBlobClosure* cf);
 
   // Sweeper operations
-  void nmethods_do();
+  void nmethods_do(CodeBlobClosure* cf);
 
   // Memory management operations
   void gc_epilogue();
@@ -1629,9 +1621,9 @@ class Threads: AllStatic {
 
   // Apply "f->do_oop" to all root oops in all threads.
   // This version may only be called by sequential code.
-  static void oops_do(OopClosure* f);
+  static void oops_do(OopClosure* f, CodeBlobClosure* cf);
   // This version may be called by sequential or parallel code.
-  static void possibly_parallel_oops_do(OopClosure* f);
+  static void possibly_parallel_oops_do(OopClosure* f, CodeBlobClosure* cf);
   // This creates a list of GCTasks, one per thread.
   static void create_thread_roots_tasks(GCTaskQueue* q);
   // This creates a list of GCTasks, one per thread, for marking objects.
@@ -1639,13 +1631,13 @@ class Threads: AllStatic {
 
   // Apply "f->do_oop" to roots in all threads that
   // are part of compiled frames
-  static void compiled_frame_oops_do(OopClosure* f);
+  static void compiled_frame_oops_do(OopClosure* f, CodeBlobClosure* cf);
 
   static void convert_hcode_pointers();
   static void restore_hcode_pointers();
 
   // Sweeper
-  static void nmethods_do();
+  static void nmethods_do(CodeBlobClosure* cf);
 
   static void gc_epilogue();
   static void gc_prologue();

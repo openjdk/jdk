@@ -593,7 +593,7 @@ public class JavacParser implements Parser {
 //where
         boolean isZero(String s) {
             char[] cs = s.toCharArray();
-            int base = ((Character.toLowerCase(s.charAt(1)) == 'x') ? 16 : 10);
+            int base = ((cs.length > 1 && Character.toLowerCase(cs[1]) == 'x') ? 16 : 10);
             int i = ((base==16) ? 2 : 0);
             while (i < cs.length && (cs[i] == '0' || cs[i] == '.')) i++;
             return !(i < cs.length && (Character.digit(cs[i], base) > 0));
@@ -2236,7 +2236,7 @@ public class JavacParser implements Parser {
 
     /* AnnotationValue          = ConditionalExpression
      *                          | Annotation
-     *                          | "{" [ AnnotationValue { "," AnnotationValue } ] "}"
+     *                          | "{" [ AnnotationValue { "," AnnotationValue } ] [","] "}"
      */
     JCExpression annotationValue() {
         int pos;
@@ -2253,7 +2253,7 @@ public class JavacParser implements Parser {
                 buf.append(annotationValue());
                 while (S.token() == COMMA) {
                     S.nextToken();
-                    if (S.token() == RPAREN) break;
+                    if (S.token() == RBRACE) break;
                     buf.append(annotationValue());
                 }
             }

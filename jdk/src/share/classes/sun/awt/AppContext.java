@@ -40,10 +40,9 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
+import sun.util.logging.PlatformLogger;
 
 /**
  * The AppContext is a table referenced by ThreadGroup which stores
@@ -128,7 +127,7 @@ import java.beans.PropertyChangeListener;
  * @author  Fred Ecks
  */
 public final class AppContext {
-    private static final Logger log = Logger.getLogger("sun.awt.AppContext");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.AppContext");
 
     /* Since the contents of an AppContext are unique to each Java
      * session, this class should never be serialized. */
@@ -380,9 +379,7 @@ public final class AppContext {
                     try {
                         w.dispose();
                     } catch (Throwable t) {
-                        if (log.isLoggable(Level.FINER)) {
-                            log.log(Level.FINER, "exception occured while disposing app context", t);
-                        }
+                        log.finer("exception occured while disposing app context", t);
                     }
                 }
                 AccessController.doPrivileged(new PrivilegedAction() {

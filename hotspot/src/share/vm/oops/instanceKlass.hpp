@@ -217,6 +217,7 @@ class instanceKlass: public Klass {
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
   bool            _rewritten;            // methods rewritten.
   bool            _has_nonstatic_fields; // for sizing with UseCompressedOops
+  bool            _should_verify_class;  // allow caching of preverification
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
   ClassState      _init_state;           // state of class
@@ -362,6 +363,10 @@ class instanceKlass: public Klass {
   int  get_init_state()                    { return _init_state; } // Useful for debugging
   bool is_rewritten() const                { return _rewritten; }
 
+  // defineClass specified verification
+  bool should_verify_class() const         { return _should_verify_class; }
+  void set_should_verify_class(bool value) { _should_verify_class = value; }
+
   // marking
   bool is_marked_dependent() const         { return _is_marked_dependent; }
   void set_is_marked_dependent(bool value) { _is_marked_dependent = value; }
@@ -460,6 +465,10 @@ class instanceKlass: public Klass {
   // RedefineClasses() support for previous versions:
   void add_previous_version(instanceKlassHandle ikh, BitMap *emcp_methods,
          int emcp_method_count);
+  // If the _previous_versions array is non-NULL, then this klass
+  // has been redefined at least once even if we aren't currently
+  // tracking a previous version.
+  bool has_been_redefined() const { return _previous_versions != NULL; }
   bool has_previous_version() const;
   void init_previous_versions() {
     _previous_versions = NULL;
@@ -501,9 +510,14 @@ class instanceKlass: public Klass {
   void set_bootstrap_method(oop mh)                   { oop_store(&_bootstrap_method, mh); }
 
   // jmethodID support
-  static jmethodID get_jmethod_id(instanceKlassHandle ik_h, size_t idnum,
-                                  jmethodID new_id, jmethodID* new_jmeths);
-  static jmethodID jmethod_id_for_impl(instanceKlassHandle ik_h, methodHandle method_h);
+  static jmethodID get_jmethod_id(instanceKlassHandle ik_h,
+                     methodHandle method_h);
+  static jmethodID get_jmethod_id_fetch_or_update(instanceKlassHandle ik_h,
+                     size_t idnum, jmethodID new_id, jmethodID* new_jmeths,
+                     jmethodID* to_dealloc_id_p,
+                     jmethodID** to_dealloc_jmeths_p);
+  static void get_jmethod_id_length_value(jmethodID* cache, size_t idnum,
+                size_t *length_p, jmethodID* id_p);
   jmethodID jmethod_id_or_null(methodOop method);
 
   // cached itable index support
@@ -749,6 +763,11 @@ private:
   void set_init_thread(Thread *thread)  { _init_thread = thread; }
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
+  // The RedefineClasses() API can cause new method idnums to be needed
+  // which will cause the caches to grow. Safety requires different
+  // cache management logic if the caches can grow instead of just
+  // going from NULL to non-NULL.
+  bool idnum_can_increment() const      { return has_been_redefined(); }
   jmethodID* methods_jmethod_ids_acquire() const
          { return (jmethodID*)OrderAccess::load_ptr_acquire(&_methods_jmethod_ids); }
   void release_set_methods_jmethod_ids(jmethodID* jmeths)

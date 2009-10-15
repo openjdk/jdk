@@ -2322,6 +2322,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
 
   {
     TraceTime tm_m("par mark", print_phases(), true, gclog_or_tty);
+    ParallelScavengeHeap::ParStrongRootsScope psrs;
 
     GCTaskQueue* q = GCTaskQueue::create();
 
@@ -2335,6 +2336,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::system_dictionary));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jvmti));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::vm_symbols));
+    q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::code_cache));
 
     if (parallel_gc_threads > 1) {
       for (uint j = 0; j < parallel_gc_threads; j++) {
@@ -2408,7 +2410,7 @@ void PSParallelCompact::adjust_roots() {
   Universe::oops_do(adjust_root_pointer_closure());
   ReferenceProcessor::oops_do(adjust_root_pointer_closure());
   JNIHandles::oops_do(adjust_root_pointer_closure());   // Global (strong) JNI handles
-  Threads::oops_do(adjust_root_pointer_closure());
+  Threads::oops_do(adjust_root_pointer_closure(), NULL);
   ObjectSynchronizer::oops_do(adjust_root_pointer_closure());
   FlatProfiler::oops_do(adjust_root_pointer_closure());
   Management::oops_do(adjust_root_pointer_closure());
@@ -2752,7 +2754,6 @@ PSParallelCompact::revisit_weak_klass_link(ParCompactionManager* cm, Klass* k) {
   cm->revisit_klass_stack()->push(k);
 }
 
-#if ( defined(COMPILER1) || defined(COMPILER2) )
 void PSParallelCompact::revisit_mdo(ParCompactionManager* cm, DataLayout* p) {
   cm->revisit_mdo_stack()->push(p);
 }
@@ -2778,7 +2779,6 @@ void PSParallelCompact::follow_mdo_weak_refs() {
     follow_stack(cm);
   }
 }
-#endif //  ( COMPILER1 || COMPILER2 )
 
 
 #ifdef VALIDATE_MARK_SWEEP

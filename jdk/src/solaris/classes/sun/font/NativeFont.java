@@ -242,7 +242,8 @@ public class NativeFont extends PhysicalFont {
                 mapper = new NativeGlyphMapper(this);
             } else {
                 /* we need to delegate */
-                delegateFont = FontManager.getDefaultPhysicalFont();
+                SunFontManager fm = SunFontManager.getInstance();
+                delegateFont = fm.getDefaultPhysicalFont();
                 mapper = delegateFont.getMapper();
             }
         }
@@ -254,7 +255,8 @@ public class NativeFont extends PhysicalFont {
             return new NativeStrike(this, desc);
         } else {
             if (delegateFont == null) {
-                delegateFont = FontManager.getDefaultPhysicalFont();
+                SunFontManager fm = SunFontManager.getInstance();
+                delegateFont = fm.getDefaultPhysicalFont();
             }
             /* If no FileFont's are found, delegate font may be
              * a NativeFont, so we need to avoid recursing here.
@@ -314,7 +316,8 @@ public class NativeFont extends PhysicalFont {
 
     PhysicalFont getDelegateFont() {
         if (delegateFont == null) {
-            delegateFont = FontManager.getDefaultPhysicalFont();
+            SunFontManager fm = SunFontManager.getInstance();
+            delegateFont = fm.getDefaultPhysicalFont();
         }
         return delegateFont;
     }

@@ -28,7 +28,7 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.peer.*;
 import java.awt.event.*;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 // FIXME: tab traversal should be disabled when mouse is captured (4816336)
 
@@ -43,7 +43,7 @@ import java.util.logging.*;
 // TODO: make painting more efficient (i.e. when down arrow is pressed, only two items should need to be repainted.
 
 public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelStateListener {
-    private static final Logger log = Logger.getLogger("sun.awt.X11.XChoicePeer");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XChoicePeer");
 
     private static final int MAX_UNFURLED_ITEMS = 10;  // Maximum number of
     // items to be displayed
@@ -892,7 +892,7 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
                 if (transX > 0 && transX < width &&
                     transY > 0 && transY < height) {
                     int newIdx = helper.y2index(transY);
-                    if (log.isLoggable(Level.FINE)) {
+                    if (log.isLoggable(PlatformLogger.FINE)) {
                         log.fine("transX=" + transX + ", transY=" + transY
                                  + ",width=" + width + ", height=" + height
                                  + ", newIdx=" + newIdx + " on " + target);

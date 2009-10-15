@@ -33,16 +33,11 @@ package sun.security.krb5;
 
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
-import java.util.StringTokenizer;
 import sun.security.krb5.internal.ktab.*;
 import sun.security.krb5.internal.crypto.EType;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
-import java.util.Vector;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 
 /**
@@ -378,9 +373,9 @@ public class Credentials {
 
                 KRBError error = ke.getError();
                 // update salt in PrincipalName
-                byte[] newSalt = error.getSalt();
-                if (newSalt != null && newSalt.length > 0) {
-                    princ.setSalt(new String(newSalt));
+                String newSalt = error.getSalt();
+                if (newSalt != null && newSalt.length() > 0) {
+                    princ.setSalt(newSalt);
                 }
 
                 // refresh keys

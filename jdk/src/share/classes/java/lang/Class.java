@@ -265,7 +265,7 @@ public final
     }
 
     /** Called after security checks have been made. */
-    private static native Class forName0(String name, boolean initialize,
+    private static native Class<?> forName0(String name, boolean initialize,
                                             ClassLoader loader)
         throws ClassNotFoundException;
 
@@ -339,7 +339,7 @@ public final
                 );
             }
             try {
-                Class[] empty = {};
+                Class<?>[] empty = {};
                 final Constructor<T> c = getConstructor0(empty, Member.DECLARED);
                 // Disable accessibility checks on the constructor
                 // since we have to do the security check here anyway
@@ -361,7 +361,7 @@ public final
         // Security check (same as in java.lang.reflect.Constructor)
         int modifiers = tmpConstructor.getModifiers();
         if (!Reflection.quickCheckMemberAccess(this, modifiers)) {
-            Class caller = Reflection.getCallerClass(3);
+            Class<?> caller = Reflection.getCallerClass(3);
             if (newInstanceCallerCache != caller) {
                 Reflection.ensureMemberAccess(caller, this, null, modifiers);
                 newInstanceCallerCache = caller;
@@ -377,7 +377,7 @@ public final
         }
     }
     private volatile transient Constructor<T> cachedConstructor;
-    private volatile transient Class       newInstanceCallerCache;
+    private volatile transient Class<?>       newInstanceCallerCache;
 
 
     /**
@@ -565,8 +565,9 @@ public final
      *          represented by this object.
      */
     public String getName() {
+        String name = this.name;
         if (name == null)
-            name = getName0();
+            this.name = name = getName0();
         return name;
     }
 
@@ -637,7 +638,7 @@ public final
         if (getGenericSignature() != null)
             return (TypeVariable<Class<T>>[])getGenericInfo().getTypeParameters();
         else
-            return (TypeVariable<Class<T>>[])new TypeVariable[0];
+            return (TypeVariable<Class<T>>[])new TypeVariable<?>[0];
     }
 
 
@@ -900,7 +901,7 @@ public final
 
             MethodRepository typeInfo = MethodRepository.make(enclosingInfo.getDescriptor(),
                                                               getFactory());
-            Class      returnType       = toClass(typeInfo.getReturnType());
+            Class<?>   returnType       = toClass(typeInfo.getReturnType());
             Type []    parameterTypes   = typeInfo.getParameterTypes();
             Class<?>[] parameterClasses = new Class<?>[parameterTypes.length];
 
@@ -995,12 +996,12 @@ public final
 
     }
 
-    private static Class toClass(Type o) {
+    private static Class<?> toClass(Type o) {
         if (o instanceof GenericArrayType)
             return Array.newInstance(toClass(((GenericArrayType)o).getGenericComponentType()),
                                      0)
                 .getClass();
-        return (Class)o;
+        return (Class<?>)o;
      }
 
     /**
@@ -1041,7 +1042,7 @@ public final
              * Loop over all declared constructors; match number
              * of and type of parameters.
              */
-            for(Constructor c: enclosingInfo.getEnclosingClass().getDeclaredConstructors()) {
+            for(Constructor<?> c: enclosingInfo.getEnclosingClass().getDeclaredConstructors()) {
                 Class<?>[] candidateParamClasses = c.getParameterTypes();
                 if (candidateParamClasses.length == parameterClasses.length) {
                     boolean matches = true;
@@ -1303,12 +1304,12 @@ public final
         // has already been ok'd by the SecurityManager.
 
         return java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Class[]>() {
+            new java.security.PrivilegedAction<Class<?>[]>() {
                 public Class[] run() {
-                    List<Class> list = new ArrayList<Class>();
-                    Class currentClass = Class.this;
+                    List<Class<?>> list = new ArrayList<Class<?>>();
+                    Class<?> currentClass = Class.this;
                     while (currentClass != null) {
-                        Class[] members = currentClass.getDeclaredClasses();
+                        Class<?>[] members = currentClass.getDeclaredClasses();
                         for (int i = 0; i < members.length; i++) {
                             if (Modifier.isPublic(members[i].getModifiers())) {
                                 list.add(members[i]);
@@ -2190,7 +2191,7 @@ public final
             return name;
         }
         if (!name.startsWith("/")) {
-            Class c = this;
+            Class<?> c = this;
             while (c.isArray()) {
                 c = c.getComponentType();
             }
@@ -2564,12 +2565,12 @@ public final
         // out concrete implementations inherited from superclasses at
         // the end.
         MethodArray inheritedMethods = new MethodArray();
-        Class[] interfaces = getInterfaces();
+        Class<?>[] interfaces = getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
             inheritedMethods.addAll(interfaces[i].privateGetPublicMethods());
         }
         if (!isInterface()) {
-            Class c = getSuperclass();
+            Class<?> c = getSuperclass();
             if (c != null) {
                 MethodArray supers = new MethodArray();
                 supers.addAll(c.privateGetPublicMethods());
@@ -2631,16 +2632,16 @@ public final
             return res;
         }
         // Direct superinterfaces, recursively
-        Class[] interfaces = getInterfaces();
+        Class<?>[] interfaces = getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
-            Class c = interfaces[i];
+            Class<?> c = interfaces[i];
             if ((res = c.getField0(name)) != null) {
                 return res;
             }
         }
         // Direct superclass, recursively
         if (!isInterface()) {
-            Class c = getSuperclass();
+            Class<?> c = getSuperclass();
             if (c != null) {
                 if ((res = c.getField0(name)) != null) {
                     return res;
@@ -2652,7 +2653,7 @@ public final
 
     private static Method searchMethods(Method[] methods,
                                         String name,
-                                        Class[] parameterTypes)
+                                        Class<?>[] parameterTypes)
     {
         Method res = null;
         String internedName = name.intern();
@@ -2669,7 +2670,7 @@ public final
     }
 
 
-    private Method getMethod0(String name, Class[] parameterTypes) {
+    private Method getMethod0(String name, Class<?>[] parameterTypes) {
         // Note: the intent is that the search algorithm this routine
         // uses be equivalent to the ordering imposed by
         // privateGetPublicMethods(). It fetches only the declared
@@ -2686,7 +2687,7 @@ public final
         }
         // Search superclass's methods
         if (!isInterface()) {
-            Class c = getSuperclass();
+            Class<? super T> c = getSuperclass();
             if (c != null) {
                 if ((res = c.getMethod0(name, parameterTypes)) != null) {
                     return res;
@@ -2694,9 +2695,9 @@ public final
             }
         }
         // Search superinterfaces' methods
-        Class[] interfaces = getInterfaces();
+        Class<?>[] interfaces = getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
-            Class c = interfaces[i];
+            Class<?> c = interfaces[i];
             if ((res = c.getMethod0(name, parameterTypes)) != null) {
                 return res;
             }
@@ -2705,7 +2706,7 @@ public final
         return null;
     }
 
-    private Constructor<T> getConstructor0(Class[] parameterTypes,
+    private Constructor<T> getConstructor0(Class<?>[] parameterTypes,
                                         int which) throws NoSuchMethodException
     {
         Constructor<T>[] constructors = privateGetDeclaredConstructors((which == Member.PUBLIC));
@@ -2774,9 +2775,9 @@ public final
     private native Field[]       getDeclaredFields0(boolean publicOnly);
     private native Method[]      getDeclaredMethods0(boolean publicOnly);
     private native Constructor<T>[] getDeclaredConstructors0(boolean publicOnly);
-    private native Class[]   getDeclaredClasses0();
+    private native Class<?>[]   getDeclaredClasses0();
 
-    private static String        argumentTypesToString(Class[] argTypes) {
+    private static String        argumentTypesToString(Class<?>[] argTypes) {
         StringBuilder buf = new StringBuilder();
         buf.append("(");
         if (argTypes != null) {
@@ -2784,7 +2785,7 @@ public final
                 if (i > 0) {
                     buf.append(", ");
                 }
-                Class c = argTypes[i];
+                Class<?> c = argTypes[i];
                 buf.append((c == null) ? "null" : c.getName());
             }
         }
@@ -2857,7 +2858,7 @@ public final
     }
 
     // Retrieves the desired assertion status of this class from the VM
-    private static native boolean desiredAssertionStatus0(Class clazz);
+    private static native boolean desiredAssertionStatus0(Class<?> clazz);
 
     /**
      * Returns true if and only if this class was declared as an enum in the
@@ -2978,7 +2979,7 @@ public final
                     getName() + " is not an enum type");
             Map<String, T> m = new HashMap<String, T>(2 * universe.length);
             for (T constant : universe)
-                m.put(((Enum)constant).name(), constant);
+                m.put(((Enum<?>)constant).name(), constant);
             enumConstantDirectory = m;
         }
         return enumConstantDirectory;
@@ -3076,8 +3077,8 @@ public final
     }
 
     // Annotations cache
-    private transient Map<Class, Annotation> annotations;
-    private transient Map<Class, Annotation> declaredAnnotations;
+    private transient Map<Class<? extends Annotation>, Annotation> annotations;
+    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
 
     private synchronized void initAnnotationsIfNecessary() {
         clearCachesOnClassRedefinition();
@@ -3089,10 +3090,10 @@ public final
         if (superClass == null) {
             annotations = declaredAnnotations;
         } else {
-            annotations = new HashMap<Class, Annotation>();
+            annotations = new HashMap<Class<? extends Annotation>, Annotation>();
             superClass.initAnnotationsIfNecessary();
-            for (Map.Entry<Class, Annotation> e : superClass.annotations.entrySet()) {
-                Class annotationClass = e.getKey();
+            for (Map.Entry<Class<? extends Annotation>, Annotation> e : superClass.annotations.entrySet()) {
+                Class<? extends Annotation> annotationClass = e.getKey();
                 if (AnnotationType.getInstance(annotationClass).isInherited())
                     annotations.put(annotationClass, e.getValue());
             }

@@ -58,6 +58,8 @@ import java.util.StringTokenizer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import sun.misc.BootClassLoaderHook;
+
 /**
  * A representation of color profile data for device independent and
  * device dependent color spaces based on the International Color
@@ -1850,11 +1852,10 @@ public class ICC_Profile implements Serializable {
                 f = new File(fullPath);
                 if (!f.isFile()) {
                     //make sure file was installed in the kernel mode
-                    try {
-                        //kernel uses platform independent paths =>
-                        //   should not use platform separator char
-                        sun.jkernel.DownloadManager.downloadFile("lib/cmm/"+fileName);
-                    } catch (IOException ioe) {}
+                    BootClassLoaderHook hook = BootClassLoaderHook.getHook();
+                    if (hook.getHook() != null) {
+                        hook.prefetchFile("lib/cmm/"+fileName);
+                    }
                 }
             }
 

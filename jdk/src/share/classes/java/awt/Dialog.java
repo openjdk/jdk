@@ -856,7 +856,7 @@ public class Dialog extends Window {
         if (type == ModalityType.TOOLKIT_MODAL) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPermission(SecurityConstants.TOOLKIT_MODALITY_PERMISSION);
+                sm.checkPermission(SecurityConstants.AWT.TOOLKIT_MODALITY_PERMISSION);
             }
         }
         modalityType = type;

@@ -165,8 +165,20 @@ public:
   //   c) to never return a distinguished value (zero) with which such
   //      task-claiming variables may be initialized, to indicate "never
   //      claimed".
+ private:
   void change_strong_roots_parity();
+ public:
   int strong_roots_parity() { return _strong_roots_parity; }
+
+  // Call these in sequential code around process_strong_roots.
+  // strong_roots_prologue calls change_strong_roots_parity, if
+  // parallel tasks are enabled.
+  class StrongRootsScope : public MarkingCodeBlobClosure::MarkScope {
+  public:
+    StrongRootsScope(SharedHeap* outer, bool activate = true);
+    ~StrongRootsScope();
+  };
+  friend class StrongRootsScope;
 
   enum ScanningOption {
     SO_None                = 0x0,
@@ -198,15 +210,18 @@ public:
   // "SO_Symbols" applies the closure to all entries in SymbolsTable;
   // "SO_Strings" applies the closure to all entries in StringTable;
   // "SO_CodeCache" applies the closure to all elements of the CodeCache.
-  void process_strong_roots(bool collecting_perm_gen,
+  void process_strong_roots(bool activate_scope,
+                            bool collecting_perm_gen,
                             ScanningOption so,
                             OopClosure* roots,
+                            CodeBlobClosure* code_roots,
                             OopsInGenClosure* perm_blk);
 
   // Apply "blk" to all the weak roots of the system.  These include
   // JNI weak roots, the code cache, system dictionary, symbol table,
   // string table.
   void process_weak_roots(OopClosure* root_closure,
+                          CodeBlobClosure* code_roots,
                           OopClosure* non_root_closure);
 
 

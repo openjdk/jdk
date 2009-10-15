@@ -109,6 +109,16 @@ public class ChannelInputStream
         return ChannelInputStream.read(ch, bb, true);
     }
 
+    public int available() throws IOException {
+        // special case where the channel is to a file
+        if (ch instanceof SeekableByteChannel) {
+            SeekableByteChannel sbc = (SeekableByteChannel)ch;
+            long rem = Math.max(0, sbc.size() - sbc.position());
+            return (rem > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)rem;
+        }
+        return 0;
+    }
+
     public void close() throws IOException {
         ch.close();
     }

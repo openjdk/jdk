@@ -113,32 +113,38 @@ _system_drive:=$(call CheckValue,_system_drive,C:)
 
 # UNIXCOMMAND_PATH: path to where the most common Unix commands are.
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
-ifdef ALT_UNIXCOMMAND_PATH
-  xALT_UNIXCOMMAND_PATH  :="$(subst \,/,$(ALT_UNIXCOMMAND_PATH))"
-  fxALT_UNIXCOMMAND_PATH :=$(call FullPath,$(xALT_UNIXCOMMAND_PATH))
-  UNIXCOMMAND_PATH       :=$(call PrefixPath,$(fxALT_UNIXCOMMAND_PATH))
-else
-  ifdef USING_CYGWIN
-    UNIXCOMMAND_PATH :=$(call PrefixPath,/usr/bin)
+ifndef UNIXCOMMAND_PATH
+  ifdef ALT_UNIXCOMMAND_PATH
+    xALT_UNIXCOMMAND_PATH  :="$(subst \,/,$(ALT_UNIXCOMMAND_PATH))"
+    fxALT_UNIXCOMMAND_PATH :=$(call FullPath,$(xALT_UNIXCOMMAND_PATH))
+    UNIXCOMMAND_PATH       :=$(call PrefixPath,$(fxALT_UNIXCOMMAND_PATH))
   else
-    ifdef ROOTDIR
-      xROOTDIR :="$(subst \,/,$(ROOTDIR))"
-      _rootdir :=$(call FullPath,$(xROOTDIR))
+    ifdef USING_CYGWIN
+      UNIXCOMMAND_PATH :=$(call PrefixPath,/usr/bin)
     else
-      xROOTDIR :="$(_system_drive)/mksnt"
-      _rootdir :=$(call FullPath,$(xROOTDIR))
-    endif
-    ifneq ($(_rootdir),)
-      UNIXCOMMAND_PATH :=$(call PrefixPath,$(_rootdir)/mksnt)
+      ifdef ROOTDIR
+        xROOTDIR :="$(subst \,/,$(ROOTDIR))"
+        _rootdir :=$(call FullPath,$(xROOTDIR))
+      else
+        xROOTDIR :="$(_system_drive)/mksnt"
+        _rootdir :=$(call FullPath,$(xROOTDIR))
+      endif
+      ifneq ($(_rootdir),)
+        UNIXCOMMAND_PATH :=$(call PrefixPath,$(_rootdir)/mksnt)
+      endif
     endif
   endif
+  UNIXCOMMAND_PATH:=$(call AltCheckSpaces,UNIXCOMMAND_PATH)
+  export UNIXCOMMAND_PATH
 endif
-UNIXCOMMAND_PATH:=$(call AltCheckSpaces,UNIXCOMMAND_PATH)
 
 # Get version of MKS or CYGWIN
 ifdef USING_CYGWIN
-_CYGWIN_VER :=$(shell $(UNAME))
-CYGWIN_VER  :=$(call GetVersion,$(_CYGWIN_VER))
+  ifndef CYGWIN_VER
+    _CYGWIN_VER :=$(shell $(UNAME))
+    CYGWIN_VER  :=$(call GetVersion,$(_CYGWIN_VER))
+    export CYGWIN_VER
+  endif
 else # MKS
 _MKS_VER :=$(shell $(MKSINFO) 2>&1 | $(GREP) Release | $(TAIL) -1 | $(SED) -e 's@.*\(Release.*\)@\1@')
 MKS_VER  :=$(call GetVersion,$(_MKS_VER))
@@ -168,235 +174,234 @@ endif # MKS
 
 # Process Windows values into FullPath values, these paths may have \ chars
 
-# System root
-ifdef SYSTEMROOT
-  xSYSTEMROOT  :="$(subst \,/,$(SYSTEMROOT))"
-  _system_root :=$(call FullPath,$(xSYSTEMROOT))
-else
-  ifdef SystemRoot
-     xSYSTEMROOT :="$(subst \,/,$(SystemRoot))"
-    _system_root :=$(call FullPath,$(xSYSTEMROOT))
+# Program Files directory
+ifndef SHORTPROGRAMFILES
+  ifdef PROGRAMFILES
+    xPROGRAMFILES      :="$(subst \,/,$(PROGRAMFILES))"
   else
-    ifdef WINDIR
-      xWINDIR      :="$(subst \,/,$(WINDIR))"
-      _system_root :=$(call FullPath,$(xWINDIR))
+    ifeq ($(ARCH_DATA_MODEL), 32)
+      xPROGRAMFILES    :="$(_system_drive)/Program Files"
     else
-      ifdef windir
-        xWINDIR      :="$(subst \,/,$(windir))"
-        _system_root :=$(call FullPath,$(xWINDIR))
-      endif
+      xPROGRAMFILES    :="$(_system_drive)/Program Files (x86)"
     endif
   endif
-endif
-_system_root:=$(call CheckValue,_system_root,$(_system_drive)/WINNT)
-
-# Program Files directory
-ifdef PROGRAMFILES
-  xPROGRAMFILES      :="$(subst \,/,$(PROGRAMFILES))"
-else
   ifeq ($(ARCH_DATA_MODEL), 32)
-    xPROGRAMFILES    :="$(_system_drive)/Program Files"
+    SHORTPROGRAMFILES  :=$(call FullPath,$(xPROGRAMFILES))
   else
-    xPROGRAMFILES    :="$(_system_drive)/Program Files (x86)"
+    ifdef PROGRAMW6432
+      xPROGRAMW6432    :="$(subst \,/,$(PROGRAMW6432))"
+    else
+      xPROGRAMW6432    :="$(_system_drive)/Program Files"
+    endif
+    SHORTPROGRAMFILES  :=$(call FullPath,$(xPROGRAMW6432))
   endif
-endif
-ifeq ($(ARCH_DATA_MODEL), 32)
-  _program_files     :=$(call FullPath,$(xPROGRAMFILES))
-else
-  ifdef PROGRAMW6432
-    xPROGRAMW6432    :="$(subst \,/,$(PROGRAMW6432))"
-  else
-    xPROGRAMW6432    :="$(_system_drive)/Program Files"
+  ifneq ($(word 1,$(SHORTPROGRAMFILES)),$(SHORTPROGRAMFILES))
+    SHORTPROGRAMFILES  :=
   endif
-  _program_files     :=$(call FullPath,$(xPROGRAMW6432))
-  _program_files32   :=$(call FullPath,$(xPROGRAMFILES))
-  ifneq ($(word 1,$(_program_files32)),$(_program_files32))
-    _program_files32:=
-  endif
-endif
-ifneq ($(word 1,$(_program_files)),$(_program_files))
-  _program_files:=
+  export SHORTPROGRAMFILES
 endif
 
 # Compilers, SDK, and Visual Studio (MSDEV) [32bit is different from 64bit]
 ifeq ($(ARCH_DATA_MODEL), 32)
-  # Try looking in MSVCDIR or MSVCDir area first (set by vcvars32.bat)
-  ifdef MSVCDIR
-    xMSVCDIR  :="$(subst \,/,$(MSVCDIR))"
-    _msvc_dir :=$(call FullPath,$(xMSVCDIR))
-  else
-    ifdef MSVCDir
-      xMSVCDIR  :="$(subst \,/,$(MSVCDir))"
-      _msvc_dir :=$(call FullPath,$(xMSVCDIR))
+  ifndef SHORTMSVCDIR
+    # Try looking in MSVCDIR or MSVCDir area first (set by vcvars32.bat)
+    ifdef MSVCDIR
+      xMSVCDIR         :="$(subst \,/,$(MSVCDIR))"
+      SHORTMSVCDIR     :=$(call FullPath,$(xMSVCDIR))
     else
-      ifneq ($(_program_files),)
-        xMSVCDIR  :="$(_program_files)/Microsoft Visual Studio .NET 2003/Vc7"
-        _msvc_dir :=$(call FullPath,$(xMSVCDIR))
+      ifdef MSVCDir
+        xMSVCDIR       :="$(subst \,/,$(MSVCDir))"
+        SHORTMSVCDIR   :=$(call FullPath,$(xMSVCDIR))
+      else
+        ifneq ($(SHORTPROGRAMFILES),)
+          xMSVCDIR     :="$(SHORTPROGRAMFILES)/Microsoft Visual Studio .NET 2003/Vc7"
+          SHORTMSVCDIR :=$(call FullPath,$(xMSVCDIR))
+        endif
       endif
     endif
-  endif
-  ifneq ($(subst MSDev98,OLDOLDOLD,$(_msvc_dir)),$(_msvc_dir))
-    _msvc_dir :=
-  endif
-  # If we still don't have it, look for VS71COMNTOOLS, setup by installer?
-  ifeq ($(_msvc_dir),)
-    ifdef VS71COMNTOOLS  # /Common/Tools directory, use ../../Vc7
-      xVS71COMNTOOLS :="$(subst \,/,$(VS71COMNTOOLS))"
-      _vs71tools     :=$(call FullPath,$(xVS71COMNTOOLS))
+    ifneq ($(subst MSDev98,OLDOLDOLD,$(SHORTMSVCDIR)),$(SHORTMSVCDIR))
+      SHORTMSVCDIR     :=
     endif
-    ifneq ($(_vs71tools),)
-      _msvc_dir :=$(_vs71tools)/../../Vc7
+    # If we still don't have it, look for VS71COMNTOOLS, setup by installer?
+    ifeq ($(SHORTMSVCDIR),)
+      ifdef VS71COMNTOOLS  # /Common/Tools directory, use ../../Vc7
+        xVS71COMNTOOLS :="$(subst \,/,$(VS71COMNTOOLS))"
+        _vs71tools     :=$(call FullPath,$(xVS71COMNTOOLS))
+      endif
+      ifneq ($(_vs71tools),)
+        SHORTMSVCDIR   :=$(_vs71tools)/../../Vc7
+      endif
     endif
+    export SHORTMSVCDIR
   endif
-  ifneq ($(_msvc_dir),)
-    _compiler_bin :=$(_msvc_dir)/Bin
-    _redist_sdk   :=$(_msvc_dir)/../SDK/v1.1/Bin
-    _ms_sdk       :=$(_msvc_dir)/PlatformSDK
+  ifneq ($(SHORTMSVCDIR),)
+    SHORTCOMPILERBIN   :=$(SHORTMSVCDIR)/Bin
+    SHORTPSDK          :=$(SHORTMSVCDIR)/PlatformSDK
+    export SHORTCOMPILERBIN
+    export SHORTPSDK
   endif
 endif
 
 # The Microsoft Platform SDK installed by itself
-ifneq ($(_program_files),)
-  xPSDK  :="$(_program_files)/Microsoft Platform SDK"
-  _psdk  :=$(call FullPath,$(xPSDK))
-  ifeq ($(_psdk),)
-    xPSDK  :="$(_program_files)/Microsoft SDK"
-    _psdk :=$(call FullPath,$(xMSSDK))
+ifneq ($(SHORTPROGRAMFILES),)
+  ifndef SHORTPSDK
+    xPSDK       :="$(SHORTPROGRAMFILES)/Microsoft Platform SDK"
+    SHORTPSDK   :=$(call FullPath,$(xPSDK))
+    ifeq ($(SHORTPSDK),)
+      xPSDK     :="$(SHORTPROGRAMFILES)/Microsoft SDK"
+      SHORTPSDK :=$(call FullPath,$(xMSSDK))
+    endif
+    export SHORTPSDK
   endif
 endif
 
 # If no SDK found yet, look in other places
-ifeq ($(_ms_sdk),)
+ifndef SHORTPSDK
   ifdef MSSDK
-    xMSSDK  :="$(subst \,/,$(MSSDK))"
-    _ms_sdk :=$(call FullPath,$(xMSSDK))
+    xMSSDK      :="$(subst \,/,$(MSSDK))"
+    SHORTPSDK   :=$(call FullPath,$(xMSSDK))
   else
     ifdef MSSdk
-      xMSSDK  :="$(subst \,/,$(MSSdk))"
-      _ms_sdk :=$(call FullPath,$(xMSSDK))
-    else
-      _ms_sdk :=$(_psdk)
+      xMSSDK    :="$(subst \,/,$(MSSdk))"
+      SHORTPSDK :=$(call FullPath,$(xMSSDK))
     endif
   endif
+  export SHORTPSDK
 endif
 
 # Compilers for 64bit are from SDK
 ifeq ($(ARCH_DATA_MODEL), 64)
-  xMSSDK61 :="C:/Program Files/Microsoft SDKs/Windows/v6.1/"
-  MSSDK61 :=$(call FullPath,$(xMSSDK61))
-  xVS2008 :="C:/Program Files (x86)/Microsoft Visual Studio 9.0/"
-  _vs2008 :=$(call FullPath,$(xVS2008))
-  ifneq ($(_vs2008),)
-    ifeq ($(ARCH), ia64)
-      _compiler_bin :=$(_vs2008)/VC/Bin/x86_ia64
-    endif
-    ifeq ($(ARCH), amd64)
-      _compiler_bin :=$(_vs2008)/VC/Bin/$(ARCH)
-      _redist_sdk   :=$(MSSDK61)/VC/redist
-    endif
-  else
-    ifneq ($(_ms_sdk),)
+  ifndef SHORTCOMPILERBIN
+    xMSSDK61 :="C:/Program Files/Microsoft SDKs/Windows/v6.1/"
+    MSSDK61 :=$(call FullPath,$(xMSSDK61))
+    xVS2008 :="C:/Program Files (x86)/Microsoft Visual Studio 9.0/"
+    _vs2008 :=$(call FullPath,$(xVS2008))
+    ifneq ($(_vs2008),)
       ifeq ($(ARCH), ia64)
-        _compiler_bin :=$(_ms_sdk)/Bin/Win64
+        SHORTCOMPILERBIN :=$(_vs2008)/VC/Bin/x86_ia64
       endif
       ifeq ($(ARCH), amd64)
-        _compiler_bin :=$(_ms_sdk)/Bin/Win64/x86/$(ARCH)
-        _redist_sdk   :=$(_ms_sdk)/redist/win64/AMD64
+        SHORTCOMPILERBIN :=$(_vs2008)/VC/Bin/$(ARCH)
+      endif
+    else
+      ifneq ($(SHORTPSDK),)
+        ifeq ($(ARCH), ia64)
+          SHORTCOMPILERBIN :=$(SHORTPSDK)/Bin/Win64
+        endif
+        ifeq ($(ARCH), amd64)
+          SHORTCOMPILERBIN :=$(SHORTPSDK)/Bin/Win64/x86/$(ARCH)
+        endif
       endif
     endif
+    export SHORTCOMPILERBIN
   endif
 endif
 
 # Location on system where jdk installs might be
-ifneq ($(_program_files),)
-  USRJDKINSTANCES_PATH =$(_program_files)/Java
+ifneq ($(SHORTPROGRAMFILES),)
+  USRJDKINSTANCES_PATH =$(SHORTPROGRAMFILES)/Java
 else
   USRJDKINSTANCES_PATH =$(_system_drive)/
 endif
 
 # SLASH_JAVA: location of all network accessable files
-ifdef ALT_SLASH_JAVA
-  xALT_SLASH_JAVA :="$(subst \,/,$(ALT_SLASH_JAVA))"
-  SLASH_JAVA      :=$(call FullPath,$(xALT_SLASH_JAVA))
-else
-  ifdef ALT_JDK_JAVA_DRIVE
-    SLASH_JAVA  =$(JDK_JAVA_DRIVE)
+ifndef SLASH_JAVA
+  ifdef ALT_SLASH_JAVA
+    xALT_SLASH_JAVA :="$(subst \,/,$(ALT_SLASH_JAVA))"
+    SLASH_JAVA      :=$(call FullPath,$(xALT_SLASH_JAVA))
   else
-    SLASH_JAVA  =J:
+    ifdef ALT_JDK_JAVA_DRIVE
+      SLASH_JAVA  =$(JDK_JAVA_DRIVE)
+    else
+      SLASH_JAVA  =J:
+    endif
   endif
+  SLASH_JAVA:=$(call AltCheckSpaces,SLASH_JAVA)
+  SLASH_JAVA:=$(call AltCheckValue,SLASH_JAVA)
+  export SLASH_JAVA
 endif
-SLASH_JAVA:=$(call AltCheckSpaces,SLASH_JAVA)
-SLASH_JAVA:=$(call AltCheckValue,SLASH_JAVA)
 
 # JDK_DEVTOOLS_DIR: common path for all the java devtools
-ifdef ALT_JDK_DEVTOOLS_DIR
-  xALT_JDK_DEVTOOLS_DIR :="$(subst \,/,$(ALT_JDK_DEVTOOLS_DIR))"
-  JDK_DEVTOOLS_DIR      :=$(call FullPath,$(xALT_JDK_DEVTOOLS_DIR))
-else
-  JDK_DEVTOOLS_DIR =$(SLASH_JAVA)/devtools
+ifndef JDK_DEVTOOLS_DIR
+  ifdef ALT_JDK_DEVTOOLS_DIR
+    xALT_JDK_DEVTOOLS_DIR :="$(subst \,/,$(ALT_JDK_DEVTOOLS_DIR))"
+    JDK_DEVTOOLS_DIR      :=$(call FullPath,$(xALT_JDK_DEVTOOLS_DIR))
+  else
+    JDK_DEVTOOLS_DIR =$(SLASH_JAVA)/devtools
+  endif
+  JDK_DEVTOOLS_DIR:=$(call AltCheckSpaces,JDK_DEVTOOLS_DIR)
+  JDK_DEVTOOLS_DIR:=$(call AltCheckValue,JDK_DEVTOOLS_DIR)
+  export JDK_DEVTOOLS_DIR
 endif
-JDK_DEVTOOLS_DIR:=$(call AltCheckSpaces,JDK_DEVTOOLS_DIR)
-JDK_DEVTOOLS_DIR:=$(call AltCheckValue,JDK_DEVTOOLS_DIR)
 
 # COMPILER_PATH: path to where the compiler and tools are installed.
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
-ifdef ALT_COMPILER_PATH
-  xALT_COMPILER_PATH  :="$(subst \,/,$(ALT_COMPILER_PATH))"
-  fxALT_COMPILER_PATH :=$(call FullPath,$(xALT_COMPILER_PATH))
-  COMPILER_PATH       :=$(call PrefixPath,$(fxALT_COMPILER_PATH))
-else
-  COMPILER_PATH :=$(call PrefixPath,$(_compiler_bin))
+ifndef COMPILER_PATH
+  ifdef ALT_COMPILER_PATH
+    xALT_COMPILER_PATH  :="$(subst \,/,$(ALT_COMPILER_PATH))"
+    fxALT_COMPILER_PATH :=$(call FullPath,$(xALT_COMPILER_PATH))
+    COMPILER_PATH       :=$(call PrefixPath,$(fxALT_COMPILER_PATH))
+  else
+    COMPILER_PATH :=$(call PrefixPath,$(SHORTCOMPILERBIN))
+  endif
+  COMPILER_PATH :=$(call AltCheckSpaces,COMPILER_PATH)
+  export COMPILER_PATH
 endif
-COMPILER_PATH :=$(call AltCheckSpaces,COMPILER_PATH)
 
 # MSDEVTOOLS_PATH: path to where the additional MS Compiler tools are.
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
-ifdef ALT_MSDEVTOOLS_PATH
-  xALT_MSDEVTOOLS_PATH  :="$(subst \,/,$(ALT_MSDEVTOOLS_PATH))"
-  fxALT_MSDEVTOOLS_PATH :=$(call FullPath,$(xALT_MSDEVTOOLS_PATH))
-  MSDEVTOOLS_PATH       :=$(call PrefixPath,$(fxALT_MSDEVTOOLS_PATH))
-else
-  ifeq ($(ARCH_DATA_MODEL), 64)
-    ifdef MSTOOLS
-      xMSTOOLS  :="$(subst \,/,$(MSTOOLS))"
-      _ms_tools :=$(call FullPath,$(xMSTOOLS))
-    else
-      ifdef Mstools
-        xMSTOOLS  :="$(subst \,/,$(Mstools))"
+ifndef MSDEVTOOLS_PATH
+  ifdef ALT_MSDEVTOOLS_PATH
+    xALT_MSDEVTOOLS_PATH  :="$(subst \,/,$(ALT_MSDEVTOOLS_PATH))"
+    fxALT_MSDEVTOOLS_PATH :=$(call FullPath,$(xALT_MSDEVTOOLS_PATH))
+    MSDEVTOOLS_PATH       :=$(call PrefixPath,$(fxALT_MSDEVTOOLS_PATH))
+  else
+    ifeq ($(ARCH_DATA_MODEL), 64)
+      ifdef MSTOOLS
+        xMSTOOLS  :="$(subst \,/,$(MSTOOLS))"
         _ms_tools :=$(call FullPath,$(xMSTOOLS))
       else
-        _ms_tools :=
+        ifdef Mstools
+          xMSTOOLS  :="$(subst \,/,$(Mstools))"
+          _ms_tools :=$(call FullPath,$(xMSTOOLS))
+        else
+          _ms_tools :=
+        endif
       endif
-    endif
-    ifneq ($(_ms_tools),)
-      _ms_tools_bin :=$(_ms_tools)/Bin
+      ifneq ($(_ms_tools),)
+        _ms_tools_bin :=$(_ms_tools)/Bin
+      else
+        # Assumes compiler bin is .../Bin/win64/x86/AMD64, rc.exe is 3 levels up
+        _ms_tools_bin :=$(SHORTCOMPILERBIN)/../../..
+      endif
     else
-      # Assumes compiler bin is .../Bin/win64/x86/AMD64, rc.exe is 3 levels up
-      _ms_tools_bin :=$(_compiler_bin)/../../..
+      _ms_tools_bin :=$(SHORTCOMPILERBIN)
     endif
-  else
-    _ms_tools_bin :=$(_compiler_bin)
+    MSDEVTOOLS_PATH :=$(call PrefixPath,$(_ms_tools_bin))
   endif
-  MSDEVTOOLS_PATH :=$(call PrefixPath,$(_ms_tools_bin))
+  MSDEVTOOLS_PATH:=$(call AltCheckSpaces,MSDEVTOOLS_PATH)
+  export MSDEVTOOLS_PATH
 endif
-MSDEVTOOLS_PATH:=$(call AltCheckSpaces,MSDEVTOOLS_PATH)
 
 # DEVTOOLS_PATH: for other tools required for building (such as zip, etc.)
 #  NOTE: Must end with / so that it could be empty, allowing PATH usage.
-ifdef ALT_DEVTOOLS_PATH
-  xALT_DEVTOOLS_PATH  :="$(subst \,/,$(ALT_DEVTOOLS_PATH))"
-  fxALT_DEVTOOLS_PATH :=$(call FullPath,$(xALT_DEVTOOLS_PATH))
-  DEVTOOLS_PATH       :=$(call PrefixPath,$(fxALT_DEVTOOLS_PATH))
-else
-  ifdef USING_CYGWIN
-    DEVTOOLS_PATH :=$(UNIXCOMMAND_PATH)
+ifndef DEVTOOLS_PATH
+  ifdef ALT_DEVTOOLS_PATH
+    xALT_DEVTOOLS_PATH  :="$(subst \,/,$(ALT_DEVTOOLS_PATH))"
+    fxALT_DEVTOOLS_PATH :=$(call FullPath,$(xALT_DEVTOOLS_PATH))
+    DEVTOOLS_PATH       :=$(call PrefixPath,$(fxALT_DEVTOOLS_PATH))
   else
-    xDEVTOOLS_PATH  :="$(_system_drive)/utils"
-    fxDEVTOOLS_PATH :=$(call FullPath,$(xDEVTOOLS_PATH))
-    DEVTOOLS_PATH  :=$(call PrefixPath,$(fxDEVTOOLS_PATH))
+    ifdef USING_CYGWIN
+      DEVTOOLS_PATH :=$(UNIXCOMMAND_PATH)
+    else
+      xDEVTOOLS_PATH  :="$(_system_drive)/utils"
+      fxDEVTOOLS_PATH :=$(call FullPath,$(xDEVTOOLS_PATH))
+      DEVTOOLS_PATH  :=$(call PrefixPath,$(fxDEVTOOLS_PATH))
+    endif
   endif
+  DEVTOOLS_PATH:=$(call AltCheckSpaces,DEVTOOLS_PATH)
+  export DEVTOOLS_PATH
 endif
-DEVTOOLS_PATH:=$(call AltCheckSpaces,DEVTOOLS_PATH)
 
 # _BOOTDIR1: First choice for a Bootstrap JDK, previous released JDK.
 # _BOOTDIR2: Second choice
@@ -410,20 +415,26 @@ endif
 
 # BUILD_JDK_IMPORT_PATH: location of JDK install trees to import for
 #   multiple platforms, e.g. windows-i586, solaris-sparc, linux-586, etc.
-ifdef ALT_BUILD_JDK_IMPORT_PATH
-  BUILD_JDK_IMPORT_PATH  :=$(call FullPath,$(ALT_BUILD_JDK_IMPORT_PATH))
-else
-  BUILD_JDK_IMPORT_PATH   = $(PROMOTED_BUILD_BINARIES)
+ifndef BUILD_JDK_IMPORT_PATH
+  ifdef ALT_BUILD_JDK_IMPORT_PATH
+    BUILD_JDK_IMPORT_PATH  :=$(call FullPath,$(ALT_BUILD_JDK_IMPORT_PATH))
+  else
+    BUILD_JDK_IMPORT_PATH   = $(PROMOTED_BUILD_BINARIES)
+  endif
+  BUILD_JDK_IMPORT_PATH:=$(call AltCheckSpaces,BUILD_JDK_IMPORT_PATH)
+  BUILD_JDK_IMPORT_PATH:=$(call AltCheckValue,BUILD_JDK_IMPORT_PATH)
+  export BUILD_JDK_IMPORT_PATH
 endif
-BUILD_JDK_IMPORT_PATH:=$(call AltCheckSpaces,BUILD_JDK_IMPORT_PATH)
-BUILD_JDK_IMPORT_PATH:=$(call AltCheckValue,BUILD_JDK_IMPORT_PATH)
 
 # JDK_IMPORT_PATH: location of previously built JDK (this version) to import
-ifdef ALT_JDK_IMPORT_PATH
-  JDK_IMPORT_PATH  :=$(call FullPath,$(ALT_JDK_IMPORT_PATH))
-else
-  JDK_IMPORT_PATH   = $(BUILD_JDK_IMPORT_PATH)/$(PLATFORM)-$(ARCH)$(_JDK_IMPORT_VARIANT)
+ifndef JDK_IMPORT_PATH
+  ifdef ALT_JDK_IMPORT_PATH
+    JDK_IMPORT_PATH  :=$(call FullPath,$(ALT_JDK_IMPORT_PATH))
+  else
+    JDK_IMPORT_PATH   = $(BUILD_JDK_IMPORT_PATH)/$(PLATFORM)-$(ARCH)$(_JDK_IMPORT_VARIANT)
+  endif
+  JDK_IMPORT_PATH:=$(call AltCheckSpaces,JDK_IMPORT_PATH)
+  JDK_IMPORT_PATH:=$(call AltCheckValue,JDK_IMPORT_PATH)
+  export JDK_IMPORT_PATH
 endif
-JDK_IMPORT_PATH:=$(call AltCheckSpaces,JDK_IMPORT_PATH)
-JDK_IMPORT_PATH:=$(call AltCheckValue,JDK_IMPORT_PATH)
 
