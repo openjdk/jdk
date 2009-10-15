@@ -85,7 +85,7 @@ ifneq (,$(findstring $(PLATFORM), linux solaris))	# UNIX systems
 	endif
     endif
     ifeq ($(PLATFORM), linux)
-	LDFLAGS += -z origin
+	LDFLAGS += -Wl,-z -Wl,origin
 	LDFLAGS += -Wl,--allow-shlib-undefined
 	LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/../lib/$(LIBARCH)/jli
 	LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/../jre/lib/$(LIBARCH)/jli
@@ -279,8 +279,14 @@ $(OBJDIR)/main.$(OBJECT_SUFFIX): $(LAUNCHER_SHARE_SRC)/bin/main.c
 
 #
 # How to install jvm.cfg. 
-# 
-$(JVMCFG): $(LAUNCHER_PLATFORM_SRC)/bin/$(ARCH)/jvm.cfg 
+#
+ifeq ($(ZERO_BUILD), true)
+JVMCFG_ARCH = zero
+else
+JVMCFG_ARCH = $(ARCH)
+endif
+
+$(JVMCFG): $(LAUNCHER_PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg 
 	$(install-file)
 
 #
