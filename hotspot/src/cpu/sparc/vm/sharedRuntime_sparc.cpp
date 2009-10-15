@@ -3213,9 +3213,8 @@ void SharedRuntime::generate_deopt_blob() {
   Register        Oreturn0           = O0;
   Register        Oreturn1           = O1;
   Register        O2UnrollBlock      = O2;
-  Register        O3tmp              = O3;
-  Register        I5exception_tmp    = I5;
-  Register        G4exception_tmp    = G4_scratch;
+  Register        L0deopt_mode       = L0;
+  Register        G4deopt_mode       = G4_scratch;
   int             frame_size_words;
   Address         saved_Freturn0_addr(FP, -sizeof(double) + STACK_BIAS);
 #if !defined(_LP64) && defined(COMPILER2)
@@ -3265,7 +3264,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   map = RegisterSaver::save_live_registers(masm, 0, &frame_size_words);
   __ ba(false, cont);
-  __ delayed()->mov(Deoptimization::Unpack_deopt, I5exception_tmp);
+  __ delayed()->mov(Deoptimization::Unpack_deopt, L0deopt_mode);
 
   int exception_offset = __ offset() - start;
 
@@ -3316,7 +3315,7 @@ void SharedRuntime::generate_deopt_blob() {
 #endif
 
   __ ba(false, cont);
-  __ delayed()->mov(Deoptimization::Unpack_exception, I5exception_tmp);;
+  __ delayed()->mov(Deoptimization::Unpack_exception, L0deopt_mode);;
 
   //
   // Reexecute entry, similar to c2 uncommon trap
@@ -3326,7 +3325,7 @@ void SharedRuntime::generate_deopt_blob() {
   // No need to update oop_map  as each call to save_live_registers will produce identical oopmap
   (void) RegisterSaver::save_live_registers(masm, 0, &frame_size_words);
 
-  __ mov(Deoptimization::Unpack_reexecute, I5exception_tmp);
+  __ mov(Deoptimization::Unpack_reexecute, L0deopt_mode);
 
   __ bind(cont);
 
@@ -3349,14 +3348,14 @@ void SharedRuntime::generate_deopt_blob() {
   // NOTE: we know that only O0/O1 will be reloaded by restore_result_registers
   // so this move will survive
 
-  __ mov(I5exception_tmp, G4exception_tmp);
+  __ mov(L0deopt_mode, G4deopt_mode);
 
   __ mov(O0, O2UnrollBlock->after_save());
 
   RegisterSaver::restore_result_registers(masm);
 
   Label noException;
-  __ cmp(G4exception_tmp, Deoptimization::Unpack_exception);   // Was exception pending?
+  __ cmp(G4deopt_mode, Deoptimization::Unpack_exception);   // Was exception pending?
   __ br(Assembler::notEqual, false, Assembler::pt, noException);
   __ delayed()->nop();
 
@@ -3390,10 +3389,10 @@ void SharedRuntime::generate_deopt_blob() {
   }
 #endif
   __ set_last_Java_frame(SP, noreg);
-  __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames), G2_thread, G4exception_tmp);
+  __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames), G2_thread, G4deopt_mode);
 #else
   // LP64 uses g4 in set_last_Java_frame
-  __ mov(G4exception_tmp, O1);
+  __ mov(G4deopt_mode, O1);
   __ set_last_Java_frame(SP, G0);
   __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames), G2_thread, O1);
 #endif
@@ -3446,7 +3445,6 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #endif
   MacroAssembler* masm               = new MacroAssembler(&buffer);
   Register        O2UnrollBlock      = O2;
-  Register        O3tmp              = O3;
   Register        O2klass_index      = O2;
 
   //
