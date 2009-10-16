@@ -8634,8 +8634,10 @@ void MacroAssembler::char_arrays_equals(bool is_array_equ, Register ary1, Regist
 
   if (is_array_equ) {
     // Need additional checks for arrays_equals.
-    andptr(ary1, ary2);
-    jcc(Assembler::zero, FALSE_LABEL); // One pointer is NULL
+    testptr(ary1, ary1);
+    jcc(Assembler::zero, FALSE_LABEL);
+    testptr(ary2, ary2);
+    jcc(Assembler::zero, FALSE_LABEL);
 
     // Check the lengths
     movl(limit, Address(ary1, length_offset));
