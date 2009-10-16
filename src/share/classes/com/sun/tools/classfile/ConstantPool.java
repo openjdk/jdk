@@ -369,14 +369,33 @@ public class ConstantPool {
             return 3;
         }
 
+        /**
+         * Get the raw value of the class referenced by this constant pool entry.
+         * This will either be the name of the class, in internal form, or a
+         * descriptor for an array class.
+         * @return the raw value of the class
+         */
         public String getName() throws ConstantPoolException {
             return cp.getUTF8Value(name_index);
         }
 
+        /**
+         * If this constant pool entry identifies either a class or interface type,
+         * or a possibly multi-dimensional array of a class of interface type,
+         * return the name of the class or interface in internal form. Otherwise,
+         * (i.e. if this is a possibly multi-dimensional array of a primitive type),
+         * return null.
+         * @return the base class or interface name
+         */
         public String getBaseName() throws ConstantPoolException {
             String name = getName();
-            int index = name.indexOf("[L") + 1;
-            return name.substring(index);
+            if (name.startsWith("[")) {
+                int index = name.indexOf("[L");
+                if (index == -1)
+                    return null;
+                return name.substring(index + 2, name.length() - 1);
+            } else
+                return name;
         }
 
         public int getDimensionCount() throws ConstantPoolException {
