@@ -350,7 +350,7 @@ public class Proxy implements java.io.Serializable {
             throw new IllegalArgumentException("interface limit exceeded");
         }
 
-        Class proxyClass = null;
+        Class<?> proxyClass = null;
 
         /* collect interface names to use as key for proxy class cache */
         String[] interfaceNames = new String[interfaces.length];
@@ -364,7 +364,7 @@ public class Proxy implements java.io.Serializable {
              * interface to the same Class object.
              */
             String interfaceName = interfaces[i].getName();
-            Class interfaceClass = null;
+            Class<?> interfaceClass = null;
             try {
                 interfaceClass = Class.forName(interfaceName, false, loader);
             } catch (ClassNotFoundException e) {

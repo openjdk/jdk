@@ -33,7 +33,6 @@ import java.util.Set;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -428,7 +427,7 @@ public class Log extends AbstractLog {
             JavaFileObject file = source.getFile();
             if (file != null)
                 printLines(errWriter,
-                           JavacFileManager.getJavacFileName(file) + ":" +
+                           file.getName() + ":" +
                            line + ": " + msg);
             printErrLine(pos, errWriter);
         }

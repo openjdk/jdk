@@ -69,10 +69,6 @@ public class DiagnosticSource {
         return fileObject;
     }
 
-    public CharSequence getName()  {
-        return JavacFileManager.getJavacBaseFileName(fileObject);
-    }
-
     /** Return the one-based line number associated with a given pos
      * for the current source file.  Zero is returned if no line exists
      * for the given position.

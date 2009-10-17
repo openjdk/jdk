@@ -201,7 +201,7 @@ public class Apt extends ListBuffer<Env<AttrContext>> {
                     computeAnnotationSet(param, annotationSet);
 
             if (symbol.members() != null) {
-                for(Scope.Entry e: symbol.members().table)
+                for(Scope.Entry e = symbol.members().elems; e != null; e = e.sibling)
                     computeAnnotationSet(e.sym, annotationSet);
             }
         }

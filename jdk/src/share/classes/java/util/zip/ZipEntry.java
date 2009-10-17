@@ -26,6 +26,7 @@
 package java.util.zip;
 
 import java.util.Date;
+import sun.misc.BootClassLoaderHook;
 
 /**
  * This class is used to represent a ZIP file entry.
@@ -109,12 +110,16 @@ class ZipEntry implements ZipConstants, Cloneable {
      * @see #getTime()
      */
     public void setTime(long time) {
-        // fix for bug 6625963: we bypass time calculations while Kernel is
-        // downloading bundles, since they aren't necessary and would cause
-        // the Kernel core to depend upon the (very large) time zone data
-        if (sun.misc.VM.isBootedKernelVM() &&
-            sun.jkernel.DownloadManager.isCurrentThreadDownloading()) {
-            this.time = sun.jkernel.DownloadManager.KERNEL_STATIC_MODTIME;
+        // Same value as defined in sun.jkernel.DownloadManager.KERNEL_STATIC_MODTIME
+        // to avoid direct reference to DownoadManager class.  Need to revisit
+        // if this is needed any more (see comment in the DownloadManager class)
+        final int KERNEL_STATIC_MODTIME = 10000000;
+        BootClassLoaderHook hook = BootClassLoaderHook.getHook();
+        if (hook != null && hook.isCurrentThreadPrefetching()) {
+            // fix for bug 6625963: we bypass time calculations while Kernel is
+            // downloading bundles, since they aren't necessary and would cause
+            // the Kernel core to depend upon the (very large) time zone data
+            this.time = KERNEL_STATIC_MODTIME;
         } else {
             this.time = javaToDosTime(time);
         }

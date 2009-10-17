@@ -193,6 +193,19 @@ public class SwingUtilities2 {
     }
 
     /**
+     * Fill the character buffer cache.  Return the buffer length.
+     */
+    private static int syncCharsBuffer(String s) {
+        int length = s.length();
+        if ((charsBuffer == null) || (charsBuffer.length < length)) {
+            charsBuffer = s.toCharArray();
+        } else {
+            s.getChars(0, length, charsBuffer, 0);
+        }
+        return length;
+    }
+
+    /**
      * checks whether TextLayout is required to handle characters.
      *
      * @param text characters to be tested
@@ -237,15 +250,23 @@ public class SwingUtilities2 {
      * Returns the left side bearing of the first character of string. The
      * left side bearing is calculated from the passed in
      * FontMetrics.  If the passed in String is less than one
-     * character, this will throw a StringIndexOutOfBoundsException exception.
+     * character {@code 0} is returned.
      *
      * @param c JComponent that will display the string
      * @param fm FontMetrics used to measure the String width
      * @param string String to get the left side bearing for.
+     * @throws NullPointerException if {@code string} is {@code null}
+     *
+     * @return the left side bearing of the first character of string
+     * or {@code 0} if the string is empty
      */
     public static int getLeftSideBearing(JComponent c, FontMetrics fm,
                                          String string) {
-        return getLeftSideBearing(c, fm, string.charAt(0));
+        int res = 0;
+        if (!string.isEmpty()) {
+            res = getLeftSideBearing(c, fm, string.charAt(0));
+        }
+        return res;
     }
 
     /**
@@ -353,7 +374,21 @@ public class SwingUtilities2 {
         if (string == null || string.equals("")) {
             return 0;
         }
-        return fm.stringWidth(string);
+        boolean needsTextLayout = ((c != null) &&
+                (c.getClientProperty(TextAttribute.NUMERIC_SHAPING) != null));
+        if (needsTextLayout) {
+            synchronized(charsBufferLock) {
+                int length = syncCharsBuffer(string);
+                needsTextLayout = isComplexLayout(charsBuffer, 0, length);
+            }
+        }
+        if (needsTextLayout) {
+            TextLayout layout = createTextLayout(c, string,
+                                    fm.getFont(), fm.getFontRenderContext());
+            return (int) layout.getAdvance();
+        } else {
+            return fm.stringWidth(string);
+        }
     }
 
 
@@ -394,21 +429,11 @@ public class SwingUtilities2 {
                                     String string, int availTextWidth) {
         // c may be null here.
         String clipString = "...";
-        int stringLength = string.length();
         availTextWidth -= SwingUtilities2.stringWidth(c, fm, clipString);
-        if (availTextWidth <= 0) {
-            //can not fit any characters
-            return clipString;
-        }
-
         boolean needsTextLayout;
 
         synchronized (charsBufferLock) {
-            if (charsBuffer == null || charsBuffer.length < stringLength) {
-                charsBuffer  = string.toCharArray();
-            } else {
-                string.getChars(0, stringLength, charsBuffer, 0);
-            }
+            int stringLength = syncCharsBuffer(string);
             needsTextLayout =
                 isComplexLayout(charsBuffer, 0, stringLength);
             if (!needsTextLayout) {
@@ -425,6 +450,10 @@ public class SwingUtilities2 {
         if (needsTextLayout) {
             FontRenderContext frc = getFontRenderContext(c, fm);
             AttributedString aString = new AttributedString(string);
+            if (c != null) {
+                aString.addAttribute(TextAttribute.NUMERIC_SHAPING,
+                        c.getClientProperty(TextAttribute.NUMERIC_SHAPING));
+            }
             LineBreakMeasurer measurer =
                 new LineBreakMeasurer(aString.getIterator(), frc);
             int nChars = measurer.nextOffset(availTextWidth);
@@ -465,7 +494,7 @@ public class SwingUtilities2 {
                  */
                 float screenWidth = (float)
                    g2d.getFont().getStringBounds(text, DEFAULT_FRC).getWidth();
-                TextLayout layout = new TextLayout(text, g2d.getFont(),
+                TextLayout layout = createTextLayout(c, text, g2d.getFont(),
                                                    g2d.getFontRenderContext());
 
                 layout = layout.getJustifiedLayout(screenWidth);
@@ -505,7 +534,21 @@ public class SwingUtilities2 {
                 }
             }
 
-            g.drawString(text, x, y);
+            boolean needsTextLayout = ((c != null) &&
+                (c.getClientProperty(TextAttribute.NUMERIC_SHAPING) != null));
+            if (needsTextLayout) {
+                synchronized(charsBufferLock) {
+                    int length = syncCharsBuffer(text);
+                    needsTextLayout = isComplexLayout(charsBuffer, 0, length);
+                }
+            }
+            if (needsTextLayout) {
+                TextLayout layout = createTextLayout(c, text, g2.getFont(),
+                                                    g2.getFontRenderContext());
+                layout.draw(g2, x, y);
+            } else {
+                g.drawString(text, x, y);
+            }
 
             if (oldAAValue != null) {
                 g2.setRenderingHint(KEY_TEXT_ANTIALIASING, oldAAValue);
@@ -547,11 +590,7 @@ public class SwingUtilities2 {
             boolean needsTextLayout = isPrinting;
             if (!needsTextLayout) {
                 synchronized (charsBufferLock) {
-                    if (charsBuffer == null || charsBuffer.length < textLength) {
-                        charsBuffer = text.toCharArray();
-                    } else {
-                        text.getChars(0, textLength, charsBuffer, 0);
-                    }
+                    syncCharsBuffer(text);
                     needsTextLayout =
                         isComplexLayout(charsBuffer, 0, textLength);
                 }
@@ -567,7 +606,7 @@ public class SwingUtilities2 {
                 Graphics2D g2d = getGraphics2D(g);
                 if (g2d != null) {
                     TextLayout layout =
-                        new TextLayout(text, g2d.getFont(),
+                        createTextLayout(c, text, g2d.getFont(),
                                        g2d.getFontRenderContext());
                     if (isPrinting) {
                         float screenWidth = (float)g2d.getFont().
@@ -728,7 +767,7 @@ public class SwingUtilities2 {
                     !isFontRenderContextPrintCompatible
                     (deviceFontRenderContext, frc)) {
                     TextLayout layout =
-                        new TextLayout(new String(data,offset,length),
+                        createTextLayout(c, new String(data, offset, length),
                                        g2d.getFont(),
                                        deviceFontRenderContext);
                     float screenWidth = (float)g2d.getFont().
@@ -844,6 +883,20 @@ public class SwingUtilities2 {
         }
 
         return retVal;
+    }
+
+    private static TextLayout createTextLayout(JComponent c, String s,
+                                            Font f, FontRenderContext frc) {
+        Object shaper = (c == null ?
+                    null : c.getClientProperty(TextAttribute.NUMERIC_SHAPING));
+        if (shaper == null) {
+            return new TextLayout(s, f, frc);
+        } else {
+            Map<TextAttribute, Object> a = new HashMap<TextAttribute, Object>();
+            a.put(TextAttribute.FONT, f);
+            a.put(TextAttribute.NUMERIC_SHAPING, shaper);
+            return new TextLayout(s, a, frc);
+        }
     }
 
     /*

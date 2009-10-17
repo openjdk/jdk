@@ -239,9 +239,9 @@ public class Convert {
         case '\"':  return "\\\"";
         case '\\':  return "\\\\";
         default:
-            return (ch > 127 || isPrintableAscii(ch))
+            return (isPrintableAscii(ch))
                 ? String.valueOf(ch)
-                : String.format("\\%03o", (int) ch);
+                : String.format("\\u%04x", (int) ch);
         }
     }
 

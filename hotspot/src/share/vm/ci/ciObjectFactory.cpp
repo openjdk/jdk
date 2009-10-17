@@ -261,12 +261,11 @@ ciObject* ciObjectFactory::get(oop key) {
     ciObject* new_object = create_new_object(keyHandle());
     assert(keyHandle() == new_object->get_oop(), "must be properly recorded");
     init_ident_of(new_object);
-    if (!keyHandle->is_perm()) {
+    if (!new_object->is_perm()) {
       // Not a perm-space object.
       insert_non_perm(bucket, keyHandle(), new_object);
       return new_object;
     }
-    new_object->set_perm();
     if (len != _ci_objects->length()) {
       // creating the new object has recursively entered new objects
       // into the table.  We need to recompute our index.

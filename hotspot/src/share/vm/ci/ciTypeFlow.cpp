@@ -2486,8 +2486,13 @@ void ciTypeFlow::build_loop_tree(Block* blk) {
         // Assume irreducible entries need more data flow
         add_to_work_list(succ);
       }
-      lp = lp->parent();
-      assert(lp != NULL, "nested loop must have parent by now");
+      Loop* plp = lp->parent();
+      if (plp == NULL) {
+        // This only happens for some irreducible cases.  The parent
+        // will be updated during a later pass.
+        break;
+      }
+      lp = plp;
     }
 
     // Merge loop tree branch for all successors.

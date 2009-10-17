@@ -408,16 +408,22 @@ public:
   // "SO_SystemClasses" to all the "system" classes and loaders;
   // "SO_Symbols_and_Strings" applies the closure to all entries in
   // SymbolsTable and StringTable.
-  void gen_process_strong_roots(int level, bool younger_gens_as_roots,
+  void gen_process_strong_roots(int level,
+                                bool younger_gens_as_roots,
+                                // The remaining arguments are in an order
+                                // consistent with SharedHeap::process_strong_roots:
+                                bool activate_scope,
                                 bool collecting_perm_gen,
                                 SharedHeap::ScanningOption so,
-                                OopsInGenClosure* older_gens,
-                                OopsInGenClosure* not_older_gens);
+                                OopsInGenClosure* not_older_gens,
+                                bool do_code_roots,
+                                OopsInGenClosure* older_gens);
 
   // Apply "blk" to all the weak roots of the system.  These include
   // JNI weak roots, the code cache, system dictionary, symbol table,
   // string table, and referents of reachable weak refs.
   void gen_process_weak_roots(OopClosure* root_closure,
+                              CodeBlobClosure* code_roots,
                               OopClosure* non_root_closure);
 
   // Set the saved marks of generations, if that makes sense.

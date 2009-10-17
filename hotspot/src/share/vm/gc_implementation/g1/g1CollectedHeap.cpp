@@ -2300,9 +2300,12 @@ void G1CollectedHeap::verify(bool allow_dirty,
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     if (!silent) { gclog_or_tty->print("roots "); }
     VerifyRootsClosure rootsCl(use_prev_marking);
-    process_strong_roots(false,
+    CodeBlobToOopClosure blobsCl(&rootsCl, /*do_marking=*/ false);
+    process_strong_roots(true,  // activate StrongRootsScope
+                         false,
                          SharedHeap::SO_AllClasses,
                          &rootsCl,
+                         &blobsCl,
                          &rootsCl);
     rem_set()->invalidate(perm_gen()->used_region(), false);
     if (!silent) { gclog_or_tty->print("heapRegions "); }
@@ -3987,8 +3990,14 @@ g1_process_strong_roots(bool collecting_perm_gen,
   BufferingOopsInGenClosure buf_scan_perm(scan_perm);
   buf_scan_perm.set_generation(perm_gen());
 
-  process_strong_roots(collecting_perm_gen, so,
+  // Walk the code cache w/o buffering, because StarTask cannot handle
+  // unaligned oop locations.
+  CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, /*do_marking=*/ true);
+
+  process_strong_roots(false, // no scoping; this is parallel code
+                       collecting_perm_gen, so,
                        &buf_scan_non_heap_roots,
+                       &eager_scan_code_roots,
                        &buf_scan_perm);
   // Finish up any enqueued closure apps.
   buf_scan_non_heap_roots.done();
@@ -4078,7 +4087,8 @@ G1CollectedHeap::scan_scan_only_set(OopsInHeapRegionClosure* oc,
 void
 G1CollectedHeap::g1_process_weak_roots(OopClosure* root_closure,
                                        OopClosure* non_root_closure) {
-  SharedHeap::process_weak_roots(root_closure, non_root_closure);
+  CodeBlobToOopClosure roots_in_blobs(root_closure, /*do_marking=*/ false);
+  SharedHeap::process_weak_roots(root_closure, &roots_in_blobs, non_root_closure);
 }
 
 
@@ -4112,15 +4122,16 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   init_for_evac_failure(NULL);
 
-  change_strong_roots_parity();  // In preparation for parallel strong roots.
   rem_set()->prepare_for_younger_refs_iterate(true);
 
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
   double start_par = os::elapsedTime();
   if (ParallelGCThreads > 0) {
     // The individual threads will set their evac-failure closures.
+    StrongRootsScope srs(this);
     workers()->run_task(&g1_par_task);
   } else {
+    StrongRootsScope srs(this);
     g1_par_task.work(0);
   }
 

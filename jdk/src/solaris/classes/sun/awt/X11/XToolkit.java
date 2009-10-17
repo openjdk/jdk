@@ -326,13 +326,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 if (log.isLoggable(PlatformLogger.FINE)) {
                     dumpPeers();
                 }
-
-                awtLock();
-                try {
-                    XlibWrapper.XSetErrorHandler(saved_error_handler);
-                } finally {
-                    awtUnlock();
-                }
             }
         });
     }
