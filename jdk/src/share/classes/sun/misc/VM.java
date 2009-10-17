@@ -346,11 +346,6 @@ public class VM {
     private native static void getThreadStateValues(int[][] vmThreadStateValues,
                                                     String[][] vmThreadStateNames);
 
-    private static boolean kernelVM;
-    public static boolean isBootedKernelVM() {
-        return booted && kernelVM;
-    }
-
     static {
         initialize();
     }

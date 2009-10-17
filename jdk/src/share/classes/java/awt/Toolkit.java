@@ -2025,7 +2025,7 @@ public abstract class Toolkit {
         }
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-          security.checkPermission(SecurityConstants.ALL_AWT_EVENTS_PERMISSION);
+          security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
@@ -2094,7 +2094,7 @@ public abstract class Toolkit {
         }
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
         }
 
         synchronized (this) {
@@ -2165,7 +2165,7 @@ public abstract class Toolkit {
     public AWTEventListener[] getAWTEventListeners() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);
@@ -2217,7 +2217,7 @@ public abstract class Toolkit {
     public AWTEventListener[] getAWTEventListeners(long eventMask) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.ALL_AWT_EVENTS_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.ALL_AWT_EVENTS_PERMISSION);
         }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);

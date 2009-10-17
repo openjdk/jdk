@@ -83,16 +83,28 @@ public class Constants {
      */
     public static String format(Object value) {
         if (value instanceof Byte)      return formatByte((Byte) value);
+        if (value instanceof Short)     return formatShort((Short) value);
         if (value instanceof Long)      return formatLong((Long) value);
         if (value instanceof Float)     return formatFloat((Float) value);
         if (value instanceof Double)    return formatDouble((Double) value);
         if (value instanceof Character) return formatChar((Character) value);
         if (value instanceof String)    return formatString((String) value);
-        return value + "";
+        if (value instanceof Integer ||
+            value instanceof Boolean)   return value.toString();
+        else
+            throw new IllegalArgumentException("Argument is not a primitive type or a string; it " +
+                                               ((value == null) ?
+                                                "is a null value." :
+                                                "has class " +
+                                                value.getClass().getName()) + "." );
     }
 
     private static String formatByte(byte b) {
-        return String.format("0x%02x", b);
+        return String.format("(byte)0x%02x", b);
+    }
+
+    private static String formatShort(short s) {
+        return String.format("(short)%d", s);
     }
 
     private static String formatLong(long lng) {

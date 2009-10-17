@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,30 @@
 
 package com.sun.tools.javah;
 
-import com.sun.javadoc.*;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 
 /**
  * A utility for mangling java identifiers into C names.  Should make
  * this more fine grained and distribute the functionality to the
  * generators.
  *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own
+ * risk.  This code and its internal interfaces are subject to change
+ * or deletion without notice.</b></p>
+ *
  * @author  Sucheta Dambalkar(Revised)
  */
-class Mangle {
+public class Mangle {
 
     public static class Type {
-
         public static final int CLASS            = 1;
         public static final int FIELDSTUB        = 2;
-        public static final int FIELD        = 3;
+        public static final int FIELD            = 3;
         public static final int JNI              = 4;
         public static final int SIGNATURE        = 5;
         public static final int METHOD_JDK_1     = 6;
@@ -49,8 +57,15 @@ class Mangle {
         public static final int METHOD_JNI_LONG  = 8;
     };
 
+    private Elements elems;
+    private Types types;
 
-    public static final String mangle(String name, int mtype) {
+    Mangle(Elements elems, Types types) {
+        this.elems = elems;
+        this.types = types;
+    }
+
+    public final String mangle(CharSequence name, int mtype) {
         StringBuffer result = new StringBuffer(100);
         int length = name.length();
 
@@ -98,15 +113,15 @@ class Mangle {
         return result.toString();
     }
 
-    public static String mangleMethod(MethodDoc method, RootDoc root, ClassDoc clazz,
+    public String mangleMethod(ExecutableElement method, TypeElement clazz,
                                       int mtype) {
         StringBuffer result = new StringBuffer(100);
         result.append("Java_");
 
         if (mtype == Mangle.Type.METHOD_JDK_1) {
-            result.append(mangle(clazz.qualifiedName(), Mangle.Type.CLASS));
+            result.append(mangle(clazz.getQualifiedName(), Mangle.Type.CLASS));
             result.append('_');
-            result.append(mangle(method.name(),
+            result.append(mangle(method.getSimpleName(),
                                  Mangle.Type.FIELD));
             result.append("_stub");
             return result.toString();
@@ -115,13 +130,13 @@ class Mangle {
         /* JNI */
         result.append(mangle(getInnerQualifiedName(clazz), Mangle.Type.JNI));
         result.append('_');
-        result.append(mangle(method.name(),
+        result.append(mangle(method.getSimpleName(),
                              Mangle.Type.JNI));
         if (mtype == Mangle.Type.METHOD_JNI_LONG) {
             result.append("__");
-            String typesig = method.signature();
-            TypeSignature newTypeSig = new TypeSignature(root);
-            String sig = newTypeSig.getTypeSignature(typesig,  method.returnType());
+            String typesig = signature(method);
+            TypeSignature newTypeSig = new TypeSignature(elems);
+            String sig = newTypeSig.getTypeSignature(typesig,  method.getReturnType());
             sig = sig.substring(1);
             sig = sig.substring(0, sig.lastIndexOf(')'));
             sig = sig.replace('/', '.');
@@ -131,15 +146,11 @@ class Mangle {
         return result.toString();
     }
     //where
-        private static String getInnerQualifiedName(ClassDoc clazz) {
-            ClassDoc encl = clazz.containingClass();
-            if (encl == null)
-                return clazz.qualifiedName();
-            else
-                return getInnerQualifiedName(encl) + '$' + clazz.simpleTypeName();
+        private String getInnerQualifiedName(TypeElement clazz) {
+            return elems.getBinaryName(clazz).toString();
         }
 
-    public static final String mangleChar(char ch) {
+    public final String mangleChar(char ch) {
         String s = Integer.toHexString(ch);
         int nzeros = 5 - s.length();
         char[] result = new char[6];
@@ -149,6 +160,19 @@ class Mangle {
         for (int i = nzeros+1, j = 0; i < 6; i++, j++)
             result[i] = s.charAt(j);
         return new String(result);
+    }
+
+    // Warning: duplicated in Gen
+    private String signature(ExecutableElement e) {
+        StringBuffer sb = new StringBuffer();
+        String sep = "(";
+        for (VariableElement p: e.getParameters()) {
+            sb.append(sep);
+            sb.append(types.erasure(p.asType()).toString());
+            sep = ",";
+        }
+        sb.append(")");
+        return sb.toString();
     }
 
     /* Warning: Intentional ASCII operation. */

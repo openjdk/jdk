@@ -54,7 +54,8 @@ class ScavengeRootsTask : public GCTask {
     flat_profiler         = 5,
     system_dictionary     = 6,
     management            = 7,
-    jvmti                 = 8
+    jvmti                 = 8,
+    code_cache            = 9
   };
  private:
   RootType _root_type;

@@ -30,17 +30,12 @@
 
 package sun.security.krb5.internal.tools;
 
+import java.net.InetAddress;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.*;
 import sun.security.krb5.internal.ktab.*;
 import sun.security.krb5.internal.crypto.EType;
-import sun.security.krb5.KrbCryptoException;
-import java.lang.RuntimeException;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.File;
 
 /**
  * This class can execute as a command-line tool to list entries in
@@ -51,9 +46,9 @@ import java.io.File;
  */
 public class Klist {
     Object target;
-    // for credentials cache, options are 'f'  and 'e';
+    // for credentials cache, options are 'f', 'e', 'a' and 'n';
     // for  keytab, optionsare 't' and 'K' and 'e'
-    char[] options = new char[3];
+    char[] options = new char[4];
     String name;       // the name of credentials cache and keytable.
     char action;       // actions would be 'c' for credentials cache
     // and 'k' for keytable.
@@ -62,7 +57,7 @@ public class Klist {
     /**
      * The main program that can be invoked at command line.
      * <br>Usage: klist
-     * [[-c] [-f] [-e]] [-k [-t] [-K]] [name]
+     * [[-c] [-f] [-e] [-a [-n]]] [-k [-t] [-K]] [name]
      * -c specifes that credential cache is to be listed
      * -k specifies that key tab is to be listed
      * name name of the credentials cache or keytab
@@ -70,6 +65,8 @@ public class Klist {
      * <ul>
      * <li><b>-f</b>  shows credentials flags
      * <li><b>-e</b>  shows the encryption type
+     * <li><b>-a</b>  shows addresses
+     * <li><b>-n</b>  do not reverse-resolve addresses
      * </ul>
      * available options for keytabs:
      * <li><b>-t</b> shows keytab entry timestamps
@@ -141,6 +138,12 @@ public class Klist {
                 case 'k':
                     action = 'k';
                     break;
+                case 'a':
+                    options[2] = 'a';
+                    break;
+                case 'n':
+                    options[3] = 'n';
+                    break;
                 case 'f':
                     options[1] = 'f';
                     break;
@@ -202,7 +205,7 @@ public class Klist {
                 }
                 if (options[2] == 't') {
                     System.out.println("\t Time stamp: " +
-                                       reformat(entries[i].getTimeStamp().toDate().toString()));
+                            reformat(entries[i].getTimeStamp().toDate().toString()));
                 }
             }
         }
@@ -249,11 +252,32 @@ public class Klist {
                     System.out.println("     Expires:         " + endtime);
                     if (options[0] == 'e') {
                         etype = EType.toString(creds[i].getEType());
-                        System.out.println("\t Encryption type: " + etype);
+                        System.out.println("     Encryption type: " + etype);
                     }
                     if (options[1] == 'f') {
-                        System.out.println("\t Flags:           " +
+                        System.out.println("     Flags:           " +
                                            creds[i].getTicketFlags().toString());
+                    }
+                    if (options[2] == 'a') {
+                        boolean first = true;
+                        InetAddress[] caddr
+                                = creds[i].setKrbCreds().getClientAddresses();
+                        if (caddr != null) {
+                            for (InetAddress ia: caddr) {
+                                String out;
+                                if (options[3] == 'n') {
+                                    out = ia.getHostAddress();
+                                } else {
+                                    out = ia.getCanonicalHostName();
+                                }
+                                System.out.println("     " +
+                                        (first?"Addresses:":"          ") +
+                                        "       " + out);
+                                first = false;
+                            }
+                        } else {
+                            System.out.println("     [No host addresses info]");
+                        }
                     }
                 } catch (RealmException e) {
                     System.out.println("Error reading principal from "+
@@ -295,7 +319,7 @@ public class Klist {
      */
     void printHelp() {
         System.out.println("\nUsage: klist " +
-                           "[[-c] [-f] [-e]] [-k [-t] [-K]] [name]");
+                           "[[-c] [-f] [-e] [-a [-n]]] [-k [-t] [-K]] [name]");
         System.out.println("   name\t name of credentials cache or " +
                            " keytab with the prefix. File-based cache or "
                            + "keytab's prefix is FILE:.");
@@ -305,6 +329,8 @@ public class Klist {
         System.out.println("   options for credentials caches:");
         System.out.println("\t-f \t shows credentials flags");
         System.out.println("\t-e \t shows the encryption type");
+        System.out.println("\t-a \t shows addresses");
+        System.out.println("\t  -n \t   do not reverse-resolve addresses");
         System.out.println("   options for keytabs:");
         System.out.println("\t-t \t shows keytab entry timestamps");
         System.out.println("\t-K \t shows keytab entry key value");

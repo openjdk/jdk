@@ -58,14 +58,12 @@ class MarkSweep : AllStatic {
    public:
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
-    virtual const bool do_nmethods() const { return true; }
   };
 
   class MarkAndPushClosure: public OopClosure {
    public:
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
-    virtual const bool do_nmethods() const { return true; }
     virtual const bool should_remember_mdo() const { return true; }
     virtual void remember_mdo(DataLayout* p) { MarkSweep::revisit_mdo(p); }
   };
@@ -173,6 +171,7 @@ class MarkSweep : AllStatic {
  public:
   // Public closures
   static FollowRootClosure    follow_root_closure;
+  static CodeBlobToOopClosure follow_code_root_closure; // => follow_root_closure
   static MarkAndPushClosure   mark_and_push_closure;
   static FollowStackClosure   follow_stack_closure;
   static AdjustPointerClosure adjust_root_pointer_closure;

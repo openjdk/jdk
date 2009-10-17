@@ -42,8 +42,8 @@ import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.CapturedType;
-import com.sun.tools.javac.file.JavacFileManager;
 
+import com.sun.tools.javac.file.BaseFileObject;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
 
 /**
@@ -133,8 +133,15 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
     }
 
     public String formatSource(JCDiagnostic d, boolean fullname, Locale l) {
-        assert (d.getSource() != null);
-        return fullname ? d.getSourceName() : d.getSource().getName();
+        JavaFileObject fo = d.getSource();
+        if (fo == null)
+            throw new IllegalArgumentException(); // d should have source set
+        if (fullname)
+            return fo.getName();
+        else if (fo instanceof BaseFileObject)
+            return ((BaseFileObject) fo).getShortName();
+        else
+            return BaseFileObject.getSimpleName(fo);
     }
 
     /**
@@ -182,7 +189,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             return printer.visit((Symbol)arg, l);
         }
         else if (arg instanceof JavaFileObject) {
-            return JavacFileManager.getJavacBaseFileName((JavaFileObject)arg);
+            return ((JavaFileObject)arg).getName();
         }
         else if (arg instanceof Formattable) {
             return ((Formattable)arg).toString(l, messages);
