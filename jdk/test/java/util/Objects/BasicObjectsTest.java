@@ -37,6 +37,7 @@ public class BasicObjectsTest {
         errors += testHashCode();
         errors += testToString();
         errors += testCompare();
+        errors += testNonNull();
         if (errors > 0 )
             throw new RuntimeException();
     }
@@ -99,6 +100,55 @@ public class BasicObjectsTest {
             errors++;
             System.err.printf("When comparing %s to %s, got %d instead of %d%n.",
                               a, b, result, expected);
+        }
+        return errors;
+    }
+
+    private static int testNonNull() {
+        int errors = 0;
+        String s;
+
+        // Test 1-arg variant
+        try {
+            s = Objects.nonNull("pants");
+            if (s != "pants") {
+                System.err.printf("1-arg non-null failed to return its arg");
+                errors++;
+            }
+        } catch (NullPointerException e) {
+            System.err.printf("1-arg nonNull threw unexpected NPE");
+            errors++;
+        }
+
+        try {
+            s = Objects.nonNull(null);
+            System.err.printf("1-arg nonNull failed to throw NPE");
+            errors++;
+        } catch (NullPointerException e) {
+            // Expected
+        }
+
+        // Test 2-arg variant
+        try {
+            s = Objects.nonNull("pants", "trousers");
+            if (s != "pants") {
+                System.err.printf("2-arg nonNull failed to return its arg");
+                errors++;
+            }
+        } catch (NullPointerException e) {
+            System.err.printf("2-arg nonNull threw unexpected NPE");
+            errors++;
+        }
+
+        try {
+            s = Objects.nonNull(null, "pantaloons");
+            System.err.printf("2-arg nonNull failed to throw NPE");
+            errors++;
+        } catch (NullPointerException e) {
+            if (e.getMessage() != "pantaloons") {
+                System.err.printf("2-arg nonNull threw NPE w/ bad detail msg");
+                errors++;
+            }
         }
         return errors;
     }
