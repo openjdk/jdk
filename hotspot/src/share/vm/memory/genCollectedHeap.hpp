@@ -266,8 +266,11 @@ public:
   // only and may need to be re-examined in case other
   // kinds of collectors are implemented in the future.
   virtual bool can_elide_initializing_store_barrier(oop new_obj) {
-    assert(UseParNewGC || UseSerialGC || UseConcMarkSweepGC,
-           "Check can_elide_initializing_store_barrier() for this collector");
+    // We wanted to assert that:-
+    // assert(UseParNewGC || UseSerialGC || UseConcMarkSweepGC,
+    //       "Check can_elide_initializing_store_barrier() for this collector");
+    // but unfortunately the flag UseSerialGC need not necessarily always
+    // be set when DefNew+Tenured are being used.
     return is_in_youngest((void*)new_obj);
   }
 
