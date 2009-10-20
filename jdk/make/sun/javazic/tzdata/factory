@@ -21,6 +21,9 @@
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
 #
+# <pre>
+# This file is in the public domain, so clarified as of
+# 2009-05-17 by Arthur David Olson.
 
 # For companies who don't want to put time zone specification in
 # their installation procedures.  When users run date, they'll get the message.

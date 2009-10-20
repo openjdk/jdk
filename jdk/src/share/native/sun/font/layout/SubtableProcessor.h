@@ -32,13 +32,19 @@
 #ifndef __SUBTABLEPROCESSOR_H
 #define __SUBTABLEPROCESSOR_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "MorphTables.h"
 
+U_NAMESPACE_BEGIN
+
 class LEGlyphStorage;
 
-class SubtableProcessor
-{
+class SubtableProcessor : public UMemory {
 public:
     virtual void process(LEGlyphStorage &glyphStorage) = 0;
     virtual ~SubtableProcessor();
@@ -60,4 +66,6 @@ private:
     SubtableProcessor &operator=(const SubtableProcessor &other); // forbid copying of this class
 };
 
+U_NAMESPACE_END
 #endif
+

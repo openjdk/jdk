@@ -27,14 +27,14 @@ package sun.awt;
 
 import java.awt.*;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 public abstract class SunGraphicsCallback {
     public static final int HEAVYWEIGHTS = 0x1;
     public static final int LIGHTWEIGHTS = 0x2;
     public static final int TWO_PASSES = 0x4;
 
-    private static final Logger log = Logger.getLogger("sun.awt.SunGraphicsCallback");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.SunGraphicsCallback");
 
     public abstract void run(Component comp, Graphics cg);
 
@@ -87,11 +87,11 @@ public abstract class SunGraphicsCallback {
         int ncomponents = comps.length;
         Shape clip = g.getClip();
 
-        if (log.isLoggable(Level.FINER) && (clip != null)) {
+        if (log.isLoggable(PlatformLogger.FINER) && (clip != null)) {
             Rectangle newrect = clip.getBounds();
-            log.log(Level.FINER, "x = " + newrect.x + ", y = " + newrect.y +
-                                 ", width = " + newrect.width +
-                                 ", height = " + newrect.height);
+            log.finer("x = " + newrect.x + ", y = " + newrect.y +
+                      ", width = " + newrect.width +
+                      ", height = " + newrect.height);
         }
 
         // A seriously sad hack--

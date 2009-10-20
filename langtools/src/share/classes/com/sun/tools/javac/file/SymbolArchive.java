@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,12 +73,14 @@ public class SymbolArchive extends ZipArchive {
         map.put(dirname, list);
     }
 
+    @Override
     public JavaFileObject getFileObject(RelativeDirectory subdirectory, String file) {
         RelativeDirectory prefix_subdir = new RelativeDirectory(prefix, subdirectory.path);
         ZipEntry ze = new RelativeFile(prefix_subdir, file).getZipEntry(zdir);
         return new SymbolFileObject(this, file, ze);
     }
 
+    @Override
     public String toString() {
         return "SymbolArchive[" + zdir.getName() + "]";
     }
@@ -93,7 +95,7 @@ public class SymbolArchive extends ZipArchive {
 
         @Override
         protected String inferBinaryName(Iterable<? extends File> path) {
-            String entryName = getZipEntryName();
+            String entryName = entry.getName();
             String prefix = ((SymbolArchive) zarch).prefix.path;
             if (entryName.startsWith(prefix))
                 entryName = entryName.substring(prefix.length());

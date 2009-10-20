@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class TestTaglets extends JavadocTester {
 
     //Input for string search tests.
     private static final String[][] TEST_4654308 = new String[][] {
-        {"4654308" + FS + "C.html", "<B>Foo:</B><DD>my only method is " +            "<A HREF=\"C.html#method()\"><CODE>here</CODE></A>"}
+        {"4654308" + FS + "C.html", "<B>Foo:</B><DD>my only method is " +            "<A HREF=\"C.html#method()\"><CODE>here</CODE></A>"}
     };
     private static final String[][] NEGATED_TEST_4654308 = NO_TEST;
 

@@ -42,7 +42,7 @@ import javax.tools.Tool;
  * @see DiagnosticListener
  * @see Diagnostic
  * @see JavaFileManager
- * @since 1.6
+ * @since 1.7
  *
  *  <p><b>This is NOT part of any API supported by Sun Microsystems.  If
  *  you write code that depends on this, you do so at your own risk.

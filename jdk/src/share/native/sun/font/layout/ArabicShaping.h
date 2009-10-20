@@ -32,12 +32,19 @@
 #ifndef __ARABICSHAPING_H
 #define __ARABICSHAPING_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
 
+U_NAMESPACE_BEGIN
+
 class LEGlyphStorage;
 
-class ArabicShaping {
+class ArabicShaping /* not : public UObject because all methods are static */ {
 public:
     // Joining types
     enum JoiningTypes
@@ -74,8 +81,8 @@ public:
 
     typedef le_int32 ShapeType;
 
-    static void shape(const LEUnicode *chars, le_int32 offset, le_int32 charCount,
-        le_int32 charMax, le_bool rightToLeft, LEGlyphStorage &glyphStorage);
+    static void shape(const LEUnicode *chars, le_int32 offset, le_int32 charCount, le_int32 charMax,
+                      le_bool rightToLeft, LEGlyphStorage &glyphStorage);
 
     static const FeatureMap *getFeatureMap(le_int32 &count);
 
@@ -88,8 +95,8 @@ private:
     static const le_uint8 shapingTypeTable[];
     static const ShapeType shapeTypes[];
 
-    static void adjustTags(le_int32 outIndex, le_int32 shapeOffset,
-        LEGlyphStorage &glyphStorage);
+    static void adjustTags(le_int32 outIndex, le_int32 shapeOffset, LEGlyphStorage &glyphStorage);
 };
 
+U_NAMESPACE_END
 #endif

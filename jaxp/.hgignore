@@ -1,4 +1,5 @@
 ^build/
 ^dist/
+^drop/
 ^webrev/
 ^nbproject/private/

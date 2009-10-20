@@ -105,8 +105,8 @@ public interface LoggingMXBean extends PlatformManagedObject {
      *
      * @param loggerName The name of the <tt>Logger</tt> to be set.
      *                   Must be non-null.
-     * @param levelName The name of the level to set the specified logger to,
-     *                 or <tt>null</tt> if to set the level to inherit
+     * @param levelName The name of the level to set on the specified logger,
+     *                 or <tt>null</tt> if setting the level to inherit
      *                 from its nearest ancestor.
      *
      * @throws IllegalArgumentException if the specified logger

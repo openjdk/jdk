@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 6746458
  * @summary Verify correct separate compilation of classes with extended identifiers.
  * @author jrose
+ * @ignore 6877225 test fails on Windows:
+ *      QuotedIdent.java:81: error while writing QuotedIdent.*86: PATH\QuotedIdent$*86.class
+ *      (The filename, directory name, or volume label syntax is incorrect)
  *
  * @library ..
  * @run main quid.QuotedIdent2

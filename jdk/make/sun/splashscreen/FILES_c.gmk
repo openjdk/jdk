@@ -52,12 +52,10 @@ FILES_c = \
 	compress.c \
 	deflate.c \
 	gzio.c \
-	infblock.c \
-	infcodes.c \
+	infback.c \
 	inffast.c \
 	inflate.c \
 	inftrees.c \
-	infutil.c \
 	trees.c \
 	uncompr.c \
 	zadler32.c \

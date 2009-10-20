@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,15 @@
 
 package com.sun.tools.javah;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ResourceBundle;
+import java.io.PrintWriter;
 import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.MissingResourceException;
+import javax.tools.Diagnostic;
+import javax.tools.Diagnostic.Kind;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileObject;
 
 /**
  * Messages, verbose and error handling support.
@@ -41,42 +44,70 @@ import java.util.MissingResourceException;
  *      bug   -- Bug has occurred in javah
  *      fatal -- We can't even find resources, so bail fast, don't localize
  *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own
+ * risk.  This code and its internal interfaces are subject to change
+ * or deletion without notice.</b></p>
  */
 public class Util {
+    /** Exit is used to replace the use of System.exit in the original javah.
+     */
+    public static class Exit extends Error {
+        private static final long serialVersionUID = 430820978114067221L;
+        Exit(int exitValue) {
+            this(exitValue, null);
+        }
+
+        Exit(int exitValue, Throwable cause) {
+            super(cause);
+            this.exitValue = exitValue;
+            this.cause = cause;
+        }
+
+        Exit(Exit e) {
+            this(e.exitValue, e.cause);
+        }
+
+        public final int exitValue;
+        public final Throwable cause;
+    }
 
     /*
      * Help for verbosity.
      */
-    public static boolean verbose = false;
+    public boolean verbose = false;
 
-    public static void log(String s) {
-        System.out.println(s);
+    public PrintWriter log;
+    public DiagnosticListener<? super JavaFileObject> dl;
+
+    Util(PrintWriter log, DiagnosticListener<? super JavaFileObject> dl) {
+        this.log = log;
+        this.dl = dl;
+    }
+
+    public void log(String s) {
+        log.println(s);
     }
 
 
     /*
      * Help for loading localized messages.
      */
-    private static ResourceBundle m;
+    private ResourceBundle m;
 
-    private static void initMessages() {
+    private void initMessages() throws Exit {
         try {
-            m=ResourceBundle.getBundle("com.sun.tools.javah.resources.l10n");
+            m = ResourceBundle.getBundle("com.sun.tools.javah.resources.l10n");
         } catch (MissingResourceException mre) {
             fatal("Error loading resources.  Please file a bug report.", mre);
         }
     }
 
-    public static String getText(String key) {
-        return getText(key, null, null);
-    }
-
-    private static String getText(String key, String a1, String a2){
+    private String getText(String key, Object... args) throws Exit {
         if (m == null)
             initMessages();
         try {
-            return MessageFormat.format(m.getString(key),
-                                        new Object[] { a1, a2 });
+            return MessageFormat.format(m.getString(key), args);
         } catch (MissingResourceException e) {
             fatal("Key " + key + " not found in resources.", e);
         }
@@ -86,107 +117,74 @@ public class Util {
     /*
      * Usage message.
      */
-    public static void usage(int exitValue) {
-        if (exitValue == 0) {
-            System.out.println(getText("usage"));
-        } else {
-            System.err.println(getText("usage"));
-        }
-        System.exit(exitValue);
+    public void usage() throws Exit {
+        log.println(getText("usage"));
     }
 
-    public static void version() {
-        System.out.println(getText("javah.version",
+    public void version() throws Exit {
+        log.println(getText("javah.version",
                                    System.getProperty("java.version"), null));
-        System.exit(0);
     }
 
     /*
      * Failure modes.
      */
-    public static void bug(String key) {
+    public void bug(String key) throws Exit {
         bug(key, null);
     }
 
-    public static void bug(String key, Exception e) {
-        if (e != null)
-            e.printStackTrace();
-        System.err.println(getText(key));
-        System.err.println(getText("bug.report"));
-        System.exit(11);
+    public void bug(String key, Exception e) throws Exit {
+        dl.report(createDiagnostic(Diagnostic.Kind.ERROR, key));
+        dl.report(createDiagnostic(Diagnostic.Kind.NOTE, "bug.report"));
+        throw new Exit(11, e);
     }
 
-    public static void error(String key) {
-        error(key, null);
+    public void error(String key, Object... args) throws Exit {
+        dl.report(createDiagnostic(Diagnostic.Kind.ERROR, key, args));
+        throw new Exit(15);
     }
 
-    public static void error(String key, String a1) {
-        error(key, a1, null);
-    }
-
-    public static void error(String key, String a1, String a2) {
-        error(key, a1, a2, false);
-    }
-
-    public static void error(String key, String a1, String a2,
-                             boolean showUsage) {
-        System.err.println("Error: " + getText(key, a1, a2));
-        if (showUsage)
-            usage(15);
-        System.exit(15);
-    }
-
-
-    private static void fatal(String msg) {
+    private void fatal(String msg) throws Exit {
         fatal(msg, null);
     }
 
-    private static void fatal(String msg, Exception e) {
-        if (e != null) {
-            e.printStackTrace();
-        }
-        System.err.println(msg);
-        System.exit(10);
+    private void fatal(String msg, Exception e) throws Exit {
+        dl.report(createDiagnostic(Diagnostic.Kind.ERROR, "", msg));
+        throw new Exit(10, e);
     }
 
-    /*
-     * Support for platform specific things in javah, such as pragma
-     * directives, exported symbols etc.
-     */
-    static private ResourceBundle platform = null;
-
-    /*
-     * Set when platform has been initialized.
-     */
-    static private boolean platformInit = false;
-
-    static String getPlatformString(String key) {
-        if (!platformInit) {
-            initPlatform();
-            platformInit = true;
-        }
-        if (platform == null)
-            return null;
-        try {
-            return platform.getString(key);
-        } catch (MissingResourceException mre) {
-            return null;
-        }
-    }
-
-    private static void initPlatform() {
-        String os = System.getProperty("os.name");
-        if (os.startsWith("Windows")) {
-            os = "win32";
-        } else if (os.indexOf("Linux") >= 0) {
-            os = "Linux";
-        }
-        String arch = System.getProperty("os.arch");
-        String resname = "com.sun.tools.javah.resources." + os + "_" + arch;
-        try {
-            platform=ResourceBundle.getBundle(resname);
-        } catch (MissingResourceException mre) {
-            // fatal("Error loading resources.  Please file a bug report.", mre);
-        }
+    private Diagnostic<JavaFileObject> createDiagnostic(
+            final Diagnostic.Kind kind, final String code, final Object... args) {
+        return new Diagnostic<JavaFileObject>() {
+            public String getCode() {
+                return code;
+            }
+            public long getColumnNumber() {
+                return Diagnostic.NOPOS;
+            }
+            public long getEndPosition() {
+                return Diagnostic.NOPOS;
+            }
+            public Kind getKind() {
+                return kind;
+            }
+            public long getLineNumber() {
+                return Diagnostic.NOPOS;
+            }
+            public String getMessage(Locale locale) {
+                if (code.length() == 0)
+                    return (String) args[0];
+                return getText(code, args); // FIXME locale
+            }
+            public long getPosition() {
+                return Diagnostic.NOPOS;
+            }
+            public JavaFileObject getSource() {
+                return null;
+            }
+            public long getStartPosition() {
+                return Diagnostic.NOPOS;
+            }
+        };
     }
 }

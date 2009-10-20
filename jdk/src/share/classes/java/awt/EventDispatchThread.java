@@ -36,7 +36,7 @@ import sun.awt.AWTAutoShutdown;
 import sun.awt.SunToolkit;
 
 import java.util.Vector;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import sun.awt.dnd.SunDragSourceContextPeer;
 import sun.awt.EventQueueDelegate;
@@ -61,7 +61,7 @@ import sun.awt.EventQueueDelegate;
  * @since 1.1
  */
 class EventDispatchThread extends Thread {
-    private static final Logger eventLog = Logger.getLogger("java.awt.event.EventDispatchThread");
+    private static final PlatformLogger eventLog = PlatformLogger.getLogger("java.awt.event.EventDispatchThread");
 
     private EventQueue theQueue;
     private boolean doDispatch = true;
@@ -275,8 +275,8 @@ class EventDispatchThread extends Thread {
             }
             while (eventOK == false);
 
-            if (eventLog.isLoggable(Level.FINEST)) {
-                eventLog.log(Level.FINEST, "Dispatching: " + event);
+            if (eventLog.isLoggable(PlatformLogger.FINEST)) {
+                eventLog.finest("Dispatching: " + event);
             }
 
             Object handle = null;
@@ -308,8 +308,8 @@ class EventDispatchThread extends Thread {
     }
 
     private void processException(Throwable e) {
-        if (eventLog.isLoggable(Level.FINE)) {
-            eventLog.log(Level.FINE, "Processing exception: " + e);
+        if (eventLog.isLoggable(PlatformLogger.FINE)) {
+            eventLog.fine("Processing exception: " + e);
         }
         getUncaughtExceptionHandler().uncaughtException(this, e);
         // don't rethrow the exception to avoid EDT recreation

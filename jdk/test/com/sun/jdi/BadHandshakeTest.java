@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6306165
+ * @bug 6306165 6432567
  * @summary Check that a bad handshake doesn't cause a debuggee to abort
  *
  * @build VMConnection BadHandshakeTest Exit0

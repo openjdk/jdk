@@ -1,2 +1,2 @@
-T6722234c.java:37:9: compiler.err.cant.apply.symbol: kindname.method, m, T6722234c.String, java.lang.String, kindname.class, T6722234c, null
+T6722234c.java:14:9: compiler.err.cant.apply.symbol: kindname.method, m, T6722234c.String, java.lang.String, kindname.class, T6722234c, null
 1 error

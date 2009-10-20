@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,11 @@
 
 OS=`uname -s`;
 case "${OS}" in
-        Windows* | CYGWIN* )
-                SEP=";"
+        CYGWIN* )
+                DIFFOPTS="--strip-trailing-cr"
         ;;
 
 	* )
-	SEP=":"
 	;;
 esac
 
@@ -94,7 +93,7 @@ for i in ${ANNOTATION_FILES}
 do
 	printf "%s\n" "Testing annotations on source file ${i}"
 	${APT} @options ${i} 2> result.txt
-	diff ${TESTSRC}/golden.txt result.txt
+	diff ${DIFFOPTS} ${TESTSRC}/golden.txt result.txt
 
 	RESULT=$?
 	case "$RESULT" in
@@ -109,7 +108,7 @@ do
 	CLASS=`basename ${i} .java`
 	printf "%s\n" "Testing annotations on class file ${CLASS}"
 	${APT} @options1 ${CLASS} 2> result2.txt
-	diff ${TESTSRC}/golden.txt result2.txt
+	diff ${DIFFOPTS} ${TESTSRC}/golden.txt result2.txt
 
 	RESULT=$?
 	case "$RESULT" in

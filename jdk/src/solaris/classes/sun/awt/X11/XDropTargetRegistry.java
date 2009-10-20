@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import java.awt.Point;
 
@@ -42,8 +42,8 @@ import java.awt.Point;
  * @since 1.5
  */
 final class XDropTargetRegistry {
-    private static final Logger logger =
-        Logger.getLogger("sun.awt.X11.xembed.xdnd.XDropTargetRegistry");
+    private static final PlatformLogger logger =
+        PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDropTargetRegistry");
 
     private static final long DELAYED_REGISTRATION_PERIOD = 200;
 
@@ -614,7 +614,7 @@ final class XDropTargetRegistry {
         if (info != null &&
             info.getProtocolVersion() >= XDnDConstants.XDND_MIN_PROTOCOL_VERSION) {
 
-            if (logger.isLoggable(Level.FINE)) {
+            if (logger.isLoggable(PlatformLogger.FINE)) {
                 logger.fine("        XEmbed drop site will be registered for " + Long.toHexString(clientWindow));
             }
             registerEmbeddedDropSite(canvasWindow, clientWindow);
@@ -628,14 +628,14 @@ final class XDropTargetRegistry {
                 dropTargetProtocol.registerEmbeddedDropSite(clientWindow);
             }
 
-            if (logger.isLoggable(Level.FINE)) {
+            if (logger.isLoggable(PlatformLogger.FINE)) {
                 logger.fine("        XEmbed drop site has been registered for " + Long.toHexString(clientWindow));
             }
         }
     }
 
     public void unregisterXEmbedClient(long canvasWindow, long clientWindow) {
-        if (logger.isLoggable(Level.FINE)) {
+        if (logger.isLoggable(PlatformLogger.FINE)) {
             logger.fine("        XEmbed drop site will be unregistered for " + Long.toHexString(clientWindow));
         }
         Iterator dropTargetProtocols =
@@ -649,7 +649,7 @@ final class XDropTargetRegistry {
 
         unregisterEmbeddedDropSite(canvasWindow, clientWindow);
 
-        if (logger.isLoggable(Level.FINE)) {
+        if (logger.isLoggable(PlatformLogger.FINE)) {
             logger.fine("        XEmbed drop site has beed unregistered for " + Long.toHexString(clientWindow));
         }
     }

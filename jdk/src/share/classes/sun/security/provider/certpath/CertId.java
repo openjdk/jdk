@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 
 package sun.security.provider.certpath;
 
-import java.io.*;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import sun.misc.HexDumpEncoder;
 import sun.security.x509.*;
@@ -54,21 +56,28 @@ import sun.security.util.*;
 public class CertId {
 
     private static final boolean debug = false;
-    private AlgorithmId hashAlgId;
-    private byte[] issuerNameHash;
-    private byte[] issuerKeyHash;
-    private SerialNumber certSerialNumber;
+    private static final AlgorithmId SHA1_ALGID
+        = new AlgorithmId(AlgorithmId.SHA_oid);
+    private final AlgorithmId hashAlgId;
+    private final byte[] issuerNameHash;
+    private final byte[] issuerKeyHash;
+    private final SerialNumber certSerialNumber;
     private int myhash = -1; // hashcode for this CertId
 
     /**
      * Creates a CertId. The hash algorithm used is SHA-1.
      */
-    public CertId(X509CertImpl issuerCert, SerialNumber serialNumber)
-        throws Exception {
+    public CertId(X509Certificate issuerCert, SerialNumber serialNumber)
+        throws IOException {
 
         // compute issuerNameHash
-        MessageDigest md = MessageDigest.getInstance("SHA1");
-        hashAlgId = AlgorithmId.get("SHA1");
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA1");
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new IOException("Unable to create CertId", nsae);
+        }
+        hashAlgId = SHA1_ALGID;
         md.update(issuerCert.getSubjectX500Principal().getEncoded());
         issuerNameHash = md.digest();
 
@@ -90,6 +99,7 @@ public class CertId {
                 encoder.encode(issuerNameHash));
             System.out.println("issuerKeyHash is " +
                 encoder.encode(issuerKeyHash));
+            System.out.println("SerialNumber is " + serialNumber.getNumber());
         }
     }
 
@@ -97,7 +107,6 @@ public class CertId {
      * Creates a CertId from its ASN.1 DER encoding.
      */
     public CertId(DerInputStream derIn) throws IOException {
-
         hashAlgId = AlgorithmId.parse(derIn.getDerValue());
         issuerNameHash = derIn.getOctetString();
         issuerKeyHash = derIn.getOctetString();
@@ -157,7 +166,7 @@ public class CertId {
      *
      * @return the hashcode value.
      */
-    public int hashCode() {
+    @Override public int hashCode() {
         if (myhash == -1) {
             myhash = hashAlgId.hashCode();
             for (int i = 0; i < issuerNameHash.length; i++) {
@@ -180,8 +189,7 @@ public class CertId {
      * @param other the object to test for equality with this object.
      * @return true if the objects are considered equal, false otherwise.
      */
-    public boolean equals(Object other) {
-
+    @Override public boolean equals(Object other) {
         if (this == other) {
             return true;
         }
@@ -203,7 +211,7 @@ public class CertId {
     /**
      * Create a string representation of the CertId.
      */
-    public String toString() {
+    @Override public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("CertId \n");
         sb.append("Algorithm: " + hashAlgId.toString() +"\n");

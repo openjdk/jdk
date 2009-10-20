@@ -27,7 +27,6 @@ package javax.tools;
 
 import java.io.*;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.CharBuffer;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;

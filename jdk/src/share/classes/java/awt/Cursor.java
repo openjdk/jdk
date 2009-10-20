@@ -36,9 +36,9 @@ import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-import java.util.logging.*;
-
 import java.security.AccessController;
+
+import sun.util.logging.PlatformLogger;
 
 /**
  * A class to encapsulate the bitmap representation of the mouse cursor.
@@ -119,7 +119,7 @@ public class Cursor implements java.io.Serializable {
     public static final int     MOVE_CURSOR                     = 13;
 
     /**
-      * @deprecated As of JDK version 1.7, the {@link #getPredefinedCursor()}
+      * @deprecated As of JDK version 1.7, the {@link #getPredefinedCursor(int)}
       * method should be used instead.
       */
     @Deprecated
@@ -191,7 +191,7 @@ public class Cursor implements java.io.Serializable {
      */
     private static final long serialVersionUID = 8028237497568985504L;
 
-    private static final Logger log = Logger.getLogger("java.awt.Cursor");
+    private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Cursor");
 
     static {
         /* ensure that the necessary native libraries are loaded */
@@ -298,8 +298,8 @@ public class Cursor implements java.io.Serializable {
             String key    = prefix + DotFileSuffix;
 
             if (!systemCustomCursorProperties.containsKey(key)) {
-                if (log.isLoggable(Level.FINER)) {
-                    log.log(Level.FINER, "Cursor.getSystemCustomCursor(" + name + ") returned null");
+                if (log.isLoggable(PlatformLogger.FINER)) {
+                    log.finer("Cursor.getSystemCustomCursor(" + name + ") returned null");
                 }
                 return null;
             }
@@ -353,8 +353,8 @@ public class Cursor implements java.io.Serializable {
             }
 
             if (cursor == null) {
-                if (log.isLoggable(Level.FINER)) {
-                    log.log(Level.FINER, "Cursor.getSystemCustomCursor(" + name + ") returned null");
+                if (log.isLoggable(PlatformLogger.FINER)) {
+                    log.finer("Cursor.getSystemCustomCursor(" + name + ") returned null");
                 }
             } else {
                 systemCustomCursors.put(name, cursor);

@@ -34,14 +34,13 @@ import java.awt.Insets;
 import java.awt.MenuBar;
 import java.awt.Rectangle;
 import java.awt.peer.FramePeer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
 class XFramePeer extends XDecoratedPeer implements FramePeer {
-    private static Logger log = Logger.getLogger("sun.awt.X11.XFramePeer");
-    private static Logger stateLog = Logger.getLogger("sun.awt.X11.states");
-    private static Logger insLog = Logger.getLogger("sun.awt.X11.insets.XFramePeer");
+    private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XFramePeer");
+    private static PlatformLogger stateLog = PlatformLogger.getLogger("sun.awt.X11.states");
+    private static PlatformLogger insLog = PlatformLogger.getLogger("sun.awt.X11.insets.XFramePeer");
 
     XMenuBarPeer menubarPeer;
     MenuBar menubar;
@@ -76,10 +75,10 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         winAttr.isResizable = true; // target.isResizable();
         winAttr.title = target.getTitle();
         winAttr.initialResizability = target.isResizable();
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "Frame''s initial attributes: decor {0}, resizable {1}, undecorated {2}, initial state {3}",
-                     new Object[] {Integer.valueOf(winAttr.decorations), Boolean.valueOf(winAttr.initialResizability),
-                                   Boolean.valueOf(!winAttr.nativeDecor), Integer.valueOf(winAttr.initialState)});
+        if (log.isLoggable(PlatformLogger.FINE)) {
+            log.fine("Frame''s initial attributes: decor {0}, resizable {1}, undecorated {2}, initial state {3}",
+                     Integer.valueOf(winAttr.decorations), Boolean.valueOf(winAttr.initialResizability),
+                     Boolean.valueOf(!winAttr.nativeDecor), Integer.valueOf(winAttr.initialState));
         }
     }
 
@@ -208,7 +207,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
     }
 
     public void setMaximizedBounds(Rectangle b) {
-        if (insLog.isLoggable(Level.FINE)) insLog.fine("Setting maximized bounds to " + b);
+        if (insLog.isLoggable(PlatformLogger.FINE)) insLog.fine("Setting maximized bounds to " + b);
         if (b == null) return;
         maxBounds = new Rectangle(b);
         XToolkit.awtLock();
@@ -225,7 +224,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
             } else {
                 hints.set_max_height((int)XlibWrapper.DisplayHeight(XToolkit.getDisplay(), XlibWrapper.DefaultScreen(XToolkit.getDisplay())));
             }
-            if (insLog.isLoggable(Level.FINER)) insLog.finer("Setting hints, flags " + XlibWrapper.hintsToString(hints.get_flags()));
+            if (insLog.isLoggable(PlatformLogger.FINER)) insLog.finer("Setting hints, flags " + XlibWrapper.hintsToString(hints.get_flags()));
             XlibWrapper.XSetWMNormalHints(XToolkit.getDisplay(), window, hints.pData);
         } finally {
             XToolkit.awtUnlock();
@@ -253,14 +252,14 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         int changed = state ^ newState;
         int changeIconic = changed & Frame.ICONIFIED;
         boolean iconic = (newState & Frame.ICONIFIED) != 0;
-        stateLog.log(Level.FINER, "Changing state, old state {0}, new state {1}(iconic {2})",
-                     new Object[] {Integer.valueOf(state), Integer.valueOf(newState), Boolean.valueOf(iconic)});
+        stateLog.finer("Changing state, old state {0}, new state {1}(iconic {2})",
+                       Integer.valueOf(state), Integer.valueOf(newState), Boolean.valueOf(iconic));
         if (changeIconic != 0 && iconic) {
-            if (stateLog.isLoggable(Level.FINER)) stateLog.finer("Iconifying shell " + getShell() + ", this " + this + ", screen " + getScreenNumber());
+            if (stateLog.isLoggable(PlatformLogger.FINER)) stateLog.finer("Iconifying shell " + getShell() + ", this " + this + ", screen " + getScreenNumber());
             XToolkit.awtLock();
             try {
                 int res = XlibWrapper.XIconifyWindow(XToolkit.getDisplay(), getShell(), getScreenNumber());
-                if (stateLog.isLoggable(Level.FINER)) stateLog.finer("XIconifyWindow returned " + res);
+                if (stateLog.isLoggable(PlatformLogger.FINER)) stateLog.finer("XIconifyWindow returned " + res);
             }
             finally {
                 XToolkit.awtUnlock();
@@ -270,7 +269,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
             setExtendedState(newState);
         }
         if (changeIconic != 0 && !iconic) {
-            if (stateLog.isLoggable(Level.FINER)) stateLog.finer("DeIconifying " + this);
+            if (stateLog.isLoggable(PlatformLogger.FINER)) stateLog.finer("DeIconifying " + this);
             xSetVisible(true);
         }
     }
@@ -283,7 +282,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         super.handlePropertyNotify(xev);
         XPropertyEvent ev = xev.get_xproperty();
 
-        log.log(Level.FINER, "Property change {0}", new Object[] {ev});
+        log.finer("Property change {0}", ev);
         /*
          * Let's see if this is a window state protocol message, and
          * if it is - decode a new state in terms of java constants.
@@ -348,7 +347,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
             XWMHints hints = getWMHints();
             hints.set_flags((int)XUtilConstants.StateHint | hints.get_flags());
             hints.set_initial_state(wm_state);
-            if (stateLog.isLoggable(Level.FINE)) stateLog.fine("Setting initial WM state on " + this + " to " + wm_state);
+            if (stateLog.isLoggable(PlatformLogger.FINE)) stateLog.fine("Setting initial WM state on " + this + " to " + wm_state);
             XlibWrapper.XSetWMHints(XToolkit.getDisplay(), getWindow(), hints.pData);
         }
         finally {

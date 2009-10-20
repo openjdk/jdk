@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 2002-2003 - All Rights Reserved
  *
  */
@@ -32,11 +33,18 @@
 #ifndef __EXTENSIONSUBTABLES_H
 #define __EXTENSIONSUBTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
 #include "GlyphSubstitutionTables.h"
 #include "LookupProcessor.h"
 #include "GlyphIterator.h"
+
+U_NAMESPACE_BEGIN
 
 struct ExtensionSubtable //: GlyphSubstitutionSubtable
 {
@@ -48,4 +56,5 @@ struct ExtensionSubtable //: GlyphSubstitutionSubtable
                       GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
 };
 
+U_NAMESPACE_END
 #endif

@@ -261,7 +261,7 @@ public class T6769027 {
 
     enum PositionKind {
         NOPOS(Position.NOPOS, "- ", "error: "),
-        POS(5, "/Test.java:1:6: ", "myfo:/Test.java:1: ");
+        POS(5, "Test.java:1:6: ", "/Test.java:1: ");
 
         int pos;
         String rawOutput;

@@ -29,8 +29,7 @@ package sun.awt.X11;
 import java.util.Hashtable;
 import sun.misc.Unsafe;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import sun.util.logging.PlatformLogger;
 
 public class XKeysym {
 
@@ -70,7 +69,7 @@ public class XKeysym {
     static Hashtable<Integer, Long> javaKeycode2KeysymHash = new Hashtable<Integer, Long>();
     static long keysym_lowercase = unsafe.allocateMemory(Native.getLongSize());
     static long keysym_uppercase = unsafe.allocateMemory(Native.getLongSize());
-    private static Logger keyEventLog = Logger.getLogger("sun.awt.X11.kye.XKeysym");
+    private static PlatformLogger keyEventLog = PlatformLogger.getLogger("sun.awt.X11.kye.XKeysym");
     public static char convertKeysym( long ks, int state ) {
 
         /* First check for Latin-1 characters (1:1 mapping) */
@@ -354,6 +353,7 @@ public class XKeysym {
         keysym2UCSHash.put( (long)0xFFB7, (char)0x0037); // XK_KP_7 --> DIGIT SEVEN
         keysym2UCSHash.put( (long)0xFFB8, (char)0x0038); // XK_KP_8 --> DIGIT EIGHT
         keysym2UCSHash.put( (long)0xFFB9, (char)0x0039); // XK_KP_9 --> DIGIT NINE
+        keysym2UCSHash.put( (long)0xFE20, (char)0x0009); // XK_ISO_Left_Tab --> <control>
         keysym2UCSHash.put( (long)0x1a1, (char)0x0104); // XK_Aogonek --> LATIN CAPITAL LETTER A WITH OGONEK
         keysym2UCSHash.put( (long)0x1a2, (char)0x02d8); // XK_breve --> BREVE
         keysym2UCSHash.put( (long)0x1a3, (char)0x0141); // XK_Lstroke --> LATIN CAPITAL LETTER L WITH STROKE
