@@ -179,4 +179,6 @@ class ConcurrentG1Refine: public CHeapObj {
   void clear_and_record_card_counts();
 
   static size_t thread_num();
+
+  void print_worker_threads_on(outputStream* st) const;
 };

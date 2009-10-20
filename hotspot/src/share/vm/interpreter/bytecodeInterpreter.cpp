@@ -3031,9 +3031,9 @@ BytecodeInterpreter::print() {
   tty->print_cr("&native_fresult: " INTPTR_FORMAT, (uintptr_t) &this->_native_fresult);
   tty->print_cr("native_lresult: " INTPTR_FORMAT, (uintptr_t) this->_native_lresult);
 #endif
-#ifdef IA64
+#if defined(IA64) && !defined(ZERO)
   tty->print_cr("last_Java_fp: " INTPTR_FORMAT, (uintptr_t) this->_last_Java_fp);
-#endif // IA64
+#endif // IA64 && !ZERO
   tty->print_cr("self_link: " INTPTR_FORMAT, (uintptr_t) this->_self_link);
 }
 

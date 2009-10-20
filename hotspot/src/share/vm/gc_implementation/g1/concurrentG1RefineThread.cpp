@@ -204,8 +204,12 @@ void ConcurrentG1RefineThread::stop() {
   if (G1TraceConcurrentRefinement) gclog_or_tty->print_cr("G1-Refine-stop");
 }
 
-void ConcurrentG1RefineThread::print() {
-  gclog_or_tty->print("\"Concurrent G1 Refinement Thread\" ");
-  Thread::print();
-  gclog_or_tty->cr();
+void ConcurrentG1RefineThread::print() const {
+  print_on(tty);
+}
+
+void ConcurrentG1RefineThread::print_on(outputStream* st) const {
+  st->print("\"G1 Concurrent Refinement Thread#%d\" ", _worker_id);
+  Thread::print_on(st);
+  st->cr();
 }

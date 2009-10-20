@@ -730,7 +730,7 @@ public class FloatingDecimal{
                  * Thus we will need more than one digit if we're using
                  * E-form
                  */
-                if ( decExp <= -3 || decExp >= 8 ){
+                if ( decExp < -3 || decExp >= 8 ){
                     high = low = false;
                 }
                 while( ! low && ! high ){
@@ -783,7 +783,7 @@ public class FloatingDecimal{
                  * Thus we will need more than one digit if we're using
                  * E-form
                  */
-                if ( decExp <= -3 || decExp >= 8 ){
+                if ( decExp < -3 || decExp >= 8 ){
                     high = low = false;
                 }
                 while( ! low && ! high ){
@@ -847,7 +847,7 @@ public class FloatingDecimal{
              * Thus we will need more than one digit if we're using
              * E-form
              */
-            if ( decExp <= -3 || decExp >= 8 ){
+            if ( decExp < -3 || decExp >= 8 ){
                 high = low = false;
             }
             while( ! low && ! high ){
