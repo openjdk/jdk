@@ -179,7 +179,7 @@ class WindowsDirectoryStream
                 synchronized (closeLock) {
                     if (!isOpen)
                         throwAsConcurrentModificationException(new
-                            IllegalStateException("Directory stream is closed"));
+                            ClosedDirectoryStreamException());
                     try {
                         name = FindNextFile(handle, findDataBuffer.address());
                         if (name == null) {
@@ -236,7 +236,8 @@ class WindowsDirectoryStream
         @Override
         public void remove() {
             if (!isOpen) {
-                throw new IllegalStateException("Directory stream is closed");
+                throwAsConcurrentModificationException(new
+                    ClosedDirectoryStreamException());
             }
             Path entry;
             synchronized (this) {
