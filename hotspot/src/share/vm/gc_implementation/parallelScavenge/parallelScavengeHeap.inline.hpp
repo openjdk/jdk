@@ -41,3 +41,11 @@ inline void ParallelScavengeHeap::invoke_full_gc(bool maximum_compaction)
     PSMarkSweep::invoke(maximum_compaction);
   }
 }
+
+inline bool ParallelScavengeHeap::is_in_young(oop p) {
+  return young_gen()->is_in_reserved(p);
+}
+
+inline bool ParallelScavengeHeap::is_in_old_or_perm(oop p) {
+  return old_gen()->is_in_reserved(p) || perm_gen()->is_in_reserved(p);
+}

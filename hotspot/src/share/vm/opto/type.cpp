@@ -1115,7 +1115,7 @@ const Type *TypeInt::xdual() const {
 
 //------------------------------widen------------------------------------------
 // Only happens for optimistic top-down optimizations.
-const Type *TypeInt::widen( const Type *old ) const {
+const Type *TypeInt::widen( const Type *old, const Type* limit ) const {
   // Coming from TOP or such; no widening
   if( old->base() != Int ) return this;
   const TypeInt *ot = old->is_int();
@@ -1134,15 +1134,21 @@ const Type *TypeInt::widen( const Type *old ) const {
     // Now widen new guy.
     // Check for widening too far
     if (_widen == WidenMax) {
-      if (min_jint < _lo && _hi < max_jint) {
+      int max = max_jint;
+      int min = min_jint;
+      if (limit->isa_int()) {
+        max = limit->is_int()->_hi;
+        min = limit->is_int()->_lo;
+      }
+      if (min < _lo && _hi < max) {
         // If neither endpoint is extremal yet, push out the endpoint
         // which is closer to its respective limit.
         if (_lo >= 0 ||                 // easy common case
-            (juint)(_lo - min_jint) >= (juint)(max_jint - _hi)) {
+            (juint)(_lo - min) >= (juint)(max - _hi)) {
           // Try to widen to an unsigned range type of 31 bits:
-          return make(_lo, max_jint, WidenMax);
+          return make(_lo, max, WidenMax);
         } else {
-          return make(min_jint, _hi, WidenMax);
+          return make(min, _hi, WidenMax);
         }
       }
       return TypeInt::INT;
@@ -1357,7 +1363,7 @@ const Type *TypeLong::xdual() const {
 
 //------------------------------widen------------------------------------------
 // Only happens for optimistic top-down optimizations.
-const Type *TypeLong::widen( const Type *old ) const {
+const Type *TypeLong::widen( const Type *old, const Type* limit ) const {
   // Coming from TOP or such; no widening
   if( old->base() != Long ) return this;
   const TypeLong *ot = old->is_long();
@@ -1376,18 +1382,24 @@ const Type *TypeLong::widen( const Type *old ) const {
     // Now widen new guy.
     // Check for widening too far
     if (_widen == WidenMax) {
-      if (min_jlong < _lo && _hi < max_jlong) {
+      jlong max = max_jlong;
+      jlong min = min_jlong;
+      if (limit->isa_long()) {
+        max = limit->is_long()->_hi;
+        min = limit->is_long()->_lo;
+      }
+      if (min < _lo && _hi < max) {
         // If neither endpoint is extremal yet, push out the endpoint
         // which is closer to its respective limit.
         if (_lo >= 0 ||                 // easy common case
-            (julong)(_lo - min_jlong) >= (julong)(max_jlong - _hi)) {
+            (julong)(_lo - min) >= (julong)(max - _hi)) {
           // Try to widen to an unsigned range type of 32/63 bits:
-          if (_hi < max_juint)
+          if (max >= max_juint && _hi < max_juint)
             return make(_lo, max_juint, WidenMax);
           else
-            return make(_lo, max_jlong, WidenMax);
+            return make(_lo, max, WidenMax);
         } else {
-          return make(min_jlong, _hi, WidenMax);
+          return make(min, _hi, WidenMax);
         }
       }
       return TypeLong::LONG;

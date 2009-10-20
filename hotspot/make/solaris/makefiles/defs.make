@@ -65,16 +65,18 @@ JDK_INCLUDE_SUBDIR=solaris
 VM_DEBUG=jvmg
 
 EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
+
+# client and server subdirectories have symbolic links to ../libjsig.so
+EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.so
+
 EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjsig.so
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.so
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.so
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.so
 ifeq ($(ARCH_DATA_MODEL), 32)
   EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjsig.so
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.so 
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.so 
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.so 
