@@ -1543,7 +1543,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * because ntlm does not support this feature.
      */
     private AuthenticationInfo
-        resetProxyAuthentication(AuthenticationInfo proxyAuthentication, AuthenticationHeader auth) {
+        resetProxyAuthentication(AuthenticationInfo proxyAuthentication, AuthenticationHeader auth) throws IOException {
         if ((proxyAuthentication != null )&&
              proxyAuthentication.getAuthScheme() != NTLM) {
             String raw = auth.raw();
@@ -1767,7 +1767,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /**
      * Sets pre-emptive proxy authentication in header
      */
-    private void setPreemptiveProxyAuthentication(MessageHeader requests) {
+    private void setPreemptiveProxyAuthentication(MessageHeader requests) throws IOException {
         AuthenticationInfo pauth
             = AuthenticationInfo.getProxyAuth(http.getProxyHostUsed(),
                                               http.getProxyPortUsed());
@@ -2123,13 +2123,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     String requestURI = null;
 
-    String getRequestURI() {
+    String getRequestURI() throws IOException {
         if (requestURI == null) {
-            try {
-                requestURI = http.getURLFile();
-            } catch (IOException e) {
-                requestURI = "";
-            }
+            requestURI = http.getURLFile();
         }
         return requestURI;
     }
