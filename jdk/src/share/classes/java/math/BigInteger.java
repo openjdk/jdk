@@ -2051,6 +2051,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  n shift distance, in bits.
      * @return {@code this << n}
+     * @throws ArithmeticException if the shift distance is {@code
+     *         Integer.MIN_VALUE}.
      * @see #shiftRight
      */
     public BigInteger shiftLeft(int n) {
@@ -2058,8 +2060,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return ZERO;
         if (n==0)
             return this;
-        if (n<0)
-            return shiftRight(-n);
+        if (n<0) {
+            if (n == Integer.MIN_VALUE) {
+                throw new ArithmeticException("Shift distance of Integer.MIN_VALUE not supported.");
+            } else {
+                return shiftRight(-n);
+            }
+        }
 
         int nInts = n >>> 5;
         int nBits = n & 0x1f;
@@ -2097,13 +2104,20 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  n shift distance, in bits.
      * @return {@code this >> n}
+     * @throws ArithmeticException if the shift distance is {@code
+     *         Integer.MIN_VALUE}.
      * @see #shiftLeft
      */
     public BigInteger shiftRight(int n) {
         if (n==0)
             return this;
-        if (n<0)
-            return shiftLeft(-n);
+        if (n<0) {
+            if (n == Integer.MIN_VALUE) {
+                throw new ArithmeticException("Shift distance of Integer.MIN_VALUE not supported.");
+            } else {
+                return shiftLeft(-n);
+            }
+        }
 
         int nInts = n >>> 5;
         int nBits = n & 0x1f;
