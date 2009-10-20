@@ -1180,6 +1180,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 inputStream = http.getInputStream();
 
                 respCode = getResponseCode();
+                if (respCode == -1) {
+                    disconnectInternal();
+                    throw new IOException ("Invalid Http response");
+                }
                 if (respCode == HTTP_PROXY_AUTH) {
                     if (streaming()) {
                         disconnectInternal();

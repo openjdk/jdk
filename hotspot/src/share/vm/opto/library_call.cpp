@@ -4160,13 +4160,13 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
           result_mem ->set_req(_objArray_path, reset_memory());
         }
       }
-      // We can dispense with card marks if we know the allocation
-      // comes out of eden (TLAB)...  In fact, ReduceInitialCardMarks
-      // causes the non-eden paths to simulate a fresh allocation,
-      // insofar that no further card marks are required to initialize
-      // the object.
-
       // Otherwise, there are no card marks to worry about.
+      // (We can dispense with card marks if we know the allocation
+      //  comes out of eden (TLAB)...  In fact, ReduceInitialCardMarks
+      //  causes the non-eden paths to take compensating steps to
+      //  simulate a fresh allocation, so that no further
+      //  card marks are required in compiled code to initialize
+      //  the object.)
 
       if (!stopped()) {
         copy_to_clone(obj, alloc_obj, obj_size, true, false);
