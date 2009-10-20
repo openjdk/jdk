@@ -31,8 +31,6 @@ import java.awt.peer.TrayIconPeer;
 import sun.awt.*;
 import java.awt.image.*;
 import java.text.BreakIterator;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;

@@ -60,20 +60,10 @@ public class ConcurrentQueueLoops {
         //queues.add(new ArrayBlockingQueue<Integer>(count, true));
         queues.add(new LinkedBlockingQueue<Integer>());
         queues.add(new LinkedBlockingDeque<Integer>());
-
-        try {
-            queues.add((Queue<Integer>)
-                       Class.forName("java.util.concurrent.LinkedTransferQueue")
-                       .newInstance());
-        } catch (IllegalAccessException e) {
-        } catch (InstantiationException e) {
-        } catch (ClassNotFoundException e) {
-            // OK; not yet added to JDK
-        }
+//         queues.add(new LinkedTransferQueue<Integer>());
 
         // Following additional implementations are available from:
         // http://gee.cs.oswego.edu/dl/concurrency-interest/index.html
-        // queues.add(new LinkedTransferQueue<Integer>());
         // queues.add(new SynchronizedLinkedListQueue<Integer>());
 
         // Avoid "first fast, second slow" benchmark effect.

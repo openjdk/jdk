@@ -31,7 +31,7 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # Files to compile.
 #
-AUTO_FILES_JAVA_DIRS = java/util/logging
+AUTO_FILES_JAVA_DIRS = java/util/logging sun/util/logging
 
 #
 # Resources
@@ -46,7 +46,6 @@ RESOURCE_BUNDLES_COMPILED_PROPERTIES = \
 include $(BUILDDIR)/common/Classes.gmk
 
 properties: $(LIBDIR)/logging.properties
-
 $(LIBDIR)/logging.properties: $(SHARE_SRC)/lib/logging.properties
 	$(install-file)
 

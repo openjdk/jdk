@@ -29,6 +29,9 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
+
+import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
 /* FontScaler is "internal interface" to font rasterizer library.
@@ -77,6 +80,79 @@ import sun.java2d.DisposerRecord;
  *     this (and this is probably more important for Type1 fonts).
  */
 public abstract class FontScaler implements DisposerRecord {
+
+    private static FontScaler nullScaler = null;
+    private static Constructor<FontScaler> scalerConstructor = null;
+
+    //Find preferred font scaler
+    //
+    //NB: we can allow property based preferences
+    //   (theoretically logic can be font type specific)
+    static {
+        Class scalerClass = null;
+        Class arglst[] = new Class[] {Font2D.class, int.class,
+        boolean.class, int.class};
+
+        try {
+            if (FontUtilities.isOpenJDK) {
+                scalerClass = Class.forName("sun.font.FreetypeFontScaler");
+            } else {
+                scalerClass = Class.forName("sun.font.T2KFontScaler");
+            }
+        } catch (ClassNotFoundException e) {
+                scalerClass = NullFontScaler.class;
+        }
+
+        //NB: rewrite using factory? constructor is ugly way
+        try {
+            scalerConstructor = scalerClass.getConstructor(arglst);
+        } catch (NoSuchMethodException e) {
+            //should not happen
+        }
+    }
+
+    /* This is the only place to instantiate new FontScaler.
+     * Therefore this is very convinient place to register
+     * scaler with Disposer as well as trigger deregistring bad font
+     * in case when scaler reports this.
+     */
+    public static FontScaler getScaler(Font2D font,
+                                int indexInCollection,
+                                boolean supportsCJK,
+                                int filesize) {
+        FontScaler scaler = null;
+
+        try {
+            Object args[] = new Object[] {font, indexInCollection,
+                                          supportsCJK, filesize};
+            scaler = scalerConstructor.newInstance(args);
+            Disposer.addObjectRecord(font, scaler);
+        } catch (Throwable e) {
+            scaler = nullScaler;
+
+            //if we can not instantiate scaler assume bad font
+            //NB: technically it could be also because of internal scaler
+            //    error but here we are assuming scaler is ok.
+            FontManager fm = FontManagerFactory.getInstance();
+            fm.deRegisterBadFont(font);
+        }
+        return scaler;
+    }
+
+    /*
+     * At the moment it is harmless to create 2 null scalers so, technically,
+     * syncronized keyword is not needed.
+     *
+     * But it is safer to keep it to avoid subtle problems if we will be adding
+     * checks like whether scaler is null scaler.
+     */
+    public static synchronized FontScaler getNullScaler() {
+        if (nullScaler == null) {
+            nullScaler = new NullFontScaler();
+        }
+        return nullScaler;
+    }
+
     protected WeakReference<Font2D> font = null;
     protected long nativeScaler = 0; //used by decendants
                                      //that have native state

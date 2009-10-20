@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 import sun.awt.motif.X11FontMetrics;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 // FIXME: implement multi-select
 /*
@@ -43,7 +43,7 @@ import java.util.logging.*;
  * posting of Item or ActionEvents
  */
 public class ListHelper implements XScrollbarClient {
-    private static final Logger log = Logger.getLogger("sun.awt.X11.ListHelper");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.ListHelper");
 
     private final int FOCUS_INSET = 1;
 
@@ -263,7 +263,7 @@ public class ListHelper implements XScrollbarClient {
     }
 
     public int y2index(int y) {
-        if (log.isLoggable(Level.FINE)) {
+        if (log.isLoggable(PlatformLogger.FINE)) {
             log.fine("y=" + y +", firstIdx=" + firstDisplayedIndex() +", itemHeight=" + getItemHeight()
                      + ",item_margin=" + ITEM_MARGIN);
         }

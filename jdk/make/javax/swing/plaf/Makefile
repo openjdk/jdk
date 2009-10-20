@@ -34,16 +34,14 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 include FILES.gmk
 AUTO_FILES_JAVA_DIRS = javax/swing/plaf sun/swing com/sun/java/swing/plaf
-ifndef DISABLE_NIMBUS
-  SUBDIRS = nimbus
-endif
-
-# Nimbus is handled in its own directory
-AUTO_JAVA_PRUNE = nimbus
 
 ifeq ($(PLATFORM), windows)
     # Don't build GTK L&F on Windows
-    AUTO_JAVA_PRUNE += gtk
+    AUTO_JAVA_PRUNE = gtk
+endif
+
+ifdef DISABLE_NIMBUS
+    AUTO_JAVA_PRUNE += nimbus
 endif
 
 MISC_FILES = $(MISC_SWING_FILES)
@@ -51,6 +49,10 @@ ifneq ($(PLATFORM), windows)
     # Only include GTK icons on Solaris/Linux
     MISC_FILES += $(MISC_SWING_FILES_UNIX)
 endif
+
+NIMBUS_GENSRC_DIR = $(GENSRCDIR)/javax/swing/plaf/nimbus
+NIMBUS_SKIN_FILE = $(SWING_SRC)/plaf/nimbus/skin.laf
+NIMBUS_GENERATOR_JAR = $(BUILDTOOLJARDIR)/generatenimbus.jar
 
 FILES_java = $(FILES_SWING_java)
 
@@ -75,14 +77,25 @@ endif
 # Process LOGO_ICONS and Motif Icons first.
 #
 build: $(LOGO_ICONS) $(MISC_SWING_FILES_MOTIF_GIF) $(MISC_SWING_FILES_MOTIF_PNG) other_files
-	$(SUBDIRS-loop)
 
-clean clobber::
-	$(SUBDIRS-loop)
+$(NIMBUS_GENSRC_DIR): $(NIMBUS_SKIN_FILE) $(NIMBUS_GENERATOR_JAR)
+	@$(ECHO) "Generating Nimbus source files:"
+	$(RM) -r $(NIMBUS_GENSRC_DIR)
+	$(BOOT_JAVA_CMD) -jar $(NIMBUS_GENERATOR_JAR) \
+	    -skinFile $(NIMBUS_SKIN_FILE) -buildDir $(GENSRCDIR) \
+	    -packagePrefix $(PACKAGE).nimbus -lafName Nimbus
+	@$(ECHO) "Finished generating Nimbus source files"
+
+clean:: classes.clean
+	$(RM) -r $(NIMBUS_GENSRC_DIR)
 
 #
 # Include
 #
+ifndef DISABLE_NIMBUS
+    CLASSES_INIT = $(NIMBUS_GENSRC_DIR)
+endif
+
 include $(BUILDDIR)/common/Classes.gmk
 
 ifndef OPENJDK

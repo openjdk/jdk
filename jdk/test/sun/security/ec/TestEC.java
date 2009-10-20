@@ -27,6 +27,8 @@
  * @summary  Provide out-of-the-box support for ECC algorithms
  * @library ../pkcs11
  * @library ../pkcs11/ec
+ * @library ../pkcs11/sslecc
+ * @compile -XDignore.symbol.file TestEC.java
  * @run main TestEC
  */
 
@@ -35,12 +37,15 @@ import java.security.Provider;
 /*
  * Leverage the collection of EC tests used by PKCS11
  *
- * NOTE: the following files were copied here from the PKCS11 EC Test area
+ * NOTE: the following 6 files were copied here from the PKCS11 EC Test area
  *       and must be kept in sync with the originals:
  *
  *           ../pkcs11/ec/p12passwords.txt
+ *           ../pkcs11/ec/certs/sunlabscerts.pem
  *           ../pkcs11/ec/pkcs12/secp256r1server-secp384r1ca.p12
  *           ../pkcs11/ec/pkcs12/sect193r1server-rsa1024ca.p12
+ *           ../pkcs11/sslecc/keystore
+ *           ../pkcs11/sslecc/truststore
  */
 
 public class TestEC {
@@ -49,18 +54,23 @@ public class TestEC {
         Provider p = new sun.security.ec.SunEC();
         System.out.println("Running tests with " + p.getName() +
             " provider...\n");
-
         long start = System.currentTimeMillis();
+
+        /*
+         * The entry point used for each test is its instance method
+         * called main (not its static method called main).
+         */
         new TestECDH().main(p);
         new TestECDSA().main(p);
         new TestCurves().main(p);
         new TestKeyFactory().main(p);
         new TestECGenSpec().main(p);
         new ReadPKCS12().main(p);
-        //new ReadCertificates().main(p);
-        long stop = System.currentTimeMillis();
+        new ReadCertificates().main(p);
+        new ClientJSSEServerJSSE().main(p);
 
+        long stop = System.currentTimeMillis();
         System.out.println("\nCompleted tests with " + p.getName() +
-            " provider (" + (stop - start) + " ms).");
+            " provider (" + ((stop - start) / 1000.0) + " seconds).");
     }
 }

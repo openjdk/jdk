@@ -39,21 +39,6 @@ import javax.crypto.spec.*;
  */
 public final class ECDHKeyAgreement extends KeyAgreementSpi {
 
-    // flag indicating whether the native ECC implementation is present
-    private static boolean implementationPresent = true;
-    static {
-        try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("sunecc");
-                    return null;
-                }
-            });
-        } catch (UnsatisfiedLinkError e) {
-            implementationPresent = false;
-        }
-    }
-
     // private key, if initialized
     private ECPrivateKey privateKey;
 
@@ -65,16 +50,12 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
 
     /**
      * Constructs a new ECDHKeyAgreement.
-     *
-     * @exception ProviderException if the native ECC library is unavailable.
      */
     public ECDHKeyAgreement() {
-        if (!implementationPresent) {
-            throw new ProviderException("ECDH implementation is not available");
-        }
     }
 
     // see JCE spec
+    @Override
     protected void engineInit(Key key, SecureRandom random)
             throws InvalidKeyException {
         if (!(key instanceof PrivateKey)) {
@@ -86,6 +67,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     }
 
     // see JCE spec
+    @Override
     protected void engineInit(Key key, AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidKeyException,
             InvalidAlgorithmParameterException {
@@ -97,6 +79,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     }
 
     // see JCE spec
+    @Override
     protected Key engineDoPhase(Key key, boolean lastPhase)
             throws InvalidKeyException, IllegalStateException {
         if (privateKey == null) {
@@ -130,6 +113,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     }
 
     // see JCE spec
+    @Override
     protected byte[] engineGenerateSecret() throws IllegalStateException {
         if ((privateKey == null) || (publicValue == null)) {
             throw new IllegalStateException("Not initialized correctly");
@@ -150,6 +134,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     }
 
     // see JCE spec
+    @Override
     protected int engineGenerateSecret(byte[] sharedSecret, int
             offset) throws IllegalStateException, ShortBufferException {
         if (offset + secretLen > sharedSecret.length) {
@@ -162,6 +147,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     }
 
     // see JCE spec
+    @Override
     protected SecretKey engineGenerateSecret(String algorithm)
             throws IllegalStateException, NoSuchAlgorithmException,
             InvalidKeyException {

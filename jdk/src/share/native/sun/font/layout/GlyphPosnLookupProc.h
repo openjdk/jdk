@@ -24,13 +24,17 @@
  */
 
 /*
- *
  * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  */
 
 #ifndef __GLYPHPOSITIONINGLOOKUPPROCESSOR_H
 #define __GLYPHPOSITIONINGLOOKUPPROCESSOR_H
+
+/**
+ * \file
+ * \internal
+ */
 
 #include "LETypes.h"
 #include "LEFontInstance.h"
@@ -42,12 +46,13 @@
 #include "GlyphIterator.h"
 #include "LookupProcessor.h"
 
+U_NAMESPACE_BEGIN
+
 class GlyphPositioningLookupProcessor : public LookupProcessor
 {
 public:
     GlyphPositioningLookupProcessor(const GlyphPositioningTableHeader *glyphPositioningTableHeader,
-        LETag scriptTag, LETag languageTag,
-        const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder);
+        LETag scriptTag, LETag languageTag, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool featureOrder);
 
     virtual ~GlyphPositioningLookupProcessor();
 
@@ -63,4 +68,5 @@ private:
     GlyphPositioningLookupProcessor &operator=(const GlyphPositioningLookupProcessor &other); // forbid copying of this class
 };
 
+U_NAMESPACE_END
 #endif

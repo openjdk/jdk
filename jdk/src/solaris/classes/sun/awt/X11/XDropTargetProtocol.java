@@ -29,7 +29,7 @@ import java.io.IOException;
 
 import java.util.HashMap;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 /**
  * An abstract class for drop protocols on X11 systems.
@@ -38,8 +38,8 @@ import java.util.logging.*;
  * @since 1.5
  */
 abstract class XDropTargetProtocol {
-    private static final Logger logger =
-        Logger.getLogger("sun.awt.X11.xembed.xdnd.XDropTargetProtocol");
+    private static final PlatformLogger logger =
+        PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDropTargetProtocol");
 
     private final XDropTargetProtocolListener listener;
 
@@ -116,16 +116,16 @@ abstract class XDropTargetProtocol {
                                                            XClientMessageEvent xclient) {
         EmbedderRegistryEntry entry = getEmbedderRegistryEntry(toplevel);
 
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "        entry={0}", new Object[] {entry});
+        if (logger.isLoggable(PlatformLogger.FINEST)) {
+            logger.finest("        entry={0}", entry);
         }
         // Window not registered as an embedder for this protocol.
         if (entry == null) {
             return false;
         }
 
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "        entry.isOverriden()={0}", new Object[] {entry.isOverriden()});
+        if (logger.isLoggable(PlatformLogger.FINEST)) {
+            logger.finest("        entry.isOverriden()={0}", entry.isOverriden());
         }
         // Window didn't have an associated drop site, so there is no need
         // to forward the message.
@@ -137,8 +137,8 @@ abstract class XDropTargetProtocol {
 
         long proxy = entry.getProxy();
 
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "        proxy={0} toplevel={1}", new Object[] {proxy, toplevel});
+        if (logger.isLoggable(PlatformLogger.FINEST)) {
+            logger.finest("        proxy={0} toplevel={1}", proxy, toplevel);
         }
         if (proxy == 0) {
             proxy = toplevel;

@@ -1,6 +1,26 @@
 /*
- * Copyright 2009 Sun Microsystems, Inc. All rights reserved.
- * SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
  */
 
 package javax.swing;
@@ -36,28 +56,70 @@ import java.security.PrivilegedAction;
  * {@code JLayer} is a good solution if you only need to do custom painting
  * over compound component or catch input events from its subcomponents.
  * <pre>
+ * import javax.swing.*;
+ * import javax.swing.plaf.LayerUI;
+ * import java.awt.*;
+ *
+ * public class JLayerSample {
+ *
+ *     private static JLayer&lt;JComponent&gt; createLayer() {
+ *         // This custom layerUI will fill the layer with translucent green
+ *         // and print out all mouseMotion events generated within its borders
+ *         LayerUI&lt;JComponent&gt; layerUI = new LayerUI&lt;JComponent&gt;() {
+ *
+ *             public void paint(Graphics g, JComponent c) {
+ *                 // paint the layer as is
+ *                 super.paint(g, c);
+ *                 // fill it with the translucent green
+ *                 g.setColor(new Color(0, 128, 0, 128));
+ *                 g.fillRect(0, 0, c.getWidth(), c.getHeight());
+ *             }
+ *
+ *             public void installUI(JComponent c) {
+ *                 super.installUI(c);
+ *                 // enable mouse motion events for the layer's subcomponents
+ *                 ((JLayer) c).setLayerEventMask(AWTEvent.MOUSE_MOTION_EVENT_MASK);
+ *             }
+ *
+ *             public void uninstallUI(JComponent c) {
+ *                 super.uninstallUI(c);
+ *                 // reset the layer event mask
+ *                 ((JLayer) c).setLayerEventMask(0);
+ *             }
+ *
+ *             // overridden method which catches MouseMotion events
+ *             public void eventDispatched(AWTEvent e, JLayer&lt;? extends JComponent&gt; l) {
+ *                 System.out.println("AWTEvent detected: " + e);
+ *             }
+ *         };
  *         // create a component to be decorated with the layer
- *        JPanel panel = new JPanel();
- *        panel.add(new JButton("JButton"));
- *        // This custom layerUI will fill the layer with translucent green
- *        // and print out all mouseMotion events generated within its borders
- *        LayerUI&lt;JPanel&gt; layerUI = new LayerUI&lt;JPanel&gt;() {
- *            public void paint(Graphics g, JCompo  nent c) {
- *                // paint the layer as is
- *                super.paint(g, c);
- *                // fill it with the translucent green
- *                g.setColor(new Color(0, 128, 0, 128));
- *                g.fillRect(0, 0, c.getWidth(), c.getHeight());
- *            }
- *            // overridden method which catches MouseMotion events
- *            public void eventDispatched(AWTEvent e, JLayer&lt;JPanel&gt; l) {
- *                System.out.println("AWTEvent detected: " + e);
- *            }
- *        };
- *        // create the layer for the panel using our custom layerUI
- *        JLayer&lt;JPanel&gt; layer = new JLayer&lt;JPanel&gt;(panel, layerUI);
- *        // work with the layer as with any other Swing component
- *        frame.add(layer);
+ *         JPanel panel = new JPanel();
+ *         panel.add(new JButton("JButton"));
+ *
+ *         // create the layer for the panel using our custom layerUI
+ *         return new JLayer&lt;JComponent&gt;(panel, layerUI);
+ *     }
+ *
+ *     private static void createAndShowGUI() {
+ *         final JFrame frame = new JFrame();
+ *         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+ *
+ *         // work with the layer as with any other Swing component
+ *         frame.add(createLayer());
+ *
+ *         frame.setSize(200, 200);
+ *         frame.setLocationRelativeTo(null);
+ *         frame.setVisible(true);
+ *     }
+ *
+ *     public static void main(String[] args) throws Exception {
+ *         SwingUtilities.invokeAndWait(new Runnable() {
+ *             public void run() {
+ *                 createAndShowGUI();
+ *             }
+ *         });
+ *     }
+ * }
  * </pre>
  *
  * <b>Note:</b> {@code JLayer} doesn't support the following methods:
@@ -158,7 +220,7 @@ public final class JLayer<V extends Component>
      * @return the {@code JLayer}'s view component
      *         or {@code null} if none exists
      *
-     * @see #setView(V)
+     * @see #setView(Component)
      */
     public V getView() {
         return view;
@@ -259,7 +321,7 @@ public final class JLayer<V extends Component>
      * @throws UnsupportedOperationException this method is not supported
      *
      * @see #setView(Component)
-     * @see #setGlassPane(Component)
+     * @see #setGlassPane(JPanel)
      */
     protected void addImpl(Component comp, Object constraints, int index) {
         throw new UnsupportedOperationException(
@@ -271,7 +333,9 @@ public final class JLayer<V extends Component>
      * {@inheritDoc}
      */
     public void remove(Component comp) {
-        if (comp == getView()) {
+        if (comp == null) {
+            super.remove(comp);
+        } else if (comp == getView()) {
             setView(null);
         } else if (comp == getGlassPane()) {
             setGlassPane(null);
@@ -319,7 +383,7 @@ public final class JLayer<V extends Component>
      * @return false if {@code JLayer}'s {@code glassPane} is visible
      */
     public boolean isOptimizedDrawingEnabled() {
-        return !glassPane.isVisible();
+        return glassPane == null || !glassPane.isVisible();
     }
 
     /**
@@ -388,7 +452,10 @@ public final class JLayer<V extends Component>
         if (layerEventMask != oldEventMask) {
             disableEvents(oldEventMask);
             enableEvents(eventMask);
-            eventController.updateAWTEventListener(this);
+            if (isDisplayable()) {
+                eventController.updateAWTEventListener(
+                        oldEventMask, layerEventMask);
+            }
         }
     }
 
@@ -475,9 +542,6 @@ public final class JLayer<V extends Component>
         if (getUI() != null) {
             return getUI().getScrollableTracksViewportHeight(this);
         }
-        if (getParent() instanceof JViewport) {
-            return ((getParent()).getHeight() > getPreferredSize().height);
-        }
         return false;
     }
 
@@ -497,9 +561,6 @@ public final class JLayer<V extends Component>
     public boolean getScrollableTracksViewportWidth() {
         if (getUI() != null) {
             return getUI().getScrollableTracksViewportWidth(this);
-        }
-        if (getParent() instanceof JViewport) {
-            return ((getParent()).getWidth() > getPreferredSize().width);
         }
         return false;
     }
@@ -535,20 +596,36 @@ public final class JLayer<V extends Component>
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         s.defaultReadObject();
-        if (getUI() != null) {
-            setUI(getUI());
+        if (layerUI != null) {
+            setUI(layerUI);
         }
-        if (getLayerEventMask() != 0) {
-            eventController.updateAWTEventListener(this);
+        if (eventMask != 0) {
+            eventController.updateAWTEventListener(0, eventMask);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void addNotify() {
+        super.addNotify();
+        eventController.updateAWTEventListener(0, eventMask);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void removeNotify() {
+        super.removeNotify();
+        eventController.updateAWTEventListener(eventMask, 0);
     }
 
     /**
      * static AWTEventListener to be shared with all AbstractLayerUIs
      */
     private static class LayerEventController implements AWTEventListener {
-        private ArrayList<WeakReference<JLayer>> layerList =
-                new ArrayList<WeakReference<JLayer>>();
+        private ArrayList<Long> layerMaskList =
+                new ArrayList<Long>();
 
         private long currentEventMask;
 
@@ -572,37 +649,24 @@ public final class JLayer<V extends Component>
             }
         }
 
-        private boolean layerListContains(JLayer l) {
-            for (WeakReference<JLayer> layerWeakReference : layerList) {
-                if (layerWeakReference.get() == l) {
-                    return true;
-                }
+        private void updateAWTEventListener(long oldEventMask, long newEventMask) {
+            if (oldEventMask != 0) {
+                layerMaskList.remove(oldEventMask);
             }
-            return false;
-        }
-
-        private void updateAWTEventListener(JLayer layer) {
-            if (!layerListContains(layer) && layer.getLayerEventMask() != 0) {
-                layerList.add(new WeakReference<JLayer>(layer));
+            if (newEventMask != 0) {
+                layerMaskList.add(newEventMask);
             }
             long combinedMask = 0;
-            Iterator<WeakReference<JLayer>> it = layerList.iterator();
-            while (it.hasNext()) {
-                WeakReference<JLayer> weakRef = it.next();
-                JLayer currLayer = weakRef.get();
-                if (currLayer == null) {
-                    it.remove();
-                } else {
-                    combinedMask |= currLayer.getLayerEventMask();
-                }
+            for (Long mask : layerMaskList) {
+                combinedMask |= mask;
             }
             if (combinedMask == 0) {
                 removeAWTEventListener();
-                layerList.clear();
             } else if (getCurrentEventMask() != combinedMask) {
                 removeAWTEventListener();
                 addAWTEventListener(combinedMask);
             }
+            currentEventMask = combinedMask;
         }
 
         private long getCurrentEventMask() {
@@ -617,7 +681,7 @@ public final class JLayer<V extends Component>
                     return null;
                 }
             });
-            currentEventMask = eventMask;
+
         }
 
         private void removeAWTEventListener() {
@@ -628,7 +692,6 @@ public final class JLayer<V extends Component>
                     return null;
                 }
             });
-            currentEventMask = 0;
         }
 
         private boolean isEventEnabled(long eventMask, int id) {

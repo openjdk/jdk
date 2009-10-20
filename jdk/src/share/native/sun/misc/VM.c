@@ -131,17 +131,6 @@ Java_sun_misc_VM_initialize(JNIEnv *env, jclass cls) {
 
         /* obtain the JVM version info */
         (*func_p)(env, &info, sizeof(info));
-
-        if (info.is_kernel_jvm == 1) {
-            /* set the static field VM.kernelVM to true for kernel VM */
-            fid = (*env)->GetStaticFieldID(env, cls, "kernelVM", "Z");
-            if (fid != 0) {
-                (*env)->SetStaticBooleanField(env, cls, fid, info.is_kernel_jvm);
-            } else {
-                sprintf(errmsg, "Static kernelVM boolean field not found");
-                JNU_ThrowInternalError(env, errmsg);
-            }
-        }
     }
 }
 

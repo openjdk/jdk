@@ -27,17 +27,6 @@
 #
 # Rules shared by all Java makefiles.
 #
-# Used to apply to source file $<, checks code conventions, issues warnings.
-define check-conventions
-  if [ "$(CONVENTION_WATCH)" = "true" ] ; then \
-    if [ "`$(CAT) -n -v -t $< | $(EGREP) -v '\@\(\#\)' | $(EGREP) '\^[MLI]'`" != "" ] ; then \
-      $(ECHO) "WARNING: File contains tabs, ^M, or ^L characters: $<"; \
-      if [ "$(CONVENTION_DETAILS)" = "true" ] ; then \
-        $(CAT) -n -v -t $< | $(EGREP) -v '\@\(\#\)' | $(EGREP) '\^[MLI]' ; \
-      fi; \
-    fi; \
-  fi
-endef
 
 # Make sure the default rule is all
 rules_default_rule: all
@@ -162,7 +151,6 @@ JAVA_SOURCE_LIST=$(TEMPDIR)/.classes.list
 # Add a java source to the list
 define add-java-file
 $(ECHO) "$?" >> $(JAVA_SOURCE_LIST)
-$(check-conventions)
 endef
 
 $(CLASSDESTDIR)/%.class: $(GENSRCDIR)/%.java
@@ -197,11 +185,8 @@ JAVAC_PREFER_SOURCE = -Xprefer:source
 
 .compile.classlist : $(JAVA_SOURCE_LIST)
 	@$(MKDIR) -p $(CLASSDESTDIR)
-	@if [ `$(CAT) $(JAVA_SOURCE_LIST) | $(WC) -l` -ge 1 ] ; then \
-	  $(ECHO) "# Java sources to be compiled: (listed in file $(JAVA_SOURCE_LIST))"; \
+	if [ -s $(JAVA_SOURCE_LIST) ] ; then \
 	  $(CAT) $(JAVA_SOURCE_LIST); \
-	  $(ECHO) "# Running javac:"; \
-	  $(ECHO) $(JAVAC_CMD) $(JAVAC_PREFER_SOURCE) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
 	  $(JAVAC_CMD) $(JAVAC_PREFER_SOURCE) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$(JAVA_SOURCE_LIST); \
 	fi
 	@$(java-vm-cleanup)
@@ -220,10 +205,7 @@ endif
 packages.clean:
 ifeq ($(DONT_CLOBBER_CLASSES),false)
   ifdef AUTO_FILES_JAVA_DIRS
-	@for sdir in $(AUTO_FILES_JAVA_DIRS); do \
-	  $(ECHO) "$(RM) -r $(CLASSDESTDIR)/$$sdir"; \
-	  $(RM) -r $(CLASSDESTDIR)/$$sdir; \
-        done
+	$(RM) -r $(patsubst %, $(CLASSDESTDIR)/%, $(AUTO_FILES_JAVA_DIRS))
   else
 	$(RM) -r $(CLASSDESTDIR)/$(PKGDIR)
   endif
@@ -259,15 +241,13 @@ classheaders: classes $(CLASSHDR_DOTFILE)
 
 $(CLASSHDR_DOTFILE): $(CLASSES_export)
 	$(prep-target)
-	@$(ECHO) "# Running javah:"
 	$(JAVAH_CMD) -d $(CLASSHDRDIR)/ \
 		$(CLASSES.export) $(subst $$,\$$,$(EXPORTED_inner))
 	@$(java-vm-cleanup)
 	@$(TOUCH) $@
 
 classheaders.clean:
-	$(RM) $(CLASSHDR_DOTFILE)
-	$(RM) -r $(CLASSHDRDIR)
+	$(RM) -r $(CLASSHDRDIR) $(CLASSHDR_DOTFILE)
 
 else # FILES_export
 

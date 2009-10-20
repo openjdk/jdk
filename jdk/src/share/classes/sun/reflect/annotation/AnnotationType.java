@@ -45,7 +45,7 @@ public class AnnotationType {
      * types.  This matches the return value that must be used for a
      * dynamic proxy, allowing for a simple isInstance test.
      */
-    private final Map<String, Class> memberTypes = new HashMap<String,Class>();
+    private final Map<String, Class<?>> memberTypes = new HashMap<String,Class<?>>();
 
     /**
      * Member name -> default value mapping.
@@ -76,12 +76,12 @@ public class AnnotationType {
      *     does not represent a valid annotation type
      */
     public static synchronized AnnotationType getInstance(
-        Class annotationClass)
+        Class<? extends Annotation> annotationClass)
     {
         AnnotationType result = sun.misc.SharedSecrets.getJavaLangAccess().
             getAnnotationType(annotationClass);
         if (result == null)
-            result = new AnnotationType((Class<?>) annotationClass);
+            result = new AnnotationType((Class<? extends Annotation>) annotationClass);
 
         return result;
     }
@@ -93,7 +93,7 @@ public class AnnotationType {
      * @throw IllegalArgumentException if the specified class object for
      *     does not represent a valid annotation type
      */
-    private AnnotationType(final Class<?> annotationClass) {
+    private AnnotationType(final Class<? extends Annotation> annotationClass) {
         if (!annotationClass.isAnnotation())
             throw new IllegalArgumentException("Not an annotation type");
 
@@ -110,7 +110,7 @@ public class AnnotationType {
             if (method.getParameterTypes().length != 0)
                 throw new IllegalArgumentException(method + " has params");
             String name = method.getName();
-            Class type = method.getReturnType();
+            Class<?> type = method.getReturnType();
             memberTypes.put(name, invocationHandlerReturnType(type));
             members.put(name, method);
 
@@ -140,7 +140,7 @@ public class AnnotationType {
      * the specified type (which is assumed to be a legal member type
      * for an annotation).
      */
-    public static Class invocationHandlerReturnType(Class type) {
+    public static Class<?> invocationHandlerReturnType(Class<?> type) {
         // Translate primitives to wrappers
         if (type == byte.class)
             return Byte.class;
@@ -167,7 +167,7 @@ public class AnnotationType {
      * Returns member types for this annotation type
      * (member name -> type mapping).
      */
-    public Map<String, Class> memberTypes() {
+    public Map<String, Class<?>> memberTypes() {
         return memberTypes;
     }
 

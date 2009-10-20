@@ -274,7 +274,7 @@ public abstract class Handler {
      * <tt>Level</tt> and  whether it satisfies any <tt>Filter</tt>.  It also
      * may make other <tt>Handler</tt> specific checks that might prevent a
      * handler from logging the <tt>LogRecord</tt>. It will return false if
-     * the <tt>LogRecord</tt> is Null.
+     * the <tt>LogRecord</tt> is null.
      * <p>
      * @param record  a <tt>LogRecord</tt>
      * @return true if the <tt>LogRecord</tt> would be logged.

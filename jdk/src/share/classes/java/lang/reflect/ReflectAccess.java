@@ -33,9 +33,9 @@ import sun.reflect.ConstructorAccessor;
     package to instantiate objects in this package. */
 
 class ReflectAccess implements sun.reflect.LangReflectAccess {
-    public Field newField(Class declaringClass,
+    public Field newField(Class<?> declaringClass,
                           String name,
-                          Class type,
+                          Class<?> type,
                           int modifiers,
                           int slot,
                           String signature,
@@ -50,11 +50,11 @@ class ReflectAccess implements sun.reflect.LangReflectAccess {
                          annotations);
     }
 
-    public Method newMethod(Class declaringClass,
+    public Method newMethod(Class<?> declaringClass,
                             String name,
-                            Class[] parameterTypes,
-                            Class returnType,
-                            Class[] checkedExceptions,
+                            Class<?>[] parameterTypes,
+                            Class<?> returnType,
+                            Class<?>[] checkedExceptions,
                             int modifiers,
                             int slot,
                             String signature,
@@ -76,8 +76,8 @@ class ReflectAccess implements sun.reflect.LangReflectAccess {
     }
 
     public <T> Constructor<T> newConstructor(Class<T> declaringClass,
-                                             Class[] parameterTypes,
-                                             Class[] checkedExceptions,
+                                             Class<?>[] parameterTypes,
+                                             Class<?>[] checkedExceptions,
                                              int modifiers,
                                              int slot,
                                              String signature,
@@ -102,29 +102,29 @@ class ReflectAccess implements sun.reflect.LangReflectAccess {
         m.setMethodAccessor(accessor);
     }
 
-    public ConstructorAccessor getConstructorAccessor(Constructor c) {
+    public ConstructorAccessor getConstructorAccessor(Constructor<?> c) {
         return c.getConstructorAccessor();
     }
 
-    public void setConstructorAccessor(Constructor c,
+    public void setConstructorAccessor(Constructor<?> c,
                                        ConstructorAccessor accessor)
     {
         c.setConstructorAccessor(accessor);
     }
 
-    public int getConstructorSlot(Constructor c) {
+    public int getConstructorSlot(Constructor<?> c) {
         return c.getSlot();
     }
 
-    public String getConstructorSignature(Constructor c) {
+    public String getConstructorSignature(Constructor<?> c) {
         return c.getSignature();
     }
 
-    public byte[] getConstructorAnnotations(Constructor c) {
+    public byte[] getConstructorAnnotations(Constructor<?> c) {
         return c.getRawAnnotations();
     }
 
-    public byte[] getConstructorParameterAnnotations(Constructor c) {
+    public byte[] getConstructorParameterAnnotations(Constructor<?> c) {
         return c.getRawParameterAnnotations();
     }
 

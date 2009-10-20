@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,11 @@
 
 OS=`uname -s`;
 case "${OS}" in
-        Windows* | CYGWIN* )
-                SEP=";"
+        CYGWIN* )
+                DIFFOPTS="--strip-trailing-cr"
         ;;
 
 	* )
-	SEP=":"
 	;;
 esac
 
@@ -88,7 +87,7 @@ done
 # check for mutliple methods and no static initializer
 
 ${APT} -XclassesAsDecls -cp ${TESTCLASSES} -print Aggregate > aggregate.txt
-diff aggregate.txt ${TESTSRC}/goldenAggregate.txt
+diff ${DIFFOPTS} aggregate.txt ${TESTSRC}/goldenAggregate.txt
 
 RESULT=$?
 case "$RESULT" in

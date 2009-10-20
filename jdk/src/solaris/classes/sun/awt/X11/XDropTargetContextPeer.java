@@ -31,7 +31,8 @@ import java.awt.peer.ComponentPeer;
 import java.io.IOException;
 
 import java.util.Iterator;
-import java.util.logging.*;
+
+import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
@@ -48,8 +49,8 @@ import sun.misc.Unsafe;
  * @since 1.5
  */
 final class XDropTargetContextPeer extends SunDropTargetContextPeer {
-    private static final Logger logger =
-        Logger.getLogger("sun.awt.X11.xembed.xdnd.XDropTargetContextPeer");
+    private static final PlatformLogger logger =
+        PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDropTargetContextPeer");
 
     private static final Unsafe unsafe = XlibWrapper.unsafe;
 
@@ -198,7 +199,7 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
                    structure. */
                 long ctxt = getNativeDragContext();
 
-                if (logger.isLoggable(Level.FINER)) {
+                if (logger.isLoggable(PlatformLogger.FINER)) {
                     logger.finer("        processing " + event + " ctxt=" + ctxt +
                                  " consumed=" + event.isConsumed());
                 }

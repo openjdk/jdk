@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class TestMultiInheritence extends JavadocTester {
     //Method foo() is inherited from BOTH I2 and I3
     private static final String[][] TEST = {
        {BUG_ID + FS + "pkg3" + FS + "I1.html",
-        "Methods inherited from interface pkg3." +        "<A HREF=\"../pkg3/I2.html\" title=\"interface in pkg3\">I2</A>"},
+        "Methods inherited from interface pkg3." +        "<A HREF=\"../pkg3/I2.html\" title=\"interface in pkg3\">I2</A>"},
         {BUG_ID + FS + "pkg3" + FS +"I1.html",
         "Methods inherited from interface pkg3." +
         "<A HREF=\"../pkg3/I3.html\" title=\"interface in pkg3\">I3</A>"},

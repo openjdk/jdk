@@ -25,15 +25,8 @@
 
 package sun.net.www.protocol.http;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.net.*;
-import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.ListIterator;
-import java.util.Enumeration;
-import java.util.HashMap;
-
+import java.net.PasswordAuthentication;
 
 /**
  * AuthCacheValue: interface to minimise exposure to authentication cache
@@ -62,7 +55,15 @@ public abstract class AuthCacheValue implements Serializable {
 
     AuthCacheValue() {}
 
+    /**
+     * Proxy or Server
+     */
     abstract Type getAuthType ();
+
+    /**
+     * Authentication scheme
+     */
+    abstract AuthScheme getAuthScheme();
 
    /**
     * name of server/proxy

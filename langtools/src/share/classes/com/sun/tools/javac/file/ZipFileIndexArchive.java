@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class ZipFileIndexArchive implements Archive {
     public JavaFileObject getFileObject(RelativeDirectory subdirectory, String file) {
         RelativeFile fullZipFileName = new RelativeFile(subdirectory, file);
         ZipFileIndex.Entry entry = zfIndex.getZipIndexEntry(fullZipFileName);
-        JavaFileObject ret = new ZipFileIndexFileObject(fileManager, zfIndex, entry, zfIndex.getZipFile().getPath());
+        JavaFileObject ret = new ZipFileIndexFileObject(fileManager, zfIndex, entry, zfIndex.getZipFile());
         return ret;
     }
 
@@ -84,6 +84,7 @@ public class ZipFileIndexArchive implements Archive {
         zfIndex.close();
     }
 
+    @Override
     public String toString() {
         return "ZipFileIndexArchive[" + zfIndex + "]";
     }
@@ -111,10 +112,10 @@ public class ZipFileIndexArchive implements Archive {
 
         /** The name of the zip file where this entry resides.
          */
-        String zipName;
+        File zipName;
 
 
-        ZipFileIndexFileObject(JavacFileManager fileManager, ZipFileIndex zfIndex, ZipFileIndex.Entry entry, String zipFileName) {
+        ZipFileIndexFileObject(JavacFileManager fileManager, ZipFileIndex zfIndex, ZipFileIndex.Entry entry, File zipFileName) {
             super(fileManager);
             this.name = entry.getFileName();
             this.zfIndex = zfIndex;
@@ -122,85 +123,41 @@ public class ZipFileIndexArchive implements Archive {
             this.zipName = zipFileName;
         }
 
-        public InputStream openInputStream() throws IOException {
+        @Override
+        public URI toUri() {
+            return createJarUri(zipName, getPrefixedEntryName());
+        }
 
+        @Override
+        public String getName() {
+            return zipName + "(" + getPrefixedEntryName() + ")";
+        }
+
+        @Override
+        public String getShortName() {
+            return zipName.getName() + "(" + entry.getName() + ")";
+        }
+
+        @Override
+        public JavaFileObject.Kind getKind() {
+            return getKind(entry.getName());
+        }
+
+        @Override
+        public InputStream openInputStream() throws IOException {
             if (inputStream == null) {
-                inputStream = new ByteArrayInputStream(read());
+                assert entry != null; // see constructor
+                inputStream = new ByteArrayInputStream(zfIndex.read(entry));
             }
             return inputStream;
         }
 
-        protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
-            return fileManager.getDecoder(fileManager.getEncodingName(), ignoreEncodingErrors);
-        }
-
+        @Override
         public OutputStream openOutputStream() throws IOException {
             throw new UnsupportedOperationException();
         }
 
-        public Writer openWriter() throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        /** @deprecated see bug 6410637 */
-        @Deprecated
-        public String getName() {
-            return name;
-        }
-
-        public boolean isNameCompatible(String cn, JavaFileObject.Kind k) {
-            cn.getClass(); // null check
-            if (k == Kind.OTHER && getKind() != k)
-                return false;
-            return name.equals(cn + k.extension);
-        }
-
-        /** @deprecated see bug 6410637 */
-        @Deprecated
-        public String getPath() {
-            return zipName + "(" + entry.getName() + ")";
-        }
-
-        public long getLastModified() {
-            return entry.getLastModified();
-        }
-
-        public boolean delete() {
-            throw new UnsupportedOperationException();
-        }
-
         @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof ZipFileIndexFileObject))
-                return false;
-            ZipFileIndexFileObject o = (ZipFileIndexFileObject) other;
-            return entry.equals(o.entry);
-        }
-
-        @Override
-        public int hashCode() {
-            return zipName.hashCode() + (name.hashCode() << 10);
-        }
-
-        public String getZipName() {
-            return zipName;
-        }
-
-        public String getZipEntryName() {
-            return entry.getName();
-        }
-
-        public URI toUri() {
-            String zipName = new File(getZipName()).toURI().normalize().getPath();
-            String entryName = getZipEntryName();
-            return URI.create("jar:" + zipName + "!" + entryName);
-        }
-
-        private byte[] read() throws IOException {
-            assert entry != null; // see constructor
-            return zfIndex.read(entry);
-        }
-
         public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
             CharBuffer cb = fileManager.getCachedContent(this);
             if (cb == null) {
@@ -224,14 +181,62 @@ public class ZipFileIndexArchive implements Archive {
         }
 
         @Override
+        public Writer openWriter() throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getLastModified() {
+            return entry.getLastModified();
+        }
+
+        @Override
+        public boolean delete() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected CharsetDecoder getDecoder(boolean ignoreEncodingErrors) {
+            return fileManager.getDecoder(fileManager.getEncodingName(), ignoreEncodingErrors);
+        }
+
+        @Override
         protected String inferBinaryName(Iterable<? extends File> path) {
-            String entryName = getZipEntryName();
+            String entryName = entry.getName();
             if (zfIndex.symbolFilePrefix != null) {
                 String prefix = zfIndex.symbolFilePrefix.path;
                 if (entryName.startsWith(prefix))
                     entryName = entryName.substring(prefix.length());
             }
             return removeExtension(entryName).replace('/', '.');
+        }
+
+        @Override
+        public boolean isNameCompatible(String cn, JavaFileObject.Kind k) {
+            cn.getClass(); // null check
+            if (k == Kind.OTHER && getKind() != k)
+                return false;
+            return name.equals(cn + k.extension);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof ZipFileIndexFileObject))
+                return false;
+            ZipFileIndexFileObject o = (ZipFileIndexFileObject) other;
+            return entry.equals(o.entry);
+        }
+
+        @Override
+        public int hashCode() {
+            return zipName.hashCode() + (name.hashCode() << 10);
+        }
+
+        private String getPrefixedEntryName() {
+            if (zfIndex.symbolFilePrefix != null)
+                return zfIndex.symbolFilePrefix.path + entry.getName();
+            else
+                return entry.getName();
         }
     }
 
