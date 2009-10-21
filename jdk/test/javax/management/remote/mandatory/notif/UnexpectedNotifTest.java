@@ -63,17 +63,13 @@ public class UnexpectedNotifTest {
         } catch (ClassNotFoundException e) {
             // OK: JMXMP not present so don't test it.
         }
-        for (String proto : protos) {
-            test(proto, false);
-            test(proto, true);
-        }
+        for (String proto : protos)
+            test(proto);
     }
 
-    private static void test(String proto, boolean eventService)
-            throws Exception {
+    private static void test(String proto) throws Exception {
         System.out.println("Unexpected notifications test for protocol " +
-                           proto + " with" +
-                           (eventService ? "" : "out") + " event service");
+                           proto);
         MBeanServer mbs = null;
         try {
             // Create a MBeanServer
@@ -88,12 +84,9 @@ public class UnexpectedNotifTest {
             // Create a connector server
             //
             url = new JMXServiceURL("service:jmx:" + proto + "://");
-            Map<String, String> env = Collections.singletonMap(
-                    RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
-                    Boolean.toString(eventService));
 
             server = JMXConnectorServerFactory.newJMXConnectorServer(url,
-                                                                     env,
+                                                                     null,
                                                                      mbs);
 
             mbs.registerMBean(

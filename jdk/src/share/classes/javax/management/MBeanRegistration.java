@@ -33,99 +33,6 @@ package javax.management;
  * to get a reference to the MBean Server and/or its name within that
  * MBean Server.</p>
  *
- * <h4 id="injection">Resource injection</h4>
- *
- * <p>As an alternative to implementing {@code MBeanRegistration}, if all that
- * is needed is the MBean Server or ObjectName then an MBean can use
- * <em>resource injection</em>.</p>
- *
- * <p>If a field in the MBean object has type {@link ObjectName} and has
- * the {@link javax.annotation.Resource &#64;Resource} annotation,
- * then the {@code ObjectName} under which the MBean is registered is
- * assigned to that field during registration.  Likewise, if a field has type
- * {@link MBeanServer} and the <code>&#64;Resource</code> annotation, then it will
- * be set to the {@code MBeanServer} in which the MBean is registered.</p>
- *
- * <p>For example:</p>
- *
- * <pre>
- * public Configuration implements ConfigurationMBean {
- *     &#64;Resource
- *     private volatile MBeanServer mbeanServer;
- *     &#64;Resource
- *     private volatile ObjectName objectName;
- *     ...
- *     void unregisterSelf() throws Exception {
- *         mbeanServer.unregisterMBean(objectName);
- *     }
- * }
- * </pre>
- *
- * <p>Resource injection can also be used on fields of type
- * {@link SendNotification} to simplify notification sending.  Such a field
- * will get a reference to an object of type {@code SendNotification} when
- * the MBean is registered, and it can use this reference to send notifications.
- * For example:</p>
- *
- * <pre>
- * public Configuration implements ConfigurationMBean {
- *     &#64;Resource
- *     private volatile SendNotification sender;
- *     ...
- *     private void updated() {
- *         Notification n = new Notification(...);
- *         sender.sendNotification(n);
- *     }
- * }
- * </pre>
- *
- * <p>(Listeners may be invoked in the same thread as the caller of
- * {@code sender.sendNotification}.)</p>
- *
- * <p>A field to be injected must not be static.  It is recommended that
- * such fields be declared {@code volatile}.</p>
- *
- * <p>It is also possible to use the <code>&#64;Resource</code> annotation on
- * methods. Such a method must have a {@code void} return type and a single
- * argument of the appropriate type, for example {@code ObjectName}.</p>
- *
- * <p>Any number of fields and methods may have the <code>&#64;Resource</code>
- * annotation.  All fields and methods with type {@code ObjectName}
- * (for example) will receive the same {@code ObjectName} value.</p>
- *
- * <p>Resource injection is available for all types of MBeans, not just
- * Standard MBeans.</p>
- *
- * <p>If an MBean implements the {@link DynamicWrapperMBean} interface then
- * resource injection happens on the object returned by that interface's
- * {@link DynamicWrapperMBean#getWrappedObject() getWrappedObject()} method
- * rather than on the MBean object itself.
- *
- * <p>Resource injection happens after the {@link #preRegister preRegister}
- * method is called (if any), and before the MBean is actually registered
- * in the MBean Server. If a <code>&#64;Resource</code> method throws
- * an exception, the effect is the same as if {@code preRegister} had
- * thrown the exception. In particular it will prevent the MBean from being
- * registered.</p>
- *
- * <p>Resource injection can be used on a field or method where the type
- * is a parent of the injected type, if the injected type is explicitly
- * specified in the <code>&#64;Resource</code> annotation.  For example:</p>
- *
- * <pre>
- *     &#64;Resource(type = MBeanServer.class)
- *     private volatile MBeanServerConnection mbsc;
- * </pre>
- *
- * <p>Formally, suppose <em>R</em> is the type in the <code>&#64;Resource</code>
- * annotation and <em>T</em> is the type of the method parameter or field.
- * Then one of <em>R</em> and <em>T</em> must be a subtype of the other
- * (or they must be the same type).  Injection happens if this subtype
- * is {@code MBeanServer}, {@code ObjectName}, or {@code SendNotification}.
- * Otherwise the <code>&#64;Resource</code> annotation is ignored.</p>
- *
- * <p>Resource injection in MBeans is new in version 2.0 of the JMX API.</p>
- *
  * @since 1.5
  */
 public interface MBeanRegistration   {
@@ -196,7 +103,7 @@ public interface MBeanRegistration   {
      * <p>If the implementation of this method throws a {@link RuntimeException}
      * or an {@link Error}, the MBean Server will rethrow those inside
      * a {@link RuntimeMBeanException} or {@link RuntimeErrorException},
-     * respectively. However, throwing an excepption in {@code postDeregister}
+     * respectively. However, throwing an exception in {@code postDeregister}
      * will not change the state of the MBean:
      * the MBean was already successfully deregistered and will remain so. </p>
      * <p>This might be confusing for the code calling
