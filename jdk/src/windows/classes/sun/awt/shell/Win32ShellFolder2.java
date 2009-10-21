@@ -524,7 +524,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details
     private static native int compareIDs(long pParentIShellFolder, long pidl1, long pidl2);
 
-    private Boolean cachedIsFileSystem;
+    private volatile Boolean cachedIsFileSystem;
 
     /**
      * @return Whether this is a file system shell folder
@@ -759,7 +759,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         }, InterruptedException.class);
     }
 
-    private Boolean cachedIsLink;
+    private volatile Boolean cachedIsLink;
 
     /**
      * @return Whether this shell folder is a link
