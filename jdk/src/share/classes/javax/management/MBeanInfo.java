@@ -25,7 +25,6 @@
 
 package javax.management;
 
-import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.io.Serializable;
@@ -38,12 +37,6 @@ import java.util.WeakHashMap;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static javax.management.ImmutableDescriptor.nonNullDescriptor;
 
 /**
@@ -80,50 +73,27 @@ import static javax.management.ImmutableDescriptor.nonNullDescriptor;
  * constructors in that object;
  *
  * <li>{@link #getAttributes()} returns the list of all attributes
- * whose existence is deduced as follows:
- * <ul>
- * <li>if the Standard MBean is defined with an MBean interface,
- * from <code>get<i>Name</i></code>, <code>is<i>Name</i></code>, or
- * <code>set<i>Name</i></code> methods that conform to the conventions
+ * whose existence is deduced from the presence in the MBean interface
+ * of a <code>get<i>Name</i></code>, <code>is<i>Name</i></code>, or
+ * <code>set<i>Name</i></code> method that conforms to the conventions
  * for Standard MBeans;
- * <li>if the Standard MBean is defined with the {@link MBean &#64;MBean} or
- * {@link MXBean &#64;MXBean} annotation on a class, from methods with the
- * {@link ManagedAttribute &#64;ManagedAttribute} annotation;
- * </ul>
  *
- * <li>{@link #getOperations()} returns the list of all operations whose
- * existence is deduced as follows:
- * <ul>
- * <li>if the Standard MBean is defined with an MBean interface, from methods in
+ * <li>{@link #getOperations()} returns the list of all methods in
  * the MBean interface that do not represent attributes;
- * <li>if the Standard MBean is defined with the {@link MBean &#64;MBean} or
- * {@link MXBean &#64;MXBean} annotation on a class, from methods with the
- * {@link ManagedOperation &#64;ManagedOperation} annotation;
- * </ul>
  *
- * <li>{@link #getNotifications()} returns:
- * <ul>
- * <li>if the MBean implements the {@link NotificationBroadcaster} interface,
- * the result of calling {@link
+ * <li>{@link #getNotifications()} returns an empty array if the MBean
+ * does not implement the {@link NotificationBroadcaster} interface,
+ * otherwise the result of calling {@link
  * NotificationBroadcaster#getNotificationInfo()} on it;
- * <li>otherwise, if there is a {@link NotificationInfo &#64;NotificationInfo}
- * or {@link NotificationInfos &#64;NotificationInfos} annotation on the
- * MBean interface or <code>&#64;MBean</code> or <code>&#64;MXBean</code>
- * class, the array implied by those annotations;
- * <li>otherwise an empty array;
- * </ul>
  *
  * <li>{@link #getDescriptor()} returns a descriptor containing the contents
  * of any descriptor annotations in the MBean interface (see
- * {@link DescriptorFields &#64;DescriptorFields} and
  * {@link DescriptorKey &#64;DescriptorKey}).
  *
  * </ul>
  *
  * <p>The description returned by {@link #getDescription()} and the
- * descriptions of the contained attributes and operations are determined
- * by the corresponding {@link Description} annotations if any;
- * otherwise their contents are not specified.</p>
+ * descriptions of the contained attributes and operations are not specified.</p>
  *
  * <p>The remaining details of the <code>MBeanInfo</code> for a
  * Standard MBean are not specified.  This includes the description of
@@ -756,379 +726,6 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
             break;
         default:
             throw new StreamCorruptedException("Got unexpected byte.");
-        }
-    }
-
-    /**
-     * <p>Return an {@code MBeanInfo} object that is the same as this one
-     * except that its descriptions are localized in the given locale.
-     * This means the text returned by {@link MBeanInfo#getDescription}
-     * (the description of the MBean itself), and the text returned by the
-     * {@link MBeanFeatureInfo#getDescription getDescription()} method
-     * for every {@linkplain MBeanAttributeInfo attribute}, {@linkplain
-     * MBeanOperationInfo operation}, {@linkplain MBeanConstructorInfo
-     * constructor}, and {@linkplain MBeanNotificationInfo notification}
-     * contained in the {@code MBeanInfo}.</p>
-     *
-     * <p>Here is how the description {@code this.getDescription()} is
-     * localized.</p>
-     *
-     * <p>First, if the {@linkplain #getDescriptor() descriptor}
-     * of this {@code MBeanInfo} contains a field <code><a
-     * href="Descriptor.html#locale">"locale"</a></code>, and the value of
-     * the field is the same as {@code locale.toString()}, then this {@code
-     * MBeanInfo} is returned. Otherwise, localization proceeds as follows,
-     * and the {@code "locale"} field in the returned {@code MBeanInfo} will
-     * be {@code locale.toString()}.
-     *
-     * <p>A <em>{@code className}</em> is determined. If this
-     * {@code MBeanInfo} contains a descriptor with the field
-     * <a href="Descriptor.html#interfaceClassName">{@code
-     * "interfaceClassName"}</a>, then the value of that field is the
-     * {@code className}. Otherwise, it is {@link #getClassName()}.
-     * Everything before the last period (.) in the {@code className} is
-     * the <em>{@code package}</em>, and everything after is the <em>{@code
-     * simpleClassName}</em>. (If there is no period, then the {@code package}
-     * is empty and the {@code simpleClassName} is the same as the {@code
-     * className}.)</p>
-     *
-     * <p>A <em>{@code resourceKey}</em> is determined. If this {@code
-     * MBeanInfo} contains a {@linkplain MBeanInfo#getDescriptor() descriptor}
-     * with a field {@link JMX#DESCRIPTION_RESOURCE_KEY_FIELD
-     * "descriptionResourceKey"}, the value of the field is
-     * the {@code resourceKey}. Otherwise, the {@code resourceKey} is {@code
-     * simpleClassName + ".mbean"}.</p>
-     *
-     * <p>A <em>{@code resourceBundleBaseName}</em> is determined. If
-     * this {@code MBeanInfo} contains a descriptor with a field {@link
-     * JMX#DESCRIPTION_RESOURCE_BUNDLE_BASE_NAME_FIELD
-     * "descriptionResourceBundleBaseName"}, the value of the field
-     * is the {@code resourceBundleBaseName}. Otherwise, the {@code
-     * resourceBundleBaseName} is {@code package + ".MBeanDescriptions"}.
-     *
-     * <p>Then, a {@link java.util.ResourceBundle ResourceBundle} is
-     * determined, using<br> {@link java.util.ResourceBundle#getBundle(String,
-     * Locale, ClassLoader) ResourceBundle.getBundle(resourceBundleBaseName,
-     * locale, loader)}. If this succeeds, and if {@link
-     * java.util.ResourceBundle#getString(String) getString(resourceKey)}
-     * returns a string, then that string is the localized description.
-     * Otherwise, the original description is unchanged.</p>
-     *
-     * <p>A localized description for an {@code MBeanAttributeInfo} is
-     * obtained similarly. The default {@code resourceBundleBaseName}
-     * is the same as above. The default description and the
-     * descriptor fields {@code "descriptionResourceKey"} and {@code
-     * "descriptionResourceBundleBaseName"} come from the {@code
-     * MBeanAttributeInfo} rather than the {@code MBeanInfo}. If the
-     * attribute's {@linkplain MBeanFeatureInfo#getName() name} is {@code
-     * Foo} then its default {@code resourceKey} is {@code simpleClassName +
-     * ".attribute.Foo"}.</p>
-     *
-     * <p>Similar rules apply for operations, constructors, and notifications.
-     * If the name of the operation, constructor, or notification is {@code
-     * Foo} then the default {@code resourceKey} is respectively {@code
-     * simpleClassName + ".operation.Foo"}, {@code simpleClassName +
-     * ".constructor.Foo"}, or {@code simpleClassName + ".notification.Foo"}.
-     * If two operations or constructors have the same name (overloading) then
-     * they have the same default {@code resourceKey}; if different localized
-     * descriptions are needed then a non-default key must be supplied using
-     * {@code "descriptionResourceKey"}.</p>
-     *
-     * <p>Similar rules also apply for descriptions of parameters ({@link
-     * MBeanParameterInfo}). The default {@code resourceKey} for a parameter
-     * whose {@linkplain MBeanFeatureInfo#getName() name} is {@code
-     * Bar} in an operation or constructor called {@code Foo} is {@code
-     * simpleClassName + ".operation.Foo.Bar"} or {@code simpleClassName +
-     * ".constructor.Foo.Bar"} respectively.</p>
-     *
-     * <h4>Example</h4>
-     *
-     * <p>Suppose you have an MBean defined by these two Java source files:</p>
-     *
-     * <pre>
-     * // ConfigurationMBean.java
-     * package com.example;
-     * public interface ConfigurationMBean {
-     *     public String getName();
-     *     public void save(String fileName);
-     * }
-     *
-     * // Configuration.java
-     * package com.example;
-     * public class Configuration implements ConfigurationMBean {
-     *     public Configuration(String defaultName) {
-     *         ...
-     *     }
-     *     ...
-     * }
-     * </pre>
-     *
-     * <p>Then you could define the default descriptions for the MBean, by
-     * including a resource bundle called {@code com/example/MBeanDescriptions}
-     * with the compiled classes. Most often this is done by creating a file
-     * {@code MBeanDescriptions.properties} in the same directory as {@code
-     * ConfigurationMBean.java}. Make sure that this file is copied into the
-     * same place as the compiled classes; in typical build environments that
-     * will be true by default.</p>
-     *
-     * <p>The file {@code com/example/MBeanDescriptions.properties} might
-     * look like this:</p>
-     *
-     * <pre>
-     * # Description of the MBean
-     * ConfigurationMBean.mbean = Configuration manager
-     *
-     * # Description of the Name attribute
-     * ConfigurationMBean.attribute.Name = The name of the configuration
-     *
-     * # Description of the save operation
-     * ConfigurationMBean.operation.save = Save the configuration to a file
-     *
-     * # Description of the parameter to the save operation.
-     * # Parameter names from the original Java source are not available,
-     * # so the default names are p1, p2, etc.  If the names were available,
-     * # this would be ConfigurationMBean.operation.save.fileName
-     * ConfigurationMBean.operation.save.p1 = The name of the file
-     *
-     * # Description of the constructor.  The default name of a constructor is
-     * # its fully-qualified class name.
-     * ConfigurationMBean.constructor.com.example.Configuration = <!--
-     * -->Constructor with name of default file
-     * # Description of the constructor parameter.
-     * ConfigurationMBean.constructor.com.example.Configuration.p1 = <!--
-     * -->Name of the default file
-     * </pre>
-     *
-     * <p>Starting with this file, you could create descriptions for the French
-     * locale by creating {@code com/example/MBeanDescriptions_fr.properties}.
-     * The keys in this file are the same as before but the text has been
-     * translated:
-     *
-     * <pre>
-     * ConfigurationMBean.mbean = Gestionnaire de configuration
-     *
-     * ConfigurationMBean.attribute.Name = Le nom de la configuration
-     *
-     * ConfigurationMBean.operation.save = Sauvegarder la configuration <!--
-     * -->dans un fichier
-     *
-     * ConfigurationMBean.operation.save.p1 = Le nom du fichier
-     *
-     * ConfigurationMBean.constructor.com.example.Configuration = <!--
-     * -->Constructeur avec nom du fichier par d&eacute;faut
-     * ConfigurationMBean.constructor.com.example.Configuration.p1 = <!--
-     * -->Nom du fichier par d&eacute;faut
-     * </pre>
-     *
-     * <p>The descriptions in {@code MBeanDescriptions.properties} and
-     * {@code MBeanDescriptions_fr.properties} will only be consulted if
-     * {@code localizeDescriptions} is called, perhaps because the
-     * MBean Server has been wrapped by {@link
-     * ClientContext#newLocalizeMBeanInfoForwarder} or because the
-     * connector server has been created with the {@link
-     * javax.management.remote.JMXConnectorServer#LOCALIZE_MBEAN_INFO_FORWARDER
-     * LOCALIZE_MBEAN_INFO_FORWARDER} option. If you want descriptions
-     * even when there is no localization step, then you should consider
-     * using {@link Description &#64;Description} annotations. Annotations
-     * provide descriptions by default but are overridden if {@code
-     * localizeDescriptions} is called.</p>
-     *
-     * @param locale the target locale for descriptions.  Cannot be null.
-     *
-     * @param loader the {@code ClassLoader} to use for looking up resource
-     * bundles.
-     *
-     * @return an {@code MBeanInfo} with descriptions appropriately localized.
-     *
-     * @throws NullPointerException if {@code locale} is null.
-     */
-    public MBeanInfo localizeDescriptions(Locale locale, ClassLoader loader) {
-        if (locale == null)
-            throw new NullPointerException("locale");
-        Descriptor d = getDescriptor();
-        String mbiLocaleString = (String) d.getFieldValue(JMX.LOCALE_FIELD);
-        if (locale.toString().equals(mbiLocaleString))
-            return this;
-        return new Rewriter(this, locale, loader).getMBeanInfo();
-    }
-
-    private static class Rewriter {
-        private final MBeanInfo mbi;
-        private final ClassLoader loader;
-        private final Locale locale;
-        private final String packageName;
-        private final String simpleClassNamePlusDot;
-        private ResourceBundle defaultBundle;
-        private boolean defaultBundleLoaded;
-
-        // ResourceBundle.getBundle throws NullPointerException
-        // if the loader is null, even though that is perfectly
-        // valid and means the bootstrap loader.  So we work
-        // around with a ClassLoader that is equivalent to the
-        // bootstrap loader but is not null.
-        private static final ClassLoader bootstrapLoader =
-                new ClassLoader(null) {};
-
-        Rewriter(MBeanInfo mbi, Locale locale, ClassLoader loader) {
-            this.mbi = mbi;
-            this.locale = locale;
-            if (loader == null)
-                loader = bootstrapLoader;
-            this.loader = loader;
-
-            String intfName = (String)
-                    mbi.getDescriptor().getFieldValue("interfaceClassName");
-            if (intfName == null)
-                intfName = mbi.getClassName();
-            int lastDot = intfName.lastIndexOf('.');
-            this.packageName = intfName.substring(0, lastDot + 1);
-            this.simpleClassNamePlusDot = intfName.substring(lastDot + 1) + ".";
-            // Inner classes show up as Outer$Inner so won't match the dot.
-            // When there is no dot, lastDot is -1,
-            // packageName is empty, and simpleClassNamePlusDot is intfName.
-        }
-
-        MBeanInfo getMBeanInfo() {
-            MBeanAttributeInfo[] mbais =
-                    rewrite(mbi.getAttributes(), "attribute.");
-            MBeanOperationInfo[] mbois =
-                    rewrite(mbi.getOperations(), "operation.");
-            MBeanConstructorInfo[] mbcis =
-                    rewrite(mbi.getConstructors(), "constructor.");
-            MBeanNotificationInfo[] mbnis =
-                    rewrite(mbi.getNotifications(), "notification.");
-            Descriptor d = mbi.getDescriptor();
-            d = changeLocale(d);
-            String description = getDescription(d, "mbean", "");
-            if (description == null)
-                description = mbi.getDescription();
-            return new MBeanInfo(
-                    mbi.getClassName(), description,
-                    mbais, mbcis, mbois, mbnis, d);
-        }
-
-        private Descriptor changeLocale(Descriptor d) {
-            if (d.getFieldValue(JMX.LOCALE_FIELD) != null) {
-                Map<String, Object> map = new HashMap<String, Object>();
-                for (String field : d.getFieldNames())
-                    map.put(field, d.getFieldValue(field));
-                map.remove(JMX.LOCALE_FIELD);
-                d = new ImmutableDescriptor(map);
-            }
-            return ImmutableDescriptor.union(
-                    d, new ImmutableDescriptor(JMX.LOCALE_FIELD + "=" + locale));
-        }
-
-        private String getDescription(
-                Descriptor d, String defaultPrefix, String defaultSuffix) {
-            ResourceBundle bundle = bundleFromDescriptor(d);
-            if (bundle == null)
-                return null;
-            String key =
-                    (String) d.getFieldValue(JMX.DESCRIPTION_RESOURCE_KEY_FIELD);
-            if (key == null)
-                key = simpleClassNamePlusDot + defaultPrefix + defaultSuffix;
-            return descriptionFromResource(bundle, key);
-        }
-
-        private <T extends MBeanFeatureInfo> T[] rewrite(
-                T[] features, String resourcePrefix) {
-            for (int i = 0; i < features.length; i++) {
-                T feature = features[i];
-                Descriptor d = feature.getDescriptor();
-                String description =
-                        getDescription(d, resourcePrefix, feature.getName());
-                if (description != null &&
-                        !description.equals(feature.getDescription())) {
-                    features[i] = setDescription(feature, description);
-                }
-            }
-            return features;
-        }
-
-        private <T extends MBeanFeatureInfo> T setDescription(
-                T feature, String description) {
-
-            Object newf;
-            String name = feature.getName();
-            Descriptor d = feature.getDescriptor();
-
-            if (feature instanceof MBeanAttributeInfo) {
-                MBeanAttributeInfo mbai = (MBeanAttributeInfo) feature;
-                newf = new MBeanAttributeInfo(
-                        name, mbai.getType(), description,
-                        mbai.isReadable(), mbai.isWritable(), mbai.isIs(),
-                        d);
-            } else if (feature instanceof MBeanOperationInfo) {
-                MBeanOperationInfo mboi = (MBeanOperationInfo) feature;
-                MBeanParameterInfo[] sig = rewrite(
-                        mboi.getSignature(), "operation." + name + ".");
-                newf = new MBeanOperationInfo(
-                        name, description, sig,
-                        mboi.getReturnType(), mboi.getImpact(), d);
-            } else if (feature instanceof MBeanConstructorInfo) {
-                MBeanConstructorInfo mbci = (MBeanConstructorInfo) feature;
-                MBeanParameterInfo[] sig = rewrite(
-                        mbci.getSignature(), "constructor." + name + ".");
-                newf = new MBeanConstructorInfo(
-                        name, description, sig, d);
-            } else if (feature instanceof MBeanNotificationInfo) {
-                MBeanNotificationInfo mbni = (MBeanNotificationInfo) feature;
-                newf = new MBeanNotificationInfo(
-                        mbni.getNotifTypes(), name, description, d);
-            } else if (feature instanceof MBeanParameterInfo) {
-                MBeanParameterInfo mbpi = (MBeanParameterInfo) feature;
-                newf = new MBeanParameterInfo(
-                        name, mbpi.getType(), description, d);
-            } else {
-                logger().log(Level.FINE, "Unknown feature type: " +
-                        feature.getClass());
-                newf = feature;
-            }
-
-            return Util.<T>cast(newf);
-        }
-
-        private ResourceBundle bundleFromDescriptor(Descriptor d) {
-            String bundleName = (String) d.getFieldValue(
-                    JMX.DESCRIPTION_RESOURCE_BUNDLE_BASE_NAME_FIELD);
-
-            if (bundleName != null)
-                return getBundle(bundleName);
-
-            if (defaultBundleLoaded)
-                return defaultBundle;
-
-            bundleName = packageName + "MBeanDescriptions";
-            defaultBundle = getBundle(bundleName);
-            defaultBundleLoaded = true;
-            return defaultBundle;
-        }
-
-        private String descriptionFromResource(
-                ResourceBundle bundle, String key) {
-            try {
-                return bundle.getString(key);
-            } catch (MissingResourceException e) {
-                logger().log(Level.FINEST, "No resource for " + key, e);
-            } catch (Exception e) {
-                logger().log(Level.FINE, "Bad resource for " + key, e);
-            }
-            return null;
-        }
-
-        private ResourceBundle getBundle(String name) {
-            try {
-                return ResourceBundle.getBundle(name, locale, loader);
-            } catch (Exception e) {
-                logger().log(Level.FINE,
-                           "Could not load ResourceBundle " + name, e);
-                return null;
-            }
-        }
-
-        private Logger logger() {
-            return Logger.getLogger("javax.management.locale");
         }
     }
 }

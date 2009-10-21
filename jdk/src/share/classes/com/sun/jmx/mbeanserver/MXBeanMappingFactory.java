@@ -23,8 +23,10 @@
  * have any questions.
  */
 
-package javax.management.openmbean;
+package com.sun.jmx.mbeanserver;
 
+import javax.management.openmbean.*;
+import com.sun.jmx.mbeanserver.MXBeanMapping;
 import com.sun.jmx.mbeanserver.DefaultMXBeanMappingFactory;
 import java.lang.reflect.Type;
 
@@ -99,49 +101,6 @@ public abstract class MXBeanMappingFactory {
      */
     public static final MXBeanMappingFactory DEFAULT =
             new DefaultMXBeanMappingFactory();
-
-    /**
-     * <p>Determine the appropriate MXBeanMappingFactory to use for the given
-     * MXBean interface, based on its annotations.  If the interface has an
-     * {@link MXBeanMappingFactoryClass @MXBeanMappingFactoryClass} annotation,
-     * that is used to determine the MXBeanMappingFactory.  Otherwise, if the
-     * package containing the interface has such an annotation, that is used.
-     * Otherwise the MXBeanMappingFactory is the {@linkplain #DEFAULT default}
-     * one.</p>
-     *
-     * @param intf the MXBean interface for which to determine the
-     * MXBeanMappingFactory.
-     *
-     * @return the MXBeanMappingFactory for the given MXBean interface.
-     *
-     * @throws IllegalArgumentException if {@code intf} is null, or if an
-     * exception occurs while trying constructing an MXBeanMappingFactory
-     * based on an annotation.  In the second case, the exception will appear
-     * in the {@linkplain Throwable#getCause() cause chain} of the
-     * {@code IllegalArgumentException}.
-     */
-    public static MXBeanMappingFactory forInterface(Class<?> intf) {
-        if (intf == null)
-            throw new IllegalArgumentException("Null interface");
-        MXBeanMappingFactoryClass annot =
-                intf.getAnnotation(MXBeanMappingFactoryClass.class);
-        if (annot == null) {
-            Package p = intf.getPackage();
-            if (p != null)
-                annot = p.getAnnotation(MXBeanMappingFactoryClass.class);
-        }
-        if (annot == null)
-            return MXBeanMappingFactory.DEFAULT;
-        Class<? extends MXBeanMappingFactory> factoryClass = annot.value();
-        try {
-            return annot.value().newInstance();
-        } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "Could not instantiate MXBeanMappingFactory " +
-                    factoryClass.getName() +
-                    " from @MXBeanMappingFactoryClass", e);
-        }
-    }
 
     /**
      * <p>Return the mapping for the given Java type.  Typically, a

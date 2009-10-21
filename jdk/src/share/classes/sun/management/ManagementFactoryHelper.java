@@ -160,7 +160,7 @@ public class ManagementFactoryHelper {
                 if (result == null) {
                     synchronized (this) {
                         if (objname == null) {
-                            result = ObjectName.valueOf(BUFFER_POOL_MXBEAN_NAME +
+                            result = Util.newObjectName(BUFFER_POOL_MXBEAN_NAME +
                                 ",name=" + pool.getName());
                             objname = result;
                         }
@@ -257,7 +257,7 @@ public class ManagementFactoryHelper {
      */
     private static void addMBean(MBeanServer mbs, Object mbean, String mbeanName) {
         try {
-            final ObjectName objName = ObjectName.valueOf(mbeanName);
+            final ObjectName objName = Util.newObjectName(mbeanName);
 
             // inner class requires these fields to be final
             final MBeanServer mbs0 = mbs;
@@ -317,7 +317,7 @@ public class ManagementFactoryHelper {
 
     private static void unregisterMBean(MBeanServer mbs, String mbeanName) {
         try {
-            final ObjectName objName = ObjectName.valueOf(mbeanName);
+            final ObjectName objName = Util.newObjectName(mbeanName);
 
             // inner class requires these fields to be final
             final MBeanServer mbs0 = mbs;
