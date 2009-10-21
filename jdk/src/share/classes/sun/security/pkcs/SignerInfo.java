@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,8 +286,6 @@ public class SignerInfo implements DerEncoder {
             }
 
             String digestAlgname = getDigestAlgorithmId().getName();
-            if (digestAlgname.equalsIgnoreCase("SHA"))
-                digestAlgname = "SHA1";
 
             byte[] dataSigned;
 
@@ -337,9 +335,12 @@ public class SignerInfo implements DerEncoder {
             String encryptionAlgname =
                 getDigestEncryptionAlgorithmId().getName();
 
-            if (encryptionAlgname.equalsIgnoreCase("SHA1withDSA"))
-                encryptionAlgname = "DSA";
-            String algname = digestAlgname + "with" + encryptionAlgname;
+            // Workaround: sometimes the encryptionAlgname is actually
+            // a signature name
+            String tmp = AlgorithmId.getEncAlgFromSigAlg(encryptionAlgname);
+            if (tmp != null) encryptionAlgname = tmp;
+            String algname = AlgorithmId.makeSigAlg(
+                    digestAlgname, encryptionAlgname);
 
             Signature sig = Signature.getInstance(algname);
             X509Certificate cert = getCertificate(block);

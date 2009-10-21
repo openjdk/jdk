@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,17 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
-package sun.net.ftp;
-
-import java.io.IOException;
+package sun.net.ftp.impl;
 
 /**
- * This exception is thrown when an error is encountered during an
- * FTP login operation.
- *
- * @author      Jonathan Payne
+ * Default FtpClientProvider.
+ * Uses sun.net.ftp.FtpCLient.
  */
-public class FtpLoginException extends IOException {
-    private static final long serialVersionUID = 2218162403237941536L;
+public class DefaultFtpClientProvider extends sun.net.ftp.FtpClientProvider {
 
-    public FtpLoginException(String s) {
-        super(s);
+    @Override
+    public sun.net.ftp.FtpClient createFtpClient() {
+        return sun.net.ftp.impl.FtpClient.create();
     }
+
 }

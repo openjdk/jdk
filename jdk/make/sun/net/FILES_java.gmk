@@ -45,8 +45,14 @@ FILES_java = \
 	sun/net/dns/ResolverConfiguration.java \
 	sun/net/dns/ResolverConfigurationImpl.java \
 	sun/net/ftp/FtpClient.java \
+	sun/net/ftp/FtpClientProvider.java \
+	sun/net/ftp/FtpDirEntry.java \
+	sun/net/ftp/FtpReplyCode.java \
+	sun/net/ftp/FtpDirParser.java \
 	sun/net/ftp/FtpLoginException.java \
 	sun/net/ftp/FtpProtocolException.java \
+	sun/net/ftp/impl/FtpClient.java \
+	sun/net/ftp/impl/DefaultFtpClientProvider.java \
 	sun/net/spi/DefaultProxySelector.java \
 	sun/net/spi/nameservice/NameServiceDescriptor.java \
 	sun/net/spi/nameservice/NameService.java \

@@ -1407,7 +1407,7 @@ public final class KeyTool {
         } else if ("RSA".equalsIgnoreCase(keyAlgName)) {
             return "SHA256WithRSA";
         } else if ("EC".equalsIgnoreCase(keyAlgName)) {
-            return "SHA1withECDSA";
+            return "SHA256withECDSA";
         } else {
             throw new Exception(rb.getString
                     ("Cannot derive signature algorithm"));
