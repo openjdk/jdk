@@ -23,7 +23,8 @@
  * have any questions.
  */
 
-package sun.net.www.protocol.http;
+package sun.net.www.protocol.http.spnego;
+
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
@@ -33,6 +34,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
+import sun.net.www.protocol.http.HttpCallerInfo;
 
 /**
  * @since 1.6

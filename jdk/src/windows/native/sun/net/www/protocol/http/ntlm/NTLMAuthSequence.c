@@ -60,7 +60,7 @@ static jfieldID ntlm_crdHandleID;
 
 static HINSTANCE lib = NULL;
 
-JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_initFirst
+JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_initFirst
 (JNIEnv *env, jclass clazz)
 {
     OSVERSIONINFO   version;
@@ -113,7 +113,7 @@ JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_initFirst
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)J
  */
 
-JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_getCredentialsHandle
+JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_getCredentialsHandle
 (JNIEnv *env, jobject this, jstring user, jstring domain, jstring password)
 {
     SEC_WINNT_AUTH_IDENTITY   AuthId;
@@ -197,7 +197,7 @@ JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_getCrede
     }
 }
 
-JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_NTLMAuthSequence_getNextToken
+JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_getNextToken
 (JNIEnv *env, jobject this, jlong crdHandle, jbyteArray lastToken)
 {
 
