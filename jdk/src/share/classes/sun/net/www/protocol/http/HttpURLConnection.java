@@ -243,7 +243,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private boolean tryTransparentNTLMProxy = true;
 
     /* Used by Windows specific code */
-    Object authObj;
+    private Object authObj;
 
     /* Set if the user is manually setting the Authorization or Proxy-Authorization headers */
     boolean isUserServerAuth;
@@ -330,6 +330,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /* Logging support */
     public static PlatformLogger getHttpLogger() {
         return logger;
+    }
+
+    /* Used for Windows NTLM implementation */
+    public Object authObj() {
+        return authObj;
+    }
+
+    public void authObj(Object authObj) {
+        this.authObj = authObj;
     }
 
     /*
@@ -2529,7 +2538,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     // Set a property for authentication.  This can safely disregard
     // the connected test.
     //
-    void setAuthenticationProperty(String key, String value) {
+    public void setAuthenticationProperty(String key, String value) {
         checkMessageHeader(key, value);
         requests.set(key, value);
     }

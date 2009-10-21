@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package sun.net.www.protocol.http;
+package sun.net.www.protocol.http.ntlm;
 
 import java.io.IOException;
 import sun.misc.BASE64Encoder;

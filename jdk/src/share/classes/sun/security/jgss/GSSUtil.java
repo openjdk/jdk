@@ -237,7 +237,7 @@ public class GSSUtil {
 
         CallbackHandler cb = null;
         if (caller instanceof HttpCaller) {
-            cb = new sun.net.www.protocol.http.NegotiateCallbackHandler(
+            cb = new sun.net.www.protocol.http.spnego.NegotiateCallbackHandler(
                     ((HttpCaller)caller).info());
         } else {
             String defaultHandler =

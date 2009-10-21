@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package sun.net.www.protocol.http;
+package sun.net.www.protocol.http.spnego;
 
 import java.io.IOException;
 
@@ -32,6 +32,8 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 
+import sun.net.www.protocol.http.HttpCallerInfo;
+import sun.net.www.protocol.http.Negotiator;
 import sun.security.jgss.GSSManagerImpl;
 import sun.security.jgss.GSSUtil;
 import sun.security.jgss.HttpCaller;
@@ -133,6 +135,7 @@ public class NegotiatorImpl extends Negotiator {
      * Return the first token of GSS, in SPNEGO, it's called NegTokenInit
      * @return the first token
      */
+    @Override
     public byte[] firstToken() {
         return oneToken;
     }
@@ -143,6 +146,7 @@ public class NegotiatorImpl extends Negotiator {
      * @return the next token
      * @throws java.io.IOException if the token cannot be created successfully
      */
+    @Override
     public byte[] nextToken(byte[] token) throws IOException {
         try {
             return context.initSecContext(token, 0, token.length);

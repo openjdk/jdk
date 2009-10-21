@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package sun.net.www.protocol.http;
+package sun.net.www.protocol.http.ntlm;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -31,6 +31,9 @@ import java.net.PasswordAuthentication;
 import java.net.UnknownHostException;
 import java.net.URL;
 import sun.net.www.HeaderParser;
+import sun.net.www.protocol.http.AuthenticationInfo;
+import sun.net.www.protocol.http.AuthScheme;
+import sun.net.www.protocol.http.HttpURLConnection;
 
 /**
  * NTLMAuthentication:
@@ -38,7 +41,7 @@ import sun.net.www.HeaderParser;
  * @author Michael McMahon
  */
 
-class NTLMAuthentication extends AuthenticationInfo {
+public class NTLMAuthentication extends AuthenticationInfo {
 
     private static final long serialVersionUID = 100L;
 
@@ -127,32 +130,23 @@ class NTLMAuthentication extends AuthenticationInfo {
     /**
      * @return true if this authentication supports preemptive authorization
      */
-    boolean supportsPreemptiveAuthorization() {
+    @Override
+    public boolean supportsPreemptiveAuthorization() {
         return false;
     }
 
     /**
      * @return true if NTLM supported transparently (no password needed, SSO)
      */
-    static boolean supportsTransparentAuth() {
+    public static boolean supportsTransparentAuth() {
         return true;
-    }
-
-    /**
-     * @return the name of the HTTP header this authentication wants set
-     */
-    String getHeaderName() {
-        if (type == SERVER_AUTHENTICATION) {
-            return "Authorization";
-        } else {
-            return "Proxy-authorization";
-        }
     }
 
     /**
      * Not supported. Must use the setHeaders() method
      */
-    String getHeaderValue(URL url, String method) {
+    @Override
+    public String getHeaderValue(URL url, String method) {
         throw new RuntimeException ("getHeaderValue not supported");
     }
 
@@ -164,7 +158,8 @@ class NTLMAuthentication extends AuthenticationInfo {
      * returning false means we have to go back to the user to ask for a new
      * username password.
      */
-    boolean isAuthorizationStale (String header) {
+    @Override
+    public boolean isAuthorizationStale (String header) {
         return false; /* should not be called for ntlm */
     }
 
@@ -176,13 +171,14 @@ class NTLMAuthentication extends AuthenticationInfo {
      * @param raw The raw header field.
      * @return true if all goes well, false if no headers were set.
      */
-    synchronized boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+    @Override
+    public synchronized boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
 
         try {
-            NTLMAuthSequence seq = (NTLMAuthSequence)conn.authObj;
+            NTLMAuthSequence seq = (NTLMAuthSequence)conn.authObj();
             if (seq == null) {
                 seq = new NTLMAuthSequence (username, password, ntdomain);
-                conn.authObj = seq;
+                conn.authObj(seq);
             }
             String response = "NTLM " + seq.getAuthHeader (raw.length()>6?raw.substring(5):null);
             conn.setAuthenticationProperty(getHeaderName(), response);
