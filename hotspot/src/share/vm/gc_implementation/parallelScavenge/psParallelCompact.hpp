@@ -799,8 +799,7 @@ class PSParallelCompact : AllStatic {
     FollowRootClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
-    virtual const bool do_nmethods() const { return true; }
-  };
+ };
 
   class FollowStackClosure: public VoidClosure {
    private:
@@ -817,6 +816,8 @@ class PSParallelCompact : AllStatic {
     AdjustPointerClosure(bool is_root) : _is_root(is_root) { }
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
+    // do not walk from thread stacks to the code cache on this phase
+    virtual void do_code_blob(CodeBlob* cb) const { }
   };
 
   // Closure for verifying update of pointers.  Does not
@@ -1063,7 +1064,6 @@ class PSParallelCompact : AllStatic {
     MarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
-    virtual const bool do_nmethods() const { return true; }
   };
 
   PSParallelCompact();

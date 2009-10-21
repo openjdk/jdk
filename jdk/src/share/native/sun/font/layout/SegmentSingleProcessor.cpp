@@ -38,6 +38,10 @@
 #include "LEGlyphStorage.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(SegmentSingleProcessor)
+
 SegmentSingleProcessor::SegmentSingleProcessor()
 {
 }
@@ -71,3 +75,5 @@ void SegmentSingleProcessor::process(LEGlyphStorage &glyphStorage)
         }
     }
 }
+
+U_NAMESPACE_END

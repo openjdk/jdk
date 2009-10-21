@@ -30,7 +30,7 @@ import java.awt.Insets;
 import java.awt.Adjustable;
 import java.awt.event.MouseWheelEvent;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 /*
  * ScrollPaneWheelScroller is a helper class for implmenenting mouse wheel
@@ -39,7 +39,7 @@ import java.util.logging.*;
  */
 public abstract class ScrollPaneWheelScroller {
 
-    private static final Logger log = Logger.getLogger("sun.awt.ScrollPaneWheelScroller");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.ScrollPaneWheelScroller");
 
     private ScrollPaneWheelScroller() {}
 
@@ -47,8 +47,8 @@ public abstract class ScrollPaneWheelScroller {
      * Called from ScrollPane.processMouseWheelEvent()
      */
     public static void handleWheelScrolling(ScrollPane sp, MouseWheelEvent e) {
-        if (log.isLoggable(Level.FINER)) {
-            log.log(Level.FINER, "x = " + e.getX() + ", y = " + e.getY() + ", src is " + e.getSource());
+        if (log.isLoggable(PlatformLogger.FINER)) {
+            log.finer("x = " + e.getX() + ", y = " + e.getY() + ", src is " + e.getSource());
         }
         int increment = 0;
 
@@ -56,8 +56,8 @@ public abstract class ScrollPaneWheelScroller {
             Adjustable adj = getAdjustableToScroll(sp);
             if (adj != null) {
                 increment = getIncrementFromAdjustable(adj, e);
-                if (log.isLoggable(Level.FINER)) {
-                    log.log(Level.FINER, "increment from adjustable(" + adj.getClass() + ") : " + increment);
+                if (log.isLoggable(PlatformLogger.FINER)) {
+                    log.finer("increment from adjustable(" + adj.getClass() + ") : " + increment);
                 }
                 scrollAdjustable(adj, increment);
             }
@@ -74,8 +74,8 @@ public abstract class ScrollPaneWheelScroller {
         // if policy is display always or never, use vert
         if (policy == ScrollPane.SCROLLBARS_ALWAYS ||
             policy == ScrollPane.SCROLLBARS_NEVER) {
-            if (log.isLoggable(Level.FINER)) {
-                log.log(Level.FINER, "using vertical scrolling due to scrollbar policy");
+            if (log.isLoggable(PlatformLogger.FINER)) {
+                log.finer("using vertical scrolling due to scrollbar policy");
             }
             return sp.getVAdjustable();
 
@@ -85,31 +85,31 @@ public abstract class ScrollPaneWheelScroller {
             Insets ins = sp.getInsets();
             int vertScrollWidth = sp.getVScrollbarWidth();
 
-            if (log.isLoggable(Level.FINER)) {
-                log.log(Level.FINER, "insets: l = " + ins.left + ", r = " + ins.right +
+            if (log.isLoggable(PlatformLogger.FINER)) {
+                log.finer("insets: l = " + ins.left + ", r = " + ins.right +
                  ", t = " + ins.top + ", b = " + ins.bottom);
-                log.log(Level.FINER, "vertScrollWidth = " + vertScrollWidth);
+                log.finer("vertScrollWidth = " + vertScrollWidth);
             }
 
             // Check if scrollbar is showing by examining insets of the
             // ScrollPane
             if (ins.right >= vertScrollWidth) {
-                if (log.isLoggable(Level.FINER)) {
-                    log.log(Level.FINER, "using vertical scrolling because scrollbar is present");
+                if (log.isLoggable(PlatformLogger.FINER)) {
+                    log.finer("using vertical scrolling because scrollbar is present");
                 }
                 return sp.getVAdjustable();
             }
             else {
                 int horizScrollHeight = sp.getHScrollbarHeight();
                 if (ins.bottom >= horizScrollHeight) {
-                    if (log.isLoggable(Level.FINER)) {
-                        log.log(Level.FINER, "using horiz scrolling because scrollbar is present");
+                    if (log.isLoggable(PlatformLogger.FINER)) {
+                        log.finer("using horiz scrolling because scrollbar is present");
                     }
                     return sp.getHAdjustable();
                 }
                 else {
-                    if (log.isLoggable(Level.FINER)) {
-                        log.log(Level.FINER, "using NO scrollbar becsause neither is present");
+                    if (log.isLoggable(PlatformLogger.FINER)) {
+                        log.finer("using NO scrollbar becsause neither is present");
                     }
                     return null;
                 }
@@ -124,9 +124,9 @@ public abstract class ScrollPaneWheelScroller {
      */
     public static int getIncrementFromAdjustable(Adjustable adj,
                                                  MouseWheelEvent e) {
-        if (log.isLoggable(Level.FINE)) {
+        if (log.isLoggable(PlatformLogger.FINE)) {
             if (adj == null) {
-                log.log(Level.FINE, "Assertion (adj != null) failed");
+                log.fine("Assertion (adj != null) failed");
             }
         }
 
@@ -146,19 +146,19 @@ public abstract class ScrollPaneWheelScroller {
      * bounds and sets the new value to the Adjustable.
      */
     public static void scrollAdjustable(Adjustable adj, int amount) {
-        if (log.isLoggable(Level.FINE)) {
+        if (log.isLoggable(PlatformLogger.FINE)) {
             if (adj == null) {
-                log.log(Level.FINE, "Assertion (adj != null) failed");
+                log.fine("Assertion (adj != null) failed");
             }
             if (amount == 0) {
-                log.log(Level.FINE, "Assertion (amount != 0) failed");
+                log.fine("Assertion (amount != 0) failed");
             }
         }
 
         int current = adj.getValue();
         int upperLimit = adj.getMaximum() - adj.getVisibleAmount();
-        if (log.isLoggable(Level.FINER)) {
-            log.log(Level.FINER, "doScrolling by " + amount);
+        if (log.isLoggable(PlatformLogger.FINER)) {
+            log.finer("doScrolling by " + amount);
         }
 
         if (amount > 0 && current < upperLimit) { // still some room to scroll

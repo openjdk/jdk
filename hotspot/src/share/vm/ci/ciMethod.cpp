@@ -325,10 +325,10 @@ ciTypeFlow* ciMethod::get_osr_flow_analysis(int osr_bci) {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::liveness_at_bci
+// ciMethod::raw_liveness_at_bci
 //
 // Which local variables are live at a specific bci?
-MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
+MethodLivenessResult ciMethod::raw_liveness_at_bci(int bci) {
   check_is_loaded();
   if (_liveness == NULL) {
     // Create the liveness analyzer.
@@ -336,7 +336,17 @@ MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
     _liveness = new (arena) MethodLiveness(arena, this);
     _liveness->compute_liveness();
   }
-  MethodLivenessResult result = _liveness->get_liveness_at(bci);
+  return _liveness->get_liveness_at(bci);
+}
+
+// ------------------------------------------------------------------
+// ciMethod::liveness_at_bci
+//
+// Which local variables are live at a specific bci?  When debugging
+// will return true for all locals in some cases to improve debug
+// information.
+MethodLivenessResult ciMethod::liveness_at_bci(int bci) {
+  MethodLivenessResult result = raw_liveness_at_bci(bci);
   if (CURRENT_ENV->jvmti_can_access_local_variables() || DeoptimizeALot || CompileTheWorld) {
     // Keep all locals live for the user's edification and amusement.
     result.at_put_range(0, result.size(), true);

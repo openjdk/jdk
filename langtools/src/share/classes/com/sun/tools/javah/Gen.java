@@ -27,15 +27,32 @@ package com.sun.tools.javah;
 
 import java.io.UnsupportedEncodingException;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import com.sun.javadoc.*;
-import java.io.*;
-import java.util.Stack;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
 
+import javax.annotation.processing.ProcessingEnvironment;
+
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+
+import javax.tools.FileObject;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 
 /**
  * An abstraction for generating support files required by native methods.
@@ -43,31 +60,39 @@ import java.util.Arrays;
  * original writing, this interface is rich enough to support JNI and the
  * old 1.0-style native method interface.
  *
+ * <p><b>This is NOT part of any API supported by Sun Microsystems.
+ * If you write code that depends on this, you do so at your own
+ * risk.  This code and its internal interfaces are subject to change
+ * or deletion without notice.</b></p>
+ *
  * @author  Sucheta Dambalkar(Revised)
  */
-
-
 public abstract class Gen {
     protected String lineSep = System.getProperty("line.separator");
 
-    RootDoc root;
+    protected ProcessingEnvironment processingEnvironment;
+    protected Types types;
+    protected Elements elems;
+    protected Mangle mangler;
+    protected Util util;
+
+    protected Gen(Util util) {
+        this.util = util;
+    }
+
     /*
      * List of classes for which we must generate output.
      */
-    protected ClassDoc[] classes;
+    protected Set<TypeElement> classes;
     static private final boolean isWindows =
         System.getProperty("os.name").startsWith("Windows");
 
-    public Gen(RootDoc root){
-        this.root = root;
-    }
 
     /**
      * Override this abstract method, generating content for the named
      * class into the outputstream.
      */
-    protected abstract void write(OutputStream o, ClassDoc clazz)
-        throws ClassNotFoundException;
+    protected abstract void write(OutputStream o, TypeElement clazz) throws Util.Exit;
 
     /**
      * Override this method to provide a list of #include statements
@@ -78,29 +103,27 @@ public abstract class Gen {
     /*
      * Output location.
      */
-    protected String outDir;
-    protected String outFile;
+    protected JavaFileManager fileManager;
+    protected JavaFileObject outFile;
 
-    public void setOutDir(String outDir) {
-        /* Check important, otherwise concatenation of two null strings
-         * produces the "nullnull" String.
-         */
-        if (outDir != null) {
-            this.outDir = outDir + System.getProperty("file.separator");
-            File d = new File(outDir);
-            if (!d.exists())
-                if (!d.mkdirs())
-                    Util.error("cant.create.dir", d.toString());
-        }
+    public void setFileManager(JavaFileManager fm) {
+        fileManager = fm;
     }
 
-    public void setOutFile(String outFile) {
+    public void setOutFile(JavaFileObject outFile) {
         this.outFile = outFile;
     }
 
 
-    public void setClasses(ClassDoc[] classes) {
+    public void setClasses(Set<TypeElement> classes) {
         this.classes = classes;
+    }
+
+    void setProcessingEnvironment(ProcessingEnvironment pEnv) {
+        processingEnvironment = pEnv;
+        elems = pEnv.getElementUtils();
+        types = pEnv.getTypeUtils();
+        mangler = new Mangle(elems, types);
     }
 
     /*
@@ -116,12 +139,11 @@ public abstract class Gen {
      * We explicitly need to write ASCII files because that is what C
      * compilers understand.
      */
-    protected PrintWriter wrapWriter(OutputStream o) {
+    protected PrintWriter wrapWriter(OutputStream o) throws Util.Exit {
         try {
-            return new
-            PrintWriter(new OutputStreamWriter(o, "ISO8859_1"), true);
+            return new PrintWriter(new OutputStreamWriter(o, "ISO8859_1"), true);
         } catch (UnsupportedEncodingException use) {
-            Util.bug("encoding.iso8859_1.not.found");
+            util.bug("encoding.iso8859_1.not.found");
             return null; /* dead code */
         }
     }
@@ -133,26 +155,25 @@ public abstract class Gen {
      * Buffer size chosen as an approximation from a single sampling of:
      *         expr `du -sk` / `ls *.h | wc -l`
      */
-    public void run() throws IOException, ClassNotFoundException {
+    public void run() throws IOException, ClassNotFoundException, Util.Exit {
         int i = 0;
         if (outFile != null) {
             /* Everything goes to one big file... */
             ByteArrayOutputStream bout = new ByteArrayOutputStream(8192);
             writeFileTop(bout); /* only once */
 
-            for (i = 0; i < classes.length; i++) {
-                write(bout, classes[i]);
+            for (TypeElement t: classes) {
+                write(bout, t);
             }
 
             writeIfChanged(bout.toByteArray(), outFile);
         } else {
             /* Each class goes to its own file... */
-            for (i = 0; i < classes.length; i++) {
+            for (TypeElement t: classes) {
                 ByteArrayOutputStream bout = new ByteArrayOutputStream(8192);
                 writeFileTop(bout);
-                ClassDoc clazz = classes[i];
-                write(bout, clazz);
-                writeIfChanged(bout.toByteArray(), getFileName(clazz.qualifiedName()));
+                write(bout, t);
+                writeIfChanged(bout.toByteArray(), getFileObject(t.getQualifiedName()));
             }
         }
     }
@@ -162,8 +183,7 @@ public abstract class Gen {
      * is done if either the file doesn't exist or if the contents are
      * different.
      */
-    private void writeIfChanged(byte[] b, String file) throws IOException {
-        File f = new File(file);
+    private void writeIfChanged(byte[] b, FileObject file) throws IOException {
         boolean mustWrite = false;
         String event = "[No need to update file ";
 
@@ -171,71 +191,80 @@ public abstract class Gen {
             mustWrite = true;
             event = "[Forcefully writing file ";
         } else {
-            if (!f.exists()) {
-                mustWrite = true;
-                event = "[Creating file ";
-            } else {
-                int l = (int)f.length();
-                if (b.length != l) {
+            InputStream in;
+            byte[] a;
+            try {
+                // regrettably, there's no API to get the length in bytes
+                // for a FileObject, so we can't short-circuit reading the
+                // file here
+                in = file.openInputStream();
+                a = readBytes(in);
+                if (!Arrays.equals(a, b)) {
                     mustWrite = true;
                     event = "[Overwriting file ";
-                } else {
-                    /* Lengths are equal, so read it. */
-                    byte[] a = new byte[l];
-                    FileInputStream in = new FileInputStream(f);
-                    if (in.read(a) != l) {
-                        in.close();
-                        /* This can't happen, we already checked the length. */
-                        Util.error("not.enough.bytes", Integer.toString(l),
-                                   f.toString());
-                    }
-                    in.close();
-                    while (--l >= 0) {
-                        if (a[l] != b[l]) {
-                            mustWrite = true;
-                            event = "[Overwriting file ";
-                        }
-                    }
+
                 }
+            } catch (FileNotFoundException e) {
+                mustWrite = true;
+                event = "[Creating file ";
             }
         }
-        if (Util.verbose)
-            Util.log(event + file + "]");
+
+        if (util.verbose)
+            util.log(event + file + "]");
+
         if (mustWrite) {
-            OutputStream out = new FileOutputStream(file);
+            OutputStream out = file.openOutputStream();
             out.write(b); /* No buffering, just one big write! */
             out.close();
         }
     }
 
-    protected String defineForStatic(ClassDoc c, FieldDoc f){
+    protected byte[] readBytes(InputStream in) throws IOException {
+        try {
+            byte[] array = new byte[in.available() + 1];
+            int offset = 0;
+            int n;
+            while ((n = in.read(array, offset, array.length - offset)) != -1) {
+                offset += n;
+                if (offset == array.length)
+                    array = Arrays.copyOf(array, array.length * 2);
+            }
 
-        String cnamedoc = c.qualifiedName();
-        String fnamedoc = f.name();
+            return Arrays.copyOf(array, offset);
+        } finally {
+            in.close();
+        }
+    }
 
-        String cname = Mangle.mangle(cnamedoc, Mangle.Type.CLASS);
-        String fname = Mangle.mangle(fnamedoc, Mangle.Type.FIELDSTUB);
+    protected String defineForStatic(TypeElement c, VariableElement f)
+            throws Util.Exit {
+        CharSequence cnamedoc = c.getQualifiedName();
+        CharSequence fnamedoc = f.getSimpleName();
 
-        if (!f.isStatic())
-            Util.bug("tried.to.define.non.static");
+        String cname = mangler.mangle(cnamedoc, Mangle.Type.CLASS);
+        String fname = mangler.mangle(fnamedoc, Mangle.Type.FIELDSTUB);
 
-        if (f.isFinal()) {
+        if (!f.getModifiers().contains(Modifier.STATIC))
+            util.bug("tried.to.define.non.static");
+
+        if (f.getModifiers().contains(Modifier.FINAL)) {
             Object value = null;
 
-            value = f.constantValue();
+            value = f.getConstantValue();
 
             if (value != null) { /* so it is a ConstantExpression */
                 String constString = null;
                 if ((value instanceof Integer)
                     || (value instanceof Byte)
-                    || (value instanceof Character)
-                    || (value instanceof Short)
-                    || (value instanceof Boolean)) {
-                    /* covers byte, boolean, char, short, int */
-                    if(value instanceof Boolean)
-                        constString = (value.toString() == "true") ? "1L" : "0L";
-                    else
-                        constString = value.toString() + "L";
+                    || (value instanceof Short)) {
+                    /* covers byte, short, int */
+                    constString = value.toString() + "L";
+                } else if (value instanceof Boolean) {
+                    constString = ((Boolean) value) ? "1L" : "0L";
+                } else if (value instanceof Character) {
+                    Character ch = (Character) value;
+                    constString = String.valueOf(((int) ch) & 0xffff) + "L";
                 } else if (value instanceof Long) {
                     // Visual C++ supports the i64 suffix, not LL.
                     if (isWindows)
@@ -294,24 +323,19 @@ public abstract class Gen {
     /*
      * File name and file preamble related operations.
      */
-    protected void writeFileTop(OutputStream o) {
+    protected void writeFileTop(OutputStream o) throws Util.Exit {
         PrintWriter pw = wrapWriter(o);
         pw.println("/* DO NOT EDIT THIS FILE - it is machine generated */" + lineSep +
                    getIncludes());
     }
 
-    protected String baseFileName(String clazz) {
-        StringBuffer f =
-            new StringBuffer(Mangle.mangle(clazz,
-                                           Mangle.Type.CLASS));
-        if (outDir != null) {
-            f.insert(0, outDir);
-        }
-        return f.toString();
+    protected String baseFileName(CharSequence className) {
+        return mangler.mangle(className, Mangle.Type.CLASS);
     }
 
-    protected String getFileName(String clazz) {
-        return baseFileName(clazz) + getFileSuffix();
+    protected FileObject getFileObject(CharSequence className) throws IOException {
+        String name = baseFileName(className) + getFileSuffix();
+        return fileManager.getFileForOutput(StandardLocation.SOURCE_OUTPUT, "", name, null);
     }
 
     protected String getFileSuffix() {
@@ -322,26 +346,39 @@ public abstract class Gen {
      * Including super classes' fields.
      */
 
-    FieldDoc[] getAllFields(ClassDoc subclazz)
-                throws ClassNotFoundException {
-        Vector<FieldDoc> fields = new Vector<FieldDoc>();
-        ClassDoc cd = null;
-        Stack<Object> s = new Stack<Object>();
+    List<VariableElement> getAllFields(TypeElement subclazz) {
+        List<VariableElement> fields = new ArrayList<VariableElement>();
+        TypeElement cd = null;
+        Stack<TypeElement> s = new Stack<TypeElement>();
 
         cd = subclazz;
         while (true) {
             s.push(cd);
-            ClassDoc c = cd.superclass();
+            TypeElement c = (TypeElement) (types.asElement(cd.getSuperclass()));
             if (c == null)
                 break;
             cd = c;
         }
 
         while (!s.empty()) {
-            cd = (ClassDoc)s.pop();
-            fields.addAll(Arrays.asList(cd.fields()));
+            cd = s.pop();
+            fields.addAll(ElementFilter.fieldsIn(cd.getEnclosedElements()));
         }
 
-        return fields.toArray(new FieldDoc[fields.size()]);
+        return fields;
+    }
+
+    // c.f. MethodDoc.signature
+    String signature(ExecutableElement e) {
+        StringBuffer sb = new StringBuffer("(");
+        String sep = "";
+        for (VariableElement p: e.getParameters()) {
+            sb.append(sep);
+            sb.append(types.erasure(p.asType()).toString());
+            sep = ",";
+        }
+        sb.append(")");
+        return sb.toString();
     }
 }
+

@@ -25,6 +25,7 @@
 
 /*
  *
+ *
  * (C) Copyright IBM Corp. 1998-2003 - All Rights Reserved
  *
  */
@@ -36,6 +37,8 @@
 #include "LigatureSubstSubtables.h"
 #include "GlyphIterator.h"
 #include "LESwaps.h"
+
+U_NAMESPACE_BEGIN
 
 le_uint32 LigatureSubstitutionSubtable::process(GlyphIterator *glyphIterator, const LEGlyphFilter *filter) const
 {
@@ -92,3 +95,5 @@ le_uint32 LigatureSubstitutionSubtable::process(GlyphIterator *glyphIterator, co
 
     return 0;
 }
+
+U_NAMESPACE_END

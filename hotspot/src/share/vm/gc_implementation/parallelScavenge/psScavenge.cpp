@@ -358,6 +358,7 @@ bool PSScavenge::invoke_no_policy() {
     PSPromotionManager* promotion_manager = PSPromotionManager::vm_thread_promotion_manager();
     {
       // TraceTime("Roots");
+      ParallelScavengeHeap::ParStrongRootsScope psrs;
 
       GCTaskQueue* q = GCTaskQueue::create();
 
@@ -376,6 +377,7 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::management));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::system_dictionary));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jvmti));
+      q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
 
       ParallelTaskTerminator terminator(
         gc_task_manager()->workers(),

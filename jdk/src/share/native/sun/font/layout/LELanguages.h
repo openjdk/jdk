@@ -25,10 +25,12 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2004. All Rights Reserved.
+ * (C) Copyright IBM Corp. 1998-2005. All Rights Reserved.
  *
  * WARNING: THIS FILE IS MACHINE GENERATED. DO NOT HAND EDIT IT UNLESS
  * YOU REALLY KNOW WHAT YOU'RE DOING.
+ *
+ * Generated on: 07/19/2005 01:01:08 PM PDT
  */
 
 #ifndef __LELANGUAGES_H
@@ -37,11 +39,18 @@
 #include "LETypes.h"
 
 /**
+ * \file
+ * \brief C++ API: List of language codes for LayoutEngine
+ */
+
+U_NAMESPACE_BEGIN
+
+/**
  * A provisional list of language codes. For now,
  * this is just a list of languages which the LayoutEngine
  * supports.
  *
- * @draft ICU 3.0
+ * @draft ICU 3.4
  */
 
 enum LanguageCodes {
@@ -79,4 +88,5 @@ enum LanguageCodes {
     languageCodeCount = 30
 };
 
+U_NAMESPACE_END
 #endif

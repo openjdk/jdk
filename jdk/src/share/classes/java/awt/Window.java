@@ -48,8 +48,6 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.accessibility.*;
 import sun.awt.AWTAccessor;
@@ -61,6 +59,7 @@ import sun.java2d.Disposer;
 import sun.java2d.pipe.Region;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
+import sun.util.logging.PlatformLogger;
 
 /**
  * A <code>Window</code> object is a top-level window with no borders and no
@@ -324,7 +323,7 @@ public class Window extends Container implements Accessible {
      */
     private static final long serialVersionUID = 4497834738069338734L;
 
-    private static final Logger log = Logger.getLogger("java.awt.Window");
+    private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Window");
 
     private static final boolean locationByPlatformProp;
 
@@ -2985,7 +2984,7 @@ public class Window extends Container implements Accessible {
         }
         synchronized (getTreeLock()) {
             super.setGraphicsConfiguration(gc);
-            if (log.isLoggable(Level.FINER)) {
+            if (log.isLoggable(PlatformLogger.FINER)) {
                 log.finer("+ Window.setGraphicsConfiguration(): new GC is \n+ " + getGraphicsConfiguration_NoClientCode() + "\n+ this is " + this);
             }
         }

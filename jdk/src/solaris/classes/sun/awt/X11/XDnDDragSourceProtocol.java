@@ -32,7 +32,7 @@ import java.awt.dnd.InvalidDnDOperationException;
 
 import java.util.Map;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import sun.misc.Unsafe;
 
@@ -42,8 +42,8 @@ import sun.misc.Unsafe;
  * @since 1.5
  */
 class XDnDDragSourceProtocol extends XDragSourceProtocol {
-    private static final Logger logger =
-        Logger.getLogger("sun.awt.X11.xembed.xdnd.XDnDDragSourceProtocol");
+    private static final PlatformLogger logger =
+        PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDnDDragSourceProtocol");
 
     private static final Unsafe unsafe = XlibWrapper.unsafe;
 
@@ -395,7 +395,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
                 return false;
             }
 
-            if (logger.isLoggable(Level.FINEST)) {
+            if (logger.isLoggable(PlatformLogger.FINEST)) {
                 logger.finest("        sourceWindow=" + sourceWindow +
                               " get_window=" + xclient.get_window() +
                               " xclient=" + xclient);

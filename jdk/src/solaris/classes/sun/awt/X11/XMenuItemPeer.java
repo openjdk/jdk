@@ -28,8 +28,6 @@ import java.awt.*;
 import java.awt.peer.*;
 import java.awt.event.*;
 
-import java.util.logging.*;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;

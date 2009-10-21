@@ -28,7 +28,6 @@
 package sun.awt.X11;
 
 import sun.misc.Unsafe;
-import java.util.logging.*;
 
 public class XQueryTree {
         private static Unsafe unsafe = XlibWrapper.unsafe;

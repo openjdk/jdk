@@ -150,15 +150,26 @@ jboolean isDisplayLocal(JNIEnv *env) {
     static jboolean isLocalSet = False;
     jboolean ret;
 
-    if (isLocalSet) {
-        return isLocal;
+    if (! isLocalSet) {
+      jclass geCls = (*env)->FindClass(env, "java/awt/GraphicsEnvironment");
+      jmethodID getLocalGE = (*env)->GetStaticMethodID(env, geCls,
+                                                 "getLocalGraphicsEnvironment",
+                                           "()Ljava/awt/GraphicsEnvironment;");
+      jobject ge = (*env)->CallStaticObjectMethod(env, geCls, getLocalGE);
+
+      jclass sgeCls = (*env)->FindClass(env,
+                                        "sun/java2d/SunGraphicsEnvironment");
+      if ((*env)->IsInstanceOf(env, ge, sgeCls)) {
+        jmethodID isDisplayLocal = (*env)->GetMethodID(env, sgeCls,
+                                                       "isDisplayLocal",
+                                                       "()Z");
+        isLocal = (*env)->CallBooleanMethod(env, ge, isDisplayLocal);
+      } else {
+        isLocal = True;
+      }
+      isLocalSet = True;
     }
 
-    isLocal = JNU_CallStaticMethodByName(env, NULL,
-                                         "sun/awt/X11GraphicsEnvironment",
-                                         "_isDisplayLocal",
-                                         "()Z").z;
-    isLocalSet = True;
     return isLocal;
 }
 
@@ -516,8 +527,8 @@ static char *getPlatformFontPathChars(JNIEnv *env, jboolean noType1) {
     return path;
 }
 
-JNIEXPORT jstring JNICALL Java_sun_font_FontManager_getFontPath
-(JNIEnv *env, jclass obj, jboolean noType1) {
+JNIEXPORT jstring JNICALL Java_sun_awt_X11FontManager_getFontPath
+(JNIEnv *env, jobject thiz, jboolean noType1) {
     jstring ret;
     static char *ptr = NULL; /* retain result across calls */
 
@@ -564,7 +575,7 @@ static int shouldSetXFontPath(JNIEnv *env) {
 }
 #endif /* !HEADLESS */
 
-JNIEXPORT void JNICALL Java_sun_font_FontManager_setNativeFontPath
+JNIEXPORT void JNICALL Java_sun_font_X11FontManager_setNativeFontPath
 (JNIEnv *env, jclass obj, jstring theString) {
 #ifdef HEADLESS
     return;
@@ -590,21 +601,6 @@ JNIEXPORT void JNICALL Java_sun_font_FontManager_setNativeFontPath
     AWT_UNLOCK();
 
 #endif
-}
-
-/* This isn't yet used on unix, the implementation is added since shared
- * code calls this method in preparation for future use.
- */
-/* Obtain all the fontname -> filename mappings.
- * This is called once and the results returned to Java code which can
- * use it for lookups to reduce or avoid the need to search font files.
- */
-JNIEXPORT void JNICALL
-Java_sun_font_FontManager_populateFontFileNameMap
-(JNIEnv *env, jclass obj, jobject fontToFileMap,
- jobject fontToFamilyMap, jobject familyToFontListMap, jobject locale)
-{
-    return;
 }
 
 #include <dlfcn.h>
@@ -865,7 +861,7 @@ static char **getFontConfigLocations() {
 #define TEXT_AA_LCD_VBGR 7
 
 JNIEXPORT jint JNICALL
-Java_sun_font_FontManager_getFontConfigAASettings
+Java_sun_font_FontConfigManager_getFontConfigAASettings
 (JNIEnv *env, jclass obj, jstring localeStr, jstring fcNameStr) {
 
     FcNameParseFuncType FcNameParse;
@@ -975,7 +971,7 @@ Java_sun_font_FontManager_getFontConfigAASettings
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_font_FontManager_getFontConfigVersion
+Java_sun_font_FontConfigManager_getFontConfigVersion
     (JNIEnv *env, jclass obj) {
 
     void* libfontconfig;
@@ -1000,7 +996,7 @@ Java_sun_font_FontManager_getFontConfigVersion
 
 
 JNIEXPORT void JNICALL
-Java_sun_font_FontManager_getFontConfig
+Java_sun_font_FontConfigManager_getFontConfig
 (JNIEnv *env, jclass obj, jstring localeStr, jobject fcInfoObj,
  jobjectArray fcCompFontArray,  jboolean includeFallbacks) {
 
@@ -1034,11 +1030,11 @@ Java_sun_font_FontManager_getFontConfig
     char* debugMinGlyphsStr = getenv("J2D_DEBUG_MIN_GLYPHS");
 
     jclass fcInfoClass =
-        (*env)->FindClass(env, "sun/font/FontManager$FontConfigInfo");
+        (*env)->FindClass(env, "sun/font/FontConfigManager$FontConfigInfo");
     jclass fcCompFontClass =
-        (*env)->FindClass(env, "sun/font/FontManager$FcCompFont");
+        (*env)->FindClass(env, "sun/font/FontConfigManager$FcCompFont");
     jclass fcFontClass =
-         (*env)->FindClass(env, "sun/font/FontManager$FontConfigFont");
+         (*env)->FindClass(env, "sun/font/FontConfigManager$FontConfigFont");
 
     if (fcInfoObj == NULL || fcCompFontArray == NULL || fcInfoClass == NULL ||
         fcCompFontClass == NULL || fcFontClass == NULL) {
@@ -1054,11 +1050,11 @@ Java_sun_font_FontManager_getFontConfig
                                   "fcName", "Ljava/lang/String;");
     fcFirstFontID =
         (*env)->GetFieldID(env, fcCompFontClass, "firstFont",
-                           "Lsun/font/FontManager$FontConfigFont;");
+                           "Lsun/font/FontConfigManager$FontConfigFont;");
 
     fcAllFontsID =
         (*env)->GetFieldID(env, fcCompFontClass, "allFonts",
-                           "[Lsun/font/FontManager$FontConfigFont;");
+                           "[Lsun/font/FontConfigManager$FontConfigFont;");
 
     fcFontCons = (*env)->GetMethodID(env, fcFontClass, "<init>", "()V");
 
@@ -1207,11 +1203,7 @@ Java_sun_font_FontManager_getFontConfig
          * Inspect the returned fonts and the ones we like (adds enough glyphs)
          * are added to the arrays and we increment 'fontCount'.
          */
-        if (includeFallbacks) {
-            nfonts = fontset->nfont;
-        } else {
-            nfonts = 1;
-        }
+        nfonts = fontset->nfont;
         family   = (FcChar8**)calloc(nfonts, sizeof(FcChar8*));
         styleStr = (FcChar8**)calloc(nfonts, sizeof(FcChar8*));
         fullname = (FcChar8**)calloc(nfonts, sizeof(FcChar8*));
@@ -1253,7 +1245,7 @@ Java_sun_font_FontManager_getFontConfig
              * adversely affects load time for minimal value-add.
              * This is still likely far more than we've had in the past.
              */
-            if (nfonts==10) {
+            if (j==10) {
                 minGlyphs = 50;
             }
             if (unionCharset == NULL) {
@@ -1272,6 +1264,9 @@ Java_sun_font_FontManager_getFontConfig
             (*FcPatternGetString)(fontPattern, FC_FAMILY, 0, &family[j]);
             (*FcPatternGetString)(fontPattern, FC_STYLE, 0, &styleStr[j]);
             (*FcPatternGetString)(fontPattern, FC_FULLNAME, 0, &fullname[j]);
+            if (!includeFallbacks) {
+                break;
+            }
         }
 
         /* Once we get here 'fontCount' is the number of returned fonts
@@ -1313,6 +1308,8 @@ Java_sun_font_FontManager_getFontConfig
                 }
                 if (includeFallbacks) {
                     (*env)->SetObjectArrayElement(env, fcFontArr, fn++,fcFont);
+                } else {
+                    break;
                 }
             }
         }
