@@ -440,7 +440,7 @@ void LIRGenerator::jobject2reg_with_patching(LIR_Opr r, ciObject* obj, CodeEmitI
     __ oop2reg_patch(NULL, r, info);
   } else {
     // no patching needed
-    __ oop2reg(obj->encoding(), r);
+    __ oop2reg(obj->constant_encoding(), r);
   }
 }
 
@@ -831,7 +831,7 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     int taken_count_offset     = md->byte_offset_of_slot(data, BranchData::taken_offset());
     int not_taken_count_offset = md->byte_offset_of_slot(data, BranchData::not_taken_offset());
     LIR_Opr md_reg = new_register(T_OBJECT);
-    __ move(LIR_OprFact::oopConst(md->encoding()), md_reg);
+    __ move(LIR_OprFact::oopConst(md->constant_encoding()), md_reg);
     LIR_Opr data_offset_reg = new_register(T_INT);
     __ cmove(lir_cond(cond),
              LIR_OprFact::intConst(taken_count_offset),
@@ -1071,7 +1071,7 @@ void LIRGenerator::do_Return(Return* x) {
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
     LIR_Opr meth = new_register(T_OBJECT);
-    __ oop2reg(method()->encoding(), meth);
+    __ oop2reg(method()->constant_encoding(), meth);
     args->append(meth);
     call_runtime(&signature, args, CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), voidType, NULL);
   }
@@ -1784,7 +1784,7 @@ void LIRGenerator::do_Throw(Throw* x) {
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
     LIR_Opr meth = new_register(T_OBJECT);
-    __ oop2reg(method()->encoding(), meth);
+    __ oop2reg(method()->constant_encoding(), meth);
     args->append(meth);
     call_runtime(&signature, args, CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), voidType, NULL);
   }
@@ -2207,7 +2207,7 @@ void LIRGenerator::do_Base(Base* x) {
     LIR_OprList* args = new LIR_OprList();
     args->append(getThreadPointer());
     LIR_Opr meth = new_register(T_OBJECT);
-    __ oop2reg(method()->encoding(), meth);
+    __ oop2reg(method()->constant_encoding(), meth);
     args->append(meth);
     call_runtime(&signature, args, CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry), voidType, NULL);
   }
@@ -2216,7 +2216,7 @@ void LIRGenerator::do_Base(Base* x) {
     LIR_Opr obj;
     if (method()->is_static()) {
       obj = new_register(T_OBJECT);
-      __ oop2reg(method()->holder()->java_mirror()->encoding(), obj);
+      __ oop2reg(method()->holder()->java_mirror()->constant_encoding(), obj);
     } else {
       Local* receiver = x->state()->local_at(0)->as_Local();
       assert(receiver != NULL, "must already exist");
@@ -2660,7 +2660,7 @@ void LIRGenerator::increment_invocation_counter(CodeEmitInfo* info, bool backedg
     }
 
     LIR_Opr meth = new_register(T_OBJECT);
-    __ oop2reg(method()->encoding(), meth);
+    __ oop2reg(method()->constant_encoding(), meth);
     LIR_Opr result = increment_and_return_counter(meth, offset, InvocationCounter::count_increment);
     __ cmp(lir_cond_aboveEqual, result, LIR_OprFact::intConst(limit));
     CodeStub* overflow = new CounterOverflowStub(info, info->bci());

@@ -46,13 +46,9 @@ public class T6733837 extends ToolTester {
     }
 
     public void exec() {
-        JavaFileObject sfo = new SimpleJavaFileObject(URI.create(""),Kind.SOURCE) {
+        JavaFileObject sfo = new SimpleJavaFileObject(URI.create("myfo:/Test.java"),Kind.SOURCE) {
             public CharSequence getCharContent(boolean ignoreEncodingErrors) {
                 return "\tclass ErroneousWithTab";
-            }
-            @Override
-            public String getName() {
-                return "RELATIVEPATH";
             }
         };
         StringWriter sw = new StringWriter();
@@ -66,7 +62,7 @@ public class T6733837 extends ToolTester {
             throw new Error("Compiler threw an exception");
         }
         System.err.println(sw.toString());
-        if (sw.toString().contains("RELATIVEPATH"))
+        if (!sw.toString().contains("/Test.java"))
             throw new Error("Bad source name in diagnostic");
     }
 }

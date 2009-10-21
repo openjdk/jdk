@@ -30,7 +30,6 @@ import java.awt.peer.*;
 import java.util.Vector;
 
 import sun.awt.SunGraphicsCallback;
-import java.util.logging.*;
 
 class WPanelPeer extends WCanvasPeer implements PanelPeer {
 

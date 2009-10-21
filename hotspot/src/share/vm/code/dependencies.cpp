@@ -302,7 +302,7 @@ void Dependencies::encode_content_bytes() {
       bytes.write_byte(code_byte);
       for (int j = 0; j < stride; j++) {
         if (j == skipj)  continue;
-        bytes.write_int(_oop_recorder->find_index(deps->at(i+j)->encoding()));
+        bytes.write_int(_oop_recorder->find_index(deps->at(i+j)->constant_encoding()));
       }
     }
   }

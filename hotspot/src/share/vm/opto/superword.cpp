@@ -457,10 +457,6 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
         } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
           // StoreCM has an input edge used as a precedence edge.
           // Maybe an issue when oop stores are vectorized.
-        } else if( out->is_MergeMem() && prev &&
-                   prev->Opcode() == Op_StoreCM && out == prev->in(MemNode::OopStore)) {
-          // Oop store is a MergeMem! This should not happen. Temporarily remove the assertion
-          // for this case because it could not be superwordized anyway.
         } else {
           assert(out == prev || prev == NULL, "no branches off of store slice");
         }
@@ -477,6 +473,12 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
 // Can s1 and s2 be in a pack with s1 immediately preceding s2 and
 // s1 aligned at "align"
 bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
+
+  // Do not use superword for non-primitives
+  if((s1->is_Mem() && !is_java_primitive(s1->as_Mem()->memory_type())) ||
+     (s2->is_Mem() && !is_java_primitive(s2->as_Mem()->memory_type())))
+    return false;
+
   if (isomorphic(s1, s2)) {
     if (independent(s1, s2)) {
       if (!exists_at(s1, 0) && !exists_at(s2, 1)) {

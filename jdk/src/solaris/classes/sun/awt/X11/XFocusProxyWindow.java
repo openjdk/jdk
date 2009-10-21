@@ -26,7 +26,6 @@
 package sun.awt.X11;
 
 import java.awt.*;
-import java.util.logging.*;
 
 /**
  * This class represent focus holder window implementation. When toplevel requests or receives focus

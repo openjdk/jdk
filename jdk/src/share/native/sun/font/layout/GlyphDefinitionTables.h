@@ -32,9 +32,16 @@
 #ifndef __GLYPHDEFINITIONTABLES_H
 #define __GLYPHDEFINITIONTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
 #include "ClassDefinitionTables.h"
+
+U_NAMESPACE_BEGIN
 
 typedef ClassDefinitionTable GlyphClassDefinitionTable;
 
@@ -110,4 +117,5 @@ struct GlyphDefinitionTableHeader
     const MarkAttachClassDefinitionTable *getMarkAttachClassDefinitionTable() const;
 };
 
+U_NAMESPACE_END
 #endif

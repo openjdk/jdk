@@ -25,7 +25,8 @@
 
 package sun.awt.shell;
 
-import java.awt.Toolkit;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.*;
 
 import sun.security.action.LoadLibraryAction;
@@ -98,18 +100,35 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
         return parent;
     }
 
+    private static final int VIEW_LIST = 2;
+    private static final int VIEW_DETAILS = 3;
+    private static final int VIEW_PARENTFOLDER = 8;
+    private static final int VIEW_NEWFOLDER = 11;
+
+    private static final Image[] STANDARD_VIEW_BUTTONS = new Image[12];
+
+    private static Image getStandardViewButton(int iconIndex) {
+        Image result = STANDARD_VIEW_BUTTONS[iconIndex];
+
+        if (result != null) {
+            return result;
+        }
+
+        BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+
+        img.setRGB(0, 0, 16, 16, Win32ShellFolder2.getStandardViewButton0(iconIndex), 0, 16);
+
+        STANDARD_VIEW_BUTTONS[iconIndex] = img;
+
+        return img;
+    }
+
     // Special folders
     private static Win32ShellFolder2 desktop;
     private static Win32ShellFolder2 drives;
     private static Win32ShellFolder2 recent;
     private static Win32ShellFolder2 network;
     private static Win32ShellFolder2 personal;
-
-    private static final boolean USE_SHELL32_ICONS = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-        public Boolean run() {
-            return OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_XP) >= 0;
-        }
-    });
 
     static Win32ShellFolder2 getDesktop() {
         if (desktop == null) {
@@ -206,9 +225,9 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
      *    folders, such as Desktop, Documents, History, Network, Home, etc.
      *    This is used in the shortcut panel of the filechooser on Windows 2000
      *    and Windows Me.
-     *  "fileChooserIcon nn":
-     *    Returns an <code>Image</code> - icon nn from resource 216 in shell32.dll,
-     *      or if not found there from resource 124 in comctl32.dll (Windows only).
+     *  "fileChooserIcon <icon>":
+     *    Returns an <code>Image</code> - icon can be ListView, DetailsView, UpFolder, NewFolder or
+     *    ViewMenu (Windows only).
      *  "optionPaneIcon iconName":
      *    Returns an <code>Image</code> - icon from the system icon list
      *
@@ -303,26 +322,23 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             }
             return folders.toArray(new File[folders.size()]);
         } else if (key.startsWith("fileChooserIcon ")) {
-            int i = -1;
-            String name = key.substring(key.indexOf(" ")+1);
-            try {
-                i = Integer.parseInt(name);
-            } catch (NumberFormatException ex) {
-                if (name.equals("ListView")) {
-                    i = (USE_SHELL32_ICONS) ? 21 : 2;
-                } else if (name.equals("DetailsView")) {
-                    i = (USE_SHELL32_ICONS) ? 23 : 3;
-                } else if (name.equals("UpFolder")) {
-                    i = (USE_SHELL32_ICONS) ? 28 : 8;
-                } else if (name.equals("NewFolder")) {
-                    i = (USE_SHELL32_ICONS) ? 31 : 11;
-                } else if (name.equals("ViewMenu")) {
-                    i = (USE_SHELL32_ICONS) ? 21 : 2;
-                }
+            String name = key.substring(key.indexOf(" ") + 1);
+
+            int iconIndex;
+
+            if (name.equals("ListView") || name.equals("ViewMenu")) {
+                iconIndex = VIEW_LIST;
+            } else if (name.equals("DetailsView")) {
+                iconIndex = VIEW_DETAILS;
+            } else if (name.equals("UpFolder")) {
+                iconIndex = VIEW_PARENTFOLDER;
+            } else if (name.equals("NewFolder")) {
+                iconIndex = VIEW_NEWFOLDER;
+            } else {
+                return null;
             }
-            if (i >= 0) {
-                return Win32ShellFolder2.getFileChooserIcon(i);
-            }
+
+            return getStandardViewButton(iconIndex);
         } else if (key.startsWith("optionPaneIcon ")) {
             Win32ShellFolder2.SystemIcon iconType;
             if (key == "optionPaneIcon Error") {

@@ -33,7 +33,7 @@ import java.awt.im.spi.InputMethodContext;
 import java.awt.peer.ComponentPeer;
 import sun.awt.X11InputMethod;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 /**
  * Input Method Adapter for XIM (without Motif)
@@ -41,7 +41,7 @@ import java.util.logging.*;
  * @author JavaSoft International
  */
 public class XInputMethod extends X11InputMethod {
-    private static final Logger log = Logger.getLogger("sun.awt.X11.XInputMethod");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XInputMethod");
 
     public XInputMethod() throws AWTException {
         super();
@@ -102,16 +102,13 @@ public class XInputMethod extends X11InputMethod {
     protected ComponentPeer getPeer(Component client) {
         XComponentPeer peer;
 
-        if (log.isLoggable(Level.FINE)) log.fine("Client is " + client);
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("Client is " + client);
         peer = (XComponentPeer)XToolkit.targetToPeer(client);
         while (client != null && peer == null) {
             client = getParent(client);
             peer = (XComponentPeer)XToolkit.targetToPeer(client);
         }
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "Peer is {0}, client is {1}",
-                    new Object[] {String.valueOf(peer), String.valueOf(client)});
-        }
+        log.fine("Peer is {0}, client is {1}", peer, client);
 
         if (peer != null)
             return peer;

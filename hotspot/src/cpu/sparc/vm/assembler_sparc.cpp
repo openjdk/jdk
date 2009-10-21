@@ -4676,3 +4676,50 @@ void MacroAssembler::reinit_heapbase() {
     load_ptr_contents(base, G6_heapbase);
   }
 }
+
+// Compare char[] arrays aligned to 4 bytes.
+void MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
+                                        Register limit, Register result,
+                                        Register chr1, Register chr2, Label& Ldone) {
+  Label Lvector, Lloop;
+  assert(chr1 == result, "should be the same");
+
+  // Note: limit contains number of bytes (2*char_elements) != 0.
+  andcc(limit, 0x2, chr1); // trailing character ?
+  br(Assembler::zero, false, Assembler::pt, Lvector);
+  delayed()->nop();
+
+  // compare the trailing char
+  sub(limit, sizeof(jchar), limit);
+  lduh(ary1, limit, chr1);
+  lduh(ary2, limit, chr2);
+  cmp(chr1, chr2);
+  br(Assembler::notEqual, true, Assembler::pt, Ldone);
+  delayed()->mov(G0, result);     // not equal
+
+  // only one char ?
+  br_on_reg_cond(rc_z, true, Assembler::pn, limit, Ldone);
+  delayed()->add(G0, 1, result); // zero-length arrays are equal
+
+  // word by word compare, dont't need alignment check
+  bind(Lvector);
+  // Shift ary1 and ary2 to the end of the arrays, negate limit
+  add(ary1, limit, ary1);
+  add(ary2, limit, ary2);
+  neg(limit, limit);
+
+  lduw(ary1, limit, chr1);
+  bind(Lloop);
+  lduw(ary2, limit, chr2);
+  cmp(chr1, chr2);
+  br(Assembler::notEqual, true, Assembler::pt, Ldone);
+  delayed()->mov(G0, result);     // not equal
+  inccc(limit, 2*sizeof(jchar));
+  // annul LDUW if branch is not taken to prevent access past end of array
+  br(Assembler::notZero, true, Assembler::pt, Lloop);
+  delayed()->lduw(ary1, limit, chr1); // hoisted
+
+  // Caller should set it:
+  // add(G0, 1, result); // equals
+}
+

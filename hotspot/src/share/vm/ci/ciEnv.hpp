@@ -339,8 +339,8 @@ public:
   // but consider adding to vmSymbols.hpp instead.
 
   // Use this to make a holder for non-perm compile time constants.
-  // The resulting array is guaranteed to satisfy "has_encoding".
-  ciArray*  make_array(GrowableArray<ciObject*>* objects);
+  // The resulting array is guaranteed to satisfy "can_be_constant".
+  ciArray*  make_system_array(GrowableArray<ciObject*>* objects);
 
   // converts the ciKlass* representing the holder of a method into a
   // ciInstanceKlass*.  This is needed since the holder of a method in
