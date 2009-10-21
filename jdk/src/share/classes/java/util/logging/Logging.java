@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ArrayList;
 
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 /**
@@ -118,6 +119,10 @@ class Logging implements LoggingMXBean {
     }
 
     public ObjectName getObjectName() {
-        return ObjectName.valueOf(LogManager.LOGGING_MXBEAN_NAME);
+        try {
+            return ObjectName.getInstance(LogManager.LOGGING_MXBEAN_NAME);
+        } catch (MalformedObjectNameException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 }

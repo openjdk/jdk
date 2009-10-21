@@ -33,10 +33,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.management.MBean;
-import javax.management.MXBean;
-import javax.management.ManagedAttribute;
-import javax.management.ManagedOperation;
 import javax.management.NotCompliantMBeanException;
 
 /**
@@ -55,15 +51,15 @@ import javax.management.NotCompliantMBeanException;
  */
 class MBeanAnalyzer<M> {
 
-    static interface MBeanVisitor<M, X extends Exception> {
+    static interface MBeanVisitor<M> {
         public void visitAttribute(String attributeName,
                 M getter,
-                M setter) throws X;
+                M setter);
         public void visitOperation(String operationName,
-                M operation) throws X;
+                M operation);
     }
 
-    <X extends Exception> void visit(MBeanVisitor<M, X> visitor) throws X {
+    void visit(MBeanVisitor<M> visitor) {
         // visit attributes
         for (Map.Entry<String, AttrMethods<M>> entry : attrMap.entrySet()) {
             String name = entry.getKey();
@@ -108,7 +104,10 @@ class MBeanAnalyzer<M> {
     private MBeanAnalyzer(Class<?> mbeanType,
             MBeanIntrospector<M> introspector)
             throws NotCompliantMBeanException {
-        introspector.checkCompliance(mbeanType);
+        if (!mbeanType.isInterface()) {
+            throw new NotCompliantMBeanException("Not an interface: " +
+                    mbeanType.getName());
+        }
 
         try {
             initMaps(mbeanType, introspector);
@@ -129,26 +128,18 @@ class MBeanAnalyzer<M> {
         for (Method m : methods) {
             final String name = m.getName();
             final int nParams = m.getParameterTypes().length;
-            final boolean managedOp = m.isAnnotationPresent(ManagedOperation.class);
-            final boolean managedAttr = m.isAnnotationPresent(ManagedAttribute.class);
-            if (managedOp && managedAttr) {
-                throw new NotCompliantMBeanException("Method " + name +
-                        " has both @ManagedOperation and @ManagedAttribute");
-            }
 
             final M cm = introspector.mFrom(m);
 
             String attrName = "";
-            if (!managedOp) {
-                if (name.startsWith("get"))
-                    attrName = name.substring(3);
-                else if (name.startsWith("is")
-                         && m.getReturnType() == boolean.class)
-                    attrName = name.substring(2);
-            }
+            if (name.startsWith("get"))
+                attrName = name.substring(3);
+            else if (name.startsWith("is")
+            && m.getReturnType() == boolean.class)
+                attrName = name.substring(2);
 
             if (attrName.length() != 0 && nParams == 0
-                    && m.getReturnType() != void.class && !managedOp) {
+                    && m.getReturnType() != void.class) {
                 // It's a getter
                 // Check we don't have both isX and getX
                 AttrMethods<M> am = attrMap.get(attrName);
@@ -165,7 +156,7 @@ class MBeanAnalyzer<M> {
                 attrMap.put(attrName, am);
             } else if (name.startsWith("set") && name.length() > 3
                     && nParams == 1 &&
-                    m.getReturnType() == void.class && !managedOp) {
+                    m.getReturnType() == void.class) {
                 // It's a setter
                 attrName = name.substring(3);
                 AttrMethods<M> am = attrMap.get(attrName);
@@ -178,9 +169,6 @@ class MBeanAnalyzer<M> {
                 }
                 am.setter = cm;
                 attrMap.put(attrName, am);
-            } else if (managedAttr) {
-                throw new NotCompliantMBeanException("Method " + name +
-                        " has @ManagedAttribute but is not a valid getter or setter");
             } else {
                 // It's an operation
                 List<M> cms = opMap.get(name);

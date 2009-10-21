@@ -33,12 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Properties;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
-import javax.management.openmbean.OpenDataException;
 import javax.management.ObjectName;
 
 /**
@@ -149,7 +143,7 @@ class RuntimeImpl implements RuntimeMXBean {
     }
 
     public ObjectName getObjectName() {
-        return ObjectName.valueOf(ManagementFactory.RUNTIME_MXBEAN_NAME);
+        return Util.newObjectName(ManagementFactory.RUNTIME_MXBEAN_NAME);
     }
 
 }

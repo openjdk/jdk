@@ -32,9 +32,13 @@
  * @run main AttributeArbitraryDataTypeTest
  */
 
+import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.beans.SimpleBeanInfo;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import javax.management.AttributeNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.Notification;
@@ -723,12 +727,49 @@ public class AttributeArbitraryDataTypeTest implements NotificationListener {
         System.out.println(message);
     }
 
+    public static Object elementFromComplex(Object complex, String element)
+    throws AttributeNotFoundException {
+        try {
+            if (complex.getClass().isArray() && element.equals("length")) {
+                return Array.getLength(complex);
+            } else if (complex instanceof CompositeData) {
+                return ((CompositeData) complex).get(element);
+            } else {
+                // Java Beans introspection
+                //
+                BeanInfo bi = java.beans.Introspector.getBeanInfo(complex.getClass());
+                PropertyDescriptor[] pds = bi.getPropertyDescriptors();
+                System.out.println("PDs: " + pds.length);
+                for (PropertyDescriptor pd : pds) {
+                    System.out.println("Property: " + pd.getName());
+                    if (pd.getName().equals(element))
+                        return pd.getReadMethod().invoke(complex);
+                }
+                throw new AttributeNotFoundException(
+                    "Could not find the getter method for the property " +
+                    element + " using the Java Beans introspector");
+            }
+        } catch (InvocationTargetException e) {
+            throw new IllegalArgumentException(e);
+        } catch (AttributeNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            AttributeNotFoundException anfe =
+                new AttributeNotFoundException(e.getMessage());
+            anfe.initCause(e);
+            throw anfe;
+        }
+    }
+
     /*
      * Standalone entry point.
      *
      * Run the test and report to stdout.
      */
     public static void main (String args[]) throws Exception {
+        Match match = Match.do_match_now;
+        String name = (String) elementFromComplex(match, "name");
+        System.out.println("name: " + name);
         AttributeArbitraryDataTypeTest test =
             new AttributeArbitraryDataTypeTest();
         int error = test.monitorNotifications();

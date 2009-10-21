@@ -23,10 +23,12 @@
  * have any questions.
  */
 
-package javax.management.openmbean;
+package com.sun.jmx.mbeanserver;
 
 import java.io.InvalidObjectException;
 import java.lang.reflect.Type;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.OpenType;
 
 /**
  * <p>A custom mapping between Java types and Open types for use in MXBeans.
@@ -166,12 +168,10 @@ public abstract class MXBeanMapping {
         if (javaType instanceof Class<?> && ((Class<?>) javaType).isPrimitive())
             return (Class<?>) javaType;
         try {
-            String className = OpenType.validClassName(openType.getClassName());
+            String className = openType.getClassName();
             return Class.forName(className, false, null);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);  // should not happen
-        } catch (OpenDataException e) {
-            throw new IllegalArgumentException("Bad OpenType: " + openType, e);
         }
     }
 
