@@ -288,7 +288,9 @@ public class JTextField extends JTextComponent implements SwingConstants {
      *
      * @see JComponent#revalidate
      * @see JComponent#isValidateRoot
+     * @see java.awt.Container#isValidateRoot
      */
+    @Override
     public boolean isValidateRoot() {
         return SwingUtilities2.getViewport(this) == null;
     }

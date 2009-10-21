@@ -4878,7 +4878,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #revalidate
      * @see java.awt.Component#invalidate
      * @see java.awt.Container#validate
+     * @see java.awt.Container#isValidateRoot
      */
+    @Override
     public boolean isValidateRoot() {
         return false;
     }
