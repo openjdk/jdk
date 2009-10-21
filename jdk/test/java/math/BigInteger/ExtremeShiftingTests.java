@@ -1,12 +1,10 @@
 /*
- * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,20 +21,28 @@
  * have any questions.
  */
 
-package sun.net.ftp;
-
-import java.io.IOException;
-
-/**
- * This exception is thrown when an error is encountered during an
- * FTP login operation.
- *
- * @author      Jonathan Payne
+/*
+ * @test
+ * @bug 6371401
+ * @summary Tests of shiftLeft and shiftRight on Integer.MIN_VALUE
+ * @author Joseph D. Darcy
  */
-public class FtpLoginException extends IOException {
-    private static final long serialVersionUID = 2218162403237941536L;
+import static java.math.BigInteger.*;
 
-    public FtpLoginException(String s) {
-        super(s);
+public class ExtremeShiftingTests {
+    public static void main(String... args) {
+        try {
+            ONE.shiftLeft(Integer.MIN_VALUE);
+            throw new RuntimeException("Should not reach here.");
+        } catch (ArithmeticException ae) {
+            ; // Expected
+        }
+
+        try {
+            ONE.shiftRight(Integer.MIN_VALUE);
+            throw new RuntimeException("Should not reach here.");
+        } catch (ArithmeticException ae) {
+            ; // Expected
+        }
     }
 }

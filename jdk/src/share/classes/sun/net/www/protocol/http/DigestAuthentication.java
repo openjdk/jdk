@@ -277,14 +277,16 @@ class DigestAuthentication extends AuthenticationInfo {
         params.setOpaque (p.findValue("opaque"));
         params.setQop (p.findValue("qop"));
 
-        String uri;
+        String uri="";
         String method;
         if (type == PROXY_AUTHENTICATION &&
                 conn.tunnelState() == HttpURLConnection.TunnelState.SETUP) {
             uri = HttpURLConnection.connectRequestURI(conn.getURL());
             method = HTTP_CONNECT;
         } else {
-            uri = conn.getRequestURI();
+            try {
+                uri = conn.getRequestURI();
+            } catch (IOException e) {}
             method = conn.getMethod();
         }
 
