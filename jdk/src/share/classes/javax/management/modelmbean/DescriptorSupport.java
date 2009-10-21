@@ -229,10 +229,9 @@ public class DescriptorSupport
             init(inDescr.descriptorMap);
     }
 
+
     /**
-     * <p>Descriptor constructor taking an XML String or a
-     * <i>fieldName=fieldValue</i> format String. The String parameter is
-     * parsed as XML if it begins with a '<' character.</p>
+     * <p>Descriptor constructor taking an XML String.</p>
      *
      * <p>The format of the XML string is not defined, but an
      * implementation must ensure that the string returned by
@@ -245,20 +244,17 @@ public class DescriptorSupport
      * programmer will have to reset or convert these fields
      * correctly.</p>
      *
-     * @param inStr An XML-format or a fieldName=fieldValue formatted string
-     * used to populate this Descriptor.  The XML format is not defined, but any
+     * @param inStr An XML-formatted string used to populate this
+     * Descriptor.  The format is not defined, but any
      * implementation must ensure that the string returned by
      * method {@link #toXMLString toXMLString} on an existing
      * descriptor can be used to instantiate an equivalent
      * descriptor when instantiated using this constructor.
      *
-     * @exception RuntimeOperationsException If the String inStr passed in
-     * parameter is null or, when it is not an XML string, if the field name or
-     * field value is illegal. If inStr is not an XML string then it must
-     * contain an "=". "fieldValue", "fieldName", and "fieldValue" are illegal.
-     * FieldName cannot be empty. "fieldName=" will cause the value to be empty.
+     * @exception RuntimeOperationsException If the String inStr
+     * passed in parameter is null
      * @exception XMLParseException XML parsing problem while parsing
-     * the XML-format input String
+     * the input String
      * @exception MBeanException Wraps a distributed communication Exception.
      */
     /* At some stage we should rewrite this code to be cleverer.  Using
@@ -287,27 +283,14 @@ public class DescriptorSupport
             throw new RuntimeOperationsException(iae, msg);
         }
 
-        // parse parameter string into structures
-
-        init(null);
-
-        if(!inStr.startsWith("<")) {
-            parseNamesValues(inStr);
-            if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
-                MODELMBEAN_LOGGER.logp(Level.FINEST,
-                    DescriptorSupport.class.getName(),
-                    "Descriptor(name=value)", "Exit");
-            }
-            return;
-        }
-
         final String lowerInStr = inStr.toLowerCase();
         if (!lowerInStr.startsWith("<descriptor>")
             || !lowerInStr.endsWith("</descriptor>")) {
             throw new XMLParseException("No <descriptor>, </descriptor> pair");
         }
 
-
+        // parse xmlstring into structures
+        init(null);
         // create dummy descriptor: should have same size
         // as number of fields in xmlstring
         // loop through structures and put them in descriptor
@@ -471,16 +454,6 @@ public class DescriptorSupport
 
         init(null);
 
-        parseNamesValues(fields);
-
-        if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
-            MODELMBEAN_LOGGER.logp(Level.FINEST,
-                    DescriptorSupport.class.getName(),
-                    "Descriptor(String... fields)", "Exit");
-        }
-    }
-
-    private void parseNamesValues(String... fields) {
         for (int i=0; i < fields.length; i++) {
             if ((fields[i] == null) || (fields[i].equals(""))) {
                 continue;
@@ -521,6 +494,11 @@ public class DescriptorSupport
             }
 
             setField(fieldName,fieldValue);
+        }
+        if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
+            MODELMBEAN_LOGGER.logp(Level.FINEST,
+                    DescriptorSupport.class.getName(),
+                    "Descriptor(String... fields)", "Exit");
         }
     }
 
