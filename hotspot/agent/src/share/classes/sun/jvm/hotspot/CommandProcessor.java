@@ -926,6 +926,28 @@ public class CommandProcessor {
                 }
             }
         },
+        new Command("dumpcodecache", "dumpcodecache", false) {
+            public void doit(Tokens t) {
+                if (t.countTokens() != 0) {
+                    usage();
+                } else {
+                    final PrintStream fout = out;
+                    final HTMLGenerator gen = new HTMLGenerator(false);
+                    CodeCacheVisitor v = new CodeCacheVisitor() {
+                            public void prologue(Address start, Address end) {
+                            }
+                            public void visit(CodeBlob blob) {
+                                fout.println(gen.genHTML(blob.instructionsBegin()));
+                            }
+                            public void epilogue() {
+                            }
+
+
+                        };
+                    VM.getVM().getCodeCache().iterate(v);
+                }
+            }
+        },
         new Command("where", "where { -a | id }", false) {
             public void doit(Tokens t) {
                 if (t.countTokens() != 1) {
