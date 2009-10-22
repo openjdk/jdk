@@ -40,6 +40,7 @@ import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.UnixOperatingSystemMXBean;
 
 import sun.management.ManagementFactoryHelper;
+import sun.management.Util;
 
 /**
  * This enum class defines the list of platform components
@@ -384,7 +385,7 @@ enum PlatformComponent {
             // if there are more than 1 key properties (i.e. other than "type")
             domainAndType += ",*";
         }
-        ObjectName on = ObjectName.valueOf(domainAndType);
+        ObjectName on = Util.newObjectName(domainAndType);
         Set<ObjectName> set =  mbs.queryNames(on, null);
         for (PlatformComponent pc : subComponents) {
             set.addAll(pc.getObjectNames(mbs));
