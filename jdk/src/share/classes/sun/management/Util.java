@@ -25,26 +25,34 @@
 
 package sun.management;
 
-import java.lang.management.*;
+import java.lang.management.ManagementPermission;
 import java.util.List;
-import java.security.Permission;
 import javax.management.ObjectName;
 import javax.management.MalformedObjectNameException;
 
-import static java.lang.management.ManagementFactory.*;
 
-class Util {
+public class Util {
+    private Util() {}  // there are no instances of this class
+
     static RuntimeException newException(Exception e) {
         throw new RuntimeException(e);
     }
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     static String[] toStringArray(List<String> list) {
-        return (String[]) list.toArray(EMPTY_STRING_ARRAY);
+        return list.toArray(EMPTY_STRING_ARRAY);
     }
 
     public static ObjectName newObjectName(String domainAndType, String name) {
-        return ObjectName.valueOf(domainAndType + ",name=" + name);
+        return newObjectName(domainAndType + ",name=" + name);
+    }
+
+    public static ObjectName newObjectName(String name) {
+        try {
+            return ObjectName.getInstance(name);
+        } catch (MalformedObjectNameException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     private static ManagementPermission monitorPermission =
