@@ -1330,7 +1330,7 @@ public:
       // In any case, we set the last card num.
       last_card_num = obj_last_card_num;
 
-      marked_bytes += obj_sz * HeapWordSize;
+      marked_bytes += (size_t)obj_sz * HeapWordSize;
       // Find the next marked object after this one.
       start = _bm->getNextMarkedWordAddress(start + 1, nextTop);
       _changed = true;
