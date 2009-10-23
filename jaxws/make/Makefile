@@ -130,7 +130,7 @@ endif
 default: all
 
 # All ant targets of interest
-ANT_TARGETS = all source build dist clobber clean sanity
+ANT_TARGETS = all source drop_included build dist clobber clean sanity
 
 # Create a make target for each
 $(ANT_TARGETS):
