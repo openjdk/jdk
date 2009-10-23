@@ -85,7 +85,6 @@ FILES_java = \
 	sun/net/www/http/Hurryable.java \
 	sun/net/www/protocol/http/Handler.java \
 	sun/net/www/protocol/http/HttpURLConnection.java \
-	sun/net/www/protocol/http/HttpLogFormatter.java \
 	sun/net/www/protocol/http/HttpAuthenticator.java \
 	sun/net/www/protocol/http/AuthenticationHeader.java \
 	sun/net/www/protocol/http/AuthenticationInfo.java \
@@ -101,6 +100,7 @@ FILES_java = \
 	sun/net/www/protocol/http/ntlm/NTLMAuthentication.java \
 	sun/net/www/protocol/http/spnego/NegotiatorImpl.java \
 	sun/net/www/protocol/http/spnego/NegotiateCallbackHandler.java \
+	sun/net/www/protocol/http/logging/HttpLogFormatter.java \
 	sun/net/www/protocol/https/AbstractDelegateHttpsURLConnection.java \
 	sun/net/www/protocol/https/HttpsClient.java \
 	sun/net/www/protocol/https/DefaultHostnameVerifier.java \
