@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package sun.net.www.protocol.http;
+package sun.net.www.protocol.http.logging;
 
 import java.util.logging.LogRecord;
 import java.util.regex.*;
