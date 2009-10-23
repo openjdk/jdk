@@ -1583,34 +1583,31 @@ public class Container extends Component {
      * @see #validateTree
      */
     public void validate() {
-        /* Avoid grabbing lock unless really necessary. */
-        if (!isValid() || descendUnconditionallyWhenValidating) {
-            boolean updateCur = false;
-            synchronized (getTreeLock()) {
-                if ((!isValid() || descendUnconditionallyWhenValidating)
-                        && peer != null)
-                {
-                    ContainerPeer p = null;
-                    if (peer instanceof ContainerPeer) {
-                        p = (ContainerPeer) peer;
-                    }
-                    if (p != null) {
-                        p.beginValidate();
-                    }
-                    validateTree();
-                    if (p != null) {
-                        p.endValidate();
-                        // Avoid updating cursor if this is an internal call.
-                        // See validateUnconditionally() for details.
-                        if (!descendUnconditionallyWhenValidating) {
-                            updateCur = isVisible();
-                        }
+        boolean updateCur = false;
+        synchronized (getTreeLock()) {
+            if ((!isValid() || descendUnconditionallyWhenValidating)
+                    && peer != null)
+            {
+                ContainerPeer p = null;
+                if (peer instanceof ContainerPeer) {
+                    p = (ContainerPeer) peer;
+                }
+                if (p != null) {
+                    p.beginValidate();
+                }
+                validateTree();
+                if (p != null) {
+                    p.endValidate();
+                    // Avoid updating cursor if this is an internal call.
+                    // See validateUnconditionally() for details.
+                    if (!descendUnconditionallyWhenValidating) {
+                        updateCur = isVisible();
                     }
                 }
             }
-            if (updateCur) {
-                updateCursorImmediately();
-            }
+        }
+        if (updateCur) {
+            updateCursorImmediately();
         }
     }
 
