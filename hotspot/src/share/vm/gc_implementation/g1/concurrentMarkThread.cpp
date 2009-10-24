@@ -286,10 +286,14 @@ void ConcurrentMarkThread::stop() {
   }
 }
 
-void ConcurrentMarkThread::print() {
-  gclog_or_tty->print("\"Concurrent Mark GC Thread\" ");
-  Thread::print();
-  gclog_or_tty->cr();
+void ConcurrentMarkThread::print() const {
+  print_on(tty);
+}
+
+void ConcurrentMarkThread::print_on(outputStream* st) const {
+  st->print("\"G1 Main Concurrent Mark GC Thread\" ");
+  Thread::print_on(st);
+  st->cr();
 }
 
 void ConcurrentMarkThread::sleepBeforeNextCycle() {
