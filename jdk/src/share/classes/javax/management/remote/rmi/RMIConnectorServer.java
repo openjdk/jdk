@@ -27,6 +27,7 @@ package javax.management.remote.rmi;
 
 
 import com.sun.jmx.remote.security.MBeanServerFileAccessController;
+import com.sun.jmx.remote.internal.IIOPHelper;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 
@@ -674,7 +675,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
         final int port;
 
         if (address == null) {
-            if (rmiServer instanceof javax.rmi.CORBA.Stub)
+            if (IIOPHelper.isStub(rmiServer))
                 protocol = "iiop";
             else
                 protocol = "rmi";
@@ -712,7 +713,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
      **/
     static String encodeStub(
             RMIServer rmiServer, Map<String, ?> env) throws IOException {
-        if (rmiServer instanceof javax.rmi.CORBA.Stub)
+        if (IIOPHelper.isStub(rmiServer))
             return "/ior/" + encodeIIOPStub(rmiServer, env);
         else
             return "/stub/" + encodeJRMPStub(rmiServer, env);
@@ -733,10 +734,9 @@ public class RMIConnectorServer extends JMXConnectorServer {
             RMIServer rmiServer, Map<String, ?> env)
             throws IOException {
         try {
-            javax.rmi.CORBA.Stub stub =
-                (javax.rmi.CORBA.Stub) rmiServer;
-            return stub._orb().object_to_string(stub);
-        } catch (org.omg.CORBA.BAD_OPERATION x) {
+            Object orb = IIOPHelper.getOrb(rmiServer);
+            return IIOPHelper.objectToString(orb, rmiServer);
+        } catch (RuntimeException x) {
             throw newIOException(x.getMessage(), x);
         }
     }
