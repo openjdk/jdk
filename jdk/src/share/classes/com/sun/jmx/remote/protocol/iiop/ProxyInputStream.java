@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package com.sun.jmx.remote.internal;
+package com.sun.jmx.remote.protocol.iiop;
 
 import java.io.IOException;
 import java.io.Serializable;
