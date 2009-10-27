@@ -3136,7 +3136,7 @@ void G1CollectedHeap::finalize_for_evac_failure() {
          _evac_failure_scan_stack->length() == 0,
          "Postcondition");
   assert(!_drain_in_progress, "Postcondition");
-  // Don't have to delete, since the scan stack is a resource object.
+  delete _evac_failure_scan_stack;
   _evac_failure_scan_stack = NULL;
 }
 
