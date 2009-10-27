@@ -29,9 +29,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ArrayList;
 
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-
 /**
  * Logging is the implementation class of LoggingMXBean.
  *
@@ -115,14 +112,6 @@ class Logging implements LoggingMXBean {
             return EMPTY_STRING;
         } else {
             return p.getName();
-        }
-    }
-
-    public ObjectName getObjectName() {
-        try {
-            return ObjectName.getInstance(LogManager.LOGGING_MXBEAN_NAME);
-        } catch (MalformedObjectNameException e) {
-            throw new IllegalArgumentException(e);
         }
     }
 }
