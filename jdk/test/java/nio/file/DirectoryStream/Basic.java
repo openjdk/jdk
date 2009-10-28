@@ -154,8 +154,10 @@ public class Basic {
         stream.close();
 
         // test IllegalStateException
+        dir.resolve(foo).createFile();
         stream =  dir.newDirectoryStream();
         i = stream.iterator();
+        i.next();
         try {
             stream.iterator();
             throw new RuntimeException("IllegalStateException not thrown as expected");
@@ -172,17 +174,26 @@ public class Basic {
             throw new RuntimeException("ConcurrentModificationException not thrown as expected");
         } catch (ConcurrentModificationException x) {
             Throwable t = x.getCause();
-            if (!(t instanceof IllegalStateException))
-                throw new RuntimeException("Cause is not IllegalStateException as expected");
+            if (!(t instanceof ClosedDirectoryStreamException))
+                throw new RuntimeException("Cause is not ClosedDirectoryStreamException as expected");
         }
         try {
             i.next();
-            throw new RuntimeException("IllegalStateException not thrown as expected");
+            throw new RuntimeException("ConcurrentModificationException not thrown as expected");
         } catch (ConcurrentModificationException x) {
             Throwable t = x.getCause();
-            if (!(t instanceof IllegalStateException))
-                throw new RuntimeException("Cause is not IllegalStateException as expected");
+            if (!(t instanceof ClosedDirectoryStreamException))
+                throw new RuntimeException("Cause is not ClosedDirectoryStreamException as expected");
         }
+        try {
+            i.remove();
+            throw new RuntimeException("ConcurrentModificationException not thrown as expected");
+        } catch (ConcurrentModificationException x) {
+            Throwable t = x.getCause();
+            if (!(t instanceof ClosedDirectoryStreamException))
+                throw new RuntimeException("Cause is not ClosedDirectoryStreamException as expected");
+        }
+
     }
 
     public static void main(String[] args) throws IOException {

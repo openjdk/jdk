@@ -59,9 +59,9 @@ public class T6440528 extends ToolTester {
     }
 
     private File getUnderlyingFile(Object o) throws Exception {
-        Field f = o.getClass().getDeclaredField("f");
-        f.setAccessible(true);
-        return (File)f.get(o);
+        Field file = o.getClass().getDeclaredField("file");
+        file.setAccessible(true);
+        return (File)file.get(o);
     }
 
     public static void main(String... args) throws Exception {
