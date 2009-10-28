@@ -790,7 +790,7 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
   assert(!has_undefined_init_size, "Undefined init size");
   assert(!has_undefined_max_size, "Undefined max size");
 
-  MemoryUsage usage((heap ? Arguments::initial_heap_size() : total_init),
+  MemoryUsage usage((heap ? InitialHeapSize : total_init),
                     total_used,
                     total_committed,
                     (heap ? Universe::heap()->max_capacity() : total_max));

@@ -37,7 +37,6 @@ SystemProperty* Arguments::_system_properties   = NULL;
 const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
 bool   Arguments::_has_alloc_profile            = false;
-uintx  Arguments::_initial_heap_size            = 0;
 uintx  Arguments::_min_heap_size                = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
@@ -182,6 +181,9 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "ProcessingToTenuringRatio",     JDK_Version::jdk(5), JDK_Version::jdk(7) },
   { "MinTrainLength",                JDK_Version::jdk(5), JDK_Version::jdk(7) },
   { "AppendRatio",         JDK_Version::jdk_update(6,10), JDK_Version::jdk(7) },
+  { "DefaultMaxRAM",       JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
+  { "DefaultInitialRAMFraction",
+                           JDK_Version::jdk_update(6,18), JDK_Version::jdk(7) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -553,6 +555,10 @@ static bool set_numeric_flag(char* name, char* value, FlagValueOrigin origin) {
   }
   uintx uintx_v = (uintx) v;
   if (!is_neg && CommandLineFlags::uintxAtPut(name, &uintx_v, origin)) {
+    return true;
+  }
+  uint64_t uint64_t_v = (uint64_t) v;
+  if (!is_neg && CommandLineFlags::uint64_tAtPut(name, &uint64_t_v, origin)) {
     return true;
   }
   return false;
@@ -947,7 +953,7 @@ static void no_shared_spaces() {
 // UseParNewGC and not explicitly set ParallelGCThreads we
 // set it, unless this is a single cpu machine.
 void Arguments::set_parnew_gc_flags() {
-  assert(!UseSerialGC && !UseParallelGC && !UseG1GC,
+  assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC && !UseG1GC,
          "control point invariant");
   assert(UseParNewGC, "Error");
 
@@ -960,13 +966,13 @@ void Arguments::set_parnew_gc_flags() {
   if (ParallelGCThreads == 0) {
     FLAG_SET_DEFAULT(ParallelGCThreads,
                      Abstract_VM_Version::parallel_worker_threads());
-    if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
+    if (ParallelGCThreads == 1) {
       FLAG_SET_DEFAULT(UseParNewGC, false);
+      FLAG_SET_DEFAULT(ParallelGCThreads, 0);
     }
   }
-  if (!UseParNewGC) {
-    FLAG_SET_DEFAULT(ParallelGCThreads, 0);
-  } else {
+  if (UseParNewGC) {
+    // CDS doesn't work with ParNew yet
     no_shared_spaces();
 
     // By default YoungPLABSize and OldPLABSize are set to 4096 and 1024 respectively,
@@ -980,7 +986,7 @@ void Arguments::set_parnew_gc_flags() {
       FLAG_SET_DEFAULT(OldPLABSize, (intx)1024);
     }
 
-    // AlwaysTenure flag should make ParNew to promote all at first collection.
+    // AlwaysTenure flag should make ParNew promote all at first collection.
     // See CR 6362902.
     if (AlwaysTenure) {
       FLAG_SET_CMDLINE(intx, MaxTenuringThreshold, 0);
@@ -1003,7 +1009,7 @@ void Arguments::set_parnew_gc_flags() {
 // further optimization and tuning efforts, and would almost
 // certainly gain from analysis of platform and environment.
 void Arguments::set_cms_and_parnew_gc_flags() {
-  assert(!UseSerialGC && !UseParallelGC, "Error");
+  assert(!UseSerialGC && !UseParallelOldGC && !UseParallelGC, "Error");
   assert(UseConcMarkSweepGC, "CMS is expected to be on here");
 
   // If we are using CMS, we prefer to UseParNewGC,
@@ -1068,7 +1074,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     } else {
       FLAG_SET_ERGO(uintx, MaxNewSize, preferred_max_new_size);
     }
-    if(PrintGCDetails && Verbose) {
+    if (PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
       tty->print_cr("Ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
     }
@@ -1097,15 +1103,15 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     } else {
       min_new = NewSize;
     }
-    size_t prev_initial_size = initial_heap_size();
-    if (prev_initial_size != 0 && prev_initial_size < min_new+OldSize) {
-      set_initial_heap_size(min_new+OldSize);
+    size_t prev_initial_size = InitialHeapSize;
+    if (prev_initial_size != 0 && prev_initial_size < min_new + OldSize) {
+      FLAG_SET_ERGO(uintx, InitialHeapSize, min_new + OldSize);
       // Currently minimum size and the initial heap sizes are the same.
-      set_min_heap_size(initial_heap_size());
+      set_min_heap_size(InitialHeapSize);
       if (PrintGCDetails && Verbose) {
         warning("Initial heap size increased to " SIZE_FORMAT " M from "
                 SIZE_FORMAT " M; use -XX:NewSize=... for finer control.",
-                initial_heap_size()/M, prev_initial_size/M);
+                InitialHeapSize/M, prev_initial_size/M);
       }
     }
 
@@ -1114,12 +1120,12 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       align_size_down(MaxHeapSize,
                       CardTableRS::ct_max_alignment_constraint());
 
-    if(PrintGCDetails && Verbose) {
+    if (PrintGCDetails && Verbose) {
       // Too early to use gclog_or_tty
       tty->print_cr("CMS set min_heap_size: " SIZE_FORMAT
            " initial_heap_size:  " SIZE_FORMAT
            " max_heap: " SIZE_FORMAT,
-           min_heap_size(), initial_heap_size(), max_heap);
+           min_heap_size(), InitialHeapSize, max_heap);
     }
     if (max_heap > min_new) {
       // Unless explicitly requested otherwise, make young gen
@@ -1127,7 +1133,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       if (FLAG_IS_DEFAULT(NewSize)) {
         FLAG_SET_ERGO(uintx, NewSize, MAX2(NewSize, min_new));
         FLAG_SET_ERGO(uintx, NewSize, MIN2(preferred_max_new_size, NewSize));
-        if(PrintGCDetails && Verbose) {
+        if (PrintGCDetails && Verbose) {
           // Too early to use gclog_or_tty
           tty->print_cr("Ergo set NewSize: " SIZE_FORMAT, NewSize);
         }
@@ -1137,8 +1143,8 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       // later NewRatio will decide how it grows; see above.
       if (FLAG_IS_DEFAULT(OldSize)) {
         if (max_heap > NewSize) {
-          FLAG_SET_ERGO(uintx, OldSize, MIN2(3*NewSize,  max_heap - NewSize));
-          if(PrintGCDetails && Verbose) {
+          FLAG_SET_ERGO(uintx, OldSize, MIN2(3*NewSize, max_heap - NewSize));
+          if (PrintGCDetails && Verbose) {
             // Too early to use gclog_or_tty
             tty->print_cr("Ergo set OldSize: " SIZE_FORMAT, OldSize);
           }
@@ -1186,7 +1192,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
 
 inline uintx max_heap_for_compressed_oops() {
   LP64_ONLY(return oopDesc::OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
-  NOT_LP64(return DefaultMaxRAM);
+  NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
 bool Arguments::should_auto_select_low_pause_collector() {
@@ -1205,7 +1211,7 @@ bool Arguments::should_auto_select_low_pause_collector() {
 
 void Arguments::set_ergonomics_flags() {
   // Parallel GC is not compatible with sharing. If one specifies
-  // that they want sharing explicitly, do not set ergonmics flags.
+  // that they want sharing explicitly, do not set ergonomics flags.
   if (DumpSharedSpaces || ForceSharedSpaces) {
     return;
   }
@@ -1271,8 +1277,6 @@ void Arguments::set_parallel_gc_flags() {
     FLAG_SET_ERGO(uintx, ParallelGCThreads,
                   Abstract_VM_Version::parallel_worker_threads());
 
-    // PS is a server collector, setup the heap sizes accordingly.
-    set_server_heap_size();
     // If InitialSurvivorRatio or MinSurvivorRatio were not specified, but the
     // SurvivorRatio has been set, reset their default values to SurvivorRatio +
     // 2.  By doing this we make SurvivorRatio also work for Parallel Scavenger.
@@ -1302,8 +1306,6 @@ void Arguments::set_parallel_gc_flags() {
 
 void Arguments::set_g1_gc_flags() {
   assert(UseG1GC, "Error");
-  // G1 is a server collector, setup the heap sizes accordingly.
-  set_server_heap_size();
 #ifdef COMPILER1
   FastTLABRefill = false;
 #endif
@@ -1321,50 +1323,77 @@ void Arguments::set_g1_gc_flags() {
   }
 }
 
-void Arguments::set_server_heap_size() {
+void Arguments::set_heap_size() {
+  if (!FLAG_IS_DEFAULT(DefaultMaxRAMFraction)) {
+    // Deprecated flag
+    FLAG_SET_CMDLINE(uintx, MaxRAMFraction, DefaultMaxRAMFraction);
+  }
+
+  const julong phys_mem =
+    FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
+                            : (julong)MaxRAM;
+
+  // If the maximum heap size has not been set with -Xmx,
+  // then set it as fraction of the size of physical memory,
+  // respecting the maximum and minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    const uint64_t reasonable_fraction =
-      os::physical_memory() / DefaultMaxRAMFraction;
-    const uint64_t maximum_size = (uint64_t)
-                 (FLAG_IS_DEFAULT(DefaultMaxRAM) && UseCompressedOops ?
-                     MIN2(max_heap_for_compressed_oops(), DefaultMaxRAM) :
-                     DefaultMaxRAM);
-    size_t reasonable_max =
-      (size_t) os::allocatable_physical_memory(reasonable_fraction);
-    if (reasonable_max > maximum_size) {
-      reasonable_max = maximum_size;
+    julong reasonable_max = phys_mem / MaxRAMFraction;
+
+    if (phys_mem <= MaxHeapSize * MinRAMFraction) {
+      // Small physical memory, so use a minimum fraction of it for the heap
+      reasonable_max = phys_mem / MinRAMFraction;
+    } else {
+      // Not-small physical memory, so require a heap at least
+      // as large as MaxHeapSize
+      reasonable_max = MAX2(reasonable_max, (julong)MaxHeapSize);
     }
+    if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit != 0) {
+      // Limit the heap size to ErgoHeapSizeLimit
+      reasonable_max = MIN2(reasonable_max, (julong)ErgoHeapSizeLimit);
+    }
+    if (UseCompressedOops) {
+      // Limit the heap size to the maximum possible when using compressed oops
+      reasonable_max = MIN2(reasonable_max, (julong)max_heap_for_compressed_oops());
+    }
+    reasonable_max = os::allocatable_physical_memory(reasonable_max);
+
+    if (!FLAG_IS_DEFAULT(InitialHeapSize)) {
+      // An initial heap size was specified on the command line,
+      // so be sure that the maximum size is consistent.  Done
+      // after call to allocatable_physical_memory because that
+      // method might reduce the allocation size.
+      reasonable_max = MAX2(reasonable_max, (julong)InitialHeapSize);
+    }
+
     if (PrintGCDetails && Verbose) {
       // Cannot use gclog_or_tty yet.
-      tty->print_cr("  Max heap size for server class platform "
-                    SIZE_FORMAT, reasonable_max);
+      tty->print_cr("  Maximum heap size " SIZE_FORMAT, reasonable_max);
     }
-    // If the initial_heap_size has not been set with -Xms,
-    // then set it as fraction of size of physical memory
-    // respecting the maximum and minimum sizes of the heap.
-    if (initial_heap_size() == 0) {
-      const uint64_t reasonable_initial_fraction =
-        os::physical_memory() / DefaultInitialRAMFraction;
-      const size_t reasonable_initial =
-        (size_t) os::allocatable_physical_memory(reasonable_initial_fraction);
-      const size_t minimum_size = NewSize + OldSize;
-      set_initial_heap_size(MAX2(MIN2(reasonable_initial, reasonable_max),
-                                minimum_size));
-      // Currently the minimum size and the initial heap sizes are the same.
-      set_min_heap_size(initial_heap_size());
-      if (PrintGCDetails && Verbose) {
-        // Cannot use gclog_or_tty yet.
-        tty->print_cr("  Initial heap size for server class platform "
-                      SIZE_FORMAT, initial_heap_size());
-      }
-    } else {
-      // A minimum size was specified on the command line.  Be sure
-      // that the maximum size is consistent.
-      if (initial_heap_size() > reasonable_max) {
-        reasonable_max = initial_heap_size();
-      }
+    FLAG_SET_ERGO(uintx, MaxHeapSize, (uintx)reasonable_max);
+  }
+
+  // If the initial_heap_size has not been set with InitialHeapSize
+  // or -Xms, then set it as fraction of the size of physical memory,
+  // respecting the maximum and minimum sizes of the heap.
+  if (FLAG_IS_DEFAULT(InitialHeapSize)) {
+    julong reasonable_initial = phys_mem / InitialRAMFraction;
+
+    reasonable_initial = MAX2(reasonable_initial, (julong)(OldSize + NewSize));
+    reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
+
+    reasonable_initial = os::allocatable_physical_memory(reasonable_initial);
+
+    if (PrintGCDetails && Verbose) {
+      // Cannot use gclog_or_tty yet.
+      tty->print_cr("  Initial heap size " SIZE_FORMAT, (uintx)reasonable_initial);
     }
-    FLAG_SET_ERGO(uintx, MaxHeapSize, (uintx) reasonable_max);
+    FLAG_SET_ERGO(uintx, InitialHeapSize, (uintx)reasonable_initial);
+
+    // Subsequent ergonomics code may expect min_heap_size to be set
+    // if InitialHeapSize is.  Use whatever the current values are
+    // for OldSize and NewSize, whether or not they were set on the
+    // command line.
+    set_min_heap_size(OldSize + NewSize);
   }
 }
 
@@ -1448,7 +1477,7 @@ bool Arguments::verify_percentage(uintx value, const char* name) {
   return false;
 }
 
-static void set_serial_gc_flags() {
+static void force_serial_gc() {
   FLAG_SET_DEFAULT(UseSerialGC, true);
   FLAG_SET_DEFAULT(UseParNewGC, false);
   FLAG_SET_DEFAULT(UseConcMarkSweepGC, false);
@@ -1584,15 +1613,15 @@ bool Arguments::check_vm_args_consistency() {
     // force sharing off.
     if (DumpSharedSpaces || ForceSharedSpaces) {
       jio_fprintf(defaultStream::error_stream(),
-                  "Reverting to Serial GC because of %s \n",
+                  "Reverting to Serial GC because of %s\n",
                   ForceSharedSpaces ? " -Xshare:on" : "-Xshare:dump");
-      set_serial_gc_flags();
+      force_serial_gc();
       FLAG_SET_DEFAULT(SOLARIS_ONLY(UseISM) NOT_SOLARIS(UseLargePages), false);
     } else {
-      if (UseSharedSpaces) {
+      if (UseSharedSpaces && Verbose) {
         jio_fprintf(defaultStream::error_stream(),
                     "Turning off use of shared archive because of "
-                    "choice of garbage collector or large pages \n");
+                    "choice of garbage collector or large pages\n");
       }
       no_shared_spaces();
     }
@@ -1925,8 +1954,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, MaxNewSize, (size_t) long_initial_eden_size);
-      FLAG_SET_CMDLINE(uintx, NewSize, (size_t) long_initial_eden_size);
+      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_eden_size);
+      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_eden_size);
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
       julong long_initial_heap_size = 0;
@@ -1937,9 +1966,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      set_initial_heap_size((size_t) long_initial_heap_size);
+      FLAG_SET_CMDLINE(uintx, InitialHeapSize, (uintx)long_initial_heap_size);
       // Currently the minimum size and the initial heap sizes are the same.
-      set_min_heap_size(initial_heap_size());
+      set_min_heap_size(InitialHeapSize);
     // -Xmx
     } else if (match_option(option, "-Xmx", &tail)) {
       julong long_max_heap_size = 0;
@@ -1950,7 +1979,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, MaxHeapSize, (size_t) long_max_heap_size);
+      FLAG_SET_CMDLINE(uintx, MaxHeapSize, (uintx)long_max_heap_size);
     // Xmaxf
     } else if (match_option(option, "-Xmaxf", &tail)) {
       int maxf = (int)(atof(tail) * 100);
@@ -2196,9 +2225,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 
       if (FLAG_IS_DEFAULT(MaxHeapSize)) {
          FLAG_SET_CMDLINE(uintx, MaxHeapSize, initHeapSize);
-         set_initial_heap_size(MaxHeapSize);
+         FLAG_SET_CMDLINE(uintx, InitialHeapSize, initHeapSize);
          // Currently the minimum size and the initial heap sizes are the same.
-         set_min_heap_size(initial_heap_size());
+         set_min_heap_size(initHeapSize);
       }
       if (FLAG_IS_DEFAULT(NewSize)) {
          // Make the young generation 3/8ths of the total heap.
@@ -2676,7 +2705,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 
 #ifdef SERIALGC
-  set_serial_gc_flags();
+  force_serial_gc();
 #endif // SERIALGC
 #ifdef KERNEL
   no_shared_spaces();
@@ -2690,18 +2719,22 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     return JNI_EINVAL;
   }
 
-  if (UseParallelGC || UseParallelOldGC) {
-    // Set some flags for ParallelGC if needed.
-    set_parallel_gc_flags();
-  } else if (UseConcMarkSweepGC) {
-    // Set some flags for CMS
+  if (UseConcMarkSweepGC) {
+    // Set flags for CMS and ParNew.  Check UseConcMarkSweep first
+    // to ensure that when both UseConcMarkSweepGC and UseParNewGC
+    // are true, we don't call set_parnew_gc_flags() as well.
     set_cms_and_parnew_gc_flags();
-  } else if (UseParNewGC) {
-    // Set some flags for ParNew
-    set_parnew_gc_flags();
-  } else if (UseG1GC) {
-    // Set some flags for garbage-first, if needed.
-    set_g1_gc_flags();
+  } else {
+    // Set heap size based on available physical memory
+    set_heap_size();
+    // Set per-collector flags
+    if (UseParallelGC || UseParallelOldGC) {
+      set_parallel_gc_flags();
+    } else if (UseParNewGC) {
+      set_parnew_gc_flags();
+    } else if (UseG1GC) {
+      set_g1_gc_flags();
+    }
   }
 
 #ifdef SERIALGC
