@@ -202,6 +202,7 @@ class CommandLineFlagsEx : CommandLineFlags {
   static void boolAtPut(CommandLineFlagWithType flag, bool value, FlagValueOrigin origin);
   static void intxAtPut(CommandLineFlagWithType flag, intx value, FlagValueOrigin origin);
   static void uintxAtPut(CommandLineFlagWithType flag, uintx value, FlagValueOrigin origin);
+  static void uint64_tAtPut(CommandLineFlagWithType flag, uint64_t value, FlagValueOrigin origin);
   static void doubleAtPut(CommandLineFlagWithType flag, double value, FlagValueOrigin origin);
   static void ccstrAtPut(CommandLineFlagWithType flag, ccstr value, FlagValueOrigin origin);
 
