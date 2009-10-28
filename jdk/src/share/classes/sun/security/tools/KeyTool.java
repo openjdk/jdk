@@ -26,6 +26,7 @@
 package sun.security.tools;
 
 import java.io.*;
+import java.security.CodeSigner;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
@@ -34,6 +35,7 @@ import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.Signature;
+import java.security.Timestamp;
 import java.security.UnrecoverableEntryException;
 import java.security.UnrecoverableKeyException;
 import java.security.Principal;
@@ -46,6 +48,8 @@ import java.security.cert.CertificateException;
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -130,6 +134,7 @@ public final class KeyTool {
     private File ksfile = null;
     private InputStream ksStream = null; // keystore stream
     private String sslserver = null;
+    private String jarfile = null;
     private KeyStore keyStore = null;
     private boolean token = false;
     private boolean nullStream = false;
@@ -206,7 +211,7 @@ public final class KeyTool {
             "-providername", "-providerclass", "-providerarg",
             "-providerpath", "-v", "-protected"),
         PRINTCERT("Prints the content of a certificate",
-            "-rfc", "-file", "-sslserver", "-v"),
+            "-rfc", "-file", "-sslserver", "-jarfile", "-v"),
         PRINTCERTREQ("Prints the content of a certificate request",
             "-file", "-v"),
         SELFCERT("Generates a self-signed certificate",
@@ -266,6 +271,7 @@ public final class KeyTool {
         {"-srcstorepass", "<arg>", "source keystore password"},
         {"-srcstoretype", "<srcstoretype>", "source keystore type"},
         {"-sslserver", "<server[:port]>", "SSL server host and port"},
+        {"-jarfile", "<filename>", "signed jar file"},
         {"-startdate", "<startdate>", "certificate validity start date/time"},
         {"-storepass", "<arg>", "keystore password"},
         {"-storetype", "<storetype>", "keystore type"},
@@ -453,6 +459,8 @@ public final class KeyTool {
                 outfilename = args[++i];
             } else if (collator.compare(flags, "-sslserver") == 0) {
                 sslserver = args[++i];
+            } else if (collator.compare(flags, "-jarfile") == 0) {
+                jarfile = args[++i];
             } else if (collator.compare(flags, "-srckeystore") == 0) {
                 srcksfname = args[++i];
             } else if ((collator.compare(flags, "-provider") == 0) ||
@@ -2065,7 +2073,71 @@ public final class KeyTool {
     }
 
     private void doPrintCert(final PrintStream out) throws Exception {
-        if (sslserver != null) {
+        if (jarfile != null) {
+            JarFile jf = new JarFile(jarfile, true);
+            Enumeration<JarEntry> entries = jf.entries();
+            Set<CodeSigner> ss = new HashSet<CodeSigner>();
+            byte[] buffer = new byte[8192];
+            int pos = 0;
+            while (entries.hasMoreElements()) {
+                JarEntry je = entries.nextElement();
+                InputStream is = null;
+                try {
+                    is = jf.getInputStream(je);
+                    while (is.read(buffer) != -1) {
+                        // we just read. this will throw a SecurityException
+                        // if a signature/digest check fails. This also
+                        // populate the signers
+                    }
+                } finally {
+                    if (is != null) {
+                        is.close();
+                    }
+                }
+                CodeSigner[] signers = je.getCodeSigners();
+                if (signers != null) {
+                    for (CodeSigner signer: signers) {
+                        if (!ss.contains(signer)) {
+                            ss.add(signer);
+                            out.printf(rb.getString("Signer #%d:"), ++pos);
+                            out.println();
+                            out.println();
+                            out.println(rb.getString("Signature:"));
+                            out.println();
+                            for (Certificate cert: signer.getSignerCertPath().getCertificates()) {
+                                X509Certificate x = (X509Certificate)cert;
+                                if (rfc) {
+                                    out.println(rb.getString("Certificate owner: ") + x.getSubjectDN() + "\n");
+                                    dumpCert(x, out);
+                                } else {
+                                    printX509Cert(x, out);
+                                }
+                                out.println();
+                            }
+                            Timestamp ts = signer.getTimestamp();
+                            if (ts != null) {
+                                out.println(rb.getString("Timestamp:"));
+                                out.println();
+                                for (Certificate cert: ts.getSignerCertPath().getCertificates()) {
+                                    X509Certificate x = (X509Certificate)cert;
+                                    if (rfc) {
+                                        out.println(rb.getString("Certificate owner: ") + x.getSubjectDN() + "\n");
+                                        dumpCert(x, out);
+                                    } else {
+                                        printX509Cert(x, out);
+                                    }
+                                    out.println();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            jf.close();
+            if (ss.size() == 0) {
+                out.println(rb.getString("Not a signed jar file"));
+            }
+        } else if (sslserver != null) {
             SSLContext sc = SSLContext.getInstance("SSL");
             final boolean[] certPrinted = new boolean[1];
             sc.init(null, new TrustManager[] {
