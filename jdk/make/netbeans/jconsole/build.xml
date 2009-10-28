@@ -35,7 +35,7 @@
 
     <target name="-pre-compile">
         <copy
-            file="${root}/src/share/classes/sun/tools/jconsole/Version-template.java"
+            file="${root}/src/share/classes/sun/tools/jconsole/Version.java.template"
             tofile="${gensrc.dir}/sun/tools/jconsole/Version.java"/>
         <replace
             file="${gensrc.dir}/sun/tools/jconsole/Version.java"

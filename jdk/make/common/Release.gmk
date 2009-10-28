@@ -330,7 +330,7 @@ endif
 #
 # Specific files and directories that will be filtered out from above areas.
 #
-SOURCE_FILTERs = $(SCM_DIRs) 'X-*' '*-X-*' '*-template.java' ',*'
+SOURCE_FILTERs = $(SCM_DIRs) ',*'
 SOURCE_FILES_filter = $(SOURCE_FILTERs:%=-name % -prune -o)
 
 #
