@@ -293,10 +293,8 @@ class JarVerifier {
                 }
                 sfv.process(sigFileSigners);
 
-            } catch (sun.security.pkcs.ParsingException pe) {
-                if (debug != null) debug.println("processEntry caught: "+pe);
-                // ignore and treat as unsigned
             } catch (IOException ioe) {
+                // e.g. sun.security.pkcs.ParsingException
                 if (debug != null) debug.println("processEntry caught: "+ioe);
                 // ignore and treat as unsigned
             } catch (SignatureException se) {
