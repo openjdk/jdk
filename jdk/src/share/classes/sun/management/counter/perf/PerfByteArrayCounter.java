@@ -88,4 +88,6 @@ public class PerfByteArrayCounter extends AbstractCounter
                                            getVectorLength(),
                                            byteArrayValue());
     }
+
+    private static final long serialVersionUID = 2545474036937279921L;
 }
