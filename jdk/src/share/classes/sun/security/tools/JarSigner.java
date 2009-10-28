@@ -1483,6 +1483,7 @@ public class JarSigner {
         Timestamp timestamp = signer.getTimestamp();
         if (timestamp != null) {
             s.append(printTimestamp(tab, timestamp));
+            s.append('\n');
         }
         // display the certificate(s)
         for (Certificate c : certs) {
