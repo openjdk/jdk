@@ -722,7 +722,7 @@ class instanceKlass: public Klass {
 #endif // SERIALGC
 
   // Naming
-  char* signature_name() const;
+  const char* signature_name() const;
 
   // Iterators
   int oop_oop_iterate(oop obj, OopClosure* blk) {
