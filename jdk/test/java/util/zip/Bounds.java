@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4811913
+ * @ignore until 6896424 is resolved
  * @summary Test bounds checking in zip package
  */
 
