@@ -8214,6 +8214,15 @@ void MacroAssembler::store_heap_oop(Address dst, Register src) {
   }
 }
 
+// Used for storing NULLs.
+void MacroAssembler::store_heap_oop_null(Address dst) {
+  if (UseCompressedOops) {
+    movl(dst, (int32_t)NULL_WORD);
+  } else {
+    movslq(dst, (int32_t)NULL_WORD);
+  }
+}
+
 // Algorithm must match oop.inline.hpp encode_heap_oop.
 void MacroAssembler::encode_heap_oop(Register r) {
   assert (UseCompressedOops, "should be compressed");
