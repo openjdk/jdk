@@ -29,6 +29,7 @@
 */
 
 import sun.awt.shell.ShellFolder;
+import sun.awt.OSInfo;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -43,6 +44,12 @@ public class bug6741890 {
     private static final int COUNT = 100000;
 
     public static void main(String[] args) throws Exception {
+        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+            System.out.println("The test is applicable only for Windows. Skipped.");
+
+            return;
+        }
+
         String tmpDir = System.getProperty("java.io.tmpdir");
 
         if (tmpDir.length() == 0) { //'java.io.tmpdir' isn't guaranteed to be defined
