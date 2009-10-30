@@ -30,8 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.LoggingMXBean;
-import java.util.logging.LogManager;
+import java.util.logging.PlatformLoggingMXBean;
 import java.nio.BufferPoolMXBean;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
@@ -181,14 +180,13 @@ enum PlatformComponent {
      * Logging facility.
      */
     LOGGING(
-        "java.util.logging.LoggingMXBean",
+        "java.util.logging.PlatformLoggingMXBean",
         "java.util.logging", "Logging", defaultKeyProperties(),
-        new MXBeanFetcher<LoggingMXBean>() {
-            public List<LoggingMXBean> getMXBeans() {
-                return Collections.singletonList(LogManager.getLoggingMXBean());
+        new MXBeanFetcher<PlatformLoggingMXBean>() {
+            public List<PlatformLoggingMXBean> getMXBeans() {
+                return ManagementFactoryHelper.getLoggingMXBean();
             }
         }),
-
 
     /**
      * Buffer pools.
