@@ -144,7 +144,6 @@ class SymbolPropertyTable;
   template(WrongMethodTypeException_klass, java_dyn_WrongMethodTypeException, Opt) \
   template(Linkage_klass,                java_dyn_Linkage,               Opt) \
   template(CallSite_klass,               java_dyn_CallSite,              Opt) \
-  template(CallSiteImpl_klass,           sun_dyn_CallSiteImpl,     Opt) \
   template(Dynamic_klass,                java_dyn_Dynamic,               Opt) \
   /* Note: MethodHandle must be first, and Dynamic last in group */           \
                                                                               \
