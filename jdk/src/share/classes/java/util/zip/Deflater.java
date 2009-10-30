@@ -333,7 +333,7 @@ class Deflater {
      *         output buffer
      */
     public int deflate(byte[] b, int off, int len) {
-        return deflateBytes(b, off, len, NO_FLUSH);
+        return deflate(b, off, len, NO_FLUSH);
     }
 
     /**
