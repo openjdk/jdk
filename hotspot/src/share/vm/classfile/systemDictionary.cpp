@@ -1973,7 +1973,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   WKID indy_group_end   = WK_KLASS_ENUM_NAME(Dynamic_klass);
   initialize_wk_klasses_until(indy_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
-    initialize_wk_klasses_through(indy_group_start, scan, CHECK);
+    initialize_wk_klasses_through(indy_group_end, scan, CHECK);
   }
   if (_well_known_klasses[indy_group_start] == NULL) {
     // Skip the rest of the dynamic typing classes, if Linkage is not loaded.
@@ -2404,7 +2404,7 @@ Handle SystemDictionary::make_dynamic_call_site(KlassHandle caller,
                                                 methodHandle mh_invdyn,
                                                 TRAPS) {
   Handle empty;
-  // call sun.dyn.CallSiteImpl::makeSite(caller, name, mtype, cmid, cbci)
+  // call java.dyn.CallSite::makeSite(caller, name, mtype, cmid, cbci)
   oop name_str_oop = StringTable::intern(name(), CHECK_(empty)); // not a handle!
   JavaCallArguments args(Handle(THREAD, caller->java_mirror()));
   args.push_oop(name_str_oop);
@@ -2413,17 +2413,19 @@ Handle SystemDictionary::make_dynamic_call_site(KlassHandle caller,
   args.push_int(caller_bci);
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
-                         SystemDictionary::CallSiteImpl_klass(),
+                         SystemDictionary::CallSite_klass(),
                          vmSymbols::makeSite_name(), vmSymbols::makeSite_signature(),
                          &args, CHECK_(empty));
   oop call_site_oop = (oop) result.get_jobject();
   assert(call_site_oop->is_oop()
-         /*&& sun_dyn_CallSiteImpl::is_instance(call_site_oop)*/, "must be sane");
-  sun_dyn_CallSiteImpl::set_vmmethod(call_site_oop, mh_invdyn());
+         /*&& java_dyn_CallSite::is_instance(call_site_oop)*/, "must be sane");
+  java_dyn_CallSite::set_vmmethod(call_site_oop, mh_invdyn());
   if (TraceMethodHandles) {
+#ifndef PRODUCT
     tty->print_cr("Linked invokedynamic bci=%d site="INTPTR_FORMAT":", caller_bci, call_site_oop);
     call_site_oop->print();
     tty->cr();
+#endif //PRODUCT
   }
   return call_site_oop;
 }
@@ -2436,9 +2438,17 @@ Handle SystemDictionary::find_bootstrap_method(KlassHandle caller,
 
   instanceKlassHandle ik(THREAD, caller());
 
-  if (ik->bootstrap_method() != NULL) {
-    return Handle(THREAD, ik->bootstrap_method());
+  oop boot_method_oop = ik->bootstrap_method();
+  if (boot_method_oop != NULL) {
+    if (TraceMethodHandles) {
+      tty->print_cr("bootstrap method for "PTR_FORMAT" cached as "PTR_FORMAT":", ik(), boot_method_oop);
+    }
+    NOT_PRODUCT(if (!boot_method_oop->is_oop()) { tty->print_cr("*** boot MH of "PTR_FORMAT" = "PTR_FORMAT, ik(), boot_method_oop); ik()->print(); });
+    assert(boot_method_oop->is_oop()
+           && java_dyn_MethodHandle::is_instance(boot_method_oop), "must be sane");
+    return Handle(THREAD, boot_method_oop);
   }
+  boot_method_oop = NULL;  // GC safety
 
   // call java.dyn.Linkage::findBootstrapMethod(caller, sbk)
   JavaCallArguments args(Handle(THREAD, ik->java_mirror()));
@@ -2452,9 +2462,18 @@ Handle SystemDictionary::find_bootstrap_method(KlassHandle caller,
                          vmSymbols::findBootstrapMethod_name(),
                          vmSymbols::findBootstrapMethod_signature(),
                          &args, CHECK_(empty));
-  oop boot_method_oop = (oop) result.get_jobject();
+  boot_method_oop = (oop) result.get_jobject();
 
   if (boot_method_oop != NULL) {
+    if (TraceMethodHandles) {
+#ifndef PRODUCT
+      tty->print_cr("--------");
+      tty->print_cr("bootstrap method for "PTR_FORMAT" computed as "PTR_FORMAT":", ik(), boot_method_oop);
+      ik()->print();
+      boot_method_oop->print();
+      tty->print_cr("========");
+#endif //PRODUCT
+    }
     assert(boot_method_oop->is_oop()
            && java_dyn_MethodHandle::is_instance(boot_method_oop), "must be sane");
     // probably no race conditions, but let's be careful:
@@ -2463,6 +2482,14 @@ Handle SystemDictionary::find_bootstrap_method(KlassHandle caller,
     else
       boot_method_oop = ik->bootstrap_method();
   } else {
+    if (TraceMethodHandles) {
+#ifndef PRODUCT
+      tty->print_cr("--------");
+      tty->print_cr("bootstrap method for "PTR_FORMAT" computed as NULL:", ik());
+      ik()->print();
+      tty->print_cr("========");
+#endif //PRODUCT
+    }
     boot_method_oop = ik->bootstrap_method();
   }
 

@@ -1015,11 +1015,8 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle po
 
   // This guy is reached from InterpreterRuntime::resolve_invokedynamic.
 
-  assert(constantPoolCacheOopDesc::is_secondary_index(raw_index), "must be secondary index");
-  int nt_index = pool->map_instruction_operand_to_index(raw_index);
-
   // At this point, we only need the signature, and can ignore the name.
-  symbolHandle method_signature(THREAD, pool->nt_signature_ref_at(nt_index));
+  symbolHandle method_signature(THREAD, pool->signature_ref_at(raw_index));  // raw_index works directly
   symbolHandle method_name = vmSymbolHandles::invoke_name();
   KlassHandle resolved_klass = SystemDictionaryHandles::MethodHandle_klass();
 
