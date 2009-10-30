@@ -45,7 +45,7 @@ public class ObjectStreamField
     /** canonical JVM signature of field type */
     private final String signature;
     /** field type (Object.class if unknown non-primitive type) */
-    private final Class type;
+    private final Class<?> type;
     /** whether or not to (de)serialize field values as unshared */
     private final boolean unshared;
     /** corresponding reflective field object, if any */
@@ -88,7 +88,7 @@ public class ObjectStreamField
         this.name = name;
         this.type = type;
         this.unshared = unshared;
-        signature = ObjectStreamClass.getClassSignature(type).intern();
+        signature = getClassSignature(type).intern();
         field = null;
     }
 
@@ -132,9 +132,9 @@ public class ObjectStreamField
         this.field = field;
         this.unshared = unshared;
         name = field.getName();
-        Class ftype = field.getType();
+        Class<?> ftype = field.getType();
         type = (showType || ftype.isPrimitive()) ? ftype : Object.class;
-        signature = ObjectStreamClass.getClassSignature(ftype).intern();
+        signature = getClassSignature(ftype).intern();
     }
 
     /**
@@ -273,5 +273,42 @@ public class ObjectStreamField
      */
     String getSignature() {
         return signature;
+    }
+
+    /**
+     * Returns JVM type signature for given class.
+     */
+    private static String getClassSignature(Class<?> cl) {
+        StringBuilder sbuf = new StringBuilder();
+        while (cl.isArray()) {
+            sbuf.append('[');
+            cl = cl.getComponentType();
+        }
+        if (cl.isPrimitive()) {
+            if (cl == Integer.TYPE) {
+                sbuf.append('I');
+            } else if (cl == Byte.TYPE) {
+                sbuf.append('B');
+            } else if (cl == Long.TYPE) {
+                sbuf.append('J');
+            } else if (cl == Float.TYPE) {
+                sbuf.append('F');
+            } else if (cl == Double.TYPE) {
+                sbuf.append('D');
+            } else if (cl == Short.TYPE) {
+                sbuf.append('S');
+            } else if (cl == Character.TYPE) {
+                sbuf.append('C');
+            } else if (cl == Boolean.TYPE) {
+                sbuf.append('Z');
+            } else if (cl == Void.TYPE) {
+                sbuf.append('V');
+            } else {
+                throw new InternalError();
+            }
+        } else {
+            sbuf.append('L' + cl.getName().replace('.', '/') + ';');
+        }
+        return sbuf.toString();
     }
 }

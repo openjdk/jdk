@@ -25,7 +25,6 @@
 
 package java.util.logging;
 
-import java.lang.management.PlatformManagedObject;
 
 /**
  * The management interface for the logging facility.
@@ -35,27 +34,26 @@ import java.lang.management.PlatformManagedObject;
  * <a href="../../lang/management/ManagementFactory.html#MXBean">MXBean</a>
  * can be obtained by calling
  * the {@link LogManager#getLoggingMXBean} method or from the
- * {@link java.lang.management.ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * {@linkplain java.lang.management.ManagementFactory#getPlatformMBeanServer
+ * platform <tt>MBeanServer</tt>}.
  *
- * <p>The {@link javax.management.ObjectName ObjectName} for uniquely
+ * The {@link javax.management.ObjectName ObjectName} for uniquely
  * identifying the <tt>LoggingMXBean</tt> within an MBeanServer is:
  * <blockquote>
  *    {@link LogManager#LOGGING_MXBEAN_NAME
  *           <tt>java.util.logging:type=Logging</tt>}
  * </blockquote>
  *
- * It can be obtained by calling the
- * {@link PlatformManagedObject#getObjectName} method.
- *
- * @see java.lang.management.ManagementFactory#getPlatformMXBeans(Class)
+ * The instance registered in the platform <tt>MBeanServer</tt> with
+ * this {@code ObjectName} is also a {@link PlatformLoggingMXBean}.
  *
  * @author  Ron Mann
  * @author  Mandy Chung
  * @since   1.5
  *
+ * @see PlatformLoggingMXBean
  */
-public interface LoggingMXBean extends PlatformManagedObject {
+public interface LoggingMXBean {
 
     /**
      * Returns the list of currently registered loggers. This method
