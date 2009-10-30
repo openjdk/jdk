@@ -36,7 +36,7 @@ package java.util;
  * @author Jon Bentley
  * @author Josh Bloch
  *
- * @version 2009.10.22 m765.827.v4
+ * @version 2009.10.29 m765.827.v5
  */
 final class DualPivotQuicksort {
 
@@ -473,9 +473,10 @@ final class DualPivotQuicksort {
                     a[great--] = pivot2;
                 }
             }
-        } else { // Use Dual-Pivot Quicksort on large arrays
-            dualPivotQuicksort(a, left, right);
         }
+
+        // Sort center part recursively, excluding known pivot values
+        sort(a, less, great);
     }
 
     /** The number of distinct short values */
@@ -507,7 +508,7 @@ final class DualPivotQuicksort {
             for (int i = left; i <= right; i++) {
                 count[a[i] - Short.MIN_VALUE]++;
             }
-            for (int i = 0, k = left; i < count.length && k < right; i++) {
+            for (int i = 0, k = left; i < count.length && k <= right; i++) {
                 short value = (short) (i + Short.MIN_VALUE);
 
                 for (int s = count[i]; s > 0; s--) {
@@ -723,13 +724,13 @@ final class DualPivotQuicksort {
                 a[j + 1] = ak;
             }
         } else if (right - left + 1 > COUNTING_SORT_THRESHOLD_FOR_BYTE) {
-            // Use counting sort on large arrays
+            // Use counting sort on huge arrays
             int[] count = new int[NUM_BYTE_VALUES];
 
             for (int i = left; i <= right; i++) {
                 count[a[i] - Byte.MIN_VALUE]++;
             }
-            for (int i = 0, k = left; i < count.length && k < right; i++) {
+            for (int i = 0, k = left; i < count.length && k <= right; i++) {
                 byte value = (byte) (i + Byte.MIN_VALUE);
 
                 for (int s = count[i]; s > 0; s--) {
@@ -951,7 +952,7 @@ final class DualPivotQuicksort {
             for (int i = left; i <= right; i++) {
                 count[a[i]]++;
             }
-            for (int i = 0, k = left; i < count.length && k < right; i++) {
+            for (int i = 0, k = left; i < count.length && k <= right; i++) {
                 for (int s = count[i]; s > 0; s--) {
                     a[k++] = (char) i;
                }
