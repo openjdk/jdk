@@ -29,10 +29,6 @@ import java.lang.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
 
 import java.lang.management.ThreadInfo;
-import java.lang.management.LockInfo;
-import java.lang.management.MonitorInfo;
-import java.util.Map;
-import java.util.HashMap;
 
 import javax.management.ObjectName;
 
@@ -415,7 +411,7 @@ class ThreadImpl implements ThreadMXBean {
     private static native void resetContentionTimes0(long tid);
 
     public ObjectName getObjectName() {
-        return ObjectName.valueOf(ManagementFactory.THREAD_MXBEAN_NAME);
+        return Util.newObjectName(ManagementFactory.THREAD_MXBEAN_NAME);
     }
 
 }

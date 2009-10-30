@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,1047 +29,458 @@ import java.lang.reflect.*;
 
 /**
  * This class contains various methods for manipulating arrays (such as
- * sorting and searching).  This class also contains a static factory
+ * sorting and searching). This class also contains a static factory
  * that allows arrays to be viewed as lists.
  *
- * <p>The methods in this class all throw a <tt>NullPointerException</tt> if
- * the specified array reference is null, except where noted.
+ * <p>The methods in this class all throw a {@code NullPointerException},
+ * if the specified array reference is null, except where noted.
  *
  * <p>The documentation for the methods contained in this class includes
- * briefs description of the <i>implementations</i>.  Such descriptions should
+ * briefs description of the <i>implementations</i>. Such descriptions should
  * be regarded as <i>implementation notes</i>, rather than parts of the
- * <i>specification</i>.  Implementors should feel free to substitute other
- * algorithms, so long as the specification itself is adhered to.  (For
- * example, the algorithm used by <tt>sort(Object[])</tt> does not have to be
- * a mergesort, but it does have to be <i>stable</i>.)
+ * <i>specification</i>. Implementors should feel free to substitute other
+ * algorithms, so long as the specification itself is adhered to. (For
+ * example, the algorithm used by {@code sort(Object[])} does not have to be
+ * a MergeSort, but it does have to be <i>stable</i>.)
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
  *
- * @author  Josh Bloch
- * @author  Neal Gafter
- * @author  John Rose
- * @since   1.2
+ * @author Josh Bloch
+ * @author Neal Gafter
+ * @author John Rose
+ * @since  1.2
  */
-
 public class Arrays {
+
     // Suppresses default constructor, ensuring non-instantiability.
-    private Arrays() {
-    }
+    private Arrays() {}
 
     // Sorting
 
     /**
-     * Sorts the specified array of longs into ascending numerical order.
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
      */
     public static void sort(long[] a) {
-        sort1(a, 0, a.length);
+        sort(a, 0, a.length);
     }
 
     /**
-     * Sorts the specified range of the specified array of longs into
-     * ascending numerical order.  The range to be sorted extends from index
-     * <tt>fromIndex</tt>, inclusive, to index <tt>toIndex</tt>, exclusive.
-     * (If <tt>fromIndex==toIndex</tt>, the range to be sorted is empty.)
+     * Sorts the specified range of the specified array into ascending order. The
+     * range of to be sorted extends from the index {@code fromIndex}, inclusive,
+     * to the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
      *
-     * <p>The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
-     * @param fromIndex the index of the first element (inclusive) to be
-     *        sorted
-     * @param toIndex the index of the last element (exclusive) to be sorted
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     * <tt>toIndex &gt; a.length</tt>
+     * @param fromIndex the index of the first element, inclusively, to be sorted
+     * @param toIndex the index of the last element, exclusively, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        sort1(a, fromIndex, toIndex-fromIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
-     * Sorts the specified array of ints into ascending numerical order.
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
      */
     public static void sort(int[] a) {
-        sort1(a, 0, a.length);
+        sort(a, 0, a.length);
     }
 
     /**
-     * Sorts the specified range of the specified array of ints into
-     * ascending numerical order.  The range to be sorted extends from index
-     * <tt>fromIndex</tt>, inclusive, to index <tt>toIndex</tt>, exclusive.
-     * (If <tt>fromIndex==toIndex</tt>, the range to be sorted is empty.)<p>
+     * Sorts the specified range of the specified array into ascending order. The
+     * range of to be sorted extends from the index {@code fromIndex}, inclusive,
+     * to the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
      *
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
-     * @param fromIndex the index of the first element (inclusive) to be
-     *        sorted
-     * @param toIndex the index of the last element (exclusive) to be sorted
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @param fromIndex the index of the first element, inclusively, to be sorted
+     * @param toIndex the index of the last element, exclusively, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(int[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        sort1(a, fromIndex, toIndex-fromIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
-     * Sorts the specified array of shorts into ascending numerical order.
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
      */
     public static void sort(short[] a) {
-        sort1(a, 0, a.length);
+        sort(a, 0, a.length);
     }
 
     /**
-     * Sorts the specified range of the specified array of shorts into
-     * ascending numerical order.  The range to be sorted extends from index
-     * <tt>fromIndex</tt>, inclusive, to index <tt>toIndex</tt>, exclusive.
-     * (If <tt>fromIndex==toIndex</tt>, the range to be sorted is empty.)<p>
+     * Sorts the specified range of the specified array into ascending order. The
+     * range of to be sorted extends from the index {@code fromIndex}, inclusive,
+     * to the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
      *
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
-     * @param fromIndex the index of the first element (inclusive) to be
-     *        sorted
-     * @param toIndex the index of the last element (exclusive) to be sorted
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @param fromIndex the index of the first element, inclusively, to be sorted
+     * @param toIndex the index of the last element, exclusively, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(short[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        sort1(a, fromIndex, toIndex-fromIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
-     * Sorts the specified array of chars into ascending numerical order.
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
      */
     public static void sort(char[] a) {
-        sort1(a, 0, a.length);
+        sort(a, 0, a.length);
     }
 
     /**
-     * Sorts the specified range of the specified array of chars into
-     * ascending numerical order.  The range to be sorted extends from index
-     * <tt>fromIndex</tt>, inclusive, to index <tt>toIndex</tt>, exclusive.
-     * (If <tt>fromIndex==toIndex</tt>, the range to be sorted is empty.)<p>
+     * Sorts the specified range of the specified array into ascending order. The
+     * range of to be sorted extends from the index {@code fromIndex}, inclusive,
+     * to the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
      *
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
-     * @param fromIndex the index of the first element (inclusive) to be
-     *        sorted
-     * @param toIndex the index of the last element (exclusive) to be sorted
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @param fromIndex the index of the first element, inclusively, to be sorted
+     * @param toIndex the index of the last element, exclusively, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(char[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        sort1(a, fromIndex, toIndex-fromIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
-     * Sorts the specified array of bytes into ascending numerical order.
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
      */
     public static void sort(byte[] a) {
-        sort1(a, 0, a.length);
+        sort(a, 0, a.length);
     }
 
     /**
-     * Sorts the specified range of the specified array of bytes into
-     * ascending numerical order.  The range to be sorted extends from index
-     * <tt>fromIndex</tt>, inclusive, to index <tt>toIndex</tt>, exclusive.
-     * (If <tt>fromIndex==toIndex</tt>, the range to be sorted is empty.)<p>
+     * Sorts the specified range of the specified array into ascending order. The
+     * range of to be sorted extends from the index {@code fromIndex}, inclusive,
+     * to the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
      *
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
-     * @param fromIndex the index of the first element (inclusive) to be
-     *        sorted
-     * @param toIndex the index of the last element (exclusive) to be sorted
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @param fromIndex the index of the first element, inclusively, to be sorted
+     * @param toIndex the index of the last element, exclusively, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(byte[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        sort1(a, fromIndex, toIndex-fromIndex);
+        DualPivotQuicksort.sort(a, fromIndex, toIndex - 1);
     }
 
     /**
-     * Sorts the specified array of doubles into ascending numerical order.
-     * <p>
-     * The <code>&lt;</code> relation does not provide a total order on
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>The {@code <} relation does not provide a total order on
      * all floating-point values; although they are distinct numbers
-     * <code>-0.0 == 0.0</code> is <code>true</code> and a NaN value
-     * compares neither less than, greater than, nor equal to any
-     * floating-point value, even itself.  To allow the sort to
-     * proceed, instead of using the <code>&lt;</code> relation to
-     * determine ascending numerical order, this method uses the total
-     * order imposed by {@link Double#compareTo}.  This ordering
-     * differs from the <code>&lt;</code> relation in that
-     * <code>-0.0</code> is treated as less than <code>0.0</code> and
-     * NaN is considered greater than any other floating-point value.
-     * For the purposes of sorting, all NaN values are considered
-     * equivalent and equal.
-     * <p>
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * {@code -0.0d == 0.0d} is {@code true} and a NaN value compares
+     * neither less than, greater than, nor equal to any floating-point
+     * value, even itself. To allow the sort to proceed, instead of using
+     * the {@code <} relation to determine ascending numerical order,
+     * this method uses the total order imposed by {@link Double#compareTo}.
+     * This ordering differs from the {@code <} relation in that {@code -0.0d}
+     * is treated as less than {@code 0.0d} and NaN is considered greater than
+     * any other floating-point value. For the purposes of sorting, all NaN
+     * values are considered equivalent and equal.
+     *
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
      */
     public static void sort(double[] a) {
-        sort2(a, 0, a.length);
+        sort(a, 0, a.length);
     }
 
     /**
-     * Sorts the specified range of the specified array of doubles into
-     * ascending numerical order.  The range to be sorted extends from index
-     * <tt>fromIndex</tt>, inclusive, to index <tt>toIndex</tt>, exclusive.
-     * (If <tt>fromIndex==toIndex</tt>, the range to be sorted is empty.)
-     * <p>
-     * The <code>&lt;</code> relation does not provide a total order on
+     * Sorts the specified range of the specified array into ascending order. The
+     * range of to be sorted extends from the index {@code fromIndex}, inclusive,
+     * to the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>The {@code <} relation does not provide a total order on
      * all floating-point values; although they are distinct numbers
-     * <code>-0.0 == 0.0</code> is <code>true</code> and a NaN value
-     * compares neither less than, greater than, nor equal to any
-     * floating-point value, even itself.  To allow the sort to
-     * proceed, instead of using the <code>&lt;</code> relation to
-     * determine ascending numerical order, this method uses the total
-     * order imposed by {@link Double#compareTo}.  This ordering
-     * differs from the <code>&lt;</code> relation in that
-     * <code>-0.0</code> is treated as less than <code>0.0</code> and
-     * NaN is considered greater than any other floating-point value.
-     * For the purposes of sorting, all NaN values are considered
-     * equivalent and equal.
-     * <p>
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
+     * {@code -0.0d == 0.0d} is {@code true} and a NaN value compares
+     * neither less than, greater than, nor equal to any floating-point
+     * value, even itself. To allow the sort to proceed, instead of using
+     * the {@code <} relation to determine ascending numerical order,
+     * this method uses the total order imposed by {@link Double#compareTo}.
+     * This ordering differs from the {@code <} relation in that {@code -0.0d}
+     * is treated as less than {@code 0.0d} and NaN is considered greater than
+     * any other floating-point value. For the purposes of sorting, all NaN
+     * values are considered equivalent and equal.
+     *
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
      *
      * @param a the array to be sorted
-     * @param fromIndex the index of the first element (inclusive) to be
-     *        sorted
-     * @param toIndex the index of the last element (exclusive) to be sorted
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
+     * @param fromIndex the index of the first element, inclusively, to be sorted
+     * @param toIndex the index of the last element, exclusively, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
      */
     public static void sort(double[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        sort2(a, fromIndex, toIndex);
+        sortNegZeroAndNaN(a, fromIndex, toIndex);
     }
 
-    /**
-     * Sorts the specified array of floats into ascending numerical order.
-     * <p>
-     * The <code>&lt;</code> relation does not provide a total order on
-     * all floating-point values; although they are distinct numbers
-     * <code>-0.0f == 0.0f</code> is <code>true</code> and a NaN value
-     * compares neither less than, greater than, nor equal to any
-     * floating-point value, even itself.  To allow the sort to
-     * proceed, instead of using the <code>&lt;</code> relation to
-     * determine ascending numerical order, this method uses the total
-     * order imposed by {@link Float#compareTo}.  This ordering
-     * differs from the <code>&lt;</code> relation in that
-     * <code>-0.0f</code> is treated as less than <code>0.0f</code> and
-     * NaN is considered greater than any other floating-point value.
-     * For the purposes of sorting, all NaN values are considered
-     * equivalent and equal.
-     * <p>
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
-     *
-     * @param a the array to be sorted
-     */
-    public static void sort(float[] a) {
-        sort2(a, 0, a.length);
-    }
-
-    /**
-     * Sorts the specified range of the specified array of floats into
-     * ascending numerical order.  The range to be sorted extends from index
-     * <tt>fromIndex</tt>, inclusive, to index <tt>toIndex</tt>, exclusive.
-     * (If <tt>fromIndex==toIndex</tt>, the range to be sorted is empty.)
-     * <p>
-     * The <code>&lt;</code> relation does not provide a total order on
-     * all floating-point values; although they are distinct numbers
-     * <code>-0.0f == 0.0f</code> is <code>true</code> and a NaN value
-     * compares neither less than, greater than, nor equal to any
-     * floating-point value, even itself.  To allow the sort to
-     * proceed, instead of using the <code>&lt;</code> relation to
-     * determine ascending numerical order, this method uses the total
-     * order imposed by {@link Float#compareTo}.  This ordering
-     * differs from the <code>&lt;</code> relation in that
-     * <code>-0.0f</code> is treated as less than <code>0.0f</code> and
-     * NaN is considered greater than any other floating-point value.
-     * For the purposes of sorting, all NaN values are considered
-     * equivalent and equal.
-     * <p>
-     * The sorting algorithm is a tuned quicksort, adapted from Jon
-     * L. Bentley and M. Douglas McIlroy's "Engineering a Sort Function",
-     * Software-Practice and Experience, Vol. 23(11) P. 1249-1265 (November
-     * 1993).  This algorithm offers n*log(n) performance on many data sets
-     * that cause other quicksorts to degrade to quadratic performance.
-     *
-     * @param a the array to be sorted
-     * @param fromIndex the index of the first element (inclusive) to be
-     *        sorted
-     * @param toIndex the index of the last element (exclusive) to be sorted
-     * @throws IllegalArgumentException if <tt>fromIndex &gt; toIndex</tt>
-     * @throws ArrayIndexOutOfBoundsException if <tt>fromIndex &lt; 0</tt> or
-     *         <tt>toIndex &gt; a.length</tt>
-     */
-    public static void sort(float[] a, int fromIndex, int toIndex) {
-        rangeCheck(a.length, fromIndex, toIndex);
-        sort2(a, fromIndex, toIndex);
-    }
-
-    private static void sort2(double a[], int fromIndex, int toIndex) {
+    private static void sortNegZeroAndNaN(double[] a, int fromIndex, int toIndex) {
         final long NEG_ZERO_BITS = Double.doubleToLongBits(-0.0d);
         /*
          * The sort is done in three phases to avoid the expense of using
-         * NaN and -0.0 aware comparisons during the main sort.
-         */
-
-        /*
-         * Preprocessing phase:  Move any NaN's to end of array, count the
-         * number of -0.0's, and turn them into 0.0's.
+         * NaN and -0.0d aware comparisons during the main sort.
+         *
+         * Preprocessing phase: move any NaN's to end of array, count the
+         * number of -0.0d's, and turn them into 0.0d's.
          */
         int numNegZeros = 0;
-        int i = fromIndex, n = toIndex;
-        while(i < n) {
+        int i = fromIndex;
+        int n = toIndex;
+        double temp;
+
+        while (i < n) {
             if (a[i] != a[i]) {
-                swap(a, i, --n);
-            } else {
-                if (a[i]==0 && Double.doubleToLongBits(a[i])==NEG_ZERO_BITS) {
+                n--;
+                temp = a[i];
+                a[i] = a[n];
+                a[n] = temp;
+            }
+            else {
+                if (a[i] == 0 && Double.doubleToLongBits(a[i]) == NEG_ZERO_BITS) {
                     a[i] = 0.0d;
                     numNegZeros++;
                 }
                 i++;
             }
         }
-
         // Main sort phase: quicksort everything but the NaN's
-        sort1(a, fromIndex, n-fromIndex);
+        DualPivotQuicksort.sort(a, fromIndex, n - 1);
 
-        // Postprocessing phase: change 0.0's to -0.0's as required
+        // Postprocessing phase: change 0.0d's to -0.0d's as required
         if (numNegZeros != 0) {
-            int j = binarySearch0(a, fromIndex, n, 0.0d); // posn of ANY zero
+            int j = binarySearch0(a, fromIndex, n, 0.0d); // position of ANY zero
+
             do {
                 j--;
-            } while (j>=fromIndex && a[j]==0.0d);
+            }
+            while (j >= fromIndex && a[j] == 0.0d);
 
             // j is now one less than the index of the FIRST zero
-            for (int k=0; k<numNegZeros; k++)
+            for (int k = 0; k < numNegZeros; k++) {
                 a[++j] = -0.0d;
+            }
         }
     }
 
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>The {@code <} relation does not provide a total order on
+     * all floating-point values; although they are distinct numbers
+     * {@code -0.0f == 0.0f} is {@code true} and a NaN value compares
+     * neither less than, greater than, nor equal to any floating-point
+     * value, even itself. To allow the sort to proceed, instead of using
+     * the {@code <} relation to determine ascending numerical order,
+     * this method uses the total order imposed by {@link Float#compareTo}.
+     * This ordering differs from the {@code <} relation in that {@code -0.0f}
+     * is treated as less than {@code 0.0f} and NaN is considered greater than
+     * any other floating-point value. For the purposes of sorting, all NaN
+     * values are considered equivalent and equal.
+     *
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
+     *
+     * @param a the array to be sorted
+     */
+    public static void sort(float[] a) {
+        sort(a, 0, a.length);
+    }
 
-    private static void sort2(float a[], int fromIndex, int toIndex) {
+    /**
+     * Sorts the specified range of the specified array into ascending order. The
+     * range of to be sorted extends from the index {@code fromIndex}, inclusive,
+     * to the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>The {@code <} relation does not provide a total order on
+     * all floating-point values; although they are distinct numbers
+     * {@code -0.0f == 0.0f} is {@code true} and a NaN value compares
+     * neither less than, greater than, nor equal to any floating-point
+     * value, even itself. To allow the sort to proceed, instead of using
+     * the {@code <} relation to determine ascending numerical order,
+     * this method uses the total order imposed by {@link Float#compareTo}.
+     * This ordering differs from the {@code <} relation in that {@code -0.0f}
+     * is treated as less than {@code 0.0f} and NaN is considered greater than
+     * any other floating-point value. For the purposes of sorting, all NaN
+     * values are considered equivalent and equal.
+     *
+     * <p>Implementation note: The sorting algorithm is a Dual-Pivot Quicksort,
+     * by Vladimir Yaroslavskiy, Jon Bentley, and Joshua Bloch. This algorithm
+     * offers O(n log(n)) performance on many data sets that cause other
+     * quicksorts to degrade to quadratic performance, and is typically
+     * faster than traditional (one-pivot) Quicksort implementations.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusively, to be sorted
+     * @param toIndex the index of the last element, exclusively, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     */
+    public static void sort(float[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        sortNegZeroAndNaN(a, fromIndex, toIndex);
+    }
+
+    private static void sortNegZeroAndNaN(float[] a, int fromIndex, int toIndex) {
         final int NEG_ZERO_BITS = Float.floatToIntBits(-0.0f);
         /*
          * The sort is done in three phases to avoid the expense of using
-         * NaN and -0.0 aware comparisons during the main sort.
-         */
-
-        /*
-         * Preprocessing phase:  Move any NaN's to end of array, count the
-         * number of -0.0's, and turn them into 0.0's.
+         * NaN and -0.0f aware comparisons during the main sort.
+         *
+         * Preprocessing phase: move any NaN's to end of array, count the
+         * number of -0.0f's, and turn them into 0.0f's.
          */
         int numNegZeros = 0;
-        int i = fromIndex, n = toIndex;
-        while(i < n) {
+        int i = fromIndex;
+        int n = toIndex;
+        float temp;
+
+        while (i < n) {
             if (a[i] != a[i]) {
-                swap(a, i, --n);
-            } else {
-                if (a[i]==0 && Float.floatToIntBits(a[i])==NEG_ZERO_BITS) {
+                n--;
+                temp = a[i];
+                a[i] = a[n];
+                a[n] = temp;
+            }
+            else {
+                if (a[i] == 0 && Float.floatToIntBits(a[i]) == NEG_ZERO_BITS) {
                     a[i] = 0.0f;
                     numNegZeros++;
                 }
                 i++;
             }
         }
-
         // Main sort phase: quicksort everything but the NaN's
-        sort1(a, fromIndex, n-fromIndex);
+        DualPivotQuicksort.sort(a, fromIndex, n - 1);
 
-        // Postprocessing phase: change 0.0's to -0.0's as required
+        // Postprocessing phase: change 0.0f's to -0.0f's as required
         if (numNegZeros != 0) {
-            int j = binarySearch0(a, fromIndex, n, 0.0f); // posn of ANY zero
+            int j = binarySearch0(a, fromIndex, n, 0.0f); // position of ANY zero
+
             do {
                 j--;
-            } while (j>=fromIndex && a[j]==0.0f);
+            }
+            while (j >= fromIndex && a[j] == 0.0f);
 
             // j is now one less than the index of the FIRST zero
-            for (int k=0; k<numNegZeros; k++)
+            for (int k = 0; k < numNegZeros; k++) {
                 a[++j] = -0.0f;
-        }
-    }
-
-
-    /*
-     * The code for each of the seven primitive types is largely identical.
-     * C'est la vie.
-     */
-
-    /**
-     * Sorts the specified sub-array of longs into ascending order.
-     */
-    private static void sort1(long x[], int off, int len) {
-        // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++)
-                for (int j=i; j>off && x[j-1]>x[j]; j--)
-                    swap(x, j, j-1);
-            return;
-        }
-
-        // Choose a partition element, v
-        int m = off + (len >> 1);       // Small arrays, middle element
-        if (len > 7) {
-            int l = off;
-            int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
             }
-            m = med3(x, l, m, n); // Mid-size, med of 3
         }
-        long v = x[m];
-
-        // Establish Invariant: v* (<v)* (>v)* v*
-        int a = off, b = a, c = off + len - 1, d = c;
-        while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v)
-                    swap(x, a++, b);
-                b++;
-            }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v)
-                    swap(x, c, d--);
-                c--;
-            }
-            if (b > c)
-                break;
-            swap(x, b++, c--);
-        }
-
-        // Swap partition elements back to middle
-        int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, b,   n-s, s);
-
-        // Recursively sort non-partition-elements
-        if ((s = b-a) > 1)
-            sort1(x, off, s);
-        if ((s = d-c) > 1)
-            sort1(x, n-s, s);
-    }
-
-    /**
-     * Swaps x[a] with x[b].
-     */
-    private static void swap(long x[], int a, int b) {
-        long t = x[a];
-        x[a] = x[b];
-        x[b] = t;
-    }
-
-    /**
-     * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
-     */
-    private static void vecswap(long x[], int a, int b, int n) {
-        for (int i=0; i<n; i++, a++, b++)
-            swap(x, a, b);
-    }
-
-    /**
-     * Returns the index of the median of the three indexed longs.
-     */
-    private static int med3(long x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-                (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
-    }
-
-    /**
-     * Sorts the specified sub-array of integers into ascending order.
-     */
-    private static void sort1(int x[], int off, int len) {
-        // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++)
-                for (int j=i; j>off && x[j-1]>x[j]; j--)
-                    swap(x, j, j-1);
-            return;
-        }
-
-        // Choose a partition element, v
-        int m = off + (len >> 1);       // Small arrays, middle element
-        if (len > 7) {
-            int l = off;
-            int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
-            }
-            m = med3(x, l, m, n); // Mid-size, med of 3
-        }
-        int v = x[m];
-
-        // Establish Invariant: v* (<v)* (>v)* v*
-        int a = off, b = a, c = off + len - 1, d = c;
-        while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v)
-                    swap(x, a++, b);
-                b++;
-            }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v)
-                    swap(x, c, d--);
-                c--;
-            }
-            if (b > c)
-                break;
-            swap(x, b++, c--);
-        }
-
-        // Swap partition elements back to middle
-        int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, b,   n-s, s);
-
-        // Recursively sort non-partition-elements
-        if ((s = b-a) > 1)
-            sort1(x, off, s);
-        if ((s = d-c) > 1)
-            sort1(x, n-s, s);
-    }
-
-    /**
-     * Swaps x[a] with x[b].
-     */
-    private static void swap(int x[], int a, int b) {
-        int t = x[a];
-        x[a] = x[b];
-        x[b] = t;
-    }
-
-    /**
-     * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
-     */
-    private static void vecswap(int x[], int a, int b, int n) {
-        for (int i=0; i<n; i++, a++, b++)
-            swap(x, a, b);
-    }
-
-    /**
-     * Returns the index of the median of the three indexed integers.
-     */
-    private static int med3(int x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-                (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
-    }
-
-    /**
-     * Sorts the specified sub-array of shorts into ascending order.
-     */
-    private static void sort1(short x[], int off, int len) {
-        // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++)
-                for (int j=i; j>off && x[j-1]>x[j]; j--)
-                    swap(x, j, j-1);
-            return;
-        }
-
-        // Choose a partition element, v
-        int m = off + (len >> 1);       // Small arrays, middle element
-        if (len > 7) {
-            int l = off;
-            int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
-            }
-            m = med3(x, l, m, n); // Mid-size, med of 3
-        }
-        short v = x[m];
-
-        // Establish Invariant: v* (<v)* (>v)* v*
-        int a = off, b = a, c = off + len - 1, d = c;
-        while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v)
-                    swap(x, a++, b);
-                b++;
-            }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v)
-                    swap(x, c, d--);
-                c--;
-            }
-            if (b > c)
-                break;
-            swap(x, b++, c--);
-        }
-
-        // Swap partition elements back to middle
-        int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, b,   n-s, s);
-
-        // Recursively sort non-partition-elements
-        if ((s = b-a) > 1)
-            sort1(x, off, s);
-        if ((s = d-c) > 1)
-            sort1(x, n-s, s);
-    }
-
-    /**
-     * Swaps x[a] with x[b].
-     */
-    private static void swap(short x[], int a, int b) {
-        short t = x[a];
-        x[a] = x[b];
-        x[b] = t;
-    }
-
-    /**
-     * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
-     */
-    private static void vecswap(short x[], int a, int b, int n) {
-        for (int i=0; i<n; i++, a++, b++)
-            swap(x, a, b);
-    }
-
-    /**
-     * Returns the index of the median of the three indexed shorts.
-     */
-    private static int med3(short x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-                (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
-    }
-
-
-    /**
-     * Sorts the specified sub-array of chars into ascending order.
-     */
-    private static void sort1(char x[], int off, int len) {
-        // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++)
-                for (int j=i; j>off && x[j-1]>x[j]; j--)
-                    swap(x, j, j-1);
-            return;
-        }
-
-        // Choose a partition element, v
-        int m = off + (len >> 1);       // Small arrays, middle element
-        if (len > 7) {
-            int l = off;
-            int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
-            }
-            m = med3(x, l, m, n); // Mid-size, med of 3
-        }
-        char v = x[m];
-
-        // Establish Invariant: v* (<v)* (>v)* v*
-        int a = off, b = a, c = off + len - 1, d = c;
-        while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v)
-                    swap(x, a++, b);
-                b++;
-            }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v)
-                    swap(x, c, d--);
-                c--;
-            }
-            if (b > c)
-                break;
-            swap(x, b++, c--);
-        }
-
-        // Swap partition elements back to middle
-        int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, b,   n-s, s);
-
-        // Recursively sort non-partition-elements
-        if ((s = b-a) > 1)
-            sort1(x, off, s);
-        if ((s = d-c) > 1)
-            sort1(x, n-s, s);
-    }
-
-    /**
-     * Swaps x[a] with x[b].
-     */
-    private static void swap(char x[], int a, int b) {
-        char t = x[a];
-        x[a] = x[b];
-        x[b] = t;
-    }
-
-    /**
-     * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
-     */
-    private static void vecswap(char x[], int a, int b, int n) {
-        for (int i=0; i<n; i++, a++, b++)
-            swap(x, a, b);
-    }
-
-    /**
-     * Returns the index of the median of the three indexed chars.
-     */
-    private static int med3(char x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-                (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
-    }
-
-
-    /**
-     * Sorts the specified sub-array of bytes into ascending order.
-     */
-    private static void sort1(byte x[], int off, int len) {
-        // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++)
-                for (int j=i; j>off && x[j-1]>x[j]; j--)
-                    swap(x, j, j-1);
-            return;
-        }
-
-        // Choose a partition element, v
-        int m = off + (len >> 1);       // Small arrays, middle element
-        if (len > 7) {
-            int l = off;
-            int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
-            }
-            m = med3(x, l, m, n); // Mid-size, med of 3
-        }
-        byte v = x[m];
-
-        // Establish Invariant: v* (<v)* (>v)* v*
-        int a = off, b = a, c = off + len - 1, d = c;
-        while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v)
-                    swap(x, a++, b);
-                b++;
-            }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v)
-                    swap(x, c, d--);
-                c--;
-            }
-            if (b > c)
-                break;
-            swap(x, b++, c--);
-        }
-
-        // Swap partition elements back to middle
-        int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, b,   n-s, s);
-
-        // Recursively sort non-partition-elements
-        if ((s = b-a) > 1)
-            sort1(x, off, s);
-        if ((s = d-c) > 1)
-            sort1(x, n-s, s);
-    }
-
-    /**
-     * Swaps x[a] with x[b].
-     */
-    private static void swap(byte x[], int a, int b) {
-        byte t = x[a];
-        x[a] = x[b];
-        x[b] = t;
-    }
-
-    /**
-     * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
-     */
-    private static void vecswap(byte x[], int a, int b, int n) {
-        for (int i=0; i<n; i++, a++, b++)
-            swap(x, a, b);
-    }
-
-    /**
-     * Returns the index of the median of the three indexed bytes.
-     */
-    private static int med3(byte x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-                (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
-    }
-
-
-    /**
-     * Sorts the specified sub-array of doubles into ascending order.
-     */
-    private static void sort1(double x[], int off, int len) {
-        // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++)
-                for (int j=i; j>off && x[j-1]>x[j]; j--)
-                    swap(x, j, j-1);
-            return;
-        }
-
-        // Choose a partition element, v
-        int m = off + (len >> 1);       // Small arrays, middle element
-        if (len > 7) {
-            int l = off;
-            int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
-            }
-            m = med3(x, l, m, n); // Mid-size, med of 3
-        }
-        double v = x[m];
-
-        // Establish Invariant: v* (<v)* (>v)* v*
-        int a = off, b = a, c = off + len - 1, d = c;
-        while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v)
-                    swap(x, a++, b);
-                b++;
-            }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v)
-                    swap(x, c, d--);
-                c--;
-            }
-            if (b > c)
-                break;
-            swap(x, b++, c--);
-        }
-
-        // Swap partition elements back to middle
-        int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, b,   n-s, s);
-
-        // Recursively sort non-partition-elements
-        if ((s = b-a) > 1)
-            sort1(x, off, s);
-        if ((s = d-c) > 1)
-            sort1(x, n-s, s);
-    }
-
-    /**
-     * Swaps x[a] with x[b].
-     */
-    private static void swap(double x[], int a, int b) {
-        double t = x[a];
-        x[a] = x[b];
-        x[b] = t;
-    }
-
-    /**
-     * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
-     */
-    private static void vecswap(double x[], int a, int b, int n) {
-        for (int i=0; i<n; i++, a++, b++)
-            swap(x, a, b);
-    }
-
-    /**
-     * Returns the index of the median of the three indexed doubles.
-     */
-    private static int med3(double x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-                (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
-    }
-
-
-    /**
-     * Sorts the specified sub-array of floats into ascending order.
-     */
-    private static void sort1(float x[], int off, int len) {
-        // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++)
-                for (int j=i; j>off && x[j-1]>x[j]; j--)
-                    swap(x, j, j-1);
-            return;
-        }
-
-        // Choose a partition element, v
-        int m = off + (len >> 1);       // Small arrays, middle element
-        if (len > 7) {
-            int l = off;
-            int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
-            }
-            m = med3(x, l, m, n); // Mid-size, med of 3
-        }
-        float v = x[m];
-
-        // Establish Invariant: v* (<v)* (>v)* v*
-        int a = off, b = a, c = off + len - 1, d = c;
-        while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v)
-                    swap(x, a++, b);
-                b++;
-            }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v)
-                    swap(x, c, d--);
-                c--;
-            }
-            if (b > c)
-                break;
-            swap(x, b++, c--);
-        }
-
-        // Swap partition elements back to middle
-        int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, b,   n-s, s);
-
-        // Recursively sort non-partition-elements
-        if ((s = b-a) > 1)
-            sort1(x, off, s);
-        if ((s = d-c) > 1)
-            sort1(x, n-s, s);
-    }
-
-    /**
-     * Swaps x[a] with x[b].
-     */
-    private static void swap(float x[], int a, int b) {
-        float t = x[a];
-        x[a] = x[b];
-        x[b] = t;
-    }
-
-    /**
-     * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
-     */
-    private static void vecswap(float x[], int a, int b, int n) {
-        for (int i=0; i<n; i++, a++, b++)
-            swap(x, a, b);
-    }
-
-    /**
-     * Returns the index of the median of the three indexed floats.
-     */
-    private static int med3(float x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-                (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
     }
 
     /**
      * Old merge sort implementation can be selected (for
      * compatibility with broken comparators) using a system property.
      * Cannot be a static boolean in the enclosing class due to
-     * circular dependencies.  To be removed in a future release.
+     * circular dependencies. To be removed in a future release.
      */
     static final class LegacyMergeSort {
         private static final boolean userRequested =
@@ -1235,7 +646,7 @@ public class Arrays {
 
     /**
      * Tuning parameter: list size at or below which insertion sort will be
-     * used in preference to mergesort or quicksort.
+     * used in preference to mergesort.
      * To be removed in a future release.
      */
     private static final int INSERTIONSORT_THRESHOLD = 7;
@@ -1474,17 +885,20 @@ public class Arrays {
     }
 
     /**
-     * Check that fromIndex and toIndex are in range, and throw an
-     * appropriate exception if they aren't.
+     * Checks that {@code fromIndex} and {@code toIndex} are in
+     * the range and throws an appropriate exception, if they aren't.
      */
-    private static void rangeCheck(int arrayLen, int fromIndex, int toIndex) {
-        if (fromIndex > toIndex)
-            throw new IllegalArgumentException("fromIndex(" + fromIndex +
-                       ") > toIndex(" + toIndex+")");
-        if (fromIndex < 0)
+    private static void rangeCheck(int length, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException(
+                "fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
+        }
+        if (fromIndex < 0) {
             throw new ArrayIndexOutOfBoundsException(fromIndex);
-        if (toIndex > arrayLen)
+        }
+        if (toIndex > length) {
             throw new ArrayIndexOutOfBoundsException(toIndex);
+        }
     }
 
     // Searching
@@ -1987,21 +1401,21 @@ public class Arrays {
 
     /**
      * Searches the specified array of floats for the specified value using
-     * the binary search algorithm.  The array must be sorted
-     * (as by the {@link #sort(float[])} method) prior to making this call.  If
-     * it is not sorted, the results are undefined.  If the array contains
+     * the binary search algorithm. The array must be sorted
+     * (as by the {@link #sort(float[])} method) prior to making this call. If
+     * it is not sorted, the results are undefined. If the array contains
      * multiple elements with the specified value, there is no guarantee which
-     * one will be found.  This method considers all NaN values to be
+     * one will be found. This method considers all NaN values to be
      * equivalent and equal.
      *
      * @param a the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>. The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element greater than the key, or <tt>a.length</tt> if all
-     *         elements in the array are less than the specified key.  Note
+     *         elements in the array are less than the specified key. Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
      */
@@ -2015,10 +1429,10 @@ public class Arrays {
      * the binary search algorithm.
      * The range must be sorted
      * (as by the {@link #sort(float[], int, int)} method)
-     * prior to making this call.  If
-     * it is not sorted, the results are undefined.  If the range contains
+     * prior to making this call. If
+     * it is not sorted, the results are undefined. If the range contains
      * multiple elements with the specified value, there is no guarantee which
-     * one will be found.  This method considers all NaN values to be
+     * one will be found. This method considers all NaN values to be
      * equivalent and equal.
      *
      * @param a the array to be searched
@@ -2028,12 +1442,12 @@ public class Arrays {
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array
      *         within the specified range;
-     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>.  The
+     *         otherwise, <tt>(-(<i>insertion point</i>) - 1)</tt>. The
      *         <i>insertion point</i> is defined as the point at which the
      *         key would be inserted into the array: the index of the first
      *         element in the range greater than the key,
      *         or <tt>toIndex</tt> if all
-     *         elements in the range are less than the specified key.  Note
+     *         elements in the range are less than the specified key. Note
      *         that this guarantees that the return value will be &gt;= 0 if
      *         and only if the key is found.
      * @throws IllegalArgumentException
@@ -2076,10 +1490,9 @@ public class Arrays {
         return -(low + 1);  // key not found.
     }
 
-
     /**
      * Searches the specified array for the specified object using the binary
-     * search algorithm.  The array must be sorted into ascending order
+     * search algorithm. The array must be sorted into ascending order
      * according to the
      * {@linkplain Comparable natural ordering}
      * of its elements (as by the
@@ -2269,7 +1682,6 @@ public class Arrays {
             int mid = (low + high) >>> 1;
             T midVal = a[mid];
             int cmp = c.compare(midVal, key);
-
             if (cmp < 0)
                 low = mid + 1;
             else if (cmp > 0)
@@ -2279,7 +1691,6 @@ public class Arrays {
         }
         return -(low + 1);  // key not found.
     }
-
 
     // Equality Testing
 
@@ -2527,7 +1938,6 @@ public class Arrays {
         return true;
     }
 
-
     /**
      * Returns <tt>true</tt> if the two specified arrays of Objects are
      * <i>equal</i> to one another.  The two arrays are considered equal if
@@ -2561,7 +1971,6 @@ public class Arrays {
 
         return true;
     }
-
 
     // Filling
 
@@ -2885,8 +2294,8 @@ public class Arrays {
             a[i] = val;
     }
 
-
     // Cloning
+
     /**
      * Copies the specified array, truncating or padding with nulls (if necessary)
      * so the copy has the specified length.  For all indices that are
@@ -3495,7 +2904,6 @@ public class Arrays {
         return copy;
     }
 
-
     // Misc
 
     /**
@@ -3928,6 +3336,7 @@ public class Arrays {
      * @param a2 the other array to be tested for equality
      * @return <tt>true</tt> if the two arrays are equal
      * @see #equals(Object[],Object[])
+     * @see Objects#deepEquals(Object, Object)
      * @since 1.5
      */
     public static boolean deepEquals(Object[] a1, Object[] a2) {
@@ -3949,32 +3358,38 @@ public class Arrays {
                 return false;
 
             // Figure out whether the two elements are equal
-            boolean eq;
-            if (e1 instanceof Object[] && e2 instanceof Object[])
-                eq = deepEquals ((Object[]) e1, (Object[]) e2);
-            else if (e1 instanceof byte[] && e2 instanceof byte[])
-                eq = equals((byte[]) e1, (byte[]) e2);
-            else if (e1 instanceof short[] && e2 instanceof short[])
-                eq = equals((short[]) e1, (short[]) e2);
-            else if (e1 instanceof int[] && e2 instanceof int[])
-                eq = equals((int[]) e1, (int[]) e2);
-            else if (e1 instanceof long[] && e2 instanceof long[])
-                eq = equals((long[]) e1, (long[]) e2);
-            else if (e1 instanceof char[] && e2 instanceof char[])
-                eq = equals((char[]) e1, (char[]) e2);
-            else if (e1 instanceof float[] && e2 instanceof float[])
-                eq = equals((float[]) e1, (float[]) e2);
-            else if (e1 instanceof double[] && e2 instanceof double[])
-                eq = equals((double[]) e1, (double[]) e2);
-            else if (e1 instanceof boolean[] && e2 instanceof boolean[])
-                eq = equals((boolean[]) e1, (boolean[]) e2);
-            else
-                eq = e1.equals(e2);
+            boolean eq = deepEquals0(e1, e2);
 
             if (!eq)
                 return false;
         }
         return true;
+    }
+
+    static boolean deepEquals0(Object e1, Object e2) {
+        assert e1 != null;
+        boolean eq;
+        if (e1 instanceof Object[] && e2 instanceof Object[])
+            eq = deepEquals ((Object[]) e1, (Object[]) e2);
+        else if (e1 instanceof byte[] && e2 instanceof byte[])
+            eq = equals((byte[]) e1, (byte[]) e2);
+        else if (e1 instanceof short[] && e2 instanceof short[])
+            eq = equals((short[]) e1, (short[]) e2);
+        else if (e1 instanceof int[] && e2 instanceof int[])
+            eq = equals((int[]) e1, (int[]) e2);
+        else if (e1 instanceof long[] && e2 instanceof long[])
+            eq = equals((long[]) e1, (long[]) e2);
+        else if (e1 instanceof char[] && e2 instanceof char[])
+            eq = equals((char[]) e1, (char[]) e2);
+        else if (e1 instanceof float[] && e2 instanceof float[])
+            eq = equals((float[]) e1, (float[]) e2);
+        else if (e1 instanceof double[] && e2 instanceof double[])
+            eq = equals((double[]) e1, (double[]) e2);
+        else if (e1 instanceof boolean[] && e2 instanceof boolean[])
+            eq = equals((boolean[]) e1, (boolean[]) e2);
+        else
+            eq = e1.equals(e2);
+        return eq;
     }
 
     /**
@@ -4173,6 +3588,7 @@ public class Arrays {
     public static String toString(float[] a) {
         if (a == null)
             return "null";
+
         int iMax = a.length - 1;
         if (iMax == -1)
             return "[]";
@@ -4236,6 +3652,7 @@ public class Arrays {
     public static String toString(Object[] a) {
         if (a == null)
             return "null";
+
         int iMax = a.length - 1;
         if (iMax == -1)
             return "[]";

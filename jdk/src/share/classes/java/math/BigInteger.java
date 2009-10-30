@@ -478,7 +478,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /**
      * Constructs a randomly generated BigInteger, uniformly distributed over
-     * the range {@code 0} to (2<sup>{@code numBits}</sup> - 1), inclusive.
+     * the range 0 to (2<sup>{@code numBits}</sup> - 1), inclusive.
      * The uniformity of the distribution assumes that a fair source of random
      * bits is provided in {@code rnd}.  Note that this constructor always
      * constructs a non-negative BigInteger.
@@ -1332,7 +1332,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  val value by which this BigInteger is to be divided.
      * @return {@code this / val}
-     * @throws ArithmeticException {@code val==0}
+     * @throws ArithmeticException if {@code val} is zero.
      */
     public BigInteger divide(BigInteger val) {
         MutableBigInteger q = new MutableBigInteger(),
@@ -1352,7 +1352,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return an array of two BigIntegers: the quotient {@code (this / val)}
      *         is the initial element, and the remainder {@code (this % val)}
      *         is the final element.
-     * @throws ArithmeticException {@code val==0}
+     * @throws ArithmeticException if {@code val} is zero.
      */
     public BigInteger[] divideAndRemainder(BigInteger val) {
         BigInteger[] result = new BigInteger[2];
@@ -1371,7 +1371,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  val value by which this BigInteger is to be divided, and the
      *         remainder computed.
      * @return {@code this % val}
-     * @throws ArithmeticException {@code val==0}
+     * @throws ArithmeticException if {@code val} is zero.
      */
     public BigInteger remainder(BigInteger val) {
         MutableBigInteger q = new MutableBigInteger(),
@@ -1547,7 +1547,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  m the modulus.
      * @return {@code this mod m}
-     * @throws ArithmeticException {@code m <= 0}
+     * @throws ArithmeticException {@code m} &le; 0
      * @see    #remainder
      */
     public BigInteger mod(BigInteger m) {
@@ -1566,7 +1566,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  exponent the exponent.
      * @param  m the modulus.
      * @return <tt>this<sup>exponent</sup> mod m</tt>
-     * @throws ArithmeticException {@code m <= 0}
+     * @throws ArithmeticException {@code m} &le; 0 or the exponent is
+     *         negative and this BigInteger is not <i>relatively
+     *         prime</i> to {@code m}.
      * @see    #modInverse
      */
     public BigInteger modPow(BigInteger exponent, BigInteger m) {
@@ -2015,7 +2017,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  m the modulus.
      * @return {@code this}<sup>-1</sup> {@code mod m}.
-     * @throws ArithmeticException {@code  m <= 0}, or this BigInteger
+     * @throws ArithmeticException {@code  m} &le; 0, or this BigInteger
      *         has no multiplicative inverse mod m (that is, this BigInteger
      *         is not <i>relatively prime</i> to m).
      */
@@ -2051,6 +2053,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  n shift distance, in bits.
      * @return {@code this << n}
+     * @throws ArithmeticException if the shift distance is {@code
+     *         Integer.MIN_VALUE}.
      * @see #shiftRight
      */
     public BigInteger shiftLeft(int n) {
@@ -2058,8 +2062,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return ZERO;
         if (n==0)
             return this;
-        if (n<0)
-            return shiftRight(-n);
+        if (n<0) {
+            if (n == Integer.MIN_VALUE) {
+                throw new ArithmeticException("Shift distance of Integer.MIN_VALUE not supported.");
+            } else {
+                return shiftRight(-n);
+            }
+        }
 
         int nInts = n >>> 5;
         int nBits = n & 0x1f;
@@ -2097,13 +2106,20 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *
      * @param  n shift distance, in bits.
      * @return {@code this >> n}
+     * @throws ArithmeticException if the shift distance is {@code
+     *         Integer.MIN_VALUE}.
      * @see #shiftLeft
      */
     public BigInteger shiftRight(int n) {
         if (n==0)
             return this;
-        if (n<0)
-            return shiftLeft(-n);
+        if (n<0) {
+            if (n == Integer.MIN_VALUE) {
+                throw new ArithmeticException("Shift distance of Integer.MIN_VALUE not supported.");
+            } else {
+                return shiftLeft(-n);
+            }
+        }
 
         int nInts = n >>> 5;
         int nBits = n & 0x1f;
@@ -2435,7 +2451,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * Returns {@code true} if this BigInteger is probably prime,
      * {@code false} if it's definitely composite.  If
-     * {@code certainty} is {@code  <= 0}, {@code true} is
+     * {@code certainty} is &le; 0, {@code true} is
      * returned.
      *
      * @param  certainty a measure of the uncertainty that the caller is
