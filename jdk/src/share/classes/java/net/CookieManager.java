@@ -218,6 +218,13 @@ public class CookieManager extends CookieHandler
             // 'secure' cookies over unsecure links)
             if (pathMatches(path, cookie.getPath()) &&
                     (secureLink || !cookie.getSecure())) {
+                // Enforce httponly attribute
+                if (cookie.isHttpOnly()) {
+                    String s = uri.getScheme();
+                    if (!"http".equalsIgnoreCase(s) && !"https".equalsIgnoreCase(s)) {
+                        continue;
+                    }
+                }
                 // Let's check the authorize port list if it exists
                 String ports = cookie.getPortlist();
                 if (ports != null && !ports.isEmpty()) {

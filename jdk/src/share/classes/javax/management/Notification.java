@@ -54,7 +54,7 @@ import com.sun.jmx.mbeanserver.GetPropertyAction;
  * @since 1.5
  */
 @SuppressWarnings("serial")  // serialVersionUID is not constant
-public class Notification extends EventObject implements Cloneable {
+public class Notification extends EventObject {
 
     // Serialization compatibility stuff:
     // Two serial forms are supported in this class. The selected form depends
@@ -244,26 +244,6 @@ public class Notification extends EventObject implements Cloneable {
     }
 
     /**
-     * <p>Creates and returns a copy of this object.  The copy is created as
-     * described for {@link Object#clone()}.  This means, first, that the
-     * class of the object will be the same as the class of this object, and,
-     * second, that the copy is a "shallow copy".  Fields of this notification
-     * are not themselves copied.  In particular, the {@linkplain
-     * #getUserData user data} of the copy is the same object as the
-     * original.</p>
-     *
-     * @return a copy of this object.
-     */
-    @Override
-    public Object clone() {
-        try {
-            return super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError(e);
-        }
-    }
-
-    /**
      * Sets the source.
      *
      * @param source the new source for this object.
@@ -341,21 +321,9 @@ public class Notification extends EventObject implements Cloneable {
      *
      * @return The message string of this notification object.
      *
-     * @see #setMessage
      */
     public String getMessage() {
         return message ;
-    }
-
-    /**
-     * Set the notification message.
-     *
-     * @param message the new notification message.
-     *
-     * @see #getMessage
-     */
-    public void setMessage(String message) {
-        this.message = message;
     }
 
     /**

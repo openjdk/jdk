@@ -25,14 +25,14 @@
 
 package com.sun.jmx.mbeanserver;
 
+import com.sun.jmx.interceptor.DefaultMBeanServerInterceptor;
+import com.sun.jmx.interceptor.MBeanServerInterceptor;
 import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
-import com.sun.jmx.interceptor.NamespaceDispatchInterceptor;
 
 import java.io.ObjectInputStream;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedExceptionAction;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -107,8 +107,6 @@ public final class JmxMBeanServer
 
     /** The MBeanServerDelegate object representing the MBean Server */
     private final MBeanServerDelegate mBeanServerDelegateObject;
-
-    private final String mbeanServerName;
 
     /**
      * <b>Package:</b> Creates an MBeanServer with the
@@ -241,10 +239,9 @@ public final class JmxMBeanServer
 
         final Repository repository = new Repository(domain);
         this.mbsInterceptor =
-            new NamespaceDispatchInterceptor(outer, delegate, instantiator,
+            new DefaultMBeanServerInterceptor(outer, delegate, instantiator,
                                               repository);
         this.interceptorsEnabled = interceptors;
-        this.mbeanServerName = Util.getMBeanServerSecurityName(delegate);
         initialize();
     }
 
@@ -940,8 +937,7 @@ public final class JmxMBeanServer
         throws ReflectionException, MBeanException {
 
         /* Permission check */
-        checkMBeanPermission(mbeanServerName, className, null, null,
-                "instantiate");
+        checkMBeanPermission(className, null, null, "instantiate");
 
         return instantiator.instantiate(className);
     }
@@ -978,8 +974,7 @@ public final class JmxMBeanServer
                InstanceNotFoundException {
 
         /* Permission check */
-        checkMBeanPermission(mbeanServerName, className, null,
-                null, "instantiate");
+        checkMBeanPermission(className, null, null, "instantiate");
 
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.instantiate(className, loaderName, myLoader);
@@ -1017,8 +1012,7 @@ public final class JmxMBeanServer
         throws ReflectionException, MBeanException {
 
         /* Permission check */
-        checkMBeanPermission(mbeanServerName, className, null, null,
-                "instantiate");
+        checkMBeanPermission(className, null, null, "instantiate");
 
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.instantiate(className, params, signature,
@@ -1061,8 +1055,7 @@ public final class JmxMBeanServer
                InstanceNotFoundException {
 
         /* Permission check */
-        checkMBeanPermission(mbeanServerName, className, null,
-                null, "instantiate");
+        checkMBeanPermission(className, null, null, "instantiate");
 
         ClassLoader myLoader = outerShell.getClass().getClassLoader();
         return instantiator.instantiate(className,loaderName,params,signature,
@@ -1333,8 +1326,7 @@ public final class JmxMBeanServer
      **/
     public ClassLoaderRepository getClassLoaderRepository() {
         /* Permission check */
-        checkMBeanPermission(mbeanServerName, null, null,
-                null, "getClassLoaderRepository");
+        checkMBeanPermission(null, null, null, "getClassLoaderRepository");
         return secureClr;
     }
 
@@ -1487,16 +1479,14 @@ public final class JmxMBeanServer
     // SECURITY CHECKS
     //----------------
 
-    private static void checkMBeanPermission(String serverName,
-                                             String classname,
+    private static void checkMBeanPermission(String classname,
                                              String member,
                                              ObjectName objectName,
                                              String actions)
         throws SecurityException {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            Permission perm = new MBeanPermission(serverName,
-                                                  classname,
+            Permission perm = new MBeanPermission(classname,
                                                   member,
                                                   objectName,
                                                   actions);

@@ -130,18 +130,12 @@ public interface JMXConnectorServerMBean {
      * <code>MBeanServer</code>.</p>
      * </ul>
      *
-     * <p>A connector server may support two chains of forwarders,
-     * a system chain and a user chain.  See {@link
-     * JMXConnectorServer#getSystemMBeanServerForwarder} for details.</p>
-     *
      * @param mbsf the new <code>MBeanServerForwarder</code>.
      *
      * @exception IllegalArgumentException if the call to {@link
      * MBeanServerForwarder#setMBeanServer mbsf.setMBeanServer} fails
      * with <code>IllegalArgumentException</code>.  This includes the
      * case where <code>mbsf</code> is null.
-     *
-     * @see JMXConnectorServer#getSystemMBeanServerForwarder
      */
     public void setMBeanServerForwarder(MBeanServerForwarder mbsf);
 
