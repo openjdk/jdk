@@ -324,6 +324,32 @@ void CommandLineFlagsEx::uintxAtPut(CommandLineFlagWithType flag, uintx value, F
   faddr->origin = origin;
 }
 
+bool CommandLineFlags::uint64_tAt(char* name, size_t len, uint64_t* value) {
+  Flag* result = Flag::find_flag(name, len);
+  if (result == NULL) return false;
+  if (!result->is_uint64_t()) return false;
+  *value = result->get_uint64_t();
+  return true;
+}
+
+bool CommandLineFlags::uint64_tAtPut(char* name, size_t len, uint64_t* value, FlagValueOrigin origin) {
+  Flag* result = Flag::find_flag(name, len);
+  if (result == NULL) return false;
+  if (!result->is_uint64_t()) return false;
+  uint64_t old_value = result->get_uint64_t();
+  result->set_uint64_t(*value);
+  *value = old_value;
+  result->origin = origin;
+  return true;
+}
+
+void CommandLineFlagsEx::uint64_tAtPut(CommandLineFlagWithType flag, uint64_t value, FlagValueOrigin origin) {
+  Flag* faddr = address_of_flag(flag);
+  guarantee(faddr != NULL && faddr->is_uint64_t(), "wrong flag type");
+  faddr->set_uint64_t(value);
+  faddr->origin = origin;
+}
+
 bool CommandLineFlags::doubleAt(char* name, size_t len, double* value) {
   Flag* result = Flag::find_flag(name, len);
   if (result == NULL) return false;
