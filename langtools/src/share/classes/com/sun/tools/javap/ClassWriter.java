@@ -179,10 +179,10 @@ public class ClassWriter extends BasicWriter {
                 // The signature parser cannot disambiguate between a
                 // FieldType and a ClassSignatureType that only contains a superclass type.
                 if (t instanceof Type.ClassSigType)
-                    print(t);
+                    print(getJavaName(t.toString()));
                 else {
                     print(" extends ");
-                    print(t);
+                    print(getJavaName(t.toString()));
                 }
             } catch (ConstantPoolException e) {
                 print(report(e));
@@ -310,7 +310,7 @@ public class ClassWriter extends BasicWriter {
 
         writeModifiers(flags.getMethodModifiers());
         if (methodType != null) {
-            writeListIfNotEmpty("<", methodType.typeArgTypes, "> ");
+            writeListIfNotEmpty("<", methodType.typeParamTypes, "> ");
         }
         if (getName(m).equals("<init>")) {
             print(getJavaName(classFile));

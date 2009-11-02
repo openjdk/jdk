@@ -33,6 +33,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -53,7 +55,8 @@ class RegularFileObject extends BaseFileObject {
      */
     private boolean hasParents = false;
     private String name;
-    final File f;
+    final File file;
+    private Reference<File> absFileRef;
 
     public RegularFileObject(JavacFileManager fileManager, File f) {
         this(fileManager, f.getName(), f);
@@ -65,17 +68,17 @@ class RegularFileObject extends BaseFileObject {
             throw new IllegalArgumentException("directories not supported");
         }
         this.name = name;
-        this.f = f;
+        this.file = f;
     }
 
     @Override
     public URI toUri() {
-        return f.toURI().normalize();
+        return file.toURI().normalize();
     }
 
     @Override
     public String getName() {
-        return f.getPath();
+        return file.getPath();
     }
 
     @Override
@@ -90,20 +93,20 @@ class RegularFileObject extends BaseFileObject {
 
     @Override
     public InputStream openInputStream() throws IOException {
-        return new FileInputStream(f);
+        return new FileInputStream(file);
     }
 
     @Override
     public OutputStream openOutputStream() throws IOException {
         ensureParentDirectoriesExist();
-        return new FileOutputStream(f);
+        return new FileOutputStream(file);
     }
 
     @Override
     public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
         CharBuffer cb = fileManager.getCachedContent(this);
         if (cb == null) {
-            InputStream in = new FileInputStream(f);
+            InputStream in = new FileInputStream(file);
             try {
                 ByteBuffer bb = fileManager.makeByteBuffer(in);
                 JavaFileObject prev = fileManager.log.useSource(this);
@@ -126,17 +129,17 @@ class RegularFileObject extends BaseFileObject {
     @Override
     public Writer openWriter() throws IOException {
         ensureParentDirectoriesExist();
-        return new OutputStreamWriter(new FileOutputStream(f), fileManager.getEncodingName());
+        return new OutputStreamWriter(new FileOutputStream(file), fileManager.getEncodingName());
     }
 
     @Override
     public long getLastModified() {
-        return f.lastModified();
+        return file.lastModified();
     }
 
     @Override
     public boolean delete() {
-        return f.delete();
+        return file.delete();
     }
 
     @Override
@@ -146,7 +149,7 @@ class RegularFileObject extends BaseFileObject {
 
     @Override
     protected String inferBinaryName(Iterable<? extends File> path) {
-        String fPath = f.getPath();
+        String fPath = file.getPath();
         //System.err.println("RegularFileObject " + file + " " +r.getPath());
         for (File dir: path) {
             //System.err.println("dir: " + dir);
@@ -178,7 +181,7 @@ class RegularFileObject extends BaseFileObject {
         if (name.equalsIgnoreCase(n)) {
             try {
                 // allow for Windows
-                return f.getCanonicalFile().getName().equals(n);
+                return file.getCanonicalFile().getName().equals(n);
             } catch (IOException e) {
             }
         }
@@ -187,7 +190,7 @@ class RegularFileObject extends BaseFileObject {
 
     private void ensureParentDirectoriesExist() throws IOException {
         if (!hasParents) {
-            File parent = f.getParentFile();
+            File parent = file.getParentFile();
             if (parent != null && !parent.exists()) {
                 if (!parent.mkdirs()) {
                     if (!parent.exists() || !parent.isDirectory()) {
@@ -199,21 +202,34 @@ class RegularFileObject extends BaseFileObject {
         }
     }
 
+    /**
+     * Check if two file objects are equal.
+     * Two RegularFileObjects are equal if the absolute paths of the underlying
+     * files are equal.
+     */
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof RegularFileObject)) {
+        if (this == other)
+            return true;
+
+        if (!(other instanceof RegularFileObject))
             return false;
-        }
+
         RegularFileObject o = (RegularFileObject) other;
-        try {
-            return f.equals(o.f) || f.getCanonicalFile().equals(o.f.getCanonicalFile());
-        } catch (IOException e) {
-            return false;
-        }
+        return getAbsoluteFile().equals(o.getAbsoluteFile());
     }
 
     @Override
     public int hashCode() {
-        return f.hashCode();
+        return getAbsoluteFile().hashCode();
+    }
+
+    private File getAbsoluteFile() {
+        File absFile = (absFileRef == null ? null : absFileRef.get());
+        if (absFile == null) {
+            absFile = file.getAbsoluteFile();
+            absFileRef = new SoftReference<File>(absFile);
+        }
+        return absFile;
     }
 }
