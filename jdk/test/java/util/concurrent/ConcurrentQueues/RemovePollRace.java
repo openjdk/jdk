@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
-// import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,7 +67,7 @@ public class RemovePollRace {
         queues.add(new ArrayBlockingQueue<Boolean>(count, true));
         queues.add(new LinkedBlockingQueue<Boolean>());
         queues.add(new LinkedBlockingDeque<Boolean>());
-//         queues.add(new LinkedTransferQueue<Boolean>());
+        queues.add(new LinkedTransferQueue<Boolean>());
 
         // Following additional implementations are available from:
         // http://gee.cs.oswego.edu/dl/concurrency-interest/index.html
