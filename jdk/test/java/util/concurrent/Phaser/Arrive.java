@@ -31,47 +31,48 @@
  * http://creativecommons.org/licenses/publicdomain
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-
 /*
  * @test
- * @bug 6805775 6815766
- * @summary Check weak consistency of concurrent queue iterators
+ * @bug 6445158
+ * @summary tests for Phaser.arrive()
  */
 
-@SuppressWarnings({"unchecked", "rawtypes"})
-public class IteratorWeakConsistency {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
+public class Arrive {
     void test(String[] args) throws Throwable {
-        test(new LinkedBlockingQueue());
-        test(new LinkedBlockingQueue(20));
-        test(new LinkedBlockingDeque());
-        test(new LinkedBlockingDeque(20));
-        test(new ConcurrentLinkedQueue());
-        test(new LinkedTransferQueue());
-        // Other concurrent queues (e.g. ArrayBlockingQueue) do not
-        // currently have weakly consistent iterators.
-        // test(new ArrayBlockingQueue(20));
-    }
-
-    void test(Queue q) throws Throwable {
-        // TODO: make this more general
-        for (int i = 0; i < 10; i++)
-            q.add(i);
-        Iterator it = q.iterator();
-        q.poll();
-        q.poll();
-        q.poll();
-        q.remove(7);
-        List list = new ArrayList();
-        while (it.hasNext())
-            list.add(it.next());
-        equal(list, Arrays.asList(0, 3, 4, 5, 6, 8, 9));
-        check(! list.contains(null));
-        System.out.printf("%s: %s%n",
-                          q.getClass().getSimpleName(),
-                          list);
+        final int n = ThreadLocalRandom.current().nextInt(1, 10);
+        final int nthreads = n*3/2;
+        final Phaser startingGate = new Phaser(nthreads);
+        final Phaser phaser = new Phaser(n);
+        final List<Thread> threads = new ArrayList<Thread>();
+        final AtomicInteger count0 = new AtomicInteger(0);
+        final AtomicInteger count1 = new AtomicInteger(0);
+        final Runnable task = new Runnable() { public void run() {
+            equal(startingGate.getPhase(), 0);
+            startingGate.arriveAndAwaitAdvance();
+            equal(startingGate.getPhase(), 1);
+            int phase = phaser.arrive();
+            if (phase == 0)
+                count0.getAndIncrement();
+            else if (phase == 1)
+                count1.getAndIncrement();
+            else
+                fail();
+        }};
+        for (int i = 0; i < nthreads; i++)
+            threads.add(new Thread(task));
+        for (Thread thread : threads)
+            thread.start();
+        for (Thread thread : threads)
+            thread.join();
+        equal(count0.get(), n);
+        equal(count1.get(), nthreads-n);
+        equal(phaser.getPhase(), 1);
     }
 
     //--------------------- Infrastructure ---------------------------
@@ -84,9 +85,8 @@ public class IteratorWeakConsistency {
     void equal(Object x, Object y) {
         if (x == null ? y == null : x.equals(y)) pass();
         else fail(x + " not equal to " + y);}
-    static Class<?> thisClass = new Object(){}.getClass().getEnclosingClass();
     public static void main(String[] args) throws Throwable {
-        new IteratorWeakConsistency().instanceMain(args);}
+        new Arrive().instanceMain(args);}
     public void instanceMain(String[] args) throws Throwable {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);

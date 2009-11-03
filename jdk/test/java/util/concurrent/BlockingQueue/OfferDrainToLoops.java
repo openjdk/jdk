@@ -63,12 +63,11 @@ public class OfferDrainToLoops {
         test(new LinkedBlockingDeque());
         test(new LinkedBlockingDeque(2000));
         test(new ArrayBlockingQueue(2000));
-//         test(new LinkedTransferQueue());
+        test(new LinkedTransferQueue());
     }
 
     Random getRandom() {
-        return new Random();
-        // return ThreadLocalRandom.current();
+        return ThreadLocalRandom.current();
     }
 
     void test(final BlockingQueue q) throws Throwable {
