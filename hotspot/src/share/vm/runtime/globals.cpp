@@ -69,9 +69,10 @@ bool Flag::is_external() const {
 
 void Flag::print_on(outputStream* st) {
   st->print("%5s %-35s %c= ", type, name, (origin != DEFAULT ? ':' : ' '));
-  if (is_bool())  st->print("%-16s", get_bool() ? "true" : "false");
-  if (is_intx())  st->print("%-16ld", get_intx());
-  if (is_uintx()) st->print("%-16lu", get_uintx());
+  if (is_bool())     st->print("%-16s", get_bool() ? "true" : "false");
+  if (is_intx())     st->print("%-16ld", get_intx());
+  if (is_uintx())    st->print("%-16lu", get_uintx());
+  if (is_uint64_t()) st->print("%-16lu", get_uint64_t());
   if (is_ccstr()) {
     const char* cp = get_ccstr();
     if (cp != NULL) {
@@ -100,6 +101,8 @@ void Flag::print_as_flag(outputStream* st) {
     st->print("-XX:%s=" INTX_FORMAT, name, get_intx());
   } else if (is_uintx()) {
     st->print("-XX:%s=" UINTX_FORMAT, name, get_uintx());
+  } else if (is_uint64_t()) {
+    st->print("-XX:%s=" UINT64_FORMAT, name, get_uint64_t());
   } else if (is_ccstr()) {
     st->print("-XX:%s=", name);
     const char* cp = get_ccstr();
