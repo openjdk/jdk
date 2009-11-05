@@ -1682,6 +1682,17 @@ class MacroAssembler: public Assembler {
 
   void load_heap_oop(Register dst, Address src);
   void store_heap_oop(Address dst, Register src);
+
+  // This dummy is to prevent a call to store_heap_oop from
+  // converting a zero (like NULL) into a Register by giving
+  // the compiler two choices it can't resolve
+
+  void store_heap_oop(Address dst, void* dummy);
+
+  // Used for storing NULL. All other oop constants should be
+  // stored using routines that take a jobject.
+  void store_heap_oop_null(Address dst);
+
   void encode_heap_oop(Register r);
   void decode_heap_oop(Register r);
   void encode_heap_oop_not_null(Register r);
