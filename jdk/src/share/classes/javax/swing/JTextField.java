@@ -290,7 +290,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * @see JComponent#isValidateRoot
      */
     public boolean isValidateRoot() {
-        return SwingUtilities2.getViewport(this) == null;
+        return SwingUtilities.getParentViewport(this) == null;
     }
 
 
