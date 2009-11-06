@@ -79,9 +79,12 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
             // Shouldn't happen but watch for it anyway
             throw new FileNotFoundException("File " + file.getAbsolutePath() + " not found");
         }
-        Win32ShellFolder2 folder = createShellFolderFromRelativePIDL(parent, pIDL);
-        Win32ShellFolder2.releasePIDL(pIDL);
-        return folder;
+
+        try {
+            return createShellFolderFromRelativePIDL(parent, pIDL);
+        } finally {
+            Win32ShellFolder2.releasePIDL(pIDL);
+        }
     }
 
     static Win32ShellFolder2 createShellFolderFromRelativePIDL(Win32ShellFolder2 parent, long pIDL)
