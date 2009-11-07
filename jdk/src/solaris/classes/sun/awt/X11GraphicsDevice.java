@@ -134,7 +134,7 @@ public class X11GraphicsDevice
                 makeConfigurations();
             }
         }
-        return configs;
+        return configs.clone();
     }
 
     private void makeConfigurations() {
