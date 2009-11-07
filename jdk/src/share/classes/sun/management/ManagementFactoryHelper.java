@@ -40,7 +40,11 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import sun.security.action.LoadLibraryAction;
 
+import java.util.logging.PlatformLoggingMXBean;
+import sun.util.logging.LoggingSupport;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import com.sun.management.OSMBeanFactory;
 import com.sun.management.HotSpotDiagnosticMXBean;
@@ -135,6 +139,54 @@ public class ManagementFactoryHelper {
         return result;
     }
 
+    public static List<PlatformLoggingMXBean> getLoggingMXBean() {
+        if (LoggingSupport.isAvailable()) {
+            return Collections.singletonList(createPlatformLoggingMXBean());
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+    private final static String LOGGING_MXBEAN_NAME = "java.util.logging:type=Logging";
+    private static PlatformLoggingMXBean createPlatformLoggingMXBean() {
+        return new PlatformLoggingMXBean() {
+            private volatile ObjectName objname;  // created lazily
+            @Override
+            public ObjectName getObjectName() {
+                ObjectName result = objname;
+                if (result == null) {
+                    synchronized (this) {
+                        if (objname == null) {
+                            result = Util.newObjectName(LOGGING_MXBEAN_NAME);
+                            objname = result;
+                        }
+                    }
+                }
+                return result;
+            }
+
+            @Override
+            public java.util.List<String> getLoggerNames() {
+                return LoggingSupport.getLoggerNames();
+            }
+
+            @Override
+            public String getLoggerLevel(String loggerName) {
+                return LoggingSupport.getLoggerLevel(loggerName);
+            }
+
+            @Override
+            public void setLoggerLevel(String loggerName, String levelName) {
+                LoggingSupport.setLoggerLevel(loggerName, levelName);
+            }
+
+            @Override
+            public String getParentLoggerName(String loggerName) {
+                return LoggingSupport.getParentLoggerName(loggerName);
+            }
+        };
+    }
+
     public static List<BufferPoolMXBean> getBufferPoolMXBeans() {
         List<BufferPoolMXBean> pools = new ArrayList<BufferPoolMXBean>(2);
         pools.add(createBufferPoolMXBean(sun.misc.SharedSecrets.getJavaNioAccess()
@@ -160,7 +212,7 @@ public class ManagementFactoryHelper {
                 if (result == null) {
                     synchronized (this) {
                         if (objname == null) {
-                            result = ObjectName.valueOf(BUFFER_POOL_MXBEAN_NAME +
+                            result = Util.newObjectName(BUFFER_POOL_MXBEAN_NAME +
                                 ",name=" + pool.getName());
                             objname = result;
                         }
@@ -257,7 +309,7 @@ public class ManagementFactoryHelper {
      */
     private static void addMBean(MBeanServer mbs, Object mbean, String mbeanName) {
         try {
-            final ObjectName objName = ObjectName.valueOf(mbeanName);
+            final ObjectName objName = Util.newObjectName(mbeanName);
 
             // inner class requires these fields to be final
             final MBeanServer mbs0 = mbs;
@@ -317,7 +369,7 @@ public class ManagementFactoryHelper {
 
     private static void unregisterMBean(MBeanServer mbs, String mbeanName) {
         try {
-            final ObjectName objName = ObjectName.valueOf(mbeanName);
+            final ObjectName objName = Util.newObjectName(mbeanName);
 
             // inner class requires these fields to be final
             final MBeanServer mbs0 = mbs;

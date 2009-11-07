@@ -75,10 +75,4 @@ public abstract class QueryEval implements Serializable {
     public static MBeanServer getMBeanServer() {
         return server.get();
     }
-
-    // Subclasses in this package can override this method to return a different
-    // string.
-    String toQueryString() {
-        return toString();
-    }
 }

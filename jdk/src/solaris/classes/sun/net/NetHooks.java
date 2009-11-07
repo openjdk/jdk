@@ -81,7 +81,7 @@ public final class NetHooks {
                     try {
                         c = (Class<Provider>)Class.forName(cn, true, null);
                     } catch (ClassNotFoundException x) {
-                        throw new AssertionError(x);
+                        return null;
                     }
                     try {
                         return c.newInstance();

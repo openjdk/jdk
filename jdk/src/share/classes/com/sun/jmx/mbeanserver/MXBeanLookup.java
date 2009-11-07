@@ -25,8 +25,6 @@
 
 package com.sun.jmx.mbeanserver;
 
-import com.sun.jmx.remote.util.EnvHelp;
-import java.io.InvalidObjectException;
 import static com.sun.jmx.mbeanserver.Util.*;
 import java.util.Map;
 import java.lang.ref.WeakReference;
@@ -85,181 +83,87 @@ import javax.management.openmbean.OpenDataException;
  *
  * From the above, it is clear that the logic for getX on an MXBean is
  * the same as for setX on a proxy, and vice versa.
- *
- * The above describes the logic for "plain" MXBeanLookup, represented
- * by MXBeanLookup.Plain.  When namespaces enter the picture, we see
- * MXBeanLookup.Prefix.  Here, the idea is that the name of the ModuleMXBean
- * might be a//m:m=m.  In this case, we don't accept a reference to
- * an MXBean object, since that would require different namespaces to know
- * each others' objects.  We only accept proxies.  Suppose you have a proxy
- * for a//m:m=m, call it moduleProxy, and you call
- * moduleProxy.setProduct(productProxy).  Then if productProxy is for
- * a//p:p=p we should convert this to just p:p=p.  If productProxy is for
- * a//b//p:p=p we should convert it to b//p:p=p.  Conversely, if getProduct
- * returns an ObjectName like b//p:p=p then we should convert it into a proxy
- * for a//b//p:p=p.
  */
-public abstract class MXBeanLookup {
+public class MXBeanLookup {
     private MXBeanLookup(MBeanServerConnection mbsc) {
         this.mbsc = mbsc;
     }
 
-    static MXBeanLookup lookupFor(MBeanServerConnection mbsc, String prefix) {
-        if (prefix == null)
-            return Plain.lookupFor(mbsc);
-        else
-            return new Prefix(mbsc, prefix);
+    static MXBeanLookup lookupFor(MBeanServerConnection mbsc) {
+        synchronized (mbscToLookup) {
+            WeakReference<MXBeanLookup> weakLookup = mbscToLookup.get(mbsc);
+            MXBeanLookup lookup = (weakLookup == null) ? null : weakLookup.get();
+            if (lookup == null) {
+                lookup = new MXBeanLookup(mbsc);
+                mbscToLookup.put(mbsc, new WeakReference<MXBeanLookup>(lookup));
+            }
+            return lookup;
+        }
     }
 
-    abstract <T> T objectNameToMXBean(ObjectName name, Class<T> type)
-            throws InvalidObjectException;
-
-    abstract ObjectName mxbeanToObjectName(Object mxbean)
-            throws OpenDataException;
-
-    static class Plain extends MXBeanLookup {
-        Plain(MBeanServerConnection mbsc) {
-            super(mbsc);
+    synchronized <T> T objectNameToMXBean(ObjectName name, Class<T> type) {
+        WeakReference<Object> wr = objectNameToProxy.get(name);
+        if (wr != null) {
+            Object proxy = wr.get();
+            if (type.isInstance(proxy))
+                return type.cast(proxy);
         }
+        T proxy = JMX.newMXBeanProxy(mbsc, name, type);
+        objectNameToProxy.put(name, new WeakReference<Object>(proxy));
+        return proxy;
+    }
 
-        static Plain lookupFor(MBeanServerConnection mbsc) {
-            synchronized (mbscToLookup) {
-                WeakReference<Plain> weakLookup = mbscToLookup.get(mbsc);
-                Plain lookup = (weakLookup == null) ? null : weakLookup.get();
-                if (lookup == null) {
-                    lookup = new Plain(mbsc);
-                    mbscToLookup.put(mbsc, new WeakReference<Plain>(lookup));
-                }
-                return lookup;
-            }
-        }
-
-        @Override
-        synchronized <T> T objectNameToMXBean(ObjectName name, Class<T> type) {
-            WeakReference<Object> wr = objectNameToProxy.get(name);
-            if (wr != null) {
-                Object proxy = wr.get();
-                if (type.isInstance(proxy))
-                    return type.cast(proxy);
-            }
-            T proxy = JMX.newMXBeanProxy(mbsc, name, type);
-            objectNameToProxy.put(name, new WeakReference<Object>(proxy));
-            return proxy;
-        }
-
-        @Override
-        synchronized ObjectName mxbeanToObjectName(Object mxbean)
-        throws OpenDataException {
-            String wrong;
-            if (mxbean instanceof Proxy) {
-                InvocationHandler ih = Proxy.getInvocationHandler(mxbean);
-                if (ih instanceof MBeanServerInvocationHandler) {
-                    MBeanServerInvocationHandler mbsih =
-                            (MBeanServerInvocationHandler) ih;
-                    if (mbsih.getMBeanServerConnection().equals(mbsc))
-                        return mbsih.getObjectName();
-                    else
-                        wrong = "proxy for a different MBeanServer";
-                } else
-                    wrong = "not a JMX proxy";
-            } else {
-                ObjectName name = mxbeanToObjectName.get(mxbean);
-                if (name != null)
-                    return name;
-                wrong = "not an MXBean registered in this MBeanServer";
-            }
-            String s = (mxbean == null) ?
-                "null" : "object of type " + mxbean.getClass().getName();
-            throw new OpenDataException(
-                    "Could not convert " + s + " to an ObjectName: " + wrong);
-            // Message will be strange if mxbean is null but it is not
-            // supposed to be.
-        }
-
-        synchronized void addReference(ObjectName name, Object mxbean)
-        throws InstanceAlreadyExistsException {
-            ObjectName existing = mxbeanToObjectName.get(mxbean);
-            if (existing != null) {
-                String multiname = AccessController.doPrivileged(
-                        new GetPropertyAction("jmx.mxbean.multiname"));
-                if (!"true".equalsIgnoreCase(multiname)) {
-                    throw new InstanceAlreadyExistsException(
-                            "MXBean already registered with name " + existing);
-                }
-            }
-            mxbeanToObjectName.put(mxbean, name);
-        }
-
-        synchronized boolean removeReference(ObjectName name, Object mxbean) {
-            if (name.equals(mxbeanToObjectName.get(mxbean))) {
-                mxbeanToObjectName.remove(mxbean);
-                return true;
+    synchronized ObjectName mxbeanToObjectName(Object mxbean)
+    throws OpenDataException {
+        String wrong;
+        if (mxbean instanceof Proxy) {
+            InvocationHandler ih = Proxy.getInvocationHandler(mxbean);
+            if (ih instanceof MBeanServerInvocationHandler) {
+                MBeanServerInvocationHandler mbsih =
+                        (MBeanServerInvocationHandler) ih;
+                if (mbsih.getMBeanServerConnection().equals(mbsc))
+                    return mbsih.getObjectName();
+                else
+                    wrong = "proxy for a different MBeanServer";
             } else
-                return false;
-            /* removeReference can be called when the above condition fails,
-             * notably if you try to register the same MXBean twice.
-             */
+                wrong = "not a JMX proxy";
+        } else {
+            ObjectName name = mxbeanToObjectName.get(mxbean);
+            if (name != null)
+                return name;
+            wrong = "not an MXBean registered in this MBeanServer";
         }
-
-        private final WeakIdentityHashMap<Object, ObjectName>
-            mxbeanToObjectName = WeakIdentityHashMap.make();
-        private final Map<ObjectName, WeakReference<Object>>
-            objectNameToProxy = newMap();
-        private static WeakIdentityHashMap<MBeanServerConnection,
-                                           WeakReference<Plain>>
-            mbscToLookup = WeakIdentityHashMap.make();
+        String s = (mxbean == null) ?
+            "null" : "object of type " + mxbean.getClass().getName();
+        throw new OpenDataException(
+                "Could not convert " + s + " to an ObjectName: " + wrong);
+        // Message will be strange if mxbean is null but it is not
+        // supposed to be.
     }
 
-    private static class Prefix extends MXBeanLookup {
-        private final String prefix;
-
-        Prefix(MBeanServerConnection mbsc, String prefix) {
-            super(mbsc);
-            this.prefix = prefix;
-        }
-
-        @Override
-        <T> T objectNameToMXBean(ObjectName name, Class<T> type)
-        throws InvalidObjectException {
-            String domain = prefix + name.getDomain();
-            try {
-                name = name.withDomain(domain);
-            } catch (IllegalArgumentException e) {
-                throw EnvHelp.initCause(
-                        new InvalidObjectException(e.getMessage()), e);
+    synchronized void addReference(ObjectName name, Object mxbean)
+    throws InstanceAlreadyExistsException {
+        ObjectName existing = mxbeanToObjectName.get(mxbean);
+        if (existing != null) {
+            String multiname = AccessController.doPrivileged(
+                    new GetPropertyAction("jmx.mxbean.multiname"));
+            if (!"true".equalsIgnoreCase(multiname)) {
+                throw new InstanceAlreadyExistsException(
+                        "MXBean already registered with name " + existing);
             }
-            return JMX.newMXBeanProxy(mbsc, name, type);
         }
-
-        @Override
-        ObjectName mxbeanToObjectName(Object mxbean)
-        throws OpenDataException {
-            ObjectName name = proxyToObjectName(mxbean);
-            String domain = name.getDomain();
-            if (!domain.startsWith(prefix)) {
-                throw new OpenDataException(
-                        "Proxy's name does not start with " +
-                        prefix + ": " + name);
-            }
-            try {
-                name = name.withDomain(domain.substring(prefix.length()));
-            } catch (IllegalArgumentException e) {
-                throw EnvHelp.initCause(
-                        new OpenDataException(e.getMessage()), e);
-            }
-            return name;
-        }
+        mxbeanToObjectName.put(mxbean, name);
     }
 
-    ObjectName proxyToObjectName(Object proxy) {
-        InvocationHandler ih = Proxy.getInvocationHandler(proxy);
-        if (ih instanceof MBeanServerInvocationHandler) {
-            MBeanServerInvocationHandler mbsih =
-                    (MBeanServerInvocationHandler) ih;
-            if (mbsih.getMBeanServerConnection().equals(mbsc))
-                return mbsih.getObjectName();
-        }
-        return null;
+    synchronized boolean removeReference(ObjectName name, Object mxbean) {
+        if (name.equals(mxbeanToObjectName.get(mxbean))) {
+            mxbeanToObjectName.remove(mxbean);
+            return true;
+        } else
+            return false;
+        /* removeReference can be called when the above condition fails,
+         * notably if you try to register the same MXBean twice.
+         */
     }
 
     static MXBeanLookup getLookup() {
@@ -273,5 +177,12 @@ public abstract class MXBeanLookup {
     private static final ThreadLocal<MXBeanLookup> currentLookup =
             new ThreadLocal<MXBeanLookup>();
 
-    final MBeanServerConnection mbsc;
+    private final MBeanServerConnection mbsc;
+    private final WeakIdentityHashMap<Object, ObjectName>
+        mxbeanToObjectName = WeakIdentityHashMap.make();
+    private final Map<ObjectName, WeakReference<Object>>
+        objectNameToProxy = newMap();
+    private static final WeakIdentityHashMap<MBeanServerConnection,
+                                             WeakReference<MXBeanLookup>>
+        mbscToLookup = WeakIdentityHashMap.make();
 }

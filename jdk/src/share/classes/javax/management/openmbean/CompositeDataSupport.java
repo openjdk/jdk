@@ -92,16 +92,16 @@ public class CompositeDataSupport
      * @param itemNames <tt>itemNames</tt> must list, in any order, all the
      * item names defined in <tt>compositeType</tt>; the order in which the
      * names are listed, is used to match values in <tt>itemValues[]</tt>; must
-     * not be null.
+     * not be null or empty.
      *
      * @param itemValues the values of the items, listed in the same order as
      * their respective names in <tt>itemNames</tt>; each item value can be
      * null, but if it is non-null it must be a valid value for the open type
      * defined in <tt>compositeType</tt> for the corresponding item; must be of
-     * the same size as <tt>itemNames</tt>; must not be null.
+     * the same size as <tt>itemNames</tt>; must not be null or empty.
      *
      * @throws IllegalArgumentException <tt>compositeType</tt> is null, or
-     * <tt>itemNames[]</tt> or <tt>itemValues[]</tt> is null, or one
+     * <tt>itemNames[]</tt> or <tt>itemValues[]</tt> is null or empty, or one
      * of the elements in <tt>itemNames[]</tt> is a null or empty string, or
      * <tt>itemNames[]</tt> and <tt>itemValues[]</tt> are not of the same size.
      *
@@ -124,6 +124,8 @@ public class CompositeDataSupport
 
         if (itemNames == null || itemValues == null)
             throw new IllegalArgumentException("Null itemNames or itemValues");
+        if (itemNames.length == 0 || itemValues.length == 0)
+            throw new IllegalArgumentException("Empty itemNames or itemValues");
         if (itemNames.length != itemValues.length) {
             throw new IllegalArgumentException(
                     "Different lengths: itemNames[" + itemNames.length +
@@ -154,10 +156,10 @@ public class CompositeDataSupport
      *                        must not be null.
      * @param  items  the mappings of all the item names to their values;
      *                <tt>items</tt> must contain all the item names defined in <tt>compositeType</tt>;
-     *                must not be null.
+     *                must not be null or empty.
      *
      * @throws IllegalArgumentException <tt>compositeType</tt> is null, or
-     * <tt>items</tt> is null, or one of the keys in <tt>items</tt> is a null
+     * <tt>items</tt> is null or empty, or one of the keys in <tt>items</tt> is a null
      * or empty string.
      * @throws OpenDataException <tt>items</tt>' size differs from the
      * number of items defined in <tt>compositeType</tt>, or one of the
@@ -167,8 +169,6 @@ public class CompositeDataSupport
      * <tt>compositeType</tt>.
      * @throws ArrayStoreException one or more keys in <tt>items</tt> is not of
      * the class <tt>java.lang.String</tt>.
-     *
-     * @see #toMap
      */
     public CompositeDataSupport(CompositeType compositeType,
                                 Map<String,?> items)
@@ -177,13 +177,13 @@ public class CompositeDataSupport
     }
 
     private static SortedMap<String, Object> makeMap(Map<String, ?> items) {
-        if (items == null)
-            throw new IllegalArgumentException("Null items map");
-        if (items.containsKey(null) || items.containsKey(""))
-            throw new IllegalArgumentException("Null or empty item name");
+        if (items == null || items.isEmpty())
+            throw new IllegalArgumentException("Null or empty items map");
 
         SortedMap<String, Object> map = new TreeMap<String, Object>();
         for (Object key : items.keySet()) {
+            if (key == null || key.equals(""))
+                throw new IllegalArgumentException("Null or empty item name");
             if (!(key instanceof String)) {
                 throw new ArrayStoreException("Item name is not string: " + key);
                 // This can happen because of erasure.  The particular
@@ -326,54 +326,6 @@ public class CompositeDataSupport
     public Collection<?> values() {
 
         return Collections.unmodifiableCollection(contents.values());
-    }
-
-    /**
-     * <p>Returns a Map representing the contents of the given CompositeData.
-     * Each item in the CompositeData is represented by an entry in the map,
-     * where the name and value of the item are the key and value of the entry.
-     * The returned value is modifiable but modifications to it have no effect
-     * on the original CompositeData.</p>
-     *
-     * <p>For example, if you have a CompositeData {@code cd1} and you want
-     * to produce another CompositeData {@code cd2} which is the same except
-     * that the value of its {@code id} item has been changed to 253, you
-     * could write:</p>
-     *
-     * <pre>
-     * CompositeData cd1 = ...;
-     * {@code Map<String, Object>} map = CompositeDataSupport.toMap(cd1);
-     * assert(map.get("id") instanceof Integer);
-     * map.put("id", 253);
-     * CompositeData cd2 = {@link #CompositeDataSupport(CompositeType, Map)
-     * new CompositeDataSupport}(cd1.getCompositeType(), map);
-     * </pre>
-     *
-     * <p>Logically, this method would be a method in the {@link CompositeData}
-     * interface, but cannot be for compatibility reasons.</p>
-     *
-     * @param cd the CompositeData to convert to a Map.
-     *
-     * @return a Map that is a copy of the contents of {@code cd}.
-     *
-     * @throws IllegalArgumentException if {@code cd} is null.
-     *
-     * @see #CompositeDataSupport(CompositeType, Map)
-     */
-    public static Map<String, Object> toMap(CompositeData cd) {
-        if (cd == null)
-            throw new IllegalArgumentException("Null argument");
-
-        // If we really wanted, we could check whether cd is a
-        // CompositeDataSupport and return a copy of cd.contents if so,
-        // but I don't think that would be substantially faster.
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-        CompositeType ct = cd.getCompositeType();
-        for (String key : ct.keySet()) {
-            Object value = cd.get(key);
-            map.put(key, value);
-        }
-        return map;
     }
 
     /**
