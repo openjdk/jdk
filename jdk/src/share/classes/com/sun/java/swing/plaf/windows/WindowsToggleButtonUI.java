@@ -25,6 +25,8 @@
 
 package com.sun.java.swing.plaf.windows;
 
+import sun.awt.AppContext;
+
 import javax.swing.plaf.basic.*;
 import javax.swing.border.*;
 import javax.swing.plaf.*;
@@ -49,18 +51,25 @@ import java.beans.PropertyChangeEvent;
  */
 public class WindowsToggleButtonUI extends BasicToggleButtonUI
 {
-    protected static int dashedRectGapX;
-    protected static int dashedRectGapY;
-    protected static int dashedRectGapWidth;
-    protected static int dashedRectGapHeight;
+    protected int dashedRectGapX;
+    protected int dashedRectGapY;
+    protected int dashedRectGapWidth;
+    protected int dashedRectGapHeight;
 
     protected Color focusColor;
 
-    private final static WindowsToggleButtonUI windowsToggleButtonUI = new WindowsToggleButtonUI();
+    private static final Object WINDOWS_TOGGLE_BUTTON_UI_KEY = new Object();
 
     private boolean defaults_initialized = false;
 
     public static ComponentUI createUI(JComponent b) {
+        AppContext appContext = AppContext.getAppContext();
+        WindowsToggleButtonUI windowsToggleButtonUI =
+                (WindowsToggleButtonUI) appContext.get(WINDOWS_TOGGLE_BUTTON_UI_KEY);
+        if (windowsToggleButtonUI == null) {
+            windowsToggleButtonUI = new WindowsToggleButtonUI();
+            appContext.put(WINDOWS_TOGGLE_BUTTON_UI_KEY, windowsToggleButtonUI);
+        }
         return windowsToggleButtonUI;
     }
 
