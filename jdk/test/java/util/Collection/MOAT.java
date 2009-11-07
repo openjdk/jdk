@@ -421,8 +421,11 @@ public class MOAT {
 
     private static void testQueue(Queue<Integer> q) {
         q.clear();
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 5; i++) {
+            testQueueAddRemove(q, null);
+            testQueueAddRemove(q, 537);
             q.add(i);
+        }
         equal(q.size(), 5);
         checkFunctionalInvariants(q);
         q.poll();
@@ -432,6 +435,216 @@ public class MOAT {
             (q instanceof LinkedBlockingDeque) ||
             (q instanceof ConcurrentLinkedQueue)) {
             testQueueIteratorRemove(q);
+        }
+    }
+
+    private static void testQueueAddRemove(final Queue<Integer> q,
+                                           final Integer e) {
+        final List<Integer> originalContents = new ArrayList<Integer>(q);
+        final boolean isEmpty = q.isEmpty();
+        final boolean isList = (q instanceof List);
+        final List asList = isList ? (List) q : null;
+        check(!q.contains(e));
+        try {
+            q.add(e);
+        } catch (NullPointerException npe) {
+            check(e == null);
+            return;                     // Null elements not supported
+        }
+        check(q.contains(e));
+        check(q.remove(e));
+        check(!q.contains(e));
+        equal(new ArrayList<Integer>(q), originalContents);
+
+        if (q instanceof Deque<?>) {
+            final Deque<Integer> deq = (Deque<Integer>) q;
+            final List<Integer> singleton = Collections.singletonList(e);
+
+            // insert, query, remove element at head
+            if (isEmpty) {
+                THROWS(NoSuchElementException.class,
+                       new Fun(){void f(){ deq.getFirst(); }},
+                       new Fun(){void f(){ deq.element(); }},
+                       new Fun(){void f(){ deq.iterator().next(); }});
+                check(deq.peekFirst() == null);
+                check(deq.peek() == null);
+            } else {
+                check(deq.getFirst() != e);
+                check(deq.element() != e);
+                check(deq.iterator().next() != e);
+                check(deq.peekFirst() != e);
+                check(deq.peek() != e);
+            }
+            check(!deq.contains(e));
+            check(!deq.removeFirstOccurrence(e));
+            check(!deq.removeLastOccurrence(e));
+            if (isList) {
+                check(asList.indexOf(e) == -1);
+                check(asList.lastIndexOf(e) == -1);
+            }
+            switch (rnd.nextInt(isList ? 4 : 3)) {
+            case 0: deq.addFirst(e); break;
+            case 1: check(deq.offerFirst(e)); break;
+            case 2: deq.push(e); break;
+            case 3: asList.add(0, e); break;
+            default: throw new AssertionError();
+            }
+            check(deq.peekFirst() == e);
+            check(deq.getFirst() == e);
+            check(deq.element() == e);
+            check(deq.peek() == e);
+            check(deq.iterator().next() == e);
+            check(deq.contains(e));
+            if (isList) {
+                check(asList.get(0) == e);
+                check(asList.indexOf(e) == 0);
+                check(asList.lastIndexOf(e) == 0);
+                check(asList.subList(0, 1).equals(singleton));
+            }
+            switch (rnd.nextInt(isList ? 11 : 9)) {
+            case 0: check(deq.pollFirst() == e); break;
+            case 1: check(deq.removeFirst() == e); break;
+            case 2: check(deq.remove() == e); break;
+            case 3: check(deq.pop() == e); break;
+            case 4: check(deq.removeFirstOccurrence(e)); break;
+            case 5: check(deq.removeLastOccurrence(e)); break;
+            case 6: check(deq.remove(e)); break;
+            case 7: check(deq.removeAll(singleton)); break;
+            case 8: Iterator it = deq.iterator(); it.next(); it.remove(); break;
+            case 9: asList.remove(0); break;
+            case 10: asList.subList(0, 1).clear(); break;
+            default: throw new AssertionError();
+            }
+            if (isEmpty) {
+                THROWS(NoSuchElementException.class,
+                       new Fun(){void f(){ deq.getFirst(); }},
+                       new Fun(){void f(){ deq.element(); }},
+                       new Fun(){void f(){ deq.iterator().next(); }});
+                check(deq.peekFirst() == null);
+                check(deq.peek() == null);
+            } else {
+                check(deq.getFirst() != e);
+                check(deq.element() != e);
+                check(deq.iterator().next() != e);
+                check(deq.peekFirst() != e);
+                check(deq.peek() != e);
+            }
+            check(!deq.contains(e));
+            check(!deq.removeFirstOccurrence(e));
+            check(!deq.removeLastOccurrence(e));
+            if (isList) {
+                check(isEmpty || asList.get(0) != e);
+                check(asList.indexOf(e) == -1);
+                check(asList.lastIndexOf(e) == -1);
+            }
+            equal(new ArrayList<Integer>(deq), originalContents);
+
+            // insert, query, remove element at tail
+            if (isEmpty) {
+                check(deq.peekLast() == null);
+                THROWS(NoSuchElementException.class,
+                       new Fun(){void f(){ deq.getLast(); }});
+            } else {
+                check(deq.peekLast() != e);
+                check(deq.getLast() != e);
+            }
+            switch (rnd.nextInt(isList ? 6 : 4)) {
+            case 0: deq.addLast(e); break;
+            case 1: check(deq.offerLast(e)); break;
+            case 2: check(deq.add(e)); break;
+            case 3: deq.addAll(singleton); break;
+            case 4: asList.addAll(deq.size(), singleton); break;
+            case 5: asList.add(deq.size(), e); break;
+            default: throw new AssertionError();
+            }
+            check(deq.peekLast() == e);
+            check(deq.getLast() == e);
+            check(deq.contains(e));
+            if (isList) {
+                ListIterator it = asList.listIterator(asList.size());
+                check(it.previous() == e);
+                check(asList.get(asList.size() - 1) == e);
+                check(asList.indexOf(e) == asList.size() - 1);
+                check(asList.lastIndexOf(e) == asList.size() - 1);
+                int size = asList.size();
+                check(asList.subList(size - 1, size).equals(singleton));
+            }
+            switch (rnd.nextInt(isList ? 8 : 6)) {
+            case 0: check(deq.pollLast() == e); break;
+            case 1: check(deq.removeLast() == e); break;
+            case 2: check(deq.removeFirstOccurrence(e)); break;
+            case 3: check(deq.removeLastOccurrence(e)); break;
+            case 4: check(deq.remove(e)); break;
+            case 5: check(deq.removeAll(singleton)); break;
+            case 6: asList.remove(asList.size() - 1); break;
+            case 7:
+                ListIterator it = asList.listIterator(asList.size());
+                it.previous();
+                it.remove();
+                break;
+            default: throw new AssertionError();
+            }
+            if (isEmpty) {
+                check(deq.peekLast() == null);
+                THROWS(NoSuchElementException.class,
+                       new Fun(){void f(){ deq.getLast(); }});
+            } else {
+                check(deq.peekLast() != e);
+                check(deq.getLast() != e);
+            }
+            check(!deq.contains(e));
+            equal(new ArrayList<Integer>(deq), originalContents);
+
+            // Test operations on empty deque
+            switch (rnd.nextInt(isList ? 4 : 2)) {
+            case 0: deq.clear(); break;
+            case 1:
+                Iterator it = deq.iterator();
+                while (it.hasNext()) {
+                    it.next();
+                    it.remove();
+                }
+                break;
+            case 2: asList.subList(0, asList.size()).clear(); break;
+            case 3:
+                ListIterator lit = asList.listIterator(asList.size());
+                while (lit.hasPrevious()) {
+                    lit.previous();
+                    lit.remove();
+                }
+                break;
+            default: throw new AssertionError();
+            }
+            testEmptyCollection(deq);
+            check(!deq.iterator().hasNext());
+            if (isList) {
+                check(!asList.listIterator().hasPrevious());
+                THROWS(NoSuchElementException.class,
+                       new Fun(){void f(){ asList.listIterator().previous(); }});
+            }
+            THROWS(NoSuchElementException.class,
+                   new Fun(){void f(){ deq.iterator().next(); }},
+                   new Fun(){void f(){ deq.element(); }},
+                   new Fun(){void f(){ deq.getFirst(); }},
+                   new Fun(){void f(){ deq.getLast(); }},
+                   new Fun(){void f(){ deq.pop(); }},
+                   new Fun(){void f(){ deq.remove(); }},
+                   new Fun(){void f(){ deq.removeFirst(); }},
+                   new Fun(){void f(){ deq.removeLast(); }});
+
+            check(deq.poll() == null);
+            check(deq.pollFirst() == null);
+            check(deq.pollLast() == null);
+            check(deq.peek() == null);
+            check(deq.peekFirst() == null);
+            check(deq.peekLast() == null);
+            check(!deq.removeFirstOccurrence(e));
+            check(!deq.removeLastOccurrence(e));
+
+            check(deq.addAll(originalContents) == !isEmpty);
+            equal(new ArrayList<Integer>(deq), originalContents);
+            check(!deq.addAll(Collections.<Integer>emptyList()));
+            equal(new ArrayList<Integer>(deq), originalContents);
         }
     }
 

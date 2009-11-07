@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,7 @@ import com.sun.jmx.remote.util.ClassLogger;
  *
  * @since 1.5
  */
-public class NotificationBroadcasterSupport
-        implements NotificationEmitter, SendNotification {
+public class NotificationBroadcasterSupport implements NotificationEmitter {
     /**
      * Constructs a NotificationBroadcasterSupport where each listener is invoked by the
      * thread sending the notification. This constructor is equivalent to
@@ -248,26 +247,6 @@ public class NotificationBroadcasterSupport
                 executor.execute(new SendNotifJob(notification, li));
             }
         }
-    }
-    /**
-     * Returns true if there are any listeners.
-     *
-     * @return true if there is at least one listener that has been added with
-     * {@code addNotificationListener} and not subsequently removed with
-     * {@code removeNotificationListener} or {@code removeAllNotificationListeners}.
-     * @since 1.7
-     */
-    public boolean isListenedTo() {
-        return listenerList.size() > 0;
-    }
-
-    /**
-     * Removes all listeners.
-     *
-     * @since 1.7
-     */
-    public void removeAllNotificationListeners() {
-        listenerList.clear();
     }
 
     /**

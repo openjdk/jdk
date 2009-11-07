@@ -118,7 +118,7 @@ Java_java_util_zip_Deflater_setDictionary(JNIEnv *env, jclass cls, jlong strm,
 
 JNIEXPORT jint JNICALL
 Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this,
-                                         jarray b, jint off, jint len)
+                                         jarray b, jint off, jint len, jint flush)
 {
     z_stream *strm = jlong_to_ptr((*env)->GetLongField(env, this, strmID));
 
@@ -197,7 +197,7 @@ Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this,
             strm->next_out = (Bytef *) out_buf;
             strm->avail_in = this_len;
             strm->avail_out = len;
-            res = deflate(strm, finish ? Z_FINISH : Z_NO_FLUSH);
+            res = deflate(strm, finish ? Z_FINISH : flush);
 
             if (res == Z_STREAM_END || res == Z_OK) {
                 (*env)->SetByteArrayRegion(env, b, off, len - strm->avail_out, out_buf);

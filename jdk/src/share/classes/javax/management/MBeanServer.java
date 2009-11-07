@@ -61,13 +61,9 @@ import javax.management.loading.ClassLoaderRepository;
  * <CODE>ObjectName</CODE> is: <BR>
  * <CODE>JMImplementation:type=MBeanServerDelegate</CODE>.</p>
  *
- * <p id="security">An object obtained from the {@link
- * MBeanServerFactory#createMBeanServer(String) createMBeanServer}, {@link
- * MBeanServerFactory#createNamedMBeanServer(String,String) createNamedMBeanServer},
- * {@link
- * MBeanServerFactory#newMBeanServer(String) newMBeanServer}, or
- * {@link
- * MBeanServerFactory#newNamedMBeanServer(String,String) newNamedMBeanServer}
+ * <p>An object obtained from the {@link
+ * MBeanServerFactory#createMBeanServer(String) createMBeanServer} or
+ * {@link MBeanServerFactory#newMBeanServer(String) newMBeanServer}
  * methods of the {@link MBeanServerFactory} class applies security
  * checks to its methods, as follows.</p>
  *
@@ -77,26 +73,10 @@ import javax.management.loading.ClassLoaderRepository;
  *
  * <p>Assuming that there is a security manager, or that the
  * implementation chooses to make checks anyway, the checks are made
- * as detailed below.
- * In what follows, and unless otherwise specified:
- * </p>
- * <ul><li><code>className</code> is the
+ * as detailed below.  In what follows, and unless otherwise specified,
+ * {@code className} is the
  * string returned by {@link MBeanInfo#getClassName()} for the target
- * MBean,</li>
- * <li>{@code mbeanServerName} is the
- * {@linkplain MBeanServerFactory#getMBeanServerName name of the
- * MBean Server} in which the target MBean is registered. This is the
- * value returned by {@link MBeanServerFactory#getMBeanServerName
- * MBeanServerFactory.getMBeanServerName(MBeanServer)}, and
- * is usually the {@code mbeanServerName} parameter that was supplied
- * to the {@link
- * MBeanServerFactory#createNamedMBeanServer(String,String)
- * createNamedMBeanServer} or {@link
- * MBeanServerFactory#newNamedMBeanServer(String,String) newNamedMBeanServer}
- * methods of the {@link MBeanServerFactory} when the MBeanServer was created,
- * or {@value javax.management.MBeanServerFactory#DEFAULT_MBEANSERVER_NAME} if
- * no name was supplied.
- * </li></ul>
+ * MBean.</p>
  *
  * <p>If a security check fails, the method throws {@link
  * SecurityException}.</p>
@@ -110,87 +90,79 @@ import javax.management.loading.ClassLoaderRepository;
  *
  * <li><p>For the {@link #invoke invoke} method, the caller's
  * permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, operationName, name, "invoke")}.
- * </p>
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, operationName, name, "invoke")}.</p>
  *
  * <li><p>For the {@link #getAttribute getAttribute} method, the
  * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, attribute, name,
- * "getAttribute")}.</p>
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, attribute, name, "getAttribute")}.</p>
  *
  * <li><p>For the {@link #getAttributes getAttributes} method, the
  * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName,className, null, name, "getAttribute")}.
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, name, "getAttribute")}.
  * Additionally, for each attribute <em>a</em> in the {@link
  * AttributeList}, if the caller's permissions do not imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, <em>a</em>, name,
- * "getAttribute")}, the
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, <em>a</em>, name, "getAttribute")}, the
  * MBean server will behave as if that attribute had not been in the
  * supplied list.</p>
  *
  * <li><p>For the {@link #setAttribute setAttribute} method, the
  * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, attrName, name,
- * "setAttribute")}, where
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, attrName, name, "setAttribute")}, where
  * <code>attrName</code> is {@link Attribute#getName()
  * attribute.getName()}.</p>
  *
  * <li><p>For the {@link #setAttributes setAttributes} method, the
  * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name, "setAttribute")}.
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, name, "setAttribute")}.
  * Additionally, for each attribute <em>a</em> in the {@link
  * AttributeList}, if the caller's permissions do not imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, <em>a</em>, name,
- * "setAttribute")}, the
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, <em>a</em>, name, "setAttribute")}, the
  * MBean server will behave as if that attribute had not been in the
  * supplied list.</p>
  *
  * <li><p>For the <code>addNotificationListener</code> methods,
  * the caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name,
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, name,
  * "addNotificationListener")}.</p>
  *
  * <li><p>For the <code>removeNotificationListener</code> methods,
  * the caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name,
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, name,
  * "removeNotificationListener")}.</p>
  *
  * <li><p>For the {@link #getMBeanInfo getMBeanInfo} method, the
  * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name, "getMBeanInfo")}.
- * </p>
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, name, "getMBeanInfo")}.</p>
  *
  * <li><p>For the {@link #getObjectInstance getObjectInstance} method,
  * the caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name,
- * "getObjectInstance")}.</p>
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, name, "getObjectInstance")}.</p>
  *
  * <li><p>For the {@link #isInstanceOf isInstanceOf} method, the
  * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name, "isInstanceOf")}.
- * </p>
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, name, "isInstanceOf")}.</p>
  *
  * <li><p>For the {@link #queryMBeans queryMBeans} method, the
  * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, null, null, null, "queryMBeans")}.
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(null, null, null, "queryMBeans")}.
  * Additionally, for each MBean <em>n</em> that matches <code>name</code>,
  * if the caller's permissions do not imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, <em>n</em>, "queryMBeans")},
- * the MBean server will behave as if that MBean did not exist.</p>
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, <em>n</em>, "queryMBeans")}, the
+ * MBean server will behave as if that MBean did not exist.</p>
  *
  * <p>Certain query elements perform operations on the MBean server.
  * If the caller does not have the required permissions for a given
@@ -208,10 +180,10 @@ import javax.management.loading.ClassLoaderRepository;
  *
  * <li><p>For the {@link #getDomains getDomains} method, the caller's
  * permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, null, null, null, "getDomains")}.
- * Additionally, for each domain <var>d</var> in the returned array, if the
- * caller's permissions do not imply {@link
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(null, null, null, "getDomains")}.  Additionally,
+ * for each domain <var>d</var> in the returned array, if the caller's
+ * permissions do not imply {@link
  * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
  * MBeanPermission(null, null, new ObjectName("<var>d</var>:x=x"),
  * "getDomains")}, the domain is eliminated from the array.  Here,
@@ -220,22 +192,21 @@ import javax.management.loading.ClassLoaderRepository;
  *
  * <li><p>For the {@link #getClassLoader getClassLoader} method, the
  * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, loaderName,
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, loaderName,
  * "getClassLoader")}.</p>
  *
  * <li><p>For the {@link #getClassLoaderFor getClassLoaderFor} method,
  * the caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, mbeanName,
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, mbeanName,
  * "getClassLoaderFor")}.</p>
  *
  * <li><p>For the {@link #getClassLoaderRepository
  * getClassLoaderRepository} method, the caller's permissions must
  * imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, null, null, null,
- * "getClassLoaderRepository")}.</p>
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(null, null, null, "getClassLoaderRepository")}.</p>
  *
  * <li><p>For the deprecated <code>deserialize</code> methods, the
  * required permissions are the same as for the methods that replace
@@ -243,15 +214,15 @@ import javax.management.loading.ClassLoaderRepository;
  *
  * <li><p>For the <code>instantiate</code> methods, the caller's
  * permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, null, "instantiate")},
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, null, "instantiate")},
  * where {@code className} is the name of the class which is to
  * be instantiated.</p>
  *
  * <li><p>For the {@link #registerMBean registerMBean} method, the
  * caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name, "registerMBean")}.
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, name, "registerMBean")}.
  *
  * <p>If the <code>MBeanPermission</code> check succeeds, the MBean's
  * class is validated by checking that its {@link
@@ -271,8 +242,8 @@ import javax.management.loading.ClassLoaderRepository;
  *
  * <li><p>For the {@link #unregisterMBean unregisterMBean} method,
  * the caller's permissions must imply {@link
- * MBeanPermission#MBeanPermission(String,String,String,ObjectName,String)
- * MBeanPermission(mbeanServerName, className, null, name, "unregisterMBean")}.
+ * MBeanPermission#MBeanPermission(String,String,ObjectName,String)
+ * MBeanPermission(className, null, name, "unregisterMBean")}.</p>
  * </p>
  *
  * </ul>
@@ -351,14 +322,11 @@ public interface MBeanServer extends MBeanServerConnection {
 
     /**
      * <p>Registers a pre-existing object as an MBean with the MBean
-     * server.  If the object name given is null, the
-     * MBean must provide its own name in one or both of two ways: by implementing the {@link
+     * server. If the object name given is null, the MBean must
+     * provide its own name by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method; or by defining
-     * an {@code objectNameTemplate} field in its {@link Descriptor},
-     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
-     * annotation.</p>
+     * MBeanRegistration#preRegister preRegister} method.
      *
      * <p>If this method successfully registers an MBean, a notification
      * is sent as described <a href="#notif">above</a>.</p>
@@ -764,16 +732,13 @@ public interface MBeanServer extends MBeanServerConnection {
                    ReflectionException;
 
     /**
-     * <p>Return the {@link java.lang.ClassLoader} that was used for loading
-     * the class of the named MBean. If the MBean implements the {@link
-     * DynamicWrapperMBean} interface, then the returned value is the
-     * result of the {@link DynamicWrapperMBean#getWrappedClassLoader()}
-     * method.</p>
+     * <p>Return the {@link java.lang.ClassLoader} that was used for
+     * loading the class of the named MBean.</p>
      *
      * @param mbeanName The ObjectName of the MBean.
      *
      * @return The ClassLoader used for that MBean.  If <var>l</var>
-     * is the value specified by the rules above, and <var>r</var> is the
+     * is the MBean's actual ClassLoader, and <var>r</var> is the
      * returned value, then either:
      *
      * <ul>

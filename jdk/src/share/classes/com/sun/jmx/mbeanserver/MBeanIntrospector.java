@@ -36,28 +36,20 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.WeakHashMap;
-import javax.management.Description;
 
 import javax.management.Descriptor;
 import javax.management.ImmutableDescriptor;
 import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
-import javax.management.MBean;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanConstructorInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
-import javax.management.MXBean;
-import javax.management.ManagedAttribute;
-import javax.management.ManagedOperation;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcaster;
-import javax.management.NotificationInfo;
-import javax.management.NotificationInfos;
 import javax.management.ReflectionException;
 
 /**
@@ -79,7 +71,7 @@ import javax.management.ReflectionException;
  * ancestor with ConvertingMethod.  But that would mean an extra object
  * for every Method in every Standard MBean interface.
  */
-public abstract class MBeanIntrospector<M> {
+abstract class MBeanIntrospector<M> {
     static final class PerInterfaceMap<M>
             extends WeakHashMap<Class<?>, WeakReference<PerInterface<M>>> {}
 
@@ -159,27 +151,7 @@ public abstract class MBeanIntrospector<M> {
      * may be null.
      */
     abstract MBeanAttributeInfo getMBeanAttributeInfo(String attributeName,
-            M getter, M setter) throws IntrospectionException;
-
-    final String getAttributeDescription(
-            String attributeName, String defaultDescription,
-            Method getter, Method setter) throws IntrospectionException {
-        String g = Introspector.descriptionForElement(getter);
-        String s = Introspector.descriptionForElement(setter);
-        if (g == null) {
-            if (s == null)
-                return defaultDescription;
-            else
-                return s;
-        } else if (s == null || g.equals(s)) {
-            return g;
-        } else {
-            throw new IntrospectionException(
-                    "Inconsistent @Description on getter and setter for " +
-                    "attribute " + attributeName);
-        }
-    }
-
+            M getter, M setter);
     /**
      * Construct an MBeanOperationInfo for the given operation based on
      * the M it was derived from.
@@ -201,36 +173,10 @@ public abstract class MBeanIntrospector<M> {
     abstract Descriptor getMBeanDescriptor(Class<?> resourceClass);
 
     /**
-     * Get any additional Descriptor entries for this introspector instance.
-     * If there is a non-default MXBeanMappingFactory, it will appear in
-     * this Descriptor.
-     * @return Additional Descriptor entries, or an empty Descriptor if none.
-     */
-    Descriptor getSpecificMBeanDescriptor() {
-        return ImmutableDescriptor.EMPTY_DESCRIPTOR;
-    }
-
-    void checkCompliance(Class<?> mbeanType) throws NotCompliantMBeanException {
-        if (!mbeanType.isInterface() &&
-                !mbeanType.isAnnotationPresent(MBean.class) &&
-                !Introspector.hasMXBeanAnnotation(mbeanType)) {
-            throw new NotCompliantMBeanException("Not an interface and " +
-                    "does not have @" + MBean.class.getSimpleName() +
-                    " or @" + MXBean.class.getSimpleName() + " annotation: " +
-                    mbeanType.getName());
-        }
-    }
-
-    /**
      * Get the methods to be analyzed to build the MBean interface.
      */
     List<Method> getMethods(final Class<?> mbeanType) throws Exception {
-        if (mbeanType.isInterface())
-            return Arrays.asList(mbeanType.getMethods());
-
-        final List<Method> methods = newList();
-        getAnnotatedMethods(mbeanType, methods);
-        return methods;
+        return Arrays.asList(mbeanType.getMethods());
     }
 
     final PerInterface<M> getPerInterface(Class<?> mbeanInterface)
@@ -265,14 +211,11 @@ public abstract class MBeanIntrospector<M> {
      * the MBeanInfo's Descriptor.
      */
     private MBeanInfo makeInterfaceMBeanInfo(Class<?> mbeanInterface,
-            MBeanAnalyzer<M> analyzer) throws IntrospectionException {
+            MBeanAnalyzer<M> analyzer) {
         final MBeanInfoMaker maker = new MBeanInfoMaker();
         analyzer.visit(maker);
-        final String defaultDescription =
+        final String description =
                 "Information on the management interface of the MBean";
-        String description = Introspector.descriptionForElement(mbeanInterface);
-        if (description == null)
-            description = defaultDescription;
         return maker.makeMBeanInfo(mbeanInterface, description);
     }
 
@@ -370,11 +313,11 @@ public abstract class MBeanIntrospector<M> {
 
     /** A visitor that constructs the per-interface MBeanInfo. */
     private class MBeanInfoMaker
-            implements MBeanAnalyzer.MBeanVisitor<M, IntrospectionException> {
+            implements MBeanAnalyzer.MBeanVisitor<M> {
 
         public void visitAttribute(String attributeName,
                 M getter,
-                M setter) throws IntrospectionException {
+                M setter) {
             MBeanAttributeInfo mbai =
                     getMBeanAttributeInfo(attributeName, getter, setter);
 
@@ -403,7 +346,7 @@ public abstract class MBeanIntrospector<M> {
                     new ImmutableDescriptor(interfaceClassName);
             final Descriptor mbeanDescriptor = getBasicMBeanDescriptor();
             final Descriptor annotatedDescriptor =
-                    Introspector.descriptorForElement(mbeanInterface, false);
+                    Introspector.descriptorForElement(mbeanInterface);
             final Descriptor descriptor =
                 DescriptorCache.getInstance().union(
                     classNameDescriptor,
@@ -442,32 +385,20 @@ public abstract class MBeanIntrospector<M> {
      * Return the MBeanInfo for the given resource, based on the given
      * per-interface data.
      */
-    final MBeanInfo getMBeanInfo(Object resource, PerInterface<M> perInterface)
-    throws NotCompliantMBeanException {
+    final MBeanInfo getMBeanInfo(Object resource, PerInterface<M> perInterface) {
         MBeanInfo mbi =
                 getClassMBeanInfo(resource.getClass(), perInterface);
-        MBeanNotificationInfo[] notifs;
-        try {
-            notifs = findNotifications(resource);
-        } catch (RuntimeException e) {
-            NotCompliantMBeanException x =
-                    new NotCompliantMBeanException(e.getMessage());
-            x.initCause(e);
-            throw x;
-        }
-        Descriptor d = getSpecificMBeanDescriptor();
-        boolean anyNotifs = (notifs != null && notifs.length > 0);
-        if (!anyNotifs && ImmutableDescriptor.EMPTY_DESCRIPTOR.equals(d))
+        MBeanNotificationInfo[] notifs = findNotifications(resource);
+        if (notifs == null || notifs.length == 0)
             return mbi;
         else {
-            d = ImmutableDescriptor.union(d, mbi.getDescriptor());
             return new MBeanInfo(mbi.getClassName(),
                     mbi.getDescription(),
                     mbi.getAttributes(),
                     mbi.getConstructors(),
                     mbi.getOperations(),
                     notifs,
-                    d);
+                    mbi.getDescriptor());
         }
     }
 
@@ -507,145 +438,29 @@ public abstract class MBeanIntrospector<M> {
         }
     }
 
-    /*
-     * Add to "methods" every public method that has the @ManagedAttribute
-     * or @ManagedOperation annotation, in the given class or any of
-     * its superclasses or superinterfaces.
-     *
-     * We always add superclass or superinterface methods first, so that
-     * the stable sort used by eliminateCovariantMethods will put the
-     * method from the most-derived class last.  This means that we will
-     * see the version of the @ManagedAttribute (or ...Operation) annotation
-     * from that method, which might have a different description or whatever.
-     */
-    public static void getAnnotatedMethods(Class<?> c, List<Method> methods)
-    throws Exception {
-        Class<?> sup = c.getSuperclass();
-        if (sup != null)
-            getAnnotatedMethods(sup, methods);
-        Class<?>[] intfs = c.getInterfaces();
-        for (Class<?> intf : intfs)
-            getAnnotatedMethods(intf, methods);
-        for (Method m : c.getMethods()) {
-            // We are careful not to add m if it is inherited from a parent
-            // class or interface, because duplicate methods lead to nasty
-            // behaviour in eliminateCovariantMethods.
-            if (m.getDeclaringClass() == c &&
-                    (m.isAnnotationPresent(ManagedAttribute.class) ||
-                     m.isAnnotationPresent(ManagedOperation.class)))
-                methods.add(m);
-        }
-    }
-
-    /*
-     * Return the array of MBeanNotificationInfo for the given MBean object.
-     * If the object implements NotificationBroadcaster and its
-     * getNotificationInfo() method returns a non-empty array, then that
-     * is the result.  Otherwise, if the object has a @NotificationInfo
-     * or @NotificationInfos annotation, then its contents form the result.
-     * Otherwise, the result is null.
-     */
     static MBeanNotificationInfo[] findNotifications(Object moi) {
-        if (moi instanceof NotificationBroadcaster) {
-            MBeanNotificationInfo[] mbn =
-                    ((NotificationBroadcaster) moi).getNotificationInfo();
-            if (mbn != null && mbn.length > 0) {
-                MBeanNotificationInfo[] result =
-                        new MBeanNotificationInfo[mbn.length];
-                for (int i = 0; i < mbn.length; i++) {
-                    MBeanNotificationInfo ni = mbn[i];
-                    if (ni.getClass() != MBeanNotificationInfo.class)
-                        ni = (MBeanNotificationInfo) ni.clone();
-                    result[i] = ni;
-                }
-                return result;
-            }
-        } else {
-            try {
-                if (!MBeanInjector.injectsSendNotification(moi))
-                    return null;
-            } catch (NotCompliantMBeanException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return findNotificationsFromAnnotations(moi.getClass());
-    }
-
-    public static MBeanNotificationInfo[] findNotificationsFromAnnotations(
-            Class<?> mbeanClass) {
-        Class<?> c = getAnnotatedNotificationInfoClass(mbeanClass);
-        if (c == null)
+        if (!(moi instanceof NotificationBroadcaster))
             return null;
-        NotificationInfo ni = c.getAnnotation(NotificationInfo.class);
-        NotificationInfos nis = c.getAnnotation(NotificationInfos.class);
-        List<NotificationInfo> list = newList();
-        if (ni != null)
-            list.add(ni);
-        if (nis != null)
-            list.addAll(Arrays.asList(nis.value()));
-        if (list.isEmpty())
+        MBeanNotificationInfo[] mbn =
+                ((NotificationBroadcaster) moi).getNotificationInfo();
+        if (mbn == null)
             return null;
-        List<MBeanNotificationInfo> mbnis = newList();
-        for (NotificationInfo x : list) {
-            // The Descriptor includes any fields explicitly specified by
-            // x.descriptorFields(), plus any fields from the contained
-            // @Description annotation.
-            Descriptor d = new ImmutableDescriptor(x.descriptorFields());
-            d = ImmutableDescriptor.union(
-                    d, Introspector.descriptorForAnnotation(x.description()));
-            MBeanNotificationInfo mbni = new MBeanNotificationInfo(
-                    x.types(), x.notificationClass().getName(),
-                    x.description().value(), d);
-            mbnis.add(mbni);
+        MBeanNotificationInfo[] result =
+                new MBeanNotificationInfo[mbn.length];
+        for (int i = 0; i < mbn.length; i++) {
+            MBeanNotificationInfo ni = mbn[i];
+            if (ni.getClass() != MBeanNotificationInfo.class)
+                ni = (MBeanNotificationInfo) ni.clone();
+            result[i] = ni;
         }
-        return mbnis.toArray(new MBeanNotificationInfo[mbnis.size()]);
-    }
-
-    private static final Map<Class<?>, WeakReference<Class<?>>>
-            annotatedNotificationInfoClasses = newWeakHashMap();
-
-    private static Class<?> getAnnotatedNotificationInfoClass(Class<?> baseClass) {
-        synchronized (annotatedNotificationInfoClasses) {
-            WeakReference<Class<?>> wr =
-                    annotatedNotificationInfoClasses.get(baseClass);
-            if (wr != null)
-                return wr.get();
-            Class<?> c = null;
-            if (baseClass.isAnnotationPresent(NotificationInfo.class) ||
-                    baseClass.isAnnotationPresent(NotificationInfos.class)) {
-                c = baseClass;
-            } else {
-                Class<?>[] intfs = baseClass.getInterfaces();
-                for (Class<?> intf : intfs) {
-                    Class<?> c1 = getAnnotatedNotificationInfoClass(intf);
-                    if (c1 != null) {
-                        if (c != null) {
-                            throw new IllegalArgumentException(
-                                    "Class " + baseClass.getName() + " inherits " +
-                                    "@NotificationInfo(s) from both " +
-                                    c.getName() + " and " + c1.getName());
-                        }
-                        c = c1;
-                    }
-                }
-            }
-            // Record the result of the search.  If no @NotificationInfo(s)
-            // were found, c is null, and we store a WeakReference(null).
-            // This prevents us from having to search again and fail again.
-            annotatedNotificationInfoClasses.put(baseClass,
-                    new WeakReference<Class<?>>(c));
-            return c;
-        }
+        return result;
     }
 
     private static MBeanConstructorInfo[] findConstructors(Class<?> c) {
         Constructor<?>[] cons = c.getConstructors();
         MBeanConstructorInfo[] mbc = new MBeanConstructorInfo[cons.length];
         for (int i = 0; i < cons.length; i++) {
-            String descr = "Public constructor of the MBean";
-            Description d = cons[i].getAnnotation(Description.class);
-            if (d != null)
-                descr = d.value();
+            final String descr = "Public constructor of the MBean";
             mbc[i] = new MBeanConstructorInfo(descr, cons[i]);
         }
         return mbc;

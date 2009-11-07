@@ -777,6 +777,7 @@ public abstract class MappedMXBeanType {
         public boolean isValue(Object o) {
             return false;
         }
+        private static final long serialVersionUID = -3413063475064374490L;
     }
     private static final OpenType inProgress;
     static {
