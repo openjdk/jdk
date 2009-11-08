@@ -183,11 +183,9 @@ public abstract class AbstractQueue<E>
         if (c == this)
             throw new IllegalArgumentException();
         boolean modified = false;
-        Iterator<? extends E> e = c.iterator();
-        while (e.hasNext()) {
-            if (add(e.next()))
+        for (E e : c)
+            if (add(e))
                 modified = true;
-        }
         return modified;
     }
 

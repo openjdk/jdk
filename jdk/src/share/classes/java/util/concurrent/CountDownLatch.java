@@ -148,7 +148,8 @@ import java.util.concurrent.atomic.*;
  *
  * </pre>
  *
- * <p>Memory consistency effects: Actions in a thread prior to calling
+ * <p>Memory consistency effects: Until the count reaches
+ * zero, actions in a thread prior to calling
  * {@code countDown()}
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions following a successful return from a corresponding
