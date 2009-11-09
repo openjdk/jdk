@@ -512,26 +512,6 @@ com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java	generic-all
 # Need to be marked othervm, or changed to be samevm safe
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java generic-all
 
-# Need to be marked othervm, or changed to be samevm safe
-demo/jvmti/gctest/Gctest.java					generic-all
-demo/jvmti/heapTracker/HeapTrackerTest.java			generic-all
-demo/jvmti/heapViewer/HeapViewerTest.java			generic-all
-demo/jvmti/hprof/CpuOldTest.java				generic-all
-demo/jvmti/hprof/CpuSamplesTest.java				generic-all
-demo/jvmti/hprof/CpuTimesDefineClassTest.java			generic-all
-demo/jvmti/hprof/CpuTimesTest.java				generic-all
-demo/jvmti/hprof/HeapAllTest.java				generic-all
-demo/jvmti/hprof/HeapBinaryFormatTest.java			generic-all
-demo/jvmti/hprof/HeapDumpTest.java				generic-all
-demo/jvmti/hprof/HeapSitesTest.java				generic-all
-demo/jvmti/hprof/MonitorTest.java				generic-all
-demo/jvmti/hprof/OptionsTest.java				generic-all
-demo/jvmti/hprof/StackMapTableTest.java				generic-all
-demo/jvmti/minst/MinstTest.java					generic-all
-demo/jvmti/mtrace/TraceJFrame.java				generic-all
-demo/jvmti/versionCheck/FailsWhenJvmtiVersionDiffers.java	generic-all
-demo/jvmti/waiters/WaitersTest.java				generic-all
-
 # Solaris sparc and others, exception in initializer
 javax/imageio/CachePremissionsTest/CachePermissionsTest.java 	generic-all
 
@@ -1123,20 +1103,6 @@ java/text/Bidi/Bug6665028.java				 	linux-x64
 
 # Solaris 10 client x86, java.lang.IndexOutOfBoundsException resumer Interrupted
 com/sun/jdi/SimulResumerTest.java				generic-all
-
-# OpenSolaris failures, Missing /usr/ucb/ps
-com/sun/jdi/ArrayLengthDumpTest.sh				generic-all
-com/sun/jdi/CatchCaughtTest.sh					generic-all
-com/sun/jdi/CatchPatternTest.sh					generic-all
-com/sun/jdi/GetLocalVariables3Test.sh				generic-all
-com/sun/jdi/GetLocalVariables4Test.sh				generic-all
-com/sun/jdi/JdbMethodExitTest.sh				generic-all
-com/sun/jdi/JdbMissStep.sh					generic-all
-com/sun/jdi/JdbVarargsTest.sh					generic-all
-com/sun/jdi/NotAField.sh					generic-all
-com/sun/jdi/Redefine-g.sh					generic-all
-com/sun/jdi/RedefineImplementor.sh				generic-all
-com/sun/jdi/RedefineMulti.sh					generic-all
 
 # Output of jps differs from expected output.
 #   Invalid argument count on solaris-sparc and x64
