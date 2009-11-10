@@ -719,12 +719,6 @@ com/sun/nio/sctp/SctpChannel/Receive.java			generic-all
 # Triggers a hotspot crash on Fedora 9 32bit -server and Windows X64  samevm
 sun/nio/cs/TestUTF8.java					generic-all
 
-# Fails on OpenSolaris, IllegalArgumentException: Source address is a wildcard
-java/nio/channels/DatagramChannel/BasicMulticastTests.java	generic-all
-
-# Fails on OpenSolaris, RuntimeException: Expected message not recieved
-java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java generic-all
-
 # Solaris sparc, socket timeout
 java/nio/channels/spi/SelectorProvider/inheritedChannel/run_tests.sh generic-all
 
