@@ -744,22 +744,22 @@ static const uint64_t NarrowOopHeapMax = (uint64_t(max_juint) + 1);
 static const uint64_t OopEncodingHeapMax = NarrowOopHeapMax << LogMinObjAlignmentInBytes;
 
 char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
+  size_t base = 0;
 #ifdef _LP64
   if (UseCompressedOops) {
     assert(mode == UnscaledNarrowOop  ||
            mode == ZeroBasedNarrowOop ||
            mode == HeapBasedNarrowOop, "mode is invalid");
+    const size_t total_size = heap_size + HeapBaseMinAddress;
     // Return specified base for the first request.
     if (!FLAG_IS_DEFAULT(HeapBaseMinAddress) && (mode == UnscaledNarrowOop)) {
-      return (char*)HeapBaseMinAddress;
-    }
-    const size_t total_size = heap_size + HeapBaseMinAddress;
-    if (total_size <= OopEncodingHeapMax && (mode != HeapBasedNarrowOop)) {
+      base = HeapBaseMinAddress;
+    } else if (total_size <= OopEncodingHeapMax && (mode != HeapBasedNarrowOop)) {
       if (total_size <= NarrowOopHeapMax && (mode == UnscaledNarrowOop) &&
           (Universe::narrow_oop_shift() == 0)) {
         // Use 32-bits oops without encoding and
         // place heap's top on the 4Gb boundary
-        return (char*)(NarrowOopHeapMax - heap_size);
+        base = (NarrowOopHeapMax - heap_size);
       } else {
         // Can't reserve with NarrowOopShift == 0
         Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
@@ -768,16 +768,38 @@ char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
           // Use zero based compressed oops with encoding and
           // place heap's top on the 32Gb boundary in case
           // total_size > 4Gb or failed to reserve below 4Gb.
-          return (char*)(OopEncodingHeapMax - heap_size);
+          base = (OopEncodingHeapMax - heap_size);
         }
       }
     } else {
       // Can't reserve below 32Gb.
       Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
     }
+    // Set narrow_oop_base and narrow_oop_use_implicit_null_checks
+    // used in ReservedHeapSpace() constructors.
+    // The final values will be set in initialize_heap() below.
+    if (base != 0 && (base + heap_size) <= OopEncodingHeapMax) {
+      // Use zero based compressed oops
+      Universe::set_narrow_oop_base(NULL);
+      // Don't need guard page for implicit checks in indexed
+      // addressing mode with zero based Compressed Oops.
+      Universe::set_narrow_oop_use_implicit_null_checks(true);
+    } else {
+      // Set to a non-NULL value so the ReservedSpace ctor computes
+      // the correct no-access prefix.
+      // The final value will be set in initialize_heap() below.
+      Universe::set_narrow_oop_base((address)NarrowOopHeapMax);
+#ifdef _WIN64
+      if (UseLargePages) {
+        // Cannot allocate guard pages for implicit checks in indexed
+        // addressing mode when large pages are specified on windows.
+        Universe::set_narrow_oop_use_implicit_null_checks(false);
+      }
+#endif //  _WIN64
+    }
   }
 #endif
-  return NULL; // also return NULL (don't care) for 32-bit VM
+  return (char*)base; // also return NULL (don't care) for 32-bit VM
 }
 
 jint Universe::initialize_heap() {

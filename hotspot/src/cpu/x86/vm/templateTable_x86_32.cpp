@@ -2890,9 +2890,6 @@ void TemplateTable::count_calls(Register method, Register temp) {
 
 
 void TemplateTable::prepare_invoke(Register method, Register index, int byte_no) {
-  bool is_invdyn_bootstrap = (byte_no < 0);
-  if (is_invdyn_bootstrap)  byte_no = -byte_no;
-
   // determine flags
   Bytecodes::Code code = bytecode();
   const bool is_invokeinterface  = code == Bytecodes::_invokeinterface;
@@ -2906,8 +2903,6 @@ void TemplateTable::prepare_invoke(Register method, Register index, int byte_no)
   const Register recv   = rcx;
   const Register flags  = rdx;
   assert_different_registers(method, index, recv, flags);
-
-  assert(!is_invdyn_bootstrap || is_invokedynamic, "byte_no<0 hack only for invdyn");
 
   // save 'interpreter return address'
   __ save_bcp();
@@ -2944,9 +2939,7 @@ void TemplateTable::prepare_invoke(Register method, Register index, int byte_no)
   // load return address
   {
     address table_addr;
-    if (is_invdyn_bootstrap)
-      table_addr = (address)Interpreter::return_5_unbox_addrs_by_index_table();
-    else if (is_invokeinterface || is_invokedynamic)
+    if (is_invokeinterface || is_invokedynamic)
       table_addr = (address)Interpreter::return_5_addrs_by_index_table();
     else
       table_addr = (address)Interpreter::return_3_addrs_by_index_table();
@@ -3154,52 +3147,9 @@ void TemplateTable::invokedynamic(int byte_no) {
   }
 
   Label handle_unlinked_site;
-  __ movptr(rcx, Address(rax, __ delayed_value(sun_dyn_CallSiteImpl::target_offset_in_bytes, rcx)));
-  __ testptr(rcx, rcx);
-  __ jcc(Assembler::zero, handle_unlinked_site);
-
+  __ movptr(rcx, Address(rax, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, rcx)));
+  __ null_check(rcx);
   __ prepare_to_jump_from_interpreted();
-  __ jump_to_method_handle_entry(rcx, rdx);
-
-  // Initial calls come here...
-  __ bind(handle_unlinked_site);
-  __ pop(rcx);                 // remove return address pushed by prepare_invoke
-
-  // box stacked arguments into an array for the bootstrap method
-  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::bootstrap_invokedynamic);
-  __ restore_bcp();      // rsi must be correct for call_VM
-  __ call_VM(rax, entry, rax);
-  __ movl(rdi, rax);            // protect bootstrap MH from prepare_invoke
-
-  // recompute return address
-  __ restore_bcp();      // rsi must be correct for prepare_invoke
-  prepare_invoke(rax, rbx, -byte_no);  // smashes rcx, rdx
-  // rax: CallSite object (f1)
-  // rbx: unused (f2)
-  // rdi: bootstrap MH
-  // rdx: flags
-
-  // now load up the arglist, which has been neatly boxed
-  __ get_thread(rcx);
-  __ movptr(rdx, Address(rcx, JavaThread::vm_result_2_offset()));
-  __ movptr(Address(rcx, JavaThread::vm_result_2_offset()), NULL_WORD);
-  __ verify_oop(rdx);
-  // rdx = arglist
-
-  // save SP now, before we add the bootstrap call to the stack
-  // We must preserve a fiction that the original arguments are outgoing,
-  // because the return sequence will reset the stack to this point
-  // and then pop all those arguments.  It seems error-prone to use
-  // a different argument list size just for bootstrapping.
-  __ prepare_to_jump_from_interpreted();
-
-  // Now let's play adapter, pushing the real arguments on the stack.
-  __ pop(rbx);                  // return PC
-  __ push(rdi);                 // boot MH
-  __ push(rax);                 // call site
-  __ push(rdx);                 // arglist
-  __ push(rbx);                 // return PC, again
-  __ mov(rcx, rdi);
   __ jump_to_method_handle_entry(rcx, rdx);
 }
 
