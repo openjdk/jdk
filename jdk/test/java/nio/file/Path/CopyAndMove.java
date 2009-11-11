@@ -25,6 +25,8 @@
  * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.Path copyTo/moveTo methods
  * @library ..
+ * @build CopyAndMove
+ * @run main/othervm CopyAndMove
  */
 
 import java.nio.ByteBuffer;

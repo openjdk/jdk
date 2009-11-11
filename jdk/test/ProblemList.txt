@@ -741,9 +741,6 @@ com/sun/nio/sctp/SctpMultiChannel/Branch.java			generic-all
 com/sun/nio/sctp/SctpMultiChannel/Send.java			generic-all
 com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java	generic-all
 
-# Linux 64bit failures. too many files open (not good for windows 2000 either)
-java/nio/channels/AsynchronousChannelGroup/Unbounded.java	generic-all
-
 # Linux 64bit failures. too many files open
 java/nio/channels/Selector/HelperSlowToDie.java			generic-all
 
@@ -771,9 +768,6 @@ java/nio/channels/DatagramChannel/Connect.java		 	generic-all
 # Solaris i586 timeouts
 java/nio/channels/DatagramChannel/EmptyBuffer.java	 	solaris-all
 
-# Gets java.lang.ExceptionInInitializerError on windows:  (Windows 2000 only?)
-java/nio/channels/FileChannel/Transfer.java		 	windows-5.0
-
 # Failed loopback connection? On windows 32bit? 
 #   Considered a stress test, can consume all resources.
 java/nio/channels/Selector/LotsOfChannels.java		 	generic-all
@@ -785,18 +779,11 @@ java/nio/channels/Selector/OpRead.java			 	solaris-sparc
 #   Considered a stress test, can consume all resources.
 java/nio/channels/Selector/RegAfterPreClose.java	 	generic-all
 
-# Gets java.net.BindException alot (static port number?)
-java/nio/channels/Selector/SelectAfterRead.java 	 	generic-all
-
 # Solaris i586, cannot assign address, samevm issues
 java/nio/channels/Selector/SelectorLimit.java		 	generic-all
 
 # Socket timeout windows X64
 java/nio/channels/ServerSocketChannel/AdaptServerSocket.java 	windows-all
-
-# Solaris i586, cannot assign address, samevm issues
-java/nio/channels/SocketChannel/CloseAfterConnect.java	 	generic-all
-java/nio/channels/SocketChannel/CloseRegisteredChannel.java 	generic-all
 
 # Timeouts etc. on Window
 java/nio/channels/SocketChannel/ConnectState.java	 	windows-all
@@ -804,11 +791,6 @@ java/nio/channels/SocketChannel/FinishConnect.java	 	windows-all
 
 # Need to be marked othervm, or changed to be samevm safe
 java/nio/channels/SocketChannel/OpenLeak.java			generic-all
-
-# Solaris i586 java.net.BindExceptions
-java/nio/channels/SocketChannel/Shutdown.java		 	solaris-all
-java/nio/channels/SocketChannel/SocketOptionTests.java	 	solaris-all
-java/nio/channels/SocketChannel/Stream.java		 	solaris-all
 
 # Gets java.net.BindException alot (static port number?)
 java/nio/channels/SocketChannel/VectorIO.java		 	generic-all
@@ -818,10 +800,6 @@ java/nio/channels/SocketChannel/VectorParams.java	 	solaris-all
 
 # Linux i586 address already in use, samevm issues
 java/nio/channels/SocketChannel/Write.java		 	generic-all
-
-# Fails in samevm, jtreg security manager does not grant FilePermission readlink action
-java/nio/file/Path/CopyAndMove.java			 	generic-all
-java/nio/file/Path/Links.java					generic-all
 
 # Fails on all platforms due to overlap of JDK jar file contents:
 sun/nio/cs/Test4200310.sh				 	generic-all
