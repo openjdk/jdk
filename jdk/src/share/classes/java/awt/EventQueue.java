@@ -1027,7 +1027,9 @@ public class EventQueue {
 
         synchronized (lock) {
             Toolkit.getEventQueue().postEvent(event);
-            lock.wait();
+            while (!event.isDispatched()) {
+                lock.wait();
+            }
         }
 
         Throwable eventThrowable = event.getThrowable();
