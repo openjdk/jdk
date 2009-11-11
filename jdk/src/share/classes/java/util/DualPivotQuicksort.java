@@ -36,11 +36,11 @@ package java.util;
  * @author Jon Bentley
  * @author Josh Bloch
  *
- * @version 2009.10.29 m765.827.v5
+ * @version 2009.11.09 m765.827.v8
  */
 final class DualPivotQuicksort {
 
-    // Suppresses default constructor, ensuring non-instantiability.
+    // Suppresses default constructor
     private DualPivotQuicksort() {}
 
     /*
@@ -70,13 +70,43 @@ final class DualPivotQuicksort {
      */
 
     /**
-     * Sorts the specified range of the array into ascending order.
+     * Sorts the specified array into ascending numerical order.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
      */
-    static void sort(int[] a, int left, int right) {
+    public static void sort(int[] a) {
+        doSort(a, 0, a.length - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     */
+    public static void sort(int[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        doSort(a, fromIndex, toIndex - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. This
+     * method differs from the public {@code sort} method in that the
+     * {@code right} index is inclusive, and it does no range checking on
+     * {@code left} or {@code right}.
+     *
+     * @param a the array to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
+     */
+    private static void doSort(int[] a, int left, int right) {
         // Use insertion sort on tiny arrays
         if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
             for (int k = left + 1; k <= right; k++) {
@@ -94,12 +124,12 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array into ascending order
-     * by Dual-Pivot Quicksort.
+     * Sorts the specified range of the array into ascending order by the
+     * Dual-Pivot Quicksort algorithm.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
      */
     private static void dualPivotQuicksort(int[] a, int left, int right) {
         // Compute indices of five evenly spaced elements
@@ -234,8 +264,8 @@ final class DualPivotQuicksort {
         a[right] = a[great + 1]; a[great + 1] = pivot2;
 
         // Sort left and right parts recursively, excluding known pivot values
-        sort(a, left,   less - 2);
-        sort(a, great + 2, right);
+        doSort(a, left,   less - 2);
+        doSort(a, great + 2, right);
 
         /*
          * If pivot1 == pivot2, all elements from center
@@ -271,17 +301,47 @@ final class DualPivotQuicksort {
         }
 
         // Sort center part recursively, excluding known pivot values
-        sort(a, less, great);
+        doSort(a, less, great);
     }
 
     /**
-     * Sorts the specified range of the array into ascending order.
+     * Sorts the specified array into ascending numerical order.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
      */
-    static void sort(long[] a, int left, int right) {
+    public static void sort(long[] a) {
+        doSort(a, 0, a.length - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     */
+    public static void sort(long[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        doSort(a, fromIndex, toIndex - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. This
+     * method differs from the public {@code sort} method in that the
+     * {@code right} index is inclusive, and it does no range checking on
+     * {@code left} or {@code right}.
+     *
+     * @param a the array to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
+     */
+    private static void doSort(long[] a, int left, int right) {
         // Use insertion sort on tiny arrays
         if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
             for (int k = left + 1; k <= right; k++) {
@@ -299,12 +359,12 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array into ascending order
-     * by Dual-Pivot Quicksort.
+     * Sorts the specified range of the array into ascending order by the
+     * Dual-Pivot Quicksort algorithm.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
      */
     private static void dualPivotQuicksort(long[] a, int left, int right) {
         // Compute indices of five evenly spaced elements
@@ -439,8 +499,8 @@ final class DualPivotQuicksort {
         a[right] = a[great + 1]; a[great + 1] = pivot2;
 
         // Sort left and right parts recursively, excluding known pivot values
-        sort(a, left,   less - 2);
-        sort(a, great + 2, right);
+        doSort(a, left,   less - 2);
+        doSort(a, great + 2, right);
 
         /*
          * If pivot1 == pivot2, all elements from center
@@ -476,20 +536,50 @@ final class DualPivotQuicksort {
         }
 
         // Sort center part recursively, excluding known pivot values
-        sort(a, less, great);
+        doSort(a, less, great);
     }
 
-    /** The number of distinct short values */
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * @param a the array to be sorted
+     */
+    public static void sort(short[] a) {
+        doSort(a, 0, a.length - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     */
+    public static void sort(short[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        doSort(a, fromIndex, toIndex - 1);
+    }
+
+    /** The number of distinct short values. */
     private static final int NUM_SHORT_VALUES = 1 << 16;
 
     /**
-     * Sorts the specified range of the array into ascending order.
+     * Sorts the specified range of the array into ascending order. This
+     * method differs from the public {@code sort} method in that the
+     * {@code right} index is inclusive, and it does no range checking on
+     * {@code left} or {@code right}.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
      */
-    static void sort(short[] a, int left, int right) {
+    private static void doSort(short[] a, int left, int right) {
         // Use insertion sort on tiny arrays
         if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
             for (int k = left + 1; k <= right; k++) {
@@ -501,7 +591,7 @@ final class DualPivotQuicksort {
                 }
                 a[j + 1] = ak;
             }
-        } else if (right - left + 1 > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
+        } else if (right-left+1 > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
             // Use counting sort on huge arrays
             int[] count = new int[NUM_SHORT_VALUES];
 
@@ -521,12 +611,12 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array into ascending order
-     * by Dual-Pivot Quicksort.
+     * Sorts the specified range of the array into ascending order by the
+     * Dual-Pivot Quicksort algorithm.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
      */
     private static void dualPivotQuicksort(short[] a, int left, int right) {
         // Compute indices of five evenly spaced elements
@@ -661,8 +751,8 @@ final class DualPivotQuicksort {
         a[right] = a[great + 1]; a[great + 1] = pivot2;
 
         // Sort left and right parts recursively, excluding known pivot values
-        sort(a, left,   less - 2);
-        sort(a, great + 2, right);
+        doSort(a, left,   less - 2);
+        doSort(a, great + 2, right);
 
         /*
          * If pivot1 == pivot2, all elements from center
@@ -698,242 +788,50 @@ final class DualPivotQuicksort {
         }
 
         // Sort center part recursively, excluding known pivot values
-        sort(a, less, great);
-    }
-
-    /** The number of distinct byte values */
-    private static final int NUM_BYTE_VALUES = 1 << 8;
-
-    /**
-     * Sorts the specified range of the array into ascending order.
-     *
-     * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
-     */
-    static void sort(byte[] a, int left, int right) {
-        // Use insertion sort on tiny arrays
-        if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
-            for (int k = left + 1; k <= right; k++) {
-                byte ak = a[k];
-                int j;
-
-                for (j = k - 1; j >= left && ak < a[j]; j--) {
-                    a[j + 1] = a[j];
-                }
-                a[j + 1] = ak;
-            }
-        } else if (right - left + 1 > COUNTING_SORT_THRESHOLD_FOR_BYTE) {
-            // Use counting sort on huge arrays
-            int[] count = new int[NUM_BYTE_VALUES];
-
-            for (int i = left; i <= right; i++) {
-                count[a[i] - Byte.MIN_VALUE]++;
-            }
-            for (int i = 0, k = left; i < count.length && k <= right; i++) {
-                byte value = (byte) (i + Byte.MIN_VALUE);
-
-                for (int s = count[i]; s > 0; s--) {
-                    a[k++] = value;
-               }
-            }
-        } else { // Use Dual-Pivot Quicksort on large arrays
-            dualPivotQuicksort(a, left, right);
-        }
+        doSort(a, less, great);
     }
 
     /**
-     * Sorts the specified range of the array into ascending order
-     * by Dual-Pivot Quicksort.
+     * Sorts the specified array into ascending numerical order.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
      */
-    private static void dualPivotQuicksort(byte[] a, int left, int right) {
-        // Compute indices of five evenly spaced elements
-        int sixth = (right - left + 1) / 6;
-        int e1 = left  + sixth;
-        int e5 = right - sixth;
-        int e3 = (left + right) >>> 1; // The midpoint
-        int e4 = e3 + sixth;
-        int e2 = e3 - sixth;
-
-        // Sort these elements in place using a 5-element sorting network
-        if (a[e1] > a[e2]) { byte t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
-        if (a[e4] > a[e5]) { byte t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-        if (a[e1] > a[e3]) { byte t = a[e1]; a[e1] = a[e3]; a[e3] = t; }
-        if (a[e2] > a[e3]) { byte t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e1] > a[e4]) { byte t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
-        if (a[e3] > a[e4]) { byte t = a[e3]; a[e3] = a[e4]; a[e4] = t; }
-        if (a[e2] > a[e5]) { byte t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-        if (a[e2] > a[e3]) { byte t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e4] > a[e5]) { byte t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-
-        /*
-         * Use the second and fourth of the five sorted elements as pivots.
-         * These values are inexpensive approximations of the first and
-         * second terciles of the array. Note that pivot1 <= pivot2.
-         *
-         * The pivots are stored in local variables, and the first and
-         * the last of the sorted elements are moved to the locations
-         * formerly occupied by the pivots. When partitioning is complete,
-         * the pivots are swapped back into their final positions, and
-         * excluded from subsequent sorting.
-         */
-        byte pivot1 = a[e2]; a[e2] = a[left];
-        byte pivot2 = a[e4]; a[e4] = a[right];
-
-        /*
-         * Partitioning
-         *
-         *   left part         center part                  right part
-         * ------------------------------------------------------------
-         * [ < pivot1  |  pivot1 <= && <= pivot2  |   ?   |  > pivot2 ]
-         * ------------------------------------------------------------
-         *              ^                          ^     ^
-         *              |                          |     |
-         *             less                        k   great
-         */
-
-        // Pointers
-        int less  = left  + 1; // The index of first element of center part
-        int great = right - 1; // The index before first element of right part
-
-        boolean pivotsDiffer = pivot1 != pivot2;
-
-        if (pivotsDiffer) {
-            /*
-             * Invariants:
-             *              all in (left, less)   < pivot1
-             *    pivot1 <= all in [less, k)     <= pivot2
-             *              all in (great, right) > pivot2
-             *
-             * Pointer k is the first index of ?-part
-             */
-            for (int k = less; k <= great; k++) {
-                byte ak = a[k];
-
-                if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
-                } else if (ak > pivot2) {
-                    while (a[great] > pivot2 && k < great) {
-                        great--;
-                    }
-                    a[k] = a[great];
-                    a[great--] = ak;
-                    ak = a[k];
-
-                    if (ak < pivot1) {
-                        a[k] = a[less];
-                        a[less++] = ak;
-                    }
-                }
-            }
-        } else { // Pivots are equal
-            /*
-             * Partition degenerates to the traditional 3-way
-             * (or "Dutch National Flag") partition:
-             *
-             *   left part   center part            right part
-             * -------------------------------------------------
-             * [  < pivot  |  == pivot  |    ?    |  > pivot   ]
-             * -------------------------------------------------
-             *
-             *              ^            ^       ^
-             *              |            |       |
-             *             less          k     great
-             *
-             * Invariants:
-             *
-             *   all in (left, less)   < pivot
-             *   all in [less, k)     == pivot
-             *   all in (great, right) > pivot
-             *
-             * Pointer k is the first index of ?-part
-             */
-            for (int k = less; k <= great; k++) {
-                byte ak = a[k];
-
-                if (ak == pivot1) {
-                  continue;
-                }
-                if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
-                } else {
-                    while (a[great] > pivot1) {
-                        great--;
-                    }
-                    a[k] = a[great];
-                    a[great--] = ak;
-                    ak = a[k];
-
-                    if (ak < pivot1) {
-                        a[k] = a[less];
-                        a[less++] = ak;
-                    }
-                }
-            }
-        }
-
-        // Swap pivots into their final positions
-        a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
-        a[right] = a[great + 1]; a[great + 1] = pivot2;
-
-        // Sort left and right parts recursively, excluding known pivot values
-        sort(a, left,   less - 2);
-        sort(a, great + 2, right);
-
-        /*
-         * If pivot1 == pivot2, all elements from center
-         * part are equal and, therefore, already sorted
-         */
-        if (!pivotsDiffer) {
-            return;
-        }
-
-        /*
-         * If center part is too large (comprises > 5/6 of
-         * the array), swap internal pivot values to ends
-         */
-        if (less < e1 && e5 < great) {
-            while (a[less] == pivot1) {
-                less++;
-            }
-            for (int k = less + 1; k <= great; k++) {
-                if (a[k] == pivot1) {
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
-            while (a[great] == pivot2) {
-                great--;
-            }
-            for (int k = great - 1; k >= less; k--) {
-                if (a[k] == pivot2) {
-                    a[k] = a[great];
-                    a[great--] = pivot2;
-                }
-            }
-        }
-
-        // Sort center part recursively, excluding known pivot values
-        sort(a, less, great);
+    public static void sort(char[] a) {
+        doSort(a, 0, a.length - 1);
     }
 
-    /** The number of distinct char values */
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     */
+    public static void sort(char[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        doSort(a, fromIndex, toIndex - 1);
+    }
+
+    /** The number of distinct char values. */
     private static final int NUM_CHAR_VALUES = 1 << 16;
 
     /**
-     * Sorts the specified range of the array into ascending order.
+     * Sorts the specified range of the array into ascending order. This
+     * method differs from the public {@code sort} method in that the
+     * {@code right} index is inclusive, and it does no range checking on
+     * {@code left} or {@code right}.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
      */
-    static void sort(char[] a, int left, int right) {
+    private static void doSort(char[] a, int left, int right) {
         // Use insertion sort on tiny arrays
         if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
             for (int k = left + 1; k <= right; k++) {
@@ -945,7 +843,7 @@ final class DualPivotQuicksort {
                 }
                 a[j + 1] = ak;
             }
-        } else if (right - left + 1 > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
+        } else if (right-left+1 > COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR) {
             // Use counting sort on huge arrays
             int[] count = new int[NUM_CHAR_VALUES];
 
@@ -963,12 +861,12 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array into ascending order
-     * by Dual-Pivot Quicksort.
+     * Sorts the specified range of the array into ascending order by the
+     * Dual-Pivot Quicksort algorithm.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
      */
     private static void dualPivotQuicksort(char[] a, int left, int right) {
         // Compute indices of five evenly spaced elements
@@ -1103,8 +1001,8 @@ final class DualPivotQuicksort {
         a[right] = a[great + 1]; a[great + 1] = pivot2;
 
         // Sort left and right parts recursively, excluding known pivot values
-        sort(a, left,   less - 2);
-        sort(a, great + 2, right);
+        doSort(a, left,   less - 2);
+        doSort(a, great + 2, right);
 
         /*
          * If pivot1 == pivot2, all elements from center
@@ -1140,17 +1038,395 @@ final class DualPivotQuicksort {
         }
 
         // Sort center part recursively, excluding known pivot values
-        sort(a, less, great);
+        doSort(a, less, great);
     }
 
     /**
-     * Sorts the specified range of the array into ascending order.
+     * Sorts the specified array into ascending numerical order.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
      */
-    static void sort(float[] a, int left, int right) {
+    public static void sort(byte[] a) {
+        doSort(a, 0, a.length - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     */
+    public static void sort(byte[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        doSort(a, fromIndex, toIndex - 1);
+    }
+
+    /** The number of distinct byte values. */
+    private static final int NUM_BYTE_VALUES = 1 << 8;
+
+    /**
+     * Sorts the specified range of the array into ascending order. This
+     * method differs from the public {@code sort} method in that the
+     * {@code right} index is inclusive, and it does no range checking on
+     * {@code left} or {@code right}.
+     *
+     * @param a the array to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
+     */
+    private static void doSort(byte[] a, int left, int right) {
+        // Use insertion sort on tiny arrays
+        if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
+            for (int k = left + 1; k <= right; k++) {
+                byte ak = a[k];
+                int j;
+
+                for (j = k - 1; j >= left && ak < a[j]; j--) {
+                    a[j + 1] = a[j];
+                }
+                a[j + 1] = ak;
+            }
+        } else if (right - left + 1 > COUNTING_SORT_THRESHOLD_FOR_BYTE) {
+            // Use counting sort on huge arrays
+            int[] count = new int[NUM_BYTE_VALUES];
+
+            for (int i = left; i <= right; i++) {
+                count[a[i] - Byte.MIN_VALUE]++;
+            }
+            for (int i = 0, k = left; i < count.length && k <= right; i++) {
+                byte value = (byte) (i + Byte.MIN_VALUE);
+
+                for (int s = count[i]; s > 0; s--) {
+                    a[k++] = value;
+               }
+            }
+        } else { // Use Dual-Pivot Quicksort on large arrays
+            dualPivotQuicksort(a, left, right);
+        }
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order by the
+     * Dual-Pivot Quicksort algorithm.
+     *
+     * @param a the array to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
+     */
+    private static void dualPivotQuicksort(byte[] a, int left, int right) {
+        // Compute indices of five evenly spaced elements
+        int sixth = (right - left + 1) / 6;
+        int e1 = left  + sixth;
+        int e5 = right - sixth;
+        int e3 = (left + right) >>> 1; // The midpoint
+        int e4 = e3 + sixth;
+        int e2 = e3 - sixth;
+
+        // Sort these elements in place using a 5-element sorting network
+        if (a[e1] > a[e2]) { byte t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
+        if (a[e4] > a[e5]) { byte t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+        if (a[e1] > a[e3]) { byte t = a[e1]; a[e1] = a[e3]; a[e3] = t; }
+        if (a[e2] > a[e3]) { byte t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
+        if (a[e1] > a[e4]) { byte t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
+        if (a[e3] > a[e4]) { byte t = a[e3]; a[e3] = a[e4]; a[e4] = t; }
+        if (a[e2] > a[e5]) { byte t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
+        if (a[e2] > a[e3]) { byte t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
+        if (a[e4] > a[e5]) { byte t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+
+        /*
+         * Use the second and fourth of the five sorted elements as pivots.
+         * These values are inexpensive approximations of the first and
+         * second terciles of the array. Note that pivot1 <= pivot2.
+         *
+         * The pivots are stored in local variables, and the first and
+         * the last of the sorted elements are moved to the locations
+         * formerly occupied by the pivots. When partitioning is complete,
+         * the pivots are swapped back into their final positions, and
+         * excluded from subsequent sorting.
+         */
+        byte pivot1 = a[e2]; a[e2] = a[left];
+        byte pivot2 = a[e4]; a[e4] = a[right];
+
+        /*
+         * Partitioning
+         *
+         *   left part         center part                  right part
+         * ------------------------------------------------------------
+         * [ < pivot1  |  pivot1 <= && <= pivot2  |   ?   |  > pivot2 ]
+         * ------------------------------------------------------------
+         *              ^                          ^     ^
+         *              |                          |     |
+         *             less                        k   great
+         */
+
+        // Pointers
+        int less  = left  + 1; // The index of first element of center part
+        int great = right - 1; // The index before first element of right part
+
+        boolean pivotsDiffer = pivot1 != pivot2;
+
+        if (pivotsDiffer) {
+            /*
+             * Invariants:
+             *              all in (left, less)   < pivot1
+             *    pivot1 <= all in [less, k)     <= pivot2
+             *              all in (great, right) > pivot2
+             *
+             * Pointer k is the first index of ?-part
+             */
+            for (int k = less; k <= great; k++) {
+                byte ak = a[k];
+
+                if (ak < pivot1) {
+                    a[k] = a[less];
+                    a[less++] = ak;
+                } else if (ak > pivot2) {
+                    while (a[great] > pivot2 && k < great) {
+                        great--;
+                    }
+                    a[k] = a[great];
+                    a[great--] = ak;
+                    ak = a[k];
+
+                    if (ak < pivot1) {
+                        a[k] = a[less];
+                        a[less++] = ak;
+                    }
+                }
+            }
+        } else { // Pivots are equal
+            /*
+             * Partition degenerates to the traditional 3-way
+             * (or "Dutch National Flag") partition:
+             *
+             *   left part   center part            right part
+             * -------------------------------------------------
+             * [  < pivot  |  == pivot  |    ?    |  > pivot   ]
+             * -------------------------------------------------
+             *
+             *              ^            ^       ^
+             *              |            |       |
+             *             less          k     great
+             *
+             * Invariants:
+             *
+             *   all in (left, less)   < pivot
+             *   all in [less, k)     == pivot
+             *   all in (great, right) > pivot
+             *
+             * Pointer k is the first index of ?-part
+             */
+            for (int k = less; k <= great; k++) {
+                byte ak = a[k];
+
+                if (ak == pivot1) {
+                  continue;
+                }
+                if (ak < pivot1) {
+                    a[k] = a[less];
+                    a[less++] = ak;
+                } else {
+                    while (a[great] > pivot1) {
+                        great--;
+                    }
+                    a[k] = a[great];
+                    a[great--] = ak;
+                    ak = a[k];
+
+                    if (ak < pivot1) {
+                        a[k] = a[less];
+                        a[less++] = ak;
+                    }
+                }
+            }
+        }
+
+        // Swap pivots into their final positions
+        a[left]  = a[less  - 1]; a[less  - 1] = pivot1;
+        a[right] = a[great + 1]; a[great + 1] = pivot2;
+
+        // Sort left and right parts recursively, excluding known pivot values
+        doSort(a, left,   less - 2);
+        doSort(a, great + 2, right);
+
+        /*
+         * If pivot1 == pivot2, all elements from center
+         * part are equal and, therefore, already sorted
+         */
+        if (!pivotsDiffer) {
+            return;
+        }
+
+        /*
+         * If center part is too large (comprises > 5/6 of
+         * the array), swap internal pivot values to ends
+         */
+        if (less < e1 && e5 < great) {
+            while (a[less] == pivot1) {
+                less++;
+            }
+            for (int k = less + 1; k <= great; k++) {
+                if (a[k] == pivot1) {
+                    a[k] = a[less];
+                    a[less++] = pivot1;
+                }
+            }
+            while (a[great] == pivot2) {
+                great--;
+            }
+            for (int k = great - 1; k >= less; k--) {
+                if (a[k] == pivot2) {
+                    a[k] = a[great];
+                    a[great--] = pivot2;
+                }
+            }
+        }
+
+        // Sort center part recursively, excluding known pivot values
+        doSort(a, less, great);
+    }
+
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>The {@code <} relation does not provide a total order on all float
+     * values: {@code -0.0f == 0.0f} is {@code true} and a {@code Float.NaN}
+     * value compares neither less than, greater than, nor equal to any value,
+     * even itself. This method uses the total order imposed by the method
+     * {@link Float#compareTo}: {@code -0.0f} is treated as less than value
+     * {@code 0.0f} and {@code Float.NaN} is considered greater than any
+     * other value and all {@code Float.NaN} values are considered equal.
+     *
+     * @param a the array to be sorted
+     */
+    public static void sort(float[] a) {
+        sortNegZeroAndNaN(a, 0, a.length - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>The {@code <} relation does not provide a total order on all float
+     * values: {@code -0.0f == 0.0f} is {@code true} and a {@code Float.NaN}
+     * value compares neither less than, greater than, nor equal to any value,
+     * even itself. This method uses the total order imposed by the method
+     * {@link Float#compareTo}: {@code -0.0f} is treated as less than value
+     * {@code 0.0f} and {@code Float.NaN} is considered greater than any
+     * other value and all {@code Float.NaN} values are considered equal.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     */
+    public static void sort(float[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        sortNegZeroAndNaN(a, fromIndex, toIndex - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The
+     * sort is done in three phases to avoid expensive comparisons in the
+     * inner loop. The comparisons would be expensive due to anomalies
+     * associated with negative zero {@code -0.0f} and {@code Float.NaN}.
+     *
+     * @param a the array to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
+     */
+    private static void sortNegZeroAndNaN(float[] a, int left, int right) {
+        /*
+         * Phase 1: Count negative zeros and move NaNs to end of array
+         */
+        final int NEGATIVE_ZERO = Float.floatToIntBits(-0.0f);
+        int numNegativeZeros = 0;
+        int n = right;
+
+        for (int k = left; k <= n; k++) {
+            float ak = a[k];
+
+            if (ak == 0.0f && NEGATIVE_ZERO == Float.floatToIntBits(ak)) {
+                a[k] = 0.0f;
+                numNegativeZeros++;
+            } else if (ak != ak) { // i.e., ak is NaN
+                a[k--] = a[n];
+                a[n--] = Float.NaN;
+            }
+        }
+
+        /*
+         * Phase 2: Sort everything except NaNs (which are already in place)
+         */
+        doSort(a, left, n);
+
+        /*
+         * Phase 3: Turn positive zeros back into negative zeros as appropriate
+         */
+        if (numNegativeZeros == 0) {
+            return;
+        }
+
+        // Find first zero element
+        int zeroIndex = findAnyZero(a, left, n);
+
+        for (int i = zeroIndex - 1; i >= left && a[i] == 0.0f; i--) {
+            zeroIndex = i;
+        }
+
+        // Turn the right number of positive zeros back into negative zeros
+        for (int i = zeroIndex, m = zeroIndex + numNegativeZeros; i < m; i++) {
+            a[i] = -0.0f;
+        }
+    }
+
+    /**
+     * Returns the index of some zero element in the specified range via
+     * binary search. The range is assumed to be sorted, and must contain
+     * at least one zero.
+     *
+     * @param a the array to be searched
+     * @param low the index of the first element, inclusive, to be searched
+     * @param high the index of the last element, inclusive, to be searched
+     */
+    private static int findAnyZero(float[] a, int low, int high) {
+        while (true) {
+            int middle = (low + high) >>> 1;
+            float middleValue = a[middle];
+
+            if (middleValue < 0.0f) {
+                low = middle + 1;
+            } else if (middleValue > 0.0f) {
+                high = middle - 1;
+            } else { // middleValue == 0.0f
+                return middle;
+            }
+        }
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. This
+     * method differs from the public {@code sort} method in three ways:
+     * {@code right} index is inclusive, it does no range checking on
+     * {@code left} or {@code right}, and it does not handle negative
+     * zeros or NaNs in the array.
+     *
+     * @param a the array to be sorted, which must not contain -0.0f or NaN
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
+     */
+    private static void doSort(float[] a, int left, int right) {
         // Use insertion sort on tiny arrays
         if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
             for (int k = left + 1; k <= right; k++) {
@@ -1168,12 +1444,12 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array into ascending order
-     * by Dual-Pivot Quicksort.
+     * Sorts the specified range of the array into ascending order by the
+     * Dual-Pivot Quicksort algorithm.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
      */
     private static void dualPivotQuicksort(float[] a, int left, int right) {
         // Compute indices of five evenly spaced elements
@@ -1308,8 +1584,8 @@ final class DualPivotQuicksort {
         a[right] = a[great + 1]; a[great + 1] = pivot2;
 
         // Sort left and right parts recursively, excluding known pivot values
-        sort(a, left,   less - 2);
-        sort(a, great + 2, right);
+        doSort(a, left,   less - 2);
+        doSort(a, great + 2, right);
 
         /*
          * If pivot1 == pivot2, all elements from center
@@ -1345,17 +1621,143 @@ final class DualPivotQuicksort {
         }
 
         // Sort center part recursively, excluding known pivot values
-        sort(a, less, great);
+        doSort(a, less, great);
     }
 
     /**
-     * Sorts the specified range of the array into ascending order.
+     * Sorts the specified array into ascending numerical order.
+     *
+     * <p>The {@code <} relation does not provide a total order on all double
+     * values: {@code -0.0d == 0.0d} is {@code true} and a {@code Double.NaN}
+     * value compares neither less than, greater than, nor equal to any value,
+     * even itself. This method uses the total order imposed by the method
+     * {@link Double#compareTo}: {@code -0.0d} is treated as less than value
+     * {@code 0.0d} and {@code Double.NaN} is considered greater than any
+     * other value and all {@code Double.NaN} values are considered equal.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
      */
-    static void sort(double[] a, int left, int right) {
+    public static void sort(double[] a) {
+        sortNegZeroAndNaN(a, 0, a.length - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The range
+     * to be sorted extends from the index {@code fromIndex}, inclusive, to
+     * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
+     * the range to be sorted is empty.
+     *
+     * <p>The {@code <} relation does not provide a total order on all double
+     * values: {@code -0.0d == 0.0d} is {@code true} and a {@code Double.NaN}
+     * value compares neither less than, greater than, nor equal to any value,
+     * even itself. This method uses the total order imposed by the method
+     * {@link Double#compareTo}: {@code -0.0d} is treated as less than value
+     * {@code 0.0d} and {@code Double.NaN} is considered greater than any
+     * other value and all {@code Double.NaN} values are considered equal.
+     *
+     * @param a the array to be sorted
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     * @throws IllegalArgumentException if {@code fromIndex > toIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *     if {@code fromIndex < 0} or {@code toIndex > a.length}
+     */
+    public static void sort(double[] a, int fromIndex, int toIndex) {
+        rangeCheck(a.length, fromIndex, toIndex);
+        sortNegZeroAndNaN(a, fromIndex, toIndex - 1);
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. The
+     * sort is done in three phases to avoid expensive comparisons in the
+     * inner loop. The comparisons would be expensive due to anomalies
+     * associated with negative zero {@code -0.0d} and {@code Double.NaN}.
+     *
+     * @param a the array to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
+     */
+    private static void sortNegZeroAndNaN(double[] a, int left, int right) {
+        /*
+         * Phase 1: Count negative zeros and move NaNs to end of array
+         */
+        final long NEGATIVE_ZERO = Double.doubleToLongBits(-0.0d);
+        int numNegativeZeros = 0;
+        int n = right;
+
+        for (int k = left; k <= n; k++) {
+            double ak = a[k];
+
+            if (ak == 0.0d && NEGATIVE_ZERO == Double.doubleToLongBits(ak)) {
+                a[k] = 0.0d;
+                numNegativeZeros++;
+            } else if (ak != ak) { // i.e., ak is NaN
+                a[k--] = a[n];
+                a[n--] = Double.NaN;
+            }
+        }
+
+        /*
+         * Phase 2: Sort everything except NaNs (which are already in place)
+         */
+        doSort(a, left, n);
+
+        /*
+         * Phase 3: Turn positive zeros back into negative zeros as appropriate
+         */
+        if (numNegativeZeros == 0) {
+            return;
+        }
+
+        // Find first zero element
+        int zeroIndex = findAnyZero(a, left, n);
+
+        for (int i = zeroIndex - 1; i >= left && a[i] == 0.0d; i--) {
+            zeroIndex = i;
+        }
+
+        // Turn the right number of positive zeros back into negative zeros
+        for (int i = zeroIndex, m = zeroIndex + numNegativeZeros; i < m; i++) {
+            a[i] = -0.0d;
+        }
+    }
+
+    /**
+     * Returns the index of some zero element in the specified range via
+     * binary search. The range is assumed to be sorted, and must contain
+     * at least one zero.
+     *
+     * @param a the array to be searched
+     * @param low the index of the first element, inclusive, to be searched
+     * @param high the index of the last element, inclusive, to be searched
+     */
+    private static int findAnyZero(double[] a, int low, int high) {
+        while (true) {
+            int middle = (low + high) >>> 1;
+            double middleValue = a[middle];
+
+            if (middleValue < 0.0d) {
+                low = middle + 1;
+            } else if (middleValue > 0.0d) {
+                high = middle - 1;
+            } else { // middleValue == 0.0d
+                return middle;
+            }
+        }
+    }
+
+    /**
+     * Sorts the specified range of the array into ascending order. This
+     * method differs from the public {@code sort} method in three ways:
+     * {@code right} index is inclusive, it does no range checking on
+     * {@code left} or {@code right}, and it does not handle negative
+     * zeros or NaNs in the array.
+     *
+     * @param a the array to be sorted, which must not contain -0.0d and NaN
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
+     */
+    private static void doSort(double[] a, int left, int right) {
         // Use insertion sort on tiny arrays
         if (right - left + 1 < INSERTION_SORT_THRESHOLD) {
             for (int k = left + 1; k <= right; k++) {
@@ -1373,12 +1775,12 @@ final class DualPivotQuicksort {
     }
 
     /**
-     * Sorts the specified range of the array into ascending order
-     * by Dual-Pivot Quicksort.
+     * Sorts the specified range of the array into ascending order by the
+     * Dual-Pivot Quicksort algorithm.
      *
      * @param a the array to be sorted
-     * @param left the index of the first element, inclusively, to be sorted
-     * @param right the index of the last element, inclusively, to be sorted
+     * @param left the index of the first element, inclusive, to be sorted
+     * @param right the index of the last element, inclusive, to be sorted
      */
     private static void dualPivotQuicksort(double[] a, int left, int right) {
         // Compute indices of five evenly spaced elements
@@ -1513,8 +1915,8 @@ final class DualPivotQuicksort {
         a[right] = a[great + 1]; a[great + 1] = pivot2;
 
         // Sort left and right parts recursively, excluding known pivot values
-        sort(a, left,   less - 2);
-        sort(a, great + 2, right);
+        doSort(a, left,   less - 2);
+        doSort(a, great + 2, right);
 
         /*
          * If pivot1 == pivot2, all elements from center
@@ -1550,6 +1952,23 @@ final class DualPivotQuicksort {
         }
 
         // Sort center part recursively, excluding known pivot values
-        sort(a, less, great);
+        doSort(a, less, great);
+    }
+
+    /**
+     * Checks that {@code fromIndex} and {@code toIndex} are in
+     * the range and throws an appropriate exception, if they aren't.
+     */
+    private static void rangeCheck(int length, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException(
+                "fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
+        }
+        if (fromIndex < 0) {
+            throw new ArrayIndexOutOfBoundsException(fromIndex);
+        }
+        if (toIndex > length) {
+            throw new ArrayIndexOutOfBoundsException(toIndex);
+        }
     }
 }
