@@ -1240,9 +1240,11 @@ void Arguments::set_ergonomics_flags() {
   // Check that UseCompressedOops can be set with the max heap size allocated
   // by ergonomics.
   if (MaxHeapSize <= max_heap_for_compressed_oops()) {
+#ifndef COMPILER1
     if (FLAG_IS_DEFAULT(UseCompressedOops) && !UseG1GC) {
       FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
+#endif
 #ifdef _WIN64
     if (UseLargePages && UseCompressedOops) {
       // Cannot allocate guard pages for implicit checks in indexed addressing
@@ -2703,6 +2705,10 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       TraceClassUnloading = true;
     }
   }
+
+#if defined(_LP64) && defined(COMPILER1)
+  UseCompressedOops = false;
+#endif
 
 #ifdef SERIALGC
   force_serial_gc();
