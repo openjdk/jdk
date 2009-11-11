@@ -690,10 +690,8 @@ ciMethod* ciEnv::get_method_by_index_impl(ciInstanceKlass* accessor,
   ciInstanceKlass* declared_holder = get_instance_klass_for_declared_method_holder(holder);
 
   // Get the method's name and signature.
-  int nt_index = cpool->name_and_type_ref_index_at(index);
-  int sig_index = cpool->signature_ref_index_at(nt_index);
   symbolOop name_sym = cpool->name_ref_at(index);
-  symbolOop sig_sym = cpool->symbol_at(sig_index);
+  symbolOop sig_sym  = cpool->signature_ref_at(index);
 
   if (holder_is_accessible) { // Our declared holder is loaded.
     instanceKlass* lookup = declared_holder->get_instanceKlass();

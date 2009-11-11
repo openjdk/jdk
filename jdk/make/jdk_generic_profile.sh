@@ -339,3 +339,82 @@ fi
 PATH="${path4sdk}"
 export PATH
 
+# Export variables required for Zero
+if [ "${ZERO_BUILD}" = true ] ; then
+  # ZERO_LIBARCH is the name of the architecture-specific
+  # subdirectory under $JAVA_HOME/jre/lib
+  arch=$(uname -m)
+  case "${arch}" in
+    x86_64)  ZERO_LIBARCH=amd64     ;;
+    i?86)    ZERO_LIBARCH=i386      ;;
+    sparc64) ZERO_LIBARCH=sparcv9   ;;
+    arm*)    ZERO_LIBARCH=arm       ;;
+    *)       ZERO_LIBARCH="$(arch)"
+  esac
+  export ZERO_LIBARCH
+
+  # ARCH_DATA_MODEL is the number of bits in a pointer
+  case "${ZERO_LIBARCH}" in
+    i386|ppc|s390|sparc|arm)
+      ARCH_DATA_MODEL=32
+      ;;
+    amd64|ppc64|s390x|sparcv9|ia64|alpha)
+      ARCH_DATA_MODEL=64
+      ;;
+    *)
+      echo "ERROR: Unable to determine ARCH_DATA_MODEL for ${ZERO_LIBARCH}"
+      exit 1
+  esac
+  export ARCH_DATA_MODEL
+
+  # ZERO_ENDIANNESS is the endianness of the processor
+  case "${ZERO_LIBARCH}" in
+    i386|amd64|ia64)
+      ZERO_ENDIANNESS=little
+      ;;
+    ppc*|s390*|sparc*|alpha)
+      ZERO_ENDIANNESS=big
+      ;;
+    *)
+      echo "ERROR: Unable to determine ZERO_ENDIANNESS for ${ZERO_LIBARCH}"
+      exit 1
+  esac
+  export ZERO_ENDIANNESS
+
+  # ZERO_ARCHDEF is used to enable architecture-specific code
+  case "${ZERO_LIBARCH}" in
+    i386)   ZERO_ARCHDEF=IA32  ;;
+    ppc*)   ZERO_ARCHDEF=PPC   ;;
+    s390*)  ZERO_ARCHDEF=S390  ;;
+    sparc*) ZERO_ARCHDEF=SPARC ;;
+    *)      ZERO_ARCHDEF=$(echo "${ZERO_LIBARCH}" | tr a-z A-Z)
+  esac
+  export ZERO_ARCHDEF
+
+  # ZERO_ARCHFLAG tells the compiler which mode to build for
+  case "${ZERO_LIBARCH}" in
+    s390)
+      ZERO_ARCHFLAG="-m31"
+      ;;
+    *)
+      ZERO_ARCHFLAG="-m${ARCH_DATA_MODEL}"
+  esac
+  export ZERO_ARCHFLAG
+
+  # LIBFFI_CFLAGS and LIBFFI_LIBS tell the compiler how to compile and
+  # link against libffi
+  pkgconfig=$(which pkg-config 2>/dev/null)
+  if [ -x "${pkgconfig}" ] ; then
+    if [ "${LIBFFI_CFLAGS}" = "" ] ; then
+      LIBFFI_CFLAGS=$("${pkgconfig}" --cflags libffi)
+    fi
+    if [ "${LIBFFI_LIBS}" = "" ] ; then
+      LIBFFI_LIBS=$("${pkgconfig}" --libs libffi)
+    fi
+  fi
+  if [ "${LIBFFI_LIBS}" = "" ] ; then
+      LIBFFI_LIBS="-lffi"
+  fi
+  export LIBFFI_CFLAGS
+  export LIBFFI_LIBS
+fi

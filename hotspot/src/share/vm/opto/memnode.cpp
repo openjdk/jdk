@@ -255,6 +255,13 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     return NodeSentinel; // caller will return NULL
   }
 
+  // Do NOT remove or optimize the next lines: ensure a new alias index
+  // is allocated for an oop pointer type before Escape Analysis.
+  // Note: C++ will not remove it since the call has side effect.
+  if ( t_adr->isa_oopptr() ) {
+    int alias_idx = phase->C->get_alias_index(t_adr->is_ptr());
+  }
+
 #ifdef ASSERT
   Node* base = NULL;
   if (address->is_AddP())

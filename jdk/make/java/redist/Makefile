@@ -94,10 +94,12 @@ ifeq ($(INCLUDE_SA), true)
   endif
 endif # INCLUDE_SA
 
-# Hotspot client is only available on 32-bit builds
+# Hotspot client is only available on 32-bit non-Zero builds
+ifneq ($(ZERO_BUILD), true)
 ifeq ($(ARCH_DATA_MODEL), 32)
   IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_NAME) \
                  $(LIB_LOCATION)/$(CLIENT_LOCATION)/Xusage.txt
+endif
 endif
 
 ifeq ($(PLATFORM), windows)
@@ -171,6 +173,7 @@ ifeq ($(PLATFORM), solaris)
   IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME)
 endif 
 
+ifneq ($(ZERO_BUILD), true)
 ifeq ($(ARCH_DATA_MODEL), 32)
 
 IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME)
@@ -200,6 +203,8 @@ $(LIB_LOCATION)/$(JVM_NAME): $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_NAME)
 endif # 32bit solaris
 
 endif # 32bit
+
+endif # ZERO_BUILD
 
 #  NOT Windows ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ NOT Windows
 

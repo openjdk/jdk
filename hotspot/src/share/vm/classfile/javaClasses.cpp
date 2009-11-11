@@ -2430,15 +2430,15 @@ oop java_dyn_MethodTypeForm::erasedType(oop mtform) {
 }
 
 
-// Support for sun_dyn_CallSiteImpl
+// Support for java_dyn_CallSite
 
-int sun_dyn_CallSiteImpl::_type_offset;
-int sun_dyn_CallSiteImpl::_target_offset;
-int sun_dyn_CallSiteImpl::_vmmethod_offset;
+int java_dyn_CallSite::_type_offset;
+int java_dyn_CallSite::_target_offset;
+int java_dyn_CallSite::_vmmethod_offset;
 
-void sun_dyn_CallSiteImpl::compute_offsets() {
+void java_dyn_CallSite::compute_offsets() {
   if (!EnableInvokeDynamic)  return;
-  klassOop k = SystemDictionary::CallSiteImpl_klass();
+  klassOop k = SystemDictionary::CallSite_klass();
   if (k != NULL) {
     compute_offset(_type_offset,   k, vmSymbols::type_name(),   vmSymbols::java_dyn_MethodType_signature(), true);
     compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_dyn_MethodHandle_signature(), true);
@@ -2446,23 +2446,23 @@ void sun_dyn_CallSiteImpl::compute_offsets() {
   }
 }
 
-oop sun_dyn_CallSiteImpl::type(oop site) {
+oop java_dyn_CallSite::type(oop site) {
   return site->obj_field(_type_offset);
 }
 
-oop sun_dyn_CallSiteImpl::target(oop site) {
+oop java_dyn_CallSite::target(oop site) {
   return site->obj_field(_target_offset);
 }
 
-void sun_dyn_CallSiteImpl::set_target(oop site, oop target) {
+void java_dyn_CallSite::set_target(oop site, oop target) {
   site->obj_field_put(_target_offset, target);
 }
 
-oop sun_dyn_CallSiteImpl::vmmethod(oop site) {
+oop java_dyn_CallSite::vmmethod(oop site) {
   return site->obj_field(_vmmethod_offset);
 }
 
-void sun_dyn_CallSiteImpl::set_vmmethod(oop site, oop ref) {
+void java_dyn_CallSite::set_vmmethod(oop site, oop ref) {
   site->obj_field_put(_vmmethod_offset, ref);
 }
 
@@ -2811,7 +2811,7 @@ void JavaClasses::compute_offsets() {
     java_dyn_MethodTypeForm::compute_offsets();
   }
   if (EnableInvokeDynamic) {
-    sun_dyn_CallSiteImpl::compute_offsets();
+    java_dyn_CallSite::compute_offsets();
   }
   java_security_AccessControlContext::compute_offsets();
   // Initialize reflection classes. The layouts of these classes

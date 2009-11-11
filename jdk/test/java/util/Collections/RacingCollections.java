@@ -234,7 +234,7 @@ public class RacingCollections {
         List<Queue<Integer>> list =
             new ArrayList<Queue<Integer>>(newConcurrentDeques());
         list.add(new LinkedBlockingQueue<Integer>(10));
-//         list.add(new LinkedTransferQueue<Integer>());
+        list.add(new LinkedTransferQueue<Integer>());
         return list;
     }
 

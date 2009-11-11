@@ -1,0 +1,2 @@
+BadlyTypedLabel2.java:15:14: compiler.err.prob.found.req: (compiler.misc.incompatible.types), java.math.RoundingMode, java.lang.String
+1 error
