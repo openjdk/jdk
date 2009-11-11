@@ -99,6 +99,15 @@ bool SystemDictionary::is_parallelCapable(Handle class_loader) {
   return java_lang_Class::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
+// ParallelDefineClass flag does not apply to bootclass loader
+bool SystemDictionary::is_parallelDefine(Handle class_loader) {
+   if (class_loader.is_null()) return false;
+   if (AllowParallelDefineClass && java_lang_Class::parallelCapable(class_loader())) {
+     return true;
+   }
+   return false;
+}
+// ----------------------------------------------------------------------------
 // Resolving of classes
 
 // Forwards to resolve_or_null
@@ -724,13 +733,13 @@ klassOop SystemDictionary::resolve_instance_class_or_null(symbolHandle class_nam
       // Do actual loading
       k = load_instance_class(name, class_loader, THREAD);
 
-      // For UnsyncloadClass and AllowParallelDefineClass only:
+      // For UnsyncloadClass only
       // If they got a linkageError, check if a parallel class load succeeded.
       // If it did, then for bytecode resolution the specification requires
       // that we return the same result we did for the other thread, i.e. the
       // successfully loaded instanceKlass
       // Should not get here for classloaders that support parallelism
-      // with the new cleaner mechanism
+      // with the new cleaner mechanism, even with AllowParallelDefineClass
       // Bootstrap goes through here to allow for an extra guarantee check
       if (UnsyncloadClass || (class_loader.is_null())) {
         if (k.is_null() && HAS_PENDING_EXCEPTION
@@ -1483,14 +1492,17 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
 }
 
 // Support parallel classloading
-// Initial implementation for bootstrap classloader
-// For custom class loaders that support parallel classloading,
+// All parallel class loaders, including bootstrap classloader
+// lock a placeholder entry for this class/class_loader pair
+// to allow parallel defines of different classes for this class loader
 // With AllowParallelDefine flag==true, in case they do not synchronize around
 // FindLoadedClass/DefineClass, calls, we check for parallel
 // loading for them, wait if a defineClass is in progress
 // and return the initial requestor's results
+// This flag does not apply to the bootstrap classloader.
 // With AllowParallelDefine flag==false, call through to define_instance_class
 // which will throw LinkageError: duplicate class definition.
+// False is the requested default.
 // For better performance, the class loaders should synchronize
 // findClass(), i.e. FindLoadedClass/DefineClassIfAbsent or they
 // potentially waste time reading and parsing the bytestream.
@@ -1511,9 +1523,11 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(symbolHandle
   {
     MutexLocker mu(SystemDictionary_lock, THREAD);
     // First check if class already defined
-    klassOop check = find_class(d_index, d_hash, name_h, class_loader);
-    if (check != NULL) {
-      return(instanceKlassHandle(THREAD, check));
+    if (UnsyncloadClass || (is_parallelDefine(class_loader))) {
+      klassOop check = find_class(d_index, d_hash, name_h, class_loader);
+      if (check != NULL) {
+        return(instanceKlassHandle(THREAD, check));
+      }
     }
 
     // Acquire define token for this class/classloader
@@ -1529,7 +1543,7 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(symbolHandle
     // Only special cases allow parallel defines and can use other thread's results
     // Other cases fall through, and may run into duplicate defines
     // caught by finding an entry in the SystemDictionary
-    if ((UnsyncloadClass || AllowParallelDefineClass) && (probe->instanceKlass() != NULL)) {
+    if ((UnsyncloadClass || is_parallelDefine(class_loader)) && (probe->instanceKlass() != NULL)) {
         probe->remove_seen_thread(THREAD, PlaceholderTable::DEFINE_CLASS);
         placeholders()->find_and_remove(p_index, p_hash, name_h, class_loader, THREAD);
         SystemDictionary_lock->notify_all();
