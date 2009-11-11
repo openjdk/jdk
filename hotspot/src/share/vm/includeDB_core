@@ -1291,6 +1291,7 @@ cpCacheOop.cpp                          jvmtiRedefineClassesTrace.hpp
 cpCacheOop.cpp                          markSweep.inline.hpp
 cpCacheOop.cpp                          objArrayOop.hpp
 cpCacheOop.cpp                          oop.inline.hpp
+cpCacheOop.cpp                          rewriter.hpp
 cpCacheOop.cpp                          universe.inline.hpp
 
 cpCacheOop.hpp                          allocation.hpp
