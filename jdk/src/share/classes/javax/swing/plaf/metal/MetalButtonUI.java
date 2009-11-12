@@ -26,6 +26,8 @@
 package javax.swing.plaf.metal;
 
 import sun.swing.SwingUtilities2;
+import sun.awt.AppContext;
+
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.plaf.basic.*;
@@ -49,19 +51,25 @@ import javax.swing.plaf.*;
  * @author Tom Santos
  */
 public class MetalButtonUI extends BasicButtonUI {
-
-    private final static MetalButtonUI metalButtonUI = new MetalButtonUI();
-
     // NOTE: These are not really needed, but at this point we can't pull
     // them. Their values are updated purely for historical reasons.
     protected Color focusColor;
     protected Color selectColor;
     protected Color disabledTextColor;
 
+    private static final Object METAL_BUTTON_UI_KEY = new Object();
+
     // ********************************
     //          Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent c) {
+        AppContext appContext = AppContext.getAppContext();
+        MetalButtonUI metalButtonUI =
+                (MetalButtonUI) appContext.get(METAL_BUTTON_UI_KEY);
+        if (metalButtonUI == null) {
+            metalButtonUI = new MetalButtonUI();
+            appContext.put(METAL_BUTTON_UI_KEY, metalButtonUI);
+        }
         return metalButtonUI;
     }
 

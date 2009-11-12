@@ -37,7 +37,7 @@ public class LastElement {
         testQueue(new LinkedBlockingDeque<Integer>());
         testQueue(new ArrayBlockingQueue<Integer>(10, true));
         testQueue(new ArrayBlockingQueue<Integer>(10, false));
-//         testQueue(new LinkedTransferQueue<Integer>());
+        testQueue(new LinkedTransferQueue<Integer>());
 
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new Exception("Some tests failed");

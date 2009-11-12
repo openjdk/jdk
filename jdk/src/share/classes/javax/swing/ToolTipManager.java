@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,7 @@
 package javax.swing;
 
 import java.awt.event.*;
-import java.applet.*;
 import java.awt.*;
-import java.io.Serializable;
-import sun.swing.UIAction;
 
 /**
  * Manages all the <code>ToolTips</code> in the system.
@@ -60,7 +57,7 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
     JComponent insideComponent;
     MouseEvent mouseEvent;
     boolean showImmediately;
-    final static ToolTipManager sharedInstance = new ToolTipManager();
+    private static final Object TOOL_TIP_MANAGER_KEY = new Object();
     transient Popup tipWindow;
     /** The Window tip is being displayed in. This will be non-null if
      * the Window tip is in differs from that of insideComponent's Window.
@@ -345,7 +342,13 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
      * @return a shared <code>ToolTipManager</code> object
      */
     public static ToolTipManager sharedInstance() {
-        return sharedInstance;
+        Object value = SwingUtilities.appContextGet(TOOL_TIP_MANAGER_KEY);
+        if (value instanceof ToolTipManager) {
+            return (ToolTipManager) value;
+        }
+        ToolTipManager manager = new ToolTipManager();
+        SwingUtilities.appContextPut(TOOL_TIP_MANAGER_KEY, manager);
+        return manager;
     }
 
     // add keylistener here to trigger tip for access
