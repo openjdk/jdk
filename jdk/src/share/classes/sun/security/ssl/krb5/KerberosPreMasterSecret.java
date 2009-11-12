@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package sun.security.ssl;
+package sun.security.ssl.krb5;
 
 import java.io.*;
 import java.security.*;
@@ -35,6 +35,11 @@ import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.EncryptedData;
 import sun.security.krb5.KrbException;
 import sun.security.krb5.internal.crypto.KeyUsage;
+
+import sun.security.ssl.Debug;
+import sun.security.ssl.HandshakeInStream;
+import sun.security.ssl.HandshakeMessage;
+import sun.security.ssl.ProtocolVersion;
 
 /**
  * This is the Kerberos premaster secret in the Kerberos client key
@@ -211,12 +216,12 @@ final class KerberosPreMasterSecret {
         return pm;
     }
 
-    // Clone not needed; package internal use only
+    // Clone not needed; internal use only
     byte[] getUnencrypted() {
         return preMaster;
     }
 
-    // Clone not needed; package internal use only
+    // Clone not needed; internal use only
     byte[] getEncrypted() {
         return encrypted;
     }
