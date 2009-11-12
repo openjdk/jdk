@@ -70,7 +70,7 @@ include $(BUILDDIR)/common/Classes.gmk
 build: $(FILES_png) $(FILES_gif) $(TEMPDIR)/manifest $(JARFILE)
 
 $(GENSRCDIR)/sun/tools/jconsole/Version.java: \
-                $(SHARE_SRC)/classes/sun/tools/jconsole/Version-template.java
+                $(SHARE_SRC)/classes/sun/tools/jconsole/Version.java.template
 	$(MKDIR) -p $(@D)
 	$(SED) -e 's/@@jconsole_version@@/$(FULL_VERSION)/g' $< > $@
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,6 +472,18 @@ public class ZoneInfoFile {
 
     private static Map<String, ZoneInfo> zoneInfoObjects = null;
 
+    private static final String ziDir;
+    static {
+        String zi = (String) AccessController.doPrivileged(
+                         new sun.security.action.GetPropertyAction("java.home"))
+                    + File.separator + "lib" + File.separator + "zi";
+        try {
+            zi = new File(zi).getCanonicalPath();
+        } catch (Exception e) {
+        }
+        ziDir = zi;
+    }
+
     /**
      * Converts the given time zone ID to a platform dependent path
      * name. For example, "America/Los_Angeles" is converted to
@@ -576,20 +588,7 @@ public class ZoneInfoFile {
             return null;
         }
 
-        int index;
-        for (index = 0; index < JAVAZI_LABEL.length; index++) {
-            if (buf[index] != JAVAZI_LABEL[index]) {
-                System.err.println("ZoneInfo: wrong magic number: " + id);
-                return null;
-            }
-        }
-
-        if (buf[index++] > JAVAZI_VERSION) {
-            System.err.println("ZoneInfo: incompatible version ("
-                               + buf[index - 1] + "): " + id);
-            return null;
-        }
-
+        int index = 0;
         int filesize = buf.length;
         int rawOffset = 0;
         int dstSavings = 0;
@@ -600,6 +599,18 @@ public class ZoneInfoFile {
         int[] simpleTimeZoneParams = null;
 
         try {
+            for (index = 0; index < JAVAZI_LABEL.length; index++) {
+                if (buf[index] != JAVAZI_LABEL[index]) {
+                    System.err.println("ZoneInfo: wrong magic number: " + id);
+                    return null;
+                }
+            }
+            if (buf[index++] > JAVAZI_VERSION) {
+                System.err.println("ZoneInfo: incompatible version ("
+                                   + buf[index - 1] + "): " + id);
+                return null;
+            }
+
             while (index < filesize) {
                 byte tag = buf[index++];
                 int  len = ((buf[index++] & 0xFF) << 8) + (buf[index++] & 0xFF);
@@ -1017,30 +1028,33 @@ public class ZoneInfoFile {
      * Reads the specified file under &lt;java.home&gt;/lib/zi into a buffer.
      * @return the buffer, or null if any I/O error occurred.
      */
-    private static byte[] readZoneInfoFile(String fileName) {
+    private static byte[] readZoneInfoFile(final String fileName) {
         byte[] buffer = null;
 
         try {
-            String homeDir = AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("java.home"));
-            final String fname = homeDir + File.separator + "lib" + File.separator
-                                 + "zi" + File.separator + fileName;
             buffer = (byte[]) AccessController.doPrivileged(new PrivilegedExceptionAction() {
                 public Object run() throws IOException {
-                    File file = new File(fname);
-                    if (!file.canRead()) {
+                    File file = new File(ziDir, fileName);
+                    if (!file.exists() || !file.isFile()) {
                         return null;
                     }
-                    int filesize = (int)file.length();
-                    byte[] buf = new byte[filesize];
-
-                    FileInputStream fis = new FileInputStream(file);
-
-                    if (fis.read(buf) != filesize) {
-                        fis.close();
-                        throw new IOException("read error on " + fname);
+                    file = file.getCanonicalFile();
+                    String path = file.getCanonicalPath();
+                    byte[] buf = null;
+                    if (path != null && path.startsWith(ziDir)) {
+                        int filesize = (int)file.length();
+                        if (filesize > 0) {
+                            FileInputStream fis = new FileInputStream(file);
+                            buf = new byte[filesize];
+                            try {
+                                if (fis.read(buf) != filesize) {
+                                    throw new IOException("read error on " + fileName);
+                                }
+                            } finally {
+                                fis.close();
+                            }
+                        }
                     }
-                    fis.close();
                     return buf;
                 }
             });

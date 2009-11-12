@@ -288,11 +288,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     public BigInteger(String val, int radix) {
         int cursor = 0, numDigits;
-        int len = val.length();
+        final int len = val.length();
 
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX)
             throw new NumberFormatException("Radix out of range");
-        if (val.length() == 0)
+        if (len == 0)
             throw new NumberFormatException("Zero length BigInteger");
 
         // Check for at most one leading sign
@@ -303,7 +303,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             // No leading sign character or at most one leading sign character
             if (index1 == 0 || index2 == 0) {
                 cursor = 1;
-                if (val.length() == 1)
+                if (len == 1)
                     throw new NumberFormatException("Zero length BigInteger");
             }
             if (index1 == 0)
@@ -342,7 +342,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // Process remaining digit groups
         int superRadix = intRadix[radix];
         int groupVal = 0;
-        while (cursor < val.length()) {
+        while (cursor < len) {
             group = val.substring(cursor, cursor += digitsPerInt[radix]);
             groupVal = Integer.parseInt(group, radix);
             if (groupVal < 0)

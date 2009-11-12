@@ -38,7 +38,6 @@ SUBDIRS =                   \
   compile_properties        \
   dir_diff                  \
   dtdbuilder                \
-  fontchecker               \
   freetypecheck             \
   generate_break_iterator   \
   GenerateCharacter         \
