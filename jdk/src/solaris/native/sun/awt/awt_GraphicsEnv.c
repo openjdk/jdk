@@ -1681,6 +1681,9 @@ typedef Status
                                      Rotation rotation,
                                      short rate,
                                      Time timestamp);
+typedef Rotation
+    (*XRRConfigRotationsType)(XRRScreenConfiguration *config,
+                              Rotation *current_rotation);
 
 static XRRQueryVersionType               awt_XRRQueryVersion;
 static XRRGetScreenInfoType              awt_XRRGetScreenInfo;
@@ -1690,6 +1693,7 @@ static XRRConfigCurrentRateType          awt_XRRConfigCurrentRate;
 static XRRConfigSizesType                awt_XRRConfigSizes;
 static XRRConfigCurrentConfigurationType awt_XRRConfigCurrentConfiguration;
 static XRRSetScreenConfigAndRateType     awt_XRRSetScreenConfigAndRate;
+static XRRConfigRotationsType            awt_XRRConfigRotations;
 
 #define LOAD_XRANDR_FUNC(f) \
     do { \
@@ -1756,6 +1760,7 @@ X11GD_InitXrandrFuncs(JNIEnv *env)
     LOAD_XRANDR_FUNC(XRRConfigSizes);
     LOAD_XRANDR_FUNC(XRRConfigCurrentConfiguration);
     LOAD_XRANDR_FUNC(XRRSetScreenConfigAndRate);
+    LOAD_XRANDR_FUNC(XRRConfigRotations);
 
     return JNI_TRUE;
 }
@@ -2010,6 +2015,7 @@ Java_sun_awt_X11GraphicsDevice_configDisplayMode
     jboolean success = JNI_FALSE;
     XRRScreenConfiguration *config;
     Drawable root;
+    Rotation currentRotation = RR_Rotate_0;
 
     AWT_LOCK();
 
@@ -2021,6 +2027,7 @@ Java_sun_awt_X11GraphicsDevice_configDisplayMode
         short chosenRate = -1;
         int nsizes;
         XRRScreenSize *sizes = awt_XRRConfigSizes(config, &nsizes);
+        awt_XRRConfigRotations(config, &currentRotation);
 
         if (sizes != NULL) {
             int i, j;
@@ -2054,7 +2061,7 @@ Java_sun_awt_X11GraphicsDevice_configDisplayMode
             Status status =
                 awt_XRRSetScreenConfigAndRate(awt_display, config, root,
                                               chosenSizeIndex,
-                                              RR_Rotate_0,
+                                              currentRotation,
                                               chosenRate,
                                               CurrentTime);
 
