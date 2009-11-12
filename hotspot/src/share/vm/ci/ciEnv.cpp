@@ -46,6 +46,9 @@ ciInstanceKlass* ciEnv::_Throwable;
 ciInstanceKlass* ciEnv::_Thread;
 ciInstanceKlass* ciEnv::_OutOfMemoryError;
 ciInstanceKlass* ciEnv::_String;
+ciInstanceKlass* ciEnv::_StringBuffer;
+ciInstanceKlass* ciEnv::_StringBuilder;
+ciInstanceKlass* ciEnv::_Integer;
 
 ciSymbol*        ciEnv::_unloaded_cisymbol = NULL;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = NULL;
@@ -110,6 +113,8 @@ ciEnv::ciEnv(CompileTask* task, int system_dictionary_modification_counter) {
   _ArrayIndexOutOfBoundsException_instance = NULL;
   _ArrayStoreException_instance = NULL;
   _ClassCastException_instance = NULL;
+  _the_null_string = NULL;
+  _the_min_jint_string = NULL;
 }
 
 ciEnv::ciEnv(Arena* arena) {
@@ -163,6 +168,8 @@ ciEnv::ciEnv(Arena* arena) {
   _ArrayIndexOutOfBoundsException_instance = NULL;
   _ArrayStoreException_instance = NULL;
   _ClassCastException_instance = NULL;
+  _the_null_string = NULL;
+  _the_min_jint_string = NULL;
 }
 
 ciEnv::~ciEnv() {
@@ -246,6 +253,22 @@ ciInstance* ciEnv::ClassCastException_instance() {
           vmSymbolHandles::java_lang_ClassCastException());
   }
   return _ClassCastException_instance;
+}
+
+ciInstance* ciEnv::the_null_string() {
+  if (_the_null_string == NULL) {
+    VM_ENTRY_MARK;
+    _the_null_string = get_object(Universe::the_null_string())->as_instance();
+  }
+  return _the_null_string;
+}
+
+ciInstance* ciEnv::the_min_jint_string() {
+  if (_the_min_jint_string == NULL) {
+    VM_ENTRY_MARK;
+    _the_min_jint_string = get_object(Universe::the_min_jint_string())->as_instance();
+  }
+  return _the_min_jint_string;
 }
 
 // ------------------------------------------------------------------
