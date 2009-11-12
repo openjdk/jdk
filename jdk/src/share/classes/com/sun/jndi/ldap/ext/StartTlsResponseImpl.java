@@ -40,7 +40,6 @@ import java.util.List;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import javax.security.auth.kerberos.KerberosPrincipal;
 
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
@@ -413,14 +412,15 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
         try {
             HostnameChecker checker = HostnameChecker.getInstance(
                                                 HostnameChecker.TYPE_LDAP);
-            Principal principal = getPeerPrincipal(session);
-            if (principal instanceof KerberosPrincipal) {
-                if (!checker.match(hostname, (KerberosPrincipal) principal)) {
+            // Use ciphersuite to determine whether Kerberos is active.
+            if (session.getCipherSuite().startsWith("TLS_KRB5")) {
+                Principal principal = getPeerPrincipal(session);
+                if (!checker.match(hostname, principal)) {
                     throw new SSLPeerUnverifiedException(
                         "hostname of the kerberos principal:" + principal +
                         " does not match the hostname:" + hostname);
                 }
-            } else {
+            } else { // X.509
 
                 // get the subject's certificate
                 certs = session.getPeerCertificates();

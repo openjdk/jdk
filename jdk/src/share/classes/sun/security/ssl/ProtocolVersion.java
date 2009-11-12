@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ package sun.security.ssl;
  * @author  Andreas Sterbenz
  * @since   1.4.1
  */
-final class ProtocolVersion {
+public final class ProtocolVersion {
 
     // dummy protocol version value for invalid SSLSession
     final static ProtocolVersion NONE = new ProtocolVersion(-1, "NONE");
@@ -80,10 +80,10 @@ final class ProtocolVersion {
 
     // version in 16 bit MSB format as it appears in records and
     // messages, i.e. 0x0301 for TLS 1.0
-    final int v;
+    public final int v;
 
     // major and minor version
-    final byte major, minor;
+    public final byte major, minor;
 
     // name used in JSSE (e.g. TLSv1 for TLS 1.0)
     final String name;
@@ -117,7 +117,7 @@ final class ProtocolVersion {
      * Return a ProtocolVersion with the specified major and minor version
      * numbers. Never throws exceptions.
      */
-    static ProtocolVersion valueOf(int major, int minor) {
+    public static ProtocolVersion valueOf(int major, int minor) {
         major &= 0xff;
         minor &= 0xff;
         int v = (major << 8) | minor;
