@@ -865,7 +865,7 @@ public class ICC_Profile implements Serializable {
         case ColorSpace.CS_PYCC:
             synchronized(ICC_Profile.class) {
                 if (PYCCprofile == null) {
-                    if (!sun.jkernel.DownloadManager.isJREComplete() ||
+                    if (BootClassLoaderHook.getHook() != null ||
                         standardProfileExists("PYCC.pf"))
                     {
                         ProfileDeferralInfo pInfo =
@@ -1835,19 +1835,6 @@ public class ICC_Profile implements Serializable {
                 }
             }
 
-        if (!f.isFile()) { /* try the directory of built-in profiles */
-            dir = System.getProperty("java.home") +
-                File.separatorChar + "lib" + File.separatorChar + "cmm";
-            fullPath = dir + File.separatorChar + fileName;
-                f = new File(fullPath);
-                if (!f.isFile()) {
-                    //make sure file was installed in the kernel mode
-                    BootClassLoaderHook hook = BootClassLoaderHook.getHook();
-                    if (hook.getHook() != null) {
-                        hook.prefetchFile("lib/cmm/"+fileName);
-                    }
-                }
-            }
         if ((f == null) || (!f.isFile())) {
             /* try the directory of built-in profiles */
             f = getStandardProfileFile(fileName);
@@ -1871,11 +1858,10 @@ public class ICC_Profile implements Serializable {
         File f = new File(fullPath);
         if (!f.isFile()) {
             //make sure file was installed in the kernel mode
-            try {
-                //kernel uses platform independent paths =>
-                //   should not use platform separator char
-                sun.jkernel.DownloadManager.downloadFile("lib/cmm/"+fileName);
-            } catch (IOException ioe) {}
+            BootClassLoaderHook hook = BootClassLoaderHook.getHook();
+            if (hook != null) {
+                hook.prefetchFile("lib/cmm/"+fileName);
+            }
         }
         return (f.isFile() && isChildOf(f, dir)) ? f : null;
     }
