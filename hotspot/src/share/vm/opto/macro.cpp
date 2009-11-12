@@ -912,15 +912,29 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     return false;
   }
 
+  CompileLog* log = C->log();
+  if (log != NULL) {
+    Node* klass = alloc->in(AllocateNode::KlassNode);
+    const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
+    log->head("eliminate_allocation type='%d'",
+              log->identify(tklass->klass()));
+    JVMState* p = alloc->jvms();
+    while (p != NULL) {
+      log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
+      p = p->caller();
+    }
+    log->tail("eliminate_allocation");
+  }
+
   process_users_of_allocation(alloc);
 
 #ifndef PRODUCT
-if (PrintEliminateAllocations) {
-  if (alloc->is_AllocateArray())
-    tty->print_cr("++++ Eliminated: %d AllocateArray", alloc->_idx);
-  else
-    tty->print_cr("++++ Eliminated: %d Allocate", alloc->_idx);
-}
+  if (PrintEliminateAllocations) {
+    if (alloc->is_AllocateArray())
+      tty->print_cr("++++ Eliminated: %d AllocateArray", alloc->_idx);
+    else
+      tty->print_cr("++++ Eliminated: %d Allocate", alloc->_idx);
+  }
 #endif
 
   return true;
@@ -1638,6 +1652,18 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
         } // for (uint i = 0; i < oldbox->outcnt();)
       } // if (!oldbox->is_eliminated())
   } // if (alock->is_Lock() && !lock->is_coarsened())
+
+  CompileLog* log = C->log();
+  if (log != NULL) {
+    log->head("eliminate_lock lock='%d'",
+              alock->is_Lock());
+    JVMState* p = alock->jvms();
+    while (p != NULL) {
+      log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
+      p = p->caller();
+    }
+    log->tail("eliminate_lock");
+  }
 
   #ifndef PRODUCT
   if (PrintEliminateLocks) {

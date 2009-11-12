@@ -570,6 +570,7 @@ ciEnv.hpp                               debugInfoRec.hpp
 ciEnv.hpp                               dependencies.hpp
 ciEnv.hpp                               exceptionHandlerTable.hpp
 ciEnv.hpp                               oopMap.hpp
+ciEnv.hpp                               systemDictionary.hpp
 ciEnv.hpp                               thread.hpp
 
 ciExceptionHandler.cpp                  ciExceptionHandler.hpp
