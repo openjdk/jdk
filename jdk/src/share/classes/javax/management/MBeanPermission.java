@@ -25,7 +25,6 @@
 
 package javax.management;
 
-import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.security.Permission;
@@ -46,7 +45,7 @@ import java.security.Permission;
  * allowed if the permissions you have {@linkplain #implies imply} the
  * permission you need.</p>
  *
- * <p>An MBeanPermission contains five items of information:</p>
+ * <p>An MBeanPermission contains four items of information:</p>
  *
  * <ul>
  *
@@ -57,23 +56,6 @@ import java.security.Permission;
  * representing all actions.</p>
  *
  * <p>The action is returned by {@link #getActions()}.</p>
- *
- * <li id="MBeanServerName"><p>The <em>MBean Server name</em>.</p>
- *
- * <p>For a permission you need, this is the {@linkplain
- * javax.management.MBeanServerFactory#getMBeanServerName
- * name of the MBeanServer}
- * containing the <a href="#MBeanName">MBean</a> for which the MBean
- * permission is checked.</p>
- *
- * <p>For a permission you have, this is either the  {@linkplain
- * javax.management.MBeanServerFactory#getMBeanServerName
- * name of the MBeanServer} in which the <a href="#MBeanName">MBean</a>
- * you have this permission for must be registered,
- * or a pattern against which that MBean Server name will be matched.<br>
- * An {@code mbeanServerName} pattern can also be empty or the single
- * character {@code "*"}, both of which will match any {@code MBeanServer} name.
- * </p>
  *
  * <li><p>The <em>class name</em>.</p>
  *
@@ -121,15 +103,15 @@ import java.security.Permission;
  * </ul>
  *
  * <p>If you have an MBeanPermission, it allows operations only if all
- * five of the items match.</p>
+ * four of the items match.</p>
  *
- * <p>The MBean Server name, class name, member, and object name can be written
- * together as a single string, which is the <em>name</em> of this permission.
+ * <p>The class name, member, and object name can be written together
+ * as a single string, which is the <em>name</em> of this permission.
  * The name of the permission is the string returned by {@link
  * Permission#getName() getName()}.  The format of the string is:</p>
  *
  * <blockquote>
- * <code>mbeanServerName::className#member[objectName]</code>
+ * <code>className#member[objectName]</code>
  * </blockquote>
  *
  * <p>The object name is written using the usual syntax for {@link
@@ -137,18 +119,15 @@ import java.security.Permission;
  * <code>]</code>.  It is terminated by a <code>]</code> character
  * that is the last character in the string.</p>
  *
- * <p>One or more of the <code>mbeanServerName</code>, <code>className</code>,
- * <code>member</code>, or <code>objectName</code> may be omitted. If the
- * <code>mbeanServerName</code> is omitted, the <code>::</code> may be too (but
- * does not have to be).
- * If the <code>member</code> is omitted, the <code>#</code> may be too (but
+ * <p>One or more of the <code>className</code>, <code>member</code>,
+ * or <code>objectName</code> may be omitted.  If the
+ * <code>member</code> is omitted, the <code>#</code> may be too (but
  * does not have to be).  If the <code>objectName</code> is omitted,
  * the <code>[]</code> may be too (but does not have to be).  It is
- * not legal to omit all four items, that is to have a <em>name</em>
+ * not legal to omit all three items, that is to have a <em>name</em>
  * that is the empty string.</p>
  *
- * <p>One or more of the <code>mbeanServerName</code>,  <code>className</code>,
- * <code>member</code>,
+ * <p>One or more of the <code>className</code>, <code>member</code>,
  * or <code>objectName</code> may be the character "<code>-</code>",
  * which is equivalent to a null value.  A null value is implied by
  * any value (including another null value) but does not imply any
@@ -268,13 +247,6 @@ public class MBeanPermission extends Permission {
     private transient ObjectName objectName;
 
     /**
-     * The name of the MBeanServer in which this permission is checked, or
-     * granted.  If null, is implied by any MBean Server name
-     * but does not imply any non-null MBean Server name.
-     */
-    private transient String mbeanServerName;
-
-    /**
      * Parse <code>actions</code> parameter.
      */
     private void parseActions() {
@@ -311,13 +283,6 @@ public class MBeanPermission extends Permission {
             throw new IllegalArgumentException("MBeanPermission name " +
                                                "cannot be empty");
 
-        final int sepIndex = name.indexOf("::");
-        if (sepIndex < 0) {
-            setMBeanServerName("*");
-        } else {
-            setMBeanServerName(name.substring(0,sepIndex));
-        }
-
         /* The name looks like "class#member[objectname]".  We subtract
            elements from the right as we parse, so after parsing the
            objectname we have "class#member" and after parsing the
@@ -325,14 +290,11 @@ public class MBeanPermission extends Permission {
 
         // Parse ObjectName
 
-
-        final int start = (sepIndex<0)?0:sepIndex+2;
-        int openingBracket = name.indexOf("[",start);
+        int openingBracket = name.indexOf("[");
         if (openingBracket == -1) {
             // If "[on]" missing then ObjectName("*:*")
             //
             objectName = ObjectName.WILDCARD;
-            name = name.substring(start);
         } else {
             if (!name.endsWith("]")) {
                 throw new IllegalArgumentException("MBeanPermission: " +
@@ -343,11 +305,11 @@ public class MBeanPermission extends Permission {
             } else {
                 // Create ObjectName
                 //
-                String on = name.substring(openingBracket + 1,
-                                           name.length() - 1);
                 try {
                     // If "[]" then ObjectName("*:*")
                     //
+                    String on = name.substring(openingBracket + 1,
+                                               name.length() - 1);
                     if (on.equals(""))
                         objectName = ObjectName.WILDCARD;
                     else if (on.equals("-"))
@@ -362,7 +324,7 @@ public class MBeanPermission extends Permission {
                 }
             }
 
-            name = name.substring(start, openingBracket);
+            name = name.substring(0, openingBracket);
         }
 
         // Parse member
@@ -386,9 +348,8 @@ public class MBeanPermission extends Permission {
      * Assign fields based on className, member, and objectName
      * parameters.
      */
-    private void initName(String mbeanServerName, String className,
-                          String member, ObjectName objectName) {
-        setMBeanServerName(mbeanServerName);
+    private void initName(String className, String member,
+                          ObjectName objectName) {
         setClassName(className);
         setMember(member);
         this.objectName = objectName;
@@ -420,30 +381,19 @@ public class MBeanPermission extends Permission {
             this.member = member;
     }
 
-    private void setMBeanServerName(String mbeanServerName) {
-        if (mbeanServerName == null || mbeanServerName.equals("-")) {
-            this.mbeanServerName = null;
-        } else if (mbeanServerName.equals("")) {
-            this.mbeanServerName = "*";
-        } else {
-            this.mbeanServerName = mbeanServerName;
-        }
-    }
-
-
     /**
      * <p>Create a new MBeanPermission object with the specified target name
      * and actions.</p>
      *
      * <p>The target name is of the form
-     * "<code>mbeanServerName::className#member[objectName]</code>" where
-     * each part is optional.  It must not be empty or null.</p>
+     * "<code>className#member[objectName]</code>" where each part is
+     * optional.  It must not be empty or null.</p>
      *
      * <p>The actions parameter contains a comma-separated list of the
      * desired actions granted on the target name.  It must not be
      * empty or null.</p>
      *
-     * @param name the quadruplet "mbeanServerName::className#member[objectName]".
+     * @param name the triplet "className#member[objectName]".
      * @param actions the action string.
      *
      * @exception IllegalArgumentException if the <code>name</code> or
@@ -468,12 +418,6 @@ public class MBeanPermission extends Permission {
      * optional.  This will be the result of {@link #getName()} on the
      * resultant MBeanPermission.</p>
      *
-     * <p>This corresponds to a permission granted for all
-     *    MBean servers present in the JVM and is equivalent to
-     *    {@link #MBeanPermission(String,String,String,ObjectName,String)
-     *           MBeanPermission("*",className,member,objectName,actions)}.
-     * </p>
-     *
      * <p>The actions parameter contains a comma-separated list of the
      * desired actions granted on the target name.  It must not be
      * empty or null.</p>
@@ -495,67 +439,17 @@ public class MBeanPermission extends Permission {
                            String member,
                            ObjectName objectName,
                            String actions) {
-        this("*",className,member,objectName,actions);
-    }
 
-    /**
-     * <p>Create a new MBeanPermission object with the specified target name
-     * (MBean Server name, class name, member, object name) and actions.</p>
-     *
-     * <p>The MBean Server name, class name, member and object name
-     * parameters define a target name of the form
-     * "<code>mbeanServerName::className#member[objectName]</code>" where each
-     * part is optional.  This will be the result of {@link #getName()} on the
-     * resultant MBeanPermission.
-     * If the <code>mbeanServerName</code> is empty or exactly {@code "*"}, then
-     * "{@code mbeanServerName::}" is omitted in that result.
-     * </p>
-     *
-     * <p>The actions parameter contains a comma-separated list of the
-     * desired actions granted on the target name.  It must not be
-     * empty or null.</p>
-     *
-     * @param mbeanServerName the name of the {@code MBeanServer} to which this
-     * permission applies.
-     * May be null or <code>"-"</code>, which represents an MBeanServer name
-     * that is implied by any MBeanServer name but does not imply any other
-     * MBeanServer name.
-     * @param className the class name to which this permission applies.
-     * May be null or <code>"-"</code>, which represents a class name
-     * that is implied by any class name but does not imply any other
-     * class name.
-     * @param member the member to which this permission applies.  May
-     * be null or <code>"-"</code>, which represents a member that is
-     * implied by any member but does not imply any other member.
-     * @param objectName the object name to which this permission
-     * applies.  May be null, which represents an object name that is
-     * implied by any object name but does not imply any other object
-     * name.
-     * @param actions the action string.
-     *
-     * @since 1.7
-     */
-    public MBeanPermission(String mbeanServerName,
-                           String className,
-                           String member,
-                           ObjectName objectName,
-                           String actions) {
-
-        super(makeName(mbeanServerName,className, member, objectName));
-        initName(mbeanServerName,className, member, objectName);
+        super(makeName(className, member, objectName));
+        initName(className, member, objectName);
 
         this.actions = actions;
         parseActions();
     }
 
-    private static String makeName(String mbeanServerName, String className,
-                                   String member,
+    private static String makeName(String className, String member,
                                    ObjectName objectName) {
         final StringBuilder name = new StringBuilder();
-        if (mbeanServerName == null)
-            mbeanServerName = "-";
-        if (!mbeanServerName.equals("") && !mbeanServerName.equals("*"))
-            name.append(mbeanServerName).append("::");
         if (className == null)
             className = "-";
         name.append(className);
@@ -1097,9 +991,6 @@ public class MBeanPermission extends Permission {
      *
      * <li> <i>p</i> is an instance of MBeanPermission; and</li>
      *
-     * <li> <i>p</i> has a null mbeanServerName or <i>p</i>'s mbeanServerName
-     * matches this object's mbeanServerName; and</li>
-     *
      * <li> <i>p</i> has a null className or <i>p</i>'s className
      * matches this object's className; and</li>
      *
@@ -1112,13 +1003,6 @@ public class MBeanPermission extends Permission {
      * <li> <i>p</i>'s actions are a subset of this object's actions</li>
      *
      * </ul>
-     *
-     * <p>If this object's mbeanServerName is a pattern, then <i>p</i>'s
-     *    mbeanServerName is matched against that pattern. An empty
-     *    mbeanServerName is equivalent to "{@code *}". A null
-     *    mbeanServerName is equivalent to "{@code -}".</p>
-     * <p>If this object's mbeanServerName is "<code>*</code>" or is
-     * empty, <i>p</i>'s mbeanServerName always matches it.</p>
      *
      * <p>If this object's className is "<code>*</code>", <i>p</i>'s
      * className always matches it.  If it is "<code>a.*</code>", <i>p</i>'s
@@ -1166,12 +1050,6 @@ public class MBeanPermission extends Permission {
 
         // Target name
         //
-        // The 'mbeanServerName' check is true iff:
-        // 1) the mbeanServerName in 'this' permission is omitted or "*", or
-        // 2) the mbeanServerName in 'that' permission is omitted or "*", or
-        // 3) the mbeanServerName in 'this' permission does pattern
-        //    matching with the mbeanServerName in 'that' permission.
-        //
         // The 'className' check is true iff:
         // 1) the className in 'this' permission is omitted or "*", or
         // 2) the className in 'that' permission is omitted or "*", or
@@ -1197,17 +1075,6 @@ public class MBeanPermission extends Permission {
            irrelevant for this permission check.  Otherwise, we do not
            expect that "that" contains a wildcard, since it is a
            needed permission.  So we assume that.classNameExactMatch.  */
-
-        if (that.mbeanServerName == null) {
-            // bottom is implied
-        } else if (this.mbeanServerName == null) {
-            // bottom implies nothing but itself
-            return false;
-        } else if (that.mbeanServerName.equals(this.mbeanServerName)) {
-            // exact match
-        } else if (!Util.wildmatch(that.mbeanServerName,this.mbeanServerName)) {
-            return false; // no match
-        }
 
         if (that.classNamePrefix == null) {
             // bottom is implied

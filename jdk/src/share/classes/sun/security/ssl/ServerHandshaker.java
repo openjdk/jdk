@@ -39,11 +39,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.*;
 
 import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosKey;
-import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.security.auth.kerberos.ServicePermission;
-import sun.security.jgss.krb5.Krb5Util;
-import sun.security.jgss.GSSCaller;
 
 import com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager;
 
@@ -69,7 +64,7 @@ final class ServerHandshaker extends Handshaker {
     private X509Certificate[]   certs;
     private PrivateKey          privateKey;
 
-    private KerberosKey[]       kerberosKeys;
+    private SecretKey[]       kerberosKeys;
 
     // flag to check for clientCertificateVerify message
     private boolean             needClientVerify = false;
@@ -366,9 +361,8 @@ final class ServerHandshaker extends Handshaker {
                             subject = AccessController.doPrivileged(
                                 new PrivilegedExceptionAction<Subject>() {
                                 public Subject run() throws Exception {
-                                    return Krb5Util.getSubject(
-                                        GSSCaller.CALLER_SSL_SERVER,
-                                        getAccSE());
+                                    return
+                                        Krb5Helper.getServerSubject(getAccSE());
                             }});
                         } catch (PrivilegedActionException e) {
                             subject = null;
@@ -379,8 +373,9 @@ final class ServerHandshaker extends Handshaker {
                         }
 
                         if (subject != null) {
-                            Set<KerberosPrincipal> principals =
-                                subject.getPrincipals(KerberosPrincipal.class);
+                            // Eliminate dependency on KerberosPrincipal
+                            Set<Principal> principals =
+                                subject.getPrincipals(Principal.class);
                             if (!principals.contains(localPrincipal)) {
                                 resumingSession = false;
                                 if (debug != null && Debug.isOn("session")) {
@@ -914,11 +909,11 @@ final class ServerHandshaker extends Handshaker {
         try {
             final AccessControlContext acc = getAccSE();
             kerberosKeys = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<KerberosKey[]>() {
-                public KerberosKey[] run() throws Exception {
+                // Eliminate dependency on KerberosKey
+                new PrivilegedExceptionAction<SecretKey[]>() {
+                public SecretKey[] run() throws Exception {
                     // get kerberos key for the default principal
-                    return Krb5Util.getKeys(
-                        GSSCaller.CALLER_SSL_SERVER, null, acc);
+                    return Krb5Helper.getServerKeys(acc);
                         }});
 
             // check permission to access and use the secret key of the
@@ -931,12 +926,13 @@ final class ServerHandshaker extends Handshaker {
                 }
 
                 String serverPrincipal =
-                    kerberosKeys[0].getPrincipal().getName();
+                    Krb5Helper.getServerPrincipalName(kerberosKeys[0]);
                 SecurityManager sm = System.getSecurityManager();
                 try {
                    if (sm != null) {
-                      sm.checkPermission(new ServicePermission(serverPrincipal,
-                                                "accept"), acc);
+                      // Eliminate dependency on ServicePermission
+                      sm.checkPermission(Krb5Helper.getServicePermission(
+                          serverPrincipal, "accept"), acc);
                    }
                 } catch (SecurityException se) {
                    kerberosKeys = null;
@@ -973,7 +969,7 @@ final class ServerHandshaker extends Handshaker {
         session.setPeerPrincipal(mesg.getPeerPrincipal());
         session.setLocalPrincipal(mesg.getLocalPrincipal());
 
-        byte[] b = mesg.getPreMasterSecret().getUnencrypted();
+        byte[] b = mesg.getUnencryptedPreMasterSecret();
         return new SecretKeySpec(b, "TlsPremasterSecret");
     }
 

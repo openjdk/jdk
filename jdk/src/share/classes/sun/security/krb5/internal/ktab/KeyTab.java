@@ -395,6 +395,28 @@ public class KeyTab implements KeyTabConstants {
         }
     }
 
+    /**
+     * Only used by KDC test. This method can specify kvno and does not
+     * remove any old keys.
+     */
+    public void addEntry(PrincipalName service, char[] psswd, int kvno)
+         throws KrbException {
+
+        EncryptionKey[] encKeys = EncryptionKey.acquireSecretKeys(
+            psswd, service.getSalt());
+
+        for (int i = 0; encKeys != null && i < encKeys.length; i++) {
+            int keyType = encKeys[i].getEType();
+            byte[] keyValue = encKeys[i].getBytes();
+            KeyTabEntry newEntry = new KeyTabEntry(service,
+                            service.getRealm(),
+                            new KerberosTime(System.currentTimeMillis()),
+                                               kvno, keyType, keyValue);
+            if (entries == null)
+                entries = new Vector<KeyTabEntry> ();
+            entries.addElement(newEntry);
+        }
+    }
 
     /**
      * Retrieves the key table entry with the specified service name.
