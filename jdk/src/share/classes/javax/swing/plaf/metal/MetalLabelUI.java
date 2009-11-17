@@ -26,6 +26,8 @@
 package javax.swing.plaf.metal;
 
 import sun.swing.SwingUtilities2;
+import sun.awt.AppContext;
+
 import javax.swing.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
@@ -51,15 +53,21 @@ public class MetalLabelUI extends BasicLabelUI
     * name in defaults table under the key "LabelUI".
     */
     protected static MetalLabelUI metalLabelUI = new MetalLabelUI();
-    private final static MetalLabelUI SAFE_METAL_LABEL_UI = new MetalLabelUI();
 
+    private static final Object METAL_LABEL_UI_KEY = new Object();
 
     public static ComponentUI createUI(JComponent c) {
         if (System.getSecurityManager() != null) {
-            return SAFE_METAL_LABEL_UI;
-        } else {
-            return metalLabelUI;
+            AppContext appContext = AppContext.getAppContext();
+            MetalLabelUI safeMetalLabelUI =
+                    (MetalLabelUI) appContext.get(METAL_LABEL_UI_KEY);
+            if (safeMetalLabelUI == null) {
+                safeMetalLabelUI = new MetalLabelUI();
+                appContext.put(METAL_LABEL_UI_KEY, safeMetalLabelUI);
+            }
+            return safeMetalLabelUI;
         }
+        return metalLabelUI;
     }
 
     /**

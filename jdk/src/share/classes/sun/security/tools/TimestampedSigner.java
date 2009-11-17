@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,18 +159,10 @@ public final class TimestampedSigner extends ContentSigner {
         //     "<digest>with<encryption>"
         // or  "<digest>with<encryption>and<mgf>"
         String signatureAlgorithm = parameters.getSignatureAlgorithm();
-        String digestAlgorithm = null;
-        String keyAlgorithm = null;
-        int with = signatureAlgorithm.indexOf("with");
-        if (with > 0) {
-            digestAlgorithm = signatureAlgorithm.substring(0, with);
-            int and = signatureAlgorithm.indexOf("and", with + 4);
-            if (and > 0) {
-                keyAlgorithm = signatureAlgorithm.substring(with + 4, and);
-            } else {
-                keyAlgorithm = signatureAlgorithm.substring(with + 4);
-            }
-        }
+        String keyAlgorithm =
+                AlgorithmId.getEncAlgFromSigAlg(signatureAlgorithm);
+        String digestAlgorithm =
+                AlgorithmId.getDigAlgFromSigAlg(signatureAlgorithm);
         AlgorithmId digestAlgorithmId = AlgorithmId.get(digestAlgorithm);
 
         // Examine signer's certificate

@@ -2485,55 +2485,45 @@ public final class Formatter implements Closeable, Flushable {
 
     private static Pattern fsPattern = Pattern.compile(formatSpecifier);
 
-    // Look for format specifiers in the format string.
+    /**
+     * Finds format specifiers in the format string.
+     */
     private FormatString[] parse(String s) {
-        ArrayList al = new ArrayList();
+        ArrayList<FormatString> al = new ArrayList<FormatString>();
         Matcher m = fsPattern.matcher(s);
-        int i = 0;
-        while (i < s.length()) {
+        for (int i = 0, len = s.length(); i < len; ) {
             if (m.find(i)) {
                 // Anything between the start of the string and the beginning
                 // of the format specifier is either fixed text or contains
                 // an invalid format string.
                 if (m.start() != i) {
                     // Make sure we didn't miss any invalid format specifiers
-                    checkText(s.substring(i, m.start()));
+                    checkText(s, i, m.start());
                     // Assume previous characters were fixed text
                     al.add(new FixedString(s.substring(i, m.start())));
                 }
 
-                // Expect 6 groups in regular expression
-                String[] sa = new String[6];
-                for (int j = 0; j < m.groupCount(); j++)
-                    {
-                    sa[j] = m.group(j + 1);
-//                  System.out.print(sa[j] + " ");
-                    }
-//              System.out.println();
-                al.add(new FormatSpecifier(this, sa));
+                al.add(new FormatSpecifier(m));
                 i = m.end();
             } else {
                 // No more valid format specifiers.  Check for possible invalid
                 // format specifiers.
-                checkText(s.substring(i));
+                checkText(s, i, len);
                 // The rest of the string is fixed text
                 al.add(new FixedString(s.substring(i)));
                 break;
             }
         }
-//      FormatString[] fs = new FormatString[al.size()];
-//      for (int j = 0; j < al.size(); j++)
-//          System.out.println(((FormatString) al.get(j)).toString());
-        return (FormatString[]) al.toArray(new FormatString[0]);
+        return al.toArray(new FormatString[al.size()]);
     }
 
-    private void checkText(String s) {
-        int idx;
-        // If there are any '%' in the given string, we got a bad format
-        // specifier.
-        if ((idx = s.indexOf('%')) != -1) {
-            char c = (idx > s.length() - 2 ? '%' : s.charAt(idx + 1));
-            throw new UnknownFormatConversionException(String.valueOf(c));
+    private static void checkText(String s, int start, int end) {
+        for (int i = start; i < end; i++) {
+            // Any '%' found in the region starts an invalid format specifier.
+            if (s.charAt(i) == '%') {
+                char c = (i == end - 1) ? '%' : s.charAt(i + 1);
+                throw new UnknownFormatConversionException(String.valueOf(c));
+            }
         }
     }
 
@@ -2561,8 +2551,6 @@ public final class Formatter implements Closeable, Flushable {
         private int precision;
         private boolean dt = false;
         private char c;
-
-        private Formatter formatter;
 
         // cache the line separator
         private String ls;
@@ -2650,21 +2638,22 @@ public final class Formatter implements Closeable, Flushable {
             return c;
         }
 
-        FormatSpecifier(Formatter formatter, String[] sa) {
-            this.formatter = formatter;
-            int idx = 0;
+        FormatSpecifier(Matcher m) {
+            int idx = 1;
 
-            index(sa[idx++]);
-            flags(sa[idx++]);
-            width(sa[idx++]);
-            precision(sa[idx++]);
+            index(m.group(idx++));
+            flags(m.group(idx++));
+            width(m.group(idx++));
+            precision(m.group(idx++));
 
-            if (sa[idx] != null) {
+            String tT = m.group(idx++);
+            if (tT != null) {
                 dt = true;
-                if (sa[idx].equals("T"))
+                if (tT.equals("T"))
                     f.add(Flags.UPPERCASE);
             }
-            conversion(sa[++idx]);
+
+            conversion(m.group(idx));
 
             if (dt)
                 checkDateTime();
@@ -2819,9 +2808,9 @@ public final class Formatter implements Closeable, Flushable {
 
         private void printString(Object arg, Locale l) throws IOException {
             if (arg instanceof Formattable) {
-                Formatter fmt = formatter;
-                if (formatter.locale() != l)
-                    fmt = new Formatter(formatter.out(), l);
+                Formatter fmt = Formatter.this;
+                if (fmt.locale() != l)
+                    fmt = new Formatter(fmt.out(), l);
                 ((Formattable)arg).formatTo(fmt, f.valueOf(), width, precision);
             } else {
                 if (f.contains(Flags.ALTERNATE))

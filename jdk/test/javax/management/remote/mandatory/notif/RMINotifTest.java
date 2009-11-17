@@ -25,10 +25,11 @@
  * @test
  * @bug 7654321
  * @summary Tests to receive notifications for opened and closed connections
+ions
  * @author sjiang
  * @run clean RMINotifTest
  * @run build RMINotifTest
- * @run main RMINotifTest classic
+ * @run main RMINotifTest
  * @run main RMINotifTest event
  */
 
@@ -38,8 +39,6 @@
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Random;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanServer;
@@ -56,19 +55,10 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
-import javax.management.remote.rmi.RMIConnectorServer;
 
 public class RMINotifTest {
 
     public static void main(String[] args) {
-        String eventService;
-        if (args[0].equals("classic"))
-            eventService = "false";
-        else if (args[0].equals("event"))
-            eventService = "true";
-        else
-            throw new IllegalArgumentException(args[0]);
-
         try {
             // create a rmi registry
             Registry reg = null;
@@ -105,10 +95,9 @@ public class RMINotifTest {
                                   "/jndi/rmi://:" + port + "/server" + port);
             System.out.println("RMIConnectorServer address " + url);
 
-            Map<String, String> env = Collections.singletonMap(
-                    RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, eventService);
             JMXConnectorServer sServer =
-                JMXConnectorServerFactory.newJMXConnectorServer(url, env, null);
+                JMXConnectorServerFactory.newJMXConnectorServer(url, null,
+                                                                null);
 
             ObjectInstance ss = server.registerMBean(sServer, new ObjectName("Default:name=RmiConnectorServer"));
 

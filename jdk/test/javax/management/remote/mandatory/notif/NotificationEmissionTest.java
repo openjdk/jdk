@@ -29,16 +29,11 @@
  * @author Luis-Miguel Alventosa
  * @run clean NotificationEmissionTest
  * @run build NotificationEmissionTest
- * @run main NotificationEmissionTest 1 Classic
- * @run main NotificationEmissionTest 2 Classic
- * @run main NotificationEmissionTest 3 Classic
- * @run main NotificationEmissionTest 4 Classic
- * @run main NotificationEmissionTest 5 Classic
- * @run main NotificationEmissionTest 1 EventService
- * @run main NotificationEmissionTest 2 EventService
- * @run main NotificationEmissionTest 3 EventService
- * @run main NotificationEmissionTest 4 EventService
- * @run main NotificationEmissionTest 5 EventService
+ * @run main NotificationEmissionTest 1
+ * @run main NotificationEmissionTest 2
+ * @run main NotificationEmissionTest 3
+ * @run main NotificationEmissionTest 4
+ * @run main NotificationEmissionTest 5
  */
 
 import java.io.File;
@@ -61,15 +56,9 @@ import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXPrincipal;
 import javax.management.remote.JMXServiceURL;
-import javax.management.remote.rmi.RMIConnectorServer;
 import javax.security.auth.Subject;
 
 public class NotificationEmissionTest {
-    private final boolean eventService;
-
-    public NotificationEmissionTest(boolean eventService) {
-        this.eventService = eventService;
-    }
 
     public class CustomJMXAuthenticator implements JMXAuthenticator {
         public Subject authenticate(Object credentials) {
@@ -228,13 +217,8 @@ public class NotificationEmissionTest {
             //
             final Map<String,Object> env = new HashMap<String,Object>();
             env.put("jmx.remote.authenticator", new CustomJMXAuthenticator());
-            env.put(RMIConnectorServer.EVENT_CLIENT_DELEGATE_FORWARDER,
-                    Boolean.toString(eventService));
-            if (prop) {
-                echo("Setting jmx.remote.x.check.notification.emission to " +
-                        propValue);
+            if (prop)
                 env.put("jmx.remote.x.check.notification.emission", propValue);
-            }
 
             // Create the JMXServiceURL
             //
@@ -302,14 +286,11 @@ public class NotificationEmissionTest {
             // If the check is effective and we're using policy.negative,
             // then we should see the two notifs sent by nb2 (of which one
             // has a getSource() that is nb3), but not the notif sent by nb1.
-            // Otherwise we should see all three notifs.  If we're using the
-            // Event Service with a Security Manager then the logic to
-            // reapply the addNL permission test for every notification is
-            // always enabled, regardless of the value of
-            // jmx.remote.x.check.notification.emission.  Otherwise, the
-            // test is only applied if that property is explicitly true.
+            // Otherwise we should see all three notifs.  The check is only
+            // effective if the property jmx.remote.x.check.notification.emission
+            // is explicitly true and there is a security manager.
             int expectedNotifs =
-                    ((prop || eventService) && sm && !policyPositive) ? 2 : 3;
+                    (prop && sm && !policyPositive) ? 2 : 3;
 
             // Wait for notifications to be emitted
             //
@@ -324,15 +305,14 @@ public class NotificationEmissionTest {
             mbsc.removeNotificationListener(nb2, li);
 
             int result = 0;
-            List<ObjectName> sources = new ArrayList();
+            List<ObjectName> sources = new ArrayList<ObjectName>();
             sources.add(nb1);
             sources.add(nb2);
             sources.add(nb3);
 
             result = checkNotifs(expectedNotifs, li.notifs, sources);
             if (result > 0) {
-                echo("...SecurityManager=" + sm + "; policy=" + policyPositive +
-                        "; eventService=" + eventService);
+                echo("...SecurityManager=" + sm + "; policy=" + policyPositive);
                 return result;
             }
         } finally {
@@ -362,18 +342,9 @@ public class NotificationEmissionTest {
     public static void main(String[] args) throws Exception {
 
         echo("\n--- Check the emission of notifications " +
-             "when a Security Manager is installed [" +
-             args[1] + "] ---");
+             "when a Security Manager is installed");
 
-        boolean eventService;
-        if (args[1].equals("Classic"))
-            eventService = false;
-        else if (args[1].equals("EventService"))
-            eventService = true;
-        else
-            throw new IllegalArgumentException(args[1]);
-
-        NotificationEmissionTest net = new NotificationEmissionTest(eventService);
+        NotificationEmissionTest net = new NotificationEmissionTest();
 
         int error = 0;
 
