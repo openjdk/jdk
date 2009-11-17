@@ -113,11 +113,13 @@ endif
 ifdef ALT_LANGTOOLS_DIST
   ifdef ALT_BOOTDIR
     ANT_JAVA_HOME = JAVA_HOME=$(ALT_BOOTDIR)
+    ANT_OPTIONS += -Djdk.home=$(ALT_BOOTDIR)
   endif
   ANT_OPTIONS += -Dbootstrap.dir=$(ALT_LANGTOOLS_DIST)/bootstrap
 else
   ifdef ALT_JDK_IMPORT_PATH
     ANT_JAVA_HOME = JAVA_HOME=$(ALT_JDK_IMPORT_PATH)
+    ANT_OPTIONS += -Djdk.home=$(ALT_JDK_IMPORT_PATH)
   endif
 endif
 
@@ -141,7 +143,7 @@ ANT_TARGETS = all source drop_included build dist clobber clean sanity
 
 # Create a make target for each
 $(ANT_TARGETS):
-	cd .. && $(ANT_JAVA_HOME) $(ANT) -version
+	cd .. && $(ANT_JAVA_HOME) $(ANT) $(ANT_OPTIONS) -version
 	cd .. && $(ANT_JAVA_HOME) $(ANT) $(ANT_OPTIONS) $@
 
 # Help target
