@@ -1117,9 +1117,6 @@ sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 # Unexpected Monitor Exception, solaris sparc -client
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh	generic-all
 
-# Probably should be samevm, but seem to cause errors even in othervm at times
-sun/tools/jhat/HatHeapDump1Test.java			 	generic-all
-
 # Problems on windows, jmap.exe hangs? (these run jmap)
 sun/tools/jmap/Basic.sh						windows-all
 
@@ -1128,9 +1125,6 @@ sun/tools/jstatd/jstatdDefaults.sh			 	solaris-all
 
 # Solaris sparcv9, jps output does not match, x64 different
 sun/tools/jstatd/jstatdExternalRegistry.sh		 	solaris-all
-
-# Probably should be samevm, but seem to cause errors even in othervm at times
-sun/tools/native2ascii/NativeErrors.java		 	generic-all
 
 # Solaris 10 sparc 32bit -client, java.lang.AssertionError: Some tests failed
 tools/jar/JarEntryTime.java					generic-all
