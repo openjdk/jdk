@@ -242,6 +242,10 @@
   product(bool, G1UseSurvivorSpaces, true,                                  \
           "When true, use survivor space.")                                 \
                                                                             \
+  develop(bool, G1FailOnFPError, false,                                     \
+          "When set, G1 will fail when it encounters an FP 'error', "       \
+          "so as to allow debugging")                                       \
+                                                                            \
   develop(bool, G1FixedTenuringThreshold, false,                            \
           "When set, G1 will not adjust the tenuring threshold")            \
                                                                             \
