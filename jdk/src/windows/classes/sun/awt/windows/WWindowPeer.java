@@ -510,6 +510,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
     private native int getScreenImOn();
 
+    // Used in Win32GraphicsDevice.
+    public final native void setFullScreenExclusiveModeState(boolean state);
+
 /*
  * ----END DISPLAY CHANGE SUPPORT----
  */
@@ -575,11 +578,17 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
     }
 
+    public final Graphics getTranslucentGraphics() {
+        synchronized (getStateLock()) {
+            return isOpaque ? null : painter.getBackBuffer(false).getGraphics();
+        }
+    }
+
     @Override
     public Graphics getGraphics() {
         synchronized (getStateLock()) {
             if (!isOpaque) {
-                return painter.getBackBuffer(false).getGraphics();
+                return getTranslucentGraphics();
             }
         }
         return super.getGraphics();
