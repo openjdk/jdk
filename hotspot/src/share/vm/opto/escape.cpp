@@ -1150,7 +1150,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
     } else {
       assert(n->is_Mem(), "memory node required.");
       Node *addr = n->in(MemNode::Address);
-      assert(addr->is_AddP(), "AddP required");
       const Type *addr_t = igvn->type(addr);
       if (addr_t == Type::TOP)
         continue;
