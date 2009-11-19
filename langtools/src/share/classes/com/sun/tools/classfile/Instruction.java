@@ -106,9 +106,9 @@ public class Instruction {
         /** See {@link Kind#LOCAL_UBYTE}. */
         R visitLocalAndValue(Instruction instr, int index, int value, P p);
         /** See {@link Kind#DYNAMIC}. */
-        R visitLookupSwitch(Instruction instr, int default_, int npairs, int[] matches, int[] offsets);
+        R visitLookupSwitch(Instruction instr, int default_, int npairs, int[] matches, int[] offsets, P p);
         /** See {@link Kind#DYNAMIC}. */
-        R visitTableSwitch(Instruction instr, int default_, int low, int high, int[] offsets);
+        R visitTableSwitch(Instruction instr, int default_, int low, int high, int[] offsets, P p);
         /** See {@link Kind#BYTE}, {@link Kind#SHORT}. */
         R visitValue(Instruction instr, int value, P p);
         /** Instruction is unrecognized. */
@@ -282,7 +282,7 @@ public class Instruction {
                         for (int i = 0; i < values.length; i++)
                             values[i] = getInt(pad + 12 + 4 * i);
                         return visitor.visitTableSwitch(
-                                this, default_, low, high, values);
+                                this, default_, low, high, values, p);
                     }
                     case LOOKUPSWITCH: {
                         int pad = align(pc + 1) - pc;
@@ -295,7 +295,7 @@ public class Instruction {
                             offsets[i] = getInt(pad + 12 + i * 8);
                         }
                         return visitor.visitLookupSwitch(
-                                this, default_, npairs, matches, offsets);
+                                this, default_, npairs, matches, offsets, p);
                     }
                     default:
                         throw new IllegalStateException();
