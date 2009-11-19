@@ -1184,7 +1184,7 @@ public class DataFlavor implements Externalizable, Cloneable {
     */
 
     public boolean isRepresentationClassRemote() {
-        return java.rmi.Remote.class.isAssignableFrom(representationClass);
+        return DataTransferer.isRemote(representationClass);
     }
 
    /**

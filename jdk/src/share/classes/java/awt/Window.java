@@ -767,7 +767,7 @@ public class Window extends Container implements Accessible {
             isPacked = true;
         }
 
-        validate();
+        validateUnconditionally();
     }
 
     /**
@@ -943,7 +943,7 @@ public class Window extends Container implements Accessible {
         if (peer == null) {
             addNotify();
         }
-        validate();
+        validateUnconditionally();
 
         isInShow = true;
         if (visible) {
@@ -2597,6 +2597,21 @@ public class Window extends Container implements Accessible {
     public void addPropertyChangeListener(String propertyName,
                                           PropertyChangeListener listener) {
         super.addPropertyChangeListener(propertyName, listener);
+    }
+
+    /**
+     * Indicates if this container is a validate root.
+     * <p>
+     * {@code Window} objects are the validate roots, and, therefore, they
+     * override this method to return {@code true}.
+     *
+     * @return {@code true}
+     * @since 1.7
+     * @see java.awt.Container#isValidateRoot
+     */
+    @Override
+    public boolean isValidateRoot() {
+        return true;
     }
 
     /**
