@@ -2847,8 +2847,15 @@ choose_collection_set() {
   double non_young_start_time_sec;
   start_recording_regions();
 
-  guarantee(_target_pause_time_ms > -1.0,
+  guarantee(_target_pause_time_ms > -1.0
+            NOT_PRODUCT(|| Universe::heap()->gc_cause() == GCCause::_scavenge_alot),
             "_target_pause_time_ms should have been set!");
+#ifndef PRODUCT
+  if (_target_pause_time_ms <= -1.0) {
+    assert(ScavengeALot && Universe::heap()->gc_cause() == GCCause::_scavenge_alot, "Error");
+    _target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
+  }
+#endif
   assert(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);
@@ -2994,7 +3001,3 @@ record_collection_pause_end(bool abandoned) {
   G1CollectorPolicy::record_collection_pause_end(abandoned);
   assert(assertMarkedBytesDataOK(), "Marked regions not OK at pause end.");
 }
-
-// Local Variables: ***
-// c-indentation-style: gnu ***
-// End: ***
