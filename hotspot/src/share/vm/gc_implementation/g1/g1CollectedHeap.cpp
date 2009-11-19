@@ -1732,13 +1732,6 @@ size_t G1CollectedHeap::unsafe_max_alloc() {
   return car->free();
 }
 
-void G1CollectedHeap::collect(GCCause::Cause cause) {
-  // The caller doesn't have the Heap_lock
-  assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
-  MutexLocker ml(Heap_lock);
-  collect_locked(cause);
-}
-
 void G1CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   assert(Thread::current()->is_VM_thread(), "Precondition#1");
   assert(Heap_lock->is_locked(), "Precondition#2");
@@ -1755,17 +1748,31 @@ void G1CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   }
 }
 
+void G1CollectedHeap::collect(GCCause::Cause cause) {
+  // The caller doesn't have the Heap_lock
+  assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
 
-void G1CollectedHeap::collect_locked(GCCause::Cause cause) {
-  // Don't want to do a GC until cleanup is completed.
-  wait_for_cleanup_complete();
-
-  // Read the GC count while holding the Heap_lock
-  int gc_count_before = SharedHeap::heap()->total_collections();
+  int gc_count_before;
   {
-    MutexUnlocker mu(Heap_lock);  // give up heap lock, execute gets it back
-    VM_G1CollectFull op(gc_count_before, cause);
-    VMThread::execute(&op);
+    MutexLocker ml(Heap_lock);
+    // Read the GC count while holding the Heap_lock
+    gc_count_before = SharedHeap::heap()->total_collections();
+
+    // Don't want to do a GC until cleanup is completed.
+    wait_for_cleanup_complete();
+  } // We give up heap lock; VMThread::execute gets it back below
+  switch (cause) {
+    case GCCause::_scavenge_alot: {
+      // Do an incremental pause, which might sometimes be abandoned.
+      VM_G1IncCollectionPause op(gc_count_before, cause);
+      VMThread::execute(&op);
+      break;
+    }
+    default: {
+      // In all other cases, we currently do a full gc.
+      VM_G1CollectFull op(gc_count_before, cause);
+      VMThread::execute(&op);
+    }
   }
 }
 
@@ -2649,8 +2656,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
     if (g1_policy()->should_initiate_conc_mark())
       strcat(verbose_str, " (initial-mark)");
 
-    GCCauseSetter x(this, GCCause::_g1_inc_collection_pause);
-
     // if PrintGCDetails is on, we'll print long statistics information
     // in the collector policy code, so let's not print this as the output
     // is messy if we do.
@@ -2802,6 +2807,22 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
           _young_list->reset_auxilary_lists();
         }
       } else {
+        if (_in_cset_fast_test != NULL) {
+          assert(_in_cset_fast_test_base != NULL, "Since _in_cset_fast_test isn't");
+          FREE_C_HEAP_ARRAY(bool, _in_cset_fast_test_base);
+          //  this is more for peace of mind; we're nulling them here and
+          // we're expecting them to be null at the beginning of the next GC
+          _in_cset_fast_test = NULL;
+          _in_cset_fast_test_base = NULL;
+        }
+        // This looks confusing, because the DPT should really be empty
+        // at this point -- since we have not done any collection work,
+        // there should not be any derived pointers in the table to update;
+        // however, there is some additional state in the DPT which is
+        // reset at the end of the (null) "gc" here via the following call.
+        // A better approach might be to split off that state resetting work
+        // into a separate method that asserts that the DPT is empty and call
+        // that here. That is deferred for now.
         COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
       }
 

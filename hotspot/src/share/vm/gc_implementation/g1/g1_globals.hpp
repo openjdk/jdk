@@ -256,6 +256,9 @@
           "If non-0 is the size of the G1 survivor space, "                 \
           "otherwise SurvivorRatio is used to determine the size")          \
                                                                             \
+  product(bool, G1ForgetfulMMUTracker, false,                               \
+          "If the MMU tracker's memory is full, forget the oldest entry")   \
+                                                                            \
   product(uintx, G1HeapRegionSize, 0,                                       \
           "Size of the G1 regions.")                                        \
                                                                             \

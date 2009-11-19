@@ -68,8 +68,9 @@ class VM_G1CollectForAllocation: public VM_GC_Operation {
 
 class VM_G1IncCollectionPause: public VM_GC_Operation {
  public:
-  VM_G1IncCollectionPause(int gc_count_before) :
-    VM_GC_Operation(gc_count_before) {}
+  VM_G1IncCollectionPause(int gc_count_before,
+                          GCCause::Cause gc_cause = GCCause::_g1_inc_collection_pause) :
+    VM_GC_Operation(gc_count_before) { _gc_cause = gc_cause; }
   virtual VMOp_Type type() const { return VMOp_G1IncCollectionPause; }
   virtual void doit();
   virtual const char* name() const {
