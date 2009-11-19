@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,48 +23,15 @@
  * have any questions.
  */
 
-#ifndef _AWT_GRAPHICSENV_H_
-#define _AWT_GRAPHICSENV_H_
+package sun.java2d.pipe;
 
-#include <jni_util.h>
+/**
+ * This is a marker interface used by Pipes that need RenderLoops.
+ * RenderLoops are validated in SurfaceData when a pipe is recognised to
+ * implement this interface.
+ *
+ * @author Mario Torre <neugens@aicas.com>
+ */
+public interface LoopBasedPipe {
 
-#ifndef HEADLESS
-#define MITSHM
-#endif /* !HEADLESS */
-
-#define UNSET_MITSHM (-2)
-#define NOEXT_MITSHM (-1)
-#define CANT_USE_MITSHM (0)
-#define CAN_USE_MITSHM (1)
-
-#ifdef MITSHM
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <X11/extensions/XShm.h>
-#ifndef X_ShmAttach
-#include <X11/Xmd.h>
-#include <X11/extensions/shmproto.h>
-#endif
-
-extern int XShmQueryExtension();
-
-void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps);
-void resetXShmAttachFailed();
-jboolean isXShmAttachFailed();
-
-#endif /* MITSHM */
-
-/* fieldIDs for X11GraphicsConfig fields that may be accessed from C */
-struct X11GraphicsConfigIDs {
-    jfieldID aData;
-    jfieldID bitsPerPixel;
-    jfieldID screen;
-};
-
-/* fieldIDs for X11GraphicsDevice fields that may be accessed from C */
-struct X11GraphicsDeviceIDs {
-    jfieldID screen;
-};
-
-#endif /* _AWT_GRAPHICSENV_H_ */
+}
