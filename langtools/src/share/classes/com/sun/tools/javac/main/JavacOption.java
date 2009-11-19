@@ -130,7 +130,7 @@ public interface JavacOption {
         private static Map<String,Boolean> createChoices(String... choices) {
             Map<String,Boolean> map = new LinkedHashMap<String,Boolean>();
             for (String c: choices)
-                map.put(c, true);
+                map.put(c, false);
             return map;
         }
 
