@@ -1378,9 +1378,15 @@ void Arguments::set_heap_size() {
   // or -Xms, then set it as fraction of the size of physical memory,
   // respecting the maximum and minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(InitialHeapSize)) {
+    julong reasonable_minimum = (julong)(OldSize + NewSize);
+
+    reasonable_minimum = MIN2(reasonable_minimum, (julong)MaxHeapSize);
+
+    reasonable_minimum = os::allocatable_physical_memory(reasonable_minimum);
+
     julong reasonable_initial = phys_mem / InitialRAMFraction;
 
-    reasonable_initial = MAX2(reasonable_initial, (julong)(OldSize + NewSize));
+    reasonable_initial = MAX2(reasonable_initial, reasonable_minimum);
     reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
 
     reasonable_initial = os::allocatable_physical_memory(reasonable_initial);
@@ -1388,14 +1394,10 @@ void Arguments::set_heap_size() {
     if (PrintGCDetails && Verbose) {
       // Cannot use gclog_or_tty yet.
       tty->print_cr("  Initial heap size " SIZE_FORMAT, (uintx)reasonable_initial);
+      tty->print_cr("  Minimum heap size " SIZE_FORMAT, (uintx)reasonable_minimum);
     }
     FLAG_SET_ERGO(uintx, InitialHeapSize, (uintx)reasonable_initial);
-
-    // Subsequent ergonomics code may expect min_heap_size to be set
-    // if InitialHeapSize is.  Use whatever the current values are
-    // for OldSize and NewSize, whether or not they were set on the
-    // command line.
-    set_min_heap_size(OldSize + NewSize);
+    set_min_heap_size((uintx)reasonable_minimum);
   }
 }
 
