@@ -492,8 +492,7 @@
                     <compilerarg line="${javac.lint.opts}"/>
                 </javac>
                 <copy todir="@{classes.dir}">
-                    <fileset dir="${src.classes.dir}">
-                        <include name="@{includes}"/>
+                    <fileset dir="${src.classes.dir}" includes="@{includes}">
                         <exclude name="**/*.java"/>
                         <exclude name="**/*.properties"/>
                         <exclude name="**/*-template"/>
