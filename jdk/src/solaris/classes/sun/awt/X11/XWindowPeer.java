@@ -35,11 +35,18 @@ import java.awt.image.BufferedImage;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.WindowPeer;
 
+import java.io.UnsupportedEncodingException;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import sun.util.logging.PlatformLogger;
 
@@ -89,6 +96,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     private boolean isMapped = false; // Is this window mapped or not
     private boolean mustControlStackPosition = false; // Am override-redirect not on top
     private XEventDispatcher rootPropertyEventDispatcher = null;
+
+    private static final AtomicBoolean isStartupNotificationRemoved = new AtomicBoolean();
 
     /*
      * Focus related flags
@@ -1183,7 +1192,77 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    private void removeStartupNotification() {
+        if (isStartupNotificationRemoved.getAndSet(true)) {
+            return;
+        }
+
+        final String desktopStartupId = AccessController.doPrivileged(new PrivilegedAction<String>() {
+            public String run() {
+                return XToolkit.getEnv("DESKTOP_STARTUP_ID");
+            }
+        });
+        if (desktopStartupId == null) {
+            return;
+        }
+
+        final StringBuilder messageBuilder = new StringBuilder("remove: ID=");
+        messageBuilder.append('"');
+        for (int i = 0; i < desktopStartupId.length(); i++) {
+            if (desktopStartupId.charAt(i) == '"' || desktopStartupId.charAt(i) == '\\') {
+                messageBuilder.append('\\');
+            }
+            messageBuilder.append(desktopStartupId.charAt(i));
+        }
+        messageBuilder.append('"');
+        messageBuilder.append('\0');
+        final byte[] message;
+        try {
+            message = messageBuilder.toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException cannotHappen) {
+            return;
+        }
+
+        XClientMessageEvent req = null;
+
+        XToolkit.awtLock();
+        try {
+            final XAtom netStartupInfoBeginAtom = XAtom.get("_NET_STARTUP_INFO_BEGIN");
+            final XAtom netStartupInfoAtom = XAtom.get("_NET_STARTUP_INFO");
+
+            req = new XClientMessageEvent();
+            req.set_type(XConstants.ClientMessage);
+            req.set_window(getWindow());
+            req.set_message_type(netStartupInfoBeginAtom.getAtom());
+            req.set_format(8);
+
+            for (int pos = 0; pos < message.length; pos += 20) {
+                final int msglen = Math.min(message.length - pos, 20);
+                int i = 0;
+                for (; i < msglen; i++) {
+                    XlibWrapper.unsafe.putByte(req.get_data() + i, message[pos + i]);
+                }
+                for (; i < 20; i++) {
+                    XlibWrapper.unsafe.putByte(req.get_data() + i, (byte)0);
+                }
+                XlibWrapper.XSendEvent(XToolkit.getDisplay(),
+                    XlibWrapper.RootWindow(XToolkit.getDisplay(), getScreenNumber()),
+                    false,
+                    XConstants.PropertyChangeMask,
+                    req.pData);
+                req.set_message_type(netStartupInfoAtom.getAtom());
+            }
+        } finally {
+            XToolkit.awtUnlock();
+            if (req != null) {
+                req.dispose();
+            }
+        }
+    }
+
     public void handleMapNotifyEvent(XEvent xev) {
+        removeStartupNotification();
+
         // See 6480534.
         isUnhiding |= isWMStateNetHidden();
 
