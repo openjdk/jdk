@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,15 +41,13 @@
  * options are turned into "-foo" options to the vm.  This option
  * filtering is handled in a number of places in the launcher, some of
  * it in machine-dependent code.  In this file, the function
- * CheckJVMType removes vm style options and TranslateApplicationArgs
- * removes "-J" prefixes.  On unix platforms, the
- * CreateExecutionEnvironment function from the unix java_md.c file
- * processes and removes -d<n> options.  However, in case
- * CreateExecutionEnvironment does not need to exec because
- * LD_LIBRARY_PATH is set acceptably and the data model does not need
- * to be changed, ParseArguments will screen out the redundant -d<n>
- * options and prevent them from being passed to the vm; this is done
- * by RemovableOption.
+ * CheckJvmType removes vm style options and TranslateApplicationArgs
+ * removes "-J" prefixes.  The CreateExecutionEnvironment function processes
+ * and removes -d<n> options. On unix, there is a possibility that the running
+ * data model may not match to the desired data model, in this case an exec is
+ * required to start the desired model. If the data models match, then
+ * ParseArguments will remove the -d<n> flags. If the data models do not match
+ * the CreateExecutionEnviroment will remove the -d<n> flags.
  */
 
 
@@ -1891,11 +1889,11 @@ DumpState()
  * Return JNI_TRUE for an option string that has no effect but should
  * _not_ be passed on to the vm; return JNI_FALSE otherwise.  On
  * Solaris SPARC, this screening needs to be done if:
- * 1) LD_LIBRARY_PATH does _not_ need to be reset and
- * 2) -d32 or -d64 is passed to a binary with a matching data model
- *    (the exec in SetLibraryPath removes -d<n> options and points the
- *    exec to the proper binary).  When this exec is not done, these options
- *    would end up getting passed onto the vm.
+ *    -d32 or -d64 is passed to a binary with an unmatched data model
+ *    (the exec in CreateExecutionEnvironment removes -d<n> options and points the
+ *    exec to the proper binary).  In the case of when the data model and the
+ *    requested version is matched, an exec would not occur, and these options
+ *    were erroneously passed to the vm.
  */
 jboolean
 RemovableOption(char * option)
