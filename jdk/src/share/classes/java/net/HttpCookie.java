@@ -1036,7 +1036,7 @@ public final class HttpCookie implements Cloneable {
                         int version = Integer.parseInt(attrValue);
                         cookie.setVersion(version);
                     } catch (NumberFormatException ignored) {
-                        throw new IllegalArgumentException("Illegal cookie version attribute");
+                        // Just ignore bogus version, it will default to 0 or 1
                     }
                 }
             });
@@ -1147,12 +1147,15 @@ public final class HttpCookie implements Cloneable {
     }
 
     private static String stripOffSurroundingQuote(String str) {
-        if (str != null && str.length() > 0 &&
+        if (str != null && str.length() > 2 &&
             str.charAt(0) == '"' && str.charAt(str.length() - 1) == '"') {
             return str.substring(1, str.length() - 1);
-        } else {
-            return str;
         }
+        if (str != null && str.length() > 2 &&
+            str.charAt(0) == '\'' && str.charAt(str.length() - 1) == '\'') {
+            return str.substring(1, str.length() - 1);
+        }
+        return str;
     }
 
     private static boolean equalsIgnoreCase(String s, String t) {
