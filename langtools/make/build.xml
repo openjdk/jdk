@@ -56,6 +56,7 @@
     <property name="build.coverage.dir" location="${build.dir}/coverage"/>
     <property name="build.classes.dir" location="${build.dir}/classes"/>
     <property name="build.gensrc.dir" location="${build.dir}/gensrc"/>
+    <property name="build.genstubs.dir" location="${build.dir}/genstubs"/>
     <property name="build.javadoc.dir" location="${build.dir}/javadoc"/>
     <property name="build.jtreg.dir" location="${build.dir}/jtreg"/>
     <property name="build.toolclasses.dir" location="${build.dir}/toolclasses"/>
@@ -93,6 +94,41 @@
         <isset property="target.java.home"/>
     </condition>
 
+    <!-- Logic for handling access import jdk classes, if available.
+        import.jdk should be unset, or set to jdk home (to use rt.jar)
+        or to jdk repo (to use src/share/classes).
+        Based on the value, if any, set up default values for javac's sourcepath,
+        classpath and bootclasspath. Note: the default values are overridden 
+        in the build-bootstrap-classes macro. -->
+
+    <available property="import.jdk.src.dir" value="${import.jdk}/src/share/classes"
+        filepath="${import.jdk}/src/share/classes" file="java/nio/file/Path.java"/>
+    <available property="import.jdk.jar" value="${import.jdk}/jre/lib/rt.jar"
+        ignoresystemclasses="true"
+        classpath="${import.jdk}/jre/lib/rt.jar" classname="java.nio.file.Path"/>
+
+    <condition property="javac.sourcepath" value="${build.genstubs.dir}" else="">
+        <isset property="import.jdk.src.dir"/>
+    </condition>
+
+    <property name="javac.classpath" value=""/>
+
+    <condition property="javac.bootclasspath.opt"
+            value="-Xbootclasspath:${build.classes.dir}:${import.jdk.jar}"
+            else="-Xbootclasspath/p:${build.classes.dir}">
+        <isset property="import.jdk.jar"/>
+    </condition>
+
+    <condition property="exclude.files" value="" else="${require.import.jdk.files}">
+        <isset property="import.jdk"/>
+    </condition>
+
+    <!-- for debugging -->
+    <target name="check-import.jdk">
+        <echo message="import.jdk: ${import.jdk}"/>
+        <echo message="import.jdk.jar: ${import.jdk.jar}"/>
+        <echo message="import.jdk.src.dir: ${import.jdk.src.dir}"/>
+    </target>
 
     <!-- Standard target to build deliverables for JDK build. -->
 
@@ -108,11 +144,15 @@
         <zip file="${dist.lib.dir}/src.zip" basedir="${src.classes.dir}"/>
     </target>
 
-    <target name="build-bootstrap-tools" depends="build-bootstrap-javac,build-bootstrap-javadoc,build-bootstrap-doclets,build-bootstrap-javah"/>
+    <target name="build-bootstrap-tools"
+        depends="build-bootstrap-javac,build-bootstrap-javadoc,build-bootstrap-doclets,build-bootstrap-javah"
+    />
 
-    <target name="build-all-tools" depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap,build-apt"/>
+    <target name="build-all-tools"
+        depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap,build-apt"
+    />
 
-    <target name="build-all-classes" depends="build-bootstrap-javac">
+    <target name="build-all-classes" depends="build-bootstrap-javac,-create-import-jdk-stubs">
         <build-classes includes="${javac.includes} ${javadoc.includes} ${doclets.includes} ${javah.includes} ${javap.includes} ${apt.includes}"/>
     </target>
 
@@ -197,7 +237,7 @@
         <build-bootstrap-tool    name="javac"/>
     </target>
 
-    <target name="build-classes-javac" depends="build-bootstrap-javac">
+    <target name="build-classes-javac" depends="build-bootstrap-javac,-create-import-jdk-stubs">
         <build-classes includes="${javac.includes}"/>
     </target>
 
@@ -379,6 +419,17 @@
 
     <target name="apt" depends="build-apt,jtreg-apt,findbugs-apt"/>
 
+    <!-- Create import JDK stubs -->
+
+    <target name="-create-import-jdk-stubs" depends="-def-genstubs" if="import.jdk.src.dir">
+        <mkdir dir="${build.genstubs.dir}"/>
+        <genstubs
+            srcdir="${import.jdk.src.dir}" destdir="${build.genstubs.dir}"
+            includes="${import.jdk.stub.files}"
+            fork="true" classpath="${build.toolclasses.dir}:${build.bootstrap.dir}/classes:${ant.home}/lib/ant.jar"
+        />
+    </target>
+
     <!-- Check targets -->
 
     <target name="-check-boot.java.home" depends="-def-check">
@@ -446,16 +497,23 @@
     <target name="-def-build-classes" depends="-def-pcompile">
         <macrodef name="build-classes">
             <attribute name="includes"/>
-            <attribute name="excludes" default="**/package-info.java"/>
+            <attribute name="excludes" default="${exclude.files} **/package-info.java"/>
             <attribute name="classes.dir" default="${build.classes.dir}"/>
             <attribute name="gensrc.dir" default="${build.gensrc.dir}"/>
-            <attribute name="bootclasspath" default="${build.bootstrap.dir}/classes"/>
+            <attribute name="javac.bootclasspath" default="${build.bootstrap.dir}/classes"/>
+            <attribute name="bootclasspath.opt" default="${javac.bootclasspath.opt}"/>
+            <attribute name="classpath" default="${javac.classpath}"/>
+            <attribute name="sourcepath" default="${javac.sourcepath}"/>
             <attribute name="java.home" default="${boot.java.home}"/>
             <attribute name="source" default="${javac.source}"/>
             <attribute name="target" default="${javac.target}"/>
             <attribute name="release" default="${release}"/>
             <attribute name="full.version" default="${full.version}"/>
             <sequential>
+                <echo level="verbose" message="build-classes: excludes=@{excludes}"/>
+                <echo level="verbose" message="build-classes: bootclasspath.opt=@{bootclasspath.opt}"/>
+                <echo level="verbose" message="build-classes: classpath=@{classpath}"/>
+                <echo level="verbose" message="build-classes: sourcepath=@{sourcepath}"/>
                 <mkdir dir="@{gensrc.dir}"/>
                 <mkdir dir="@{classes.dir}"/>
                 <pcompile srcdir="${src.classes.dir}"
@@ -479,14 +537,17 @@
                        destdir="@{classes.dir}"
                        includes="@{includes}"
                        excludes="@{excludes}"
-                       sourcepath=""
+                       sourcepath="@{sourcepath}"
+                       classpath="@{classpath}"
                        includeAntRuntime="no"
                        source="@{source}"
                        target="@{target}"
                        debug="${javac.debug}"
                        debuglevel="${javac.debuglevel}">
-                    <compilerarg value="-J-Xbootclasspath/p:@{bootclasspath}"/>
-                    <compilerarg value="-Xbootclasspath/p:@{classes.dir}"/>
+                    <compilerarg value="-implicit:none"/>
+                    <compilerarg value="-Xprefer:source"/>
+                    <compilerarg value="-J-Xbootclasspath/p:@{javac.bootclasspath}"/>
+                    <compilerarg line="@{bootclasspath.opt}"/>
                     <compilerarg line="${javac.no.jdk.warnings}"/>
                     <compilerarg line="${javac.version.opt}"/>
                     <compilerarg line="${javac.lint.opts}"/>
@@ -526,9 +587,12 @@
                 target="${boot.javac.target}"
                 gensrc.dir="${build.bootstrap.dir}/gensrc"
                 classes.dir="${build.bootstrap.dir}/classes"
-                bootclasspath=""
+                javac.bootclasspath=""
+                bootclasspath.opt="-Xbootclasspath/p:${build.bootstrap.dir}/classes"
+                sourcepath=""
                 release="${bootstrap.release}"
-                full.version="${bootstrap.full.version}"/>
+                full.version="${bootstrap.full.version}"
+                excludes="${require.import.jdk.files} **/package-info.java"/>
         </presetdef>
     </target>
 
@@ -543,6 +607,20 @@
                classpath="${ant.home}/lib/ant.jar"/>
         <taskdef name="pcompile"
                  classname="CompilePropertiesTask"
+                 classpath="${build.toolclasses.dir}/"/>
+    </target>
+
+    <target name="-def-genstubs" depends="build-bootstrap-javac">
+        <mkdir dir="${build.toolclasses.dir}"/>
+        <javac fork="true"
+               source="${boot.javac.source}"
+               target="${boot.javac.target}"
+               executable="${boot.java.home}/bin/javac"
+               srcdir="${make.tools.dir}/GenStubs"
+               destdir="${build.toolclasses.dir}/"
+               classpath="${build.bootstrap.dir}/classes:${ant.home}/lib/ant.jar"/>
+        <taskdef name="genstubs"
+                 classname="GenStubs$$Ant"
                  classpath="${build.toolclasses.dir}/"/>
     </target>
 
@@ -707,7 +785,7 @@
 
     <!-- standard JDK target -->
     <target name="sanity"
-        description="display settings of congiguration values">
+        description="display settings of configuration values">
         <echo level="info">ant.home = ${ant.home}</echo>
         <echo level="info">boot.java.home = ${boot.java.home}</echo>
         <echo level="info">target.java.home = ${target.java.home}</echo>
