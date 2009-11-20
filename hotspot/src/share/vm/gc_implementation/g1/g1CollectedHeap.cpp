@@ -928,6 +928,8 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     TraceTime t(full ? "Full GC (System.gc())" : "Full GC", PrintGC, true, gclog_or_tty);
 
+    TraceMemoryManagerStats tms(true /* fullGC */);
+
     double start = os::elapsedTime();
     g1_policy()->record_full_collection_start();
 
@@ -1000,6 +1002,8 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     ref_processor()->enqueue_discovered_references();
 
     COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
+
+    MemoryService::track_memory_usage();
 
     if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
       HandleMark hm;  // Discard invalid handles created during verification
@@ -2645,6 +2649,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
   }
 
   {
+    ResourceMark rm;
+
     char verbose_str[128];
     sprintf(verbose_str, "GC pause ");
     if (g1_policy()->in_young_gc_mode()) {
@@ -2663,7 +2669,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     TraceTime t(verbose_str, PrintGC && !PrintGCDetails, true, gclog_or_tty);
 
-    ResourceMark rm;
+    TraceMemoryManagerStats tms(false /* fullGC */);
+
     assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
     assert(Thread::current() == VMThread::vm_thread(), "should be in vm thread");
     guarantee(!is_gc_active(), "collection is not reentrant");
@@ -2858,6 +2865,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
       g1_policy()->record_collection_pause_end(abandoned);
 
       assert(regions_accounted_for(), "Region leakage.");
+
+      MemoryService::track_memory_usage();
 
       if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
         HandleMark hm;  // Discard invalid handles created during verification
