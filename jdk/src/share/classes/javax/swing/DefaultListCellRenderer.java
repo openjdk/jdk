@@ -71,7 +71,7 @@ import sun.swing.DefaultLookup;
  * @author Hans Muller
  */
 public class DefaultListCellRenderer extends JLabel
-    implements ListCellRenderer, Serializable
+    implements ListCellRenderer<Object>, Serializable
 {
 
    /**
@@ -111,7 +111,7 @@ public class DefaultListCellRenderer extends JLabel
     }
 
     public Component getListCellRendererComponent(
-        JList list,
+        JList<?> list,
         Object value,
         int index,
         boolean isSelected,
