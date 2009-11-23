@@ -175,7 +175,7 @@ abstract class MBeanIntrospector<M> {
     /**
      * Get the methods to be analyzed to build the MBean interface.
      */
-    List<Method> getMethods(final Class<?> mbeanType) throws Exception {
+    List<Method> getMethods(final Class<?> mbeanType) {
         return Arrays.asList(mbeanType.getMethods());
     }
 
