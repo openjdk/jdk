@@ -43,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
-// import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
@@ -70,7 +70,7 @@ public class GCRetention {
         queues.add(new PriorityBlockingQueue<Boolean>());
         queues.add(new PriorityQueue<Boolean>());
         queues.add(new LinkedList<Boolean>());
-//         queues.add(new LinkedTransferQueue<Boolean>());
+        queues.add(new LinkedTransferQueue<Boolean>());
 
         // Following additional implementations are available from:
         // http://gee.cs.oswego.edu/dl/concurrency-interest/index.html
