@@ -110,6 +110,9 @@ public enum Source {
     }
 
     /** Allow encoding errors, giving only warnings. */
+    public boolean allowStringsInSwitch() {
+        return compareTo(JDK1_7) >= 0;
+    }
     public boolean allowEncodingErrors() {
         return compareTo(JDK1_6) < 0;
     }

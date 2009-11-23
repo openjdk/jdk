@@ -233,10 +233,9 @@
   template(sun_dyn_AdapterMethodHandle,               "sun/dyn/AdapterMethodHandle")              \
   template(sun_dyn_BoundMethodHandle,                 "sun/dyn/BoundMethodHandle")                \
   template(sun_dyn_DirectMethodHandle,                "sun/dyn/DirectMethodHandle")               \
-  template(sun_dyn_CallSiteImpl,                      "sun/dyn/CallSiteImpl")                     \
   template(makeImpl_name,                             "makeImpl") /*MethodType::makeImpl*/        \
   template(makeImpl_signature,    "(Ljava/lang/Class;[Ljava/lang/Class;ZZ)Ljava/dyn/MethodType;") \
-  template(makeSite_name,                             "makeSite") /*CallSiteImpl::makeImpl*/       \
+  template(makeSite_name,                             "makeSite") /*CallSite::makeSite*/          \
   template(makeSite_signature,    "(Ljava/lang/Class;Ljava/lang/String;Ljava/dyn/MethodType;II)Ljava/dyn/CallSite;") \
   template(findBootstrapMethod_name,                  "findBootstrapMethod")                      \
   template(findBootstrapMethod_signature, "(Ljava/lang/Class;Ljava/lang/Class;)Ljava/dyn/MethodHandle;") \

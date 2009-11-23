@@ -537,8 +537,9 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   }
 
   const TypeOopPtr *tinst = base_t->add_offset(t->offset())->is_oopptr();
-  // Do NOT remove the next call: ensure an new alias index is allocated
-  // for the instance type
+  // Do NOT remove the next line: ensure a new alias index is allocated
+  // for the instance type. Note: C++ will not remove it since the call
+  // has side effect.
   int alias_idx = _compile->get_alias_index(tinst);
   igvn->set_type(addp, tinst);
   // record the allocation in the node map
