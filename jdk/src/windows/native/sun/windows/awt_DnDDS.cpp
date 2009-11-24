@@ -648,7 +648,7 @@ HRESULT __stdcall AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
             dropfiles->pt.x = m_dropPoint.x;
             dropfiles->pt.y = m_dropPoint.y;
             dropfiles->fNC = m_fNC;
-            dropfiles->fWide = FALSE; // good guess!
+            dropfiles->fWide = TRUE; // good guess!
             dataout += sizeof(DROPFILES);
         }
 
@@ -815,7 +815,7 @@ HRESULT __stdcall AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
             dropfiles->pt.x = m_dropPoint.x;
             dropfiles->pt.y = m_dropPoint.y;
             dropfiles->fNC = m_fNC;
-            dropfiles->fWide = FALSE; // good guess!
+            dropfiles->fWide = TRUE; // good guess!
             dataout += sizeof(DROPFILES);
         }
 
