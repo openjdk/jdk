@@ -203,6 +203,8 @@ public abstract class DataTransferer {
     private static final Map nativeEOLNs =
         Collections.synchronizedMap(new HashMap());
 
+    private static final byte [] UNICODE_NULL_TERMINATOR =  new byte [] {0,0};
+
     /**
      * The number of terminating NUL bytes for the Set of textNatives.
      */
@@ -1299,7 +1301,7 @@ search:
             }
             final List list = (List)obj;
 
-            final ArrayList fileList = new ArrayList();
+            final ArrayList <String> fileList = new ArrayList<String>();
 
             final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
 
@@ -1331,12 +1333,23 @@ search:
                 throw new IOException(pae.getMessage());
             }
 
-            for (int i = 0; i < fileList.size(); i++)
-            {
-                byte[] bytes = ((String)fileList.get(i)).getBytes();
-                if (i != 0) bos.write(0);
-                bos.write(bytes, 0, bytes.length);
+            if(fileList.isEmpty()) {
+                //store empty unicode string (null terminator)
+                bos.write(UNICODE_NULL_TERMINATOR);
+            } else {
+                for (int i = 0; i < fileList.size(); i++) {
+                    byte[] bytes = fileList.get(i).getBytes(getDefaultUnicodeEncoding());
+                    //store unicode string with null terminator
+                    bos.write(bytes, 0, bytes.length);
+                    bos.write(UNICODE_NULL_TERMINATOR);
+                }
             }
+
+            // According to MSDN the byte array have to be double NULL-terminated.
+            // The array contains Unicode characters, so each NULL-terminator is
+            // a pair of bytes
+
+            bos.write(UNICODE_NULL_TERMINATOR);
 
         // Source data is an InputStream. For arbitrary flavors, just grab the
         // bytes and dump them into a byte array. For text flavors, decode back
