@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,12 +120,13 @@ public:
   // is returned to the completed buffer set, and this call returns false.
   bool apply_closure_to_completed_buffer(int worker_i = 0,
                                          int stop_at = 0,
-                                         bool with_CAS = false);
+                                         bool during_pause = false);
+
   bool apply_closure_to_completed_buffer_helper(int worker_i,
                                                 CompletedBufferNode* nd);
 
-  CompletedBufferNode* get_completed_buffer_CAS();
-  CompletedBufferNode* get_completed_buffer_lock(int stop_at);
+  CompletedBufferNode* get_completed_buffer(int stop_at);
+
   // Applies the current closure to all completed buffers,
   // non-consumptively.
   void apply_closure_to_all_completed_buffers();
