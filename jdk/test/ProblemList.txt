@@ -344,6 +344,9 @@ java/io/StreamTokenizer/Comment.java			 	generic-all
 # Some of these tests (like java/lang/management) may just need to be marked
 #   othervm, but that is partially speculation.
 
+# Samevm failure on OpenSolaris, security manager?
+java/lang/ClassLoader/UninitializedParent.java			generic-all
+
 # Times out on solaris 10 sparc
 java/lang/ClassLoader/Assert.java				generic-all
 
@@ -537,6 +540,18 @@ javax/imageio/plugins/jpeg/ReadAsGrayTest.java			generic-all
 
 # Missing close on file wbmp*, windows samevm
 javax/imageio/plugins/wbmp/CanDecodeTest.java			generic-all
+
+# Failures on OpenSolaris, cannot read input files? samevm issues?
+javax/imageio/metadata/BooleanAttributes.java			generic-all
+javax/imageio/plugins/bmp/BMPSubsamplingTest.java		generic-all
+javax/imageio/plugins/bmp/TopDownTest.java			generic-all
+javax/imageio/plugins/gif/EncodeSubImageTest.java		generic-all
+javax/imageio/plugins/gif/GifTransparencyTest.java		generic-all
+javax/imageio/plugins/png/GrayPngTest.java			generic-all
+javax/imageio/plugins/png/ItxtUtf8Test.java			generic-all
+javax/imageio/plugins/png/MergeStdCommentTest.java		generic-all
+javax/imageio/plugins/png/ShortHistogramTest.java		generic-all
+javax/imageio/plugins/shared/BitDepth.java			generic-all
 
 # Exclude all javax/print tests, even if they passed, they may need samevm work
 
@@ -1117,9 +1132,6 @@ sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 # Unexpected Monitor Exception, solaris sparc -client
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh	generic-all
 
-# Probably should be samevm, but seem to cause errors even in othervm at times
-sun/tools/jhat/HatHeapDump1Test.java			 	generic-all
-
 # Problems on windows, jmap.exe hangs? (these run jmap)
 sun/tools/jmap/Basic.sh						windows-all
 
@@ -1128,9 +1140,6 @@ sun/tools/jstatd/jstatdDefaults.sh			 	solaris-all
 
 # Solaris sparcv9, jps output does not match, x64 different
 sun/tools/jstatd/jstatdExternalRegistry.sh		 	solaris-all
-
-# Probably should be samevm, but seem to cause errors even in othervm at times
-sun/tools/native2ascii/NativeErrors.java		 	generic-all
 
 # Solaris 10 sparc 32bit -client, java.lang.AssertionError: Some tests failed
 tools/jar/JarEntryTime.java					generic-all
