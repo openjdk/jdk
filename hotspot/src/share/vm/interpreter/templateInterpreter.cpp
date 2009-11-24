@@ -465,9 +465,11 @@ void TemplateInterpreterGenerator::set_wide_entry_point(Template* t, address& we
 void TemplateInterpreterGenerator::set_short_entry_points(Template* t, address& bep, address& cep, address& sep, address& aep, address& iep, address& lep, address& fep, address& dep, address& vep) {
   assert(t->is_valid(), "template must exist");
   switch (t->tos_in()) {
-    case btos: vep = __ pc(); __ pop(btos); bep = __ pc(); generate_and_dispatch(t); break;
-    case ctos: vep = __ pc(); __ pop(ctos); sep = __ pc(); generate_and_dispatch(t); break;
-    case stos: vep = __ pc(); __ pop(stos); sep = __ pc(); generate_and_dispatch(t); break;
+    case btos:
+    case ctos:
+    case stos:
+      ShouldNotReachHere();  // btos/ctos/stos should use itos.
+      break;
     case atos: vep = __ pc(); __ pop(atos); aep = __ pc(); generate_and_dispatch(t); break;
     case itos: vep = __ pc(); __ pop(itos); iep = __ pc(); generate_and_dispatch(t); break;
     case ltos: vep = __ pc(); __ pop(ltos); lep = __ pc(); generate_and_dispatch(t); break;
