@@ -394,7 +394,7 @@
   product(bool, UseOptoBiasInlining, true,                                  \
           "Generate biased locking code in C2 ideal graph")                 \
                                                                             \
-  experimental(bool, OptimizeStringConcat, false,                           \
+  product(bool, OptimizeStringConcat, false,                                \
           "Optimize the construction of Strings by StringBuilder")          \
                                                                             \
   notproduct(bool, PrintOptimizeStringConcat, false,                        \
