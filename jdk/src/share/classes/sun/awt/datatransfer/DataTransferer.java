@@ -51,6 +51,9 @@ import java.io.Reader;
 import java.io.SequenceInputStream;
 import java.io.StringReader;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -202,8 +205,6 @@ public abstract class DataTransferer {
      */
     private static final Map nativeEOLNs =
         Collections.synchronizedMap(new HashMap());
-
-    private static final byte [] UNICODE_NULL_TERMINATOR =  new byte [] {0,0};
 
     /**
      * The number of terminating NUL bytes for the Set of textNatives.
@@ -626,6 +627,14 @@ public abstract class DataTransferer {
      * format is DataFlavor.imageFlavor.
      */
     public abstract boolean isImageFormat(long format);
+
+    /**
+     * Determines whether the format is a URI list we can convert to
+     * a DataFlavor.javaFileListFlavor.
+     */
+    protected boolean isURIListFormat(long format) {
+        return false;
+    }
 
     /**
      * Returns a Map whose keys are all of the possible formats into which the
@@ -1299,57 +1308,54 @@ search:
             if (!DataFlavor.javaFileListFlavor.equals(flavor)) {
                 throw new IOException("data translation failed");
             }
-            final List list = (List)obj;
 
-            final ArrayList <String> fileList = new ArrayList<String>();
+            final List list = (List)obj;
 
             final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
 
-            int nFiles = 0;
-            for (int i = 0; i < list.size(); i++) {
-                Object o = list.get(i);
-                if (o instanceof File || o instanceof String) {
-                    nFiles++;
+            final ArrayList<String> fileList = castToFiles(list, userProtectionDomain);
+
+            bos = convertFileListToBytes(fileList);
+
+
+        // Target data is a URI list. Source data must be a
+        // java.util.List which contains java.io.File or String instances.
+        } else if (isURIListFormat(format)) {
+            if (!DataFlavor.javaFileListFlavor.equals(flavor)) {
+                throw new IOException("data translation failed");
+            }
+            String nat = getNativeForFormat(format);
+            String targetCharset = null;
+            if (nat != null) {
+                try {
+                    targetCharset = new DataFlavor(nat).getParameter("charset");
+                } catch (ClassNotFoundException cnfe) {
+                    throw new IOException(cnfe);
                 }
             }
-
-            try {
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws IOException {
-                        for (Object fileObject : list)
-                        {
-                            File file = castToFile(fileObject);
-                            if (null == System.getSecurityManager() ||
-                                !(isFileInWebstartedCache(file) ||
-                                isForbiddenToRead(file, userProtectionDomain)))
-                            {
-                                fileList.add(file.getCanonicalPath());
-                            }
-                        }
-                        return null;
-                    }
-                });
-            } catch (PrivilegedActionException pae) {
-                throw new IOException(pae.getMessage());
+            if (targetCharset == null) {
+                targetCharset = "UTF-8";
             }
+            final List list = (List)obj;
+            final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
+            final ArrayList<String> fileList = castToFiles(list, userProtectionDomain);
+            final ArrayList<String> uriList = new ArrayList<String>(fileList.size());
+            for (String fileObject : fileList) {
+                final URI uri = new File(fileObject).toURI();
+                // Some implementations are fussy about the number of slashes (file:///path/to/file is best)
+                try {
+                    uriList.add(new URI(uri.getScheme(), "", uri.getPath(), uri.getFragment()).toString());
+                } catch (URISyntaxException uriSyntaxException) {
+                    throw new IOException(uriSyntaxException);
+                  }
+              }
 
-            if(fileList.isEmpty()) {
-                //store empty unicode string (null terminator)
-                bos.write(UNICODE_NULL_TERMINATOR);
-            } else {
-                for (int i = 0; i < fileList.size(); i++) {
-                    byte[] bytes = fileList.get(i).getBytes(getDefaultUnicodeEncoding());
-                    //store unicode string with null terminator
-                    bos.write(bytes, 0, bytes.length);
-                    bos.write(UNICODE_NULL_TERMINATOR);
-                }
+            byte[] eoln = "\r\n".getBytes(targetCharset);
+            for (int i = 0; i < uriList.size(); i++) {
+                byte[] bytes = uriList.get(i).getBytes(targetCharset);
+                bos.write(bytes, 0, bytes.length);
+                bos.write(eoln, 0, eoln.length);
             }
-
-            // According to MSDN the byte array have to be double NULL-terminated.
-            // The array contains Unicode characters, so each NULL-terminator is
-            // a pair of bytes
-
-            bos.write(UNICODE_NULL_TERMINATOR);
 
         // Source data is an InputStream. For arbitrary flavors, just grab the
         // bytes and dump them into a byte array. For text flavors, decode back
@@ -1397,6 +1403,8 @@ search:
         bos.close();
         return ret;
     }
+
+    protected abstract ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList) throws IOException;
 
     private String removeSuspectedData(DataFlavor flavor, final Transferable contents, final String str)
             throws IOException
@@ -1465,6 +1473,33 @@ search:
         return true;
     }
 
+    private ArrayList<String> castToFiles(final List files,
+                                          final ProtectionDomain userProtectionDomain) throws IOException
+    {
+        final ArrayList<String> fileList = new ArrayList<String>();
+        try {
+            AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                public Object run() throws IOException {
+                    for (Object fileObject : files)
+                    {
+                        File file = castToFile(fileObject);
+                        if (file != null &&
+                            (null == System.getSecurityManager() ||
+                            !(isFileInWebstartedCache(file) ||
+                            isForbiddenToRead(file, userProtectionDomain))))
+                        {
+                            fileList.add(file.getCanonicalPath());
+                        }
+                    }
+                    return null;
+                }
+            });
+        } catch (PrivilegedActionException pae) {
+            throw new IOException(pae.getMessage());
+        }
+        return fileList;
+    }
+
     // It is important do not use user's successors
     // of File class.
     private File castToFile(Object fileObject) throws IOException {
@@ -1473,6 +1508,8 @@ search:
             filePath = ((File)fileObject).getCanonicalPath();
         } else if (fileObject instanceof String) {
            filePath = (String) fileObject;
+        } else {
+           return null;
         }
         return new File(filePath);
     }
@@ -1577,6 +1614,29 @@ search:
 
             // Turn the list of Files into a List and return
             return Arrays.asList(files);
+
+        // Source data is a URI list. Convert to DataFlavor.javaFileListFlavor
+        // where possible.
+        } else if (isURIListFormat(format) && DataFlavor.javaFileListFlavor.equals(flavor)) {
+            try {
+                URI uris[] = dragQueryURIs(str, bytes, format, localeTransferable);
+                if (uris == null) {
+                    return null;
+                }
+                ArrayList files = new ArrayList();
+                for (URI uri : uris) {
+                    try {
+                        files.add(new File(uri));
+                    } catch (IllegalArgumentException illegalArg) {
+                        // When converting from URIs to less generic files,
+                        // common practice (Wine, SWT) seems to be to
+                        // silently drop the URIs that aren't local files.
+                    }
+                }
+                return files;
+            } finally {
+                str.close();
+            }
 
         // Target data is a String. Strip terminating NUL bytes. Decode bytes
         // into characters. Search-and-replace EOLN.
@@ -1961,6 +2021,19 @@ search:
      * Decodes a byte array into a set of String filenames.
      */
     protected abstract String[] dragQueryFile(byte[] bytes);
+
+    /**
+     * Decodes URIs from either a byte array or a stream.
+     */
+    protected URI[] dragQueryURIs(InputStream stream,
+                                  byte[] bytes,
+                                  long format,
+                                  Transferable localeTransferable)
+      throws IOException
+    {
+        throw new IOException(
+            new UnsupportedOperationException("not implemented on this platform"));
+    }
 
     /**
      * Translates either a byte array or an input stream which contain
