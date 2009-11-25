@@ -638,7 +638,7 @@ class SynthTableUI extends BasicTableUI implements SynthUI,
             if ((b == null || b instanceof UIResource
                     || component instanceof SynthBooleanTableCellRenderer)
                     && !table.isCellSelected(row, column)) {
-                if (alternateColor != null && row % 2 == 0) {
+                if (alternateColor != null && row % 2 != 0) {
                     component.setBackground(alternateColor);
                 }
             }

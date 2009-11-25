@@ -42,6 +42,10 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <X11/extensions/XShm.h>
+#ifndef X_ShmAttach
+#include <X11/Xmd.h>
+#include <X11/extensions/shmproto.h>
+#endif
 
 extern int XShmQueryExtension();
 
