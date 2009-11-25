@@ -25,6 +25,7 @@
 
 package sun.font;
 
+import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
 /*
@@ -49,7 +50,8 @@ import sun.java2d.DisposerRecord;
  * entries would be removed much more promptly than we need.
  */
 
-class FontStrikeDisposer implements DisposerRecord {
+class FontStrikeDisposer
+    implements DisposerRecord, Disposer.PollDisposable {
 
     Font2D font2D;
     FontStrikeDesc desc;

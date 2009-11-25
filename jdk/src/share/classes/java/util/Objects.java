@@ -33,7 +33,7 @@ package java.util;
  *
  * @since 1.7
  */
-public class Objects {
+public final class Objects {
     private Objects() {
         throw new AssertionError("No java.util.Objects instances for you!");
     }
@@ -57,6 +57,32 @@ public class Objects {
         return (a == b) || (a != null && a.equals(b));
     }
 
+   /**
+    * Returns {@code true} if the arguments are deeply equal to each other
+    * and {@code false} otherwise.
+    *
+    * Two {@code null} values are deeply equal.  If both arguments are
+    * arrays, the algorithm in {@link Arrays#deepEquals(Object[],
+    * Object[]) Arrays.deepEquals} is used to determine equality.
+    * Otherwise, equality is determined by using the {@link
+    * Object#equals equals} method of the first argument.
+    *
+    * @param a an object
+    * @param b an object to be compared with {@code a} for deep equality
+    * @return {@code true} if the arguments are deeply equal to each other
+    * and {@code false} otherwise
+    * @see Arrays#deepEquals(Object[], Object[])
+    * @see Objects#equals(Object, Object)
+    */
+    public static boolean deepEquals(Object a, Object b) {
+        if (a == b)
+            return true;
+        else if (a == null || b == null)
+            return false;
+        else
+            return Arrays.deepEquals0(a, b);
+    }
+
     /**
      * Returns the hash code of a non-{@code null} argument and 0 for
      * a {@code null} argument.
@@ -68,6 +94,36 @@ public class Objects {
      */
     public static int hashCode(Object o) {
         return o != null ? o.hashCode() : 0;
+    }
+
+   /**
+    * Generates a hash code for a sequence of input values. The hash
+    * code is generated as if all the input values were placed into an
+    * array, and that array were hashed by calling {@link
+    * Arrays#hashCode(Object[])}.
+    *
+    * <p>This method is useful for implementing {@link
+    * Object#hashCode()} on objects containing multiple fields. For
+    * example, if an object that has three fields, {@code x}, {@code
+    * y}, and {@code z}, one could write:
+    *
+    * <blockquote><pre>
+    * &#064;Override public int hashCode() {
+    *     return Objects.hash(x, y, z);
+    * }
+    * </pre></blockquote>
+    *
+    * <b>Warning: When a single object reference is supplied, the returned
+    * value does not equal the hash code of that object reference.</b> This
+    * value can be computed by calling {@link #hashCode(Object)}.
+    *
+    * @param values the values to be hashed
+    * @return a hash value of the sequence of input values
+    * @see Arrays#hashCode
+    * @see List#hashCode
+    */
+    public static int hash(Object... values) {
+        return Arrays.hashCode(values);
     }
 
     /**
@@ -82,6 +138,23 @@ public class Objects {
      */
     public static String toString(Object o) {
         return String.valueOf(o);
+    }
+
+    /**
+     * Returns the result of calling {@code toString} on the first
+     * argument if the first argument is not {@code null} and returns
+     * the second argument otherwise.
+     *
+     * @param o an object
+     * @param nullDefault string to return if the first argument is
+     *        {@code null}
+     * @return the result of calling {@code toString} on the first
+     * argument if it is not {@code null} and the second argument
+     * otherwise.
+     * @see Objects#toString(Object)
+     */
+    public static String toString(Object o, String nullDefault) {
+        return (o != null) ? o.toString() : nullDefault;
     }
 
     /**

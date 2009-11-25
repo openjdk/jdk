@@ -677,7 +677,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_X11_XToolkit_getEnv
     jstring ret = NULL;
 
     keystr = JNU_GetStringPlatformChars(env, key, NULL);
-    if (key) {
+    if (keystr) {
         ptr = getenv(keystr);
         if (ptr) {
             ret = JNU_NewStringPlatform(env, (const char *) ptr);

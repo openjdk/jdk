@@ -320,21 +320,6 @@ public abstract class Font2D {
                     lastFontStrike = new SoftReference(strike);
                     StrikeCache.refStrike(strike);
                     return strike;
-                } else {
-                    /* We have found a cleared reference that has not yet
-                     * been removed by the disposer.
-                     * If we make this reference unreachable by removing it
-                     * from the map,or overwriting it with a new reference to
-                     * a new strike, then it is possible it may never be
-                     * enqueued for disposal. That is the implication of
-                     * the docs for java.lang.ref. So on finding a cleared
-                     * reference, we need to dispose the native resources,
-                     * if they haven't already been freed.
-                     * The reference object needs to have a reference to
-                     * the disposer instance for this to occur.
-                     */
-                  ((StrikeCache.DisposableStrike)strikeRef)
-                      .getDisposer().dispose();
                 }
             }
             /* When we create a new FontStrike instance, we *must*

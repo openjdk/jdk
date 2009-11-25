@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ public class Debug {
         System.err.println(prefix + ": "+message);
     }
 
-    static void println(PrintStream s, String name, byte[] data) {
+    public static void println(PrintStream s, String name, byte[] data) {
         s.print(name + ":  { ");
         if (data == null) {
             s.print("null");

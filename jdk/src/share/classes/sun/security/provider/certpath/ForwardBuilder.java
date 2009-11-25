@@ -719,6 +719,11 @@ class ForwardBuilder extends Builder {
         /* we don't perform any validation of the trusted cert */
         if (!isTrustedCert) {
             /*
+             * check that the signature algorithm is not disabled.
+             */
+            AlgorithmChecker.check(cert);
+
+            /*
              * Check CRITICAL private extensions for user checkers that
              * support forward checking (forwardCheckers) and remove
              * ones we know how to check.

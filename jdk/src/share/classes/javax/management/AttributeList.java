@@ -138,56 +138,6 @@ public class AttributeList extends ArrayList<Object> {
     }
 
     /**
-     * <p>Constructs an {@code AttributeList} containing the elements of
-     * the {@code Map} specified, in the order in which they appear in the
-     * {@code Map}'s {@link Map#entrySet entrySet}.  For each <em>{@code
-     * key}</em> and <em>{@code value}</em> in the {@code Map}, the constructed
-     * {@code AttributeList} will contain {@link Attribute#Attribute
-     * Attribute(<em>key</em>, <em>value</em>)}.</p>
-     *
-     * @param map the {@code Map} defining the elements of the new
-     * {@code AttributeList}.
-     */
-    public AttributeList(Map<String, ?> map) {
-        for (Map.Entry<String, ?> entry : map.entrySet())
-            add(new Attribute(entry.getKey(), entry.getValue()));
-        typeSafe = true;
-    }
-
-    /**
-     * <p>Return a {@code Map} that is a snapshot of the values in this
-     * {@code AttributeList}.  Each key in the {@code Map} is the {@linkplain
-     * Attribute#getName() name} of an {@code Attribute} in the list, and each
-     * value is the corresponding {@linkplain Attribute#getValue() value} of
-     * that {@code Attribute}.  The {@code AttributeList} and the {@code Map}
-     * are unrelated after the call, that is, changes to one do not affect the
-     * other.</p>
-     *
-     * <p>If the {@code AttributeList} contains more than one {@code Attribute}
-     * with the same name, then the {@code Map} will contain an entry
-     * for that name where the value is that of the last of those {@code
-     * Attribute}s.</p>
-     *
-     * @return the new {@code Map}.
-     *
-     * @throws IllegalArgumentException if this {@code AttributeList} contains
-     * an element that is not an {@code Attribute}.
-     */
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-
-        // We can't call adding(this) because we're not necessarily typeSafe
-        if (tainted)
-            throw new IllegalArgumentException("AttributeList contains non-Attribute");
-
-        for (Object x : this) {
-            Attribute a = (Attribute) x;
-            map.put(a.getName(), a.getValue());
-        }
-        return map;
-    }
-
-    /**
      * Return a view of this list as a {@code List<Attribute>}.
      * Changes to the returned value are reflected by changes
      * to the original {@code AttributeList} and vice versa.

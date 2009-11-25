@@ -26,12 +26,12 @@
 package java.util.prefs;
 import java.util.*;
 import java.io.*;
-import java.util.logging.Logger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 
+import sun.util.logging.PlatformLogger;
 
 /**
  * Preferences implementation for Unix.  Preferences are stored in the file
@@ -61,8 +61,8 @@ class FileSystemPreferences extends AbstractPreferences {
      * Returns logger for error messages. Backing store exceptions are logged at
      * WARNING level.
      */
-    private static Logger getLogger() {
-        return Logger.getLogger("java.util.prefs");
+    private static PlatformLogger getLogger() {
+        return PlatformLogger.getLogger("java.util.prefs");
     }
 
     /**
