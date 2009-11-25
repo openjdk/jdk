@@ -34,8 +34,16 @@
 
 import java.util.Collections;
 import java.util.Set;
-import javax.management.*;
-import javax.management.namespace.MBeanServerSupport;
+import javax.management.Attribute;
+import javax.management.AttributeList;
+import javax.management.DynamicMBean;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
+import javax.management.ObjectName;
+import javax.management.RuntimeMBeanException;
+import javax.management.StandardMBean;
 
 public class MBeanExceptionTest {
     public static void main(String[] args) throws Exception {
@@ -62,46 +70,41 @@ public class MBeanExceptionTest {
 
         final boolean[] booleans = {false, true};
 
-        for (boolean mbss : booleans) {
-            for (boolean runtimeX : booleans) {
-                Class<? extends Exception> excC =
-                        runtimeX ? RuntimeMBeanException.class : MBeanException.class;
-                String excS =
-                        runtimeX ? "a RuntimeMBeanException" : "an MBeanException";
-                String mbsS =
-                        mbss ? "a conformant MBeanServerSupport" : "a plain MBeanServer";
-                MBeanServer xmbs =
-                        mbss ? new CreateExceptionMBS() : mbs;
+        for (boolean runtimeX : booleans) {
+            Class<? extends Exception> excC =
+                    runtimeX ? RuntimeMBeanException.class : MBeanException.class;
+            String excS =
+                    runtimeX ? "a RuntimeMBeanException" : "an MBeanException";
+            String mbsS = "a plain MBeanServer";
+            System.out.println(
+                    "Test that, with " + mbsS + ", " + excS + " is wrapped " +
+                    "in " + excS);
+            // E.g. "Test that, with a plain MBeanServer, an MBeanException
+            // is wrapped in an MBeanException".
+            try {
+                mbs.createMBean(
+                        Except.class.getName(), new ObjectName(":name=Oops"),
+                        new Object[] {runtimeX},
+                        new String[] {boolean.class.getName()});
                 System.out.println(
-                        "Test that, with " + mbsS + ", " + excS + " is wrapped " +
-                        "in " + excS);
-                // E.g. "Test that, with a plain MBeanServer, an MBeanException
-                // is wrapped in an MBeanException".
-                try {
-                    mbs.createMBean(
-                            Except.class.getName(), new ObjectName(":name=Oops"),
-                            new Object[] {runtimeX},
-                            new String[] {boolean.class.getName()});
+                        "FAIL: createMBean succeeded but should not have");
+                failures++;
+            } catch (Exception e) {
+                if (!excC.isInstance(e)) {
                     System.out.println(
-                            "FAIL: createMBean succeeded but should not have");
+                            "FAIL: expected " + excC.getName() + " from " +
+                            "createMBean, got " + e);
                     failures++;
-                } catch (Exception e) {
-                    if (!excC.isInstance(e)) {
+                } else {
+                    Throwable cause = e.getCause();
+                    if (!excC.isInstance(cause)) {
                         System.out.println(
-                                "FAIL: expected " + excC.getName() + " from " +
-                                "createMBean, got " + e);
+                                "FAIL: expected " + excC.getName() +
+                                " as cause of " + excC.getName() +
+                                ", got " + e);
                         failures++;
-                    } else {
-                        Throwable cause = e.getCause();
-                        if (!excC.isInstance(cause)) {
-                            System.out.println(
-                                    "FAIL: expected " + excC.getName() +
-                                    " as cause of " + excC.getName() +
-                                    ", got " + e);
-                            failures++;
-                        } else
-                            System.out.println("...ok");
-                    }
+                    } else
+                        System.out.println("...ok");
                 }
             }
         }
@@ -280,28 +283,4 @@ public class MBeanExceptionTest {
     private static final RuntimeException theUncheckedException =
         new UnsupportedOperationException("The unchecked exception " +
                                           "that should be seen");
-
-    private static class CreateExceptionMBS extends MBeanServerSupport {
-        @Override
-        protected Set<ObjectName> getNames() {
-            return Collections.emptySet();
-        }
-
-        @Override
-        public DynamicMBean getDynamicMBeanFor(ObjectName name)
-                throws InstanceNotFoundException {
-            throw new InstanceNotFoundException(name);
-        }
-
-        @Override
-        public ObjectInstance createMBean(String className,
-                ObjectName name, ObjectName loaderName, Object[] params,
-                String[] signature, boolean useCLR)
-                throws ReflectionException, InstanceAlreadyExistsException,
-                MBeanRegistrationException, MBeanException,
-                NotCompliantMBeanException, InstanceNotFoundException {
-            Exception wrapped = new MBeanException(new Exception(), "Bang");
-            throw new MBeanException(wrapped, "Bang");
-        }
-    }
 }

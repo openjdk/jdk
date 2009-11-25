@@ -34,15 +34,7 @@ import java.lang.management.MemoryPoolMXBean;
 import javax.management.ObjectName;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
-import javax.management.NotificationEmitter;
-import javax.management.NotificationFilter;
-import javax.management.NotificationListener;
-import javax.management.ListenerNotFoundException;
 import javax.management.openmbean.CompositeData;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.ListIterator;
-import java.util.Collections;
 
 /**
  * Implementation class for the memory subsystem.
@@ -177,7 +169,7 @@ class MemoryImpl extends NotificationEmitterSupport
     }
 
     public ObjectName getObjectName() {
-        return ObjectName.valueOf(ManagementFactory.MEMORY_MXBEAN_NAME);
+        return Util.newObjectName(ManagementFactory.MEMORY_MXBEAN_NAME);
     }
 
 }

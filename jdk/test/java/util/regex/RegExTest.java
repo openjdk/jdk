@@ -32,7 +32,7 @@
  * 4872664 4803179 4892980 4900747 4945394 4938995 4979006 4994840 4997476
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
- * 6350801 6676425
+ * 6350801 6676425 6878475
  */
 
 import java.util.regex.*;
@@ -3389,9 +3389,9 @@ public class RegExTest {
               "gname",
               "yyy");
 
-        check(Pattern.compile("x+(?<8gname>y+)z+"),
+        check(Pattern.compile("x+(?<gname8>y+)z+"),
               "xxxyyyzzz",
-              "8gname",
+              "gname8",
               "yyy");
 
         //backref
@@ -3430,81 +3430,82 @@ public class RegExTest {
         //replaceFirst/All
         checkReplaceFirst("(?<gn>ab)(c*)",
                           "abccczzzabcczzzabccc",
-                          "$<gn>",
+                          "${gn}",
                           "abzzzabcczzzabccc");
 
         checkReplaceAll("(?<gn>ab)(c*)",
                         "abccczzzabcczzzabccc",
-                        "$<gn>",
+                        "${gn}",
                         "abzzzabzzzab");
 
 
         checkReplaceFirst("(?<gn>ab)(c*)",
                           "zzzabccczzzabcczzzabccczzz",
-                          "$<gn>",
+                          "${gn}",
                           "zzzabzzzabcczzzabccczzz");
 
         checkReplaceAll("(?<gn>ab)(c*)",
                         "zzzabccczzzabcczzzabccczzz",
-                        "$<gn>",
+                        "${gn}",
                         "zzzabzzzabzzzabzzz");
 
         checkReplaceFirst("(?<gn1>ab)(?<gn2>c*)",
                           "zzzabccczzzabcczzzabccczzz",
-                          "$<gn2>",
+                          "${gn2}",
                           "zzzccczzzabcczzzabccczzz");
 
         checkReplaceAll("(?<gn1>ab)(?<gn2>c*)",
                         "zzzabccczzzabcczzzabccczzz",
-                        "$<gn2>",
+                        "${gn2}",
                         "zzzccczzzcczzzccczzz");
 
         //toSupplementaries("(ab)(c*)"));
         checkReplaceFirst("(?<gn1>" + toSupplementaries("ab") +
                            ")(?<gn2>" + toSupplementaries("c") + "*)",
                           toSupplementaries("abccczzzabcczzzabccc"),
-                          "$<gn1>",
+                          "${gn1}",
                           toSupplementaries("abzzzabcczzzabccc"));
 
 
         checkReplaceAll("(?<gn1>" + toSupplementaries("ab") +
                         ")(?<gn2>" + toSupplementaries("c") + "*)",
                         toSupplementaries("abccczzzabcczzzabccc"),
-                        "$<gn1>",
+                        "${gn1}",
                         toSupplementaries("abzzzabzzzab"));
 
         checkReplaceFirst("(?<gn1>" + toSupplementaries("ab") +
                            ")(?<gn2>" + toSupplementaries("c") + "*)",
                           toSupplementaries("abccczzzabcczzzabccc"),
-                          "$<gn2>",
+                          "${gn2}",
                           toSupplementaries("ccczzzabcczzzabccc"));
 
 
         checkReplaceAll("(?<gn1>" + toSupplementaries("ab") +
                         ")(?<gn2>" + toSupplementaries("c") + "*)",
                         toSupplementaries("abccczzzabcczzzabccc"),
-                        "$<gn2>",
+                        "${gn2}",
                         toSupplementaries("ccczzzcczzzccc"));
 
         checkReplaceFirst("(?<dog>Dog)AndCat",
                           "zzzDogAndCatzzzDogAndCatzzz",
-                          "$<dog>",
+                          "${dog}",
                           "zzzDogzzzDogAndCatzzz");
 
 
         checkReplaceAll("(?<dog>Dog)AndCat",
                           "zzzDogAndCatzzzDogAndCatzzz",
-                          "$<dog>",
+                          "${dog}",
                           "zzzDogzzzDogzzz");
 
         // backref in Matcher & String
-        if (!"abcdefghij".replaceFirst("cd(?<gn>ef)gh", "$<gn>").equals("abefij") ||
-            !"abbbcbdbefgh".replaceAll("(?<gn>[a-e])b", "$<gn>").equals("abcdefgh"))
+        if (!"abcdefghij".replaceFirst("cd(?<gn>ef)gh", "${gn}").equals("abefij") ||
+            !"abbbcbdbefgh".replaceAll("(?<gn>[a-e])b", "${gn}").equals("abcdefgh"))
             failCount++;
 
         // negative
         checkExpectedFail("(?<groupnamehasnoascii.in>abc)(def)");
         checkExpectedFail("(?<groupnamehasnoascii_in>abc)(def)");
+        checkExpectedFail("(?<6groupnamestartswithdigit>abc)(def)");
         checkExpectedFail("(?<gname>abc)(def)\\k<gnameX>");
         checkExpectedFail("(?<gname>abc)(?<gname>def)\\k<gnameX>");
         checkExpectedFail(Pattern.compile("(?<gname>abc)(def)").matcher("abcdef"),

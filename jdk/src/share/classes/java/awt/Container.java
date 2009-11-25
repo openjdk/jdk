@@ -1492,20 +1492,59 @@ public class Container extends Component {
     }
 
     /**
-     * Invalidates the container.  The container and all parents
-     * above it are marked as needing to be laid out.  This method can
-     * be called often, so it needs to execute quickly.
+     * Indicates if this container is a <i>validate root</i>.
+     * <p>
+     * Layout-related changes, such as bounds of the validate root descendants,
+     * do not affect the layout of the validate root parent. This peculiarity
+     * enables the {@code invalidate()} method to stop invalidating the
+     * component hierarchy when the method encounters a validate root.
+     * <p>
+     * If a component hierarchy contains validate roots, the {@code validate()}
+     * method must be invoked on the validate root of a previously invalidated
+     * component, rather than on the top-level container (such as a {@code
+     * Frame} object) to restore the validity of the hierarchy later.
+     * <p>
+     * The {@code Window} class and the {@code Applet} class are the validate
+     * roots in AWT.  Swing introduces more validate roots.
      *
-     * <p> If the {@code LayoutManager} installed on this container is
-     * an instance of {@code LayoutManager2}, then
-     * {@link LayoutManager2#invalidateLayout(Container)} is invoked on
-     * it supplying this {@code Container} as the argument.
+     * @return whether this container is a validate root
+     * @see #invalidate
+     * @see java.awt.Component#invalidate
+     * @see javax.swing.JComponent#isValidateRoot
+     * @see javax.swing.JComponent#revalidate
+     * @since 1.7
+     */
+    public boolean isValidateRoot() {
+        return false;
+    }
+
+    /**
+     * Invalidates the parent of the container unless the container
+     * is a validate root.
+     */
+    @Override
+    void invalidateParent() {
+        if (!isValidateRoot()) {
+            super.invalidateParent();
+        }
+    }
+
+    /**
+     * Invalidates the container.
+     * <p>
+     * If the {@code LayoutManager} installed on this container is an instance
+     * of the {@code LayoutManager2} interface, then
+     * the {@link LayoutManager2#invalidateLayout(Container)} method is invoked
+     * on it supplying this {@code Container} as the argument.
+     * <p>
+     * Afterwards this method marks this container invalid, and invalidates its
+     * ancestors. See the {@link Component#invalidate} method for more details.
      *
      * @see #validate
      * @see #layout
-     * @see LayoutManager
-     * @see LayoutManager2#invalidateLayout(Container)
+     * @see LayoutManager2
      */
+    @Override
     public void invalidate() {
         LayoutManager layoutMgr = this.layoutMgr;
         if (layoutMgr instanceof LayoutManager2) {
@@ -1518,52 +1557,90 @@ public class Container extends Component {
     /**
      * Validates this container and all of its subcomponents.
      * <p>
-     * The <code>validate</code> method is used to cause a container
-     * to lay out its subcomponents again. It should be invoked when
-     * this container's subcomponents are modified (added to or
-     * removed from the container, or layout-related information
-     * changed) after the container has been displayed.
-     *
-     * <p>If this {@code Container} is not valid, this method invokes
+     * Validating a container means laying out its subcomponents.
+     * Layout-related changes, such as setting the bounds of a component, or
+     * adding a component to the container, invalidate the container
+     * automatically.  Note that the ancestors of the container may be
+     * invalidated also (see {@link Component#invalidate} for details.)
+     * Therefore, to restore the validity of the hierarchy, the {@code
+     * validate()} method should be invoked on a validate root of an
+     * invalidated component, or on the top-most container if the hierarchy
+     * does not contain validate roots.
+     * <p>
+     * Validating the container may be a quite time-consuming operation. For
+     * performance reasons a developer may postpone the validation of the
+     * hierarchy till a set of layout-related operations completes, e.g. after
+     * adding all the children to the container.
+     * <p>
+     * If this {@code Container} is not valid, this method invokes
      * the {@code validateTree} method and marks this {@code Container}
      * as valid. Otherwise, no action is performed.
-     * <p>
-     * Note that the {@code invalidate()} method may invalidate not only the
-     * component it is called upon, but also the parents of the component.
-     * Therefore, to restore the validity of the hierarchy, the {@code
-     * validate()} method must be invoked on the top-most invalid container of
-     * the hierarchy. For performance reasons a developer may postpone the
-     * validation of the hierarchy till a bunch of layout-related operations
-     * completes, e.g. after adding all the children to the container.
      *
      * @see #add(java.awt.Component)
      * @see #invalidate
+     * @see Container#isValidateRoot
      * @see javax.swing.JComponent#revalidate()
      * @see #validateTree
      */
     public void validate() {
-        /* Avoid grabbing lock unless really necessary. */
-        if (!isValid()) {
-            boolean updateCur = false;
-            synchronized (getTreeLock()) {
-                if (!isValid() && peer != null) {
-                    ContainerPeer p = null;
-                    if (peer instanceof ContainerPeer) {
-                        p = (ContainerPeer) peer;
-                    }
-                    if (p != null) {
-                        p.beginValidate();
-                    }
-                    validateTree();
-                    if (p != null) {
-                        p.endValidate();
+        boolean updateCur = false;
+        synchronized (getTreeLock()) {
+            if ((!isValid() || descendUnconditionallyWhenValidating)
+                    && peer != null)
+            {
+                ContainerPeer p = null;
+                if (peer instanceof ContainerPeer) {
+                    p = (ContainerPeer) peer;
+                }
+                if (p != null) {
+                    p.beginValidate();
+                }
+                validateTree();
+                if (p != null) {
+                    p.endValidate();
+                    // Avoid updating cursor if this is an internal call.
+                    // See validateUnconditionally() for details.
+                    if (!descendUnconditionallyWhenValidating) {
                         updateCur = isVisible();
                     }
                 }
             }
-            if (updateCur) {
-                updateCursorImmediately();
+        }
+        if (updateCur) {
+            updateCursorImmediately();
+        }
+    }
+
+    /**
+     * Indicates whether valid containers should also traverse their
+     * children and call the validateTree() method on them.
+     *
+     * Synchronization: TreeLock.
+     *
+     * The field is allowed to be static as long as the TreeLock itself is
+     * static.
+     *
+     * @see #validateUnconditionally()
+     */
+    private static boolean descendUnconditionallyWhenValidating = false;
+
+    /**
+     * Unconditionally validate the component hierarchy.
+     */
+    final void validateUnconditionally() {
+        boolean updateCur = false;
+        synchronized (getTreeLock()) {
+            descendUnconditionallyWhenValidating = true;
+
+            validate();
+            if (peer instanceof ContainerPeer) {
+                updateCur = isVisible();
             }
+
+            descendUnconditionallyWhenValidating = false;
+        }
+        if (updateCur) {
+            updateCursorImmediately();
         }
     }
 
@@ -1578,16 +1655,20 @@ public class Container extends Component {
      */
     protected void validateTree() {
         checkTreeLock();
-        if (!isValid()) {
+        if (!isValid() || descendUnconditionallyWhenValidating) {
             if (peer instanceof ContainerPeer) {
                 ((ContainerPeer)peer).beginLayout();
             }
-            doLayout();
+            if (!isValid()) {
+                doLayout();
+            }
             for (int i = 0; i < component.size(); i++) {
                 Component comp = component.get(i);
                 if (   (comp instanceof Container)
                        && !(comp instanceof Window)
-                       && !comp.isValid()) {
+                       && (!comp.isValid() ||
+                           descendUnconditionallyWhenValidating))
+                {
                     ((Container)comp).validateTree();
                 } else {
                     comp.validate();
@@ -4092,16 +4173,29 @@ public class Container extends Component {
         }
     }
 
-    /*
+    /**
+     * Checks if the container and its direct lightweight containers are
+     * visible.
+     *
      * Consider the heavyweight container hides or shows the HW descendants
      * automatically. Therefore we care of LW containers' visibility only.
+     *
+     * This method MUST be invoked under the TreeLock.
      */
-    private boolean isRecursivelyVisibleUpToHeavyweightContainer() {
+    final boolean isRecursivelyVisibleUpToHeavyweightContainer() {
         if (!isLightweight()) {
             return true;
         }
-        return isVisible() && (getContainer() == null ||
-             getContainer().isRecursivelyVisibleUpToHeavyweightContainer());
+
+        for (Container cont = getContainer();
+                cont != null && cont.isLightweight();
+                cont = cont.getContainer())
+        {
+            if (!cont.isVisible()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

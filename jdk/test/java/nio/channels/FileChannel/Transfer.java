@@ -25,6 +25,7 @@
  * @bug 4434723 4482726 4559072 4638365 4795550 5081340 5103988 6253145
  * @summary Test FileChannel.transferFrom and transferTo
  * @library ..
+ * @run main/timeout=180 Transfer
  */
 
 import java.io.*;

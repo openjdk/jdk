@@ -192,4 +192,6 @@ public abstract class LazyCompositeData
 
         return isTypeMatched(type1.getRowType(), type2.getRowType());
     }
+
+    private static final long serialVersionUID = -2190411934472666714L;
 }

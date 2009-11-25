@@ -45,7 +45,6 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
-import javax.management.remote.rmi.RMIConnectorServer;
 
 /**
  * "This test checks for a bug whereby reconnection did not work if (a) it was
@@ -74,7 +73,6 @@ public class NotifReconnectDeadlockTest {
         Map env = new HashMap(2);
         env.put("jmx.remote.x.server.connection.timeout", new Long(serverTimeout));
         env.put("jmx.remote.x.client.connection.check.period", new Long(Long.MAX_VALUE));
-        env.put(RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "false");
 
         final MBeanServer mbs = MBeanServerFactory.newMBeanServer();
 
