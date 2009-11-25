@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2005 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
  * @run main NotifBufferSizePropertyNameTest
  */
 
+import java.io.IOException;
 import java.util.*;
 
 import javax.management.*;
 import javax.management.remote.*;
-import javax.management.remote.rmi.RMIConnectorServer;
 
 /**
  * This class tests also the size of a server notification buffer.
@@ -87,9 +87,6 @@ public class NotifBufferSizePropertyNameTest {
 
     private static void test(Map env) throws Exception {
         final MBeanServer mbs = MBeanServerFactory.newMBeanServer();
-
-        env = new HashMap((env == null) ? Collections.emptyMap() : env);
-        env.put(RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE, "false");
 
         mbs.registerMBean(new NotificationEmitter(), oname);
         JMXConnectorServer server = JMXConnectorServerFactory.newJMXConnectorServer(

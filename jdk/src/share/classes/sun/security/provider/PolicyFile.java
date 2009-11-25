@@ -1832,8 +1832,9 @@ public class PolicyFile extends java.security.Policy {
         return canonCs;
     }
 
-    // public for java.io.FilePermission
-    public static String canonPath(String path) throws IOException {
+    // Wrapper to return a canonical path that avoids calling getCanonicalPath()
+    // with paths that are intended to match all entries in the directory
+    private static String canonPath(String path) throws IOException {
         if (path.endsWith("*")) {
             path = path.substring(0, path.length()-1) + "-";
             path = new File(path).getCanonicalPath();

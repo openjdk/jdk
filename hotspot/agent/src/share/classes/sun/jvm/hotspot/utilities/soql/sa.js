@@ -1047,7 +1047,7 @@ while (tmp.itr.hasNext()) {
    } else {
       // some type names have ':'. replace to make it as a 
       // JavaScript identifier
-      tmp.name = tmp.name.replace(':', '_');
+      tmp.name = tmp.name.replace(':', '_').replace('<', '_').replace('>', '_').replace('*', '_').replace(' ', '_');
       eval("function read" + tmp.name + "(addr) {" +
            "   return readVMType('" + tmp.name + "', addr);}"); 
       eval("function print" + tmp.name + "(addr) {" + 

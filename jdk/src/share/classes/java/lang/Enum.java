@@ -40,10 +40,17 @@ import java.io.ObjectStreamException;
  * Edition</i>, <a
  * href="http://java.sun.com/docs/books/jls/third_edition/html/classes.html#8.9">&sect;8.9</a>.
  *
+ * <p> Note that when using an enumeration type as the type of a set
+ * or as the type of the keys in a map, specialized and efficient
+ * {@linkplain java.util.EnumSet set} and {@linkplain
+ * java.util.EnumMap map} implementations are available.
+ *
  * @param <E> The enum type subclass
  * @author  Josh Bloch
  * @author  Neal Gafter
  * @see     Class#getEnumConstants()
+ * @see     java.util.EnumSet
+ * @see     java.util.EnumMap
  * @since   1.5
  */
 public abstract class Enum<E extends Enum<E>>

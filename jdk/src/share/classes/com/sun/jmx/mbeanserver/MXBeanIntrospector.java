@@ -28,26 +28,18 @@ package com.sun.jmx.mbeanserver;
 import com.sun.jmx.mbeanserver.MBeanIntrospector.MBeanInfoMap;
 import com.sun.jmx.mbeanserver.MBeanIntrospector.PerInterfaceMap;
 import java.lang.annotation.Annotation;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Map;
-import java.util.WeakHashMap;
-import javax.management.Description;
 import javax.management.Descriptor;
 import javax.management.ImmutableDescriptor;
-import javax.management.IntrospectionException;
-import javax.management.JMX;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
-import javax.management.ManagedOperation;
 import javax.management.NotCompliantMBeanException;
-import javax.management.openmbean.MXBeanMappingFactory;
 import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
 import javax.management.openmbean.OpenMBeanOperationInfoSupport;
 import javax.management.openmbean.OpenMBeanParameterInfo;
@@ -60,36 +52,10 @@ import javax.management.openmbean.OpenType;
  * @since 1.6
  */
 class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
-    /* We keep one MXBeanIntrospector per MXBeanMappingFactory, since the results
-     * of the introspection depend on the factory.  The MXBeanIntrospector
-     * has a reference back to the factory, so we wrap it in a WeakReference.
-     * It will be strongly referenced by any MXBeanSupport instances using it;
-     * if there are none then it is OK to gc it.
-     */
-    private static final
-            Map<MXBeanMappingFactory, WeakReference<MXBeanIntrospector>> map =
-            new WeakHashMap<MXBeanMappingFactory, WeakReference<MXBeanIntrospector>>();
+    private static final MXBeanIntrospector instance = new MXBeanIntrospector();
 
-    static MXBeanIntrospector getInstance(MXBeanMappingFactory factory) {
-        if (factory == null)
-            factory = MXBeanMappingFactory.DEFAULT;
-        synchronized (map) {
-            MXBeanIntrospector intro;
-            WeakReference<MXBeanIntrospector> wr = map.get(factory);
-            if (wr != null) {
-                intro = wr.get();
-                if (intro != null)
-                    return intro;
-            }
-            intro = new MXBeanIntrospector(factory);
-            wr = new WeakReference<MXBeanIntrospector>(intro);
-            map.put(factory, wr);
-            return intro;
-        }
-    }
-
-    private MXBeanIntrospector(MXBeanMappingFactory factory) {
-        this.mappingFactory = factory;
+    static MXBeanIntrospector getInstance() {
+        return instance;
     }
 
     @Override
@@ -115,7 +81,7 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
 
     @Override
     ConvertingMethod mFrom(Method m) {
-        return ConvertingMethod.from(m, mappingFactory);
+        return ConvertingMethod.from(m);
     }
 
     @Override
@@ -176,17 +142,13 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
 
     @Override
     MBeanAttributeInfo getMBeanAttributeInfo(String attributeName,
-            ConvertingMethod getter, ConvertingMethod setter)
-            throws IntrospectionException {
+            ConvertingMethod getter, ConvertingMethod setter) {
 
         final boolean isReadable = (getter != null);
         final boolean isWritable = (setter != null);
         final boolean isIs = isReadable && getName(getter).startsWith("is");
 
-        final String description = getAttributeDescription(
-                attributeName, attributeName,
-                getter == null ? null : getter.getMethod(),
-                setter == null ? null : setter.getMethod());
+        final String description = attributeName;
 
         final OpenType<?> openType;
         final Type originalType;
@@ -235,17 +197,13 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
     MBeanOperationInfo getMBeanOperationInfo(String operationName,
             ConvertingMethod operation) {
         final Method method = operation.getMethod();
-        String description = operationName;
+        final String description = operationName;
         /* Ideally this would be an empty string, but
-           OMBOperationInfo constructor forbids that.  */
-        Description d = method.getAnnotation(Description.class);
-        if (d != null)
-            description = d.value();
+           OMBOperationInfo constructor forbids that.  Also, we
+           could consult an annotation to get a useful
+           description.  */
 
-        int impact = MBeanOperationInfo.UNKNOWN;
-        ManagedOperation annot = method.getAnnotation(ManagedOperation.class);
-        if (annot != null)
-            impact = annot.impact().getCode();
+        final int impact = MBeanOperationInfo.UNKNOWN;
 
         final OpenType<?> returnType = operation.getOpenReturnType();
         final Type originalReturnType = operation.getGenericReturnType();
@@ -257,15 +215,8 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         boolean openParameterTypes = true;
         Annotation[][] annots = method.getParameterAnnotations();
         for (int i = 0; i < paramTypes.length; i++) {
-            String paramName = Introspector.nameForParameter(annots[i]);
-            if (paramName == null)
-                paramName = "p" + i;
-
-            String paramDescription =
-                    Introspector.descriptionForParameter(annots[i]);
-            if (paramDescription == null)
-                paramDescription = paramName;
-
+            final String paramName = "p" + i;
+            final String paramDescription = paramName;
             final OpenType<?> openType = paramTypes[i];
             final Type originalType = originalParamTypes[i];
             Descriptor descriptor =
@@ -292,7 +243,7 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
         Descriptor descriptor =
             typeDescriptor(returnType, originalReturnType);
         descriptor = ImmutableDescriptor.union(descriptor,
-                Introspector.descriptorForElement(method, false));
+                Introspector.descriptorForElement(method));
         final MBeanOperationInfo oi;
         if (openReturnType && openParameterTypes) {
             /* If the return value and all the parameters can be faithfully
@@ -341,17 +292,6 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
          * currently it does not.
          */
         return ImmutableDescriptor.EMPTY_DESCRIPTOR;
-    }
-
-    @Override
-    Descriptor getSpecificMBeanDescriptor() {
-        if (mappingFactory == MXBeanMappingFactory.DEFAULT)
-            return ImmutableDescriptor.EMPTY_DESCRIPTOR;
-        else {
-            return new ImmutableDescriptor(
-                    JMX.MXBEAN_MAPPING_FACTORY_CLASS_FIELD + "=" +
-                    mappingFactory.getClass().getName());
-        }
     }
 
     private static Descriptor typeDescriptor(OpenType<?> openType,
@@ -421,7 +361,5 @@ class MXBeanIntrospector extends MBeanIntrospector<ConvertingMethod> {
     private final PerInterfaceMap<ConvertingMethod>
         perInterfaceMap = new PerInterfaceMap<ConvertingMethod>();
 
-    private final MBeanInfoMap mbeanInfoMap = new MBeanInfoMap();
-
-    private final MXBeanMappingFactory mappingFactory;
+    private static final MBeanInfoMap mbeanInfoMap = new MBeanInfoMap();
 }

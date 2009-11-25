@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +90,7 @@ public class ZipFileIndex {
 
     // ZipFileIndex data entries
     private File zipFile;
+    private Reference<File> absFileRef;
     private long zipFileLastModified = NOT_MODIFIED;
     private RandomAccessFile zipRandomFile;
     private Entry[] entries;
@@ -1213,6 +1215,15 @@ public class ZipFileIndex {
 
     public File getZipFile() {
         return zipFile;
+    }
+
+    File getAbsoluteFile() {
+        File absFile = (absFileRef == null ? null : absFileRef.get());
+        if (absFile == null) {
+            absFile = zipFile.getAbsoluteFile();
+            absFileRef = new SoftReference<File>(absFile);
+        }
+        return absFile;
     }
 
     private RelativeDirectory getRelativeDirectory(String path) {

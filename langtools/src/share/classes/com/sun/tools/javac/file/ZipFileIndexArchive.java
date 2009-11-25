@@ -219,17 +219,27 @@ public class ZipFileIndexArchive implements Archive {
             return name.equals(cn + k.extension);
         }
 
+        /**
+         * Check if two file objects are equal.
+         * Two ZipFileIndexFileObjects are equal if the absolute paths of the underlying
+         * zip files are equal and if the paths within those zip files are equal.
+         */
         @Override
         public boolean equals(Object other) {
+            if (this == other)
+                return true;
+
             if (!(other instanceof ZipFileIndexFileObject))
                 return false;
+
             ZipFileIndexFileObject o = (ZipFileIndexFileObject) other;
-            return entry.equals(o.entry);
+            return zfIndex.getAbsoluteFile().equals(o.zfIndex.getAbsoluteFile())
+                    && name.equals(o.name);
         }
 
         @Override
         public int hashCode() {
-            return zipName.hashCode() + (name.hashCode() << 10);
+            return zfIndex.getAbsoluteFile().hashCode() + name.hashCode();
         }
 
         private String getPrefixedEntryName() {
