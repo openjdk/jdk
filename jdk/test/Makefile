@@ -536,7 +536,7 @@ jdk_text: java/text sun/text
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_tools1
 jdk_tools1: com/sun/jdi
-	$(call RunOthervmBatch)
+	$(call RunSamevmBatch)
 JDK_ALL_TARGETS += jdk_tools2
 jdk_tools2: com/sun/tools sun/jvmstat sun/tools tools vm com/sun/servicetag com/sun/tracing
 	$(call RunOthervmBatch)

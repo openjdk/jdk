@@ -57,6 +57,7 @@ class VMConnection {
         if (testClasses == null) {
             return retVal;
         }
+        retVal += "-classpath " + testClasses + " ";
         File myFile = new File(testClasses, "@debuggeeVMOptions");
 
         if (!myFile.canRead()) {
@@ -97,7 +98,7 @@ class VMConnection {
             if (line.length() != 0 && !line.startsWith("#")) {
                 System.out.println("-- Added debuggeeVM options from file " +
                                    wholePath + ": " + line);
-                retVal = line;
+                retVal += line;
                 break;
             }
             // Else, read he next line.
