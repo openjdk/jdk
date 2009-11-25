@@ -469,46 +469,9 @@ public class JViewport extends JComponent implements Accessible
      * is the synchronous version of a <code>revalidate</code>.
      */
     private void validateView() {
-        Component validateRoot = null;
+        Component validateRoot = SwingUtilities.getValidateRoot(this, false);
 
-        /* Find the first JComponent ancestor of this component whose
-         * isValidateRoot() method returns true.
-         */
-        for(Component c = this; c != null; c = c.getParent()) {
-            if ((c instanceof CellRendererPane) || (c.getPeer() == null)) {
-                return;
-            }
-            if ((c instanceof JComponent) &&
-                (((JComponent)c).isValidateRoot())) {
-                validateRoot = c;
-                break;
-            }
-        }
-
-        // If no validateRoot, nothing to validate from.
         if (validateRoot == null) {
-            return;
-        }
-
-        // Make sure all ancestors are visible.
-        Component root = null;
-
-        for(Component c = validateRoot; c != null; c = c.getParent()) {
-            // We don't check isVisible here, otherwise if the component
-            // is contained in something like a JTabbedPane when the
-            // component is made visible again it won't have scrolled
-            // to the correct location.
-            if (c.getPeer() == null) {
-                return;
-            }
-            if ((c instanceof Window) || (c instanceof Applet)) {
-                root = c;
-                break;
-            }
-        }
-
-        // Make sure there is a Window ancestor.
-        if (root == null) {
             return;
         }
 
