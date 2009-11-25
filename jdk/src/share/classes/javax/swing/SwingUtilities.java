@@ -2027,4 +2027,54 @@ public class SwingUtilities implements SwingConstants
         }
         return view;
     }
+
+   /**
+     * Retrieves the validate root of a given container.
+     *
+     * If the container is contained within a {@code CellRendererPane}, this
+     * method returns {@code null} due to the synthetic nature of the {@code
+     * CellRendererPane}.
+     * <p>
+     * The component hierarchy must be displayable up to the toplevel component
+     * (either a {@code Frame} or an {@code Applet} object.) Otherwise this
+     * method returns {@code null}.
+     * <p>
+     * If the {@code visibleOnly} argument is {@code true}, the found validate
+     * root and all its parents up to the toplevel component must also be
+     * visible. Otherwise this method returns {@code null}.
+     *
+     * @return the validate root of the given container or null
+     * @see java.awt.Component#isDisplayable()
+     * @see java.awt.Component#isVisible()
+     * @since 1.7
+     */
+    static Container getValidateRoot(Container c, boolean visibleOnly) {
+        Container root = null;
+
+        for (; c != null; c = c.getParent())
+        {
+            if (!c.isDisplayable() || c instanceof CellRendererPane) {
+                return null;
+            }
+            if (c.isValidateRoot()) {
+                root = c;
+                break;
+            }
+        }
+
+        if (root == null) {
+            return null;
+        }
+
+        for (; c != null; c = c.getParent()) {
+            if (!c.isDisplayable() || (visibleOnly && !c.isVisible())) {
+                return null;
+            }
+            if (c instanceof Window || c instanceof Applet) {
+                return root;
+            }
+        }
+
+        return null;
+    }
 }

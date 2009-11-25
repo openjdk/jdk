@@ -31,6 +31,7 @@ import java.nio.channels.*;
 import java.net.*;
 import javax.net.ssl.*;
 import java.util.*;
+import java.util.logging.Logger;
 import java.text.*;
 import sun.net.www.MessageHeader;
 import com.sun.net.httpserver.*;
@@ -204,6 +205,21 @@ class ExchangeImpl {
         tmpout.write (bytes(statusLine, 0), 0, statusLine.length());
         boolean noContentToSend = false; // assume there is content
         rspHdrs.set ("Date", df.format (new Date()));
+
+        /* check for response type that is not allowed to send a body */
+
+        if ((rCode>=100 && rCode <200) /* informational */
+            ||(rCode == 204)           /* no content */
+            ||(rCode == 304))          /* not modified */
+        {
+            if (contentLen != -1) {
+                Logger logger = server.getLogger();
+                String msg = "sendResponseHeaders: rCode = "+ rCode
+                    + ": forcing contentLen = -1";
+                logger.warning (msg);
+            }
+            contentLen = -1;
+        }
         if (contentLen == 0) {
             if (http10) {
                 o.setWrappedStream (new UndefLengthOutputStream (this, ros));

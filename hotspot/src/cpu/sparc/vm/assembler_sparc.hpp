@@ -1279,6 +1279,7 @@ public:
 
   // 171
 
+  inline void ldf(FloatRegisterImpl::Width w, Register s1, RegisterOrConstant s2, FloatRegister d);
   inline void ldf(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d);
   inline void ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d, RelocationHolder const& rspec = RelocationHolder());
 
@@ -1535,7 +1536,8 @@ public:
 
   // pp 222
 
-  inline void stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2 );
+  inline void stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, RegisterOrConstant s2);
+  inline void stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2);
   inline void stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a);
   inline void stf(    FloatRegisterImpl::Width w, FloatRegister d, const Address& a, int offset = 0);
 
@@ -2049,12 +2051,13 @@ public:
                        Register temp = noreg );
   void regcon_sll_ptr( RegisterOrConstant& dest, RegisterOrConstant src,
                        Register temp = noreg );
-  RegisterOrConstant ensure_rs2(RegisterOrConstant rs2, Register sethi_temp) {
-    guarantee(sethi_temp != noreg, "constant offset overflow");
-    if (is_simm13(rs2.constant_or_zero()))
-      return rs2;               // register or short constant
-    set(rs2.as_constant(), sethi_temp);
-    return sethi_temp;
+
+  RegisterOrConstant ensure_simm13_or_reg(RegisterOrConstant roc, Register Rtemp) {
+    guarantee(Rtemp != noreg, "constant offset overflow");
+    if (is_simm13(roc.constant_or_zero()))
+      return roc;               // register or short constant
+    set(roc.as_constant(), Rtemp);
+    return RegisterOrConstant(Rtemp);
   }
 
   // --------------------------------------------------

@@ -52,6 +52,9 @@ VM_PICFLAG/LIBJVM = $(PICFLAG)
 VM_PICFLAG/AOUT   =
 VM_PICFLAG        = $(VM_PICFLAG/$(LINK_INTO))
 
+ifeq ($(ZERO_BUILD), true)
+CFLAGS += $(LIBFFI_CFLAGS)
+endif
 CFLAGS += $(VM_PICFLAG)
 CFLAGS += -fno-rtti
 CFLAGS += -fno-exceptions
@@ -64,6 +67,7 @@ ARCHFLAG/amd64   = -m64
 ARCHFLAG/ia64    =
 ARCHFLAG/sparc   = -m32 -mcpu=v9
 ARCHFLAG/sparcv9 = -m64 -mcpu=v9
+ARCHFLAG/zero    = $(ZERO_ARCHFLAG)
 
 CFLAGS     += $(ARCHFLAG)
 AOUT_FLAGS += $(ARCHFLAG)

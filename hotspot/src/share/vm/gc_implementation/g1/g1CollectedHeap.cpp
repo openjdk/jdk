@@ -2210,40 +2210,58 @@ private:
   bool _allow_dirty;
   bool _par;
   bool _use_prev_marking;
+  bool _failures;
 public:
   // use_prev_marking == true  -> use "prev" marking information,
   // use_prev_marking == false -> use "next" marking information
   VerifyRegionClosure(bool allow_dirty, bool par, bool use_prev_marking)
     : _allow_dirty(allow_dirty),
       _par(par),
-      _use_prev_marking(use_prev_marking) {}
+      _use_prev_marking(use_prev_marking),
+      _failures(false) {}
+
+  bool failures() {
+    return _failures;
+  }
 
   bool doHeapRegion(HeapRegion* r) {
     guarantee(_par || r->claim_value() == HeapRegion::InitialClaimValue,
               "Should be unclaimed at verify points.");
     if (!r->continuesHumongous()) {
-      VerifyObjsInRegionClosure not_dead_yet_cl(r, _use_prev_marking);
-      r->verify(_allow_dirty, _use_prev_marking);
-      r->object_iterate(&not_dead_yet_cl);
-      guarantee(r->max_live_bytes() >= not_dead_yet_cl.live_bytes(),
-                "More live objects than counted in last complete marking.");
+      bool failures = false;
+      r->verify(_allow_dirty, _use_prev_marking, &failures);
+      if (failures) {
+        _failures = true;
+      } else {
+        VerifyObjsInRegionClosure not_dead_yet_cl(r, _use_prev_marking);
+        r->object_iterate(&not_dead_yet_cl);
+        if (r->max_live_bytes() < not_dead_yet_cl.live_bytes()) {
+          gclog_or_tty->print_cr("["PTR_FORMAT","PTR_FORMAT"] "
+                                 "max_live_bytes "SIZE_FORMAT" "
+                                 "< calculated "SIZE_FORMAT,
+                                 r->bottom(), r->end(),
+                                 r->max_live_bytes(),
+                                 not_dead_yet_cl.live_bytes());
+          _failures = true;
+        }
+      }
     }
-    return false;
+    return false; // stop the region iteration if we hit a failure
   }
 };
 
 class VerifyRootsClosure: public OopsInGenClosure {
 private:
   G1CollectedHeap* _g1h;
-  bool             _failures;
   bool             _use_prev_marking;
+  bool             _failures;
 public:
   // use_prev_marking == true  -> use "prev" marking information,
   // use_prev_marking == false -> use "next" marking information
   VerifyRootsClosure(bool use_prev_marking) :
     _g1h(G1CollectedHeap::heap()),
-    _failures(false),
-    _use_prev_marking(use_prev_marking) { }
+    _use_prev_marking(use_prev_marking),
+    _failures(false) { }
 
   bool failures() { return _failures; }
 
@@ -2253,7 +2271,7 @@ public:
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       if (_g1h->is_obj_dead_cond(obj, _use_prev_marking)) {
         gclog_or_tty->print_cr("Root location "PTR_FORMAT" "
-                               "points to dead obj "PTR_FORMAT, p, (void*) obj);
+                              "points to dead obj "PTR_FORMAT, p, (void*) obj);
         obj->print_on(gclog_or_tty);
         _failures = true;
       }
@@ -2271,6 +2289,7 @@ private:
   G1CollectedHeap* _g1h;
   bool _allow_dirty;
   bool _use_prev_marking;
+  bool _failures;
 
 public:
   // use_prev_marking == true  -> use "prev" marking information,
@@ -2280,13 +2299,21 @@ public:
     AbstractGangTask("Parallel verify task"),
     _g1h(g1h),
     _allow_dirty(allow_dirty),
-    _use_prev_marking(use_prev_marking) { }
+    _use_prev_marking(use_prev_marking),
+    _failures(false) { }
+
+  bool failures() {
+    return _failures;
+  }
 
   void work(int worker_i) {
     HandleMark hm;
     VerifyRegionClosure blk(_allow_dirty, true, _use_prev_marking);
     _g1h->heap_region_par_iterate_chunked(&blk, worker_i,
                                           HeapRegion::ParVerifyClaimValue);
+    if (blk.failures()) {
+      _failures = true;
+    }
   }
 };
 
@@ -2307,6 +2334,7 @@ void G1CollectedHeap::verify(bool allow_dirty,
                          &rootsCl,
                          &blobsCl,
                          &rootsCl);
+    bool failures = rootsCl.failures();
     rem_set()->invalidate(perm_gen()->used_region(), false);
     if (!silent) { gclog_or_tty->print("heapRegions "); }
     if (GCParallelVerificationEnabled && ParallelGCThreads > 1) {
@@ -2318,6 +2346,9 @@ void G1CollectedHeap::verify(bool allow_dirty,
       set_par_threads(n_workers);
       workers()->run_task(&task);
       set_par_threads(0);
+      if (task.failures()) {
+        failures = true;
+      }
 
       assert(check_heap_region_claim_values(HeapRegion::ParVerifyClaimValue),
              "sanity check");
@@ -2329,10 +2360,24 @@ void G1CollectedHeap::verify(bool allow_dirty,
     } else {
       VerifyRegionClosure blk(allow_dirty, false, use_prev_marking);
       _hrs->iterate(&blk);
+      if (blk.failures()) {
+        failures = true;
+      }
     }
     if (!silent) gclog_or_tty->print("remset ");
     rem_set()->verify();
-    guarantee(!rootsCl.failures(), "should not have had failures");
+
+    if (failures) {
+      gclog_or_tty->print_cr("Heap:");
+      print_on(gclog_or_tty, true /* extended */);
+      gclog_or_tty->print_cr("");
+      if (VerifyDuringGC && G1VerifyDuringGCPrintReachable) {
+        concurrent_mark()->print_reachable(use_prev_marking,
+                                           "failed-verification");
+      }
+      gclog_or_tty->flush();
+    }
+    guarantee(!failures, "there should not have been any failures");
   } else {
     if (!silent) gclog_or_tty->print("(SKIPPING roots, heapRegions, remset) ");
   }
@@ -2374,6 +2419,7 @@ void G1CollectedHeap::print_on(outputStream* st, bool extended) const {
   st->cr();
   perm()->as_gen()->print_on(st);
   if (extended) {
+    st->cr();
     print_on_extended(st);
   }
 }
@@ -2383,27 +2429,18 @@ void G1CollectedHeap::print_on_extended(outputStream* st) const {
   _hrs->iterate(&blk);
 }
 
-class PrintOnThreadsClosure : public ThreadClosure {
-  outputStream* _st;
-public:
-  PrintOnThreadsClosure(outputStream* st) : _st(st) { }
-  virtual void do_thread(Thread *t) {
-    t->print_on(_st);
-  }
-};
-
 void G1CollectedHeap::print_gc_threads_on(outputStream* st) const {
   if (ParallelGCThreads > 0) {
-    workers()->print_worker_threads();
+    workers()->print_worker_threads_on(st);
   }
-  st->print("\"G1 concurrent mark GC Thread\" ");
-  _cmThread->print();
+
+  _cmThread->print_on(st);
   st->cr();
-  st->print("\"G1 concurrent refinement GC Threads\" ");
-  PrintOnThreadsClosure p(st);
-  _cg1r->threads_do(&p);
-  st->cr();
-  st->print("\"G1 zero-fill GC Thread\" ");
+
+  _cm->print_worker_threads_on(st);
+
+  _cg1r->print_worker_threads_on(st);
+
   _czft->print_on(st);
   st->cr();
 }
@@ -3099,7 +3136,7 @@ void G1CollectedHeap::finalize_for_evac_failure() {
          _evac_failure_scan_stack->length() == 0,
          "Postcondition");
   assert(!_drain_in_progress, "Postcondition");
-  // Don't have to delete, since the scan stack is a resource object.
+  delete _evac_failure_scan_stack;
   _evac_failure_scan_stack = NULL;
 }
 

@@ -31,15 +31,13 @@ import java.lang.reflect.Type;
 
 import javax.management.Descriptor;
 import javax.management.MBeanException;
-import javax.management.openmbean.MXBeanMapping;
-import javax.management.openmbean.MXBeanMappingFactory;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
 
 final class ConvertingMethod {
-    static ConvertingMethod from(Method m, MXBeanMappingFactory mappingFactory) {
+    static ConvertingMethod from(Method m) {
         try {
-            return new ConvertingMethod(m, mappingFactory);
+            return new ConvertingMethod(m);
         } catch (OpenDataException ode) {
             final String msg = "Method " + m.getDeclaringClass().getName() +
                 "." + m.getName() + " has parameter or return type that " +
@@ -53,7 +51,7 @@ final class ConvertingMethod {
     }
 
     Descriptor getDescriptor() {
-        return Introspector.descriptorForElement(method, false);
+        return Introspector.descriptorForElement(method);
     }
 
     Type getGenericReturnType() {
@@ -206,9 +204,9 @@ final class ConvertingMethod {
         return method.getDeclaringClass() + "." + method.getName();
     }
 
-    private ConvertingMethod(Method m, MXBeanMappingFactory mappingFactory)
-    throws OpenDataException {
+    private ConvertingMethod(Method m) throws OpenDataException {
         this.method = m;
+        MXBeanMappingFactory mappingFactory = MXBeanMappingFactory.DEFAULT;
         returnMapping =
                 mappingFactory.mappingForType(m.getGenericReturnType(), mappingFactory);
         Type[] params = m.getGenericParameterTypes();

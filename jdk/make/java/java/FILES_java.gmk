@@ -251,6 +251,7 @@ JAVA_JAVA_java = \
 	java/util/IdentityHashMap.java \
 	java/util/EnumMap.java \
     java/util/Arrays.java \
+    java/util/DualPivotQuicksort.java \
     java/util/TimSort.java \
     java/util/ComparableTimSort.java \
     java/util/ConcurrentModificationException.java \
@@ -258,6 +259,7 @@ JAVA_JAVA_java = \
     java/util/ServiceConfigurationError.java \
     java/util/Timer.java \
     java/util/TimerTask.java \
+    java/util/Objects.java \
     java/util/UUID.java \
     java/util/concurrent/AbstractExecutorService.java \
     java/util/concurrent/ArrayBlockingQueue.java \
@@ -285,11 +287,18 @@ JAVA_JAVA_java = \
     java/util/concurrent/ExecutorService.java \
     java/util/concurrent/ExecutorCompletionService.java \
     java/util/concurrent/Executors.java \
+    java/util/concurrent/ForkJoinPool.java \
+    java/util/concurrent/ForkJoinTask.java \
+    java/util/concurrent/ForkJoinWorkerThread.java \
     java/util/concurrent/Future.java \
     java/util/concurrent/FutureTask.java \
     java/util/concurrent/LinkedBlockingDeque.java \
     java/util/concurrent/LinkedBlockingQueue.java \
+    java/util/concurrent/LinkedTransferQueue.java \
+    java/util/concurrent/Phaser.java \
     java/util/concurrent/PriorityBlockingQueue.java \
+    java/util/concurrent/RecursiveAction.java \
+    java/util/concurrent/RecursiveTask.java \
     java/util/concurrent/RejectedExecutionException.java \
     java/util/concurrent/RejectedExecutionHandler.java \
     java/util/concurrent/RunnableFuture.java \
@@ -300,9 +309,11 @@ JAVA_JAVA_java = \
     java/util/concurrent/Semaphore.java \
     java/util/concurrent/SynchronousQueue.java \
     java/util/concurrent/ThreadFactory.java \
+    java/util/concurrent/ThreadLocalRandom.java \
     java/util/concurrent/ThreadPoolExecutor.java \
     java/util/concurrent/TimeUnit.java \
     java/util/concurrent/TimeoutException.java \
+    java/util/concurrent/TransferQueue.java \
     java/util/concurrent/atomic/AtomicBoolean.java \
     java/util/concurrent/atomic/AtomicInteger.java \
     java/util/concurrent/atomic/AtomicIntegerArray.java \

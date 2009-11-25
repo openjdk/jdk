@@ -225,4 +225,72 @@ insert-buffer'd into a Java program."
     (insert "\"")
     (switch-to-buffer buf)))
 
+Alternatively, the following class reads a class file and outputs a string
+that can be used by the stringToBytes method above.
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+public class BytesToString {
+
+    public static void main(String[] args) throws IOException {
+        File f = new File(args[0]);
+        int len = (int)f.length();
+        byte[] classBytes = new byte[len];
+
+        FileInputStream in = new FileInputStream(args[0]);
+        try {
+            int pos = 0;
+            for (;;) {
+                int n = in.read(classBytes, pos, (len-pos));
+                if (n < 0)
+                    throw new RuntimeException("class file changed??");
+                pos += n;
+                if (pos >= n)
+                    break;
+            }
+        } finally {
+            in.close();
+        }
+
+        int pos = 0;
+        boolean lastWasOctal = false;
+        for (int i=0; i<len; i++) {
+            int value = classBytes[i];
+            if (value < 0)
+                value += 256;
+            String s = null;
+            if (value == '\\')
+                s = "\\\\";
+            else if (value == '\"')
+                s = "\\\"";
+            else {
+                if ((value >= 32 && value < 127) && ((!lastWasOctal ||
+                    (value < '0' || value > '7')))) {
+                    s = Character.toString((char)value);
+                }
+            }
+            if (s == null) {
+                s = "\\" + Integer.toString(value, 8);
+                lastWasOctal = true;
+            } else {
+                lastWasOctal = false;
+            }
+            if (pos > 61) {
+                System.out.print("\"");
+                if (i<len)
+                    System.out.print("+");
+                System.out.println();
+                pos = 0;
+            }
+            if (pos == 0)
+                System.out.print("                \"");
+            System.out.print(s);
+            pos += s.length();
+        }
+        System.out.println("\"");
+    }
+}
+
 */

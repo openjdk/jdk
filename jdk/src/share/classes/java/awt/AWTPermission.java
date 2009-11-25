@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,15 @@ import java.security.BasicPermission;
  *   <td>Enter full-screen exclusive mode</td>
  *   <td>Entering full-screen exclusive mode allows direct access to
  * low-level graphics card memory.  This could be used to spoof the
- * system, since the program is in direct control of rendering.</td>
+ * system, since the program is in direct control of rendering. Depending on
+ * the implementation, the security warning may not be shown for the windows
+ * used to enter the full-screen exclusive mode (assuming that the {@code
+ * fullScreenExclusive} permission has been granted to this application). Note
+ * that this behavior does not mean that the {@code
+ * showWindowWithoutWarningBanner} permission will be automatically granted to
+ * the application which has the {@code fullScreenExclusive} permission:
+ * non-full-screen windows will continue to be shown with the security
+ * warning.</td>
  * </tr>
  *
  * <tr>

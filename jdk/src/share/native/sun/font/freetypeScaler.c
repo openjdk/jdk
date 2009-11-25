@@ -102,8 +102,20 @@ Java_sun_font_FreetypeFontScaler_initIDs(
 }
 
 static void freeNativeResources(JNIEnv *env, FTScalerInfo* scalerInfo) {
+    void *stream;
+
     if (scalerInfo == NULL)
         return;
+
+    //apparently Done_Face will only close the stream
+    // but will not relase the memory of stream structure.
+    // We need to free it explicitly to avoid leak.
+    //Direct access to the stream field might be not ideal solution as
+    // it is considred to be "private".
+    //Alternatively we could have stored pointer to the structure
+    // in the scalerInfo but this will increase size of the structure
+    // for no good reason
+    stream = scalerInfo->face->stream;
 
     FT_Done_Face(scalerInfo->face);
     FT_Done_FreeType(scalerInfo->library);
@@ -115,6 +127,10 @@ static void freeNativeResources(JNIEnv *env, FTScalerInfo* scalerInfo) {
     if (scalerInfo->fontData != NULL) {
         free(scalerInfo->fontData);
     }
+
+   if (stream != NULL) {
+        free(stream);
+   }
 
     free(scalerInfo);
 }
