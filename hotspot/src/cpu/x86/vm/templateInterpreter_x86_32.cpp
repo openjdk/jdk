@@ -92,8 +92,7 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
   return entry;
 }
 
-// Arguments are: required type at TOS+8, failing object (or NULL) at TOS+4.
-// pc at TOS (just for debugging)
+// Arguments are: required type at TOS+4, failing object (or NULL) at TOS.
 address TemplateInterpreterGenerator::generate_WrongMethodType_handler() {
   address entry = __ pc();
 

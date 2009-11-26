@@ -31,7 +31,7 @@
  * created and that they have an "address" argument.
  *
  * @build GeneratedConnectors NullTransportService
- * @run main GeneratedConnectors
+ * @run main/othervm GeneratedConnectors
  */
 
 import com.sun.jdi.*;
