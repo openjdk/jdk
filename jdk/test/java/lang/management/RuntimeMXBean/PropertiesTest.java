@@ -40,8 +40,21 @@ import java.lang.management.RuntimeMXBean;
 public class PropertiesTest {
     private static int NUM_MYPROPS = 3;
     public static void main(String[] argv) throws Exception {
-        Properties sysProps = System.getProperties();
+        // Save a copy of the original system properties
+        Properties props = System.getProperties();
 
+        try {
+            // replace the system Properties object for any modification
+            // in case jtreg caches a copy
+            System.setProperties(new Properties(props));
+            runTest(props.size());
+        } finally {
+            // restore original system properties
+            System.setProperties(props);
+        }
+    }
+
+    private static void runTest(int sysPropsCount) throws Exception {
         // Create a new system properties using the old one
         // as the defaults
         Properties myProps = new Properties( System.getProperties() );
@@ -65,10 +78,10 @@ public class PropertiesTest {
             System.out.println(i++ + ": " + key + " : " + value);
         }
 
-        if (props.size() != NUM_MYPROPS + sysProps.size()) {
+        if (props.size() != NUM_MYPROPS + sysPropsCount) {
             throw new RuntimeException("Test Failed: " +
                 "Expected number of properties = " +
-                NUM_MYPROPS + sysProps.size() +
+                NUM_MYPROPS + sysPropsCount +
                 " but found = " + props.size());
         }
     }

@@ -396,7 +396,7 @@ public class Repository {
 
         // Set domain to default if domain is empty and not already set
         if (dom.length() == 0)
-            name = ObjectName.valueOf(domain + name.toString());
+            name = Util.newObjectName(domain + name.toString());
 
         // Do we have default domain ?
         if (dom == domain) {  // ES: OK (dom & domain are interned)
@@ -573,7 +573,7 @@ public class Repository {
             // Pattern matching in the domain name (*, ?)
             final String dom2Match = name.getDomain();
             for (String dom : domainTb.keySet()) {
-                if (Util.wildpathmatch(dom, dom2Match)) {
+                if (Util.wildmatch(dom, dom2Match)) {
                     final Map<String,NamedObject> moiTb = domainTb.get(dom);
                     if (allNames)
                         result.addAll(moiTb.values());

@@ -876,7 +876,11 @@ public class Scanner implements Lexer {
                         }
                         scanChar();
                         skipIllegalUnderscores();
-                        scanNumber(2);
+                        if (digit(2) < 0) {
+                            lexError("invalid.binary.number");
+                        } else {
+                            scanNumber(2);
+                        }
                     } else {
                         putChar('0');
                         if (ch == '_') {

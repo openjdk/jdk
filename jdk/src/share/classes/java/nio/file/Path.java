@@ -412,7 +412,7 @@ public abstract class Path
      * dependent if {@code "a/b/../x"} would locate the same file as {@code "/a/x"}.
      *
      * @param   other
-     *          the resulting path
+     *          the path to relativize against this path
      *
      * @return  the resulting relative path, or {@code null} if both paths are
      *          equal
@@ -1615,23 +1615,23 @@ public abstract class Path
      * Tests if the file referenced by this object is the same file referenced
      * by another object.
      *
-     * <p> If this {@code FileRef} and the given {@code FileRef} are {@link
+     * <p> If this {@code Path} and the given {@code Path} are {@link
      * #equals(Object) equal} then this method returns {@code true} without checking
-     * if the file exists. If the {@code FileRef} and the given {@code FileRef}
-     * are associated with different providers, or the given {@code FileRef} is
+     * if the file exists. If the {@code Path} and the given {@code Path}
+     * are associated with different providers, or the given {@code Path} is
      * {@code null} then this method returns {@code false}. Otherwise, this method
-     * checks if both {@code FileRefs} locate the same file, and depending on the
+     * checks if both {@code Paths} locate the same file, and depending on the
      * implementation, may require to open or access both files.
      *
      * <p> If the file system and files remain static, then this method implements
-     * an equivalence relation for non-null {@code FileRefs}.
+     * an equivalence relation for non-null {@code Paths}.
      * <ul>
-     * <li>It is <i>reflexive</i>: for a non-null {@code FileRef} {@code f},
+     * <li>It is <i>reflexive</i>: for a non-null {@code Path} {@code f},
      *     {@code f.isSameFile(f)} should return {@code true}.
-     * <li>It is <i>symmetric</i>: for two non-null {@code FileRefs}
+     * <li>It is <i>symmetric</i>: for two non-null {@code Path}
      *     {@code f} and {@code g}, {@code f.isSameFile(g)} will equal
      *     {@code g.isSameFile(f)}.
-     * <li>It is <i>transitive</i>: for three {@code FileRefs}
+     * <li>It is <i>transitive</i>: for three {@code Paths}
      *     {@code f}, {@code g}, and {@code h}, if {@code f.isSameFile(g)} returns
      *     {@code true} and {@code g.isSameFile(h)} returns {@code true}, then
      *     {@code f.isSameFile(h)} will return return {@code true}.

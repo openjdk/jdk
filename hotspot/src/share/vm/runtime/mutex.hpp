@@ -61,18 +61,10 @@ union SplitWord {   // full-word with separately addressable LSB
 } ;
 
 // Endian-ness ... index of least-significant byte in SplitWord.Bytes[]
-#ifdef AMD64        // little
+#ifdef VM_LITTLE_ENDIAN
  #define _LSBINDEX 0
 #else
-#if IA32            // little
- #define _LSBINDEX 0
-#else
-#ifdef SPARC        // big
  #define _LSBINDEX (sizeof(intptr_t)-1)
-#else
- #error "unknown architecture"
-#endif
-#endif
 #endif
 
 class ParkEvent ;

@@ -165,11 +165,6 @@ else
   JAVADOC_CMD   = $(JAVA_TOOLS_DIR)/javadoc $(JAVA_TOOLS_FLAGS:%=-J%)
 endif
 
-#always use the bootstrap javah until bug-ID 6889255 is fixed.  These
-#five lines should be removed as part of that fix:
-JAVAH_CMD     = $(JAVA_TOOLS_DIR)/javah \
-		  $(JAVAHFLAGS)
-
 # Override of what javac to use (see deploy workspace)
 ifdef JAVAC
   JAVAC_CMD     = $(JAVAC)

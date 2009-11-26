@@ -210,7 +210,10 @@ public class GDIWindowSurfaceData extends SurfaceData {
             // if a GlyphVector overrides the AA setting.
             // We use getRenderLoops() rather than setting solidloops
             // directly so that we get the appropriate loops in XOR mode.
-            sg2d.loops = getRenderLoops(sg2d);
+            if (sg2d.loops == null) {
+                // assert(some pipe will always be a LoopBasedPipe)
+                sg2d.loops = getRenderLoops(sg2d);
+            }
         } else {
             super.validatePipe(sg2d);
         }

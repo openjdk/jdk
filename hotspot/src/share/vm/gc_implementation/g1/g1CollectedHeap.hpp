@@ -992,11 +992,39 @@ public:
 
   // Can a compiler initialize a new object without store barriers?
   // This permission only extends from the creation of a new object
-  // via a TLAB up to the first subsequent safepoint.
+  // via a TLAB up to the first subsequent safepoint. If such permission
+  // is granted for this heap type, the compiler promises to call
+  // defer_store_barrier() below on any slow path allocation of
+  // a new object for which such initializing store barriers will
+  // have been elided. G1, like CMS, allows this, but should be
+  // ready to provide a compensating write barrier as necessary
+  // if that storage came out of a non-young region. The efficiency
+  // of this implementation depends crucially on being able to
+  // answer very efficiently in constant time whether a piece of
+  // storage in the heap comes from a young region or not.
+  // See ReduceInitialCardMarks.
   virtual bool can_elide_tlab_store_barriers() const {
-    // Since G1's TLAB's may, on occasion, come from non-young regions
-    // as well. (Is there a flag controlling that? XXX)
-    return false;
+    return true;
+  }
+
+  bool is_in_young(oop obj) {
+    HeapRegion* hr = heap_region_containing(obj);
+    return hr != NULL && hr->is_young();
+  }
+
+  // We don't need barriers for initializing stores to objects
+  // in the young gen: for the SATB pre-barrier, there is no
+  // pre-value that needs to be remembered; for the remembered-set
+  // update logging post-barrier, we don't maintain remembered set
+  // information for young gen objects. Note that non-generational
+  // G1 does not have any "young" objects, should not elide
+  // the rs logging barrier and so should always answer false below.
+  // However, non-generational G1 (-XX:-G1Gen) appears to have
+  // bit-rotted so was not tested below.
+  virtual bool can_elide_initializing_store_barrier(oop new_obj) {
+    assert(G1Gen || !is_in_young(new_obj),
+           "Non-generational G1 should never return true below");
+    return is_in_young(new_obj);
   }
 
   // Can a compiler elide a store barrier when it writes

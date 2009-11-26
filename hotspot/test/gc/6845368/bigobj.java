@@ -3,7 +3,7 @@
    @bug 6845368
    @summary ensure gc updates references > 64K bytes from the start of the obj
    @author John Coomes
-   @run main/othervm -Xmx64m bigobj
+   @run main/othervm/timeout=720 -Xmx64m bigobj
 */
 
 // Allocate an object with a block of reference fields that starts more

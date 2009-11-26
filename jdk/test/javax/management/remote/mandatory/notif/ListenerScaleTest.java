@@ -51,8 +51,6 @@
  * been compiled by the second.
  */
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
@@ -67,7 +65,6 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
-import javax.management.remote.rmi.RMIConnectorServer;
 
 public class ListenerScaleTest {
     private static final int WARMUP_WITH_ONE_MBEAN = 1000;
@@ -128,20 +125,12 @@ public class ListenerScaleTest {
         };
 
     public static void main(String[] args) throws Exception {
-        test(false);
-        test(true);
-    }
-
-    private static void test(boolean eventService) throws Exception {
         MBeanServer mbs = MBeanServerFactory.newMBeanServer();
         Sender sender = new Sender();
         mbs.registerMBean(sender, testObjectName);
         JMXServiceURL url = new JMXServiceURL("service:jmx:rmi://");
-        Map<String, String> env = Collections.singletonMap(
-                RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
-                Boolean.toString(eventService));
         JMXConnectorServer cs =
-            JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
+            JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
         cs.start();
         JMXServiceURL addr = cs.getAddress();
         JMXConnector cc = JMXConnectorFactory.connect(addr);

@@ -61,6 +61,14 @@ import java.util.*;
  * causes tasks to be immediately removed from the work queue at
  * time of cancellation.
  *
+ * <p>Successive executions of a task scheduled via
+ * <code>scheduleAtFixedRate</code> or
+ * <code>scheduleWithFixedDelay</code> do not overlap. While different
+ * executions may be performed by different threads, the effects of
+ * prior executions <a
+ * href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
+ * those of subsequent ones.
+ *
  * <p>While this class inherits from {@link ThreadPoolExecutor}, a few
  * of the inherited tuning methods are not useful for it. In
  * particular, because it acts as a fixed-sized pool using

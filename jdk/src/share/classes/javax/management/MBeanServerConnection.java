@@ -29,7 +29,6 @@ package javax.management;
 // java import
 import java.io.IOException;
 import java.util.Set;
-import javax.management.event.NotificationManager;
 
 
 /**
@@ -40,20 +39,17 @@ import javax.management.event.NotificationManager;
  *
  * @since 1.5
  */
-public interface MBeanServerConnection extends NotificationManager {
+public interface MBeanServerConnection {
     /**
      * <p>Instantiates and registers an MBean in the MBean server.  The
      * MBean server will use its {@link
      * javax.management.loading.ClassLoaderRepository Default Loader
      * Repository} to load the class of the MBean.  An object name is
      * associated with the MBean.  If the object name given is null, the
-     * MBean must provide its own name in one or both of two ways: by implementing the {@link
+     * MBean must provide its own name by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method; or by defining
-     * an {@code objectNameTemplate} field in its {@link Descriptor},
-     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
-     * annotation.</p>
+     * MBeanRegistration#preRegister preRegister} method.</p>
      *
      * <p>This method is equivalent to {@link
      * #createMBean(String,ObjectName,Object[],String[])
@@ -122,14 +118,11 @@ public interface MBeanServerConnection extends NotificationManager {
      * class loader to be used is identified by its object name. An
      * object name is associated with the MBean. If the object name of
      * the loader is null, the ClassLoader that loaded the MBean
-     * server will be used.  If the object name given is null, the
-     * MBean must provide its own name in one or both of two ways: by implementing the {@link
+     * server will be used.  If the MBean's object name given is null,
+     * the MBean must provide its own name by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method; or by defining
-     * an {@code objectNameTemplate} field in its {@link Descriptor},
-     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
-     * annotation.</p>
+     * MBeanRegistration#preRegister preRegister} method.</p>
      *
      * <p>This method is equivalent to {@link
      * #createMBean(String,ObjectName,ObjectName,Object[],String[])
@@ -205,13 +198,10 @@ public interface MBeanServerConnection extends NotificationManager {
      * javax.management.loading.ClassLoaderRepository Default Loader
      * Repository} to load the class of the MBean.  An object name is
      * associated with the MBean.  If the object name given is null, the
-     * MBean must provide its own name in one or both of two ways: by implementing the {@link
+     * MBean must provide its own name by implementing the {@link
      * javax.management.MBeanRegistration MBeanRegistration} interface
      * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method; or by defining
-     * an {@code objectNameTemplate} field in its {@link Descriptor},
-     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
-     * annotation.</p>
+     * MBeanRegistration#preRegister preRegister} method.
      *
      * @param className The class name of the MBean to be instantiated.
      * @param name The object name of the MBean. May be null.
@@ -280,14 +270,11 @@ public interface MBeanServerConnection extends NotificationManager {
      * class loader to be used is identified by its object name. An
      * object name is associated with the MBean. If the object name of
      * the loader is not specified, the ClassLoader that loaded the
-     * MBean server will be used.  If the object name given is null, the
-     * MBean must provide its own name in one or both of two ways: by implementing the {@link
-     * javax.management.MBeanRegistration MBeanRegistration} interface
-     * and returning the name from the {@link
-     * MBeanRegistration#preRegister preRegister} method; or by defining
-     * an {@code objectNameTemplate} field in its {@link Descriptor},
-     * typically using the {@link ObjectNameTemplate &#64;ObjectNameTemplate}
-     * annotation.</p>
+     * MBean server will be used.  If the MBean object name given is
+     * null, the MBean must provide its own name by implementing the
+     * {@link javax.management.MBeanRegistration MBeanRegistration}
+     * interface and returning the name from the {@link
+     * MBeanRegistration#preRegister preRegister} method.
      *
      * @param className The class name of the MBean to be instantiated.
      * @param name The object name of the MBean. May be null.
@@ -436,17 +423,7 @@ public interface MBeanServerConnection extends NotificationManager {
      * specified, all the MBeans registered will be retrieved.
      * @param query The query expression to be applied for selecting
      * MBeans. If null no query expression will be applied for
-     * selecting MBeans.  ObjectName patterns that may be contained in the
-     * query expression will be
-     * <a href="namespace/package-summary.html#NamespaceAndQueries"><!--
-     * -->evaluated</a> in the context of the
-     * {@link javax.management.namespace namespace}
-     * in which the MBeans selected by {@code name} are registered.
-     * Thus, in the {@code query} parameter, no ObjectName pattern containing a
-     * namespace path can match any of the MBean names selected by {@code name}.
-     * See the
-     * <a href="namespace/package-summary.html#RejectedNamespacePatterns"><!--
-     * -->namespaces documentation</a> for more details.
+     * selecting MBeans.
      *
      * @return A set containing the <CODE>ObjectInstance</CODE>
      * objects for the selected MBeans.  If no MBean satisfies the
@@ -454,11 +431,6 @@ public interface MBeanServerConnection extends NotificationManager {
      *
      * @exception IOException A communication problem occurred when
      * talking to the MBean server.
-     * @exception RuntimeOperationsException Wraps a
-     * <CODE>java.lang.IllegalArgumentException</CODE>: The <em>name</em>
-     * parameter contains an invalid pattern. See the
-     * <a href="namespace/package-summary.html#RejectedNamespacePatterns"><!--
-     * -->namespaces documentation</a> for more details.
      */
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query)
             throws IOException;
@@ -479,17 +451,7 @@ public interface MBeanServerConnection extends NotificationManager {
      * specified, the name of all registered MBeans will be retrieved.
      * @param query The query expression to be applied for selecting
      * MBeans. If null no query expression will be applied for
-     * selecting MBeans. ObjectName patterns that may be contained in the
-     * query expression will be
-     * <a href="namespace/package-summary.html#NamespaceAndQueries"><!--
-     * -->evaluated</a> in the context of the
-     * {@link javax.management.namespace namespace}
-     * in which the MBeans slected by {@code name} are registered.
-     * Thus, in the {@code query} parameter, no ObjectName pattern containing a
-     * namespace path can match any of the MBean names selected by {@code name}.
-     * See the
-     * <a href="namespace/package-summary.html#RejectedNamespacePatterns"><!--
-     * -->namespaces documentation</a> for more details.
+     * selecting MBeans.
      *
      * @return A set containing the ObjectNames for the MBeans
      * selected.  If no MBean satisfies the query, an empty list is
@@ -497,11 +459,6 @@ public interface MBeanServerConnection extends NotificationManager {
      *
      * @exception IOException A communication problem occurred when
      * talking to the MBean server.
-     * @exception RuntimeOperationsException Wraps a
-     * <CODE>java.lang.IllegalArgumentException</CODE>: The <em>name</em>
-     * parameter contains an invalid pattern. See the
-     * <a href="namespace/package-summary.html#RejectedNamespacePatterns"><!--
-     * -->namespaces documentation</a> for more details.
      */
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query)
             throws IOException;
@@ -594,7 +551,8 @@ public interface MBeanServerConnection extends NotificationManager {
      * else {
      *     {@code List<String>} missing = new {@code ArrayList<String>}(<!--
      * -->{@link java.util.Arrays#asList Arrays.asList}(attrNames));
-     *     missing.removeAll(list.toMap().keySet());
+     *     for (Attribute a : list.asList())
+     *         missing.remove(a.getName());
      *     System.out.println("Did not retrieve: " + missing);
      * }
      * </pre>
@@ -681,9 +639,11 @@ public interface MBeanServerConnection extends NotificationManager {
      * if (inputAttrs.size() == outputAttrs.size())
      *     System.out.println("All attributes were set successfully");
      * else {
-     *     {@code List<String>} missing = new {@code ArrayList<String>}(<!--
-     * -->inputAttrs.toMap().keySet());
-     *     missing.removeAll(outputAttrs.toMap().keySet());
+     *     {@code List<String>} missing = new {@code ArrayList<String>}();
+     *     for (Attribute a : inputAttrs.asList())
+     *         missing.add(a.getName());
+     *     for (Attribute a : outputAttrs.asList())
+     *         missing.remove(a.getName());
      *     System.out.println("Did not set: " + missing);
      * }
      * </pre>
@@ -809,7 +769,28 @@ public interface MBeanServerConnection extends NotificationManager {
     public String[] getDomains()
             throws IOException;
 
-    // doc inherited from NotificationManager
+    /**
+     * <p>Adds a listener to a registered MBean.
+     * Notifications emitted by the MBean will be forwarded to the listener.</p>
+     *
+     * @param name The name of the MBean on which the listener should
+     * be added.
+     * @param listener The listener object which will handle the
+     * notifications emitted by the registered MBean.
+     * @param filter The filter object. If filter is null, no
+     * filtering will be performed before handling notifications.
+     * @param handback The context to be sent to the listener when a
+     * notification is emitted.
+     *
+     * @exception InstanceNotFoundException The MBean name provided
+     * does not match any of the registered MBeans.
+     * @exception IOException A communication problem occurred when
+     * talking to the MBean server.
+     *
+     * @see #removeNotificationListener(ObjectName, NotificationListener)
+     * @see #removeNotificationListener(ObjectName, NotificationListener,
+     * NotificationFilter, Object)
+     */
     public void addNotificationListener(ObjectName name,
                                         NotificationListener listener,
                                         NotificationFilter filter,
@@ -926,13 +907,65 @@ public interface MBeanServerConnection extends NotificationManager {
             throws InstanceNotFoundException, ListenerNotFoundException,
                    IOException;
 
-    // doc inherited from NotificationManager
+
+    /**
+     * <p>Removes a listener from a registered MBean.</p>
+     *
+     * <P> If the listener is registered more than once, perhaps with
+     * different filters or callbacks, this method will remove all
+     * those registrations.
+     *
+     * @param name The name of the MBean on which the listener should
+     * be removed.
+     * @param listener The listener to be removed.
+     *
+     * @exception InstanceNotFoundException The MBean name provided
+     * does not match any of the registered MBeans.
+     * @exception ListenerNotFoundException The listener is not
+     * registered in the MBean.
+     * @exception IOException A communication problem occurred when
+     * talking to the MBean server.
+     *
+     * @see #addNotificationListener(ObjectName, NotificationListener,
+     * NotificationFilter, Object)
+     */
     public void removeNotificationListener(ObjectName name,
                                            NotificationListener listener)
             throws InstanceNotFoundException, ListenerNotFoundException,
                    IOException;
 
-    // doc inherited from NotificationManager
+    /**
+     * <p>Removes a listener from a registered MBean.</p>
+     *
+     * <p>The MBean must have a listener that exactly matches the
+     * given <code>listener</code>, <code>filter</code>, and
+     * <code>handback</code> parameters.  If there is more than one
+     * such listener, only one is removed.</p>
+     *
+     * <p>The <code>filter</code> and <code>handback</code> parameters
+     * may be null if and only if they are null in a listener to be
+     * removed.</p>
+     *
+     * @param name The name of the MBean on which the listener should
+     * be removed.
+     * @param listener The listener to be removed.
+     * @param filter The filter that was specified when the listener
+     * was added.
+     * @param handback The handback that was specified when the
+     * listener was added.
+     *
+     * @exception InstanceNotFoundException The MBean name provided
+     * does not match any of the registered MBeans.
+     * @exception ListenerNotFoundException The listener is not
+     * registered in the MBean, or it is not registered with the given
+     * filter and handback.
+     * @exception IOException A communication problem occurred when
+     * talking to the MBean server.
+     *
+     * @see #addNotificationListener(ObjectName, NotificationListener,
+     * NotificationFilter, Object)
+     *
+     */
     public void removeNotificationListener(ObjectName name,
                                            NotificationListener listener,
                                            NotificationFilter filter,
@@ -985,12 +1018,6 @@ public interface MBeanServerConnection extends NotificationManager {
      * the first, the result is true.</p>
      *
      * <p>Otherwise, the result is false.</p>
-     *
-     * <p>If the MBean implements the {@link DynamicWrapperMBean}
-     * interface, then in the above rules X is the result of the MBean's {@link
-     * DynamicWrapperMBean#getWrappedObject() getWrappedObject()} method and L
-     * is the result of its {@link DynamicWrapperMBean#getWrappedClassLoader()
-     * getWrappedClassLoader()} method.
      *
      * @param name The <CODE>ObjectName</CODE> of the MBean.
      * @param className The name of the class.
