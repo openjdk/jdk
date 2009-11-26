@@ -496,11 +496,13 @@ const char* Klass::external_name() const {
       return result;
     }
   }
+  if (name() == NULL)  return "<unknown>";
   return name()->as_klass_external_name();
 }
 
 
-char* Klass::signature_name() const {
+const char* Klass::signature_name() const {
+  if (name() == NULL)  return "<unknown>";
   return name()->as_C_string();
 }
 

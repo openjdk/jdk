@@ -1963,7 +1963,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   WKID meth_group_end   = WK_KLASS_ENUM_NAME(WrongMethodTypeException_klass);
   initialize_wk_klasses_until(meth_group_start, scan, CHECK);
   if (EnableMethodHandles) {
-    initialize_wk_klasses_through(meth_group_start, scan, CHECK);
+    initialize_wk_klasses_through(meth_group_end, scan, CHECK);
   }
   if (_well_known_klasses[meth_group_start] == NULL) {
     // Skip the rest of the method handle classes, if MethodHandle is not loaded.
