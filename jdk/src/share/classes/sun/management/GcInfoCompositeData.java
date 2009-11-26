@@ -248,4 +248,5 @@ public class GcInfoCompositeData extends LazyCompositeData {
         return baseGcInfoCompositeType;
     }
 
+    private static final long serialVersionUID = -5716428894085882742L;
 }

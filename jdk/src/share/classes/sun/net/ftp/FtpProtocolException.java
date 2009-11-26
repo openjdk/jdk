@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,49 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-
 package sun.net.ftp;
 
-import java.io.*;
-
 /**
- * This exeception is thrown when unexpected results are returned during
- * an FTP session.
- *
+ * Thrown to indicate that the FTP server reported an error.
+ * For instance that the requested file doesn't exist or
+ * that a command isn't supported.
+ * <p>The specific error code can be retreived with {@link #getReplyCode() }.</p>
  * @author      Jonathan Payne
  */
-public class FtpProtocolException extends IOException {
+public class FtpProtocolException extends Exception {
     private static final long serialVersionUID = 5978077070276545054L;
+    private final FtpReplyCode code;
 
-    FtpProtocolException(String s) {
-        super(s);
+    /**
+     * Constructs a new {@code FtpProtocolException} from the
+     * specified detail message. The reply code is set to unknow error.
+     *
+     * @param   detail   the detail message.
+     */
+    public FtpProtocolException(String detail) {
+            super(detail);
+            code = FtpReplyCode.UNKNOWN_ERROR;
+    }
+
+    /**
+     * Constructs a new {@code FtpProtocolException} from the
+     * specified response code and exception detail message
+     *
+     * @param   detail   the detail message.
+     * @param   code The {@code FtpRelyCode} received from server.
+     */
+      public FtpProtocolException(String detail, FtpReplyCode code) {
+        super(detail);
+        this.code = code;
+    }
+
+    /**
+     * Gets the reply code sent by the server that led to this exception
+     * being thrown.
+     *
+     * @return The {@link FtpReplyCode} associated with that exception.
+     */
+    public FtpReplyCode getReplyCode() {
+        return code;
     }
 }

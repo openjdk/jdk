@@ -65,7 +65,7 @@ import javax.print.attribute.PrintServiceAttribute;
  * PrinterStateReason PrinterStateReason} objects to an existing
  * PrinterStateReasons object and remove them again. However, like class
  *  {@link java.util.HashMap java.util.HashMap}, class PrinterStateReasons is
- * bot multiple thread safe. If a PrinterStateReasons object will be used by
+ * not multiple thread safe. If a PrinterStateReasons object will be used by
  * multiple threads, be sure to synchronize its operations (e.g., using a
  * synchronized map view obtained from class {@link java.util.Collections
  * java.util.Collections}).

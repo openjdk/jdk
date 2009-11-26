@@ -74,7 +74,7 @@ final class CipherSuite implements Comparable {
     // Flag indicating if CipherSuite availability can change dynamically.
     // This is the case when we rely on a JCE cipher implementation that
     // may not be available in the installed JCE providers.
-    // It is true because we might not have an ECC or Kerberos implementation.
+    // It is true because we might not have an ECC implementation.
     final static boolean DYNAMIC_AVAILABILITY = true;
 
     private final static boolean ALLOW_ECC = Debug.getBooleanProperty

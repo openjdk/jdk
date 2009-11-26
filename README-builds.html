@@ -545,7 +545,11 @@
                 </li>
                 <li>
                     <strong>Windows:</strong>
-                    Make sure you start your build inside a bash/sh/ksh shell.
+                    Make sure you start your build inside a bash/sh/ksh shell
+                    and are using a <tt>make.exe</tt> utility built for that
+                    environment (a cygwin <tt>make.exe</tt> is not the same
+                    as a <tt>make.exe</tt> built for something like
+                    <a href="http://www.mkssoftware.com/">MKS</a>). 
                     <br>
                     <b>WARNING:</b> Watch out for make version 3.81, it may
                     not work due to a lack of support for MS-DOS drive letter paths
@@ -826,7 +830,8 @@
                 All OpenJDK builds require access to the previously released 
                 JDK 6, this is often called a bootstrap JDK.
                 The JDK 6 binaries can be downloaded from Sun's 
-                <a href="http://java.sun.com/javase/1.6.0/download.html" target="_blank">JDK 6 download site</a>.
+                <a href="http://java.sun.com/javase/downloads/index.jsp"
+		target="_blank">JDK 6 download site</a>.
                 For build performance reasons
                 is very important that this bootstrap JDK be made available on the
                 local disk of the machine doing the build.

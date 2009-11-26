@@ -807,6 +807,9 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             Interpreter interp = VM.getVM().getInterpreter();
             if (interp.contains(pc)) {
                InterpreterCodelet codelet = interp.getCodeletContaining(pc);
+               if (codelet == null) {
+                  return "Unknown location in the Interpreter: " + pc;
+               }
                return genHTML(codelet);
             }
             return genHTML(blob);
@@ -969,16 +972,24 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
    }
 
    protected String genSafepointInfo(NMethod nm, PCDesc pcDesc) {
-      ScopeDesc sd = nm.getScopeDescAt(pcDesc.getRealPC(nm));
-      Formatter buf = new Formatter(genHTML);
-      Formatter tabs = new Formatter(genHTML);
+       ScopeDesc sd = nm.getScopeDescAt(pcDesc.getRealPC(nm));
+       Formatter buf = new Formatter(genHTML);
+       Formatter tabs = new Formatter(genHTML);
+       tabs.append(tab + tab + tab); // Initial indent for debug info
 
-      buf.beginTag("pre");
-      genScope(buf, tabs, sd);
-      buf.endTag("pre");
-      buf.append(genOopMapInfo(nm, pcDesc));
+       buf.beginTag("pre");
+       genScope(buf, tabs, sd);
 
-      return buf.toString();
+       // Reset indent for scalar replaced objects
+       tabs = new Formatter(genHTML);
+       tabs.append(tab + tab + tab); // Initial indent for debug info
+
+       genScObjInfo(buf, tabs, sd);
+       buf.endTag("pre");
+
+       buf.append(genOopMapInfo(nm, pcDesc));
+
+       return buf.toString();
    }
 
     protected void genScope(Formatter buf, Formatter tabs, ScopeDesc sd) {
@@ -1022,8 +1033,95 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             buf.append(genHTMLForMonitors(sd, monitors));
         }
 
-        tabs.append(tab);
         buf.br();
+        tabs.append(tab);
+    }
+
+    protected void genScObjInfo(Formatter buf, Formatter tabs, ScopeDesc sd) {
+        if (sd == null) {
+            return;
+        }
+
+        List objects = sd.getObjects();
+        if (objects == null) {
+            return;
+        }
+        int length = objects.size();
+        for (int i = 0; i < length; i++) {
+            buf.append(tabs);
+            ObjectValue ov = (ObjectValue)objects.get(i);
+            buf.append("ScObj" + i);
+            ScopeValue sv = ov.getKlass();
+            if (Assert.ASSERTS_ENABLED) {
+                Assert.that(sv.isConstantOop(), "scalar replaced object klass must be constant oop");
+            }
+            ConstantOopReadValue klv = (ConstantOopReadValue)sv;
+            OopHandle klHandle = klv.getValue();
+            if (Assert.ASSERTS_ENABLED) {
+                Assert.that(klHandle != null, "scalar replaced object klass must be not NULL");
+            }
+            Oop obj = VM.getVM().getObjectHeap().newOop(klHandle);
+            if (obj instanceof InstanceKlass) {
+                InstanceKlass kls = (InstanceKlass) obj;
+                buf.append(" " + kls.getName().asString() + "={");
+                int flen = ov.fieldsSize();
+
+                TypeArray klfields = kls.getFields();
+                int klen = (int) klfields.getLength();
+
+                ConstantPool cp = kls.getConstants();
+                int findex = 0;
+                for (int index = 0; index < klen; index += kls.NEXT_OFFSET) {
+                    int accsFlags = klfields.getShortAt(index + kls.ACCESS_FLAGS_OFFSET);
+                    int nameIndex = klfields.getShortAt(index + kls.NAME_INDEX_OFFSET);
+                    AccessFlags access = new AccessFlags(accsFlags);
+                    if (!access.isStatic()) {
+                        ScopeValue svf = ov.getFieldAt(findex++);
+                        String    fstr = scopeValueAsString(sd, svf);
+                        Symbol f_name  = cp.getSymbolAt(nameIndex);
+                        buf.append(" [" + f_name.asString() + " :"+ index + "]=(#" + fstr + ")");
+                    }
+                }
+                buf.append(" }");
+            } else {
+                buf.append(" ");
+                int flen = ov.fieldsSize();
+                if (obj instanceof TypeArrayKlass) {
+                    TypeArrayKlass kls = (TypeArrayKlass) obj;
+                    buf.append(kls.getElementTypeName() + "[" + flen + "]");
+                } else if (obj instanceof ObjArrayKlass) {
+                    ObjArrayKlass kls = (ObjArrayKlass) obj;
+                    Klass elobj = kls.getBottomKlass();
+                    if (elobj instanceof InstanceKlass) {
+                        buf.append(elobj.getName().asString());
+                    } else if (elobj instanceof TypeArrayKlass) {
+                        TypeArrayKlass elkls = (TypeArrayKlass) elobj;
+                        buf.append(elkls.getElementTypeName());
+                    } else {
+                        if (Assert.ASSERTS_ENABLED) {
+                            Assert.that(false, "unknown scalar replaced object klass!");
+                        }
+                    }
+                    buf.append("[" + flen + "]");
+                    int ndim = (int) kls.getDimension();
+                    while (--ndim > 0) {
+                        buf.append("[]");
+                    }
+                } else {
+                    if (Assert.ASSERTS_ENABLED) {
+                        Assert.that(false, "unknown scalar replaced object klass!");
+                    }
+                }
+                buf.append("={");
+                for (int findex = 0; findex < flen; findex++) {
+                    ScopeValue svf = ov.getFieldAt(findex);
+                    String fstr = scopeValueAsString(sd, svf);
+                    buf.append(" [" + findex + "]=(#" + fstr + ")");
+                }
+                buf.append(" }");
+            }
+            buf.br();
+        }
     }
 
    protected String genHTMLForOopMap(OopMap map) {
@@ -1037,8 +1135,6 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             tmpBuf.beginTag("tr");
             tmpBuf.beginTag("td");
             tmpBuf.append(type);
-            tmpBuf.endTag("td");
-            tmpBuf.endTag("tr");
             for (; ! oms.isDone(); oms.next()) {
                OopMapValue omv = oms.getCurrent();
                if (omv == null) {
@@ -1048,7 +1144,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                VMReg vmReg = omv.getReg();
                int reg = vmReg.getValue();
                if (reg < stack0) {
-                  tmpBuf.append(VMRegImpl.getRegisterName(vmReg.getValue()));
+                  tmpBuf.append(VMRegImpl.getRegisterName(reg));
                } else {
                   tmpBuf.append('[');
                   tmpBuf.append(Integer.toString((reg - stack0) * 4));
@@ -1058,7 +1154,13 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                   tmpBuf.append(" = ");
                   VMReg vmContentReg = omv.getContentReg();
                   int contentReg = vmContentReg.getValue();
-                  tmpBuf.append(VMRegImpl.getRegisterName(vmContentReg.getValue()));
+                  if (contentReg < stack0) {
+                     tmpBuf.append(VMRegImpl.getRegisterName(contentReg));
+                  } else {
+                     tmpBuf.append('[');
+                     tmpBuf.append(Integer.toString((contentReg - stack0) * 4));
+                     tmpBuf.append(']');
+                  }
                }
                tmpBuf.append(spaces);
             }
@@ -1072,19 +1174,19 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
       OopMapValueIterator omvIterator = new OopMapValueIterator();
       OopMapStream oms = new OopMapStream(map, OopMapValue.OopTypes.OOP_VALUE);
-      buf.append(omvIterator.iterate(oms, "Oop:", false));
-
-      oms = new OopMapStream(map, OopMapValue.OopTypes.VALUE_VALUE);
-      buf.append(omvIterator.iterate(oms, "Value:", false));
+      buf.append(omvIterator.iterate(oms, "Oops:", false));
 
       oms = new OopMapStream(map, OopMapValue.OopTypes.NARROWOOP_VALUE);
-      buf.append(omvIterator.iterate(oms, "Oop:", false));
+      buf.append(omvIterator.iterate(oms, "narrowOops:", false));
+
+      oms = new OopMapStream(map, OopMapValue.OopTypes.VALUE_VALUE);
+      buf.append(omvIterator.iterate(oms, "Values:", false));
 
       oms = new OopMapStream(map, OopMapValue.OopTypes.CALLEE_SAVED_VALUE);
       buf.append(omvIterator.iterate(oms, "Callee saved:",  true));
 
       oms = new OopMapStream(map, OopMapValue.OopTypes.DERIVED_OOP_VALUE);
-      buf.append(omvIterator.iterate(oms, "Derived oop:", true));
+      buf.append(omvIterator.iterate(oms, "Derived oops:", true));
 
       buf.endTag("table");
       return buf.toString();
@@ -1093,6 +1195,8 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
    protected String genOopMapInfo(NMethod nmethod, PCDesc pcDesc) {
       OopMapSet mapSet = nmethod.getOopMaps();
+      if (mapSet == null || (mapSet.getSize() <= 0))
+        return "";
       int pcOffset = pcDesc.getPCOffset();
       OopMap map = mapSet.findMapAtOffset(pcOffset, VM.getVM().isDebugging());
       if (map == null) {
@@ -1106,6 +1210,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
      Formatter buf = new Formatter(genHTML);
      buf.beginTag("pre");
      buf.append("OopMap: ");
+     buf.br();
      buf.append(genHTMLForOopMap(map));
      buf.endTag("pre");
 
@@ -1154,7 +1259,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       return buf.toString();
    }
 
-   private String scopeValueAsString(ScopeValue sv) {
+   private String scopeValueAsString(ScopeDesc sd, ScopeValue sv) {
       Formatter buf = new Formatter(genHTML);
       if (sv.isConstantInt()) {
          buf.append("int ");
@@ -1187,6 +1292,11 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          } else {
             buf.append("null");
          }
+      } else if (sv.isObject()) {
+         ObjectValue ov = (ObjectValue)sv;
+         buf.append("#ScObj" + sd.getObjects().indexOf(ov));
+      } else {
+         buf.append("unknown scope value " + sv);
       }
       return buf.toString();
    }
@@ -1219,7 +1329,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          }
 
          buf.append(", ");
-         buf.append(scopeValueAsString(sv));
+         buf.append(scopeValueAsString(sd, sv));
          buf.append(") ");
       }
 
@@ -1246,7 +1356,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          buf.append("(owner = ");
          ScopeValue owner = mv.owner();
          if (owner != null) {
-            buf.append(scopeValueAsString(owner));
+            buf.append(scopeValueAsString(sd, owner));
          } else {
             buf.append("null");
          }
@@ -1324,11 +1434,11 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                   buf.append(instr.asString(currentPc, symFinder));
                }
 
+               buf.br();
                if (isSafepoint && !prevWasCall) {
-                  buf.append(genSafepointInfo(nmethod, pcDesc));
+                 buf.append(genSafepointInfo(nmethod, pcDesc));
                }
 
-               buf.br();
                prevWasCall = instr.isCall();
             }
 

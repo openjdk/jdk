@@ -243,7 +243,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private boolean tryTransparentNTLMProxy = true;
 
     /* Used by Windows specific code */
-    Object authObj;
+    private Object authObj;
 
     /* Set if the user is manually setting the Authorization or Proxy-Authorization headers */
     boolean isUserServerAuth;
@@ -330,6 +330,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /* Logging support */
     public static PlatformLogger getHttpLogger() {
         return logger;
+    }
+
+    /* Used for Windows NTLM implementation */
+    public Object authObj() {
+        return authObj;
+    }
+
+    public void authObj(Object authObj) {
+        this.authObj = authObj;
     }
 
     /*
@@ -1180,6 +1189,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 inputStream = http.getInputStream();
 
                 respCode = getResponseCode();
+                if (respCode == -1) {
+                    disconnectInternal();
+                    throw new IOException ("Invalid Http response");
+                }
                 if (respCode == HTTP_PROXY_AUTH) {
                     if (streaming()) {
                         disconnectInternal();
@@ -1539,7 +1552,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * because ntlm does not support this feature.
      */
     private AuthenticationInfo
-        resetProxyAuthentication(AuthenticationInfo proxyAuthentication, AuthenticationHeader auth) {
+        resetProxyAuthentication(AuthenticationInfo proxyAuthentication, AuthenticationHeader auth) throws IOException {
         if ((proxyAuthentication != null )&&
              proxyAuthentication.getAuthScheme() != NTLM) {
             String raw = auth.raw();
@@ -1763,7 +1776,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /**
      * Sets pre-emptive proxy authentication in header
      */
-    private void setPreemptiveProxyAuthentication(MessageHeader requests) {
+    private void setPreemptiveProxyAuthentication(MessageHeader requests) throws IOException {
         AuthenticationInfo pauth
             = AuthenticationInfo.getProxyAuth(http.getProxyHostUsed(),
                                               http.getProxyPortUsed());
@@ -2119,13 +2132,9 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     String requestURI = null;
 
-    String getRequestURI() {
+    String getRequestURI() throws IOException {
         if (requestURI == null) {
-            try {
-                requestURI = http.getURLFile();
-            } catch (IOException e) {
-                requestURI = "";
-            }
+            requestURI = http.getURLFile();
         }
         return requestURI;
     }
@@ -2525,7 +2534,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     // Set a property for authentication.  This can safely disregard
     // the connected test.
     //
-    void setAuthenticationProperty(String key, String value) {
+    public void setAuthenticationProperty(String key, String value) {
         checkMessageHeader(key, value);
         requests.set(key, value);
     }

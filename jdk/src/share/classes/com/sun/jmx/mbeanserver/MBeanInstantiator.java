@@ -614,15 +614,6 @@ public class MBeanInstantiator {
     }
 
     /**
-     * Returns the class of a primitive type.
-     * @param name The type for which we the associated class.
-     * @return the class, or null if name is not primitive.
-     */
-    public static Class<?> primitiveType(String name) {
-        return primitiveClasses.get(name);
-    }
-
-    /**
      * Load a class with the specified loader, or with this object
      * class loader if the specified loader is null.
      **/

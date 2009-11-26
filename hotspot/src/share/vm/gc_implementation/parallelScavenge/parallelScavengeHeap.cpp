@@ -314,41 +314,6 @@ bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
   return false;
 }
 
-// Static method
-bool ParallelScavengeHeap::is_in_young(oop* p) {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap,
-                                            "Must be ParallelScavengeHeap");
-
-  PSYoungGen* young_gen = heap->young_gen();
-
-  if (young_gen->is_in_reserved(p)) {
-    return true;
-  }
-
-  return false;
-}
-
-// Static method
-bool ParallelScavengeHeap::is_in_old_or_perm(oop* p) {
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap,
-                                            "Must be ParallelScavengeHeap");
-
-  PSOldGen* old_gen = heap->old_gen();
-  PSPermGen* perm_gen = heap->perm_gen();
-
-  if (old_gen->is_in_reserved(p)) {
-    return true;
-  }
-
-  if (perm_gen->is_in_reserved(p)) {
-    return true;
-  }
-
-  return false;
-}
-
 // There are two levels of allocation policy here.
 //
 // When an allocation request fails, the requesting thread must invoke a VM
@@ -762,6 +727,13 @@ void ParallelScavengeHeap::accumulate_statistics_all_tlabs() {
 
 void ParallelScavengeHeap::resize_all_tlabs() {
   CollectedHeap::resize_all_tlabs();
+}
+
+bool ParallelScavengeHeap::can_elide_initializing_store_barrier(oop new_obj) {
+  // We don't need barriers for stores to objects in the
+  // young gen and, a fortiori, for initializing stores to
+  // objects therein.
+  return is_in_young(new_obj);
 }
 
 // This method is used by System.gc() and JVMTI.

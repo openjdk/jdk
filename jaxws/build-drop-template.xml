@@ -34,7 +34,7 @@
 
     <!-- Location where the copied bundle lands. -->
     <property name="@DROP@.bundle.copy"
-              value="${drop.dir}/bundles/${@DROP@.bundle.name}"/>
+              value="${drop.expanded.dir}/bundles/${@DROP@.bundle.name}"/>
 
     <!-- Root of exploded area. -->
     <property name="@DROP@.root.dir" value="${drop.dir}/@DROP@"/>
@@ -43,10 +43,13 @@
     <!-- To see if the drop areas are ready. (ignoring bundles) -->
     <target name="-@DROP@-ready">
         <condition property="@DROP@.ready">
-            <and>
-                <available file="${@DROP@.root.dir}" type="dir"/>
-                <available file="${@DROP@.root.dir}/PATCHED" type="file"/>
-            </and>
+            <or>
+                <available file="${drop.included.dir}" type="dir"/>
+                <and>
+                    <available file="${@DROP@.root.dir}" type="dir"/>
+                    <available file="${@DROP@.root.dir}/PATCHED" type="file"/>
+                </and>
+            </or>
         </condition>
     </target>
 
@@ -72,7 +75,6 @@
     <target name="-@DROP@-url-should-be-used" unless="@DROP@.url.should.be.used">
         <condition property="@DROP@.url.should.be.used">
             <and>
-                <http url="${@DROP@.master.bundle.url.base}"/>
                 <not>
                     <isset property="@DROP@.master.bundle.copy.exists"/>
                 </not>
@@ -106,6 +108,16 @@
         <delete dir="${@DROP@.root.dir}"/>
         <delete dir="${@DROP@.root.dir}-temp"/>
         <mkdir dir="${@DROP@.root.dir}-temp"/>
+	<checksum file="${@DROP@.bundle.copy}" 
+		  property="@DROP@.bundle.md5.checksum.is"/>
+        <condition property="@DROP@.bundle.md5.checksum.good">
+            <equals arg1="${@DROP@.bundle.md5.checksum}"
+                    arg2="${@DROP@.bundle.md5.checksum.is}"/>
+        </condition>
+        <fail unless="@DROP@.bundle.md5.checksum.good">
+              Checksum on file ${@DROP@.bundle.copy} is 
+              ${@DROP@.bundle.md5.checksum.is}, not ${@DROP@.bundle.md5.checksum}
+        </fail>
         <unzip src="${@DROP@.bundle.copy}" dest="${@DROP@.root.dir}-temp"/>
         <move file="${@DROP@.root.dir}-temp" tofile="${@DROP@.root.dir}"/>
         <touch>
