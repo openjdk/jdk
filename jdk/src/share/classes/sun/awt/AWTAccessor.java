@@ -249,13 +249,13 @@ public final class AWTAccessor {
      */
     public interface EventQueueAccessor {
         /*
-         * Gets the next event queue.
-         */
-        EventQueue getNextQueue(EventQueue eventQueue);
-        /*
          * Gets the event dispatch thread.
          */
         Thread getDispatchThread(EventQueue eventQueue);
+        /*
+         * Checks if the current thread is EDT for the given EQ.
+         */
+        public boolean isDispatchThreadImpl(EventQueue eventQueue);
     }
 
     /*
