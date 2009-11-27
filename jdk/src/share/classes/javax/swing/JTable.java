@@ -719,7 +719,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #addNotify
      */
     protected void configureEnclosingScrollPane() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
@@ -728,7 +728,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // example, the rowHeaderView of the scrollPane -
                 // an implementor of fixed columns might do this.
                 JViewport viewport = scrollPane.getViewport();
-                if (viewport == null || viewport.getView() != this) {
+                if (viewport == null ||
+                        SwingUtilities.getUnwrappedView(viewport) != this) {
                     return;
                 }
                 scrollPane.setColumnHeaderView(getTableHeader());
@@ -751,7 +752,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * from configureEnclosingScrollPane() and updateUI() in a safe manor.
      */
     private void configureEnclosingScrollPaneUI() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
@@ -760,7 +761,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // example, the rowHeaderView of the scrollPane -
                 // an implementor of fixed columns might do this.
                 JViewport viewport = scrollPane.getViewport();
-                if (viewport == null || viewport.getView() != this) {
+                if (viewport == null ||
+                        SwingUtilities.getUnwrappedView(viewport) != this) {
                     return;
                 }
                 //  scrollPane.getViewport().setBackingStoreEnabled(true);
@@ -820,7 +822,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @since 1.3
      */
     protected void unconfigureEnclosingScrollPane() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
@@ -829,7 +831,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // example, the rowHeaderView of the scrollPane -
                 // an implementor of fixed columns might do this.
                 JViewport viewport = scrollPane.getViewport();
-                if (viewport == null || viewport.getView() != this) {
+                if (viewport == null ||
+                        SwingUtilities.getUnwrappedView(viewport) != this) {
                     return;
                 }
                 scrollPane.setColumnHeaderView(null);
@@ -1334,7 +1337,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 return (TableCellRenderer)renderer;
             }
             else {
-                return getDefaultRenderer(columnClass.getSuperclass());
+                Class c = columnClass.getSuperclass();
+                if (c == null && columnClass != Object.class) {
+                    c = Object.class;
+                }
+                return getDefaultRenderer(c);
             }
         }
     }
@@ -5216,7 +5223,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #getFillsViewportHeight
      */
     public boolean getScrollableTracksViewportHeight() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         return getFillsViewportHeight()
                && port != null
                && port.getHeight() > getPreferredSize().height;

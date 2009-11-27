@@ -145,7 +145,7 @@ public class DemoRun {
          */
         int nvm_options = 0;
         if ( vm_options != null ) nvm_options = vm_options.length;
-        String cmd[]     = new String[1 + (d64?1:0) + 5 + nvm_options];
+        String cmd[]     = new String[1 + (d64?1:0) + 7 + nvm_options];
         String cmdLine;
         int exitStatus;
         int i,j;
@@ -153,6 +153,10 @@ public class DemoRun {
         i = 0;
         cmdLine = "";
         cmdLine += (cmd[i++] = java);
+        cmdLine += " ";
+        cmdLine += (cmd[i++] = "-cp");
+        cmdLine += " ";
+        cmdLine += (cmd[i++] = cdir);
         cmdLine += " ";
         cmdLine += (cmd[i++] = "-Dtest.classes=" + cdir);
         if ( d64 ) {

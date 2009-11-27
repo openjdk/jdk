@@ -119,12 +119,36 @@ public class CancelledProducerConsumerLoops {
         }
     }
 
+    static final class LTQasSQ<T> extends LinkedTransferQueue<T> {
+        LTQasSQ() { super(); }
+        public void put(T x) {
+            try { super.transfer(x); }
+            catch (InterruptedException ex) { throw new Error(); }
+        }
+        private final static long serialVersionUID = 42;
+    }
+
+    static final class HalfSyncLTQ<T> extends LinkedTransferQueue<T> {
+        HalfSyncLTQ() { super(); }
+        public void put(T x) {
+            if (ThreadLocalRandom.current().nextBoolean())
+                super.put(x);
+            else {
+                try { super.transfer(x); }
+                catch (InterruptedException ex) { throw new Error(); }
+            }
+        }
+        private final static long serialVersionUID = 42;
+    }
+
     static void oneTest(int pairs, int iters) throws Exception {
 
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), pairs, iters);
-//         oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
+        oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
+        oneRun(new LTQasSQ<Integer>(), pairs, iters);
+        oneRun(new HalfSyncLTQ<Integer>(), pairs, iters);
         oneRun(new SynchronousQueue<Integer>(), pairs, iters / 8);
 
         /* PriorityBlockingQueue is unbounded

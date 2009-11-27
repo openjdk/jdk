@@ -176,7 +176,9 @@ bool os::have_special_privileges() {
 #endif
 
 // Cpu architecture string
-#if   defined(IA64)
+#if   defined(ZERO)
+static char cpu_arch[] = ZERO_LIBARCH;
+#elif defined(IA64)
 static char cpu_arch[] = "ia64";
 #elif defined(IA32)
 static char cpu_arch[] = "i386";
@@ -1743,7 +1745,14 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     {EM_SPARC32PLUS, EM_SPARC,   ELFCLASS32, ELFDATA2MSB, (char*)"Sparc 32"},
     {EM_SPARCV9,     EM_SPARCV9, ELFCLASS64, ELFDATA2MSB, (char*)"Sparc v9 64"},
     {EM_PPC,         EM_PPC,     ELFCLASS32, ELFDATA2MSB, (char*)"Power PC 32"},
-    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64"}
+    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64"},
+    {EM_ARM,         EM_ARM,     ELFCLASS32,   ELFDATA2LSB, (char*)"ARM"},
+    {EM_S390,        EM_S390,    ELFCLASSNONE, ELFDATA2MSB, (char*)"IBM System/390"},
+    {EM_ALPHA,       EM_ALPHA,   ELFCLASS64, ELFDATA2LSB, (char*)"Alpha"},
+    {EM_MIPS_RS3_LE, EM_MIPS_RS3_LE, ELFCLASS32, ELFDATA2LSB, (char*)"MIPSel"},
+    {EM_MIPS,        EM_MIPS,    ELFCLASS32, ELFDATA2MSB, (char*)"MIPS"},
+    {EM_PARISC,      EM_PARISC,  ELFCLASS32, ELFDATA2MSB, (char*)"PARISC"},
+    {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"}
   };
 
   #if  (defined IA32)
@@ -1760,9 +1769,23 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     static  Elf32_Half running_arch_code=EM_PPC64;
   #elif  (defined __powerpc__)
     static  Elf32_Half running_arch_code=EM_PPC;
+  #elif  (defined ARM)
+    static  Elf32_Half running_arch_code=EM_ARM;
+  #elif  (defined S390)
+    static  Elf32_Half running_arch_code=EM_S390;
+  #elif  (defined ALPHA)
+    static  Elf32_Half running_arch_code=EM_ALPHA;
+  #elif  (defined MIPSEL)
+    static  Elf32_Half running_arch_code=EM_MIPS_RS3_LE;
+  #elif  (defined PARISC)
+    static  Elf32_Half running_arch_code=EM_PARISC;
+  #elif  (defined MIPS)
+    static  Elf32_Half running_arch_code=EM_MIPS;
+  #elif  (defined M68K)
+    static  Elf32_Half running_arch_code=EM_68K;
   #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __sparc, __powerpc__
+         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
   #endif
 
   // Identify compatability class for VM's architecture and library's architecture
@@ -1794,10 +1817,12 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     return NULL;
   }
 
+#ifndef S390
   if (lib_arch.elf_class != arch_array[running_arch_index].elf_class) {
     ::snprintf(diag_msg_buf, diag_msg_max_length-1," (Possible cause: architecture word width mismatch)");
     return NULL;
   }
+#endif // !S390
 
   if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
     if ( lib_arch.name!=NULL ) {
@@ -2586,7 +2611,9 @@ bool os::large_page_init() {
     // format has been changed), we'll use the largest page size supported by
     // the processor.
 
+#ifndef ZERO
     _large_page_size = IA32_ONLY(4 * M) AMD64_ONLY(2 * M) IA64_ONLY(256 * M) SPARC_ONLY(4 * M);
+#endif // ZERO
 
     FILE *fp = fopen("/proc/meminfo", "r");
     if (fp) {

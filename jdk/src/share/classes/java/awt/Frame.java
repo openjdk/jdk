@@ -845,8 +845,11 @@ public class Frame extends Window implements MenuContainer {
      * others by setting those fields you want to accept from system
      * to <code>Integer.MAX_VALUE</code>.
      * <p>
-     * On some systems only the size portion of the bounds is taken
-     * into account.
+     * Note, the given maximized bounds are used as a hint for the native
+     * system, because the underlying platform may not support setting the
+     * location and/or size of the maximized windows.  If that is the case, the
+     * provided values do not affect the appearance of the frame in the
+     * maximized state.
      *
      * @param bounds  bounds for the maximized state
      * @see #getMaximizedBounds()

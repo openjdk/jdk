@@ -141,6 +141,8 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                      "\u9a6c\u6765\u897f\u4e9a\u590f\u4ee4\u65f6", "MYST"};
         String NORONHA[] = new String[] {"\u8d39\u5c14\u5357\u591a\u5fb7\u8bfa\u7f57\u5c3c\u4e9a\u65f6\u95f4", "FNT",
                                          "\u8d39\u5c14\u5357\u591a\u5fb7\u8bfa\u7f57\u5c3c\u4e9a\u590f\u4ee4\u65f6", "FNST"};
+        String NOVT[] = new String[] {"Novosibirsk \u65f6\u95f4", "NOVT",
+                                      "Novosibirsk \u590f\u4ee4\u65f6", "NOVST"};
         String NPT[] = new String[] {"\u5c3c\u6cca\u5c14\u65f6\u95f4", "NPT",
                                      "\u5c3c\u6cca\u5c14\u590f\u4ee4\u65f6", "NPST"};
         String NST[] = new String[] {"\u7ebd\u82ac\u5170\u6807\u51c6\u65f6\u95f4", "NST",
@@ -441,7 +443,6 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"America/Winnipeg", CST},
             {"America/Yakutat", AKST},
             {"America/Yellowknife", MST},
-            {"Antarctica/Casey", WST_AUS},
             {"Antarctica/Davis", new String[] {"\u6234\u7ef4\u65af\u65f6\u95f4", "DAVT",
                                                "\u6234\u7ef4\u65af\u590f\u4ee4\u65f6", "DAVST"}},
             {"Antarctica/DumontDUrville", new String[] {"Dumont-d'Urville \u65f6\u95f4", "DDUT",
@@ -529,8 +530,8 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                           "\u83f2\u5f8b\u5bbe\u590f\u4ee4\u65f6", "PHST"}},
             {"Asia/Muscat", GST},
             {"Asia/Nicosia", EET},
-            {"Asia/Novosibirsk", new String[] {"Novosibirsk \u65f6\u95f4", "NOVT",
-                                               "Novosibirsk \u590f\u4ee4\u65f6", "NOVST"}},
+            {"Asia/Novokuznetsk", NOVT},
+            {"Asia/Novosibirsk", NOVT},
             {"Asia/Oral", new String[] {"Oral \u65f6\u95f4", "ORAT",
                                         "Oral \u590f\u4ee4\u65f6", "ORAST"}},
             {"Asia/Omsk", new String[] {"\u9102\u6728\u65af\u514b\u65f6\u95f4", "OMST",

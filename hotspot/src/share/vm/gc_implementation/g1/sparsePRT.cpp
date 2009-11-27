@@ -135,7 +135,6 @@ RSHashTable::RSHashTable(size_t capacity) :
   _occupied_entries(0), _occupied_cards(0),
   _entries(NEW_C_HEAP_ARRAY(SparsePRTEntry, capacity)),
   _buckets(NEW_C_HEAP_ARRAY(int, capacity)),
-  _next_deleted(NULL), _deleted(false),
   _free_list(NullEntry), _free_region(0)
 {
   clear();
@@ -296,40 +295,6 @@ void RSHashTable::add_entry(SparsePRTEntry* e) {
   assert(e2->num_valid_cards() > 0, "Postcondition.");
 }
 
-RSHashTable* RSHashTable::_head_deleted_list = NULL;
-
-void RSHashTable::add_to_deleted_list(RSHashTable* rsht) {
-  assert(!rsht->deleted(), "Should delete only once.");
-  rsht->set_deleted(true);
-  RSHashTable* hd = _head_deleted_list;
-  while (true) {
-    rsht->_next_deleted = hd;
-    RSHashTable* res =
-      (RSHashTable*)
-      Atomic::cmpxchg_ptr(rsht, &_head_deleted_list, hd);
-    if (res == hd) return;
-    else hd = res;
-  }
-}
-
-RSHashTable* RSHashTable::get_from_deleted_list() {
-  RSHashTable* hd = _head_deleted_list;
-  while (hd != NULL) {
-    RSHashTable* next = hd->next_deleted();
-    RSHashTable* res =
-      (RSHashTable*)
-      Atomic::cmpxchg_ptr(next, &_head_deleted_list, hd);
-    if (res == hd) {
-      hd->set_next_deleted(NULL);
-      hd->set_deleted(false);
-      return hd;
-    } else {
-      hd = res;
-    }
-  }
-  return NULL;
-}
-
 CardIdx_t /* RSHashTable:: */ RSHashTableIter::find_first_card_in_list() {
   CardIdx_t res;
   while (_bl_ind != RSHashTable::NullEntry) {
@@ -442,15 +407,6 @@ void SparsePRT::cleanup_all() {
     sprt->cleanup();
     sprt = get_from_expanded_list();
   }
-  // Now delete all deleted RSHashTables.
-  RSHashTable* rsht = RSHashTable::get_from_deleted_list();
-  while (rsht != NULL) {
-#if SPARSE_PRT_VERBOSE
-    gclog_or_tty->print_cr("About to delete RSHT " PTR_FORMAT ".", rsht);
-#endif
-    delete rsht;
-    rsht = RSHashTable::get_from_deleted_list();
-  }
 }
 
 
@@ -511,8 +467,10 @@ void SparsePRT::clear() {
 }
 
 void SparsePRT::cleanup() {
-  // Make sure that the current and next tables agree.  (Another mechanism
-  // takes care of deleting now-unused tables.)
+  // Make sure that the current and next tables agree.
+  if (_cur != _next) {
+    delete _cur;
+  }
   _cur = _next;
   set_expanded(false);
 }
@@ -535,7 +493,8 @@ void SparsePRT::expand() {
       _next->add_entry(e);
     }
   }
-  if (last != _cur)
-    RSHashTable::add_to_deleted_list(last);
+  if (last != _cur) {
+    delete last;
+  }
   add_to_expanded_list(this);
 }

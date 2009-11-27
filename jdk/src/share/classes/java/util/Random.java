@@ -50,6 +50,18 @@ import sun.misc.Unsafe;
  * <p>
  * Many applications will find the method {@link Math#random} simpler to use.
  *
+ * <p>Instances of {@code java.util.Random} are threadsafe.
+ * However, the concurrent use of the same {@code java.util.Random}
+ * instance across threads may encounter contention and consequent
+ * poor performance. Consider instead using
+ * {@link java.util.concurrent.ThreadLocalRandom} in multithreaded
+ * designs.
+ *
+ * <p>Instances of {@code java.util.Random} are not cryptographically
+ * secure.  Consider instead using {@link java.security.SecureRandom} to
+ * get a cryptographically secure pseudo-random number generator for use
+ * by security-sensitive applications.
+ *
  * @author  Frank Yellin
  * @since   1.0
  */

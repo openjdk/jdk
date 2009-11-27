@@ -781,25 +781,6 @@ public class EnvHelp {
     }
 
     /**
-     * Returns true if the parameter JMXConnector.USE_EVENT_SERVICE is set to a
-     * String equals "true" by ignoring case in the map or in the System.
-     */
-    public static boolean eventServiceEnabled(Map<String, ?> env) {
-        return computeBooleanFromString(env, JMXConnector.USE_EVENT_SERVICE, true);
-    }
-
-    /**
-     * Returns true if the parameter JMXConnectorServer.DELEGATE_TO_EVENT_SERVICE
-     * is set to a String equals "true" (ignores case).
-     * If the property DELEGATE_TO_EVENT_SERVICE is not set, returns
-     * a default value of "true".
-     */
-    public static boolean delegateToEventService(Map<String, ?> env) {
-        return computeBooleanFromString(env,
-                JMXConnectorServer.DELEGATE_TO_EVENT_SERVICE, true, true);
-    }
-
-    /**
      * <p>Name of the attribute that specifies whether a connector server
      * should not prevent the VM from exiting
      */
@@ -816,46 +797,6 @@ public class EnvHelp {
         return (env != null) &&
                 ("true".equalsIgnoreCase((String)env.get(JMX_SERVER_DAEMON)));
     }
-
-//    /**
-//     * <p>Name of the attribute that specifies an EventRelay object to use.
-//     */
-//    public static final String EVENT_RELAY =
-//            "jmx.remote.x.event.relay";
-//
-//
-//    /**
-//     * Returns an EventRelay object. The default one is FetchingEventRelay.
-//     * If {@code EVENT_RELAY} is specified in {@code env} as a key,
-//     * its value will be returned as an EventRelay object, if the value is
-//     * not of type {@code EventRelay}, the default {@code FetchingEventRelay}
-//     * will be returned.
-//     * If {@code EVENT_RELAY} is not specified but {@code ENABLE_EVENT_RELAY}
-//     * is specified as a key and its value is <code true>, the default {@code FetchingEventRelay}
-//     * will be returned.
-//     */
-//    public static EventRelay getEventRelay(Map env) {
-//        Map info = env == null ?
-//            Collections.EMPTY_MAP : env;
-//
-//        Object o = env.get(EVENT_RELAY);
-//        if (o instanceof EventRelay) {
-//            return (EventRelay)o;
-//        } else if (o != null) {
-//            logger.warning("getEventRelay",
-//                    "The user specified object is not an EventRelay object, " +
-//                    "using the default class FetchingEventRelay.");
-//
-//            return new FetchingEventRelay();
-//        }
-//
-//        if (enableEventRelay(env)) {
-//            return new FetchingEventRelay();
-//        }
-//
-//        return null;
-//    }
-
 
     private static final class SinkOutputStream extends OutputStream {
         public void write(byte[] b, int off, int len) {}
