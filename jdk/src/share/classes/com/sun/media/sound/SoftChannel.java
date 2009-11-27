@@ -328,7 +328,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     }
 
     protected void initVoice(SoftVoice voice, SoftPerformer p, int voiceID,
-            int noteNumber, int velocity, ModelConnectionBlock[] connectionBlocks,
+            int noteNumber, int velocity, int delay, ModelConnectionBlock[] connectionBlocks,
             ModelChannelMixer channelmixer, boolean releaseTriggered) {
         if (voice.active) {
             // Voice is active , we must steal the voice
@@ -363,7 +363,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         voice.objects.put("midi_cc", co_midi_cc);
         voice.objects.put("midi_rpn", co_midi_rpn);
         voice.objects.put("midi_nrpn", co_midi_nrpn);
-        voice.noteOn(noteNumber, velocity);
+        voice.noteOn(noteNumber, velocity, delay);
         voice.setMute(mute);
         voice.setSoloMute(solomute);
         if (releaseTriggered)
@@ -399,14 +399,21 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     }
 
     public void noteOn(int noteNumber, int velocity) {
+        noteOn(noteNumber, velocity, 0);
+    }
+
+    /* A special noteOn with delay parameter, which is used to
+     * start note within control buffers.
+     */
+    protected void noteOn(int noteNumber, int velocity, int delay) {
         noteNumber = restrict7Bit(noteNumber);
         velocity = restrict7Bit(velocity);
-        noteOn_internal(noteNumber, velocity);
+        noteOn_internal(noteNumber, velocity, delay);
         if (current_mixer != null)
             current_mixer.noteOn(noteNumber, velocity);
     }
 
-    private void noteOn_internal(int noteNumber, int velocity) {
+    private void noteOn_internal(int noteNumber, int velocity, int delay) {
 
         if (velocity == 0) {
             noteOff_internal(noteNumber, 64);
@@ -490,6 +497,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
             int tunedKey = (int)(Math.round(tuning.getTuning()[noteNumber]/100.0));
             play_noteNumber = noteNumber;
             play_velocity = velocity;
+            play_delay = delay;
             play_releasetriggered = false;
             lastVelocity[noteNumber] = velocity;
             current_director.noteOn(tunedKey, velocity);
@@ -594,6 +602,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
             play_noteNumber = noteNumber;
             play_velocity = lastVelocity[noteNumber];
             play_releasetriggered = true;
+            play_delay = 0;
             current_director.noteOff(tunedKey, velocity);
 
         }
@@ -604,12 +613,14 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     private int voiceNo = 0;
     private int play_noteNumber = 0;
     private int play_velocity = 0;
+    private int play_delay = 0;
     private boolean play_releasetriggered = false;
 
     public void play(int performerIndex, ModelConnectionBlock[] connectionBlocks) {
 
         int noteNumber = play_noteNumber;
         int velocity = play_velocity;
+        int delay = play_delay;
         boolean releasetriggered = play_releasetriggered;
 
         SoftPerformer p = current_instrument.getPerformers()[performerIndex];
@@ -633,7 +644,7 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         if (voiceNo == -1)
             return;
 
-        initVoice(voices[voiceNo], p, prevVoiceID, noteNumber, velocity,
+        initVoice(voices[voiceNo], p, prevVoiceID, noteNumber, velocity, delay,
                 connectionBlocks, current_mixer, releasetriggered);
     }
 
