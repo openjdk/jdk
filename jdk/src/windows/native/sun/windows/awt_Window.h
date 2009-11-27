@@ -63,8 +63,11 @@ public:
     static jfieldID sysWID;
     static jfieldID sysHID;
 
+    static jfieldID windowTypeID;
+
     static jmethodID getWarningStringMID;
     static jmethodID calculateSecurityWarningPositionMID;
+    static jmethodID windowTypeNameMID;
 
     AwtWindow();
     virtual ~AwtWindow();
@@ -362,10 +365,24 @@ protected:
 
     void EnableTranslucency(BOOL enable);
 
+    // Native representation of the java.awt.Window.Type enum
+    enum Type {
+        NORMAL, UTILITY, POPUP
+    };
+
+    inline Type GetType() { return m_windowType; }
+
 private:
     int m_screenNum;
 
     void InitOwner(AwtWindow *owner);
+
+    Type m_windowType;
+    void InitType(JNIEnv *env, jobject peer);
+
+    // Tweak the style according to the type of the window
+    void TweakStyle(DWORD & style, DWORD & exStyle);
+
 };
 
 #endif /* AWT_WINDOW_H */

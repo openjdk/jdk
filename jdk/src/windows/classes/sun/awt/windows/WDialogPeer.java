@@ -53,7 +53,12 @@ class WDialogPeer extends WWindowPeer implements DialogPeer {
         }
     }
 
-    native void create(WComponentPeer parent);
+    native void createAwtDialog(WComponentPeer parent);
+    void create(WComponentPeer parent) {
+        preCreate(parent);
+        createAwtDialog(parent);
+    }
+
     native void showModal();
     native void endModal();
 
