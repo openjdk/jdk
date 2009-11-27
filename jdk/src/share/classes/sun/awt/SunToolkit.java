@@ -722,13 +722,7 @@ public abstract class SunToolkit extends Toolkit
         EventQueue eq = (EventQueue)appContext.get(AppContext.EVENT_QUEUE_KEY);
 
         AWTAccessor.EventQueueAccessor accessor = AWTAccessor.getEventQueueAccessor();
-        EventQueue next = accessor.getNextQueue(eq);
-        while (next != null) {
-            eq = next;
-            next = accessor.getNextQueue(eq);
-        }
-
-        return (Thread.currentThread() == accessor.getDispatchThread(eq));
+        return accessor.isDispatchThreadImpl(eq);
     }
 
     public Dimension getScreenSize() {
