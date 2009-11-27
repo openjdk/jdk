@@ -25,6 +25,8 @@
 
 package com.sun.java.swing.plaf.motif;
 
+import sun.awt.AppContext;
+
 import java.awt.*;
 import java.awt.event.*;
 
@@ -48,7 +50,7 @@ import javax.swing.plaf.basic.*;
  */
 public class MotifToggleButtonUI extends BasicToggleButtonUI
 {
-    private final static MotifToggleButtonUI motifToggleButtonUI = new MotifToggleButtonUI();
+    private static final Object MOTIF_TOGGLE_BUTTON_UI_KEY = new Object();
 
     protected Color selectColor;
 
@@ -58,6 +60,13 @@ public class MotifToggleButtonUI extends BasicToggleButtonUI
     //         Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent b) {
+        AppContext appContext = AppContext.getAppContext();
+        MotifToggleButtonUI motifToggleButtonUI =
+                (MotifToggleButtonUI) appContext.get(MOTIF_TOGGLE_BUTTON_UI_KEY);
+        if (motifToggleButtonUI == null) {
+            motifToggleButtonUI = new MotifToggleButtonUI();
+            appContext.put(MOTIF_TOGGLE_BUTTON_UI_KEY, motifToggleButtonUI);
+        }
         return motifToggleButtonUI;
     }
 

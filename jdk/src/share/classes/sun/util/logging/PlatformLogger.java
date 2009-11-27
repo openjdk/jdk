@@ -136,7 +136,7 @@ public class PlatformLogger {
      * This method is called from LogManager.readPrimordialConfiguration().
      */
     public static synchronized void redirectPlatformLoggers() {
-        if (loggingEnabled || !JavaLogger.supported) return;
+        if (loggingEnabled || !LoggingSupport.isAvailable()) return;
 
         loggingEnabled = true;
         for (Map.Entry<String, WeakReference<PlatformLogger>> entry : loggers.entrySet()) {
@@ -487,73 +487,22 @@ public class PlatformLogger {
      * java.util.logging.Logger object.
      */
     static class JavaLogger extends LoggerProxy {
-        private static final boolean supported;
-        private static final Class<?> loggerClass;
-        private static final Class<?> levelClass;
-        private static final Method getLoggerMethod;
-        private static final Method setLevelMethod;
-        private static final Method getLevelMethod;
-        private static final Method isLoggableMethod;
-        private static final Method logMethod;
-        private static final Method logThrowMethod;
-        private static final Method logParamsMethod;
         private static final Map<Integer, Object> levelObjects =
             new HashMap<Integer, Object>();
 
         static {
-            loggerClass = getClass("java.util.logging.Logger");
-            levelClass = getClass("java.util.logging.Level");
-            getLoggerMethod = getMethod(loggerClass, "getLogger", String.class);
-            setLevelMethod = getMethod(loggerClass, "setLevel", levelClass);
-            getLevelMethod = getMethod(loggerClass, "getLevel");
-            isLoggableMethod = getMethod(loggerClass, "isLoggable", levelClass);
-            logMethod = getMethod(loggerClass, "log", levelClass, String.class);
-            logThrowMethod = getMethod(loggerClass, "log", levelClass, String.class, Throwable.class);
-            logParamsMethod = getMethod(loggerClass, "log", levelClass, String.class, Object[].class);
-            supported = (loggerClass != null && levelClass != null && getLoggerMethod != null &&
-                         getLevelMethod != null && setLevelMethod != null &&
-                         logMethod != null && logThrowMethod != null && logParamsMethod != null);
-            if (supported) {
+            if (LoggingSupport.isAvailable()) {
                 // initialize the map to Level objects
                 getLevelObjects();
             }
         }
 
-        private static Class<?> getClass(String name) {
-            try {
-                return Class.forName(name, true, null);
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
-
-        private static Method getMethod(Class<?> cls, String name, Class<?>... parameterTypes) {
-            if (cls == null) return null;
-
-            try {
-                return cls.getMethod(name, parameterTypes);
-            } catch (NoSuchMethodException e) {
-                throw new AssertionError(e);
-            }
-        }
-
-        private static Object invoke(Method m, Object obj, Object... params) {
-            try {
-                return m.invoke(obj, params);
-            } catch (IllegalAccessException e) {
-                throw new AssertionError(e);
-            } catch (InvocationTargetException e) {
-                throw new AssertionError(e);
-            }
-        }
-
         private static void getLevelObjects() {
             // get all java.util.logging.Level objects
-            Method parseLevelMethod = getMethod(levelClass, "parse", String.class);
             int[] levelArray = new int[] {OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL};
             for (int l : levelArray) {
-                Object o = invoke(parseLevelMethod, null, getLevelName(l));
-                levelObjects.put(l, o);
+                Object level = LoggingSupport.parseLevel(getLevelName(l));
+                levelObjects.put(l, level);
             }
         }
 
@@ -564,10 +513,10 @@ public class PlatformLogger {
 
         JavaLogger(String name, int level) {
             super(name, level);
-            this.javaLogger = invoke(getLoggerMethod, null, name);
+            this.javaLogger = LoggingSupport.getLogger(name);
             if (level != 0) {
                 // level has been updated and so set the Logger's level
-                invoke(setLevelMethod, javaLogger, levelObjects.get(level));
+                LoggingSupport.setLevel(javaLogger, levelObjects.get(level));
             }
         }
 
@@ -578,24 +527,24 @@ public class PlatformLogger {
         * not be updated.
         */
         void doLog(int level, String msg) {
-            invoke(logMethod, javaLogger, levelObjects.get(level), msg);
+            LoggingSupport.log(javaLogger, levelObjects.get(level), msg);
         }
 
         void doLog(int level, String msg, Throwable t) {
-            invoke(logThrowMethod, javaLogger, levelObjects.get(level), msg, t);
+            LoggingSupport.log(javaLogger, levelObjects.get(level), msg, t);
         }
 
         void doLog(int level, String msg, Object... params) {
-            invoke(logParamsMethod, javaLogger, levelObjects.get(level), msg, params);
+            LoggingSupport.log(javaLogger, levelObjects.get(level), msg, params);
         }
 
         boolean isEnabled() {
-            Object level = invoke(getLevelMethod, javaLogger);
+            Object level = LoggingSupport.getLevel(javaLogger);
             return level == null || level.equals(levelObjects.get(OFF)) == false;
         }
 
         int getLevel() {
-            Object level = invoke(getLevelMethod, javaLogger);
+            Object level = LoggingSupport.getLevel(javaLogger);
             if (level != null) {
                 for (Map.Entry<Integer, Object> l : levelObjects.entrySet()) {
                     if (level == l.getValue()) {
@@ -608,14 +557,13 @@ public class PlatformLogger {
 
         void setLevel(int newLevel) {
             levelValue = newLevel;
-            invoke(setLevelMethod, javaLogger, levelObjects.get(newLevel));
+            LoggingSupport.setLevel(javaLogger, levelObjects.get(newLevel));
         }
 
         public boolean isLoggable(int level) {
-            return (Boolean) invoke(isLoggableMethod, javaLogger, levelObjects.get(level));
+            return LoggingSupport.isLoggable(javaLogger, levelObjects.get(level));
         }
     }
-
 
     private static String getLevelName(int level) {
         switch (level) {

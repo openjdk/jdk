@@ -67,7 +67,7 @@ public class MBeanConstructorInfo extends MBeanFeatureInfo implements Cloneable 
     public MBeanConstructorInfo(String description, Constructor<?> constructor) {
         this(constructor.getName(), description,
              constructorSignature(constructor),
-             Introspector.descriptorForElement(constructor, false));
+             Introspector.descriptorForElement(constructor));
     }
 
     /**

@@ -903,19 +903,20 @@ class sun_dyn_AdapterMethodHandle: public sun_dyn_BoundMethodHandle {
   // Relevant integer codes (keep these in synch. with MethodHandleNatives.Constants):
   enum {
     OP_RETYPE_ONLY   = 0x0, // no argument changes; straight retype
-    OP_CHECK_CAST    = 0x1, // ref-to-ref conversion; requires a Class argument
-    OP_PRIM_TO_PRIM  = 0x2, // converts from one primitive to another
-    OP_REF_TO_PRIM   = 0x3, // unboxes a wrapper to produce a primitive
-    OP_PRIM_TO_REF   = 0x4, // boxes a primitive into a wrapper (NYI)
-    OP_SWAP_ARGS     = 0x5, // swap arguments (vminfo is 2nd arg)
-    OP_ROT_ARGS      = 0x6, // rotate arguments (vminfo is displaced arg)
-    OP_DUP_ARGS      = 0x7, // duplicates one or more arguments (at TOS)
-    OP_DROP_ARGS     = 0x8, // remove one or more argument slots
-    OP_COLLECT_ARGS  = 0x9, // combine one or more arguments into a varargs (NYI)
-    OP_SPREAD_ARGS   = 0xA, // expand in place a varargs array (of known size)
-    OP_FLYBY         = 0xB, // operate first on reified argument list (NYI)
-    OP_RICOCHET      = 0xC, // run an adapter chain on the return value (NYI)
-    CONV_OP_LIMIT    = 0xD, // limit of CONV_OP enumeration
+    OP_RETYPE_RAW    = 0x1, // straight retype, trusted (void->int, Object->T)
+    OP_CHECK_CAST    = 0x2, // ref-to-ref conversion; requires a Class argument
+    OP_PRIM_TO_PRIM  = 0x3, // converts from one primitive to another
+    OP_REF_TO_PRIM   = 0x4, // unboxes a wrapper to produce a primitive
+    OP_PRIM_TO_REF   = 0x5, // boxes a primitive into a wrapper (NYI)
+    OP_SWAP_ARGS     = 0x6, // swap arguments (vminfo is 2nd arg)
+    OP_ROT_ARGS      = 0x7, // rotate arguments (vminfo is displaced arg)
+    OP_DUP_ARGS      = 0x8, // duplicates one or more arguments (at TOS)
+    OP_DROP_ARGS     = 0x9, // remove one or more argument slots
+    OP_COLLECT_ARGS  = 0xA, // combine one or more arguments into a varargs (NYI)
+    OP_SPREAD_ARGS   = 0xB, // expand in place a varargs array (of known size)
+    OP_FLYBY         = 0xC, // operate first on reified argument list (NYI)
+    OP_RICOCHET      = 0xD, // run an adapter chain on the return value (NYI)
+    CONV_OP_LIMIT    = 0xE, // limit of CONV_OP enumeration
 
     CONV_OP_MASK     = 0xF00, // this nybble contains the conversion op field
     CONV_VMINFO_MASK = 0x0FF, // LSB is reserved for JVM use

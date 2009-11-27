@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Arrays;
 
+import sun.misc.IOUtils;
 import sun.security.pkcs.*;
 
 /**
@@ -142,25 +143,7 @@ public class HttpTimestamper implements Timestamper {
 
             int total = 0;
             int contentLength = connection.getContentLength();
-            if (contentLength != -1) {
-                replyBuffer = new byte[contentLength];
-            } else {
-                replyBuffer = new byte[2048];
-                contentLength = Integer.MAX_VALUE;
-            }
-
-            while (total < contentLength) {
-                int count = input.read(replyBuffer, total,
-                                        replyBuffer.length - total);
-                if (count < 0)
-                    break;
-
-                total += count;
-                if (total >= replyBuffer.length && total < contentLength) {
-                    replyBuffer = Arrays.copyOf(replyBuffer, total * 2);
-                }
-            }
-            replyBuffer = Arrays.copyOf(replyBuffer, total);
+            replyBuffer = IOUtils.readFully(input, contentLength, false);
 
             if (DEBUG) {
                 System.out.println("received timestamp response (length=" +

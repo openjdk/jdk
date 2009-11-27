@@ -165,7 +165,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
                 if (defaultConfig != null) {
                     configs = new GraphicsConfiguration[1];
                     configs[0] = defaultConfig;
-                    return configs;
+                    return configs.clone();
                 }
             }
 
@@ -196,7 +196,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             configs = new GraphicsConfiguration[v.size()];
             v.copyInto(configs);
         }
-        return configs;
+        return configs.clone();
     }
 
     /**
@@ -353,6 +353,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             }
             WWindowPeer peer = (WWindowPeer)old.getPeer();
             if (peer != null) {
+                peer.setFullScreenExclusiveModeState(false);
                 // we used to destroy the buffers on exiting fs mode, this
                 // is no longer needed since fs change will cause a surface
                 // data replacement
@@ -370,12 +371,15 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             addFSWindowListener(w);
             // Enter full screen exclusive mode.
             WWindowPeer peer = (WWindowPeer)w.getPeer();
-            synchronized(peer) {
-                enterFullScreenExclusive(screen, peer);
-                // Note: removed replaceSurfaceData() call because
-                // changing the window size or making it visible
-                // will cause this anyway, and both of these events happen
-                // as part of switching into fullscreen mode.
+            if (peer != null) {
+                synchronized(peer) {
+                    enterFullScreenExclusive(screen, peer);
+                    // Note: removed replaceSurfaceData() call because
+                    // changing the window size or making it visible
+                    // will cause this anyway, and both of these events happen
+                    // as part of switching into fullscreen mode.
+                }
+                peer.setFullScreenExclusiveModeState(true);
             }
 
             // fix for 4868278

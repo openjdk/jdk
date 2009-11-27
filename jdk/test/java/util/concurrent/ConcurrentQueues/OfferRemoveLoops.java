@@ -56,12 +56,11 @@ public class OfferRemoveLoops {
         testQueue(new ArrayBlockingQueue(10));
         testQueue(new PriorityBlockingQueue(10));
         testQueue(new ConcurrentLinkedQueue());
-//         testQueue(new LinkedTransferQueue());
+        testQueue(new LinkedTransferQueue());
     }
 
     Random getRandom() {
-        return new Random();
-        // return ThreadLocalRandom.current();
+        return ThreadLocalRandom.current();
     }
 
     void testQueue(final Queue q) throws Throwable {

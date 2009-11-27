@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,7 +503,19 @@ public class EncryptionKey
                              + '\n'));
     }
 
+    /**
+     * Find a key with given etype
+     */
     public static EncryptionKey findKey(int etype, EncryptionKey[] keys)
+            throws KrbException {
+        return findKey(etype, null, keys);
+    }
+
+    /**
+     * Find a key with given etype and kvno
+     * @param kvno if null, return any (first?) key
+     */
+    public static EncryptionKey findKey(int etype, Integer kvno, EncryptionKey[] keys)
         throws KrbException {
 
         // check if encryption type is supported
@@ -516,7 +528,8 @@ public class EncryptionKey
         for (int i = 0; i < keys.length; i++) {
             ktype = keys[i].getEType();
             if (EType.isSupported(ktype)) {
-                if (etype == ktype) {
+                Integer kv = keys[i].getKeyVersionNumber();
+                if (etype == ktype && (kvno == null || kvno.equals(kv))) {
                     return keys[i];
                 }
             }
@@ -528,8 +541,11 @@ public class EncryptionKey
             for (int i = 0; i < keys.length; i++) {
                 ktype = keys[i].getEType();
                 if (ktype == EncryptedData.ETYPE_DES_CBC_CRC ||
-                    ktype == EncryptedData.ETYPE_DES_CBC_MD5) {
-                    return new EncryptionKey(etype, keys[i].getBytes());
+                        ktype == EncryptedData.ETYPE_DES_CBC_MD5) {
+                    Integer kv = keys[i].getKeyVersionNumber();
+                    if (kvno == null || kvno.equals(kv)) {
+                        return new EncryptionKey(etype, keys[i].getBytes());
+                    }
                 }
             }
         }

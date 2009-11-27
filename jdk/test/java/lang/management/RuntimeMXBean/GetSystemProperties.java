@@ -49,6 +49,21 @@ public class GetSystemProperties {
     private static final String VALUE4 = "test.property.value4";
 
     public static void main(String[] argv) throws Exception {
+        // Save a copy of the original system properties
+        Properties props = System.getProperties();
+
+        try {
+            // replace the system Properties object for any modification
+            // in case jtreg caches a copy
+            System.setProperties(new Properties(props));
+            runTest();
+        } finally {
+            // restore original system properties
+            System.setProperties(props);
+        }
+    }
+
+    private static void runTest() throws Exception {
         RuntimeMXBean mbean = ManagementFactory.getRuntimeMXBean();
 
         // Print all system properties
@@ -88,7 +103,10 @@ public class GetSystemProperties {
         Map<String,String> props2 = mbean.getSystemProperties();
         // expect the system properties returned should be
         // same as the one before adding KEY3 and KEY4
-        props1.equals(props2);
+        if (!props1.equals(props2)) {
+            throw new RuntimeException("Two copies of system properties " +
+                "are expected to be equal");
+        }
 
         System.out.println("Test passed.");
     }

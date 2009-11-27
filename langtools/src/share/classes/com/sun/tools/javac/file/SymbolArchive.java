@@ -76,13 +76,13 @@ public class SymbolArchive extends ZipArchive {
     @Override
     public JavaFileObject getFileObject(RelativeDirectory subdirectory, String file) {
         RelativeDirectory prefix_subdir = new RelativeDirectory(prefix, subdirectory.path);
-        ZipEntry ze = new RelativeFile(prefix_subdir, file).getZipEntry(zdir);
+        ZipEntry ze = new RelativeFile(prefix_subdir, file).getZipEntry(zfile);
         return new SymbolFileObject(this, file, ze);
     }
 
     @Override
     public String toString() {
-        return "SymbolArchive[" + zdir.getName() + "]";
+        return "SymbolArchive[" + zfile.getName() + "]";
     }
 
     /**

@@ -128,4 +128,6 @@ public class VMOptionCompositeData extends LazyCompositeData {
                 "Unexpected composite type for VMOption");
         }
     }
+
+    private static final long serialVersionUID = -2395573975093578470L;
 }

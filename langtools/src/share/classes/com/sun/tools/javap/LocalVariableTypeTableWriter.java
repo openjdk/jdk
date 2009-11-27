@@ -125,7 +125,7 @@ public class LocalVariableTypeTableWriter extends  InstructionDetailWriter {
                     print(" // ");
                     Descriptor d = new Signature(entry.signature_index);
                     try {
-                        print(d.getFieldType(constant_pool));
+                        print(d.getFieldType(constant_pool).toString().replace("/", "."));
                     } catch (InvalidDescriptor e) {
                         print(report(e));
                     } catch (ConstantPoolException e) {

@@ -275,11 +275,14 @@ class NativeSignatureIterator: public SignatureIterator {
 
   void do_bool  ()                     { pass_int();    _jni_offset++; _offset++;       }
   void do_char  ()                     { pass_int();    _jni_offset++; _offset++;       }
-#ifdef _LP64
+#if defined(_LP64) || defined(ZERO)
   void do_float ()                     { pass_float();  _jni_offset++; _offset++;       }
-  void do_double()                     { pass_double(); _jni_offset++; _offset += 2;    }
 #else
   void do_float ()                     { pass_int();    _jni_offset++; _offset++;       }
+#endif
+#ifdef _LP64
+  void do_double()                     { pass_double(); _jni_offset++; _offset += 2;    }
+#else
   void do_double()                     { pass_double(); _jni_offset += 2; _offset += 2; }
 #endif
   void do_byte  ()                     { pass_int();    _jni_offset++; _offset++;       }
@@ -303,8 +306,10 @@ class NativeSignatureIterator: public SignatureIterator {
   virtual void pass_int()              = 0;
   virtual void pass_long()             = 0;
   virtual void pass_object()           = 0;
-#ifdef _LP64
+#if defined(_LP64) || defined(ZERO)
   virtual void pass_float()            = 0;
+#endif
+#ifdef _LP64
   virtual void pass_double()           = 0;
 #else
   virtual void pass_double()           { pass_long(); }  // may be same as long

@@ -120,7 +120,7 @@ endif # PLATFORM solaris
 
 # for dynamic inclusion of extra sound libs: these
 # JNI libs will be loaded from Platform.java
-CPPFLAGS += -DEXTRA_SOUND_JNI_LIBS="\"$(EXTRA_SOUND_JNI_LIBS)\""
+CPPFLAGS += -DEXTRA_SOUND_JNI_LIBS='"$(EXTRA_SOUND_JNI_LIBS)"'
 
 # integrate MIDI i/o in jsound lib
 ifeq ($(INCLUDE_MIDI),TRUE)

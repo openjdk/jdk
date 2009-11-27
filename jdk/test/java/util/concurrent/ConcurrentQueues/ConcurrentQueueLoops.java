@@ -60,7 +60,7 @@ public class ConcurrentQueueLoops {
         //queues.add(new ArrayBlockingQueue<Integer>(count, true));
         queues.add(new LinkedBlockingQueue<Integer>());
         queues.add(new LinkedBlockingDeque<Integer>());
-//         queues.add(new LinkedTransferQueue<Integer>());
+        queues.add(new LinkedTransferQueue<Integer>());
 
         // Following additional implementations are available from:
         // http://gee.cs.oswego.edu/dl/concurrency-interest/index.html
