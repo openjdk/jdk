@@ -317,14 +317,9 @@ public class SpNegoContext implements GSSContextSpi {
                 mechToken = GSS_initSecContext(null);
 
                 errorCode = GSSException.DEFECTIVE_TOKEN;
-                byte[] micToken = null;
-                if (!GSSUtil.useMSInterop()) {
-                    // calculate MIC only in normal mode
-                    micToken = generateMechListMIC(DER_mechTypes);
-                }
                 // generate SPNEGO token
                 initToken = new NegTokenInit(DER_mechTypes, getContextFlags(),
-                                        mechToken, micToken);
+                                        mechToken, null);
                 if (DEBUG) {
                     System.out.println("SpNegoContext.initSecContext: " +
                                 "sending token of type = " +
@@ -583,15 +578,9 @@ public class SpNegoContext implements GSSContextSpi {
                                 "negotiated result = " + negoResult);
                 }
 
-                // calculate MIC only in normal mode
-                byte[] micToken = null;
-                if (!GSSUtil.useMSInterop() && valid) {
-                    micToken = generateMechListMIC(DER_mechTypes);
-                }
-
                 // generate SPNEGO token
                 NegTokenTarg targToken = new NegTokenTarg(negoResult.ordinal(),
-                                mech_wanted, accept_token, micToken);
+                                mech_wanted, accept_token, null);
                 if (DEBUG) {
                     System.out.println("SpNegoContext.acceptSecContext: " +
                                 "sending token of type = " +
@@ -735,9 +724,9 @@ public class SpNegoContext implements GSSContextSpi {
     }
 
     /**
-     * generate MIC on mechList
+     * generate MIC on mechList. Not used at the moment.
      */
-    private byte[] generateMechListMIC(byte[] mechTypes)
+    /*private byte[] generateMechListMIC(byte[] mechTypes)
         throws GSSException {
 
         // sanity check the required input
@@ -774,7 +763,7 @@ public class SpNegoContext implements GSSContextSpi {
             }
         }
         return mic;
-    }
+    }*/
 
     /**
      * verify MIC on MechList
