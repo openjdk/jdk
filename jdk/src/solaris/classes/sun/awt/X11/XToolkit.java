@@ -109,11 +109,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static int awt_multiclick_time;
     static boolean securityWarningEnabled;
 
-    // WeakSet should be used here, but there is no such class
-    // in JDK (at least in JDK6 and earlier versions)
-    private WeakHashMap<Window, Boolean> overrideRedirectWindows =
-        new WeakHashMap<Window, Boolean>();
-
     private static int screenWidth = -1, screenHeight = -1; // Dimensions of default screen
     static long awt_defaultFg; // Pixel
     private static XMouseInfoPeer xPeer;
@@ -1313,19 +1308,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             return true;
         } else {
             return XWM.getWM().supportsExtendedState(state);
-        }
-    }
-
-    @Override
-    public void setOverrideRedirect(Window target) {
-        synchronized (overrideRedirectWindows) {
-            overrideRedirectWindows.put(target, true);
-        }
-    }
-
-    public boolean isOverrideRedirect(Window target) {
-        synchronized (overrideRedirectWindows) {
-            return overrideRedirectWindows.containsKey(target);
         }
     }
 

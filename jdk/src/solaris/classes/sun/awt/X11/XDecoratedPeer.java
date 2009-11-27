@@ -1099,9 +1099,9 @@ abstract class XDecoratedPeer extends XWindowPeer {
         return false;
     }
 
+    @Override
     boolean isOverrideRedirect() {
-//        return false;
-        return ((XToolkit)Toolkit.getDefaultToolkit()).isOverrideRedirect((Window)target);
+        return Window.Type.POPUP.equals(getWindowType());
     }
 
     public boolean requestWindowFocus(long time, boolean timeProvided) {

@@ -483,12 +483,6 @@ public class XTrayIconPeer implements TrayIconPeer,
         }
     }
 
-    static boolean isTrayIconStuffWindow(Window w) {
-        return (w instanceof InfoWindow.Tooltip) ||
-               (w instanceof InfoWindow.Balloon) ||
-               (w instanceof XTrayIconEmbeddedFrame);
-    }
-
     // ***************************************
     // Special embedded frame for tray icon
     // ***************************************

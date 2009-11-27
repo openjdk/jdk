@@ -53,7 +53,6 @@ import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 import sun.awt.ComponentAccessor;
 import sun.awt.WindowAccessor;
-import sun.awt.AWTAccessor;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.awt.X11GraphicsDevice;
@@ -106,6 +105,18 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     private boolean isBeforeFirstMapNotify = false; // Is the window (being shown) between
                                                     //    setVisible(true) & handleMapNotify().
 
+    /**
+     * The type of the window.
+     *
+     * The type is supposed to be immutable while the peer object exists.
+     * The value gets initialized in the preInit() method.
+     */
+    private Window.Type windowType = Window.Type.NORMAL;
+
+    public final Window.Type getWindowType() {
+        return windowType;
+    }
+
     // It need to be accessed from XFramePeer.
     protected Vector <ToplevelStateListener> toplevelStateListeners = new Vector<ToplevelStateListener>();
     XWindowPeer(XCreateWindowParams params) {
@@ -137,6 +148,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     void preInit(XCreateWindowParams params) {
         target = (Component)params.get(TARGET);
+        windowType = ((Window)target).getType();
         params.put(REPARENTED,
                    Boolean.valueOf(isOverrideRedirect() || isSimpleWindow()));
         super.preInit(params);
@@ -1128,9 +1140,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     boolean isOverrideRedirect() {
-        return (XWM.getWMID() == XWM.OPENLOOK_WM ? true : false) ||
-            ((XToolkit)Toolkit.getDefaultToolkit()).isOverrideRedirect((Window)target) ||
-            XTrayIconPeer.isTrayIconStuffWindow((Window)target);
+        return XWM.getWMID() == XWM.OPENLOOK_WM ||
+            Window.Type.POPUP.equals(getWindowType());
     }
 
     final boolean isOLWMDecorBug() {
@@ -1826,12 +1837,49 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     void setActualFocusedWindow(XWindowPeer actualFocusedWindow) {
     }
 
+    /**
+     * Applies the current window type.
+     */
+    private void applyWindowType() {
+        XNETProtocol protocol = XWM.getWM().getNETProtocol();
+        if (protocol == null) {
+            return;
+        }
+
+        XAtom typeAtom = null;
+
+        switch (getWindowType())
+        {
+            case NORMAL:
+                typeAtom = protocol.XA_NET_WM_WINDOW_TYPE_NORMAL;
+                break;
+            case UTILITY:
+                typeAtom = protocol.XA_NET_WM_WINDOW_TYPE_UTILITY;
+                break;
+            case POPUP:
+                typeAtom = protocol.XA_NET_WM_WINDOW_TYPE_POPUP_MENU;
+                break;
+        }
+
+        if (typeAtom != null) {
+            XAtomList wtype = new XAtomList();
+            wtype.add(typeAtom);
+            protocol.XA_NET_WM_WINDOW_TYPE.
+                setAtomListProperty(getWindow(), wtype);
+        } else {
+            protocol.XA_NET_WM_WINDOW_TYPE.
+                DeleteProperty(getWindow());
+        }
+    }
+
+    @Override
     public void xSetVisible(boolean visible) {
         if (log.isLoggable(PlatformLogger.FINE)) log.fine("Setting visible on " + this + " to " + visible);
         XToolkit.awtLock();
         try {
             this.visible = visible;
             if (visible) {
+                applyWindowType();
                 XlibWrapper.XMapRaised(XToolkit.getDisplay(), getWindow());
             } else {
                 XlibWrapper.XUnmapWindow(XToolkit.getDisplay(), getWindow());

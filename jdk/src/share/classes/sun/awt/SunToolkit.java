@@ -800,14 +800,6 @@ public abstract class SunToolkit extends Toolkit
     }
 
 
-    /**
-     * Makes the window OverrideRedirect, on X11 platforms. See
-     * ICCCM specification for more details about OverrideRedirect
-     * windows. Implemented in XToolkit, no-op in WToolkit.
-     */
-    public void setOverrideRedirect(Window target) {
-    }
-
     static SoftCache imgCache = new SoftCache();
 
     static synchronized Image getImageFromHash(Toolkit tk, URL url) {
