@@ -218,6 +218,15 @@ public class SoftChannel implements MidiChannel, ModelDirectedPlayer {
     }
 
     private int findFreeVoice(int x) {
+        if(x == -1)
+        {
+            // x = -1 means that there where no available voice
+            // last time we called findFreeVoice
+            // and it hasn't changed because no audio has been
+            // rendered in the meantime.
+            // Therefore we have to return -1.
+            return -1;
+        }
         for (int i = x; i < voices.length; i++)
             if (!voices[i].active)
                 return i;
