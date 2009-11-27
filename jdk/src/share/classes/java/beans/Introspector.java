@@ -25,26 +25,19 @@
 
 package java.beans;
 
+import com.sun.beans.WeakCache;
 import com.sun.beans.finder.BeanInfoFinder;
 import com.sun.beans.finder.ClassFinder;
-
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
-import java.util.Collections;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.EventListener;
 import java.util.List;
-import java.util.WeakHashMap;
 import java.util.TreeMap;
 
 import sun.awt.AppContext;
@@ -112,8 +105,8 @@ public class Introspector {
     public final static int IGNORE_ALL_BEANINFO        = 3;
 
     // Static Caches to speed up introspection.
-    private static Map declaredMethodCache =
-        Collections.synchronizedMap(new WeakHashMap());
+    private static WeakCache<Class<?>, Method[]> declaredMethodCache =
+            new WeakCache<Class<?>, Method[]>();
 
     private static final Object BEANINFO_CACHE = new Object();
 
@@ -174,20 +167,21 @@ public class Introspector {
         if (!ReflectUtil.isPackageAccessible(beanClass)) {
             return (new Introspector(beanClass, null, USE_ALL_BEANINFO)).getBeanInfo();
         }
-        Map<Class<?>, BeanInfo> map;
         synchronized (BEANINFO_CACHE) {
-            map = (Map<Class<?>, BeanInfo>) AppContext.getAppContext().get(BEANINFO_CACHE);
-            if (map == null) {
-                map = Collections.synchronizedMap(new WeakHashMap<Class<?>, BeanInfo>());
-                AppContext.getAppContext().put(BEANINFO_CACHE, map);
+            WeakCache<Class<?>, BeanInfo> beanInfoCache =
+                    (WeakCache<Class<?>, BeanInfo>) AppContext.getAppContext().get(BEANINFO_CACHE);
+
+            if (beanInfoCache == null) {
+                beanInfoCache = new WeakCache<Class<?>, BeanInfo>();
+                AppContext.getAppContext().put(BEANINFO_CACHE, beanInfoCache);
             }
+            BeanInfo beanInfo = beanInfoCache.get(beanClass);
+            if (beanInfo == null) {
+                beanInfo = (new Introspector(beanClass, null, USE_ALL_BEANINFO)).getBeanInfo();
+                beanInfoCache.put(beanClass, beanInfo);
+            }
+            return beanInfo;
         }
-        BeanInfo bi = map.get(beanClass);
-        if (bi == null) {
-            bi = (new Introspector(beanClass, null, USE_ALL_BEANINFO)).getBeanInfo();
-            map.put(beanClass, bi);
-        }
-        return bi;
     }
 
     /**
@@ -359,11 +353,13 @@ public class Introspector {
      */
 
     public static void flushCaches() {
-        Map map = (Map) AppContext.getAppContext().get(BEANINFO_CACHE);
-        if (map != null) {
-            map.clear();
+        synchronized (BEANINFO_CACHE) {
+            WeakCache beanInfoCache = (WeakCache) AppContext.getAppContext().get(BEANINFO_CACHE);
+            if (beanInfoCache != null) {
+                beanInfoCache.clear();
+            }
+            declaredMethodCache.clear();
         }
-        declaredMethodCache.clear();
     }
 
     /**
@@ -385,11 +381,13 @@ public class Introspector {
         if (clz == null) {
             throw new NullPointerException();
         }
-        Map map = (Map) AppContext.getAppContext().get(BEANINFO_CACHE);
-        if (map != null) {
-            map.remove(clz);
+        synchronized (BEANINFO_CACHE) {
+            WeakCache beanInfoCache = (WeakCache) AppContext.getAppContext().get(BEANINFO_CACHE);
+            if (beanInfoCache != null) {
+                beanInfoCache.put(clz, null);
+            }
+            declaredMethodCache.put(clz, null);
         }
-        declaredMethodCache.remove(clz);
     }
 
     //======================================================================
@@ -1272,41 +1270,26 @@ public class Introspector {
     /*
      * Internal method to return *public* methods within a class.
      */
-    private static synchronized Method[] getPublicDeclaredMethods(Class clz) {
+    private static Method[] getPublicDeclaredMethods(Class clz) {
         // Looking up Class.getDeclaredMethods is relatively expensive,
         // so we cache the results.
-        Method[] result = null;
         if (!ReflectUtil.isPackageAccessible(clz)) {
             return new Method[0];
         }
-        final Class fclz = clz;
-        Reference ref = (Reference)declaredMethodCache.get(fclz);
-        if (ref != null) {
-            result = (Method[])ref.get();
-            if (result != null) {
-                return result;
-            }
-        }
-
-        // We have to raise privilege for getDeclaredMethods
-        result = (Method[]) AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return fclz.getDeclaredMethods();
+        synchronized (BEANINFO_CACHE) {
+            Method[] result = declaredMethodCache.get(clz);
+            if (result == null) {
+                result = clz.getMethods();
+                for (int i = 0; i < result.length; i++) {
+                    Method method = result[i];
+                    if (!method.getDeclaringClass().equals(clz)) {
+                        result[i] = null;
+                    }
                 }
-            });
-
-
-        // Null out any non-public methods.
-        for (int i = 0; i < result.length; i++) {
-            Method method = result[i];
-            int mods = method.getModifiers();
-            if (!Modifier.isPublic(mods)) {
-                result[i] = null;
+                declaredMethodCache.put(clz, result);
             }
+            return result;
         }
-        // Add it to the cache.
-        declaredMethodCache.put(fclz, new SoftReference(result));
-        return result;
     }
 
     //======================================================================
