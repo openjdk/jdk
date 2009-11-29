@@ -147,11 +147,15 @@ public class SimpleLaunchingConnector implements LaunchingConnector {
         String arch = System.getProperty("os.arch");
         if (arch.equals("sparcv9")) {
             exe += "sparcv9/java";
+        } else if (arch.equals("amd64")) {
+            exe += "amd64/java";
         } else {
             exe += "java";
         }
         String cmd = exe + " -Xdebug -Xrunjdwp:transport=dt_socket,timeout=15000,address=" +
-            key.address() + "" + className;
+            key.address() +
+            " -classpath " + System.getProperty("test.classes") +
+            " " + className;
         Process process = Runtime.getRuntime().exec(cmd);
         Connection conn = ts.accept(key, 30*1000, 9*1000);
         ts.stopListening(key);
