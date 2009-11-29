@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Unit test for java.net.HttpCookie
- * @bug 6244040 6277796 6277801 6277808 6294071 6692802 6790677
+ * @bug 6244040 6277796 6277801 6277808 6294071 6692802 6790677 6901170
  * @author Edward Wang
  */
 
@@ -335,6 +335,9 @@ public class TestHttpCookie {
         // bug 6277801
         test("set-cookie: CUSTOMER=WILE_E_COYOTE; path=/; expires=Wednesday, 09-Nov-99 23:12:40 GMT; path=\"/acme\"")
         .n("CUSTOMER").v("WILE_E_COYOTE").p("/").ver(0);
+
+        // bug 6901170
+        test("set-cookie: CUSTOMER=WILE_E_COYOTE; version='1'").ver(1);
     }
 
     static void misc() {

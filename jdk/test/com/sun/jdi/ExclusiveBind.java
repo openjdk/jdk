@@ -101,6 +101,8 @@ public class ExclusiveBind {
         String arch = System.getProperty("os.arch");
         if (arch.equals("sparcv9")) {
             exe += "sparcv9/java";
+        } else if (arch.equals("amd64")) {
+            exe += "amd64/java";
         } else {
             exe += "java";
         }
