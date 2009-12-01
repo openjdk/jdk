@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@
  * two data models and cohabitation of jre/jdk bits with both data
  * models is supported, then DUAL_MODE is defined.  When DUAL_MODE is
  * defined, the architecture names for the narrow and wide version of
- * the architecture are defined in LIBARCH64NAME and LIBARCH32NAME.  Currently
- * only Solaris on sparc/sparcv9 and i586/amd64 is DUAL_MODE; linux
- * i586/amd64 could be defined as DUAL_MODE but that is not the
+ * the architecture are defined in LIBARCH64NAME and LIBARCH32NAME.
+ * Currently  only Solaris on sparc/sparcv9 and i586/amd64 is DUAL_MODE;
+ * linux i586/amd64 could be defined as DUAL_MODE but that is not the
  * current policy.
  */
 
@@ -103,49 +103,56 @@ static char *execname = NULL;
  * platform independent routine SelectVersion.  This may result in
  * the exec of the specified launcher version.
  *
- * Typically, the launcher execs at least once to ensure a suitable
- * LD_LIBRARY_PATH is in effect for the process.  The first exec
- * screens out all the data model options; leaving the choice of data
- * model implicit in the binary selected to run.  However, in case no
- * exec is done, the data model options are screened out before the vm
- * is invoked.
+ * Previously the launcher modified the LD_LIBRARY_PATH appropriately for the
+ * desired data model path, regardless if data models matched or not. The
+ * launcher subsequently exec'ed the desired executable, in order to make the
+ * LD_LIBRARY_PATH path available for the runtime linker. This is no longer the
+ * case, the launcher dlopens the target libjvm.so. All other required
+ * libraries are loaded by the runtime linker, by virtue of the $ORIGIN paths
+ * baked into the shared libraries, by the build infrastructure at compile time.
  *
- *  incoming argv ------------------------------
- *  |                                          |
- * \|/                                         |
- * CheckJVMType                                |
- * (removes -client, -server, etc.)            |
- *                                            \|/
- *                                            CreateExecutionEnvironment
- *                                            (removes -d32 and -d64,
- *                                             determines desired data model,
- *                                             sets up LD_LIBRARY_PATH,
- *                                             and exec's)
- *                                             |
- *  --------------------------------------------
+ *  Main
+ *  (incoming argv)
  *  |
  * \|/
- * exec child 1 incoming argv -----------------
+ * SelectVersion
+ * (selects the JRE version, note: not data model)
+ *  |
+ * \|/
+ * CreateExecutionEnvironment
+ * (determines desired data model)
+ *  |
+ *  |
+ * \|/
+ *  Have Desired Model ? --> NO --> Is Dual-Mode ? --> NO --> Exit(with error)
  *  |                                          |
- * \|/                                         |
- * CheckJVMType                                |
- * (removes -client, -server, etc.)            |
+ *  |                                          |
  *  |                                         \|/
- *  |                                          CreateExecutionEnvironment
- *  |                                          (verifies desired data model
- *  |                                           is running and acceptable
- *  |                                           LD_LIBRARY_PATH;
- *  |                                           no-op in child)
+ *  |                                         YES
+ *  |                                          |
+ *  |                                          |
+ *  |                                         \|/
+ *  |                                CheckJvmType
+ *  |                               (removes -client, -server etc.)
+ *  |                                          |
+ *  |                                          |
+ * \|/                                        \|/
+ * YES                              (find the desired executable and exec child)
+ *  |                                          |
+ *  |                                          |
+ * \|/                                        \|/
+ * CheckJvmType                                Main
+ * (removes -client, -server, etc.)
+ *  |
  *  |
  * \|/
  * TranslateDashJArgs...
  * (Prepare to pass args to vm)
  *  |
  *  |
- *  |
  * \|/
  * ParseArguments
- * (ignores -d32 and -d64,
+ * (removes -d32 and -d64 if any,
  *  processes version options,
  *  creates argument list for vm,
  *  etc.)
@@ -199,16 +206,12 @@ CreateExecutionEnvironment(int *_argcp,
     /* Compute/set the name of the executable */
     SetExecname(*_argvp);
 
-    /* Set the LD_LIBRARY_PATH environment variable, check data model
-       flags, and exec process, if needed */
+    /* Check data model flags, and exec process, if needed */
     {
       char *arch        = (char *)GetArch(); /* like sparc or sparcv9 */
       char * jvmtype    = NULL;
       int argc          = *_argcp;
       char **argv       = original_argv;
-
-      char *runpath     = NULL; /* existing effective LD_LIBRARY_PATH
-                                   setting */
 
       int running       = CURRENT_DATA_MODEL;
 
@@ -217,18 +220,8 @@ CreateExecutionEnvironment(int *_argcp,
                                            fine unless another model
                                            is asked for */
 
-      char* new_runpath = NULL; /* desired new LD_LIBRARY_PATH string */
-      char* newpath     = NULL; /* path on new LD_LIBRARY_PATH */
-      char* lastslash   = NULL;
-
-      char** newenvp    = NULL; /* current environment */
-
       char** newargv    = NULL;
       int    newargc    = 0;
-#ifdef __solaris__
-      char*  dmpath     = NULL;  /* data model specific LD_LIBRARY_PATH,
-                                    Solaris only */
-#endif
 
       /*
        * Starting in 1.5, all unix platforms accept the -d32 and -d64
@@ -306,6 +299,11 @@ CreateExecutionEnvironment(int *_argcp,
           JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
           exit(4);
         }
+        /*
+         * we seem to have everything we need, so without further ado
+         * we return back.
+         */
+        return;
       } else {  /* do the same speculatively or exit */
 #ifdef DUAL_MODE
         if (running != wanted) {
@@ -334,190 +332,6 @@ CreateExecutionEnvironment(int *_argcp,
         exit(1);
 #endif
       }
-
-      /*
-       * We will set the LD_LIBRARY_PATH as follows:
-       *
-       *     o          $JVMPATH (directory portion only)
-       *     o          $JRE/lib/$LIBARCHNAME
-       *     o          $JRE/../lib/$LIBARCHNAME
-       *
-       * followed by the user's previous effective LD_LIBRARY_PATH, if
-       * any.
-       */
-
-#ifdef __solaris__
-      /*
-       * Starting in Solaris 7, ld.so.1 supports three LD_LIBRARY_PATH
-       * variables:
-       *
-       * 1. LD_LIBRARY_PATH -- used for 32 and 64 bit searches if
-       * data-model specific variables are not set.
-       *
-       * 2. LD_LIBRARY_PATH_64 -- overrides and replaces LD_LIBRARY_PATH
-       * for 64-bit binaries.
-       *
-       * 3. LD_LIBRARY_PATH_32 -- overrides and replaces LD_LIBRARY_PATH
-       * for 32-bit binaries.
-       *
-       * The vm uses LD_LIBRARY_PATH to set the java.library.path system
-       * property.  To shield the vm from the complication of multiple
-       * LD_LIBRARY_PATH variables, if the appropriate data model
-       * specific variable is set, we will act as if LD_LIBRARY_PATH had
-       * the value of the data model specific variant and the data model
-       * specific variant will be unset.  Note that the variable for the
-       * *wanted* data model must be used (if it is set), not simply the
-       * current running data model.
-       */
-
-      switch(wanted) {
-      case 0:
-        if(running == 32) {
-          dmpath = getenv("LD_LIBRARY_PATH_32");
-          wanted = 32;
-        }
-        else {
-          dmpath = getenv("LD_LIBRARY_PATH_64");
-          wanted = 64;
-        }
-        break;
-
-      case 32:
-        dmpath = getenv("LD_LIBRARY_PATH_32");
-        break;
-
-      case 64:
-        dmpath = getenv("LD_LIBRARY_PATH_64");
-        break;
-
-      default:
-        JLI_ReportErrorMessage(JRE_ERROR3, __LINE__);
-        exit(1); /* unknown value in wanted */
-        break;
-      }
-
-      /*
-       * If dmpath is NULL, the relevant data model specific variable is
-       * not set and normal LD_LIBRARY_PATH should be used.
-       */
-      if( dmpath == NULL) {
-        runpath = getenv("LD_LIBRARY_PATH");
-      }
-      else {
-        runpath = dmpath;
-      }
-#else
-      /*
-       * If not on Solaris, assume only a single LD_LIBRARY_PATH
-       * variable.
-       */
-      runpath = getenv("LD_LIBRARY_PATH");
-#endif /* __solaris__ */
-
-#ifdef __linux
-      /*
-       * On linux, if a binary is running as sgid or suid, glibc sets
-       * LD_LIBRARY_PATH to the empty string for security purposes.  (In
-       * contrast, on Solaris the LD_LIBRARY_PATH variable for a
-       * privileged binary does not lose its settings; but the dynamic
-       * linker does apply more scrutiny to the path.) The launcher uses
-       * the value of LD_LIBRARY_PATH to prevent an exec loop.
-       * Therefore, if we are running sgid or suid, this function's
-       * setting of LD_LIBRARY_PATH will be ineffective and we should
-       * return from the function now.  Getting the right libraries to
-       * be found must be handled through other mechanisms.
-       */
-      if((getgid() != getegid()) || (getuid() != geteuid()) ) {
-        return;
-      }
-#endif
-
-      /* runpath contains current effective LD_LIBRARY_PATH setting */
-
-      jvmpath = JLI_StringDup(jvmpath);
-      new_runpath = JLI_MemAlloc( ((runpath!=NULL)?JLI_StrLen(runpath):0) +
-                              2*JLI_StrLen(jrepath) + 2*JLI_StrLen(arch) +
-                              JLI_StrLen(jvmpath) + 52);
-      newpath = new_runpath + JLI_StrLen("LD_LIBRARY_PATH=");
-
-
-      /*
-       * Create desired LD_LIBRARY_PATH value for target data model.
-       */
-      {
-        /* remove the name of the .so from the JVM path */
-        lastslash = JLI_StrRChr(jvmpath, '/');
-        if (lastslash)
-          *lastslash = '\0';
-
-
-        /* jvmpath, ((running != wanted)?((wanted==64)?"/"LIBARCH64NAME:"/.."):""), */
-
-        sprintf(new_runpath, "LD_LIBRARY_PATH="
-                "%s:"
-                "%s/lib/%s:"
-                "%s/../lib/%s",
-                jvmpath,
-#ifdef DUAL_MODE
-                jrepath, GetArchPath(wanted),
-                jrepath, GetArchPath(wanted)
-#else
-                jrepath, arch,
-                jrepath, arch
-#endif
-                );
-
-
-        /*
-         * Check to make sure that the prefix of the current path is the
-         * desired environment variable setting.
-         */
-        if (runpath != NULL &&
-            JLI_StrNCmp(newpath, runpath, JLI_StrLen(newpath))==0 &&
-            (runpath[JLI_StrLen(newpath)] == 0 || runpath[JLI_StrLen(newpath)] == ':') &&
-            (running == wanted) /* data model does not have to be changed */
-#ifdef __solaris__
-            && (dmpath == NULL)    /* data model specific variables not set  */
-#endif
-            ) {
-
-          return;
-
-        }
-      }
-
-      /*
-       * Place the desired environment setting onto the prefix of
-       * LD_LIBRARY_PATH.  Note that this prevents any possible infinite
-       * loop of execv() because we test for the prefix, above.
-       */
-      if (runpath != 0) {
-        JLI_StrCat(new_runpath, ":");
-        JLI_StrCat(new_runpath, runpath);
-      }
-
-      if( putenv(new_runpath) != 0) {
-        exit(1); /* problem allocating memory; LD_LIBRARY_PATH not set
-                    properly */
-      }
-
-      /*
-       * Unix systems document that they look at LD_LIBRARY_PATH only
-       * once at startup, so we have to re-exec the current executable
-       * to get the changed environment variable to have an effect.
-       */
-
-#ifdef __solaris__
-      /*
-       * If dmpath is not NULL, remove the data model specific string
-       * in the environment for the exec'ed child.
-       */
-
-      if( dmpath != NULL)
-        (void)UnsetEnv((wanted==32)?"LD_LIBRARY_PATH_32":"LD_LIBRARY_PATH_64");
-#endif
-
-      newenvp = environ;
 
       {
         char *newexec = execname;
@@ -549,17 +363,16 @@ CreateExecutionEnvironment(int *_argcp,
           argv[0] = newexec;
         }
 #endif
-
+        JLI_TraceLauncher("TRACER_MARKER:About to EXEC\n");
         (void)fflush(stdout);
         (void)fflush(stderr);
-        execve(newexec, argv, newenvp);
+        execv(newexec, argv);
         JLI_ReportErrorMessageSys(JRE_ERROR4, newexec);
 
 #ifdef DUAL_MODE
         if (running != wanted) {
           JLI_ReportErrorMessage(JRE_ERROR5, wanted, running);
 #  ifdef __solaris__
-
 #    ifdef __sparc
           JLI_ReportErrorMessage(JRE_ERROR6);
 #    else
@@ -570,12 +383,10 @@ CreateExecutionEnvironment(int *_argcp,
 #endif
 
       }
-
       exit(1);
     }
 
 }
-
 
 /*
  * On Solaris VM choosing is done by the launcher (java.c).
@@ -1123,6 +934,7 @@ ExecJRE(char *jre, char **argv)
             printf(" %s", argv[i]);
         printf("\n");
     }
+    JLI_TraceLauncher("TRACER_MARKER:About to EXEC\n");
     (void)fflush(stdout);
     (void)fflush(stderr);
     execv(wanted, argv);
