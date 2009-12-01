@@ -486,7 +486,7 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
                 }
                 if (remSize > 0 && addSize == 0) {
                     fireIntervalRemoved(BasicDirectoryModel.this, remStart, remStart + remSize - 1);
-                } else if (addSize > 0 && remSize == 0 && fileCache.size() > addSize) {
+                } else if (addSize > 0 && remSize == 0 && addStart + addSize <= fileCache.size()) {
                     fireIntervalAdded(BasicDirectoryModel.this, addStart, addStart + addSize - 1);
                 } else {
                     fireContentsChanged();

@@ -57,6 +57,7 @@ import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 import static sun.swing.SwingUtilities2.Section.*;
 import sun.swing.PrintingStatus;
+import sun.swing.SwingLazyValue;
 
 /**
  * The <code>JTable</code> is used to display and edit regular two-dimensional tables
@@ -718,7 +719,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #addNotify
      */
     protected void configureEnclosingScrollPane() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
@@ -727,7 +728,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // example, the rowHeaderView of the scrollPane -
                 // an implementor of fixed columns might do this.
                 JViewport viewport = scrollPane.getViewport();
-                if (viewport == null || viewport.getView() != this) {
+                if (viewport == null ||
+                        SwingUtilities.getUnwrappedView(viewport) != this) {
                     return;
                 }
                 scrollPane.setColumnHeaderView(getTableHeader());
@@ -750,7 +752,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * from configureEnclosingScrollPane() and updateUI() in a safe manor.
      */
     private void configureEnclosingScrollPaneUI() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
@@ -759,7 +761,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // example, the rowHeaderView of the scrollPane -
                 // an implementor of fixed columns might do this.
                 JViewport viewport = scrollPane.getViewport();
-                if (viewport == null || viewport.getView() != this) {
+                if (viewport == null ||
+                        SwingUtilities.getUnwrappedView(viewport) != this) {
                     return;
                 }
                 //  scrollPane.getViewport().setBackingStoreEnabled(true);
@@ -819,7 +822,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @since 1.3
      */
     protected void unconfigureEnclosingScrollPane() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             Container gp = port.getParent();
             if (gp instanceof JScrollPane) {
@@ -828,7 +831,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 // example, the rowHeaderView of the scrollPane -
                 // an implementor of fixed columns might do this.
                 JViewport viewport = scrollPane.getViewport();
-                if (viewport == null || viewport.getView() != this) {
+                if (viewport == null ||
+                        SwingUtilities.getUnwrappedView(viewport) != this) {
                     return;
                 }
                 scrollPane.setColumnHeaderView(null);
@@ -5215,7 +5219,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #getFillsViewportHeight
      */
     public boolean getScrollableTracksViewportHeight() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         return getFillsViewportHeight()
                && port != null
                && port.getHeight() > getPreferredSize().height;
@@ -5316,7 +5320,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     }
 
     private void setLazyValue(Hashtable h, Class c, String s) {
-        h.put(c, new UIDefaults.ProxyLazyValue(s));
+        h.put(c, new SwingLazyValue(s));
     }
 
     private void setLazyRenderer(Class c, String s) {

@@ -25,6 +25,7 @@
 
 package sun.net.www.protocol.http.spnego;
 
+import com.sun.security.jgss.ExtendedGSSContext;
 import java.io.IOException;
 
 import org.ietf.jgss.GSSContext;
@@ -100,15 +101,10 @@ public class NegotiatorImpl extends Negotiator {
                                         null,
                                         GSSContext.DEFAULT_LIFETIME);
 
-        // In order to support credential delegation in HTTP/SPNEGO,
-        // we always request it before initSecContext. The current
-        // implementation will check the OK-AS-DELEGATE flag inside
-        // the service ticket of the web server, and only enable
-        // delegation when this flag is set. This check is only
-        // performed when the GSS caller is CALLER_HTTP_NEGOTIATE,
-        // so all other normal GSS-API calls are not affected.
-
-        context.requestCredDeleg(true);
+        // Always respect delegation policy in HTTP/SPNEGO.
+        if (context instanceof ExtendedGSSContext) {
+            ((ExtendedGSSContext)context).requestDelegPolicy(true);
+        }
         oneToken = context.initSecContext(new byte[0], 0, 0);
     }
 

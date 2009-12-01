@@ -947,10 +947,12 @@ public class JSplitPane extends JComponent implements Accessible
      *
      * @return true
      * @see JComponent#revalidate
+     * @see java.awt.Container#isValidateRoot
      *
      * @beaninfo
      *    hidden: true
      */
+    @Override
     public boolean isValidateRoot() {
         return true;
     }

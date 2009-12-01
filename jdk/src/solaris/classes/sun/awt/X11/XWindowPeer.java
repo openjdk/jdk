@@ -1079,31 +1079,39 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         updateSecurityWarningVisibility();
     }
 
+    @Override
+    public void setFullScreenExclusiveModeState(boolean state) {
+        super.setFullScreenExclusiveModeState(state);
+        updateSecurityWarningVisibility();
+    }
+
     public void updateSecurityWarningVisibility() {
         if (warningWindow == null) {
             return;
         }
 
-        boolean show = false;
-
-        int state = getWMState();
-
         if (!isVisible()) {
             return; // The warning window should already be hidden.
         }
 
-        // getWMState() always returns 0 (Withdrawn) for simple windows. Hence
-        // we ignore the state for such windows.
-        if (isVisible() && (state == XUtilConstants.NormalState || isSimpleWindow())) {
-            if (XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow() ==
-                    getTarget())
-            {
-                show = true;
-            }
+        boolean show = false;
 
-            if (isMouseAbove() || warningWindow.isMouseAbove())
-            {
-                show = true;
+        if (!isFullScreenExclusiveMode()) {
+            int state = getWMState();
+
+            // getWMState() always returns 0 (Withdrawn) for simple windows. Hence
+            // we ignore the state for such windows.
+            if (isVisible() && (state == XUtilConstants.NormalState || isSimpleWindow())) {
+                if (XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow() ==
+                        getTarget())
+                {
+                    show = true;
+                }
+
+                if (isMouseAbove() || warningWindow.isMouseAbove())
+                {
+                    show = true;
+                }
             }
         }
 
@@ -1756,25 +1764,36 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
+    // should be synchronized on awtLock
     private int dropTargetCount = 0;
 
-    public synchronized void addDropTarget() {
-        if (dropTargetCount == 0) {
-            long window = getWindow();
-            if (window != 0) {
-                XDropTargetRegistry.getRegistry().registerDropSite(window);
+    public void addDropTarget() {
+        XToolkit.awtLock();
+        try {
+            if (dropTargetCount == 0) {
+                long window = getWindow();
+                if (window != 0) {
+                    XDropTargetRegistry.getRegistry().registerDropSite(window);
+                }
             }
+            dropTargetCount++;
+        } finally {
+            XToolkit.awtUnlock();
         }
-        dropTargetCount++;
     }
 
-    public synchronized void removeDropTarget() {
-        dropTargetCount--;
-        if (dropTargetCount == 0) {
-            long window = getWindow();
-            if (window != 0) {
-                XDropTargetRegistry.getRegistry().unregisterDropSite(window);
+    public void removeDropTarget() {
+        XToolkit.awtLock();
+        try {
+            dropTargetCount--;
+            if (dropTargetCount == 0) {
+                long window = getWindow();
+                if (window != 0) {
+                    XDropTargetRegistry.getRegistry().unregisterDropSite(window);
+                }
             }
+        } finally {
+            XToolkit.awtUnlock();
         }
     }
     void addRootPropertyEventDispatcher() {
@@ -1837,13 +1856,18 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
-    protected synchronized void updateDropTarget() {
-        if (dropTargetCount > 0) {
-            long window = getWindow();
-            if (window != 0) {
-                XDropTargetRegistry.getRegistry().unregisterDropSite(window);
-                XDropTargetRegistry.getRegistry().registerDropSite(window);
+    protected void updateDropTarget() {
+        XToolkit.awtLock();
+        try {
+            if (dropTargetCount > 0) {
+                long window = getWindow();
+                if (window != 0) {
+                    XDropTargetRegistry.getRegistry().unregisterDropSite(window);
+                    XDropTargetRegistry.getRegistry().registerDropSite(window);
+                }
             }
+        } finally {
+            XToolkit.awtUnlock();
         }
     }
 

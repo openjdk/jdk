@@ -3498,7 +3498,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * @see Scrollable#getScrollableTracksViewportWidth
      */
     public boolean getScrollableTracksViewportWidth() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             return port.getWidth() > getPreferredSize().width;
         }
@@ -3515,7 +3515,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * @see Scrollable#getScrollableTracksViewportHeight
      */
     public boolean getScrollableTracksViewportHeight() {
-        JViewport port = SwingUtilities2.getViewport(this);
+        JViewport port = SwingUtilities.getParentViewport(this);
         if (port != null) {
             return port.getHeight() > getPreferredSize().height;
         }

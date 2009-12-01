@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,24 @@
  * have any questions.
  */
 
-
 /*
- *
- *
- * Used by SolarisRunpath.sh to help test if the launcher fully
- * respects Solaris LD_LIBRARY_PATH semantics.  The ./lib directory is
- * structured so that the results of the dynamically linked number
- * method varies depending on the value the data model dependent
- * LD_LIBRARY_PATH variable.
+ * @test
+ * @bug 6795356
+ * @summary Checks that SwingLazyValue class correclty works
+ * @author Alexander Potochkin
+ * @run main SwingLazyValueTest
  */
 
+import sun.swing.SwingLazyValue;
 
+import javax.swing.*;
 
-class libraryCaller {
-    static {
-        System.loadLibrary("library");
-    }
-    static native int number();
+public class SwingLazyValueTest {
 
-    public static void main(String argv[]) {
-        System.out.println(number());
+    public static void main(String[] args) throws Exception {
+        if(new SwingLazyValue("javax.swing.JTable$DoubleRenderer").
+                createValue(null) == null) {
+            throw new RuntimeException("SwingLazyValue doesn't work");
+        }
     }
 }
