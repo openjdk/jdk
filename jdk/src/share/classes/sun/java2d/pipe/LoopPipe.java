@@ -46,7 +46,8 @@ import sun.awt.SunHints;
 public class LoopPipe
     implements PixelDrawPipe,
                PixelFillPipe,
-               ShapeDrawPipe
+               ShapeDrawPipe,
+               LoopBasedPipe
 {
     final static RenderingEngine RenderEngine = RenderingEngine.getInstance();
 

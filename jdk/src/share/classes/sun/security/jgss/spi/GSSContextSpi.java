@@ -124,6 +124,8 @@ public interface GSSContextSpi {
 
     public void requestInteg(boolean state) throws GSSException;
 
+    public void requestDelegPolicy(boolean state) throws GSSException;
+
     public void setChannelBinding(ChannelBinding cb) throws GSSException;
 
     public boolean getCredDelegState();
@@ -135,6 +137,8 @@ public interface GSSContextSpi {
     public boolean getSequenceDetState();
 
     public boolean getAnonymityState();
+
+    public boolean getDelegPolicyState();
 
     public boolean isTransferable() throws GSSException;
 
