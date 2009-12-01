@@ -214,8 +214,9 @@ public class DefaultTableCellRenderer extends JLabel
                                     : table.getBackground();
             if (background == null || background instanceof javax.swing.plaf.UIResource) {
                 Color alternateColor = DefaultLookup.getColor(this, ui, "Table.alternateRowColor");
-                if (alternateColor != null && row % 2 == 0)
+                if (alternateColor != null && row % 2 != 0) {
                     background = alternateColor;
+                }
             }
             super.setForeground(unselectedForeground != null
                                     ? unselectedForeground
