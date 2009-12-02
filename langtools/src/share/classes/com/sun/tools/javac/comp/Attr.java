@@ -115,6 +115,8 @@ public class Attr extends JCTree.Visitor {
         allowBoxing = source.allowBoxing();
         allowCovariantReturns = source.allowCovariantReturns();
         allowAnonOuterThis = source.allowAnonOuterThis();
+        allowStringsInSwitch = source.allowStringsInSwitch();
+        sourceName = source.name;
         relax = (options.get("-retrofit") != null ||
                  options.get("-relax") != null);
         useBeforeDeclarationWarning = options.get("useBeforeDeclarationWarning") != null;
@@ -166,6 +168,16 @@ public class Attr extends JCTree.Visitor {
      * API warnings.
      */
     boolean enableSunApiLintControl;
+
+    /**
+     * Switch: allow strings in switch?
+     */
+    boolean allowStringsInSwitch;
+
+    /**
+     * Switch: name of source level; used for error reporting.
+     */
+    String sourceName;
 
     /** Check kind and type of given tree against protokind and prototype.
      *  If check succeeds, store type in tree and return it.
@@ -886,7 +898,15 @@ public class Attr extends JCTree.Visitor {
         boolean enumSwitch =
             allowEnums &&
             (seltype.tsym.flags() & Flags.ENUM) != 0;
-        if (!enumSwitch)
+        boolean stringSwitch = false;
+        if (types.isSameType(seltype, syms.stringType)) {
+            if (allowStringsInSwitch) {
+                stringSwitch = true;
+            } else {
+                log.error(tree.selector.pos(), "string.switch.not.supported.in.source", sourceName);
+            }
+        }
+        if (!enumSwitch && !stringSwitch)
             seltype = chk.checkType(tree.selector.pos(), seltype, syms.intType);
 
         // Attribute all cases and
@@ -909,7 +929,8 @@ public class Attr extends JCTree.Visitor {
                     Type pattype = attribExpr(c.pat, switchEnv, seltype);
                     if (pattype.tag != ERROR) {
                         if (pattype.constValue() == null) {
-                            log.error(c.pat.pos(), "const.expr.req");
+                            log.error(c.pat.pos(),
+                                      (stringSwitch ? "string.const.req" : "const.expr.req"));
                         } else if (labels.contains(pattype.constValue())) {
                             log.error(c.pos(), "duplicate.case.label");
                         } else {

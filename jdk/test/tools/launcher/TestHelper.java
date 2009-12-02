@@ -39,18 +39,36 @@ import javax.tools.JavaCompiler;
  */
 public enum TestHelper {
     INSTANCE;
-    static final String JAVAHOME = System.getProperty("java.home", ".");
+    static final String JAVAHOME = System.getProperty("java.home");
     static final boolean isSDK = JAVAHOME.endsWith("jre");
     static final String javaCmd;
+    static final String java64Cmd;
     static final String javacCmd;
     static final JavaCompiler compiler;
 
-    static final boolean debug = Boolean.getBoolean("Arrrghs.Debug");
+    static final boolean debug = Boolean.getBoolean("TestHelper.Debug");
     static final boolean isWindows =
             System.getProperty("os.name", "unknown").startsWith("Windows");
+    static final boolean is64Bit =
+            System.getProperty("sun.arch.data.model").equals("64");
+    static final boolean is32Bit =
+            System.getProperty("sun.arch.data.model").equals("32");
+    static final boolean isSolaris =
+            System.getProperty("os.name", "unknown").startsWith("SunOS");
+    static final boolean isLinux =
+            System.getProperty("os.name", "unknown").startsWith("Linux");
+    static final boolean isDualMode = isSolaris;
+    static final boolean isSparc = System.getProperty("os.arch").startsWith("sparc");
+
     static int testExitValue = 0;
 
     static {
+        if (is64Bit && is32Bit) {
+            throw new RuntimeException("arch model cannot be both 32 and 64 bit");
+        }
+        if (!is64Bit && !is32Bit) {
+            throw new RuntimeException("arch model is not 32 or 64 bit ?");
+        }
         compiler = ToolProvider.getSystemJavaCompiler();
         File binDir = (isSDK) ? new File((new File(JAVAHOME)).getParentFile(), "bin")
             : new File(JAVAHOME, "bin");
@@ -69,6 +87,33 @@ public enum TestHelper {
         if (!javacCmdFile.canExecute()) {
             throw new RuntimeException("java <" + javacCmd + "> must exist");
         }
+        if (isSolaris) {
+            File sparc64BinDir = new File(binDir,isSparc ? "sparcv9" : "amd64");
+            File java64CmdFile= new File(sparc64BinDir, "java");
+            if (java64CmdFile.exists() && java64CmdFile.canExecute()) {
+                java64Cmd = java64CmdFile.getAbsolutePath();
+            } else {
+                java64Cmd = null;
+            }
+        } else {
+            java64Cmd = null;
+        }
+    }
+
+    /*
+     * usually the jre/lib/arch-name is the same as os.arch, except for x86.
+     */
+    static String getJreArch() {
+        String arch = System.getProperty("os.arch");
+        return arch.equals("x86") ? "i386" : arch;
+    }
+
+    /*
+     * A convenience method to create a jar with jar file name and defs
+     */
+    static void createJar(File jarName, String... mainDefs)
+            throws FileNotFoundException{
+        createJar(null, jarName, new File("Foo"), mainDefs);
     }
 
     /*
@@ -123,16 +168,23 @@ public enum TestHelper {
         }
     }
 
+    static TestResult doExec(String...cmds) {
+        return doExec(null, cmds);
+    }
+
     /*
      * A method which executes a java cmd and returns the results in a container
      */
-    static TestResult doExec(String...cmds) {
+    static TestResult doExec(Map<String, String> envToSet, String...cmds) {
         String cmdStr = "";
         for (String x : cmds) {
             cmdStr = cmdStr.concat(x + " ");
         }
         ProcessBuilder pb = new ProcessBuilder(cmds);
         Map<String, String> env = pb.environment();
+        if (envToSet != null) {
+            env.putAll(envToSet);
+        }
         BufferedReader rdr = null;
         try {
             List<String> outputList = new ArrayList<String>();
@@ -163,21 +215,25 @@ public enum TestHelper {
         List<String> testOutput;
 
         public TestResult(String str, int rv, List<String> oList) {
-            status = new StringBuilder(str);
+            status = new StringBuilder("Executed command: " + str + "\n");
             exitValue = rv;
             testOutput = oList;
         }
 
+        void appendStatus(String x) {
+            status = status.append("  " + x + "\n");
+        }
+
         void checkNegative() {
             if (exitValue == 0) {
-                status = status.append("  Error: test must not return 0 exit value");
+                appendStatus("Error: test must not return 0 exit value");
                 testExitValue++;
             }
         }
 
         void checkPositive() {
             if (exitValue != 0) {
-                status = status.append("  Error: test did not return 0 exit value");
+                appendStatus("Error: test did not return 0 exit value");
                 testExitValue++;
             }
         }
@@ -188,7 +244,7 @@ public enum TestHelper {
 
         boolean isZeroOutput() {
             if (!testOutput.isEmpty()) {
-                status = status.append("  Error: No message from cmd please");
+                appendStatus("Error: No message from cmd please");
                 testExitValue++;
                 return false;
             }
@@ -197,19 +253,20 @@ public enum TestHelper {
 
         boolean isNotZeroOutput() {
             if (testOutput.isEmpty()) {
-                status = status.append("  Error: Missing message");
+                appendStatus("Error: Missing message");
                 testExitValue++;
                 return false;
             }
             return true;
         }
 
+        @Override
         public String toString() {
-            if (debug) {
-                for (String x : testOutput) {
-                    status = status.append(x + "\n");
-                }
+            status = status.append("++++Test Output Begin++++\n");
+            for (String x : testOutput) {
+                appendStatus(x);
             }
+            status = status.append("++++Test Output End++++\n");
             return status.toString();
         }
 
@@ -219,7 +276,18 @@ public enum TestHelper {
                     return true;
                 }
             }
-            status = status.append("   Error: string <" + str + "> not found ");
+            appendStatus("Error: string <" + str + "> not found");
+            testExitValue++;
+            return false;
+        }
+
+        boolean matches(String stringToMatch) {
+          for (String x : testOutput) {
+                if (x.matches(stringToMatch)) {
+                    return true;
+                }
+            }
+            appendStatus("Error: string <" + stringToMatch + "> not found");
             testExitValue++;
             return false;
         }

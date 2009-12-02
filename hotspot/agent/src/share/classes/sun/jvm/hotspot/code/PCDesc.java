@@ -36,6 +36,7 @@ import sun.jvm.hotspot.types.*;
 public class PCDesc extends VMObject {
   private static CIntegerField pcOffsetField;
   private static CIntegerField scopeDecodeOffsetField;
+  private static CIntegerField objDecodeOffsetField;
   private static CIntegerField pcFlagsField;
 
   static {
@@ -51,6 +52,7 @@ public class PCDesc extends VMObject {
 
     pcOffsetField          = type.getCIntegerField("_pc_offset");
     scopeDecodeOffsetField = type.getCIntegerField("_scope_decode_offset");
+    objDecodeOffsetField   = type.getCIntegerField("_obj_decode_offset");
     pcFlagsField           = type.getCIntegerField("_flags");
   }
 
@@ -66,6 +68,10 @@ public class PCDesc extends VMObject {
 
   public int getScopeDecodeOffset() {
     return ((int) scopeDecodeOffsetField.getValue(addr));
+  }
+
+  public int getObjDecodeOffset() {
+    return ((int) objDecodeOffsetField.getValue(addr));
   }
 
   public Address getRealPC(NMethod code) {

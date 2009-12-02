@@ -89,7 +89,8 @@ import com.sun.security.jgss.*;
  */
 class GSSContextImpl implements ExtendedGSSContext {
 
-    private GSSManagerImpl gssManager = null;
+    private final GSSManagerImpl gssManager;
+    private final boolean initiator;
 
     // private flags for the context state
     private static final int PRE_INIT = 1;
@@ -99,14 +100,12 @@ class GSSContextImpl implements ExtendedGSSContext {
 
     // instance variables
     private int currentState = PRE_INIT;
-    private boolean initiator;
 
     private GSSContextSpi mechCtxt = null;
     private Oid mechOid = null;
     private ObjectIdentifier objId = null;
 
     private GSSCredentialImpl myCred = null;
-    private GSSCredentialImpl delegCred = null;
 
     private GSSNameImpl srcName = null;
     private GSSNameImpl targName = null;
@@ -121,6 +120,7 @@ class GSSContextImpl implements ExtendedGSSContext {
     private boolean reqSequenceDetState = true;
     private boolean reqCredDelegState = false;
     private boolean reqAnonState = false;
+    private boolean reqDelegPolicyState = false;
 
     /**
      * Creates a GSSContextImp on the context initiator's side.
@@ -221,6 +221,7 @@ class GSSContextImpl implements ExtendedGSSContext {
                 mechCtxt.requestSequenceDet(reqSequenceDetState);
                 mechCtxt.requestAnonymity(reqAnonState);
                 mechCtxt.setChannelBinding(channelBindings);
+                mechCtxt.requestDelegPolicy(reqDelegPolicyState);
 
                 objId = new ObjectIdentifier(mechOid.toString());
 
@@ -465,42 +466,42 @@ class GSSContextImpl implements ExtendedGSSContext {
     }
 
     public void requestMutualAuth(boolean state) throws GSSException {
-        if (mechCtxt == null)
+        if (mechCtxt == null && initiator)
             reqMutualAuthState = state;
     }
 
     public void requestReplayDet(boolean state) throws GSSException {
-        if (mechCtxt == null)
+        if (mechCtxt == null && initiator)
             reqReplayDetState = state;
     }
 
     public void requestSequenceDet(boolean state) throws GSSException {
-        if (mechCtxt == null)
+        if (mechCtxt == null && initiator)
             reqSequenceDetState = state;
     }
 
     public void requestCredDeleg(boolean state) throws GSSException {
-        if (mechCtxt == null)
+        if (mechCtxt == null && initiator)
             reqCredDelegState = state;
     }
 
     public void requestAnonymity(boolean state) throws GSSException {
-        if (mechCtxt == null)
+        if (mechCtxt == null && initiator)
             reqAnonState = state;
     }
 
     public void requestConf(boolean state) throws GSSException {
-        if (mechCtxt == null)
+        if (mechCtxt == null && initiator)
             reqConfState = state;
     }
 
     public void requestInteg(boolean state) throws GSSException {
-        if (mechCtxt == null)
+        if (mechCtxt == null && initiator)
             reqIntegState = state;
     }
 
     public void requestLifetime(int lifetime) throws GSSException {
-        if (mechCtxt == null)
+        if (mechCtxt == null && initiator)
             reqLifetime = lifetime;
     }
 
@@ -630,6 +631,8 @@ class GSSContextImpl implements ExtendedGSSContext {
         targName = null;
     }
 
+    // ExtendedGSSContext methods:
+
     @Override
     public Object inquireSecContext(InquireType type) throws GSSException {
         SecurityManager security = System.getSecurityManager();
@@ -640,5 +643,19 @@ class GSSContextImpl implements ExtendedGSSContext {
             throw new GSSException(GSSException.NO_CONTEXT);
         }
         return mechCtxt.inquireSecContext(type);
+    }
+
+    @Override
+    public void requestDelegPolicy(boolean state) throws GSSException {
+        if (mechCtxt == null && initiator)
+            reqDelegPolicyState = state;
+    }
+
+    @Override
+    public boolean getDelegPolicyState() {
+        if (mechCtxt != null)
+            return mechCtxt.getDelegPolicyState();
+        else
+            return reqDelegPolicyState;
     }
 }

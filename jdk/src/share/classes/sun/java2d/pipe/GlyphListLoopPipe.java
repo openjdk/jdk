@@ -36,8 +36,9 @@ import sun.font.GlyphList;
  * the installed loop may not match the glyphvector.
  */
 
-public abstract class GlyphListLoopPipe extends GlyphListPipe {
-
+public abstract class GlyphListLoopPipe extends GlyphListPipe
+    implements LoopBasedPipe
+{
     protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl,
                                  int aaHint) {
         switch (aaHint) {

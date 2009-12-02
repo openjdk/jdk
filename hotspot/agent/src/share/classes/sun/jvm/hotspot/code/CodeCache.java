@@ -173,7 +173,8 @@ public class CodeCache {
     CodeBlob lastBlob = null;
     while (ptr != null && ptr.lessThan(end)) {
       try {
-        CodeBlob blob = findBlobUnsafe(ptr);
+        // Use findStart to get a pointer inside blob other findBlob asserts
+        CodeBlob blob = findBlobUnsafe(heap.findStart(ptr));
         if (blob != null) {
           visitor.visit(blob);
           if (blob == lastBlob) {

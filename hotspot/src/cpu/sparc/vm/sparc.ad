@@ -9419,8 +9419,9 @@ instruct countLeadingZerosI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
   // x |= (x >> 8);
   // x |= (x >> 16);
   // return (WORDBITS - popc(x));
-  format %{ "SRL     $src,1,$dst\t! count leading zeros (int)\n\t"
-            "OR      $src,$tmp,$dst\n\t"
+  format %{ "SRL     $src,1,$tmp\t! count leading zeros (int)\n\t"
+            "SRL     $src,0,$dst\t! 32-bit zero extend\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
             "SRL     $dst,2,$tmp\n\t"
             "OR      $dst,$tmp,$dst\n\t"
             "SRL     $dst,4,$tmp\n\t"
@@ -9437,7 +9438,8 @@ instruct countLeadingZerosI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
     Register Rsrc = $src$$Register;
     Register Rtmp = $tmp$$Register;
     __ srl(Rsrc, 1, Rtmp);
-    __ or3(Rsrc, Rtmp, Rdst);
+    __ srl(Rsrc, 0, Rdst);
+    __ or3(Rdst, Rtmp, Rdst);
     __ srl(Rdst, 2, Rtmp);
     __ or3(Rdst, Rtmp, Rdst);
     __ srl(Rdst, 4, Rtmp);
@@ -9465,7 +9467,7 @@ instruct countLeadingZerosL(iRegI dst, iRegL src, iRegL tmp, flagsReg cr) %{
   // x |= (x >> 16);
   // x |= (x >> 32);
   // return (WORDBITS - popc(x));
-  format %{ "SRLX    $src,1,$dst\t! count leading zeros (long)\n\t"
+  format %{ "SRLX    $src,1,$tmp\t! count leading zeros (long)\n\t"
             "OR      $src,$tmp,$dst\n\t"
             "SRLX    $dst,2,$tmp\n\t"
             "OR      $dst,$tmp,$dst\n\t"

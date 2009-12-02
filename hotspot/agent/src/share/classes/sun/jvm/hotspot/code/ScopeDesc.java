@@ -51,11 +51,10 @@ public class ScopeDesc {
   /** Scalar replaced bjects pool */
   private List    objects; // ArrayList<ScopeValue>
 
-
-  public ScopeDesc(NMethod code, int decodeOffset, boolean reexecute) {
+  private ScopeDesc(NMethod code, int decodeOffset, List objects, boolean reexecute) {
     this.code = code;
     this.decodeOffset = decodeOffset;
-    this.objects      = decodeObjectValues(DebugInformationRecorder.SERIALIZED_NULL);
+    this.objects      = objects;
     this.reexecute    = reexecute;
 
     // Decode header
@@ -108,7 +107,7 @@ public class ScopeDesc {
     return decodeMonitorValues(monitorsDecodeOffset);
   }
 
-  /** Returns a List&lt;MonitorValue&gt; */
+  /** Returns a List&lt;ObjectValue&gt; */
   public List getObjects() {
     return objects;
   }
@@ -119,7 +118,7 @@ public class ScopeDesc {
       return null;
     }
 
-    return new ScopeDesc(code, senderDecodeOffset, false);
+    return new ScopeDesc(code, senderDecodeOffset, objects, false);
   }
 
   /** Returns where the scope was decoded */
