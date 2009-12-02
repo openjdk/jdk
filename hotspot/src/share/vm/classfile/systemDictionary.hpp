@@ -150,6 +150,7 @@ class SymbolPropertyTable;
   template(vector_klass,                 java_util_Vector,               Pre) \
   template(hashtable_klass,              java_util_Hashtable,            Pre) \
   template(stringBuffer_klass,           java_lang_StringBuffer,         Pre) \
+  template(StringBuilder_klass,          java_lang_StringBuilder,        Pre) \
                                                                               \
   /* It's NULL in non-1.4 JDKs. */                                            \
   template(stackTraceElement_klass,      java_lang_StackTraceElement,    Opt) \

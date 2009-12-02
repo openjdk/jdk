@@ -67,6 +67,8 @@ typeArrayOop Universe::_the_empty_int_array           = NULL;
 objArrayOop Universe::_the_empty_system_obj_array     = NULL;
 objArrayOop Universe::_the_empty_class_klass_array    = NULL;
 objArrayOop Universe::_the_array_interfaces_array     = NULL;
+oop Universe::_the_null_string                        = NULL;
+oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodOopCache* Universe::_finalizer_register_cache = NULL;
 LatestMethodOopCache* Universe::_loader_addClass_cache    = NULL;
 ActiveMethodOopsCache* Universe::_reflect_invoke_cache    = NULL;
@@ -187,6 +189,8 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_the_empty_system_obj_array);
   f->do_oop((oop*)&_the_empty_class_klass_array);
   f->do_oop((oop*)&_the_array_interfaces_array);
+  f->do_oop((oop*)&_the_null_string);
+  f->do_oop((oop*)&_the_min_jint_string);
   _finalizer_register_cache->oops_do(f);
   _loader_addClass_cache->oops_do(f);
   _reflect_invoke_cache->oops_do(f);
@@ -288,6 +292,9 @@ void Universe::genesis(TRAPS) {
     SystemDictionary::initialize(CHECK);
 
     klassOop ok = SystemDictionary::object_klass();
+
+    _the_null_string            = StringTable::intern("null", CHECK);
+    _the_min_jint_string       = StringTable::intern("-2147483648", CHECK);
 
     if (UseSharedSpaces) {
       // Verify shared interfaces array.

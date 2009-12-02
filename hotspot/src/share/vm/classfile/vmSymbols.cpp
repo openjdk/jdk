@@ -303,6 +303,11 @@ inline bool match_F_R(jshort flags) {
   const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED;
   return (flags & (req | neg)) == req;
 }
+inline bool match_F_Y(jshort flags) {
+  const int req = JVM_ACC_SYNCHRONIZED;
+  const int neg = JVM_ACC_STATIC;
+  return (flags & (req | neg)) == req;
+}
 inline bool match_F_RN(jshort flags) {
   const int req = JVM_ACC_NATIVE;
   const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED;
@@ -361,6 +366,7 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
   const char* sname = vmSymbols::name_for(signature_for(id));
   const char* fname = "";
   switch (flags_for(id)) {
+  case F_Y:  fname = "synchronized ";  break;
   case F_RN: fname = "native ";        break;
   case F_SN: fname = "native static "; break;
   case F_S:  fname = "static ";        break;

@@ -224,6 +224,32 @@ bool Compile::valid_bundle_info(const Node *n) {
 }
 
 
+void Compile::gvn_replace_by(Node* n, Node* nn) {
+  for (DUIterator_Last imin, i = n->last_outs(imin); i >= imin; ) {
+    Node* use = n->last_out(i);
+    bool is_in_table = initial_gvn()->hash_delete(use);
+    uint uses_found = 0;
+    for (uint j = 0; j < use->len(); j++) {
+      if (use->in(j) == n) {
+        if (j < use->req())
+          use->set_req(j, nn);
+        else
+          use->set_prec(j, nn);
+        uses_found++;
+      }
+    }
+    if (is_in_table) {
+      // reinsert into table
+      initial_gvn()->hash_find_insert(use);
+    }
+    record_for_igvn(use);
+    i -= uses_found;    // we deleted 1 or more copies of this edge
+  }
+}
+
+
+
+
 // Identify all nodes that are reachable from below, useful.
 // Use breadth-first pass that records state in a Unique_Node_List,
 // recursive traversal is slower.
@@ -554,6 +580,28 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       rethrow_exceptions(kit.transfer_exceptions_into_jvms());
     }
 
+    if (!failing() && has_stringbuilder()) {
+      {
+        // remove useless nodes to make the usage analysis simpler
+        ResourceMark rm;
+        PhaseRemoveUseless pru(initial_gvn(), &for_igvn);
+      }
+
+      {
+        ResourceMark rm;
+        print_method("Before StringOpts", 3);
+        PhaseStringOpts pso(initial_gvn(), &for_igvn);
+        print_method("After StringOpts", 3);
+      }
+
+      // now inline anything that we skipped the first time around
+      while (_late_inlines.length() > 0) {
+        CallGenerator* cg = _late_inlines.pop();
+        cg->do_late_inline();
+      }
+    }
+    assert(_late_inlines.length() == 0, "should have been processed");
+
     print_method("Before RemoveUseless", 3);
 
     // Remove clutter produced by parsing.
@@ -820,6 +868,7 @@ void Compile::Init(int aliaslevel) {
   _fixed_slots = 0;
   set_has_split_ifs(false);
   set_has_loops(has_method() && method()->has_loops()); // first approximation
+  set_has_stringbuilder(false);
   _deopt_happens = true;  // start out assuming the worst
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
@@ -2236,6 +2285,30 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     }
     if (in1->outcnt() == 0) {
       in1->disconnect_inputs(NULL);
+    }
+    break;
+  }
+
+  case Op_Proj: {
+    if (OptimizeStringConcat) {
+      ProjNode* p = n->as_Proj();
+      if (p->_is_io_use) {
+        // Separate projections were used for the exception path which
+        // are normally removed by a late inline.  If it wasn't inlined
+        // then they will hang around and should just be replaced with
+        // the original one.
+        Node* proj = NULL;
+        // Replace with just one
+        for (SimpleDUIterator i(p->in(0)); i.has_next(); i.next()) {
+          Node *use = i.get();
+          if (use->is_Proj() && p != use && use->as_Proj()->_con == p->_con) {
+            proj = use;
+            break;
+          }
+        }
+        assert(p != NULL, "must be found");
+        p->subsume_by(proj);
+      }
     }
     break;
   }

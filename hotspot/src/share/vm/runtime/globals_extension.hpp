@@ -64,6 +64,7 @@
 #define C2_PRODUCT_FLAG_MEMBER(type, name, value, doc)         FLAG_MEMBER(name),
 #define C2_PD_PRODUCT_FLAG_MEMBER(type, name, doc)             FLAG_MEMBER(name),
 #define C2_DIAGNOSTIC_FLAG_MEMBER(type, name, value, doc)      FLAG_MEMBER(name),
+#define C2_EXPERIMENTAL_FLAG_MEMBER(type, name, value, doc)    FLAG_MEMBER(name),
 #ifdef PRODUCT
   #define C2_DEVELOP_FLAG_MEMBER(type, name, value, doc)       /* flag is constant */
   #define C2_PD_DEVELOP_FLAG_MEMBER(type, name, doc)           /* flag is constant */
@@ -84,7 +85,7 @@ typedef enum {
  C1_FLAGS(C1_DEVELOP_FLAG_MEMBER, C1_PD_DEVELOP_FLAG_MEMBER, C1_PRODUCT_FLAG_MEMBER, C1_PD_PRODUCT_FLAG_MEMBER, C1_NOTPRODUCT_FLAG_MEMBER)
 #endif
 #ifdef COMPILER2
- C2_FLAGS(C2_DEVELOP_FLAG_MEMBER, C2_PD_DEVELOP_FLAG_MEMBER, C2_PRODUCT_FLAG_MEMBER, C2_PD_PRODUCT_FLAG_MEMBER, C2_DIAGNOSTIC_FLAG_MEMBER, C2_NOTPRODUCT_FLAG_MEMBER)
+ C2_FLAGS(C2_DEVELOP_FLAG_MEMBER, C2_PD_DEVELOP_FLAG_MEMBER, C2_PRODUCT_FLAG_MEMBER, C2_PD_PRODUCT_FLAG_MEMBER, C2_DIAGNOSTIC_FLAG_MEMBER, C2_EXPERIMENTAL_FLAG_MEMBER, C2_NOTPRODUCT_FLAG_MEMBER)
 #endif
  NUM_CommandLineFlag
 } CommandLineFlag;
@@ -130,6 +131,7 @@ typedef enum {
 #define C2_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)         FLAG_MEMBER_WITH_TYPE(name,type),
 #define C2_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, doc)             FLAG_MEMBER_WITH_TYPE(name,type),
 #define C2_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)      FLAG_MEMBER_WITH_TYPE(name,type),
+#define C2_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)      FLAG_MEMBER_WITH_TYPE(name,type),
 #ifdef PRODUCT
   #define C2_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)       /* flag is constant */
   #define C2_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, doc)           /* flag is constant */
@@ -181,6 +183,7 @@ typedef enum {
           C2_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           C2_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           C2_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
+          C2_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
           C2_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE)
 #endif
  NUM_CommandLineFlagWithType
