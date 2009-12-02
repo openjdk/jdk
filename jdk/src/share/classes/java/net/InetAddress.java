@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.security.AccessController;
 import java.io.ObjectStreamException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import sun.security.action.*;
 import sun.net.InetAddressCachePolicy;
 import sun.net.util.IPAddressUtil;
@@ -1471,6 +1472,23 @@ class InetAddress implements java.io.Serializable {
         }
 
         return impl;
+    }
+
+    private void readObjectNoData (ObjectInputStream s) throws
+                         IOException, ClassNotFoundException {
+        if (getClass().getClassLoader() != null) {
+            throw new SecurityException ("invalid address type");
+        }
+    }
+
+    private void readObject (ObjectInputStream s) throws
+                         IOException, ClassNotFoundException {
+        s.defaultReadObject ();
+        if (getClass().getClassLoader() != null) {
+            hostName = null;
+            address = 0;
+            throw new SecurityException ("invalid address type");
+        }
     }
 }
 

@@ -68,6 +68,9 @@ class Net {                                             // package-private
         InetSocketAddress isa = (InetSocketAddress)sa;
         if (isa.isUnresolved())
             throw new UnresolvedAddressException(); // ## needs arg
+        InetAddress addr = isa.getAddress();
+        if (!(addr instanceof Inet4Address || addr instanceof Inet6Address))
+            throw new IllegalArgumentException("Invalid address type");
         return isa;
     }
 
