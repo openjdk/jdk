@@ -652,7 +652,10 @@ void AwtWindow::UnregisterWarningWindowClass()
 
 HICON AwtWindow::GetSecurityWarningIcon()
 {
-    HICON ico = AwtToolkit::GetInstance().GetSecurityWarningIcon(securityWarningAnimationStage,
+    // It is assumed that the icon at index 0 is gray
+    const UINT index = securityAnimationKind == akShow ?
+        securityWarningAnimationStage : 0;
+    HICON ico = AwtToolkit::GetInstance().GetSecurityWarningIcon(index,
             warningWindowWidth, warningWindowHeight);
     return ico;
 }
