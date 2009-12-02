@@ -661,18 +661,25 @@ public:
     return (_flags & Flag_is_Call) != 0;
   }
 
+  CallNode* isa_Call() const {
+    return is_Call() ? as_Call() : NULL;
+  }
+
   CallNode *as_Call() const { // Only for CallNode (not for MachCallNode)
     assert((_class_id & ClassMask_Call) == Class_Call, "invalid node class");
     return (CallNode*)this;
   }
 
-  #define DEFINE_CLASS_QUERY(type) \
-  bool is_##type() const { \
+  #define DEFINE_CLASS_QUERY(type)                           \
+  bool is_##type() const {                                   \
     return ((_class_id & ClassMask_##type) == Class_##type); \
-  } \
-  type##Node *as_##type() const { \
-    assert(is_##type(), "invalid node class"); \
-    return (type##Node*)this; \
+  }                                                          \
+  type##Node *as_##type() const {                            \
+    assert(is_##type(), "invalid node class");               \
+    return (type##Node*)this;                                \
+  }                                                          \
+  type##Node* isa_##type() const {                           \
+    return (is_##type()) ? as_##type() : NULL;               \
   }
 
   DEFINE_CLASS_QUERY(AbstractLock)
@@ -1249,6 +1256,24 @@ Node* Node::last_out(DUIterator_Last& i) const {
 #undef I_VDUI_ONLY
 #undef VDUI_ONLY
 
+// An Iterator that truly follows the iterator pattern.  Doesn't
+// support deletion but could be made to.
+//
+//   for (SimpleDUIterator i(n); i.has_next(); i.next()) {
+//     Node* m = i.get();
+//
+class SimpleDUIterator : public StackObj {
+ private:
+  Node* node;
+  DUIterator_Fast i;
+  DUIterator_Fast imax;
+ public:
+  SimpleDUIterator(Node* n): node(n), i(n->fast_outs(imax)) {}
+  bool has_next() { return i < imax; }
+  void next() { i++; }
+  Node* get() { return node->fast_out(i); }
+};
+
 
 //-----------------------------------------------------------------------------
 // Map dense integer indices to Nodes.  Uses classic doubling-array trick.
@@ -1290,6 +1315,12 @@ class Node_List : public Node_Array {
 public:
   Node_List() : Node_Array(Thread::current()->resource_area()), _cnt(0) {}
   Node_List(Arena *a) : Node_Array(a), _cnt(0) {}
+  bool contains(Node* n) {
+    for (uint e = 0; e < size(); e++) {
+      if (at(e) == n) return true;
+    }
+    return false;
+  }
   void insert( uint i, Node *n ) { Node_Array::insert(i,n); _cnt++; }
   void remove( uint i ) { Node_Array::remove(i); _cnt--; }
   void push( Node *b ) { map(_cnt++,b); }

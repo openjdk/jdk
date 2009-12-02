@@ -46,7 +46,8 @@ bool Flag::is_unlocker() const {
 bool Flag::is_unlocked() const {
   if (strcmp(kind, "{diagnostic}") == 0) {
     return UnlockDiagnosticVMOptions;
-  } else if (strcmp(kind, "{experimental}") == 0) {
+  } else if (strcmp(kind, "{experimental}") == 0 ||
+             strcmp(kind, "{C2 experimental}") == 0) {
     return UnlockExperimentalVMOptions;
   } else {
     return true;
@@ -169,6 +170,7 @@ void Flag::print_as_flag(outputStream* st) {
 #define C2_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C2 product}", DEFAULT },
 #define C2_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, "{C2 pd product}", DEFAULT },
 #define C2_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C2 diagnostic}", DEFAULT },
+#define C2_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, "{C2 experimental}", DEFAULT },
 #ifdef PRODUCT
   #define C2_DEVELOP_FLAG_STRUCT(type, name, value, doc) /* flag is constant */
   #define C2_PD_DEVELOP_FLAG_STRUCT(type, name, doc)     /* flag is constant */
@@ -190,7 +192,7 @@ static Flag flagTable[] = {
  C1_FLAGS(C1_DEVELOP_FLAG_STRUCT, C1_PD_DEVELOP_FLAG_STRUCT, C1_PRODUCT_FLAG_STRUCT, C1_PD_PRODUCT_FLAG_STRUCT, C1_NOTPRODUCT_FLAG_STRUCT)
 #endif
 #ifdef COMPILER2
- C2_FLAGS(C2_DEVELOP_FLAG_STRUCT, C2_PD_DEVELOP_FLAG_STRUCT, C2_PRODUCT_FLAG_STRUCT, C2_PD_PRODUCT_FLAG_STRUCT, C2_DIAGNOSTIC_FLAG_STRUCT, C2_NOTPRODUCT_FLAG_STRUCT)
+ C2_FLAGS(C2_DEVELOP_FLAG_STRUCT, C2_PD_DEVELOP_FLAG_STRUCT, C2_PRODUCT_FLAG_STRUCT, C2_PD_PRODUCT_FLAG_STRUCT, C2_DIAGNOSTIC_FLAG_STRUCT, C2_EXPERIMENTAL_FLAG_STRUCT, C2_NOTPRODUCT_FLAG_STRUCT)
 #endif
  {0, NULL, NULL}
 };
