@@ -606,6 +606,13 @@ void OneContigSpaceCardGeneration::shrink_by(size_t bytes) {
 void OneContigSpaceCardGeneration::prepare_for_verify() {}
 
 
+// Override for a card-table generation with one contiguous
+// space. NOTE: For reasons that are lost in the fog of history,
+// this code is used when you iterate over perm gen objects,
+// even when one uses CDS, where the perm gen has a couple of
+// other spaces; this is because CompactingPermGenGen derives
+// from OneContigSpaceCardGeneration. This should be cleaned up,
+// see CR 6897789..
 void OneContigSpaceCardGeneration::object_iterate(ObjectClosure* blk) {
   _the_space->object_iterate(blk);
 }

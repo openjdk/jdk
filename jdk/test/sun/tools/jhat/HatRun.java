@@ -186,11 +186,13 @@ public class HatRun {
          */
         int nvm_options = 0;
         if ( vm_options != null ) nvm_options = vm_options.length;
-        String cmd[]     = new String[1 + (d64?1:0) + 5 + nvm_options];
+        String cmd[]     = new String[1 + (d64?1:0) + 7 + nvm_options];
         int i,j;
 
         i = 0;
         cmd[i++] = java;
+        cmd[i++] = "-cp";
+        cmd[i++] = cdir;
         cmd[i++] = "-Dtest.classes=" + cdir;
         if ( d64 ) {
             cmd[i++] = "-d64";

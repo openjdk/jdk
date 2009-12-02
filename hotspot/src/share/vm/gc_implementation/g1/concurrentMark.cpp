@@ -667,39 +667,6 @@ ConcurrentMark::~ConcurrentMark() {
 // Called at the first checkpoint.
 //
 
-#define PRINT_REACHABLE_AT_INITIAL_MARK 0
-#if PRINT_REACHABLE_AT_INITIAL_MARK
-static FILE* reachable_file = NULL;
-
-class PrintReachableClosure: public OopsInGenClosure {
-  CMBitMap* _bm;
-  int _level;
-public:
-  PrintReachableClosure(CMBitMap* bm) :
-    _bm(bm), _level(0) {
-    guarantee(reachable_file != NULL, "pre-condition");
-  }
-  void do_oop(oop* p) {
-    oop obj = *p;
-    HeapWord* obj_addr = (HeapWord*)obj;
-    if (obj == NULL) return;
-    fprintf(reachable_file, "%d: "PTR_FORMAT" -> "PTR_FORMAT" (%d)\n",
-            _level, p, (void*) obj, _bm->isMarked(obj_addr));
-    if (!_bm->isMarked(obj_addr)) {
-      _bm->mark(obj_addr);
-      _level++;
-      obj->oop_iterate(this);
-      _level--;
-    }
-  }
-};
-#endif // PRINT_REACHABLE_AT_INITIAL_MARK
-
-#define SEND_HEAP_DUMP_TO_FILE 0
-#if SEND_HEAP_DUMP_TO_FILE
-static FILE* heap_dump_file = NULL;
-#endif // SEND_HEAP_DUMP_TO_FILE
-
 void ConcurrentMark::clearNextBitmap() {
    guarantee(!G1CollectedHeap::heap()->mark_in_progress(), "Precondition.");
 
@@ -737,32 +704,9 @@ void ConcurrentMark::checkpointRootsInitialPre() {
 
   _has_aborted = false;
 
-  // Find all the reachable objects...
-#if PRINT_REACHABLE_AT_INITIAL_MARK
-  guarantee(reachable_file == NULL, "Protocol");
-  char fn_buf[100];
-  sprintf(fn_buf, "/tmp/reachable.txt.%d", os::current_process_id());
-  reachable_file = fopen(fn_buf, "w");
-  // clear the mark bitmap (no grey objects to start with)
-  _nextMarkBitMap->clearAll();
-  PrintReachableClosure prcl(_nextMarkBitMap);
-  g1h->process_strong_roots(true,    // activate StrongRootsScope
-                            false,   // fake perm gen collection
-                            SharedHeap::SO_AllClasses,
-                            &prcl, // Regular roots
-                            NULL,  // do not visit active blobs
-                            &prcl    // Perm Gen Roots
-                            );
-  // The root iteration above "consumed" dirty cards in the perm gen.
-  // Therefore, as a shortcut, we dirty all such cards.
-  g1h->rem_set()->invalidate(g1h->perm_gen()->used_region(), false);
-  fclose(reachable_file);
-  reachable_file = NULL;
-  // clear the mark bitmap again.
-  _nextMarkBitMap->clearAll();
-  COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
-  COMPILER2_PRESENT(DerivedPointerTable::clear());
-#endif // PRINT_REACHABLE_AT_INITIAL_MARK
+  if (G1PrintReachableAtInitialMark) {
+    print_reachable(true, "before");
+  }
 
   // Initialise marking structures. This has to be done in a STW phase.
   reset();
@@ -1965,15 +1909,21 @@ void ConcurrentMark::checkpointRootsFinalWork() {
 #endif
 }
 
+#ifndef PRODUCT
+
 class ReachablePrinterOopClosure: public OopClosure {
 private:
   G1CollectedHeap* _g1h;
   CMBitMapRO*      _bitmap;
   outputStream*    _out;
+  bool             _use_prev_marking;
 
 public:
-  ReachablePrinterOopClosure(CMBitMapRO* bitmap, outputStream* out) :
-    _bitmap(bitmap), _g1h(G1CollectedHeap::heap()), _out(out) { }
+  ReachablePrinterOopClosure(CMBitMapRO*   bitmap,
+                             outputStream* out,
+                             bool          use_prev_marking) :
+    _g1h(G1CollectedHeap::heap()),
+    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking) { }
 
   void do_oop(narrowOop* p) { do_oop_work(p); }
   void do_oop(      oop* p) { do_oop_work(p); }
@@ -1988,14 +1938,23 @@ public:
     else {
       HeapRegion* hr  = _g1h->heap_region_containing(obj);
       guarantee(hr != NULL, "invariant");
-      if (hr->obj_allocated_since_prev_marking(obj)) {
+      bool over_tams = false;
+      if (_use_prev_marking) {
+        over_tams = hr->obj_allocated_since_prev_marking(obj);
+      } else {
+        over_tams = hr->obj_allocated_since_next_marking(obj);
+      }
+
+      if (over_tams) {
         str = "over TAMS";
-        if (_bitmap->isMarked((HeapWord*) obj))
+        if (_bitmap->isMarked((HeapWord*) obj)) {
           str2 = " AND MARKED";
-      } else if (_bitmap->isMarked((HeapWord*) obj))
+        }
+      } else if (_bitmap->isMarked((HeapWord*) obj)) {
         str = "marked";
-      else
+      } else {
         str = "#### NOT MARKED ####";
+      }
     }
 
     _out->print_cr("    "PTR_FORMAT" contains "PTR_FORMAT" %s%s",
@@ -2005,16 +1964,19 @@ public:
 
 class ReachablePrinterClosure: public BitMapClosure {
 private:
-  CMBitMapRO* _bitmap;
+  CMBitMapRO*   _bitmap;
   outputStream* _out;
+  bool          _use_prev_marking;
 
 public:
-  ReachablePrinterClosure(CMBitMapRO* bitmap, outputStream* out) :
-    _bitmap(bitmap), _out(out) { }
+  ReachablePrinterClosure(CMBitMapRO*   bitmap,
+                          outputStream* out,
+                          bool          use_prev_marking) :
+    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking) { }
 
   bool do_bit(size_t offset) {
     HeapWord* addr = _bitmap->offsetToHeapWord(offset);
-    ReachablePrinterOopClosure oopCl(_bitmap, _out);
+    ReachablePrinterOopClosure oopCl(_bitmap, _out, _use_prev_marking);
 
     _out->print_cr("  obj "PTR_FORMAT", offset %10d (marked)", addr, offset);
     oop(addr)->oop_iterate(&oopCl);
@@ -2026,75 +1988,110 @@ public:
 
 class ObjInRegionReachablePrinterClosure : public ObjectClosure {
 private:
-  CMBitMapRO* _bitmap;
+  CMBitMapRO*   _bitmap;
   outputStream* _out;
+  bool          _use_prev_marking;
 
 public:
+  ObjInRegionReachablePrinterClosure(CMBitMapRO*   bitmap,
+                                     outputStream* out,
+                                     bool          use_prev_marking) :
+    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking) { }
+
   void do_object(oop o) {
-    ReachablePrinterOopClosure oopCl(_bitmap, _out);
+    ReachablePrinterOopClosure oopCl(_bitmap, _out, _use_prev_marking);
 
     _out->print_cr("  obj "PTR_FORMAT" (over TAMS)", (void*) o);
     o->oop_iterate(&oopCl);
     _out->print_cr("");
   }
-
-  ObjInRegionReachablePrinterClosure(CMBitMapRO* bitmap, outputStream* out) :
-    _bitmap(bitmap), _out(out) { }
 };
 
 class RegionReachablePrinterClosure : public HeapRegionClosure {
 private:
-  CMBitMapRO* _bitmap;
+  CMBitMapRO*   _bitmap;
   outputStream* _out;
+  bool          _use_prev_marking;
 
 public:
   bool doHeapRegion(HeapRegion* hr) {
     HeapWord* b = hr->bottom();
     HeapWord* e = hr->end();
     HeapWord* t = hr->top();
-    HeapWord* p = hr->prev_top_at_mark_start();
+    HeapWord* p = NULL;
+    if (_use_prev_marking) {
+      p = hr->prev_top_at_mark_start();
+    } else {
+      p = hr->next_top_at_mark_start();
+    }
     _out->print_cr("** ["PTR_FORMAT", "PTR_FORMAT"] top: "PTR_FORMAT" "
-                   "PTAMS: "PTR_FORMAT, b, e, t, p);
+                   "TAMS: "PTR_FORMAT, b, e, t, p);
     _out->print_cr("");
 
-    ObjInRegionReachablePrinterClosure ocl(_bitmap, _out);
+    ObjInRegionReachablePrinterClosure ocl(_bitmap, _out, _use_prev_marking);
     hr->object_iterate_mem_careful(MemRegion(p, t), &ocl);
 
     return false;
   }
 
-  RegionReachablePrinterClosure(CMBitMapRO* bitmap,
-                                outputStream* out) :
-    _bitmap(bitmap), _out(out) { }
+  RegionReachablePrinterClosure(CMBitMapRO*   bitmap,
+                                outputStream* out,
+                                bool          use_prev_marking) :
+    _bitmap(bitmap), _out(out), _use_prev_marking(use_prev_marking) { }
 };
 
-void ConcurrentMark::print_prev_bitmap_reachable() {
-  outputStream* out = gclog_or_tty;
+void ConcurrentMark::print_reachable(bool use_prev_marking, const char* str) {
+  gclog_or_tty->print_cr("== Doing reachable object dump... ");
 
-#if SEND_HEAP_DUMP_TO_FILE
-  guarantee(heap_dump_file == NULL, "Protocol");
-  char fn_buf[100];
-  sprintf(fn_buf, "/tmp/dump.txt.%d", os::current_process_id());
-  heap_dump_file = fopen(fn_buf, "w");
-  fileStream fstream(heap_dump_file);
-  out = &fstream;
-#endif // SEND_HEAP_DUMP_TO_FILE
+  if (G1PrintReachableBaseFile == NULL) {
+    gclog_or_tty->print_cr("  #### error: no base file defined");
+    return;
+  }
 
-  RegionReachablePrinterClosure rcl(_prevMarkBitMap, out);
-  out->print_cr("--- ITERATING OVER REGIONS WITH PTAMS < TOP");
+  if (strlen(G1PrintReachableBaseFile) + 1 + strlen(str) >
+      (JVM_MAXPATHLEN - 1)) {
+    gclog_or_tty->print_cr("  #### error: file name too long");
+    return;
+  }
+
+  char file_name[JVM_MAXPATHLEN];
+  sprintf(file_name, "%s.%s", G1PrintReachableBaseFile, str);
+  gclog_or_tty->print_cr("  dumping to file %s", file_name);
+
+  fileStream fout(file_name);
+  if (!fout.is_open()) {
+    gclog_or_tty->print_cr("  #### error: could not open file");
+    return;
+  }
+
+  outputStream* out = &fout;
+
+  CMBitMapRO* bitmap = NULL;
+  if (use_prev_marking) {
+    bitmap = _prevMarkBitMap;
+  } else {
+    bitmap = _nextMarkBitMap;
+  }
+
+  out->print_cr("-- USING %s", (use_prev_marking) ? "PTAMS" : "NTAMS");
+  out->cr();
+
+  RegionReachablePrinterClosure rcl(bitmap, out, use_prev_marking);
+  out->print_cr("--- ITERATING OVER REGIONS WITH TAMS < TOP");
+  out->cr();
   _g1h->heap_region_iterate(&rcl);
-  out->print_cr("");
+  out->cr();
 
-  ReachablePrinterClosure cl(_prevMarkBitMap, out);
-  out->print_cr("--- REACHABLE OBJECTS ON THE BITMAP");
-  _prevMarkBitMap->iterate(&cl);
-  out->print_cr("");
+  ReachablePrinterClosure cl(bitmap, out, use_prev_marking);
+  out->print_cr("--- ITERATING OVER MARKED OBJECTS ON THE BITMAP");
+  out->cr();
+  bitmap->iterate(&cl);
+  out->cr();
 
-#if SEND_HEAP_DUMP_TO_FILE
-  fclose(heap_dump_file);
-  heap_dump_file = NULL;
-#endif // SEND_HEAP_DUMP_TO_FILE
+  gclog_or_tty->print_cr("  done");
 }
+
+#endif // PRODUCT
 
 // This note is for drainAllSATBBuffers and the code in between.
 // In the future we could reuse a task to do this work during an

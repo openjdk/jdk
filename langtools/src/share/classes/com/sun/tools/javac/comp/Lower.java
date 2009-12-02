@@ -357,7 +357,7 @@ public class Lower extends TreeTranslator {
      *          case 2: stmt2
      *          }
      *  </pre>
-     *  with the auxilliary table intialized as follows:
+     *  with the auxiliary table initialized as follows:
      *  <pre>
      *          class Outer$0 {
      *              synthetic final int[] $EnumMap$Color = new int[Color.values().length];
@@ -858,7 +858,7 @@ public class Lower extends TreeTranslator {
         int acode;                // The access code of the access method.
         List<Type> argtypes;      // The argument types of the access method.
         Type restype;             // The result type of the access method.
-        List<Type> thrown;        // The thrown execeptions of the access method.
+        List<Type> thrown;        // The thrown exceptions of the access method.
         switch (vsym.kind) {
         case VAR:
             acode = accessCode(tree, enclOp);
@@ -2463,7 +2463,7 @@ public class Lower extends TreeTranslator {
     // the dead code, which will not be eliminated during code generation.
     // Note that Flow.isFalse and Flow.isTrue only return true
     // for constant expressions in the sense of JLS 15.27, which
-    // are guaranteed to have no side-effects.  More agressive
+    // are guaranteed to have no side-effects.  More aggressive
     // constant propagation would require that we take care to
     // preserve possible side-effects in the condition expression.
 
@@ -2850,7 +2850,7 @@ public class Lower extends TreeTranslator {
 
         // If translated left hand side is an Apply, we are
         // seeing an access method invocation. In this case, return
-        // that access method invokation as result.
+        // that access method invocation as result.
         if (isUpdateOperator && tree.arg.getTag() == JCTree.APPLY) {
             result = tree.arg;
         } else {
@@ -2900,7 +2900,7 @@ public class Lower extends TreeTranslator {
     }
         // where
         /**
-         * A statment of the form
+         * A statement of the form
          *
          * <pre>
          *     for ( T v : arrayexpr ) stmt;
@@ -3109,12 +3109,17 @@ public class Lower extends TreeTranslator {
         Type selsuper = types.supertype(tree.selector.type);
         boolean enumSwitch = selsuper != null &&
             (tree.selector.type.tsym.flags() & ENUM) != 0;
-        Type target = enumSwitch ? tree.selector.type : syms.intType;
+        boolean stringSwitch = selsuper != null &&
+            types.isSameType(tree.selector.type, syms.stringType);
+        Type target = enumSwitch ? tree.selector.type :
+            (stringSwitch? syms.stringType : syms.intType);
         tree.selector = translate(tree.selector, target);
         tree.cases = translateCases(tree.cases);
         if (enumSwitch) {
             result = visitEnumSwitch(tree);
             patchTargets(result, tree, result);
+        } else if (stringSwitch) {
+            result = visitStringSwitch(tree);
         } else {
             result = tree;
         }
@@ -3142,6 +3147,184 @@ public class Lower extends TreeTranslator {
             }
         }
         return make.Switch(selector, cases.toList());
+    }
+
+    public JCTree visitStringSwitch(JCSwitch tree) {
+        List<JCCase> caseList = tree.getCases();
+        int alternatives = caseList.size();
+
+        if (alternatives == 0) { // Strange but legal possibility
+            return make.at(tree.pos()).Exec(attr.makeNullCheck(tree.getExpression()));
+        } else {
+            /*
+             * The general approach used is to translate a single
+             * string switch statement into a series of two chained
+             * switch statements: the first a synthesized statement
+             * switching on the argument string's hash value and
+             * computing a string's position in the list of original
+             * case labels, if any, followed by a second switch on the
+             * computed integer value.  The second switch has the same
+             * code structure as the original string switch statement
+             * except that the string case labels are replaced with
+             * positional integer constants starting at 0.
+             *
+             * The first switch statement can be thought of as an
+             * inlined map from strings to their position in the case
+             * label list.  An alternate implementation would use an
+             * actual Map for this purpose, as done for enum switches.
+             *
+             * With some additional effort, it would be possible to
+             * use a single switch statement on the hash code of the
+             * argument, but care would need to be taken to preserve
+             * the proper control flow in the presence of hash
+             * collisions and other complications, such as
+             * fallthroughs.  Switch statements with one or two
+             * alternatives could also be specially translated into
+             * if-then statements to omit the computation of the hash
+             * code.
+             *
+             * The generated code assumes that the hashing algorithm
+             * of String is the same in the compilation environment as
+             * in the environment the code will run in.  The string
+             * hashing algorithm in the SE JDK has been unchanged
+             * since at least JDK 1.2.
+             */
+
+            ListBuffer<JCStatement> stmtList = new ListBuffer<JCStatement>();
+
+            // Map from String case labels to their original position in
+            // the list of case labels.
+            Map<String, Integer> caseLabelToPosition =
+                new LinkedHashMap<String, Integer>(alternatives + 1, 1.0f);
+
+            // Map of hash codes to the string case labels having that hashCode.
+            Map<Integer, Set<String>> hashToString =
+                new LinkedHashMap<Integer, Set<String>>(alternatives + 1, 1.0f);
+
+            int casePosition = 0;
+            for(JCCase oneCase : caseList) {
+                JCExpression expression = oneCase.getExpression();
+
+                if (expression != null) { // expression for a "default" case is null
+                    String labelExpr = (String) expression.type.constValue();
+                    Integer mapping = caseLabelToPosition.put(labelExpr, casePosition);
+                    assert mapping == null;
+                    int hashCode = labelExpr.hashCode();
+
+                    Set<String> stringSet = hashToString.get(hashCode);
+                    if (stringSet == null) {
+                        stringSet = new LinkedHashSet<String>(1, 1.0f);
+                        stringSet.add(labelExpr);
+                        hashToString.put(hashCode, stringSet);
+                    } else {
+                        boolean added = stringSet.add(labelExpr);
+                        assert added;
+                    }
+                }
+                casePosition++;
+            }
+
+            // Synthesize a switch statement that has the effect of
+            // mapping from a string to the integer position of that
+            // string in the list of case labels.  This is done by
+            // switching on the hashCode of the string followed by an
+            // if-then-else chain comparing the input for equality
+            // with all the case labels having that hash value.
+
+            /*
+             * s$ = top of stack;
+             * tmp$ = -1;
+             * switch($s.hashCode()) {
+             *     case caseLabel.hashCode:
+             *         if (s$.equals("caseLabel_1")
+             *           tmp$ = caseLabelToPosition("caseLabel_1");
+             *         else if (s$.equals("caseLabel_2"))
+             *           tmp$ = caseLabelToPosition("caseLabel_2");
+             *         ...
+             *         break;
+             * ...
+             * }
+             */
+
+            VarSymbol dollar_s = new VarSymbol(FINAL|SYNTHETIC,
+                                               names.fromString("s" + tree.pos + target.syntheticNameChar()),
+                                               syms.stringType,
+                                               currentMethodSym);
+            stmtList.append(make.at(tree.pos()).VarDef(dollar_s, tree.getExpression()).setType(dollar_s.type));
+
+            VarSymbol dollar_tmp = new VarSymbol(SYNTHETIC,
+                                                 names.fromString("tmp" + tree.pos + target.syntheticNameChar()),
+                                                 syms.intType,
+                                                 currentMethodSym);
+            JCVariableDecl dollar_tmp_def =
+                (JCVariableDecl)make.VarDef(dollar_tmp, make.Literal(INT, -1)).setType(dollar_tmp.type);
+            dollar_tmp_def.init.type = dollar_tmp.type = syms.intType;
+            stmtList.append(dollar_tmp_def);
+            ListBuffer<JCCase> caseBuffer = ListBuffer.lb();
+            // hashCode will trigger nullcheck on original switch expression
+            JCMethodInvocation hashCodeCall = makeCall(make.Ident(dollar_s),
+                                                       names.hashCode,
+                                                       List.<JCExpression>nil()).setType(syms.intType);
+            JCSwitch switch1 = make.Switch(hashCodeCall,
+                                        caseBuffer.toList());
+            for(Map.Entry<Integer, Set<String>> entry : hashToString.entrySet()) {
+                int hashCode = entry.getKey();
+                Set<String> stringsWithHashCode = entry.getValue();
+                assert stringsWithHashCode.size() >= 1;
+
+                JCStatement elsepart = null;
+                for(String caseLabel : stringsWithHashCode ) {
+                    JCMethodInvocation stringEqualsCall = makeCall(make.Ident(dollar_s),
+                                                                   names.equals,
+                                                                   List.<JCExpression>of(make.Literal(caseLabel)));
+                    elsepart = make.If(stringEqualsCall,
+                                       make.Exec(make.Assign(make.Ident(dollar_tmp),
+                                                             make.Literal(caseLabelToPosition.get(caseLabel))).
+                                                 setType(dollar_tmp.type)),
+                                       elsepart);
+                }
+
+                ListBuffer<JCStatement> lb = ListBuffer.lb();
+                JCBreak breakStmt = make.Break(null);
+                breakStmt.target = switch1;
+                lb.append(elsepart).append(breakStmt);
+
+                caseBuffer.append(make.Case(make.Literal(hashCode), lb.toList()));
+            }
+
+            switch1.cases = caseBuffer.toList();
+            stmtList.append(switch1);
+
+            // Make isomorphic switch tree replacing string labels
+            // with corresponding integer ones from the label to
+            // position map.
+
+            ListBuffer<JCCase> lb = ListBuffer.lb();
+            JCSwitch switch2 = make.Switch(make.Ident(dollar_tmp), lb.toList());
+            for(JCCase oneCase : caseList ) {
+                // Rewire up old unlabeled break statements to the
+                // replacement switch being created.
+                patchTargets(oneCase, tree, switch2);
+
+                boolean isDefault = (oneCase.getExpression() == null);
+                JCExpression caseExpr;
+                if (isDefault)
+                    caseExpr = null;
+                else {
+                    caseExpr = make.Literal(caseLabelToPosition.get((String)oneCase.
+                                                                    getExpression().
+                                                                    type.constValue()));
+                }
+
+                lb.append(make.Case(caseExpr,
+                                    oneCase.getStatements()));
+            }
+
+            switch2.cases = lb.toList();
+            stmtList.append(switch2);
+
+            return make.Block(0L, stmtList.toList());
+        }
     }
 
     public void visitNewArray(JCNewArray tree) {

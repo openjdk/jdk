@@ -27,7 +27,7 @@
 
 #
 # This script is to generate the supported locale list string and replace the
-# LocaleDataMetaInfo-XLocales.java in <ws>/src/share/classes/sun/util
+# LocaleDataMetaInfo-XLocales.java.template in <ws>/src/share/classes/sun/util
 # 
 # SORT, NAWK & SED is passed in as environment variables.
 #

@@ -36,15 +36,17 @@ package java.util;
  * @author Jon Bentley
  * @author Josh Bloch
  *
- * @version 2009.11.09 m765.827.v8
+ * @version 2009.11.16 m765.827.v12a
  */
 final class DualPivotQuicksort {
 
-    // Suppresses default constructor
+    /**
+     * Suppresses default constructor.
+     */
     private DualPivotQuicksort() {}
 
     /*
-     * Tuning Parameters.
+     * Tuning parameters.
      */
 
     /**
@@ -66,7 +68,7 @@ final class DualPivotQuicksort {
     private static final int COUNTING_SORT_THRESHOLD_FOR_SHORT_OR_CHAR = 32768;
 
     /*
-     * Sorting methods for the seven primitive types.
+     * Sorting methods for 7 primitive types.
      */
 
     /**
@@ -112,7 +114,6 @@ final class DualPivotQuicksort {
             for (int k = left + 1; k <= right; k++) {
                 int ak = a[k];
                 int j;
-
                 for (j = k - 1; j >= left && ak < a[j]; j--) {
                     a[j + 1] = a[j];
                 }
@@ -140,16 +141,20 @@ final class DualPivotQuicksort {
         int e4 = e3 + sixth;
         int e2 = e3 - sixth;
 
-        // Sort these elements in place using a 5-element sorting network
-        if (a[e1] > a[e2]) { int t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
-        if (a[e4] > a[e5]) { int t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-        if (a[e1] > a[e3]) { int t = a[e1]; a[e1] = a[e3]; a[e3] = t; }
-        if (a[e2] > a[e3]) { int t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e1] > a[e4]) { int t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
-        if (a[e3] > a[e4]) { int t = a[e3]; a[e3] = a[e4]; a[e4] = t; }
-        if (a[e2] > a[e5]) { int t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-        if (a[e2] > a[e3]) { int t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e4] > a[e5]) { int t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+        // Sort these elements using a 5-element sorting network
+        int ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+
+        if (ae1 > ae2) { int t = ae1; ae1 = ae2; ae2 = t; }
+        if (ae4 > ae5) { int t = ae4; ae4 = ae5; ae5 = t; }
+        if (ae1 > ae3) { int t = ae1; ae1 = ae3; ae3 = t; }
+        if (ae2 > ae3) { int t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae1 > ae4) { int t = ae1; ae1 = ae4; ae4 = t; }
+        if (ae3 > ae4) { int t = ae3; ae3 = ae4; ae4 = t; }
+        if (ae2 > ae5) { int t = ae2; ae2 = ae5; ae5 = t; }
+        if (ae2 > ae3) { int t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae4 > ae5) { int t = ae4; ae4 = ae5; ae5 = t; }
+
+        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
@@ -162,8 +167,8 @@ final class DualPivotQuicksort {
          * the pivots are swapped back into their final positions, and
          * excluded from subsequent sorting.
          */
-        int pivot1 = a[e2]; a[e2] = a[left];
-        int pivot2 = a[e4]; a[e4] = a[right];
+        int pivot1 = ae2; a[e2] = a[left];
+        int pivot2 = ae4; a[e4] = a[right];
 
         /*
          * Partitioning
@@ -192,21 +197,25 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 int ak = a[k];
-
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
                 } else if (ak > pivot2) {
-                    while (a[great] > pivot2 && k < great) {
-                        great--;
+                    while (a[great] > pivot2) {
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) < pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -234,24 +243,28 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 int ak = a[k];
-
                 if (ak == pivot1) {
-                  continue;
+                    continue;
                 }
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
-                } else {
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
+                } else { // a[k] > pivot
                     while (a[great] > pivot1) {
-                        great--;
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -283,19 +296,19 @@ final class DualPivotQuicksort {
             while (a[less] == pivot1) {
                 less++;
             }
-            for (int k = less + 1; k <= great; k++) {
-                if (a[k] == pivot1) {
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
             while (a[great] == pivot2) {
                 great--;
             }
-            for (int k = great - 1; k >= less; k--) {
-                if (a[k] == pivot2) {
+            for (int k = less + 1; k <= great; ) {
+                int ak = a[k];
+                if (ak == pivot1) {
+                    a[k++] = a[less];
+                    a[less++] = pivot1;
+                } else if (ak == pivot2) {
                     a[k] = a[great];
                     a[great--] = pivot2;
+                } else {
+                    k++;
                 }
             }
         }
@@ -347,7 +360,6 @@ final class DualPivotQuicksort {
             for (int k = left + 1; k <= right; k++) {
                 long ak = a[k];
                 int j;
-
                 for (j = k - 1; j >= left && ak < a[j]; j--) {
                     a[j + 1] = a[j];
                 }
@@ -375,16 +387,20 @@ final class DualPivotQuicksort {
         int e4 = e3 + sixth;
         int e2 = e3 - sixth;
 
-        // Sort these elements in place using a 5-element sorting network
-        if (a[e1] > a[e2]) { long t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
-        if (a[e4] > a[e5]) { long t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-        if (a[e1] > a[e3]) { long t = a[e1]; a[e1] = a[e3]; a[e3] = t; }
-        if (a[e2] > a[e3]) { long t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e1] > a[e4]) { long t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
-        if (a[e3] > a[e4]) { long t = a[e3]; a[e3] = a[e4]; a[e4] = t; }
-        if (a[e2] > a[e5]) { long t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-        if (a[e2] > a[e3]) { long t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e4] > a[e5]) { long t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+        // Sort these elements using a 5-element sorting network
+        long ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+
+        if (ae1 > ae2) { long t = ae1; ae1 = ae2; ae2 = t; }
+        if (ae4 > ae5) { long t = ae4; ae4 = ae5; ae5 = t; }
+        if (ae1 > ae3) { long t = ae1; ae1 = ae3; ae3 = t; }
+        if (ae2 > ae3) { long t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae1 > ae4) { long t = ae1; ae1 = ae4; ae4 = t; }
+        if (ae3 > ae4) { long t = ae3; ae3 = ae4; ae4 = t; }
+        if (ae2 > ae5) { long t = ae2; ae2 = ae5; ae5 = t; }
+        if (ae2 > ae3) { long t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae4 > ae5) { long t = ae4; ae4 = ae5; ae5 = t; }
+
+        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
@@ -397,8 +413,8 @@ final class DualPivotQuicksort {
          * the pivots are swapped back into their final positions, and
          * excluded from subsequent sorting.
          */
-        long pivot1 = a[e2]; a[e2] = a[left];
-        long pivot2 = a[e4]; a[e4] = a[right];
+        long pivot1 = ae2; a[e2] = a[left];
+        long pivot2 = ae4; a[e4] = a[right];
 
         /*
          * Partitioning
@@ -427,21 +443,25 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 long ak = a[k];
-
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
                 } else if (ak > pivot2) {
-                    while (a[great] > pivot2 && k < great) {
-                        great--;
+                    while (a[great] > pivot2) {
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -469,24 +489,28 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 long ak = a[k];
-
                 if (ak == pivot1) {
-                  continue;
+                    continue;
                 }
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
-                } else {
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
+                } else { // a[k] > pivot
                     while (a[great] > pivot1) {
-                        great--;
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -518,19 +542,19 @@ final class DualPivotQuicksort {
             while (a[less] == pivot1) {
                 less++;
             }
-            for (int k = less + 1; k <= great; k++) {
-                if (a[k] == pivot1) {
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
             while (a[great] == pivot2) {
                 great--;
             }
-            for (int k = great - 1; k >= less; k--) {
-                if (a[k] == pivot2) {
+            for (int k = less + 1; k <= great; ) {
+                long ak = a[k];
+                if (ak == pivot1) {
+                    a[k++] = a[less];
+                    a[less++] = pivot1;
+                } else if (ak == pivot2) {
                     a[k] = a[great];
                     a[great--] = pivot2;
+                } else {
+                    k++;
                 }
             }
         }
@@ -585,7 +609,6 @@ final class DualPivotQuicksort {
             for (int k = left + 1; k <= right; k++) {
                 short ak = a[k];
                 int j;
-
                 for (j = k - 1; j >= left && ak < a[j]; j--) {
                     a[j + 1] = a[j];
                 }
@@ -627,16 +650,20 @@ final class DualPivotQuicksort {
         int e4 = e3 + sixth;
         int e2 = e3 - sixth;
 
-        // Sort these elements in place using a 5-element sorting network
-        if (a[e1] > a[e2]) { short t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
-        if (a[e4] > a[e5]) { short t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-        if (a[e1] > a[e3]) { short t = a[e1]; a[e1] = a[e3]; a[e3] = t; }
-        if (a[e2] > a[e3]) { short t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e1] > a[e4]) { short t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
-        if (a[e3] > a[e4]) { short t = a[e3]; a[e3] = a[e4]; a[e4] = t; }
-        if (a[e2] > a[e5]) { short t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-        if (a[e2] > a[e3]) { short t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e4] > a[e5]) { short t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+        // Sort these elements using a 5-element sorting network
+        short ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+
+        if (ae1 > ae2) { short t = ae1; ae1 = ae2; ae2 = t; }
+        if (ae4 > ae5) { short t = ae4; ae4 = ae5; ae5 = t; }
+        if (ae1 > ae3) { short t = ae1; ae1 = ae3; ae3 = t; }
+        if (ae2 > ae3) { short t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae1 > ae4) { short t = ae1; ae1 = ae4; ae4 = t; }
+        if (ae3 > ae4) { short t = ae3; ae3 = ae4; ae4 = t; }
+        if (ae2 > ae5) { short t = ae2; ae2 = ae5; ae5 = t; }
+        if (ae2 > ae3) { short t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae4 > ae5) { short t = ae4; ae4 = ae5; ae5 = t; }
+
+        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
@@ -649,8 +676,8 @@ final class DualPivotQuicksort {
          * the pivots are swapped back into their final positions, and
          * excluded from subsequent sorting.
          */
-        short pivot1 = a[e2]; a[e2] = a[left];
-        short pivot2 = a[e4]; a[e4] = a[right];
+        short pivot1 = ae2; a[e2] = a[left];
+        short pivot2 = ae4; a[e4] = a[right];
 
         /*
          * Partitioning
@@ -679,21 +706,25 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 short ak = a[k];
-
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
                 } else if (ak > pivot2) {
-                    while (a[great] > pivot2 && k < great) {
-                        great--;
+                    while (a[great] > pivot2) {
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -721,24 +752,28 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 short ak = a[k];
-
                 if (ak == pivot1) {
-                  continue;
+                    continue;
                 }
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
-                } else {
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
+                } else { // a[k] > pivot
                     while (a[great] > pivot1) {
-                        great--;
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -770,19 +805,19 @@ final class DualPivotQuicksort {
             while (a[less] == pivot1) {
                 less++;
             }
-            for (int k = less + 1; k <= great; k++) {
-                if (a[k] == pivot1) {
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
             while (a[great] == pivot2) {
                 great--;
             }
-            for (int k = great - 1; k >= less; k--) {
-                if (a[k] == pivot2) {
+            for (int k = less + 1; k <= great; ) {
+                short ak = a[k];
+                if (ak == pivot1) {
+                    a[k++] = a[less];
+                    a[less++] = pivot1;
+                } else if (ak == pivot2) {
                     a[k] = a[great];
                     a[great--] = pivot2;
+                } else {
+                    k++;
                 }
             }
         }
@@ -837,7 +872,6 @@ final class DualPivotQuicksort {
             for (int k = left + 1; k <= right; k++) {
                 char ak = a[k];
                 int j;
-
                 for (j = k - 1; j >= left && ak < a[j]; j--) {
                     a[j + 1] = a[j];
                 }
@@ -877,16 +911,20 @@ final class DualPivotQuicksort {
         int e4 = e3 + sixth;
         int e2 = e3 - sixth;
 
-        // Sort these elements in place using a 5-element sorting network
-        if (a[e1] > a[e2]) { char t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
-        if (a[e4] > a[e5]) { char t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-        if (a[e1] > a[e3]) { char t = a[e1]; a[e1] = a[e3]; a[e3] = t; }
-        if (a[e2] > a[e3]) { char t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e1] > a[e4]) { char t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
-        if (a[e3] > a[e4]) { char t = a[e3]; a[e3] = a[e4]; a[e4] = t; }
-        if (a[e2] > a[e5]) { char t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-        if (a[e2] > a[e3]) { char t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e4] > a[e5]) { char t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+        // Sort these elements using a 5-element sorting network
+        char ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+
+        if (ae1 > ae2) { char t = ae1; ae1 = ae2; ae2 = t; }
+        if (ae4 > ae5) { char t = ae4; ae4 = ae5; ae5 = t; }
+        if (ae1 > ae3) { char t = ae1; ae1 = ae3; ae3 = t; }
+        if (ae2 > ae3) { char t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae1 > ae4) { char t = ae1; ae1 = ae4; ae4 = t; }
+        if (ae3 > ae4) { char t = ae3; ae3 = ae4; ae4 = t; }
+        if (ae2 > ae5) { char t = ae2; ae2 = ae5; ae5 = t; }
+        if (ae2 > ae3) { char t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae4 > ae5) { char t = ae4; ae4 = ae5; ae5 = t; }
+
+        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
@@ -899,8 +937,8 @@ final class DualPivotQuicksort {
          * the pivots are swapped back into their final positions, and
          * excluded from subsequent sorting.
          */
-        char pivot1 = a[e2]; a[e2] = a[left];
-        char pivot2 = a[e4]; a[e4] = a[right];
+        char pivot1 = ae2; a[e2] = a[left];
+        char pivot2 = ae4; a[e4] = a[right];
 
         /*
          * Partitioning
@@ -929,21 +967,25 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 char ak = a[k];
-
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
                 } else if (ak > pivot2) {
-                    while (a[great] > pivot2 && k < great) {
-                        great--;
+                    while (a[great] > pivot2) {
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -971,24 +1013,28 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 char ak = a[k];
-
                 if (ak == pivot1) {
-                  continue;
+                    continue;
                 }
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
-                } else {
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
+                } else { // a[k] > pivot
                     while (a[great] > pivot1) {
-                        great--;
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -1020,19 +1066,19 @@ final class DualPivotQuicksort {
             while (a[less] == pivot1) {
                 less++;
             }
-            for (int k = less + 1; k <= great; k++) {
-                if (a[k] == pivot1) {
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
             while (a[great] == pivot2) {
                 great--;
             }
-            for (int k = great - 1; k >= less; k--) {
-                if (a[k] == pivot2) {
+            for (int k = less + 1; k <= great; ) {
+                char ak = a[k];
+                if (ak == pivot1) {
+                    a[k++] = a[less];
+                    a[less++] = pivot1;
+                } else if (ak == pivot2) {
                     a[k] = a[great];
                     a[great--] = pivot2;
+                } else {
+                    k++;
                 }
             }
         }
@@ -1087,7 +1133,6 @@ final class DualPivotQuicksort {
             for (int k = left + 1; k <= right; k++) {
                 byte ak = a[k];
                 int j;
-
                 for (j = k - 1; j >= left && ak < a[j]; j--) {
                     a[j + 1] = a[j];
                 }
@@ -1129,16 +1174,20 @@ final class DualPivotQuicksort {
         int e4 = e3 + sixth;
         int e2 = e3 - sixth;
 
-        // Sort these elements in place using a 5-element sorting network
-        if (a[e1] > a[e2]) { byte t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
-        if (a[e4] > a[e5]) { byte t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-        if (a[e1] > a[e3]) { byte t = a[e1]; a[e1] = a[e3]; a[e3] = t; }
-        if (a[e2] > a[e3]) { byte t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e1] > a[e4]) { byte t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
-        if (a[e3] > a[e4]) { byte t = a[e3]; a[e3] = a[e4]; a[e4] = t; }
-        if (a[e2] > a[e5]) { byte t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-        if (a[e2] > a[e3]) { byte t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e4] > a[e5]) { byte t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+        // Sort these elements using a 5-element sorting network
+        byte ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+
+        if (ae1 > ae2) { byte t = ae1; ae1 = ae2; ae2 = t; }
+        if (ae4 > ae5) { byte t = ae4; ae4 = ae5; ae5 = t; }
+        if (ae1 > ae3) { byte t = ae1; ae1 = ae3; ae3 = t; }
+        if (ae2 > ae3) { byte t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae1 > ae4) { byte t = ae1; ae1 = ae4; ae4 = t; }
+        if (ae3 > ae4) { byte t = ae3; ae3 = ae4; ae4 = t; }
+        if (ae2 > ae5) { byte t = ae2; ae2 = ae5; ae5 = t; }
+        if (ae2 > ae3) { byte t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae4 > ae5) { byte t = ae4; ae4 = ae5; ae5 = t; }
+
+        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
@@ -1151,8 +1200,8 @@ final class DualPivotQuicksort {
          * the pivots are swapped back into their final positions, and
          * excluded from subsequent sorting.
          */
-        byte pivot1 = a[e2]; a[e2] = a[left];
-        byte pivot2 = a[e4]; a[e4] = a[right];
+        byte pivot1 = ae2; a[e2] = a[left];
+        byte pivot2 = ae4; a[e4] = a[right];
 
         /*
          * Partitioning
@@ -1181,21 +1230,25 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 byte ak = a[k];
-
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
                 } else if (ak > pivot2) {
-                    while (a[great] > pivot2 && k < great) {
-                        great--;
+                    while (a[great] > pivot2) {
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -1223,24 +1276,28 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 byte ak = a[k];
-
                 if (ak == pivot1) {
-                  continue;
+                    continue;
                 }
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
-                } else {
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
+                } else { // a[k] > pivot
                     while (a[great] > pivot1) {
-                        great--;
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -1272,19 +1329,19 @@ final class DualPivotQuicksort {
             while (a[less] == pivot1) {
                 less++;
             }
-            for (int k = less + 1; k <= great; k++) {
-                if (a[k] == pivot1) {
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
             while (a[great] == pivot2) {
                 great--;
             }
-            for (int k = great - 1; k >= less; k--) {
-                if (a[k] == pivot2) {
+            for (int k = less + 1; k <= great; ) {
+                byte ak = a[k];
+                if (ak == pivot1) {
+                    a[k++] = a[less];
+                    a[less++] = pivot1;
+                } else if (ak == pivot2) {
                     a[k] = a[great];
                     a[great--] = pivot2;
+                } else {
+                    k++;
                 }
             }
         }
@@ -1356,7 +1413,6 @@ final class DualPivotQuicksort {
 
         for (int k = left; k <= n; k++) {
             float ak = a[k];
-
             if (ak == 0.0f && NEGATIVE_ZERO == Float.floatToIntBits(ak)) {
                 a[k] = 0.0f;
                 numNegativeZeros++;
@@ -1432,7 +1488,6 @@ final class DualPivotQuicksort {
             for (int k = left + 1; k <= right; k++) {
                 float ak = a[k];
                 int j;
-
                 for (j = k - 1; j >= left && ak < a[j]; j--) {
                     a[j + 1] = a[j];
                 }
@@ -1460,16 +1515,20 @@ final class DualPivotQuicksort {
         int e4 = e3 + sixth;
         int e2 = e3 - sixth;
 
-        // Sort these elements in place using a 5-element sorting network
-        if (a[e1] > a[e2]) { float t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
-        if (a[e4] > a[e5]) { float t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-        if (a[e1] > a[e3]) { float t = a[e1]; a[e1] = a[e3]; a[e3] = t; }
-        if (a[e2] > a[e3]) { float t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e1] > a[e4]) { float t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
-        if (a[e3] > a[e4]) { float t = a[e3]; a[e3] = a[e4]; a[e4] = t; }
-        if (a[e2] > a[e5]) { float t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-        if (a[e2] > a[e3]) { float t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e4] > a[e5]) { float t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+        // Sort these elements using a 5-element sorting network
+        float ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+
+        if (ae1 > ae2) { float t = ae1; ae1 = ae2; ae2 = t; }
+        if (ae4 > ae5) { float t = ae4; ae4 = ae5; ae5 = t; }
+        if (ae1 > ae3) { float t = ae1; ae1 = ae3; ae3 = t; }
+        if (ae2 > ae3) { float t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae1 > ae4) { float t = ae1; ae1 = ae4; ae4 = t; }
+        if (ae3 > ae4) { float t = ae3; ae3 = ae4; ae4 = t; }
+        if (ae2 > ae5) { float t = ae2; ae2 = ae5; ae5 = t; }
+        if (ae2 > ae3) { float t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae4 > ae5) { float t = ae4; ae4 = ae5; ae5 = t; }
+
+        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
@@ -1482,8 +1541,8 @@ final class DualPivotQuicksort {
          * the pivots are swapped back into their final positions, and
          * excluded from subsequent sorting.
          */
-        float pivot1 = a[e2]; a[e2] = a[left];
-        float pivot2 = a[e4]; a[e4] = a[right];
+        float pivot1 = ae2; a[e2] = a[left];
+        float pivot2 = ae4; a[e4] = a[right];
 
         /*
          * Partitioning
@@ -1512,21 +1571,25 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 float ak = a[k];
-
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
                 } else if (ak > pivot2) {
-                    while (a[great] > pivot2 && k < great) {
-                        great--;
+                    while (a[great] > pivot2) {
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -1554,24 +1617,28 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 float ak = a[k];
-
                 if (ak == pivot1) {
-                  continue;
+                    continue;
                 }
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
-                } else {
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
+                } else { // a[k] > pivot
                     while (a[great] > pivot1) {
-                        great--;
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -1603,19 +1670,19 @@ final class DualPivotQuicksort {
             while (a[less] == pivot1) {
                 less++;
             }
-            for (int k = less + 1; k <= great; k++) {
-                if (a[k] == pivot1) {
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
             while (a[great] == pivot2) {
                 great--;
             }
-            for (int k = great - 1; k >= less; k--) {
-                if (a[k] == pivot2) {
+            for (int k = less + 1; k <= great; ) {
+                float ak = a[k];
+                if (ak == pivot1) {
+                    a[k++] = a[less];
+                    a[less++] = pivot1;
+                } else if (ak == pivot2) {
                     a[k] = a[great];
                     a[great--] = pivot2;
+                } else {
+                    k++;
                 }
             }
         }
@@ -1687,7 +1754,6 @@ final class DualPivotQuicksort {
 
         for (int k = left; k <= n; k++) {
             double ak = a[k];
-
             if (ak == 0.0d && NEGATIVE_ZERO == Double.doubleToLongBits(ak)) {
                 a[k] = 0.0d;
                 numNegativeZeros++;
@@ -1763,7 +1829,6 @@ final class DualPivotQuicksort {
             for (int k = left + 1; k <= right; k++) {
                 double ak = a[k];
                 int j;
-
                 for (j = k - 1; j >= left && ak < a[j]; j--) {
                     a[j + 1] = a[j];
                 }
@@ -1791,16 +1856,20 @@ final class DualPivotQuicksort {
         int e4 = e3 + sixth;
         int e2 = e3 - sixth;
 
-        // Sort these elements in place using a 5-element sorting network
-        if (a[e1] > a[e2]) { double t = a[e1]; a[e1] = a[e2]; a[e2] = t; }
-        if (a[e4] > a[e5]) { double t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
-        if (a[e1] > a[e3]) { double t = a[e1]; a[e1] = a[e3]; a[e3] = t; }
-        if (a[e2] > a[e3]) { double t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e1] > a[e4]) { double t = a[e1]; a[e1] = a[e4]; a[e4] = t; }
-        if (a[e3] > a[e4]) { double t = a[e3]; a[e3] = a[e4]; a[e4] = t; }
-        if (a[e2] > a[e5]) { double t = a[e2]; a[e2] = a[e5]; a[e5] = t; }
-        if (a[e2] > a[e3]) { double t = a[e2]; a[e2] = a[e3]; a[e3] = t; }
-        if (a[e4] > a[e5]) { double t = a[e4]; a[e4] = a[e5]; a[e5] = t; }
+        // Sort these elements using a 5-element sorting network
+        double ae1 = a[e1], ae2 = a[e2], ae3 = a[e3], ae4 = a[e4], ae5 = a[e5];
+
+        if (ae1 > ae2) { double t = ae1; ae1 = ae2; ae2 = t; }
+        if (ae4 > ae5) { double t = ae4; ae4 = ae5; ae5 = t; }
+        if (ae1 > ae3) { double t = ae1; ae1 = ae3; ae3 = t; }
+        if (ae2 > ae3) { double t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae1 > ae4) { double t = ae1; ae1 = ae4; ae4 = t; }
+        if (ae3 > ae4) { double t = ae3; ae3 = ae4; ae4 = t; }
+        if (ae2 > ae5) { double t = ae2; ae2 = ae5; ae5 = t; }
+        if (ae2 > ae3) { double t = ae2; ae2 = ae3; ae3 = t; }
+        if (ae4 > ae5) { double t = ae4; ae4 = ae5; ae5 = t; }
+
+        a[e1] = ae1; a[e3] = ae3; a[e5] = ae5;
 
         /*
          * Use the second and fourth of the five sorted elements as pivots.
@@ -1813,8 +1882,8 @@ final class DualPivotQuicksort {
          * the pivots are swapped back into their final positions, and
          * excluded from subsequent sorting.
          */
-        double pivot1 = a[e2]; a[e2] = a[left];
-        double pivot2 = a[e4]; a[e4] = a[right];
+        double pivot1 = ae2; a[e2] = a[left];
+        double pivot2 = ae4; a[e4] = a[right];
 
         /*
          * Partitioning
@@ -1843,21 +1912,25 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 double ak = a[k];
-
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
                 } else if (ak > pivot2) {
-                    while (a[great] > pivot2 && k < great) {
-                        great--;
+                    while (a[great] > pivot2) {
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -1885,24 +1958,28 @@ final class DualPivotQuicksort {
              *
              * Pointer k is the first index of ?-part
              */
+            outer:
             for (int k = less; k <= great; k++) {
                 double ak = a[k];
-
                 if (ak == pivot1) {
-                  continue;
+                    continue;
                 }
                 if (ak < pivot1) {
-                    a[k] = a[less];
-                    a[less++] = ak;
-                } else {
+                    if (k > less) {
+                        a[k] = a[less];
+                        a[less] = ak;
+                    }
+                    less++;
+                } else { // a[k] > pivot
                     while (a[great] > pivot1) {
-                        great--;
+                        if (k == great--) {
+                            break outer;
+                        }
                     }
                     a[k] = a[great];
                     a[great--] = ak;
-                    ak = a[k];
 
-                    if (ak < pivot1) {
+                    if ((ak = a[k]) <  pivot1) {
                         a[k] = a[less];
                         a[less++] = ak;
                     }
@@ -1934,19 +2011,19 @@ final class DualPivotQuicksort {
             while (a[less] == pivot1) {
                 less++;
             }
-            for (int k = less + 1; k <= great; k++) {
-                if (a[k] == pivot1) {
-                    a[k] = a[less];
-                    a[less++] = pivot1;
-                }
-            }
             while (a[great] == pivot2) {
                 great--;
             }
-            for (int k = great - 1; k >= less; k--) {
-                if (a[k] == pivot2) {
+            for (int k = less + 1; k <= great; ) {
+                double ak = a[k];
+                if (ak == pivot1) {
+                    a[k++] = a[less];
+                    a[less++] = pivot1;
+                } else if (ak == pivot2) {
                     a[k] = a[great];
                     a[great--] = pivot2;
+                } else {
+                    k++;
                 }
             }
         }

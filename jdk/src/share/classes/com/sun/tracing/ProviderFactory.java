@@ -4,7 +4,10 @@ package com.sun.tracing;
 import java.util.HashSet;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
-import java.util.logging.Logger;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import sun.security.action.GetPropertyAction;
 
 import sun.tracing.NullProviderFactory;
 import sun.tracing.PrintStreamProviderFactory;
@@ -52,23 +55,17 @@ public abstract class ProviderFactory {
         HashSet<ProviderFactory> factories = new HashSet<ProviderFactory>();
 
         // Try to instantiate a DTraceProviderFactory
-        String prop = null;
-        try { prop = System.getProperty("com.sun.tracing.dtrace"); }
-        catch (java.security.AccessControlException e) {
-            Logger.getAnonymousLogger().fine(
-                "Cannot access property com.sun.tracing.dtrace");
-        }
+        String prop = AccessController.doPrivileged(
+            new GetPropertyAction("com.sun.tracing.dtrace"));
+
         if ( (prop == null || !prop.equals("disable")) &&
              DTraceProviderFactory.isSupported() ) {
             factories.add(new DTraceProviderFactory());
         }
 
         // Try to instantiate an output stream factory
-        try { prop = System.getProperty("sun.tracing.stream"); }
-        catch (java.security.AccessControlException e) {
-            Logger.getAnonymousLogger().fine(
-                "Cannot access property sun.tracing.stream");
-        }
+        prop = AccessController.doPrivileged(
+            new GetPropertyAction("sun.tracing.stream"));
         if (prop != null) {
             for (String spec : prop.split(",")) {
                 PrintStream ps = getPrintStreamFromSpec(spec);
@@ -89,22 +86,29 @@ public abstract class ProviderFactory {
         }
     }
 
-    private static PrintStream getPrintStreamFromSpec(String spec) {
+    private static PrintStream getPrintStreamFromSpec(final String spec) {
         try {
             // spec is in the form of <class>.<field>, where <class> is
             // a fully specified class name, and <field> is a static member
             // in that class.  The <field> must be a 'PrintStream' or subtype
             // in order to be used.
-            int fieldpos = spec.lastIndexOf('.');
-            Class<?> cls = Class.forName(spec.substring(0, fieldpos));
-            Field f = cls.getField(spec.substring(fieldpos + 1));
-            Class<?> fieldType = f.getType();
+            final int fieldpos = spec.lastIndexOf('.');
+            final Class<?> cls = Class.forName(spec.substring(0, fieldpos));
+
+            Field f = AccessController.doPrivileged(new PrivilegedExceptionAction<Field>() {
+                public Field run() throws NoSuchFieldException {
+                    return cls.getField(spec.substring(fieldpos + 1));
+                }
+            });
+
             return (PrintStream)f.get(null);
-        } catch (Exception e) {
-            Logger.getAnonymousLogger().warning(
-                "Could not parse sun.tracing.stream property: " + e);
+        } catch (ClassNotFoundException e) {
+            throw new AssertionError(e);
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
+        } catch (PrivilegedActionException e) {
+            throw new AssertionError(e);
         }
-        return null;
     }
 }
 

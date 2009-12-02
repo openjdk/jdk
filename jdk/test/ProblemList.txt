@@ -344,6 +344,9 @@ java/io/StreamTokenizer/Comment.java			 	generic-all
 # Some of these tests (like java/lang/management) may just need to be marked
 #   othervm, but that is partially speculation.
 
+# Samevm failure on OpenSolaris, security manager?
+java/lang/ClassLoader/UninitializedParent.java			generic-all
+
 # Times out on solaris 10 sparc
 java/lang/ClassLoader/Assert.java				generic-all
 
@@ -537,6 +540,18 @@ javax/imageio/plugins/jpeg/ReadAsGrayTest.java			generic-all
 
 # Missing close on file wbmp*, windows samevm
 javax/imageio/plugins/wbmp/CanDecodeTest.java			generic-all
+
+# Failures on OpenSolaris, cannot read input files? samevm issues?
+javax/imageio/metadata/BooleanAttributes.java			generic-all
+javax/imageio/plugins/bmp/BMPSubsamplingTest.java		generic-all
+javax/imageio/plugins/bmp/TopDownTest.java			generic-all
+javax/imageio/plugins/gif/EncodeSubImageTest.java		generic-all
+javax/imageio/plugins/gif/GifTransparencyTest.java		generic-all
+javax/imageio/plugins/png/GrayPngTest.java			generic-all
+javax/imageio/plugins/png/ItxtUtf8Test.java			generic-all
+javax/imageio/plugins/png/MergeStdCommentTest.java		generic-all
+javax/imageio/plugins/png/ShortHistogramTest.java		generic-all
+javax/imageio/plugins/shared/BitDepth.java			generic-all
 
 # Exclude all javax/print tests, even if they passed, they may need samevm work
 
@@ -878,6 +893,10 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 
 # jdk_security
 
+# Fails on OpenSolaris, IOException: Attempt to obtain kerberos service ticket
+#     for host/`hostname`@RABBIT.HOLE failed!
+sun/security/krb5/auto/SSL.java					generic-all
+
 # Run too slow on Solaris 10 sparc
 sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/SSLSocketTimeoutNulls.java solaris-sparc
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ClientTimeout.java solaris-sparc
@@ -1073,9 +1092,6 @@ java/text/Bidi/Bug6665028.java				 	linux-x64
 #  So most if not all tools tests are now being run with "othervm" mode.
 #  Some of these tools tests have a tendency to use fixed ports, bad idea.
 
-# Solaris 10 client x86, java.lang.IndexOutOfBoundsException resumer Interrupted
-com/sun/jdi/SimulResumerTest.java				generic-all
-
 # Output of jps differs from expected output.
 #   Invalid argument count on solaris-sparc and x64
 sun/tools/jstatd/jstatdPort.sh					generic-all
@@ -1087,11 +1103,16 @@ sun/tools/jps/jps-lm.sh						generic-all
 sun/tools/jps/jps-Vvml_2.sh					generic-all
 sun/tools/jps/jps-m_2.sh					generic-all
 
+# Fails on OpenSolaris "Could not synchronize with target"
+sun/tools/jps/jps-Defaults.sh					generic-all
+sun/tools/jps/jps-V_2.sh					generic-all
+sun/tools/jps/jps-Vm_2.sh					generic-all
+sun/tools/jps/jps-Vvm.sh					generic-all
+sun/tools/jps/jps-Vvml.sh					generic-all
+sun/tools/jps/jps-m.sh						generic-all
+
 # Server name error, port 2098 problem?
 sun/tools/jstatd/jstatdServerName.sh				generic-all
-
-# Solaris, handshake failed, othervm mode
-com/sun/jdi/RedefineException.sh				generic-all
 
 # These tests fail on solaris sparc, all the time
 com/sun/servicetag/DeleteServiceTag.java			generic-all
@@ -1117,9 +1138,6 @@ sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 # Unexpected Monitor Exception, solaris sparc -client
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh	generic-all
 
-# Probably should be samevm, but seem to cause errors even in othervm at times
-sun/tools/jhat/HatHeapDump1Test.java			 	generic-all
-
 # Problems on windows, jmap.exe hangs? (these run jmap)
 sun/tools/jmap/Basic.sh						windows-all
 
@@ -1128,9 +1146,6 @@ sun/tools/jstatd/jstatdDefaults.sh			 	solaris-all
 
 # Solaris sparcv9, jps output does not match, x64 different
 sun/tools/jstatd/jstatdExternalRegistry.sh		 	solaris-all
-
-# Probably should be samevm, but seem to cause errors even in othervm at times
-sun/tools/native2ascii/NativeErrors.java		 	generic-all
 
 # Solaris 10 sparc 32bit -client, java.lang.AssertionError: Some tests failed
 tools/jar/JarEntryTime.java					generic-all

@@ -2094,9 +2094,43 @@ Zone Asia/Novosibirsk	 5:31:40 -	LMT	1919 Dec 14 6:00
 			 6:00	Russia	NOV%sT	1992 Jan 19 2:00s
 			 7:00	Russia	NOV%sT	1993 May 23 # say Shanks & P.
 			 6:00	Russia	NOV%sT
+
+# From Alexander Krivenyshev (2009-10-13):
+# Kemerovo oblast' (Kemerovo region) in Russia will change current time zone on
+# March 28, 2010:
+# from current Russia Zone 6 - Krasnoyarsk Time Zone (KRA) UTC +0700
+# to Russia Zone 5 - Novosibirsk Time Zone (NOV) UTC +0600
+#
+# This is according to Government of Russia decree # 740, on September
+# 14, 2009 "Application in the territory of the Kemerovo region the Fifth
+# time zone." ("Russia Zone 5" or old "USSR Zone 5" is GMT +0600)
+#
+# Russian Government web site (Russian language)
+# <a href="http://www.government.ru/content/governmentactivity/rfgovernmentdecisions/archiv">
+# http://www.government.ru/content/governmentactivity/rfgovernmentdecisions/archive/2009/09/14/991633.htm
+# </a>
+# or Russian-English translation by WorldTimeZone.com with reference
+# map to local region and new Russia Time Zone map after March 28, 2010
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_russia03.html">
+# http://www.worldtimezone.com/dst_news/dst_news_russia03.html
+# </a>
+#
+# Thus, when Russia will switch to DST on the night of March 28, 2010
+# Kemerovo region (Kemerovo oblast') will not change the clock.
+#
+# As a result, Kemerovo oblast' will be in the same time zone as
+# Novosibirsk, Omsk, Tomsk, Barnaul and Altai Republic.
+
+Zone Asia/Novokuznetsk	 5:48:48 -	NMT	1920 Jan  6
+			 6:00	-	KRAT	1930 Jun 21 # Krasnoyarsk Time
+			 7:00	Russia	KRA%sT	1991 Mar 31 2:00s
+			 6:00	Russia	KRA%sT	1992 Jan 19 2:00s
+			 7:00	Russia	KRA%sT	2010 Mar 28 2:00s
+			 6:00	Russia	NOV%sT # Novosibirsk/Novokuznetsk Time
+
 #
 # From Oscar van Vlijmen (2001-08-25): [This region consists of]
-# Kemerovskaya oblast', Krasnoyarskij kraj,
+# Krasnoyarskij kraj,
 # Tajmyrskij (Dolgano-Nenetskij) avtonomnyj okrug,
 # Respublika Tuva, Respublika Khakasiya, Evenkijskij avtonomnyj okrug.
 Zone Asia/Krasnoyarsk	 6:11:20 -	LMT	1920 Jan  6
