@@ -48,7 +48,7 @@ public class SSL {
         KDC kdc = KDC.create(OneKDC.REALM);
         // Run this after KDC, so our own DNS service can be started
         try {
-            SERVER = InetAddress.getLocalHost().getHostName();
+            SERVER = InetAddress.getLocalHost().getHostName().toLowerCase();
         } catch (java.net.UnknownHostException e) {
             SERVER = "localhost";
         }
