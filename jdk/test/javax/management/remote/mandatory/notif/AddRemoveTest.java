@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,10 @@
  */
 
 import java.net.MalformedURLException;
+import java.io.IOException;
 
-import java.util.Collections;
-import java.util.Map;
 import javax.management.*;
 import javax.management.remote.*;
-import javax.management.remote.rmi.RMIConnectorServer;
 
 public class AddRemoveTest {
     private static final String[] protocols = {"rmi", "iiop", "jmxmp"};
@@ -71,16 +69,9 @@ public class AddRemoveTest {
         }
     }
 
-    private static boolean test(String proto) throws Exception {
-        boolean ok = test(proto, false);
-        ok &= test(proto, true);
-        return ok;
-    }
-
-    private static boolean test(String proto, boolean eventService)
+    private static boolean test(String proto)
             throws Exception {
-        System.out.println(">>> Test for protocol " + proto + " with" +
-                (eventService ? "" : "out") + " event service");
+        System.out.println(">>> Test for protocol " + proto);
         JMXServiceURL u = new JMXServiceURL(proto, null, 0);
         JMXConnectorServer server;
         JMXServiceURL addr;
@@ -98,10 +89,7 @@ public class AddRemoveTest {
 
         try {
             // with a client listener, but close the server first
-            Map<String, String> env = Collections.singletonMap(
-                    RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
-                    Boolean.toString(eventService));
-            server = JMXConnectorServerFactory.newJMXConnectorServer(u, env, mbs);
+            server = JMXConnectorServerFactory.newJMXConnectorServer(u, null, mbs);
             server.start();
 
             addr = server.getAddress();

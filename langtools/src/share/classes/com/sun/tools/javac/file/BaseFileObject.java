@@ -120,6 +120,14 @@ public abstract class BaseFileObject implements JavaFileObject {
 
     }
 
+    // force subtypes to define equals
+    @Override
+    public abstract boolean equals(Object other);
+
+    // force subtypes to define hashCode
+    @Override
+    public abstract int hashCode();
+
     /** The file manager that created this JavaFileObject. */
     protected final JavacFileManager fileManager;
 }

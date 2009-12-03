@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import sun.misc.BASE64Encoder;
 import sun.misc.BASE64Decoder;
 
 import sun.security.pkcs.*;
+import sun.security.x509.AlgorithmId;
 
 /**
  * <p>A signature file as defined in the <a
@@ -103,7 +104,7 @@ public class SignatureFile {
             if (name.length() > 8 || name.indexOf('.') != -1) {
                 throw new JarException("invalid file name");
             }
-            rawName = name.toUpperCase();
+            rawName = name.toUpperCase(Locale.ENGLISH);
         }
     }
 
@@ -217,7 +218,8 @@ public class SignatureFile {
         if (signatureBlock != null) {
             SignerInfo info = signatureBlock.getSignerInfos()[0];
             suffix = info.getDigestEncryptionAlgorithmId().getName();
-            suffix = suffix.substring(suffix.length() - 3);
+            String temp = AlgorithmId.getEncAlgFromSigAlg(suffix);
+            if (temp != null) suffix = temp;
         }
         return "META-INF/" + rawName + "." + suffix;
     }

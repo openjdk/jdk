@@ -32,10 +32,9 @@ import java.security.Principal;
 import java.security.cert.*;
 
 import javax.security.auth.x500.X500Principal;
-import javax.security.auth.kerberos.KerberosPrincipal;
 
+import sun.security.ssl.Krb5Helper;
 import sun.security.x509.X500Name;
-import sun.security.krb5.PrincipalName;
 
 import sun.net.util.IPAddressUtil;
 
@@ -98,8 +97,7 @@ public class HostnameChecker {
     /**
      * Perform the check for Kerberos.
      */
-    public static boolean match(String expectedName,
-                        KerberosPrincipal principal) {
+    public static boolean match(String expectedName, Principal principal) {
         String hostName = getServerName(principal);
         return (expectedName.equalsIgnoreCase(hostName));
     }
@@ -107,23 +105,8 @@ public class HostnameChecker {
     /**
      * Return the Server name from Kerberos principal.
      */
-    public static String getServerName(KerberosPrincipal principal) {
-        if (principal == null) {
-           return null;
-        }
-        String hostName = null;
-        try {
-            PrincipalName princName =
-                new PrincipalName(principal.getName(),
-                        PrincipalName.KRB_NT_SRV_HST);
-            String[] nameParts = princName.getNameStrings();
-            if (nameParts.length >= 2) {
-                hostName = nameParts[1];
-            }
-        } catch (Exception e) {
-            // ignore
-        }
-        return hostName;
+    public static String getServerName(Principal principal) {
+        return Krb5Helper.getPrincipalHostName(principal);
     }
 
     /**

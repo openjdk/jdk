@@ -8214,6 +8214,15 @@ void MacroAssembler::store_heap_oop(Address dst, Register src) {
   }
 }
 
+// Used for storing NULLs.
+void MacroAssembler::store_heap_oop_null(Address dst) {
+  if (UseCompressedOops) {
+    movl(dst, (int32_t)NULL_WORD);
+  } else {
+    movslq(dst, (int32_t)NULL_WORD);
+  }
+}
+
 // Algorithm must match oop.inline.hpp encode_heap_oop.
 void MacroAssembler::encode_heap_oop(Register r) {
   assert (UseCompressedOops, "should be compressed");
@@ -8634,8 +8643,10 @@ void MacroAssembler::char_arrays_equals(bool is_array_equ, Register ary1, Regist
 
   if (is_array_equ) {
     // Need additional checks for arrays_equals.
-    andptr(ary1, ary2);
-    jcc(Assembler::zero, FALSE_LABEL); // One pointer is NULL
+    testptr(ary1, ary1);
+    jcc(Assembler::zero, FALSE_LABEL);
+    testptr(ary2, ary2);
+    jcc(Assembler::zero, FALSE_LABEL);
 
     // Check the lengths
     movl(limit, Address(ary1, length_offset));

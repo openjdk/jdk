@@ -141,6 +141,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                      "Malaysia Summer Time", "MYST"};
         String NORONHA[] = new String[] {"Fernando de Noronha Time", "FNT",
                                          "Fernando de Noronha Summer Time", "FNST"};
+        String NOVT[] = new String[] {"Novosibirsk Time", "NOVT",
+                                      "Novosibirsk Summer Time", "NOVST"};
         String NPT[] = new String[] {"Nepal Time", "NPT",
                                      "Nepal Summer Time", "NPST"};
         String NST[] = new String[] {"Newfoundland Standard Time", "NST",
@@ -441,7 +443,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"America/Winnipeg", CST},
             {"America/Yakutat", AKST},
             {"America/Yellowknife", MST},
-            {"Antarctica/Casey", WST_AUS},
+            {"Antarctica/Casey", new String[] {"Casey Time", "CAST",
+                                               "Casey Summer Time", "CAST"}},
             {"Antarctica/Davis", new String[] {"Davis Time", "DAVT",
                                                "Davis Summer Time", "DAVST"}},
             {"Antarctica/DumontDUrville", new String[] {"Dumont-d'Urville Time", "DDUT",
@@ -529,8 +532,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                           "Philippines Summer Time", "PHST"}},
             {"Asia/Muscat", GST},
             {"Asia/Nicosia", EET},
-            {"Asia/Novosibirsk", new String[] {"Novosibirsk Time", "NOVT",
-                                               "Novosibirsk Summer Time", "NOVST"}},
+            {"Asia/Novokuznetsk", NOVT},
+            {"Asia/Novosibirsk", NOVT},
             {"Asia/Oral", new String[] {"Oral Time", "ORAT",
                                         "Oral Summer Time", "ORAST"}},
             {"Asia/Omsk", new String[] {"Omsk Time", "OMST",

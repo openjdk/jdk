@@ -81,6 +81,14 @@ void SafepointSynchronize::begin() {
   jlong safepoint_limit_time;
   timeout_error_printed = false;
 
+  // PrintSafepointStatisticsTimeout can be specified separately. When
+  // specified, PrintSafepointStatistics will be set to true in
+  // deferred_initialize_stat method. The initialization has to be done
+  // early enough to avoid any races. See bug 6880029 for details.
+  if (PrintSafepointStatistics || PrintSafepointStatisticsTimeout > 0) {
+    deferred_initialize_stat();
+  }
+
   // Begin the process of bringing the system to a safepoint.
   // Java threads can be in several different states and are
   // stopped by different mechanisms:
@@ -169,8 +177,7 @@ void SafepointSynchronize::begin() {
       }
     }
 
-    if ( (PrintSafepointStatistics || (PrintSafepointStatisticsTimeout > 0))
-         && iterations == 0) {
+    if (PrintSafepointStatistics && iterations == 0) {
       begin_statistics(nof_threads, still_running);
     }
 
@@ -1026,8 +1033,7 @@ void SafepointSynchronize::deferred_initialize_stat() {
 }
 
 void SafepointSynchronize::begin_statistics(int nof_threads, int nof_running) {
-  deferred_initialize_stat();
-
+  assert(init_done, "safepoint statistics array hasn't been initialized");
   SafepointStats *spstat = &_safepoint_stats[_cur_stat_index];
 
   VM_Operation *op = VMThread::vm_operation();

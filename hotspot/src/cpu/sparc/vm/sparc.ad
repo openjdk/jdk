@@ -193,38 +193,38 @@ reg_def R_F31( SOC, SOC, Op_RegF, 31, F31->as_VMReg());
 // I believe we can't handle callee-save doubles D32 and up until
 // the place in the sparc stack crawler that asserts on the 255 is
 // fixed up.
-reg_def R_D32x(SOC, SOC, Op_RegD,255, F32->as_VMReg());
-reg_def R_D32 (SOC, SOC, Op_RegD,  1, F32->as_VMReg()->next());
-reg_def R_D34x(SOC, SOC, Op_RegD,255, F34->as_VMReg());
-reg_def R_D34 (SOC, SOC, Op_RegD,  3, F34->as_VMReg()->next());
-reg_def R_D36x(SOC, SOC, Op_RegD,255, F36->as_VMReg());
-reg_def R_D36 (SOC, SOC, Op_RegD,  5, F36->as_VMReg()->next());
-reg_def R_D38x(SOC, SOC, Op_RegD,255, F38->as_VMReg());
-reg_def R_D38 (SOC, SOC, Op_RegD,  7, F38->as_VMReg()->next());
-reg_def R_D40x(SOC, SOC, Op_RegD,255, F40->as_VMReg());
-reg_def R_D40 (SOC, SOC, Op_RegD,  9, F40->as_VMReg()->next());
-reg_def R_D42x(SOC, SOC, Op_RegD,255, F42->as_VMReg());
-reg_def R_D42 (SOC, SOC, Op_RegD, 11, F42->as_VMReg()->next());
-reg_def R_D44x(SOC, SOC, Op_RegD,255, F44->as_VMReg());
-reg_def R_D44 (SOC, SOC, Op_RegD, 13, F44->as_VMReg()->next());
-reg_def R_D46x(SOC, SOC, Op_RegD,255, F46->as_VMReg());
-reg_def R_D46 (SOC, SOC, Op_RegD, 15, F46->as_VMReg()->next());
-reg_def R_D48x(SOC, SOC, Op_RegD,255, F48->as_VMReg());
-reg_def R_D48 (SOC, SOC, Op_RegD, 17, F48->as_VMReg()->next());
-reg_def R_D50x(SOC, SOC, Op_RegD,255, F50->as_VMReg());
-reg_def R_D50 (SOC, SOC, Op_RegD, 19, F50->as_VMReg()->next());
-reg_def R_D52x(SOC, SOC, Op_RegD,255, F52->as_VMReg());
-reg_def R_D52 (SOC, SOC, Op_RegD, 21, F52->as_VMReg()->next());
-reg_def R_D54x(SOC, SOC, Op_RegD,255, F54->as_VMReg());
-reg_def R_D54 (SOC, SOC, Op_RegD, 23, F54->as_VMReg()->next());
-reg_def R_D56x(SOC, SOC, Op_RegD,255, F56->as_VMReg());
-reg_def R_D56 (SOC, SOC, Op_RegD, 25, F56->as_VMReg()->next());
-reg_def R_D58x(SOC, SOC, Op_RegD,255, F58->as_VMReg());
-reg_def R_D58 (SOC, SOC, Op_RegD, 27, F58->as_VMReg()->next());
-reg_def R_D60x(SOC, SOC, Op_RegD,255, F60->as_VMReg());
-reg_def R_D60 (SOC, SOC, Op_RegD, 29, F60->as_VMReg()->next());
-reg_def R_D62x(SOC, SOC, Op_RegD,255, F62->as_VMReg());
-reg_def R_D62 (SOC, SOC, Op_RegD, 31, F62->as_VMReg()->next());
+reg_def R_D32 (SOC, SOC, Op_RegD,  1, F32->as_VMReg());
+reg_def R_D32x(SOC, SOC, Op_RegD,255, F32->as_VMReg()->next());
+reg_def R_D34 (SOC, SOC, Op_RegD,  3, F34->as_VMReg());
+reg_def R_D34x(SOC, SOC, Op_RegD,255, F34->as_VMReg()->next());
+reg_def R_D36 (SOC, SOC, Op_RegD,  5, F36->as_VMReg());
+reg_def R_D36x(SOC, SOC, Op_RegD,255, F36->as_VMReg()->next());
+reg_def R_D38 (SOC, SOC, Op_RegD,  7, F38->as_VMReg());
+reg_def R_D38x(SOC, SOC, Op_RegD,255, F38->as_VMReg()->next());
+reg_def R_D40 (SOC, SOC, Op_RegD,  9, F40->as_VMReg());
+reg_def R_D40x(SOC, SOC, Op_RegD,255, F40->as_VMReg()->next());
+reg_def R_D42 (SOC, SOC, Op_RegD, 11, F42->as_VMReg());
+reg_def R_D42x(SOC, SOC, Op_RegD,255, F42->as_VMReg()->next());
+reg_def R_D44 (SOC, SOC, Op_RegD, 13, F44->as_VMReg());
+reg_def R_D44x(SOC, SOC, Op_RegD,255, F44->as_VMReg()->next());
+reg_def R_D46 (SOC, SOC, Op_RegD, 15, F46->as_VMReg());
+reg_def R_D46x(SOC, SOC, Op_RegD,255, F46->as_VMReg()->next());
+reg_def R_D48 (SOC, SOC, Op_RegD, 17, F48->as_VMReg());
+reg_def R_D48x(SOC, SOC, Op_RegD,255, F48->as_VMReg()->next());
+reg_def R_D50 (SOC, SOC, Op_RegD, 19, F50->as_VMReg());
+reg_def R_D50x(SOC, SOC, Op_RegD,255, F50->as_VMReg()->next());
+reg_def R_D52 (SOC, SOC, Op_RegD, 21, F52->as_VMReg());
+reg_def R_D52x(SOC, SOC, Op_RegD,255, F52->as_VMReg()->next());
+reg_def R_D54 (SOC, SOC, Op_RegD, 23, F54->as_VMReg());
+reg_def R_D54x(SOC, SOC, Op_RegD,255, F54->as_VMReg()->next());
+reg_def R_D56 (SOC, SOC, Op_RegD, 25, F56->as_VMReg());
+reg_def R_D56x(SOC, SOC, Op_RegD,255, F56->as_VMReg()->next());
+reg_def R_D58 (SOC, SOC, Op_RegD, 27, F58->as_VMReg());
+reg_def R_D58x(SOC, SOC, Op_RegD,255, F58->as_VMReg()->next());
+reg_def R_D60 (SOC, SOC, Op_RegD, 29, F60->as_VMReg());
+reg_def R_D60x(SOC, SOC, Op_RegD,255, F60->as_VMReg()->next());
+reg_def R_D62 (SOC, SOC, Op_RegD, 31, F62->as_VMReg());
+reg_def R_D62x(SOC, SOC, Op_RegD,255, F62->as_VMReg()->next());
 
 
 // ----------------------------
@@ -3016,7 +3016,7 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
 
     // return true if the same array
     __ cmp(ary1_reg, ary2_reg);
-    __ br(Assembler::equal, true, Assembler::pn, Ldone);
+    __ brx(Assembler::equal, true, Assembler::pn, Ldone);
     __ delayed()->add(G0, 1, result_reg); // equal
 
     __ br_null(ary1_reg, true, Assembler::pn, Ldone);
@@ -9419,8 +9419,9 @@ instruct countLeadingZerosI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
   // x |= (x >> 8);
   // x |= (x >> 16);
   // return (WORDBITS - popc(x));
-  format %{ "SRL     $src,1,$dst\t! count leading zeros (int)\n\t"
-            "OR      $src,$tmp,$dst\n\t"
+  format %{ "SRL     $src,1,$tmp\t! count leading zeros (int)\n\t"
+            "SRL     $src,0,$dst\t! 32-bit zero extend\n\t"
+            "OR      $dst,$tmp,$dst\n\t"
             "SRL     $dst,2,$tmp\n\t"
             "OR      $dst,$tmp,$dst\n\t"
             "SRL     $dst,4,$tmp\n\t"
@@ -9437,7 +9438,8 @@ instruct countLeadingZerosI(iRegI dst, iRegI src, iRegI tmp, flagsReg cr) %{
     Register Rsrc = $src$$Register;
     Register Rtmp = $tmp$$Register;
     __ srl(Rsrc, 1, Rtmp);
-    __ or3(Rsrc, Rtmp, Rdst);
+    __ srl(Rsrc, 0, Rdst);
+    __ or3(Rdst, Rtmp, Rdst);
     __ srl(Rdst, 2, Rtmp);
     __ or3(Rdst, Rtmp, Rdst);
     __ srl(Rdst, 4, Rtmp);
@@ -9465,7 +9467,7 @@ instruct countLeadingZerosL(iRegI dst, iRegL src, iRegL tmp, flagsReg cr) %{
   // x |= (x >> 16);
   // x |= (x >> 32);
   // return (WORDBITS - popc(x));
-  format %{ "SRLX    $src,1,$dst\t! count leading zeros (long)\n\t"
+  format %{ "SRLX    $src,1,$tmp\t! count leading zeros (long)\n\t"
             "OR      $src,$tmp,$dst\n\t"
             "SRLX    $dst,2,$tmp\n\t"
             "OR      $dst,$tmp,$dst\n\t"

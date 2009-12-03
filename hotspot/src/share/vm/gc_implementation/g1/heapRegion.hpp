@@ -569,13 +569,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // ever evacuated into this region.  If we evacuate, allocate, and
   // then evacuate we are in deep doodoo.
   void note_end_of_copying() {
-    assert(top() >= _next_top_at_mark_start,
-           "Increase only");
-    // Survivor regions will be scanned on the start of concurrent
-    // marking.
-    if (!is_survivor()) {
-      _next_top_at_mark_start = top();
-    }
+    assert(top() >= _next_top_at_mark_start, "Increase only");
+    _next_top_at_mark_start = top();
   }
 
   // Returns "false" iff no object in the region was allocated when the
@@ -798,7 +793,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // use_prev_marking == true. Currently, there is only one case where
   // this is called with use_prev_marking == false, which is to verify
   // the "next" marking information at the end of remark.
-  void verify(bool allow_dirty, bool use_prev_marking) const;
+  void verify(bool allow_dirty, bool use_prev_marking, bool *failures) const;
 
   // Override; it uses the "prev" marking information
   virtual void verify(bool allow_dirty) const;

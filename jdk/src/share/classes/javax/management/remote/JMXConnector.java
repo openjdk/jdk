@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,26 +56,6 @@ public interface JMXConnector extends Closeable {
       */
      public static final String CREDENTIALS =
          "jmx.remote.credentials";
-
-     /**
-      * <p>Name of the attribute that specifies whether to use the
-      * {@linkplain javax.management.event Event Service} to handle
-      * notifications for this connector.  The value associated with
-      * this attribute, if any, is a String, which must be equal,
-      * ignoring case, to {@code "true"} or {@code "false"}.</p>
-      *
-      * <p>Not all connectors will understand this attribute, but the
-      * standard {@linkplain javax.management.remote.rmi.RMIConnector
-      * RMI Connector} does.</p>
-      *
-      * <p>If this attribute is not present, then the system property of the
-      * same name (<code>{@value}</code>) is consulted. If that is not set
-      * either, then the Event Service is not used.</p>
-      *
-      * @since 1.7
-      */
-     public static final String USE_EVENT_SERVICE =
-         "jmx.remote.use.event.service";
 
     /**
      * <p>Establishes the connection to the connector server.  This

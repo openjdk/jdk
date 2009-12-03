@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,18 +175,6 @@ public class JmxProperties {
      */
     public static final String RELATION_LOGGER_NAME =
             "javax.management.relation";
-
-    /**
-     * Logger name for Namespaces.
-     */
-    public static final String NAMESPACE_LOGGER_NAME =
-            "javax.management.namespace";
-
-     /**
-     * Logger name for Namespaces.
-     */
-    public static final Logger NAMESPACE_LOGGER =
-            Logger.getLogger(NAMESPACE_LOGGER_NAME);
 
     /**
      * Logger for Relation Service.
