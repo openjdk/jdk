@@ -3117,7 +3117,6 @@ public class Lower extends TreeTranslator {
         tree.cases = translateCases(tree.cases);
         if (enumSwitch) {
             result = visitEnumSwitch(tree);
-            patchTargets(result, tree, result);
         } else if (stringSwitch) {
             result = visitStringSwitch(tree);
         } else {
@@ -3146,7 +3145,9 @@ public class Lower extends TreeTranslator {
                 cases.append(c);
             }
         }
-        return make.Switch(selector, cases.toList());
+        JCSwitch enumSwitch = make.Switch(selector, cases.toList());
+        patchTargets(enumSwitch, tree, enumSwitch);
+        return enumSwitch;
     }
 
     public JCTree visitStringSwitch(JCSwitch tree) {
@@ -3187,7 +3188,14 @@ public class Lower extends TreeTranslator {
              * of String is the same in the compilation environment as
              * in the environment the code will run in.  The string
              * hashing algorithm in the SE JDK has been unchanged
-             * since at least JDK 1.2.
+             * since at least JDK 1.2.  Since the algorithm has been
+             * specified since that release as well, it is very
+             * unlikely to be changed in the future.
+             *
+             * Different hashing algorithms, such as the length of the
+             * strings or a perfect hashing algorithm over the
+             * particular set of case labels, could potentially be
+             * used instead of String.hashCode.
              */
 
             ListBuffer<JCStatement> stmtList = new ListBuffer<JCStatement>();
