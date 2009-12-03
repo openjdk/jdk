@@ -524,7 +524,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details
     private static native int compareIDs(long pParentIShellFolder, long pidl1, long pidl2);
 
-    private Boolean cachedIsFileSystem;
+    private volatile Boolean cachedIsFileSystem;
 
     /**
      * @return Whether this is a file system shell folder
@@ -693,29 +693,32 @@ final class Win32ShellFolder2 extends ShellFolder {
                     ArrayList<Win32ShellFolder2> list = new ArrayList<Win32ShellFolder2>();
                     long pEnumObjects = getEnumObjects(includeHiddenFiles);
                     if (pEnumObjects != 0) {
-                        long childPIDL;
-                        int testedAttrs = ATTRIB_FILESYSTEM | ATTRIB_FILESYSANCESTOR;
-                        do {
-                            childPIDL = getNextChild(pEnumObjects);
-                            boolean releasePIDL = true;
-                            if (childPIDL != 0 &&
-                                    (getAttributes0(pIShellFolder, childPIDL, testedAttrs) & testedAttrs) != 0) {
-                                Win32ShellFolder2 childFolder;
-                                if (Win32ShellFolder2.this.equals(desktop)
-                                        && personal != null
-                                        && pidlsEqual(pIShellFolder, childPIDL, personal.disposer.relativePIDL)) {
-                                    childFolder = personal;
-                                } else {
-                                    childFolder = new Win32ShellFolder2(Win32ShellFolder2.this, childPIDL);
-                                    releasePIDL = false;
+                        try {
+                            long childPIDL;
+                            int testedAttrs = ATTRIB_FILESYSTEM | ATTRIB_FILESYSANCESTOR;
+                            do {
+                                childPIDL = getNextChild(pEnumObjects);
+                                boolean releasePIDL = true;
+                                if (childPIDL != 0 &&
+                                        (getAttributes0(pIShellFolder, childPIDL, testedAttrs) & testedAttrs) != 0) {
+                                    Win32ShellFolder2 childFolder;
+                                    if (Win32ShellFolder2.this.equals(desktop)
+                                            && personal != null
+                                            && pidlsEqual(pIShellFolder, childPIDL, personal.disposer.relativePIDL)) {
+                                        childFolder = personal;
+                                    } else {
+                                        childFolder = new Win32ShellFolder2(Win32ShellFolder2.this, childPIDL);
+                                        releasePIDL = false;
+                                    }
+                                    list.add(childFolder);
                                 }
-                                list.add(childFolder);
-                            }
-                            if (releasePIDL) {
-                                releasePIDL(childPIDL);
-                            }
-                        } while (childPIDL != 0 && !Thread.currentThread().isInterrupted());
-                        releaseEnumObjects(pEnumObjects);
+                                if (releasePIDL) {
+                                    releasePIDL(childPIDL);
+                                }
+                            } while (childPIDL != 0 && !Thread.currentThread().isInterrupted());
+                        } finally {
+                            releaseEnumObjects(pEnumObjects);
+                        }
                     }
                     return Thread.currentThread().isInterrupted()
                         ? new File[0]
@@ -759,7 +762,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         }, InterruptedException.class);
     }
 
-    private Boolean cachedIsLink;
+    private volatile Boolean cachedIsLink;
 
     /**
      * @return Whether this shell folder is a link

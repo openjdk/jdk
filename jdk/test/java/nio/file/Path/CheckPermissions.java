@@ -25,6 +25,8 @@
  * @bug 6866804
  * @summary Unit test for java.nio.file.Path
  * @library ..
+ * @build CheckPermissions
+ * @run main/othervm CheckPermissions
  */
 
 import java.nio.ByteBuffer;

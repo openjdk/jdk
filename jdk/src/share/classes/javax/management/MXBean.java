@@ -27,7 +27,6 @@ package javax.management;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -44,10 +43,6 @@ import javax.management.openmbean.CompositeDataInvocationHandler;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeDataView;
 import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.MXBeanMapping;
-import javax.management.openmbean.MXBeanMappingClass;
-import javax.management.openmbean.MXBeanMappingFactory;
-import javax.management.openmbean.MXBeanMappingFactoryClass;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenMBeanInfo;
 import javax.management.openmbean.OpenType;
@@ -57,13 +52,11 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
 /**
-    <p>Annotation to mark a class or interface explicitly as being an MXBean,
-    or as not being an MXBean.  By default, an
+    <p>Annotation to mark an interface explicitly as being an MXBean
+    interface, or as not being an MXBean interface.  By default, an
     interface is an MXBean interface if its name ends with {@code
-    MXBean}, as in {@code SomethingMXBean}.  A class is never an MXBean by
-    default.</p>
-
-    <p>The following interfaces are MXBean interfaces:</p>
+    MXBean}, as in {@code SomethingMXBean}.  The following interfaces
+    are MXBean interfaces:</p>
 
     <pre>
     public interface WhatsitMXBean {}
@@ -84,12 +77,7 @@ import javax.management.openmbean.TabularType;
     public interface MisleadingMXBean {}
     </pre>
 
-    <p>A class can be annotated with {@code @MXBean} to indicate that it
-    is an MXBean.  In this case, its methods should have <code>&#64;{@link
-    ManagedAttribute}</code> or <code>&#64;{@link ManagedOperation}</code>
-    annotations, as described for <code>&#64;{@link MBean}</code>.</p>
-
-    <h3 id="MXBean-spec">MXBean specification</h3>
+    <h3 id="MXBean-spec">MXBean specification</a></h3>
 
     <p>The MXBean concept provides a simple way to code an MBean
       that only references a predefined set of types, the ones defined
@@ -486,11 +474,7 @@ public class MemoryPool
       from type <em>opendata(J)</em> to type <em>J</em>, a null value is
       mapped to a null value.</p>
 
-    <p>In addition to the default type mapping rules, you can specify
-      custom type mappings, as described <a
-      href="#custom">below</a>.</p>
-
-    <p>The following table summarizes the default type mapping rules.</p>
+    <p>The following table summarizes the type mapping rules.</p>
 
     <table border="1" cellpadding="5">
       <tr>
@@ -1051,77 +1035,6 @@ public interface Node {
 }
 </pre>
 
-    <p>Alternatively, you can define a custom mapping for your recursive
-      type; see the next section.</p>
-
-    <h3 id="custom">Custom MXBean type mappings</h3>
-
-    <p>You can augment or replace the default type mappings described
-      above with custom mappings.  An example appears in the
-      documentation for {@link MXBeanMapping}.</p>
-
-    <p>If an MXBean uses custom mappings, then an MXBean proxy for
-      that MXBean must use the same mappings for correct behavior.
-      This requires more careful synchronization between client and
-      server than is necessary with the default mappings.  For example
-      it typically requires the client to have the same implementation
-      of any {@link MXBeanMapping} subclasses as the server.  For this
-      reason, custom mappings should be avoided if possible.</p>
-
-    <p>Every MXBean has an associated {@link MXBeanMappingFactory}.
-      Call this <code><em>f</em></code>.  Then every type that appears
-      in that MXBean has an associated {@link MXBeanMapping}
-      determined by <code><em>f</em></code>.  If the type is
-      <code><em>J</em></code>, say, then the mapping is {@link
-      MXBeanMappingFactory#mappingForType
-      <em>f</em>.mappingForType}<code>(<em>J</em>,
-      <em>f</em>)</code>.</p>
-
-    <p>The {@code MXBeanMappingFactory} <code><em>f</em></code> for an
-      MXBean is determined as follows.</p>
-
-    <ul>
-      <li><p>If a {@link JMX.MBeanOptions} argument is supplied to
-          the {@link StandardMBean} constructor that makes an MXBean,
-          or to the {@link JMX#newMBeanProxy(MBeanServerConnection,
-          ObjectName, Class, JMX.MBeanOptions) JMX.newMBeanProxy}
-          method, and the {@code MBeanOptions} object defines a non-null
-          {@code MXBeanMappingFactory}, then that is the value of
-          <code><em>f</em></code>.</p></li>
-
-      <li><p>Otherwise, if the MXBean interface has an {@link
-          MXBeanMappingFactoryClass} annotation, then that annotation
-          must identify a subclass of {@code MXBeanMappingFactory}
-          with a no-argument constructor.  Then
-          <code><em>f</em></code> is the result of calling this
-          constructor.  If the class does not have a no-argument
-          constructor, or if calling the constructor produces an
-          exception, then the MXBean is invalid and an attempt to
-          register it in the MBean Server will produce a {@link
-          NotCompliantMBeanException}.</p>
-
-        <p>This annotation is not inherited from any parent
-          interfaces.  If an MXBean interface has this annotation,
-          then usually any MXBean subinterfaces must repeat the same
-          annotation for correct behavior.</p></li>
-
-      <li><p>Otherwise, if the package in which the MXBean interface
-          appears has an {@code MXBeanMappingFactoryClass} annotation,
-          then <code><em>f</em></code> is determined as if that
-          annotation appeared on the MXBean interface.</p></li>
-
-      <li><p>Otherwise, <code><em>f</em></code> is the default mapping
-          factory, {@link MXBeanMappingFactory#DEFAULT}.</p></li>
-    </ul>
-
-    <p>The default mapping factory recognizes the {@link
-      MXBeanMappingClass} annotation on a class or interface.  If
-      <code><em>J</em></code> is a class or interface that has such an
-      annotation, then the {@code MXBeanMapping} for
-      <code><em>J</em></code> produced by the default mapping factory
-      will be determined by the value of the annotation as described
-      in its {@linkplain MXBeanMappingClass documentation}.</p>
-
     <h3>MBeanInfo contents for an MXBean</h3>
 
     <p>An MXBean is a type of Open MBean.  However, for compatibility
@@ -1250,29 +1163,12 @@ public interface Node {
       appropriate), or <em>C</em> is true of <em>e</em>.{@link
       Throwable#getCause() getCause()}".</p>
 
-   @see MXBeanMapping
-
    @since 1.6
 */
 
-/*
- * This annotation is @Inherited because if an MXBean is defined as a
- * class using annotations, then its subclasses are also MXBeans.
- * For example:
- * @MXBean
- * public class Super {
- *     @ManagedAttribute
- *     public String getName() {...}
- * }
- * public class Sub extends Super {}
- * Here Sub is an MXBean.
- *
- * The @Inherited annotation has no effect when applied to an interface.
- */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@Inherited
 public @interface MXBean {
     /**
        True if the annotated interface is an MXBean interface.

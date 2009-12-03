@@ -141,6 +141,8 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                      "Heure d'\u00e9t\u00e9 de Malaisie", "MYST"};
         String NORONHA[] = new String[] {"Heure de Fernando de Noronha", "FNT",
                                          "Heure d'\u00e9t\u00e9 de Fernando de Noronha", "FNST"};
+        String NOVT[] = new String[] {"Heure de Novossibirsk", "NOVT",
+                                      "Heure d'\u00e9t\u00e9 de Novossibirsk", "NOVST"};
         String NPT[] = new String[] {"Heure du N\u00e9pal", "NPT",
                                      "Heure d'\u00e9t\u00e9 du N\u00e9pal", "NPST"};
         String NST[] = new String[] {"Heure normale de Terre-Neuve", "NST",
@@ -441,7 +443,6 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
             {"America/Winnipeg", CST},
             {"America/Yakutat", AKST},
             {"America/Yellowknife", MST},
-            {"Antarctica/Casey", WST_AUS},
             {"Antarctica/Davis", new String[] {"Heure de Davis", "DAVT",
                                                "Heure d'\u00e9t\u00e9 de Davis", "DAVST"}},
             {"Antarctica/DumontDUrville", new String[] {"Heure de Dumont-d'Urville", "DDUT",
@@ -529,8 +530,8 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                           "Heure d'\u00e9t\u00e9 des Philippines", "PHST"}},
             {"Asia/Muscat", GST},
             {"Asia/Nicosia", EET},
-            {"Asia/Novosibirsk", new String[] {"Heure de Novossibirsk", "NOVT",
-                                               "Heure d'\u00e9t\u00e9 de Novossibirsk", "NOVST"}},
+            {"Asia/Novokuznetsk", NOVT},
+            {"Asia/Novosibirsk", NOVT},
             {"Asia/Oral", new String[] {"Heure d'Oral", "ORAT",
                                         "Heure d'\u00e9t\u00e9 d'Oral", "ORAST"}},
             {"Asia/Omsk", new String[] {"Heure d'Omsk", "OMST",

@@ -25,6 +25,8 @@
  * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.Path copyTo/moveTo methods
  * @library ..
+ * @build CopyAndMove
+ * @run main/othervm CopyAndMove
  */
 
 import java.nio.ByteBuffer;
@@ -92,7 +94,6 @@ public class CopyAndMove {
     {
         assertTrue(attrs1.isReadOnly() == attrs2.isReadOnly());
         assertTrue(attrs1.isHidden() == attrs2.isHidden());
-        assertTrue(attrs1.isArchive() == attrs2.isArchive());
         assertTrue(attrs1.isSystem() == attrs2.isSystem());
     }
 

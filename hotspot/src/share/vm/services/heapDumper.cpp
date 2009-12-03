@@ -1913,8 +1913,9 @@ void HeapDumper::dump_heap() {
     if (use_default_filename) {
       char fn[32];
       sprintf(fn, "java_pid%d", os::current_process_id());
-      assert(strlen(base_path) + strlen(fn) < sizeof(base_path), "HeapDumpPath too long");
+      assert(strlen(base_path) + strlen(fn) + strlen(".hprof") < sizeof(base_path), "HeapDumpPath too long");
       strcat(base_path, fn);
+      strcat(base_path, ".hprof");
     }
     assert(strlen(base_path) < sizeof(my_path), "Buffer too small");
     strcpy(my_path, base_path);
@@ -1927,8 +1928,6 @@ void HeapDumper::dump_heap() {
     strcat(my_path, fn);
   }
   dump_file_seq++;   // increment seq number for next time we dump
-  assert(strlen(".hprof") + strlen(my_path) < sizeof(my_path), "HeapDumpPath too long");
-  strcat(my_path, ".hprof");
 
   HeapDumper dumper(false /* no GC before heap dump */,
                     true  /* send to tty */);
