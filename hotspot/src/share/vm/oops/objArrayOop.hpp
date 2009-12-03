@@ -37,6 +37,32 @@ class objArrayOopDesc : public arrayOopDesc {
     return &((T*)base())[index];
   }
 
+private:
+  // Give size of objArrayOop in HeapWords minus the header
+  static int array_size(int length) {
+    const int OopsPerHeapWord = HeapWordSize/heapOopSize;
+    assert(OopsPerHeapWord >= 1 && (HeapWordSize % heapOopSize == 0),
+           "Else the following (new) computation would be in error");
+#ifdef ASSERT
+    // The old code is left in for sanity-checking; it'll
+    // go away pretty soon. XXX
+    // Without UseCompressedOops, this is simply:
+    // oop->length() * HeapWordsPerOop;
+    // With narrowOops, HeapWordsPerOop is 1/2 or equal 0 as an integer.
+    // The oop elements are aligned up to wordSize
+    const int HeapWordsPerOop = heapOopSize/HeapWordSize;
+    int old_res;
+    if (HeapWordsPerOop > 0) {
+      old_res = length * HeapWordsPerOop;
+    } else {
+      old_res = align_size_up(length, OopsPerHeapWord)/OopsPerHeapWord;
+    }
+#endif  // ASSERT
+    int res = (length + OopsPerHeapWord - 1)/OopsPerHeapWord;
+    assert(res == old_res, "Inconsistency between old and new.");
+    return res;
+  }
+
  public:
   // Returns the offset of the first element.
   static int base_offset_in_bytes() {
@@ -67,27 +93,10 @@ class objArrayOopDesc : public arrayOopDesc {
   // Sizing
   static int header_size()    { return arrayOopDesc::header_size(T_OBJECT); }
   int object_size()           { return object_size(length()); }
-  int array_size()            { return array_size(length()); }
 
   static int object_size(int length) {
     // This returns the object size in HeapWords.
     return align_object_size(header_size() + array_size(length));
-  }
-
-  // Give size of objArrayOop in HeapWords minus the header
-  static int array_size(int length) {
-    // Without UseCompressedOops, this is simply:
-    // oop->length() * HeapWordsPerOop;
-    // With narrowOops, HeapWordsPerOop is 1/2 or equal 0 as an integer.
-    // The oop elements are aligned up to wordSize
-    const int HeapWordsPerOop = heapOopSize/HeapWordSize;
-    if (HeapWordsPerOop > 0) {
-      return length * HeapWordsPerOop;
-    } else {
-      const int OopsPerHeapWord = HeapWordSize/heapOopSize;
-      int word_len = align_size_up(length, OopsPerHeapWord)/OopsPerHeapWord;
-      return word_len;
-    }
   }
 
   // special iterators for index ranges, returns size of object
