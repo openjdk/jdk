@@ -893,10 +893,6 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 
 # jdk_security
 
-# Fails on OpenSolaris, IOException: Attempt to obtain kerberos service ticket
-#     for host/`hostname`@RABBIT.HOLE failed!
-sun/security/krb5/auto/SSL.java					generic-all
-
 # Run too slow on Solaris 10 sparc
 sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/SSLSocketTimeoutNulls.java solaris-sparc
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ClientTimeout.java solaris-sparc

@@ -36,33 +36,32 @@ import sun.security.jgss.GSSUtil;
 public class SSL {
 
     private static final String KRB5_CIPHER = "TLS_KRB5_WITH_3DES_EDE_CBC_SHA";
-    private static final int PORT = 4569;
     private static final int LOOP_LIMIT = 1;
     private static final char[] PASS = "secret".toCharArray();
     private static int loopCount = 0;
-
-    private static String SERVER;
+    private static volatile String server;
+    private static volatile int port;
 
     public static void main(String[] args) throws Exception {
 
         KDC kdc = KDC.create(OneKDC.REALM);
         // Run this after KDC, so our own DNS service can be started
         try {
-            SERVER = InetAddress.getLocalHost().getHostName().toLowerCase();
+            server = InetAddress.getLocalHost().getHostName().toLowerCase();
         } catch (java.net.UnknownHostException e) {
-            SERVER = "localhost";
+            server = "localhost";
         }
 
         kdc.addPrincipal(OneKDC.USER, OneKDC.PASS);
         kdc.addPrincipalRandKey("krbtgt/" + OneKDC.REALM);
-        kdc.addPrincipal("host/" + SERVER, PASS);
+        kdc.addPrincipal("host/" + server, PASS);
         KDC.saveConfig(OneKDC.KRB5_CONF, kdc);
         System.setProperty("java.security.krb5.conf", OneKDC.KRB5_CONF);
 
         final Context c = Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
-        final Context s = Context.fromUserPass("host/" + SERVER, PASS, true);
+        final Context s = Context.fromUserPass("host/" + server, PASS, true);
 
-        c.startAsClient("host/" + SERVER, GSSUtil.GSS_KRB5_MECH_OID);
+        c.startAsClient("host/" + server, GSSUtil.GSS_KRB5_MECH_OID);
         s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
 
         new Thread(new Runnable() {
@@ -87,7 +86,7 @@ public class SSL {
         public byte[] run(Context s, byte[] input) throws Exception {
             SSLSocketFactory sslsf =
                 (SSLSocketFactory) SSLSocketFactory.getDefault();
-            SSLSocket sslSocket = (SSLSocket) sslsf.createSocket(SERVER, PORT);
+            SSLSocket sslSocket = (SSLSocket) sslsf.createSocket(server, port);
 
             // Enable only a KRB5 cipher suite.
             String enabledSuites[] = {KRB5_CIPHER};
@@ -124,7 +123,8 @@ public class SSL {
             SSLServerSocketFactory sslssf =
                 (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
             SSLServerSocket sslServerSocket =
-                (SSLServerSocket) sslssf.createServerSocket(PORT);
+                (SSLServerSocket) sslssf.createServerSocket(0); // any port
+            port = sslServerSocket.getLocalPort();
 
             // Enable only a KRB5 cipher suite.
             String enabledSuites[] = {KRB5_CIPHER};
