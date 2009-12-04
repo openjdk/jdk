@@ -103,8 +103,6 @@ class G1CollectedHeap;
 // we can easily share them among the subclasses.
 class G1MemoryPoolSuper : public CollectedMemoryPool {
 private:
-  G1CollectedHeap* _g1h;
-
   // It returns x - y if x > y, 0 otherwise.
   // As described in the comment above, some of the inputs to the
   // calculations we have to do are obtained concurrently and hence
@@ -121,6 +119,8 @@ private:
   }
 
 protected:
+  G1CollectedHeap* _g1h;
+
   // Would only be called from subclasses.
   G1MemoryPoolSuper(G1CollectedHeap* g1h,
                     const char* name,
@@ -152,38 +152,6 @@ protected:
   static size_t old_space_committed(G1CollectedHeap* g1h);
   static size_t old_space_used(G1CollectedHeap* g1h);
   static size_t old_space_max(G1CollectedHeap* g1h);
-
-  // The non-static versions are included for convenience.
-
-  size_t eden_space_committed() {
-    return eden_space_committed(_g1h);
-  }
-  size_t eden_space_used() {
-    return eden_space_used(_g1h);
-  }
-  size_t eden_space_max() {
-    return eden_space_max(_g1h);
-  }
-
-  size_t survivor_space_committed() {
-    return survivor_space_committed(_g1h);
-  }
-  size_t survivor_space_used() {
-    return survivor_space_used(_g1h);
-  }
-  size_t survivor_space_max() {
-    return survivor_space_max(_g1h);
-  }
-
-  size_t old_space_committed() {
-    return old_space_committed(_g1h);
-  }
-  size_t old_space_used() {
-    return old_space_used(_g1h);
-  }
-  size_t old_space_max() {
-    return old_space_max(_g1h);
-  }
 };
 
 // Memory pool that represents the G1 eden.
@@ -192,10 +160,10 @@ public:
   G1EdenPool(G1CollectedHeap* g1h);
 
   size_t used_in_bytes() {
-    return eden_space_used();
+    return eden_space_used(_g1h);
   }
-  size_t max_size() {
-    return eden_space_max();
+  size_t max_size() const {
+    return eden_space_max(_g1h);
   }
   MemoryUsage get_memory_usage();
 };
@@ -206,10 +174,10 @@ public:
   G1SurvivorPool(G1CollectedHeap* g1h);
 
   size_t used_in_bytes() {
-    return survivor_space_used();
+    return survivor_space_used(_g1h);
   }
-  size_t max_size() {
-    return survivor_space_max();
+  size_t max_size() const {
+    return survivor_space_max(_g1h);
   }
   MemoryUsage get_memory_usage();
 };
@@ -220,10 +188,10 @@ public:
   G1OldGenPool(G1CollectedHeap* g1h);
 
   size_t used_in_bytes() {
-    return old_space_used();
+    return old_space_used(_g1h);
   }
-  size_t max_size() {
-    return old_space_max();
+  size_t max_size() const {
+    return old_space_max(_g1h);
   }
   MemoryUsage get_memory_usage();
 };
