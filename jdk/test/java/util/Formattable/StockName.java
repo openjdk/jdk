@@ -21,11 +21,9 @@
  * have any questions.
  */
 
-/**
+/*
  * @test
  * @bug 4965770 4992540 5030716
- * @compile -source 1.5 StockName.java
- * @run main StockName
  */
 
 import java.nio.CharBuffer;

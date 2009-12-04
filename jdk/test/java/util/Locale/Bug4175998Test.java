@@ -23,7 +23,7 @@
 /*
     @test
     @summary test ISO639-2 language codes
-    @compile -encoding ascii -source 1.4 -target 1.4 Bug4175998Test.java
+    @compile -encoding ascii -source 5 Bug4175998Test.java
     @run main Bug4175998Test
     @bug 4175998
 */

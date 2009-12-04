@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile -source 1.5 CancelledFutureLoops.java
+ * @compile CancelledFutureLoops.java
  * @run main/timeout=2000 CancelledFutureLoops
  * @summary Checks for responsiveness of futures to cancellation.
  * Runs under the assumption that ITERS computations require more than
