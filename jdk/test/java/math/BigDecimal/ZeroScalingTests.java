@@ -26,8 +26,6 @@
  * @bug 4902952 4905407 4916149
  * @summary Tests that the scale of zero is propagated properly and has the proper effect.
  * @author Joseph D. Darcy
- * @compile -source 1.5 ZeroScalingTests.java
- * @run main ZeroScalingTests
  */
 
 import java.math.*;

@@ -27,9 +27,6 @@
  * @summary Unit test for EnumMap
  * @author  Josh Bloch
  * @author  Yo Yo Ma
- *
- * @compile -source 1.5 EnumMapBash.java
- * @run main EnumMapBash
  */
 
 import java.util.*;

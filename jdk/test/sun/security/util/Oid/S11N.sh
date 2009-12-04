@@ -99,7 +99,7 @@ esac
 
 # the test code
 
-${TESTJAVA}${FS}bin${FS}javac -source 1.3 -target 1.3 -d . ${TESTSRC}${FS}SerialTest.java || exit 10
+${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}SerialTest.java || exit 10
 
 OLDJAVA="
     /java/re/j2se/1.6.0/latest/binaries/${PF}

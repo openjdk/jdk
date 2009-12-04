@@ -26,7 +26,7 @@
 * @bug 4891872
 * @summary Some tests for the generic core reflection api.
 * @author Gilad Bracha
-* @compile -source 1.5 TestC2.java
+* @compile TestC2.java
 * @run main/othervm -ea TestC2
 */
 
