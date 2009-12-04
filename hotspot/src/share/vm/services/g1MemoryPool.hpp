@@ -137,6 +137,9 @@ protected:
   static size_t overall_used(G1CollectedHeap* g1h) {
     return g1h->used_unlocked();
   }
+  static size_t overall_max(G1CollectedHeap* g1h) {
+    return g1h->g1_reserved_obj_bytes();
+  }
 
   static size_t eden_space_committed(G1CollectedHeap* g1h);
   static size_t eden_space_used(G1CollectedHeap* g1h);

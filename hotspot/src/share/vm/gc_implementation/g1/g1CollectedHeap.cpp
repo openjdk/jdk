@@ -2130,7 +2130,7 @@ size_t G1CollectedHeap::large_typearray_limit() {
 }
 
 size_t G1CollectedHeap::max_capacity() const {
-  return _g1_committed.byte_size();
+  return g1_reserved_obj_bytes();
 }
 
 jlong G1CollectedHeap::millis_since_last_gc() {

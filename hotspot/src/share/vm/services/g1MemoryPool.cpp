@@ -96,7 +96,7 @@ size_t G1MemoryPoolSuper::old_space_used(G1CollectedHeap* g1h) {
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::old_space_max(G1CollectedHeap* g1h) {
-  size_t max = g1h->g1_reserved_obj_bytes();
+  size_t max = overall_max(g1h);
   size_t eden_max = eden_space_max(g1h);
   size_t survivor_max = survivor_space_max(g1h);
   max = subtract_up_to_zero(max, eden_max);
@@ -113,11 +113,12 @@ G1EdenPool::G1EdenPool(G1CollectedHeap* g1h) :
 }
 
 MemoryUsage G1EdenPool::get_memory_usage() {
-  size_t maxSize   = max_size();
-  size_t used      = used_in_bytes();
-  size_t committed = eden_space_committed();
+  size_t initial_sz = initial_size();
+  size_t max_sz     = max_size();
+  size_t used       = used_in_bytes();
+  size_t committed  = eden_space_committed();
 
-  return MemoryUsage(initial_size(), used, committed, maxSize);
+  return MemoryUsage(initial_sz, used, committed, max_sz);
 }
 
 G1SurvivorPool::G1SurvivorPool(G1CollectedHeap* g1h) :
@@ -129,11 +130,12 @@ G1SurvivorPool::G1SurvivorPool(G1CollectedHeap* g1h) :
 }
 
 MemoryUsage G1SurvivorPool::get_memory_usage() {
-  size_t maxSize   = max_size();
-  size_t used      = used_in_bytes();
-  size_t committed = survivor_space_committed();
+  size_t initial_sz = initial_size();
+  size_t max_sz     = max_size();
+  size_t used       = used_in_bytes();
+  size_t committed  = survivor_space_committed();
 
-  return MemoryUsage(initial_size(), used, committed, maxSize);
+  return MemoryUsage(initial_sz, used, committed, max_sz);
 }
 
 G1OldGenPool::G1OldGenPool(G1CollectedHeap* g1h) :
@@ -145,9 +147,10 @@ G1OldGenPool::G1OldGenPool(G1CollectedHeap* g1h) :
 }
 
 MemoryUsage G1OldGenPool::get_memory_usage() {
-  size_t maxSize   = max_size();
-  size_t used      = used_in_bytes();
-  size_t committed = old_space_committed();
+  size_t initial_sz = initial_size();
+  size_t max_sz     = max_size();
+  size_t used       = used_in_bytes();
+  size_t committed  = old_space_committed();
 
-  return MemoryUsage(initial_size(), used, committed, maxSize);
+  return MemoryUsage(initial_sz, used, committed, max_sz);
 }
