@@ -800,9 +800,9 @@ public abstract class SunToolkit extends Toolkit
     }
 
 
-    static SoftCache imgCache = new SoftCache();
+    static final SoftCache imgCache = new SoftCache();
 
-    static synchronized Image getImageFromHash(Toolkit tk, URL url) {
+    static Image getImageFromHash(Toolkit tk, URL url) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -830,32 +830,36 @@ public abstract class SunToolkit extends Toolkit
                     sm.checkConnect(url.getHost(), url.getPort());
             }
         }
-        Image img = (Image)imgCache.get(url);
-        if (img == null) {
-            try {
-                img = tk.createImage(new URLImageSource(url));
-                imgCache.put(url, img);
-            } catch (Exception e) {
+        synchronized (imgCache) {
+            Image img = (Image)imgCache.get(url);
+            if (img == null) {
+                try {
+                    img = tk.createImage(new URLImageSource(url));
+                    imgCache.put(url, img);
+                } catch (Exception e) {
+                }
             }
+            return img;
         }
-        return img;
     }
 
-    static synchronized Image getImageFromHash(Toolkit tk,
+    static Image getImageFromHash(Toolkit tk,
                                                String filename) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(filename);
         }
-        Image img = (Image)imgCache.get(filename);
-        if (img == null) {
-            try {
-                img = tk.createImage(new FileImageSource(filename));
-                imgCache.put(filename, img);
-            } catch (Exception e) {
+        synchronized (imgCache) {
+            Image img = (Image)imgCache.get(filename);
+            if (img == null) {
+                try {
+                    img = tk.createImage(new FileImageSource(filename));
+                    imgCache.put(filename, img);
+                } catch (Exception e) {
+                }
             }
+            return img;
         }
-        return img;
     }
 
     public Image getImage(String filename) {
