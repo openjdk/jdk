@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile -source 1.5 MultipleProducersSingleConsumerLoops.java
+ * @compile MultipleProducersSingleConsumerLoops.java
  * @run main/timeout=3600 MultipleProducersSingleConsumerLoops
  * @summary  multiple producers and single consumer using blocking queues
  */

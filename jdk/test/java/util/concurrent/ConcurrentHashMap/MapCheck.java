@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile -source 1.5 MapCheck.java
+ * @compile MapCheck.java
  * @run main/timeout=240 MapCheck
  * @summary Times and checks basic map operations
  */
