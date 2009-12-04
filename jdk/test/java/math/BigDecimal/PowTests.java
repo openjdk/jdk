@@ -26,8 +26,6 @@
  * @bug 4916097
  * @summary Some exponent over/undeflow tests for the pow method
  * @author Joseph D. Darcy
- * @compile -source 1.5 PowTests.java
- * @run main PowTests
  */
 
 import java.math.*;

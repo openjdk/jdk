@@ -25,9 +25,6 @@
  * @bug 5006520
  * @summary Check many different ways to run Windows programs
  * @author Martin Buchholz
- *
- * @compile -source 1.5 WinCommand.java
- * @run main WinCommand
  */
 
 import java.io.*;
