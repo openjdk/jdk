@@ -673,8 +673,8 @@ FormatData/es_VE/NumberElements/0=,
 FormatData/es_VE/NumberElements/1=.
 FormatData/es_VE/NumberElements/2=;
 
-# bug #4099810, 4290801
-CurrencyNames/uk_UA/UAH=\u0433\u0440\u0432.
+# bug #4099810, 4290801, 6868106
+CurrencyNames/uk_UA/UAH=\u0433\u0440\u043b.
 FormatData/uk_UA/NumberPatterns/0=#,##0.###;-#,##0.###
 # FormatData/uk_UA/NumberPatterns/1=#,##0.## '\u0433\u0440\u0432.';-#,##0.## '\u0433\u0440\u0432.' # Changed; see bug 4122840
 FormatData/uk_UA/NumberPatterns/2=#,##0%
