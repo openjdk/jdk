@@ -533,6 +533,16 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             processGlobalMotionEvent(ev);
         }
 
+        if( ev.get_type() == XConstants.MappingNotify ) {
+            // The 'window' field in this event is unused.
+            // This application itself does nothing to initiate such an event
+            // (no calls of XChangeKeyboardMapping etc.).
+            // SunRay server sends this event to the application once on every
+            // keyboard (not just layout) change which means, quite seldom.
+            XlibWrapper.XRefreshKeyboardMapping(ev.pData);
+            resetKeyboardSniffer();
+            setupModifierMap();
+        }
         XBaseWindow.dispatchToWindow(ev);
 
         Collection dispatchers = null;
@@ -2112,6 +2122,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     static final int XSUN_KP_BEHAVIOR = 1;
     static final int XORG_KP_BEHAVIOR = 2;
+    static final int    IS_SUN_KEYBOARD = 1;
+    static final int IS_NONSUN_KEYBOARD = 2;
+    static final int    IS_KANA_KEYBOARD = 1;
+    static final int IS_NONKANA_KEYBOARD = 2;
+
 
     static int     awt_IsXsunKPBehavior = 0;
     static boolean awt_UseXKB         = false;
@@ -2140,6 +2155,33 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         } finally {
             awtUnlock();
         }
+    }
+
+    static int  sunOrNotKeyboard = 0;
+    static int kanaOrNotKeyboard = 0;
+    static void resetKeyboardSniffer() {
+        sunOrNotKeyboard  = 0;
+        kanaOrNotKeyboard = 0;
+    }
+    static boolean isSunKeyboard() {
+        if( sunOrNotKeyboard == 0 ) {
+            if( XlibWrapper.IsSunKeyboard( getDisplay() )) {
+                sunOrNotKeyboard = IS_SUN_KEYBOARD;
+            }else{
+                sunOrNotKeyboard = IS_NONSUN_KEYBOARD;
+            }
+        }
+        return (sunOrNotKeyboard == IS_SUN_KEYBOARD);
+    }
+    static boolean isKanaKeyboard() {
+        if( kanaOrNotKeyboard == 0 ) {
+            if( XlibWrapper.IsKanaKeyboard( getDisplay() )) {
+                kanaOrNotKeyboard = IS_KANA_KEYBOARD;
+            }else{
+                kanaOrNotKeyboard = IS_NONKANA_KEYBOARD;
+            }
+        }
+        return (kanaOrNotKeyboard == IS_KANA_KEYBOARD);
     }
     static boolean isXKBenabled() {
         awtLock();
