@@ -98,7 +98,7 @@ public final class AWTAccessor {
          * Returns whether the component is visible without invoking
          * any client code.
          */
-        boolean isVisible_NoClientCode(Component comp);
+        boolean isVisible(Component comp);
 
         /**
          * Sets the RequestFocusController.
@@ -114,6 +114,112 @@ public final class AWTAccessor {
          * Sets the appContext of the component.
          */
         void setAppContext(Component comp, AppContext appContext);
+
+        /**
+         * Returns the parent of the component.
+         */
+        Container getParent(Component comp);
+
+        /**
+         * Sets the parent of the component to the specified parent.
+         */
+        void setParent(Component comp, Container parent);
+
+        /**
+         * Resizes the component to the specified width and height.
+         */
+        void setSize(Component comp, int width, int height);
+
+        /**
+         * Returns the location of the component.
+         */
+        Point getLocation(Component comp);
+
+        /**
+         * Moves the component to the new location.
+         */
+        void setLocation(Component comp, int x, int y);
+
+        /**
+         * Determines whether this component is enabled.
+         */
+        boolean isEnabled(Component comp);
+
+        /**
+         * Determines whether this component is displayable.
+         */
+        boolean isDisplayable(Component comp);
+
+        /**
+         * Gets the cursor set in the component.
+         */
+        Cursor getCursor(Component comp);
+
+        /**
+         * Returns the peer of the component.
+         */
+        ComponentPeer getPeer(Component comp);
+
+        /**
+         * Sets the peer of the component to the specified peer.
+         */
+        void setPeer(Component comp, ComponentPeer peer);
+
+        /**
+         * Determines whether this component is lightweight.
+         */
+        boolean isLightweight(Component comp);
+
+        /**
+         * Returns whether or not paint messages received from
+         * the operating system should be ignored.
+         */
+        boolean getIgnoreRepaint(Component comp);
+
+        /**
+         * Returns the width of the component.
+         */
+        int getWidth(Component comp);
+
+        /**
+         * Returns the height of the component.
+         */
+        int getHeight(Component comp);
+
+        /**
+         * Returns the x coordinate of the component.
+         */
+        int getX(Component comp);
+
+        /**
+         * Returns the y coordinate of the component.
+         */
+        int getY(Component comp);
+
+        /**
+         * Gets the foreground color of this component.
+         */
+        Color getForeground(Component comp);
+
+        /**
+         * Gets the background color of this component.
+         */
+        Color getBackground(Component comp);
+
+        /**
+         * Sets the background of this component to the specified color.
+         */
+        void setBackground(Component comp, Color background);
+
+        /**
+         * Gets the font of the component.
+         */
+        Font getFont(Component comp);
+
+        /**
+         * Processes events occurring on this component.
+         */
+        void processEvent(Component comp, AWTEvent e);
     }
 
     /*
@@ -169,6 +275,22 @@ public final class AWTAccessor {
          * components in the specified window to the specified value.
          */
         void setLWRequestStatus(Window changed, boolean status);
+
+        /**
+         * Indicates whether this window should receive focus on subsequently
+         * being shown, or being moved to the front.
+         */
+        boolean isAutoRequestFocus(Window w);
+
+        /**
+         * Indicates whether the specified window is an utility window for TrayIcon.
+         */
+        boolean isTrayIconWindow(Window w);
+
+        /**
+         * Marks the specified window as an utility window for TrayIcon.
+         */
+        void setTrayIconWindow(Window w, boolean isTrayIconWindow);
     }
 
     /*

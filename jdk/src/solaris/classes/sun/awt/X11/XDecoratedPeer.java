@@ -32,7 +32,7 @@ import java.awt.event.WindowEvent;
 
 import sun.util.logging.PlatformLogger;
 
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
 abstract class XDecoratedPeer extends XWindowPeer {
@@ -167,10 +167,11 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     public Graphics getGraphics() {
+        AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
         return getGraphics(content.surfaceData,
-                           ComponentAccessor.getForeground(target),
-                           ComponentAccessor.getBackground(target),
-                           ComponentAccessor.getFont_NoClientCode(target));
+                           compAccessor.getForeground(target),
+                           compAccessor.getBackground(target),
+                           compAccessor.getFont(target));
     }
 
     public void setTitle(String title) {
@@ -404,8 +405,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     public void handleMoved(WindowDimensions dims) {
         Point loc = dims.getLocation();
-        ComponentAccessor.setX((Component)target, loc.x);
-        ComponentAccessor.setY((Component)target, loc.y);
+        AWTAccessor.getComponentAccessor().setLocation((Component)target, loc.x, loc.y);
         postEvent(new ComponentEvent(target, ComponentEvent.COMPONENT_MOVED));
     }
 
@@ -511,8 +511,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
                 // its location changes.
                 Point oldLocation = getLocation();
 
-                Point newLocation = new Point(ComponentAccessor.getX((Component)target),
-                                              ComponentAccessor.getY((Component)target));
+                Point newLocation = new Point(AWTAccessor.getComponentAccessor().getX((Component)target),
+                                              AWTAccessor.getComponentAccessor().getY((Component)target));
 
                 if (!newLocation.equals(oldLocation)) {
                     handleMoved(newDimensions);
@@ -710,10 +710,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         updateChildrenSizes();
 
         // Bounds of the window
-        Rectangle targetBounds = new Rectangle(ComponentAccessor.getX((Component)target),
-                ComponentAccessor.getY((Component)target),
-                ComponentAccessor.getWidth((Component)target),
-                ComponentAccessor.getHeight((Component)target));
+        Rectangle targetBounds = AWTAccessor.getComponentAccessor().getBounds((Component)target);
 
         Point newLocation = targetBounds.getLocation();
         if (xe.get_send_event() || runningWM == XWM.NO_WM || XWM.isNonReparentingWM()) {
@@ -1042,10 +1039,11 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     final void dumpTarget() {
-        int getWidth = ComponentAccessor.getWidth((Component)target);
-        int getHeight = ComponentAccessor.getHeight((Component)target);
-        int getTargetX = ComponentAccessor.getX((Component)target);
-        int getTargetY = ComponentAccessor.getY((Component)target);
+        AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+        int getWidth = compAccessor.getWidth((Component)target);
+        int getHeight = compAccessor.getHeight((Component)target);
+        int getTargetX = compAccessor.getX((Component)target);
+        int getTargetY = compAccessor.getY((Component)target);
         System.err.println(">>> Target: " + getTargetX + ", " + getTargetY + ", " + getWidth + ", " + getHeight);
     }
 
@@ -1208,7 +1206,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             Window owner = XWindowPeer.getDecoratedOwner(actualFocusedWindow);
 
             if (owner != null && owner == target) {
-                setActualFocusedWindow((XWindowPeer) ComponentAccessor.getPeer(actualFocusedWindow));
+                setActualFocusedWindow((XWindowPeer) AWTAccessor.getComponentAccessor().getPeer(actualFocusedWindow));
             }
         }
         super.handleWindowFocusOut(oppositeWindow, serial);
