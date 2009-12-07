@@ -40,7 +40,7 @@ G1MemoryPoolSuper::G1MemoryPoolSuper(G1CollectedHeap* g1h,
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::eden_space_committed(G1CollectedHeap* g1h) {
-  return eden_space_used(g1h);
+  return MAX2(eden_space_used(g1h), (size_t) HeapRegion::GrainBytes);
 }
 
 // See the comment at the top of g1MemoryPool.hpp
@@ -54,12 +54,14 @@ size_t G1MemoryPoolSuper::eden_space_used(G1CollectedHeap* g1h) {
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::eden_space_max(G1CollectedHeap* g1h) {
+  // This should ensure that it returns a value no smaller than the
+  // region size. Currently, eden_space_committed() guarantees that.
   return eden_space_committed(g1h);
 }
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::survivor_space_committed(G1CollectedHeap* g1h) {
-  return survivor_space_used(g1h);
+  return MAX2(survivor_space_used(g1h), (size_t) HeapRegion::GrainBytes);
 }
 
 // See the comment at the top of g1MemoryPool.hpp
@@ -71,6 +73,8 @@ size_t G1MemoryPoolSuper::survivor_space_used(G1CollectedHeap* g1h) {
 
 // See the comment at the top of g1MemoryPool.hpp
 size_t G1MemoryPoolSuper::survivor_space_max(G1CollectedHeap* g1h) {
+  // This should ensure that it returns a value no smaller than the
+  // region size. Currently, survivor_space_committed() guarantees that.
   return survivor_space_committed(g1h);
 }
 
@@ -81,6 +85,7 @@ size_t G1MemoryPoolSuper::old_space_committed(G1CollectedHeap* g1h) {
   size_t survivor_committed = survivor_space_committed(g1h);
   committed = subtract_up_to_zero(committed, eden_committed);
   committed = subtract_up_to_zero(committed, survivor_committed);
+  committed = MAX2(committed, (size_t) HeapRegion::GrainBytes);
   return committed;
 }
 
@@ -101,6 +106,7 @@ size_t G1MemoryPoolSuper::old_space_max(G1CollectedHeap* g1h) {
   size_t survivor_max = survivor_space_max(g1h);
   max = subtract_up_to_zero(max, eden_max);
   max = subtract_up_to_zero(max, survivor_max);
+  max = MAX2(max, (size_t) HeapRegion::GrainBytes);
   return max;
 }
 
