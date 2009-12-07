@@ -3964,6 +3964,18 @@ public class Window extends Container implements Accessible {
             public void setLWRequestStatus(Window changed, boolean status) {
                 changed.syncLWRequests = status;
             }
+
+            public boolean isAutoRequestFocus(Window w) {
+                return w.autoRequestFocus;
+            }
+
+            public boolean isTrayIconWindow(Window w) {
+                return w.isTrayIconWindow;
+            }
+
+            public void setTrayIconWindow(Window w, boolean isTrayIconWindow) {
+                w.isTrayIconWindow = isTrayIconWindow;
+            }
         }); // WindowAccessor
     } // static
 

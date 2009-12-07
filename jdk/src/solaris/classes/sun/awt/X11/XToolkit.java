@@ -626,7 +626,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     Component owner =
                         XKeyboardFocusManagerPeer.getCurrentNativeFocusOwner();
                     if (owner != null) {
-                        XWindow ownerWindow = (XWindow) ComponentAccessor.getPeer(owner);
+                        XWindow ownerWindow = (XWindow) AWTAccessor.getComponentAccessor().getPeer(owner);
                         if (ownerWindow != null) {
                             w = ownerWindow.getContentWindow();
                         }

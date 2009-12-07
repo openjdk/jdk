@@ -51,8 +51,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.AWTAccessor;
-import sun.awt.ComponentAccessor;
-import sun.awt.WindowAccessor;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.awt.X11GraphicsDevice;
@@ -254,7 +252,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (((Window)target).getWarningString() != null) {
             // accessSystemTray permission allows to display TrayIcon, TrayIcon tooltip
             // and TrayIcon balloon windows without a warning window.
-            if (!WindowAccessor.isTrayIconWindow((Window)target)) {
+            if (!AWTAccessor.getWindowAccessor().isTrayIconWindow((Window)target)) {
                 warningWindow = new XWarningWindow((Window)target, getWindow(), this);
             }
         }
@@ -546,7 +544,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     boolean isAutoRequestFocus() {
         if (XToolkit.isToolkitThread()) {
-            return WindowAccessor.isAutoRequestFocus((Window)target);
+            return AWTAccessor.getWindowAccessor().isAutoRequestFocus((Window)target);
         } else {
             return ((Window)target).isAutoRequestFocus();
         }
@@ -1086,10 +1084,11 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (warningWindow != null) {
             // We can't use the coordinates stored in the XBaseWindow since
             // they are zeros for decorated frames.
-            int x = ComponentAccessor.getX(target);
-            int y = ComponentAccessor.getY(target);
-            int width = ComponentAccessor.getWidth(target);
-            int height = ComponentAccessor.getHeight(target);
+            AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+            int x = compAccessor.getX(target);
+            int y = compAccessor.getY(target);
+            int width = compAccessor.getWidth(target);
+            int height = compAccessor.getHeight(target);
             warningWindow.reposition(x, y, width, height);
         }
     }
@@ -1172,7 +1171,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (isSimpleWindow()) {
             if (target == XKeyboardFocusManagerPeer.getCurrentNativeFocusedWindow()) {
                 Window owner = getDecoratedOwner((Window)target);
-                ((XWindowPeer)ComponentAccessor.getPeer(owner)).requestWindowFocus();
+                ((XWindowPeer)AWTAccessor.getComponentAccessor().getPeer(owner)).requestWindowFocus();
             }
         }
     }
@@ -1399,7 +1398,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         XToolkit.awtLock();
         try {
             if (isReparented() && delayedModalBlocking) {
-                addToTransientFors((XDialogPeer) ComponentAccessor.getPeer(modalBlocker));
+                addToTransientFors((XDialogPeer) AWTAccessor.getComponentAccessor().getPeer(modalBlocker));
                 delayedModalBlocking = false;
             }
         } finally {
@@ -1483,7 +1482,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         try {
             // State lock should always be after awtLock
             synchronized(getStateLock()) {
-                XDialogPeer blockerPeer = (XDialogPeer) ComponentAccessor.getPeer(d);
+                XDialogPeer blockerPeer = (XDialogPeer) AWTAccessor.getComponentAccessor().getPeer(d);
                 if (blocked) {
                     log.fine("{0} is blocked by {1}", this, blockerPeer);
                     modalBlocker = d;
@@ -1763,7 +1762,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         // current chain iterator in the order from next to prev
         XWindowPeer chainToSplit = prevTransientFor;
         while (chainToSplit != null) {
-            XWindowPeer blocker = (XWindowPeer) ComponentAccessor.getPeer(chainToSplit.modalBlocker);
+            XWindowPeer blocker = (XWindowPeer) AWTAccessor.getComponentAccessor().getPeer(chainToSplit.modalBlocker);
             if (thisChainBlockers.contains(blocker)) {
                 // add to this dialog's chain
                 setToplevelTransientFor(thisChain, chainToSplit, true, false);
@@ -1791,7 +1790,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     static Window getDecoratedOwner(Window window) {
         while ((null != window) && !(window instanceof Frame || window instanceof Dialog)) {
-            window = (Window) ComponentAccessor.getParent_NoClientCode(window);
+            window = (Window) AWTAccessor.getComponentAccessor().getParent(window);
         }
         return window;
     }
@@ -1824,7 +1823,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         focusLog.fine("Parent window is not active");
 
-        XDecoratedPeer wpeer = (XDecoratedPeer)ComponentAccessor.getPeer(ownerWindow);
+        XDecoratedPeer wpeer = (XDecoratedPeer)AWTAccessor.getComponentAccessor().getPeer(ownerWindow);
         if (wpeer != null && wpeer.requestWindowFocus(this, time, timeProvided)) {
             focusLog.fine("Parent window accepted focus request - generating focus for this window");
             return true;
@@ -2154,9 +2153,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     if (toplevel != null) {
                         Window w = (Window)toplevel.target;
                         while (w != null && toplevel != this && !(toplevel instanceof XDialogPeer)) {
-                            w = (Window) ComponentAccessor.getParent_NoClientCode(w);
+                            w = (Window) AWTAccessor.getComponentAccessor().getParent(w);
                             if (w != null) {
-                                toplevel = (XWindowPeer) ComponentAccessor.getPeer(w);
+                                toplevel = (XWindowPeer) AWTAccessor.getComponentAccessor().getPeer(w);
                             }
                         }
                         if (w == null || (w != this.target && w instanceof Dialog)) {

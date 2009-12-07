@@ -1119,6 +1119,18 @@ public abstract class SunToolkit extends Toolkit
     }
 
     /**
+     * Gives native peers the ability to query the closest HW component.
+     * If the given component is heavyweight, then it returns this. Otherwise,
+     * it goes one level up in the hierarchy and tests next component.
+     */
+    public static Component getHeavyweightComponent(Component c) {
+        while (c != null && AWTAccessor.getComponentAccessor().isLightweight(c)) {
+            c = AWTAccessor.getComponentAccessor().getParent(c);
+        }
+        return c;
+    }
+
+    /**
      * Returns a new input method window, with behavior as specified in
      * {@link java.awt.im.spi.InputMethodContext#createInputMethodWindow}.
      * If the inputContext is not null, the window should return it from its
