@@ -78,6 +78,7 @@ class Krb5Context implements GSSContextSpi {
     private boolean sequenceDetState  = true;
     private boolean confState  = true;
     private boolean integState  = true;
+    private boolean delegPolicyState = false;
 
     private int mySeqNumber;
     private int peerSeqNumber;
@@ -299,6 +300,21 @@ class Krb5Context implements GSSContextSpi {
         return sequenceDetState || replayDetState;
     }
 
+    /**
+     * Requests that the deleg policy be respected.
+     */
+    public final void requestDelegPolicy(boolean value) {
+        if (state == STATE_NEW && isInitiator())
+            delegPolicyState = value;
+    }
+
+    /**
+     * Is deleg policy respected?
+     */
+    public final boolean getDelegPolicyState() {
+        return delegPolicyState;
+    }
+
     /*
      * Anonymity is a little different in that after an application
      * requests anonymity it will want to know whether the mechanism
@@ -420,6 +436,10 @@ class Krb5Context implements GSSContextSpi {
 
     final void setIntegState(boolean state) {
         integState = state;
+    }
+
+    final void setDelegPolicyState(boolean state) {
+        delegPolicyState = state;
     }
 
     /**

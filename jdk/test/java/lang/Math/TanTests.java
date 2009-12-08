@@ -25,8 +25,6 @@
  * @test
  * @bug 5033578
  * @summary Tests for {Math, StrictMath}.tan
- * @compile -source 1.5 TanTests.java
- * @run main TanTests
  * @author Joseph D. Darcy
  */
 

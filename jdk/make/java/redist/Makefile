@@ -194,10 +194,8 @@ endif
 # For backwards compatability, make a link of the 32-bit client JVM to $(LIBDIR)
 IMPORT_LIST += $(LIB_LOCATION)/$(JVM_NAME)
 
-# create a link from lib/libjvm.so to client/libjvm.so
 $(LIB_LOCATION)/$(JVM_NAME): $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_NAME)
 	@$(prep-target)
-	$(LN) -s $(CLIENT_LOCATION)/$(JVM_NAME) $@
 
 #  solaris   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ solaris
 endif # 32bit solaris
