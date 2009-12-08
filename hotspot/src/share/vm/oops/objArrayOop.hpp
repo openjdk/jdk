@@ -58,7 +58,7 @@ private:
       old_res = align_size_up(length, OopsPerHeapWord)/OopsPerHeapWord;
     }
 #endif  // ASSERT
-    int res = (length + OopsPerHeapWord - 1)/OopsPerHeapWord;
+    int res = ((uint)length + OopsPerHeapWord - 1)/OopsPerHeapWord;
     assert(res == old_res, "Inconsistency between old and new.");
     return res;
   }
@@ -96,7 +96,11 @@ private:
 
   static int object_size(int length) {
     // This returns the object size in HeapWords.
-    return align_object_size(header_size() + array_size(length));
+    uint asz = array_size(length);
+    uint osz = align_object_size(header_size() + asz);
+    assert(osz >= asz,   "no overflow");
+    assert((int)osz > 0, "no overflow");
+    return (int)osz;
   }
 
   // special iterators for index ranges, returns size of object
