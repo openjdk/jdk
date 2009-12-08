@@ -25,8 +25,6 @@
  * @bug 4904082 4917089 6337226
  * @summary Tests that integral division and related methods return the proper result and scale.
  * @author Joseph D. Darcy
- * @compile -source 1.5 IntegralDivisionTests.java
- * @run main IntegralDivisionTests
  */
 import java.math.*;
 public class IntegralDivisionTests {

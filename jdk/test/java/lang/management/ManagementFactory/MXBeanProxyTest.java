@@ -26,9 +26,6 @@
  * @bug     5024531
  * @summary Basic Test for ManagementFactory.newPlatformMXBean().
  * @author  Mandy Chung
- *
- * @compile -source 1.5 MXBeanProxyTest.java
- * @run main MXBeanProxyTest
  */
 import javax.management.*;
 import java.lang.management.ClassLoadingMXBean;

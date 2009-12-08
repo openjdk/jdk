@@ -27,7 +27,7 @@
  * @summary HTTP client: Improve proxy server configuration and selection
  * @library ../../../sun/net/www/httptest/
  * @build ClosedChannelList HttpServer HttpTransaction HttpCallback
- * @compile -source 1.5 ProxyTest.java
+ * @compile ProxyTest.java
  * @run main/othervm -Dhttp.proxyHost=inexistant -Dhttp.proxyPort=8080 ProxyTest
  */
 

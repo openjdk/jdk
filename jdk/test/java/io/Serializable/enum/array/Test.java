@@ -25,9 +25,6 @@
  * @bug 4838379
  * @summary Verify that serialization of enum constant arrays functions
  *          properly.
- *
- * @compile -source 1.5 Test.java
- * @run main Test
  */
 
 import java.io.*;

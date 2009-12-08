@@ -26,9 +26,6 @@
  * @bug     4193200
  * @summary Basic test for Collections.frequency
  * @author  Josh Bloch
- *
- * @compile -source 1.5 Frequency.java
- * @run main Frequency
  */
 
 import java.util.*;
