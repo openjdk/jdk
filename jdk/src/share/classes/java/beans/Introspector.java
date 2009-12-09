@@ -78,20 +78,7 @@ import sun.reflect.misc.ReflectUtil;
  * patterns to identify property accessors, event sources, or public
  * methods.  We then proceed to analyze the class's superclass and add
  * in the information from it (and possibly on up the superclass chain).
- *
  * <p>
- * Because the Introspector caches BeanInfo classes for better performance,
- * take care if you use it in an application that uses
- * multiple class loaders.
- * In general, when you destroy a <code>ClassLoader</code>
- * that has been used to introspect classes,
- * you should use the
- * {@link #flushCaches <code>Introspector.flushCaches</code>}
- * or
- * {@link #flushFromCaches <code>Introspector.flushFromCaches</code>} method
- * to flush all of the introspected classes out of the cache.
- *
- * <P>
  * For more information about introspection and design patterns, please
  * consult the
  *  <a href="http://java.sun.com/products/javabeans/docs/index.html">JavaBeans specification</a>.
