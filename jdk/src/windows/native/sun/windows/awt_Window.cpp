@@ -220,6 +220,7 @@ AwtWindow::AwtWindow() {
     ::InitializeCriticalSection(&contentBitmapCS);
 
     m_windowType = Type::NORMAL;
+    m_alwaysOnTop = false;
 }
 
 AwtWindow::~AwtWindow()
@@ -352,10 +353,10 @@ void AwtWindow::RepositionSecurityWarning(JNIEnv *env)
     RECT rect;
     CalculateWarningWindowBounds(env, &rect);
 
-    ::SetWindowPos(warningWindow, HWND_NOTOPMOST,
+    ::SetWindowPos(warningWindow, IsAlwaysOnTop() ? HWND_TOPMOST : GetHWnd(),
             rect.left, rect.top,
             rect.right - rect.left, rect.bottom - rect.top,
-            SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOZORDER |
+            SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE |
             SWP_NOOWNERZORDER
             );
 }
@@ -831,7 +832,9 @@ void AwtWindow::StartSecurityAnimation(AnimationKind kind)
             securityAnimationTimerElapse, NULL);
 
     if (securityAnimationKind == akShow) {
-        ::SetWindowPos(warningWindow, HWND_NOTOPMOST, 0, 0, 0, 0,
+        ::SetWindowPos(warningWindow,
+                IsAlwaysOnTop() ? HWND_TOPMOST : GetHWnd(),
+                0, 0, 0, 0,
                 SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE |
                 SWP_SHOWWINDOW | SWP_NOOWNERZORDER);
 
@@ -2270,6 +2273,7 @@ void AwtWindow::_SetAlwaysOnTop(void *param)
     if (::IsWindow(w->GetHWnd()))
     {
         w->SendMessage(WM_AWT_SETALWAYSONTOP, (WPARAM)value, (LPARAM)w);
+        w->m_alwaysOnTop = (bool)value;
     }
 ret:
     env->DeleteGlobalRef(self);

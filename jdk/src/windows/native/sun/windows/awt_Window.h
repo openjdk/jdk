@@ -383,6 +383,10 @@ private:
     // Tweak the style according to the type of the window
     void TweakStyle(DWORD & style, DWORD & exStyle);
 
+    // Set in _SetAlwaysOnTop()
+    bool m_alwaysOnTop;
+public:
+    inline bool IsAlwaysOnTop() { return m_alwaysOnTop; }
 };
 
 #endif /* AWT_WINDOW_H */
