@@ -71,8 +71,8 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
                                      "Bhutanische Sommerzeit", "BTST"};
         String CAT[] = new String[] {"Zentralafrikanische Zeit", "CAT",
                                      "Zentralafrikanische Sommerzeit", "CAST"};
-        String CET[] = new String[] {"Zentraleurop\u00e4ische Zeit", "CET",
-                                     "Zentraleurop\u00e4ische Sommerzeit", "CEST"};
+        String CET[] = new String[] {"Mitteleurop\u00e4ische Zeit", "MEZ",
+                                     "Mitteleurop\u00e4ische Sommerzeit", "MESZ"};
         String CHAST[] = new String[] {"Chatham Normalzeit", "CHAST",
                                        "Chatham Sommerzeit", "CHADT"};
         String CIT[] = new String[] {"Zentralindonesische Zeit", "CIT",
@@ -93,8 +93,8 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
                                      "Ostafrikanische Sommerzeit", "EAST"};
         String EASTER[] = new String[] {"Osterinseln Zeit", "EAST",
                                         "Osterinseln Sommerzeit", "EASST"};
-        String EET[] = new String[] {"Osteurop\u00e4ische Zeit", "EET",
-                                     "Osteurop\u00e4ische Sommerzeit", "EEST"};
+        String EET[] = new String[] {"Osteurop\u00e4ische Zeit", "OEZ",
+                                     "Osteurop\u00e4ische Sommerzeit", "OESZ"};
         String EGT[] = new String[] {"Ostgr\u00f6nl\u00e4ndische Zeit", "EGT",
                                      "Ostgr\u00f6nl\u00e4ndische Sommerzeit", "EGST"};
         String EST[] = new String[] {"\u00d6stliche Normalzeit", "EST",
@@ -177,8 +177,8 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
                                       "Argentinische Sommerzeit", "WARST"};
         String WAT[] = new String[] {"Westafrikanische Zeit", "WAT",
                                      "Westafrikanische Sommerzeit", "WAST"};
-        String WET[] = new String[] {"Westeurop\u00e4ische Zeit", "WET",
-                                     "Westeurop\u00e4ische Sommerzeit", "WEST"};
+        String WET[] = new String[] {"Westeurop\u00e4ische Zeit", "WEZ",
+                                     "Westeurop\u00e4ische Sommerzeit", "WESZ"};
         String WIT[] = new String[] {"Westindonesische Zeit", "WIT",
                                      "Westindonesische Sommerzeit", "WIST"};
         String WST_AUS[] = new String[] {"Westliche Normalzeit (Australien)", "WST",
