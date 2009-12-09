@@ -1449,7 +1449,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * (which is assigned to the virtual pointer) reports the maximum
      * capabilities of the mouse pointer (i.e. 32 physical buttons).
      */
-    private native synchronized int getNumberOfButtonsImpl();
+    private native int getNumberOfButtonsImpl();
 
     @Override
     public int getNumberOfButtons(){
