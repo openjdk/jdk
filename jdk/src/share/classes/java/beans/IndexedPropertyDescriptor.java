@@ -313,11 +313,14 @@ perty.
     }
 
     /**
-     * Gets the <code>Class</code> object of the indexed properties' type.
-     * The returned <code>Class</code> may describe a primitive type such as <code>int</code>.
+     * Returns the Java type info for the indexed property.
+     * Note that the {@code Class} object may describe
+     * primitive Java types such as {@code int}.
+     * This type is returned by the indexed read method
+     * or is used as the parameter type of the indexed write method.
      *
-     * @return The <code>Class</code> for the indexed properties' type; may return <code>null</code>
-     *         if the type cannot be determined.
+     * @return the {@code Class} object that represents the Java type info,
+     *         or {@code null} if the type cannot be determined
      */
     public synchronized Class<?> getIndexedPropertyType() {
         Class type = getIndexedPropertyType0();
