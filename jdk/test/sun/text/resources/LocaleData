@@ -5526,3 +5526,26 @@ LocaleNames//IM=Isle Of Man
 # BL, MF (6627549)
 LocaleNames//BL=Saint Barth\u00e9lemy
 LocaleNames//MF=Saint Martin
+
+# bug 6609737
+FormatData/de/DateTimePatterns/0=HH:mm' Uhr 'z
+TimeZoneNames/de/CET/1=Mitteleurop\u00e4ische Zeit
+TimeZoneNames/de/CET/2=MEZ
+TimeZoneNames/de/CET/3=Mitteleurop\u00e4ische Sommerzeit
+TimeZoneNames/de/CET/4=MESZ
+TimeZoneNames/de/EET/2=OEZ
+TimeZoneNames/de/EET/4=OESZ
+TimeZoneNames/de/WET/2=WEZ
+TimeZoneNames/de/WET/4=WESZ
+
+# bug 6610748
+FormatData/fi/AmPmMarkers/0=ap.
+FormatData/fi/AmPmMarkers/1=ip.
+
+# bug 6507067 
+TimeZoneNames/zh_TW/Asia\/Taipei/1=\u53f0\u7063\u6a19\u6e96\u6642\u9593
+TimeZoneNames/zh_TW/Asia\/Taipei/2=TST
+
+# bug 6645271
+FormatData/hr_HR/DateTimePatterns/6=dd.MM.yyyy.
+FormatData/hr_HR/DateTimePatterns/7=dd.MM.yy.
