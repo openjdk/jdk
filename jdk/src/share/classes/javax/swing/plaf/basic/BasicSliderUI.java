@@ -1409,9 +1409,10 @@ public class BasicSliderUI extends SliderUI{
     }
 
     /**
-     * Returns a value give a y position.  If yPos is past the track at the top or the
-     * bottom it will set the value to the min or max of the slider, depending if the
-     * slider is inverted or not.
+     * Returns the value at the y position. If {@code yPos} is beyond the
+     * track at the the bottom or the top, this method sets the value to either
+     * the minimum or maximum value of the slider, depending on if the slider
+     * is inverted or not.
      */
     public int valueForYPosition( int yPos ) {
         int value;
@@ -1440,9 +1441,10 @@ public class BasicSliderUI extends SliderUI{
     }
 
     /**
-     * Returns a value give an x position.  If xPos is past the track at the left or the
-     * right it will set the value to the min or max of the slider, depending if the
-     * slider is inverted or not.
+     * Returns the value at the x position.  If {@code xPos} is beyond the
+     * track at the left or the right, this method sets the value to either the
+     * minimum or maximum value of the slider, depending on if the slider is
+     * inverted or not.
      */
     public int valueForXPosition( int xPos ) {
         int value;
