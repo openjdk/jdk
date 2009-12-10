@@ -717,7 +717,10 @@ public:
 //------------------------------ClearArray-------------------------------------
 class ClearArrayNode: public Node {
 public:
-  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base ) : Node(ctrl,arymem,word_cnt,base) {}
+  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base )
+    : Node(ctrl,arymem,word_cnt,base) {
+    init_class_id(Class_ClearArray);
+  }
   virtual int         Opcode() const;
   virtual const Type *bottom_type() const { return Type::MEMORY; }
   // ClearArray modifies array elements, and so affects only the
@@ -743,6 +746,9 @@ public:
                             Node* start_offset,
                             Node* end_offset,
                             PhaseGVN* phase);
+  // Return allocation input memory edge if it is different instance
+  // or itself if it is the one we are looking for.
+  static bool step_through(Node** np, uint instance_id, PhaseTransform* phase);
 };
 
 //------------------------------StrComp-------------------------------------
