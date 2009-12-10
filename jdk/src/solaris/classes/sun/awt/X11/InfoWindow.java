@@ -45,6 +45,7 @@ public abstract class InfoWindow extends Window {
 
     protected InfoWindow(Frame parent, Color borderColor) {
         super(parent);
+        setType(Window.Type.POPUP);
         container = new Container() {
             @Override
             public Insets getInsets() {
