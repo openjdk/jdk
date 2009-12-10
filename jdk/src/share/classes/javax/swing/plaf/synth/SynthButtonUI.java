@@ -25,40 +25,49 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.Serializable;
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.beans.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
-import sun.swing.plaf.synth.SynthUI;
-import sun.swing.plaf.synth.DefaultSynthStyle;
 
 /**
- * Synth's ButtonUI implementation.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JButton}.
  *
  * @author Scott Violet
+ * @since 1.7
  */
-class SynthButtonUI extends BasicButtonUI implements
+public class SynthButtonUI extends BasicButtonUI implements
                                  PropertyChangeListener, SynthUI {
     private SynthStyle style;
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent c) {
         return new SynthButtonUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults(AbstractButton b) {
         updateStyle(b);
 
         LookAndFeel.installProperty(b, "rolloverEnabled", Boolean.TRUE);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installListeners(AbstractButton b) {
         super.installListeners(b);
         b.addPropertyChangeListener(this);
@@ -99,11 +108,19 @@ class SynthButtonUI extends BasicButtonUI implements
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallListeners(AbstractButton b) {
         super.uninstallListeners(b);
         b.removePropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults(AbstractButton b) {
         SynthContext context = getContext(b, ENABLED);
 
@@ -112,18 +129,18 @@ class SynthButtonUI extends BasicButtonUI implements
         style = null;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
 
     SynthContext getContext(JComponent c, int state) {
-        Region region = getRegion(c);
+        Region region = SynthLookAndFeel.getRegion(c);
         return SynthContext.getContext(SynthContext.class, c, region,
                                        style, state);
-    }
-
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
     }
 
     /**
@@ -164,6 +181,10 @@ class SynthButtonUI extends BasicButtonUI implements
         return state;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public int getBaseline(JComponent c, int width, int height) {
         if (c == null) {
             throw new NullPointerException("Component must be non-null");
@@ -215,6 +236,10 @@ class SynthButtonUI extends BasicButtonUI implements
     //          Paint Methods
     // ********************************
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -224,6 +249,10 @@ class SynthButtonUI extends BasicButtonUI implements
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -231,6 +260,12 @@ class SynthButtonUI extends BasicButtonUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
         AbstractButton b = (AbstractButton)context.getComponent();
 
@@ -253,19 +288,22 @@ class SynthButtonUI extends BasicButtonUI implements
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintButtonBorder(context, g, x, y, w, h);
     }
 
     /**
-     * Returns the default icon. This should NOT callback
+     * Returns the default icon. This should not callback
      * to the JComponent.
      *
-     * @param b AbstractButton the icon is associated with
+     * @param b button the icon is associated with
      * @return default icon
      */
-
     protected Icon getDefaultIcon(AbstractButton b) {
         SynthContext context = getContext(b);
         Icon icon = context.getStyle().getIcon(context, getPropertyPrefix() + "icon");
@@ -274,7 +312,11 @@ class SynthButtonUI extends BasicButtonUI implements
     }
 
     /**
-     * Returns the Icon to use in painting the button.
+     * Returns the Icon to use for painting the button. The icon is chosen with
+     * respect to the current state of the button.
+     *
+     * @param b button the icon is associated with
+     * @return an icon
      */
     protected Icon getIcon(AbstractButton b) {
         Icon icon = b.getIcon();
@@ -374,7 +416,7 @@ class SynthButtonUI extends BasicButtonUI implements
     /**
      * Returns the amount to shift the text/icon when painting.
      */
-    protected int getTextShiftOffset(SynthContext state) {
+    private int getTextShiftOffset(SynthContext state) {
         AbstractButton button = (AbstractButton)state.getComponent();
         ButtonModel model = button.getModel();
 
@@ -389,6 +431,11 @@ class SynthButtonUI extends BasicButtonUI implements
     // ********************************
     //          Layout Methods
     // ********************************
+
+    /**
+     * @inheritDoc
+     */
+    @Override
     public Dimension getMinimumSize(JComponent c) {
         if (c.getComponentCount() > 0 && c.getLayout() != null) {
             return null;
@@ -406,6 +453,10 @@ class SynthButtonUI extends BasicButtonUI implements
         return size;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         if (c.getComponentCount() > 0 && c.getLayout() != null) {
             return null;
@@ -423,6 +474,10 @@ class SynthButtonUI extends BasicButtonUI implements
         return size;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public Dimension getMaximumSize(JComponent c) {
         if (c.getComponentCount() > 0 && c.getLayout() != null) {
             return null;
@@ -442,7 +497,8 @@ class SynthButtonUI extends BasicButtonUI implements
     }
 
     /**
-     * Returns the Icon used in calculating the pref/min/max size.
+     * Returns the Icon used in calculating the
+     * preferred/minimum/maximum size.
      */
     protected Icon getSizingIcon(AbstractButton b) {
         Icon icon = getEnabledIcon(b, b.getIcon());
@@ -452,6 +508,10 @@ class SynthButtonUI extends BasicButtonUI implements
         return icon;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle((AbstractButton)e.getSource());

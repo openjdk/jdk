@@ -27,21 +27,21 @@ package javax.swing.plaf.synth;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.lang.reflect.*;
 import javax.swing.*;
 import javax.swing.plaf.*;
 import javax.swing.event.*;
 import javax.swing.plaf.basic.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
- * Synth's ComboBoxUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JComboBox}.
  *
  * @author Scott Violet
+ * @since 1.7
  */
-class SynthComboBoxUI extends BasicComboBoxUI implements
+public class SynthComboBoxUI extends BasicComboBoxUI implements
                               PropertyChangeListener, SynthUI {
     private SynthStyle style;
     private boolean useListColors;
@@ -93,12 +93,11 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
     private boolean forceOpaque = false;
 
     /**
-     * NOTE: This serves the same purpose as the same field in BasicComboBoxUI.
-     * It is here because I could not give the padding field in
-     * BasicComboBoxUI protected access in an update release.
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
      */
-    private Insets padding;
-
     public static ComponentUI createUI(JComponent c) {
         return new SynthComboBoxUI();
     }
@@ -118,21 +117,6 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
 
     @Override
     protected void installDefaults() {
-        //NOTE: This next line of code was added because, since squareButton in
-        //BasicComboBoxUI is private, I need to have some way of reading it from UIManager.
-        //This is an incomplete solution (since it implies that squareButons,
-        //once set, cannot be reset per state. Probably ok, but not always ok).
-        //This line of code should be removed at the same time that squareButton
-        //is made protected in the super class.
-        super.installDefaults();
-
-        //This is here instead of in updateStyle because the value for padding
-        //needs to remain consistent with the value for padding in
-        //BasicComboBoxUI. I wouldn't have this value here at all if not
-        //for the fact that I cannot make "padding" protected in any way
-        //for an update release. This *should* be fixed in Java 7
-        padding = UIManager.getInsets("ComboBox.padding");
-
         updateStyle(comboBox);
     }
 
@@ -142,6 +126,7 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
 
         style = SynthLookAndFeel.updateStyle(context, this);
         if (style != oldStyle) {
+            padding = (Insets) style.get(context, "ComboBox.padding");
             popupInsets = (Insets)style.get(context, "ComboBox.popupInsets");
             useListColors = style.getBoolean(context,
                     "ComboBox.rendererUseListColors", true);
@@ -149,6 +134,8 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
                     "ComboBox.buttonWhenNotEditable", false);
             pressedWhenPopupVisible = style.getBoolean(context,
                     "ComboBox.pressedWhenPopupVisible", false);
+            squareButton = style.getBoolean(context,
+                    "ComboBox.squareButton", true);
 
             if (oldStyle != null) {
                 uninstallKeyboardActions();
@@ -164,6 +151,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void installListeners() {
         comboBox.addPropertyChangeListener(this);
@@ -172,6 +162,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         super.installListeners();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void uninstallUI(JComponent c) {
         if (popup instanceof SynthComboPopup) {
@@ -181,6 +174,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         buttonHandler = null;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(comboBox, ENABLED);
@@ -190,6 +186,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         style = null;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void uninstallListeners() {
         editorFocusHandler.unregister();
@@ -200,6 +199,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         super.uninstallListeners();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
@@ -208,10 +210,6 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
     private SynthContext getContext(JComponent c, int state) {
         return SynthContext.getContext(SynthContext.class, c,
                     SynthLookAndFeel.getRegion(c), style, state);
-    }
-
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
     }
 
     private int getComponentState(JComponent c) {
@@ -252,6 +250,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected ComboPopup createPopup() {
         SynthComboPopup p = new SynthComboPopup(comboBox);
@@ -259,11 +260,17 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         return p;
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected ListCellRenderer createRenderer() {
         return new SynthComboBoxRenderer();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected ComboBoxEditor createEditor() {
         return new SynthComboBoxEditor();
@@ -273,6 +280,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
     // end UI Initialization
     //======================
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
@@ -280,6 +290,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected JButton createArrowButton() {
         SynthArrowButton button = new SynthArrowButton(SwingConstants.SOUTH);
@@ -291,6 +304,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
     //=================================
     // begin ComponentUI Implementation
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
@@ -302,6 +318,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
@@ -310,6 +329,12 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
         hasFocus = comboBox.hasFocus();
         if ( !comboBox.isEditable() ) {
@@ -318,6 +343,9 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
@@ -375,7 +403,7 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * Return the default size of an empty display area of the combo box using
+     * Returns the default size of an empty display area of the combo box using
      * the current renderer and font.
      *
      * This method was overridden to use SynthComboBoxRenderer instead of
@@ -391,23 +419,6 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         SynthComboBoxRenderer r = new SynthComboBoxRenderer();
         Dimension d = getSizeForComponent(r.getListCellRendererComponent(listBox, " ", -1, false, false));
         return new Dimension(d.width, d.height);
-    }
-
-    /**
-     * This has been refactored out in hopes that it may be investigated and
-     * simplified for the next major release. adding/removing
-     * the component to the currentValuePane and changing the font may be
-     * redundant operations.
-     *
-     * NOTE: This method was copied in its entirety from BasicComboBoxUI. Might
-     * want to make it protected in BasicComboBoxUI in Java 7
-     */
-    private Dimension getSizeForComponent(Component comp) {
-        currentValuePane.add(comp);
-        comp.setFont(comboBox.getFont());
-        Dimension d = comp.getPreferredSize();
-        currentValuePane.remove(comp);
-        return d;
     }
 
     /**
@@ -478,84 +489,16 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
 
-    /**
-     * From BasicCombBoxEditor v 1.24.
-     */
-    private static class SynthComboBoxEditor implements
-                              ComboBoxEditor, UIResource {
-        protected JTextField editor;
-        private Object oldValue;
+    private static class SynthComboBoxEditor
+            extends BasicComboBoxEditor.UIResource {
 
-        public SynthComboBoxEditor() {
-            editor = new JTextField("",9);
-            editor.setName("ComboBox.textField");
-        }
-
-        @Override
-        public Component getEditorComponent() {
-            return editor;
-        }
-
-        /**
-         * Sets the item that should be edited.
-         *
-         * @param anObject the displayed value of the editor
-         */
-        @Override
-        public void setItem(Object anObject) {
-            String text;
-
-            if ( anObject != null )  {
-                text = anObject.toString();
-                oldValue = anObject;
-            } else {
-                text = "";
-            }
-            // workaround for 4530952
-            if (!text.equals(editor.getText())) {
-                editor.setText(text);
-            }
-        }
-
-        @Override
-        public Object getItem() {
-            Object newValue = editor.getText();
-
-            if (oldValue != null && !(oldValue instanceof String))  {
-                // The original value is not a string. Should return the value in it's
-                // original type.
-                if (newValue.equals(oldValue.toString())) {
-                    return oldValue;
-                } else {
-                    // Must take the value from the editor and get the value and cast it to the new type.
-                    Class<?> cls = oldValue.getClass();
-                    try {
-                        Method method = cls.getMethod("valueOf", new Class[]{String.class});
-                        newValue = method.invoke(oldValue, new Object[] { editor.getText()});
-                    } catch (Exception ex) {
-                        // Fail silently and return the newValue (a String object)
-                    }
-                }
-            }
-            return newValue;
-        }
-
-        @Override
-        public void selectAll() {
-            editor.selectAll();
-            editor.requestFocus();
-        }
-
-        @Override
-        public void addActionListener(ActionListener l) {
-            editor.addActionListener(l);
-        }
-
-        @Override
-        public void removeActionListener(ActionListener l) {
-            editor.removeActionListener(l);
+        @Override public JTextField createEditorComponent() {
+            JTextField f = new JTextField("", 9);
+            f.setName("ComboBox.textField");
+            return f;
         }
     }
+
 
     /**
      * Handles all the logic for treating the combo as a button when it is
@@ -620,7 +563,7 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         //------------------------------------------------------------------
 
         /**
-         * {@inheritDoc}
+         * @inheritDoc
          *
          * Ensures that isPressed() will return true if the combo is pressed,
          * or the arrowButton is pressed, <em>or</em> if the combo popup is
@@ -634,7 +577,7 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         }
 
         /**
-         * {@inheritDoc}
+         * @inheritDoc
          *
          * Ensures that the armed state is in sync with the pressed state
          * if shouldActLikeButton is true. Without this method, the arrow
@@ -649,7 +592,7 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         }
 
         /**
-         * {@inheritDoc}
+         * @inheritDoc
          *
          * Ensures that isRollover() will return true if the combo is
          * rolled over, or the arrowButton is rolled over.
@@ -660,7 +603,7 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         }
 
         /**
-         * {@inheritDoc}
+         * @inheritDoc
          *
          * Forwards pressed states to the internal "pressed" field
          */
@@ -671,7 +614,7 @@ class SynthComboBoxUI extends BasicComboBoxUI implements
         }
 
         /**
-         * {@inheritDoc}
+         * @inheritDoc
          *
          * Forwards rollover states to the internal "over" field
          */

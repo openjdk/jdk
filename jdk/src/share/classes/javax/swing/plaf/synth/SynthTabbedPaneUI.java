@@ -34,19 +34,21 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-import sun.swing.plaf.synth.SynthUI;
 import sun.swing.SwingUtilities2;
 
 /**
- * A Synth L&F implementation of TabbedPaneUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JTabbedPane}.
+ *
+ * <p>Looks up the {@code selectedTabPadInsets} property from the Style,
+ * which represents additional insets for the selected tab.
  *
  * @author Scott Violet
+ * @since 1.7
  */
-/**
- * Looks up 'selectedTabPadInsets' from the Style, which will be additional
- * insets for the selected tab.
- */
-class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyChangeListener  {
+public class SynthTabbedPaneUI extends BasicTabbedPaneUI
+                               implements PropertyChangeListener, SynthUI {
+
     /**
      * <p>If non-zero, tabOverlap indicates the amount that the tab bounds
      * should be altered such that they would overlap with a tab on either the
@@ -103,11 +105,17 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
 
     private boolean selectedTabIsPressed = false;
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent c) {
         return new SynthTabbedPaneUI();
     }
 
-    SynthTabbedPaneUI() {
+    private SynthTabbedPaneUI() {
         textRect = new Rectangle();
         iconRect = new Rectangle();
     }
@@ -116,6 +124,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         return (tabPane.getTabLayoutPolicy() == JTabbedPane.SCROLL_TAB_LAYOUT);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults() {
         updateStyle(tabPane);
     }
@@ -175,16 +187,28 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
             tabContentStyle.getInsets(tabContentContext, null);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installListeners() {
         super.installListeners();
         tabPane.addPropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
         tabPane.removePropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(tabPane, ENABLED);
         style.uninstallDefaults(context);
@@ -207,17 +231,17 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         tabContentStyle = null;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
-        return getContext(c, getComponentState(c));
+        return getContext(c, SynthLookAndFeel.getComponentState(c));
     }
 
-    public SynthContext getContext(JComponent c, int state) {
+    private SynthContext getContext(JComponent c, int state) {
         return SynthContext.getContext(SynthContext.class, c,
                     SynthLookAndFeel.getRegion(c),style, state);
-    }
-
-    public SynthContext getContext(JComponent c, Region subregion) {
-        return getContext(c, subregion, getComponentState(c));
     }
 
     private SynthContext getContext(JComponent c, Region subregion, int state){
@@ -236,14 +260,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         return SynthContext.getContext(klass, c, subregion, style, state);
     }
 
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
-    }
-
-    private int getComponentState(JComponent c) {
-        return SynthLookAndFeel.getComponentState(c);
-    }
-
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected JButton createScrollButton(int direction) {
         // added for Nimbus LAF so that it can use the basic arrow buttons
         // UIManager is queried directly here because this is called before
@@ -256,6 +276,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         return new SynthScrollableTabButton(direction);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle(tabPane);
@@ -313,6 +337,9 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         };
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected int getTabLabelShiftX(int tabPlacement, int tabIndex, boolean isSelected) {
         if (nudgeSelectedLabel) {
@@ -322,6 +349,9 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected int getTabLabelShiftY(int tabPlacement, int tabIndex, boolean isSelected) {
         if (nudgeSelectedLabel) {
@@ -331,6 +361,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -341,6 +375,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected int getBaseline(int tab) {
         if (tabPane.getTabComponentAt(tab) != null ||
                 getTextViewForTab(tab) != null) {
@@ -361,11 +399,19 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         return textRect.y + metrics.getAscent() + getBaselineOffset();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintTabbedPaneBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -373,6 +419,12 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
         int selectedIndex = tabPane.getSelectedIndex();
         int tabPlacement = tabPane.getTabPlacement();
@@ -426,6 +478,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
     }
 
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void paintTabArea(Graphics g, int tabPlacement,
                                 int selectedIndex) {
         // This can be invoked from ScrollabeTabPanel
@@ -439,7 +495,7 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
                      new Rectangle(x, y, width, height));
     }
 
-    protected void paintTabArea(SynthContext ss, Graphics g,
+    private void paintTabArea(SynthContext ss, Graphics g,
                                 int tabPlacement, int selectedIndex,
                                 Rectangle tabAreaBounds) {
         Rectangle clipRect = g.getClipBounds();
@@ -493,6 +549,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void setRolloverTab(int index) {
         int oldRolloverTab = getRolloverTab();
         super.setRolloverTab(index);
@@ -519,7 +579,7 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         }
     }
 
-    protected void paintTab(SynthContext ss, Graphics g,
+    private void paintTab(SynthContext ss, Graphics g,
                             int tabPlacement, Rectangle[] rects, int tabIndex,
                             Rectangle iconRect, Rectangle textRect) {
         Rectangle tabRect = rects[tabIndex];
@@ -587,7 +647,7 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         }
     }
 
-    protected void layoutLabel(SynthContext ss, int tabPlacement,
+    private void layoutLabel(SynthContext ss, int tabPlacement,
                                FontMetrics metrics, int tabIndex,
                                String title, Icon icon,
                                Rectangle tabRect, Rectangle iconRect,
@@ -614,7 +674,7 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         textRect.y += yNudge;
     }
 
-    protected void paintText(SynthContext ss,
+    private void paintText(SynthContext ss,
                              Graphics g, int tabPlacement,
                              Font font, FontMetrics metrics, int tabIndex,
                              String title, Rectangle textRect,
@@ -636,7 +696,7 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
     }
 
 
-    protected void paintContentBorder(SynthContext ss, Graphics g,
+    private void paintContentBorder(SynthContext ss, Graphics g,
                                       int tabPlacement, int selectedIndex) {
         int width = tabPane.getWidth();
         int height = tabPane.getHeight();
@@ -683,7 +743,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         }
     }
 
-
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected int calculateMaxTabHeight(int tabPlacement) {
         FontMetrics metrics = getFontMetrics(tabContext.getStyle().getFont(
                                              tabContext));
@@ -696,6 +759,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         return result;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected int calculateTabWidth(int tabPlacement, int tabIndex,
                                     FontMetrics metrics) {
         Icon icon = getIconForTab(tabIndex);
@@ -723,6 +790,10 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         return width;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected int calculateMaxTabWidth(int tabPlacement) {
         FontMetrics metrics = getFontMetrics(tabContext.getStyle().getFont(
                                      tabContext));
@@ -735,17 +806,25 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
         return result;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected Insets getTabInsets(int tabPlacement, int tabIndex) {
         updateTabContext(tabIndex, false, false, false,
                           (getFocusIndex() == tabIndex));
         return tabInsets;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected FontMetrics getFontMetrics() {
         return getFontMetrics(tabContext.getStyle().getFont(tabContext));
     }
 
-    protected FontMetrics getFontMetrics(Font font) {
+    private FontMetrics getFontMetrics(Font font) {
         return tabPane.getFontMetrics(font);
     }
 
@@ -787,7 +866,8 @@ class SynthTabbedPaneUI extends BasicTabbedPaneUI implements SynthUI, PropertyCh
      * Overridden to create a TabbedPaneLayout subclass which takes into
      * account tabOverlap.
      */
-    @Override protected LayoutManager createLayoutManager() {
+    @Override
+    protected LayoutManager createLayoutManager() {
         if (tabPane.getTabLayoutPolicy() == JTabbedPane.SCROLL_TAB_LAYOUT) {
             return super.createLayoutManager();
         } else { /* WRAP_TAB_LAYOUT */
