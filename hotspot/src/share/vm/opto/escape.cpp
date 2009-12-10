@@ -543,6 +543,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn) {
   int alias_idx = _compile->get_alias_index(tinst);
   igvn->set_type(addp, tinst);
   // record the allocation in the node map
+  assert(ptnode_adr(addp->_idx)->_node != NULL, "should be registered");
   set_map(addp->_idx, get_map(base->_idx));
 
   // Set addp's Base and Address to 'base'.
@@ -618,9 +619,14 @@ PhiNode *ConnectionGraph::create_split_phi(PhiNode *orig_phi, int alias_idx, Gro
   const TypePtr *atype = C->get_adr_type(alias_idx);
   result = PhiNode::make(orig_phi->in(0), NULL, Type::MEMORY, atype);
   C->copy_node_notes_to(result, orig_phi);
-  set_map_phi(orig_phi->_idx, result);
   igvn->set_type(result, result->bottom_type());
   record_for_optimizer(result);
+
+  debug_only(Node* pn = ptnode_adr(orig_phi->_idx)->_node;)
+  assert(pn == NULL || pn == orig_phi, "wrong node");
+  set_map(orig_phi->_idx, result);
+  ptnode_adr(orig_phi->_idx)->_node = orig_phi;
+
   new_created = true;
   return result;
 }
@@ -711,6 +717,81 @@ static Node *step_through_mergemem(MergeMemNode *mmem, int alias_idx, const Type
 }
 
 //
+// Move memory users to their memory slices.
+//
+void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phis, PhaseGVN *igvn) {
+  Compile* C = _compile;
+
+  const TypePtr* tp = igvn->type(n->in(MemNode::Address))->isa_ptr();
+  assert(tp != NULL, "ptr type");
+  int alias_idx = C->get_alias_index(tp);
+  int general_idx = C->get_general_index(alias_idx);
+
+  // Move users first
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* use = n->fast_out(i);
+    if (use->is_MergeMem()) {
+      MergeMemNode* mmem = use->as_MergeMem();
+      assert(n == mmem->memory_at(alias_idx), "should be on instance memory slice");
+      if (n != mmem->memory_at(general_idx) || alias_idx == general_idx) {
+        continue; // Nothing to do
+      }
+      // Replace previous general reference to mem node.
+      uint orig_uniq = C->unique();
+      Node* m = find_inst_mem(n, general_idx, orig_phis, igvn);
+      assert(orig_uniq == C->unique(), "no new nodes");
+      mmem->set_memory_at(general_idx, m);
+      --imax;
+      --i;
+    } else if (use->is_MemBar()) {
+      assert(!use->is_Initialize(), "initializing stores should not be moved");
+      if (use->req() > MemBarNode::Precedent &&
+          use->in(MemBarNode::Precedent) == n) {
+        // Don't move related membars.
+        record_for_optimizer(use);
+        continue;
+      }
+      tp = use->as_MemBar()->adr_type()->isa_ptr();
+      if (tp != NULL && C->get_alias_index(tp) == alias_idx ||
+          alias_idx == general_idx) {
+        continue; // Nothing to do
+      }
+      // Move to general memory slice.
+      uint orig_uniq = C->unique();
+      Node* m = find_inst_mem(n, general_idx, orig_phis, igvn);
+      assert(orig_uniq == C->unique(), "no new nodes");
+      igvn->hash_delete(use);
+      imax -= use->replace_edge(n, m);
+      igvn->hash_insert(use);
+      record_for_optimizer(use);
+      --i;
+#ifdef ASSERT
+    } else if (use->is_Mem()) {
+      if (use->Opcode() == Op_StoreCM && use->in(MemNode::OopStore) == n) {
+        // Don't move related cardmark.
+        continue;
+      }
+      // Memory nodes should have new memory input.
+      tp = igvn->type(use->in(MemNode::Address))->isa_ptr();
+      assert(tp != NULL, "ptr type");
+      int idx = C->get_alias_index(tp);
+      assert(get_map(use->_idx) != NULL || idx == alias_idx,
+             "Following memory nodes should have new memory input or be on the same memory slice");
+    } else if (use->is_Phi()) {
+      // Phi nodes should be split and moved already.
+      tp = use->as_Phi()->adr_type()->isa_ptr();
+      assert(tp != NULL, "ptr type");
+      int idx = C->get_alias_index(tp);
+      assert(idx == alias_idx, "Following Phi nodes should be on the same memory slice");
+    } else {
+      use->dump();
+      assert(false, "should not be here");
+#endif
+    }
+  }
+}
+
+//
 // Search memory chain of "mem" to find a MemNode whose address
 // is the specified alias index.
 //
@@ -775,6 +856,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
                C->get_alias_index(result->as_Phi()->adr_type()) != alias_idx) {
       Node *un = result->as_Phi()->unique_input(phase);
       if (un != NULL) {
+        orig_phis.append_if_missing(result->as_Phi());
         result = un;
       } else {
         break;
@@ -907,10 +989,12 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
 void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist) {
   GrowableArray<Node *>  memnode_worklist;
   GrowableArray<PhiNode *>  orig_phis;
+
   PhaseGVN  *igvn = _compile->initial_gvn();
   uint new_index_start = (uint) _compile->num_alias_types();
-  VectorSet visited(Thread::current()->resource_area());
-  VectorSet ptset(Thread::current()->resource_area());
+  Arena* arena = Thread::current()->resource_area();
+  VectorSet visited(arena);
+  VectorSet ptset(arena);
 
 
   //  Phase 1:  Process possible allocations from alloc_worklist.
@@ -986,6 +1070,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       //   - non-escaping
       //   - eligible to be a unique type
       //   - not determined to be ineligible by escape analysis
+      assert(ptnode_adr(alloc->_idx)->_node != NULL &&
+             ptnode_adr(n->_idx)->_node != NULL, "should be registered");
       set_map(alloc->_idx, n);
       set_map(n->_idx, alloc);
       const TypeOopPtr *t = igvn->type(n)->isa_oopptr();
@@ -1182,6 +1268,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         return;
       }
       if (mem != n->in(MemNode::Memory)) {
+        // We delay the memory edge update since we need old one in
+        // MergeMem code below when instances memory slices are separated.
+        debug_only(Node* pn = ptnode_adr(n->_idx)->_node;)
+        assert(pn == NULL || pn == n, "wrong node");
         set_map(n->_idx, mem);
         ptnode_adr(n->_idx)->_node = n;
       }
@@ -1249,6 +1339,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       Node* cur = NULL;
       if (mem == NULL || mem->is_top())
         continue;
+      // First, update mergemem by moving memory nodes to corresponding slices
+      // if their type became more precise since this mergemem was created.
       while (mem->is_Mem()) {
         const Type *at = igvn->type(mem->in(MemNode::Address));
         if (at != Type::TOP) {
@@ -1267,7 +1359,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       }
       nmm->set_memory_at(i, (cur != NULL) ? cur : mem);
       // Find any instance of the current type if we haven't encountered
-      // a value of the instance along the chain.
+      // already a memory slice of the instance along the memory chain.
       for (uint ni = new_index_start; ni < new_index_end; ni++) {
         if((uint)_compile->get_general_index(ni) == i) {
           Node *m = (ni >= nmm->req()) ? nmm->empty_memory() : nmm->in(ni);
@@ -1283,11 +1375,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
     }
     // Find the rest of instances values
     for (uint ni = new_index_start; ni < new_index_end; ni++) {
-      const TypeOopPtr *tinst = igvn->C->get_adr_type(ni)->isa_oopptr();
+      const TypeOopPtr *tinst = _compile->get_adr_type(ni)->isa_oopptr();
       Node* result = step_through_mergemem(nmm, ni, tinst);
       if (result == nmm->base_memory()) {
         // Didn't find instance memory, search through general slice recursively.
-        result = nmm->memory_at(igvn->C->get_general_index(ni));
+        result = nmm->memory_at(_compile->get_general_index(ni));
         result = find_inst_mem(result, ni, orig_phis, igvn);
         if (_compile->failing()) {
           return;
@@ -1325,19 +1417,48 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
   }
 
   // Update the memory inputs of MemNodes with the value we computed
-  // in Phase 2.
+  // in Phase 2 and move stores memory users to corresponding memory slices.
+#ifdef ASSERT
+  visited.Clear();
+  Node_Stack old_mems(arena, _compile->unique() >> 2);
+#endif
   for (uint i = 0; i < nodes_size(); i++) {
     Node *nmem = get_map(i);
     if (nmem != NULL) {
       Node *n = ptnode_adr(i)->_node;
-      if (n != NULL && n->is_Mem()) {
+      assert(n != NULL, "sanity");
+      if (n->is_Mem()) {
+#ifdef ASSERT
+        Node* old_mem = n->in(MemNode::Memory);
+        if (!visited.test_set(old_mem->_idx)) {
+          old_mems.push(old_mem, old_mem->outcnt());
+        }
+#endif
+        assert(n->in(MemNode::Memory) != nmem, "sanity");
+        if (!n->is_Load()) {
+          // Move memory users of a store first.
+          move_inst_mem(n, orig_phis, igvn);
+        }
+        // Now update memory input
         igvn->hash_delete(n);
         n->set_req(MemNode::Memory, nmem);
         igvn->hash_insert(n);
         record_for_optimizer(n);
+      } else {
+        assert(n->is_Allocate() || n->is_CheckCastPP() ||
+               n->is_AddP() || n->is_Phi(), "unknown node used for set_map()");
       }
     }
   }
+#ifdef ASSERT
+  // Verify that memory was split correctly
+  while (old_mems.is_nonempty()) {
+    Node* old_mem = old_mems.node();
+    uint  old_cnt = old_mems.index();
+    old_mems.pop();
+    assert(old_cnt = old_mem->outcnt(), "old mem could be lost");
+  }
+#endif
 }
 
 bool ConnectionGraph::has_candidates(Compile *C) {
