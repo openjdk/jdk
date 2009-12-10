@@ -212,27 +212,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return true;
     }
 
-    static XComponentPeer getNativeContainer(Component comp) {
-        if (comp == null) {
-            return null;
-        }
-
-        synchronized(comp.getTreeLock()) {
-            while (comp != null && (ComponentAccessor.getPeer(comp) instanceof LightweightPeer)) {
-                comp = ComponentAccessor.getParent_NoClientCode(comp);
-            }
-
-            if (comp != null) {
-                ComponentPeer peer = ComponentAccessor.getPeer(comp);
-                if (peer != null && peer instanceof XComponentPeer) {
-                    return (XComponentPeer)peer;
-                }
-            }
-        }
-
-        return null;
-    }
-
     /*************************************************
      * FOCUS STUFF
      *************************************************/
@@ -508,13 +487,14 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     }
 
     XWindowPeer getParentTopLevel() {
-        Container parent = (target instanceof Container) ? ((Container)target) : (ComponentAccessor.getParent_NoClientCode(target));
+        AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+        Container parent = (target instanceof Container) ? ((Container)target) : (compAccessor.getParent(target));
         // Search for parent window
         while (parent != null && !(parent instanceof Window)) {
-            parent = ComponentAccessor.getParent_NoClientCode(parent);
+            parent = compAccessor.getParent(parent);
         }
         if (parent != null) {
-            return (XWindowPeer)ComponentAccessor.getPeer(parent);
+            return (XWindowPeer)compAccessor.getPeer(parent);
         } else {
             return null;
         }
@@ -828,7 +808,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     public void endLayout() {
         if (!paintPending && !paintArea.isEmpty()
-            && !ComponentAccessor.getIgnoreRepaint(target))
+            && !AWTAccessor.getComponentAccessor().getIgnoreRepaint(target))
         {
             // if not waiting for native painting repaint damaged area
             postEvent(new PaintEvent(target, PaintEvent.PAINT,
@@ -1239,11 +1219,11 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     // End of multi-buffering
 
     public void notifyTextComponentChange(boolean add){
-        Container parent = ComponentAccessor.getParent_NoClientCode(target);
+        Container parent = AWTAccessor.getComponentAccessor().getParent(target);
         while(!(parent == null ||
                 parent instanceof java.awt.Frame ||
                 parent instanceof java.awt.Dialog)) {
-        parent = ComponentAccessor.getParent_NoClientCode(parent);
+            parent = AWTAccessor.getComponentAccessor().getParent(parent);
         }
 
 /*      FIX ME - FIX ME need to implement InputMethods

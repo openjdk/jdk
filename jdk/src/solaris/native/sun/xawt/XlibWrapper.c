@@ -33,6 +33,7 @@
 #include <X11/extensions/shape.h>
 #include <string.h>
 #include <stdlib.h>
+#include <X11/Sunkeysym.h>
 
 #include <jni.h>
 #include <jni_util.h>
@@ -1214,6 +1215,48 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsXsunKPBehavior
     }
 }
 
+
+JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsSunKeyboard
+(JNIEnv *env, jclass clazz, jlong display)
+{
+    int xx;
+    AWT_CHECK_HAVE_LOCK();
+    xx = XKeysymToKeycode((Display*)jlong_to_ptr(display), SunXK_F37);
+    return (!xx) ? JNI_FALSE : JNI_TRUE;
+}
+
+JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsKanaKeyboard
+(JNIEnv *env, jclass clazz, jlong display)
+{
+    int xx;
+    AWT_CHECK_HAVE_LOCK();
+    static jboolean result = JNI_FALSE;
+
+    int32_t minKeyCode, maxKeyCode, keySymsPerKeyCode;
+    KeySym *keySyms, *keySymsStart, keySym;
+    int32_t i;
+    int32_t kanaCount = 0;
+
+    // There's no direct way to determine whether the keyboard has
+    // a kana lock key. From available keyboard mapping tables, it looks
+    // like only keyboards with the kana lock key can produce keysyms
+    // for kana characters. So, as an indirect test, we check for those.
+    XDisplayKeycodes((Display*)jlong_to_ptr(display), &minKeyCode, &maxKeyCode);
+    keySyms = XGetKeyboardMapping((Display*)jlong_to_ptr(display), minKeyCode, maxKeyCode - minKeyCode + 1, &keySymsPerKeyCode);
+    keySymsStart = keySyms;
+    for (i = 0; i < (maxKeyCode - minKeyCode + 1) * keySymsPerKeyCode; i++) {
+        keySym = *keySyms++;
+        if ((keySym & 0xff00) == 0x0400) {
+            kanaCount++;
+        }
+    }
+    XFree(keySymsStart);
+
+    // use a (somewhat arbitrary) minimum so we don't get confused by a stray function key
+    result = kanaCount > 10;
+    return result ? JNI_TRUE : JNI_FALSE;
+}
+
 JavaVM* jvm = NULL;
 static int ToolkitErrorHandler(Display * dpy, XErrorEvent * event) {
     if (jvm != NULL) {
@@ -1260,6 +1303,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_CallErrorHandler
 {
     return (*(XErrorHandler)jlong_to_ptr(handler))((Display*) jlong_to_ptr(display), (XErrorEvent*) jlong_to_ptr(event_ptr));
 }
+
 
 /*
  * Class:     sun_awt_X11_XlibWrapper
@@ -1852,6 +1896,17 @@ Java_sun_awt_X11_XlibWrapper_XFreeModifiermap(JNIEnv *env, jclass clazz,
                                               jlong keymap) {
     AWT_CHECK_HAVE_LOCK();
     XFreeModifiermap((XModifierKeymap*) jlong_to_ptr(keymap));
+}
+/*
+ * Class:     sun_awt_X11_XlibWrapper
+ * Method:    XRefreshKeyboardMapping
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XRefreshKeyboardMapping
+(JNIEnv *env, jclass clazz, jlong event_ptr)
+{
+    AWT_CHECK_HAVE_LOCK();
+    XRefreshKeyboardMapping((XMappingEvent*) jlong_to_ptr(event_ptr));
 }
 
 JNIEXPORT void JNICALL

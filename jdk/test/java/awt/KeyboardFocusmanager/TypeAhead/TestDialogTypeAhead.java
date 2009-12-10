@@ -50,13 +50,7 @@ test
 
 import java.applet.Applet;
 import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
 import java.awt.event.*;
-import java.awt.peer.DialogPeer;
-import java.awt.peer.ComponentPeer;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
 
@@ -94,11 +88,13 @@ public class TestDialogTypeAhead extends Applet
                 }
             }, AWTEvent.KEY_EVENT_MASK);
 
+        KeyboardFocusManager.setCurrentKeyboardFocusManager(new TestKFM());
+
         this.setLayout (new BorderLayout ());
 
         f = new Frame("frame");
         b = new Button("press");
-        d = new TestDialog(f, "dialog", true, robotSema);
+        d = new Dialog(f, "dialog", true);
         ok = new Button("ok");
         d.add(ok);
         d.pack();
@@ -170,6 +166,11 @@ public class TestDialogTypeAhead extends Applet
         } catch (InterruptedException ie) {
             throw new RuntimeException("Interrupted!");
         }
+        if (!robotSema.getState()) {
+            throw new RuntimeException("robotSema hasn't been triggered");
+        }
+
+        System.err.println("typing ahead");
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
         waitForIdle();
@@ -278,65 +279,14 @@ public class TestDialogTypeAhead extends Applet
         }
     }
 
-    // Fix for 6446952.
-    // In the process of showing the dialog we have to catch peer.show() call
-    // so that to trigger key events just before it gets invoked.
-    // We base on the fact that a modal dialog sets type-ahead markers
-    // before it calls 'show' on the peer.
-    // Posting the key events before dialog.setVisible(true) would be actually not
-    // good because it would be Ok to dispatch them to the current focus owner,
-    // not to the dialog.
-    class TestDialog extends Dialog {
-        ComponentPeer origDialogPeer;
-        ComponentPeer proxyInstPeer;
-        Semaphore trigger;
+    class TestKFM extends DefaultKeyboardFocusManager {
+        protected synchronized void enqueueKeyEvents(long after,
+                                                     Component untilFocused)
+        {
+            super.enqueueKeyEvents(after, untilFocused);
 
-        TestDialog(Frame owner, String title, boolean modal, Semaphore trigger) {
-            super(owner, title, modal);
-            this.trigger = trigger;
-        }
-        public ComponentPeer getPeer() {
-            ComponentPeer ret = super.getPeer();
-            if (ret == proxyInstPeer) {
-                return origDialogPeer;
-            } else {
-                return ret;
-            }
-        }
-
-        public void addNotify() {
-            super.addNotify();
-            replacePeer();
-        }
-
-        void replacePeer() {
-            origDialogPeer = getPeer();
-
-            InvocationHandler handler = new InvocationHandler() {
-                    public Object invoke(Object proxy, Method method, Object[] args) {
-                        if (method.getName() == "show") {
-                            trigger.raise();
-                        }
-
-                        Object ret = null;
-                        try {
-                            ret = method.invoke(origDialogPeer, args);
-                        } catch (IllegalAccessException iae) {
-                            throw new Error("Test error.", iae);
-                        } catch (InvocationTargetException ita) {
-                            throw new Error("Test error.", ita);
-                        }
-                        return ret;
-                    }
-                };
-
-            proxyInstPeer = (DialogPeer)Proxy.newProxyInstance(
-                DialogPeer.class.getClassLoader(), new Class[] {DialogPeer.class}, handler);
-
-            try {
-                Util.getField(Component.class, "peer").set(d, proxyInstPeer);
-            } catch (IllegalAccessException iae) {
-                throw new Error("Test error.", iae);
+            if (untilFocused == TestDialogTypeAhead.this.ok) {
+                TestDialogTypeAhead.this.robotSema.raise();
             }
         }
     }
