@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,27 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-package javax.swing.plaf.synth;
 
-import sun.swing.DefaultLookup;
-import javax.swing.JComponent;
-import javax.swing.plaf.ComponentUI;
+/* @test
+ @summary Test SoftReceiver getMidiDevice method */
 
-/**
- * SynthDefaultLookup redirects all lookup calls to the SynthContext.
- *
- * @author Scott Violet
- */
-class SynthDefaultLookup extends DefaultLookup {
-    public Object getDefault(JComponent c, ComponentUI ui, String key) {
-        if (!(ui instanceof SynthUI)) {
-            Object value = super.getDefault(c, ui, key);
-            return value;
+import javax.sound.midi.Receiver;
+
+import com.sun.media.sound.AudioSynthesizer;
+import com.sun.media.sound.SoftReceiver;
+import com.sun.media.sound.SoftSynthesizer;
+
+public class GetMidiDevice {
+
+    public static void main(String[] args) throws Exception {
+
+        AudioSynthesizer synth = new SoftSynthesizer();
+        synth.openStream(null, null);
+        Receiver recv = synth.getReceiver();
+        if (((SoftReceiver) recv).getMidiDevice() != synth) {
+            throw new Exception("SoftReceiver.getMidiDevice() doesn't return "
+                    + "instance of the synthesizer");
         }
-        SynthContext context = ((SynthUI)ui).getContext(c);
-        Object value = context.getStyle().get(context, key);
-        context.dispose();
-        return value;
+        synth.close();
     }
 }

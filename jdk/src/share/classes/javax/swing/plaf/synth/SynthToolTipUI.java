@@ -34,23 +34,33 @@ import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.plaf.basic.BasicToolTipUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.text.View;
-import sun.swing.plaf.synth.SynthUI;
 
 
 /**
- * Synth's ToolTipUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JToolTip}.
  *
  * @author Joshua Outwater
+ * @since 1.7
  */
-class SynthToolTipUI extends BasicToolTipUI implements PropertyChangeListener,
-               SynthUI {
+public class SynthToolTipUI extends BasicToolTipUI
+                            implements PropertyChangeListener, SynthUI {
     private SynthStyle style;
 
-
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent c) {
         return new SynthToolTipUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults(JComponent c) {
         updateStyle(c);
     }
@@ -61,6 +71,10 @@ class SynthToolTipUI extends BasicToolTipUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults(JComponent c) {
         SynthContext context = getContext(c, ENABLED);
         style.uninstallDefaults(context);
@@ -68,14 +82,26 @@ class SynthToolTipUI extends BasicToolTipUI implements PropertyChangeListener,
         style = null;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installListeners(JComponent c) {
         c.addPropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallListeners(JComponent c) {
         c.removePropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -83,10 +109,6 @@ class SynthToolTipUI extends BasicToolTipUI implements PropertyChangeListener,
     private SynthContext getContext(JComponent c, int state) {
         return SynthContext.getContext(SynthContext.class, c,
                     SynthLookAndFeel.getRegion(c), style, state);
-    }
-
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
     }
 
     private int getComponentState(JComponent c) {
@@ -98,6 +120,10 @@ class SynthToolTipUI extends BasicToolTipUI implements PropertyChangeListener,
         return SynthLookAndFeel.getComponentState(c);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -108,11 +134,19 @@ class SynthToolTipUI extends BasicToolTipUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintToolTipBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -120,9 +154,14 @@ class SynthToolTipUI extends BasicToolTipUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
         JToolTip tip = (JToolTip)context.getComponent();
-        String tipText = tip.getToolTipText();
 
         Insets insets = tip.getInsets();
         View v = (View)tip.getClientProperty(BasicHTML.propertyKey);
@@ -140,6 +179,10 @@ class SynthToolTipUI extends BasicToolTipUI implements PropertyChangeListener,
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         SynthContext context = getContext(c);
         Insets insets = c.getInsets();
@@ -164,6 +207,10 @@ class SynthToolTipUI extends BasicToolTipUI implements PropertyChangeListener,
         return prefSize;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle((JToolTip)e.getSource());

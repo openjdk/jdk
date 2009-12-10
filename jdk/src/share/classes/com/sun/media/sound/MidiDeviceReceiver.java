@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,20 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-package javax.swing.plaf.synth;
+package com.sun.media.sound;
 
-import sun.swing.DefaultLookup;
-import javax.swing.JComponent;
-import javax.swing.plaf.ComponentUI;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.Receiver;
 
 /**
- * SynthDefaultLookup redirects all lookup calls to the SynthContext.
+ * A Receiver with reference to it's MidiDevice object.
  *
- * @author Scott Violet
+ * @author Karl Helgason
  */
-class SynthDefaultLookup extends DefaultLookup {
-    public Object getDefault(JComponent c, ComponentUI ui, String key) {
-        if (!(ui instanceof SynthUI)) {
-            Object value = super.getDefault(c, ui, key);
-            return value;
-        }
-        SynthContext context = ((SynthUI)ui).getContext(c);
-        Object value = context.getStyle().get(context, key);
-        context.dispose();
-        return value;
-    }
+public interface MidiDeviceReceiver extends Receiver {
+
+    /** Obtains the MidiDevice object associated with this Receiver.
+     */
+    public MidiDevice getMidiDevice();
+
 }

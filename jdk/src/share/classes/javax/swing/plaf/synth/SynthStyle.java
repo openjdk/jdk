@@ -33,7 +33,6 @@ import javax.swing.text.DefaultEditorKit;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.text.JTextComponent;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
  * <code>SynthStyle</code> is a set of style properties.

@@ -24,14 +24,10 @@
  */
 package javax.swing.plaf.basic;
 
-import javax.swing.*;
+import javax.swing.ComboBoxEditor;
+import javax.swing.JTextField;
 import javax.swing.border.Border;
-
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
-
-import java.awt.*;
+import java.awt.Component;
 import java.awt.event.*;
 
 import java.lang.reflect.Method;
@@ -73,12 +69,17 @@ public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
      * @param anObject the displayed value of the editor
      */
     public void setItem(Object anObject) {
-        if ( anObject != null )  {
-            editor.setText(anObject.toString());
+        String text;
 
+        if ( anObject != null )  {
+            text = anObject.toString();
             oldValue = anObject;
         } else {
-            editor.setText("");
+            text = "";
+        }
+        // workaround for 4530952
+        if (! text.equals(editor.getText())) {
+            editor.setText(text);
         }
     }
 
