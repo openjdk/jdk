@@ -210,6 +210,8 @@ private:
   Unique_Node_List  _delayed_worklist; // Nodes to be processed before
                                        // the call build_connection_graph().
 
+  GrowableArray<MergeMemNode *>  _mergemem_worklist; // List of all MergeMem nodes
+
   VectorSet                _processed; // Records which nodes have been
                                        // processed.
 
@@ -314,6 +316,9 @@ private:
 
   // Set the escape state of a node
   void set_escape_state(uint ni, PointsToNode::EscapeState es);
+
+  // Search for objects which are not scalar replaceable.
+  void verify_escape_state(int nidx, VectorSet& ptset, PhaseTransform* phase);
 
 public:
   ConnectionGraph(Compile *C);
