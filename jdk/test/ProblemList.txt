@@ -586,6 +586,14 @@ javax/print/attribute/MediaMappingsTest.java 			generic-all
 # Suspect many of these tests auffer from using fixed ports, no concrete 
 #   evidence.
 
+# Dies on Solaris 10 sparc and sparcv9, Linux  -ea -esa with 
+#   Interrupted or IO exception, maybe writing to non-unique named file?
+com/sun/net/httpserver/bugs/B6373555.java			generic-all
+
+# Dies on pretty much all platforms when run with -ea -esa, Assertion error
+java/net/CookieHandler/TestHttpCookie.java			generic-all
+java/net/URLClassLoader/closetest/CloseTest.java		generic-all
+
 # Fails on OpenSolaris, BindException unexpected 
 java/net/BindException/Test.java				generic-all
 
@@ -731,6 +739,10 @@ java/net/ProxySelector/B6737819.java				generic-all
 
 # Suspect many of these tests auffer from using fixed ports, no concrete 
 #   evidence.
+
+# Fails with -ea -esa, Assertion error, but only on Solaris 10 machines?
+com/sun/nio/sctp/SctpChannel/Send.java				generic-all
+com/sun/nio/sctp/SctpChannel/Shutdown.java			generic-all
 
 # Fails on Windows 2000, Can't delete test directory .\x.SetLastModified.dir
 #    at SetLastModified.main(SetLastModified.java:107)
@@ -923,6 +935,9 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 ############################################################################
 
 # jdk_security
+
+# Fails with -ea -esa, but only on Solaris sparc? Suspect it is timing out
+sun/security/tools/keytool/standard.sh				generic-all
 
 # Fails on Solaris 10 X64, address already in use
 sun/security/krb5/auto/HttpNegotiateServer.java			generic-all
@@ -1158,6 +1173,9 @@ java/text/Bidi/Bug6665028.java				 	linux-x64
 #  So most if not all tools tests are now being run with "othervm" mode.
 #  Some of these tools tests have a tendency to use fixed ports, bad idea.
 
+# Fails with -ea -esa on Solaris, Assertion error (Solaris specific test)
+com/sun/tracing/BasicFunctionality.java				generic-all
+
 # Fails on Fedora 9 32bit, jps output differs problem
 sun/tools/jstatd/jstatdDefaults.sh				generic-all
 
@@ -1241,6 +1259,12 @@ tools/jar/index/MetaInf.java				 	windows-all
 ############################################################################
 
 # jdk_util
+
+# Fails with -ea -esa on all platforms with Assertion error
+java/util/ResourceBundle/Test4300693.java			generic-all
+
+# Failing on all -client 32bit platforms starting with b77? See 6908348.
+java/util/concurrent/BlockingQueue/CancelledProducerConsumerLoops.java generic-all
 
 # Assert error, failures, on Linux Fedora 9 -server
 #   Windows samevm failure, assert error "Passed = 134, failed = 2"

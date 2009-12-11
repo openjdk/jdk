@@ -370,7 +370,8 @@ ifndef USE_JTREG_SAMEVM
 endif
 # With samevm, you cannot use -javaoptions?
 ifeq ($(USE_JTREG_SAMEVM),true)
-  EXTRA_JTREG_OPTIONS += -samevm $(JAVA_ARGS) $(JAVA_ARGS:%=-vmoption:%)
+  JTREG_SAMEVM_OPTION = -samevm
+  EXTRA_JTREG_OPTIONS += $(JTREG_SAMEVM_OPTION) $(JAVA_ARGS) $(JAVA_ARGS:%=-vmoption:%)
   JTREG_TEST_OPTIONS = $(JAVA_VM_ARGS:%=-vmoption:%)
 else
   JTREG_TEST_OPTIONS = $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_VM_ARGS:%=-vmoption:%)
@@ -600,16 +601,22 @@ JTREG = $(JT_HOME)/win32/bin/jtreg
 JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 # Only run automatic tests
 JTREG_BASIC_OPTIONS += -a
+# Always turn on assertions
+JTREG_ASSERT_OPTION = -ea -esa
+JTREG_BASIC_OPTIONS += $(JTREG_ASSERT_OPTION)
 # Report details on all failed or error tests, times too
 JTREG_BASIC_OPTIONS += -v:fail,error,time
 # Retain all files for failing tests
 JTREG_BASIC_OPTIONS += -retain:fail,error
 # Ignore tests are not run and completely silent about it
-JTREG_BASIC_OPTIONS += -ignore:quiet
+JTREG_IGNORE_OPTION = -ignore:quiet
+JTREG_BASIC_OPTIONS += $(JTREG_IGNORE_OPTION)
 # Multiple by 4 the timeout numbers
-JTREG_BASIC_OPTIONS += -timeoutFactor:4
+JTREG_TIMEOUT_OPTION =  -timeoutFactor:4
+JTREG_BASIC_OPTIONS += $(JTREG_TIMEOUT_OPTION)
 # Boost the max memory for jtreg to avoid gc thrashing
-JTREG_BASIC_OPTIONS += -J-Xmx512m
+JTREG_MEMORY_OPTION = -J-Xmx512m
+JTREG_BASIC_OPTIONS += $(JTREG_MEMORY_OPTION)
 
 # Make sure jtreg exists
 $(JTREG): $(JT_HOME)
