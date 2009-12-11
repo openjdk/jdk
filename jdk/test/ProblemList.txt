@@ -431,6 +431,11 @@ java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
 
 # jdk_management
 
+# Fails on Windows 2000, Test failed for iiop java.lang.NullPointerException
+#  at org.omg.stub.javax.management.remote.rmi._RMIConnectionImpl_Tie._invoke(Unknown Source)
+#  at com.sun.corba.se.impl.protocol.CorbaServerRequestDispatcherImpl.dispatchToServant(CorbaServerRequestDispatcherImpl.java:653)
+javax/management/remote/mandatory/connection/ReconnectTest.java generic-all
+
 # Solaris 10 sparc, NPE from org.omg.stub.javax.management.remote.rmi._RMIConnectionImpl_Tie._invoke
 javax/management/remote/mandatory/threads/ExecutorTest.java 	generic-all
 
@@ -717,12 +722,38 @@ sun/net/www/http/KeepAliveCache/KeepAliveTimerThread.java	generic-all
 # Connection refused, windows samevm
 sun/net/www/protocol/http/DigestTest.java			generic-all
 
+# Fails on Fedora 9 32bit & 64bit & Solaris 10, wrong proxy for http://localhost/index.html
+java/net/ProxySelector/B6737819.java				generic-all
+
 ############################################################################
 
 # jdk_nio
 
 # Suspect many of these tests auffer from using fixed ports, no concrete 
 #   evidence.
+
+# Fails on Windows 2000, Can't delete test directory .\x.SetLastModified.dir
+#    at SetLastModified.main(SetLastModified.java:107)
+java/io/File/SetLastModified.java                               generic-all
+
+# Fails on Solaris 10 x64, address already in use
+java/nio/channels/DatagramChannel/SRTest.java			generic-all
+
+# Fails on Solaris 10 x86, times out
+java/nio/channels/DatagramChannel/Sender.java			generic-all
+
+# Fails on Fedora 9 x86, address in use
+java/nio/channels/Selector/SelectWrite.java			generic-all
+
+# Fails on Fedora 9 32bit times out
+java/nio/channels/DatagramChannel/EmptyBuffer.java		generic-all
+
+# Fails on Windows 2000, ExceptionInInitializerError
+#   in WindowsAsynchronousServerSocketChannelImpl.java:316
+java/nio/channels/AsynchronousChannelGroup/Unbounded.java	generic-all
+
+# Fails on Windows 2000,  times out
+java/nio/channels/FileChannel/Transfer.java			generic-all
 
 # Fails on OpenSolaris, IllegalStateException: Cannot add or remove addresses 
 #    from a channel that is bound to the wildcard address
@@ -892,6 +923,45 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 ############################################################################
 
 # jdk_security
+
+# Fails on Solaris 10 X64, address already in use
+sun/security/krb5/auto/HttpNegotiateServer.java			generic-all
+
+# Fails on almost all platforms
+#   java.lang.UnsupportedClassVersionError: SerialTest : 
+#      Unsupported major.minor version 51.0
+#    at java.lang.ClassLoader.defineClass1(Native Method)
+sun/security/util/Oid/S11N.sh					generic-all
+
+# Fails on Fedora 9 32bit
+#  GSSException: Failure unspecified at GSS-API level (Mechanism level: 
+#    Invalid argument (400) - Cannot find key of appropriate type to decrypt 
+#    AP REP - DES CBC mode with MD5)
+#  at sun.security.jgss.krb5.Krb5Context.acceptSecContext(Krb5Context.java:778)
+sun/security/krb5/auto/NonMutualSpnego.java			generic-all
+
+# Fails on Solaris 10 sparc, GSSException: Failure unspecified at GSS-API level
+#   Also fails on Windows 2000 similar way
+sun/security/krb5/auto/ok-as-delegate.sh			generic-all
+
+# Fails on Windows 2000, GSSException: Failure unspecified at GSS-API level
+#    (Mechanism level: Request is a replay (34))
+sun/security/krb5/auto/ok-as-delegate-xrealm.sh			generic-all
+
+# Fails on Windows 2000, ExceptionInInitializerError
+sun/security/mscapi/AccessKeyStore.sh				generic-all
+
+# Fails on Windows 2000, UnsatisfiedLinkError: libnspr4.dll: Access is denied
+sun/security/pkcs11/KeyAgreement/TestDH.java			generic-all
+
+# Fails on Windows 2000, UnsatisfiedLinkError: libnspr4.dll: Access is denied
+sun/security/pkcs11/fips/ClientJSSEServerJSSE.java		generic-all
+
+# Fails on Solaris 10, KrbException: Additional pre-authentication required (25)
+sun/security/krb5/auto/basic.sh					generic-all
+
+# Fails on Fedora 9 64bit, PKCS11Exception: CKR_DEVICE_ERROR
+sun/security/pkcs11/KeyAgreement/TestDH.java			generic-all
 
 # Run too slow on Solaris 10 sparc
 sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/SSLSocketTimeoutNulls.java solaris-sparc
@@ -1088,6 +1158,13 @@ java/text/Bidi/Bug6665028.java				 	linux-x64
 #  So most if not all tools tests are now being run with "othervm" mode.
 #  Some of these tools tests have a tendency to use fixed ports, bad idea.
 
+# Fails on Fedora 9 32bit, jps output differs problem
+sun/tools/jstatd/jstatdDefaults.sh				generic-all
+
+# Fails on Linux Fedora 9 32bit, Could not read data for remote JVM 16133
+#       jstat output differs from expected output
+sun/tools/jstatd/jstatdExternalRegistry.sh			generic-all
+
 # Output of jps differs from expected output.
 #   Invalid argument count on solaris-sparc and x64
 sun/tools/jstatd/jstatdPort.sh					generic-all
@@ -1098,6 +1175,11 @@ sun/tools/jps/jps-l_2.sh					generic-all
 sun/tools/jps/jps-lm.sh						generic-all
 sun/tools/jps/jps-Vvml_2.sh					generic-all
 sun/tools/jps/jps-m_2.sh					generic-all
+
+# Fails on Solaris 10 sparcv9, shell exits with 1
+#  Turning off use of shared archive because of choice of garbage collector or large pages 
+#  Could not synchronize with target
+sun/tools/jps/jps-v_1.sh					generic-all
 
 # Fails on OpenSolaris "Could not synchronize with target"
 sun/tools/jps/jps-Defaults.sh					generic-all
