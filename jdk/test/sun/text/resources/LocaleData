@@ -5549,3 +5549,6 @@ TimeZoneNames/zh_TW/Asia\/Taipei/2=TST
 # bug 6645271
 FormatData/hr_HR/DateTimePatterns/6=dd.MM.yyyy.
 FormatData/hr_HR/DateTimePatterns/7=dd.MM.yy.
+
+# bug 6873931
+CurrencyNames/tr_TR/TRY=TL
