@@ -289,7 +289,7 @@ attachListener.hpp                      allocation.hpp
 attachListener.hpp                      debug.hpp
 attachListener.hpp                      ostream.hpp
 
-barrierSet.cpp				barrierSet.hpp
+barrierSet.cpp				barrierSet.inline.hpp
 barrierSet.cpp			        collectedHeap.hpp
 barrierSet.cpp				universe.hpp
 
