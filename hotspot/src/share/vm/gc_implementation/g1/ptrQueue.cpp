@@ -107,7 +107,7 @@ void** PtrQueueSet::allocate_buffer() {
     res[0] = NULL;
     return res;
   } else {
-    return NEW_C_HEAP_ARRAY(void*, _sz);
+    return (void**) NEW_C_HEAP_ARRAY(char, _sz);
   }
 }
 
@@ -127,7 +127,8 @@ void PtrQueueSet::reduce_free_list() {
     assert(_buf_free_list != NULL, "_buf_free_list_sz must be wrong.");
     void** head = _buf_free_list;
     _buf_free_list = (void**)_buf_free_list[0];
-    FREE_C_HEAP_ARRAY(void*,head);
+    FREE_C_HEAP_ARRAY(char, head);
+    _buf_free_list_sz --;
     n--;
   }
 }

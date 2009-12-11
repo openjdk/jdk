@@ -1124,8 +1124,7 @@ class BacktraceBuilder: public StackObj {
     if (_dirty && _methods != NULL) {
       BarrierSet* bs = Universe::heap()->barrier_set();
       assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
-      bs->write_ref_array(MemRegion((HeapWord*)_methods->base(),
-                                    _methods->array_size()));
+      bs->write_ref_array((HeapWord*)_methods->base(), _methods->length());
       _dirty = false;
     }
   }
