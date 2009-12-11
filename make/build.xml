@@ -98,7 +98,7 @@
         import.jdk should be unset, or set to jdk home (to use rt.jar)
         or to jdk repo (to use src/share/classes).
         Based on the value, if any, set up default values for javac's sourcepath,
-        classpath and bootclasspath. Note: the default values are overridden 
+        classpath and bootclasspath. Note: the default values are overridden
         in the build-bootstrap-classes macro. -->
 
     <available property="import.jdk.src.dir" value="${import.jdk}/src/share/classes"
@@ -552,8 +552,8 @@
                     <compilerarg line="${javac.version.opt}"/>
                     <compilerarg line="${javac.lint.opts}"/>
                 </javac>
-                <copy todir="@{classes.dir}">
-                    <fileset dir="${src.classes.dir}" includes="@{includes}">
+                <copy todir="@{classes.dir}" includeemptydirs="false">
+                    <fileset dir="${src.classes.dir}" includes="@{includes}" excludes="@{excludes}">
                         <exclude name="**/*.java"/>
                         <exclude name="**/*.properties"/>
                         <exclude name="**/*-template"/>
