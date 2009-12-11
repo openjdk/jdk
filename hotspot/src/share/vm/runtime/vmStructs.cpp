@@ -666,6 +666,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(Thread,                      _current_pending_monitor_is_from_java,         bool)                                  \
   nonstatic_field(Thread,                      _current_waiting_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
+  nonstatic_field(NamedThread,                 _processed_thread,                             JavaThread*)                           \
   nonstatic_field(JavaThread,                  _next,                                         JavaThread*)                           \
   nonstatic_field(JavaThread,                  _threadObj,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \

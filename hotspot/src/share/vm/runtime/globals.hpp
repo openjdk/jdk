@@ -2554,6 +2554,9 @@ class CommandLineFlags {
           "Include miscellaneous runtime verifications in nmethod code; "   \
           "default off because it disturbs nmethod size heuristics")        \
                                                                             \
+  notproduct(bool, CrashGCForDumpingJavaThread, false,                      \
+          "Manually make GC thread crash then dump java stack trace;  "     \
+          "Test only")                                                      \
                                                                             \
   /* compilation */                                                         \
   product(bool, UseCompiler, true,                                          \

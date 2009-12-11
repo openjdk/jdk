@@ -991,6 +991,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name, bool
 // uniquely named instances should derive from this.
 NamedThread::NamedThread() : Thread() {
   _name = NULL;
+  _processed_thread = NULL;
 }
 
 NamedThread::~NamedThread() {
@@ -2333,6 +2334,27 @@ void JavaThread::gc_prologue() {
   frames_do(frame_gc_prologue);
 }
 
+// If the caller is a NamedThread, then remember, in the current scope,
+// the given JavaThread in its _processed_thread field.
+class RememberProcessedThread: public StackObj {
+  NamedThread* _cur_thr;
+public:
+  RememberProcessedThread(JavaThread* jthr) {
+    Thread* thread = Thread::current();
+    if (thread->is_Named_thread()) {
+      _cur_thr = (NamedThread *)thread;
+      _cur_thr->set_processed_thread(jthr);
+    } else {
+      _cur_thr = NULL;
+    }
+  }
+
+  ~RememberProcessedThread() {
+    if (_cur_thr) {
+      _cur_thr->set_processed_thread(NULL);
+    }
+  }
+};
 
 void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // Flush deferred store-barriers, if any, associated with
@@ -2349,6 +2371,8 @@ void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
           (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");
 
   if (has_last_Java_frame()) {
+    // Record JavaThread to GC thread
+    RememberProcessedThread rpt(this);
 
     // Traverse the privileged stack
     if (_privileged_stack_top != NULL) {
