@@ -1855,12 +1855,26 @@ void LIRGenerator::do_UnsafeGetRaw(UnsafeGetRaw* x) {
     addr = new LIR_Address(base_op, index_op->as_jint(), dst_type);
   } else {
 #ifdef X86
+#ifdef _LP64
+    if (!index_op->is_illegal() && index_op->type() == T_INT) {
+      LIR_Opr tmp = new_pointer_register();
+      __ convert(Bytecodes::_i2l, index_op, tmp);
+      index_op = tmp;
+    }
+#endif
     addr = new LIR_Address(base_op, index_op, LIR_Address::Scale(log2_scale), 0, dst_type);
 #else
     if (index_op->is_illegal() || log2_scale == 0) {
+#ifdef _LP64
+      if (!index_op->is_illegal() && index_op->type() == T_INT) {
+        LIR_Opr tmp = new_pointer_register();
+        __ convert(Bytecodes::_i2l, index_op, tmp);
+        index_op = tmp;
+      }
+#endif
       addr = new LIR_Address(base_op, index_op, dst_type);
     } else {
-      LIR_Opr tmp = new_register(T_INT);
+      LIR_Opr tmp = new_pointer_register();
       __ shift_left(index_op, log2_scale, tmp);
       addr = new LIR_Address(base_op, tmp, dst_type);
     }
@@ -1915,10 +1929,25 @@ void LIRGenerator::do_UnsafePutRaw(UnsafePutRaw* x) {
   LIR_Opr index_op = idx.result();
   if (log2_scale != 0) {
     // temporary fix (platform dependent code without shift on Intel would be better)
-    index_op = new_register(T_INT);
-    __ move(idx.result(), index_op);
+    index_op = new_pointer_register();
+#ifdef _LP64
+    if(idx.result()->type() == T_INT) {
+      __ convert(Bytecodes::_i2l, idx.result(), index_op);
+    } else {
+#endif
+      __ move(idx.result(), index_op);
+#ifdef _LP64
+    }
+#endif
     __ shift_left(index_op, log2_scale, index_op);
   }
+#ifdef _LP64
+  else if(!index_op->is_illegal() && index_op->type() == T_INT) {
+    LIR_Opr tmp = new_pointer_register();
+    __ convert(Bytecodes::_i2l, index_op, tmp);
+    index_op = tmp;
+  }
+#endif
 
   LIR_Address* addr = new LIR_Address(base_op, index_op, x->basic_type());
   __ move(value.result(), addr);

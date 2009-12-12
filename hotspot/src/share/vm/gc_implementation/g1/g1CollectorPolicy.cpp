@@ -1516,8 +1516,30 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
       (end_time_sec - _recent_prev_end_times_for_all_gcs_sec->oldest()) * 1000.0;
     update_recent_gc_times(end_time_sec, elapsed_ms);
     _recent_avg_pause_time_ratio = _recent_gc_times_ms->sum()/interval_ms;
-    // using 1.01 to account for floating point inaccuracies
-    assert(recent_avg_pause_time_ratio() < 1.01, "All GC?");
+    if (recent_avg_pause_time_ratio() < 0.0 ||
+        (recent_avg_pause_time_ratio() - 1.0 > 0.0)) {
+#ifndef PRODUCT
+      // Dump info to allow post-facto debugging
+      gclog_or_tty->print_cr("recent_avg_pause_time_ratio() out of bounds");
+      gclog_or_tty->print_cr("-------------------------------------------");
+      gclog_or_tty->print_cr("Recent GC Times (ms):");
+      _recent_gc_times_ms->dump();
+      gclog_or_tty->print_cr("(End Time=%3.3f) Recent GC End Times (s):", end_time_sec);
+      _recent_prev_end_times_for_all_gcs_sec->dump();
+      gclog_or_tty->print_cr("GC = %3.3f, Interval = %3.3f, Ratio = %3.3f",
+                             _recent_gc_times_ms->sum(), interval_ms, recent_avg_pause_time_ratio());
+      // In debug mode, terminate the JVM if the user wants to debug at this point.
+      assert(!G1FailOnFPError, "Debugging data for CR 6898948 has been dumped above");
+#endif  // !PRODUCT
+      // Clip ratio between 0.0 and 1.0, and continue. This will be fixed in
+      // CR 6902692 by redoing the manner in which the ratio is incrementally computed.
+      if (_recent_avg_pause_time_ratio < 0.0) {
+        _recent_avg_pause_time_ratio = 0.0;
+      } else {
+        assert(_recent_avg_pause_time_ratio - 1.0 > 0.0, "Ctl-point invariant");
+        _recent_avg_pause_time_ratio = 1.0;
+      }
+    }
   }
 
   if (G1PolicyVerbose > 1) {
@@ -2825,8 +2847,15 @@ choose_collection_set() {
   double non_young_start_time_sec;
   start_recording_regions();
 
-  guarantee(_target_pause_time_ms > -1.0,
+  guarantee(_target_pause_time_ms > -1.0
+            NOT_PRODUCT(|| Universe::heap()->gc_cause() == GCCause::_scavenge_alot),
             "_target_pause_time_ms should have been set!");
+#ifndef PRODUCT
+  if (_target_pause_time_ms <= -1.0) {
+    assert(ScavengeALot && Universe::heap()->gc_cause() == GCCause::_scavenge_alot, "Error");
+    _target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
+  }
+#endif
   assert(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);
@@ -2972,7 +3001,3 @@ record_collection_pause_end(bool abandoned) {
   G1CollectorPolicy::record_collection_pause_end(abandoned);
   assert(assertMarkedBytesDataOK(), "Marked regions not OK at pause end.");
 }
-
-// Local Variables: ***
-// c-indentation-style: gnu ***
-// End: ***

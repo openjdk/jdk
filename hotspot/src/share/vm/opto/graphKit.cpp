@@ -1351,8 +1351,8 @@ void GraphKit::set_all_memory(Node* newmem) {
 }
 
 //------------------------------set_all_memory_call----------------------------
-void GraphKit::set_all_memory_call(Node* call) {
-  Node* newmem = _gvn.transform( new (C, 1) ProjNode(call, TypeFunc::Memory) );
+void GraphKit::set_all_memory_call(Node* call, bool separate_io_proj) {
+  Node* newmem = _gvn.transform( new (C, 1) ProjNode(call, TypeFunc::Memory, separate_io_proj) );
   set_all_memory(newmem);
 }
 
@@ -1573,7 +1573,7 @@ void GraphKit::set_arguments_for_java_call(CallJavaNode* call) {
 //---------------------------set_edges_for_java_call---------------------------
 // Connect a newly created call into the current JVMS.
 // A return value node (if any) is returned from set_edges_for_java_call.
-void GraphKit::set_edges_for_java_call(CallJavaNode* call, bool must_throw) {
+void GraphKit::set_edges_for_java_call(CallJavaNode* call, bool must_throw, bool separate_io_proj) {
 
   // Add the predefined inputs:
   call->init_req( TypeFunc::Control, control() );
@@ -1595,13 +1595,13 @@ void GraphKit::set_edges_for_java_call(CallJavaNode* call, bool must_throw) {
   // Re-use the current map to produce the result.
 
   set_control(_gvn.transform(new (C, 1) ProjNode(call, TypeFunc::Control)));
-  set_i_o(    _gvn.transform(new (C, 1) ProjNode(call, TypeFunc::I_O    )));
-  set_all_memory_call(xcall);
+  set_i_o(    _gvn.transform(new (C, 1) ProjNode(call, TypeFunc::I_O    , separate_io_proj)));
+  set_all_memory_call(xcall, separate_io_proj);
 
   //return xcall;   // no need, caller already has it
 }
 
-Node* GraphKit::set_results_for_java_call(CallJavaNode* call) {
+Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_proj) {
   if (stopped())  return top();  // maybe the call folded up?
 
   // Capture the return value, if any.
@@ -1614,8 +1614,15 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call) {
   // Note:  Since any out-of-line call can produce an exception,
   // we always insert an I_O projection from the call into the result.
 
-  make_slow_call_ex(call, env()->Throwable_klass(), false);
+  make_slow_call_ex(call, env()->Throwable_klass(), separate_io_proj);
 
+  if (separate_io_proj) {
+    // The caller requested separate projections be used by the fall
+    // through and exceptional paths, so replace the projections for
+    // the fall through path.
+    set_i_o(_gvn.transform( new (C, 1) ProjNode(call, TypeFunc::I_O) ));
+    set_all_memory(_gvn.transform( new (C, 1) ProjNode(call, TypeFunc::Memory) ));
+  }
   return ret;
 }
 
@@ -1677,6 +1684,59 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
     set_all_memory_call(call);
   }
 }
+
+
+// Replace the call with the current state of the kit.
+void GraphKit::replace_call(CallNode* call, Node* result) {
+  JVMState* ejvms = NULL;
+  if (has_exceptions()) {
+    ejvms = transfer_exceptions_into_jvms();
+  }
+
+  SafePointNode* final_state = stop();
+
+  // Find all the needed outputs of this call
+  CallProjections callprojs;
+  call->extract_projections(&callprojs, true);
+
+  // Replace all the old call edges with the edges from the inlining result
+  C->gvn_replace_by(callprojs.fallthrough_catchproj, final_state->in(TypeFunc::Control));
+  C->gvn_replace_by(callprojs.fallthrough_memproj,   final_state->in(TypeFunc::Memory));
+  C->gvn_replace_by(callprojs.fallthrough_ioproj,    final_state->in(TypeFunc::I_O));
+
+  // Replace the result with the new result if it exists and is used
+  if (callprojs.resproj != NULL && result != NULL) {
+    C->gvn_replace_by(callprojs.resproj, result);
+  }
+
+  if (ejvms == NULL) {
+    // No exception edges to simply kill off those paths
+    C->gvn_replace_by(callprojs.catchall_catchproj, C->top());
+    C->gvn_replace_by(callprojs.catchall_memproj,   C->top());
+    C->gvn_replace_by(callprojs.catchall_ioproj,    C->top());
+  } else {
+    GraphKit ekit(ejvms);
+
+    // Load my combined exception state into the kit, with all phis transformed:
+    SafePointNode* ex_map = ekit.combine_and_pop_all_exception_states();
+
+    Node* ex_oop = ekit.use_exception_state(ex_map);
+
+    C->gvn_replace_by(callprojs.catchall_catchproj, ekit.control());
+    C->gvn_replace_by(callprojs.catchall_memproj,   ekit.reset_memory());
+    C->gvn_replace_by(callprojs.catchall_ioproj,    ekit.i_o());
+
+    // Replace the old exception object with the newly created one
+    if (callprojs.exobj != NULL) {
+      C->gvn_replace_by(callprojs.exobj, ex_oop);
+    }
+  }
+
+  // Disconnect the call from the graph
+  call->disconnect_inputs(NULL);
+  C->gvn_replace_by(call, C->top());
+}
+
 
 //------------------------------increment_counter------------------------------
 // for statistics: increment a VM counter by 1
@@ -3459,4 +3519,3 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
   sync_kit(ideal);
 }
 #undef __
-

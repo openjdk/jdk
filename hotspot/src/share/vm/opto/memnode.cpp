@@ -255,6 +255,13 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     return NodeSentinel; // caller will return NULL
   }
 
+  // Do NOT remove or optimize the next lines: ensure a new alias index
+  // is allocated for an oop pointer type before Escape Analysis.
+  // Note: C++ will not remove it since the call has side effect.
+  if ( t_adr->isa_oopptr() ) {
+    int alias_idx = phase->C->get_alias_index(t_adr->is_ptr());
+  }
+
 #ifdef ASSERT
   Node* base = NULL;
   if (address->is_AddP())
@@ -1496,6 +1503,8 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       }
     }
   } else if (tp->base() == Type::InstPtr) {
+    const TypeInstPtr* tinst = tp->is_instptr();
+    ciKlass* klass = tinst->klass();
     assert( off != Type::OffsetBot ||
             // arrays can be cast to Objects
             tp->is_oopptr()->klass()->is_java_lang_Object() ||
@@ -1503,6 +1512,25 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
             phase->C->has_unsafe_access(),
             "Field accesses must be precise" );
     // For oop loads, we expect the _type to be precise
+    if (OptimizeStringConcat && klass == phase->C->env()->String_klass() &&
+        adr->is_AddP() && off != Type::OffsetBot) {
+      // For constant Strings treat the fields as compile time constants.
+      Node* base = adr->in(AddPNode::Base);
+      if (base->Opcode() == Op_ConP) {
+        const TypeOopPtr* t = phase->type(base)->isa_oopptr();
+        ciObject* string = t->const_oop();
+        ciConstant constant = string->as_instance()->field_value_by_offset(off);
+        if (constant.basic_type() == T_INT) {
+          return TypeInt::make(constant.as_int());
+        } else if (constant.basic_type() == T_ARRAY) {
+          if (adr->bottom_type()->is_ptr_to_narrowoop()) {
+            return TypeNarrowOop::make_from_constant(constant.as_object());
+          } else {
+            return TypeOopPtr::make_from_constant(constant.as_object());
+          }
+        }
+      }
+    }
   } else if (tp->base() == Type::KlassPtr) {
     assert( off != Type::OffsetBot ||
             // arrays can be cast to Objects

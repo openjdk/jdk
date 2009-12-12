@@ -294,19 +294,16 @@ class os: AllStatic {
   }
 
   static bool    is_memory_serialize_page(JavaThread *thread, address addr) {
-    address thr_addr;
     if (UseMembar) return false;
-    // Calculate thread specific address
+    // Previously this function calculated the exact address of this
+    // thread's serialize page, and checked if the faulting address
+    // was equal.  However, some platforms mask off faulting addresses
+    // to the page size, so now we just check that the address is
+    // within the page.  This makes the thread argument unnecessary,
+    // but we retain the NULL check to preserve existing behaviour.
     if (thread == NULL) return false;
-    // TODO-FIXME: some platforms mask off faulting addresses to the base pagesize.
-    // Instead of using a test for equality we should probably use something
-    // of the form:
-    // return ((_mem_serialize_page ^ addr) & -pagesize) == 0
-    //
-    thr_addr  = (address)(((uintptr_t)thread >>
-                get_serialize_page_shift_count()) &
-                get_serialize_page_mask()) + (uintptr_t)_mem_serialize_page;
-    return  (thr_addr == addr);
+    address page = (address) _mem_serialize_page;
+    return addr >= page && addr < (page + os::vm_page_size());
   }
 
   static void block_on_serialize_page_trap();

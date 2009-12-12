@@ -289,7 +289,7 @@ attachListener.hpp                      allocation.hpp
 attachListener.hpp                      debug.hpp
 attachListener.hpp                      ostream.hpp
 
-barrierSet.cpp				barrierSet.hpp
+barrierSet.cpp				barrierSet.inline.hpp
 barrierSet.cpp			        collectedHeap.hpp
 barrierSet.cpp				universe.hpp
 
@@ -570,6 +570,7 @@ ciEnv.hpp                               debugInfoRec.hpp
 ciEnv.hpp                               dependencies.hpp
 ciEnv.hpp                               exceptionHandlerTable.hpp
 ciEnv.hpp                               oopMap.hpp
+ciEnv.hpp                               systemDictionary.hpp
 ciEnv.hpp                               thread.hpp
 
 ciExceptionHandler.cpp                  ciExceptionHandler.hpp
@@ -1291,6 +1292,7 @@ cpCacheOop.cpp                          jvmtiRedefineClassesTrace.hpp
 cpCacheOop.cpp                          markSweep.inline.hpp
 cpCacheOop.cpp                          objArrayOop.hpp
 cpCacheOop.cpp                          oop.inline.hpp
+cpCacheOop.cpp                          rewriter.hpp
 cpCacheOop.cpp                          universe.inline.hpp
 
 cpCacheOop.hpp                          allocation.hpp

@@ -255,6 +255,8 @@ void VM_Version::get_processor_features() {
   if (!VM_Version::supports_sse2()) {
     vm_exit_during_initialization("Unknown x64 processor: SSE2 not supported");
   }
+  // in 64 bit the use of SSE2 is the minimum
+  if (UseSSE < 2) UseSSE = 2;
 #endif
 
   // If the OS doesn't support SSE, we can't use this feature even if the HW does

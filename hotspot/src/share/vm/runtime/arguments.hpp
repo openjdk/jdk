@@ -254,7 +254,6 @@ class Arguments : AllStatic {
   static bool   _has_profile;
   static bool   _has_alloc_profile;
   static const char*  _gc_log_filename;
-  static uintx  _initial_heap_size;
   static uintx  _min_heap_size;
 
   // -Xrun arguments
@@ -300,8 +299,8 @@ class Arguments : AllStatic {
   static void set_g1_gc_flags();
   // GC ergonomics
   static void set_ergonomics_flags();
-  // Setup heap size for a server platform
-  static void set_server_heap_size();
+  // Setup heap size
+  static void set_heap_size();
   // Based on automatic selection criteria, should the
   // low pause collector be used.
   static bool should_auto_select_low_pause_collector();
@@ -434,9 +433,7 @@ class Arguments : AllStatic {
   static bool has_profile()                 { return _has_profile; }
   static bool has_alloc_profile()           { return _has_alloc_profile; }
 
-  // -Xms , -Xmx
-  static uintx initial_heap_size()          { return _initial_heap_size; }
-  static void  set_initial_heap_size(uintx v) { _initial_heap_size = v;  }
+  // -Xms, -Xmx
   static uintx min_heap_size()              { return _min_heap_size; }
   static void  set_min_heap_size(uintx v)   { _min_heap_size = v;  }
 
