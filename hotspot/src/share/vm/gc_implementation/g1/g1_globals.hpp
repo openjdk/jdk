@@ -242,6 +242,10 @@
   product(bool, G1UseSurvivorSpaces, true,                                  \
           "When true, use survivor space.")                                 \
                                                                             \
+  develop(bool, G1FailOnFPError, false,                                     \
+          "When set, G1 will fail when it encounters an FP 'error', "       \
+          "so as to allow debugging")                                       \
+                                                                            \
   develop(bool, G1FixedTenuringThreshold, false,                            \
           "When set, G1 will not adjust the tenuring threshold")            \
                                                                             \
@@ -251,6 +255,9 @@
   develop(uintx, G1FixedSurvivorSpaceSize, 0,                               \
           "If non-0 is the size of the G1 survivor space, "                 \
           "otherwise SurvivorRatio is used to determine the size")          \
+                                                                            \
+  product(bool, G1ForgetfulMMUTracker, false,                               \
+          "If the MMU tracker's memory is full, forget the oldest entry")   \
                                                                             \
   product(uintx, G1HeapRegionSize, 0,                                       \
           "Size of the G1 regions.")                                        \

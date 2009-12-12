@@ -169,6 +169,8 @@ class Universe: AllStatic {
   static objArrayOop  _the_empty_system_obj_array;    // Canonicalized system obj array
   static objArrayOop  _the_empty_class_klass_array;   // Canonicalized obj array of type java.lang.Class
   static objArrayOop  _the_array_interfaces_array;    // Canonicalized 2-array of cloneable & serializable klasses
+  static oop          _the_null_string;               // A cache of "null" as a Java string
+  static oop          _the_min_jint_string;          // A cache of "-2147483648" as a Java string
   static LatestMethodOopCache* _finalizer_register_cache; // static method for registering finalizable objects
   static LatestMethodOopCache* _loader_addClass_cache;    // method for registering loaded classes in class loader vector
   static ActiveMethodOopsCache* _reflect_invoke_cache;    // method for security checks
@@ -310,6 +312,8 @@ class Universe: AllStatic {
   static objArrayOop  the_empty_system_obj_array ()   { return _the_empty_system_obj_array;    }
   static objArrayOop  the_empty_class_klass_array ()  { return _the_empty_class_klass_array;   }
   static objArrayOop  the_array_interfaces_array()    { return _the_array_interfaces_array;    }
+  static oop          the_null_string()               { return _the_null_string;               }
+  static oop          the_min_jint_string()          { return _the_min_jint_string;          }
   static methodOop    finalizer_register_method()     { return _finalizer_register_cache->get_methodOop(); }
   static methodOop    loader_addClass_method()        { return _loader_addClass_cache->get_methodOop(); }
   static ActiveMethodOopsCache* reflect_invoke_cache() { return _reflect_invoke_cache; }

@@ -155,7 +155,7 @@ bool DirtyCardQueueSet::mut_process_buffer(void** buf) {
 }
 
 DirtyCardQueueSet::CompletedBufferNode*
-DirtyCardQueueSet::get_completed_buffer_lock(int stop_at) {
+DirtyCardQueueSet::get_completed_buffer(int stop_at) {
   CompletedBufferNode* nd = NULL;
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
 
@@ -173,28 +173,6 @@ DirtyCardQueueSet::get_completed_buffer_lock(int stop_at) {
   }
   debug_only(assert_completed_buffer_list_len_correct_locked());
   return nd;
-}
-
-// We only do this in contexts where there is no concurrent enqueueing.
-DirtyCardQueueSet::CompletedBufferNode*
-DirtyCardQueueSet::get_completed_buffer_CAS() {
-  CompletedBufferNode* nd = _completed_buffers_head;
-
-  while (nd != NULL) {
-    CompletedBufferNode* next = nd->next;
-    CompletedBufferNode* result =
-      (CompletedBufferNode*)Atomic::cmpxchg_ptr(next,
-                                                &_completed_buffers_head,
-                                                nd);
-    if (result == nd) {
-      return result;
-    } else {
-      nd = _completed_buffers_head;
-    }
-  }
-  assert(_completed_buffers_head == NULL, "Loop post");
-  _completed_buffers_tail = NULL;
-  return NULL;
 }
 
 bool DirtyCardQueueSet::
@@ -222,15 +200,10 @@ apply_closure_to_completed_buffer_helper(int worker_i,
 
 bool DirtyCardQueueSet::apply_closure_to_completed_buffer(int worker_i,
                                                           int stop_at,
-                                                          bool with_CAS)
+                                                          bool during_pause)
 {
-  CompletedBufferNode* nd = NULL;
-  if (with_CAS) {
-    guarantee(stop_at == 0, "Precondition");
-    nd = get_completed_buffer_CAS();
-  } else {
-    nd = get_completed_buffer_lock(stop_at);
-  }
+  assert(!during_pause || stop_at == 0, "Should not leave any completed buffers during a pause");
+  CompletedBufferNode* nd = get_completed_buffer(stop_at);
   bool res = apply_closure_to_completed_buffer_helper(worker_i, nd);
   if (res) Atomic::inc(&_processed_buffers_rs_thread);
   return res;

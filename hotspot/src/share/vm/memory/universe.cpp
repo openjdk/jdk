@@ -67,6 +67,8 @@ typeArrayOop Universe::_the_empty_int_array           = NULL;
 objArrayOop Universe::_the_empty_system_obj_array     = NULL;
 objArrayOop Universe::_the_empty_class_klass_array    = NULL;
 objArrayOop Universe::_the_array_interfaces_array     = NULL;
+oop Universe::_the_null_string                        = NULL;
+oop Universe::_the_min_jint_string                   = NULL;
 LatestMethodOopCache* Universe::_finalizer_register_cache = NULL;
 LatestMethodOopCache* Universe::_loader_addClass_cache    = NULL;
 ActiveMethodOopsCache* Universe::_reflect_invoke_cache    = NULL;
@@ -187,6 +189,8 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_the_empty_system_obj_array);
   f->do_oop((oop*)&_the_empty_class_klass_array);
   f->do_oop((oop*)&_the_array_interfaces_array);
+  f->do_oop((oop*)&_the_null_string);
+  f->do_oop((oop*)&_the_min_jint_string);
   _finalizer_register_cache->oops_do(f);
   _loader_addClass_cache->oops_do(f);
   _reflect_invoke_cache->oops_do(f);
@@ -288,6 +292,9 @@ void Universe::genesis(TRAPS) {
     SystemDictionary::initialize(CHECK);
 
     klassOop ok = SystemDictionary::object_klass();
+
+    _the_null_string            = StringTable::intern("null", CHECK);
+    _the_min_jint_string       = StringTable::intern("-2147483648", CHECK);
 
     if (UseSharedSpaces) {
       // Verify shared interfaces array.
@@ -744,22 +751,22 @@ static const uint64_t NarrowOopHeapMax = (uint64_t(max_juint) + 1);
 static const uint64_t OopEncodingHeapMax = NarrowOopHeapMax << LogMinObjAlignmentInBytes;
 
 char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
+  size_t base = 0;
 #ifdef _LP64
   if (UseCompressedOops) {
     assert(mode == UnscaledNarrowOop  ||
            mode == ZeroBasedNarrowOop ||
            mode == HeapBasedNarrowOop, "mode is invalid");
+    const size_t total_size = heap_size + HeapBaseMinAddress;
     // Return specified base for the first request.
     if (!FLAG_IS_DEFAULT(HeapBaseMinAddress) && (mode == UnscaledNarrowOop)) {
-      return (char*)HeapBaseMinAddress;
-    }
-    const size_t total_size = heap_size + HeapBaseMinAddress;
-    if (total_size <= OopEncodingHeapMax && (mode != HeapBasedNarrowOop)) {
+      base = HeapBaseMinAddress;
+    } else if (total_size <= OopEncodingHeapMax && (mode != HeapBasedNarrowOop)) {
       if (total_size <= NarrowOopHeapMax && (mode == UnscaledNarrowOop) &&
           (Universe::narrow_oop_shift() == 0)) {
         // Use 32-bits oops without encoding and
         // place heap's top on the 4Gb boundary
-        return (char*)(NarrowOopHeapMax - heap_size);
+        base = (NarrowOopHeapMax - heap_size);
       } else {
         // Can't reserve with NarrowOopShift == 0
         Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
@@ -768,16 +775,38 @@ char* Universe::preferred_heap_base(size_t heap_size, NARROW_OOP_MODE mode) {
           // Use zero based compressed oops with encoding and
           // place heap's top on the 32Gb boundary in case
           // total_size > 4Gb or failed to reserve below 4Gb.
-          return (char*)(OopEncodingHeapMax - heap_size);
+          base = (OopEncodingHeapMax - heap_size);
         }
       }
     } else {
       // Can't reserve below 32Gb.
       Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
     }
+    // Set narrow_oop_base and narrow_oop_use_implicit_null_checks
+    // used in ReservedHeapSpace() constructors.
+    // The final values will be set in initialize_heap() below.
+    if (base != 0 && (base + heap_size) <= OopEncodingHeapMax) {
+      // Use zero based compressed oops
+      Universe::set_narrow_oop_base(NULL);
+      // Don't need guard page for implicit checks in indexed
+      // addressing mode with zero based Compressed Oops.
+      Universe::set_narrow_oop_use_implicit_null_checks(true);
+    } else {
+      // Set to a non-NULL value so the ReservedSpace ctor computes
+      // the correct no-access prefix.
+      // The final value will be set in initialize_heap() below.
+      Universe::set_narrow_oop_base((address)NarrowOopHeapMax);
+#ifdef _WIN64
+      if (UseLargePages) {
+        // Cannot allocate guard pages for implicit checks in indexed
+        // addressing mode when large pages are specified on windows.
+        Universe::set_narrow_oop_use_implicit_null_checks(false);
+      }
+#endif //  _WIN64
+    }
   }
 #endif
-  return NULL; // also return NULL (don't care) for 32-bit VM
+  return (char*)base; // also return NULL (don't care) for 32-bit VM
 }
 
 jint Universe::initialize_heap() {

@@ -2347,9 +2347,9 @@ JVM_END
 JVM_ENTRY(void, MH_linkCallSite(JNIEnv *env, jobject igcls, jobject site_jh, jobject target_jh)) {
   // No special action required, yet.
   oop site_oop = JNIHandles::resolve(site_jh);
-  if (site_oop == NULL || site_oop->klass() != SystemDictionary::CallSiteImpl_klass())
+  if (site_oop == NULL || site_oop->klass() != SystemDictionary::CallSite_klass())
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "call site");
-  sun_dyn_CallSiteImpl::set_target(site_oop, JNIHandles::resolve(target_jh));
+  java_dyn_CallSite::set_target(site_oop, JNIHandles::resolve(target_jh));
 }
 JVM_END
 
@@ -2365,6 +2365,7 @@ JVM_END
 #define OBJ   LANG"Object;"
 #define CLS   LANG"Class;"
 #define STRG  LANG"String;"
+#define CST   JDYN"CallSite;"
 #define MT    JDYN"MethodType;"
 #define MH    JDYN"MethodHandle;"
 #define MHI   IDYN"MethodHandleImpl;"
@@ -2372,7 +2373,6 @@ JVM_END
 #define AMH   IDYN"AdapterMethodHandle;"
 #define BMH   IDYN"BoundMethodHandle;"
 #define DMH   IDYN"DirectMethodHandle;"
-#define CSTI  IDYN"CallSiteImpl;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
@@ -2398,7 +2398,7 @@ static JNINativeMethod methods[] = {
 
 // More entry points specifically for EnableInvokeDynamic.
 static JNINativeMethod methods2[] = {
-  {CC"linkCallSite",            CC"("CSTI MH")V",               FN_PTR(MH_linkCallSite)}
+  {CC"linkCallSite",            CC"("CST MH")V",                FN_PTR(MH_linkCallSite)}
 };
 
 

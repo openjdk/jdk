@@ -1061,9 +1061,9 @@ class java_dyn_MethodTypeForm: AllStatic {
 };
 
 
-// Interface to sun.dyn.CallSiteImpl objects
+// Interface to java.dyn.CallSite objects
 
-class sun_dyn_CallSiteImpl: AllStatic {
+class java_dyn_CallSite: AllStatic {
   friend class JavaClasses;
 
 private:
