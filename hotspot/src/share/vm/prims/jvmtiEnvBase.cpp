@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,26 @@ JvmtiEnvBase::initialize() {
 }
 
 
-JvmtiEnvBase::JvmtiEnvBase() : _env_event_enable() {
+bool
+JvmtiEnvBase::use_version_1_0_semantics() {
+  int major, minor, micro;
+
+  JvmtiExport::decode_version_values(_version, &major, &minor, &micro);
+  return major == 1 && minor == 0;  // micro version doesn't matter here
+}
+
+
+bool
+JvmtiEnvBase::use_version_1_1_semantics() {
+  int major, minor, micro;
+
+  JvmtiExport::decode_version_values(_version, &major, &minor, &micro);
+  return major == 1 && minor == 1;  // micro version doesn't matter here
+}
+
+
+JvmtiEnvBase::JvmtiEnvBase(jint version) : _env_event_enable() {
+  _version = version;
   _env_local_storage = NULL;
   _tag_map = NULL;
   _native_method_prefix_count = 0;
