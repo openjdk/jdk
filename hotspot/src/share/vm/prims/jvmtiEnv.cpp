@@ -32,15 +32,15 @@
  // FIXLATER: hook into JvmtiTrace
 #define TraceJVMTICalls false
 
-JvmtiEnv::JvmtiEnv() : JvmtiEnvBase() {
+JvmtiEnv::JvmtiEnv(jint version) : JvmtiEnvBase(version) {
 }
 
 JvmtiEnv::~JvmtiEnv() {
 }
 
 JvmtiEnv*
-JvmtiEnv::create_a_jvmti() {
-  return new JvmtiEnv();
+JvmtiEnv::create_a_jvmti(jint version) {
+  return new JvmtiEnv(version);
 }
 
 // VM operation class to copy jni function table at safepoint.
@@ -408,6 +408,11 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
   if (phase == JVMTI_PHASE_ONLOAD) {
     Arguments::append_sysclasspath(segment);
     return JVMTI_ERROR_NONE;
+  } else if (use_version_1_0_semantics()) {
+    // This JvmtiEnv requested version 1.0 semantics and this function
+    // is only allowed in the ONLOAD phase in version 1.0 so we need to
+    // return an error here.
+    return JVMTI_ERROR_WRONG_PHASE;
   } else if (phase == JVMTI_PHASE_LIVE) {
     // The phase is checked by the wrapper that called this function,
     // but this thread could be racing with the thread that is
@@ -2857,6 +2862,14 @@ JvmtiEnv::IsMethodSynthetic(methodOop method_oop, jboolean* is_synthetic_ptr) {
 // is_obsolete_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::IsMethodObsolete(methodOop method_oop, jboolean* is_obsolete_ptr) {
+  if (use_version_1_0_semantics() &&
+      get_capabilities()->can_redefine_classes == 0) {
+    // This JvmtiEnv requested version 1.0 semantics and this function
+    // requires the can_redefine_classes capability in version 1.0 so
+    // we need to return an error here.
+    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
+  }
+
   if (method_oop == NULL || method_oop->is_obsolete()) {
     *is_obsolete_ptr = true;
   } else {
