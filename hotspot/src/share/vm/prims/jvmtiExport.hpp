@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,6 +236,8 @@ class JvmtiExport : public AllStatic {
   static bool is_jvmti_version(jint version)                      { return (version & JVMTI_VERSION_MASK) == JVMTI_VERSION_VALUE; }
   static bool is_jvmdi_version(jint version)                      { return (version & JVMTI_VERSION_MASK) == JVMDI_VERSION_VALUE; }
   static jint get_jvmti_interface(JavaVM *jvm, void **penv, jint version);
+  static void decode_version_values(jint version, int * major, int * minor,
+                                    int * micro);
 
   // single stepping management methods
   static void at_single_stepping_point(JavaThread *thread, methodOop method, address location) KERNEL_RETURN;
