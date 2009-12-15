@@ -54,7 +54,7 @@ public interface Dependency {
         /**
          * Find the immediate dependencies of a given class file.
          * @param classfile the class file to be examined
-         * @return the set of dependencies located in the given class file.
+         * @return the dependencies located in the given class file.
          */
         public Iterable<? extends Dependency> findDependencies(ClassFile classfile);
     }
