@@ -414,7 +414,7 @@ public class Dependencies {
             return pattern.matcher(dependency.getTarget().getClassName()).matches();
         }
 
-        Pattern pattern;
+        private final Pattern pattern;
     }
 
     /**
@@ -448,8 +448,8 @@ public class Dependencies {
             return false;
         }
 
-        Set<String> packageNames;
-        boolean matchSubpackages;
+        private final Set<String> packageNames;
+        private final boolean matchSubpackages;
     }
 
 
@@ -543,8 +543,8 @@ public class Dependencies {
 
         class Visitor implements ConstantPool.Visitor<Void,Void>, Type.Visitor<Void, Void> {
             private ConstantPool constant_pool;
-            private Set<Dependency> deps;
             private Location origin;
+            Set<Dependency> deps;
 
             Visitor(ClassFile classFile) {
                 try {
