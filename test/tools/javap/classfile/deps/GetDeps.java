@@ -186,7 +186,7 @@ public class GetDeps {
 
         private Comparator<Dependency> originComparator = new Comparator<Dependency>() {
             public int compare(Dependency o1, Dependency o2) {
-                return o1.getTarget().toString().compareTo(o2.getOrigin().toString());
+                return o1.getOrigin().toString().compareTo(o2.getOrigin().toString());
             }
         };
 
