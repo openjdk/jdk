@@ -448,7 +448,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
                                 rbx_index, Address::times_ptr,
                                 base + vtableEntry::method_offset_in_bytes());
       Register rbx_method = rbx_temp;
-      __ movl(rbx_method, vtable_entry_addr);
+      __ movptr(rbx_method, vtable_entry_addr);
 
       __ verify_oop(rbx_method);
       __ jmp(rbx_method_fie);

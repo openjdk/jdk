@@ -7666,7 +7666,7 @@ RegisterOrConstant MacroAssembler::delayed_value_impl(intptr_t* delayed_value_ad
 
 #ifdef ASSERT
   Label L;
-  testl(tmp, tmp);
+  testptr(tmp, tmp);
   jccb(Assembler::notZero, L);
   hlt();
   bind(L);
