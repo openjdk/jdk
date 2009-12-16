@@ -51,7 +51,7 @@ MAPFILE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers \
 # and mustn't be otherwise.
 MAPFILE_DTRACE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers-$(TYPE)
 
-G_SUFFIX =
+G_SUFFIX = _g
 VERSION = debug
 SYSDEFS += -DASSERT -DDEBUG
 PICFLAGS = DEFAULT

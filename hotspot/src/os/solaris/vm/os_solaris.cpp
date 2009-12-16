@@ -457,7 +457,7 @@ static volatile int max_hrtime_lock = LOCK_FREE;     // Update counter with LSB 
 
 
 void os::Solaris::initialize_system_info() {
-  _processor_count = sysconf(_SC_NPROCESSORS_CONF);
+  set_processor_count(sysconf(_SC_NPROCESSORS_CONF));
   _processors_online = sysconf (_SC_NPROCESSORS_ONLN);
   _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) * (julong)sysconf(_SC_PAGESIZE);
 }

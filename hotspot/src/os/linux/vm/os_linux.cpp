@@ -223,8 +223,8 @@ static const char *unstable_chroot_error = "/proc file system not found.\n"
                      "environment on Linux when /proc filesystem is not mounted.";
 
 void os::Linux::initialize_system_info() {
-  _processor_count = sysconf(_SC_NPROCESSORS_CONF);
-  if (_processor_count == 1) {
+  set_processor_count(sysconf(_SC_NPROCESSORS_CONF));
+  if (processor_count() == 1) {
     pid_t pid = os::Linux::gettid();
     char fname[32];
     jio_snprintf(fname, sizeof(fname), "/proc/%d", pid);
@@ -236,7 +236,7 @@ void os::Linux::initialize_system_info() {
     }
   }
   _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) * (julong)sysconf(_SC_PAGESIZE);
-  assert(_processor_count > 0, "linux error");
+  assert(processor_count() > 0, "linux error");
 }
 
 void os::init_system_properties_values() {
