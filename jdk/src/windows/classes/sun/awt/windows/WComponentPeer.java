@@ -57,7 +57,7 @@ import sun.awt.event.IgnorePaintEvent;
 
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.peer.DropTargetPeer;
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 
 import sun.util.logging.PlatformLogger;
 
@@ -817,7 +817,7 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     private void postPaintIfNecessary(int x, int y, int w, int h) {
-        if ( !ComponentAccessor.getIgnoreRepaint( (Component) target) ) {
+        if ( !AWTAccessor.getComponentAccessor().getIgnoreRepaint( (Component) target) ) {
             PaintEvent event = PaintEventDispatcher.getPaintEventDispatcher().
                 createPaintEvent((Component)target, x, y, w, h);
             if (event != null) {

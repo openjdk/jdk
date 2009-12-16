@@ -37,6 +37,7 @@ import javax.swing.text.*;
 import javax.swing.event.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
+import javax.swing.plaf.synth.SynthUI;
 import sun.swing.DefaultLookup;
 import sun.awt.AppContext;
 import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
@@ -221,8 +222,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         // is ==, which is the case for the windows look and feel.
         // Until an appropriate solution is found, the code is being
         // reverted to what it was before the original fix.
-        if (this instanceof sun.swing.plaf.synth.SynthUI ||
-                (c instanceof JTextArea)) {
+        if (this instanceof SynthUI || (c instanceof JTextArea)) {
             return;
         }
         Color background = c.getBackground();
@@ -289,7 +289,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     protected abstract String getPropertyPrefix();
 
     /**
-     * Initializes component properties, e.g. font, foreground,
+     * Initializes component properties, such as font, foreground,
      * background, caret color, selection color, selected text color,
      * disabled text color, and border color.  The font, foreground, and
      * background properties are only set if their current value is either null
@@ -377,9 +377,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     }
 
     /**
-     * Sets the component properties that haven't been explicitly overridden to
-     * null.  A property is considered overridden if its current value
-     * is not a UIResource.
+     * Sets the component properties that have not been explicitly overridden
+     * to {@code null}.  A property is considered overridden if its current
+     * value is not a {@code UIResource}.
      *
      * @see #installDefaults
      * @see #uninstallUI
@@ -756,18 +756,18 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * things.
      * <ol>
      * <li>
-     * Set the associated component to opaque (can be changed
+     * Sets the associated component to opaque (can be changed
      * easily by a subclass or on JTextComponent directly),
      * which is the most common case.  This will cause the
      * component's background color to be painted.
      * <li>
-     * Install the default caret and highlighter into the
+     * Installs the default caret and highlighter into the
      * associated component.
      * <li>
-     * Attach to the editor and model.  If there is no
+     * Attaches to the editor and model.  If there is no
      * model, a default one is created.
      * <li>
-     * create the view factory and the view hierarchy used
+     * Creates the view factory and the view hierarchy used
      * to represent the model.
      * </ol>
      *
@@ -784,7 +784,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
             // This is a workaround as these should not override what synth has
             // set them to
-            if (!(this instanceof sun.swing.plaf.synth.SynthUI)){
+            if (! (this instanceof SynthUI)) {
                 // common case is background painted... this can
                 // easily be changed by subclasses or from outside
                 // of the component.
@@ -857,9 +857,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * To prevent this from happening twice, this method is
      * reimplemented to simply paint.
      * <p>
-     * <em>NOTE:</em> Superclass is also not thread-safe in
-     * it's rendering of the background, although that's not
-     * an issue with the default rendering.
+     * <em>NOTE:</em> NOTE: Superclass is also not thread-safe in its
+     * rendering of the background, although that is not an issue with the
+     * default rendering.
      */
     public void update(Graphics g, JComponent c) {
         paint(g, c);
