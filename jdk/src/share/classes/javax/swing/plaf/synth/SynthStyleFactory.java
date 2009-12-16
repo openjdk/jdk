@@ -24,10 +24,7 @@
  */
 package javax.swing.plaf.synth;
 
-import java.awt.*;
-import java.util.*;
-import javax.swing.plaf.*;
-import javax.swing.*;
+import javax.swing.JComponent;
 
 /**
  * Factory used for obtaining <code>SynthStyle</code>s.  Each of the

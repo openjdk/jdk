@@ -722,13 +722,7 @@ public abstract class SunToolkit extends Toolkit
         EventQueue eq = (EventQueue)appContext.get(AppContext.EVENT_QUEUE_KEY);
 
         AWTAccessor.EventQueueAccessor accessor = AWTAccessor.getEventQueueAccessor();
-        EventQueue next = accessor.getNextQueue(eq);
-        while (next != null) {
-            eq = next;
-            next = accessor.getNextQueue(eq);
-        }
-
-        return (Thread.currentThread() == accessor.getDispatchThread(eq));
+        return accessor.isDispatchThreadImpl(eq);
     }
 
     public Dimension getScreenSize() {
@@ -806,17 +800,9 @@ public abstract class SunToolkit extends Toolkit
     }
 
 
-    /**
-     * Makes the window OverrideRedirect, on X11 platforms. See
-     * ICCCM specification for more details about OverrideRedirect
-     * windows. Implemented in XToolkit, no-op in WToolkit.
-     */
-    public void setOverrideRedirect(Window target) {
-    }
+    static final SoftCache imgCache = new SoftCache();
 
-    static SoftCache imgCache = new SoftCache();
-
-    static synchronized Image getImageFromHash(Toolkit tk, URL url) {
+    static Image getImageFromHash(Toolkit tk, URL url) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
@@ -844,32 +830,36 @@ public abstract class SunToolkit extends Toolkit
                     sm.checkConnect(url.getHost(), url.getPort());
             }
         }
-        Image img = (Image)imgCache.get(url);
-        if (img == null) {
-            try {
-                img = tk.createImage(new URLImageSource(url));
-                imgCache.put(url, img);
-            } catch (Exception e) {
+        synchronized (imgCache) {
+            Image img = (Image)imgCache.get(url);
+            if (img == null) {
+                try {
+                    img = tk.createImage(new URLImageSource(url));
+                    imgCache.put(url, img);
+                } catch (Exception e) {
+                }
             }
+            return img;
         }
-        return img;
     }
 
-    static synchronized Image getImageFromHash(Toolkit tk,
+    static Image getImageFromHash(Toolkit tk,
                                                String filename) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(filename);
         }
-        Image img = (Image)imgCache.get(filename);
-        if (img == null) {
-            try {
-                img = tk.createImage(new FileImageSource(filename));
-                imgCache.put(filename, img);
-            } catch (Exception e) {
+        synchronized (imgCache) {
+            Image img = (Image)imgCache.get(filename);
+            if (img == null) {
+                try {
+                    img = tk.createImage(new FileImageSource(filename));
+                    imgCache.put(filename, img);
+                } catch (Exception e) {
+                }
             }
+            return img;
         }
-        return img;
     }
 
     public Image getImage(String filename) {
@@ -1126,6 +1116,18 @@ public abstract class SunToolkit extends Toolkit
      */
     public static Container getNativeContainer(Component c) {
         return Toolkit.getNativeContainer(c);
+    }
+
+    /**
+     * Gives native peers the ability to query the closest HW component.
+     * If the given component is heavyweight, then it returns this. Otherwise,
+     * it goes one level up in the hierarchy and tests next component.
+     */
+    public static Component getHeavyweightComponent(Component c) {
+        while (c != null && AWTAccessor.getComponentAccessor().isLightweight(c)) {
+            c = AWTAccessor.getComponentAccessor().getParent(c);
+        }
+        return c;
     }
 
     /**

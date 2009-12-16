@@ -104,11 +104,8 @@ class EventDispatchThread extends Thread {
         } else {
             stopEvent.dispatch();
         }
-        synchronized (theQueue) {
-            if (theQueue.getDispatchThread() == this) {
-                theQueue.detachDispatchThread();
-            }
-        }
+
+        theQueue.detachDispatchThread(this, false);
     }
 
     public void stopDispatching() {
@@ -142,35 +139,7 @@ class EventDispatchThread extends Thread {
                 }
             });
         } finally {
-            /*
-             * This synchronized block is to secure that the event dispatch
-             * thread won't die in the middle of posting a new event to the
-             * associated event queue. It is important because we notify
-             * that the event dispatch thread is busy after posting a new event
-             * to its queue, so the EventQueue.dispatchThread reference must
-             * be valid at that point.
-             */
-            synchronized (theQueue) {
-                if (theQueue.getDispatchThread() == this) {
-                    theQueue.detachDispatchThread();
-                }
-                /*
-                 * Event dispatch thread dies in case of an uncaught exception.
-                 * A new event dispatch thread for this queue will be started
-                 * only if a new event is posted to it. In case if no more
-                 * events are posted after this thread died all events that
-                 * currently are in the queue will never be dispatched.
-                 */
-                /*
-                 * Fix for 4648733. Check both the associated java event
-                 * queue and the PostEventQueue.
-                 */
-                if (theQueue.peekEvent() != null ||
-                    !SunToolkit.isPostEventQueueEmpty()) {
-                    theQueue.initDispatchThread();
-                }
-                AWTAutoShutdown.getInstance().notifyThreadFree(this);
-            }
+            theQueue.detachDispatchThread(this, true);
         }
     }
 

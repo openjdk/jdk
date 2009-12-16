@@ -669,7 +669,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
 
     /**
      * Sets the border of the component to have a rollover border which
-     * was created by <code>createRolloverBorder</code>.
+     * was created by the {@link #createRolloverBorder} method.
      *
      * @param c component which will have a rollover border installed
      * @see #createRolloverBorder
@@ -709,7 +709,7 @@ public class BasicToolBarUI extends ToolBarUI implements SwingConstants
 
     /**
      * Sets the border of the component to have a non-rollover border which
-     * was created by <code>createNonRolloverBorder</code>.
+     * was created by the {@link #createNonRolloverBorder} method.
      *
      * @param c component which will have a non-rollover border installed
      * @see #createNonRolloverBorder

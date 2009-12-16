@@ -1518,6 +1518,7 @@ HICON AwtToolkit::GetAwtIconSm()
     return defaultIconSm;
 }
 
+// The icon at index 0 must be gray. See AwtWindow::GetSecurityWarningIcon()
 HICON AwtToolkit::GetSecurityWarningIcon(UINT index, UINT w, UINT h)
 {
     //Note: should not exceed 10 because of the current implementation.
