@@ -84,11 +84,12 @@ class DirtyCardQueueSet: public PtrQueueSet {
   jint _processed_buffers_rs_thread;
 
 public:
-  DirtyCardQueueSet();
+  DirtyCardQueueSet(bool notify_when_complete = true);
 
   void initialize(Monitor* cbl_mon, Mutex* fl_lock,
-                  int max_completed_queue = 0,
-                  Mutex* lock = NULL, PtrQueueSet* fl_owner = NULL);
+                  int process_completed_threshold,
+                  int max_completed_queue,
+                  Mutex* lock, PtrQueueSet* fl_owner = NULL);
 
   // The number of parallel ids that can be claimed to allow collector or
   // mutator threads to do card-processing work.
@@ -123,9 +124,9 @@ public:
                                          bool during_pause = false);
 
   bool apply_closure_to_completed_buffer_helper(int worker_i,
-                                                CompletedBufferNode* nd);
+                                                BufferNode* nd);
 
-  CompletedBufferNode* get_completed_buffer(int stop_at);
+  BufferNode* get_completed_buffer(int stop_at);
 
   // Applies the current closure to all completed buffers,
   // non-consumptively.

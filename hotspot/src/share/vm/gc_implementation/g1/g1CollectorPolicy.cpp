@@ -1914,12 +1914,57 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
   calculate_young_list_min_length();
   calculate_young_list_target_config();
 
+  // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
+  double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSUpdatePauseFractionPercent / 100.0;
+  adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
+
   // </NEW PREDICTION>
 
   _target_pause_time_ms = -1.0;
 }
 
 // <NEW PREDICTION>
+
+void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
+                                                     double update_rs_processed_buffers,
+                                                     double goal_ms) {
+  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  ConcurrentG1Refine *cg1r = G1CollectedHeap::heap()->concurrent_g1_refine();
+
+  if (G1AdaptiveConcRefine) {
+    const int k_gy = 3, k_gr = 6;
+    const double inc_k = 1.1, dec_k = 0.9;
+
+    int g = cg1r->green_zone();
+    if (update_rs_time > goal_ms) {
+      g = (int)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
+    } else {
+      if (update_rs_time < goal_ms && update_rs_processed_buffers > g) {
+        g = (int)MAX2(g * inc_k, g + 1.0);
+      }
+    }
+    // Change the refinement threads params
+    cg1r->set_green_zone(g);
+    cg1r->set_yellow_zone(g * k_gy);
+    cg1r->set_red_zone(g * k_gr);
+    cg1r->reinitialize_threads();
+
+    int processing_threshold_delta = MAX2((int)(cg1r->green_zone() * sigma()), 1);
+    int processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
+                                    cg1r->yellow_zone());
+    // Change the barrier params
+    dcqs.set_process_completed_threshold(processing_threshold);
+    dcqs.set_max_completed_queue(cg1r->red_zone());
+  }
+
+  int curr_queue_size = dcqs.completed_buffers_num();
+  if (curr_queue_size >= cg1r->yellow_zone()) {
+    dcqs.set_completed_queue_padding(curr_queue_size);
+  } else {
+    dcqs.set_completed_queue_padding(0);
+  }
+  dcqs.notify_if_necessary();
+}
 
 double
 G1CollectorPolicy::
