@@ -2045,8 +2045,9 @@ bool instanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
     // As we walk along, look for equalities between outer1 and class2.
     // Eventually, the walks will terminate as outer1 stops
     // at the top-level class around the original class.
-    symbolOop ignore_name;
-    klassOop next = outer1->compute_enclosing_class(ignore_name, CHECK_false);
+    bool ignore_inner_is_member;
+    klassOop next = outer1->compute_enclosing_class(&ignore_inner_is_member,
+                                                    CHECK_false);
     if (next == NULL)  break;
     if (next == class2())  return true;
     outer1 = instanceKlassHandle(THREAD, next);
@@ -2055,8 +2056,9 @@ bool instanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
   // Now do the same for class2.
   instanceKlassHandle outer2 = class2;
   for (;;) {
-    symbolOop ignore_name;
-    klassOop next = outer2->compute_enclosing_class(ignore_name, CHECK_false);
+    bool ignore_inner_is_member;
+    klassOop next = outer2->compute_enclosing_class(&ignore_inner_is_member,
+                                                    CHECK_false);
     if (next == NULL)  break;
     // Might as well check the new outer against all available values.
     if (next == class1())  return true;
