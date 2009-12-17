@@ -5557,3 +5557,9 @@ CurrencyNames/tr_TR/TRY=TL
 CalendarData/ro/firstDayOfWeek=2
 CalendarData/ro/minimalDaysInFirstWeek=1
 FormatData/ro/DayNames/6=s\u00e2mb\u0103t\u0103
+
+#bug 6645268
+LocaleNames/fi/fr=ranska
+LocaleNames/fi/FR=Ranska
+LocaleNames/fi_FI/fr=ranska
+LocaleNames/fi_FI/FR=Ranska
