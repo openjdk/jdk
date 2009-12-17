@@ -5552,3 +5552,8 @@ FormatData/hr_HR/DateTimePatterns/7=dd.MM.yy.
 
 # bug 6873931
 CurrencyNames/tr_TR/TRY=TL
+
+#bug 6450945
+CalendarData/ro/firstDayOfWeek=2
+CalendarData/ro/minimalDaysInFirstWeek=1
+FormatData/ro/DayNames/6=s\u00e2mb\u0103t\u0103
