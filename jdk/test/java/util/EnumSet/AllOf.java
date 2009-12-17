@@ -26,9 +26,6 @@
  * @bug     4946090
  * @summary AllOf static factory is broken in Regular and Jumbo enum set
  * @author  Josh Bloch
- *
- * @compile -source 1.5 AllOf.java
- * @run main AllOf
  */
 
 import java.util.*;

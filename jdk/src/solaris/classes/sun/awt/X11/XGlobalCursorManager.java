@@ -31,7 +31,7 @@ import java.awt.peer.LightweightPeer;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 
 import sun.awt.GlobalCursorManager;
 import sun.awt.SunToolkit;
@@ -94,11 +94,11 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
                 nc = nativeContainer.get();
             }
         } else {
-            nc = getNativeContainer(comp);
+           nc = SunToolkit.getHeavyweightComponent(comp);
         }
 
         if (nc != null) {
-            ComponentPeer nc_peer = ComponentAccessor.getPeer(nc);
+            ComponentPeer nc_peer = AWTAccessor.getComponentAccessor().getPeer(nc);
             if (nc_peer instanceof XComponentPeer) {
                 synchronized (this) {
                     nativeContainer = new WeakReference<Component>(nc);
@@ -131,13 +131,6 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
         // when mouse pointer is out of any java toplevel.
         // let's use default cursor for this.
         updateGrabbedCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-    }
-
-    private Component getNativeContainer(Component comp) {
-        while (comp != null && ComponentAccessor.getPeer(comp) instanceof LightweightPeer) {
-            comp = ComponentAccessor.getParent_NoClientCode(comp);
-        }
-        return comp;
     }
 
     protected void getCursorPos(Point p) {
@@ -186,27 +179,29 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
     }
 
     private Cursor getCapableCursor(Component comp) {
+        AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+
         Component c = comp;
         while ((c != null) && !(c instanceof Window)
-               && ComponentAccessor.isEnabledImpl(c)
-               && ComponentAccessor.getVisible(c)
-               && ComponentAccessor.getPeer(c) != null)
+               && compAccessor.isEnabled(c)
+               && compAccessor.isVisible(c)
+               && compAccessor.isDisplayable(c))
         {
-            c = ComponentAccessor.getParent_NoClientCode(c);
+            c = compAccessor.getParent(c);
         }
         if (c instanceof Window) {
-            return (ComponentAccessor.isEnabledImpl(c)
-                    && ComponentAccessor.getVisible(c)
-                    && (ComponentAccessor.getPeer(c) != null)
-                    && ComponentAccessor.isEnabledImpl(comp))
+            return (compAccessor.isEnabled(c)
+                    && compAccessor.isVisible(c)
+                    && compAccessor.isDisplayable(c)
+                    && compAccessor.isEnabled(comp))
                    ?
-                    ComponentAccessor.getCursor_NoClientCode(comp)
+                    compAccessor.getCursor(comp)
                    :
                     Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
         } else if (c == null) {
             return null;
         }
-        return getCapableCursor(ComponentAccessor.getParent_NoClientCode(c));
+        return getCapableCursor(compAccessor.getParent(c));
     }
 
     /* This methods needs to be called from within XToolkit.awtLock / XToolkit.awtUnlock section. */

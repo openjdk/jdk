@@ -26,8 +26,6 @@
  * @bug 4984872
  * @summary Basic tests of toPlainString method
  * @author Joseph D. Darcy
- * @compile -source 1.5 ToPlainStringTests.java
- * @run main ToPlainStringTests
  */
 
 import java.math.*;

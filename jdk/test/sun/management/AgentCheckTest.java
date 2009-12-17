@@ -27,9 +27,6 @@
  *  @summary Localize log messages from the management agents
  *
  *  @author Tim Bell
- *
- *  @run compile -source 1.5 -g AgentCheckTest.java
- *  @run main AgentCheckTest
  */
 import sun.management.Agent;
 

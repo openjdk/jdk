@@ -45,9 +45,6 @@ import com.sun.tools.classfile.InnerClasses_attribute;
 import com.sun.tools.classfile.LineNumberTable_attribute;
 import com.sun.tools.classfile.LocalVariableTable_attribute;
 import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
-import com.sun.tools.classfile.ModuleExportTable_attribute;
-import com.sun.tools.classfile.ModuleMemberTable_attribute;
-import com.sun.tools.classfile.Module_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleTypeAnnotations_attribute;
@@ -370,63 +367,6 @@ public class AttributeWriter extends BasicWriter
         }
         indent(-1);
         return null;
-    }
-
-    public Void visitModule(Module_attribute attr, Void ignore) {
-        print("Module: #" + attr.module_name);
-        tab();
-        println("// " + getModuleName(attr));
-        return null;
-    }
-
-    String getModuleName(Module_attribute attr) {
-        try {
-            return attr.getModuleName(constant_pool);
-        } catch (ConstantPoolException e) {
-            return report(e);
-        }
-    }
-
-    public Void visitModuleExportTable(ModuleExportTable_attribute attr, Void ignore) {
-        println("ModuleExportTable:");
-        indent(+1);
-        println("Types: (" + attr.export_type_table.length + ")");
-        for (int i = 0; i < attr.export_type_table.length; i++) {
-            print("#" + attr.export_type_table[i]);
-            tab();
-            println("// " + getExportTypeName(attr, i));
-        }
-        indent(-1);
-        return null;
-    }
-
-    String getExportTypeName(ModuleExportTable_attribute attr, int index) {
-        try {
-            return attr.getExportTypeName(index, constant_pool);
-        } catch (ConstantPoolException e) {
-            return report(e);
-        }
-    }
-
-    public Void visitModuleMemberTable(ModuleMemberTable_attribute attr, Void ignore) {
-        println("ModuleMemberTable:");
-        indent(+1);
-        println("Packages: (" + attr.package_member_table.length + ")");
-        for (int i = 0; i < attr.package_member_table.length; i++) {
-            print("#" + attr.package_member_table[i]);
-            tab();
-            println("// " + getPackageMemberName(attr, i));
-        }
-        indent(-1);
-        return null;
-    }
-
-    String getPackageMemberName(ModuleMemberTable_attribute attr, int index) {
-        try {
-            return attr.getPackageMemberName(index, constant_pool);
-        } catch (ConstantPoolException e) {
-            return report(e);
-        }
     }
 
     public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, Void ignore) {

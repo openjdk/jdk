@@ -31,7 +31,7 @@ import java.awt.peer.ComponentPeer;
 import java.awt.dnd.DropTarget;
 import java.util.Vector;
 import sun.awt.AppContext;
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 
 public class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
 
@@ -103,7 +103,7 @@ public class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
 
     public void blockWindows(java.util.List<Window> toBlock) {
         for (Window w : toBlock) {
-            WWindowPeer wp = (WWindowPeer)ComponentAccessor.getPeer(w);
+            WWindowPeer wp = (WWindowPeer)AWTAccessor.getComponentAccessor().getPeer(w);
             if (wp != null) {
                 blockWindow(wp);
             }
