@@ -63,7 +63,7 @@ public class FormatData_be extends ListResourceBundle {
                     "\u0436\u043d\u0456\u045e\u043d\u044f", // august
                     "\u0432\u0435\u0440\u0430\u0441\u043d\u044f", // september
                     "\u043a\u0430\u0441\u0442\u0440\u044b\u0447\u043d\u0456\u043a\u0430", // october
-                    "\u043b\u0438\u0441\u0442\u0430\u043f\u0430\u0434\u0430", // november
+                    "\u043b\u0456\u0441\u0442\u0430\u043f\u0430\u0434\u0430", // november
                     "\u0441\u043d\u0435\u0436\u043d\u044f", // december
                     "" // month 13 if applicable
                 }
@@ -80,7 +80,7 @@ public class FormatData_be extends ListResourceBundle {
                     "\u0436\u043d\u0432", // abb august
                     "\u0432\u0440\u0441", // abb september
                     "\u043a\u0441\u0442", // abb october
-                    "\u043b\u0441\u0442", // abb november
+                    "\u043b\u0456\u0442", // abb november
                     "\u0441\u043d\u0436", // abb december
                     "" // abb month 13 if applicable
                 }
