@@ -1852,6 +1852,7 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
           !n->is_Phi() &&       // a few noisely useless nodes
           !n->is_Proj() &&
           !n->is_MachTemp() &&
+          !n->is_SafePointScalarObject() &&
           !n->is_Catch() &&     // Would be nice to print exception table targets
           !n->is_MergeMem() &&  // Not very interesting
           !n->is_top() &&       // Debug info table constants
