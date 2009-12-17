@@ -28,13 +28,20 @@ package sun.awt.X11;
 import java.awt.Image;
 
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -47,6 +54,8 @@ import javax.imageio.spi.ImageWriterSpi;
 
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
+
+import java.io.ByteArrayOutputStream;
 
 /**
  * Platform-specific support for the data transfer subsystem.
@@ -106,6 +115,22 @@ public class XDataTransferer extends DataTransferer {
             }
         }
         return super.getCharsetForTextFormat(lFormat);
+    }
+
+    protected boolean isURIListFormat(long format) {
+        String nat = getNativeForFormat(format);
+        if (nat == null) {
+            return false;
+        }
+        try {
+            DataFlavor df = new DataFlavor(nat);
+            if (df.getPrimaryType().equals("text") && df.getSubType().equals("uri-list")) {
+                return true;
+            }
+        } catch (Exception e) {
+            // Not a MIME format.
+        }
+        return false;
     }
 
     public boolean isFileFormat(long format) {
@@ -170,6 +195,19 @@ public class XDataTransferer extends DataTransferer {
         }
     }
 
+    protected ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList)
+        throws IOException
+    {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        for (int i = 0; i < fileList.size(); i++)
+        {
+               byte[] bytes = fileList.get(i).getBytes();
+               if (i != 0) bos.write(0);
+               bos.write(bytes, 0, bytes.length);
+        }
+        return bos;
+    }
+
     /**
      * Translates either a byte array or an input stream which contain
      * platform-specific image data in the given format into an Image.
@@ -212,6 +250,52 @@ public class XDataTransferer extends DataTransferer {
                                                          XAtom.get("STRING").getAtom());
         } finally {
             XToolkit.awtUnlock();
+        }
+    }
+
+    protected URI[] dragQueryURIs(InputStream stream,
+                                  byte[] bytes,
+                                  long format,
+                                  Transferable localeTransferable)
+      throws IOException {
+
+        String charset = null;
+        if (localeTransferable != null &&
+            isLocaleDependentTextFormat(format) &&
+            localeTransferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
+            try {
+                charset = new String(
+                    (byte[])localeTransferable.getTransferData(javaTextEncodingFlavor),
+                    "UTF-8"
+                );
+            } catch (UnsupportedFlavorException cannotHappen) {
+            }
+        } else {
+            charset = getCharsetForTextFormat(format);
+        }
+        if (charset == null) {
+            // Only happens when we have a custom text type.
+            charset = getDefaultTextCharset();
+        }
+
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(stream, charset));
+            String line;
+            ArrayList<URI> uriList = new ArrayList<URI>();
+            URI uri;
+            while ((line = reader.readLine()) != null) {
+                try {
+                    uri = new URI(line);
+                } catch (URISyntaxException uriSyntaxException) {
+                    throw new IOException(uriSyntaxException);
+                }
+                uriList.add(uri);
+            }
+            return uriList.toArray(new URI[uriList.size()]);
+        } finally {
+            if (reader != null)
+                reader.close();
         }
     }
 

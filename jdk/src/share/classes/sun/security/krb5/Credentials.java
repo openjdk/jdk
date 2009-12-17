@@ -234,7 +234,19 @@ public class Credentials {
      * @return true if OK-AS_DELEGATE flag is set, otherwise, return false.
      */
     public boolean checkDelegate() {
-        return (flags.get(Krb5.TKT_OPTS_DELEGATE));
+        return flags.get(Krb5.TKT_OPTS_DELEGATE);
+    }
+
+    /**
+     * Reset TKT_OPTS_DELEGATE to false, called at credentials acquirement
+     * when one of the cross-realm TGTs does not have the OK-AS-DELEGATE
+     * flag set. This info must be preservable and restorable through
+     * the Krb5Util.credsToTicket/ticketToCreds() methods so that even if
+     * the service ticket is cached it still remembers the cross-realm
+     * authentication result.
+     */
+    public void resetDelegate() {
+        flags.set(Krb5.TKT_OPTS_DELEGATE, false);
     }
 
     public Credentials renew() throws KrbException, IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,8 @@
  * have any questions.
  */
 
-
-/*
- *
- *
- * Used by SolarisRunpath.sh to help test if the launcher fully
- * respects Solaris LD_LIBRARY_PATH semantics.  The ./lib directory is
- * structured so that the results of the dynamically linked number
- * method varies depending on the value the data model dependent
- * LD_LIBRARY_PATH variable.
- */
-
-
-
-class libraryCaller {
-    static {
-        System.loadLibrary("library");
-    }
-    static native int number();
-
-    public static void main(String argv[]) {
-        System.out.println(number());
-    }
+interface InterprocessMessages {
+    final static int EXECUTION_IS_SUCCESSFULL = 0;
+    final static int FILES_ON_TARGET_ARE_CORRUPTED = 212;
 }
+

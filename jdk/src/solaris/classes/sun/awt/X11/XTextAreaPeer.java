@@ -60,7 +60,7 @@ import javax.swing.text.JTextComponent;
 import javax.swing.plaf.BorderUIResource;
 import java.awt.im.InputMethodRequests;
 import sun.awt.CausedFocusEvent;
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 
 
 class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
@@ -119,13 +119,14 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         textPane.setVisible(true);
         textPane.validate();
 
-        foreground = ComponentAccessor.getForeground(target);
+        AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+        foreground = compAccessor.getForeground(target);
         if (foreground == null)  {
             foreground = SystemColor.textText;
         }
         setForeground(foreground);
 
-        background = ComponentAccessor.getBackground(target);
+        background = compAccessor.getBackground(target);
         if (background == null) {
             if (target.isEditable()) background = SystemColor.text;
             else background = SystemColor.control;
@@ -134,8 +135,8 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
         if (!target.isBackgroundSet()) {
             // This is a way to set the background color of the TextArea
-            // without calling setBackground - go through reflection
-            ComponentAccessor.setBackground(target, background);
+            // without calling setBackground - go through accessor
+            compAccessor.setBackground(target, background);
         }
         if (!target.isForegroundSet()) {
             target.setForeground(SystemColor.textText);
@@ -311,13 +312,13 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
     }
 
     void handleJavaKeyEvent(KeyEvent e) {
-        ComponentAccessor.processEvent(jtext,e);
+        AWTAccessor.getComponentAccessor().processEvent(jtext,e);
     }
 
     public boolean handlesWheelScrolling() { return true; }
 
     void handleJavaMouseWheelEvent(MouseWheelEvent e) {
-        ComponentAccessor.processEvent(textPane,e);
+        AWTAccessor.getComponentAccessor().processEvent(textPane,e);
     }
 
     public void handleJavaMouseEvent( MouseEvent e ) {
@@ -1111,7 +1112,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
             this.xwin = xwin;
             setDoubleBuffered(true);
             jt.addFocusListener(this);
-            ComponentAccessor.setParent(this,parent);
+            AWTAccessor.getComponentAccessor().setParent(this,parent);
             setViewportBorder(new BevelBorder(false,SystemColor.controlDkShadow,SystemColor.controlLtHighlight) );
             this.jtext = jt;
             setFocusable(false);
@@ -1308,7 +1309,7 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
                         c = current.getButton();
                         p = toLocalSpace( c, p );
                     }
-                    ComponentAccessor.processEvent( c, newMouseEvent( c, p, event ) );
+                    AWTAccessor.getComponentAccessor().processEvent( c, newMouseEvent( c, p, event ) );
                     break;
             }
         }

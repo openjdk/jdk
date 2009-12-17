@@ -90,5 +90,4 @@ public class Options {
     public int tabColumn = 40;    // column number for comments
 
     public boolean compat;             // bug-for-bug compatibility mode with old javap
-    public boolean jsr277;
 }
