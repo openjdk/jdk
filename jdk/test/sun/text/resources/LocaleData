@@ -5567,3 +5567,11 @@ LocaleNames/fi_FI/FR=Ranska
 # bug 6646611
 FormatData/be_BY/MonthNames/10=\u043b\u0456\u0441\u0442\u0430\u043f\u0430\u0434\u0430
 FormatData/be_BY/MonthAbbreviations/10=\u043b\u0456\u0441
+
+# bug 6645405
+FormatData/hu_HU/NumberPatterns/1=#,##0.## \u00A4;-#,##0.## \u00A4
+
+# bug 6650730
+FormatData/lt/NumberElements/1=\u00a0
+FormatData/lt/DateTimePatterns/6=yyyy-MM-dd
+
