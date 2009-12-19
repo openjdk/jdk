@@ -166,8 +166,10 @@ public class HatRun {
                             jre_home );
         String cdir      = System.getProperty("test.classes", ".");
         String os_arch   = System.getProperty("os.arch");
-        boolean d64      = os_arch.equals("sparcv9") ||
-                           os_arch.equals("amd64");
+        String os_name   = System.getProperty("os.name");
+        boolean d64      = os_name.equals("SunOS") && (
+                             os_arch.equals("sparcv9") ||
+                             os_arch.equals("amd64"));
         String isa_dir   = d64?(File.separator+os_arch):"";
         String java      = jre_home
                              + File.separator + "bin" + isa_dir

@@ -38,6 +38,26 @@ public class BasicInt
     extends Basic
 {
 
+    private static final int[] VALUES = {
+        Integer.MIN_VALUE,
+        (int) -1,
+        (int) 0,
+        (int) 1,
+        Integer.MAX_VALUE,
+
+
+
+
+
+
+
+
+
+
+
+
+    };
+
     private static void relGet(IntBuffer b) {
         int n = b.capacity();
         int v;
@@ -309,6 +329,12 @@ public class BasicInt
 
 
 
+    private static void fail(String problem,
+                             IntBuffer xb, IntBuffer yb,
+                             int x, int y) {
+        fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
+    }
+
     private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
         boolean caught = false;
         try {
@@ -521,6 +547,42 @@ public class BasicInt
             fail("Non-identical buffers equal", b, b2);
         if (b.compareTo(b2) <= 0)
             fail("Comparison to lesser buffer <= 0", b, b2);
+
+        // Check equals and compareTo with interesting values
+        for (int x : VALUES) {
+            IntBuffer xb = IntBuffer.wrap(new int[] { x });
+            if (xb.compareTo(xb) != 0) {
+                fail("compareTo not reflexive", xb, xb, x, x);
+            }
+            if (! xb.equals(xb)) {
+                fail("equals not reflexive", xb, xb, x, x);
+            }
+            for (int y : VALUES) {
+                IntBuffer yb = IntBuffer.wrap(new int[] { y });
+                if (xb.compareTo(yb) != - yb.compareTo(xb)) {
+                    fail("compareTo not anti-symmetric",
+                         xb, yb, x, y);
+                }
+                if ((xb.compareTo(yb) == 0) != xb.equals(yb)) {
+                    fail("compareTo inconsistent with equals",
+                         xb, yb, x, y);
+                }
+                if (xb.compareTo(yb) != Integer.compare(x, y)) {
+
+
+
+
+
+
+                    fail("Incorrect results for IntBuffer.compareTo",
+                         xb, yb, x, y);
+                }
+                if (xb.equals(yb) != ((x == y) || ((x != x) && (y != y)))) {
+                    fail("Incorrect results for IntBuffer.equals",
+                         xb, yb, x, y);
+                }
+            }
+        }
 
         // Sub, dup
 

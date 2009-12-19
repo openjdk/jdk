@@ -1,0 +1,199 @@
+#
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+# List of root classes/methods, each line of the following syntax:
+# <class name> 
+# <method name> <signature>|*
+# exclude <class>|<method> 
+
+# The boot module generated based on this rootset does not support
+# - security permission check
+# - non-standard charset
+# - logging output
+# - resource bundles
+#   including error output from the launcher 
+
+# VM preloaded classes
+java.lang.Object
+java.lang.String
+java.lang.Class
+java.lang.Cloneable
+java.lang.ClassLoader
+java.lang.System
+java.lang.Throwable
+java.lang.Error
+java.lang.ThreadDeath
+java.lang.Exception
+java.lang.RuntimeException
+java.security.ProtectionDomain
+java.security.AccessControlContext
+java.lang.ClassNotFoundException
+java.lang.NoClassDefFoundError
+java.lang.ClassCastException
+java.lang.ArrayStoreException
+java.lang.VirtualMachineError
+java.lang.OutOfMemoryError
+java.lang.StackOverflowError
+java.lang.IllegalMonitorStateException
+java.lang.ref.Reference
+java.lang.ref.SoftReference
+java.lang.ref.WeakReference
+java.lang.ref.FinalReference
+java.lang.ref.PhantomReference
+java.lang.ref.Finalizer
+java.lang.Runnable
+java.lang.Thread
+java.lang.ThreadGroup
+java.util.Properties
+java.lang.reflect.AccessibleObject
+java.lang.reflect.Member
+java.lang.reflect.Field
+java.lang.reflect.Method
+java.lang.reflect.Constructor
+java.lang.reflect.Type
+sun.reflect.MagicAccessorImpl
+sun.reflect.MethodAccessorImpl
+sun.reflect.ConstructorAccessorImpl
+sun.reflect.DelegatingClassLoader
+sun.reflect.ConstantPool
+sun.reflect.UnsafeStaticFieldAccessorImpl
+java.util.Vector
+java.lang.StringBuffer
+java.lang.StackTraceElement
+java.nio.Buffer
+java.lang.Boolean
+java.lang.Character
+java.lang.Float
+java.lang.Double
+java.lang.Byte
+java.lang.Short
+java.lang.Integer
+java.lang.Long
+java.lang.NullPointerException
+java.lang.ArithmeticException
+java.lang.Compiler
+
+
+# Root methods
+java.lang.ClassLoader.getSystemClassLoader ()Ljava/lang/ClassLoader;
+java.lang.System.initializeSystemClass ()V
+sun.launcher.LauncherHelper.checkAndLoadMain (ZZLjava/lang/String;)Ljava/lang/Object;
+
+# The tool doesn't automatically find superclasses and parse the method
+# if overridden as it tries to reduce unnecessary classes being pulled in.
+# The following forces the dependency to be included the result.
+sun.net.www.protocol.file.Handler.<init> ()V
+sun.net.www.protocol.jar.Handler.<init> ()V
+sun.net.www.protocol.file.Handler.openConnection *
+sun.net.www.protocol.jar.Handler.openConnection *
+sun.misc.URLClassPath$JarLoader.<init>  (Ljava/net/URL;Ljava/net/URLStreamHandler;Ljava/util/HashMap;)V
+sun.misc.URLClassPath$FileLoader.<init> (Ljava/net/URL;)V
+sun.misc.URLClassPath$FileLoader.getClassPath *
+sun.misc.URLClassPath$FileLoader.getResource *
+sun.misc.URLClassPath$JarLoader.getResource *
+sun.misc.URLClassPath$JarLoader.getClassPath *
+
+# permission collections
+java.io.FilePermission.newPermissionCollection ()Ljava/security/PermissionCollection;
+java.security.BasicPermission.newPermissionCollection ()Ljava/security/PermissionCollection;
+
+# native
+java.io.UnixFileSystem
+java.io.UnixFileSystem.<init> ()V
+java.io.UnixFileSystem.canonicalize *
+java.io.Win32FileSystem
+java.io.Win32FileSystem.<init> ()V
+java.io.Win32FileSystem.canonicalize *
+java.io.WinNTFileSystem
+java.io.WinNTFileSystem.<init> ()V
+java.io.WinNTFileSystem.canonicalize *
+
+# missing
+java.util.HashMap.<init> ()V
+java.util.HashMap$EntrySet.iterator *
+
+# Called from native GetStringPlatformChars (jni_util.c)
+java.lang.String.getBytes *
+
+# charset
+sun.nio.cs.US_ASCII.newEncoder ()Ljava/nio/charset/CharsetEncoder;
+sun.nio.cs.UTF_8.newEncoder ()Ljava/nio/charset/CharsetEncoder;
+sun.nio.cs.UTF_8.newDecoder  *
+sun.nio.cs.UTF_16.newEncoder ()Ljava/nio/charset/CharsetEncoder;
+sun.nio.cs.UTF_16.newDecoder  *
+sun.nio.cs.UTF_32.newEncoder ()Ljava/nio/charset/CharsetEncoder;
+sun.nio.cs.UTF_32.newDecoder  *
+
+# hashcode
+java.util.jar.Attributes$Name.hashCode *
+
+# nio
+sun.nio.ByteBuffered
+sun.nio.ch.DirectBuffer
+java.nio.DirectByteBuffer
+java.nio.MappedByteBuffer
+java.nio.DirectLongBufferU
+
+# resource files
+sun.launcher.resources.launcher
+
+sun.misc.Launcher$AppClassLoader.getPermissions *
+sun.misc.Launcher$AppClassLoader.loadClass  (Ljava/lang/String;)Ljava/lang/Class;
+sun.misc.Launcher$AppClassLoader.findClass  (Ljava/lang/String;)Ljava/lang/Class;
+sun.misc.Launcher$ExtClassLoader.getPermissions *
+sun.misc.Launcher$ExtClassLoader.loadClass  (Ljava/lang/String;)Ljava/lang/Class;
+sun.misc.Launcher$ExtClassLoader.findClass  (Ljava/lang/String;)Ljava/lang/Class;
+java.lang.ClassLoader.checkPackageAccess *
+java.lang.ClassLoader.findClass *
+java.lang.ClassLoader.defineClass *
+java.net.URLClassLoader.getPermissions *
+java.net.URLClassLoader.findClass *
+java.net.URLClassLoader.defineClass *
+java.security.SecureClassLoader.defineClass *
+# need to parse superclasses <init>
+java.security.SecureClassLoader.<init> ()V
+
+exclude sun.security.provider.PolicyFile.<init>
+exclude java.lang.ClassLoader.compareCerts
+exclude java.security.cert.Certificate.equals
+# unsigned jars - no verifier
+exclude java.util.jar.JarFile.initializeVerifier
+exclude java.util.jar.JarVerifier 
+exclude sun.security.util.SignatureFileVerifier.<init>
+
+
+# what about other charset
+exclude sun.misc.Service
+exclude java.util.ServiceLoader
+
+# exclude support for localized messages
+exclude java.util.ResourceBundle.getBundle
+exclude java.text.MessageFormat
+exclude sun.util.logging.PlatformLogger$LoggerProxy.format *
+
+# exclude nio and miscellaneous classes
+exclude java.nio.channels.**
+exclude sun.misc.FloatingDecimal
+exclude sun.misc.FormattedFloatingDecimal
+exclude sun.misc.FDBigInt 
