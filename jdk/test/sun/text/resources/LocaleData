@@ -5577,3 +5577,6 @@ FormatData/lt/DateTimePatterns/6=yyyy-MM-dd
 
 #bug 6910489
 CalendarData/sl/firstDayOfWeek=2
+
+# bug 6573250
+CurrencyNames/en_CA/USD=US$
