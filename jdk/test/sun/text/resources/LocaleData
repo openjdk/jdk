@@ -5575,3 +5575,5 @@ FormatData/hu_HU/NumberPatterns/1=#,##0.## \u00A4;-#,##0.## \u00A4
 FormatData/lt/NumberElements/1=\u00a0
 FormatData/lt/DateTimePatterns/6=yyyy-MM-dd
 
+#bug 6910489
+CalendarData/sl/firstDayOfWeek=2
