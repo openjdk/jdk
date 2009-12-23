@@ -123,6 +123,13 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
       } else {
         assert(false, "unexpected projection");
       }
+    } else if (result->is_ClearArray()) {
+      if (!ClearArrayNode::step_through(&result, instance_id, phase)) {
+        // Can not bypass initialization of the instance
+        // we are looking for.
+        break;
+      }
+      // Otherwise skip it (the call updated 'result' value).
     } else if (result->is_MergeMem()) {
       result = step_through_mergemem(phase, result->as_MergeMem(), t_adr, NULL, tty);
     }
@@ -537,6 +544,15 @@ Node* MemNode::find_previous_store(PhaseTransform* phase) {
       } else if (mem->is_Proj() && mem->in(0)->is_MemBar()) {
         mem = mem->in(0)->in(TypeFunc::Memory);
         continue;           // (a) advance through independent MemBar memory
+      } else if (mem->is_ClearArray()) {
+        if (ClearArrayNode::step_through(&mem, (uint)addr_t->instance_id(), phase)) {
+          // (the call updated 'mem' value)
+          continue;         // (a) advance through independent allocation memory
+        } else {
+          // Can not bypass initialization of the instance
+          // we are looking for.
+          return mem;
+        }
       } else if (mem->is_MergeMem()) {
         int alias_idx = phase->C->get_alias_index(adr_type());
         mem = mem->as_MergeMem()->memory_at(alias_idx);
@@ -2454,6 +2470,31 @@ Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return mem;
 }
 
+//----------------------------step_through----------------------------------
+// Return allocation input memory edge if it is different instance
+// or itself if it is the one we are looking for.
+bool ClearArrayNode::step_through(Node** np, uint instance_id, PhaseTransform* phase) {
+  Node* n = *np;
+  assert(n->is_ClearArray(), "sanity");
+  intptr_t offset;
+  AllocateNode* alloc = AllocateNode::Ideal_allocation(n->in(3), phase, offset);
+  // This method is called only before Allocate nodes are expanded during
+  // macro nodes expansion. Before that ClearArray nodes are only generated
+  // in LibraryCallKit::generate_arraycopy() which follows allocations.
+  assert(alloc != NULL, "should have allocation");
+  if (alloc->_idx == instance_id) {
+    // Can not bypass initialization of the instance we are looking for.
+    return false;
+  }
+  // Otherwise skip it.
+  InitializeNode* init = alloc->initialization();
+  if (init != NULL)
+    *np = init->in(TypeFunc::Memory);
+  else
+    *np = alloc->in(TypeFunc::Memory);
+  return true;
+}
+
 //----------------------------clear_memory-------------------------------------
 // Generate code to initialize object storage to zero.
 Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
@@ -2627,7 +2668,30 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  if (remove_dead_region(phase, can_reshape)) return this;
+
+  // Eliminate volatile MemBars for scalar replaced objects.
+  if (can_reshape && req() == (Precedent+1) &&
+      (Opcode() == Op_MemBarAcquire || Opcode() == Op_MemBarVolatile)) {
+    // Volatile field loads and stores.
+    Node* my_mem = in(MemBarNode::Precedent);
+    if (my_mem != NULL && my_mem->is_Mem()) {
+      const TypeOopPtr* t_oop = my_mem->in(MemNode::Address)->bottom_type()->isa_oopptr();
+      // Check for scalar replaced object reference.
+      if( t_oop != NULL && t_oop->is_known_instance_field() &&
+          t_oop->offset() != Type::OffsetBot &&
+          t_oop->offset() != Type::OffsetTop) {
+        // Replace MemBar projections by its inputs.
+        PhaseIterGVN* igvn = phase->is_IterGVN();
+        igvn->replace_node(proj_out(TypeFunc::Memory), in(TypeFunc::Memory));
+        igvn->replace_node(proj_out(TypeFunc::Control), in(TypeFunc::Control));
+        // Must return either the original node (now dead) or a new node
+        // (Do not return a top here, since that would break the uniqueness of top.)
+        return new (phase->C, 1) ConINode(TypeInt::ZERO);
+      }
+    }
+  }
+  return NULL;
 }
 
 //------------------------------Value------------------------------------------
