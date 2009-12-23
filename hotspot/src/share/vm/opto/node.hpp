@@ -47,6 +47,7 @@ class CallStaticJavaNode;
 class CatchNode;
 class CatchProjNode;
 class CheckCastPPNode;
+class ClearArrayNode;
 class CmpNode;
 class CodeBuffer;
 class ConstraintCastNode;
@@ -599,8 +600,9 @@ public:
     DEFINE_CLASS_ID(BoxLock,  Node, 10)
     DEFINE_CLASS_ID(Add,      Node, 11)
     DEFINE_CLASS_ID(Mul,      Node, 12)
+    DEFINE_CLASS_ID(ClearArray, Node, 13)
 
-    _max_classes  = ClassMask_Mul
+    _max_classes  = ClassMask_ClearArray
   };
   #undef DEFINE_CLASS_ID
 
@@ -698,6 +700,7 @@ public:
   DEFINE_CLASS_QUERY(CatchProj)
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(ConstraintCast)
+  DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
   DEFINE_CLASS_QUERY(Cmp)
   DEFINE_CLASS_QUERY(CountedLoop)

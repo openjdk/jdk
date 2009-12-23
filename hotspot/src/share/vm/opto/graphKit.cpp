@@ -1714,6 +1714,11 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
     C->gvn_replace_by(callprojs.catchall_catchproj, C->top());
     C->gvn_replace_by(callprojs.catchall_memproj,   C->top());
     C->gvn_replace_by(callprojs.catchall_ioproj,    C->top());
+
+    // Replace the old exception object with top
+    if (callprojs.exobj != NULL) {
+      C->gvn_replace_by(callprojs.exobj, C->top());
+    }
   } else {
     GraphKit ekit(ejvms);
 
