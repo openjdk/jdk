@@ -25,45 +25,49 @@
 package javax.swing.plaf.synth;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Insets;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-
-import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
- * Synth's MenuBarUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JMenuBar}.
  *
  * @author Scott Violet
+ * @since 1.7
  */
-class SynthMenuBarUI extends BasicMenuBarUI implements PropertyChangeListener,
-                                  SynthUI {
+public class SynthMenuBarUI extends BasicMenuBarUI
+                            implements PropertyChangeListener, SynthUI {
     private SynthStyle style;
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param x component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent x) {
         return new SynthMenuBarUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults() {
         if (menuBar.getLayout() == null ||
             menuBar.getLayout() instanceof UIResource) {
-            menuBar.setLayout(new DefaultMenuLayout(menuBar,BoxLayout.LINE_AXIS));
+            menuBar.setLayout(new SynthMenuLayout(menuBar,BoxLayout.LINE_AXIS));
         }
         updateStyle(menuBar);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installListeners() {
         super.installListeners();
         menuBar.addPropertyChangeListener(this);
@@ -82,6 +86,10 @@ class SynthMenuBarUI extends BasicMenuBarUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(menuBar, ENABLED);
 
@@ -90,11 +98,19 @@ class SynthMenuBarUI extends BasicMenuBarUI implements PropertyChangeListener,
         style = null;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
         menuBar.removePropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -104,14 +120,14 @@ class SynthMenuBarUI extends BasicMenuBarUI implements PropertyChangeListener,
                     SynthLookAndFeel.getRegion(c), style, state);
     }
 
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
-    }
-
     private int getComponentState(JComponent c) {
         return SynthLookAndFeel.getComponentState(c);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -122,6 +138,10 @@ class SynthMenuBarUI extends BasicMenuBarUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -129,14 +149,28 @@ class SynthMenuBarUI extends BasicMenuBarUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * Paints the specified component. This implementation does nothing.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintMenuBarBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle((JMenuBar)e.getSource());

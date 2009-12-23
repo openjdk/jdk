@@ -164,10 +164,10 @@ fi
 if [ -n "${STANDALONE}" ] ; then 
    #if running standalone, compile the support files
    ${TESTJAVA}/bin/javac -d ${TESTCLASSES} \
-            -classpath "$TESTJAVA/lib/tools.jar${PATHSEP}." \
+            -classpath "$TESTJAVA/lib/tools.jar${PATHSEP}${TESTSRC}" \
             TestScaffold.java VMConnection.java TargetListener.java TargetAdapter.java
    ${TESTJAVA}/bin/javac -d ${TESTCLASSES} \
-            -classpath "$TESTJAVA/lib/tools.jar${PATHSEP}." -g \
+            -classpath "$TESTJAVA/lib/tools.jar${PATHSEP}${TESTSRC}" -g \
             FetchLocals.java DataModelTest.java
 fi
 

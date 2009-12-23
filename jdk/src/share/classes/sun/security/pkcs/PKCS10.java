@@ -44,7 +44,6 @@ import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
 import sun.security.x509.X500Name;
-import sun.security.x509.X500Signer;
 
 /**
  * A PKCS #10 certificate request is created and sent to a Certificate
@@ -183,13 +182,13 @@ public class PKCS10 {
      * Create the signed certificate request.  This will later be
      * retrieved in either string or binary format.
      *
-     * @param requester identifies the signer (by X.500 name)
-     *          and provides the private key used to sign.
+     * @param subject identifies the signer (by X.500 name).
+     * @param signature private key and signing algorithm to use.
      * @exception IOException on errors.
      * @exception CertificateException on certificate handling errors.
      * @exception SignatureException on signature handling errors.
      */
-    public void encodeAndSign(X500Signer requester)
+    public void encodeAndSign(X500Name subject, Signature signature)
     throws CertificateException, IOException, SignatureException {
         DerOutputStream out, scratch;
         byte[]          certificateRequestInfo;
@@ -198,7 +197,7 @@ public class PKCS10 {
         if (encoded != null)
             throw new SignatureException("request is already signed");
 
-        subject = requester.getSigner();
+        this.subject = subject;
 
         /*
          * Encode cert request info, wrap in a sequence for signing
@@ -217,14 +216,20 @@ public class PKCS10 {
         /*
          * Sign it ...
          */
-        requester.update(certificateRequestInfo, 0,
+        signature.update(certificateRequestInfo, 0,
                 certificateRequestInfo.length);
-        sig = requester.sign();
+        sig = signature.sign();
 
         /*
          * Build guts of SIGNED macro
          */
-        requester.getAlgorithmId().encode(scratch);     // sig algorithm
+        AlgorithmId algId = null;
+        try {
+            algId = AlgorithmId.getAlgorithmId(signature.getAlgorithm());
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new SignatureException(nsae);
+        }
+        algId.encode(scratch);     // sig algorithm
         scratch.putBitString(sig);                      // sig
 
         /*

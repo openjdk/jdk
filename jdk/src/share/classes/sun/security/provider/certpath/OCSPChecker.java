@@ -335,10 +335,13 @@ class OCSPChecker extends PKIXCertPathChecker {
             response = OCSP.check(Collections.singletonList(certId), uri,
                 responderCert, pkixParams.getDate());
         } catch (Exception e) {
-            // Wrap all exceptions in CertPathValidatorException so that
-            // we can fallback to CRLs, if enabled.
-            throw new CertPathValidatorException
-                ("Unable to send OCSP request", e);
+            if (e instanceof CertPathValidatorException) {
+                throw (CertPathValidatorException) e;
+            } else {
+                // Wrap exceptions in CertPathValidatorException so that
+                // we can fallback to CRLs, if enabled.
+                throw new CertPathValidatorException(e);
+            }
         }
 
         RevocationStatus rs = (RevocationStatus) response.getSingleResponse(certId);

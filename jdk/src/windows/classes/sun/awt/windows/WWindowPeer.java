@@ -199,7 +199,17 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     }
 
     native void createAwtWindow(WComponentPeer parent);
+
+    private volatile Window.Type windowType = Window.Type.NORMAL;
+
+    // This method must be called for Window, Dialog, and Frame before creating
+    // the hwnd
+    void preCreate(WComponentPeer parent) {
+        windowType = ((Window)target).getType();
+    }
+
     void create(WComponentPeer parent) {
+        preCreate(parent);
         createAwtWindow(parent);
     }
 

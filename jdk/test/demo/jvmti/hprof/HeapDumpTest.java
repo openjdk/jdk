@@ -26,7 +26,7 @@
  * @bug 5012882 6299047
  * @summary Test jvmti hprof
  *
- * @compile -source 1.5 -g:source HelloWorld.java ../DemoRun.java
+ * @compile -g:source HelloWorld.java ../DemoRun.java
  * @build HeapDumpTest
  * @run main HeapDumpTest HelloWorld
  */

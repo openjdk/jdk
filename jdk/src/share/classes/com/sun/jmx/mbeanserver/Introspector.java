@@ -26,6 +26,7 @@
 package com.sun.jmx.mbeanserver;
 
 import java.lang.annotation.Annotation;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -33,8 +34,13 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 import javax.management.Descriptor;
 import javax.management.DescriptorKey;
@@ -506,11 +512,25 @@ public class Introspector {
             } else {
                 // Java Beans introspection
                 //
-                BeanInfo bi = java.beans.Introspector.getBeanInfo(complex.getClass());
-                PropertyDescriptor[] pds = bi.getPropertyDescriptors();
-                for (PropertyDescriptor pd : pds)
-                    if (pd.getName().equals(element))
-                        return pd.getReadMethod().invoke(complex);
+                Class<?> clazz = complex.getClass();
+                Method readMethod = null;
+                if (BeansHelper.isAvailable()) {
+                    Object bi = BeansHelper.getBeanInfo(clazz);
+                    Object[] pds = BeansHelper.getPropertyDescriptors(bi);
+                    for (Object pd: pds) {
+                        if (BeansHelper.getPropertyName(pd).equals(element)) {
+                            readMethod = BeansHelper.getReadMethod(pd);
+                            break;
+                        }
+                    }
+                } else {
+                    // Java Beans not available so use simple introspection
+                    // to locate method
+                    readMethod = SimpleIntrospector.getReadMethod(clazz, element);
+                }
+                if (readMethod != null)
+                    return readMethod.invoke(complex);
+
                 throw new AttributeNotFoundException(
                     "Could not find the getter method for the property " +
                     element + " using the Java Beans introspector");
@@ -522,6 +542,237 @@ public class Introspector {
         } catch (Exception e) {
             throw EnvHelp.initCause(
                 new AttributeNotFoundException(e.getMessage()), e);
+        }
+    }
+
+    /**
+     * A simple introspector that uses reflection to analyze a class and
+     * identify its "getter" methods. This class is intended for use only when
+     * Java Beans is not present (which implies that there isn't explicit
+     * information about the bean available).
+     */
+    private static class SimpleIntrospector {
+        private SimpleIntrospector() { }
+
+        private static final String GET_METHOD_PREFIX = "get";
+        private static final String IS_METHOD_PREFIX = "is";
+
+        // cache to avoid repeated lookups
+        private static final Map<Class<?>,SoftReference<List<Method>>> cache =
+            Collections.synchronizedMap(
+                new WeakHashMap<Class<?>,SoftReference<List<Method>>> ());
+
+        /**
+         * Returns the list of methods cached for the given class, or {@code null}
+         * if not cached.
+         */
+        private static List<Method> getCachedMethods(Class<?> clazz) {
+            // return cached methods if possible
+            SoftReference<List<Method>> ref = cache.get(clazz);
+            if (ref != null) {
+                List<Method> cached = ref.get();
+                if (cached != null)
+                    return cached;
+            }
+            return null;
+        }
+
+        /**
+         * Returns {@code true} if the given method is a "getter" method (where
+         * "getter" method is a public method of the form getXXX or "boolean
+         * isXXX")
+         */
+        static boolean isReadMethod(Method method) {
+            // ignore static methods
+            int modifiers = method.getModifiers();
+            if (Modifier.isStatic(modifiers))
+                return false;
+
+            String name = method.getName();
+            Class<?>[] paramTypes = method.getParameterTypes();
+            int paramCount = paramTypes.length;
+
+            if (paramCount == 0 && name.length() > 2) {
+                // boolean isXXX()
+                if (name.startsWith(IS_METHOD_PREFIX))
+                    return (method.getReturnType() == boolean.class);
+                // getXXX()
+                if (name.length() > 3 && name.startsWith(GET_METHOD_PREFIX))
+                    return (method.getReturnType() != void.class);
+            }
+            return false;
+        }
+
+        /**
+         * Returns the list of "getter" methods for the given class. The list
+         * is ordered so that isXXX methods appear before getXXX methods - this
+         * is for compatability with the JavaBeans Introspector.
+         */
+        static List<Method> getReadMethods(Class<?> clazz) {
+            // return cached result if available
+            List<Method> cachedResult = getCachedMethods(clazz);
+            if (cachedResult != null)
+                return cachedResult;
+
+            // get list of public methods, filtering out methods that have
+            // been overridden to return a more specific type.
+            List<Method> methods =
+                StandardMBeanIntrospector.getInstance().getMethods(clazz);
+            methods = MBeanAnalyzer.eliminateCovariantMethods(methods);
+
+            // filter out the non-getter methods
+            List<Method> result = new LinkedList<Method>();
+            for (Method m: methods) {
+                if (isReadMethod(m)) {
+                    // favor isXXX over getXXX
+                    if (m.getName().startsWith(IS_METHOD_PREFIX)) {
+                        result.add(0, m);
+                    } else {
+                        result.add(m);
+                    }
+                }
+            }
+
+            // add result to cache
+            cache.put(clazz, new SoftReference<List<Method>>(result));
+
+            return result;
+        }
+
+        /**
+         * Returns the "getter" to read the given property from the given class or
+         * {@code null} if no method is found.
+         */
+        static Method getReadMethod(Class<?> clazz, String property) {
+            // first character in uppercase (compatability with JavaBeans)
+            property = property.substring(0, 1).toUpperCase(Locale.ENGLISH) +
+                property.substring(1);
+            String getMethod = GET_METHOD_PREFIX + property;
+            String isMethod = IS_METHOD_PREFIX + property;
+            for (Method m: getReadMethods(clazz)) {
+                String name = m.getName();
+                if (name.equals(isMethod) || name.equals(getMethod)) {
+                    return m;
+                }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * A class that provides access to the JavaBeans Introspector and
+     * PropertyDescriptors without creating a static dependency on java.beans.
+     */
+    private static class BeansHelper {
+        private static final Class<?> introspectorClass =
+            getClass("java.beans.Introspector");
+        private static final Class<?> beanInfoClass =
+            (introspectorClass == null) ? null : getClass("java.beans.BeanInfo");
+        private static final Class<?> getPropertyDescriptorClass =
+            (beanInfoClass == null) ? null : getClass("java.beans.PropertyDescriptor");
+
+        private static final Method getBeanInfo =
+            getMethod(introspectorClass, "getBeanInfo", Class.class);
+        private static final Method getPropertyDescriptors =
+            getMethod(beanInfoClass, "getPropertyDescriptors");
+        private static final Method getPropertyName =
+            getMethod(getPropertyDescriptorClass, "getName");
+        private static final Method getReadMethod =
+            getMethod(getPropertyDescriptorClass, "getReadMethod");
+
+        private static Class<?> getClass(String name) {
+            try {
+                return Class.forName(name, true, null);
+            } catch (ClassNotFoundException e) {
+                return null;
+            }
+        }
+        private static Method getMethod(Class<?> clazz,
+                                        String name,
+                                        Class<?>... paramTypes)
+        {
+            if (clazz != null) {
+                try {
+                    return clazz.getMethod(name, paramTypes);
+                } catch (NoSuchMethodException e) {
+                    throw new AssertionError(e);
+                }
+            } else {
+                return null;
+            }
+        }
+
+        private BeansHelper() { }
+
+        /**
+         * Returns {@code true} if java.beans is available.
+         */
+        static boolean isAvailable() {
+            return introspectorClass != null;
+        }
+
+        /**
+         * Invokes java.beans.Introspector.getBeanInfo(Class)
+         */
+        static Object getBeanInfo(Class<?> clazz) throws Exception {
+            try {
+                return getBeanInfo.invoke(null, clazz);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof Exception)
+                    throw (Exception)cause;
+                throw new AssertionError(e);
+            } catch (IllegalAccessException iae) {
+                throw new AssertionError(iae);
+            }
+        }
+
+        /**
+         * Invokes java.beans.BeanInfo.getPropertyDescriptors()
+         */
+        static Object[] getPropertyDescriptors(Object bi) {
+            try {
+                return (Object[])getPropertyDescriptors.invoke(bi);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException)
+                    throw (RuntimeException)cause;
+                throw new AssertionError(e);
+            } catch (IllegalAccessException iae) {
+                throw new AssertionError(iae);
+            }
+        }
+
+        /**
+         * Invokes java.beans.PropertyDescriptor.getName()
+         */
+        static String getPropertyName(Object pd) {
+            try {
+                return (String)getPropertyName.invoke(pd);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException)
+                    throw (RuntimeException)cause;
+                throw new AssertionError(e);
+            } catch (IllegalAccessException iae) {
+                throw new AssertionError(iae);
+            }
+        }
+
+        /**
+         * Invokes java.beans.PropertyDescriptor.getReadMethod()
+         */
+        static Method getReadMethod(Object pd) {
+            try {
+                return (Method)getReadMethod.invoke(pd);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof RuntimeException)
+                    throw (RuntimeException)cause;
+                throw new AssertionError(e);
+            } catch (IllegalAccessException iae) {
+                throw new AssertionError(iae);
+            }
         }
     }
 }

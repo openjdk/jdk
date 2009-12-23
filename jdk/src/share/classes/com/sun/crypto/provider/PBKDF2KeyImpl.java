@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,19 @@
 
 package com.sun.crypto.provider;
 
-import java.io.*;
+import java.io.ObjectStreamException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.security.KeyRep;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
  * This class represents a PBE key derived using PBKDF2 defined
@@ -123,7 +121,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
         this.key = deriveKey(prf, passwdBytes, salt, iterCount, keyLength);
     }
 
-    private static byte[] deriveKey(Mac prf, byte[] password, byte[] salt,
+    private static byte[] deriveKey(final Mac prf, final byte[] password, byte[] salt,
                                     int iterCount, int keyLengthInBit) {
         int keyLength = keyLengthInBit/8;
         byte[] key = new byte[keyLength];
@@ -133,7 +131,34 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             int intR = keyLength - (intL - 1)*hlen; // residue
             byte[] ui = new byte[hlen];
             byte[] ti = new byte[hlen];
-            SecretKey macKey = new SecretKeySpec(password, prf.getAlgorithm());
+            // SecretKeySpec cannot be used, since password can be empty here.
+            SecretKey macKey = new SecretKey() {
+                @Override
+                public String getAlgorithm() {
+                    return prf.getAlgorithm();
+                }
+                @Override
+                public String getFormat() {
+                    return "RAW";
+                }
+                @Override
+                public byte[] getEncoded() {
+                    return password;
+                }
+                @Override
+                public int hashCode() {
+                    return Arrays.hashCode(password) * 41 +
+                            prf.getAlgorithm().toLowerCase().hashCode();
+                }
+                @Override
+                public boolean equals(Object obj) {
+                    if (this == obj) return true;
+                    if (this.getClass() != obj.getClass()) return false;
+                    SecretKey sk = (SecretKey)obj;
+                    return prf.getAlgorithm().equalsIgnoreCase(sk.getAlgorithm()) &&
+                            Arrays.equals(password, sk.getEncoded());
+                }
+            };
             prf.init(macKey);
 
             byte[] ibytes = new byte[4];
@@ -230,7 +255,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
      * @throws ObjectStreamException if a new object representing
      * this PBE key could not be created
      */
-    private Object writeReplace() throws java.io.ObjectStreamException {
+    private Object writeReplace() throws ObjectStreamException {
             return new KeyRep(KeyRep.Type.SECRET, getAlgorithm(),
                               getFormat(), getEncoded());
     }
