@@ -47,7 +47,7 @@ cp ${TESTSRC}/Assert.java .
 cp -R ${TESTSRC}/package1 .
 cp -R ${TESTSRC}/package2 .
 
-${TESTJAVA}/bin/javac -source 1.4 Assert.java 
+${TESTJAVA}/bin/javac Assert.java 
 
 ${TESTJAVA}/bin/java Assert
 

@@ -26,10 +26,10 @@
  * @summary Verify that enum classes present in a serialization stream cannot
  *          be resolved by the receiver to non-enum classes, and vice-versa.
  *
- * @compile -source 1.5 Write.java
+ * @compile Write.java
  * @run main Write
  * @clean Write
- * @compile -source 1.5 Read.java
+ * @compile Read.java
  * @run main Read
  * @clean Read
  */

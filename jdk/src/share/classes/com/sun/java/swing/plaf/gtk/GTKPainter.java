@@ -24,7 +24,6 @@
  */
 package com.sun.java.swing.plaf.gtk;
 
-import sun.swing.plaf.synth.SynthUI;
 import sun.awt.UNIXToolkit;
 
 import javax.swing.plaf.synth.*;

@@ -63,6 +63,14 @@ import sun.security.util.DerValue;
  * settings after calling a KDC method, call <code>Config.refresh()</code> to
  * make sure your changes are reflected in the <code>Config</code> object.
  * </ol>
+ * System properties recognized:
+ * <ul>
+ * <li>test.kdc.save.ccache
+ * </ul>
+ * Support policies:
+ * <ul>
+ * <li>ok-as-delegate
+ * </ul>
  * Issues and TODOs:
  * <ol>
  * <li> Generates krb5.conf to be used on another machine, currently the kdc is
@@ -151,7 +159,7 @@ public class KDC {
      * A standalone KDC server.
      */
     public static void main(String[] args) throws Exception {
-        KDC kdc = create("RABBIT.HOLE", "kdc.rabbit,hole", 0, false);
+        KDC kdc = create("RABBIT.HOLE", "kdc.rabbit.hole", 0, false);
         kdc.addPrincipal("dummy", "bogus".toCharArray());
         kdc.addPrincipal("foo", "bar".toCharArray());
         kdc.addPrincipalRandKey("krbtgt/RABBIT.HOLE");
@@ -426,14 +434,17 @@ public class KDC {
      * @throws sun.security.krb5.KrbException when the principal is not inside
      *         the database.
      */
-    private char[] getPassword(PrincipalName p) throws KrbException {
+    private char[] getPassword(PrincipalName p, boolean server)
+            throws KrbException {
         String pn = p.toString();
         if (p.getRealmString() == null) {
             pn = pn + "@" + getRealm();
         }
         char[] pass = passwords.get(pn);
         if (pass == null) {
-            throw new KrbException(Krb5.KDC_ERR_C_PRINCIPAL_UNKNOWN);
+            throw new KrbException(server?
+                Krb5.KDC_ERR_S_PRINCIPAL_UNKNOWN:
+                Krb5.KDC_ERR_C_PRINCIPAL_UNKNOWN);
         }
         return pass;
     }
@@ -457,10 +468,12 @@ public class KDC {
      * Returns the key for a given principal of the given encryption type
      * @param p the principal
      * @param etype the encryption type
+     * @param server looking for a server principal?
      * @return the key
      * @throws sun.security.krb5.KrbException for unknown/unsupported etype
      */
-    private EncryptionKey keyForUser(PrincipalName p, int etype) throws KrbException {
+    private EncryptionKey keyForUser(PrincipalName p, int etype, boolean server)
+            throws KrbException {
         try {
             // Do not call EncryptionKey.acquireSecretKeys(), otherwise
             // the krb5.conf config file would be loaded.
@@ -469,21 +482,70 @@ public class KDC {
             Integer kvno = null;
             // For service whose password ending with a number, use it as kvno
             if (p.toString().indexOf('/') >= 0) {
-                char[] pass = getPassword(p);
+                char[] pass = getPassword(p, server);
                 if (Character.isDigit(pass[pass.length-1])) {
                     kvno = pass[pass.length-1] - '0';
                 }
             }
             return new EncryptionKey((byte[]) stringToKey.invoke(
-                    null, getPassword(p), getSalt(p), null, etype),
+                    null, getPassword(p, server), getSalt(p), null, etype),
                     etype, kvno);
         } catch (InvocationTargetException ex) {
             KrbException ke = (KrbException)ex.getCause();
+            throw ke;
+        } catch (KrbException ke) {
             throw ke;
         } catch (Exception e) {
             throw new RuntimeException(e);  // should not happen
         }
     }
+
+    private Map<String,String> policies = new HashMap<String,String>();
+
+    public void setPolicy(String rule, String value) {
+        if (value == null) {
+            policies.remove(rule);
+        } else {
+            policies.put(rule, value);
+        }
+    }
+    /**
+     * If the provided client/server pair matches a rule
+     *
+     * A system property named test.kdc.policy.RULE will be consulted.
+     * If it's unset, returns false. If its value is "", any pair is
+     * matched. Otherwise, it should contains the server name matched.
+     *
+     * TODO: client name is not used currently.
+     *
+     * @param c client name
+     * @param s server name
+     * @param rule rule name
+     * @return if a match is found
+     */
+    private boolean configMatch(String c, String s, String rule) {
+        String policy = policies.get(rule);
+        boolean result = false;
+        if (policy == null) {
+            result = false;
+        } else if (policy.length() == 0) {
+            result = true;
+        } else {
+            String[] names = policy.split("\\s+");
+            for (String name: names) {
+                if (name.equals(s)) {
+                    result = true;
+                    break;
+                }
+            }
+        }
+        if (result) {
+            System.out.printf(">>>> Policy match result (%s vs %s on %s) %b\n",
+                    c, s, rule, result);
+        }
+        return result;
+    }
+
 
     /**
      * Processes an incoming request and generates a response.
@@ -530,7 +592,7 @@ public class KDC {
                         tkt = apReq.ticket;
                         etype = tkt.encPart.getEType();
                         tkt.sname.setRealm(tkt.realm);
-                        EncryptionKey kkey = keyForUser(tkt.sname, etype);
+                        EncryptionKey kkey = keyForUser(tkt.sname, etype, true);
                         byte[] bb = tkt.encPart.decrypt(kkey, KeyUsage.KU_TICKET);
                         DerInputStream derIn = new DerInputStream(bb);
                         DerValue der = derIn.getDerValue();
@@ -541,7 +603,7 @@ public class KDC {
                     throw new KrbException(Krb5.KDC_ERR_PADATA_TYPE_NOSUPP);
                 }
             }
-            EncryptionKey skey = keyForUser(body.sname, etype);
+            EncryptionKey skey = keyForUser(body.sname, etype, true);
             if (skey == null) {
                 throw new KrbException(Krb5.KDC_ERR_SUMTYPE_NOSUPP); // TODO
             }
@@ -580,6 +642,10 @@ public class KDC {
             }
             if (body.kdcOptions.get(KDCOptions.ALLOW_POSTDATE)) {
                 bFlags[Krb5.TKT_OPTS_MAY_POSTDATE] = true;
+            }
+
+            if (configMatch("", body.sname.getNameString(), "ok-as-delegate")) {
+                bFlags[Krb5.TKT_OPTS_DELEGATE] = true;
             }
             bFlags[Krb5.TKT_OPTS_INITIAL] = true;
 
@@ -671,8 +737,8 @@ public class KDC {
             eTypes = (int[])f.get(body);
             int eType = eTypes[0];
 
-            EncryptionKey ckey = keyForUser(body.cname, eType);
-            EncryptionKey skey = keyForUser(body.sname, eType);
+            EncryptionKey ckey = keyForUser(body.cname, eType, false);
+            EncryptionKey skey = keyForUser(body.sname, eType, true);
             if (ckey == null) {
                 throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
             }

@@ -28,7 +28,7 @@
  * This tests launches a debuggee using a custom LaunchingConnector.
  *
  * @build DebugUsingCustomConnector SimpleLaunchingConnector Foo NullTransportService
- * @run main DebugUsingCustomConnector
+ * @run main/othervm DebugUsingCustomConnector
  */
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;

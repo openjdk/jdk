@@ -42,39 +42,53 @@ import javax.swing.JToolBar;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicToolBarUI;
 import sun.swing.plaf.synth.SynthIcon;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
- * A Synth L&F implementation of ToolBarUI.  This implementation
- * is a "combined" view/controller.
- * <p>
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JToolBar}.
  *
+ * @since 1.7
  */
-class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
-           SynthUI {
-    protected Icon handleIcon = null;
-    protected Rectangle contentRect = new Rectangle();
+public class SynthToolBarUI extends BasicToolBarUI
+                            implements PropertyChangeListener, SynthUI {
+    private Icon handleIcon = null;
+    private Rectangle contentRect = new Rectangle();
 
     private SynthStyle style;
     private SynthStyle contentStyle;
     private SynthStyle dragWindowStyle;
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent c) {
         return new SynthToolBarUI();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void installDefaults() {
         toolBar.setLayout(createLayout());
         updateStyle(toolBar);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void installListeners() {
         super.installListeners();
         toolBar.addPropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
@@ -106,6 +120,9 @@ class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(toolBar, ENABLED);
@@ -131,18 +148,33 @@ class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
         toolBar.setLayout(null);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void installComponents() {}
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void uninstallComponents() {}
 
+    /**
+     * Creates a {@code LayoutManager} to use with the toolbar.
+     *
+     * @return a {@code LayoutManager} instance
+     */
     protected LayoutManager createLayout() {
         return new SynthToolBarLayoutManager();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
-        return getContext(c, getComponentState(c));
+        return getContext(c, SynthLookAndFeel.getComponentState(c));
     }
 
     private SynthContext getContext(JComponent c, int state) {
@@ -161,18 +193,13 @@ class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
                                        style, state);
     }
 
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
-    }
-
-    private int getComponentState(JComponent c) {
-        return SynthLookAndFeel.getComponentState(c);
-    }
-
     private int getComponentState(JComponent c, Region region) {
         return SynthLookAndFeel.getComponentState(c);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
@@ -185,6 +212,9 @@ class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
@@ -193,6 +223,10 @@ class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintToolBarBorder(context, g, x, y, w, h,
@@ -200,17 +234,32 @@ class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
     }
 
     // Overloaded to do nothing so we can share listeners.
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void setBorderToNonRollover(Component c) {}
 
     // Overloaded to do nothing so we can share listeners.
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void setBorderToRollover(Component c) {}
 
     // Overloaded to do nothing so we can share listeners.
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void setBorderToNormal(Component c) {}
 
+    /**
+     * Paints the toolbar.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
         if (handleIcon != null && toolBar.isFloatable()) {
             int startX = toolBar.getComponentOrientation().isLeftToRight() ?
@@ -227,7 +276,14 @@ class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
         subcontext.dispose();
     }
 
-    public void paintContent(SynthContext context, Graphics g,
+    /**
+     * Paints the toolbar content.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     * @param bounds bounding box for the toolbar
+     */
+    protected void paintContent(SynthContext context, Graphics g,
             Rectangle bounds) {
         SynthLookAndFeel.updateSubregion(context, g, bounds);
         context.getPainter().paintToolBarContentBackground(context, g,
@@ -238,6 +294,9 @@ class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
                              toolBar.getOrientation());
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void paintDragWindow(Graphics g) {
         int w = dragWindow.getWidth();
@@ -258,6 +317,10 @@ class SynthToolBarUI extends BasicToolBarUI implements PropertyChangeListener,
     // PropertyChangeListener
     //
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle((JToolBar)e.getSource());

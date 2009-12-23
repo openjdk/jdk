@@ -1337,7 +1337,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 return (TableCellRenderer)renderer;
             }
             else {
-                return getDefaultRenderer(columnClass.getSuperclass());
+                Class c = columnClass.getSuperclass();
+                if (c == null && columnClass != Object.class) {
+                    c = Object.class;
+                }
+                return getDefaultRenderer(c);
             }
         }
     }

@@ -268,7 +268,7 @@ public class BasicSpinnerUI extends SpinnerUI
     }
 
     /**
-     * Create a <code>LayoutManager</code> that manages the <code>editor</code>,
+     * Creates a <code>LayoutManager</code> that manages the <code>editor</code>,
      * <code>nextButton</code>, and <code>previousButton</code>
      * children of the JSpinner.  These three children must be
      * added with a constraint that identifies their role:
@@ -286,7 +286,7 @@ public class BasicSpinnerUI extends SpinnerUI
 
 
     /**
-     * Create a <code>PropertyChangeListener</code> that can be
+     * Creates a <code>PropertyChangeListener</code> that can be
      * added to the JSpinner itself.  Typically, this listener
      * will call replaceEditor when the "editor" property changes,
      * since it's the <code>SpinnerUI's</code> responsibility to
@@ -302,16 +302,13 @@ public class BasicSpinnerUI extends SpinnerUI
 
 
     /**
-     * Create a component that will replace the spinner models value
-     * with the object returned by <code>spinner.getPreviousValue</code>.
-     * By default the <code>previousButton</code> is a JButton. This
-     * method invokes <code>installPreviousButtonListeners</code> to
-     * install the necessary listeners to update the <code>JSpinner</code>'s
-     * model in response to a user gesture. If a previousButton isn't needed
-     * (in a subclass) then override this method to return null.
+     * Creates a decrement button, i.e. component that replaces the spinner
+     * value with the object returned by <code>spinner.getPreviousValue</code>.
+     * By default the <code>previousButton</code> is a {@code JButton}. If the
+     * decrement button is not needed this method should return {@code null}.
      *
-     * @return a component that will replace the spinners model with the
-     *     next value in the sequence, or null
+     * @return a component that will replace the spinner's value with the
+     *     previous value in the sequence, or {@code null}
      * @see #installUI
      * @see #createNextButton
      * @see #installPreviousButtonListeners
@@ -325,15 +322,13 @@ public class BasicSpinnerUI extends SpinnerUI
 
 
     /**
-     * Create a component that will replace the spinner models value
-     * with the object returned by <code>spinner.getNextValue</code>.
-     * By default the <code>nextButton</code> is a JButton
-     * who's <code>ActionListener</code> updates it's <code>JSpinner</code>
-     * ancestors model.  If a nextButton isn't needed (in a subclass)
-     * then override this method to return null.
+     * Creates an increment button, i.e. component that replaces the spinner
+     * value with the object returned by <code>spinner.getNextValue</code>.
+     * By default the <code>nextButton</code> is a {@code JButton}. If the
+     * increment button is not needed this method should return {@code null}.
      *
-     * @return a component that will replace the spinners model with the
-     *     next value in the sequence, or null
+     * @return a component that will replace the spinner's value with the
+     *     next value in the sequence, or {@code null}
      * @see #installUI
      * @see #createPreviousButton
      * @see #installNextButtonListeners

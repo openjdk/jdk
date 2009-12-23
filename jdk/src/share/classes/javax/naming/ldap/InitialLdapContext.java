@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,8 @@ public class InitialLdapContext extends InitialDirContext implements LdapContext
      *
      * <p> This constructor will not modify its parameters or
      * save references to them, but may save a clone or copy.
+     * Caller should not modify mutable keys and values in
+     * <tt>environment</tt> after it has been passed to the constructor.
      *
      * <p> <tt>connCtls</tt> is used as the underlying context instance's
      * connection request controls.  See the class description

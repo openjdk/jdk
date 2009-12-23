@@ -871,7 +871,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 return comp.canBeFocusOwner();
             }
 
-            public boolean isVisible_NoClientCode(Component comp) {
+            public boolean isVisible(Component comp) {
                 return comp.isVisible_NoClientCode();
             }
             public void setRequestFocusController
@@ -884,6 +884,71 @@ public abstract class Component implements ImageObserver, MenuContainer,
             }
             public void setAppContext(Component comp, AppContext appContext) {
                  comp.appContext = appContext;
+            }
+            public Container getParent(Component comp) {
+                return comp.getParent_NoClientCode();
+            }
+            public void setParent(Component comp, Container parent) {
+                comp.parent = parent;
+            }
+            public void setSize(Component comp, int width, int height) {
+                comp.width = width;
+                comp.height = height;
+            }
+            public Point getLocation(Component comp) {
+                return comp.location_NoClientCode();
+            }
+            public void setLocation(Component comp, int x, int y) {
+                comp.x = x;
+                comp.y = y;
+            }
+            public boolean isEnabled(Component comp) {
+                return comp.isEnabledImpl();
+            }
+            public boolean isDisplayable(Component comp) {
+                return comp.peer != null;
+            }
+            public Cursor getCursor(Component comp) {
+                return comp.getCursor_NoClientCode();
+            }
+            public ComponentPeer getPeer(Component comp) {
+                return comp.peer;
+            }
+            public void setPeer(Component comp, ComponentPeer peer) {
+                comp.peer = peer;
+            }
+            public boolean isLightweight(Component comp) {
+                return (comp.peer instanceof LightweightPeer);
+            }
+            public boolean getIgnoreRepaint(Component comp) {
+                return comp.ignoreRepaint;
+            }
+            public int getWidth(Component comp) {
+                return comp.width;
+            }
+            public int getHeight(Component comp) {
+                return comp.height;
+            }
+            public int getX(Component comp) {
+                return comp.x;
+            }
+            public int getY(Component comp) {
+                return comp.y;
+            }
+            public Color getForeground(Component comp) {
+                return comp.foreground;
+            }
+            public Color getBackground(Component comp) {
+                return comp.background;
+            }
+            public void setBackground(Component comp, Color background) {
+                comp.background = background;
+            }
+            public Font getFont(Component comp) {
+                return comp.getFont_NoClientCode();
+            }
+            public void processEvent(Component comp, AWTEvent e) {
+                comp.processEvent(e);
             }
         });
     }
@@ -8021,7 +8086,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     Container getNativeContainer() {
         Container p = parent;
         while (p != null && p.peer instanceof LightweightPeer) {
-            p = p.getParent();
+            p = p.getParent_NoClientCode();
         }
         return p;
     }

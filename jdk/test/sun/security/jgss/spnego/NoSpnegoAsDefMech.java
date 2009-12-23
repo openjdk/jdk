@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,23 @@
  * have any questions.
  */
 
-
 /*
- *
- *
- * Used by SolarisRunpath.sh to help test if the launcher fully
- * respects Solaris LD_LIBRARY_PATH semantics.  The ./lib directory is
- * structured so that the results of the dynamically linked number
- * method varies depending on the value the data model dependent
- * LD_LIBRARY_PATH variable.
+ * @test
+ * @bug 6770883
+ * @summary Infinite loop if SPNEGO specified as sun.security.jgss.mechanism
  */
 
+import org.ietf.jgss.*;
+import sun.security.jgss.*;
 
+public class NoSpnegoAsDefMech {
 
-class libraryCaller {
-    static {
-        System.loadLibrary("library");
-    }
-    static native int number();
-
-    public static void main(String argv[]) {
-        System.out.println(number());
+    public static void main(String[] argv) throws Exception {
+        System.setProperty("sun.security.jgss.mechanism", GSSUtil.GSS_SPNEGO_MECH_OID.toString());
+        try {
+            GSSManager.getInstance().createName("service@host", GSSName.NT_HOSTBASED_SERVICE, new Oid("1.3.6.1.5.5.2"));
+        } catch (GSSException e) {
+            // This is OK, for example, krb5.conf is missing or other problems
+        }
     }
 }
