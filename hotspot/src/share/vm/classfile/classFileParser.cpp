@@ -2511,23 +2511,12 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
       fac_ptr->nonstatic_byte_count -= 1;
       (*fields_ptr)->ushort_at_put(i + instanceKlass::signature_index_offset,
                                    word_sig_index);
-      if (wordSize == jintSize) {
-        fac_ptr->nonstatic_word_count += 1;
-      } else {
-        fac_ptr->nonstatic_double_count += 1;
-      }
+      fac_ptr->nonstatic_word_count += 1;
 
-      FieldAllocationType atype = (FieldAllocationType) (*fields_ptr)->ushort_at(i+4);
+      FieldAllocationType atype = (FieldAllocationType) (*fields_ptr)->ushort_at(i + instanceKlass::low_offset);
       assert(atype == NONSTATIC_BYTE, "");
       FieldAllocationType new_atype = NONSTATIC_WORD;
-      if (wordSize > jintSize) {
-        if (Universe::field_type_should_be_aligned(T_LONG)) {
-          atype = NONSTATIC_ALIGNED_DOUBLE;
-        } else {
-          atype = NONSTATIC_DOUBLE;
-        }
-      }
-      (*fields_ptr)->ushort_at_put(i+4, new_atype);
+      (*fields_ptr)->ushort_at_put(i + instanceKlass::low_offset, new_atype);
 
       found_vmentry = true;
       break;
@@ -3085,7 +3074,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
     int len = fields->length();
     for (int i = 0; i < len; i += instanceKlass::next_offset) {
       int real_offset;
-      FieldAllocationType atype = (FieldAllocationType) fields->ushort_at(i+4);
+      FieldAllocationType atype = (FieldAllocationType) fields->ushort_at(i + instanceKlass::low_offset);
       switch (atype) {
         case STATIC_OOP:
           real_offset = next_static_oop_offset;
@@ -3173,8 +3162,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(symbolHandle name,
         default:
           ShouldNotReachHere();
       }
-      fields->short_at_put(i+4, extract_low_short_from_int(real_offset) );
-      fields->short_at_put(i+5, extract_high_short_from_int(real_offset) );
+      fields->short_at_put(i + instanceKlass::low_offset,  extract_low_short_from_int(real_offset));
+      fields->short_at_put(i + instanceKlass::high_offset, extract_high_short_from_int(real_offset));
     }
 
     // Size of instances

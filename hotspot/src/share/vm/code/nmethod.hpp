@@ -252,7 +252,9 @@ class nmethod : public CodeBlob {
   void* operator new(size_t size, int nmethod_size);
 
   const char* reloc_string_for(u_char* begin, u_char* end);
-  void make_not_entrant_or_zombie(int state);
+  // Returns true if this thread changed the state of the nmethod or
+  // false if another thread performed the transition.
+  bool make_not_entrant_or_zombie(int state);
   void inc_decompile_count();
 
   // used to check that writes to nmFlags are done consistently.
@@ -375,10 +377,12 @@ class nmethod : public CodeBlob {
   bool  is_zombie() const                         { return flags.state == zombie; }
   bool  is_unloaded() const                       { return flags.state == unloaded;   }
 
-  // Make the nmethod non entrant. The nmethod will continue to be alive.
-  // It is used when an uncommon trap happens.
-  void  make_not_entrant()                        { make_not_entrant_or_zombie(not_entrant); }
-  void  make_zombie()                             { make_not_entrant_or_zombie(zombie); }
+  // Make the nmethod non entrant. The nmethod will continue to be
+  // alive.  It is used when an uncommon trap happens.  Returns true
+  // if this thread changed the state of the nmethod or false if
+  // another thread performed the transition.
+  bool  make_not_entrant()                        { return make_not_entrant_or_zombie(not_entrant); }
+  bool  make_zombie()                             { return make_not_entrant_or_zombie(zombie); }
 
   // used by jvmti to track if the unload event has been reported
   bool  unload_reported()                         { return _unload_reported; }
@@ -563,7 +567,7 @@ class nmethod : public CodeBlob {
   // Logging
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
-  void log_state_change(int state) const;
+  void log_state_change() const;
 
   // Prints a comment for one native instruction (reloc info, pc desc)
   void print_code_comment_on(outputStream* st, int column, address begin, address end);
