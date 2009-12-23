@@ -253,7 +253,6 @@ void ConcurrentMarkSweepGeneration::init_initiating_occupancy(intx io, intx tr) 
   }
 }
 
-
 void ConcurrentMarkSweepGeneration::ref_processor_init() {
   assert(collector() != NULL, "no collector");
   collector()->ref_processor_init();
@@ -341,6 +340,14 @@ CMSStats::CMSStats(ConcurrentMarkSweepGeneration* cms_gen, unsigned int alpha):
   _icms_duty_cycle = CMSIncrementalDutyCycle;
 }
 
+double CMSStats::cms_free_adjustment_factor(size_t free) const {
+  // TBD: CR 6909490
+  return 1.0;
+}
+
+void CMSStats::adjust_cms_free_adjustment_factor(bool fail, size_t free) {
+}
+
 // If promotion failure handling is on use
 // the padded average size of the promotion for each
 // young generation collection.
@@ -361,7 +368,11 @@ double CMSStats::time_until_cms_gen_full() const {
 
     // Adjust by the safety factor.
     double cms_free_dbl = (double)cms_free;
-    cms_free_dbl = cms_free_dbl * (100.0 - CMSIncrementalSafetyFactor) / 100.0;
+    double cms_adjustment = (100.0 - CMSIncrementalSafetyFactor)/100.0;
+    // Apply a further correction factor which tries to adjust
+    // for recent occurance of concurrent mode failures.
+    cms_adjustment = cms_adjustment * cms_free_adjustment_factor(cms_free);
+    cms_free_dbl = cms_free_dbl * cms_adjustment;
 
     if (PrintGCDetails && Verbose) {
       gclog_or_tty->print_cr("CMSStats::time_until_cms_gen_full: cms_free "
@@ -395,6 +406,8 @@ double CMSStats::time_until_cms_start() const {
   // late.
   double work = cms_duration() + gc0_period();
   double deadline = time_until_cms_gen_full();
+  // If a concurrent mode failure occurred recently, we want to be
+  // more conservative and halve our expected time_until_cms_gen_full()
   if (work > deadline) {
     if (Verbose && PrintGCDetails) {
       gclog_or_tty->print(
@@ -556,7 +569,8 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _should_unload_classes(false),
   _concurrent_cycles_since_last_unload(0),
   _roots_scanning_options(0),
-  _sweep_estimate(CMS_SweepWeight, CMS_SweepPadding)
+  _inter_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding),
+  _intra_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding)
 {
   if (ExplicitGCInvokesConcurrentAndUnloadsClasses) {
     ExplicitGCInvokesConcurrent = true;
@@ -773,7 +787,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   NOT_PRODUCT(_overflow_counter = CMSMarkStackOverflowInterval;)
   _gc_counters = new CollectorCounters("CMS", 1);
   _completed_initialization = true;
-  _sweep_timer.start();  // start of time
+  _inter_sweep_timer.start();  // start of time
 }
 
 const char* ConcurrentMarkSweepGeneration::name() const {
@@ -898,6 +912,14 @@ bool ConcurrentMarkSweepGeneration::promotion_attempt_is_safe(
     }
   }
   return result;
+}
+
+// At a promotion failure dump information on block layout in heap
+// (cms old generation).
+void ConcurrentMarkSweepGeneration::promotion_failure_occurred() {
+  if (CMSDumpAtPromotionFailure) {
+    cmsSpace()->dump_at_safepoint_with_locks(collector(), gclog_or_tty);
+  }
 }
 
 CompactibleSpace*
@@ -1368,12 +1390,7 @@ void
 ConcurrentMarkSweepGeneration::
 par_promote_alloc_done(int thread_num) {
   CMSParGCThreadState* ps = _par_gc_thread_states[thread_num];
-  ps->lab.retire();
-#if CFLS_LAB_REFILL_STATS
-  if (thread_num == 0) {
-    _cmsSpace->print_par_alloc_stats();
-  }
-#endif
+  ps->lab.retire(thread_num);
 }
 
 void
@@ -1974,11 +1991,14 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   // We must adjust the allocation statistics being maintained
   // in the free list space. We do so by reading and clearing
   // the sweep timer and updating the block flux rate estimates below.
-  assert(_sweep_timer.is_active(), "We should never see the timer inactive");
-  _sweep_timer.stop();
-  // Note that we do not use this sample to update the _sweep_estimate.
-  _cmsGen->cmsSpace()->beginSweepFLCensus((float)(_sweep_timer.seconds()),
-                                          _sweep_estimate.padded_average());
+  assert(!_intra_sweep_timer.is_active(), "_intra_sweep_timer should be inactive");
+  if (_inter_sweep_timer.is_active()) {
+    _inter_sweep_timer.stop();
+    // Note that we do not use this sample to update the _inter_sweep_estimate.
+    _cmsGen->cmsSpace()->beginSweepFLCensus((float)(_inter_sweep_timer.seconds()),
+                                            _inter_sweep_estimate.padded_average(),
+                                            _intra_sweep_estimate.padded_average());
+  }
 
   GenMarkSweep::invoke_at_safepoint(_cmsGen->level(),
     ref_processor(), clear_all_soft_refs);
@@ -2015,10 +2035,10 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   }
 
   // Adjust the per-size allocation stats for the next epoch.
-  _cmsGen->cmsSpace()->endSweepFLCensus(sweepCount() /* fake */);
-  // Restart the "sweep timer" for next epoch.
-  _sweep_timer.reset();
-  _sweep_timer.start();
+  _cmsGen->cmsSpace()->endSweepFLCensus(sweep_count() /* fake */);
+  // Restart the "inter sweep timer" for the next epoch.
+  _inter_sweep_timer.reset();
+  _inter_sweep_timer.start();
 
   // Sample collection pause time and reset for collection interval.
   if (UseAdaptiveSizePolicy) {
@@ -2676,7 +2696,7 @@ void ConcurrentMarkSweepGeneration::gc_epilogue(bool full) {
   // Also reset promotion tracking in par gc thread states.
   if (ParallelGCThreads > 0) {
     for (uint i = 0; i < ParallelGCThreads; i++) {
-      _par_gc_thread_states[i]->promo.stopTrackingPromotions();
+      _par_gc_thread_states[i]->promo.stopTrackingPromotions(i);
     }
   }
 }
@@ -2771,7 +2791,7 @@ class VerifyMarkedClosure: public BitMapClosure {
   bool do_bit(size_t offset) {
     HeapWord* addr = _marks->offsetToHeapWord(offset);
     if (!_marks->isMarked(addr)) {
-      oop(addr)->print();
+      oop(addr)->print_on(gclog_or_tty);
       gclog_or_tty->print_cr(" ("INTPTR_FORMAT" should have been marked)", addr);
       _failed = true;
     }
@@ -2820,7 +2840,7 @@ bool CMSCollector::verify_after_remark() {
   // Clear any marks from a previous round
   verification_mark_bm()->clear_all();
   assert(verification_mark_stack()->isEmpty(), "markStack should be empty");
-  assert(overflow_list_is_empty(), "overflow list should be empty");
+  verify_work_stacks_empty();
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   gch->ensure_parsability(false);  // fill TLABs, but no need to retire them
@@ -2893,8 +2913,8 @@ void CMSCollector::verify_after_remark_work_1() {
   verification_mark_bm()->iterate(&vcl);
   if (vcl.failed()) {
     gclog_or_tty->print("Verification failed");
-    Universe::heap()->print();
-    fatal(" ... aborting");
+    Universe::heap()->print_on(gclog_or_tty);
+    fatal("CMS: failed marking verification after remark");
   }
 }
 
@@ -3314,7 +3334,7 @@ bool ConcurrentMarkSweepGeneration::grow_by(size_t bytes) {
     Universe::heap()->barrier_set()->resize_covered_region(mr);
     // Hmmmm... why doesn't CFLS::set_end verify locking?
     // This is quite ugly; FIX ME XXX
-    _cmsSpace->assert_locked();
+    _cmsSpace->assert_locked(freelistLock());
     _cmsSpace->set_end((HeapWord*)_virtual_space.high());
 
     // update the space and generation capacity counters
@@ -5868,9 +5888,9 @@ void CMSCollector::sweep(bool asynch) {
   check_correct_thread_executing();
   verify_work_stacks_empty();
   verify_overflow_empty();
-  incrementSweepCount();
-  _sweep_timer.stop();
-  _sweep_estimate.sample(_sweep_timer.seconds());
+  increment_sweep_count();
+  _inter_sweep_timer.stop();
+  _inter_sweep_estimate.sample(_inter_sweep_timer.seconds());
   size_policy()->avg_cms_free_at_sweep()->sample(_cmsGen->free());
 
   // PermGen verification support: If perm gen sweeping is disabled in
@@ -5893,6 +5913,9 @@ void CMSCollector::sweep(bool asynch) {
     }
   }
 
+  assert(!_intra_sweep_timer.is_active(), "Should not be active");
+  _intra_sweep_timer.reset();
+  _intra_sweep_timer.start();
   if (asynch) {
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     CMSPhaseAccounting pa(this, "sweep", !PrintGCDetails);
@@ -5937,8 +5960,11 @@ void CMSCollector::sweep(bool asynch) {
   verify_work_stacks_empty();
   verify_overflow_empty();
 
-  _sweep_timer.reset();
-  _sweep_timer.start();
+  _intra_sweep_timer.stop();
+  _intra_sweep_estimate.sample(_intra_sweep_timer.seconds());
+
+  _inter_sweep_timer.reset();
+  _inter_sweep_timer.start();
 
   update_time_of_last_gc(os::javaTimeMillis());
 
@@ -5981,11 +6007,11 @@ void CMSCollector::sweep(bool asynch) {
 // FIX ME!!! Looks like this belongs in CFLSpace, with
 // CMSGen merely delegating to it.
 void ConcurrentMarkSweepGeneration::setNearLargestChunk() {
-  double nearLargestPercent = 0.999;
+  double nearLargestPercent = FLSLargestBlockCoalesceProximity;
   HeapWord*  minAddr        = _cmsSpace->bottom();
   HeapWord*  largestAddr    =
     (HeapWord*) _cmsSpace->dictionary()->findLargestDict();
-  if (largestAddr == 0) {
+  if (largestAddr == NULL) {
     // The dictionary appears to be empty.  In this case
     // try to coalesce at the end of the heap.
     largestAddr = _cmsSpace->end();
@@ -5993,6 +6019,13 @@ void ConcurrentMarkSweepGeneration::setNearLargestChunk() {
   size_t largestOffset     = pointer_delta(largestAddr, minAddr);
   size_t nearLargestOffset =
     (size_t)((double)largestOffset * nearLargestPercent) - MinChunkSize;
+  if (PrintFLSStatistics != 0) {
+    gclog_or_tty->print_cr(
+      "CMS: Large Block: " PTR_FORMAT ";"
+      " Proximity: " PTR_FORMAT " -> " PTR_FORMAT,
+      largestAddr,
+      _cmsSpace->nearLargestChunk(), minAddr + nearLargestOffset);
+  }
   _cmsSpace->set_nearLargestChunk(minAddr + nearLargestOffset);
 }
 
@@ -6072,9 +6105,11 @@ void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen,
   assert_lock_strong(gen->freelistLock());
   assert_lock_strong(bitMapLock());
 
-  assert(!_sweep_timer.is_active(), "Was switched off in an outer context");
-  gen->cmsSpace()->beginSweepFLCensus((float)(_sweep_timer.seconds()),
-                                      _sweep_estimate.padded_average());
+  assert(!_inter_sweep_timer.is_active(), "Was switched off in an outer context");
+  assert(_intra_sweep_timer.is_active(),  "Was switched on  in an outer context");
+  gen->cmsSpace()->beginSweepFLCensus((float)(_inter_sweep_timer.seconds()),
+                                      _inter_sweep_estimate.padded_average(),
+                                      _intra_sweep_estimate.padded_average());
   gen->setNearLargestChunk();
 
   {
@@ -6087,7 +6122,7 @@ void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen,
     // end-of-sweep-census below will be off by a little bit.
   }
   gen->cmsSpace()->sweep_completed();
-  gen->cmsSpace()->endSweepFLCensus(sweepCount());
+  gen->cmsSpace()->endSweepFLCensus(sweep_count());
   if (should_unload_classes()) {                // unloaded classes this cycle,
     _concurrent_cycles_since_last_unload = 0;   // ... reset count
   } else {                                      // did not unload classes,

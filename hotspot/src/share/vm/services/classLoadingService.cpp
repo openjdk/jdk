@@ -128,7 +128,7 @@ void ClassLoadingService::notify_class_unloaded(instanceKlass* k) {
 
   if (TraceClassUnloading) {
     ResourceMark rm;
-    tty->print_cr("[Unloading class %s]", k->external_name());
+    gclog_or_tty->print_cr("[Unloading class %s]", k->external_name());
   }
 }
 
