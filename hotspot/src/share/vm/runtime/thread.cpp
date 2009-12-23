@@ -884,6 +884,22 @@ static void call_initializeSystemClass(TRAPS) {
                                          vmSymbolHandles::void_method_signature(), CHECK);
 }
 
+#ifdef KERNEL
+static void set_jkernel_boot_classloader_hook(TRAPS) {
+  klassOop k = SystemDictionary::sun_jkernel_DownloadManager_klass();
+  instanceKlassHandle klass (THREAD, k);
+
+  if (k == NULL) {
+    // sun.jkernel.DownloadManager may not present in the JDK; just return
+    return;
+  }
+
+  JavaValue result(T_VOID);
+  JavaCalls::call_static(&result, klass, vmSymbolHandles::setBootClassLoaderHook_name(),
+                                         vmSymbolHandles::void_method_signature(), CHECK);
+}
+#endif // KERNEL
+
 static void reset_vm_info_property(TRAPS) {
   // the vm info string
   ResourceMark rm(THREAD);
@@ -975,6 +991,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, char* thread_name, bool
 // uniquely named instances should derive from this.
 NamedThread::NamedThread() : Thread() {
   _name = NULL;
+  _processed_thread = NULL;
 }
 
 NamedThread::~NamedThread() {
@@ -2317,6 +2334,27 @@ void JavaThread::gc_prologue() {
   frames_do(frame_gc_prologue);
 }
 
+// If the caller is a NamedThread, then remember, in the current scope,
+// the given JavaThread in its _processed_thread field.
+class RememberProcessedThread: public StackObj {
+  NamedThread* _cur_thr;
+public:
+  RememberProcessedThread(JavaThread* jthr) {
+    Thread* thread = Thread::current();
+    if (thread->is_Named_thread()) {
+      _cur_thr = (NamedThread *)thread;
+      _cur_thr->set_processed_thread(jthr);
+    } else {
+      _cur_thr = NULL;
+    }
+  }
+
+  ~RememberProcessedThread() {
+    if (_cur_thr) {
+      _cur_thr->set_processed_thread(NULL);
+    }
+  }
+};
 
 void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // Flush deferred store-barriers, if any, associated with
@@ -2333,6 +2371,8 @@ void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
           (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");
 
   if (has_last_Java_frame()) {
+    // Record JavaThread to GC thread
+    RememberProcessedThread rpt(this);
 
     // Traverse the privileged stack
     if (_privileged_stack_top != NULL) {
@@ -3101,6 +3141,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (HAS_PENDING_EXCEPTION) {
     vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
   }
+
+#ifdef KERNEL
+  if (JDK_Version::is_gte_jdk17x_version()) {
+    set_jkernel_boot_classloader_hook(THREAD);
+  }
+#endif // KERNEL
 
 #ifndef SERIALGC
   // Support for ConcurrentMarkSweep. This should be cleaned up
