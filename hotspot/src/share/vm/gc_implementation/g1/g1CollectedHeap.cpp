@@ -1375,6 +1375,7 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   SharedHeap(policy_),
   _g1_policy(policy_),
+  _dirty_card_queue_set(false),
   _ref_processor(NULL),
   _process_strong_tasks(new SubTasksDone(G1H_PS_NumElements)),
   _bot_shared(NULL),
@@ -1460,8 +1461,6 @@ jint G1CollectedHeap::initialize() {
   Universe::check_alignment(init_byte_size, HeapRegion::GrainBytes, "g1 heap");
   Universe::check_alignment(max_byte_size, HeapRegion::GrainBytes, "g1 heap");
 
-  // We allocate this in any case, but only do no work if the command line
-  // param is off.
   _cg1r = new ConcurrentG1Refine();
 
   // Reserve the maximum.
@@ -1594,18 +1593,20 @@ jint G1CollectedHeap::initialize() {
 
   JavaThread::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
                                                SATB_Q_FL_lock,
-                                               0,
+                                               G1SATBProcessCompletedThreshold,
                                                Shared_SATB_Q_lock);
 
   JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
-                                                G1UpdateBufferQueueMaxLength,
+                                                concurrent_g1_refine()->yellow_zone(),
+                                                concurrent_g1_refine()->red_zone(),
                                                 Shared_DirtyCardQ_lock);
 
   if (G1DeferredRSUpdate) {
     dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                       DirtyCardQ_FL_lock,
-                                      0,
+                                      -1, // never trigger processing
+                                      -1, // no limit on length
                                       Shared_DirtyCardQ_lock,
                                       &JavaThread::dirty_card_queue_set());
   }
@@ -4239,10 +4240,11 @@ void G1CollectedHeap::evacuate_collection_set() {
     RedirtyLoggedCardTableEntryFastClosure redirty;
     dirty_card_queue_set().set_closure(&redirty);
     dirty_card_queue_set().apply_closure_to_all_completed_buffers();
-    JavaThread::dirty_card_queue_set().merge_bufferlists(&dirty_card_queue_set());
+
+    DirtyCardQueueSet& dcq = JavaThread::dirty_card_queue_set();
+    dcq.merge_bufferlists(&dirty_card_queue_set());
     assert(dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");
   }
-
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 }
 
