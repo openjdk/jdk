@@ -3146,7 +3146,6 @@ void TemplateTable::invokedynamic(int byte_no) {
     __ profile_call(rsi);
   }
 
-  Label handle_unlinked_site;
   __ movptr(rcx, Address(rax, __ delayed_value(java_dyn_CallSite::target_offset_in_bytes, rcx)));
   __ null_check(rcx);
   __ prepare_to_jump_from_interpreted();
