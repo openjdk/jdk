@@ -55,10 +55,10 @@ security.provider.9=sun.security.smartcardio.SunPCSC
 
 #
 # Select the source of seed data for SecureRandom. By default an
-# attempt is made to use the entropy gathering device specified by 
+# attempt is made to use the entropy gathering device specified by
 # the securerandom.source property. If an exception occurs when
-# accessing the URL then the traditional system/thread activity 
-# algorithm is used. 
+# accessing the URL then the traditional system/thread activity
+# algorithm is used.
 #
 # On Solaris and Linux systems, if file:/dev/urandom is specified and it
 # exists, a special SecureRandom implementation is activated by default.
@@ -72,7 +72,7 @@ securerandom.source=file:/dev/urandom
 # The entropy gathering device is described as a URL and can also
 # be specified with the system property "java.security.egd". For example,
 #   -Djava.security.egd=file:/dev/urandom
-# Specifying this system property will override the securerandom.source 
+# Specifying this system property will override the securerandom.source
 # setting.
 
 #
@@ -149,7 +149,7 @@ package.access=sun.,com.sun.imageio.
 security.overridePropertiesFile=true
 
 #
-# Determines the default key and trust manager factory algorithms for 
+# Determines the default key and trust manager factory algorithms for
 # the javax.net.ssl package.
 #
 ssl.KeyManagerFactory.algorithm=SunX509
@@ -168,10 +168,10 @@ ssl.TrustManagerFactory.algorithm=PKIX
 # is to cache for 30 seconds.
 #
 # NOTE: setting this to anything other than the default value can have
-#       serious security implications. Do not set it unless 
+#       serious security implications. Do not set it unless
 #       you are sure you are not exposed to DNS spoofing attack.
 #
-#networkaddress.cache.ttl=-1 
+#networkaddress.cache.ttl=-1
 
 # The Java-level namelookup cache policy for failed lookups:
 #
@@ -183,7 +183,7 @@ ssl.TrustManagerFactory.algorithm=PKIX
 # the WINS name service in addition to DNS, name service lookups
 # that fail may take a noticeably long time to return (approx. 5 seconds).
 # For this reason the default caching policy is to maintain these
-# results for 10 seconds. 
+# results for 10 seconds.
 #
 #
 networkaddress.cache.negative.ttl=10
@@ -192,7 +192,7 @@ networkaddress.cache.negative.ttl=10
 # Properties to configure OCSP for certificate revocation checking
 #
 
-# Enable OCSP 
+# Enable OCSP
 #
 # By default, OCSP is not used for certificate revocation checking.
 # This property enables the use of OCSP when set to the value "true".
@@ -201,7 +201,7 @@ networkaddress.cache.negative.ttl=10
 #
 # Example,
 #   ocsp.enable=true
- 
+
 #
 # Location of the OCSP responder
 #
@@ -213,15 +213,15 @@ networkaddress.cache.negative.ttl=10
 #
 # Example,
 #   ocsp.responderURL=http://ocsp.example.net:80
- 
+
 #
 # Subject name of the OCSP responder's certificate
 #
 # By default, the certificate of the OCSP responder is that of the issuer
 # of the certificate being validated. This property identifies the certificate
-# of the OCSP responder when the default does not apply. Its value is a string 
-# distinguished name (defined in RFC 2253) which identifies a certificate in 
-# the set of certificates supplied during cert path validation. In cases where 
+# of the OCSP responder when the default does not apply. Its value is a string
+# distinguished name (defined in RFC 2253) which identifies a certificate in
+# the set of certificates supplied during cert path validation. In cases where
 # the subject name alone is not sufficient to uniquely identify the certificate
 # then both the "ocsp.responderCertIssuerName" and
 # "ocsp.responderCertSerialNumber" properties must be used instead. When this
@@ -237,14 +237,14 @@ networkaddress.cache.negative.ttl=10
 # of the certificate being validated. This property identifies the certificate
 # of the OCSP responder when the default does not apply. Its value is a string
 # distinguished name (defined in RFC 2253) which identifies a certificate in
-# the set of certificates supplied during cert path validation. When this 
-# property is set then the "ocsp.responderCertSerialNumber" property must also 
-# be set. When the "ocsp.responderCertSubjectName" property is set then this 
+# the set of certificates supplied during cert path validation. When this
+# property is set then the "ocsp.responderCertSerialNumber" property must also
+# be set. When the "ocsp.responderCertSubjectName" property is set then this
 # property is ignored.
 #
 # Example,
 #   ocsp.responderCertIssuerName="CN=Enterprise CA, O=XYZ Corp"
- 
+
 #
 # Serial number of the OCSP responder's certificate
 #
@@ -259,4 +259,31 @@ networkaddress.cache.negative.ttl=10
 #
 # Example,
 #   ocsp.responderCertSerialNumber=2A:FF:00
- 
+
+#
+# Policy for failed Kerberos KDC lookups:
+#
+# When a KDC is unavailable (network error, service failure, etc), it is
+# put inside a blacklist and accessed less often for future requests. The
+# value (case-insensitive) for this policy can be:
+#
+# tryLast
+#    KDCs in the blacklist are always tried after those not on the list.
+#
+# tryLess[:max_retries,timeout]
+#    KDCs in the blacklist are still tried by their order in the configuration,
+#    but with smaller max_retries and timeout values. max_retries and timeout
+#    are optional numerical parameters (default 1 and 5000, which means once
+#    and 5 seconds). Please notes that if any of the values defined here is
+#    more than what is defined in krb5.conf, it will be ignored.
+#
+# Whenever a KDC is detected as available, it is removed from the blacklist.
+# The blacklist is reset when krb5.conf is reloaded. You can add
+# refreshKrb5Config=true to a JAAS configuration file so that krb5.conf is
+# reloaded whenever a JAAS authentication is attempted.
+#
+# Example,
+#   krb5.kdc.bad.policy = tryLast
+#   krb5.kdc.bad.policy = tryLess:2,2000
+krb5.kdc.bad.policy = tryLast
+
