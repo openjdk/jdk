@@ -141,6 +141,10 @@ public class KDC {
     // Options
     private Map<Option,Object> options = new HashMap<Option,Object>();
 
+    private Thread thread1, thread2, thread3;
+    DatagramSocket u1 = null;
+    ServerSocket t1 = null;
+
     /**
      * Option names, to be expanded forever.
      */
@@ -940,8 +944,6 @@ public class KDC {
      * @throws java.io.IOException for any communication error
      */
     protected void startServer(int port, boolean asDaemon) throws IOException {
-        DatagramSocket u1 = null;
-        ServerSocket t1 = null;
         if (port > 0) {
             u1 = new DatagramSocket(port, InetAddress.getByName("127.0.0.1"));
             t1 = new ServerSocket(port);
@@ -966,7 +968,7 @@ public class KDC {
         this.port = port;
 
         // The UDP consumer
-        Thread thread = new Thread() {
+        thread1 = new Thread() {
             public void run() {
                 while (true) {
                     try {
@@ -982,11 +984,11 @@ public class KDC {
                 }
             }
         };
-        thread.setDaemon(asDaemon);
-        thread.start();
+        thread1.setDaemon(asDaemon);
+        thread1.start();
 
         // The TCP consumer
-        thread = new Thread() {
+        thread2 = new Thread() {
             public void run() {
                 while (true) {
                     try {
@@ -1004,11 +1006,11 @@ public class KDC {
                 }
             }
         };
-        thread.setDaemon(asDaemon);
-        thread.start();
+        thread2.setDaemon(asDaemon);
+        thread2.start();
 
         // The dispatcher
-        thread = new Thread() {
+        thread3 = new Thread() {
             public void run() {
                 while (true) {
                     try {
@@ -1018,10 +1020,21 @@ public class KDC {
                 }
             }
         };
-        thread.setDaemon(true);
-        thread.start();
+        thread3.setDaemon(true);
+        thread3.start();
     }
 
+    public void terminate() {
+        try {
+            thread1.stop();
+            thread2.stop();
+            thread3.stop();
+            u1.close();
+            t1.close();
+        } catch (Exception e) {
+            // OK
+        }
+    }
     /**
      * Helper class to encapsulate a job in a KDC.
      */
