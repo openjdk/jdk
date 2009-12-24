@@ -484,8 +484,9 @@ public class KDC {
             Method stringToKey = EncryptionKey.class.getDeclaredMethod("stringToKey", char[].class, String.class, byte[].class, Integer.TYPE);
             stringToKey.setAccessible(true);
             Integer kvno = null;
-            // For service whose password ending with a number, use it as kvno
-            if (p.toString().indexOf('/') >= 0) {
+            // For service whose password ending with a number, use it as kvno.
+            // Kvno must be postive.
+            if (p.toString().indexOf('/') > 0) {
                 char[] pass = getPassword(p, server);
                 if (Character.isDigit(pass[pass.length-1])) {
                     kvno = pass[pass.length-1] - '0';
