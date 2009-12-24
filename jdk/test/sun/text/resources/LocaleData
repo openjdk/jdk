@@ -5580,3 +5580,29 @@ CalendarData/sl/firstDayOfWeek=2
 
 # bug 6573250
 CurrencyNames/en_CA/USD=US$
+
+# bug 6870908
+FormatData/et/MonthNames/0=jaanuar
+FormatData/et/MonthNames/1=veebruar
+FormatData/et/MonthNames/2=m\u00e4rts
+FormatData/et/MonthNames/3=aprill
+FormatData/et/MonthNames/4=mai
+FormatData/et/MonthNames/5=juuni
+FormatData/et/MonthNames/6=juuli
+FormatData/et/MonthNames/7=august
+FormatData/et/MonthNames/8=september
+FormatData/et/MonthNames/9=oktoober
+FormatData/et/MonthNames/10=november
+FormatData/et/MonthNames/11=detsember
+FormatData/et/MonthAbbreviations/0=jaan
+FormatData/et/MonthAbbreviations/1=veebr
+FormatData/et/MonthAbbreviations/2=m\u00e4rts
+FormatData/et/MonthAbbreviations/3=apr
+FormatData/et/MonthAbbreviations/4=mai
+FormatData/et/MonthAbbreviations/5=juuni
+FormatData/et/MonthAbbreviations/6=juuli
+FormatData/et/MonthAbbreviations/7=aug
+FormatData/et/MonthAbbreviations/8=sept
+FormatData/et/MonthAbbreviations/9=okt
+FormatData/et/MonthAbbreviations/10=nov
+FormatData/et/MonthAbbreviations/11=dets
