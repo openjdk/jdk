@@ -83,8 +83,8 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
                                      "\uc911\ubd80 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "CDT"};
         String CTT[] = new String[] {"\uc911\uad6d \ud45c\uc900\uc2dc", "CST",
                                      "\uc911\uad6d \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "CDT"};
-        String CUBA[] = new String[] {"Cuba Standard Time", "CST",
-                                      "Cuba Daylight Time", "CDT"};
+        String CUBA[] = new String[] {"\ucfe0\ubc14 \ud45c\uc900\uc2dc", "CST",
+                                      "\ucfe0\ubc14 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "CDT"};
         String DARWIN[] = new String[] {"\uc911\ubd80 \ud45c\uc900\uc2dc(\ub178\ub358 \uc9c0\uc5ed)", "CST",
                                         "\uc911\ubd80 \uc77c\uad11\uc808\uc57d\uc2dc\uac04(\ub178\ub358 \uc9c0\uc5ed)", "CST"};
         String DUBLIN[] = new String[] {"\uadf8\ub9ac\ub2c8\uce58 \ud45c\uc900\uc2dc", "GMT",
@@ -594,8 +594,8 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Australia/Canberra", EST_NSW},
             {"Australia/Currie", EST_NSW},
             {"Australia/Darwin", DARWIN},
-            {"Australia/Eucla", new String[] {"Central Western Standard Time (Australia)", "CWST",
-                                              "Central Western Summer Time (Australia)", "CWST"}},
+            {"Australia/Eucla", new String[] {"\uc911\uc11c\ubd80 \ud45c\uc900\uc2dc(\uc624\uc2a4\ud2b8\ub808\uc77c\ub9ac\uc544)", "CWST",
+                                              "\uc911\uc11c\ubd80 \uc77c\uad11\uc808\uc57d\uc2dc\uac04(\uc624\uc2a4\ud2b8\ub808\uc77c\ub9ac\uc544)", "CWST"}},
             {"Australia/Hobart", TASMANIA},
             {"Australia/LHI", LORD_HOWE},
             {"Australia/Lindeman", BRISBANE},
