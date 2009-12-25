@@ -83,8 +83,8 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
                                      "Zentrale Sommerzeit", "CDT"};
         String CTT[] = new String[] {"Chinesische Normalzeit", "CST",
                                      "Chinesische Sommerzeit", "CDT"};
-        String CUBA[] = new String[] {"Cuba Standard Time", "CST",
-                                      "Cuba Daylight Time", "CDT"};
+        String CUBA[] = new String[] {"Kubanische Normalzeit", "CST",
+                                      "Kubanische Sommerzeit", "CDT"};
         String DARWIN[] = new String[] {"Zentrale Normalzeit (Northern Territory)", "CST",
                                         "Zentrale Sommerzeit (Northern Territory)", "CST"};
         String DUBLIN[] = new String[] {"Greenwich Zeit", "GMT",
@@ -594,8 +594,8 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"Australia/Canberra", EST_NSW},
             {"Australia/Currie", EST_NSW},
             {"Australia/Darwin", DARWIN},
-            {"Australia/Eucla", new String[] {"Central Western Standard Time (Australia)", "CWST",
-                                              "Central Western Summer Time (Australia)", "CWST"}},
+            {"Australia/Eucla", new String[] {"Zentral-Westliche Normalzeit (Australien)", "CWST",
+                                              "Zentral-Westliche Sommerzeit (Australien)", "CWST"}},
             {"Australia/Hobart", TASMANIA},
             {"Australia/LHI", LORD_HOWE},
             {"Australia/Lindeman", BRISBANE},
