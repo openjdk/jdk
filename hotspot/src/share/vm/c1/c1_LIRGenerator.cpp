@@ -386,18 +386,26 @@ void LIRGenerator::walk(Value instr) {
 
 
 CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ignore_xhandler) {
-  int index;
-  Value value;
-  for_each_stack_value(state, index, value) {
-    assert(value->subst() == value, "missed substition");
-    if (!value->is_pinned() && value->as_Constant() == NULL && value->as_Local() == NULL) {
-      walk(value);
-      assert(value->operand()->is_valid(), "must be evaluated now");
-    }
-  }
+  assert(state != NULL, "state must be defined");
+
   ValueStack* s = state;
-  int bci = x->bci();
   for_each_state(s) {
+    if (s->kind() == ValueStack::EmptyExceptionState) {
+      assert(s->stack_size() == 0 && s->locals_size() == 0 && (s->locks_size() == 0 || s->locks_size() == 1), "state must be empty");
+      continue;
+    }
+
+    int index;
+    Value value;
+    for_each_stack_value(s, index, value) {
+      assert(value->subst() == value, "missed substitution");
+      if (!value->is_pinned() && value->as_Constant() == NULL && value->as_Local() == NULL) {
+        walk(value);
+        assert(value->operand()->is_valid(), "must be evaluated now");
+      }
+    }
+
+    int bci = s->bci();
     IRScope* scope = s->scope();
     ciMethod* method = scope->method();
 
@@ -428,15 +436,14 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ig
         }
       }
     }
-    bci = scope->caller_bci();
   }
 
-  return new CodeEmitInfo(x->bci(), state, ignore_xhandler ? NULL : x->exception_handlers());
+  return new CodeEmitInfo(state, ignore_xhandler ? NULL : x->exception_handlers());
 }
 
 
 CodeEmitInfo* LIRGenerator::state_for(Instruction* x) {
-  return state_for(x, x->lock_stack());
+  return state_for(x, x->exception_state());
 }
 
 
@@ -900,16 +907,12 @@ void LIRGenerator::move_to_phi(ValueStack* cur_state) {
       Value sux_value;
       int index;
 
+      assert(cur_state->scope() == sux_state->scope(), "not matching");
+      assert(cur_state->locals_size() == sux_state->locals_size(), "not matching");
+      assert(cur_state->stack_size() == sux_state->stack_size(), "not matching");
+
       for_each_stack_value(sux_state, index, sux_value) {
         move_to_phi(&resolver, cur_state->stack_at(index), sux_value);
-      }
-
-      // Inlining may cause the local state not to match up, so walk up
-      // the caller state until we get to the same scope as the
-      // successor and then start processing from there.
-      while (cur_state->scope() != sux_state->scope()) {
-        cur_state = cur_state->caller_state();
-        assert(cur_state != NULL, "scopes don't match up");
       }
 
       for_each_local_value(sux_state, index, sux_value) {
@@ -1023,10 +1026,10 @@ void LIRGenerator::do_Phi(Phi* x) {
 
 // Code for a constant is generated lazily unless the constant is frequently used and can't be inlined.
 void LIRGenerator::do_Constant(Constant* x) {
-  if (x->state() != NULL) {
+  if (x->state_before() != NULL) {
     // Any constant with a ValueStack requires patching so emit the patch here
     LIR_Opr reg = rlock_result(x);
-    CodeEmitInfo* info = state_for(x, x->state());
+    CodeEmitInfo* info = state_for(x, x->state_before());
     __ oop2reg_patch(NULL, reg, info);
   } else if (x->use_count() > 1 && !can_inline_as_constant(x)) {
     if (!x->is_pinned()) {
@@ -1102,7 +1105,7 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
   // need to perform the null check on the rcvr
   CodeEmitInfo* info = NULL;
   if (x->needs_null_check()) {
-    info = state_for(x, x->state()->copy_locks());
+    info = state_for(x);
   }
   __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_OBJECT), result, info);
   __ move(new LIR_Address(result, Klass::java_mirror_offset_in_bytes() +
@@ -1481,7 +1484,7 @@ void LIRGenerator::do_StoreField(StoreField* x) {
   } else if (x->needs_null_check()) {
     NullCheck* nc = x->explicit_null_check();
     if (nc == NULL) {
-      info = state_for(x, x->lock_stack());
+      info = state_for(x);
     } else {
       info = state_for(nc);
     }
@@ -1509,10 +1512,12 @@ void LIRGenerator::do_StoreField(StoreField* x) {
 
   set_no_result(x);
 
+#ifndef PRODUCT
   if (PrintNotLoaded && needs_patching) {
     tty->print_cr("   ###class not loaded at store_%s bci %d",
-                  x->is_static() ?  "static" : "field", x->bci());
+                  x->is_static() ?  "static" : "field", x->printable_bci());
   }
+#endif
 
   if (x->needs_null_check() &&
       (needs_patching ||
@@ -1575,7 +1580,7 @@ void LIRGenerator::do_LoadField(LoadField* x) {
   } else if (x->needs_null_check()) {
     NullCheck* nc = x->explicit_null_check();
     if (nc == NULL) {
-      info = state_for(x, x->lock_stack());
+      info = state_for(x);
     } else {
       info = state_for(nc);
     }
@@ -1585,10 +1590,12 @@ void LIRGenerator::do_LoadField(LoadField* x) {
 
   object.load_item();
 
+#ifndef PRODUCT
   if (PrintNotLoaded && needs_patching) {
     tty->print_cr("   ###class not loaded at load_%s bci %d",
-                  x->is_static() ?  "static" : "field", x->bci());
+                  x->is_static() ?  "static" : "field", x->printable_bci());
   }
+#endif
 
   if (x->needs_null_check() &&
       (needs_patching ||
@@ -1781,7 +1788,7 @@ void LIRGenerator::do_Throw(Throw* x) {
   if (GenerateCompilerNullChecks &&
       (x->exception()->as_NewInstance() == NULL && x->exception()->as_ExceptionObject() == NULL)) {
     // if the exception object wasn't created using new then it might be null.
-    __ null_check(exception_opr, new CodeEmitInfo(info, true));
+    __ null_check(exception_opr, new CodeEmitInfo(info, x->state()->copy(ValueStack::ExceptionState, x->state()->bci())));
   }
 
   if (compilation()->env()->jvmti_can_post_on_exceptions()) {
@@ -2127,7 +2134,6 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   int lo_key = x->lo_key();
   int hi_key = x->hi_key();
   int len = x->length();
-  CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr value = tag.result();
   if (UseTableRanges) {
     do_SwitchRanges(create_lookup_ranges(x), value, x->default_sux());
@@ -2186,7 +2192,7 @@ void LIRGenerator::do_Goto(Goto* x) {
 
     // increment backedge counter if needed
     CodeEmitInfo* info = state_for(x, state);
-    increment_backedge_counter(info, info->bci());
+    increment_backedge_counter(info, info->stack()->bci());
     CodeEmitInfo* safepoint_info = state_for(x, state);
     __ safepoint(safepoint_poll_register(), safepoint_info);
   }
@@ -2293,7 +2299,7 @@ void LIRGenerator::do_Base(Base* x) {
       LIR_Opr lock = new_register(T_INT);
       __ load_stack_address_monitor(0, lock);
 
-      CodeEmitInfo* info = new CodeEmitInfo(SynchronizationEntryBCI, scope()->start()->state(), NULL);
+      CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL);
       CodeStub* slow_path = new MonitorEnterStub(obj, lock, info);
 
       // receiver is guaranteed non-NULL so don't need CodeEmitInfo
@@ -2303,7 +2309,7 @@ void LIRGenerator::do_Base(Base* x) {
 
   // increment invocation counters if needed
   if (!method()->is_accessor()) { // Accessors do not have MDOs, so no counting.
-    CodeEmitInfo* info = new CodeEmitInfo(InvocationEntryBci, scope()->start()->state(), NULL);
+    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state(), NULL);
     increment_invocation_counter(info);
   }
 
@@ -2463,7 +2469,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
       break;
     case Bytecodes::_invokedynamic: {
       ciBytecodeStream bcs(x->scope()->method());
-      bcs.force_bci(x->bci());
+      bcs.force_bci(x->state()->bci());
       assert(bcs.cur_bc() == Bytecodes::_invokedynamic, "wrong stream");
       ciCPCache* cpcache = bcs.get_cpcache();
 

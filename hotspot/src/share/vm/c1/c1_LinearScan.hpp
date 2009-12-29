@@ -346,7 +346,7 @@ class LinearScan : public CompilationResourceObj {
   int append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeValue*>* scope_values);
   int append_scope_value(int op_id, Value value, GrowableArray<ScopeValue*>* scope_values);
 
-  IRScopeDebugInfo* compute_debug_info_for_scope(int op_id, IRScope* cur_scope, ValueStack* cur_state, ValueStack* innermost_state, int cur_bci, int stack_end, int locks_end);
+  IRScopeDebugInfo* compute_debug_info_for_scope(int op_id, IRScope* cur_scope, ValueStack* cur_state, ValueStack* innermost_state);
   void compute_debug_info(CodeEmitInfo* info, int op_id);
 
   void assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw);
