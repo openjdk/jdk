@@ -22,7 +22,6 @@
  *
  */
 
-class BlockBegin;
 class CompilationResourceObj;
 class XHandlers;
 class ExceptionInfo;

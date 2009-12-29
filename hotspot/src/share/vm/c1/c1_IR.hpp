@@ -132,8 +132,6 @@ class IRScope: public CompilationResourceObj {
   // hierarchy
   Compilation*  _compilation;                    // the current compilation
   IRScope*      _caller;                         // the caller scope, or NULL
-  int           _caller_bci;                     // the caller bci of the corresponding (inlined) invoke, or < 0
-  ValueStack*   _caller_state;                   // the caller state, or NULL
   int           _level;                          // the inlining level
   ciMethod*     _method;                         // the corresponding method
   IRScopeList   _callees;                        // the inlined method scopes
@@ -144,15 +142,9 @@ class IRScope: public CompilationResourceObj {
   bool          _monitor_pairing_ok;             // the monitor pairing info
   BlockBegin*   _start;                          // the start block, successsors are method entries
 
-  // lock stack management
-  int           _lock_stack_size;                // number of expression stack elements which, if present,
-                                                 // must be spilled to the stack because of exception
-                                                 // handling inside inlined methods
-
   BitMap        _requires_phi_function;          // bit is set if phi functions at loop headers are necessary for a local variable
 
   // helper functions
-  BlockBegin* header_block(BlockBegin* entry, BlockBegin::Flag f, ValueStack* state);
   BlockBegin* build_graph(Compilation* compilation, int osr_bci);
 
  public:
@@ -162,33 +154,16 @@ class IRScope: public CompilationResourceObj {
   // accessors
   Compilation*  compilation() const              { return _compilation; }
   IRScope*      caller() const                   { return _caller; }
-  int           caller_bci() const               { return _caller_bci; }
-  ValueStack*   caller_state() const             { return _caller_state; }
   int           level() const                    { return _level; }
   ciMethod*     method() const                   { return _method; }
   int           max_stack() const;               // NOTE: expensive
-  int           lock_stack_size() const          {
-    assert(_lock_stack_size != -1, "uninitialized");
-    return _lock_stack_size;
-  }
   BitMap&       requires_phi_function()          { return _requires_phi_function; }
-
-  // mutators
-  // Needed because caller state is not ready at time of IRScope construction
-  void          set_caller_state(ValueStack* state) { _caller_state = state; }
-  // Needed because caller state changes after IRScope construction.
-  // Computes number of expression stack elements whose state must be
-  // preserved in the case of an exception; these may be seen by
-  // caller scopes. Zero when inlining of methods containing exception
-  // handlers is disabled, otherwise a conservative approximation.
-  void          compute_lock_stack_size();
 
   // hierarchy
   bool          is_top_scope() const             { return _caller == NULL; }
   void          add_callee(IRScope* callee)      { _callees.append(callee); }
   int           number_of_callees() const        { return _callees.length(); }
   IRScope*      callee_no(int i) const           { return _callees.at(i); }
-  int           top_scope_bci() const;
 
   // accessors, graph
   bool          is_valid() const                 { return start() != NULL; }
@@ -266,9 +241,6 @@ class CodeEmitInfo: public CompilationResourceObj {
   XHandlers*        _exception_handlers;
   OopMap*           _oop_map;
   ValueStack*       _stack;                      // used by deoptimization (contains also monitors
-  int               _bci;
-  CodeEmitInfo*     _next;
-  int               _id;
   bool              _is_method_handle_invoke;    // true if the associated call site is a MethodHandle call site.
 
   FrameMap*     frame_map() const                { return scope()->compilation()->frame_map(); }
@@ -277,23 +249,10 @@ class CodeEmitInfo: public CompilationResourceObj {
  public:
 
   // use scope from ValueStack
-  CodeEmitInfo(int bci, ValueStack* stack, XHandlers* exception_handlers);
-
-  // used by natives
-  CodeEmitInfo(IRScope* scope, int bci)
-    : _scope(scope)
-    , _bci(bci)
-    , _oop_map(NULL)
-    , _scope_debug_info(NULL)
-    , _stack(NULL)
-    , _exception_handlers(NULL)
-    , _next(NULL)
-    , _id(-1)
-    , _is_method_handle_invoke(false) {
-  }
+  CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers);
 
   // make a copy
-  CodeEmitInfo(CodeEmitInfo* info, bool lock_stack_only = false);
+  CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack = NULL);
 
   // accessors
   OopMap* oop_map()                              { return _oop_map; }
@@ -301,16 +260,9 @@ class CodeEmitInfo: public CompilationResourceObj {
   IRScope* scope() const                         { return _scope; }
   XHandlers* exception_handlers() const          { return _exception_handlers; }
   ValueStack* stack() const                      { return _stack; }
-  int bci() const                                { return _bci; }
 
   void add_register_oop(LIR_Opr opr);
   void record_debug_info(DebugInformationRecorder* recorder, int pc_offset);
-
-  CodeEmitInfo* next() const        { return _next; }
-  void set_next(CodeEmitInfo* next) { _next = next; }
-
-  int id() const      { return _id; }
-  void set_id(int id) { _id = id; }
 
   bool     is_method_handle_invoke() const { return _is_method_handle_invoke;     }
   void set_is_method_handle_invoke(bool x) {        _is_method_handle_invoke = x; }

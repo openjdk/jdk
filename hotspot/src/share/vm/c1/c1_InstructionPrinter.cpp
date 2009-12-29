@@ -316,7 +316,7 @@ void InstructionPrinter::print_head() {
 void InstructionPrinter::print_line(Instruction* instr) {
   // print instruction data on one line
   if (instr->is_pinned()) output()->put('.');
-  fill_to(bci_pos  ); output()->print("%d", instr->bci());
+  fill_to(bci_pos  ); output()->print("%d", instr->printable_bci());
   fill_to(use_pos  ); output()->print("%d", instr->use_count());
   fill_to(temp_pos ); print_temp(instr);
   fill_to(instr_pos); print_instr(instr);
@@ -569,7 +569,7 @@ void InstructionPrinter::do_BlockBegin(BlockBegin* x) {
   if (printed_flag) output()->print(") ");
 
   // print block bci range
-  output()->print("[%d, %d]", x->bci(), (end == NULL ? -1 : end->bci()));
+  output()->print("[%d, %d]", x->bci(), (end == NULL ? -1 : end->printable_bci()));
 
   // print block successors
   if (end != NULL && end->number_of_sux() > 0) {

@@ -58,9 +58,6 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
     // BlockEnds.
     BlockBegin*  _continuation;
 
-    // Without return value of inlined method on stack
-    ValueStack*  _continuation_state;
-
     // Was this ScopeData created only for the parsing and inlining of
     // a jsr?
     bool         _parsing_jsr;
@@ -125,13 +122,9 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
     void set_stream(ciBytecodeStream* stream)      { _stream = stream;          }
 
     intx max_inline_size() const                   { return _max_inline_size;   }
-    int  caller_stack_size() const;
 
     BlockBegin* continuation() const               { return _continuation;      }
     void set_continuation(BlockBegin* cont)        { _continuation = cont;      }
-
-    ValueStack* continuation_state() const         { return _continuation_state; }
-    void set_continuation_state(ValueStack* s)     { _continuation_state = s; }
 
     // Indicates whether this ScopeData was pushed only for the
     // parsing and inlining of a jsr
@@ -163,7 +156,6 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
 
   // for all GraphBuilders
   static bool       _can_trap[Bytecodes::number_of_java_codes];
-  static bool       _is_async[Bytecodes::number_of_java_codes];
 
   // for each instance of GraphBuilder
   ScopeData*        _scope_data;                 // Per-scope data; used for inlining
@@ -179,7 +171,6 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   // for each call to connect_to_end; can also be set by inliner
   BlockBegin*       _block;                      // the current block
   ValueStack*       _state;                      // the current execution state
-  ValueStack*       _exception_state;            // state that will be used by handle_exception
   Instruction*      _last;                       // the last instruction added
   bool              _skip_block;                 // skip processing of the rest of this block
 
@@ -194,8 +185,6 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   ValueStack*       state() const                { return _state; }
   void              set_state(ValueStack* state) { _state = state; }
   IRScope*          scope() const                { return scope_data()->scope(); }
-  ValueStack*       exception_state() const      { return _exception_state; }
-  void              set_exception_state(ValueStack* s) { _exception_state = s; }
   ciMethod*         method() const               { return scope()->method(); }
   ciBytecodeStream* stream() const               { return scope_data()->stream(); }
   Instruction*      last() const                 { return _last; }
@@ -230,7 +219,7 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void load_indexed (BasicType type);
   void store_indexed(BasicType type);
   void stack_op(Bytecodes::Code code);
-  void arithmetic_op(ValueType* type, Bytecodes::Code code, ValueStack* lock_stack = NULL);
+  void arithmetic_op(ValueType* type, Bytecodes::Code code, ValueStack* state_before = NULL);
   void negate_op(ValueType* type);
   void shift_op(ValueType* type, Bytecodes::Code code);
   void logic_op(ValueType* type, Bytecodes::Code code);
@@ -267,12 +256,8 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   Instruction* append_split(StateSplit* instr);
 
   // other helpers
-  static bool is_async(Bytecodes::Code code) {
-    assert(0 <= code && code < Bytecodes::number_of_java_codes, "illegal bytecode");
-    return _is_async[code];
-  }
   BlockBegin* block_at(int bci)                  { return scope_data()->block_at(bci); }
-  XHandlers* handle_exception(int bci);
+  XHandlers* handle_exception(Instruction* instruction);
   void connect_to_end(BlockBegin* beg);
   void null_check(Value value);
   void eliminate_redundant_phis(BlockBegin* start);
@@ -283,7 +268,28 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
 
   void kill_all();
 
-  ValueStack* lock_stack();
+  // use of state copy routines (try to minimize unnecessary state
+  // object allocations):
+
+  // - if the instruction unconditionally needs a full copy of the
+  // state (for patching for example), then use copy_state_before*
+
+  // - if the instruction needs a full copy of the state only for
+  // handler generation (Instruction::needs_exception_state() returns
+  // false) then use copy_state_exhandling*
+
+  // - if the instruction needs either a full copy of the state for
+  // handler generation and a least a minimal copy of the state (as
+  // returned by Instruction::exception_state()) for debug info
+  // generation (that is when Instruction::needs_exception_state()
+  // returns true) then use copy_state_for_exception*
+
+  ValueStack* copy_state_before_with_bci(int bci);
+  ValueStack* copy_state_before();
+  ValueStack* copy_state_exhandling_with_bci(int bci);
+  ValueStack* copy_state_exhandling();
+  ValueStack* copy_state_for_exception_with_bci(int bci);
+  ValueStack* copy_state_for_exception();
 
   //
   // Inlining support
@@ -292,9 +298,7 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   // accessors
   bool parsing_jsr() const                               { return scope_data()->parsing_jsr();           }
   BlockBegin* continuation() const                       { return scope_data()->continuation();          }
-  ValueStack* continuation_state() const                 { return scope_data()->continuation_state();    }
   BlockBegin* jsr_continuation() const                   { return scope_data()->jsr_continuation();      }
-  int caller_stack_size() const                          { return scope_data()->caller_stack_size();     }
   void set_continuation(BlockBegin* continuation)        { scope_data()->set_continuation(continuation); }
   void set_inline_cleanup_info(BlockBegin* block,
                                Instruction* return_prev,

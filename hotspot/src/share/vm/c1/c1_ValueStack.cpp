@@ -28,55 +28,60 @@
 
 // Implementation of ValueStack
 
-ValueStack::ValueStack(IRScope* scope, int locals_size, int max_stack_size)
+ValueStack::ValueStack(IRScope* scope, ValueStack* caller_state)
 : _scope(scope)
-, _locals(locals_size, NULL)
-, _stack(max_stack_size)
-, _lock_stack(false)
-, _locks(1)
+, _caller_state(caller_state)
+, _bci(-99)
+, _kind(Parsing)
+, _locals(scope->method()->max_locals(), NULL)
+, _stack(scope->method()->max_stack())
+, _locks()
 {
-  assert(scope != NULL, "scope must exist");
-}
-
-ValueStack* ValueStack::copy() {
-  ValueStack* s = new ValueStack(scope(), locals_size(), max_stack_size());
-  s->_stack.appendAll(&_stack);
-  s->_locks.appendAll(&_locks);
-  s->replace_locals(this);
-  return s;
+  verify();
 }
 
 
-ValueStack* ValueStack::copy_locks() {
-  int sz = scope()->lock_stack_size();
-  if (stack_size() == 0) {
-    sz = 0;
+ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci)
+  : _scope(copy_from->scope())
+  , _caller_state(copy_from->caller_state())
+  , _bci(bci)
+  , _kind(kind)
+  , _locals()
+  , _stack()
+  , _locks(copy_from->locks_size())
+{
+  assert(kind != EmptyExceptionState || !Compilation::current()->env()->jvmti_can_access_local_variables(), "need locals");
+  if (kind != EmptyExceptionState) {
+    // only allocate space if we need to copy the locals-array
+    _locals = Values(copy_from->locals_size());
+    _locals.appendAll(&copy_from->_locals);
   }
-  ValueStack* s = new ValueStack(scope(), locals_size(), sz);
-  s->_lock_stack = true;
-  s->_locks.appendAll(&_locks);
-  s->replace_locals(this);
-  if (sz > 0) {
-    assert(sz <= stack_size(), "lock stack underflow");
-    for (int i = 0; i < sz; i++) {
-      s->_stack.append(_stack[i]);
+
+  if (kind != ExceptionState && kind != EmptyExceptionState) {
+    if (kind == Parsing) {
+      // stack will be modified, so reserve enough space to avoid resizing
+      _stack = Values(scope()->method()->max_stack());
+    } else {
+      // stack will not be modified, so do not waste space
+      _stack = Values(copy_from->stack_size());
     }
+    _stack.appendAll(&copy_from->_stack);
   }
-  return s;
+
+  _locks.appendAll(&copy_from->_locks);
+
+  verify();
 }
+
 
 bool ValueStack::is_same(ValueStack* s) {
-  assert(s != NULL, "state must exist");
-  assert(scope      () == s->scope      (), "scopes       must correspond");
-  assert(locals_size() == s->locals_size(), "locals sizes must correspond");
-  return is_same_across_scopes(s);
-}
+  if (scope() != s->scope()) return false;
+  if (caller_state() != s->caller_state()) return false;
 
+  if (locals_size() != s->locals_size()) return false;
+  if (stack_size() != s->stack_size()) return false;
+  if (locks_size() != s->locks_size()) return false;
 
-bool ValueStack::is_same_across_scopes(ValueStack* s) {
-  assert(s != NULL, "state must exist");
-  assert(stack_size () == s->stack_size (), "stack  sizes must correspond");
-  assert(locks_size () == s->locks_size (), "locks  sizes must correspond");
   // compare each stack element with the corresponding stack element of s
   int index;
   Value value;
@@ -89,25 +94,12 @@ bool ValueStack::is_same_across_scopes(ValueStack* s) {
   return true;
 }
 
-
-ValueStack* ValueStack::caller_state() const {
-  return scope()->caller_state();
-}
-
-
 void ValueStack::clear_locals() {
   for (int i = _locals.length() - 1; i >= 0; i--) {
     _locals.at_put(i, NULL);
   }
 }
 
-
-void ValueStack::replace_locals(ValueStack* with) {
-  assert(locals_size() == with->locals_size(), "number of locals must match");
-  for (int i = locals_size() - 1; i >= 0; i--) {
-    _locals.at_put(i, with->_locals.at(i));
-  }
-}
 
 void ValueStack::pin_stack_for_linear_scan() {
   for_each_state_value(this, v,
@@ -123,33 +115,25 @@ void ValueStack::apply(Values list, ValueVisitor* f) {
   for (int i = 0; i < list.length(); i++) {
     Value* va = list.adr_at(i);
     Value v0 = *va;
-    if (v0 != NULL) {
-      if (!v0->type()->is_illegal()) {
-        assert(v0->as_HiWord() == NULL, "should never see HiWord during traversal");
-        f->visit(va);
+    if (v0 != NULL && !v0->type()->is_illegal()) {
+      f->visit(va);
 #ifdef ASSERT
-        Value v1 = *va;
-        if (v0 != v1) {
-          assert(v1->type()->is_illegal() || v0->type()->tag() == v1->type()->tag(), "types must match");
-          if (v0->type()->is_double_word()) {
-            list.at_put(i + 1, v0->hi_word());
-          }
-        }
+      Value v1 = *va;
+      assert(v1->type()->is_illegal() || v0->type()->tag() == v1->type()->tag(), "types must match");
+      assert(!v1->type()->is_double_word() || list.at(i + 1) == NULL, "hi-word of doubleword value must be NULL");
 #endif
-        if (v0->type()->is_double_word()) i++;
-      }
+      if (v0->type()->is_double_word()) i++;
     }
   }
 }
 
 
 void ValueStack::values_do(ValueVisitor* f) {
-  apply(_stack, f);
-  apply(_locks, f);
-
   ValueStack* state = this;
   for_each_state(state) {
     apply(state->_locals, f);
+    apply(state->_stack, f);
+    apply(state->_locks, f);
   }
 }
 
@@ -164,52 +148,26 @@ Values* ValueStack::pop_arguments(int argument_size) {
 }
 
 
-int ValueStack::lock(IRScope* scope, Value obj) {
+int ValueStack::total_locks_size() const {
+  int num_locks = 0;
+  const ValueStack* state = this;
+  for_each_state(state) {
+    num_locks += state->locks_size();
+  }
+  return num_locks;
+}
+
+int ValueStack::lock(Value obj) {
   _locks.push(obj);
-  scope->set_min_number_of_locks(locks_size());
-  return locks_size() - 1;
+  int num_locks = total_locks_size();
+  scope()->set_min_number_of_locks(num_locks);
+  return num_locks - 1;
 }
 
 
 int ValueStack::unlock() {
   _locks.pop();
-  return locks_size();
-}
-
-
-ValueStack* ValueStack::push_scope(IRScope* scope) {
-  assert(scope->caller() == _scope, "scopes must have caller/callee relationship");
-  ValueStack* res = new ValueStack(scope,
-                                   scope->method()->max_locals(),
-                                   max_stack_size() + scope->method()->max_stack());
-  // Preserves stack and monitors.
-  res->_stack.appendAll(&_stack);
-  res->_locks.appendAll(&_locks);
-  assert(res->_stack.size() <= res->max_stack_size(), "stack overflow");
-  return res;
-}
-
-
-ValueStack* ValueStack::pop_scope() {
-  assert(_scope->caller() != NULL, "scope must have caller");
-  IRScope* scope = _scope->caller();
-  int max_stack = max_stack_size() - _scope->method()->max_stack();
-  assert(max_stack >= 0, "stack underflow");
-  ValueStack* res = new ValueStack(scope,
-                                   scope->method()->max_locals(),
-                                   max_stack);
-  // Preserves stack and monitors. Restores local and store state from caller scope.
-  res->_stack.appendAll(&_stack);
-  res->_locks.appendAll(&_locks);
-  ValueStack* caller = caller_state();
-  if (caller != NULL) {
-    for (int i = 0; i < caller->_locals.length(); i++) {
-      res->_locals.at_put(i, caller->_locals.at(i));
-    }
-    assert(res->_locals.length() == res->scope()->method()->max_locals(), "just checking");
-  }
-  assert(res->_stack.size() <= res->max_stack_size(), "stack overflow");
-  return res;
+  return total_locks_size();
 }
 
 
@@ -220,11 +178,7 @@ void ValueStack::setup_phi_for_stack(BlockBegin* b, int index) {
   Value phi = new Phi(t, b, -index - 1);
   _stack[index] = phi;
 
-#ifdef ASSERT
-  if (t->is_double_word()) {
-    _stack[index + 1] = phi->hi_word();
-  }
-#endif
+  assert(!t->is_double_word() || _stack.at(index + 1) == NULL, "hi-word of doubleword value must be NULL");
 }
 
 void ValueStack::setup_phi_for_local(BlockBegin* b, int index) {
@@ -236,7 +190,9 @@ void ValueStack::setup_phi_for_local(BlockBegin* b, int index) {
 }
 
 #ifndef PRODUCT
+
 void ValueStack::print() {
+  scope()->method()->print_name();
   if (stack_is_empty()) {
     tty->print_cr("empty stack");
   } else {
@@ -244,18 +200,20 @@ void ValueStack::print() {
     for (int i = 0; i < stack_size();) {
       Value t = stack_at_inc(i);
       tty->print("%2d  ", i);
+      tty->print("%c%d ", t->type()->tchar(), t->id());
       ip.print_instr(t);
       tty->cr();
     }
   }
   if (!no_active_locks()) {
     InstructionPrinter ip;
-    for (int i = 0; i < locks_size(); i--) {
+    for (int i = 0; i < locks_size(); i++) {
       Value t = lock_at(i);
       tty->print("lock %2d  ", i);
       if (t == NULL) {
         tty->print("this");
       } else {
+        tty->print("%c%d ", t->type()->tchar(), t->id());
         ip.print_instr(t);
       }
       tty->cr();
@@ -270,16 +228,55 @@ void ValueStack::print() {
         tty->print("null");
         i ++;
       } else {
+        tty->print("%c%d ", l->type()->tchar(), l->id());
         ip.print_instr(l);
         if (l->type()->is_illegal() || l->type()->is_single_word()) i ++; else i += 2;
       }
       tty->cr();
     }
   }
+
+  if (caller_state() != NULL) {
+    caller_state()->print();
+  }
 }
 
 
 void ValueStack::verify() {
-  Unimplemented();
+  assert(scope() != NULL, "scope must exist");
+  if (caller_state() != NULL) {
+    assert(caller_state()->scope() == scope()->caller(), "invalid caller scope");
+    caller_state()->verify();
+  }
+
+  if (kind() == Parsing) {
+    assert(bci() == -99, "bci not defined during parsing");
+  } else {
+    assert(bci() >= -1, "bci out of range");
+    assert(bci() < scope()->method()->code_size(), "bci out of range");
+    assert(bci() == SynchronizationEntryBCI || Bytecodes::is_defined(scope()->method()->java_code_at_bci(bci())), "make sure bci points at a real bytecode");
+    assert(scope()->method()->liveness_at_bci(bci()).is_valid(), "liveness at bci must be valid");
+  }
+
+  int i;
+  for (i = 0; i < stack_size(); i++) {
+    Value v = _stack.at(i);
+    if (v == NULL) {
+      assert(_stack.at(i - 1)->type()->is_double_word(), "only hi-words are NULL on stack");
+    } else if (v->type()->is_double_word()) {
+      assert(_stack.at(i + 1) == NULL, "hi-word must be NULL");
+    }
+  }
+
+  for (i = 0; i < locals_size(); i++) {
+    Value v = _locals.at(i);
+    if (v != NULL && v->type()->is_double_word()) {
+      assert(_locals.at(i + 1) == NULL, "hi-word must be NULL");
+    }
+  }
+
+  for_each_state_value(this, v,
+    assert(v != NULL, "just test if state-iteration succeeds");
+  );
 }
 #endif // PRODUCT
