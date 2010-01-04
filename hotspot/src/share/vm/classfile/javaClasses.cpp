@@ -2403,6 +2403,10 @@ oop java_dyn_MethodType::ptype(oop mt, int idx) {
   return ptypes(mt)->obj_at(idx);
 }
 
+int java_dyn_MethodType::ptype_count(oop mt) {
+  return ptypes(mt)->length();
+}
+
 
 
 // Support for java_dyn_MethodTypeForm
