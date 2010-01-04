@@ -2756,9 +2756,16 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   set_aggressive_opts_flags();
 
 #ifdef CC_INTERP
-  // Biased locking is not implemented with c++ interpreter
+  // Clear flags not supported by the C++ interpreter
+  FLAG_SET_DEFAULT(ProfileInterpreter, false);
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
-#endif /* CC_INTERP */
+  LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedOops, false));
+#endif // CC_INTERP
+
+#ifdef ZERO
+  // Clear flags not supported by Zero
+  FLAG_SET_DEFAULT(TaggedStackInterpreter, false);
+#endif // ZERO
 
 #ifdef COMPILER2
   if (!UseBiasedLocking || EmitSync != 0) {
