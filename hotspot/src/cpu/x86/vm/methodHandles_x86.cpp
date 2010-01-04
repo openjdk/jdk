@@ -268,8 +268,9 @@ void MethodHandles::remove_arg_slots(MacroAssembler* _masm,
 }
 
 #ifndef PRODUCT
+extern "C" void print_method_handle(oop mh);
 void trace_method_handle_stub(const char* adaptername,
-                              oopDesc* mh,
+                              oop mh,
                               intptr_t* entry_sp,
                               intptr_t* saved_sp,
                               intptr_t* saved_bp) {
@@ -280,6 +281,7 @@ void trace_method_handle_stub(const char* adaptername,
          adaptername, (intptr_t)mh, (intptr_t)entry_sp, (intptr_t)(saved_sp - entry_sp), (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
   if (last_sp != saved_sp)
     printf("*** last_sp="INTPTR_FORMAT"\n", (intptr_t)last_sp);
+  if (Verbose)  print_method_handle(mh);
 }
 #endif //PRODUCT
 

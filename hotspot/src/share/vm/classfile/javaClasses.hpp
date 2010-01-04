@@ -1027,6 +1027,7 @@ class java_dyn_MethodType: AllStatic {
   static oop            form(oop mt);
 
   static oop            ptype(oop mt, int index);
+  static int            ptype_count(oop mt);
 
   static symbolOop      as_signature(oop mt, bool intern_if_not_found, TRAPS);
   static void           print_signature(oop mt, outputStream* st);
