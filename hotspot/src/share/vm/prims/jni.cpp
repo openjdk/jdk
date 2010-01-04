@@ -3241,7 +3241,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
     jint b = Atomic::xchg(0xdeadbeef, &a);
     void *c = &a;
     void *d = Atomic::xchg_ptr(&b, &c);
-    assert(a == 0xdeadbeef && b == (jint) 0xcafebabe, "Atomic::xchg() works");
+    assert(a == (jint) 0xdeadbeef && b == (jint) 0xcafebabe, "Atomic::xchg() works");
     assert(c == &b && d == &a, "Atomic::xchg_ptr() works");
   }
 #endif // ZERO && ASSERT
