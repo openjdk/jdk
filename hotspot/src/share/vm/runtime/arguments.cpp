@@ -948,6 +948,7 @@ static void no_shared_spaces() {
   }
 }
 
+#ifndef KERNEL
 // If the user has chosen ParallelGCThreads > 0, we set UseParNewGC
 // if it's not explictly set or unset. If the user has chosen
 // UseParNewGC and not explicitly set ParallelGCThreads we
@@ -1177,8 +1178,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       // the value (either from the command line or ergonomics) of
       // OldPLABSize.  Following OldPLABSize is an ergonomics decision.
       FLAG_SET_ERGO(uintx, CMSParPromoteBlocksToClaim, OldPLABSize);
-    }
-    else {
+    } else {
       // OldPLABSize and CMSParPromoteBlocksToClaim are both set.
       // CMSParPromoteBlocksToClaim is a collector-specific flag, so
       // we'll let it to take precedence.
@@ -1188,7 +1188,23 @@ void Arguments::set_cms_and_parnew_gc_flags() {
                   " CMSParPromoteBlocksToClaim will take precedence.\n");
     }
   }
+  if (!FLAG_IS_DEFAULT(ResizeOldPLAB) && !ResizeOldPLAB) {
+    // OldPLAB sizing manually turned off: Use a larger default setting,
+    // unless it was manually specified. This is because a too-low value
+    // will slow down scavenges.
+    if (FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim)) {
+      FLAG_SET_ERGO(uintx, CMSParPromoteBlocksToClaim, 50); // default value before 6631166
+    }
+  }
+  // Overwrite OldPLABSize which is the variable we will internally use everywhere.
+  FLAG_SET_ERGO(uintx, OldPLABSize, CMSParPromoteBlocksToClaim);
+  // If either of the static initialization defaults have changed, note this
+  // modification.
+  if (!FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
+    CFLS_LAB::modify_initialization(OldPLABSize, OldPLABWeight);
+  }
 }
+#endif // KERNEL
 
 inline uintx max_heap_for_compressed_oops() {
   LP64_ONLY(return oopDesc::OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
@@ -2370,22 +2386,25 @@ SOLARIS_ONLY(
                   "ExtendedDTraceProbes flag is only applicable on Solaris\n");
       return JNI_EINVAL;
 #endif // ndef SOLARIS
-    } else
 #ifdef ASSERT
-    if (match_option(option, "-XX:+FullGCALot", &tail)) {
+    } else if (match_option(option, "-XX:+FullGCALot", &tail)) {
       FLAG_SET_CMDLINE(bool, FullGCALot, true);
       // disable scavenge before parallel mark-compact
       FLAG_SET_CMDLINE(bool, ScavengeBeforeFullGC, false);
-    } else
 #endif
-    if (match_option(option, "-XX:ParCMSPromoteBlocksToClaim=", &tail)) {
+    } else if (match_option(option, "-XX:CMSParPromoteBlocksToClaim=", &tail)) {
       julong cms_blocks_to_claim = (julong)atol(tail);
       FLAG_SET_CMDLINE(uintx, CMSParPromoteBlocksToClaim, cms_blocks_to_claim);
       jio_fprintf(defaultStream::error_stream(),
-        "Please use -XX:CMSParPromoteBlocksToClaim in place of "
+        "Please use -XX:OldPLABSize in place of "
+        "-XX:CMSParPromoteBlocksToClaim in the future\n");
+    } else if (match_option(option, "-XX:ParCMSPromoteBlocksToClaim=", &tail)) {
+      julong cms_blocks_to_claim = (julong)atol(tail);
+      FLAG_SET_CMDLINE(uintx, CMSParPromoteBlocksToClaim, cms_blocks_to_claim);
+      jio_fprintf(defaultStream::error_stream(),
+        "Please use -XX:OldPLABSize in place of "
         "-XX:ParCMSPromoteBlocksToClaim in the future\n");
-    } else
-    if (match_option(option, "-XX:ParallelGCOldGenAllocBufferSize=", &tail)) {
+    } else if (match_option(option, "-XX:ParallelGCOldGenAllocBufferSize=", &tail)) {
       julong old_plab_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &old_plab_size, 1);
       if (errcode != arg_in_range) {
@@ -2398,8 +2417,7 @@ SOLARIS_ONLY(
       jio_fprintf(defaultStream::error_stream(),
                   "Please use -XX:OldPLABSize in place of "
                   "-XX:ParallelGCOldGenAllocBufferSize in the future\n");
-    } else
-    if (match_option(option, "-XX:ParallelGCToSpaceAllocBufferSize=", &tail)) {
+    } else if (match_option(option, "-XX:ParallelGCToSpaceAllocBufferSize=", &tail)) {
       julong young_plab_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &young_plab_size, 1);
       if (errcode != arg_in_range) {
@@ -2412,8 +2430,7 @@ SOLARIS_ONLY(
       jio_fprintf(defaultStream::error_stream(),
                   "Please use -XX:YoungPLABSize in place of "
                   "-XX:ParallelGCToSpaceAllocBufferSize in the future\n");
-    } else
-    if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
+    } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
       if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
         if (!process_argument(tail, args->ignoreUnrecognized, origin)) {
@@ -2727,6 +2744,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     return JNI_EINVAL;
   }
 
+#ifndef KERNEL
   if (UseConcMarkSweepGC) {
     // Set flags for CMS and ParNew.  Check UseConcMarkSweep first
     // to ensure that when both UseConcMarkSweepGC and UseParNewGC
@@ -2744,6 +2762,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       set_g1_gc_flags();
     }
   }
+#endif // KERNEL
 
 #ifdef SERIALGC
   assert(verify_serial_gc_flags(), "SerialGC unset");

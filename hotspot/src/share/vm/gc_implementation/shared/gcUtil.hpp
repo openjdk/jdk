@@ -54,14 +54,21 @@ class AdaptiveWeightedAverage : public CHeapObj {
 
  public:
   // Input weight must be between 0 and 100
-  AdaptiveWeightedAverage(unsigned weight) :
-    _average(0.0), _sample_count(0), _weight(weight), _last_sample(0.0) {
+  AdaptiveWeightedAverage(unsigned weight, float avg = 0.0) :
+    _average(avg), _sample_count(0), _weight(weight), _last_sample(0.0) {
   }
 
   void clear() {
     _average = 0;
     _sample_count = 0;
     _last_sample = 0;
+  }
+
+  // Useful for modifying static structures after startup.
+  void  modify(size_t avg, unsigned wt, bool force = false)  {
+    assert(force, "Are you sure you want to call this?");
+    _average = (float)avg;
+    _weight  = wt;
   }
 
   // Accessors
@@ -83,6 +90,10 @@ class AdaptiveWeightedAverage : public CHeapObj {
     // Convert to float and back to avoid integer overflow.
     return (size_t)exp_avg((float)avg, (float)sample, weight);
   }
+
+  // Printing
+  void print_on(outputStream* st) const;
+  void print() const;
 };
 
 
@@ -129,6 +140,10 @@ class AdaptivePaddedAverage : public AdaptiveWeightedAverage {
 
   // Override
   void  sample(float new_sample);
+
+  // Printing
+  void print_on(outputStream* st) const;
+  void print() const;
 };
 
 // A weighted average that includes a deviation from the average,
@@ -146,7 +161,12 @@ public:
     AdaptivePaddedAverage(weight, padding)  {}
   // Override
   void  sample(float new_sample);
+
+  // Printing
+  void print_on(outputStream* st) const;
+  void print() const;
 };
+
 // Use a least squares fit to a set of data to generate a linear
 // equation.
 //              y = intercept + slope * x
