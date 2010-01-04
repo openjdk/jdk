@@ -592,7 +592,6 @@ JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
     break;
   case JVMTI_VERBOSE_GC:
     PrintGC = value != 0;
-    TraceClassUnloading = value != 0;
     break;
   case JVMTI_VERBOSE_JNI:
     PrintJNIResolving = value != 0;

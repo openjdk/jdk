@@ -1866,7 +1866,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         FLAG_SET_CMDLINE(bool, TraceClassUnloading, true);
       } else if (!strcmp(tail, ":gc")) {
         FLAG_SET_CMDLINE(bool, PrintGC, true);
-        FLAG_SET_CMDLINE(bool, TraceClassUnloading, true);
       } else if (!strcmp(tail, ":jni")) {
         FLAG_SET_CMDLINE(bool, PrintJNIResolving, true);
       }
@@ -2720,9 +2719,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (PrintGCDetails) {
     // Turn on -verbose:gc options as well
     PrintGC = true;
-    if (FLAG_IS_DEFAULT(TraceClassUnloading)) {
-      TraceClassUnloading = true;
-    }
   }
 
 #if defined(_LP64) && defined(COMPILER1)
