@@ -449,8 +449,12 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ addptr(rax, stack_base);
   __ subptr(rax, stack_size);
 
+  // Use the maximum number of pages we might bang.
+  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages) ? StackShadowPages :
+                                                                              (StackRedPages+StackYellowPages);
+
   // add in the red and yellow zone sizes
-  __ addptr(rax, (StackRedPages + StackYellowPages) * page_size);
+  __ addptr(rax, max_pages * page_size);
 
   // check against the current stack bottom
   __ cmpptr(rsp, rax);
@@ -1502,8 +1506,10 @@ int AbstractInterpreter::layout_activation(methodOop method,
          tempcount* Interpreter::stackElementWords() + popframe_extra_args;
   if (interpreter_frame != NULL) {
 #ifdef ASSERT
-    assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(),
-           "Frame not properly walkable");
+    if (!EnableMethodHandles)
+      // @@@ FIXME: Should we correct interpreter_frame_sender_sp in the calling sequences?
+      // Probably, since deoptimization doesn't work yet.
+      assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
     assert(caller->sp() == interpreter_frame->sender_sp(), "Frame not properly walkable(2)");
 #endif
 

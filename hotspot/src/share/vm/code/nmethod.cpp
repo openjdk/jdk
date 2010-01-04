@@ -1763,6 +1763,14 @@ void nmethod::copy_scopes_pcs(PcDesc* pcs, int count) {
          "must end with a sentinel");
 #endif //ASSERT
 
+  // Search for MethodHandle invokes and tag the nmethod.
+  for (int i = 0; i < count; i++) {
+    if (pcs[i].is_method_handle_invoke()) {
+      set_has_method_handle_invokes(true);
+      break;
+    }
+  }
+
   int size = count * sizeof(PcDesc);
   assert(scopes_pcs_size() >= size, "oob");
   memcpy(scopes_pcs_begin(), pcs, size);
@@ -2026,6 +2034,18 @@ void nmethodLocker::unlock_nmethod(nmethod* nm) {
 bool nmethod::is_deopt_pc(address pc) {
   bool ret =  pc == deopt_handler_begin();
   return ret;
+}
+
+
+// -----------------------------------------------------------------------------
+// MethodHandle
+
+bool nmethod::is_method_handle_return(address return_pc) {
+  if (!has_method_handle_invokes())  return false;
+  PcDesc* pd = pc_desc_at(return_pc);
+  if (pd == NULL)
+    return false;
+  return pd->is_method_handle_invoke();
 }
 
 

@@ -1984,7 +1984,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
     scan = WKID(meth_group_end+1);
   }
   WKID indy_group_start = WK_KLASS_ENUM_NAME(Linkage_klass);
-  WKID indy_group_end   = WK_KLASS_ENUM_NAME(Dynamic_klass);
+  WKID indy_group_end   = WK_KLASS_ENUM_NAME(InvokeDynamic_klass);
   initialize_wk_klasses_until(indy_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
     initialize_wk_klasses_through(indy_group_end, scan, CHECK);
@@ -2340,6 +2340,8 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle signature,
   SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature);
   if (spe == NULL || spe->property_oop() == NULL) {
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
+    if (THREAD->is_Compiler_thread())
+      return NULL;              // do not attempt from within compiler
     Handle mt = compute_method_handle_type(signature(),
                                            class_loader, protection_domain,
                                            CHECK_NULL);

@@ -1084,6 +1084,14 @@ public:
   static oop            vmmethod(oop site);
   static void       set_vmmethod(oop site, oop ref);
 
+  // Testers
+  static bool is_subclass(klassOop klass) {
+    return Klass::cast(klass)->is_subclass_of(SystemDictionary::CallSite_klass());
+  }
+  static bool is_instance(oop obj) {
+    return obj != NULL && is_subclass(obj->klass());
+  }
+
   // Accessors for code generation:
   static int target_offset_in_bytes()           { return _target_offset; }
   static int type_offset_in_bytes()             { return _type_offset; }

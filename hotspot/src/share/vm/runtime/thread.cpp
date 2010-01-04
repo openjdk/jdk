@@ -3055,6 +3055,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       warning("java.lang.ArithmeticException has not been initialized");
       warning("java.lang.StackOverflowError has not been initialized");
     }
+
+    if (EnableInvokeDynamic) {
+      // JSR 292: An intialized java.dyn.InvokeDynamic is required in
+      // the compiler.
+      initialize_class(vmSymbolHandles::java_dyn_InvokeDynamic(), CHECK_0);
+    }
   }
 
   // See        : bugid 4211085.

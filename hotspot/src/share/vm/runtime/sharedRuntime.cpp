@@ -802,7 +802,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
 #ifdef ASSERT
   // Check that the receiver klass is of the right subtype and that it is initialized for virtual calls
-  if (bc != Bytecodes::_invokestatic) {
+  if (bc != Bytecodes::_invokestatic && bc != Bytecodes::_invokedynamic) {
     assert(receiver.not_null(), "should have thrown exception");
     KlassHandle receiver_klass (THREAD, receiver->klass());
     klassOop rk = constants->klass_ref_at(bytecode_index, CHECK_(nullHandle));
@@ -1027,7 +1027,16 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* thread))
   frame stub_frame = thread->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
-  if (caller_frame.is_interpreted_frame() || caller_frame.is_entry_frame() ) {
+
+  // MethodHandle invokes don't have a CompiledIC and should always
+  // simply redispatch to the callee_target.
+  address   sender_pc = caller_frame.pc();
+  CodeBlob* sender_cb = caller_frame.cb();
+  nmethod*  sender_nm = sender_cb->as_nmethod_or_null();
+
+  if (caller_frame.is_interpreted_frame() ||
+      caller_frame.is_entry_frame() ||
+      (sender_nm != NULL && sender_nm->is_method_handle_return(sender_pc))) {
     methodOop callee = thread->callee_target();
     guarantee(callee != NULL && callee->is_method(), "bad handshake");
     thread->set_vm_result(callee);

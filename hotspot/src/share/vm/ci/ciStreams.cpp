@@ -339,9 +339,9 @@ ciMethod* ciBytecodeStream::get_method(bool& will_link) {
 // for checking linkability when retrieving the associated method.
 ciKlass* ciBytecodeStream::get_declared_method_holder() {
   bool ignore;
-  // report as Dynamic for invokedynamic, which is syntactically classless
+  // report as InvokeDynamic for invokedynamic, which is syntactically classless
   if (cur_bc() == Bytecodes::_invokedynamic)
-    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbol::java_dyn_Dynamic(), false);
+    return CURRENT_ENV->get_klass_by_name(_holder, ciSymbol::java_dyn_InvokeDynamic(), false);
   return CURRENT_ENV->get_klass_by_index(_holder, get_method_holder_index(), ignore);
 }
 
