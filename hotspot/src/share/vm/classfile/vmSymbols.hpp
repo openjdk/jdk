@@ -346,9 +346,14 @@
                                                                                                   \
   /* common signatures names */                                                                   \
   template(void_method_signature,                     "()V")                                      \
+  template(void_boolean_signature,                    "()Z")                                      \
+  template(void_byte_signature,                       "()B")                                      \
+  template(void_char_signature,                       "()C")                                      \
+  template(void_short_signature,                      "()S")                                      \
   template(void_int_signature,                        "()I")                                      \
   template(void_long_signature,                       "()J")                                      \
-  template(void_boolean_signature,                    "()Z")                                      \
+  template(void_float_signature,                      "()F")                                      \
+  template(void_double_signature,                     "()D")                                      \
   template(int_void_signature,                        "(I)V")                                     \
   template(int_int_signature,                         "(I)I")                                     \
   template(int_bool_signature,                        "(I)Z")                                     \
@@ -853,6 +858,46 @@
                                                                                                                           \
   do_intrinsic(_invoke,                   java_lang_reflect_Method, invoke_name, object_array_object_object_signature, F_R) \
   /*   (symbols invoke_name and invoke_signature defined above) */                                                      \
+  do_intrinsic(_checkSpreadArgument,      sun_dyn_MethodHandleImpl, checkSpreadArgument_name, checkSpreadArgument_signature, F_S) \
+   do_name(    checkSpreadArgument_name,       "checkSpreadArgument")                                                   \
+   do_name(    checkSpreadArgument_signature,  "(Ljava/lang/Object;I)V")                                                \
+                                                                                                                        \
+  /* unboxing methods: */                                                                                               \
+  do_intrinsic(_booleanValue,             java_lang_Boolean,      booleanValue_name, void_boolean_signature, F_R)       \
+   do_name(     booleanValue_name,       "booleanValue")                                                                \
+  do_intrinsic(_byteValue,                java_lang_Byte,         byteValue_name, void_byte_signature, F_R)             \
+   do_name(     byteValue_name,          "byteValue")                                                                   \
+  do_intrinsic(_charValue,                java_lang_Character,    charValue_name, void_char_signature, F_R)             \
+   do_name(     charValue_name,          "charValue")                                                                   \
+  do_intrinsic(_shortValue,               java_lang_Short,        shortValue_name, void_short_signature, F_R)           \
+   do_name(     shortValue_name,         "shortValue")                                                                  \
+  do_intrinsic(_intValue,                 java_lang_Integer,      intValue_name, void_int_signature, F_R)               \
+   do_name(     intValue_name,           "intValue")                                                                    \
+  do_intrinsic(_longValue,                java_lang_Long,         longValue_name, void_long_signature, F_R)             \
+   do_name(     longValue_name,          "longValue")                                                                   \
+  do_intrinsic(_floatValue,               java_lang_Float,        floatValue_name, void_float_signature, F_R)           \
+   do_name(     floatValue_name,         "floatValue")                                                                  \
+  do_intrinsic(_doubleValue,              java_lang_Double,       doubleValue_name, void_double_signature, F_R)         \
+   do_name(     doubleValue_name,        "doubleValue")                                                                 \
+                                                                                                                        \
+  /* boxing methods: */                                                                                                 \
+   do_name(    valueOf_name,              "valueOf")                                                                    \
+  do_intrinsic(_Boolean_valueOf,          java_lang_Boolean,      valueOf_name, Boolean_valueOf_signature, F_S)         \
+   do_name(     Boolean_valueOf_signature,                       "(Z)Ljava/lang/Boolean;")                              \
+  do_intrinsic(_Byte_valueOf,             java_lang_Byte,         valueOf_name, Byte_valueOf_signature, F_S)            \
+   do_name(     Byte_valueOf_signature,                          "(B)Ljava/lang/Byte;")                                 \
+  do_intrinsic(_Character_valueOf,        java_lang_Character,    valueOf_name, Character_valueOf_signature, F_S)       \
+   do_name(     Character_valueOf_signature,                     "(C)Ljava/lang/Character;")                            \
+  do_intrinsic(_Short_valueOf,            java_lang_Short,        valueOf_name, Short_valueOf_signature, F_S)           \
+   do_name(     Short_valueOf_signature,                         "(S)Ljava/lang/Short;")                                \
+  do_intrinsic(_Integer_valueOf,          java_lang_Integer,      valueOf_name, Integer_valueOf_signature, F_S)         \
+   do_name(     Integer_valueOf_signature,                       "(I)Ljava/lang/Integer;")                              \
+  do_intrinsic(_Long_valueOf,             java_lang_Long,         valueOf_name, Long_valueOf_signature, F_S)            \
+   do_name(     Long_valueOf_signature,                          "(J)Ljava/lang/Long;")                                 \
+  do_intrinsic(_Float_valueOf,            java_lang_Float,        valueOf_name, Float_valueOf_signature, F_S)           \
+   do_name(     Float_valueOf_signature,                         "(F)Ljava/lang/Float;")                                \
+  do_intrinsic(_Double_valueOf,           java_lang_Double,       valueOf_name, Double_valueOf_signature, F_S)          \
+   do_name(     Double_valueOf_signature,                        "(D)Ljava/lang/Double;")                               \
                                                                                                                         \
     /*end*/
 
@@ -983,7 +1028,12 @@ class vmIntrinsics: AllStatic {
     F_Y,                        // !static ?native  synchronized
     F_RN,                       // !static  native !synchronized
     F_SN,                       //  static  native !synchronized
-    F_RNY                       // !static  native  synchronized
+    F_RNY,                      // !static  native  synchronized
+
+    FLAG_LIMIT
+  };
+  enum {
+    log2_FLAG_LIMIT = 4         // checked by an assert at start-up
   };
 
 public:
@@ -995,15 +1045,32 @@ public:
 
   static const char* name_at(ID id);
 
+private:
+  static ID find_id_impl(vmSymbols::SID holder,
+                         vmSymbols::SID name,
+                         vmSymbols::SID sig,
+                         jshort flags);
+
+public:
   // Given a method's class, name, signature, and access flags, report its ID.
   static ID find_id(vmSymbols::SID holder,
                     vmSymbols::SID name,
                     vmSymbols::SID sig,
-                    jshort flags);
+                    jshort flags) {
+    ID id = find_id_impl(holder, name, sig, flags);
+#ifdef ASSERT
+    // ID _none does not hold the following asserts.
+    if (id == _none)  return id;
+#endif
+    assert(    class_for(id) == holder, "correct id");
+    assert(     name_for(id) == name,   "correct id");
+    assert(signature_for(id) == sig,    "correct id");
+    return id;
+  }
 
   static void verify_method(ID actual_id, methodOop m) PRODUCT_RETURN;
 
-  // No need for these in the product:
+  // Find out the symbols behind an intrinsic:
   static vmSymbols::SID     class_for(ID id);
   static vmSymbols::SID      name_for(ID id);
   static vmSymbols::SID signature_for(ID id);
@@ -1013,4 +1080,8 @@ public:
 
   // Access to intrinsic methods:
   static methodOop method_for(ID id);
+
+  // Wrapper object methods:
+  static ID for_boxing(BasicType type);
+  static ID for_unboxing(BasicType type);
 };

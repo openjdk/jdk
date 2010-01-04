@@ -2814,6 +2814,10 @@ methodDataOop.hpp                       oop.hpp
 methodDataOop.hpp                       orderAccess.hpp
 methodDataOop.hpp                       universe.hpp
 
+methodHandleWalk.hpp                    methodHandles.hpp
+
+methodHandleWalk.cpp                    methodHandleWalk.hpp
+
 methodHandles.hpp                       frame.inline.hpp
 methodHandles.hpp                       globals.hpp
 methodHandles.hpp                       interfaceSupport.hpp
