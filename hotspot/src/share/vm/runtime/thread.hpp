@@ -760,6 +760,7 @@ class JavaThread: public Thread {
   volatile address _exception_pc;                // PC where exception happened
   volatile address _exception_handler_pc;        // PC for handler of exception
   volatile int     _exception_stack_size;        // Size of frame where exception happened
+  volatile int     _is_method_handle_exception;  // True if the current exception PC is at a MethodHandle call.
 
   // support for compilation
   bool    _is_compiling;                         // is true if a compilation is active inthis thread (one compilation per thread possible)
@@ -1095,11 +1096,13 @@ class JavaThread: public Thread {
   int      exception_stack_size() const          { return _exception_stack_size; }
   address  exception_pc() const                  { return _exception_pc; }
   address  exception_handler_pc() const          { return _exception_handler_pc; }
+  int      is_method_handle_exception() const    { return _is_method_handle_exception; }
 
   void set_exception_oop(oop o)                  { _exception_oop = o; }
   void set_exception_pc(address a)               { _exception_pc = a; }
   void set_exception_handler_pc(address a)       { _exception_handler_pc = a; }
   void set_exception_stack_size(int size)        { _exception_stack_size = size; }
+  void set_is_method_handle_exception(int value) { _is_method_handle_exception = value; }
 
   // Stack overflow support
   inline size_t stack_available(address cur_sp);
@@ -1173,6 +1176,7 @@ class JavaThread: public Thread {
   static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc        ); }
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
   static ByteSize exception_stack_size_offset()  { return byte_offset_of(JavaThread, _exception_stack_size); }
+  static ByteSize is_method_handle_exception_offset() { return byte_offset_of(JavaThread, _is_method_handle_exception); }
   static ByteSize stack_guard_state_offset()     { return byte_offset_of(JavaThread, _stack_guard_state   ); }
   static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags       ); }
 

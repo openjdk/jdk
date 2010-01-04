@@ -2699,6 +2699,15 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
     ScavengeRootsInCode = 1;
   }
+#ifdef COMPILER2
+  if (EnableInvokeDynamic && DoEscapeAnalysis) {
+    // TODO: We need to find rules for invokedynamic and EA.  For now,
+    // simply disable EA by default.
+    if (FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
+      DoEscapeAnalysis = false;
+    }
+  }
+#endif
 
   if (PrintGCDetails) {
     // Turn on -verbose:gc options as well
@@ -2721,6 +2730,15 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
   // Set flags based on ergonomics.
   set_ergonomics_flags();
+
+#ifdef _LP64
+  // XXX JSR 292 currently does not support compressed oops.
+  if (EnableMethodHandles && UseCompressedOops) {
+    if (FLAG_IS_DEFAULT(UseCompressedOops) || FLAG_IS_ERGO(UseCompressedOops)) {
+      UseCompressedOops = false;
+    }
+  }
+#endif // _LP64
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {

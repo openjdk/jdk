@@ -210,7 +210,8 @@ class Bytecode_invoke: public ResourceObj {
   bool is_valid() const                          { return is_invokeinterface() ||
                                                           is_invokevirtual()   ||
                                                           is_invokestatic()    ||
-                                                          is_invokespecial();     }
+                                                          is_invokespecial()   ||
+                                                          is_invokedynamic(); }
 
   // Creation
   inline friend Bytecode_invoke* Bytecode_invoke_at(methodHandle method, int bci);

@@ -911,9 +911,10 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     ciMethod* scope_method = method ? method : _method;
     // Describe the scope here
     assert(jvms->bci() >= InvocationEntryBci && jvms->bci() <= 0x10000, "must be a valid or entry BCI");
-    assert(!jvms->should_reexecute() || depth==max_depth, "reexecute allowed only for the youngest");
+    assert(!jvms->should_reexecute() || depth == max_depth, "reexecute allowed only for the youngest");
     // Now we can describe the scope.
-    debug_info()->describe_scope(safepoint_pc_offset,scope_method,jvms->bci(),jvms->should_reexecute(),locvals,expvals,monvals);
+    bool is_method_handle_invoke = false;
+    debug_info()->describe_scope(safepoint_pc_offset, scope_method, jvms->bci(), jvms->should_reexecute(), is_method_handle_invoke, locvals, expvals, monvals);
   } // End jvms loop
 
   // Mark the end of the scope set.

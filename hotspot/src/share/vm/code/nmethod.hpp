@@ -81,18 +81,19 @@ class PcDescCache VALUE_OBJ_CLASS_SPEC {
 
 struct nmFlags {
   friend class VMStructs;
-  unsigned int version:8;                 // version number (0 = first version)
-  unsigned int level:4;                   // optimization level
-  unsigned int age:4;                     // age (in # of sweep steps)
+  unsigned int version:8;                    // version number (0 = first version)
+  unsigned int level:4;                      // optimization level
+  unsigned int age:4;                        // age (in # of sweep steps)
 
-  unsigned int state:2;                   // {alive, zombie, unloaded)
+  unsigned int state:2;                      // {alive, zombie, unloaded)
 
-  unsigned int isUncommonRecompiled:1;    // recompiled because of uncommon trap?
-  unsigned int isToBeRecompiled:1;        // to be recompiled as soon as it matures
-  unsigned int hasFlushedDependencies:1;  // Used for maintenance of dependencies
-  unsigned int markedForReclamation:1;    // Used by NMethodSweeper
+  unsigned int isUncommonRecompiled:1;       // recompiled because of uncommon trap?
+  unsigned int isToBeRecompiled:1;           // to be recompiled as soon as it matures
+  unsigned int hasFlushedDependencies:1;     // Used for maintenance of dependencies
+  unsigned int markedForReclamation:1;       // Used by NMethodSweeper
 
-  unsigned int has_unsafe_access:1;       // May fault due to unsafe access.
+  unsigned int has_unsafe_access:1;          // May fault due to unsafe access.
+  unsigned int has_method_handle_invokes:1;  // Has this method MethodHandle invokes?
 
   void clear();
 };
@@ -409,6 +410,9 @@ class nmethod : public CodeBlob {
   bool  has_unsafe_access() const                 { return flags.has_unsafe_access; }
   void  set_has_unsafe_access(bool z)             { flags.has_unsafe_access = z; }
 
+  bool  has_method_handle_invokes() const         { return flags.has_method_handle_invokes; }
+  void  set_has_method_handle_invokes(bool z)     { flags.has_method_handle_invokes = z; }
+
   int   level() const                             { return flags.level; }
   void  set_level(int newLevel)                   { check_safepoint(); flags.level = newLevel; }
 
@@ -540,6 +544,9 @@ class nmethod : public CodeBlob {
   // Accessor/mutator for the original pc of a frame before a frame was deopted.
   address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
   void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
+
+  // MethodHandle
+  bool is_method_handle_return(address return_pc);
 
   // jvmti support:
   void post_compiled_method_load_event();

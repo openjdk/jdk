@@ -218,7 +218,7 @@
   template(base_name,                                 "base")                                     \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
-  template(java_dyn_Dynamic,                          "java/dyn/Dynamic")                         \
+  template(java_dyn_InvokeDynamic,                    "java/dyn/InvokeDynamic")                   \
   template(java_dyn_Linkage,                          "java/dyn/Linkage")                         \
   template(java_dyn_CallSite,                         "java/dyn/CallSite")                        \
   template(java_dyn_MethodHandle,                     "java/dyn/MethodHandle")                    \

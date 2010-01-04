@@ -308,7 +308,7 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
     return true;
   }
   if (dest_method->is_method_handle_invoke()
-      && holder_klass->name() == ciSymbol::java_dyn_Dynamic()) {
+      && holder_klass->name() == ciSymbol::java_dyn_InvokeDynamic()) {
     // FIXME: NYI
     uncommon_trap(Deoptimization::Reason_unhandled,
                   Deoptimization::Action_none,
