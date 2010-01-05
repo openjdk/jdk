@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,29 @@ import sun.security.util.DerOutputStream;
 
 public class GSSNameImpl implements GSSName {
 
+    /**
+     * The old Oid used in RFC 2853. Now supported as
+     * input parameters in:
+     *
+     * 1. The four overloaded GSSManager.createName(*) methods
+     * 2. GSSManager.getMechsForName(Oid)
+     *
+     * Note that even if a GSSName is created with this old Oid,
+     * its internal name type and getStringNameType() output are
+     * always the new value.
+     */
+    final static Oid oldHostbasedServiceName;
+
+    static {
+        Oid tmp = null;
+        try {
+            tmp = new Oid("1.3.6.1.5.6.2");
+        } catch (Exception e) {
+            // should never happen
+        }
+        oldHostbasedServiceName = tmp;
+    }
+
     private GSSManagerImpl gssManager = null;
 
     /*
@@ -134,6 +157,9 @@ public class GSSNameImpl implements GSSName {
                         Oid mech)
         throws GSSException {
 
+        if (oldHostbasedServiceName.equals(appNameType)) {
+            appNameType = GSSName.NT_HOSTBASED_SERVICE;
+        }
         if (appName == null)
             throw new GSSExceptionImpl(GSSException.BAD_NAME,
                                    "Cannot import null name");
