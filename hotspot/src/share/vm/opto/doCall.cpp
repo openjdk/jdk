@@ -228,6 +228,12 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // Use a more generic tactic, like a simple call.
   if (call_is_virtual) {
     return CallGenerator::for_virtual_call(call_method, vtable_index);
+  } else if (call_method->is_method_handle_invoke()) {
+    if (jvms->method()->java_code_at_bci(jvms->bci()) == Bytecodes::_invokedynamic)
+      return CallGenerator::for_dynamic_call(call_method);
+    else
+      // %%% if the target MH is a compile-time constant, we should try to inline it
+      return CallGenerator::for_direct_call(call_method);
   } else {
     // Class Hierarchy Analysis or Type Profile reveals a unique target,
     // or it is a static or special call.
@@ -299,19 +305,11 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
   // Interface classes can be loaded & linked and never get around to
   // being initialized.  Uncommon-trap for not-initialized static or
   // v-calls.  Let interface calls happen.
-  ciInstanceKlass* holder_klass  = dest_method->holder();
+  ciInstanceKlass* holder_klass = dest_method->holder();
   if (!holder_klass->is_initialized() &&
       !holder_klass->is_interface()) {
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
-                  holder_klass);
-    return true;
-  }
-  if (dest_method->is_method_handle_invoke()
-      && holder_klass->name() == ciSymbol::java_dyn_InvokeDynamic()) {
-    // FIXME: NYI
-    uncommon_trap(Deoptimization::Reason_unhandled,
-                  Deoptimization::Action_none,
                   holder_klass);
     return true;
   }
@@ -333,6 +331,7 @@ void Parse::do_call() {
   bool is_virtual = bc() == Bytecodes::_invokevirtual;
   bool is_virtual_or_interface = is_virtual || bc() == Bytecodes::_invokeinterface;
   bool has_receiver = is_virtual_or_interface || bc() == Bytecodes::_invokespecial;
+  bool is_invokedynamic = bc() == Bytecodes::_invokedynamic;
 
   // Find target being called
   bool             will_link;
@@ -341,7 +340,8 @@ void Parse::do_call() {
   ciKlass* holder = iter().get_declared_method_holder();
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
 
-  int   nargs    = dest_method->arg_size();
+  int nargs = dest_method->arg_size();
+  if (is_invokedynamic)  nargs -= 1;
 
   // uncommon-trap when callee is unloaded, uninitialized or will not link
   // bailout when too many arguments for register representation
@@ -355,7 +355,7 @@ void Parse::do_call() {
     return;
   }
   assert(holder_klass->is_loaded(), "");
-  assert(dest_method->is_static() == !has_receiver, "must match bc");
+  assert((dest_method->is_static() || is_invokedynamic) == !has_receiver , "must match bc");
   // Note: this takes into account invokeinterface of methods declared in java/lang/Object,
   // which should be invokevirtuals but according to the VM spec may be invokeinterfaces
   assert(holder_klass->is_interface() || holder_klass->super() == NULL || (bc() != Bytecodes::_invokeinterface), "must match bc");

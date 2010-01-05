@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,8 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     }
     // Mark the call node as virtual, sort of:
     call->set_optimized_virtual(true);
+    if (method()->is_method_handle_invoke())
+      call->set_method_handle_invoke(true);
   }
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
@@ -145,6 +147,71 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   return kit.transfer_exceptions_into_jvms();
 }
 
+//---------------------------DynamicCallGenerator-----------------------------
+// Internal class which handles all out-of-line dynamic calls.
+class DynamicCallGenerator : public CallGenerator {
+public:
+  DynamicCallGenerator(ciMethod* method)
+    : CallGenerator(method)
+  {
+  }
+  virtual JVMState* generate(JVMState* jvms);
+};
+
+JVMState* DynamicCallGenerator::generate(JVMState* jvms) {
+  GraphKit kit(jvms);
+
+  if (kit.C->log() != NULL) {
+    kit.C->log()->elem("dynamic_call bci='%d'", jvms->bci());
+  }
+
+  // Get the constant pool cache from the caller class.
+  ciMethod* caller_method = jvms->method();
+  ciBytecodeStream str(caller_method);
+  str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
+  assert(str.cur_bc() == Bytecodes::_invokedynamic, "wrong place to issue a dynamic call!");
+  ciCPCache* cpcache = str.get_cpcache();
+
+  // Get the offset of the CallSite from the constant pool cache
+  // pointer.
+  int index = str.get_method_index();
+  size_t call_site_offset = cpcache->get_f1_offset(index);
+
+  // Load the CallSite object from the constant pool cache.
+  const TypeOopPtr* cpcache_ptr = TypeOopPtr::make_from_constant(cpcache);
+  Node* cpc = kit.makecon(cpcache_ptr);
+  Node* adr = kit.basic_plus_adr(cpc, cpc, call_site_offset);
+  Node* call_site = kit.make_load(kit.control(), adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
+
+  // Load the MethodHandle (target) from the CallSite object.
+  Node* mh_adr = kit.basic_plus_adr(call_site, call_site, java_dyn_CallSite::target_offset_in_bytes());
+  Node* mh = kit.make_load(kit.control(), mh_adr, TypeInstPtr::BOTTOM, T_OBJECT);
+
+  address stub = SharedRuntime::get_resolve_opt_virtual_call_stub();
+
+  CallStaticJavaNode *call = new (kit.C, tf()->domain()->cnt()) CallStaticJavaNode(tf(), stub, method(), kit.bci());
+  // invokedynamic is treated as an optimized invokevirtual.
+  call->set_optimized_virtual(true);
+  // Take extra care (in the presence of argument motion) not to trash the SP:
+  call->set_method_handle_invoke(true);
+
+  // Pass the MethodHandle as first argument and shift the other
+  // arguments.
+  call->init_req(0 + TypeFunc::Parms, mh);
+  uint nargs = call->method()->arg_size();
+  for (uint i = 1; i < nargs; i++) {
+    Node* arg = kit.argument(i - 1);
+    call->init_req(i + TypeFunc::Parms, arg);
+  }
+
+  kit.set_edges_for_java_call(call);
+  Node* ret = kit.set_results_for_java_call(call);
+  kit.push_node(method()->return_type()->basic_type(), ret);
+  return kit.transfer_exceptions_into_jvms();
+}
+
+//--------------------------VirtualCallGenerator------------------------------
+// Internal class which handles all out-of-line calls checking receiver type.
 class VirtualCallGenerator : public CallGenerator {
 private:
   int _vtable_index;
@@ -159,8 +226,6 @@ public:
   virtual JVMState* generate(JVMState* jvms);
 };
 
-//--------------------------VirtualCallGenerator------------------------------
-// Internal class which handles all out-of-line calls checking receiver type.
 JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   GraphKit kit(jvms);
   Node* receiver = kit.argument(0);
@@ -253,8 +318,14 @@ CallGenerator* CallGenerator::for_direct_call(ciMethod* m, bool separate_io_proj
   return new DirectCallGenerator(m, separate_io_proj);
 }
 
+CallGenerator* CallGenerator::for_dynamic_call(ciMethod* m) {
+  assert(m->is_method_handle_invoke(), "for_dynamic_call mismatch");
+  return new DynamicCallGenerator(m);
+}
+
 CallGenerator* CallGenerator::for_virtual_call(ciMethod* m, int vtable_index) {
   assert(!m->is_static(), "for_virtual_call mismatch");
+  assert(!m->is_method_handle_invoke(), "should be a direct call");
   return new VirtualCallGenerator(m, vtable_index);
 }
 

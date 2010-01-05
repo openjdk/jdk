@@ -321,7 +321,7 @@ int ciBytecodeStream::get_method_index() {
 //
 // If this is a method invocation bytecode, get the invoked method.
 ciMethod* ciBytecodeStream::get_method(bool& will_link) {
-  ciMethod* m = CURRENT_ENV->get_method_by_index(_holder, get_method_index(),cur_bc());
+  ciMethod* m = CURRENT_ENV->get_method_by_index(_holder, get_method_index(), cur_bc());
   will_link = m->is_loaded();
   return m;
 }
@@ -369,4 +369,15 @@ int ciBytecodeStream::get_method_signature_index() {
   int method_index = get_method_index();
   int name_and_type_index = cpool->name_and_type_ref_index_at(method_index);
   return cpool->signature_ref_index_at(name_and_type_index);
+}
+
+// ------------------------------------------------------------------
+// ciBytecodeStream::get_cpcache
+ciCPCache* ciBytecodeStream::get_cpcache() {
+  VM_ENTRY_MARK;
+  // Get the constant pool.
+  constantPoolOop      cpool   = _holder->get_instanceKlass()->constants();
+  constantPoolCacheOop cpcache = cpool->cache();
+
+  return CURRENT_ENV->get_object(cpcache)->as_cpcache();
 }

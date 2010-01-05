@@ -131,6 +131,7 @@ public:
 
   // What kind of ciObject is this?
   virtual bool is_null_object() const       { return false; }
+  virtual bool is_cpcache() const           { return false; }
   virtual bool is_instance()                { return false; }
   virtual bool is_method()                  { return false; }
   virtual bool is_method_data()             { return false; }
@@ -184,6 +185,10 @@ public:
   ciNullObject*            as_null_object() {
     assert(is_null_object(), "bad cast");
     return (ciNullObject*)this;
+  }
+  ciCPCache*               as_cpcache() {
+    assert(is_cpcache(), "bad cast");
+    return (ciCPCache*) this;
   }
   ciInstance*              as_instance() {
     assert(is_instance(), "bad cast");

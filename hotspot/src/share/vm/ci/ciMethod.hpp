@@ -213,7 +213,7 @@ class ciMethod : public ciObject {
   bool check_call(int refinfo_index, bool is_static) const;
   void build_method_data();  // make sure it exists in the VM also
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
-  bool is_method_handle_invoke();
+  bool is_method_handle_invoke() const;
   ciInstance* method_handle_type();
 
   // What kind of ciObject is this?

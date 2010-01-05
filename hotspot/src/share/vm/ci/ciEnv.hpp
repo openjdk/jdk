@@ -77,6 +77,7 @@ private:
   static ciInstanceKlass* _ArrayStoreException;
   static ciInstanceKlass* _Class;
   static ciInstanceKlass* _ClassCastException;
+  static ciInstanceKlass* _InvokeDynamic;
   static ciInstanceKlass* _Object;
   static ciInstanceKlass* _Throwable;
   static ciInstanceKlass* _Thread;
@@ -151,6 +152,8 @@ private:
                                      int field_index);
   ciMethod*  get_method_by_index_impl(ciInstanceKlass* loading_klass,
                                       int method_index, Bytecodes::Code bc);
+  ciMethod*  get_fake_invokedynamic_method_impl(ciInstanceKlass* accessor,
+                                                int index, Bytecodes::Code bc);
 
   // Helper methods
   bool       check_klass_accessibility(ciKlass* accessing_klass,
@@ -300,6 +303,9 @@ public:
   }
   ciInstanceKlass* ClassCastException_klass() {
     return _ClassCastException;
+  }
+  ciInstanceKlass* InvokeDynamic_klass() {
+    return _InvokeDynamic;
   }
   ciInstanceKlass* Object_klass() {
     return _Object;
