@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with(NULL) {
     bool ignore;
     // This is not really a class reference; the index always refers to the
     // field's type signature, as a symbol.  Linkage checks do not apply.
-    _type = ciEnv::current(thread)->get_klass_by_index(klass, sig_index, ignore);
+    _type = ciEnv::current(thread)->get_klass_by_index(cpool, sig_index, ignore, klass);
   } else {
     _type = ciType::make(field_type);
   }
@@ -100,9 +100,9 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with(NULL) {
   int holder_index = cpool->klass_ref_index_at(index);
   bool holder_is_accessible;
   ciInstanceKlass* declared_holder =
-    ciEnv::current(thread)->get_klass_by_index(klass, holder_index,
-                                               holder_is_accessible)
-      ->as_instance_klass();
+    ciEnv::current(thread)->get_klass_by_index(cpool, holder_index,
+                                               holder_is_accessible,
+                                               klass)->as_instance_klass();
 
   // The declared holder of this field may not have been loaded.
   // Bail out with partial field information.
@@ -168,8 +168,18 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   _holder = CURRENT_ENV->get_object(fd->field_holder())->as_instance_klass();
 
   // Check to see if the field is constant.
-  if (_holder->is_initialized() &&
-      this->is_final() && this->is_static()) {
+  if (_holder->is_initialized() && this->is_final()) {
+    if (!this->is_static()) {
+      // A field can be constant if it's a final static field or if it's
+      // a final non-static field of a trusted class ({java,sun}.dyn).
+      if (_holder->is_in_package("java/dyn") || _holder->is_in_package("sun/dyn")) {
+        _is_constant = true;
+        return;
+      }
+      _is_constant = false;
+      return;
+    }
+
     // This field just may be constant.  The only cases where it will
     // not be constant are:
     //

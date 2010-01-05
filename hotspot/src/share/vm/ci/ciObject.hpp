@@ -131,10 +131,12 @@ public:
 
   // What kind of ciObject is this?
   virtual bool is_null_object() const       { return false; }
+  virtual bool is_call_site() const         { return false; }
   virtual bool is_cpcache() const           { return false; }
   virtual bool is_instance()                { return false; }
   virtual bool is_method()                  { return false; }
   virtual bool is_method_data()             { return false; }
+  virtual bool is_method_handle() const     { return false; }
   virtual bool is_array()                   { return false; }
   virtual bool is_obj_array()               { return false; }
   virtual bool is_type_array()              { return false; }
@@ -186,6 +188,10 @@ public:
     assert(is_null_object(), "bad cast");
     return (ciNullObject*)this;
   }
+  ciCallSite*              as_call_site() {
+    assert(is_call_site(), "bad cast");
+    return (ciCallSite*) this;
+  }
   ciCPCache*               as_cpcache() {
     assert(is_cpcache(), "bad cast");
     return (ciCPCache*) this;
@@ -201,6 +207,10 @@ public:
   ciMethodData*            as_method_data() {
     assert(is_method_data(), "bad cast");
     return (ciMethodData*)this;
+  }
+  ciMethodHandle*          as_method_handle() {
+    assert(is_method_handle(), "bad cast");
+    return (ciMethodHandle*) this;
   }
   ciArray*                 as_array() {
     assert(is_array(), "bad cast");

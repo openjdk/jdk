@@ -132,8 +132,9 @@ methodOop MethodHandles::decode_vmtarget(oop vmtarget, int vmindex, oop mtype,
     }
     return m;
   } else {
-    decode_flags_result |= MethodHandles::_dmf_does_dispatch;
     assert(vmtarget->is_klass(), "must be class or interface");
+    decode_flags_result |= MethodHandles::_dmf_does_dispatch;
+    decode_flags_result |= MethodHandles::_dmf_has_receiver;
     receiver_limit_result = (klassOop)vmtarget;
     Klass* tk = Klass::cast((klassOop)vmtarget);
     if (tk->is_interface()) {
@@ -179,8 +180,10 @@ methodOop MethodHandles::decode_BoundMethodHandle(oop mh, klassOop& receiver_lim
         // short-circuits directly to the methodOop.
         // (It might be another argument besides a receiver also.)
         assert(target->is_method(), "must be a simple method");
-        methodOop m = (methodOop) target;
         decode_flags_result |= MethodHandles::_dmf_binds_method;
+        methodOop m = (methodOop) target;
+        if (!m->is_static())
+          decode_flags_result |= MethodHandles::_dmf_has_receiver;
         return m;
       }
     }
@@ -233,8 +236,8 @@ methodOop MethodHandles::decode_methodOop(methodOop m, int& decode_flags_result)
     BasicType recv_bt = char2type(sig->byte_at(1));
     // Note: recv_bt might be T_ILLEGAL if byte_at(2) is ')'
     assert(sig->byte_at(0) == '(', "must be method sig");
-    if (recv_bt == T_OBJECT || recv_bt == T_ARRAY)
-      decode_flags_result |= _dmf_has_receiver;
+//     if (recv_bt == T_OBJECT || recv_bt == T_ARRAY)
+//       decode_flags_result |= _dmf_has_receiver;
   } else {
     // non-static method
     decode_flags_result |= _dmf_has_receiver;
@@ -818,7 +821,7 @@ static bool is_always_null_type(klassOop klass) {
   for (int i = 0; ; i++) {
     const char* test_name = always_null_names[i];
     if (test_name == NULL)  break;
-    if (name->equals(test_name, (int) strlen(test_name)))
+    if (name->equals(test_name))
       return true;
   }
   return false;
@@ -1487,8 +1490,9 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
       int target_pushes = decode_MethodHandle_stack_pushes(target());
       assert(this_pushes == slots_pushed + target_pushes, "BMH stack motion must be correct");
       // do not blow the stack; use a Java-based adapter if this limit is exceeded
-      if (slots_pushed + target_pushes > MethodHandlePushLimit)
-        err = "too many bound parameters";
+      // FIXME
+      // if (slots_pushed + target_pushes > MethodHandlePushLimit)
+      //   err = "too many bound parameters";
     }
   }
 
@@ -1518,6 +1522,11 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
     verify_vmslots(mh, CHECK);
   }
 
+  // Get bound type and required slots.
+  oop ptype_oop = java_dyn_MethodType::ptype(java_dyn_MethodHandle::type(target()), argnum);
+  BasicType ptype = java_lang_Class::as_BasicType(ptype_oop);
+  int slots_pushed = type2size[ptype];
+
   // If (a) the target is a direct non-dispatched method handle,
   // or (b) the target is a dispatched direct method handle and we
   // are binding the receiver, cut out the middle-man.
@@ -1529,7 +1538,7 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
     int decode_flags = 0; klassOop receiver_limit_oop = NULL;
     methodHandle m(THREAD, decode_method(target(), receiver_limit_oop, decode_flags));
     if (m.is_null()) { THROW_MSG(vmSymbols::java_lang_InternalError(), "DMH failed to decode"); }
-    DEBUG_ONLY(int m_vmslots = m->size_of_parameters() - 1); // pos. of 1st arg.
+    DEBUG_ONLY(int m_vmslots = m->size_of_parameters() - slots_pushed); // pos. of 1st arg.
     assert(sun_dyn_BoundMethodHandle::vmslots(mh()) == m_vmslots, "type w/ m sig");
     if (argnum == 0 && (decode_flags & _dmf_has_receiver) != 0) {
       KlassHandle receiver_limit(THREAD, receiver_limit_oop);
@@ -1554,10 +1563,6 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
   }
 
   // Next question:  Is this a ref, int, or long bound value?
-  oop ptype_oop = java_dyn_MethodType::ptype(java_dyn_MethodHandle::type(target()), argnum);
-  BasicType ptype = java_lang_Class::as_BasicType(ptype_oop);
-  int slots_pushed = type2size[ptype];
-
   MethodHandleEntry* me = NULL;
   if (ptype == T_OBJECT) {
     if (direct_to_method)  me = MethodHandles::entry(_bound_ref_direct_mh);

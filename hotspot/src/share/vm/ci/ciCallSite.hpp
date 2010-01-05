@@ -22,28 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciCPCache.cpp.incl"
-
-// ciCPCache
-
-// ------------------------------------------------------------------
-// ciCPCache::get_f1_offset
-size_t ciCPCache::get_f1_offset(int index) {
-  // Calculate the offset from the constantPoolCacheOop to the f1
-  // field.
-  ByteSize f1_offset =
-    constantPoolCacheOopDesc::entry_offset(index) +
-    ConstantPoolCacheEntry::f1_offset();
-
-  return in_bytes(f1_offset);
-}
-
-
-// ------------------------------------------------------------------
-// ciCPCache::print
+// ciCallSite
 //
-// Print debugging information about the cache.
-void ciCPCache::print() {
-  Unimplemented();
-}
+// The class represents a java.dyn.CallSite object.
+class ciCallSite : public ciInstance {
+public:
+  ciCallSite(instanceHandle h_i) : ciInstance(h_i) {}
+
+  // What kind of ciObject is this?
+  bool is_call_site() const { return true; }
+
+  // Return the target MethodHandle of this CallSite.
+  ciMethodHandle* get_target() const;
+
+  void print();
+};

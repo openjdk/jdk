@@ -180,6 +180,10 @@ const char* InlineTree::shouldNotInline(ciMethod *callee_method, ciMethod* calle
     return NULL;
   }
 
+  // Always inline MethodHandle methods.
+  if (callee_method->is_method_handle_invoke())
+    return NULL;
+
   // First check all inlining restrictions which are required for correctness
   if (callee_method->is_abstract())               return "abstract method";
   // note: we allow ik->is_abstract()

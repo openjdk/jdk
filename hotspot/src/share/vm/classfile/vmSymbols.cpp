@@ -299,6 +299,20 @@ vmIntrinsics::ID vmIntrinsics::for_unboxing(BasicType type) {
   return wrapper_intrinsic(type, true);
 }
 
+vmIntrinsics::ID vmIntrinsics::for_raw_conversion(BasicType src, BasicType dest) {
+#define SRC_DEST(s,d) (((int)(s) << 4) + (int)(d))
+  switch (SRC_DEST(src, dest)) {
+  case SRC_DEST(T_INT, T_FLOAT):   return vmIntrinsics::_intBitsToFloat;
+  case SRC_DEST(T_FLOAT, T_INT):   return vmIntrinsics::_floatToRawIntBits;
+
+  case SRC_DEST(T_LONG, T_DOUBLE): return vmIntrinsics::_longBitsToDouble;
+  case SRC_DEST(T_DOUBLE, T_LONG): return vmIntrinsics::_doubleToRawLongBits;
+  }
+#undef SRC_DEST
+
+  return vmIntrinsics::_none;
+}
+
 methodOop vmIntrinsics::method_for(vmIntrinsics::ID id) {
   if (id == _none)  return NULL;
   symbolOop cname = vmSymbols::symbol_at(class_for(id));

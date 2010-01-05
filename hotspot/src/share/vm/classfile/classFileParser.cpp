@@ -643,7 +643,7 @@ void ClassFileParser::verify_constantvalue(int constantvalue_index, int signatur
       guarantee_property(value_type.is_int(), "Inconsistent constant value type in class file %s", CHECK);
       break;
     case T_OBJECT:
-      guarantee_property((cp->symbol_at(signature_index)->equals("Ljava/lang/String;", 18)
+      guarantee_property((cp->symbol_at(signature_index)->equals("Ljava/lang/String;")
                          && (value_type.is_string() || value_type.is_unresolved_string())),
                          "Bad string initial value in class file %s", CHECK);
       break;
@@ -1718,9 +1718,7 @@ methodHandle ClassFileParser::parse_method(constantPoolHandle cp, bool is_interf
   m->set_exception_table(exception_handlers());
 
   // Copy byte codes
-  if (code_length > 0) {
-    memcpy(m->code_base(), code_start, code_length);
-  }
+  m->set_code(code_start);
 
   // Copy line number table
   if (linenumber_table != NULL) {

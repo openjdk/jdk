@@ -23,27 +23,24 @@
  */
 
 #include "incls/_precompiled.incl"
-#include "incls/_ciCPCache.cpp.incl"
+#include "incls/_ciCallSite.cpp.incl"
 
-// ciCPCache
+// ciCallSite
 
 // ------------------------------------------------------------------
-// ciCPCache::get_f1_offset
-size_t ciCPCache::get_f1_offset(int index) {
-  // Calculate the offset from the constantPoolCacheOop to the f1
-  // field.
-  ByteSize f1_offset =
-    constantPoolCacheOopDesc::entry_offset(index) +
-    ConstantPoolCacheEntry::f1_offset();
-
-  return in_bytes(f1_offset);
+// ciCallSite::get_target
+//
+// Return the target MethodHandle of this CallSite.
+ciMethodHandle* ciCallSite::get_target() const {
+  VM_ENTRY_MARK;
+  oop method_handle_oop = java_dyn_CallSite::target(get_oop());
+  return CURRENT_ENV->get_object(method_handle_oop)->as_method_handle();
 }
 
-
 // ------------------------------------------------------------------
-// ciCPCache::print
+// ciCallSite::print
 //
-// Print debugging information about the cache.
-void ciCPCache::print() {
+// Print debugging information about the CallSite.
+void ciCallSite::print() {
   Unimplemented();
 }

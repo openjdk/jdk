@@ -205,6 +205,7 @@ class Bytecode_invoke: public ResourceObj {
   bool is_invokespecial() const                  { return adjusted_invoke_code() == Bytecodes::_invokespecial; }
   bool is_invokedynamic() const                  { return adjusted_invoke_code() == Bytecodes::_invokedynamic; }
 
+  bool has_receiver() const                      { return !is_invokestatic() && !is_invokedynamic(); }
   bool has_giant_index() const                   { return is_invokedynamic(); }
 
   bool is_valid() const                          { return is_invokeinterface() ||

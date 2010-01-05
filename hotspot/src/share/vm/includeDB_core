@@ -516,6 +516,11 @@ ciArrayKlassKlass.hpp                   ciKlassKlass.hpp
 
 ciCallProfile.hpp                       ciClassList.hpp
 
+ciCallSite.cpp                          ciCallSite.hpp
+ciCallSite.cpp                          ciUtilities.hpp
+
+ciCallSite.hpp                          ciInstance.hpp
+
 ciConstant.cpp                          allocation.hpp
 ciConstant.cpp                          allocation.inline.hpp
 ciConstant.cpp                          ciConstant.hpp
@@ -599,6 +604,7 @@ ciField.cpp                             universe.inline.hpp
 ciField.hpp                             ciClassList.hpp
 ciField.hpp                             ciConstant.hpp
 ciField.hpp                             ciFlags.hpp
+ciField.hpp                             ciInstance.hpp
 
 ciFlags.cpp                             ciFlags.hpp
 
@@ -685,6 +691,7 @@ ciMethod.hpp                            ciFlags.hpp
 ciMethod.hpp                            ciInstanceKlass.hpp
 ciMethod.hpp                            ciObject.hpp
 ciMethod.hpp                            ciSignature.hpp
+ciMethod.hpp                            methodHandles.hpp
 ciMethod.hpp                            methodLiveness.hpp
 
 ciMethodBlocks.cpp                      bytecode.hpp
@@ -715,6 +722,15 @@ ciMethodKlass.cpp                       ciUtilities.hpp
 
 ciMethodKlass.hpp                       ciKlass.hpp
 ciMethodKlass.hpp                       ciSymbol.hpp
+
+ciMethodHandle.cpp                      ciClassList.hpp
+ciMethodHandle.cpp                      ciInstance.hpp
+ciMethodHandle.cpp                      ciMethodHandle.hpp
+ciMethodHandle.cpp                      ciUtilities.hpp
+ciMethodHandle.cpp                      methodHandles.hpp
+ciMethodHandle.cpp                      methodHandleWalk.hpp
+
+ciMethodHandle.hpp                      methodHandles.hpp
 
 ciNullObject.cpp                        ciNullObject.hpp
 
@@ -761,12 +777,14 @@ ciObject.hpp                            handles.hpp
 ciObject.hpp                            jniHandles.hpp
 
 ciObjectFactory.cpp                     allocation.inline.hpp
+ciObjectFactory.cpp                     ciCallSite.hpp
 ciObjectFactory.cpp                     ciCPCache.hpp
 ciObjectFactory.cpp                     ciInstance.hpp
 ciObjectFactory.cpp                     ciInstanceKlass.hpp
 ciObjectFactory.cpp                     ciInstanceKlassKlass.hpp
 ciObjectFactory.cpp                     ciMethod.hpp
 ciObjectFactory.cpp                     ciMethodData.hpp
+ciObjectFactory.cpp                     ciMethodHandle.hpp
 ciObjectFactory.cpp                     ciMethodKlass.hpp
 ciObjectFactory.cpp                     ciNullObject.hpp
 ciObjectFactory.cpp                     ciObjArray.hpp
@@ -800,6 +818,7 @@ ciSignature.hpp                         ciSymbol.hpp
 ciSignature.hpp                         globalDefinitions.hpp
 ciSignature.hpp                         growableArray.hpp
 
+ciStreams.cpp                           ciCallSite.hpp
 ciStreams.cpp                           ciConstant.hpp
 ciStreams.cpp                           ciField.hpp
 ciStreams.cpp                           ciStreams.hpp
@@ -2824,6 +2843,8 @@ methodDataOop.hpp                       universe.hpp
 methodHandleWalk.hpp                    methodHandles.hpp
 
 methodHandleWalk.cpp                    methodHandleWalk.hpp
+methodHandleWalk.cpp                    oopFactory.hpp
+methodHandleWalk.cpp                    rewriter.hpp
 
 methodHandles.hpp                       frame.inline.hpp
 methodHandles.hpp                       globals.hpp
