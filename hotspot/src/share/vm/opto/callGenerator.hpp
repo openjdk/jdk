@@ -100,6 +100,7 @@ class CallGenerator : public ResourceObj {
 
   // How to generate vanilla out-of-line call sites:
   static CallGenerator* for_direct_call(ciMethod* m, bool separate_io_projs = false);   // static, special
+  static CallGenerator* for_dynamic_call(ciMethod* m);   // invokedynamic
   static CallGenerator* for_virtual_call(ciMethod* m, int vtable_index);  // virtual, interface
 
   // How to generate a replace a direct call with an inline version

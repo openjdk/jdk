@@ -542,6 +542,16 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
   // pointers as far as the kill mask goes.
   bool exclude_soe = op == Op_CallRuntime;
 
+  // If the call is a MethodHandle invoke, we need to exclude the
+  // register which is used to save the SP value over MH invokes from
+  // the mask.  Otherwise this register could be used for
+  // deoptimization information.
+  if (op == Op_CallStaticJava) {
+    MachCallStaticJavaNode* mcallstaticjava = (MachCallStaticJavaNode*) mcall;
+    if (mcallstaticjava->_method_handle_invoke)
+      proj->_rout.OR(Matcher::method_handle_invoke_SP_save_mask());
+  }
+
   // Fill in the kill mask for the call
   for( OptoReg::Name r = OptoReg::Name(0); r < _last_Mach_Reg; r=OptoReg::add(r,1) ) {
     if( !regs.Member(r) ) {     // Not already defined by the call

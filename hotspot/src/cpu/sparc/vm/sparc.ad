@@ -1885,6 +1885,10 @@ RegMask Matcher::modL_proj_mask() {
   return RegMask();
 }
 
+const RegMask Matcher::method_handle_invoke_SP_save_mask() {
+  return RegMask();
+}
+
 %}
 
 

@@ -117,8 +117,9 @@ public:
   static const int base2reg[];        // Map Types to machine register types
   // Convert ideal machine register to a register mask for spill-loads
   static const RegMask *idealreg2regmask[];
-  RegMask *idealreg2spillmask[_last_machine_leaf];
-  RegMask *idealreg2debugmask[_last_machine_leaf];
+  RegMask *idealreg2spillmask  [_last_machine_leaf];
+  RegMask *idealreg2debugmask  [_last_machine_leaf];
+  RegMask *idealreg2mhdebugmask[_last_machine_leaf];
   void init_spill_mask( Node *ret );
   // Convert machine register number to register mask
   static uint mreg2regmask_max;
@@ -296,6 +297,8 @@ public:
   static RegMask divL_proj_mask();
   // Register for MODL projection of divmodL
   static RegMask modL_proj_mask();
+
+  static const RegMask method_handle_invoke_SP_save_mask();
 
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java

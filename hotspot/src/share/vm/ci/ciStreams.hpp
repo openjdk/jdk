@@ -232,6 +232,8 @@ public:
   int       get_method_holder_index();
   int       get_method_signature_index();
 
+  ciCPCache* get_cpcache();
+
  private:
   void assert_index_size(int required_size) const {
 #ifdef ASSERT

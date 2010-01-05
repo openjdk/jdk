@@ -25,6 +25,7 @@
 class ciEnv;
 class ciObjectFactory;
 class ciConstantPoolCache;
+class ciCPCache;
 
 class ciField;
 class ciConstant;

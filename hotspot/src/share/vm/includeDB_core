@@ -532,6 +532,12 @@ ciConstantPoolCache.cpp                 ciUtilities.hpp
 ciConstantPoolCache.hpp                 growableArray.hpp
 ciConstantPoolCache.hpp                 resourceArea.hpp
 
+ciCPCache.cpp                           cpCacheOop.hpp
+ciCPCache.cpp                           ciCPCache.hpp
+
+ciCPCache.hpp                           ciClassList.hpp
+ciCPCache.hpp                           ciObject.hpp
+
 ciEnv.cpp                               allocation.inline.hpp
 ciEnv.cpp                               ciConstant.hpp
 ciEnv.cpp                               ciEnv.hpp
@@ -755,6 +761,7 @@ ciObject.hpp                            handles.hpp
 ciObject.hpp                            jniHandles.hpp
 
 ciObjectFactory.cpp                     allocation.inline.hpp
+ciObjectFactory.cpp                     ciCPCache.hpp
 ciObjectFactory.cpp                     ciInstance.hpp
 ciObjectFactory.cpp                     ciInstanceKlass.hpp
 ciObjectFactory.cpp                     ciInstanceKlassKlass.hpp

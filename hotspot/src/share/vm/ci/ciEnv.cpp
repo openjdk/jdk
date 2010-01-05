@@ -41,6 +41,7 @@ ciObjArrayKlassKlass*  ciEnv::_obj_array_klass_klass_instance;
 ciInstanceKlass* ciEnv::_ArrayStoreException;
 ciInstanceKlass* ciEnv::_Class;
 ciInstanceKlass* ciEnv::_ClassCastException;
+ciInstanceKlass* ciEnv::_InvokeDynamic;
 ciInstanceKlass* ciEnv::_Object;
 ciInstanceKlass* ciEnv::_Throwable;
 ciInstanceKlass* ciEnv::_Thread;
@@ -736,6 +737,35 @@ ciMethod* ciEnv::get_method_by_index_impl(ciInstanceKlass* accessor,
 
 
 // ------------------------------------------------------------------
+// ciEnv::get_fake_invokedynamic_method_impl
+ciMethod* ciEnv::get_fake_invokedynamic_method_impl(ciInstanceKlass* accessor,
+                                                    int index, Bytecodes::Code bc) {
+  assert(bc == Bytecodes::_invokedynamic, "must be invokedynamic");
+  assert(accessor->get_instanceKlass()->is_linked(), "must be linked before accessing constant pool");
+  constantPoolHandle cpool = accessor->get_instanceKlass()->constants();
+
+  // Get the CallSite from the constant pool cache.
+  ConstantPoolCacheEntry* cpc_entry = cpool->cache()->secondary_entry_at(index);
+  assert(cpc_entry != NULL && cpc_entry->is_secondary_entry(), "sanity");
+  Handle call_site = cpc_entry->f1();
+
+  // Call site might not be linked yet.
+  if (call_site.is_null()) {
+    ciInstanceKlass* mh_klass = get_object(SystemDictionary::MethodHandle_klass())->as_instance_klass();
+    ciSymbol*       sig_sym   = get_object(cpool->signature_ref_at(index))->as_symbol();
+    return get_unloaded_method(mh_klass, ciSymbol::invoke_name(), sig_sym);
+  }
+
+  // Get the methodOop from the CallSite.
+  methodOop method_oop = (methodOop) java_dyn_CallSite::vmmethod(call_site());
+  assert(method_oop != NULL, "sanity");
+  assert(method_oop->is_method_handle_invoke(), "consistent");
+
+  return get_object(method_oop)->as_method();
+}
+
+
+// ------------------------------------------------------------------
 // ciEnv::get_instance_klass_for_declared_method_holder
 ciInstanceKlass* ciEnv::get_instance_klass_for_declared_method_holder(ciKlass* method_holder) {
   // For the case of <array>.clone(), the method holder can be a ciArrayKlass
@@ -757,14 +787,17 @@ ciInstanceKlass* ciEnv::get_instance_klass_for_declared_method_holder(ciKlass* m
 }
 
 
-
-
 // ------------------------------------------------------------------
 // ciEnv::get_method_by_index
 ciMethod* ciEnv::get_method_by_index(ciInstanceKlass* accessor,
                                      int index, Bytecodes::Code bc) {
-  GUARDED_VM_ENTRY(return get_method_by_index_impl(accessor, index, bc);)
+  if (bc == Bytecodes::_invokedynamic) {
+    GUARDED_VM_ENTRY(return get_fake_invokedynamic_method_impl(accessor, index, bc);)
+  } else {
+    GUARDED_VM_ENTRY(return get_method_by_index_impl(accessor, index, bc);)
+  }
 }
+
 
 // ------------------------------------------------------------------
 // ciEnv::name_buffer
