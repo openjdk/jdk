@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,6 @@ public class GSSUtil {
 
     public static final Oid NT_GSS_KRB5_PRINCIPAL =
                 GSSUtil.createOid("1.2.840.113554.1.2.2.1");
-
-    public static final Oid NT_HOSTBASED_SERVICE2 =
-                GSSUtil.createOid("1.2.840.113554.1.2.1.4");
 
     private static final String DEFAULT_HANDLER =
             "auth.login.defaultCallbackHandler";
