@@ -148,7 +148,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
 }
 
 //---------------------------DynamicCallGenerator-----------------------------
-// Internal class which handles all out-of-line dynamic calls.
+// Internal class which handles all out-of-line invokedynamic calls.
 class DynamicCallGenerator : public CallGenerator {
 public:
   DynamicCallGenerator(ciMethod* method)
@@ -179,25 +179,25 @@ JVMState* DynamicCallGenerator::generate(JVMState* jvms) {
 
   // Load the CallSite object from the constant pool cache.
   const TypeOopPtr* cpcache_ptr = TypeOopPtr::make_from_constant(cpcache);
-  Node* cpc = kit.makecon(cpcache_ptr);
-  Node* adr = kit.basic_plus_adr(cpc, cpc, call_site_offset);
-  Node* call_site = kit.make_load(kit.control(), adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
+  Node* cpcache_adr = kit.makecon(cpcache_ptr);
+  Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, cpcache_adr, call_site_offset);
+  Node* call_site = kit.make_load(kit.control(), call_site_adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
 
-  // Load the MethodHandle (target) from the CallSite object.
-  Node* mh_adr = kit.basic_plus_adr(call_site, call_site, java_dyn_CallSite::target_offset_in_bytes());
-  Node* mh = kit.make_load(kit.control(), mh_adr, TypeInstPtr::BOTTOM, T_OBJECT);
+  // Load the target MethodHandle from the CallSite object.
+  Node* target_mh_adr = kit.basic_plus_adr(call_site, call_site, java_dyn_CallSite::target_offset_in_bytes());
+  Node* target_mh = kit.make_load(kit.control(), target_mh_adr, TypeInstPtr::BOTTOM, T_OBJECT);
 
-  address stub = SharedRuntime::get_resolve_opt_virtual_call_stub();
+  address resolve_stub = SharedRuntime::get_resolve_opt_virtual_call_stub();
 
-  CallStaticJavaNode *call = new (kit.C, tf()->domain()->cnt()) CallStaticJavaNode(tf(), stub, method(), kit.bci());
+  CallStaticJavaNode *call = new (kit.C, tf()->domain()->cnt()) CallStaticJavaNode(tf(), resolve_stub, method(), kit.bci());
   // invokedynamic is treated as an optimized invokevirtual.
   call->set_optimized_virtual(true);
   // Take extra care (in the presence of argument motion) not to trash the SP:
   call->set_method_handle_invoke(true);
 
-  // Pass the MethodHandle as first argument and shift the other
-  // arguments.
-  call->init_req(0 + TypeFunc::Parms, mh);
+  // Pass the target MethodHandle as first argument and shift the
+  // other arguments.
+  call->init_req(0 + TypeFunc::Parms, target_mh);
   uint nargs = call->method()->arg_size();
   for (uint i = 1; i < nargs; i++) {
     Node* arg = kit.argument(i - 1);
@@ -592,6 +592,155 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
 
   // fall through if the instance exactly matches the desired type
   kit.replace_in_map(receiver, exact_receiver);
+
+  // Make the hot call:
+  JVMState* new_jvms = _if_hit->generate(kit.sync_jvms());
+  if (new_jvms == NULL) {
+    // Inline failed, so make a direct call.
+    assert(_if_hit->is_inline(), "must have been a failed inline");
+    CallGenerator* cg = CallGenerator::for_direct_call(_if_hit->method());
+    new_jvms = cg->generate(kit.sync_jvms());
+  }
+  kit.add_exception_states_from(new_jvms);
+  kit.set_jvms(new_jvms);
+
+  // Need to merge slow and fast?
+  if (slow_map == NULL) {
+    // The fast path is the only path remaining.
+    return kit.transfer_exceptions_into_jvms();
+  }
+
+  if (kit.stopped()) {
+    // Inlined method threw an exception, so it's just the slow path after all.
+    kit.set_jvms(slow_jvms);
+    return kit.transfer_exceptions_into_jvms();
+  }
+
+  // Finish the diamond.
+  kit.C->set_has_split_ifs(true); // Has chance for split-if optimization
+  RegionNode* region = new (kit.C, 3) RegionNode(3);
+  region->init_req(1, kit.control());
+  region->init_req(2, slow_map->control());
+  kit.set_control(gvn.transform(region));
+  Node* iophi = PhiNode::make(region, kit.i_o(), Type::ABIO);
+  iophi->set_req(2, slow_map->i_o());
+  kit.set_i_o(gvn.transform(iophi));
+  kit.merge_memory(slow_map->merged_memory(), region, 2);
+  uint tos = kit.jvms()->stkoff() + kit.sp();
+  uint limit = slow_map->req();
+  for (uint i = TypeFunc::Parms; i < limit; i++) {
+    // Skip unused stack slots; fast forward to monoff();
+    if (i == tos) {
+      i = kit.jvms()->monoff();
+      if( i >= limit ) break;
+    }
+    Node* m = kit.map()->in(i);
+    Node* n = slow_map->in(i);
+    if (m != n) {
+      const Type* t = gvn.type(m)->meet(gvn.type(n));
+      Node* phi = PhiNode::make(region, m, t);
+      phi->set_req(2, n);
+      kit.map()->set_req(i, gvn.transform(phi));
+    }
+  }
+  return kit.transfer_exceptions_into_jvms();
+}
+
+
+//------------------------PredictedDynamicCallGenerator-----------------------
+// Internal class which handles all out-of-line calls checking receiver type.
+class PredictedDynamicCallGenerator : public CallGenerator {
+  ciMethodHandle* _predicted_method_handle;
+  CallGenerator*  _if_missed;
+  CallGenerator*  _if_hit;
+  float           _hit_prob;
+
+public:
+  PredictedDynamicCallGenerator(ciMethodHandle* predicted_method_handle,
+                                CallGenerator* if_missed,
+                                CallGenerator* if_hit,
+                                float hit_prob)
+    : CallGenerator(if_missed->method()),
+      _predicted_method_handle(predicted_method_handle),
+      _if_missed(if_missed),
+      _if_hit(if_hit),
+      _hit_prob(hit_prob)
+  {}
+
+  virtual bool is_inline()   const { return _if_hit->is_inline(); }
+  virtual bool is_deferred() const { return _if_hit->is_deferred(); }
+
+  virtual JVMState* generate(JVMState* jvms);
+};
+
+
+CallGenerator* CallGenerator::for_predicted_dynamic_call(ciMethodHandle* predicted_method_handle,
+                                                         CallGenerator* if_missed,
+                                                         CallGenerator* if_hit,
+                                                         float hit_prob) {
+  return new PredictedDynamicCallGenerator(predicted_method_handle, if_missed, if_hit, hit_prob);
+}
+
+
+JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
+  GraphKit kit(jvms);
+  PhaseGVN& gvn = kit.gvn();
+
+  CompileLog* log = kit.C->log();
+  if (log != NULL) {
+    log->elem("predicted_dynamic_call bci='%d'", jvms->bci());
+  }
+
+  // Get the constant pool cache from the caller class.
+  ciMethod* caller_method = jvms->method();
+  ciBytecodeStream str(caller_method);
+  str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
+  ciCPCache* cpcache = str.get_cpcache();
+
+  // Get the offset of the CallSite from the constant pool cache
+  // pointer.
+  int index = str.get_method_index();
+  size_t call_site_offset = cpcache->get_f1_offset(index);
+
+  // Load the CallSite object from the constant pool cache.
+  const TypeOopPtr* cpcache_ptr = TypeOopPtr::make_from_constant(cpcache);
+  Node* cpcache_adr   = kit.makecon(cpcache_ptr);
+  Node* call_site_adr = kit.basic_plus_adr(cpcache_adr, cpcache_adr, call_site_offset);
+  Node* call_site     = kit.make_load(kit.control(), call_site_adr, TypeInstPtr::BOTTOM, T_OBJECT, Compile::AliasIdxRaw);
+
+  // Load the target MethodHandle from the CallSite object.
+  Node* target_adr = kit.basic_plus_adr(call_site, call_site, java_dyn_CallSite::target_offset_in_bytes());
+  Node* target_mh  = kit.make_load(kit.control(), target_adr, TypeInstPtr::BOTTOM, T_OBJECT);
+
+  // Check if the MethodHandle is still the same.
+  const TypeOopPtr* predicted_mh_ptr = TypeOopPtr::make_from_constant(_predicted_method_handle, true);
+  Node* predicted_mh = kit.makecon(predicted_mh_ptr);
+
+  Node* cmp = gvn.transform(new(kit.C, 3) CmpPNode(target_mh, predicted_mh));
+  Node* bol = gvn.transform(new(kit.C, 2) BoolNode(cmp, BoolTest::eq) );
+  IfNode* iff = kit.create_and_xform_if(kit.control(), bol, _hit_prob, COUNT_UNKNOWN);
+  kit.set_control( gvn.transform(new(kit.C, 1) IfTrueNode (iff)));
+  Node* slow_ctl = gvn.transform(new(kit.C, 1) IfFalseNode(iff));
+
+  SafePointNode* slow_map = NULL;
+  JVMState* slow_jvms;
+  { PreserveJVMState pjvms(&kit);
+    kit.set_control(slow_ctl);
+    if (!kit.stopped()) {
+      slow_jvms = _if_missed->generate(kit.sync_jvms());
+      assert(slow_jvms != NULL, "miss path must not fail to generate");
+      kit.add_exception_states_from(slow_jvms);
+      kit.set_map(slow_jvms->map());
+      if (!kit.stopped())
+        slow_map = kit.stop();
+    }
+  }
+
+  if (kit.stopped()) {
+    // Instance exactly does not matches the desired type.
+    kit.set_jvms(slow_jvms);
+    return kit.transfer_exceptions_into_jvms();
+  }
 
   // Make the hot call:
   JVMState* new_jvms = _if_hit->generate(kit.sync_jvms());

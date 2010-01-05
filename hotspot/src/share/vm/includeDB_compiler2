@@ -156,6 +156,8 @@ callGenerator.cpp                       cfgnode.hpp
 callGenerator.cpp                       compileLog.hpp
 callGenerator.cpp                       connode.hpp
 callGenerator.cpp                       ciCPCache.hpp
+callGenerator.cpp                       ciMethodHandle.hpp
+callGenerator.cpp                       javaClasses.hpp
 callGenerator.cpp                       parse.hpp
 callGenerator.cpp                       rootnode.hpp
 callGenerator.cpp                       runtime.hpp
@@ -392,6 +394,9 @@ divnode.hpp                             type.hpp
 
 doCall.cpp                              addnode.hpp
 doCall.cpp                              callGenerator.hpp
+doCall.cpp                              ciCallSite.hpp
+doCall.cpp                              ciCPCache.hpp
+doCall.cpp                              ciMethodHandle.hpp
 doCall.cpp                              cfgnode.hpp
 doCall.cpp                              compileLog.hpp
 doCall.cpp                              linkResolver.hpp

@@ -1724,9 +1724,9 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
   if (!method()->is_native()) {
     SimpleScopeDesc ssd(this, fr.pc());
     Bytecode_invoke* call = Bytecode_invoke_at(ssd.method(), ssd.bci());
-    bool is_static = call->is_invokestatic();
+    bool has_receiver = call->has_receiver();
     symbolOop signature = call->signature();
-    fr.oops_compiled_arguments_do(signature, is_static, reg_map, f);
+    fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
   }
 }
 

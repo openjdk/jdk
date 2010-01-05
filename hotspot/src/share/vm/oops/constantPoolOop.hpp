@@ -191,6 +191,16 @@ class constantPoolOopDesc : public oopDesc {
     }
   }
 
+  void object_at_put(int which, oop str) {
+    oop_store((volatile oop*) obj_at_addr(which), str);
+    release_tag_at_put(which, JVM_CONSTANT_Object);
+    if (UseConcMarkSweepGC) {
+      // In case the earlier card-mark was consumed by a concurrent
+      // marking thread before the tag was updated, redirty the card.
+      oop_store_without_check((volatile oop*) obj_at_addr(which), str);
+    }
+  }
+
   // For temporary use while constructing constant pool
   void string_index_at_put(int which, int string_index) {
     tag_at_put(which, JVM_CONSTANT_StringIndex);
@@ -228,7 +238,8 @@ class constantPoolOopDesc : public oopDesc {
       tag.is_unresolved_klass() ||
       tag.is_symbol() ||
       tag.is_unresolved_string() ||
-      tag.is_string();
+      tag.is_string() ||
+      tag.is_object();
   }
 
   // Fetching constants
@@ -289,6 +300,11 @@ class constantPoolOopDesc : public oopDesc {
   oop string_at(int which, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
     return string_at_impl(h_this, which, CHECK_NULL);
+  }
+
+  oop object_at(int which) {
+    assert(tag_at(which).is_object(), "Corrupted constant pool");
+    return *obj_at_addr(which);
   }
 
   // A "pseudo-string" is an non-string oop that has found is way into

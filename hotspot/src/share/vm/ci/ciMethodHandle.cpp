@@ -23,27 +23,30 @@
  */
 
 #include "incls/_precompiled.incl"
-#include "incls/_ciCPCache.cpp.incl"
+#include "incls/_ciMethodHandle.cpp.incl"
 
-// ciCPCache
+// ciMethodHandle
 
 // ------------------------------------------------------------------
-// ciCPCache::get_f1_offset
-size_t ciCPCache::get_f1_offset(int index) {
-  // Calculate the offset from the constantPoolCacheOop to the f1
-  // field.
-  ByteSize f1_offset =
-    constantPoolCacheOopDesc::entry_offset(index) +
-    ConstantPoolCacheEntry::f1_offset();
+// ciMethodHandle::get_adapter
+//
+// Return an adapter for this MethodHandle.
+ciMethod* ciMethodHandle::get_adapter(bool is_invokedynamic) const {
+  VM_ENTRY_MARK;
 
-  return in_bytes(f1_offset);
+  Handle h(get_oop());
+  methodHandle callee(_callee->get_methodOop());
+  MethodHandleCompiler mhc(h, callee, is_invokedynamic, THREAD);
+  methodHandle m = mhc.compile(CHECK_NULL);
+  return CURRENT_ENV->get_object(m())->as_method();
 }
 
 
 // ------------------------------------------------------------------
-// ciCPCache::print
+// ciMethodHandle::print_impl
 //
-// Print debugging information about the cache.
-void ciCPCache::print() {
-  Unimplemented();
+// Implementation of the print method.
+void ciMethodHandle::print_impl(outputStream* st) {
+  st->print(" type=");
+  get_oop()->print();
 }

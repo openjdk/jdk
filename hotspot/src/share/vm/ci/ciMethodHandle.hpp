@@ -22,28 +22,35 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciCPCache.cpp.incl"
-
-// ciCPCache
-
-// ------------------------------------------------------------------
-// ciCPCache::get_f1_offset
-size_t ciCPCache::get_f1_offset(int index) {
-  // Calculate the offset from the constantPoolCacheOop to the f1
-  // field.
-  ByteSize f1_offset =
-    constantPoolCacheOopDesc::entry_offset(index) +
-    ConstantPoolCacheEntry::f1_offset();
-
-  return in_bytes(f1_offset);
-}
-
-
-// ------------------------------------------------------------------
-// ciCPCache::print
+// ciMethodHandle
 //
-// Print debugging information about the cache.
-void ciCPCache::print() {
-  Unimplemented();
-}
+// The class represents a java.dyn.MethodHandle object.
+class ciMethodHandle : public ciInstance {
+private:
+  ciMethod* _callee;
+
+  // Return an adapter for this MethodHandle.
+  ciMethod* get_adapter(bool is_invokedynamic) const;
+
+protected:
+  void print_impl(outputStream* st);
+
+public:
+  ciMethodHandle(instanceHandle h_i) : ciInstance(h_i) {};
+
+  // What kind of ciObject is this?
+  bool is_method_handle() const { return true; }
+
+  ciMethod* callee() const { return _callee; }
+  void  set_callee(ciMethod* m) { _callee = m; }
+
+  // Return an adapter for a MethodHandle call.
+  ciMethod* get_method_handle_adapter() const {
+    return get_adapter(false);
+  }
+
+  // Return an adapter for an invokedynamic call.
+  ciMethod* get_invokedynamic_adapter() const {
+    return get_adapter(true);
+  }
+};

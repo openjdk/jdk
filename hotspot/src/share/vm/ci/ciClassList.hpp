@@ -43,6 +43,8 @@ class ciTypeFlow;
 class ciObject;
 class   ciNullObject;
 class   ciInstance;
+class     ciCallSite;
+class     ciMethodHandle;
 class   ciMethod;
 class   ciMethodData;
 class     ciReceiverTypeData;  // part of ciMethodData
@@ -79,6 +81,7 @@ friend class ciObjectFactory;
 // Any more access must be given explicitly.
 #define CI_PACKAGE_ACCESS_TO           \
 friend class ciObjectFactory;          \
+friend class ciCallSite;               \
 friend class ciConstantPoolCache;      \
 friend class ciField;                  \
 friend class ciConstant;               \
@@ -94,6 +97,7 @@ friend class ciNullObject;             \
 friend class ciInstance;               \
 friend class ciMethod;                 \
 friend class ciMethodData;             \
+friend class ciMethodHandle;           \
 friend class ciReceiverTypeData;       \
 friend class ciSymbol;                 \
 friend class ciArray;                  \

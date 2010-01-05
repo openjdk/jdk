@@ -1084,4 +1084,7 @@ public:
   // Wrapper object methods:
   static ID for_boxing(BasicType type);
   static ID for_unboxing(BasicType type);
+
+  // Raw conversion:
+  static ID for_raw_conversion(BasicType src, BasicType dest);
 };

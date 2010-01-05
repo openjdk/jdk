@@ -38,6 +38,8 @@ class ciMethod : public ciObject {
   CI_PACKAGE_ACCESS
   friend class ciEnv;
   friend class ciExceptionHandlerStream;
+  friend class ciBytecodeStream;
+  friend class ciMethodHandle;
 
  private:
   // General method information.
@@ -251,4 +253,10 @@ class ciMethod : public ciObject {
   // Print the name of this method in various incarnations.
   void print_name(outputStream* st = tty);
   void print_short_name(outputStream* st = tty);
+
+  methodOop get_method_handle_target() {
+    klassOop receiver_limit_oop = NULL;
+    int flags = 0;
+    return MethodHandles::decode_method(get_oop(), receiver_limit_oop, flags);
+  }
 };

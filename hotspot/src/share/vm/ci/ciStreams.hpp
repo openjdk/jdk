@@ -232,7 +232,8 @@ public:
   int       get_method_holder_index();
   int       get_method_signature_index();
 
-  ciCPCache* get_cpcache();
+  ciCPCache*  get_cpcache();
+  ciCallSite* get_call_site();
 
  private:
   void assert_index_size(int required_size) const {

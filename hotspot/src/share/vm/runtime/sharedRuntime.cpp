@@ -2145,7 +2145,7 @@ VMReg SharedRuntime::name_for_receiver() {
   return regs.first();
 }
 
-VMRegPair *SharedRuntime::find_callee_arguments(symbolOop sig, bool is_static, int* arg_size) {
+VMRegPair *SharedRuntime::find_callee_arguments(symbolOop sig, bool has_receiver, int* arg_size) {
   // This method is returning a data structure allocating as a
   // ResourceObject, so do not put any ResourceMarks in here.
   char *s = sig->as_C_string();
@@ -2157,7 +2157,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(symbolOop sig, bool is_static, i
   BasicType *sig_bt = NEW_RESOURCE_ARRAY( BasicType, 256 );
   VMRegPair *regs = NEW_RESOURCE_ARRAY( VMRegPair, 256 );
   int cnt = 0;
-  if (!is_static) {
+  if (has_receiver) {
     sig_bt[cnt++] = T_OBJECT; // Receiver is argument 0; not in signature
   }
 
