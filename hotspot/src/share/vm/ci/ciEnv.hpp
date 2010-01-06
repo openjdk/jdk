@@ -74,18 +74,9 @@ private:
   static ciTypeArrayKlassKlass* _type_array_klass_klass_instance;
   static ciObjArrayKlassKlass*  _obj_array_klass_klass_instance;
 
-  static ciInstanceKlass* _ArrayStoreException;
-  static ciInstanceKlass* _Class;
-  static ciInstanceKlass* _ClassCastException;
-  static ciInstanceKlass* _InvokeDynamic;
-  static ciInstanceKlass* _Object;
-  static ciInstanceKlass* _Throwable;
-  static ciInstanceKlass* _Thread;
-  static ciInstanceKlass* _OutOfMemoryError;
-  static ciInstanceKlass* _String;
-  static ciInstanceKlass* _StringBuffer;
-  static ciInstanceKlass* _StringBuilder;
-  static ciInstanceKlass* _Integer;
+#define WK_KLASS_DECL(name, ignore_s, ignore_o) static ciInstanceKlass* _##name;
+  WK_KLASSES_DO(WK_KLASS_DECL)
+#undef WK_KLASS_DECL
 
   static ciSymbol*        _unloaded_cisymbol;
   static ciInstanceKlass* _unloaded_ciinstance_klass;
@@ -301,42 +292,13 @@ public:
 
 
   // Access to certain well known ciObjects.
-  ciInstanceKlass* ArrayStoreException_klass() {
-    return _ArrayStoreException;
+#define WK_KLASS_FUNC(name, ignore_s, ignore_o) \
+  ciInstanceKlass* name() { \
+    return _##name;\
   }
-  ciInstanceKlass* Class_klass() {
-    return _Class;
-  }
-  ciInstanceKlass* ClassCastException_klass() {
-    return _ClassCastException;
-  }
-  ciInstanceKlass* InvokeDynamic_klass() {
-    return _InvokeDynamic;
-  }
-  ciInstanceKlass* Object_klass() {
-    return _Object;
-  }
-  ciInstanceKlass* Throwable_klass() {
-    return _Throwable;
-  }
-  ciInstanceKlass* Thread_klass() {
-    return _Thread;
-  }
-  ciInstanceKlass* OutOfMemoryError_klass() {
-    return _OutOfMemoryError;
-  }
-  ciInstanceKlass* String_klass() {
-    return _String;
-  }
-  ciInstanceKlass* StringBuilder_klass() {
-    return _StringBuilder;
-  }
-  ciInstanceKlass* StringBuffer_klass() {
-    return _StringBuffer;
-  }
-  ciInstanceKlass* Integer_klass() {
-    return _Integer;
-  }
+  WK_KLASSES_DO(WK_KLASS_FUNC)
+#undef WK_KLASS_FUNC
+
   ciInstance* NullPointerException_instance() {
     assert(_NullPointerException_instance != NULL, "initialization problem");
     return _NullPointerException_instance;

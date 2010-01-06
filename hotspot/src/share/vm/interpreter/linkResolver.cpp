@@ -55,7 +55,7 @@ void CallInfo::set_interface(KlassHandle resolved_klass, KlassHandle selected_kl
   // we should pick the vtable index from the resolved method.
   // Other than that case, there is no valid vtable index to specify.
   int vtable_index = methodOopDesc::invalid_vtable_index;
-  if (resolved_method->method_holder() == SystemDictionary::object_klass()) {
+  if (resolved_method->method_holder() == SystemDictionary::Object_klass()) {
     assert(resolved_method->vtable_index() == selected_method->vtable_index(), "sanity check");
     vtable_index = resolved_method->vtable_index();
   }
@@ -193,7 +193,7 @@ void LinkResolver::check_method_accessability(KlassHandle ref_klass,
   // We'll check for the method name first, as that's most likely
   // to be false (so we'll short-circuit out of these tests).
   if (sel_method->name() == vmSymbols::clone_name() &&
-      sel_klass() == SystemDictionary::object_klass() &&
+      sel_klass() == SystemDictionary::Object_klass() &&
       resolved_klass->oop_is_array()) {
     // We need to change "protected" to "public".
     assert(flags.is_protected(), "clone not protected?");

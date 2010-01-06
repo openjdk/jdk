@@ -353,7 +353,7 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     assert(h_exception.not_null(), "NULL exceptions should be handled by athrow");
     assert(h_exception->is_oop(), "just checking");
     // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
-    if (!(h_exception->is_a(SystemDictionary::throwable_klass()))) {
+    if (!(h_exception->is_a(SystemDictionary::Throwable_klass()))) {
       if (ExitVMOnVerifyError) vm_exit(-1);
       ShouldNotReachHere();
     }
@@ -585,7 +585,7 @@ IRT_ENTRY(void, InterpreterRuntime::new_illegal_monitor_state_exception(JavaThre
   Handle exception(thread, thread->vm_result());
   assert(exception() != NULL, "vm result should be set");
   thread->set_vm_result(NULL); // clear vm result before continuing (may cause memory leaks and assert failures)
-  if (!exception->is_a(SystemDictionary::threaddeath_klass())) {
+  if (!exception->is_a(SystemDictionary::ThreadDeath_klass())) {
     exception = get_preinitialized_exception(
                        SystemDictionary::IllegalMonitorStateException_klass(),
                        CATCH);
@@ -660,7 +660,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
       tty->print_cr("Resolving: klass: %s to method: %s", info.resolved_klass()->name()->as_C_string(), info.resolved_method()->name()->as_C_string());
     }
     if (info.resolved_method()->method_holder() ==
-                                            SystemDictionary::object_klass()) {
+                                            SystemDictionary::Object_klass()) {
       // NOTE: THIS IS A FIX FOR A CORNER CASE in the JVM spec
       // (see also cpCacheOop.cpp for details)
       methodHandle rm = info.resolved_method();

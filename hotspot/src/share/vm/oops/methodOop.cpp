@@ -456,12 +456,12 @@ objArrayHandle methodOopDesc::resolved_checked_exceptions_impl(methodOop this_oo
     return objArrayHandle(THREAD, Universe::the_empty_class_klass_array());
   } else {
     methodHandle h_this(THREAD, this_oop);
-    objArrayOop m_oop = oopFactory::new_objArray(SystemDictionary::class_klass(), length, CHECK_(objArrayHandle()));
+    objArrayOop m_oop = oopFactory::new_objArray(SystemDictionary::Class_klass(), length, CHECK_(objArrayHandle()));
     objArrayHandle mirrors (THREAD, m_oop);
     for (int i = 0; i < length; i++) {
       CheckedExceptionElement* table = h_this->checked_exceptions_start(); // recompute on each iteration, not gc safe
       klassOop k = h_this->constants()->klass_at(table[i].class_cp_index, CHECK_(objArrayHandle()));
-      assert(Klass::cast(k)->is_subclass_of(SystemDictionary::throwable_klass()), "invalid exception class");
+      assert(Klass::cast(k)->is_subclass_of(SystemDictionary::Throwable_klass()), "invalid exception class");
       mirrors->obj_at_put(i, Klass::cast(k)->java_mirror());
     }
     return mirrors;
@@ -1032,8 +1032,8 @@ bool methodOopDesc::load_signature_classes(methodHandle m, TRAPS) {
       // We are loading classes eagerly. If a ClassNotFoundException or
       // a LinkageError was generated, be sure to ignore it.
       if (HAS_PENDING_EXCEPTION) {
-        if (PENDING_EXCEPTION->is_a(SystemDictionary::classNotFoundException_klass()) ||
-            PENDING_EXCEPTION->is_a(SystemDictionary::linkageError_klass())) {
+        if (PENDING_EXCEPTION->is_a(SystemDictionary::ClassNotFoundException_klass()) ||
+            PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {
           CLEAR_PENDING_EXCEPTION;
         } else {
           return false;

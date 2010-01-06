@@ -75,7 +75,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   _java_mirror = NULL;
 
   if (is_shared()) {
-    if (h_k() != SystemDictionary::object_klass()) {
+    if (h_k() != SystemDictionary::Object_klass()) {
       super();
     }
     java_mirror();

@@ -143,7 +143,7 @@ methodOop MethodHandles::decode_vmtarget(oop vmtarget, int vmindex, oop mtype,
       return klassItable::method_for_itable_index((klassOop)vmtarget, vmindex);
     } else {
       if (!tk->oop_is_instance())
-        tk = instanceKlass::cast(SystemDictionary::object_klass());
+        tk = instanceKlass::cast(SystemDictionary::Object_klass());
       return ((instanceKlass*)tk)->method_at_vtable(vmindex);
     }
   }
@@ -264,14 +264,14 @@ methodOop MethodHandles::decode_method(oop x, klassOop& receiver_limit_result, i
     return decode_MemberName(x, receiver_limit_result, decode_flags_result);
   } else if (java_dyn_MethodHandle::is_subclass(xk)) {
     return decode_MethodHandle(x, receiver_limit_result, decode_flags_result);
-  } else if (xk == SystemDictionary::reflect_method_klass()) {
+  } else if (xk == SystemDictionary::reflect_Method_klass()) {
     oop clazz  = java_lang_reflect_Method::clazz(x);
     int slot   = java_lang_reflect_Method::slot(x);
     klassOop k = java_lang_Class::as_klassOop(clazz);
     if (k != NULL && Klass::cast(k)->oop_is_instance())
       return decode_methodOop(instanceKlass::cast(k)->method_with_idnum(slot),
                               decode_flags_result);
-  } else if (xk == SystemDictionary::reflect_constructor_klass()) {
+  } else if (xk == SystemDictionary::reflect_Constructor_klass()) {
     oop clazz  = java_lang_reflect_Constructor::clazz(x);
     int slot   = java_lang_reflect_Constructor::slot(x);
     klassOop k = java_lang_Class::as_klassOop(clazz);
@@ -328,7 +328,7 @@ enum {
 };
 
 void MethodHandles::init_MemberName(oop mname_oop, oop target_oop) {
-  if (target_oop->klass() == SystemDictionary::reflect_field_klass()) {
+  if (target_oop->klass() == SystemDictionary::reflect_Field_klass()) {
     oop clazz = java_lang_reflect_Field::clazz(target_oop); // fd.field_holder()
     int slot  = java_lang_reflect_Field::slot(target_oop);  // fd.index()
     int mods  = java_lang_reflect_Field::modifiers(target_oop);
@@ -413,7 +413,7 @@ void MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   if (defc_klassOop == NULL)  return;  // a primitive; no resolution possible
   if (!Klass::cast(defc_klassOop)->oop_is_instance()) {
     if (!Klass::cast(defc_klassOop)->oop_is_array())  return;
-    defc_klassOop = SystemDictionary::object_klass();
+    defc_klassOop = SystemDictionary::Object_klass();
   }
   instanceKlassHandle defc(THREAD, defc_klassOop);
   defc_klassOop = NULL;  // safety
@@ -749,7 +749,7 @@ oop MethodHandles::encode_target(Handle mh, int format, TRAPS) {
       return NULL;                // unformed MH
     }
     klassOop tklass = target->klass();
-    if (Klass::cast(tklass)->is_subclass_of(SystemDictionary::object_klass())) {
+    if (Klass::cast(tklass)->is_subclass_of(SystemDictionary::Object_klass())) {
       return target;              // target is another MH (or something else?)
     }
   }
@@ -828,19 +828,19 @@ static bool is_always_null_type(klassOop klass) {
 }
 
 bool MethodHandles::class_cast_needed(klassOop src, klassOop dst) {
-  if (src == dst || dst == SystemDictionary::object_klass())
+  if (src == dst || dst == SystemDictionary::Object_klass())
     return false;                               // quickest checks
   Klass* srck = Klass::cast(src);
   Klass* dstk = Klass::cast(dst);
   if (dstk->is_interface()) {
     // interface receivers can safely be viewed as untyped,
     // because interface calls always include a dynamic check
-    //dstk = Klass::cast(SystemDictionary::object_klass());
+    //dstk = Klass::cast(SystemDictionary::Object_klass());
     return false;
   }
   if (srck->is_interface()) {
     // interface arguments must be viewed as untyped
-    //srck = Klass::cast(SystemDictionary::object_klass());
+    //srck = Klass::cast(SystemDictionary::Object_klass());
     return true;
   }
   if (is_always_null_type(src)) {
@@ -853,7 +853,7 @@ bool MethodHandles::class_cast_needed(klassOop src, klassOop dst) {
 }
 
 static oop object_java_mirror() {
-  return Klass::cast(SystemDictionary::object_klass())->java_mirror();
+  return Klass::cast(SystemDictionary::Object_klass())->java_mirror();
 }
 
 bool MethodHandles::same_basic_type_for_arguments(BasicType src,
@@ -1449,7 +1449,7 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
       break;
     }
     // check subrange of Integer.value, if necessary
-    if (argument == NULL || argument->klass() != SystemDictionary::int_klass()) {
+    if (argument == NULL || argument->klass() != SystemDictionary::Integer_klass()) {
       err = "bound integer argument must be of type java.lang.Integer";
       break;
     }
@@ -1472,7 +1472,7 @@ void MethodHandles::verify_BoundMethodHandle(Handle mh, Handle target, int argnu
       BasicType argbox = java_lang_boxing_object::basic_type(argument);
       if (argbox != ptype) {
         err = check_argument_type_change(T_OBJECT, (argument == NULL
-                                                    ? SystemDictionary::object_klass()
+                                                    ? SystemDictionary::Object_klass()
                                                     : argument->klass()),
                                          ptype, ptype_klass(), argnum);
         assert(err != NULL, "this must be an error");
@@ -2175,7 +2175,7 @@ JVM_ENTRY(void, MHI_init_MT(JNIEnv *env, jobject igcls, jobject erased_jh)) {
       symbolOop name = vmSymbols::toString_name(), sig = vmSymbols::void_string_signature();
       JavaCallArguments args(Handle(THREAD, JNIHandles::resolve_non_null(erased_jh)));
       JavaValue result(T_OBJECT);
-      JavaCalls::call_virtual(&result, SystemDictionary::object_klass(), name, sig,
+      JavaCalls::call_virtual(&result, SystemDictionary::Object_klass(), name, sig,
                               &args, CHECK);
       Handle str(THREAD, (oop)result.get_jobject());
       java_lang_String::print(str, tty);
