@@ -274,7 +274,7 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words)
     fill_with_array(start, words);
   } else if (words > 0) {
     assert(words == min_fill_size(), "unaligned size");
-    post_allocation_setup_common(SystemDictionary::object_klass(), start,
+    post_allocation_setup_common(SystemDictionary::Object_klass(), start,
                                  words);
   }
 }

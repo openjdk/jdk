@@ -1045,7 +1045,7 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
     case T_DOUBLE: emit_bc(Bytecodes::_dreturn); break;
     case T_VOID:   emit_bc(Bytecodes::_return);  break;
     case T_OBJECT:
-      if (_rklass.not_null() && _rklass() != SystemDictionary::object_klass())
+      if (_rklass.not_null() && _rklass() != SystemDictionary::Object_klass())
         emit_bc(Bytecodes::_checkcast, cpool_klass_put(_rklass()));
       emit_bc(Bytecodes::_areturn);
       break;

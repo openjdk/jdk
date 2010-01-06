@@ -38,18 +38,9 @@ ciInstanceKlassKlass*  ciEnv::_instance_klass_klass_instance;
 ciTypeArrayKlassKlass* ciEnv::_type_array_klass_klass_instance;
 ciObjArrayKlassKlass*  ciEnv::_obj_array_klass_klass_instance;
 
-ciInstanceKlass* ciEnv::_ArrayStoreException;
-ciInstanceKlass* ciEnv::_Class;
-ciInstanceKlass* ciEnv::_ClassCastException;
-ciInstanceKlass* ciEnv::_InvokeDynamic;
-ciInstanceKlass* ciEnv::_Object;
-ciInstanceKlass* ciEnv::_Throwable;
-ciInstanceKlass* ciEnv::_Thread;
-ciInstanceKlass* ciEnv::_OutOfMemoryError;
-ciInstanceKlass* ciEnv::_String;
-ciInstanceKlass* ciEnv::_StringBuffer;
-ciInstanceKlass* ciEnv::_StringBuilder;
-ciInstanceKlass* ciEnv::_Integer;
+#define WK_KLASS_DEFN(name, ignore_s, ignore_o) ciInstanceKlass* ciEnv::_##name = NULL;
+WK_KLASSES_DO(WK_KLASS_DEFN)
+#undef WK_KLASS_DEFN
 
 ciSymbol*        ciEnv::_unloaded_cisymbol = NULL;
 ciInstanceKlass* ciEnv::_unloaded_ciinstance_klass = NULL;

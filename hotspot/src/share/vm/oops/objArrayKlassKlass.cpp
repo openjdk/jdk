@@ -99,7 +99,7 @@ klassOop objArrayKlassKlass::allocate_objArray_klass_impl(objArrayKlassKlassHand
       }
     } else {
       // The element type is already Object.  Object[] has direct super of Object.
-      super_klass = KlassHandle(THREAD, SystemDictionary::object_klass());
+      super_klass = KlassHandle(THREAD, SystemDictionary::Object_klass());
     }
   }
 

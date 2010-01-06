@@ -82,55 +82,55 @@ class SymbolPropertyTable;
 
 #define WK_KLASSES_DO(template)                                               \
   /* well-known classes */                                                    \
-  template(object_klass,                 java_lang_Object,               Pre) \
-  template(string_klass,                 java_lang_String,               Pre) \
-  template(class_klass,                  java_lang_Class,                Pre) \
-  template(cloneable_klass,              java_lang_Cloneable,            Pre) \
-  template(classloader_klass,            java_lang_ClassLoader,          Pre) \
-  template(serializable_klass,           java_io_Serializable,           Pre) \
-  template(system_klass,                 java_lang_System,               Pre) \
-  template(throwable_klass,              java_lang_Throwable,            Pre) \
-  template(error_klass,                  java_lang_Error,                Pre) \
-  template(threaddeath_klass,            java_lang_ThreadDeath,          Pre) \
-  template(exception_klass,              java_lang_Exception,            Pre) \
-  template(runtime_exception_klass,      java_lang_RuntimeException,     Pre) \
-  template(protectionDomain_klass,       java_security_ProtectionDomain, Pre) \
+  template(Object_klass,                 java_lang_Object,               Pre) \
+  template(String_klass,                 java_lang_String,               Pre) \
+  template(Class_klass,                  java_lang_Class,                Pre) \
+  template(Cloneable_klass,              java_lang_Cloneable,            Pre) \
+  template(ClassLoader_klass,            java_lang_ClassLoader,          Pre) \
+  template(Serializable_klass,           java_io_Serializable,           Pre) \
+  template(System_klass,                 java_lang_System,               Pre) \
+  template(Throwable_klass,              java_lang_Throwable,            Pre) \
+  template(Error_klass,                  java_lang_Error,                Pre) \
+  template(ThreadDeath_klass,            java_lang_ThreadDeath,          Pre) \
+  template(Exception_klass,              java_lang_Exception,            Pre) \
+  template(RuntimeException_klass,       java_lang_RuntimeException,     Pre) \
+  template(ProtectionDomain_klass,       java_security_ProtectionDomain, Pre) \
   template(AccessControlContext_klass,   java_security_AccessControlContext, Pre) \
-  template(classNotFoundException_klass, java_lang_ClassNotFoundException, Pre) \
-  template(noClassDefFoundError_klass,   java_lang_NoClassDefFoundError, Pre) \
-  template(linkageError_klass,           java_lang_LinkageError,         Pre) \
+  template(ClassNotFoundException_klass, java_lang_ClassNotFoundException, Pre) \
+  template(NoClassDefFoundError_klass,   java_lang_NoClassDefFoundError, Pre) \
+  template(LinkageError_klass,           java_lang_LinkageError,         Pre) \
   template(ClassCastException_klass,     java_lang_ClassCastException,   Pre) \
   template(ArrayStoreException_klass,    java_lang_ArrayStoreException,  Pre) \
-  template(virtualMachineError_klass,    java_lang_VirtualMachineError,  Pre) \
+  template(VirtualMachineError_klass,    java_lang_VirtualMachineError,  Pre) \
   template(OutOfMemoryError_klass,       java_lang_OutOfMemoryError,     Pre) \
   template(StackOverflowError_klass,     java_lang_StackOverflowError,   Pre) \
   template(IllegalMonitorStateException_klass, java_lang_IllegalMonitorStateException, Pre) \
-  template(reference_klass,              java_lang_ref_Reference,        Pre) \
+  template(Reference_klass,              java_lang_ref_Reference,        Pre) \
                                                                               \
   /* Preload ref klasses and set reference types */                           \
-  template(soft_reference_klass,         java_lang_ref_SoftReference,    Pre) \
-  template(weak_reference_klass,         java_lang_ref_WeakReference,    Pre) \
-  template(final_reference_klass,        java_lang_ref_FinalReference,   Pre) \
-  template(phantom_reference_klass,      java_lang_ref_PhantomReference, Pre) \
-  template(finalizer_klass,              java_lang_ref_Finalizer,        Pre) \
+  template(SoftReference_klass,          java_lang_ref_SoftReference,    Pre) \
+  template(WeakReference_klass,          java_lang_ref_WeakReference,    Pre) \
+  template(FinalReference_klass,         java_lang_ref_FinalReference,   Pre) \
+  template(PhantomReference_klass,       java_lang_ref_PhantomReference, Pre) \
+  template(Finalizer_klass,              java_lang_ref_Finalizer,        Pre) \
                                                                               \
-  template(thread_klass,                 java_lang_Thread,               Pre) \
-  template(threadGroup_klass,            java_lang_ThreadGroup,          Pre) \
-  template(properties_klass,             java_util_Properties,           Pre) \
-  template(reflect_accessible_object_klass, java_lang_reflect_AccessibleObject, Pre) \
-  template(reflect_field_klass,          java_lang_reflect_Field,        Pre) \
-  template(reflect_method_klass,         java_lang_reflect_Method,       Pre) \
-  template(reflect_constructor_klass,    java_lang_reflect_Constructor,  Pre) \
+  template(Thread_klass,                 java_lang_Thread,               Pre) \
+  template(ThreadGroup_klass,            java_lang_ThreadGroup,          Pre) \
+  template(Properties_klass,             java_util_Properties,           Pre) \
+  template(reflect_AccessibleObject_klass, java_lang_reflect_AccessibleObject, Pre) \
+  template(reflect_Field_klass,          java_lang_reflect_Field,        Pre) \
+  template(reflect_Method_klass,         java_lang_reflect_Method,       Pre) \
+  template(reflect_Constructor_klass,    java_lang_reflect_Constructor,  Pre) \
                                                                               \
   /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */ \
   /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
-  template(reflect_magic_klass,          sun_reflect_MagicAccessorImpl,  Opt) \
-  template(reflect_method_accessor_klass, sun_reflect_MethodAccessorImpl, Opt_Only_JDK14NewRef) \
-  template(reflect_constructor_accessor_klass, sun_reflect_ConstructorAccessorImpl, Opt_Only_JDK14NewRef) \
-  template(reflect_delegating_classloader_klass, sun_reflect_DelegatingClassLoader, Opt) \
-  template(reflect_constant_pool_klass,  sun_reflect_ConstantPool,       Opt_Only_JDK15) \
-  template(reflect_unsafe_static_field_accessor_impl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15) \
+  template(reflect_MagicAccessorImpl_klass,          sun_reflect_MagicAccessorImpl,  Opt) \
+  template(reflect_MethodAccessorImpl_klass, sun_reflect_MethodAccessorImpl, Opt_Only_JDK14NewRef) \
+  template(reflect_ConstructorAccessorImpl_klass, sun_reflect_ConstructorAccessorImpl, Opt_Only_JDK14NewRef) \
+  template(reflect_DelegatingClassLoader_klass, sun_reflect_DelegatingClassLoader, Opt) \
+  template(reflect_ConstantPool_klass,  sun_reflect_ConstantPool,       Opt_Only_JDK15) \
+  template(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15) \
                                                                               \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */ \
   template(MethodHandle_klass,           java_dyn_MethodHandle,          Opt) \
@@ -147,13 +147,11 @@ class SymbolPropertyTable;
   template(InvokeDynamic_klass,          java_dyn_InvokeDynamic,         Opt) \
   /* Note: MethodHandle must be first, and Dynamic last in group */           \
                                                                               \
-  template(vector_klass,                 java_util_Vector,               Pre) \
-  template(hashtable_klass,              java_util_Hashtable,            Pre) \
-  template(stringBuffer_klass,           java_lang_StringBuffer,         Pre) \
+  template(StringBuffer_klass,           java_lang_StringBuffer,         Pre) \
   template(StringBuilder_klass,          java_lang_StringBuilder,        Pre) \
                                                                               \
   /* It's NULL in non-1.4 JDKs. */                                            \
-  template(stackTraceElement_klass,      java_lang_StackTraceElement,    Opt) \
+  template(StackTraceElement_klass,      java_lang_StackTraceElement,    Opt) \
   /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
   template(java_nio_Buffer_klass,        java_nio_Buffer,                Opt) \
@@ -164,14 +162,14 @@ class SymbolPropertyTable;
   template(sun_jkernel_DownloadManager_klass, sun_jkernel_DownloadManager, Opt_Kernel) \
                                                                               \
   /* Preload boxing klasses */                                                \
-  template(boolean_klass,                java_lang_Boolean,              Pre) \
-  template(char_klass,                   java_lang_Character,            Pre) \
-  template(float_klass,                  java_lang_Float,                Pre) \
-  template(double_klass,                 java_lang_Double,               Pre) \
-  template(byte_klass,                   java_lang_Byte,                 Pre) \
-  template(short_klass,                  java_lang_Short,                Pre) \
-  template(int_klass,                    java_lang_Integer,              Pre) \
-  template(long_klass,                   java_lang_Long,                 Pre) \
+  template(Boolean_klass,                java_lang_Boolean,              Pre) \
+  template(Character_klass,              java_lang_Character,            Pre) \
+  template(Float_klass,                  java_lang_Float,                Pre) \
+  template(Double_klass,                 java_lang_Double,               Pre) \
+  template(Byte_klass,                   java_lang_Byte,                 Pre) \
+  template(Short_klass,                  java_lang_Short,                Pre) \
+  template(Integer_klass,                java_lang_Integer,              Pre) \
+  template(Long_klass,                   java_lang_Long,                 Pre) \
   /*end*/
 
 
@@ -438,8 +436,8 @@ public:
   // Tells whether ClassLoader.checkPackageAccess is present
   static bool has_checkPackageAccess()      { return _has_checkPackageAccess; }
 
-  static bool class_klass_loaded()          { return WK_KLASS(class_klass) != NULL; }
-  static bool cloneable_klass_loaded()      { return WK_KLASS(cloneable_klass) != NULL; }
+  static bool Class_klass_loaded()          { return WK_KLASS(Class_klass) != NULL; }
+  static bool Cloneable_klass_loaded()      { return WK_KLASS(Cloneable_klass) != NULL; }
 
   // Returns default system loader
   static oop java_system_loader();
