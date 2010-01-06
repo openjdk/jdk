@@ -111,7 +111,7 @@ class java_lang_String : AllStatic {
 
   // Testers
   static bool is_instance(oop obj) {
-    return obj != NULL && obj->klass() == SystemDictionary::string_klass();
+    return obj != NULL && obj->klass() == SystemDictionary::String_klass();
   }
 
   // Debugging
@@ -161,7 +161,7 @@ class java_lang_Class : AllStatic {
   static void print_signature(oop java_class, outputStream *st);
   // Testing
   static bool is_instance(oop obj) {
-    return obj != NULL && obj->klass() == SystemDictionary::class_klass();
+    return obj != NULL && obj->klass() == SystemDictionary::Class_klass();
   }
   static bool is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);

@@ -144,43 +144,13 @@ void ciObjectFactory::init_shared_objects() {
   ciEnv::_obj_array_klass_klass_instance =
     get(Universe::objArrayKlassKlassObj())
       ->as_obj_array_klass_klass();
-  ciEnv::_ArrayStoreException =
-    get(SystemDictionary::ArrayStoreException_klass())
-      ->as_instance_klass();
-  ciEnv::_Class =
-    get(SystemDictionary::class_klass())
-      ->as_instance_klass();
-  ciEnv::_ClassCastException =
-    get(SystemDictionary::ClassCastException_klass())
-      ->as_instance_klass();
-  if (EnableInvokeDynamic) {
-    ciEnv::_InvokeDynamic =
-      get(SystemDictionary::InvokeDynamic_klass())->as_instance_klass();
-  }
-  ciEnv::_Object =
-    get(SystemDictionary::object_klass())
-      ->as_instance_klass();
-  ciEnv::_Throwable =
-    get(SystemDictionary::throwable_klass())
-      ->as_instance_klass();
-  ciEnv::_Thread =
-    get(SystemDictionary::thread_klass())
-      ->as_instance_klass();
-  ciEnv::_OutOfMemoryError =
-    get(SystemDictionary::OutOfMemoryError_klass())
-      ->as_instance_klass();
-  ciEnv::_String =
-    get(SystemDictionary::string_klass())
-      ->as_instance_klass();
-  ciEnv::_StringBuffer =
-    get(SystemDictionary::stringBuffer_klass())
-      ->as_instance_klass();
-  ciEnv::_StringBuilder =
-    get(SystemDictionary::StringBuilder_klass())
-      ->as_instance_klass();
-  ciEnv::_Integer =
-    get(SystemDictionary::int_klass())
-      ->as_instance_klass();
+
+#define WK_KLASS_DEFN(name, ignore_s, opt)                              \
+  if (SystemDictionary::name() != NULL) \
+    ciEnv::_##name = get(SystemDictionary::name())->as_instance_klass();
+
+  WK_KLASSES_DO(WK_KLASS_DEFN)
+#undef WK_KLASS_DEFN
 
   for (int len = -1; len != _ci_objects->length(); ) {
     len = _ci_objects->length();
@@ -588,7 +558,7 @@ ciObjectFactory::NonPermObject* &ciObjectFactory::find_non_perm(oop key) {
   if (key->is_perm() && _non_perm_count == 0) {
     return emptyBucket;
   } else if (key->is_instance()) {
-    if (key->klass() == SystemDictionary::class_klass()) {
+    if (key->klass() == SystemDictionary::Class_klass()) {
       // class mirror instances are always perm
       return emptyBucket;
     }

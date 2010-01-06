@@ -790,7 +790,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   NOT_PRODUCT(Exceptions::debug_check_abort(exception));
 
   #ifdef ASSERT
-    if (!(exception->is_a(SystemDictionary::throwable_klass()))) {
+    if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
       // should throw an exception here
       ShouldNotReachHere();
     }
@@ -939,7 +939,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
 #endif
   assert (exception != NULL, "should have thrown a NULLPointerException");
 #ifdef ASSERT
-  if (!(exception->is_a(SystemDictionary::throwable_klass()))) {
+  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
     // should throw an exception here
     ShouldNotReachHere();
   }
