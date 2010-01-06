@@ -1170,7 +1170,7 @@ void nmethod::log_state_change() const {
 }
 
 // Common functionality for both make_not_entrant and make_zombie
-bool nmethod::make_not_entrant_or_zombie(int state) {
+bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
 
   // If the method is already zombie there is nothing to do
