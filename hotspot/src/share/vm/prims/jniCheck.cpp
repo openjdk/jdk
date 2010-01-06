@@ -341,7 +341,7 @@ klassOop jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_prim
     ReportJNIFatalError(thr, fatal_received_null_class);
   }
 
-  if (mirror->klass() != SystemDictionary::class_klass()) {
+  if (mirror->klass() != SystemDictionary::Class_klass()) {
     ReportJNIFatalError(thr, fatal_class_not_a_class);
   }
 
@@ -358,7 +358,7 @@ void jniCheck::validate_throwable_klass(JavaThread* thr, klassOop klass) {
   assert(klass != NULL, "klass argument must have a value");
 
   if (!Klass::cast(klass)->oop_is_instance() ||
-      !instanceKlass::cast(klass)->is_subclass_of(SystemDictionary::throwable_klass())) {
+      !instanceKlass::cast(klass)->is_subclass_of(SystemDictionary::Throwable_klass())) {
     ReportJNIFatalError(thr, fatal_class_not_a_throwable_class);
   }
 }

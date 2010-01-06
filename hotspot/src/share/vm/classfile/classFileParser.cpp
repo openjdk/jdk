@@ -430,7 +430,7 @@ void ClassFileParser::patch_constant_pool(constantPoolHandle cp, int index, Hand
   case JVM_CONSTANT_UnresolvedClass :
     // Patching a class means pre-resolving it.
     // The name in the constant pool is ignored.
-    if (patch->klass() == SystemDictionary::class_klass()) { // %%% java_lang_Class::is_instance
+    if (patch->klass() == SystemDictionary::Class_klass()) { // %%% java_lang_Class::is_instance
       guarantee_property(!java_lang_Class::is_primitive(patch()),
                          "Illegal class patch at %d in class file %s",
                          index, CHECK);
@@ -3469,8 +3469,8 @@ void ClassFileParser::set_precomputed_flags(instanceKlassHandle k) {
 #endif
 
   // Check if this klass supports the java.lang.Cloneable interface
-  if (SystemDictionary::cloneable_klass_loaded()) {
-    if (k->is_subtype_of(SystemDictionary::cloneable_klass())) {
+  if (SystemDictionary::Cloneable_klass_loaded()) {
+    if (k->is_subtype_of(SystemDictionary::Cloneable_klass())) {
       k->set_is_cloneable();
     }
   }
@@ -4175,7 +4175,7 @@ char* ClassFileParser::skip_over_field_name(char* name, bool slash_ok, unsigned 
       // Check if ch is Java identifier start or is Java identifier part
       // 4672820: call java.lang.Character methods directly without generating separate tables.
       EXCEPTION_MARK;
-      instanceKlassHandle klass (THREAD, SystemDictionary::char_klass());
+      instanceKlassHandle klass (THREAD, SystemDictionary::Character_klass());
 
       // return value
       JavaValue result(T_BOOLEAN);

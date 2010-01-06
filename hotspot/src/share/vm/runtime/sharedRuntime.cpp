@@ -860,7 +860,7 @@ methodHandle SharedRuntime::resolve_helper(JavaThread *thread,
   if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
     int retry_count = 0;
     while (!HAS_PENDING_EXCEPTION && callee_method->is_old() &&
-           callee_method->method_holder() != SystemDictionary::object_klass()) {
+           callee_method->method_holder() != SystemDictionary::Object_klass()) {
       // If has a pending exception then there is no need to re-try to
       // resolve this method.
       // If the method has been redefined, we need to try again.
@@ -1538,7 +1538,7 @@ char* SharedRuntime::generate_wrong_method_type_message(JavaThread* thread,
 oop SharedRuntime::wrong_method_type_is_for_single_argument(JavaThread* thr,
                                                             oopDesc* required) {
   if (required == NULL)  return NULL;
-  if (required->klass() == SystemDictionary::class_klass())
+  if (required->klass() == SystemDictionary::Class_klass())
     return required;
   if (required->is_klass())
     return Klass::cast(klassOop(required))->java_mirror();

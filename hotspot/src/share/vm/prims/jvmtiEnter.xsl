@@ -773,7 +773,7 @@ static jvmtiError JNICALL
     </xsl:apply-templates>
     <xsl:text>
     }
-    if (!thread_oop-&gt;is_a(SystemDictionary::thread_klass())) {
+    if (!thread_oop-&gt;is_a(SystemDictionary::Thread_klass())) {
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">     
       <xsl:with-param name="err">JVMTI_ERROR_INVALID_THREAD</xsl:with-param>
@@ -857,7 +857,7 @@ static jvmtiError JNICALL
     </xsl:apply-templates>
     <xsl:text>
   }
-  if (!k_mirror->is_a(SystemDictionary::class_klass())) {
+  if (!k_mirror->is_a(SystemDictionary::Class_klass())) {
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">     
       <xsl:with-param name="err">JVMTI_ERROR_INVALID_CLASS</xsl:with-param>
