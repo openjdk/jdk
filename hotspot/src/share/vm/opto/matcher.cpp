@@ -70,19 +70,27 @@ Matcher::Matcher( Node_List &proj_list ) :
   _dontcare(&_states_arena) {
   C->set_matcher(this);
 
-  idealreg2spillmask[Op_RegI] = NULL;
-  idealreg2spillmask[Op_RegN] = NULL;
-  idealreg2spillmask[Op_RegL] = NULL;
-  idealreg2spillmask[Op_RegF] = NULL;
-  idealreg2spillmask[Op_RegD] = NULL;
-  idealreg2spillmask[Op_RegP] = NULL;
+  idealreg2spillmask  [Op_RegI] = NULL;
+  idealreg2spillmask  [Op_RegN] = NULL;
+  idealreg2spillmask  [Op_RegL] = NULL;
+  idealreg2spillmask  [Op_RegF] = NULL;
+  idealreg2spillmask  [Op_RegD] = NULL;
+  idealreg2spillmask  [Op_RegP] = NULL;
 
-  idealreg2debugmask[Op_RegI] = NULL;
-  idealreg2debugmask[Op_RegN] = NULL;
-  idealreg2debugmask[Op_RegL] = NULL;
-  idealreg2debugmask[Op_RegF] = NULL;
-  idealreg2debugmask[Op_RegD] = NULL;
-  idealreg2debugmask[Op_RegP] = NULL;
+  idealreg2debugmask  [Op_RegI] = NULL;
+  idealreg2debugmask  [Op_RegN] = NULL;
+  idealreg2debugmask  [Op_RegL] = NULL;
+  idealreg2debugmask  [Op_RegF] = NULL;
+  idealreg2debugmask  [Op_RegD] = NULL;
+  idealreg2debugmask  [Op_RegP] = NULL;
+
+  idealreg2mhdebugmask[Op_RegI] = NULL;
+  idealreg2mhdebugmask[Op_RegN] = NULL;
+  idealreg2mhdebugmask[Op_RegL] = NULL;
+  idealreg2mhdebugmask[Op_RegF] = NULL;
+  idealreg2mhdebugmask[Op_RegD] = NULL;
+  idealreg2mhdebugmask[Op_RegP] = NULL;
+
   debug_only(_mem_node = NULL;)   // Ideal memory node consumed by mach node
 }
 
@@ -389,19 +397,28 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
 void Matcher::init_first_stack_mask() {
 
   // Allocate storage for spill masks as masks for the appropriate load type.
-  RegMask *rms = (RegMask*)C->comp_arena()->Amalloc_D(sizeof(RegMask)*12);
-  idealreg2spillmask[Op_RegN] = &rms[0];
-  idealreg2spillmask[Op_RegI] = &rms[1];
-  idealreg2spillmask[Op_RegL] = &rms[2];
-  idealreg2spillmask[Op_RegF] = &rms[3];
-  idealreg2spillmask[Op_RegD] = &rms[4];
-  idealreg2spillmask[Op_RegP] = &rms[5];
-  idealreg2debugmask[Op_RegN] = &rms[6];
-  idealreg2debugmask[Op_RegI] = &rms[7];
-  idealreg2debugmask[Op_RegL] = &rms[8];
-  idealreg2debugmask[Op_RegF] = &rms[9];
-  idealreg2debugmask[Op_RegD] = &rms[10];
-  idealreg2debugmask[Op_RegP] = &rms[11];
+  RegMask *rms = (RegMask*)C->comp_arena()->Amalloc_D(sizeof(RegMask) * 3*6);
+
+  idealreg2spillmask  [Op_RegN] = &rms[0];
+  idealreg2spillmask  [Op_RegI] = &rms[1];
+  idealreg2spillmask  [Op_RegL] = &rms[2];
+  idealreg2spillmask  [Op_RegF] = &rms[3];
+  idealreg2spillmask  [Op_RegD] = &rms[4];
+  idealreg2spillmask  [Op_RegP] = &rms[5];
+
+  idealreg2debugmask  [Op_RegN] = &rms[6];
+  idealreg2debugmask  [Op_RegI] = &rms[7];
+  idealreg2debugmask  [Op_RegL] = &rms[8];
+  idealreg2debugmask  [Op_RegF] = &rms[9];
+  idealreg2debugmask  [Op_RegD] = &rms[10];
+  idealreg2debugmask  [Op_RegP] = &rms[11];
+
+  idealreg2mhdebugmask[Op_RegN] = &rms[12];
+  idealreg2mhdebugmask[Op_RegI] = &rms[13];
+  idealreg2mhdebugmask[Op_RegL] = &rms[14];
+  idealreg2mhdebugmask[Op_RegF] = &rms[15];
+  idealreg2mhdebugmask[Op_RegD] = &rms[16];
+  idealreg2mhdebugmask[Op_RegP] = &rms[17];
 
   OptoReg::Name i;
 
@@ -442,12 +459,19 @@ void Matcher::init_first_stack_mask() {
   // Make up debug masks.  Any spill slot plus callee-save registers.
   // Caller-save registers are assumed to be trashable by the various
   // inline-cache fixup routines.
-  *idealreg2debugmask[Op_RegN]= *idealreg2spillmask[Op_RegN];
-  *idealreg2debugmask[Op_RegI]= *idealreg2spillmask[Op_RegI];
-  *idealreg2debugmask[Op_RegL]= *idealreg2spillmask[Op_RegL];
-  *idealreg2debugmask[Op_RegF]= *idealreg2spillmask[Op_RegF];
-  *idealreg2debugmask[Op_RegD]= *idealreg2spillmask[Op_RegD];
-  *idealreg2debugmask[Op_RegP]= *idealreg2spillmask[Op_RegP];
+  *idealreg2debugmask  [Op_RegN]= *idealreg2spillmask[Op_RegN];
+  *idealreg2debugmask  [Op_RegI]= *idealreg2spillmask[Op_RegI];
+  *idealreg2debugmask  [Op_RegL]= *idealreg2spillmask[Op_RegL];
+  *idealreg2debugmask  [Op_RegF]= *idealreg2spillmask[Op_RegF];
+  *idealreg2debugmask  [Op_RegD]= *idealreg2spillmask[Op_RegD];
+  *idealreg2debugmask  [Op_RegP]= *idealreg2spillmask[Op_RegP];
+
+  *idealreg2mhdebugmask[Op_RegN]= *idealreg2spillmask[Op_RegN];
+  *idealreg2mhdebugmask[Op_RegI]= *idealreg2spillmask[Op_RegI];
+  *idealreg2mhdebugmask[Op_RegL]= *idealreg2spillmask[Op_RegL];
+  *idealreg2mhdebugmask[Op_RegF]= *idealreg2spillmask[Op_RegF];
+  *idealreg2mhdebugmask[Op_RegD]= *idealreg2spillmask[Op_RegD];
+  *idealreg2mhdebugmask[Op_RegP]= *idealreg2spillmask[Op_RegP];
 
   // Prevent stub compilations from attempting to reference
   // callee-saved registers from debug info
@@ -458,14 +482,31 @@ void Matcher::init_first_stack_mask() {
     if( _register_save_policy[i] == 'C' ||
         _register_save_policy[i] == 'A' ||
         (_register_save_policy[i] == 'E' && exclude_soe) ) {
-      idealreg2debugmask[Op_RegN]->Remove(i);
-      idealreg2debugmask[Op_RegI]->Remove(i); // Exclude save-on-call
-      idealreg2debugmask[Op_RegL]->Remove(i); // registers from debug
-      idealreg2debugmask[Op_RegF]->Remove(i); // masks
-      idealreg2debugmask[Op_RegD]->Remove(i);
-      idealreg2debugmask[Op_RegP]->Remove(i);
+      idealreg2debugmask  [Op_RegN]->Remove(i);
+      idealreg2debugmask  [Op_RegI]->Remove(i); // Exclude save-on-call
+      idealreg2debugmask  [Op_RegL]->Remove(i); // registers from debug
+      idealreg2debugmask  [Op_RegF]->Remove(i); // masks
+      idealreg2debugmask  [Op_RegD]->Remove(i);
+      idealreg2debugmask  [Op_RegP]->Remove(i);
+
+      idealreg2mhdebugmask[Op_RegN]->Remove(i);
+      idealreg2mhdebugmask[Op_RegI]->Remove(i);
+      idealreg2mhdebugmask[Op_RegL]->Remove(i);
+      idealreg2mhdebugmask[Op_RegF]->Remove(i);
+      idealreg2mhdebugmask[Op_RegD]->Remove(i);
+      idealreg2mhdebugmask[Op_RegP]->Remove(i);
     }
   }
+
+  // Subtract the register we use to save the SP for MethodHandle
+  // invokes to from the debug mask.
+  const RegMask save_mask = method_handle_invoke_SP_save_mask();
+  idealreg2mhdebugmask[Op_RegN]->SUBTRACT(save_mask);
+  idealreg2mhdebugmask[Op_RegI]->SUBTRACT(save_mask);
+  idealreg2mhdebugmask[Op_RegL]->SUBTRACT(save_mask);
+  idealreg2mhdebugmask[Op_RegF]->SUBTRACT(save_mask);
+  idealreg2mhdebugmask[Op_RegD]->SUBTRACT(save_mask);
+  idealreg2mhdebugmask[Op_RegP]->SUBTRACT(save_mask);
 }
 
 //---------------------------is_save_on_entry----------------------------------
@@ -989,6 +1030,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   CallNode *call;
   const TypeTuple *domain;
   ciMethod*        method = NULL;
+  bool             is_method_handle_invoke = false;  // for special kill effects
   if( sfpt->is_Call() ) {
     call = sfpt->as_Call();
     domain = call->tf()->domain();
@@ -1013,6 +1055,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mcall_java->_method = method;
       mcall_java->_bci = call_java->_bci;
       mcall_java->_optimized_virtual = call_java->is_optimized_virtual();
+      is_method_handle_invoke = call_java->is_method_handle_invoke();
+      mcall_java->_method_handle_invoke = is_method_handle_invoke;
       if( mcall_java->is_MachCallStaticJava() )
         mcall_java->as_MachCallStaticJava()->_name =
          call_java->as_CallStaticJava()->_name;
@@ -1124,6 +1168,15 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // Compute number of stack slots needed to restore stack in case of
     // Pascal-style argument popping.
     mcall->_argsize = out_arg_limit_per_call - begin_out_arg_area;
+  }
+
+  if (is_method_handle_invoke) {
+    // Kill some extra stack space in case method handles want to do
+    // a little in-place argument insertion.
+    int regs_per_word  = NOT_LP64(1) LP64_ONLY(2); // %%% make a global const!
+    out_arg_limit_per_call += MethodHandlePushLimit * regs_per_word;
+    // Do not update mcall->_argsize because (a) the extra space is not
+    // pushed as arguments and (b) _argsize is dead (not used anywhere).
   }
 
   // Compute the max stack slot killed by any call.  These will not be

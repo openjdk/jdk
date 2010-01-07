@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ static const char* vm_symbol_bodies = VM_SYMBOLS_DO(VM_SYMBOL_BODY, VM_ALIAS_IGN
 void vmSymbols::initialize(TRAPS) {
   assert((int)SID_LIMIT <= (1<<log2_SID_LIMIT), "must fit in this bitfield");
   assert((int)SID_LIMIT*5 > (1<<log2_SID_LIMIT), "make the bitfield smaller, please");
+  assert(vmIntrinsics::FLAG_LIMIT <= (1 << vmIntrinsics::log2_FLAG_LIMIT), "must fit in this bitfield");
 
   if (!UseSharedSpaces) {
     const char* string = &vm_symbol_bodies[0];
@@ -271,6 +272,58 @@ vmSymbols::SID vmSymbols::find_sid(symbolOop symbol) {
   return sid;
 }
 
+static vmIntrinsics::ID wrapper_intrinsic(BasicType type, bool unboxing) {
+#define TYPE2(type, unboxing) ((int)(type)*2 + ((unboxing) ? 1 : 0))
+  switch (TYPE2(type, unboxing)) {
+#define BASIC_TYPE_CASE(type, box, unbox) \
+    case TYPE2(type, false):  return vmIntrinsics::box; \
+    case TYPE2(type, true):   return vmIntrinsics::unbox
+    BASIC_TYPE_CASE(T_BOOLEAN, _Boolean_valueOf,   _booleanValue);
+    BASIC_TYPE_CASE(T_BYTE,    _Byte_valueOf,      _byteValue);
+    BASIC_TYPE_CASE(T_CHAR,    _Character_valueOf, _charValue);
+    BASIC_TYPE_CASE(T_SHORT,   _Short_valueOf,     _shortValue);
+    BASIC_TYPE_CASE(T_INT,     _Integer_valueOf,   _intValue);
+    BASIC_TYPE_CASE(T_LONG,    _Long_valueOf,      _longValue);
+    BASIC_TYPE_CASE(T_FLOAT,   _Float_valueOf,     _floatValue);
+    BASIC_TYPE_CASE(T_DOUBLE,  _Double_valueOf,    _doubleValue);
+#undef BASIC_TYPE_CASE
+  }
+#undef TYPE2
+  return vmIntrinsics::_none;
+}
+
+vmIntrinsics::ID vmIntrinsics::for_boxing(BasicType type) {
+  return wrapper_intrinsic(type, false);
+}
+vmIntrinsics::ID vmIntrinsics::for_unboxing(BasicType type) {
+  return wrapper_intrinsic(type, true);
+}
+
+vmIntrinsics::ID vmIntrinsics::for_raw_conversion(BasicType src, BasicType dest) {
+#define SRC_DEST(s,d) (((int)(s) << 4) + (int)(d))
+  switch (SRC_DEST(src, dest)) {
+  case SRC_DEST(T_INT, T_FLOAT):   return vmIntrinsics::_intBitsToFloat;
+  case SRC_DEST(T_FLOAT, T_INT):   return vmIntrinsics::_floatToRawIntBits;
+
+  case SRC_DEST(T_LONG, T_DOUBLE): return vmIntrinsics::_longBitsToDouble;
+  case SRC_DEST(T_DOUBLE, T_LONG): return vmIntrinsics::_doubleToRawLongBits;
+  }
+#undef SRC_DEST
+
+  return vmIntrinsics::_none;
+}
+
+methodOop vmIntrinsics::method_for(vmIntrinsics::ID id) {
+  if (id == _none)  return NULL;
+  symbolOop cname = vmSymbols::symbol_at(class_for(id));
+  symbolOop mname = vmSymbols::symbol_at(name_for(id));
+  symbolOop msig  = vmSymbols::symbol_at(signature_for(id));
+  if (cname == NULL || mname == NULL || msig == NULL)  return NULL;
+  klassOop k = SystemDictionary::find_well_known_klass(cname);
+  if (k == NULL)  return NULL;
+  return instanceKlass::cast(k)->find_method(mname, msig);
+}
+
 
 #define VM_INTRINSIC_INITIALIZE(id, klass, name, sig, flags) #id "\0"
 static const char* vm_intrinsic_name_bodies =
@@ -330,15 +383,15 @@ inline bool match_F_RNY(jshort flags) {
 }
 
 // These are for forming case labels:
-#define ID3(x, y, z) (( jint)(z) +                                  \
-                      ((jint)(y) <<    vmSymbols::log2_SID_LIMIT) + \
-                      ((jint)(x) << (2*vmSymbols::log2_SID_LIMIT))  )
+#define ID3(x, y, z) (( jlong)(z) +                                  \
+                      ((jlong)(y) <<    vmSymbols::log2_SID_LIMIT) + \
+                      ((jlong)(x) << (2*vmSymbols::log2_SID_LIMIT))  )
 #define SID_ENUM(n) vmSymbols::VM_SYMBOL_ENUM_NAME(n)
 
-vmIntrinsics::ID vmIntrinsics::find_id(vmSymbols::SID holder,
-                                       vmSymbols::SID name,
-                                       vmSymbols::SID sig,
-                                       jshort flags) {
+vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbols::SID holder,
+                                            vmSymbols::SID name,
+                                            vmSymbols::SID sig,
+                                            jshort flags) {
   assert((int)vmSymbols::SID_LIMIT <= (1<<vmSymbols::log2_SID_LIMIT), "must fit");
 
   // Let the C compiler build the decision tree.
@@ -383,62 +436,50 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
 }
 
 
-// These are for friendly printouts of intrinsics:
+// These are to get information about intrinsics.
+
+#define ID4(x, y, z, f) ((ID3(x, y, z) << vmIntrinsics::log2_FLAG_LIMIT) | (jlong) (f))
+
+static const jlong intrinsic_info_array[vmIntrinsics::ID_LIMIT+1] = {
+#define VM_INTRINSIC_INFO(ignore_id, klass, name, sig, fcode) \
+  ID4(SID_ENUM(klass), SID_ENUM(name), SID_ENUM(sig), vmIntrinsics::fcode),
+
+  0, VM_INTRINSICS_DO(VM_INTRINSIC_INFO,
+                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE)
+    0
+#undef VM_INTRINSIC_INFO
+};
+
+inline jlong intrinsic_info(vmIntrinsics::ID id) {
+  return intrinsic_info_array[vmIntrinsics::ID_from((int)id)];
+}
 
 vmSymbols::SID vmIntrinsics::class_for(vmIntrinsics::ID id) {
-#ifndef PRODUCT
-#define VM_INTRINSIC_CASE(id, klass, name, sig, fcode) \
-  case id: return SID_ENUM(klass);
-
-  switch (id) {
-    VM_INTRINSICS_DO(VM_INTRINSIC_CASE,
-                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
-  }
-#undef VM_INTRINSIC_CASE
-#endif //PRODUCT
-  return vmSymbols::NO_SID;
+  jlong info = intrinsic_info(id);
+  int shift = 2*vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
+  assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1021, "");
+  return vmSymbols::SID( (info >> shift) & mask );
 }
 
 vmSymbols::SID vmIntrinsics::name_for(vmIntrinsics::ID id) {
-#ifndef PRODUCT
-#define VM_INTRINSIC_CASE(id, klass, name, sig, fcode) \
-  case id: return SID_ENUM(name);
-
-  switch (id) {
-    VM_INTRINSICS_DO(VM_INTRINSIC_CASE,
-                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
-  }
-#undef VM_INTRINSIC_CASE
-#endif //PRODUCT
-  return vmSymbols::NO_SID;
+  jlong info = intrinsic_info(id);
+  int shift = vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
+  assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1022, "");
+  return vmSymbols::SID( (info >> shift) & mask );
 }
 
 vmSymbols::SID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
-#ifndef PRODUCT
-#define VM_INTRINSIC_CASE(id, klass, name, sig, fcode) \
-  case id: return SID_ENUM(sig);
-
-  switch (id) {
-    VM_INTRINSICS_DO(VM_INTRINSIC_CASE,
-                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
-  }
-#undef VM_INTRINSIC_CASE
-#endif //PRODUCT
-  return vmSymbols::NO_SID;
+  jlong info = intrinsic_info(id);
+  int shift = log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
+  assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 1023, "");
+  return vmSymbols::SID( (info >> shift) & mask );
 }
 
 vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {
-#ifndef PRODUCT
-#define VM_INTRINSIC_CASE(id, klass, name, sig, fcode) \
-  case id: return fcode;
-
-  switch (id) {
-    VM_INTRINSICS_DO(VM_INTRINSIC_CASE,
-                     VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE);
-  }
-#undef VM_INTRINSIC_CASE
-#endif //PRODUCT
-  return F_none;
+  jlong info = intrinsic_info(id);
+  int shift = 0, mask = right_n_bits(log2_FLAG_LIMIT);
+  assert(((ID4(1021,1022,1023,15) >> shift) & mask) == 15, "");
+  return Flags( (info >> shift) & mask );
 }
 
 

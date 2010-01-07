@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,9 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
 
   virtual bool is_compiled_by_c2() const         { return false; }
   virtual bool is_compiled_by_c1() const         { return false; }
+
+  // Casting
+  nmethod* as_nmethod_or_null()                  { return is_nmethod() ? (nmethod*) this : NULL; }
 
   // Boundaries
   address    header_begin() const                { return (address)    this; }
