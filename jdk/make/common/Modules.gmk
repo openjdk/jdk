@@ -34,12 +34,10 @@ JRE_MODULE_IMAGE_DIR = $(ABS_OUTPUTDIR)/jre-module-image
 #
 # Open issues that need further investigation:
 # 1. Classes in jre/lib/ext/dnsns.jar are currently put in jre/lib/jndi-dns
-#    module.
+#    module.  META-INF/services file is not installed.
 # 2. Signed jars
 #    For JDK build, signed jars are copied to the build.
 #    All jars in the module image are unsigned.
-# 3. jre/lib/security/US_export_policy.jar and local_policy.jar
-#    are not included in the module image yet.
 
 MODULE_IMAGEBINDIR = bin
 
@@ -63,7 +61,8 @@ process-module-image-jre process-module-image-jdk ::
 	@$(ECHO) ">>>Making "$@" @ `$(DATE)` ..."
 
 # Order is important here, trim jre after jdk image is created
-modules:: sanity-module-images post-sanity-module-images  \
+modules:: gen-modules \
+	 sanity-module-images post-sanity-module-images  \
 	 $(INITIAL_MODULE_IMAGE_JRE) $(INITIAL_MODULE_IMAGE_JDK) \
 	 trim-module-image-jre trim-module-image-jdk \
 	 process-module-image-jre process-module-image-jdk
@@ -124,6 +123,33 @@ endif
 
 MODULES_TEMPDIR=$(ABS_TEMPDIR)/modules
 MODULES_LIB = $(ABS_OUTPUTDIR)/modules
+MODULES_LIST = $(MODULES_TEMPDIR)/classlist/modules.list
+
+# Modules in the jre/lib/security directory
+POLICY_MODULES = US_export_policy local_policy
+
+# Modules in the modules/ext directory
+EXT_MODULES = localedata security-sunec security-sunjce
+
+# Build PKCS#11 on all platforms except 64-bit Windows.
+PKCS11 = security-sunpkcs11
+ifeq ($(ARCH_DATA_MODEL), 64)
+  ifeq ($(PLATFORM), windows)
+    PKCS11 =
+  endif
+endif
+
+EXT_MODULES += $(PKCS11)
+
+# Build Microsoft CryptoAPI provider only on (non-64-bit) Windows platform.
+ifeq ($(PLATFORM), windows)
+  ifneq ($(ARCH_DATA_MODEL), 64)
+    EXT_MODULES += security-sunmscapi
+  endif
+endif
+
+# Modules for JDK only
+JDK_MODULES = tools
 
 gen-modules:
 	$(CD) modules; $(MAKE) all
@@ -151,7 +177,6 @@ initial-module-image-jre-sol64:: initial-module-image-jre-setup \
 # Construct an initial jre image (initial jdk jre) no trimming or stripping
 initial-module-image-jre:: initial-module-image-jre-setup \
 		    $(JRE_LICENSES) $(JRE_MODULE_DOCFILES) \
-		    gen-modules \
 		    $(BUILDMETAINDEX_JARFILE)
 	@# Copy in bin directory
 	$(CD) $(OUTPUTDIR) && $(FIND) bin -depth | $(CPIO) -pdum $(JRE_MODULE_IMAGE_DIR)
@@ -162,7 +187,21 @@ initial-module-image-jre:: initial-module-image-jre-setup \
 	@#
 	@# copy modules to jre/lib
 	@#
-	$(CP) -rf $(MODULES_LIB)/jre/lib/* $(JRE_MODULE_IMAGE_DIR)/lib 
+	for m in `$(NAWK) '{print $$1}' $(MODULES_LIST)` ; do \
+	    $(CP) $(MODULES_LIB)/$$m/lib/$$m.jar $(JRE_MODULE_IMAGE_DIR)/lib ; \
+	done
+	$(MKDIR) -p $(JRE_MODULE_IMAGE_DIR)/lib/ext
+	for m in $(EXT_MODULES) ; do \
+           $(MV) $(JRE_MODULE_IMAGE_DIR)/lib/$$m.jar $(JRE_MODULE_IMAGE_DIR)/lib/ext ; \
+        done
+	for m in $(POLICY_MODULES) ; do \
+           $(MV) $(JRE_MODULE_IMAGE_DIR)/lib/$$m.jar $(JRE_MODULE_IMAGE_DIR)/lib/security; \
+        done
+	@# Remove jdk modules
+	for m in $(JDK_MODULES) ; do \
+           $(RM) $(JRE_MODULE_IMAGE_DIR)/lib/$$m.jar ; \
+        done
+
 	@# Make sure all directories are read/execute for everyone
 	$(CHMOD) a+rx `$(FIND) $(JRE_MODULE_IMAGE_DIR) -type d`
 	@# Remove some files from the jre area
@@ -304,7 +343,9 @@ initial-module-image-jdk:: initial-module-image-jdk-setup \
 	@# copy jdk modules to jdk/lib
 	@#
 	$(MKDIR) -p $(JDK_MODULE_IMAGE_DIR)/lib
-	$(CP) -rf $(MODULES_LIB)/lib/* $(JDK_MODULE_IMAGE_DIR)/lib 
+	for m in $(JDK_MODULES) ; do \
+	    $(CP) $(MODULES_LIB)/$$m/lib/$$m.jar $(JDK_MODULE_IMAGE_DIR)/lib ; \
+        done
   ifeq ($(PLATFORM), windows)
 	@#
 	@# lib/

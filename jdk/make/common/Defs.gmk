@@ -225,12 +225,6 @@ DEVTOOLS_FT_DIR_EXISTS = $(shell \
     endif
   endif 
 
-  ifeq ($(PLATFORM), windows)
-    FREETYPE_LIB = $(FREETYPE_LIB_PATH)/freetype.lib
-  else
-    FREETYPE_LIB = -L$(FREETYPE_LIB_PATH) -lfreetype
-  endif
-
   ifdef ALT_FREETYPE_HEADERS_PATH
     FREETYPE_HEADERS_PATH = $(ALT_FREETYPE_HEADERS_PATH)
   else
@@ -388,6 +382,14 @@ ifneq ($(THREADDIR),)
   UNIQUE_LOCATION_STRING += /$(THREADDIR)
 endif
 
+#
+# Build units may or may not define MODULE.  Default to "other".
+#
+ifndef MODULE
+  MODULE = other
+endif
+override MODULE_DEST_DIR = $(OUTPUTDIR)/tmp/modules/$(MODULE)
+
 # the use of += above makes a space separated list which we need to 
 # remove for filespecs.
 #
@@ -498,6 +500,58 @@ PKGDIR		= $(subst .,/,$(PACKAGE))
 include $(JDK_MAKE_SHARED_DIR)/Defs-java.gmk
 
 #
+# Macros to find the module that $@ belongs to
+#
+
+UNIQUE_PATH_PATTERN = $(subst /,.,$(UNIQUE_PATH))
+MODULE_PATH_PATTERN = -e 's%.*\/classes\/%classes\/%' \
+		      -e 's%.*\/$(UNIQUE_PATH_PATTERN)\/%classes\/%' \
+		      -e 's%.*\/lib\/%lib\/%' \
+	              -e 's%.*\/bin\/%bin\/%' \
+	              -e 's%.*\/include\/%include\/%' \
+		      -e 's%.*\/demo\/%demo\/%' \
+		      -e 's%.*\/sample\/%sample\/%'
+
+# Install a file to its module
+define install-module-file
+dest=`echo $(@D)/ | $(SED) $(MODULE_PATH_PATTERN)` ; \
+$(MKDIR) -p $(MODULE_DEST_DIR)/$$dest; \
+$(CP) $@ $(MODULE_DEST_DIR)/$$dest
+endef
+
+# Install all files from the directory to its module
+define install-module-dir
+dest=`echo $(@D)/ | $(SED) $(MODULE_PATH_PATTERN)` ; \
+$(MKDIR) -p $(MODULE_DEST_DIR)/$$dest; \
+$(CP) -rf $(@D)/* $(MODULE_DEST_DIR)/$$dest
+endef
+
+# chmod the file in its module
+define chmod-module-file
+dest=`echo $@ | $(SED) $(MODULE_PATH_PATTERN)` ; \
+$(CHMOD) $1 $(MODULE_DEST_DIR)/$$dest
+endef
+
+# install a sym link in its module
+define install-module-sym-link
+dest=`echo $@ | $(SED) $(MODULE_PATH_PATTERN)` ; \
+$(LN) -s $1 $(MODULE_DEST_DIR)/$$dest
+endef
+
+
+# Run MAKE $@ for a launcher:
+#   $(call make-launcher, name, mainclass, java-args, main-args)
+define make-launcher
+$(CD) $(BUILDDIR)/launchers && \
+$(MAKE) -f Makefile.launcher \
+        MODULE=$(MODULE) \
+        PROGRAM=$(strip $1) \
+        MAIN_CLASS=$(strip $2) \
+        MAIN_JAVA_ARGS="$(strip $3)" \
+        MAIN_ARGS="$(strip $4)"
+endef
+
+#
 # Convenient macros
 #
 
@@ -511,6 +565,28 @@ endef
 define install-file
 $(prep-target)
 $(CP) $< $@
+$(install-module-file)
+endef
+
+define chmod-file
+$(CHMOD) $1 $@
+$(call chmod-module-file, $1)
+endef
+
+define install-sym-link
+$(LN) -s $1 $@
+$(call install-module-sym-link, $1)
+endef
+
+#
+# Marcos for files not belonging to any module 
+define install-non-module-file
+$(prep-target)
+$(CP) $< $@
+endef
+
+define install-manifest-file
+$(install-non-module-file)
 endef
 
 # Cleanup rule for after debug java run (hotspot.log file is left around)
@@ -712,7 +788,7 @@ else
 endif
 
 # Install of imported file (JDK_IMPORT_PATH, or some other external location)
-define install-import-file
+define install-importonly-file
 @$(ECHO) "ASSEMBLY_IMPORT: $@"
 $(prep-target)
 $(CP) $< $@
@@ -728,6 +804,11 @@ $(CP) $< $@
     fi;                                                             \
   fi;                                                               \
 fi
+endef
+
+define install-import-file
+$(install-importonly-file)
+$(install-module-file)
 endef
 
 .PHONY: all build clean clobber
