@@ -3075,7 +3075,18 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
     if (rem > 0 && rem < MinChunkSize) {
       n--; rem += word_sz;
     }
-    assert((ssize_t)n >= 1, "Control point invariant");
+    // Note that at this point we may have n == 0.
+    assert((ssize_t)n >= 0, "Control point invariant");
+
+    // If n is 0, the chunk fc that was found is not large
+    // enough to leave a viable remainder.  We are unable to
+    // allocate even one block.  Return fc to the
+    // dictionary and return, leaving "fl" empty.
+    if (n == 0) {
+      returnChunkToDictionary(fc);
+      return;
+    }
+
     // First return the remainder, if any.
     // Note that we hold the lock until we decide if we're going to give
     // back the remainder to the dictionary, since a concurrent allocation
