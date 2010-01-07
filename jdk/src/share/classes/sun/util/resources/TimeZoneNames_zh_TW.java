@@ -173,8 +173,8 @@ public final class TimeZoneNames_zh_TW extends TimeZoneNamesBundle {
                                       "\u7279\u9b6f\u514b\u590f\u4ee4\u6642\u9593", "TRUST"};
         String ULAT[]= new String[] {"\u5eab\u502b\u6642\u9593", "ULAT",
                                      "\u5eab\u502b\u590f\u4ee4\u6642\u9593", "ULAST"};
-          String WART[] = new String[] {"\u963f\u6839\u5ef7\u6642\u9593", "WART",
-                                      "\u963f\u6839\u5ef7\u590f\u4ee4\u6642\u9593", "WARST"};
+          String WART[] = new String[] {"\u897f\u963f\u6839\u5ef7\u6642\u9593", "WART",
+                                      "\u897f\u963f\u6839\u5ef7\u590f\u4ee4\u6642\u9593", "WARST"};
         String WAT[] = new String[] {"\u897f\u975e\u6642\u9593", "WAT",
                                      "\u897f\u975e\u590f\u4ee4\u6642\u9593", "WAST"};
         String WET[] = new String[] {"\u897f\u6b50\u6642\u9593", "WET",

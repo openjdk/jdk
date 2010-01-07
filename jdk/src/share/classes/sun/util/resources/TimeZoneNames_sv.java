@@ -173,8 +173,8 @@ public final class TimeZoneNames_sv extends TimeZoneNamesBundle {
                                       "Truk, sommartid", "TRUST"};
         String ULAT[]= new String[] {"Ulaanbaatar, normaltid", "ULAT",
                                      "Ulaanbaatar, sommartid", "ULAST"};
-        String WART[] = new String[] {"Argentina, normaltid", "WART",
-                                      "Argentina, sommartid", "WARST"};
+        String WART[] = new String[] {"V\u00e4stargentina, normaltid", "WART",
+                                      "V\u00e4stargentina, sommartid", "WARST"};
         String WAT[] = new String[] {"V\u00e4stafrikansk tid", "WAT",
                                      "V\u00e4stafrikansk sommartid", "WAST"};
         String WET[] = new String[] {"V\u00e4steuropeisk tid", "WET",

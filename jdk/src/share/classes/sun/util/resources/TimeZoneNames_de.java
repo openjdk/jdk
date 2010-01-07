@@ -173,8 +173,8 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
                                       "Truk Sommerzeit", "TRUST"};
         String ULAT[]= new String[] {"Ulaanbaatar Zeit", "ULAT",
                                      "Ulaanbaatar Sommerzeit", "ULAST"};
-        String WART[] = new String[] {"Argentinische Zeit", "WART",
-                                      "Argentinische Sommerzeit", "WARST"};
+        String WART[] = new String[] {"Westargentinische Zeit", "WART",
+                                      "Westargentinische Sommerzeit", "WARST"};
         String WAT[] = new String[] {"Westafrikanische Zeit", "WAT",
                                      "Westafrikanische Sommerzeit", "WAST"};
         String WET[] = new String[] {"Westeurop\u00e4ische Zeit", "WEZ",

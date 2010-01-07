@@ -173,8 +173,8 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                       "Heure d'\u00e9t\u00e9 de Truk", "TRUST"};
         String ULAT[]= new String[] {"Heure de l'Ulaanbaatar", "ULAT",
                                      "Heure d'\u00e9t\u00e9 de l'Ulaanbaatar", "ULAST"} ;
-        String WART[] = new String[] {"Heure D'Argentine", "WART",
-                                      "Heure d'\u00e9t\u00e9 D'Argentine", "WARST"} ;
+        String WART[] = new String[] {"Heure D'Argentine de l'Ouest", "WART",
+                                      "Heure d'\u00e9t\u00e9 D'Argentine de l'Ouest", "WARST"} ;
         String WAT[] = new String[] {"Heure d'Afrique de l'Ouest", "WAT",
                                      "Heure d'\u00e9t\u00e9 d'Afrique de l'Ouest", "WAST"} ;
         String WET[] = new String[] {"Heure d'Europe de l'Ouest", "WET",
