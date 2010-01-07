@@ -24,6 +24,7 @@
 #
 
 BUILDDIR  = ../..
+MODULE    = swing
 PACKAGE   = javax.swing
 PRODUCT   = com
 SWING_SRC = $(SHARE_SRC)/classes/javax/swing

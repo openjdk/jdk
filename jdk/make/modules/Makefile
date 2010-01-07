@@ -40,32 +40,7 @@ MODULE_JAR_MANIFEST_FILE=$(ABS_TEMPDIR)/manifest.tmp
 TMP=$(ABS_TEMPDIR)/modules
 MODULE_CLASSLIST = $(TMP)/classlist
 MODULE_CLASSES = $(TMP)/classes
-MODULE_LIST = $(MODULE_CLASSLIST)/modules.list
-
-# Modules in the modules/ext directory
-EXT_MODULES = localedata security-sunec security-sunjce
-
-# Build PKCS#11 on all platforms except 64-bit Windows.
-# We exclude windows-amd64 because we don't have any
-# 64-bit PKCS#11 implementations to test with on that platform.
-PKCS11 = security-sunpkcs11
-ifeq ($(ARCH_DATA_MODEL), 64)
-  ifeq ($(PLATFORM), windows)
-    PKCS11 =
-  endif
-endif
-
-EXT_MODULES += $(PKCS11)
-
-# Build Microsoft CryptoAPI provider only on (non-64-bit) Windows platform.
-ifeq ($(PLATFORM), windows)
-  ifneq ($(ARCH_DATA_MODEL), 64)
-    EXT_MODULES += security-sunmscapi
-  endif
-endif
-
-
-JDK_MODULES = tools
+MODULES_LIST = $(MODULE_CLASSLIST)/modules.list
 
 SUBDIRS = tools
 all build clean clobber::
@@ -76,7 +51,7 @@ all:: unpack-jars gen-classlist modularize
 $(CLASSANALYZER_JAR):
 	$(CD) tools && $(MAKE) all
 
-JAR_LIST := $(shell $(FIND) $(ABS_OUTPUTDIR)/lib -name \*.jar -depth) 
+JAR_LIST := $(shell $(FIND) $(ABS_OUTPUTDIR)/lib -name \*.jar -print) 
 unpack-jars:
 	$(RM) -rf $(MODULE_CLASSES)
 	$(MKDIR) -p $(MODULE_CLASSES)
@@ -107,31 +82,29 @@ gen-classlist: $(CLASSANALYZER_JAR)
 modularize: $(MODULE_JAR_MANIFEST_FILE)
 	@$(ECHO) ">>>Making "$@" @ `$(DATE)` ..."
 	@$(RM) -rf $(MODULE_LIB)
-	@$(MKDIR) -p $(MODULE_LIB)/lib
-	@$(MKDIR) -p $(MODULE_LIB)/jre/lib/ext
 
-	@# create modules
-	for m in `$(NAWK) '{print $$1}' $(MODULE_LIST)` ; do \
+	@# create jar file for modules and
+	@# copy other files from all members of this module 
+	for m in `$(NAWK) '{print $$1}' $(MODULES_LIST)` ; do \
    	   $(ECHO) "Creating module $$m" ; \
    	   $(SED) -e 's%\\%\/%g' < $(MODULE_CLASSLIST)/$$m.classlist > $(TMP)/tmp.cf ; \
 	   if [ -f $(MODULE_CLASSLIST)/$$m.resources ] ; then \
    	       $(SED) -e 's%\\%\/%g' < $(MODULE_CLASSLIST)/$$m.resources >> $(TMP)/tmp.cf ; \
            fi ; \
+           $(MKDIR) -p $(MODULE_LIB)/$$m/lib; \
 	   $(CD) $(MODULE_CLASSES) && \
                $(BOOT_JAR_CMD) c0mf $(MODULE_JAR_MANIFEST_FILE) \
-		   $(MODULE_LIB)/$$m.jar \
-		   @$(TMP)/tmp.cf \
-                   $(BOOT_JAR_JFLAGS) ; \
-	done
+		   $(MODULE_LIB)/$$m/lib/$$m.jar \
+	           @$(TMP)/tmp.cf \
+                   $(BOOT_JAR_JFLAGS); \
+	   for s in `$(GREP) "^$$m" $(MODULES_LIST)` ; do \
+               if [ -d $(TMP)/$$s ] ; then \
+               	   $(CP) -rf $(TMP)/$$s/*  $(MODULE_LIB)/$$m; \
+		   $(RM) -rf $(MODULE_LIB)/$$m/classes; \
+	       fi \
+	   done \
+        done
 	@$(CD) $(MODULE_CLASSES) && $(java-vm-cleanup)
-	@# move modules to lib, jre/lib, or jre/lib/ext
-	for m in $(EXT_MODULES) ; do \
-	   $(MV) $(MODULE_LIB)/$$m.jar $(MODULE_LIB)/jre/lib/ext ; \
-	done
-	for m in $(JDK_MODULES) ; do \
-	   $(MV) $(MODULE_LIB)/$$m.jar $(MODULE_LIB)/lib ; \
-	done
-	$(MV) $(MODULE_LIB)/*.jar $(MODULE_LIB)/jre/lib
 	@$(ECHO) ">>>Finished making "$@" @ `$(DATE)` ..."
 
 $(MODULE_JAR_MANIFEST_FILE):
@@ -140,6 +113,5 @@ $(MODULE_JAR_MANIFEST_FILE):
 clean clobber::
 	$(RM) -rf $(MODULE_CLASSLIST)
 	$(RM) -rf $(MODULE_LIB)
-	$(RM) -f $(MODULE_JAR_MANIFEST_FILE)
-	$(RM) -f $(CLASSANALYZER_JAR)
-
+	$(RM) $(MODULE_JAR_MANIFEST_FILE)
+	$(RM) $(CLASSANALYZER_JAR)

@@ -1117,7 +1117,7 @@ TMP_SDK_INCLUDE_GET_FULL_VERSION= $(TMP_SDK_INCLUDE_FIND_VERSION) | \
 #    be checked when this represents a full control build (i.e. the
 #    HOTSPOT_IMPORT_PATH includes these files in it's 'include' directory).
 $(TEMPDIR)/%.h: $(SHARE_SRC)/javavm/export/%.h
-	@$(install-file)
+	@$(install-non-module-file)
 	@$(RM) $@.IMPORT
 	@if [ -r $(HOTSPOT_IMPORT_PATH)/include/$(@F) ]; then \
 	  $(CP) $(HOTSPOT_IMPORT_PATH)/include/$(@F) $@.IMPORT ; \
@@ -1131,7 +1131,7 @@ $(TEMPDIR)/%.h: $(SHARE_SRC)/javavm/export/%.h
 	fi
 
 $(TEMPDIR)/%.h: $(PLATFORM_SRC)/javavm/export/%.h
-	@$(install-file)
+	@$(install-non-module-file)
 	@$(RM) $@.IMPORT
 	@if [ -r $(HOTSPOT_IMPORT_PATH)/include/$(PLATFORM_INCLUDE_NAME)/$(@F) ]; then \
 	  $(CP) $(HOTSPOT_IMPORT_PATH)/include/$(PLATFORM_INCLUDE_NAME)/$(@F) $@.IMPORT ; \
