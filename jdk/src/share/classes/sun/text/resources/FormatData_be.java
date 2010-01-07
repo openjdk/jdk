@@ -80,7 +80,7 @@ public class FormatData_be extends ListResourceBundle {
                     "\u0436\u043d\u0432", // abb august
                     "\u0432\u0440\u0441", // abb september
                     "\u043a\u0441\u0442", // abb october
-                    "\u043b\u0456\u0442", // abb november
+                    "\u043b\u0456\u0441", // abb november
                     "\u0441\u043d\u0436", // abb december
                     "" // abb month 13 if applicable
                 }
