@@ -124,7 +124,7 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
 static void print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state) {
   if (obj.not_null()) {
     st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, (address)obj());
-    if (obj->klass() == SystemDictionary::class_klass()) {
+    if (obj->klass() == SystemDictionary::Class_klass()) {
       klassOop target_klass = java_lang_Class::as_klassOop(obj());
       st->print_cr("(a java.lang.Class for %s)", instanceKlass::cast(target_klass)->external_name());
     } else {
@@ -430,7 +430,7 @@ void vframeStreamCommon::security_get_caller_frame(int depth) {
       // This is Method.invoke() -- skip it
     } else if (use_new_reflection &&
               Klass::cast(method()->method_holder())
-                 ->is_subclass_of(SystemDictionary::reflect_method_accessor_klass())) {
+                 ->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
       // This is an auxilary frame -- skip it
     } else {
       // This is non-excluded frame, we need to count it against the depth
@@ -490,8 +490,8 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 void vframeStreamCommon::skip_reflection_related_frames() {
   while (!at_end() &&
          (JDK_Version::is_gte_jdk14x_version() && UseNewReflection &&
-          (Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_method_accessor_klass()) ||
-           Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_constructor_accessor_klass())))) {
+          (Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
+           Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass())))) {
     next();
   }
 }

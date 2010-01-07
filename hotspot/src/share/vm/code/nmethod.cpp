@@ -1170,7 +1170,7 @@ void nmethod::log_state_change() const {
 }
 
 // Common functionality for both make_not_entrant and make_zombie
-bool nmethod::make_not_entrant_or_zombie(int state) {
+bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
 
   // If the method is already zombie there is nothing to do
@@ -1724,9 +1724,9 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
   if (!method()->is_native()) {
     SimpleScopeDesc ssd(this, fr.pc());
     Bytecode_invoke* call = Bytecode_invoke_at(ssd.method(), ssd.bci());
-    bool is_static = call->is_invokestatic();
+    bool has_receiver = call->has_receiver();
     symbolOop signature = call->signature();
-    fr.oops_compiled_arguments_do(signature, is_static, reg_map, f);
+    fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
   }
 }
 
@@ -1762,6 +1762,14 @@ void nmethod::copy_scopes_pcs(PcDesc* pcs, int count) {
   assert(prev_offset == PcDesc::upper_offset_limit,
          "must end with a sentinel");
 #endif //ASSERT
+
+  // Search for MethodHandle invokes and tag the nmethod.
+  for (int i = 0; i < count; i++) {
+    if (pcs[i].is_method_handle_invoke()) {
+      set_has_method_handle_invokes(true);
+      break;
+    }
+  }
 
   int size = count * sizeof(PcDesc);
   assert(scopes_pcs_size() >= size, "oob");
@@ -2026,6 +2034,18 @@ void nmethodLocker::unlock_nmethod(nmethod* nm) {
 bool nmethod::is_deopt_pc(address pc) {
   bool ret =  pc == deopt_handler_begin();
   return ret;
+}
+
+
+// -----------------------------------------------------------------------------
+// MethodHandle
+
+bool nmethod::is_method_handle_return(address return_pc) {
+  if (!has_method_handle_invokes())  return false;
+  PcDesc* pd = pc_desc_at(return_pc);
+  if (pd == NULL)
+    return false;
+  return pd->is_method_handle_invoke();
 }
 
 

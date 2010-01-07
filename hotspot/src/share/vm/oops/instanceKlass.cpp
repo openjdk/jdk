@@ -383,7 +383,7 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
       this_oop->set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
     }
-    if (e->is_a(SystemDictionary::error_klass())) {
+    if (e->is_a(SystemDictionary::Error_klass())) {
       THROW_OOP(e());
     } else {
       JavaCallArguments args(e);
@@ -568,7 +568,7 @@ void instanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
     THROW_MSG(throwError ? vmSymbols::java_lang_InstantiationError()
               : vmSymbols::java_lang_InstantiationException(), external_name());
   }
-  if (as_klassOop() == SystemDictionary::class_klass()) {
+  if (as_klassOop() == SystemDictionary::Class_klass()) {
     ResourceMark rm(THREAD);
     THROW_MSG(throwError ? vmSymbols::java_lang_IllegalAccessError()
               : vmSymbols::java_lang_IllegalAccessException(), external_name());
@@ -2225,7 +2225,7 @@ void FieldPrinter::do_field(fieldDescriptor* fd) {
 void instanceKlass::oop_print_on(oop obj, outputStream* st) {
   Klass::oop_print_on(obj, st);
 
-  if (as_klassOop() == SystemDictionary::string_klass()) {
+  if (as_klassOop() == SystemDictionary::String_klass()) {
     typeArrayOop value  = java_lang_String::value(obj);
     juint        offset = java_lang_String::offset(obj);
     juint        length = java_lang_String::length(obj);
@@ -2245,7 +2245,7 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
   FieldPrinter print_nonstatic_field(st, obj);
   do_nonstatic_fields(&print_nonstatic_field);
 
-  if (as_klassOop() == SystemDictionary::class_klass()) {
+  if (as_klassOop() == SystemDictionary::Class_klass()) {
     st->print(BULLET"signature: ");
     java_lang_Class::print_signature(obj, st);
     st->cr();
@@ -2272,7 +2272,7 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
   st->print("a ");
   name()->print_value_on(st);
   obj->print_address_on(st);
-  if (as_klassOop() == SystemDictionary::string_klass()
+  if (as_klassOop() == SystemDictionary::String_klass()
       && java_lang_String::value(obj) != NULL) {
     ResourceMark rm;
     int len = java_lang_String::length(obj);
@@ -2281,7 +2281,7 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
     st->print(" = \"%s\"", str);
     if (len > plen)
       st->print("...[%d]", len);
-  } else if (as_klassOop() == SystemDictionary::class_klass()) {
+  } else if (as_klassOop() == SystemDictionary::Class_klass()) {
     klassOop k = java_lang_Class::as_klassOop(obj);
     st->print(" = ");
     if (k != NULL) {
@@ -2348,7 +2348,7 @@ void instanceKlass::verify_class_klass_nonstatic_oop_maps(klassOop k) {
 
     // Check that we have the right class
     static bool first_time = true;
-    guarantee(k == SystemDictionary::class_klass() && first_time, "Invalid verify of maps");
+    guarantee(k == SystemDictionary::Class_klass() && first_time, "Invalid verify of maps");
     first_time = false;
     const int extra = java_lang_Class::number_of_fake_oop_fields;
     guarantee(ik->nonstatic_field_size() == extra, "just checking");

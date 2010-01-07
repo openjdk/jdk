@@ -270,6 +270,8 @@ void BytecodePrinter::print_constant(int i, outputStream* st) {
     st->print_cr(" %s", constants->resolved_klass_at(i)->klass_part()->external_name());
   } else if (tag.is_unresolved_klass()) {
     st->print_cr(" <unresolved klass at %d>", i);
+  } else if (tag.is_object()) {
+    st->print_cr(" " PTR_FORMAT, constants->object_at(i));
   } else {
     st->print_cr(" bad tag=%d at %d", tag.value(), i);
   }
