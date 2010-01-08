@@ -2795,6 +2795,11 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 #endif
 
+  if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
+    warning("PrintAssembly is enabled; turning on DebugNonSafepoints to gain additional output");
+    DebugNonSafepoints = true;
+  }
+
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags();
   }

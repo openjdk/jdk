@@ -1525,6 +1525,7 @@ disassembler.cpp                        disassembler.hpp
 disassembler.cpp                        fprofiler.hpp
 disassembler.cpp                        handles.inline.hpp
 disassembler.cpp                        hpi.hpp
+disassembler.cpp                        javaClasses.hpp
 disassembler.cpp                        stubCodeGenerator.hpp
 disassembler.cpp                        stubRoutines.hpp
 

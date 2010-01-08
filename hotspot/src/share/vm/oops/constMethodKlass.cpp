@@ -216,6 +216,7 @@ void constMethodKlass::oop_print_on(oop obj, outputStream* st) {
   }
 }
 
+#endif //PRODUCT
 
 // Short version of printing constMethodOop - just print the name of the
 // method it belongs to.
@@ -225,8 +226,6 @@ void constMethodKlass::oop_print_value_on(oop obj, outputStream* st) {
   st->print(" const part of method " );
   m->method()->print_value_on(st);
 }
-
-#endif // PRODUCT
 
 const char* constMethodKlass::internal_name() const {
   return "{constMethod}";

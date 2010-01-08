@@ -499,6 +499,8 @@ void objArrayKlass::oop_print_on(oop obj, outputStream* st) {
   }
 }
 
+#endif //PRODUCT
+
 static int max_objArray_print_length = 4;
 
 void objArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
@@ -508,7 +510,7 @@ void objArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
   int len = objArrayOop(obj)->length();
   st->print("[%d] ", len);
   obj->print_address_on(st);
-  if (PrintOopAddress || PrintMiscellaneous && (WizardMode || Verbose)) {
+  if (NOT_PRODUCT(PrintOopAddress ||) PrintMiscellaneous && (WizardMode || Verbose)) {
     st->print("{");
     for (int i = 0; i < len; i++) {
       if (i > max_objArray_print_length) {
@@ -519,8 +521,6 @@ void objArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
     st->print(" }");
   }
 }
-
-#endif // PRODUCT
 
 const char* objArrayKlass::internal_name() const {
   return external_name();
