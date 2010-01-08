@@ -2268,6 +2268,8 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
   }
 }
 
+#endif //PRODUCT
+
 void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
   st->print("a ");
   name()->print_value_on(st);
@@ -2298,8 +2300,6 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
     java_lang_boxing_object::print(obj, st);
   }
 }
-
-#endif // ndef PRODUCT
 
 const char* instanceKlass::internal_name() const {
   return external_name();

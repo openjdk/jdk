@@ -278,6 +278,7 @@ void objArrayKlassKlass::oop_print_on(oop obj, outputStream* st) {
   st->cr();
 }
 
+#endif //PRODUCT
 
 void objArrayKlassKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_klass(), "must be klass");
@@ -286,8 +287,6 @@ void objArrayKlassKlass::oop_print_value_on(oop obj, outputStream* st) {
   oak->element_klass()->print_value_on(st);
   st->print("[]");
 }
-
-#endif
 
 const char* objArrayKlassKlass::internal_name() const {
   return "{object array class}";
