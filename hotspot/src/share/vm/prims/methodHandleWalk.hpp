@@ -404,4 +404,10 @@ public:
 
   // Compile the given MH chain into bytecode.
   methodHandle compile(TRAPS);
+
+  // Tests if the given class is a MH adapter holder.
+  static bool klass_is_method_handle_adapter_holder(klassOop klass) {
+    return (klass == SystemDictionary::MethodHandle_klass() ||
+            klass == SystemDictionary::InvokeDynamic_klass());
+  }
 };
