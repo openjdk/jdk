@@ -204,7 +204,8 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   virtual void print_value_on(outputStream* st) const PRODUCT_RETURN;
 
   // Print the comment associated with offset on stream, if there is one
-  void print_block_comment(outputStream* stream, intptr_t offset) {
+  virtual void print_block_comment(outputStream* stream, address block_begin) {
+    intptr_t offset = (intptr_t)(block_begin - instructions_begin());
     _comments.print_block_comment(stream, offset);
   }
 
