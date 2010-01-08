@@ -468,6 +468,10 @@ public class Pretty extends JCTree.Visitor {
                 print(" throws ");
                 printExprs(tree.thrown);
             }
+            if (tree.defaultValue != null) {
+                print(" default ");
+                printExpr(tree.defaultValue);
+            }
             if (tree.body != null) {
                 print(" ");
                 printStat(tree.body);
