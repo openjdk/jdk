@@ -30,6 +30,9 @@ package java.dyn;
 import sun.dyn.Access;
 import sun.dyn.MethodHandleImpl;
 
+import static java.dyn.MethodHandles.invokers;  // package-private API
+import static sun.dyn.MemberName.newIllegalArgumentException;  // utility
+
 /**
  * A method handle is a typed reference to the entry point of a method.
  * <p>
@@ -45,8 +48,9 @@ import sun.dyn.MethodHandleImpl;
  * Every method handle appears as an object containing a method named
  * <code>invoke</code>, whose signature exactly matches
  * the method handle's type.
- * A normal Java method call (using the <code>invokevirtual</code> instruction)
- * can invoke this method from Java source code (if language support is present).
+ * A Java method call expression, which compiles to an
+ * <code>invokevirtual</code> instruction,
+ * can invoke this method from Java source code.
  * <p>
  * Every call to a method handle specifies an intended method type,
  * which must exactly match the type of the method handle.
@@ -57,6 +61,10 @@ import sun.dyn.MethodHandleImpl;
  * The call fails with a {@link WrongMethodTypeException}
  * if the method does not exist, even if there is an <code>invoke</code>
  * method of a closely similar signature.
+ * As with other kinds
+ * of methods in the JVM, signature matching during method linkage
+ * is exact, and does not allow for language-level implicit conversions
+ * such as {@code String} to {@code Object} or {@code short} to {@code int}.
  * <p>
  * A method handle is an unrestricted capability to call a method.
  * A method handle can be formed on a non-public method by a class
@@ -73,6 +81,15 @@ import sun.dyn.MethodHandleImpl;
  * must be <code>invoke</code>.  The signature of the invocation
  * (after resolving symbolic type names) must exactly match the method type
  * of the target method.
+ * <p>
+ * Every <code>invoke</code> method always throws {@link Exception},
+ * which is to say that there is no static restriction on what a method handle
+ * can throw.  Since the JVM does not distinguish between checked
+ * and unchecked exceptions (other than by their class, of course),
+ * there is no particular effect on bytecode shape from ascribing
+ * checked exceptions to method handle invocations.  But in Java source
+ * code, methods which perform method handle calls must either explicitly
+ * throw {@code Exception}, or else must catch all checked exceptions locally.
  * <p>
  * Bytecode in an extended JVM can directly obtain a method handle
  * for any accessible method from a <code>ldc</code> instruction
@@ -97,6 +114,59 @@ import sun.dyn.MethodHandleImpl;
  * can also be created.  These do not perform virtual lookup based on
  * receiver type.  Such a method handle simulates the effect of
  * an <code>invokespecial</code> instruction to the same method.
+ * <p>
+ * Here are some examples of usage:
+ * <p><blockquote><pre>
+ * Object x, y; String s; int i;
+ * MethodType mt; MethodHandle mh;
+ * MethodHandles.Lookup lookup = MethodHandles.lookup();
+ * // mt is {(char,char) =&gt; String}
+ * mt = MethodType.make(String.class, char.class, char.class);
+ * mh = lookup.findVirtual(String.class, "replace", mt);
+ * // (Ljava/lang/String;CC)Ljava/lang/String;
+ * s = mh.&lt;String&gt;invoke("daddy",'d','n');
+ * assert(s.equals("nanny"));
+ * // weakly typed invocation (using MHs.invoke)
+ * s = (String) MethodHandles.invoke(mh, "sappy", 'p', 'v');
+ * assert(s.equals("savvy"));
+ * // mt is {Object[] =&gt; List}
+ * mt = MethodType.make(java.util.List.class, Object[].class);
+ * mh = lookup.findStatic(java.util.Arrays.class, "asList", mt);
+ * // mt is {(Object,Object,Object) =&gt; Object}
+ * mt = MethodType.makeGeneric(3);
+ * mh = MethodHandles.collectArguments(mh, mt);
+ * // mt is {(Object,Object,Object) =&gt; Object}
+ * // (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+ * x = mh.invoke((Object)1, (Object)2, (Object)3);
+ * assert(x.equals(java.util.Arrays.asList(1,2,3)));
+ * // mt is { =&gt; int}
+ * mt = MethodType.make(int.class);
+ * mh = lookup.findVirtual(java.util.List.class, "size", mt);
+ * // (Ljava/util/List;)I
+ * i = mh.&lt;int&gt;invoke(java.util.Arrays.asList(1,2,3));
+ * assert(i == 3);
+ * </pre></blockquote>
+ * Each of the above calls generates a single invokevirtual instruction
+ * with the name {@code invoke} and the type descriptors indicated in the comments.
+ * The argument types are taken directly from the actual arguments,
+ * while the return type is taken from the type parameter.
+ * (This type parameter may be a primitive, and it defaults to {@code Object}.)
+ * <p>
+ * <em>A note on generic typing:</em>  Method handles do not represent
+ * their function types in terms of Java parameterized (generic) types,
+ * because there are three mismatches between function types and parameterized
+ * Java types.
+ * <ol>
+ * <li>Method types range over all possible arities,
+ * from no arguments to an arbitrary number of arguments.
+ * Generics are not variadic, and so cannot represent this.</li>
+ * <li>Method types can specify arguments of primitive types,
+ * which Java generic types cannot range over.</li>
+ * <li>Higher order functions over method handles (combinators) are
+ * often generic across a wide range of function types, including
+ * those of multiple arities.  It is impossible to represent such
+ * genericity with a Java type parameter.</li>
+ * </ol>
  *
  * @see MethodType
  * @see MethodHandles
@@ -107,17 +177,19 @@ public abstract class MethodHandle
         // with a JVM change which moves the required hidden state onto this class.
         extends MethodHandleImpl
 {
-    // interface MethodHandle<T extends MethodType<R,A...>>
-    // { T type(); <R,A...> public R invoke(A...); }
+    private static Access IMPL_TOKEN = Access.getToken();
 
-    final private MethodType type;
+    // interface MethodHandle<R throws X extends Exception,A...>
+    // { MethodType<R throws X,A...> type(); public R invoke(A...) throws X; }
+
+    private MethodType type;
 
     /**
      * Report the type of this method handle.
      * Every invocation of this method handle must exactly match this type.
      * @return the method handle type
      */
-    public MethodType type() {
+    public final MethodType type() {
         return type;
     }
 
@@ -130,6 +202,369 @@ public abstract class MethodHandle
      */
     protected MethodHandle(Access token, MethodType type) {
         super(token);
+        Access.check(token);
         this.type = type;
+    }
+
+    private void initType(MethodType type) {
+        type.getClass();  // elicit NPE
+        if (this.type != null)  throw new InternalError();
+        this.type = type;
+    }
+
+    static {
+        // This hack allows the implementation package special access to
+        // the internals of MethodHandle.  In particular, the MTImpl has all sorts
+        // of cached information useful to the implementation code.
+        MethodHandleImpl.setMethodHandleFriend(IMPL_TOKEN, new MethodHandleImpl.MethodHandleFriend() {
+            public void initType(MethodHandle mh, MethodType type) { mh.initType(type); }
+        });
+    }
+
+    /** The string of a direct method handle is the simple name of its target method.
+     * The string of an adapter or bound method handle is the string of its
+     * target method handle.
+     * The string of a Java method handle is the string of its entry point method,
+     * unless the Java method handle overrides the toString method.
+     */
+    @Override
+    public String toString() {
+        return MethodHandleImpl.getNameString(IMPL_TOKEN, this);
+    }
+
+    //// First draft of the "Method Handle Kernel API" discussed at the JVM Language Summit, 9/2009.
+    //// Implementations here currently delegate to statics in MethodHandles.  Some of those statics
+    //// will be deprecated.  Others will be kept as "algorithms" to supply degrees of freedom
+    //// not present in the Kernel API.
+
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Perform an exact invocation.  The signature at the call site of {@code invokeExact} must
+     * exactly match this method handle's {@code type}.
+     * No conversions are allowed on arguments or return values.
+     * <em>This is not yet implemented, pending required compiler and JVM support.</em>
+     */
+    public final <T> T invokeExact(Object... arguments) throws Throwable {
+        // This is an approximate implementation, which discards the caller's signature and refuses the call.
+        throw new InternalError("not yet implemented");
+    }
+
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Perform a generic invocation.  The signature at the call site of {@code invokeExact} must
+     * have the same arity as this method handle's {@code type}.
+     * The same conversions are allowed on arguments or return values as are supported by
+     * by {@link MethodHandles#convertArguments}.
+     * If the call site signature exactly matches this method handle's {@code type},
+     * the call proceeds as if by {@link #invokeExact}.
+     * <em>This is not fully implemented, pending required compiler and JVM support.</em>
+     */
+    // This is an approximate implementation, which discards the caller's signature.
+    // When it is made signature polymorphic, the overloadings will disappear.
+    public final <T> T invokeGeneric() throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this);
+    }
+    public final <T> T invokeGeneric(Object a0) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0);
+    }
+    public final <T> T invokeGeneric(Object a0, Object a1) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0, a1);
+    }
+    public final <T> T invokeGeneric(Object a0, Object a1, Object a2) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0, a1, a2);
+    }
+    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0, a1, a2, a3);
+    }
+    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
+                  Object a4) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0, a1, a2, a3, a4);
+    }
+    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
+                  Object a4, Object a5) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5);
+    }
+    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
+                  Object a4, Object a5, Object a6) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5, a6);
+    }
+    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
+                  Object a4, Object a5, Object a6, Object a7) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5, a6, a7);
+    }
+    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
+                  Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5, a6, a7, a8);
+    }
+    public final <T> T invokeGeneric(Object a0, Object a1, Object a2, Object a3,
+                  Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable {
+        MethodHandle invoker = invokers(this.type()).genericInvoker();
+        return invoker.<T>invoke(this, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+    }
+
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Perform a varargs invocation, passing the arguments in the given array
+     * to the method handle, as if via {@link #invokeGeneric} from a call site
+     * which mentions only the type {@code Object}, and whose arity is the length
+     * of the argument array.
+     * <p>
+     * The length of the arguments array must equal the parameter count
+     * of the target's type.
+     * The arguments array is spread into separate arguments.
+     * <p>
+     * In order to match the type of the target, the following argument
+     * conversions are applied as necessary:
+     * <ul>
+     * <li>reference casting
+     * <li>unboxing
+     * </ul>
+     * The following conversions are not applied:
+     * <ul>
+     * <li>primitive conversions (e.g., {@code byte} to {@code int}
+     * <li>varargs conversions other than the initial spread
+     * <li>any application-specific conversions (e.g., string to number)
+     * </ul>
+     * The result returned by the call is boxed if it is a primitive,
+     * or forced to null if the return type is void.
+     * <p>
+     * This call is equivalent to the following code:
+     * <p><blockquote><pre>
+     *   MethodHandle invoker = MethodHandles.genericInvoker(this.type(), 0, true);
+     *   Object result = invoker.invoke(this, arguments);
+     * </pre></blockquote>
+     * @param arguments the arguments to pass to the target
+     * @return the result returned by the target
+     * @see MethodHandles#genericInvoker
+     */
+    public final Object invokeVarargs(Object[] arguments) throws Throwable {
+        int argc = arguments == null ? 0 : arguments.length;
+        MethodType type = type();
+        if (argc <= 10) {
+            MethodHandle invoker = MethodHandles.invokers(type).genericInvoker();
+            switch (argc) {
+                case 0:  return invoker.invoke(this);
+                case 1:  return invoker.invoke(this,
+                                    arguments[0]);
+                case 2:  return invoker.invoke(this,
+                                    arguments[0], arguments[1]);
+                case 3:  return invoker.invoke(this,
+                                    arguments[0], arguments[1], arguments[2]);
+                case 4:  return invoker.invoke(this,
+                                    arguments[0], arguments[1], arguments[2],
+                                    arguments[3]);
+                case 5:  return invoker.invoke(this,
+                                    arguments[0], arguments[1], arguments[2],
+                                    arguments[3], arguments[4]);
+                case 6:  return invoker.invoke(this,
+                                    arguments[0], arguments[1], arguments[2],
+                                    arguments[3], arguments[4], arguments[5]);
+                case 7:  return invoker.invoke(this,
+                                    arguments[0], arguments[1], arguments[2],
+                                    arguments[3], arguments[4], arguments[5],
+                                    arguments[6]);
+                case 8:  return invoker.invoke(this,
+                                    arguments[0], arguments[1], arguments[2],
+                                    arguments[3], arguments[4], arguments[5],
+                                    arguments[6], arguments[7]);
+                case 9:  return invoker.invoke(this,
+                                    arguments[0], arguments[1], arguments[2],
+                                    arguments[3], arguments[4], arguments[5],
+                                    arguments[6], arguments[7], arguments[8]);
+                case 10:  return invoker.invoke(this,
+                                    arguments[0], arguments[1], arguments[2],
+                                    arguments[3], arguments[4], arguments[5],
+                                    arguments[6], arguments[7], arguments[8],
+                                    arguments[9]);
+            }
+        }
+
+        // more than ten arguments get boxed in a varargs list:
+        MethodHandle invoker = MethodHandles.invokers(type).varargsInvoker(0);
+        return invoker.invoke(this, arguments);
+    }
+    /** Equivalent to {@code invokeVarargs(arguments.toArray())}. */
+    public final Object invokeVarargs(java.util.List<?> arguments) throws Throwable {
+        return invokeVarargs(arguments.toArray());
+    }
+
+    /*  --- this is intentionally NOT a javadoc yet ---
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Produce an adapter method handle which adapts the type of the
+     * current method handle to a new type by pairwise argument conversion.
+     * The original type and new type must have the same number of arguments.
+     * The resulting method handle is guaranteed to confess a type
+     * which is equal to the desired new type.
+     * <p>
+     * If the original type and new type are equal, returns {@code this}.
+     * <p>
+     * The following conversions are applied as needed both to
+     * arguments and return types.  Let T0 and T1 be the differing
+     * new and old parameter types (or old and new return types)
+     * for corresponding values passed by the new and old method types.
+     * Given those types T0, T1, one of the following conversions is applied
+     * if possible:
+     * <ul>
+     * <li>If T0 and T1 are references, and T1 is not an interface type,
+     *     then a cast to T1 is applied.
+     *     (The types do not need to be related in any particular way.)
+     * <li>If T0 and T1 are references, and T1 is an interface type,
+     *     then the value of type T0 is passed as a T1 without a cast.
+     *     (This treatment of interfaces follows the usage of the bytecode verifier.)
+     * <li>If T0 and T1 are primitives, then a Java casting
+     *     conversion (JLS 5.5) is applied, if one exists.
+     * <li>If T0 and T1 are primitives and one is boolean,
+     *     the boolean is treated as a one-bit unsigned integer.
+     *     (This treatment follows the usage of the bytecode verifier.)
+     *     A conversion from another primitive type behaves as if
+     *     it first converts to byte, and then masks all but the low bit.
+     * <li>If T0 is a primitive and T1 a reference, a boxing
+     *     conversion is applied if one exists, possibly followed by
+     *     an reference conversion to a superclass.
+     *     T1 must be a wrapper class or a supertype of one.
+     *     If T1 is a wrapper class, T0 is converted if necessary
+     *     to T1's primitive type by one of the preceding conversions.
+     *     Otherwise, T0 is boxed, and its wrapper converted to T1.
+     * <li>If T0 is a reference and T1 a primitive, an unboxing
+     *     conversion is applied if one exists, possibly preceded by
+     *     a reference conversion to a wrapper class.
+     *     T0 must be a wrapper class or a supertype of one.
+     *     If T0 is a wrapper class, its primitive value is converted
+     *     if necessary to T1 by one of the preceding conversions.
+     *     Otherwise, T0 is converted directly to the wrapper type for T1,
+     *     which is then unboxed.
+     * <li>If the return type T1 is void, any returned value is discarded
+     * <li>If the return type T0 is void and T1 a reference, a null value is introduced.
+     * <li>If the return type T0 is void and T1 a primitive, a zero value is introduced.
+     * </ul>
+     * <p>
+     */
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Produce an adapter method handle which adapts the type of the
+     * current method handle to a new type by pairwise argument conversion.
+     * The original type and new type must have the same number of arguments.
+     * The resulting method handle is guaranteed to confess a type
+     * which is equal to the desired new type.
+     * <p>
+     * If the original type and new type are equal, returns {@code this}.
+     * <p>
+     * This method is equivalent to {@link MethodHandles#convertArguments}.
+     * @param newType the expected type of the new method handle
+     * @return a method handle which delegates to {@code this} after performing
+     *           any necessary argument conversions, and arranges for any
+     *           necessary return value conversions
+     * @throws IllegalArgumentException if the conversion cannot be made
+     * @see MethodHandles#convertArguments
+     */
+    public final MethodHandle asType(MethodType newType) {
+        return MethodHandles.convertArguments(this, newType);
+    }
+
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Produce a method handle which adapts, as its <i>target</i>,
+     * the current method handle.  The type of the adapter will be
+     * the same as the type of the target, except that all but the first
+     * {@code keepPosArgs} parameters of the target's type are replaced
+     * by a single array parameter of type {@code Object[]}.
+     * Thus, if {@code keepPosArgs} is zero, the adapter will take all
+     * arguments in a single object array.
+     * <p>
+     * When called, the adapter replaces a trailing array argument
+     * by the array's elements, each as its own argument to the target.
+     * (The order of the arguments is preserved.)
+     * They are converted pairwise by casting and/or unboxing
+     * (as if by {@link MethodHandles#convertArguments})
+     * to the types of the trailing parameters of the target.
+     * Finally the target is called.
+     * What the target eventually returns is returned unchanged by the adapter.
+     * <p>
+     * Before calling the target, the adapter verifies that the array
+     * contains exactly enough elements to provide a correct argument count
+     * to the target method handle.
+     * (The array may also be null when zero elements are required.)
+     * @param keepPosArgs the number of leading positional arguments to preserve
+     * @return a new method handle which spreads its final argument,
+     *         before calling the original method handle
+     * @throws IllegalArgumentException if target does not have at least
+     *         {@code keepPosArgs} parameter types
+     */
+    public final MethodHandle asSpreader(int keepPosArgs) {
+        MethodType oldType = type();
+        int nargs = oldType.parameterCount();
+        MethodType newType = oldType.dropParameterTypes(keepPosArgs, nargs);
+        newType = newType.insertParameterTypes(keepPosArgs, Object[].class);
+        return MethodHandles.spreadArguments(this, newType);
+    }
+
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Produce a method handle which adapts, as its <i>target</i>,
+     * the current method handle.  The type of the adapter will be
+     * the same as the type of the target, except that a single trailing
+     * array parameter of type {@code Object[]} is replaced by
+     * {@code spreadArrayArgs} parameters of type {@code Object}.
+     * <p>
+     * When called, the adapter replaces its trailing {@code spreadArrayArgs}
+     * arguments by a single new {@code Object} array, whose elements
+     * comprise (in order) the replaced arguments.
+     * Finally the target is called.
+     * What the target eventually returns is returned unchanged by the adapter.
+     * <p>
+     * (The array may also be a shared constant when {@code spreadArrayArgs} is zero.)
+     * @param spreadArrayArgs the number of arguments to spread from the trailing array
+     * @return a new method handle which collects some trailing argument
+     *         into an array, before calling the original method handle
+     * @throws IllegalArgumentException if the last argument of the target
+     *         is not {@code Object[]}
+     * @throws IllegalArgumentException if {@code spreadArrayArgs} is not
+     *         a legal array size
+     * @deprecated Provisional and unstable; use {@link MethodHandles#collectArguments}.
+     */
+    public final MethodHandle asCollector(int spreadArrayArgs) {
+        MethodType oldType = type();
+        int nargs = oldType.parameterCount();
+        MethodType newType = oldType.dropParameterTypes(nargs-1, nargs);
+        newType = newType.insertParameterTypes(nargs-1, MethodType.genericMethodType(spreadArrayArgs).parameterArray());
+        return MethodHandles.collectArguments(this, newType);
+    }
+
+    /**
+     * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
+     * Produce a method handle which binds the given argument
+     * to the current method handle as <i>target</i>.
+     * The type of the bound handle will be
+     * the same as the type of the target, except that a single leading
+     * reference parameter will be omitted.
+     * <p>
+     * When called, the bound handle inserts the given value {@code x}
+     * as a new leading argument to the target.  The other arguments are
+     * also passed unchanged.
+     * What the target eventually returns is returned unchanged by the bound handle.
+     * <p>
+     * The reference {@code x} must be convertible to the first parameter
+     * type of the target.
+     * @param x  the value to bind to the first argument of the target
+     * @return a new method handle which collects some trailing argument
+     *         into an array, before calling the original method handle
+     * @throws IllegalArgumentException if the target does not have a
+     *         leading parameter type that is a reference type
+     * @throws ClassCastException if {@code x} cannot be converted
+     *         to the leading parameter type of the target
+     * @deprecated Provisional and unstable; use {@link MethodHandles#insertArguments}.
+     */
+    public final MethodHandle bindTo(Object x) {
+        return MethodHandles.insertArguments(this, 0, x);
     }
 }
