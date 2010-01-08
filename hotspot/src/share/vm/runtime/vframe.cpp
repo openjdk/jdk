@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,6 +432,8 @@ void vframeStreamCommon::security_get_caller_frame(int depth) {
               Klass::cast(method()->method_holder())
                  ->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
       // This is an auxilary frame -- skip it
+    } else if (method()->is_method_handle_adapter()) {
+      // This is an internal adapter frame from the MethodHandleCompiler -- skip it
     } else {
       // This is non-excluded frame, we need to count it against the depth
       if (depth-- <= 0) {

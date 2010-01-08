@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,6 +480,11 @@ bool Reflection::can_relax_access_check_for(
   // because one is inside the other.
   if (under_host_klass(accessor_ik, accessee) ||
       under_host_klass(accessee_ik, accessor))
+    return true;
+
+  // Adapter frames can access anything.
+  if (MethodHandleCompiler::klass_is_method_handle_adapter_holder(accessor))
+    // This is an internal adapter frame from the MethodHandleCompiler.
     return true;
 
   if (RelaxAccessControlCheck ||
