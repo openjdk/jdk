@@ -56,13 +56,13 @@ HS_DTRACE_PROBE_DECL6(hotspot, compiled__method__unload,
 #endif
 
 bool nmethod::is_compiled_by_c1() const {
+  if (compiler() == NULL || method() == NULL)  return false;  // can happen during debug printing
   if (is_native_method()) return false;
-  assert(compiler() != NULL, "must be");
   return compiler()->is_c1();
 }
 bool nmethod::is_compiled_by_c2() const {
+  if (compiler() == NULL || method() == NULL)  return false;  // can happen during debug printing
   if (is_native_method()) return false;
-  assert(compiler() != NULL, "must be");
   return compiler()->is_c2();
 }
 
@@ -2397,6 +2397,107 @@ ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
                          p->obj_decode_offset(), p->should_reexecute());
   }
   return NULL;
+}
+
+void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) {
+  if (block_begin == entry_point())             stream->print_cr("[Entry Point]");
+  if (block_begin == verified_entry_point())    stream->print_cr("[Verified Entry Point]");
+  if (block_begin == exception_begin())         stream->print_cr("[Exception Handler]");
+  if (block_begin == stub_begin())              stream->print_cr("[Stub Code]");
+  if (block_begin == consts_begin())            stream->print_cr("[Constants]");
+  if (block_begin == entry_point()) {
+    methodHandle m = method();
+    if (m.not_null()) {
+      stream->print("  # ");
+      m->print_value_on(stream);
+      stream->cr();
+    }
+    if (m.not_null() && !is_osr_method()) {
+      ResourceMark rm;
+      int sizeargs = m->size_of_parameters();
+      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
+      VMRegPair* regs   = NEW_RESOURCE_ARRAY(VMRegPair, sizeargs);
+      {
+        int sig_index = 0;
+        if (!m->is_static())
+          sig_bt[sig_index++] = T_OBJECT; // 'this'
+        for (SignatureStream ss(m->signature()); !ss.at_return_type(); ss.next()) {
+          BasicType t = ss.type();
+          sig_bt[sig_index++] = t;
+          if (type2size[t] == 2) {
+            sig_bt[sig_index++] = T_VOID;
+          } else {
+            assert(type2size[t] == 1, "size is 1 or 2");
+          }
+        }
+        assert(sig_index == sizeargs, "");
+      }
+      const char* spname = "sp"; // make arch-specific?
+      intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs, false);
+      int stack_slot_offset = this->frame_size() * wordSize;
+      int tab1 = 14, tab2 = 24;
+      int sig_index = 0;
+      int arg_index = (m->is_static() ? 0 : -1);
+      bool did_old_sp = false;
+      for (SignatureStream ss(m->signature()); !ss.at_return_type(); ) {
+        bool at_this = (arg_index == -1);
+        bool at_old_sp = false;
+        BasicType t = (at_this ? T_OBJECT : ss.type());
+        assert(t == sig_bt[sig_index], "sigs in sync");
+        if (at_this)
+          stream->print("  # this: ");
+        else
+          stream->print("  # parm%d: ", arg_index);
+        stream->move_to(tab1);
+        VMReg fst = regs[sig_index].first();
+        VMReg snd = regs[sig_index].second();
+        if (fst->is_reg()) {
+          stream->print("%s", fst->name());
+          if (snd->is_valid())  {
+            stream->print(":%s", snd->name());
+          }
+        } else if (fst->is_stack()) {
+          int offset = fst->reg2stack() * VMRegImpl::stack_slot_size + stack_slot_offset;
+          if (offset == stack_slot_offset)  at_old_sp = true;
+          stream->print("[%s+0x%x]", spname, offset);
+        } else {
+          stream->print("reg%d:%d??", (int)(intptr_t)fst, (int)(intptr_t)snd);
+        }
+        stream->print(" ");
+        stream->move_to(tab2);
+        stream->print("= ");
+        if (at_this) {
+          m->method_holder()->print_value_on(stream);
+        } else {
+          bool did_name = false;
+          if (!at_this && ss.is_object()) {
+            symbolOop name = ss.as_symbol_or_null();
+            if (name != NULL) {
+              name->print_value_on(stream);
+              did_name = true;
+            }
+          }
+          if (!did_name)
+            stream->print("%s", type2name(t));
+        }
+        if (at_old_sp) {
+          stream->print("  (%s of caller)", spname);
+          did_old_sp = true;
+        }
+        stream->cr();
+        sig_index += type2size[t];
+        arg_index += 1;
+        if (!at_this)  ss.next();
+      }
+      if (!did_old_sp) {
+        stream->print("  # ");
+        stream->move_to(tab1);
+        stream->print("[%s+0x%x]", spname, stack_slot_offset);
+        stream->print("  (%s of caller)", spname);
+        stream->cr();
+      }
+    }
+  }
 }
 
 void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin, u_char* end) {
