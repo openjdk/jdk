@@ -839,17 +839,16 @@ public:
   // JVMTI support
   jint jvmti_class_status() const;
 
-#ifndef PRODUCT
  public:
   // Printing
-  void oop_print_on      (oop obj, outputStream* st);
   void oop_print_value_on(oop obj, outputStream* st);
+#ifndef PRODUCT
+  void oop_print_on      (oop obj, outputStream* st);
 
   void print_dependent_nmethods(bool verbose = false);
   bool is_dependent_nmethod(nmethod* nm);
 #endif
 
- public:
   // Verification
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);

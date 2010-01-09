@@ -541,6 +541,7 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
   st->cr();
 }
 
+#endif //PRODUCT
 
 void Klass::oop_print_value_on(oop obj, outputStream* st) {
   // print title
@@ -548,8 +549,6 @@ void Klass::oop_print_value_on(oop obj, outputStream* st) {
   st->print("%s", internal_name());
   obj->print_address_on(st);
 }
-
-#endif
 
 // Verification
 
