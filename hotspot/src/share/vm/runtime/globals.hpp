@@ -2675,10 +2675,10 @@ class CommandLineFlags {
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
           "maximum number of subklasses to print when printing klass")      \
                                                                             \
-  develop(intx, MaxInlineLevel, 9,                                          \
+  product(intx, MaxInlineLevel, 9,                                          \
           "maximum number of nested calls that are inlined")                \
                                                                             \
-  develop(intx, MaxRecursiveInlineLevel, 1,                                 \
+  product(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
@@ -2691,10 +2691,10 @@ class CommandLineFlags {
   product_pd(intx, FreqInlineSize,                                          \
           "maximum bytecode size of a frequent method to be inlined")       \
                                                                             \
-  develop(intx, MaxTrivialSize, 6,                                          \
+  product(intx, MaxTrivialSize, 6,                                          \
           "maximum bytecode size of a trivial method to be inlined")        \
                                                                             \
-  develop(intx, MinInliningThreshold, 250,                                  \
+  product(intx, MinInliningThreshold, 250,                                  \
           "min. invocation count a method needs to have to be inlined")     \
                                                                             \
   develop(intx, AlignEntryCode, 4,                                          \

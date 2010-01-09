@@ -27,11 +27,16 @@
 
 //=============================================================================
 //------------------------------InlineTree-------------------------------------
-InlineTree::InlineTree( Compile* c, const InlineTree *caller_tree, ciMethod* callee, JVMState* caller_jvms, int caller_bci, float site_invoke_ratio )
+InlineTree::InlineTree( Compile* c,
+                        const InlineTree *caller_tree, ciMethod* callee,
+                        JVMState* caller_jvms, int caller_bci,
+                        float site_invoke_ratio, int site_depth_adjust)
 : C(c), _caller_jvms(caller_jvms),
   _caller_tree((InlineTree*)caller_tree),
   _method(callee), _site_invoke_ratio(site_invoke_ratio),
-  _count_inline_bcs(method()->code_size()) {
+  _site_depth_adjust(site_depth_adjust),
+  _count_inline_bcs(method()->code_size())
+{
   NOT_PRODUCT(_count_inlines = 0;)
   if (_caller_jvms != NULL) {
     // Keep a private copy of the caller_jvms:
@@ -40,7 +45,7 @@ InlineTree::InlineTree( Compile* c, const InlineTree *caller_tree, ciMethod* cal
     assert(!caller_jvms->should_reexecute(), "there should be no reexecute bytecode with inlining");
   }
   assert(_caller_jvms->same_calls_as(caller_jvms), "consistent JVMS");
-  assert((caller_tree == NULL ? 0 : caller_tree->inline_depth() + 1) == inline_depth(), "correct (redundant) depth parameter");
+  assert((caller_tree == NULL ? 0 : caller_tree->stack_depth() + 1) == stack_depth(), "correct (redundant) depth parameter");
   assert(caller_bci == this->caller_bci(), "correct (redundant) bci parameter");
   if (UseOldInlining) {
     // Update hierarchical counts, count_inline_bcs() and count_inlines()
@@ -52,10 +57,13 @@ InlineTree::InlineTree( Compile* c, const InlineTree *caller_tree, ciMethod* cal
   }
 }
 
-InlineTree::InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvms, float site_invoke_ratio)
+InlineTree::InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvms,
+                       float site_invoke_ratio, int site_depth_adjust)
 : C(c), _caller_jvms(caller_jvms), _caller_tree(NULL),
   _method(callee_method), _site_invoke_ratio(site_invoke_ratio),
-  _count_inline_bcs(method()->code_size()) {
+  _site_depth_adjust(site_depth_adjust),
+  _count_inline_bcs(method()->code_size())
+{
   NOT_PRODUCT(_count_inlines = 0;)
   assert(!UseOldInlining, "do not use for old stuff");
 }
@@ -269,10 +277,13 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_
     return msg;
   }
 
-  bool is_accessor = InlineAccessors && callee_method->is_accessor();
+  if (InlineAccessors && callee_method->is_accessor()) {
+    // accessor methods are not subject to any of the following limits.
+    return NULL;
+  }
 
   // suppress a few checks for accessors and trivial methods
-  if (!is_accessor && callee_method->code_size() > MaxTrivialSize) {
+  if (callee_method->code_size() > MaxTrivialSize) {
 
     // don't inline into giant methods
     if (C->unique() > (uint)NodeCountInliningCutoff) {
@@ -291,7 +302,7 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_
     }
   }
 
-  if (!C->do_inlining() && InlineAccessors && !is_accessor) {
+  if (!C->do_inlining() && InlineAccessors) {
     return "not an accessor";
   }
   if( inline_depth() > MaxInlineLevel ) {
@@ -464,7 +475,30 @@ InlineTree *InlineTree::build_inline_tree_for_callee( ciMethod* callee_method, J
   if (old_ilt != NULL) {
     return old_ilt;
   }
-  InlineTree *ilt = new InlineTree( C, this, callee_method, caller_jvms, caller_bci, recur_frequency );
+  int new_depth_adjust = 0;
+  if (caller_jvms->method() != NULL) {
+    if ((caller_jvms->method()->name() == ciSymbol::invoke_name() &&
+         caller_jvms->method()->holder()->name() == ciSymbol::java_dyn_MethodHandle())
+        || caller_jvms->method()->holder()->name() == ciSymbol::java_dyn_InvokeDynamic())
+      /* @@@ FIXME:
+    if (caller_jvms->method()->is_method_handle_adapter())
+      */
+      new_depth_adjust -= 1;  // don't count actions in MH or indy adapter frames
+    else if (callee_method->is_method_handle_invoke()) {
+      new_depth_adjust -= 1;  // don't count method handle calls from java.dyn implem
+    }
+    if (new_depth_adjust != 0 && PrintInlining) {
+      stringStream nm1; caller_jvms->method()->print_name(&nm1);
+      stringStream nm2; callee_method->print_name(&nm2);
+      tty->print_cr("discounting inlining depth from %s to %s", nm1.base(), nm2.base());
+    }
+    if (new_depth_adjust != 0 && C->log()) {
+      int id1 = C->log()->identify(caller_jvms->method());
+      int id2 = C->log()->identify(callee_method);
+      C->log()->elem("inline_depth_discount caller='%d' callee='%d'", id1, id2);
+    }
+  }
+  InlineTree *ilt = new InlineTree(C, this, callee_method, caller_jvms, caller_bci, recur_frequency, _site_depth_adjust + new_depth_adjust);
   _subtrees.append( ilt );
 
   NOT_PRODUCT( _count_inlines += 1; )
@@ -490,7 +524,7 @@ InlineTree *InlineTree::build_inline_tree_root() {
   Compile* C = Compile::current();
 
   // Root of inline tree
-  InlineTree *ilt = new InlineTree(C, NULL, C->method(), NULL, -1, 1.0F);
+  InlineTree *ilt = new InlineTree(C, NULL, C->method(), NULL, -1, 1.0F, 0);
 
   return ilt;
 }

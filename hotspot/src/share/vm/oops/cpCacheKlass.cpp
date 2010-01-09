@@ -261,6 +261,15 @@ void constantPoolCacheKlass::oop_print_on(oop obj, outputStream* st) {
 
 #endif
 
+void constantPoolCacheKlass::oop_print_value_on(oop obj, outputStream* st) {
+  assert(obj->is_constantPoolCache(), "obj must be constant pool cache");
+  constantPoolCacheOop cache = (constantPoolCacheOop)obj;
+  st->print("cache [%d]", cache->length());
+  cache->print_address_on(st);
+  st->print(" for ");
+  cache->constant_pool()->print_value_on(st);
+}
+
 void constantPoolCacheKlass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->is_constantPoolCache(), "obj must be constant pool cache");
   constantPoolCacheOop cache = (constantPoolCacheOop)obj;
