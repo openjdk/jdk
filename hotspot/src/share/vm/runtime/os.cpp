@@ -280,7 +280,7 @@ void os::signal_init() {
                            string,
                            CHECK);
 
-    KlassHandle group(THREAD, SystemDictionary::threadGroup_klass());
+    KlassHandle group(THREAD, SystemDictionary::ThreadGroup_klass());
     JavaCalls::call_special(&result,
                             thread_group,
                             group,

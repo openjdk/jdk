@@ -365,6 +365,7 @@ class methodOopDesc : public oopDesc {
 #endif
 
   // byte codes
+  void    set_code(address code)      { return constMethod()->set_code(code); }
   address code_base() const           { return constMethod()->code_base(); }
   bool    contains(address bcp) const { return constMethod()->contains(bcp); }
 
