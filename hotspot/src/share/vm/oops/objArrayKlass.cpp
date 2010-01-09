@@ -246,8 +246,8 @@ objArrayOop objArrayKlass::compute_secondary_supers(int num_extra_slots, TRAPS) 
   } else {
     objArrayOop sec_oop = oopFactory::new_system_objArray(num_secondaries, CHECK_NULL);
     objArrayHandle secondaries(THREAD, sec_oop);
-    secondaries->obj_at_put(num_extra_slots+0, SystemDictionary::cloneable_klass());
-    secondaries->obj_at_put(num_extra_slots+1, SystemDictionary::serializable_klass());
+    secondaries->obj_at_put(num_extra_slots+0, SystemDictionary::Cloneable_klass());
+    secondaries->obj_at_put(num_extra_slots+1, SystemDictionary::Serializable_klass());
     for (int i = 0; i < num_elem_supers; i++) {
       klassOop elem_super = (klassOop) elem_supers->obj_at(i);
       klassOop array_super = elem_super->klass_part()->array_klass_or_null();

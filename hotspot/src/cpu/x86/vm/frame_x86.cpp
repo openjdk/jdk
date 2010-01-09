@@ -330,6 +330,14 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   // This is the sp before any possible extension (adapter/locals).
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
 
+  address sender_pc = this->sender_pc();
+  CodeBlob* sender_cb = CodeCache::find_blob_unsafe(sender_pc);
+  assert(sender_cb, "sanity");
+  nmethod* sender_nm = sender_cb->as_nmethod_or_null();
+  if (sender_nm != NULL && sender_nm->is_method_handle_return(sender_pc)) {
+    unextended_sp = (intptr_t*) at(link_offset);
+  }
+
   // The interpreter and compiler(s) always save EBP/RBP in a known
   // location on entry. We must record where that location is
   // so this if EBP/RBP was live on callout from c2 we can find
@@ -352,7 +360,7 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 #endif // AMD64
   }
 #endif /* COMPILER2 */
-  return frame(sp, unextended_sp, link(), sender_pc());
+  return frame(sp, unextended_sp, link(), sender_pc);
 }
 
 
@@ -374,6 +382,18 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   // it is only an fp if the sender is an interpreter frame (or c1?)
 
   intptr_t *saved_fp = (intptr_t*)*(sender_sp - frame::sender_sp_offset);
+
+  intptr_t* unextended_sp = sender_sp;
+  // If we are returning to a compiled method handle call site,
+  // the saved_fp will in fact be a saved value of the unextended SP.
+  // The simplest way to tell whether we are returning to such a call
+  // site is as follows:
+  CodeBlob* sender_cb = CodeCache::find_blob_unsafe(sender_pc);
+  assert(sender_cb, "sanity");
+  nmethod* sender_nm = sender_cb->as_nmethod_or_null();
+  if (sender_nm != NULL && sender_nm->is_method_handle_return(sender_pc)) {
+    unextended_sp = saved_fp;
+  }
 
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
@@ -399,7 +419,7 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   }
 
   assert(sender_sp != sp(), "must have changed");
-  return frame(sender_sp, saved_fp, sender_pc);
+  return frame(sender_sp, unextended_sp, saved_fp, sender_pc);
 }
 
 frame frame::sender(RegisterMap* map) const {

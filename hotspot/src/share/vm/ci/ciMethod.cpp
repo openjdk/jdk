@@ -687,7 +687,7 @@ int ciMethod::scale_count(int count, float prof_factor) {
 // ------------------------------------------------------------------
 // invokedynamic support
 //
-bool ciMethod::is_method_handle_invoke() {
+bool ciMethod::is_method_handle_invoke() const {
   check_is_loaded();
   bool flag = ((flags().as_int() & JVM_MH_INVOKE_BITS) == JVM_MH_INVOKE_BITS);
 #ifdef ASSERT

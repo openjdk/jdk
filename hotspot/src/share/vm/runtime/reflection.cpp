@@ -449,7 +449,7 @@ bool Reflection::verify_class_access(klassOop current_class, klassOop new_class,
   // sun/reflect/MagicAccessorImpl subclasses to succeed trivially.
   if (   JDK_Version::is_gte_jdk14x_version()
       && UseNewReflection
-      && Klass::cast(current_class)->is_subclass_of(SystemDictionary::reflect_magic_klass())) {
+      && Klass::cast(current_class)->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
     return true;
   }
 
@@ -541,7 +541,7 @@ bool Reflection::verify_field_access(klassOop current_class,
   // sun/reflect/MagicAccessorImpl subclasses to succeed trivially.
   if (   JDK_Version::is_gte_jdk14x_version()
       && UseNewReflection
-      && Klass::cast(current_class)->is_subclass_of(SystemDictionary::reflect_magic_klass())) {
+      && Klass::cast(current_class)->is_subclass_of(SystemDictionary::reflect_MagicAccessorImpl_klass())) {
     return true;
   }
 
@@ -631,7 +631,7 @@ oop get_mirror_from_signature(methodHandle method, SignatureStream* ss, TRAPS) {
 
 objArrayHandle Reflection::get_parameter_types(methodHandle method, int parameter_count, oop* return_type, TRAPS) {
   // Allocate array holding parameter types (java.lang.Class instances)
-  objArrayOop m = oopFactory::new_objArray(SystemDictionary::class_klass(), parameter_count, CHECK_(objArrayHandle()));
+  objArrayOop m = oopFactory::new_objArray(SystemDictionary::Class_klass(), parameter_count, CHECK_(objArrayHandle()));
   objArrayHandle mirrors (THREAD, m);
   int index = 0;
   // Collect parameter types
@@ -1308,7 +1308,7 @@ oop Reflection::reflect_method(oop mirror, symbolHandle method_name, objArrayHan
   if (Klass::cast(klass)->oop_is_array() && which == MEMBER_DECLARED)  return NULL;
 
   if (Klass::cast(java_lang_Class::as_klassOop(mirror))->oop_is_array()) {
-    klass = SystemDictionary::object_klass();
+    klass = SystemDictionary::Object_klass();
   }
   instanceKlassHandle h_k(THREAD, klass);
 
@@ -1375,13 +1375,13 @@ objArrayOop Reflection::reflect_methods(oop mirror, jint which, TRAPS) {
   // Exclude primitive types
   if (java_lang_Class::is_primitive(mirror) ||
      (Klass::cast(java_lang_Class::as_klassOop(mirror))->oop_is_array() && (which == MEMBER_DECLARED))) {
-    klassOop klass = SystemDictionary::reflect_method_klass();
+    klassOop klass = SystemDictionary::reflect_Method_klass();
     return oopFactory::new_objArray(klass, 0, CHECK_NULL);  // Return empty array
   }
 
   klassOop klass = java_lang_Class::as_klassOop(mirror);
   if (Klass::cast(java_lang_Class::as_klassOop(mirror))->oop_is_array()) {
-    klass = SystemDictionary::object_klass();
+    klass = SystemDictionary::Object_klass();
   }
   instanceKlassHandle h_k(THREAD, klass);
 
@@ -1411,7 +1411,7 @@ objArrayOop Reflection::reflect_methods(oop mirror, jint which, TRAPS) {
         }
 
         // Allocate result
-        klassOop klass = SystemDictionary::reflect_method_klass();
+        klassOop klass = SystemDictionary::reflect_Method_klass();
         objArrayOop r = oopFactory::new_objArray(klass, count, CHECK_NULL);
         objArrayHandle h_result (THREAD, r);
 
@@ -1462,7 +1462,7 @@ objArrayOop Reflection::reflect_methods(oop mirror, jint which, TRAPS) {
           }
         }
         // Allocate result
-        klassOop klass = SystemDictionary::reflect_method_klass();
+        klassOop klass = SystemDictionary::reflect_Method_klass();
         objArrayOop r = oopFactory::new_objArray(klass, count, CHECK_NULL);
         objArrayHandle h_result (THREAD, r);
 
@@ -1523,7 +1523,7 @@ objArrayOop Reflection::reflect_constructors(oop mirror, jint which, TRAPS) {
   bool prim  = java_lang_Class::is_primitive(mirror);
   Klass* k = prim ? NULL : Klass::cast(java_lang_Class::as_klassOop(mirror));
   if (prim || k->is_interface() || k->oop_is_array()) {
-    return oopFactory::new_objArray(SystemDictionary::reflect_constructor_klass(), 0, CHECK_NULL);  // Return empty array
+    return oopFactory::new_objArray(SystemDictionary::reflect_Constructor_klass(), 0, CHECK_NULL);  // Return empty array
   }
 
   // Must be instanceKlass at this point

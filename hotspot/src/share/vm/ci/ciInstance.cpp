@@ -36,7 +36,7 @@ ciType* ciInstance::java_mirror_type() {
   VM_ENTRY_MARK;
   oop m = get_oop();
   // Return NULL if it is not java.lang.Class.
-  if (m == NULL || m->klass() != SystemDictionary::class_klass()) {
+  if (m == NULL || m->klass() != SystemDictionary::Class_klass()) {
     return NULL;
   }
   // Return either a primitive type or a klass.

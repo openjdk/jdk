@@ -180,6 +180,10 @@ const char* InlineTree::shouldNotInline(ciMethod *callee_method, ciMethod* calle
     return NULL;
   }
 
+  // Always inline MethodHandle methods.
+  if (callee_method->is_method_handle_invoke())
+    return NULL;
+
   // First check all inlining restrictions which are required for correctness
   if (callee_method->is_abstract())               return "abstract method";
   // note: we allow ik->is_abstract()
@@ -322,14 +326,17 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
     // stricter than callee_holder->is_initialized()
     ciBytecodeStream iter(caller_method);
     iter.force_bci(caller_bci);
-    int index = iter.get_index_int();
-    if( !caller_method->is_klass_loaded(index, true) ) {
-      return false;
-    }
-    // Try to do constant pool resolution if running Xcomp
     Bytecodes::Code call_bc = iter.cur_bc();
-    if( !caller_method->check_call(index, call_bc == Bytecodes::_invokestatic) ) {
-      return false;
+    // An invokedynamic instruction does not have a klass.
+    if (call_bc != Bytecodes::_invokedynamic) {
+      int index = iter.get_index_int();
+      if (!caller_method->is_klass_loaded(index, true)) {
+        return false;
+      }
+      // Try to do constant pool resolution if running Xcomp
+      if( !caller_method->check_call(index, call_bc == Bytecodes::_invokestatic) ) {
+        return false;
+      }
     }
   }
   // We will attempt to see if a class/field/etc got properly loaded.  If it
