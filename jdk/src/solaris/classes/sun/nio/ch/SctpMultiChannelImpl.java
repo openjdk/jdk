@@ -38,7 +38,6 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetBoundException;
 import java.nio.channels.spi.SelectorProvider;
@@ -63,9 +62,6 @@ import static sun.nio.ch.SctpResultContainer.*;
 public class SctpMultiChannelImpl extends SctpMultiChannel
     implements SelChImpl
 {
-    /* Used to make native close and preClose calls */
-    private static NativeDispatcher nd;
-
     private final FileDescriptor fd;
 
     private final int fdVal;
@@ -140,7 +136,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 synchronized (stateLock) {
                     ensureOpen();
                     if (isBound())
-                        throw new AlreadyBoundException();
+                        SctpNet.throwAlreadyBoundException();
                     InetSocketAddress isa = (local == null) ?
                         new InetSocketAddress(0) : Net.checkAddress(local);
 
@@ -155,7 +151,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                     if (isa.getAddress().isAnyLocalAddress())
                         wildcard = true;
 
-                    Net.listen(fd, backlog < 1 ? 50 : backlog);
+                    SctpNet.listen(fdVal, backlog < 1 ? 50 : backlog);
                 }
             }
         }
@@ -196,7 +192,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                     if (add) {
                         for (InetSocketAddress addr : localAddresses) {
                             if (addr.getAddress().equals(address)) {
-                                throw new AlreadyBoundException();
+                                SctpNet.throwAlreadyBoundException();
                             }
                         }
                     } else { /*removing */
@@ -284,7 +280,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     @Override
     public void implCloseSelectableChannel() throws IOException {
         synchronized (stateLock) {
-            nd.preClose(fd);
+            SctpNet.preClose(fdVal);
 
             if (receiverThread != 0)
                 NativeThread.signal(receiverThread);
@@ -375,7 +371,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
             /* Postpone the kill if there is a thread sending or receiving. */
             if (receiverThread == 0 && senderThread == 0) {
-                nd.close(fd);
+                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
             } else {
                 state = ChannelState.KILLPENDING;
@@ -981,6 +977,5 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         Util.load();   /* loads nio & net native libraries */
         java.security.AccessController.doPrivileged(
                 new sun.security.action.LoadLibraryAction("sctp"));
-        nd = new SctpSocketDispatcher();
     }
 }

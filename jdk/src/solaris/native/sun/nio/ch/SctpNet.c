@@ -48,6 +48,9 @@ JNIEXPORT jint JNICALL JNI_OnLoad
     return JNI_VERSION_1_2;
 }
 
+static int preCloseFD = -1;     /* File descriptor to which we dup other fd's
+                                   before closing them for real */
+
 /**
  * Loads the native sctp library that contains the socket extension
  * functions, as well as locating the individual functions.
@@ -105,6 +108,23 @@ jboolean loadSocketExtensionFuncs
 
     funcsLoaded = JNI_TRUE;
     return JNI_TRUE;
+}
+
+/*
+ * Class:     sun_nio_ch_SctpNet
+ * Method:    init
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_SctpNet_init
+  (JNIEnv *env, jclass cl) {
+    int sp[2];
+    if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "socketpair failed");
+        return;
+    }
+    preCloseFD = sp[0];
+    close(sp[1]);
 }
 
 /*
@@ -182,6 +202,76 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_bindx
     }
 
     free(sap);
+}
+
+/*
+ * Class:     sun_nio_ch_SctpNet
+ * Method:    listen0
+ * Signature: (II)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_SctpNet_listen0
+  (JNIEnv *env, jclass cl, jint fd, jint backlog) {
+    if (listen(fd, backlog) < 0)
+        handleSocketError(env, errno);
+}
+
+/*
+ * Class:     sun_nio_ch_SctpNet
+ * Method:    connect0
+ * Signature: (ILjava/net/InetAddress;I)I
+ */
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_SctpNet_connect0
+  (JNIEnv *env, jclass clazz, int fd, jobject iao, jint port) {
+    SOCKADDR sa;
+    int sa_len = SOCKADDR_LEN;
+    int rv;
+
+    if (NET_InetAddressToSockaddr(env, iao, port, (struct sockaddr *) &sa,
+                                  &sa_len, JNI_TRUE) != 0) {
+        return IOS_THROWN;
+    }
+
+    rv = connect(fd, (struct sockaddr *)&sa, sa_len);
+    if (rv != 0) {
+        if (errno == EINPROGRESS) {
+            return IOS_UNAVAILABLE;
+        } else if (errno == EINTR) {
+            return IOS_INTERRUPTED;
+        }
+        return handleSocketError(env, errno);
+    }
+    return 1;
+}
+
+/*
+ * Class:     sun_nio_ch_SctpNet
+ * Method:    close0
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_SctpNet_close0
+  (JNIEnv *env, jclass clazz, jint fd) {
+    if (fd != -1) {
+        int rv = close(fd);
+        if (rv < 0)
+            JNU_ThrowIOExceptionWithLastError(env, "Close failed");
+    }
+}
+
+/*
+ * Class:     sun_nio_ch_SctpNet
+ * Method:    preClose0
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_nio_ch_SctpNet_preClose0
+  (JNIEnv *env, jclass clazz, jint fd) {
+    if (preCloseFD >= 0) {
+        if (dup2(preCloseFD, fd) < 0)
+            JNU_ThrowIOExceptionWithLastError(env, "dup2 failed");
+    }
 }
 
 void initializeISA
