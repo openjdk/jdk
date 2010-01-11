@@ -309,7 +309,7 @@ abstract class PathFileObject implements JavaFileObject {
     }
 
     protected static String toBinaryName(String relativePath, String sep) {
-        return removeExtension(relativePath).replaceAll(sep, ".");
+        return removeExtension(relativePath).replace(sep, ".");
     }
 
     protected static String removeExtension(String fileName) {
