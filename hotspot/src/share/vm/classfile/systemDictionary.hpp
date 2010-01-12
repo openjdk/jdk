@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class SymbolPropertyTable;
   template(Linkage_klass,                java_dyn_Linkage,               Opt) \
   template(CallSite_klass,               java_dyn_CallSite,              Opt) \
   template(InvokeDynamic_klass,          java_dyn_InvokeDynamic,         Opt) \
-  /* Note: MethodHandle must be first, and Dynamic last in group */           \
+  /* Note: MethodHandle must be first, and InvokeDynamic last in group */     \
                                                                               \
   template(StringBuffer_klass,           java_lang_StringBuffer,         Pre) \
   template(StringBuilder_klass,          java_lang_StringBuilder,        Pre) \

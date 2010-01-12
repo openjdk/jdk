@@ -211,7 +211,7 @@ class CommandLineFlags {
   static bool wasSetOnCmdline(const char* name, bool* value);
   static void printSetFlags();
 
-  static void printFlags() PRODUCT_RETURN;
+  static void printFlags();
 
   static void verify() PRODUCT_RETURN;
 };
@@ -326,9 +326,6 @@ class CommandLineFlags {
    * been re-added (see 6401008) */                                         \
   product(bool, UseMembar, false,                                           \
           "(Unstable) Issues membars on thread state transitions")          \
-                                                                            \
-  product(bool, PrintCommandLineFlags, false,                               \
-          "Prints flags that appeared on the command line")                 \
                                                                             \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
           "Enable normal processing of flags relating to field diagnostics")\
@@ -2053,9 +2050,6 @@ class CommandLineFlags {
           "number of times a GC thread (minus the coordinator) "            \
           "will sleep while yielding before giving up and resuming GC")     \
                                                                             \
-  notproduct(bool, PrintFlagsFinal, false,                                  \
-          "Print all command line flags after argument processing")         \
-                                                                            \
   /* gc tracing */                                                          \
   manageable(bool, PrintGC, false,                                          \
           "Print message at garbage collect")                               \
@@ -2355,10 +2349,19 @@ class CommandLineFlags {
          "If false, restricts profiled locations to the root method only")  \
                                                                             \
   product(bool, PrintVMOptions, trueInDebug,                                \
-         "print VM flag settings")                                          \
+         "Print flags that appeared on the command line")                   \
                                                                             \
   product(bool, IgnoreUnrecognizedVMOptions, false,                         \
          "Ignore unrecognized VM options")                                  \
+                                                                            \
+  product(bool, PrintCommandLineFlags, false,                               \
+         "Print flags specified on command line or set by ergonomics")      \
+                                                                            \
+  product(bool, PrintFlagsInitial, false,                                   \
+         "Print all VM flags before argument processing and exit VM")       \
+                                                                            \
+  product(bool, PrintFlagsFinal, false,                                     \
+         "Print all VM flags after argument and ergonomic processing")      \
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
          "Use a mutex to serialize output to tty and hotspot.log")          \
@@ -2758,10 +2761,10 @@ class CommandLineFlags {
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
           "maximum number of subklasses to print when printing klass")      \
                                                                             \
-  develop(intx, MaxInlineLevel, 9,                                          \
+  product(intx, MaxInlineLevel, 9,                                          \
           "maximum number of nested calls that are inlined")                \
                                                                             \
-  develop(intx, MaxRecursiveInlineLevel, 1,                                 \
+  product(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
@@ -2774,10 +2777,10 @@ class CommandLineFlags {
   product_pd(intx, FreqInlineSize,                                          \
           "maximum bytecode size of a frequent method to be inlined")       \
                                                                             \
-  develop(intx, MaxTrivialSize, 6,                                          \
+  product(intx, MaxTrivialSize, 6,                                          \
           "maximum bytecode size of a trivial method to be inlined")        \
                                                                             \
-  develop(intx, MinInliningThreshold, 250,                                  \
+  product(intx, MinInliningThreshold, 250,                                  \
           "min. invocation count a method needs to have to be inlined")     \
                                                                             \
   develop(intx, AlignEntryCode, 4,                                          \

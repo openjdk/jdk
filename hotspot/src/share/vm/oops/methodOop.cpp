@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -819,6 +819,18 @@ jint* methodOopDesc::method_type_offsets_chain() {
     OrderAccess::release_store(&pchase[0], step0);
   }
   return pchase;
+}
+
+//------------------------------------------------------------------------------
+// methodOopDesc::is_method_handle_adapter
+//
+// Tests if this method is an internal adapter frame from the
+// MethodHandleCompiler.
+bool methodOopDesc::is_method_handle_adapter() const {
+  return ((name() == vmSymbols::invoke_name() &&
+           method_holder() == SystemDictionary::MethodHandle_klass())
+          ||
+          method_holder() == SystemDictionary::InvokeDynamic_klass());
 }
 
 methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,

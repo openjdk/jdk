@@ -1,5 +1,5 @@
 //
-// Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1525,6 +1525,7 @@ disassembler.cpp                        disassembler.hpp
 disassembler.cpp                        fprofiler.hpp
 disassembler.cpp                        handles.inline.hpp
 disassembler.cpp                        hpi.hpp
+disassembler.cpp                        javaClasses.hpp
 disassembler.cpp                        stubCodeGenerator.hpp
 disassembler.cpp                        stubRoutines.hpp
 
@@ -3503,6 +3504,7 @@ reflection.cpp                          javaCalls.hpp
 reflection.cpp                          javaClasses.hpp
 reflection.cpp                          jvm.h
 reflection.cpp                          linkResolver.hpp
+reflection.cpp                          methodHandleWalk.hpp
 reflection.cpp                          objArrayKlass.hpp
 reflection.cpp                          objArrayOop.hpp
 reflection.cpp                          oopFactory.hpp
