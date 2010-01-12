@@ -631,6 +631,7 @@ MethodHandleCompiler::MethodHandleCompiler(Handle root, methodHandle callee, boo
   Handle first_mtype(THREAD, chain().method_type_oop());
   // _rklass is NULL for primitives.
   _rtype = java_lang_Class::as_BasicType(java_dyn_MethodType::rtype(first_mtype()), &_rklass);
+  if (_rtype == T_ARRAY)  _rtype = T_OBJECT;
 
   int params = _callee->size_of_parameters();  // Incoming arguments plus receiver.
   _num_params = for_invokedynamic() ? params - 1 : params;  // XXX Check if callee is static?
@@ -957,10 +958,13 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   symbolOop name      = m->name();
   symbolOop signature = m->signature();
 
-  // This generated adapter method should be in the same class as the
-  // DMH target method (for accessability reasons).
   if (tailcall) {
-    _target_klass = klass;
+    // Actually, in order to make these methods more recognizable,
+    // let's put them in holder classes MethodHandle and InvokeDynamic.
+    // That way stack walkers and compiler heuristics can recognize them.
+    _target_klass = (for_invokedynamic()
+                     ? SystemDictionary::InvokeDynamic_klass()
+                     : SystemDictionary::MethodHandle_klass());
   }
 
   // instanceKlass* ik = instanceKlass::cast(klass);
@@ -1017,6 +1021,7 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
   // If tailcall, we have walked all the way to a direct method handle.
   // Otherwise, make a recursive call to some helper routine.
   BasicType rbt = m->result_type();
+  if (rbt == T_ARRAY)  rbt = T_OBJECT;
   ArgToken ret;
   if (tailcall) {
     if (rbt != _rtype) {

@@ -43,7 +43,9 @@ void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_met
 }
 #endif
 
-CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual, JVMState* jvms, bool allow_inline, float prof_factor) {
+CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual,
+                                       JVMState* jvms, bool allow_inline,
+                                       float prof_factor) {
   CallGenerator* cg;
 
   // Dtrace currently doesn't work unless all calls are vanilla
@@ -116,7 +118,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
         // TO DO:  When UseOldInlining is removed, copy the ILT code elsewhere.
         float site_invoke_ratio = prof_factor;
         // Note:  ilt is for the root of this parse, not the present call site.
-        ilt = new InlineTree(this, jvms->method(), jvms->caller(), site_invoke_ratio);
+        ilt = new InlineTree(this, jvms->method(), jvms->caller(), site_invoke_ratio, 0);
       }
       WarmCallInfo scratch_ci;
       if (!UseOldInlining)

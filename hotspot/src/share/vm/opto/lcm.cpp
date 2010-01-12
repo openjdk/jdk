@@ -120,6 +120,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     case Op_LoadRange:
     case Op_LoadD_unaligned:
     case Op_LoadL_unaligned:
+      assert(mach->in(2) == val, "should be address");
       break;
     case Op_StoreB:
     case Op_StoreC:
@@ -146,6 +147,21 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     default:                    // Also check for embedded loads
       if( !mach->needs_anti_dependence_check() )
         continue;               // Not an memory op; skip it
+      {
+        // Check that value is used in memory address.
+        Node* base;
+        Node* index;
+        const MachOper* oper = mach->memory_inputs(base, index);
+        if (oper == NULL || oper == (MachOper*)-1) {
+          continue;             // Not an memory op; skip it
+        }
+        if (val == base ||
+            val == index && val->bottom_type()->isa_narrowoop()) {
+          break;                // Found it
+        } else {
+          continue;             // Skip it
+        }
+      }
       break;
     }
     // check if the offset is not too high for implicit exception

@@ -392,18 +392,18 @@ static const char* patterns[] = {
 };
 
 static MethodMatcher::Mode check_mode(char name[], const char*& error_msg) {
-  if (strcmp(name, "*") == 0) return MethodMatcher::Any;
-
   int match = MethodMatcher::Exact;
-  if (name[0] == '*') {
+  while (name[0] == '*') {
     match |= MethodMatcher::Suffix;
     strcpy(name, name + 1);
   }
 
+  if (strcmp(name, "*") == 0) return MethodMatcher::Any;
+
   size_t len = strlen(name);
-  if (len > 0 && name[len - 1] == '*') {
+  while (len > 0 && name[len - 1] == '*') {
     match |= MethodMatcher::Prefix;
-    name[len - 1] = '\0';
+    name[--len] = '\0';
   }
 
   if (strstr(name, "*") != NULL) {
@@ -610,6 +610,14 @@ void compilerOracle_init() {
   CompilerOracle::parse_from_string(CompileCommand, CompilerOracle::parse_from_line);
   CompilerOracle::parse_from_string(CompileOnly, CompilerOracle::parse_compile_only);
   CompilerOracle::parse_from_file();
+  if (lists[PrintCommand] != NULL) {
+    if (PrintAssembly) {
+      warning("CompileCommand and/or .hotspot_compiler file contains 'print' commands, but PrintAssembly is also enabled");
+    } else if (FLAG_IS_DEFAULT(DebugNonSafepoints)) {
+      warning("printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output");
+      DebugNonSafepoints = true;
+    }
+  }
 }
 
 
