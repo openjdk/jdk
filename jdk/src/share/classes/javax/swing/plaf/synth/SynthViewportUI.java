@@ -25,40 +25,57 @@
 
 package javax.swing.plaf.synth;
 
-import java.awt.*;
 import java.beans.*;
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.plaf.*;
 import java.awt.*;
-import java.awt.event.*;
-import sun.swing.plaf.synth.SynthUI;
 
 
 /**
- * Synth's ViewportUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JViewport}.
  *
+ * @since 1.7
  */
-class SynthViewportUI extends ViewportUI implements
-           PropertyChangeListener, SynthUI {
+public class SynthViewportUI extends ViewportUI
+                             implements PropertyChangeListener, SynthUI {
     private SynthStyle style;
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent c) {
         return new SynthViewportUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void installUI(JComponent c) {
         super.installUI(c);
         installDefaults(c);
         installListeners(c);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void uninstallUI(JComponent c) {
         super.uninstallUI(c);
         uninstallListeners(c);
         uninstallDefaults(c);
     }
 
+    /**
+     * Installs defaults for a viewport.
+     *
+     * @param c a {@code JViewport} object
+     */
     protected void installDefaults(JComponent c) {
         updateStyle(c);
     }
@@ -85,14 +102,29 @@ class SynthViewportUI extends ViewportUI implements
         context.dispose();
     }
 
+    /**
+     * Installs listeners into the viewport.
+     *
+     * @param c a {@code JViewport} object
+     */
     protected void installListeners(JComponent c) {
         c.addPropertyChangeListener(this);
     }
 
+    /**
+     * Uninstalls listeners from the viewport.
+     *
+     * @param c a {@code JViewport} object
+     */
     protected void uninstallListeners(JComponent c) {
         c.removePropertyChangeListener(this);
     }
 
+    /**
+     * Uninstalls defaults from a viewport.
+     *
+     * @param c a {@code JViewport} object
+     */
     protected void uninstallDefaults(JComponent c) {
         SynthContext context = getContext(c, ENABLED);
         style.uninstallDefaults(context);
@@ -100,8 +132,12 @@ class SynthViewportUI extends ViewportUI implements
         style = null;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
-        return getContext(c, getComponentState(c));
+        return getContext(c, SynthLookAndFeel.getComponentState(c));
     }
 
     private SynthContext getContext(JComponent c, int state) {
@@ -113,10 +149,10 @@ class SynthViewportUI extends ViewportUI implements
         return SynthLookAndFeel.getRegion(c);
     }
 
-    private int getComponentState(JComponent c) {
-        return SynthLookAndFeel.getComponentState(c);
-    }
-
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -127,12 +163,20 @@ class SynthViewportUI extends ViewportUI implements
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         // This does nothing on purpose, JViewport doesn't allow a border
         // and therefor this will NEVER be called.
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -140,9 +184,19 @@ class SynthViewportUI extends ViewportUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component. This implementation does nothing.
+     *
+     * @param context context for the component being painted
+     * @param g {@code Graphics} object used for painting
+     */
     protected void paint(SynthContext context, Graphics g) {
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle((JComponent)e.getSource());

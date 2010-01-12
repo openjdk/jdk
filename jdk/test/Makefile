@@ -282,11 +282,23 @@ STATS_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/$(STATS_TXT_NAME)
 RUNLIST   = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/runlist.txt
 PASSLIST  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/passlist.txt
 FAILLIST  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/faillist.txt
+EXITCODE  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/exitcode.txt
+
+TESTEXIT = \
+  if [ ! -s $(EXITCODE) ] ; then \
+    $(ECHO) "ERROR: EXITCODE file not filled in."; \
+    $(ECHO) "1" > $(EXITCODE); \
+  fi ; \
+  testExitCode=`$(CAT) $(EXITCODE)`; \
+  $(ECHO) "EXIT CODE: $${testExitCode}"; \
+  exit ${testExitCode}
+
 BUNDLE_UP_AND_EXIT = \
 ( \
-  exitCode=$$? && \
+  jtregExitCode=$$? && \
   _summary="$(SUMMARY_TXT)"; \
-  $(RM) -f $(STATS_TXT) $(RUNLIST) $(PASSLIST) $(FAILLIST); \
+  $(RM) -f $(STATS_TXT) $(RUNLIST) $(PASSLIST) $(FAILLIST) $(EXITCODE); \
+  $(ECHO) "$${jtregExitCode}" > $(EXITCODE); \
   if [ -r "$${_summary}" ] ; then \
     $(ECHO) "Summary: $${_summary}" > $(STATS_TXT); \
     $(EXPAND) $${_summary} | $(EGREP) -v ' Not run\.' > $(RUNLIST); \
@@ -297,10 +309,13 @@ BUNDLE_UP_AND_EXIT = \
       $(EGREP) ' Error\.' $(RUNLIST); \
       $(EGREP) -v ' Passed\.' $(RUNLIST) ) \
       | $(SORT) | $(UNIQ) > $(FAILLIST); \
-    if [ $${exitCode} != 0 -o -s $(FAILLIST) ] ; then \
+    if [ $${jtregExitCode} != 0 -o -s $(FAILLIST) ] ; then \
       $(EXPAND) $(FAILLIST) \
         | $(CUT) -d' ' -f1 \
         | $(SED) -e 's@^@FAILED: @' >> $(STATS_TXT); \
+      if [ $${jtregExitCode} = 0 ] ; then \
+        jtregExitCode=1; \
+      fi; \
     fi; \
     runc="`$(CAT) $(RUNLIST)      | $(WC) -l | $(AWK) '{print $$1;}'`"; \
     passc="`$(CAT) $(PASSLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
@@ -312,8 +327,8 @@ BUNDLE_UP_AND_EXIT = \
     $(ECHO) "Missing file: $${_summary}" >> $(STATS_TXT); \
   fi; \
   $(CAT) $(STATS_TXT); \
-  $(ZIP_UP_RESULTS) && $(KILL_DISPLAY) && \
-  exit $${exitCode} \
+  $(ZIP_UP_RESULTS) && $(KILL_DISPLAY) ; \
+  $(TESTEXIT) \
 )
 
 ################################################################
@@ -337,9 +352,11 @@ clean:
 # jtreg tests
 
 # Expect JT_HOME to be set for jtreg tests. (home for jtreg)
-JT_HOME = $(SLASH_JAVA)/re/jtreg/4.0/promoted/latest/binaries/jtreg
-ifdef JPRT_JTREG_HOME
-  JT_HOME = $(JPRT_JTREG_HOME)
+ifndef JT_HOME
+  JT_HOME = $(SLASH_JAVA)/re/jtreg/4.0/promoted/latest/binaries/jtreg
+  ifdef JPRT_JTREG_HOME
+    JT_HOME = $(JPRT_JTREG_HOME)
+  endif
 endif
 
 # Expect JPRT to set TESTDIRS to the jtreg test dirs
@@ -361,21 +378,22 @@ endif
 
 # Some tests annoy me and fail frequently
 PROBLEM_LIST=ProblemList.txt
+PROBLEM_LISTS=$(PROBLEM_LIST) $(wildcard closed/$(PROBLEM_LIST))
 EXCLUDELIST=$(ABS_TEST_OUTPUT_DIR)/excludelist.txt
 
 # Create exclude list for this platform and arch
 ifdef NO_EXCLUDES
-$(EXCLUDELIST): $(PROBLEM_LIST) $(TESTDIRS)
+$(EXCLUDELIST): $(PROBLEM_LISTS) $(TESTDIRS)
 	@$(ECHO) "NOTHING_EXCLUDED" > $@
 else
-$(EXCLUDELIST): $(PROBLEM_LIST) $(TESTDIRS)
+$(EXCLUDELIST): $(PROBLEM_LISTS) $(TESTDIRS)
 	@$(RM) $@ $@.temp1 $@.temp2
-	@( ( $(EGREP) -- '$(OS_NAME)-all'           $< ) ;\
-	   ( $(EGREP) -- '$(OS_NAME)-$(OS_ARCH)'    $< ) ;\
-	   ( $(EGREP) -- '$(OS_NAME)-$(OS_VERSION)' $< ) ;\
-	   ( $(EGREP) -- 'generic-$(OS_ARCH)'       $< ) ;\
-           ( $(EGREP) -- 'generic-all'              $< ) ;\
-           ( $(ECHO) "#") ;\
+	@(($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-all'          ) ;\
+	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_ARCH)'   ) ;\
+	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_VERSION)') ;\
+	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- 'generic-$(OS_ARCH)'      ) ;\
+          ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- 'generic-all'             ) ;\
+          ($(ECHO) "#") ;\
         ) | $(SED) -e 's@^[\ ]*@@' \
           | $(EGREP) -v '^#' > $@.temp1
 	@for tdir in $(TESTDIRS) ; do \
@@ -386,14 +404,18 @@ $(EXCLUDELIST): $(PROBLEM_LIST) $(TESTDIRS)
 	@$(ECHO) "Excluding list contains `$(EXPAND) $@ | $(WC) -l` items"
 endif
 
+# Select list of directories that exist
+define TestDirs
+$(foreach i,$1,$(wildcard ${i})) $(foreach i,$1,$(wildcard closed/${i}))
+endef
 # Running batches of tests with or without samevm
 define RunSamevmBatch
-$(ECHO) "Running tests in samevm mode: $?"
-$(MAKE) TESTDIRS="$?" USE_JTREG_SAMEVM=true  UNIQUE_DIR=$@ jtreg_tests
+$(ECHO) "Running tests in samevm mode: $(call TestDirs, $?)"
+$(MAKE) TESTDIRS="$(call TestDirs, $?)" USE_JTREG_SAMEVM=true  UNIQUE_DIR=$@ jtreg_tests
 endef
 define RunOthervmBatch
-$(ECHO) "Running tests in othervm mode: $?"
-$(MAKE) TESTDIRS="$?" USE_JTREG_SAMEVM=false UNIQUE_DIR=$@ jtreg_tests
+$(ECHO) "Running tests in othervm mode: $(call TestDirs, $?)"
+$(MAKE) TESTDIRS="$(call TestDirs, $?)" USE_JTREG_SAMEVM=false UNIQUE_DIR=$@ jtreg_tests
 endef
 define SummaryInfo
 $(ECHO) "Summary for: $?"
@@ -428,6 +450,9 @@ JDK_ALL_TARGETS += jdk_beans3
 jdk_beans3: java/beans/XMLEncoder
 	$(call RunOthervmBatch)
 
+jdk_beans: jdk_beans1 jdk_beans2 jdk_beans3
+	@$(SummaryInfo)
+
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_io
 jdk_io: java/io
@@ -449,6 +474,9 @@ jdk_management1: javax/management
 JDK_ALL_TARGETS += jdk_management2
 jdk_management2: com/sun/jmx com/sun/management sun/management
 	$(call RunOthervmBatch)
+
+jdk_management: jdk_management1 jdk_management2
+	@$(SummaryInfo)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_math
@@ -482,6 +510,9 @@ JDK_ALL_TARGETS += jdk_nio3
 jdk_nio3: com/sun/nio sun/nio
 	$(call RunOthervmBatch)
 
+jdk_nio: jdk_nio1 jdk_nio2 jdk_nio3
+	@$(SummaryInfo)
+
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_rmi
@@ -502,6 +533,9 @@ JDK_ALL_TARGETS += jdk_security3
 jdk_security3: com/sun/security lib/security javax/security sun/security
 	$(call RunOthervmBatch)
 
+jdk_security: jdk_security1 jdk_security2 jdk_security3
+	@$(SummaryInfo)
+
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has problems, and doesn't help performance as much as others.
 JDK_ALL_TARGETS += jdk_swing
@@ -517,10 +551,13 @@ jdk_text: java/text sun/text
 #   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_tools1
 jdk_tools1: com/sun/jdi
-	$(call RunOthervmBatch)
+	$(call RunSamevmBatch)
 JDK_ALL_TARGETS += jdk_tools2
 jdk_tools2: com/sun/tools sun/jvmstat sun/tools tools vm com/sun/servicetag com/sun/tracing
 	$(call RunOthervmBatch)
+
+jdk_tools: jdk_tools1 jdk_tools2
+	@$(SummaryInfo)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_util
@@ -576,7 +613,7 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG) $(EXCLUDELIST)
               $(JTREG_TEST_OPTIONS)                                          \
               $(TESTDIRS)                                                    \
 	  ) ; $(BUNDLE_UP_AND_EXIT)                                          \
-	) 2>&1 | $(TEE) $(ABS_TEST_OUTPUT_DIR)/output.txt
+	) 2>&1 | $(TEE) $(ABS_TEST_OUTPUT_DIR)/output.txt ; $(TESTEXIT)
 
 PHONY_LIST += jtreg_tests
 

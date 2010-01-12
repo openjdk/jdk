@@ -24,8 +24,6 @@
 /*
  * @test
  * @bug 4992443 4994819
- * @compile -source 1.5 VMSupportsCS8.java
- * @run main VMSupportsCS8
  * @summary Checks that the value of VMSupportsCS8 matches system properties.
  */
 

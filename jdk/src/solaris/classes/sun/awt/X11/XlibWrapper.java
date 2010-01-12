@@ -353,6 +353,8 @@ static native String XSetLocaleModifiers(String modifier_list);
     static native String ServerVendor(long display);
     static native int VendorRelease(long display);
     static native boolean IsXsunKPBehavior(long display);
+    static native boolean IsSunKeyboard(long display);
+    static native boolean IsKanaKeyboard(long display);
 
     static native void XBell(long display, int percent);
 
@@ -513,8 +515,9 @@ static native String XSetLocaleModifiers(String modifier_list);
                                     long keysym_uppercase);
 
     static native long XGetModifierMapping(long display);
-
     static native void XFreeModifiermap(long keymap);
+    static native void XRefreshKeyboardMapping(long event);
+
 
     static native void XChangeActivePointerGrab(long display, int mask,
                                                 long cursor, long time);

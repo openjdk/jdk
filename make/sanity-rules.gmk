@@ -204,13 +204,9 @@ ifeq ($(SPONSORS_SRC_AVAILABLE), true)
 	   "" >> $(WARNING_FILE)
   endif
 endif
-ifndef OPENJDK
-  ifdef NO_DOCS
-	@$(ECHO) "WARNING: Your build environment has the variable NO_DOCS\n" \
-	   "        defined. This will result in a development-only\n" \
-	   "        build of the JDK, lacking the documentation.\n" \
+ifeq ($(GENERATE_DOCS),false)
+	@$(ECHO) "WARNING: This build does not include running javadoc.\n" \
 	   "" >> $(WARNING_FILE)
-  endif
 endif
 ifdef NO_IMAGES
 	@$(ECHO) "WARNING: Your build environment has the variable NO_IMAGES\n" \
@@ -355,4 +351,4 @@ endif
 .PHONY: sanity settings pre-sanity insane \
 	post-sanity post-sanity-hotspot post-sanity-jdk \
 	post-sanity-install post-sanity-deploy \
-	alt_bootdir bootdir
+	alt_bootdir bootdir environment

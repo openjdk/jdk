@@ -82,7 +82,9 @@ $(FILES_DAT): $(FILES_MAP)
 		$(FILES_MAP) $(FILES_DAT) sjis0213
 
 
-$(FILES_genout_extcs): $(GENCSDATASRC)/SingleByte-X.java  $(GENCSDATASRC)/DoubleByte-X.java \
+$(FILES_genout_extcs): \
+                $(GENCSDATASRC)/SingleByte-X.java.template  \
+		$(GENCSDATASRC)/DoubleByte-X.java.template \
 		$(GENCSDATASRC)/extsbcs $(GENCSDATASRC)/dbcs
 	@$(prep-target)
 	$(RM) -r $(GENCSEXT)

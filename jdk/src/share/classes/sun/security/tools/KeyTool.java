@@ -40,7 +40,6 @@ import java.security.UnrecoverableEntryException;
 import java.security.UnrecoverableKeyException;
 import java.security.Principal;
 import java.security.Provider;
-import java.security.Identity;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -57,9 +56,6 @@ import java.net.URLClassLoader;
 import sun.misc.BASE64Encoder;
 import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs.PKCS10;
-import sun.security.provider.IdentityDatabase;
-import sun.security.provider.SystemSigner;
-import sun.security.provider.SystemIdentity;
 import sun.security.provider.X509Factory;
 import sun.security.util.DerOutputStream;
 import sun.security.util.Password;
@@ -1163,18 +1159,16 @@ public final class KeyTool {
         Signature signature = Signature.getInstance(sigAlgName);
         signature.initSign(privateKey);
 
-        X500Signer signer = new X500Signer(signature, issuer);
-
         X509CertInfo info = new X509CertInfo();
         info.set(X509CertInfo.VALIDITY, interval);
         info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(
                     new java.util.Random().nextInt() & 0x7fffffff));
         info.set(X509CertInfo.VERSION,
-                     new CertificateVersion(CertificateVersion.V3));
+                    new CertificateVersion(CertificateVersion.V3));
         info.set(X509CertInfo.ALGORITHM_ID,
-                     new CertificateAlgorithmId(signer.getAlgorithmId()));
-        info.set(X509CertInfo.ISSUER,
-                     new CertificateIssuerName(signer.getSigner()));
+                    new CertificateAlgorithmId(
+                        AlgorithmId.getAlgorithmId(sigAlgName)));
+        info.set(X509CertInfo.ISSUER, new CertificateIssuerName(issuer));
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         boolean canRead = false;
@@ -1249,7 +1243,7 @@ public final class KeyTool {
         request.getAttributes().setAttribute(X509CertInfo.EXTENSIONS,
                 new PKCS10Attribute(PKCS9Attribute.EXTENSION_REQUEST_OID, ext));
 
-        // Construct an X500Signer object, so that we can sign the request
+        // Construct a Signature object, so that we can sign the request
         if (sigAlgName == null) {
             sigAlgName = getCompatibleSigAlgName(privKey.getAlgorithm());
         }
@@ -1259,10 +1253,9 @@ public final class KeyTool {
         X500Name subject = dname == null?
                 new X500Name(((X509Certificate)cert).getSubjectDN().toString()):
                 new X500Name(dname);
-        X500Signer signer = new X500Signer(signature, subject);
 
         // Sign the request and base-64 encode it
-        request.encodeAndSign(signer);
+        request.encodeAndSign(subject, signature);
         request.print(out);
     }
 
@@ -1564,75 +1557,8 @@ public final class KeyTool {
     private void doImportIdentityDatabase(InputStream in)
         throws Exception
     {
-        byte[] encoded;
-        ByteArrayInputStream bais;
-        java.security.cert.X509Certificate newCert;
-        java.security.cert.Certificate[] chain = null;
-        PrivateKey privKey;
-        boolean modified = false;
-
-        IdentityDatabase idb = IdentityDatabase.fromStream(in);
-        for (Enumeration<Identity> enum_ = idb.identities();
-                                        enum_.hasMoreElements();) {
-            Identity id = enum_.nextElement();
-            newCert = null;
-            // only store trusted identities in keystore
-            if ((id instanceof SystemSigner && ((SystemSigner)id).isTrusted())
-                || (id instanceof SystemIdentity
-                    && ((SystemIdentity)id).isTrusted())) {
-                // ignore if keystore entry with same alias name already exists
-                if (keyStore.containsAlias(id.getName())) {
-                    MessageFormat form = new MessageFormat
-                        (rb.getString("Keystore entry for <id.getName()> already exists"));
-                    Object[] source = {id.getName()};
-                    System.err.println(form.format(source));
-                    continue;
-                }
-                java.security.Certificate[] certs = id.certificates();
-                if (certs!=null && certs.length>0) {
-                    // we can only store one user cert per identity.
-                    // convert old-style to new-style cert via the encoding
-                    DerOutputStream dos = new DerOutputStream();
-                    certs[0].encode(dos);
-                    encoded = dos.toByteArray();
-                    bais = new ByteArrayInputStream(encoded);
-                    newCert = (X509Certificate)cf.generateCertificate(bais);
-                    bais.close();
-
-                    // if certificate is self-signed, make sure it verifies
-                    if (isSelfSigned(newCert)) {
-                        PublicKey pubKey = newCert.getPublicKey();
-                        try {
-                            newCert.verify(pubKey);
-                        } catch (Exception e) {
-                            // ignore this cert
-                            continue;
-                        }
-                    }
-
-                    if (id instanceof SystemSigner) {
-                        MessageFormat form = new MessageFormat(rb.getString
-                            ("Creating keystore entry for <id.getName()> ..."));
-                        Object[] source = {id.getName()};
-                        System.err.println(form.format(source));
-                        if (chain==null) {
-                            chain = new java.security.cert.Certificate[1];
-                        }
-                        chain[0] = newCert;
-                        privKey = ((SystemSigner)id).getPrivateKey();
-                        keyStore.setKeyEntry(id.getName(), privKey, storePass,
-                                             chain);
-                    } else {
-                        keyStore.setCertificateEntry(id.getName(), newCert);
-                    }
-                    kssave = true;
-                }
-            }
-        }
-        if (!kssave) {
-            System.err.println(rb.getString
-                ("No entries from identity database added"));
-        }
+        System.err.println(rb.getString
+            ("No entries from identity database added"));
     }
 
     /**

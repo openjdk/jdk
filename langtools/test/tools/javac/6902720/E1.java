@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,8 @@
  * have any questions.
  */
 
-/*
- *
- *
- * Indictly used by SolarisRunpath.sh; this file is used to generate
- * the shared objects:
- *
- * ./lib/sparc/lib32/liblibrary.so
- * ./lib/sparc/lib32/lib32/liblibrary.so
- *
- * ./lib/sparc/lib64/liblibrary.so
- * ./lib/sparc/lib64/lib64/liblibrary.so
- *
- * ./lib/i386/lib32/liblibrary.so
- * ./lib/i386/lib32/lib32/liblibrary.so
- *
- * The function defined below returns either 0 or the size of an
- * integer in the data model used to compile the file (32 for ILP; 64
- * for LP).  The libraries in ./lib/$ARCH/lib$DM return 0; those in
- * ./lib/$ARCH/lib$DM/lib$DM return 32 or 64.
- */
-
-
-#include <jni.h>
-#include "libraryCaller.h"
-
-#ifndef RETURN_VALUE
-#define RETURN_VALUE 0
-#endif
-
-JNIEXPORT jint JNICALL Java_libraryCaller_number
-(JNIEnv *je, jclass jc) {
-  return RETURN_VALUE;
+enum E1 {
+    A,
+    B { },
+    C { void m() { } };
 }
