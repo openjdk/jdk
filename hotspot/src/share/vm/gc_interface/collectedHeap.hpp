@@ -127,14 +127,14 @@ class CollectedHeap : public CHeapObj {
   static inline size_t filler_array_max_size();
 
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
-  DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words);)
+  DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 
   // Fill with a single array; caller must ensure filler_array_min_size() <=
   // words <= filler_array_max_size().
-  static inline void fill_with_array(HeapWord* start, size_t words);
+  static inline void fill_with_array(HeapWord* start, size_t words, bool zap = true);
 
   // Fill with a single object (either an int array or a java.lang.Object).
-  static inline void fill_with_object_impl(HeapWord* start, size_t words);
+  static inline void fill_with_object_impl(HeapWord* start, size_t words, bool zap = true);
 
   // Verification functions
   virtual void check_for_bad_heap_word_value(HeapWord* addr, size_t size)
@@ -338,14 +338,14 @@ class CollectedHeap : public CHeapObj {
     return size_t(align_object_size(oopDesc::header_size()));
   }
 
-  static void fill_with_objects(HeapWord* start, size_t words);
+  static void fill_with_objects(HeapWord* start, size_t words, bool zap = true);
 
-  static void fill_with_object(HeapWord* start, size_t words);
-  static void fill_with_object(MemRegion region) {
-    fill_with_object(region.start(), region.word_size());
+  static void fill_with_object(HeapWord* start, size_t words, bool zap = true);
+  static void fill_with_object(MemRegion region, bool zap = true) {
+    fill_with_object(region.start(), region.word_size(), zap);
   }
-  static void fill_with_object(HeapWord* start, HeapWord* end) {
-    fill_with_object(start, pointer_delta(end, start));
+  static void fill_with_object(HeapWord* start, HeapWord* end, bool zap = true) {
+    fill_with_object(start, pointer_delta(end, start), zap);
   }
 
   // Some heaps may offer a contiguous region for shared non-blocking
