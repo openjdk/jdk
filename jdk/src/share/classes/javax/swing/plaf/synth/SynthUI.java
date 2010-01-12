@@ -22,18 +22,19 @@
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
  */
-package sun.swing.plaf.synth;
+package javax.swing.plaf.synth;
 
 import java.awt.Graphics;
 import javax.swing.JComponent;
-import javax.swing.plaf.synth.*;
 
 /**
  * SynthUI is used to fetch the SynthContext for a particular Component.
  *
  * @author Scott Violet
+ * @since 1.7
  */
 public interface SynthUI extends SynthConstants {
+
     /**
      * Returns the Context for the specified component.
      *
@@ -44,6 +45,13 @@ public interface SynthUI extends SynthConstants {
 
     /**
      * Paints the border.
+     *
+     * @param context a component context
+     * @param g {@code Graphics} to paint on
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     * @param w width of the border
+     * @param h height of the border
      */
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h);

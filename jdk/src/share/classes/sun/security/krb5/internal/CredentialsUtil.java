@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2001-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,7 @@ rs.
 
         // Get a list of realms to traverse
         String[] realms = Realm.getRealmsList(localRealm, serviceRealm);
+        boolean okAsDelegate = true;
 
         if (realms == null || realms.length == 0)
         {
@@ -194,6 +195,15 @@ rs.
              */
 
             newTgtRealm = newTgt.getServer().getInstanceComponent();
+            if (okAsDelegate && !newTgt.checkDelegate()) {
+                if (DEBUG)
+                {
+                    System.out.println(">>> Credentials acquireServiceCreds: " +
+                            "global OK-AS-DELEGATE turned off at " +
+                            newTgt.getServer());
+                }
+                okAsDelegate = false;
+            }
 
             if (DEBUG)
             {
@@ -282,6 +292,9 @@ rs.
             {
                 System.out.println(">>> Credentials acquireServiceCreds: returning creds:");
                 Credentials.printDebug(theCreds);
+            }
+            if (!okAsDelegate) {
+                theCreds.resetDelegate();
             }
             return theCreds;
         }

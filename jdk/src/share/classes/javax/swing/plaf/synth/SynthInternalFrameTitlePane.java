@@ -30,14 +30,9 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import javax.swing.border.*;
-import javax.swing.event.InternalFrameEvent;
-import java.util.EventListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-import java.beans.VetoableChangeListener;
 import java.beans.PropertyVetoException;
-import sun.swing.plaf.synth.SynthUI;
 import sun.swing.SwingUtilities2;
 
 /**

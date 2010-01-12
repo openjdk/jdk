@@ -27,7 +27,7 @@
 # @summary 
 # @author  Mandy Chung
 #
-# @run compile -source 1.5 InputArgument.java
+# @run compile InputArgument.java
 # @run shell TestInputArgument.sh
 #
 

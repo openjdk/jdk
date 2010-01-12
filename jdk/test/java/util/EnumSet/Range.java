@@ -26,9 +26,6 @@
  * @bug     4952736
  * @summary Range static factory is broken in Regular and Jumbo enum set
  * @author  Josh Bloch
- *
- * @compile -source 1.5 Range.java
- * @run main Range
  */
 
 import java.util.*;

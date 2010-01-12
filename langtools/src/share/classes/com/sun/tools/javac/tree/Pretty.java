@@ -54,7 +54,7 @@ public class Pretty extends JCTree.Visitor {
     /** Set when we are producing source output.  If we're not
      *  producing source output, we can sometimes give more detail in
      *  the output even though that detail would not be valid java
-     *  soruce.
+     *  source.
      */
     private final boolean sourceOutput;
 
@@ -489,6 +489,20 @@ public class Pretty extends JCTree.Visitor {
                 print("/*public static final*/ ");
                 print(tree.name);
                 if (tree.init != null) {
+                    if (sourceOutput && tree.init.getTag() == JCTree.NEWCLASS) {
+                        print(" /*enum*/ ");
+                        JCNewClass init = (JCNewClass) tree.init;
+                        if (init.args != null && init.args.nonEmpty()) {
+                            print("(");
+                            print(init.args);
+                            print(")");
+                        }
+                        if (init.def != null && init.def.defs != null) {
+                            print(" ");
+                            printBlock(init.def.defs);
+                        }
+                        return;
+                    }
                     print(" /* = ");
                     printExpr(tree.init);
                     print(" */");

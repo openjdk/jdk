@@ -27,7 +27,7 @@
  * @summary Package annotations
  * @author gafter
  *
- * @compile -source 1.5 package-info.java PackageMain.java
+ * @compile package-info.java PackageMain.java
  * @run main PackageMain
  */
 

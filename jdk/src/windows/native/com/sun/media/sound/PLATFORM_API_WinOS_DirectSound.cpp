@@ -485,7 +485,7 @@ DWORD WINAPI __stdcall DS_StartBufferHelper::ThreadProc(void *param)
         }
         if (data.line2Start->isSource) {
             data.startResult =
-                data.line2Start->playBuffer->Play(0, 0, DSCBSTART_LOOPING);
+                data.line2Start->playBuffer->Play(0, 0, DSBPLAY_LOOPING);
         } else {
             data.startResult =
                 data.line2Start->captureBuffer->Start(DSCBSTART_LOOPING);

@@ -27,7 +27,7 @@ package sun.awt.X11;
 
 import java.awt.Component;
 import java.awt.Toolkit;
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 
 public class XEmbedChildProxy extends Component {
     long handle;
@@ -39,8 +39,9 @@ public class XEmbedChildProxy extends Component {
 
     public void addNotify() {
         synchronized(getTreeLock()) {
-            if (ComponentAccessor.getPeer(this) == null) {
-                ComponentAccessor.setPeer(this, ((XToolkit)Toolkit.getDefaultToolkit()).createEmbedProxy(this));
+            if (AWTAccessor.getComponentAccessor().getPeer(this) == null) {
+                AWTAccessor.getComponentAccessor().
+                    setPeer(this,((XToolkit)Toolkit.getDefaultToolkit()).createEmbedProxy(this));
             }
             super.addNotify();
         }
