@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -281,8 +281,11 @@ endif
 $(EXPORT_LIB_DIR)/%.jar: $(GEN_DIR)/%.jar
 	$(install-file)
 
-# Include files (jvmti.h, jni.h, $(JDK_INCLUDE_SUBDIR)/jni_md.h, jmm.h)
+# Include files (jvmti.h, jvmticmlr.h, jni.h, $(JDK_INCLUDE_SUBDIR)/jni_md.h, jmm.h)
 $(EXPORT_INCLUDE_DIR)/%: $(GEN_DIR)/jvmtifiles/%
+	$(install-file)
+
+$(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/code/%
 	$(install-file)
 
 $(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/prims/%
