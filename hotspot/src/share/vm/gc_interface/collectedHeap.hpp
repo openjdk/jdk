@@ -51,6 +51,9 @@ class CollectedHeap : public CHeapObj {
   // Used for filler objects (static, but initialized in ctor).
   static size_t _filler_array_max_size;
 
+  // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2 is being used
+  bool _defer_initial_card_mark;
+
  protected:
   MemRegion _reserved;
   BarrierSet* _barrier_set;
@@ -70,12 +73,15 @@ class CollectedHeap : public CHeapObj {
   // Constructor
   CollectedHeap();
 
+  // Do common initializations that must follow instance construction,
+  // for example, those needing virtual calls.
+  // This code could perhaps be moved into initialize() but would
+  // be slightly more awkward because we want the latter to be a
+  // pure virtual.
+  void pre_initialize();
+
   // Create a new tlab
   virtual HeapWord* allocate_new_tlab(size_t size);
-
-  // Fix up tlabs to make the heap well-formed again,
-  // optionally retiring the tlabs.
-  virtual void fill_all_tlabs(bool retire);
 
   // Accumulate statistics on all tlabs.
   virtual void accumulate_statistics_all_tlabs();
@@ -431,13 +437,24 @@ class CollectedHeap : public CHeapObj {
   // promises to call this function on such a slow-path-allocated
   // object before performing initializations that have elided
   // store barriers. Returns new_obj, or maybe a safer copy thereof.
-  virtual oop defer_store_barrier(JavaThread* thread, oop new_obj);
+  virtual oop new_store_pre_barrier(JavaThread* thread, oop new_obj);
 
   // Answers whether an initializing store to a new object currently
-  // allocated at the given address doesn't need a (deferred) store
+  // allocated at the given address doesn't need a store
   // barrier. Returns "true" if it doesn't need an initializing
   // store barrier; answers "false" if it does.
   virtual bool can_elide_initializing_store_barrier(oop new_obj) = 0;
+
+  // If a compiler is eliding store barriers for TLAB-allocated objects,
+  // we will be informed of a slow-path allocation by a call
+  // to new_store_pre_barrier() above. Such a call precedes the
+  // initialization of the object itself, and no post-store-barriers will
+  // be issued. Some heap types require that the barrier strictly follows
+  // the initializing stores. (This is currently implemented by deferring the
+  // barrier until the next slow-path allocation or gc-related safepoint.)
+  // This interface answers whether a particular heap type needs the card
+  // mark to be thus strictly sequenced after the stores.
+  virtual bool card_mark_must_follow_store() const = 0;
 
   // If the CollectedHeap was asked to defer a store barrier above,
   // this informs it to flush such a deferred store barrier to the

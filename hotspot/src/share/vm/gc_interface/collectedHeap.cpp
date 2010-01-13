@@ -59,8 +59,18 @@ CollectedHeap::CollectedHeap()
                 PerfDataManager::create_string_variable(SUN_GC, "lastCause",
                              80, GCCause::to_string(_gc_lastcause), CHECK);
   }
+  _defer_initial_card_mark = false; // strengthened by subclass in pre_initialize() below.
 }
 
+void CollectedHeap::pre_initialize() {
+  // Used for ReduceInitialCardMarks (when COMPILER2 is used);
+  // otherwise remains unused.
+#ifdef COMPLER2
+  _defer_initial_card_mark = ReduceInitialCardMarks && (DeferInitialCardMark || card_mark_must_follow_store());
+#else
+  assert(_defer_initial_card_mark == false, "Who would set it?");
+#endif
+}
 
 #ifndef PRODUCT
 void CollectedHeap::check_for_bad_heap_word_value(HeapWord* addr, size_t size) {
@@ -140,12 +150,13 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(Thread* thread, size_t size) {
 void CollectedHeap::flush_deferred_store_barrier(JavaThread* thread) {
   MemRegion deferred = thread->deferred_card_mark();
   if (!deferred.is_empty()) {
+    assert(_defer_initial_card_mark, "Otherwise should be empty");
     {
       // Verify that the storage points to a parsable object in heap
       DEBUG_ONLY(oop old_obj = oop(deferred.start());)
       assert(is_in(old_obj), "Not in allocated heap");
       assert(!can_elide_initializing_store_barrier(old_obj),
-             "Else should have been filtered in defer_store_barrier()");
+             "Else should have been filtered in new_store_pre_barrier()");
       assert(!is_in_permanent(old_obj), "Sanity: not expected");
       assert(old_obj->is_oop(true), "Not an oop");
       assert(old_obj->is_parsable(), "Will not be concurrently parsable");
@@ -174,9 +185,7 @@ void CollectedHeap::flush_deferred_store_barrier(JavaThread* thread) {
 //     so long as the card-mark is completed before the next
 //     scavenge. For all these cases, we can do a card mark
 //     at the point at which we do a slow path allocation
-//     in the old gen. For uniformity, however, we end
-//     up using the same scheme (see below) for all three
-//     cases (deferring the card-mark appropriately).
+//     in the old gen, i.e. in this call.
 // (b) GenCollectedHeap(ConcurrentMarkSweepGeneration) requires
 //     in addition that the card-mark for an old gen allocated
 //     object strictly follow any associated initializing stores.
@@ -199,12 +208,13 @@ void CollectedHeap::flush_deferred_store_barrier(JavaThread* thread) {
 //     but, like in CMS, because of the presence of concurrent refinement
 //     (much like CMS' precleaning), must strictly follow the oop-store.
 //     Thus, using the same protocol for maintaining the intended
-//     invariants turns out, serendepitously, to be the same for all
-//     three collectors/heap types above.
+//     invariants turns out, serendepitously, to be the same for both
+//     G1 and CMS.
 //
-// For each future collector, this should be reexamined with
-// that specific collector in mind.
-oop CollectedHeap::defer_store_barrier(JavaThread* thread, oop new_obj) {
+// For any future collector, this code should be reexamined with
+// that specific collector in mind, and the documentation above suitably
+// extended and updated.
+oop CollectedHeap::new_store_pre_barrier(JavaThread* thread, oop new_obj) {
   // If a previous card-mark was deferred, flush it now.
   flush_deferred_store_barrier(thread);
   if (can_elide_initializing_store_barrier(new_obj)) {
@@ -212,10 +222,17 @@ oop CollectedHeap::defer_store_barrier(JavaThread* thread, oop new_obj) {
     // following the flush above.
     assert(thread->deferred_card_mark().is_empty(), "Error");
   } else {
-    // Remember info for the newly deferred store barrier
-    MemRegion deferred = MemRegion((HeapWord*)new_obj, new_obj->size());
-    assert(!deferred.is_empty(), "Error");
-    thread->set_deferred_card_mark(deferred);
+    MemRegion mr((HeapWord*)new_obj, new_obj->size());
+    assert(!mr.is_empty(), "Error");
+    if (_defer_initial_card_mark) {
+      // Defer the card mark
+      thread->set_deferred_card_mark(mr);
+    } else {
+      // Do the card mark
+      BarrierSet* bs = barrier_set();
+      assert(bs->has_write_region_opt(), "No write_region() on BarrierSet");
+      bs->write_region(mr);
+    }
   }
   return new_obj;
 }
@@ -313,22 +330,6 @@ HeapWord* CollectedHeap::allocate_new_tlab(size_t size) {
   return NULL;
 }
 
-void CollectedHeap::fill_all_tlabs(bool retire) {
-  assert(UseTLAB, "should not reach here");
-  // See note in ensure_parsability() below.
-  assert(SafepointSynchronize::is_at_safepoint() ||
-         !is_init_completed(),
-         "should only fill tlabs at safepoint");
-  // The main thread starts allocating via a TLAB even before it
-  // has added itself to the threads list at vm boot-up.
-  assert(Threads::first() != NULL,
-         "Attempt to fill tlabs before main thread has been added"
-         " to threads list is doomed to failure!");
-  for(JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
-     thread->tlab().make_parsable(retire);
-  }
-}
-
 void CollectedHeap::ensure_parsability(bool retire_tlabs) {
   // The second disjunct in the assertion below makes a concession
   // for the start-up verification done while the VM is being
@@ -343,8 +344,24 @@ void CollectedHeap::ensure_parsability(bool retire_tlabs) {
          "Should only be called at a safepoint or at start-up"
          " otherwise concurrent mutator activity may make heap "
          " unparsable again");
-  if (UseTLAB) {
-    fill_all_tlabs(retire_tlabs);
+  const bool use_tlab = UseTLAB;
+  const bool deferred = _defer_initial_card_mark;
+  // The main thread starts allocating via a TLAB even before it
+  // has added itself to the threads list at vm boot-up.
+  assert(!use_tlab || Threads::first() != NULL,
+         "Attempt to fill tlabs before main thread has been added"
+         " to threads list is doomed to failure!");
+  for (JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
+     if (use_tlab) thread->tlab().make_parsable(retire_tlabs);
+#ifdef COMPILER2
+     // The deferred store barriers must all have been flushed to the
+     // card-table (or other remembered set structure) before GC starts
+     // processing the card-table (or other remembered set).
+     if (deferred) flush_deferred_store_barrier(thread);
+#else
+     assert(!deferred, "Should be false");
+     assert(thread->deferred_card_mark().is_empty(), "Should be empty");
+#endif
   }
 }
 
