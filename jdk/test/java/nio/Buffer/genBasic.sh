@@ -36,5 +36,3 @@ gen int Int Integer
 gen long Long Long
 gen float Float Float
 gen double Double Double
-
-rm -rf build
