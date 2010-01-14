@@ -32,15 +32,20 @@
 #pragma pop_macro("bad_alloc")
 //"bad_alloc" is undefined from here
 
+//we need to include any STL container before <awt.h> inclusion due to
+//"new" re-redefinition that is in conflict with in-place new allocator
+//applied in STL.
 #if defined(_DEBUG) || defined(DEBUG)
+    //forward declaration of "new" operator from <awt.h>
     extern void * operator new(size_t size, const char * filename, int linenumber);
+    //"new" operator definition that is consistent with re-defined
+    //in <awt.h> "delete" operator
     void * operator new(size_t size) {return operator new(size, "stl", 1);}
 #endif
+#include <map>
 
 #include <awt.h>
-#include <memory.h>
 #include <shlobj.h>
-#include <map>
 
 #include "jlong.h"
 #include "awt_DataTransferer.h"
