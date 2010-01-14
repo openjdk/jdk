@@ -3370,6 +3370,9 @@ class CommandLineFlags {
   diagnostic(bool, OptimizeMethodHandles, true,                             \
           "when constructing method handles, try to improve them")          \
                                                                             \
+  experimental(bool, TrustFinalNonStaticFields, false,                      \
+          "trust final non-static declarations for constant folding")       \
+                                                                            \
   experimental(bool, EnableInvokeDynamic, false,                            \
           "recognize the invokedynamic instruction")                        \
                                                                             \
