@@ -211,7 +211,7 @@ class CommandLineFlags {
   static bool wasSetOnCmdline(const char* name, bool* value);
   static void printSetFlags();
 
-  static void printFlags() PRODUCT_RETURN;
+  static void printFlags();
 
   static void verify() PRODUCT_RETURN;
 };
@@ -326,9 +326,6 @@ class CommandLineFlags {
    * been re-added (see 6401008) */                                         \
   product(bool, UseMembar, false,                                           \
           "(Unstable) Issues membars on thread state transitions")          \
-                                                                            \
-  product(bool, PrintCommandLineFlags, false,                               \
-          "Prints flags that appeared on the command line")                 \
                                                                             \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
           "Enable normal processing of flags relating to field diagnostics")\
@@ -1355,9 +1352,45 @@ class CommandLineFlags {
   product(uintx, ParGCDesiredObjsFromOverflowList, 20,                      \
           "The desired number of objects to claim from the overflow list")  \
                                                                             \
-  product(uintx, CMSParPromoteBlocksToClaim, 50,                            \
+  product(uintx, CMSParPromoteBlocksToClaim, 16,                             \
           "Number of blocks to attempt to claim when refilling CMS LAB for "\
           "parallel GC.")                                                   \
+                                                                            \
+  product(uintx, OldPLABWeight, 50,                                         \
+          "Percentage (0-100) used to weight the current sample when"       \
+          "computing exponentially decaying average for resizing CMSParPromoteBlocksToClaim.") \
+                                                                            \
+  product(bool, ResizeOldPLAB, true,                                        \
+          "Dynamically resize (old gen) promotion labs")                    \
+                                                                            \
+  product(bool, PrintOldPLAB, false,                                        \
+          "Print (old gen) promotion labs sizing decisions")                \
+                                                                            \
+  product(uintx, CMSOldPLABMin, 16,                                         \
+          "Min size of CMS gen promotion lab caches per worker per blksize")\
+                                                                            \
+  product(uintx, CMSOldPLABMax, 1024,                                       \
+          "Max size of CMS gen promotion lab caches per worker per blksize")\
+                                                                            \
+  product(uintx, CMSOldPLABNumRefills, 4,                                   \
+          "Nominal number of refills of CMS gen promotion lab cache"        \
+          " per worker per block size")                                     \
+                                                                            \
+  product(bool, CMSOldPLABResizeQuicker, false,                             \
+          "Whether to react on-the-fly during a scavenge to a sudden"       \
+          " change in block demand rate")                                   \
+                                                                            \
+  product(uintx, CMSOldPLABToleranceFactor, 4,                              \
+          "The tolerance of the phase-change detector for on-the-fly"       \
+          " PLAB resizing during a scavenge")                               \
+                                                                            \
+  product(uintx, CMSOldPLABReactivityFactor, 2,                             \
+          "The gain in the feedback loop for on-the-fly PLAB resizing"      \
+          " during a scavenge")                                             \
+                                                                            \
+  product(uintx, CMSOldPLABReactivityCeiling, 10,                           \
+          "The clamping of the gain in the feedback loop for on-the-fly"    \
+          " PLAB resizing during a scavenge")                               \
                                                                             \
   product(bool, AlwaysPreTouch, false,                                      \
           "It forces all freshly committed pages to be pre-touched.")       \
@@ -1400,27 +1433,54 @@ class CommandLineFlags {
           "Percentage (0-100) by which the CMS incremental mode duty cycle" \
           " is shifted to the right within the period between young GCs")   \
                                                                             \
-  product(uintx, CMSExpAvgFactor, 25,                                       \
-          "Percentage (0-100) used to weight the current sample when "      \
-          "computing exponential averages for CMS statistics")              \
+  product(uintx, CMSExpAvgFactor, 50,                                       \
+          "Percentage (0-100) used to weight the current sample when"       \
+          "computing exponential averages for CMS statistics.")             \
                                                                             \
-  product(uintx, CMS_FLSWeight, 50,                                         \
-          "Percentage (0-100) used to weight the current sample when "      \
-          "computing exponentially decating averages for CMS FLS statistics") \
+  product(uintx, CMS_FLSWeight, 75,                                         \
+          "Percentage (0-100) used to weight the current sample when"       \
+          "computing exponentially decating averages for CMS FLS statistics.") \
                                                                             \
-  product(uintx, CMS_FLSPadding, 2,                                         \
-          "The multiple of deviation from mean to use for buffering "       \
+  product(uintx, CMS_FLSPadding, 1,                                         \
+          "The multiple of deviation from mean to use for buffering"        \
           "against volatility in free list demand.")                        \
                                                                             \
   product(uintx, FLSCoalescePolicy, 2,                                      \
           "CMS: Aggression level for coalescing, increasing from 0 to 4")   \
                                                                             \
-  product(uintx, CMS_SweepWeight, 50,                                       \
+  product(bool, FLSAlwaysCoalesceLarge, false,                              \
+          "CMS: Larger free blocks are always available for coalescing")    \
+                                                                            \
+  product(double, FLSLargestBlockCoalesceProximity, 0.99,                   \
+          "CMS: the smaller the percentage the greater the coalition force")\
+                                                                            \
+  product(double, CMSSmallCoalSurplusPercent, 1.05,                         \
+          "CMS: the factor by which to inflate estimated demand of small"   \
+          " block sizes to prevent coalescing with an adjoining block")     \
+                                                                            \
+  product(double, CMSLargeCoalSurplusPercent, 0.95,                         \
+          "CMS: the factor by which to inflate estimated demand of large"   \
+          " block sizes to prevent coalescing with an adjoining block")     \
+                                                                            \
+  product(double, CMSSmallSplitSurplusPercent, 1.10,                        \
+          "CMS: the factor by which to inflate estimated demand of small"   \
+          " block sizes to prevent splitting to supply demand for smaller"  \
+          " blocks")                                                        \
+                                                                            \
+  product(double, CMSLargeSplitSurplusPercent, 1.00,                        \
+          "CMS: the factor by which to inflate estimated demand of large"   \
+          " block sizes to prevent splitting to supply demand for smaller"  \
+          " blocks")                                                        \
+                                                                            \
+  product(bool, CMSExtrapolateSweep, false,                                 \
+          "CMS: cushion for block demand during sweep")                     \
+                                                                            \
+  product(uintx, CMS_SweepWeight, 75,                                       \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for inter-sweep "       \
           "duration")                                                       \
                                                                             \
-  product(uintx, CMS_SweepPadding, 2,                                       \
+  product(uintx, CMS_SweepPadding, 1,                                       \
           "The multiple of deviation from mean to use for buffering "       \
           "against volatility in inter-sweep duration.")                    \
                                                                             \
@@ -1458,6 +1518,13 @@ class CommandLineFlags {
                                                                             \
   product(uintx, CMSIndexedFreeListReplenish, 4,                            \
           "Replenish and indexed free list with this number of chunks")     \
+                                                                            \
+  product(bool, CMSReplenishIntermediate, true,                             \
+          "Replenish all intermediate free-list caches")                    \
+                                                                            \
+  product(bool, CMSSplitIndexedFreeListBlocks, true,                        \
+          "When satisfying batched demand, splot blocks from the "          \
+          "IndexedFreeList whose size is a multiple of requested size")     \
                                                                             \
   product(bool, CMSLoopWarn, false,                                         \
           "Warn in case of excessive CMS looping")                          \
@@ -1593,6 +1660,18 @@ class CommandLineFlags {
           "Bitmap operations should process at most this many bits"         \
           "between yields")                                                 \
                                                                             \
+  product(bool, CMSDumpAtPromotionFailure, false,                           \
+          "Dump useful information about the state of the CMS old "         \
+          " generation upon a promotion failure.")                          \
+                                                                            \
+  product(bool, CMSPrintChunksInDump, false,                                \
+          "In a dump enabled by CMSDumpAtPromotionFailure, include "        \
+          " more detailed information about the free chunks.")              \
+                                                                            \
+  product(bool, CMSPrintObjectsInDump, false,                               \
+          "In a dump enabled by CMSDumpAtPromotionFailure, include "        \
+          " more detailed information about the allocated objects.")        \
+                                                                            \
   diagnostic(bool, FLSVerifyAllHeapReferences, false,                       \
           "Verify that all refs across the FLS boundary "                   \
           " are to valid objects")                                          \
@@ -1676,6 +1755,10 @@ class CommandLineFlags {
   product(bool, HandlePromotionFailure, true,                               \
           "The youngest generation collection does not require "            \
           "a guarantee of full promotion of all live objects.")             \
+                                                                            \
+  product(bool, PrintPromotionFailure, false,                               \
+          "Print additional diagnostic information following "              \
+          " promotion failure")                                             \
                                                                             \
   notproduct(bool, PromotionFailureALot, false,                             \
           "Use promotion failure handling on every youngest generation "    \
@@ -1966,9 +2049,6 @@ class CommandLineFlags {
   product(uintx, CMSYieldSleepCount, 0,                                     \
           "number of times a GC thread (minus the coordinator) "            \
           "will sleep while yielding before giving up and resuming GC")     \
-                                                                            \
-  notproduct(bool, PrintFlagsFinal, false,                                  \
-          "Print all command line flags after argument processing")         \
                                                                             \
   /* gc tracing */                                                          \
   manageable(bool, PrintGC, false,                                          \
@@ -2269,10 +2349,19 @@ class CommandLineFlags {
          "If false, restricts profiled locations to the root method only")  \
                                                                             \
   product(bool, PrintVMOptions, trueInDebug,                                \
-         "print VM flag settings")                                          \
+         "Print flags that appeared on the command line")                   \
                                                                             \
   product(bool, IgnoreUnrecognizedVMOptions, false,                         \
          "Ignore unrecognized VM options")                                  \
+                                                                            \
+  product(bool, PrintCommandLineFlags, false,                               \
+         "Print flags specified on command line or set by ergonomics")      \
+                                                                            \
+  product(bool, PrintFlagsInitial, false,                                   \
+         "Print all VM flags before argument processing and exit VM")       \
+                                                                            \
+  product(bool, PrintFlagsFinal, false,                                     \
+         "Print all VM flags after argument and ergonomic processing")      \
                                                                             \
   diagnostic(bool, SerializeVMOutput, true,                                 \
          "Use a mutex to serialize output to tty and hotspot.log")          \
@@ -2672,10 +2761,10 @@ class CommandLineFlags {
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
           "maximum number of subklasses to print when printing klass")      \
                                                                             \
-  develop(intx, MaxInlineLevel, 9,                                          \
+  product(intx, MaxInlineLevel, 9,                                          \
           "maximum number of nested calls that are inlined")                \
                                                                             \
-  develop(intx, MaxRecursiveInlineLevel, 1,                                 \
+  product(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
@@ -2688,10 +2777,10 @@ class CommandLineFlags {
   product_pd(intx, FreqInlineSize,                                          \
           "maximum bytecode size of a frequent method to be inlined")       \
                                                                             \
-  develop(intx, MaxTrivialSize, 6,                                          \
+  product(intx, MaxTrivialSize, 6,                                          \
           "maximum bytecode size of a trivial method to be inlined")        \
                                                                             \
-  develop(intx, MinInliningThreshold, 250,                                  \
+  product(intx, MinInliningThreshold, 250,                                  \
           "min. invocation count a method needs to have to be inlined")     \
                                                                             \
   develop(intx, AlignEntryCode, 4,                                          \

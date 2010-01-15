@@ -21,6 +21,8 @@
 // have any questions.
 //  
 
+arguments.cpp                           compactibleFreeListSpace.hpp
+
 assembler_<arch>.cpp                    g1SATBCardTableModRefBS.hpp
 assembler_<arch>.cpp                    g1CollectedHeap.inline.hpp
 assembler_<arch>.cpp                    heapRegion.hpp

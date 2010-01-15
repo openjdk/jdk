@@ -81,8 +81,8 @@ void FreeList::reset(size_t hint) {
   set_hint(hint);
 }
 
-void FreeList::init_statistics() {
-  _allocation_stats.initialize();
+void FreeList::init_statistics(bool split_birth) {
+  _allocation_stats.initialize(split_birth);
 }
 
 FreeChunk* FreeList::getChunkAtHead() {
@@ -292,14 +292,31 @@ bool FreeList::verifyChunkInFreeLists(FreeChunk* fc) const {
 }
 
 #ifndef PRODUCT
+void FreeList::verify_stats() const {
+  // The +1 of the LH comparand is to allow some "looseness" in
+  // checking: we usually call this interface when adding a block
+  // and we'll subsequently update the stats; we cannot update the
+  // stats beforehand because in the case of the large-block BT
+  // dictionary for example, this might be the first block and
+  // in that case there would be no place that we could record
+  // the stats (which are kept in the block itself).
+  assert(_allocation_stats.prevSweep() + _allocation_stats.splitBirths() + 1   // Total Stock + 1
+          >= _allocation_stats.splitDeaths() + (ssize_t)count(), "Conservation Principle");
+}
+
 void FreeList::assert_proper_lock_protection_work() const {
-#ifdef ASSERT
-  if (_protecting_lock != NULL &&
-      SharedHeap::heap()->n_par_threads() > 0) {
-    // Should become an assert.
-    guarantee(_protecting_lock->owned_by_self(), "FreeList RACE DETECTED");
+  assert(_protecting_lock != NULL, "Don't call this directly");
+  assert(ParallelGCThreads > 0, "Don't call this directly");
+  Thread* thr = Thread::current();
+  if (thr->is_VM_thread() || thr->is_ConcurrentGC_thread()) {
+    // assert that we are holding the freelist lock
+  } else if (thr->is_GC_task_thread()) {
+    assert(_protecting_lock->owned_by_self(), "FreeList RACE DETECTED");
+  } else if (thr->is_Java_thread()) {
+    assert(!SafepointSynchronize::is_at_safepoint(), "Should not be executing");
+  } else {
+    ShouldNotReachHere();  // unaccounted thread type?
   }
-#endif
 }
 #endif
 

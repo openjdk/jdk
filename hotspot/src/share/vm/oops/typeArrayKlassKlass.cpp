@@ -45,6 +45,7 @@ void typeArrayKlassKlass::oop_print_on(oop obj, outputStream* st) {
   Klass:: oop_print_on(obj, st);
 }
 
+#endif //PRODUCT
 
 void typeArrayKlassKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_klass(), "must be klass");
@@ -62,8 +63,6 @@ void typeArrayKlassKlass::oop_print_value_on(oop obj, outputStream* st) {
   }
   st->print("}");
 }
-
-#endif
 
 const char* typeArrayKlassKlass::internal_name() const {
   return "{type array class}";

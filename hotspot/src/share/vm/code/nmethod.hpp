@@ -81,18 +81,19 @@ class PcDescCache VALUE_OBJ_CLASS_SPEC {
 
 struct nmFlags {
   friend class VMStructs;
-  unsigned int version:8;                 // version number (0 = first version)
-  unsigned int level:4;                   // optimization level
-  unsigned int age:4;                     // age (in # of sweep steps)
+  unsigned int version:8;                    // version number (0 = first version)
+  unsigned int level:4;                      // optimization level
+  unsigned int age:4;                        // age (in # of sweep steps)
 
-  unsigned int state:2;                   // {alive, zombie, unloaded)
+  unsigned int state:2;                      // {alive, zombie, unloaded)
 
-  unsigned int isUncommonRecompiled:1;    // recompiled because of uncommon trap?
-  unsigned int isToBeRecompiled:1;        // to be recompiled as soon as it matures
-  unsigned int hasFlushedDependencies:1;  // Used for maintenance of dependencies
-  unsigned int markedForReclamation:1;    // Used by NMethodSweeper
+  unsigned int isUncommonRecompiled:1;       // recompiled because of uncommon trap?
+  unsigned int isToBeRecompiled:1;           // to be recompiled as soon as it matures
+  unsigned int hasFlushedDependencies:1;     // Used for maintenance of dependencies
+  unsigned int markedForReclamation:1;       // Used by NMethodSweeper
 
-  unsigned int has_unsafe_access:1;       // May fault due to unsafe access.
+  unsigned int has_unsafe_access:1;          // May fault due to unsafe access.
+  unsigned int has_method_handle_invokes:1;  // Has this method MethodHandle invokes?
 
   void clear();
 };
@@ -254,7 +255,7 @@ class nmethod : public CodeBlob {
   const char* reloc_string_for(u_char* begin, u_char* end);
   // Returns true if this thread changed the state of the nmethod or
   // false if another thread performed the transition.
-  bool make_not_entrant_or_zombie(int state);
+  bool make_not_entrant_or_zombie(unsigned int state);
   void inc_decompile_count();
 
   // used to check that writes to nmFlags are done consistently.
@@ -409,6 +410,9 @@ class nmethod : public CodeBlob {
   bool  has_unsafe_access() const                 { return flags.has_unsafe_access; }
   void  set_has_unsafe_access(bool z)             { flags.has_unsafe_access = z; }
 
+  bool  has_method_handle_invokes() const         { return flags.has_method_handle_invokes; }
+  void  set_has_method_handle_invokes(bool z)     { flags.has_method_handle_invokes = z; }
+
   int   level() const                             { return flags.level; }
   void  set_level(int newLevel)                   { check_safepoint(); flags.level = newLevel; }
 
@@ -541,6 +545,9 @@ class nmethod : public CodeBlob {
   address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
   void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
 
+  // MethodHandle
+  bool is_method_handle_return(address return_pc);
+
   // jvmti support:
   void post_compiled_method_load_event();
 
@@ -568,6 +575,13 @@ class nmethod : public CodeBlob {
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
   void log_state_change() const;
+
+  // Prints block-level comments, including nmethod specific block labels:
+  virtual void print_block_comment(outputStream* stream, address block_begin) {
+    print_nmethod_labels(stream, block_begin);
+    CodeBlob::print_block_comment(stream, block_begin);
+  }
+  void print_nmethod_labels(outputStream* stream, address block_begin);
 
   // Prints a comment for one native instruction (reloc info, pc desc)
   void print_code_comment_on(outputStream* st, int column, address begin, address end);
