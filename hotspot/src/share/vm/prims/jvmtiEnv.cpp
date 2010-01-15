@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,15 @@
  // FIXLATER: hook into JvmtiTrace
 #define TraceJVMTICalls false
 
-JvmtiEnv::JvmtiEnv() : JvmtiEnvBase() {
+JvmtiEnv::JvmtiEnv(jint version) : JvmtiEnvBase(version) {
 }
 
 JvmtiEnv::~JvmtiEnv() {
 }
 
 JvmtiEnv*
-JvmtiEnv::create_a_jvmti() {
-  return new JvmtiEnv();
+JvmtiEnv::create_a_jvmti(jint version) {
+  return new JvmtiEnv(version);
 }
 
 // VM operation class to copy jni function table at safepoint.
@@ -411,8 +411,15 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
   if (phase == JVMTI_PHASE_ONLOAD) {
     Arguments::append_sysclasspath(segment);
     return JVMTI_ERROR_NONE;
-  } else {
-    assert(phase == JVMTI_PHASE_LIVE, "sanity check");
+  } else if (use_version_1_0_semantics()) {
+    // This JvmtiEnv requested version 1.0 semantics and this function
+    // is only allowed in the ONLOAD phase in version 1.0 so we need to
+    // return an error here.
+    return JVMTI_ERROR_WRONG_PHASE;
+  } else if (phase == JVMTI_PHASE_LIVE) {
+    // The phase is checked by the wrapper that called this function,
+    // but this thread could be racing with the thread that is
+    // terminating the VM so we check one more time.
 
     // create the zip entry
     ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment);
@@ -433,6 +440,8 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     }
     ClassLoader::add_to_list(zip_entry);
     return JVMTI_ERROR_NONE;
+  } else {
+    return JVMTI_ERROR_WRONG_PHASE;
   }
 
 } /* end AddToBootstrapClassLoaderSearch */
@@ -451,10 +460,11 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
       }
     }
     return JVMTI_ERROR_NONE;
-  } else {
+  } else if (phase == JVMTI_PHASE_LIVE) {
+    // The phase is checked by the wrapper that called this function,
+    // but this thread could be racing with the thread that is
+    // terminating the VM so we check one more time.
     HandleMark hm;
-
-    assert(phase == JVMTI_PHASE_LIVE, "sanity check");
 
     // create the zip entry (which will open the zip file and hence
     // check that the segment is indeed a zip file).
@@ -504,6 +514,8 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     }
 
     return JVMTI_ERROR_NONE;
+  } else {
+    return JVMTI_ERROR_WRONG_PHASE;
   }
 } /* end AddToSystemClassLoaderSearch */
 
@@ -2863,6 +2875,14 @@ JvmtiEnv::IsMethodSynthetic(methodOop method_oop, jboolean* is_synthetic_ptr) {
 // is_obsolete_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::IsMethodObsolete(methodOop method_oop, jboolean* is_obsolete_ptr) {
+  if (use_version_1_0_semantics() &&
+      get_capabilities()->can_redefine_classes == 0) {
+    // This JvmtiEnv requested version 1.0 semantics and this function
+    // requires the can_redefine_classes capability in version 1.0 so
+    // we need to return an error here.
+    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
+  }
+
   if (method_oop == NULL || method_oop->is_obsolete()) {
     *is_obsolete_ptr = true;
   } else {

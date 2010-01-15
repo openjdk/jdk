@@ -1279,7 +1279,8 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     // Visit all children, looking for Phis
     for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
       Node *out = cl->out(i);
-      if (!out->is_Phi() || out == phi)  continue; // Looking for other phis
+      // Look for other phis (secondary IVs). Skip dead ones
+      if (!out->is_Phi() || out == phi || !phase->has_node(out)) continue;
       PhiNode* phi2 = out->as_Phi();
       Node *incr2 = phi2->in( LoopNode::LoopBackControl );
       // Look for induction variables of the form:  X += constant

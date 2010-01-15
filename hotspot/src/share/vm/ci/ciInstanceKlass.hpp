@@ -148,6 +148,7 @@ public:
 
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
+  ciField* get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static);
 
   GrowableArray<ciField*>* non_static_fields();
 

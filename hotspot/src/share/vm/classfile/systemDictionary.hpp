@@ -144,13 +144,13 @@ class SymbolPropertyTable;
   template(WrongMethodTypeException_klass, java_dyn_WrongMethodTypeException, Opt) \
   template(Linkage_klass,                java_dyn_Linkage,               Opt) \
   template(CallSite_klass,               java_dyn_CallSite,              Opt) \
-  template(CallSiteImpl_klass,           sun_dyn_CallSiteImpl,     Opt) \
   template(Dynamic_klass,                java_dyn_Dynamic,               Opt) \
   /* Note: MethodHandle must be first, and Dynamic last in group */           \
                                                                               \
   template(vector_klass,                 java_util_Vector,               Pre) \
   template(hashtable_klass,              java_util_Hashtable,            Pre) \
   template(stringBuffer_klass,           java_lang_StringBuffer,         Pre) \
+  template(StringBuilder_klass,          java_lang_StringBuilder,        Pre) \
                                                                               \
   /* It's NULL in non-1.4 JDKs. */                                            \
   template(stackTraceElement_klass,      java_lang_StackTraceElement,    Opt) \
@@ -578,6 +578,7 @@ private:
   static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
   static void check_loader_lock_contention(Handle loader_lock, TRAPS);
   static bool is_parallelCapable(Handle class_loader);
+  static bool is_parallelDefine(Handle class_loader);
 
   static klassOop find_shared_class(symbolHandle class_name);
 

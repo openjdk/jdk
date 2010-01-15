@@ -82,6 +82,9 @@ private:
   static ciInstanceKlass* _Thread;
   static ciInstanceKlass* _OutOfMemoryError;
   static ciInstanceKlass* _String;
+  static ciInstanceKlass* _StringBuffer;
+  static ciInstanceKlass* _StringBuilder;
+  static ciInstanceKlass* _Integer;
 
   static ciSymbol*        _unloaded_cisymbol;
   static ciInstanceKlass* _unloaded_ciinstance_klass;
@@ -96,6 +99,9 @@ private:
   ciInstance* _ArrayIndexOutOfBoundsException_instance;
   ciInstance* _ArrayStoreException_instance;
   ciInstance* _ClassCastException_instance;
+
+  ciInstance* _the_null_string;      // The Java string "null"
+  ciInstance* _the_min_jint_string; // The Java string "-2147483648"
 
   // Look up a klass by name from a particular class loader (the accessor's).
   // If require_local, result must be defined in that class loader, or NULL.
@@ -310,6 +316,15 @@ public:
   ciInstanceKlass* String_klass() {
     return _String;
   }
+  ciInstanceKlass* StringBuilder_klass() {
+    return _StringBuilder;
+  }
+  ciInstanceKlass* StringBuffer_klass() {
+    return _StringBuffer;
+  }
+  ciInstanceKlass* Integer_klass() {
+    return _Integer;
+  }
   ciInstance* NullPointerException_instance() {
     assert(_NullPointerException_instance != NULL, "initialization problem");
     return _NullPointerException_instance;
@@ -323,6 +338,9 @@ public:
   ciInstance* ArrayIndexOutOfBoundsException_instance();
   ciInstance* ArrayStoreException_instance();
   ciInstance* ClassCastException_instance();
+
+  ciInstance* the_null_string();
+  ciInstance* the_min_jint_string();
 
   static ciSymbol* unloaded_cisymbol() {
     return _unloaded_cisymbol;

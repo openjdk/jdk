@@ -26,7 +26,7 @@
 // Defines all globals flags used by the server compiler.
 //
 
-#define C2_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct) \
+#define C2_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct) \
                                                                             \
   notproduct(intx, CompileZapFirst, 0,                                      \
           "If +ZapDeadCompiledLocals, "                                     \
@@ -394,6 +394,12 @@
   product(bool, UseOptoBiasInlining, true,                                  \
           "Generate biased locking code in C2 ideal graph")                 \
                                                                             \
+  product(bool, OptimizeStringConcat, false,                                \
+          "Optimize the construction of Strings by StringBuilder")          \
+                                                                            \
+  notproduct(bool, PrintOptimizeStringConcat, false,                        \
+          "Print information about transformations performed on Strings")   \
+                                                                            \
   product(intx, ValueSearchLimit, 1000,                                     \
           "Recursion limit in PhaseMacroExpand::value_from_mem_phi")        \
                                                                             \
@@ -413,4 +419,4 @@
   product(bool, BlockLayoutRotateLoops, true,                               \
           "Allow back branches to be fall throughs in the block layour")    \
 
-C2_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
+C2_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG)

@@ -168,6 +168,15 @@ void ciObjectFactory::init_shared_objects() {
   ciEnv::_String =
     get(SystemDictionary::string_klass())
       ->as_instance_klass();
+  ciEnv::_StringBuffer =
+    get(SystemDictionary::stringBuffer_klass())
+      ->as_instance_klass();
+  ciEnv::_StringBuilder =
+    get(SystemDictionary::StringBuilder_klass())
+      ->as_instance_klass();
+  ciEnv::_Integer =
+    get(SystemDictionary::int_klass())
+      ->as_instance_klass();
 
   for (int len = -1; len != _ci_objects->length(); ) {
     len = _ci_objects->length();
