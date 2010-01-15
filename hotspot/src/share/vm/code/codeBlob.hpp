@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,9 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   virtual bool is_compiled_by_c2() const         { return false; }
   virtual bool is_compiled_by_c1() const         { return false; }
 
+  // Casting
+  nmethod* as_nmethod_or_null()                  { return is_nmethod() ? (nmethod*) this : NULL; }
+
   // Boundaries
   address    header_begin() const                { return (address)    this; }
   address    header_end() const                  { return ((address)   this) + _header_size; };
@@ -201,7 +204,8 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   virtual void print_value_on(outputStream* st) const PRODUCT_RETURN;
 
   // Print the comment associated with offset on stream, if there is one
-  void print_block_comment(outputStream* stream, intptr_t offset) {
+  virtual void print_block_comment(outputStream* stream, address block_begin) {
+    intptr_t offset = (intptr_t)(block_begin - instructions_begin());
     _comments.print_block_comment(stream, offset);
   }
 

@@ -119,14 +119,13 @@ class objArrayKlass : public arrayKlass {
  private:
    static klassOop array_klass_impl   (objArrayKlassHandle this_oop, bool or_null, int n, TRAPS);
 
-#ifndef PRODUCT
  public:
   // Printing
-  void oop_print_on      (oop obj, outputStream* st);
   void oop_print_value_on(oop obj, outputStream* st);
-#endif
+#ifndef PRODUCT
+  void oop_print_on      (oop obj, outputStream* st);
+#endif //PRODUCT
 
- public:
   // Verification
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);

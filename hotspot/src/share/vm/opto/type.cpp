@@ -2431,7 +2431,7 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass *klass, bool klass_
 //------------------------------make_from_constant-----------------------------
 // Make a java pointer from an oop constant
 const TypeOopPtr* TypeOopPtr::make_from_constant(ciObject* o, bool require_constant) {
-  if (o->is_method_data() || o->is_method()) {
+  if (o->is_method_data() || o->is_method() || o->is_cpcache()) {
     // Treat much like a typeArray of bytes, like below, but fake the type...
     const Type* etype = (Type*)get_const_basic_type(T_BYTE);
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
@@ -3966,7 +3966,7 @@ const TypeFunc *TypeFunc::make(ciMethod* method) {
   const TypeFunc* tf = C->last_tf(method); // check cache
   if (tf != NULL)  return tf;  // The hit rate here is almost 50%.
   const TypeTuple *domain;
-  if (method->flags().is_static()) {
+  if (method->is_static()) {
     domain = TypeTuple::make_domain(NULL, method->signature());
   } else {
     domain = TypeTuple::make_domain(method->holder(), method->signature());

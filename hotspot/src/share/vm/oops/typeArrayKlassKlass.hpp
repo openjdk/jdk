@@ -47,12 +47,12 @@ class typeArrayKlassKlass : public arrayKlassKlass {
   static int header_size() { return oopDesc::header_size() + sizeof(typeArrayKlassKlass)/HeapWordSize; }
   int object_size() const  { return align_object_size(header_size()); }
 
-#ifndef PRODUCT
  public:
   // Printing
-  void oop_print_on(oop obj, outputStream* st);
   void oop_print_value_on(oop obj, outputStream* st);
-#endif
- public:
+#ifndef PRODUCT
+  void oop_print_on(oop obj, outputStream* st);
+#endif //PRODUCT
+
   const char* internal_name() const;
 };

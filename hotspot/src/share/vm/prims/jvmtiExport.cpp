@@ -656,7 +656,7 @@ static inline klassOop oop_to_klassOop(oop obj) {
   klassOop k = obj->klass();
 
   // if the object is a java.lang.Class then return the java mirror
-  if (k == SystemDictionary::class_klass()) {
+  if (k == SystemDictionary::Class_klass()) {
     if (!java_lang_Class::is_primitive(obj)) {
       k = java_lang_Class::as_klassOop(obj);
       assert(k != NULL, "class for non-primitive mirror must exist");
@@ -1925,7 +1925,7 @@ void JvmtiExport::record_vm_internal_object_allocation(oop obj) {
       if (collector != NULL && collector->is_enabled()) {
         // Don't record classes as these will be notified via the ClassLoad
         // event.
-        if (obj->klass() != SystemDictionary::class_klass()) {
+        if (obj->klass() != SystemDictionary::Class_klass()) {
           collector->record_allocation(obj);
         }
       }
