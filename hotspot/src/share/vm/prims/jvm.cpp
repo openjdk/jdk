@@ -1318,19 +1318,20 @@ JVM_ENTRY(jclass, JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass))
     return NULL;
   }
 
-  symbolOop simple_name = NULL;
+  bool inner_is_member = false;
   klassOop outer_klass
     = instanceKlass::cast(java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(ofClass))
-                          )->compute_enclosing_class(simple_name, CHECK_NULL);
+                          )->compute_enclosing_class(&inner_is_member, CHECK_NULL);
   if (outer_klass == NULL)  return NULL;  // already a top-level class
-  if (simple_name == NULL)  return NULL;  // an anonymous class (inside a method)
+  if (!inner_is_member)  return NULL;     // an anonymous class (inside a method)
   return (jclass) JNIHandles::make_local(env, Klass::cast(outer_klass)->java_mirror());
 }
 JVM_END
 
 // should be in instanceKlass.cpp, but is here for historical reasons
 klassOop instanceKlass::compute_enclosing_class_impl(instanceKlassHandle k,
-                                                     symbolOop& simple_name_result, TRAPS) {
+                                                     bool* inner_is_member,
+                                                     TRAPS) {
   Thread* thread = THREAD;
   const int inner_class_info_index = inner_class_inner_class_info_offset;
   const int outer_class_info_index = inner_class_outer_class_info_offset;
@@ -1347,8 +1348,7 @@ klassOop instanceKlass::compute_enclosing_class_impl(instanceKlassHandle k,
   bool found = false;
   klassOop ok;
   instanceKlassHandle outer_klass;
-  bool inner_is_member = false;
-  int simple_name_index = 0;
+  *inner_is_member = false;
 
   // Find inner_klass attribute
   for (int i = 0; i < i_length && !found; i += inner_class_next_offset) {
@@ -1364,8 +1364,7 @@ klassOop instanceKlass::compute_enclosing_class_impl(instanceKlassHandle k,
         if (found && ooff != 0) {
           ok = i_cp->klass_at(ooff, CHECK_NULL);
           outer_klass = instanceKlassHandle(thread, ok);
-          simple_name_index = noff;
-          inner_is_member = true;
+          *inner_is_member = true;
         }
       }
     }
@@ -1377,7 +1376,7 @@ klassOop instanceKlass::compute_enclosing_class_impl(instanceKlassHandle k,
     if (encl_method_class_idx != 0) {
       ok = i_cp->klass_at(encl_method_class_idx, CHECK_NULL);
       outer_klass = instanceKlassHandle(thread, ok);
-      inner_is_member = false;
+      *inner_is_member = false;
     }
   }
 
@@ -1387,9 +1386,7 @@ klassOop instanceKlass::compute_enclosing_class_impl(instanceKlassHandle k,
   // Throws an exception if outer klass has not declared k as an inner klass
   // We need evidence that each klass knows about the other, or else
   // the system could allow a spoof of an inner class to gain access rights.
-  Reflection::check_for_inner_class(outer_klass, k, inner_is_member, CHECK_NULL);
-
-  simple_name_result = (inner_is_member ? i_cp->symbol_at(simple_name_index) : symbolOop(NULL));
+  Reflection::check_for_inner_class(outer_klass, k, *inner_is_member, CHECK_NULL);
   return outer_klass();
 }
 
@@ -2257,10 +2254,8 @@ JVM_ENTRY(const char*, JVM_GetCPMethodNameUTF(JNIEnv *env, jclass cls, jint cp_i
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_Methodref:
+    case JVM_CONSTANT_NameAndType:  // for invokedynamic
       return cp->uncached_name_ref_at(cp_index)->as_utf8();
-    case JVM_CONSTANT_NameAndType:
-      // for invokedynamic
-      return cp->nt_name_ref_at(cp_index)->as_utf8();
     default:
       fatal("JVM_GetCPMethodNameUTF: illegal constant");
   }
@@ -2277,10 +2272,8 @@ JVM_ENTRY(const char*, JVM_GetCPMethodSignatureUTF(JNIEnv *env, jclass cls, jint
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_Methodref:
+    case JVM_CONSTANT_NameAndType:  // for invokedynamic
       return cp->uncached_signature_ref_at(cp_index)->as_utf8();
-    case JVM_CONSTANT_NameAndType:
-      // for invokedynamic
-      return cp->nt_signature_ref_at(cp_index)->as_utf8();
     default:
       fatal("JVM_GetCPMethodSignatureUTF: illegal constant");
   }

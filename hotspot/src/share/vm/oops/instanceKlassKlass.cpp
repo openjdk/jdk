@@ -317,6 +317,11 @@ void instanceKlassKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
     pm->claim_or_forward_breadth(sg_addr);
   }
 
+  oop* bsm_addr = ik->adr_bootstrap_method();
+  if (PSScavenge::should_scavenge(bsm_addr)) {
+    pm->claim_or_forward_breadth(bsm_addr);
+  }
+
   klassKlass::oop_copy_contents(pm, obj);
 }
 
@@ -343,6 +348,11 @@ void instanceKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   oop* sg_addr = ik->adr_signers();
   if (PSScavenge::should_scavenge(sg_addr)) {
     pm->claim_or_forward_depth(sg_addr);
+  }
+
+  oop* bsm_addr = ik->adr_bootstrap_method();
+  if (PSScavenge::should_scavenge(bsm_addr)) {
+    pm->claim_or_forward_depth(bsm_addr);
   }
 
   klassKlass::oop_copy_contents(pm, obj);

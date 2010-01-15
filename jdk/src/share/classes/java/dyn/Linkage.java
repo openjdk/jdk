@@ -25,7 +25,9 @@
 
 package java.dyn;
 
+import java.dyn.MethodHandles.Lookup;
 import java.util.WeakHashMap;
+import sun.dyn.Access;
 import sun.reflect.Reflection;
 import static sun.dyn.util.VerifyAccess.checkBootstrapPrivilege;
 
@@ -34,6 +36,8 @@ import static sun.dyn.util.VerifyAccess.checkBootstrapPrivilege;
  * @author John Rose, JSR 292 EG
  */
 public class Linkage {
+    private static final Access IMPL_TOKEN = Access.getToken();
+
     private Linkage() {}  // do not instantiate
 
     /**
@@ -53,19 +57,23 @@ public class Linkage {
      *     call to this method.
      * <li>The given class is already fully initialized.
      * <li>The given class is in the process of initialization, in another thread.
+     * <li>The same {@code CallSite} object has already been returned from
+     * a bootstrap method call to another {@code invokedynamic} call site.
      * </ul>
      * Because of these rules, a class may install its own bootstrap method in
      * a static initializer.
+     * @param callerClass a class that may have {@code invokedynamic} sites
+     * @param bootstrapMethod the method to use to bootstrap all such sites
      */
     public static
-    void registerBootstrapMethod(Class callerClass, MethodHandle mh) {
+    void registerBootstrapMethod(Class callerClass, MethodHandle bootstrapMethod) {
         Class callc = Reflection.getCallerClass(2);
         checkBootstrapPrivilege(callc, callerClass, "registerBootstrapMethod");
-        checkBSM(mh);
+        checkBSM(bootstrapMethod);
         synchronized (bootstrapMethods) {
             if (bootstrapMethods.containsKey(callerClass))
                 throw new IllegalStateException("bootstrap method already declared in "+callerClass);
-            bootstrapMethods.put(callerClass, mh);
+            bootstrapMethods.put(callerClass, bootstrapMethod);
         }
     }
 
@@ -88,8 +96,9 @@ public class Linkage {
     public static
     void registerBootstrapMethod(Class<?> runtime, String name) {
         Class callc = Reflection.getCallerClass(2);
+        Lookup lookup = new Lookup(IMPL_TOKEN, callc);
         MethodHandle bootstrapMethod =
-            MethodHandles.findStaticFrom(callc, runtime, name, BOOTSTRAP_METHOD_TYPE);
+            lookup.findStatic(runtime, name, BOOTSTRAP_METHOD_TYPE);
         // FIXME: exception processing wrong here
         checkBSM(bootstrapMethod);
         Linkage.registerBootstrapMethod(callc, bootstrapMethod);
@@ -106,8 +115,9 @@ public class Linkage {
     public static
     void registerBootstrapMethod(String name) {
         Class callc = Reflection.getCallerClass(2);
+        Lookup lookup = new Lookup(IMPL_TOKEN, callc);
         MethodHandle bootstrapMethod =
-            MethodHandles.findStaticFrom(callc, callc, name, BOOTSTRAP_METHOD_TYPE);
+            lookup.findStatic(callc, name, BOOTSTRAP_METHOD_TYPE);
         // FIXME: exception processing wrong here
         checkBSM(bootstrapMethod);
         Linkage.registerBootstrapMethod(callc, bootstrapMethod);
@@ -116,8 +126,7 @@ public class Linkage {
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
      * Report the bootstrap method registered for a given class.
-     * Returns null if the class has never yet registered a bootstrap method,
-     * or if the class has explicitly registered a null bootstrap method.
+     * Returns null if the class has never yet registered a bootstrap method.
      * Only callers privileged to set the bootstrap method may inquire
      * about it, because a bootstrap method is potentially a back-door entry
      * point into its class.
@@ -137,12 +146,12 @@ public class Linkage {
      * {@code (Class, String, MethodType)} returning a {@code CallSite}.
      */
     public static final MethodType BOOTSTRAP_METHOD_TYPE
-            = MethodType.make(CallSite.class,
-                              Class.class, String.class, MethodType.class);
+            = MethodType.methodType(CallSite.class,
+                                    Class.class, String.class, MethodType.class);
 
     private static final MethodType OLD_BOOTSTRAP_METHOD_TYPE
-            = MethodType.make(Object.class,
-                              CallSite.class, Object[].class);
+            = MethodType.methodType(Object.class,
+                                    CallSite.class, Object[].class);
 
     private static final WeakHashMap<Class, MethodHandle> bootstrapMethods =
             new WeakHashMap<Class, MethodHandle>();
@@ -173,8 +182,8 @@ public class Linkage {
 
     /**
      * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
-     * Invalidate all <code>invokedynamic</code> call sites associated
-     * with the given class.
+     * Invalidate all <code>invokedynamic</code> call sites in the bytecodes
+     * of any methods of the given class.
      * (These are exactly those sites which report the given class
      * via the {@link CallSite#callerClass()} method.)
      * <p>

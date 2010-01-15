@@ -100,21 +100,26 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
   return entry;
 }
 
-// Arguments are: required type in rarg1, failing object (or NULL) in rarg2
+// Arguments are: required type at TOS+8, failing object (or NULL) at TOS+4.
 address TemplateInterpreterGenerator::generate_WrongMethodType_handler() {
   address entry = __ pc();
 
   __ pop(c_rarg2);              // failing object is at TOS
   __ pop(c_rarg1);              // required type is at TOS+8
 
-  // expression stack must be empty before entering the VM if an
-  // exception happened
+  __ verify_oop(c_rarg1);
+  __ verify_oop(c_rarg2);
+
+  // Various method handle types use interpreter registers as temps.
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Expression stack must be empty before entering the VM for an exception.
   __ empty_expression_stack();
 
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address,
-                              InterpreterRuntime::
-                              throw_WrongMethodTypeException),
+                              InterpreterRuntime::throw_WrongMethodTypeException),
              // pass required type, failing object (or NULL)
              c_rarg1, c_rarg2);
   return entry;
@@ -166,8 +171,7 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 
 
 address TemplateInterpreterGenerator::generate_return_entry_for(TosState state,
-                                                                int step, bool unbox) {
-  assert(!unbox, "NYI");//6815692//
+                                                                int step) {
 
   // amd64 doesn't need to do anything special about compiled returns
   // to the interpreter so the code that exists on x86 to place a sentinel
@@ -183,15 +187,29 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state,
   __ restore_bcp();
   __ restore_locals();
 
-  __ get_cache_and_index_at_bcp(rbx, rcx, 1);
+  Label L_got_cache, L_giant_index;
+  if (EnableInvokeDynamic) {
+    __ cmpb(Address(r13, 0), Bytecodes::_invokedynamic);
+    __ jcc(Assembler::equal, L_giant_index);
+  }
+  __ get_cache_and_index_at_bcp(rbx, rcx, 1, false);
+  __ bind(L_got_cache);
   __ movl(rbx, Address(rbx, rcx,
-                       Address::times_8,
+                       Address::times_ptr,
                        in_bytes(constantPoolCacheOopDesc::base_offset()) +
                        3 * wordSize));
   __ andl(rbx, 0xFF);
   if (TaggedStackInterpreter) __ shll(rbx, 1); // 2 slots per parameter.
   __ lea(rsp, Address(rsp, rbx, Address::times_8));
   __ dispatch_next(state, step);
+
+  // out of the main line of code...
+  if (EnableInvokeDynamic) {
+    __ bind(L_giant_index);
+    __ get_cache_and_index_at_bcp(rbx, rcx, 1, true);
+    __ jmp(L_got_cache);
+  }
+
   return entry;
 }
 
