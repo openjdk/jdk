@@ -527,7 +527,7 @@ JvmtiEnvBase::new_jthreadGroupArray(int length, Handle *handles) {
 JavaThread *
 JvmtiEnvBase::get_JavaThread(jthread jni_thread) {
   oop t = JNIHandles::resolve_external_guard(jni_thread);
-  if (t == NULL || !t->is_a(SystemDictionary::thread_klass())) {
+  if (t == NULL || !t->is_a(SystemDictionary::Thread_klass())) {
     return NULL;
   }
   // The following returns NULL if the thread has not yet run or is in
@@ -1269,7 +1269,7 @@ VM_GetThreadListStackTraces::doit() {
   for (int i = 0; i < _thread_count; ++i) {
     jthread jt = _thread_list[i];
     oop thread_oop = JNIHandles::resolve_external_guard(jt);
-    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::thread_klass())) {
+    if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
       set_result(JVMTI_ERROR_INVALID_THREAD);
       return;
     }
