@@ -62,12 +62,13 @@ TreeList* TreeList::as_TreeList(TreeChunk* tc) {
   tl->link_head(tc);
   tl->link_tail(tc);
   tl->set_count(1);
-  tl->init_statistics();
+  tl->init_statistics(true /* split_birth */);
   tl->setParent(NULL);
   tl->setLeft(NULL);
   tl->setRight(NULL);
   return tl;
 }
+
 TreeList* TreeList::as_TreeList(HeapWord* addr, size_t size) {
   TreeChunk* tc = (TreeChunk*) addr;
   assert(size >= sizeof(TreeChunk), "Chunk is too small for a TreeChunk");
@@ -267,6 +268,31 @@ TreeChunk* TreeList::first_available() {
   return retTC;
 }
 
+// Returns the block with the largest heap address amongst
+// those in the list for this size; potentially slow and expensive,
+// use with caution!
+TreeChunk* TreeList::largest_address() {
+  guarantee(head() != NULL, "The head of the list cannot be NULL");
+  FreeChunk* fc = head()->next();
+  TreeChunk* retTC;
+  if (fc == NULL) {
+    retTC = head_as_TreeChunk();
+  } else {
+    // walk down the list and return the one with the highest
+    // heap address among chunks of this size.
+    FreeChunk* last = fc;
+    while (fc->next() != NULL) {
+      if ((HeapWord*)last < (HeapWord*)fc) {
+        last = fc;
+      }
+      fc = fc->next();
+    }
+    retTC = TreeChunk::as_TreeChunk(last);
+  }
+  assert(retTC->list() == this, "Wrong type of chunk.");
+  return retTC;
+}
+
 BinaryTreeDictionary::BinaryTreeDictionary(MemRegion mr, bool splay):
   _splay(splay)
 {
@@ -379,7 +405,7 @@ BinaryTreeDictionary::getChunkFromTree(size_t size, Dither dither, bool splay)
             break;
           }
           // The evm code reset the hint of the candidate as
-          // at an interrim point.  Why?  Seems like this leaves
+          // at an interim point.  Why?  Seems like this leaves
           // the hint pointing to a list that didn't work.
           // curTL->set_hint(hintTL->size());
         }
@@ -436,7 +462,7 @@ FreeChunk* BinaryTreeDictionary::findLargestDict() const {
   TreeList *curTL = root();
   if (curTL != NULL) {
     while(curTL->right() != NULL) curTL = curTL->right();
-    return curTL->first_available();
+    return curTL->largest_address();
   } else {
     return NULL;
   }
@@ -664,7 +690,7 @@ void BinaryTreeDictionary::insertChunkInTree(FreeChunk* fc) {
     }
   }
   TreeChunk* tc = TreeChunk::as_TreeChunk(fc);
-  // This chunk is being returned to the binary try.  It's embedded
+  // This chunk is being returned to the binary tree.  Its embedded
   // TreeList should be unused at this point.
   tc->initialize();
   if (curTL != NULL) {          // exact match
@@ -807,6 +833,8 @@ void BinaryTreeDictionary::dictCensusUpdate(size_t size, bool split, bool birth)
 }
 
 bool BinaryTreeDictionary::coalDictOverPopulated(size_t size) {
+  if (FLSAlwaysCoalesceLarge) return true;
+
   TreeList* list_of_size = findList(size);
   // None of requested size implies overpopulated.
   return list_of_size == NULL || list_of_size->coalDesired() <= 0 ||
@@ -854,17 +882,20 @@ class BeginSweepClosure : public AscendTreeCensusClosure {
   double _percentage;
   float _inter_sweep_current;
   float _inter_sweep_estimate;
+  float _intra_sweep_estimate;
 
  public:
   BeginSweepClosure(double p, float inter_sweep_current,
-                              float inter_sweep_estimate) :
+                              float inter_sweep_estimate,
+                              float intra_sweep_estimate) :
    _percentage(p),
    _inter_sweep_current(inter_sweep_current),
-   _inter_sweep_estimate(inter_sweep_estimate) { }
+   _inter_sweep_estimate(inter_sweep_estimate),
+   _intra_sweep_estimate(intra_sweep_estimate) { }
 
   void do_list(FreeList* fl) {
     double coalSurplusPercent = _percentage;
-    fl->compute_desired(_inter_sweep_current, _inter_sweep_estimate);
+    fl->compute_desired(_inter_sweep_current, _inter_sweep_estimate, _intra_sweep_estimate);
     fl->set_coalDesired((ssize_t)((double)fl->desired() * coalSurplusPercent));
     fl->set_beforeSweep(fl->count());
     fl->set_bfrSurp(fl->surplus());
@@ -939,9 +970,10 @@ FreeChunk* BinaryTreeDictionary::find_chunk_ends_at(HeapWord* target) const {
 }
 
 void BinaryTreeDictionary::beginSweepDictCensus(double coalSurplusPercent,
-  float inter_sweep_current, float inter_sweep_estimate) {
+  float inter_sweep_current, float inter_sweep_estimate, float intra_sweep_estimate) {
   BeginSweepClosure bsc(coalSurplusPercent, inter_sweep_current,
-                                            inter_sweep_estimate);
+                                            inter_sweep_estimate,
+                                            intra_sweep_estimate);
   bsc.do_tree(root());
 }
 
@@ -1077,13 +1109,13 @@ void BinaryTreeDictionary::reportStatistics() const {
 // Print census information - counts, births, deaths, etc.
 // for each list in the tree.  Also print some summary
 // information.
-class printTreeCensusClosure : public AscendTreeCensusClosure {
+class PrintTreeCensusClosure : public AscendTreeCensusClosure {
   int _print_line;
   size_t _totalFree;
   FreeList _total;
 
  public:
-  printTreeCensusClosure() {
+  PrintTreeCensusClosure() {
     _print_line = 0;
     _totalFree = 0;
   }
@@ -1113,7 +1145,7 @@ void BinaryTreeDictionary::printDictCensus(void) const {
 
   gclog_or_tty->print("\nBinaryTree\n");
   FreeList::print_labels_on(gclog_or_tty, "size");
-  printTreeCensusClosure ptc;
+  PrintTreeCensusClosure ptc;
   ptc.do_tree(root());
 
   FreeList* total = ptc.total();
@@ -1128,6 +1160,38 @@ void BinaryTreeDictionary::printDictCensus(void) const {
               /(total->prevSweep() != 0 ? (double)total->prevSweep() : 1.0),
              (double)(total->desired() - total->count())
              /(total->desired() != 0 ? (double)total->desired() : 1.0));
+}
+
+class PrintFreeListsClosure : public AscendTreeCensusClosure {
+  outputStream* _st;
+  int _print_line;
+
+ public:
+  PrintFreeListsClosure(outputStream* st) {
+    _st = st;
+    _print_line = 0;
+  }
+  void do_list(FreeList* fl) {
+    if (++_print_line >= 40) {
+      FreeList::print_labels_on(_st, "size");
+      _print_line = 0;
+    }
+    fl->print_on(gclog_or_tty);
+    size_t sz = fl->size();
+    for (FreeChunk* fc = fl->head(); fc != NULL;
+         fc = fc->next()) {
+      _st->print_cr("\t[" PTR_FORMAT "," PTR_FORMAT ")  %s",
+                    fc, (HeapWord*)fc + sz,
+                    fc->cantCoalesce() ? "\t CC" : "");
+    }
+  }
+};
+
+void BinaryTreeDictionary::print_free_lists(outputStream* st) const {
+
+  FreeList::print_labels_on(st, "size");
+  PrintFreeListsClosure pflc(st);
+  pflc.do_tree(root());
 }
 
 // Verify the following tree invariants:

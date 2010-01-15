@@ -1274,7 +1274,7 @@ void HeapObjectDumper::do_object(oop o) {
   if (o->is_klass()) return;
 
   // skip classes as these emitted as HPROF_GC_CLASS_DUMP records
-  if (o->klass() == SystemDictionary::class_klass()) {
+  if (o->klass() == SystemDictionary::Class_klass()) {
     if (!java_lang_Class::is_primitive(o)) {
       return;
     }
