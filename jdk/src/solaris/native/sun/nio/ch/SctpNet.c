@@ -484,7 +484,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setIntOption0
         arglen = sizeof(arg);
     }
 
-    if (setsockopt(fd, klevel, kopt, parg, arglen) < 0) {
+    if (NET_SetSockOpt(fd, klevel, kopt, parg, arglen) < 0) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                                      "sun_nio_ch_SctpNet.setIntOption0");
     }
@@ -517,7 +517,7 @@ JNIEXPORT int JNICALL Java_sun_nio_ch_SctpNet_getIntOption0
         arglen = sizeof(result);
     }
 
-    if (getsockopt(fd, klevel, kopt, arg, &arglen) < 0) {
+    if (NET_GetSockOpt(fd, klevel, kopt, arg, &arglen) < 0) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.Net.getIntOption");
         return -1;
