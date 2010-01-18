@@ -234,6 +234,7 @@ FILES_src = \
 	sun/nio/cs/UTF_16BE.java \
 	sun/nio/cs/UTF_16LE.java \
 	sun/nio/cs/UTF_8.java \
+	sun/nio/cs/Unicode.java \
 	sun/nio/cs/UnicodeDecoder.java \
 	sun/nio/cs/UnicodeEncoder.java \
 	sun/nio/cs/UTF_32.java \
