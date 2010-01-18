@@ -150,10 +150,8 @@ SUNWprivate_1.1 {
 		Java_java_lang_StrictMath_asin;
 		Java_java_lang_StrictMath_atan;
 		Java_java_lang_StrictMath_atan2;
-		Java_java_lang_StrictMath_ceil;
 		Java_java_lang_StrictMath_cos;
 		Java_java_lang_StrictMath_exp;
-		Java_java_lang_StrictMath_floor;
 		Java_java_lang_StrictMath_log;
 		Java_java_lang_StrictMath_log10;
 		Java_java_lang_StrictMath_pow;
