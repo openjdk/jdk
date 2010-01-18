@@ -110,6 +110,38 @@ jboolean loadSocketExtensionFuncs
     return JNI_TRUE;
 }
 
+jint
+handleSocketError(JNIEnv *env, jint errorValue)
+{
+    char *xn;
+    switch (errorValue) {
+        case EINPROGRESS:     /* Non-blocking connect */
+            return 0;
+        case EPROTO:
+            xn= JNU_JAVANETPKG "ProtocolException";
+            break;
+        case ECONNREFUSED:
+            xn = JNU_JAVANETPKG "ConnectException";
+            break;
+        case ETIMEDOUT:
+            xn = JNU_JAVANETPKG "ConnectException";
+            break;
+        case EHOSTUNREACH:
+            xn = JNU_JAVANETPKG "NoRouteToHostException";
+            break;
+        case EADDRINUSE:  /* Fall through */
+        case EADDRNOTAVAIL:
+            xn = JNU_JAVANETPKG "BindException";
+            break;
+        default:
+            xn = JNU_JAVANETPKG "SocketException";
+            break;
+    }
+    errno = errorValue;
+    JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
+    return IOS_THROWN;
+}
+
 /*
  * Class:     sun_nio_ch_SctpNet
  * Method:    init
