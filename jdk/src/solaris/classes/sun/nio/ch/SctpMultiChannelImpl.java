@@ -842,16 +842,17 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         int streamNumber = messageInfo.streamNumber();
         boolean unordered = messageInfo.isUnordered();
         int ppid = messageInfo.payloadProtocolID();
-        int pos = src.position();
-        int lim = src.limit();
-        assert (pos <= lim && streamNumber >= 0);
-        int rem = (pos <= lim ? lim - pos : 0);
 
         if (src instanceof DirectBuffer)
-            return sendFromNativeBuffer(fd, src, rem, pos, target, assocId,
+            return sendFromNativeBuffer(fd, src, target, assocId,
                     streamNumber, unordered, ppid);
 
         /* Substitute a native buffer */
+        int pos = src.position();
+        int lim = src.limit();
+        assert (pos <= lim && streamNumber >= 0);
+
+        int rem = (pos <= lim ? lim - pos : 0);
         ByteBuffer bb = Util.getTemporaryDirectBuffer(rem);
         try {
             bb.put(src);
@@ -859,7 +860,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             /* Do not update src until we see how many bytes were written */
             src.position(pos);
 
-            int n = sendFromNativeBuffer(fd, bb, rem, pos, target, assocId,
+            int n = sendFromNativeBuffer(fd, bb, target, assocId,
                     streamNumber, unordered, ppid);
             if (n > 0) {
                 /* now update src */
@@ -873,14 +874,17 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     private int sendFromNativeBuffer(int fd,
                                      ByteBuffer bb,
-                                     int rem,
-                                     int pos,
                                      SocketAddress target,
                                      int assocId,
                                      int streamNumber,
                                      boolean unordered,
                                      int ppid)
             throws IOException {
+        int pos = bb.position();
+        int lim = bb.limit();
+        assert (pos <= lim);
+        int rem = (pos <= lim ? lim - pos : 0);
+
         int written = send0(fd, ((DirectBuffer)bb).address() + pos,
                             rem, target, assocId, streamNumber, unordered, ppid);
         if (written > 0)
