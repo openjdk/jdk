@@ -307,6 +307,9 @@ INCLUDEDIR          = $(OUTPUTDIR)/include
 # for generated class files
 CLASSBINDIR         = $(OUTPUTDIR)/classes
 DEMOCLASSDIR        = $(OUTPUTDIR)/democlasses
+# for modules
+MODULES_DIR         = $(OUTPUTDIR)/modules
+ABS_MODULES_DIR     = $(ABS_OUTPUTDIR)/modules
 # for generated tool class files
 BUILDTOOLCLASSDIR   = $(OUTPUTDIR)/btclasses
 # for build tool jar files
@@ -385,10 +388,18 @@ endif
 #
 # Build units may or may not define MODULE.  Default to "other".
 #
+# MODULE variable defines the lowest-level module name that
+# might or might not be the name of the modules created in
+# the modules build (see make/modules/modules.config and
+# modules.group).
+#
+MODULES_TEMPDIR     = $(OUTPUTDIR)/tmp/modules
+ABS_MODULES_TEMPDIR = $(ABS_OUTPUTDIR)/tmp/modules
+
 ifndef MODULE
   MODULE = other
 endif
-override MODULE_DEST_DIR = $(OUTPUTDIR)/tmp/modules/$(MODULE)
+override MODULE_DEST_DIR = $(MODULES_TEMPDIR)/$(MODULE)
 
 # the use of += above makes a space separated list which we need to 
 # remove for filespecs.
@@ -516,7 +527,7 @@ MODULE_PATH_PATTERN = -e 's%.*\/classes\/%classes\/%' \
 define install-module-file
 dest=`echo $(@D)/ | $(SED) $(MODULE_PATH_PATTERN)` ; \
 $(MKDIR) -p $(MODULE_DEST_DIR)/$$dest; \
-$(CP) $@ $(MODULE_DEST_DIR)/$$dest
+$(CP) -f $@ $(MODULE_DEST_DIR)/$$dest
 endef
 
 # Install all files from the directory to its module
@@ -535,7 +546,7 @@ endef
 # install a sym link in its module
 define install-module-sym-link
 dest=`echo $@ | $(SED) $(MODULE_PATH_PATTERN)` ; \
-$(LN) -s $1 $(MODULE_DEST_DIR)/$$dest
+$(LN) -sf $1 $(MODULE_DEST_DIR)/$$dest
 endef
 
 

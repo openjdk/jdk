@@ -121,8 +121,6 @@ endif
 # JRE Image
 ######################################################
 
-MODULES_TEMPDIR=$(ABS_TEMPDIR)/modules
-MODULES_LIB = $(ABS_OUTPUTDIR)/modules
 MODULES_LIST = $(MODULES_TEMPDIR)/classlist/modules.list
 
 # Modules in the jre/lib/security directory
@@ -188,7 +186,7 @@ initial-module-image-jre:: initial-module-image-jre-setup \
 	@# copy modules to jre/lib
 	@#
 	for m in `$(NAWK) '{print $$1}' $(MODULES_LIST)` ; do \
-	    $(CP) $(MODULES_LIB)/$$m/lib/$$m.jar $(JRE_MODULE_IMAGE_DIR)/lib ; \
+	    $(CP) $(MODULES_DIR)/$$m/lib/$$m.jar $(JRE_MODULE_IMAGE_DIR)/lib ; \
 	done
 	$(MKDIR) -p $(JRE_MODULE_IMAGE_DIR)/lib/ext
 	for m in $(EXT_MODULES) ; do \
@@ -344,7 +342,7 @@ initial-module-image-jdk:: initial-module-image-jdk-setup \
 	@#
 	$(MKDIR) -p $(JDK_MODULE_IMAGE_DIR)/lib
 	for m in $(JDK_MODULES) ; do \
-	    $(CP) $(MODULES_LIB)/$$m/lib/$$m.jar $(JDK_MODULE_IMAGE_DIR)/lib ; \
+	    $(CP) $(MODULES_DIR)/$$m/lib/$$m.jar $(JDK_MODULE_IMAGE_DIR)/lib ; \
         done
   ifeq ($(PLATFORM), windows)
 	@#
