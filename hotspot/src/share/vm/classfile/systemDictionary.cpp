@@ -2164,9 +2164,8 @@ klassOop SystemDictionary::find_constrained_instance_or_array_klass(
   // a loader constraint that would require this loader to return the
   // klass that is already loaded.
   if (FieldType::is_array(class_name())) {
-    // Array classes are hard because their klassOops are not kept in the
-    // constraint table. The array klass may be constrained, but the elem class
-    // may not be.
+    // For array classes, their klassOops are not kept in the
+    // constraint table. The element klassOops are.
     jint dimension;
     symbolOop object_key;
     BasicType t = FieldType::get_array_info(class_name(), &dimension,
@@ -2176,8 +2175,9 @@ klassOop SystemDictionary::find_constrained_instance_or_array_klass(
     } else {
       symbolHandle elem_name(THREAD, object_key);
       MutexLocker mu(SystemDictionary_lock, THREAD);
-      klass = constraints()->find_constrained_elem_klass(class_name, elem_name, class_loader, THREAD);
+      klass = constraints()->find_constrained_klass(elem_name, class_loader);
     }
+    // If element class already loaded, allocate array klass
     if (klass != NULL) {
       klass = Klass::cast(klass)->array_klass_or_null(dimension);
     }
@@ -2195,22 +2195,38 @@ bool SystemDictionary::add_loader_constraint(symbolHandle class_name,
                                              Handle class_loader1,
                                              Handle class_loader2,
                                              Thread* THREAD) {
-  unsigned int d_hash1 = dictionary()->compute_hash(class_name, class_loader1);
+  symbolHandle constraint_name;
+  if (!FieldType::is_array(class_name())) {
+    constraint_name = class_name;
+  } else {
+    // For array classes, their klassOops are not kept in the
+    // constraint table. The element classes are.
+    jint dimension;
+    symbolOop object_key;
+    BasicType t = FieldType::get_array_info(class_name(), &dimension,
+                                            &object_key, CHECK_(false));
+    // primitive types always pass
+    if (t != T_OBJECT) {
+      return true;
+    } else {
+      constraint_name = symbolHandle(THREAD, object_key);
+    }
+  }
+  unsigned int d_hash1 = dictionary()->compute_hash(constraint_name, class_loader1);
   int d_index1 = dictionary()->hash_to_index(d_hash1);
 
-  unsigned int d_hash2 = dictionary()->compute_hash(class_name, class_loader2);
+  unsigned int d_hash2 = dictionary()->compute_hash(constraint_name, class_loader2);
   int d_index2 = dictionary()->hash_to_index(d_hash2);
-
   {
-    MutexLocker mu_s(SystemDictionary_lock, THREAD);
+  MutexLocker mu_s(SystemDictionary_lock, THREAD);
 
-    // Better never do a GC while we're holding these oops
-    No_Safepoint_Verifier nosafepoint;
+  // Better never do a GC while we're holding these oops
+  No_Safepoint_Verifier nosafepoint;
 
-    klassOop klass1 = find_class(d_index1, d_hash1, class_name, class_loader1);
-    klassOop klass2 = find_class(d_index2, d_hash2, class_name, class_loader2);
-    return constraints()->add_entry(class_name, klass1, class_loader1,
-                                    klass2, class_loader2);
+  klassOop klass1 = find_class(d_index1, d_hash1, constraint_name, class_loader1);
+  klassOop klass2 = find_class(d_index2, d_hash2, constraint_name, class_loader2);
+  return constraints()->add_entry(constraint_name, klass1, class_loader1,
+                                  klass2, class_loader2);
   }
 }
 
@@ -2287,6 +2303,7 @@ symbolOop SystemDictionary::find_resolution_error(constantPoolHandle pool, int w
 // Returns the name of the type that failed a loader constraint check, or
 // NULL if no constraint failed. The returned C string needs cleaning up
 // with a ResourceMark in the caller.  No exception except OOME is thrown.
+// Arrays are not added to the loader constraint table, their elements are.
 char* SystemDictionary::check_signature_loaders(symbolHandle signature,
                                                Handle loader1, Handle loader2,
                                                bool is_method, TRAPS)  {
