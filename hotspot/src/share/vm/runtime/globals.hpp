@@ -2012,6 +2012,10 @@ class CommandLineFlags {
   diagnostic(bool, GCParallelVerificationEnabled, true,                     \
           "Enable parallel memory system verification")                     \
                                                                             \
+  diagnostic(bool, DeferInitialCardMark, false,                             \
+          "When +ReduceInitialCardMarks, explicitly defer any that "        \
+           "may arise from new_pre_store_barrier")                          \
+                                                                            \
   diagnostic(bool, VerifyRememberedSets, false,                             \
           "Verify GC remembered sets")                                      \
                                                                             \
