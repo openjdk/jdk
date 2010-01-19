@@ -51,6 +51,8 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
 }
 
 jint GenCollectedHeap::initialize() {
+  CollectedHeap::pre_initialize();
+
   int i;
   _n_gens = gen_policy()->number_of_generations();
 
@@ -129,6 +131,7 @@ jint GenCollectedHeap::initialize() {
 
   _rem_set = collector_policy()->create_rem_set(_reserved, n_covered_regions);
   set_barrier_set(rem_set()->bs());
+
   _gch = this;
 
   for (i = 0; i < _n_gens; i++) {
