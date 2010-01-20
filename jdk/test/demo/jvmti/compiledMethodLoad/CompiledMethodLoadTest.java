@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,25 @@
 
 
 /* @test
- * @bug 5012882 6299047
- * @summary Test jvmti hprof
+ * @bug 6580131
+ * @summary Test jvmti demo compiledMethodLoad
  *
- * @compile -g HelloWorld.java ../DemoRun.java
- * @build CpuTimesTest
- * @run main CpuTimesTest HelloWorld
+ * @compile ../DemoRun.java ../Hello.java
+ * @build CompiledMethodLoadTest
+ * @run main CompiledMethodLoadTest Hello
  */
 
-public class CpuTimesTest {
+public class CompiledMethodLoadTest {
 
     public static void main(String args[]) throws Exception {
-        DemoRun hprof;
+        DemoRun demo;
 
-        /* Run JVMTI hprof agent with cpu=times */
-        hprof = new DemoRun("hprof", "cpu=times");
-        hprof.runit(args[0]);
+        /* Run demo that uses JVMTI compiledMethodLoad agent (no options) */
+        demo = new DemoRun("compiledMethodLoad", "" /* options to compiledMethodLoad */ );
+        demo.runit(args[0]);
 
         /* Make sure patterns in output look ok */
-        if (hprof.output_contains("ERROR")) {
+        if (demo.output_contains("ERROR")) {
             throw new RuntimeException("Test failed - ERROR seen in output");
         }
 

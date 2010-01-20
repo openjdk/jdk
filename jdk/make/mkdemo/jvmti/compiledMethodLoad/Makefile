@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2010 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,45 +23,19 @@
 # have any questions.
 #
 
-BUILDDIR = ../..
-MODULE   = base
-
+BUILDDIR = ../../..
+PRODUCT = demo/jvmti
+DEMONAME = compiledMethodLoad
 include $(BUILDDIR)/common/Defs.gmk
 
-#
-# Make the directories of include files shipped with the JDK.
-#
+DEMO_ROOT       = $(SHARE_SRC)/demo/jvmti/$(DEMONAME)
+DEMO_TOPFILES   = ./README.txt
+DEMO_DESTDIR    = $(DEMODIR)/jvmti/$(DEMONAME)
 
-FILES_h = $(INCLUDEDIR)/jni.h 			\
-	  $(PLATFORM_INCLUDE)/jni_md.h		\
-	  $(INCLUDEDIR)/jvmti.h			\
-	  $(INCLUDEDIR)/jvmticmlr.h		\
-	  $(INCLUDEDIR)/classfile_constants.h
-
-$(INCLUDEDIR)/%.h: $(SHARE_SRC)/javavm/export/%.h
-	$(install-non-module-file)
-
-$(PLATFORM_INCLUDE)/%.h: $(PLATFORM_SRC)/javavm/export/%.h
-	$(install-non-module-file)
-
-JVMCFG = $(LIBDIR)/$(LIBARCH)/jvm.cfg
+DEMO_OBJECTS = agent_util.$(OBJECT_SUFFIX)
 
 #
-# How to install jvm.cfg.
+# Demo jar building rules.
 #
-ifeq ($(ZERO_BUILD), true)
-JVMCFG_ARCH = zero
-else
-JVMCFG_ARCH = $(ARCH)
-endif
-
-$(JVMCFG): $(PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg
-	$(install-file)
-
-all: build
-
-build: $(FILES_h) $(JVMCFG)
-
-clean clobber:: 
-	$(RM) $(FILES_h) $(JVMCFG)
+include $(BUILDDIR)/common/Demo.gmk
 
