@@ -2530,6 +2530,7 @@ jvmtiExport.hpp                         growableArray.hpp
 jvmtiExport.hpp                         handles.hpp
 jvmtiExport.hpp                         iterator.hpp
 jvmtiExport.hpp                         jvmti.h
+jvmtiExport.hpp                         jvmticmlr.h
 jvmtiExport.hpp                         oop.hpp
 jvmtiExport.hpp                         oopsHierarchy.hpp
 
