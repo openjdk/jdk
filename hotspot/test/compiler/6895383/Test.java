@@ -30,6 +30,9 @@
  * @run main/othervm -Xcomp Test
  */
 
+import java.util.*;
+import java.util.concurrent.*;
+
 public class Test {
     public static void main(String argv[]) {
         Test test = new Test();
