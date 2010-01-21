@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,12 +51,19 @@ public class Expression extends Statement {
     private Object value = unbound;
 
     /**
-     * Creates a new <code>Statement</code> object with a <code>target</code>,
-     * <code>methodName</code> and <code>arguments</code> as per the parameters.
+     * Creates a new {@link Expression} object
+     * for the specified target object to invoke the method
+     * specified by the name and by the array of arguments.
+     * <p>
+     * The {@code target} and the {@code methodName} values should not be {@code null}.
+     * Otherwise an attempt to execute this {@code Expression}
+     * will result in a {@code NullPointerException}.
+     * If the {@code arguments} value is {@code null},
+     * an empty array is used as the value of the {@code arguments} property.
      *
-     * @param target The target of this expression.
-     * @param methodName The methodName of this expression.
-     * @param arguments The arguments of this expression. If <code>null</code> then an empty array will be used.
+     * @param target  the target object of this expression
+     * @param methodName  the name of the method to invoke on the specified target
+     * @param arguments  the array of arguments to invoke the specified method
      *
      * @see #getValue
      */
@@ -66,16 +73,23 @@ public class Expression extends Statement {
     }
 
     /**
-     * Creates a new <code>Expression</code> object for a method
-     * that returns a result. The result will never be calculated
-     * however, since this constructor uses the <code>value</code>
-     * parameter to set the value property by calling the
-     * <code>setValue</code> method.
+     * Creates a new {@link Expression} object with the specified value
+     * for the specified target object to invoke the  method
+     * specified by the name and by the array of arguments.
+     * The {@code value} value is used as the value of the {@code value} property,
+     * so the {@link #getValue} method will return it
+     * without executing this {@code Expression}.
+     * <p>
+     * The {@code target} and the {@code methodName} values should not be {@code null}.
+     * Otherwise an attempt to execute this {@code Expression}
+     * will result in a {@code NullPointerException}.
+     * If the {@code arguments} value is {@code null},
+     * an empty array is used as the value of the {@code arguments} property.
      *
-     * @param value The value of this expression.
-     * @param target The target of this expression.
-     * @param methodName The methodName of this expression.
-     * @param arguments The arguments of this expression. If <code>null</code> then an empty array will be used.
+     * @param value  the value of this expression
+     * @param target  the target object of this expression
+     * @param methodName  the name of the method to invoke on the specified target
+     * @param arguments  the array of arguments to invoke the specified method
      *
      * @see #setValue
      */
