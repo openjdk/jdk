@@ -1714,7 +1714,7 @@ public class Gen extends JCTree.Visitor {
         for (Attribute.TypeCompound ta : meth.typeAnnotations) {
             if (ta.position.pos == treePos) {
                 ta.position.offset = code.cp;
-                ta.position.lvarOffset[0] = code.cp;
+                ta.position.lvarOffset = new int[] { code.cp };
                 ta.position.isValidOffset = true;
             }
         }
@@ -1726,7 +1726,7 @@ public class Gen extends JCTree.Visitor {
         for (Attribute.TypeCompound ta : meth.owner.typeAnnotations) {
             if (ta.position.pos == treePos) {
                 ta.position.offset = code.cp;
-                ta.position.lvarOffset[0] = code.cp;
+                ta.position.lvarOffset = new int[] { code.cp };
                 ta.position.isValidOffset = true;
             }
         }
@@ -1738,7 +1738,7 @@ public class Gen extends JCTree.Visitor {
             for (Attribute.TypeCompound ta : s.typeAnnotations) {
                 if (ta.position.pos == treePos) {
                     ta.position.offset = code.cp;
-                    ta.position.lvarOffset[0] = code.cp;
+                    ta.position.lvarOffset = new int[] { code.cp };
                     ta.position.isValidOffset = true;
                 }
             }
