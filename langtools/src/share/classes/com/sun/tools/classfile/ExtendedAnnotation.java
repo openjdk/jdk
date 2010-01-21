@@ -264,18 +264,18 @@ public class ExtendedAnnotation {
         public int offset = -1;
 
         // For locals.
-        public int[] lvarOffset = new int[] { -1 };
-        public int[] lvarLength = new int[] { -1 };
-        public int[] lvarIndex = new int[] { -1 };
+        public int[] lvarOffset = null;
+        public int[] lvarLength = null;
+        public int[] lvarIndex = null;
 
         // For type parameter bound
-        public int bound_index = -1;
+        public int bound_index = Integer.MIN_VALUE;
 
         // For type parameter and method parameter
-        public int parameter_index = -1;
+        public int parameter_index = Integer.MIN_VALUE;
 
         // For class extends, implements, and throws classes
-        public int type_index = -2;
+        public int type_index = Integer.MIN_VALUE;
 
         // For wildcards
         public Position wildcard_position = null;
