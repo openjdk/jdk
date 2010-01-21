@@ -133,6 +133,12 @@ public class FormatData_fi extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
+            { "AmPmMarkers",
+                new String[] {
+                    "ap.", // am marker
+                    "ip."  // pm marker
+                }
+            },
         };
     }
 }

@@ -113,7 +113,7 @@ public class FormatData_uk extends ListResourceBundle {
             { "NumberElements",
                 new String[] {
                     ",", // decimal separator
-                    ".", // group (thousands) separator
+                    "\u00a0", // group (thousands) separator
                     ";", // list separator
                     "%", // percent sign
                     "0", // native 0 digit
