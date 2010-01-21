@@ -170,11 +170,13 @@ class ReferenceProcessor : public CHeapObj {
   // The caller is responsible for taking care of potential
   // interference with concurrent operations on these lists
   // (or predicates involved) by other threads. Currently
-  // only used by the CMS collector.
+  // only used by the CMS collector.  should_unload_classes is
+  // used to aid assertion checking when classes are collected.
   void preclean_discovered_references(BoolObjectClosure* is_alive,
                                       OopClosure*        keep_alive,
                                       VoidClosure*       complete_gc,
-                                      YieldClosure*      yield);
+                                      YieldClosure*      yield,
+                                      bool               should_unload_classes);
 
   // Delete entries in the discovered lists that have
   // either a null referent or are not active. Such
