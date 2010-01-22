@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2731,6 +2731,79 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_oop_arraycopy             = StubRoutines::_oop_arraycopy;
   }
 
+  void generate_math_stubs() {
+    {
+      StubCodeMark mark(this, "StubRoutines", "log");
+      StubRoutines::_intrinsic_log = (double (*)(double)) __ pc();
+
+      __ subq(rsp, 8);
+      __ movdbl(Address(rsp, 0), xmm0);
+      __ fld_d(Address(rsp, 0));
+      __ flog();
+      __ fstp_d(Address(rsp, 0));
+      __ movdbl(xmm0, Address(rsp, 0));
+      __ addq(rsp, 8);
+      __ ret(0);
+    }
+    {
+      StubCodeMark mark(this, "StubRoutines", "log10");
+      StubRoutines::_intrinsic_log10 = (double (*)(double)) __ pc();
+
+      __ subq(rsp, 8);
+      __ movdbl(Address(rsp, 0), xmm0);
+      __ fld_d(Address(rsp, 0));
+      __ flog10();
+      __ fstp_d(Address(rsp, 0));
+      __ movdbl(xmm0, Address(rsp, 0));
+      __ addq(rsp, 8);
+      __ ret(0);
+    }
+    {
+      StubCodeMark mark(this, "StubRoutines", "sin");
+      StubRoutines::_intrinsic_sin = (double (*)(double)) __ pc();
+
+      __ subq(rsp, 8);
+      __ movdbl(Address(rsp, 0), xmm0);
+      __ fld_d(Address(rsp, 0));
+      __ trigfunc('s');
+      __ fstp_d(Address(rsp, 0));
+      __ movdbl(xmm0, Address(rsp, 0));
+      __ addq(rsp, 8);
+      __ ret(0);
+    }
+    {
+      StubCodeMark mark(this, "StubRoutines", "cos");
+      StubRoutines::_intrinsic_cos = (double (*)(double)) __ pc();
+
+      __ subq(rsp, 8);
+      __ movdbl(Address(rsp, 0), xmm0);
+      __ fld_d(Address(rsp, 0));
+      __ trigfunc('c');
+      __ fstp_d(Address(rsp, 0));
+      __ movdbl(xmm0, Address(rsp, 0));
+      __ addq(rsp, 8);
+      __ ret(0);
+    }
+    {
+      StubCodeMark mark(this, "StubRoutines", "tan");
+      StubRoutines::_intrinsic_tan = (double (*)(double)) __ pc();
+
+      __ subq(rsp, 8);
+      __ movdbl(Address(rsp, 0), xmm0);
+      __ fld_d(Address(rsp, 0));
+      __ trigfunc('t');
+      __ fstp_d(Address(rsp, 0));
+      __ movdbl(xmm0, Address(rsp, 0));
+      __ addq(rsp, 8);
+      __ ret(0);
+    }
+
+    // The intrinsic version of these seem to return the same value as
+    // the strict version.
+    StubRoutines::_intrinsic_exp = SharedRuntime::dexp;
+    StubRoutines::_intrinsic_pow = SharedRuntime::dpow;
+  }
+
 #undef __
 #define __ masm->
 
@@ -2945,6 +3018,8 @@ class StubGenerator: public StubCodeGenerator {
         MethodHandles::generate_method_handle_stub(_masm, ek);
       }
     }
+
+    generate_math_stubs();
   }
 
  public:
