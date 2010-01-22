@@ -260,6 +260,10 @@ public:
     return true;
   }
 
+  virtual bool card_mark_must_follow_store() const {
+    return UseConcMarkSweepGC;
+  }
+
   // We don't need barriers for stores to objects in the
   // young gen and, a fortiori, for initializing stores to
   // objects therein. This applies to {DefNew,ParNew}+{Tenured,CMS}

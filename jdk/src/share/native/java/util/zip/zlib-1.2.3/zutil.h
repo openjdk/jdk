@@ -220,7 +220,8 @@ extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  endif
 #  ifdef WIN32
      /* In Win32, vsnprintf is available as the "non-ANSI" _vsnprintf. */
-#    if !defined(vsnprintf) && !defined(NO_vsnprintf)
+#    if !defined(vsnprintf) && !defined(NO_vsnprintf) && (!defined(_MSC_VER) || (_MSC_VER < 1500))
+       /* Only needed before Visual Studio 2008 */
 #      define vsnprintf _vsnprintf
 #    endif
 #  endif

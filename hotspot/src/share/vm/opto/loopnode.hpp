@@ -30,6 +30,7 @@ class LoopNode;
 class Node;
 class PhaseIdealLoop;
 class VectorSet;
+class Invariance;
 struct small_cache;
 
 //
@@ -325,6 +326,10 @@ public:
   // Returns TRUE if loop tree is structurally changed.
   bool beautify_loops( PhaseIdealLoop *phase );
 
+  // Perform optimization to use the loop predicates for null checks and range checks.
+  // Applies to any loop level (not just the innermost one)
+  bool loop_predication( PhaseIdealLoop *phase);
+
   // Perform iteration-splitting on inner loops.  Split iterations to
   // avoid range checks or one-shot null checks.  Returns false if the
   // current round of loop opts should stop.
@@ -394,6 +399,9 @@ public:
   // mutual alignment).  Note that if we vectorize short memory ops
   // into longer memory ops, we may want to increase alignment.
   bool policy_align( PhaseIdealLoop *phase ) const;
+
+  // Return TRUE if "iff" is a range check.
+  bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar) const;
 
   // Compute loop trip count from profile data
   void compute_profile_trip_cnt( PhaseIdealLoop *phase );
@@ -521,9 +529,6 @@ class PhaseIdealLoop : public PhaseTransform {
   }
   Node *dom_lca_for_get_late_ctrl_internal( Node *lca, Node *n, Node *tag );
 
-  // true if CFG node d dominates CFG node n
-  bool is_dominator(Node *d, Node *n);
-
   // Helper function for directing control inputs away from CFG split
   // points.
   Node *find_non_split_ctrl( Node *ctrl ) const {
@@ -572,6 +577,17 @@ public:
     assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
     return n;
   }
+  // true if CFG node d dominates CFG node n
+  bool is_dominator(Node *d, Node *n);
+  // return get_ctrl for a data node and self(n) for a CFG node
+  Node* ctrl_or_self(Node* n) {
+    if (has_ctrl(n))
+      return get_ctrl(n);
+    else {
+      assert (n->is_CFG(), "must be a CFG node");
+      return n;
+    }
+  }
 
 private:
   Node *get_ctrl_no_update( Node *i ) const {
@@ -600,7 +616,7 @@ private:
   // Lazy-dazy update of 'get_ctrl' and 'idom_at' mechanisms.  Replace
   // the 'old_node' with 'new_node'.  Kill old-node.  Add a reference
   // from old_node to new_node to support the lazy update.  Reference
-  // replaces loop reference, since that is not neede for dead node.
+  // replaces loop reference, since that is not needed for dead node.
 public:
   void lazy_update( Node *old_node, Node *new_node ) {
     assert( old_node != new_node, "no cycles please" );
@@ -679,11 +695,11 @@ private:
     _dom_lca_tags(C->comp_arena()),
     _verify_me(NULL),
     _verify_only(true) {
-    build_and_optimize(false);
+    build_and_optimize(false, false);
   }
 
   // build the loop tree and perform any requested optimizations
-  void build_and_optimize(bool do_split_if);
+  void build_and_optimize(bool do_split_if, bool do_loop_pred);
 
 public:
   // Dominators for the sea of nodes
@@ -694,13 +710,13 @@ public:
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
 
   // Compute the Ideal Node to Loop mapping
-  PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs) :
+  PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs, bool do_loop_pred) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
     _dom_lca_tags(C->comp_arena()),
     _verify_me(NULL),
     _verify_only(false) {
-    build_and_optimize(do_split_ifs);
+    build_and_optimize(do_split_ifs, do_loop_pred);
   }
 
   // Verify that verify_me made the same decisions as a fresh run.
@@ -710,7 +726,7 @@ public:
     _dom_lca_tags(C->comp_arena()),
     _verify_me(verify_me),
     _verify_only(false) {
-    build_and_optimize(false);
+    build_and_optimize(false, false);
   }
 
   // Build and verify the loop tree without modifying the graph.  This
@@ -789,6 +805,30 @@ public:
 
   // Return true if exp is a scaled induction var plus (or minus) constant
   bool is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale, Node** p_offset, int depth = 0);
+
+  // Return true if proj is for "proj->[region->..]call_uct"
+  bool is_uncommon_trap_proj(ProjNode* proj, bool must_reason_predicate = false);
+  // Return true for    "if(test)-> proj -> ...
+  //                          |
+  //                          V
+  //                      other_proj->[region->..]call_uct"
+  bool is_uncommon_trap_if_pattern(ProjNode* proj, bool must_reason_predicate = false);
+  // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
+  ProjNode* create_new_if_for_predicate(ProjNode* cont_proj);
+  // Find a good location to insert a predicate
+  ProjNode* find_predicate_insertion_point(Node* start_c);
+  // Construct a range check for a predicate if
+  BoolNode* rc_predicate(Node* ctrl,
+                         int scale, Node* offset,
+                         Node* init, Node* limit, Node* stride,
+                         Node* range);
+
+  // Implementation of the loop predication to promote checks outside the loop
+  bool loop_predication_impl(IdealLoopTree *loop);
+
+  // Helper function to collect predicate for eliminating the useless ones
+  void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
+  void eliminate_useless_predicates();
 
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
   void do_range_check( IdealLoopTree *loop, Node_List &old_new );
@@ -906,7 +946,6 @@ private:
   const TypeInt* filtered_type_from_dominators( Node* val, Node *val_ctrl);
 
   // Helper functions
-  void register_new_node( Node *n, Node *blk );
   Node *spinup( Node *iff, Node *new_false, Node *new_true, Node *region, Node *phi, small_cache *cache );
   Node *find_use_block( Node *use, Node *def, Node *old_false, Node *new_false, Node *old_true, Node *new_true );
   void handle_use( Node *use, Node *def, small_cache *cache, Node *region_dom, Node *new_false, Node *new_true, Node *old_false, Node *old_true );
@@ -918,6 +957,7 @@ private:
 public:
   void set_created_loop_node() { _created_loop_node = true; }
   bool created_loop_node()     { return _created_loop_node; }
+  void register_new_node( Node *n, Node *blk );
 
 #ifndef PRODUCT
   void dump( ) const;
