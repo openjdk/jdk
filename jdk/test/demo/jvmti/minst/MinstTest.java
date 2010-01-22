@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class MinstTest {
 
         /* Make sure patterns in output look ok */
         if (demo.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in oputput");
+            throw new RuntimeException("Test failed - ERROR seen in output");
         }
 
         /* Must be a pass. */
