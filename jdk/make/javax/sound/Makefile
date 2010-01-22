@@ -26,6 +26,7 @@
 # WARNING: Make sure the OPENJDK plugs are up-to-date, see make/common/internal/BinaryPlugs.gmk
 
 BUILDDIR = ../..
+MODULE  = sound
 PACKAGE = javax.sound
 LIBRARY = jsound
 PRODUCT = sun
