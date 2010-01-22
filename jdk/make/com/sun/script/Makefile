@@ -25,6 +25,7 @@
 
 
 BUILDDIR = ../../..
+MODULE  = scripting-rhino
 PACKAGE = com.sun.script
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

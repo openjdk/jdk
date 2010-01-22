@@ -43,7 +43,7 @@ OS=`uname -s`
 case "$OS" in
 SunOS | Linux )
   PS=":"  ;;
-Windows* )
+Windows* | CYGWIN* )
   PS=";"  ;;
 * )
   echo "Unrecognized system!"
@@ -85,14 +85,14 @@ CLASSPATH=${TESTCLASSES}/share; export CLASSPATH;
 ${JAVAC} -d ${TESTCLASSES}/nclasses ${TESTSRC}/install/SerialDriver.java
 
 # Run Case 1. Map test.SerialDriver within stream to install.SerialDriver.
-CLASSPATH=${TESTCLASSES}/oclasses${PS}${TESTCLASSES}/share; export CLASSPATH;
+CLASSPATH="${TESTCLASSES}/oclasses${PS}${TESTCLASSES}/share"; export CLASSPATH;
 ${JAVA} test.SerialDriver -s
-CLASSPATH=${TESTCLASSES}/nclasses${PS}${TESTCLASSES}/share; export CLASSPATH;
+CLASSPATH="${TESTCLASSES}/nclasses${PS}${TESTCLASSES}/share"; export CLASSPATH;
 ${JAVA} install.SerialDriver -d
 rm stream.ser
 
 # Run Case 2. Map install.SerialDriver within stream to test.SerialDriver.
-CLASSPATH=${TESTCLASSES}/nclasses${PS}${TESTCLASSES}/share; export CLASSPATH;
+CLASSPATH="${TESTCLASSES}/nclasses${PS}${TESTCLASSES}/share"; export CLASSPATH;
 ${JAVA} install.SerialDriver -s
-CLASSPATH=${TESTCLASSES}/oclasses${PS}${TESTCLASSES}/share; export CLASSPATH;
+CLASSPATH="${TESTCLASSES}/oclasses${PS}${TESTCLASSES}/share"; export CLASSPATH;
 ${JAVA} test.SerialDriver -d

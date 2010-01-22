@@ -27,6 +27,7 @@
 # Makefile for building dtrace extension
 #
 BUILDDIR = ../../..
+MODULE  = tracing
 PACKAGE = sun.tracing.dtrace
 LIBRARY = jsdt
 PRODUCT = sun

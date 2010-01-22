@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = rmic
 PACKAGE = sun.rmi.rmic
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
