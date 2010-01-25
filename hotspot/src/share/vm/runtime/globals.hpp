@@ -1201,7 +1201,7 @@ class CommandLineFlags {
   product(bool, UseSerialGC, false,                                         \
           "Use the serial garbage collector")                               \
                                                                             \
-  experimental(bool, UseG1GC, false,                                        \
+  product(bool, UseG1GC, false,                                             \
           "Use the Garbage-First garbage collector")                        \
                                                                             \
   product(bool, UseParallelGC, false,                                       \
