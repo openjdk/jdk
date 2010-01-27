@@ -1249,6 +1249,7 @@ void ClassLoader::compile_the_world() {
 }
 
 int ClassLoader::_compile_the_world_counter = 0;
+static int _codecache_sweep_counter = 0;
 
 void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
   int len = (int)strlen(name);
@@ -1293,6 +1294,13 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
           for (int n = 0; n < k->methods()->length(); n++) {
             methodHandle m (THREAD, methodOop(k->methods()->obj_at(n)));
             if (CompilationPolicy::canBeCompiled(m)) {
+
+              if (++_codecache_sweep_counter == CompileTheWorldSafepointInterval) {
+                // Give sweeper a chance to keep up with CTW
+                VM_ForceSafepoint op;
+                VMThread::execute(&op);
+                _codecache_sweep_counter = 0;
+              }
               // Force compilation
               CompileBroker::compile_method(m, InvocationEntryBci,
                                             methodHandle(), 0, "CTW", THREAD);
