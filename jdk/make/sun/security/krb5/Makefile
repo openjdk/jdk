@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = security-kerberos
 PACKAGE = sun.security.krb5
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
@@ -76,4 +77,11 @@ ifeq ($(PLATFORM), windows)
   OTHER_LDLIBS = $(JVMLIB)
 else
   OTHER_LDLIBS = -ldl $(JVMLIB)
+endif
+
+build:
+ifeq ($(PLATFORM),windows)
+	$(call make-launcher, kinit, sun.security.krb5.internal.tools.Kinit, , )
+	$(call make-launcher, klist, sun.security.krb5.internal.tools.Klist, , )
+	$(call make-launcher, ktab, sun.security.krb5.internal.tools.Ktab, , )
 endif

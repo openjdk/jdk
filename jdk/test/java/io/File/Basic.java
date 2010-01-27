@@ -75,7 +75,7 @@ public class Basic {
         if (!f.canRead()) fail(f, "is not readable");
         if (f.canWrite() != writeable)
             fail(f, writeable ? "is not writeable" : "is writeable");
-        int rwLen = (File.separatorChar == '/' ? 6 : 7);
+        int rwLen = 6;
         if (f.length() != length) fail(f, "has wrong length");
     }
 
@@ -89,7 +89,7 @@ public class Basic {
         if (nonExistantFile.exists()) fail(nonExistantFile, "exists");
 
         show(rwFile);
-        testFile(rwFile, true, File.separatorChar == '/' ? 6 : 7);
+        testFile(rwFile, true, 6);
         rwFile.delete();
         if (rwFile.exists())
             fail(rwFile, "could not delete");

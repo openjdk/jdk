@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../../..
+MODULE  = pack200
 PACKAGE = com.sun.java.util.jar.pack
 LIBRARY = unpack
 PRODUCT = sun
@@ -123,10 +124,13 @@ COBJDIR = $(strip $(subst unpack,unpack-cmd,$(OBJDIR)))
 
 all: build
 
-build: prop
+build: prop pack200-tool
 
 prop:
 	$(MAKE) -C prop
+
+pack200-tool:
+	$(call make-launcher, pack200, com.sun.java.util.jar.pack.Driver, , --pack)
 
 unpacker:
 	$(MAKE) $(UNPACK_EXE) STANDALONE=true LDMAPFLAGS_OPT= LDMAPFLAGS_DBG=
@@ -151,6 +155,7 @@ ifdef MT
 	$(MT) /manifest $(TEMPDIR)/unpack200$(EXE_SUFFIX).manifest /outputresource:$(TEMPDIR)/unpack200$(EXE_SUFFIX);#1
 endif
 	$(CP) $(TEMPDIR)/unpack200$(EXE_SUFFIX) $(UNPACK_EXE)
+	$(install-module-file)
 
 ifeq ($(PLATFORM), windows) 
 $(RES):: $(VERSIONINFO_RESOURCE)

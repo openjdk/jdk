@@ -25,6 +25,8 @@
 
 # JDK Demo building jar file.
   
+MODULE = demos
+
 # Some names are defined with LIBRARY inside the Defs.gmk file
 LIBRARY=$(DEMONAME)
 OBJDIR=$(TEMPDIR)/$(DEMONAME)

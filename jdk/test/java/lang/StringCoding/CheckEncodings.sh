@@ -31,7 +31,7 @@
 OS=`uname -s`
 case "$OS" in
   SunOS | Linux ) ;;
-  Windows* )
+  Windows* | CYGWIN* )
     echo "Passed"; exit 0 ;;
   * ) echo "Unrecognized system!" ;  exit 1 ;;
 esac
