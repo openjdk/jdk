@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1431,6 +1431,23 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
 
 }
 
+// These should never be compiled since the interpreter will prefer
+// the compiled version to the intrinsic version.
+bool AbstractInterpreter::can_be_compiled(methodHandle m) {
+  switch (method_kind(m)) {
+    case Interpreter::java_lang_math_sin     : // fall thru
+    case Interpreter::java_lang_math_cos     : // fall thru
+    case Interpreter::java_lang_math_tan     : // fall thru
+    case Interpreter::java_lang_math_abs     : // fall thru
+    case Interpreter::java_lang_math_log     : // fall thru
+    case Interpreter::java_lang_math_log10   : // fall thru
+    case Interpreter::java_lang_math_sqrt    :
+      return false;
+    default:
+      return true;
+  }
+}
+
 // How much stack a method activation needs in words.
 int AbstractInterpreter::size_top_interpreter_activation(methodOop method) {
 
@@ -1488,7 +1505,10 @@ int AbstractInterpreter::layout_activation(methodOop method,
 
   if (interpreter_frame != NULL) {
 #ifdef ASSERT
-    assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
+    if (!EnableMethodHandles)
+      // @@@ FIXME: Should we correct interpreter_frame_sender_sp in the calling sequences?
+      // Probably, since deoptimization doesn't work yet.
+      assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
     assert(caller->sp() == interpreter_frame->sender_sp(), "Frame not properly walkable(2)");
 #endif
 

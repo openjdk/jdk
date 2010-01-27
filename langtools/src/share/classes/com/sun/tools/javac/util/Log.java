@@ -145,7 +145,10 @@ public class Log extends AbstractLog {
         private int getIntOption(Options options, String optionName, int defaultValue) {
             String s = options.get(optionName);
             try {
-                if (s != null) return Integer.parseInt(s);
+                if (s != null) {
+                    int n = Integer.parseInt(s);
+                    return (n <= 0 ? Integer.MAX_VALUE : n);
+                }
             } catch (NumberFormatException e) {
                 // silently ignore ill-formed numbers
             }

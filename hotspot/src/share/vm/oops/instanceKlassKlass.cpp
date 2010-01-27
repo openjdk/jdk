@@ -638,14 +638,13 @@ void instanceKlassKlass::oop_print_on(oop obj, outputStream* st) {
   st->cr();
 }
 
+#endif //PRODUCT
 
 void instanceKlassKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_klass(), "must be klass");
   instanceKlass* ik = instanceKlass::cast(klassOop(obj));
   ik->name()->print_value_on(st);
 }
-
-#endif // PRODUCT
 
 const char* instanceKlassKlass::internal_name() const {
   return "{instance class}";
