@@ -2012,6 +2012,10 @@ class CommandLineFlags {
   diagnostic(bool, GCParallelVerificationEnabled, true,                     \
           "Enable parallel memory system verification")                     \
                                                                             \
+  diagnostic(bool, DeferInitialCardMark, false,                             \
+          "When +ReduceInitialCardMarks, explicitly defer any that "        \
+           "may arise from new_pre_store_barrier")                          \
+                                                                            \
   diagnostic(bool, VerifyRememberedSets, false,                             \
           "Verify GC remembered sets")                                      \
                                                                             \
@@ -3455,6 +3459,9 @@ class CommandLineFlags {
                                                                             \
   diagnostic(bool, OptimizeMethodHandles, true,                             \
           "when constructing method handles, try to improve them")          \
+                                                                            \
+  experimental(bool, TrustFinalNonStaticFields, false,                      \
+          "trust final non-static declarations for constant folding")       \
                                                                             \
   experimental(bool, EnableInvokeDynamic, false,                            \
           "recognize the invokedynamic instruction")                        \

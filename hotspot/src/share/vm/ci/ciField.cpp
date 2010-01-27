@@ -161,6 +161,18 @@ ciField::ciField(fieldDescriptor *fd): _known_to_link_with(NULL) {
          "bootstrap classes must not create & cache unshared fields");
 }
 
+static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
+  if (holder == NULL)
+    return false;
+  if (holder->name() == ciSymbol::java_lang_System())
+    // Never trust strangely unstable finals:  System.out, etc.
+    return false;
+  // Even if general trusting is disabled, trust system-built closures in these packages.
+  if (holder->is_in_package("java/dyn") || holder->is_in_package("sun/dyn"))
+    return true;
+  return TrustFinalNonStaticFields;
+}
+
 void ciField::initialize_from(fieldDescriptor* fd) {
   // Get the flags, offset, and canonical holder of the field.
   _flags = ciFlags(fd->access_flags());
@@ -172,7 +184,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
     if (!this->is_static()) {
       // A field can be constant if it's a final static field or if it's
       // a final non-static field of a trusted class ({java,sun}.dyn).
-      if (_holder->is_in_package("java/dyn") || _holder->is_in_package("sun/dyn")) {
+      if (trust_final_non_static_fields(_holder)) {
         _is_constant = true;
         return;
       }
