@@ -891,4 +891,17 @@ public class TreeInfo {
             throw new AssertionError("Unexpected type tree: " + tree);
         }
     }
+
+    public static JCTree innermostType(JCTree type) {
+        switch (type.getTag()) {
+        case JCTree.TYPEARRAY:
+            return innermostType(((JCArrayTypeTree)type).elemtype);
+        case JCTree.WILDCARD:
+            return innermostType(((JCWildcard)type).inner);
+        case JCTree.ANNOTATED_TYPE:
+            return innermostType(((JCAnnotatedType)type).underlyingType);
+        default:
+            return type;
+        }
+    }
 }

@@ -67,7 +67,7 @@ class arrayKlass: public Klass {
   // Compiler/Interpreter offset
   static ByteSize component_mirror_offset() { return byte_offset_of(arrayKlass, _component_mirror); }
 
-  virtual klassOop java_super() const;//{ return SystemDictionary::object_klass(); }
+  virtual klassOop java_super() const;//{ return SystemDictionary::Object_klass(); }
 
   // Allocation
   // Sizes points to the first dimension of the array, subsequent dimensions

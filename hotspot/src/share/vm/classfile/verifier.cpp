@@ -143,7 +143,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
 
 bool Verifier::is_eligible_for_verification(instanceKlassHandle klass, bool should_verify_class) {
   symbolOop name = klass->name();
-  klassOop refl_magic_klass = SystemDictionary::reflect_magic_klass();
+  klassOop refl_magic_klass = SystemDictionary::reflect_MagicAccessorImpl_klass();
 
   return (should_verify_for(klass->class_loader(), should_verify_class) &&
     // return if the class is a bootstrapping class

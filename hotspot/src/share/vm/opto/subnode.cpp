@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1244,8 +1244,7 @@ const Type *CosDNode::Value( PhaseTransform *phase ) const {
   if( t1 == Type::TOP ) return Type::TOP;
   if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
   double d = t1->getd();
-  if( d < 0.0 ) return Type::DOUBLE;
-  return TypeD::make( SharedRuntime::dcos( d ) );
+  return TypeD::make( StubRoutines::intrinsic_cos( d ) );
 }
 
 //=============================================================================
@@ -1256,8 +1255,7 @@ const Type *SinDNode::Value( PhaseTransform *phase ) const {
   if( t1 == Type::TOP ) return Type::TOP;
   if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
   double d = t1->getd();
-  if( d < 0.0 ) return Type::DOUBLE;
-  return TypeD::make( SharedRuntime::dsin( d ) );
+  return TypeD::make( StubRoutines::intrinsic_sin( d ) );
 }
 
 //=============================================================================
@@ -1268,8 +1266,7 @@ const Type *TanDNode::Value( PhaseTransform *phase ) const {
   if( t1 == Type::TOP ) return Type::TOP;
   if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
   double d = t1->getd();
-  if( d < 0.0 ) return Type::DOUBLE;
-  return TypeD::make( SharedRuntime::dtan( d ) );
+  return TypeD::make( StubRoutines::intrinsic_tan( d ) );
 }
 
 //=============================================================================
@@ -1280,8 +1277,7 @@ const Type *LogDNode::Value( PhaseTransform *phase ) const {
   if( t1 == Type::TOP ) return Type::TOP;
   if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
   double d = t1->getd();
-  if( d < 0.0 ) return Type::DOUBLE;
-  return TypeD::make( SharedRuntime::dlog( d ) );
+  return TypeD::make( StubRoutines::intrinsic_log( d ) );
 }
 
 //=============================================================================
@@ -1292,8 +1288,7 @@ const Type *Log10DNode::Value( PhaseTransform *phase ) const {
   if( t1 == Type::TOP ) return Type::TOP;
   if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
   double d = t1->getd();
-  if( d < 0.0 ) return Type::DOUBLE;
-  return TypeD::make( SharedRuntime::dlog10( d ) );
+  return TypeD::make( StubRoutines::intrinsic_log10( d ) );
 }
 
 //=============================================================================
@@ -1304,8 +1299,7 @@ const Type *ExpDNode::Value( PhaseTransform *phase ) const {
   if( t1 == Type::TOP ) return Type::TOP;
   if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
   double d = t1->getd();
-  if( d < 0.0 ) return Type::DOUBLE;
-  return TypeD::make( SharedRuntime::dexp( d ) );
+  return TypeD::make( StubRoutines::intrinsic_exp( d ) );
 }
 
 
@@ -1323,5 +1317,5 @@ const Type *PowDNode::Value( PhaseTransform *phase ) const {
   double d2 = t2->getd();
   if( d1 < 0.0 ) return Type::DOUBLE;
   if( d2 < 0.0 ) return Type::DOUBLE;
-  return TypeD::make( SharedRuntime::dpow( d1, d2 ) );
+  return TypeD::make( StubRoutines::intrinsic_pow( d1, d2 ) );
 }

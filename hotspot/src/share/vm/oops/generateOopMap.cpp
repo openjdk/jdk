@@ -1556,13 +1556,13 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_big(), itr->bci()); break;
     case Bytecodes::_putfield:          do_field(false, false, itr->get_index_big(), itr->bci()); break;
 
-   case Bytecodes::_invokevirtual:
-   case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_big(), itr->bci()); break;
-   case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_big(), itr->bci()); break;
+    case Bytecodes::_invokevirtual:
+    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_big(), itr->bci()); break;
+    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_big(), itr->bci()); break;
     case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_int(), itr->bci()); break;
-   case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_big(), itr->bci()); break;
-   case Bytecodes::_newarray:
-   case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
+    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_big(), itr->bci()); break;
+    case Bytecodes::_newarray:
+    case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
     case Bytecodes::_checkcast:         do_checkcast(); break;
     case Bytecodes::_arraylength:
     case Bytecodes::_instanceof:        pp(rCTS, vCTS); break;
@@ -1830,12 +1830,8 @@ void GenerateOopMap::do_jsr(int targ_bci) {
 
 
 void GenerateOopMap::do_ldc(int idx, int bci) {
-  constantPoolOop cp = method()->constants();
-  constantTag tag    = cp->tag_at(idx);
-
-  CellTypeState cts = (tag.is_string() || tag.is_unresolved_string() ||
-                       tag.is_klass()  || tag.is_unresolved_klass())
-                    ? CellTypeState::make_line_ref(bci) : valCTS;
+  constantPoolOop cp  = method()->constants();
+  CellTypeState   cts = cp->is_pointer_entry(idx) ? CellTypeState::make_line_ref(bci) : valCTS;
   ppush1(cts);
 }
 

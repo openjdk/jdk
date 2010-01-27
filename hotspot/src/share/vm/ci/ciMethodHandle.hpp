@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,35 @@
  *
  */
 
-void PtrQueue::handle_zero_index() {
-  assert(0 == _index, "Precondition.");
-  // This thread records the full buffer and allocates a new one (while
-  // holding the lock if there is one).
-  void** buf = _buf;
-  _buf = qset()->allocate_buffer();
-  _sz = qset()->buffer_size();
-  _index = _sz;
-  assert(0 <= _index && _index <= _sz, "Invariant.");
-  if (buf != NULL) {
-    if (_lock) {
-      locking_enqueue_completed_buffer(buf);
-    } else {
-      qset()->enqueue_complete_buffer(buf);
-    }
+// ciMethodHandle
+//
+// The class represents a java.dyn.MethodHandle object.
+class ciMethodHandle : public ciInstance {
+private:
+  ciMethod* _callee;
+
+  // Return an adapter for this MethodHandle.
+  ciMethod* get_adapter(bool is_invokedynamic) const;
+
+protected:
+  void print_impl(outputStream* st);
+
+public:
+  ciMethodHandle(instanceHandle h_i) : ciInstance(h_i) {};
+
+  // What kind of ciObject is this?
+  bool is_method_handle() const { return true; }
+
+  ciMethod* callee() const { return _callee; }
+  void  set_callee(ciMethod* m) { _callee = m; }
+
+  // Return an adapter for a MethodHandle call.
+  ciMethod* get_method_handle_adapter() const {
+    return get_adapter(false);
   }
-}
+
+  // Return an adapter for an invokedynamic call.
+  ciMethod* get_invokedynamic_adapter() const {
+    return get_adapter(true);
+  }
+};
