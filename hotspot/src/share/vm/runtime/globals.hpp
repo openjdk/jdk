@@ -2447,6 +2447,9 @@ class CommandLineFlags {
   notproduct(bool, CompileTheWorldIgnoreInitErrors, false,                  \
           "Compile all methods although class initializer failed")          \
                                                                             \
+  notproduct(intx, CompileTheWorldSafepointInterval, 100,                   \
+          "Force a safepoint every n compiles so sweeper can keep up")      \
+                                                                            \
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \

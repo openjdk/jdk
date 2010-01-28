@@ -921,6 +921,7 @@ classFileStream.hpp                     top.hpp
 
 classLoader.cpp                         allocation.inline.hpp
 classLoader.cpp                         arguments.hpp
+classLoader.cpp                         bytecodeStream.hpp
 classLoader.cpp                         classFileParser.hpp
 classLoader.cpp                         classFileStream.hpp
 classLoader.cpp                         classLoader.hpp
@@ -948,6 +949,7 @@ classLoader.cpp                         jvm_misc.hpp
 classLoader.cpp                         management.hpp
 classLoader.cpp                         oop.inline.hpp
 classLoader.cpp                         oopFactory.hpp
+classLoader.cpp                         oopMapCache.hpp
 classLoader.cpp                         os_<os_family>.inline.hpp
 classLoader.cpp                         symbolOop.hpp
 classLoader.cpp                         systemDictionary.hpp
@@ -3725,6 +3727,7 @@ sharedRuntime.cpp                       events.hpp
 sharedRuntime.cpp                       forte.hpp
 sharedRuntime.cpp                       gcLocker.inline.hpp
 sharedRuntime.cpp                       handles.inline.hpp
+sharedRuntime.cpp                       hashtable.inline.hpp
 sharedRuntime.cpp                       init.hpp
 sharedRuntime.cpp                       interfaceSupport.hpp
 sharedRuntime.cpp                       interpreterRuntime.hpp
@@ -3752,6 +3755,7 @@ sharedRuntime.cpp                       xmlstream.hpp
 sharedRuntime.hpp                       allocation.hpp
 sharedRuntime.hpp                       bytecodeHistogram.hpp
 sharedRuntime.hpp                       bytecodeTracer.hpp
+sharedRuntime.hpp                       hashtable.hpp
 sharedRuntime.hpp                       linkResolver.hpp
 sharedRuntime.hpp                       resourceArea.hpp
 sharedRuntime.hpp                       threadLocalStorage.hpp
