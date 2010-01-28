@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1189,7 +1189,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
                                                             // VMReg max_arg,
                                                             int comp_args_on_stack, // VMRegStackSlots
                                                             const BasicType *sig_bt,
-                                                            const VMRegPair *regs) {
+                                                            const VMRegPair *regs,
+                                                            AdapterFingerPrint* fingerprint) {
   address i2c_entry = __ pc();
 
   AdapterGenerator agen(masm);
@@ -1258,7 +1259,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   agen.gen_c2i_adapter(total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
   __ flush();
-  return new AdapterHandlerEntry(i2c_entry, c2i_entry, c2i_unverified_entry);
+  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
 
 }
 
