@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -418,12 +418,13 @@ int LIR_Assembler::initial_frame_size_in_bytes() {
 }
 
 
-int LIR_Assembler::emit_exception_handler() {
+void LIR_Assembler::emit_exception_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
   // failures when searching for the corresponding bci => add a nop
   // (was bug 5/14/1999 - gri)
+
   __ nop();
 
   // generate code for exception handler
@@ -431,10 +432,13 @@ int LIR_Assembler::emit_exception_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("exception handler overflow");
-    return -1;
+    return;
   }
-
+#ifdef ASSERT
   int offset = code_offset();
+#endif // ASSERT
+
+  compilation()->offsets()->set_value(CodeOffsets::Exceptions, code_offset());
 
   // if the method does not have an exception handler, then there is
   // no reason to search for one
@@ -470,19 +474,19 @@ int LIR_Assembler::emit_exception_handler() {
   // unwind activation and forward exception to caller
   // rax,: exception
   __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
-  assert(code_offset() - offset <= exception_handler_size, "overflow");
-  __ end_a_stub();
 
-  return offset;
+  assert(code_offset() - offset <= exception_handler_size, "overflow");
+
+  __ end_a_stub();
 }
 
-
-int LIR_Assembler::emit_deopt_handler() {
+void LIR_Assembler::emit_deopt_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
   // failures when searching for the corresponding bci => add a nop
   // (was bug 5/14/1999 - gri)
+
   __ nop();
 
   // generate code for exception handler
@@ -490,17 +494,23 @@ int LIR_Assembler::emit_deopt_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("deopt handler overflow");
-    return -1;
+    return;
   }
-
+#ifdef ASSERT
   int offset = code_offset();
+#endif // ASSERT
+
+  compilation()->offsets()->set_value(CodeOffsets::Deopt, code_offset());
+
   InternalAddress here(__ pc());
   __ pushptr(here.addr());
+
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+
   assert(code_offset() - offset <= deopt_handler_size, "overflow");
+
   __ end_a_stub();
 
-  return offset;
 }
 
 

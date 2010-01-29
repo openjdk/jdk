@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,11 +107,7 @@ void RegisterMap::print() const {
 
 address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
-    nmethod* nm = cb()->as_nmethod_or_null();
-    if (nm->is_method_handle_return(pc()))
-      return nm->deopt_mh_handler_begin() - pc_return_offset;
-    else
-      return nm->deopt_handler_begin() - pc_return_offset;
+    return ((nmethod*) cb())->deopt_handler_begin() - pc_return_offset;
   } else {
     return (pc() - pc_return_offset);
   }
@@ -273,16 +269,10 @@ void frame::deoptimize(JavaThread* thread, bool thread_is_known_safe) {
   } // NeedsDeoptSuspend
 
 
-  // If the call site is a MethodHandle call site use the MH deopt
-  // handler.
-  address deopt = nm->is_method_handle_return(pc()) ?
-    nm->deopt_mh_handler_begin() :
-    nm->deopt_handler_begin();
-
+  address deopt = nm->deopt_handler_begin();
   // Save the original pc before we patch in the new one
   nm->set_original_pc(this, pc());
   patch_pc(thread, deopt);
-
 #ifdef ASSERT
   {
     RegisterMap map(thread, false);
@@ -310,29 +300,6 @@ frame frame::real_sender(RegisterMap* map) const {
   }
   return result;
 }
-
-
-//------------------------------------------------------------------------------
-// frame::verify_deopt_original_pc
-//
-// Verifies the calculated original PC of a deoptimization PC for the
-// given unextended SP.  The unextended SP might also be the saved SP
-// for MethodHandle call sites.
-#if ASSERT
-void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp, bool is_method_handle_return) {
-  frame fr;
-
-  // This is ugly but it's better than to change {get,set}_original_pc
-  // to take an SP value as argument.  And it's only a debugging
-  // method anyway.
-  fr._unextended_sp = unextended_sp;
-
-  address original_pc = nm->get_original_pc(&fr);
-  assert(nm->code_contains(original_pc), "original PC must be in nmethod");
-  assert(nm->is_method_handle_return(original_pc) == is_method_handle_return, "must be");
-}
-#endif
-
 
 // Note: called by profiler - NOT for current thread
 frame frame::profile_find_Java_sender_frame(JavaThread *thread) {

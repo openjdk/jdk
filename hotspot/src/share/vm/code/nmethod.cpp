@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -592,7 +592,6 @@ nmethod::nmethod(
     // values something that will never match a pc like the nmethod vtable entry
     _exception_offset        = 0;
     _deoptimize_offset       = 0;
-    _deoptimize_mh_offset    = 0;
     _orig_pc_offset          = 0;
 #ifdef HAVE_DTRACE_H
     _trap_offset             = 0;
@@ -683,7 +682,6 @@ nmethod::nmethod(
     // values something that will never match a pc like the nmethod vtable entry
     _exception_offset        = 0;
     _deoptimize_offset       = 0;
-    _deoptimize_mh_offset    = 0;
     _trap_offset             = offsets->value(CodeOffsets::Dtrace_trap);
     _orig_pc_offset          = 0;
     _stub_offset             = data_offset();
@@ -796,7 +794,6 @@ nmethod::nmethod(
     // Exception handler and deopt handler are in the stub section
     _exception_offset        = _stub_offset + offsets->value(CodeOffsets::Exceptions);
     _deoptimize_offset       = _stub_offset + offsets->value(CodeOffsets::Deopt);
-    _deoptimize_mh_offset    = _stub_offset + offsets->value(CodeOffsets::DeoptMH);
     _consts_offset           = instructions_offset() + code_buffer->total_offset_of(code_buffer->consts()->start());
     _scopes_data_offset      = data_offset();
     _scopes_pcs_offset       = _scopes_data_offset   + round_to(debug_info->data_size         (), oopSize);
@@ -2034,21 +2031,9 @@ void nmethodLocker::unlock_nmethod(nmethod* nm) {
   guarantee(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
 }
 
-
-// -----------------------------------------------------------------------------
-// nmethod::get_deopt_original_pc
-//
-// Return the original PC for the given PC if:
-// (a) the given PC belongs to a nmethod and
-// (b) it is a deopt PC
-address nmethod::get_deopt_original_pc(const frame* fr) {
-  if (fr->cb() == NULL)  return NULL;
-
-  nmethod* nm = fr->cb()->as_nmethod_or_null();
-  if (nm != NULL && nm->is_deopt_pc(fr->pc()))
-    return nm->get_original_pc(fr);
-
-  return NULL;
+bool nmethod::is_deopt_pc(address pc) {
+  bool ret =  pc == deopt_handler_begin();
+  return ret;
 }
 
 
@@ -2419,8 +2404,6 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) {
   if (block_begin == verified_entry_point())    stream->print_cr("[Verified Entry Point]");
   if (block_begin == exception_begin())         stream->print_cr("[Exception Handler]");
   if (block_begin == stub_begin())              stream->print_cr("[Stub Code]");
-  if (block_begin == deopt_handler_begin())     stream->print_cr("[Deopt Handler Code]");
-  if (block_begin == deopt_mh_handler_begin())  stream->print_cr("[Deopt MH Handler Code]");
   if (block_begin == consts_begin())            stream->print_cr("[Constants]");
   if (block_begin == entry_point()) {
     methodHandle m = method();

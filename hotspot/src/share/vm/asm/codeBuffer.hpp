@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ public:
                  Dtrace_trap = OSR_Entry,  // dtrace probes can never have an OSR entry so reuse it
                  Exceptions,     // Offset where exception handler lives
                  Deopt,          // Offset where deopt handler lives
-                 DeoptMH,        // Offset where MethodHandle deopt handler lives
                  max_Entries };
 
   // special value to note codeBlobs where profile (forte) stack walking is
@@ -52,13 +51,12 @@ private:
 
 public:
   CodeOffsets() {
-    _values[Entry         ] = 0;
+    _values[Entry] = 0;
     _values[Verified_Entry] = 0;
     _values[Frame_Complete] = frame_never_safe;
-    _values[OSR_Entry     ] = 0;
-    _values[Exceptions    ] = -1;
-    _values[Deopt         ] = -1;
-    _values[DeoptMH       ] = -1;
+    _values[OSR_Entry] = 0;
+    _values[Exceptions] = -1;
+    _values[Deopt] = -1;
   }
 
   int value(Entries e) { return _values[e]; }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,7 +357,7 @@ void LIR_Assembler::monitorexit(LIR_Opr obj_opr, LIR_Opr lock_opr, Register hdr,
 }
 
 
-int LIR_Assembler::emit_exception_handler() {
+void LIR_Assembler::emit_exception_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
@@ -373,10 +373,13 @@ int LIR_Assembler::emit_exception_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("exception handler overflow");
-    return -1;
+    return;
   }
-
+#ifdef ASSERT
   int offset = code_offset();
+#endif // ASSERT
+  compilation()->offsets()->set_value(CodeOffsets::Exceptions, code_offset());
+
 
   if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_exceptions()) {
     __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
@@ -387,13 +390,11 @@ int LIR_Assembler::emit_exception_handler() {
   __ delayed()->nop();
   debug_only(__ stop("should have gone to the caller");)
   assert(code_offset() - offset <= exception_handler_size, "overflow");
-  __ end_a_stub();
 
-  return offset;
+  __ end_a_stub();
 }
 
-
-int LIR_Assembler::emit_deopt_handler() {
+void LIR_Assembler::emit_deopt_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
@@ -407,18 +408,23 @@ int LIR_Assembler::emit_deopt_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("deopt handler overflow");
-    return -1;
+    return;
   }
-
+#ifdef ASSERT
   int offset = code_offset();
+#endif // ASSERT
+  compilation()->offsets()->set_value(CodeOffsets::Deopt, code_offset());
+
   AddressLiteral deopt_blob(SharedRuntime::deopt_blob()->unpack());
+
   __ JUMP(deopt_blob, G3_scratch, 0); // sethi;jmp
   __ delayed()->nop();
-  assert(code_offset() - offset <= deopt_handler_size, "overflow");
-  debug_only(__ stop("should have gone to the caller");)
-  __ end_a_stub();
 
-  return offset;
+  assert(code_offset() - offset <= deopt_handler_size, "overflow");
+
+  debug_only(__ stop("should have gone to the caller");)
+
+  __ end_a_stub();
 }
 
 

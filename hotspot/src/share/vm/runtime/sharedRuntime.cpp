@@ -1033,20 +1033,10 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* thread))
   address   sender_pc = caller_frame.pc();
   CodeBlob* sender_cb = caller_frame.cb();
   nmethod*  sender_nm = sender_cb->as_nmethod_or_null();
-  bool is_mh_invoke_via_adapter = false;  // Direct c2c call or via adapter?
-  if (sender_nm != NULL && sender_nm->is_method_handle_return(sender_pc)) {
-    // If the callee_target is set, then we have come here via an i2c
-    // adapter.
-    methodOop callee = thread->callee_target();
-    if (callee != NULL) {
-      assert(callee->is_method(), "sanity");
-      is_mh_invoke_via_adapter = true;
-    }
-  }
 
   if (caller_frame.is_interpreted_frame() ||
-      caller_frame.is_entry_frame()       ||
-      is_mh_invoke_via_adapter) {
+      caller_frame.is_entry_frame() ||
+      (sender_nm != NULL && sender_nm->is_method_handle_return(sender_pc))) {
     methodOop callee = thread->callee_target();
     guarantee(callee != NULL && callee->is_method(), "bad handshake");
     thread->set_vm_result(callee);
@@ -1427,7 +1417,7 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
         if (callee == cb || callee->is_adapter_blob()) {
           // static call or optimized virtual
           if (TraceCallFixup) {
-            tty->print("fixup callsite           at " INTPTR_FORMAT " to compiled code for", caller_pc);
+            tty->print("fixup callsite at " INTPTR_FORMAT " to compiled code for", caller_pc);
             moop->print_short_name(tty);
             tty->print_cr(" to " INTPTR_FORMAT, entry_point);
           }
@@ -1443,7 +1433,7 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
         }
       } else {
           if (TraceCallFixup) {
-            tty->print("already patched callsite at " INTPTR_FORMAT " to compiled code for", caller_pc);
+            tty->print("already patched  callsite at " INTPTR_FORMAT " to compiled code for", caller_pc);
             moop->print_short_name(tty);
             tty->print_cr(" to " INTPTR_FORMAT, entry_point);
           }

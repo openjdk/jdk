@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1430,10 +1430,6 @@ void Compile::Fill_buffer() {
     _code_offsets.set_value(CodeOffsets::Exceptions, emit_exception_handler(*cb));
     // Emit the deopt handler code.
     _code_offsets.set_value(CodeOffsets::Deopt, emit_deopt_handler(*cb));
-    // Emit the MethodHandle deopt handler code.  We can use the same
-    // code as for the normal deopt handler, we just need a different
-    // entry point address.
-    _code_offsets.set_value(CodeOffsets::DeoptMH, emit_deopt_handler(*cb));
   }
 
   // One last check for failed CodeBuffer::expand:

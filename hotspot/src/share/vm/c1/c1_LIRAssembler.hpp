@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,9 +133,9 @@ class LIR_Assembler: public CompilationResourceObj {
   void add_call_info_here(CodeEmitInfo* info)                              { add_call_info(code_offset(), info); }
 
   // code patterns
-  int  emit_exception_handler();
+  void emit_exception_handler();
   void emit_exception_entries(ExceptionInfoList* info_list);
-  int  emit_deopt_handler();
+  void emit_deopt_handler();
 
   void emit_code(BlockList* hir);
   void emit_block(BlockBegin* block);
