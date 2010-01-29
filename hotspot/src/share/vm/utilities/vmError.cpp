@@ -502,6 +502,23 @@ void VMError::report(outputStream* st) {
 #endif // ZERO
      }
 
+  STEP(135, "(printing target Java thread stack)" )
+
+     // printing Java thread stack trace if it is involved in GC crash
+     if (_verbose && (_thread->is_Named_thread())) {
+       JavaThread*  jt = ((NamedThread *)_thread)->processed_thread();
+       if (jt != NULL) {
+         st->print_cr("JavaThread " PTR_FORMAT " (nid = " UINTX_FORMAT ") was being processed", jt, jt->osthread()->thread_id());
+         if (jt->has_last_Java_frame()) {
+           st->print_cr("Java frames: (J=compiled Java code, j=interpreted, Vv=VM code)");
+           for(StackFrameStream sfs(jt); !sfs.is_done(); sfs.next()) {
+             sfs.current()->print_on_error(st, buf, sizeof(buf), true);
+             st->cr();
+           }
+         }
+       }
+     }
+
   STEP(140, "(printing VM operation)" )
 
      if (_verbose && _thread && _thread->is_VM_thread()) {

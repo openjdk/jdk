@@ -139,7 +139,7 @@ STRIP_PROP_FILES = $(PROPERTIES_FILES:%=$(CLASSDESTDIR)/%)
 STRIP_PROP_options=$(TEMPDIR)/strip_prop_options
 define install-properties-file
 $(install-file)
-$(CHMOD) a+rw $@
+$(call chmod-file, a+rw)
 @$(ECHO) "# Adding to strip properties list: $@"
 $(ECHO) "$@" >> $(STRIP_PROP_options)
 endef

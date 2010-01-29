@@ -56,6 +56,7 @@
     <property name="build.coverage.dir" location="${build.dir}/coverage"/>
     <property name="build.classes.dir" location="${build.dir}/classes"/>
     <property name="build.gensrc.dir" location="${build.dir}/gensrc"/>
+    <property name="build.genstubs.dir" location="${build.dir}/genstubs"/>
     <property name="build.javadoc.dir" location="${build.dir}/javadoc"/>
     <property name="build.jtreg.dir" location="${build.dir}/jtreg"/>
     <property name="build.toolclasses.dir" location="${build.dir}/toolclasses"/>
@@ -93,6 +94,48 @@
         <isset property="target.java.home"/>
     </condition>
 
+    <!-- Logic for handling access import jdk classes, if available.
+        import.jdk should be unset, or set to jdk home (to use rt.jar)
+        or to jdk repo (to use src/share/classes).
+        Based on the value, if any, set up default values for javac's sourcepath,
+        classpath and bootclasspath. Note: the default values are overridden
+        in the build-bootstrap-classes macro. -->
+
+    <available property="import.jdk.src.dir" value="${import.jdk}/src/share/classes"
+        filepath="${import.jdk}/src/share/classes" file="java/nio/file/Path.java"/>
+    <available property="import.jdk.jar" value="${import.jdk}/jre/lib/rt.jar"
+        ignoresystemclasses="true"
+        classpath="${import.jdk}/jre/lib/rt.jar" classname="java.nio.file.Path"/>
+
+    <!-- Set the default value of the sourcepath used for javac. -->
+    <condition property="javac.sourcepath" value="${build.genstubs.dir}" else="">
+        <isset property="import.jdk.src.dir"/>
+    </condition>
+
+    <!-- Set the default value of the classpath used for javac. -->
+    <property name="javac.classpath" value=""/>
+
+    <!-- Set the default bootclasspath option used for javac. 
+	Note that different variants of the option are used, meaning we can't just 
+	define the value for the option.
+	Note the explicit use of the standard property ${path.separator} in the following.
+	This is because Ant is not clever enough to handle direct use of : or ; -->
+    <condition property="javac.bootclasspath.opt"
+            value="-Xbootclasspath:${build.classes.dir}${path.separator}${import.jdk.jar}"
+            else="-Xbootclasspath/p:${build.classes.dir}">
+        <isset property="import.jdk.jar"/>
+    </condition>
+
+    <condition property="exclude.files" value="" else="${require.import.jdk.files}">
+        <isset property="import.jdk"/>
+    </condition>
+
+    <!-- for debugging -->
+    <target name="check-import.jdk">
+        <echo message="import.jdk: ${import.jdk}"/>
+        <echo message="import.jdk.jar: ${import.jdk.jar}"/>
+        <echo message="import.jdk.src.dir: ${import.jdk.src.dir}"/>
+    </target>
 
     <!-- Standard target to build deliverables for JDK build. -->
 
@@ -108,11 +151,17 @@
         <zip file="${dist.lib.dir}/src.zip" basedir="${src.classes.dir}"/>
     </target>
 
-    <target name="build-bootstrap-tools" depends="build-bootstrap-javac,build-bootstrap-javadoc,build-bootstrap-doclets,build-bootstrap-javah"/>
+    <target name="build-bootstrap-tools"
+        depends="build-bootstrap-javac,build-bootstrap-javadoc,build-bootstrap-doclets,build-bootstrap-javah"
+    />
 
-    <target name="build-all-tools" depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap,build-apt"/>
+    <target name="build-all-tools"
+        depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap,build-apt"
+    />
 
-    <target name="build-all-classes" depends="build-classes-javac,build-classes-javadoc,build-classes-doclets,build-classes-javah,build-classes-javap,build-classes-apt"/>
+    <target name="build-all-classes" depends="build-bootstrap-javac,-create-import-jdk-stubs">
+        <build-classes includes="${javac.includes} ${javadoc.includes} ${doclets.includes} ${javah.includes} ${javap.includes} ${apt.includes}"/>
+    </target>
 
     <!-- clean -->
 
@@ -188,23 +237,27 @@
 
     <!-- javac targets -->
 
-    <target name="build-bootstrap-javac" depends="-def-build-bootstrap-tool">
-        <build-bootstrap-tool name="javac" includes="${javac.includes}"/>
+    <target name="build-bootstrap-javac"
+            depends="-def-build-bootstrap-classes,-def-build-bootstrap-jar,-def-build-bootstrap-tool">
+        <build-bootstrap-classes includes="${javac.includes}"/>
+        <build-bootstrap-jar     name="javac" includes="${javac.includes}"/>
+        <build-bootstrap-tool    name="javac"/>
     </target>
 
-    <target name="build-classes-javac" depends="build-bootstrap-javac">
-        <build-classes name="javac" includes="${javac.includes}"/>
+    <target name="build-classes-javac" depends="build-bootstrap-javac,-create-import-jdk-stubs">
+        <build-classes includes="${javac.includes}"/>
     </target>
 
-    <target name="build-javac" depends="build-bootstrap-javac">
-        <build-tool name="javac" includes="${javac.includes}"/>
+    <target name="build-javac" depends="build-classes-javac">
+        <build-jar  name="javac" includes="${javac.includes}"/>
+        <build-tool name="javac"/>
     </target>
 
     <target name="javadoc-javac" depends="build-javac,-def-javadoc-tool">
         <javadoc-tool name="javac" includes="${javac.includes}" options="${javadoc.jls3.option}"/>
     </target>
 
-    <target name="jtreg-javac" depends="build-javac,-def-jtreg">
+    <target name="jtreg-javac" depends="build-javac,build-javap,-def-jtreg">
         <jtreg-tool name="javac" tests="${javac.tests}"/>
     </target>
 
@@ -217,19 +270,20 @@
     <!-- javadoc targets -->
 
     <target name="build-bootstrap-javadoc" depends="build-bootstrap-javac">
-        <build-bootstrap-tool name="javadoc"
-                              includes="${javadoc.includes}"
-                              jarclasspath="javac.jar doclets.jar"/>
+        <build-bootstrap-classes includes="${javadoc.includes}"/>
+        <build-bootstrap-jar     name="javadoc" includes="${javadoc.includes}"
+                                 jarclasspath="javac.jar doclets.jar"/>
+        <build-bootstrap-tool    name="javadoc"/>
     </target>
 
     <target name="build-classes-javadoc" depends="build-classes-javac">
-        <build-classes name="javadoc" includes="${javadoc.includes}"/>
+        <build-classes includes="${javadoc.includes}"/>
     </target>
 
-    <target name="build-javadoc" depends="build-javac">
-        <build-tool name="javadoc"
-                    includes="${javadoc.includes}"
+    <target name="build-javadoc" depends="build-javac,build-classes-javadoc">
+        <build-jar  name="javadoc" includes="${javadoc.includes}"
                     jarclasspath="javac.jar doclets.jar"/>
+        <build-tool name="javadoc"/>
     </target>
 
     <target name="javadoc-javadoc" depends="build-javadoc,-def-javadoc-tool">
@@ -249,21 +303,19 @@
     <!-- doclets targets -->
 
     <target name="build-bootstrap-doclets" depends="build-bootstrap-javadoc,-def-build-bootstrap-jar">
-        <build-bootstrap-jar name="doclets"
-                              includes="${doclets.includes}"
-                              jarmainclass="com.sun.tools.javadoc.Main"
-                              jarclasspath="javadoc.jar"/>
+        <build-bootstrap-classes includes="${doclets.includes}"/>
+        <build-bootstrap-jar     name="doclets" includes="${doclets.includes}"
+                                 jarmainclass="com.sun.tools.javadoc.Main"
+                                 jarclasspath="javadoc.jar"/>
     </target>
 
     <target name="build-classes-doclets" depends="build-classes-javadoc">
-        <build-classes name="doclets" includes="${doclets.includes}"/>
+        <build-classes includes="${doclets.includes}"/>
     </target>
 
-    <target name="build-doclets" depends="build-javadoc">
+    <target name="build-doclets" depends="build-javadoc,build-classes-doclets">
         <!-- just jar, no bin for doclets -->
-        <build-jar name="doclets"
-                    includes="${doclets.includes}"
-                    jarclasspath="javadoc.jar"/>
+        <build-jar name="doclets" includes="${doclets.includes}" jarclasspath="javadoc.jar"/>
     </target>
 
     <!-- (no javadoc for doclets) -->
@@ -281,19 +333,19 @@
     <!-- javah targets -->
 
     <target name="build-bootstrap-javah" depends="build-bootstrap-javadoc">
-        <build-bootstrap-tool name="javah"
-                              includes="${javah.includes}"
-                              jarclasspath="javadoc.jar doclets.jar javac.jar"/>
+        <build-bootstrap-classes includes="${javah.includes}"/>
+        <build-bootstrap-jar     name="javah" includes="${javah.includes}"
+                                 jarclasspath="javadoc.jar doclets.jar javac.jar"/>
+        <build-bootstrap-tool    name="javah"/>
     </target>
 
-    <target name="build-javah" depends="build-javac">
-        <build-tool name="javah"
-                    includes="${javah.includes}"
-                    jarclasspath="javac.jar"/>
+    <target name="build-javah" depends="build-javac,build-classes-javah">
+        <build-jar  name="javah" includes="${javah.includes}" jarclasspath="javac.jar"/>
+        <build-tool name="javah"/>
     </target>
 
     <target name="build-classes-javah" depends="build-classes-javadoc">
-        <build-classes name="javah" includes="${javah.includes}"/>
+        <build-classes includes="${javah.includes}"/>
     </target>
 
     <!-- (no javadoc for javah) -->
@@ -310,21 +362,23 @@
 
     <!-- javap targets -->
 
-    <target name="build-bootstrap-javap" depends="-def-build-bootstrap-tool">
-        <build-bootstrap-tool name="javap"
-                              includes="${javap.includes}"
-                              jarmainclass="sun.tools.javap.Main"/>
+    <target name="build-bootstrap-javap"
+            depends="-def-build-bootstrap-classes,-def-build-bootstrap-jar,-def-build-bootstrap-tool">
+        <build-bootstrap-classes includes="${javap.includes}"/>
+        <build-bootstrap-jar     name="javap" includes="${javap.includes}"
+                                 jarmainclass="sun.tools.javap.Main"/>
+        <build-bootstrap-tool    name="javap"/>
     </target>
 
     <target name="build-classes-javap" depends="build-classes-javac">
-        <build-classes name="javap" includes="${javap.includes}"/>
+        <build-classes includes="${javap.includes}"/>
     </target>
 
-    <target name="build-javap" depends="build-javac">
-        <build-tool name="javap"
-                    includes="${javap.includes}"
+    <target name="build-javap" depends="build-javac,build-classes-javap">
+        <build-jar  name="javap" includes="${javap.includes}"
                     jarmainclass="com.sun.tools.javap.Main"
                     jarclasspath="javac.jar"/>
+        <build-tool name="javap"/>
     </target>
 
     <!-- (no javadoc for javap) -->
@@ -342,19 +396,19 @@
     <!-- apt targets -->
 
     <target name="build-bootstrap-apt" depends="build-bootstrap-javac">
-        <build-bootstrap-tool name="apt"
-                              includes="${apt.includes}"
-                              jarclasspath="javac.jar"/>
+        <build-bootstrap-classes includes="${apt.includes}"/>
+        <build-bootstrap-jar     name="apt" includes="${apt.includes}"
+                                 jarclasspath="javac.jar"/>
+        <build-bootstrap-tool    name="apt"/>
     </target>
 
-    <target name="build-apt" depends="build-javac">
-        <build-tool name="apt"
-                    includes="${apt.includes}"
-                    jarclasspath="javac.jar"/>
+    <target name="build-apt" depends="build-javac,build-classes-apt">
+        <build-jar  name="apt" includes="${apt.includes}" jarclasspath="javac.jar"/>
+        <build-tool name="apt"/>
     </target>
 
     <target name="build-classes-apt" depends="build-classes-javac">
-        <build-classes name="apt" includes="${apt.includes}"/>
+        <build-classes includes="${apt.includes}"/>
     </target>
 
     <target name="javadoc-apt" depends="build-apt,-def-javadoc-tool">
@@ -371,6 +425,17 @@
     </target>
 
     <target name="apt" depends="build-apt,jtreg-apt,findbugs-apt"/>
+
+    <!-- Create import JDK stubs -->
+
+    <target name="-create-import-jdk-stubs" depends="-def-genstubs" if="import.jdk.src.dir">
+        <mkdir dir="${build.genstubs.dir}"/>
+        <genstubs
+            srcdir="${import.jdk.src.dir}" destdir="${build.genstubs.dir}"
+            includes="${import.jdk.stub.files}"
+            fork="true" classpath="${build.toolclasses.dir}:${build.bootstrap.dir}/classes:${ant.home}/lib/ant.jar"
+        />
+    </target>
 
     <!-- Check targets -->
 
@@ -396,40 +461,12 @@
 
     <!-- Ant macro and preset defs -->
 
-    <target name="-def-build-tool" depends="-def-build-jar">
+    <target name="-def-build-tool">
         <macrodef name="build-tool">
             <attribute name="name"/>
-            <attribute name="includes"/>
-            <attribute name="excludes" default="**/package-info.java"/>
             <attribute name="bin.dir" default="${dist.bin.dir}"/>
-            <attribute name="classes.dir" default="${build.classes.dir}"/>
-            <attribute name="gensrc.dir" default="${build.gensrc.dir}"/>
-            <attribute name="lib.dir" default="${dist.lib.dir}"/>
             <attribute name="java" default="${launcher.java}"/>
-            <attribute name="javac.bootclasspath" default="${build.bootstrap.dir}/classes"/>
-            <attribute name="javac.java.home" default="${boot.java.home}"/>
-            <attribute name="javac.source" default="${javac.source}"/>
-            <attribute name="javac.target" default="${javac.target}"/>
-            <attribute name="jarmainclass" default="com.sun.tools.@{name}.Main"/>
-            <attribute name="jarclasspath" default=""/>
-            <attribute name="release" default="${release}"/>
-            <attribute name="full.version" default="${full.version}"/>
             <sequential>
-                <build-jar
-                    name="@{name}"
-                    gensrc.dir="@{gensrc.dir}"
-                    classes.dir="@{classes.dir}"
-                    lib.dir="@{lib.dir}"
-                    includes="@{includes}"
-                    excludes="@{excludes}"
-                    jarmainclass="@{jarmainclass}"
-                    jarclasspath="@{jarclasspath}"
-                    release="@{release}"
-                    full.version="@{full.version}"
-                    javac.bootclasspath="@{javac.bootclasspath}"
-                    javac.source="@{javac.source}"
-                    javac.target="@{javac.target}"
-                />
                 <mkdir dir="@{bin.dir}"/>
                 <copy file="${src.bin.dir}/launcher.sh-template" tofile="@{bin.dir}/@{name}">
                     <filterset begintoken="#" endtoken="#">
@@ -442,35 +479,15 @@
         </macrodef>
     </target>
 
-    <target name="-def-build-jar" depends="-def-build-classes">
+    <target name="-def-build-jar">
         <macrodef name="build-jar">
             <attribute name="name"/>
             <attribute name="includes"/>
-            <attribute name="excludes" default="**/package-info.java"/>
             <attribute name="classes.dir" default="${build.classes.dir}"/>
-            <attribute name="gensrc.dir" default="${build.gensrc.dir}"/>
             <attribute name="lib.dir" default="${dist.lib.dir}"/>
-            <attribute name="javac.bootclasspath" default="${build.bootstrap.dir}/classes"/>
-            <attribute name="javac.java.home" default="${boot.java.home}"/>
-            <attribute name="javac.source" default="${javac.source}"/>
-            <attribute name="javac.target" default="${javac.target}"/>
             <attribute name="jarmainclass" default="com.sun.tools.@{name}.Main"/>
             <attribute name="jarclasspath" default=""/>
-            <attribute name="release" default="${release}"/>
-            <attribute name="full.version" default="${full.version}"/>
             <sequential>
-                <build-classes
-                    name="@{name}"
-                    gensrc.dir="@{gensrc.dir}"
-                    classes.dir="@{classes.dir}"
-                    includes="@{includes}"
-                    excludes="@{excludes}"
-                    release="@{release}"
-                    full.version="@{full.version}"
-                    javac.bootclasspath="@{javac.bootclasspath}"
-                    javac.source="@{javac.source}"
-                    javac.target="@{javac.target}"
-                />
                 <mkdir dir="@{lib.dir}"/>
                 <jar destfile="@{lib.dir}/@{name}.jar"
                      basedir="@{classes.dir}"
@@ -486,18 +503,24 @@
 
     <target name="-def-build-classes" depends="-def-pcompile">
         <macrodef name="build-classes">
-            <attribute name="name"/>
             <attribute name="includes"/>
-            <attribute name="excludes" default="**/package-info.java"/>
+            <attribute name="excludes" default="${exclude.files} **/package-info.java"/>
             <attribute name="classes.dir" default="${build.classes.dir}"/>
             <attribute name="gensrc.dir" default="${build.gensrc.dir}"/>
             <attribute name="javac.bootclasspath" default="${build.bootstrap.dir}/classes"/>
-            <attribute name="javac.java.home" default="${boot.java.home}"/>
-            <attribute name="javac.source" default="${javac.source}"/>
-            <attribute name="javac.target" default="${javac.target}"/>
+            <attribute name="bootclasspath.opt" default="${javac.bootclasspath.opt}"/>
+            <attribute name="classpath" default="${javac.classpath}"/>
+            <attribute name="sourcepath" default="${javac.sourcepath}"/>
+            <attribute name="java.home" default="${boot.java.home}"/>
+            <attribute name="source" default="${javac.source}"/>
+            <attribute name="target" default="${javac.target}"/>
             <attribute name="release" default="${release}"/>
             <attribute name="full.version" default="${full.version}"/>
             <sequential>
+                <echo level="verbose" message="build-classes: excludes=@{excludes}"/>
+                <echo level="verbose" message="build-classes: bootclasspath.opt=@{bootclasspath.opt}"/>
+                <echo level="verbose" message="build-classes: classpath=@{classpath}"/>
+                <echo level="verbose" message="build-classes: sourcepath=@{sourcepath}"/>
                 <mkdir dir="@{gensrc.dir}"/>
                 <mkdir dir="@{classes.dir}"/>
                 <pcompile srcdir="${src.classes.dir}"
@@ -516,39 +539,28 @@
                           destdir="@{gensrc.dir}"
                           includes="**/*.properties"/>
                 <javac fork="true"
-                       executable="@{javac.java.home}/bin/javac"
-                       srcdir="@{gensrc.dir}"
-                       destdir="@{classes.dir}"
-                       includes="@{includes}"
-                       sourcepath=""
-                       includeAntRuntime="no"
-                       source="@{javac.source}"
-                       target="@{javac.target}">
-                    <compilerarg value="-J-Xbootclasspath/p:@{javac.bootclasspath}"/>
-                    <compilerarg line="${javac.version.opt}"/>
-                    <compilerarg line="-Xlint"/>
-                </javac>
-                <javac fork="true"
-                       executable="@{javac.java.home}/bin/javac"
-                       srcdir="${src.classes.dir}"
+                       executable="@{java.home}/bin/javac"
+                       srcdir="${src.classes.dir}:@{gensrc.dir}"
                        destdir="@{classes.dir}"
                        includes="@{includes}"
                        excludes="@{excludes}"
-                       sourcepath=""
+                       sourcepath="@{sourcepath}"
+                       classpath="@{classpath}"
                        includeAntRuntime="no"
-                       source="@{javac.source}"
-                       target="@{javac.target}"
+                       source="@{source}"
+                       target="@{target}"
                        debug="${javac.debug}"
                        debuglevel="${javac.debuglevel}">
+                    <compilerarg value="-implicit:none"/>
+                    <compilerarg value="-Xprefer:source"/>
                     <compilerarg value="-J-Xbootclasspath/p:@{javac.bootclasspath}"/>
-                    <compilerarg value="-Xbootclasspath/p:@{classes.dir}"/>
+                    <compilerarg line="@{bootclasspath.opt}"/>
                     <compilerarg line="${javac.no.jdk.warnings}"/>
                     <compilerarg line="${javac.version.opt}"/>
                     <compilerarg line="${javac.lint.opts}"/>
                 </javac>
-                <copy todir="@{classes.dir}">
-                    <fileset dir="${src.classes.dir}">
-                        <include name="@{includes}"/>
+                <copy todir="@{classes.dir}" includeemptydirs="false">
+                    <fileset dir="${src.classes.dir}" includes="@{includes}" excludes="@{excludes}">
                         <exclude name="**/*.java"/>
                         <exclude name="**/*.properties"/>
                         <exclude name="**/*-template"/>
@@ -562,30 +574,32 @@
     <target name="-def-build-bootstrap-tool" depends="-check-boot.java.home,-def-build-tool">
         <presetdef name="build-bootstrap-tool">
             <build-tool
-                javac.source="${boot.javac.source}"
-                javac.target="${boot.javac.target}"
-                gensrc.dir="${build.bootstrap.dir}/gensrc"
-                classes.dir="${build.bootstrap.dir}/classes"
                 bin.dir="${build.bootstrap.dir}/bin"
-                lib.dir="${build.bootstrap.dir}/lib"
-                java="${boot.java}"
-                javac.bootclasspath=""
-                release="${bootstrap.release}"
-                full.version="${bootstrap.full.version}"/>
+                java="${boot.java}"/>
         </presetdef>
     </target>
 
     <target name="-def-build-bootstrap-jar" depends="-def-build-jar">
         <presetdef name="build-bootstrap-jar">
             <build-jar
-                javac.source="${boot.javac.source}"
-                javac.target="${boot.javac.target}"
+                classes.dir="${build.bootstrap.dir}/classes"
+                lib.dir="${build.bootstrap.dir}/lib"/>
+        </presetdef>
+    </target>
+
+    <target name="-def-build-bootstrap-classes" depends="-def-build-classes">
+        <presetdef name="build-bootstrap-classes">
+            <build-classes
+                source="${boot.javac.source}"
+                target="${boot.javac.target}"
                 gensrc.dir="${build.bootstrap.dir}/gensrc"
                 classes.dir="${build.bootstrap.dir}/classes"
-                lib.dir="${build.bootstrap.dir}/lib"
                 javac.bootclasspath=""
+                bootclasspath.opt="-Xbootclasspath/p:${build.bootstrap.dir}/classes"
+                sourcepath=""
                 release="${bootstrap.release}"
-                full.version="${bootstrap.full.version}"/>
+                full.version="${bootstrap.full.version}"
+                excludes="${require.import.jdk.files} **/package-info.java"/>
         </presetdef>
     </target>
 
@@ -600,6 +614,20 @@
                classpath="${ant.home}/lib/ant.jar"/>
         <taskdef name="pcompile"
                  classname="CompilePropertiesTask"
+                 classpath="${build.toolclasses.dir}/"/>
+    </target>
+
+    <target name="-def-genstubs" depends="build-bootstrap-javac">
+        <mkdir dir="${build.toolclasses.dir}"/>
+        <javac fork="true"
+               source="${boot.javac.source}"
+               target="${boot.javac.target}"
+               executable="${boot.java.home}/bin/javac"
+               srcdir="${make.tools.dir}/GenStubs"
+               destdir="${build.toolclasses.dir}/"
+               classpath="${build.bootstrap.dir}/classes:${ant.home}/lib/ant.jar"/>
+        <taskdef name="genstubs"
+                 classname="GenStubs$$Ant"
                  classpath="${build.toolclasses.dir}/"/>
     </target>
 
@@ -764,7 +792,7 @@
 
     <!-- standard JDK target -->
     <target name="sanity"
-        description="display settings of congiguration values">
+        description="display settings of configuration values">
         <echo level="info">ant.home = ${ant.home}</echo>
         <echo level="info">boot.java.home = ${boot.java.home}</echo>
         <echo level="info">target.java.home = ${target.java.home}</echo>

@@ -43,16 +43,21 @@ class Rewriter: public StackObj {
   bool has_cp_cache(int i) { return (uint)i < (uint)_cp_map.length() && _cp_map[i] >= 0; }
   int maybe_add_cp_cache_entry(int i) { return has_cp_cache(i) ? _cp_map[i] : add_cp_cache_entry(i); }
   int add_cp_cache_entry(int cp_index) {
+    assert((cp_index & _secondary_entry_tag) == 0, "bad tag");
     assert(_cp_map[cp_index] == -1, "not twice on same cp_index");
     int cache_index = _cp_cache_map.append(cp_index);
     _cp_map.at_put(cp_index, cache_index);
     assert(cp_entry_to_cp_cache(cp_index) == cache_index, "");
     return cache_index;
   }
-  int add_extra_cp_cache_entry(int main_entry);
+  int add_secondary_cp_cache_entry(int main_cpc_entry) {
+    assert(main_cpc_entry < _cp_cache_map.length(), "must be earlier CP cache entry");
+    int cache_index = _cp_cache_map.append(main_cpc_entry | _secondary_entry_tag);
+    return cache_index;
+  }
 
   // All the work goes in here:
-  Rewriter(instanceKlassHandle klass, TRAPS);
+  Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, objArrayHandle methods, TRAPS);
 
   void compute_index_maps();
   void make_constant_pool_cache(TRAPS);
@@ -65,4 +70,9 @@ class Rewriter: public StackObj {
  public:
   // Driver routine:
   static void rewrite(instanceKlassHandle klass, TRAPS);
+  static void rewrite(instanceKlassHandle klass, constantPoolHandle cpool, objArrayHandle methods, TRAPS);
+
+  enum {
+    _secondary_entry_tag = nth_bit(30)
+  };
 };

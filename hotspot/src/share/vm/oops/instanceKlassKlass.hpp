@@ -69,14 +69,13 @@ private:
   // Apply closure to the InstanceKlass oops that are outside the java heap.
   inline void iterate_c_heap_oops(instanceKlass* ik, OopClosure* closure);
 
-#ifndef PRODUCT
  public:
   // Printing
-  void oop_print_on(oop obj, outputStream* st);
   void oop_print_value_on(oop obj, outputStream* st);
+#ifndef PRODUCT
+  void oop_print_on(oop obj, outputStream* st);
 #endif
 
- public:
   // Verification
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);

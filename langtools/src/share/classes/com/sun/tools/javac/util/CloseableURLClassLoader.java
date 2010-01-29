@@ -23,7 +23,7 @@
  * have any questions.
  */
 
-package com.sun.tools.javac.file;
+package com.sun.tools.javac.util;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -45,9 +45,9 @@ import java.util.jar.JarFile;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-class CloseableURLClassLoader
+public class CloseableURLClassLoader
         extends URLClassLoader implements Closeable {
-    CloseableURLClassLoader(URL[] urls, ClassLoader parent) throws Error {
+    public CloseableURLClassLoader(URL[] urls, ClassLoader parent) throws Error {
         super(urls, parent);
         try {
             getLoaders(); //proactive check that URLClassLoader is as expected
@@ -63,6 +63,7 @@ class CloseableURLClassLoader
      * @throws java.io.IOException if the jar files cannot be found for any
      * reson, or if closing the jar file itself causes an IOException.
      */
+    @Override
     public void close() throws IOException {
         try {
             for (Object l: getLoaders()) {

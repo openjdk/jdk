@@ -291,7 +291,7 @@ TESTEXIT = \
   fi ; \
   testExitCode=`$(CAT) $(EXITCODE)`; \
   $(ECHO) "EXIT CODE: $${testExitCode}"; \
-  exit ${testExitCode}
+  exit $${testExitCode}
 
 BUNDLE_UP_AND_EXIT = \
 ( \
@@ -300,7 +300,7 @@ BUNDLE_UP_AND_EXIT = \
   $(RM) -f $(STATS_TXT) $(RUNLIST) $(PASSLIST) $(FAILLIST) $(EXITCODE); \
   $(ECHO) "$${jtregExitCode}" > $(EXITCODE); \
   if [ -r "$${_summary}" ] ; then \
-    $(ECHO) "Summary: $${_summary}" > $(STATS_TXT); \
+    $(ECHO) "Summary: $(UNIQUE_DIR)" > $(STATS_TXT); \
     $(EXPAND) $${_summary} | $(EGREP) -v ' Not run\.' > $(RUNLIST); \
     $(EGREP) ' Passed\.' $(RUNLIST) \
       | $(EGREP) -v ' Error\.' \
@@ -370,7 +370,8 @@ ifndef USE_JTREG_SAMEVM
 endif
 # With samevm, you cannot use -javaoptions?
 ifeq ($(USE_JTREG_SAMEVM),true)
-  EXTRA_JTREG_OPTIONS += -samevm $(JAVA_ARGS) $(JAVA_ARGS:%=-vmoption:%)
+  JTREG_SAMEVM_OPTION = -samevm
+  EXTRA_JTREG_OPTIONS += $(JTREG_SAMEVM_OPTION) $(JAVA_ARGS) $(JAVA_ARGS:%=-vmoption:%)
   JTREG_TEST_OPTIONS = $(JAVA_VM_ARGS:%=-vmoption:%)
 else
   JTREG_TEST_OPTIONS = $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_VM_ARGS:%=-vmoption:%)
@@ -418,8 +419,9 @@ $(ECHO) "Running tests in othervm mode: $(call TestDirs, $?)"
 $(MAKE) TESTDIRS="$(call TestDirs, $?)" USE_JTREG_SAMEVM=false UNIQUE_DIR=$@ jtreg_tests
 endef
 define SummaryInfo
-$(ECHO) "Summary for: $?"
+$(ECHO) "########################################################"
 $(CAT) $(?:%=$(ABS_TEST_OUTPUT_DIR)/%/$(STATS_TXT_NAME))
+$(ECHO) "########################################################"
 endef
 
 # ------------------------------------------------------------------
@@ -446,10 +448,14 @@ JDK_ALL_TARGETS += jdk_beans2
 jdk_beans2: java/beans/Beans java/beans/EventHandler java/beans/XMLDecoder \
             java/beans/PropertyEditor
 	$(call RunOthervmBatch)
+
+# Stable othervm testruns (minus items from PROBLEM_LIST)
+#   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_beans3
 jdk_beans3: java/beans/XMLEncoder
 	$(call RunOthervmBatch)
 
+# All beans tests
 jdk_beans: jdk_beans1 jdk_beans2 jdk_beans3
 	@$(SummaryInfo)
 
@@ -475,6 +481,7 @@ JDK_ALL_TARGETS += jdk_management2
 jdk_management2: com/sun/jmx com/sun/management sun/management
 	$(call RunOthervmBatch)
 
+# All management tests
 jdk_management: jdk_management1 jdk_management2
 	@$(SummaryInfo)
 
@@ -506,10 +513,14 @@ JDK_ALL_TARGETS += jdk_nio2
 jdk_nio2: java/nio/Buffer java/nio/ByteOrder \
           java/nio/channels java/nio/BufferPoolMXBean java/nio/MappedByteBuffer
 	$(call RunOthervmBatch)
+
+# Stable othervm testruns (minus items from PROBLEM_LIST)
+#   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_nio3
 jdk_nio3: com/sun/nio sun/nio
 	$(call RunOthervmBatch)
 
+# All nio tests
 jdk_nio: jdk_nio1 jdk_nio2 jdk_nio3
 	@$(SummaryInfo)
 
@@ -529,10 +540,14 @@ jdk_security1: java/security
 JDK_ALL_TARGETS += jdk_security2
 jdk_security2: javax/crypto com/sun/crypto
 	$(call RunOthervmBatch)
+
+# Stable othervm testruns (minus items from PROBLEM_LIST)
+#   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_security3
 jdk_security3: com/sun/security lib/security javax/security sun/security
 	$(call RunOthervmBatch)
 
+# All security tests
 jdk_security: jdk_security1 jdk_security2 jdk_security3
 	@$(SummaryInfo)
 
@@ -547,15 +562,18 @@ JDK_ALL_TARGETS += jdk_text
 jdk_text: java/text sun/text
 	$(call RunSamevmBatch)
 
-# Stable othervm testruns (minus items from PROBLEM_LIST)
-#   Using samevm has serious problems with these tests
+# Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_tools1
 jdk_tools1: com/sun/jdi
 	$(call RunSamevmBatch)
+
+# Stable othervm testruns (minus items from PROBLEM_LIST)
+#   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_tools2
 jdk_tools2: com/sun/tools sun/jvmstat sun/tools tools vm com/sun/servicetag com/sun/tracing
 	$(call RunOthervmBatch)
 
+# All tools tests
 jdk_tools: jdk_tools1 jdk_tools2
 	@$(SummaryInfo)
 
@@ -567,7 +585,9 @@ jdk_util: java/util sun/util
 # ------------------------------------------------------------------
 
 # Run all tests
-jdk_all: $(filter-out jdk_awt jdk_rmi jdk_swing, $(JDK_ALL_TARGETS))
+FILTER_OUT_LIST=jdk_awt jdk_rmi jdk_swing
+JDK_ALL_STABLE_TARGETS := $(filter-out $(FILTER_OUT_LIST), $(JDK_ALL_TARGETS))
+jdk_all: $(JDK_ALL_STABLE_TARGETS)
 	@$(SummaryInfo)
 
 # These are all phony targets
@@ -581,16 +601,22 @@ JTREG = $(JT_HOME)/win32/bin/jtreg
 JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 # Only run automatic tests
 JTREG_BASIC_OPTIONS += -a
+# Always turn on assertions
+JTREG_ASSERT_OPTION = -ea -esa
+JTREG_BASIC_OPTIONS += $(JTREG_ASSERT_OPTION)
 # Report details on all failed or error tests, times too
 JTREG_BASIC_OPTIONS += -v:fail,error,time
 # Retain all files for failing tests
 JTREG_BASIC_OPTIONS += -retain:fail,error
 # Ignore tests are not run and completely silent about it
-JTREG_BASIC_OPTIONS += -ignore:quiet
-# Multiple by 2 the timeout numbers
-JTREG_BASIC_OPTIONS += -timeoutFactor:2
+JTREG_IGNORE_OPTION = -ignore:quiet
+JTREG_BASIC_OPTIONS += $(JTREG_IGNORE_OPTION)
+# Multiple by 4 the timeout numbers
+JTREG_TIMEOUT_OPTION =  -timeoutFactor:4
+JTREG_BASIC_OPTIONS += $(JTREG_TIMEOUT_OPTION)
 # Boost the max memory for jtreg to avoid gc thrashing
-JTREG_BASIC_OPTIONS += -J-Xmx512m
+JTREG_MEMORY_OPTION = -J-Xmx512m
+JTREG_BASIC_OPTIONS += $(JTREG_MEMORY_OPTION)
 
 # Make sure jtreg exists
 $(JTREG): $(JT_HOME)

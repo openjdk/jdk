@@ -224,6 +224,32 @@ bool Compile::valid_bundle_info(const Node *n) {
 }
 
 
+void Compile::gvn_replace_by(Node* n, Node* nn) {
+  for (DUIterator_Last imin, i = n->last_outs(imin); i >= imin; ) {
+    Node* use = n->last_out(i);
+    bool is_in_table = initial_gvn()->hash_delete(use);
+    uint uses_found = 0;
+    for (uint j = 0; j < use->len(); j++) {
+      if (use->in(j) == n) {
+        if (j < use->req())
+          use->set_req(j, nn);
+        else
+          use->set_prec(j, nn);
+        uses_found++;
+      }
+    }
+    if (is_in_table) {
+      // reinsert into table
+      initial_gvn()->hash_find_insert(use);
+    }
+    record_for_igvn(use);
+    i -= uses_found;    // we deleted 1 or more copies of this edge
+  }
+}
+
+
+
+
 // Identify all nodes that are reachable from below, useful.
 // Use breadth-first pass that records state in a Unique_Node_List,
 // recursive traversal is slower.
@@ -554,6 +580,28 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       rethrow_exceptions(kit.transfer_exceptions_into_jvms());
     }
 
+    if (!failing() && has_stringbuilder()) {
+      {
+        // remove useless nodes to make the usage analysis simpler
+        ResourceMark rm;
+        PhaseRemoveUseless pru(initial_gvn(), &for_igvn);
+      }
+
+      {
+        ResourceMark rm;
+        print_method("Before StringOpts", 3);
+        PhaseStringOpts pso(initial_gvn(), &for_igvn);
+        print_method("After StringOpts", 3);
+      }
+
+      // now inline anything that we skipped the first time around
+      while (_late_inlines.length() > 0) {
+        CallGenerator* cg = _late_inlines.pop();
+        cg->do_late_inline();
+      }
+    }
+    assert(_late_inlines.length() == 0, "should have been processed");
+
     print_method("Before RemoveUseless", 3);
 
     // Remove clutter produced by parsing.
@@ -820,6 +868,7 @@ void Compile::Init(int aliaslevel) {
   _fixed_slots = 0;
   set_has_split_ifs(false);
   set_has_loops(has_method() && method()->has_loops()); // first approximation
+  set_has_stringbuilder(false);
   _deopt_happens = true;  // start out assuming the worst
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
@@ -883,6 +932,7 @@ void Compile::Init(int aliaslevel) {
 
   _intrinsics = NULL;
   _macro_nodes = new GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _predicate_opaqs = new GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   register_library_intrinsics();
 }
 
@@ -1504,6 +1554,19 @@ void Compile::Finish_Warm() {
   }
 }
 
+//---------------------cleanup_loop_predicates-----------------------
+// Remove the opaque nodes that protect the predicates so that all unused
+// checks and uncommon_traps will be eliminated from the ideal graph
+void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
+  if (predicate_count()==0) return;
+  for (int i = predicate_count(); i > 0; i--) {
+    Node * n = predicate_opaque1_node(i-1);
+    assert(n->Opcode() == Op_Opaque1, "must be");
+    igvn.replace_node(n, n->in(1));
+  }
+  assert(predicate_count()==0, "should be clean!");
+  igvn.optimize();
+}
 
 //------------------------------Optimize---------------------------------------
 // Given a graph, optimize it.
@@ -1545,7 +1608,7 @@ void Compile::Optimize() {
   if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, true );
+      PhaseIdealLoop ideal_loop( igvn, true, UseLoopPredicate);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 1", 2);
       if (failing())  return;
@@ -1553,7 +1616,7 @@ void Compile::Optimize() {
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t3("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false );
+      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 2", 2);
       if (failing())  return;
@@ -1561,7 +1624,7 @@ void Compile::Optimize() {
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t4("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false );
+      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 3", 2);
     }
@@ -1599,13 +1662,21 @@ void Compile::Optimize() {
   // peeling, unrolling, etc.
   if(loop_opts_cnt > 0) {
     debug_only( int cnt = 0; );
+    bool loop_predication = UseLoopPredicate;
     while(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
-      PhaseIdealLoop ideal_loop( igvn, true );
+      PhaseIdealLoop ideal_loop( igvn, true, loop_predication);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop iterations", 2);
       if (failing())  return;
+      // Perform loop predication optimization during first iteration after CCP.
+      // After that switch it off and cleanup unused loop predicates.
+      if (loop_predication) {
+        loop_predication = false;
+        cleanup_loop_predicates(igvn);
+        if (failing())  return;
+      }
     }
   }
 
@@ -1803,6 +1874,7 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
           !n->is_Phi() &&       // a few noisely useless nodes
           !n->is_Proj() &&
           !n->is_MachTemp() &&
+          !n->is_SafePointScalarObject() &&
           !n->is_Catch() &&     // Would be nice to print exception table targets
           !n->is_MergeMem() &&  // Not very interesting
           !n->is_top() &&       // Debug info table constants
@@ -2236,6 +2308,30 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
     }
     if (in1->outcnt() == 0) {
       in1->disconnect_inputs(NULL);
+    }
+    break;
+  }
+
+  case Op_Proj: {
+    if (OptimizeStringConcat) {
+      ProjNode* p = n->as_Proj();
+      if (p->_is_io_use) {
+        // Separate projections were used for the exception path which
+        // are normally removed by a late inline.  If it wasn't inlined
+        // then they will hang around and should just be replaced with
+        // the original one.
+        Node* proj = NULL;
+        // Replace with just one
+        for (SimpleDUIterator i(p->in(0)); i.has_next(); i.next()) {
+          Node *use = i.get();
+          if (use->is_Proj() && p != use && use->as_Proj()->_con == p->_con) {
+            proj = use;
+            break;
+          }
+        }
+        assert(p != NULL, "must be found");
+        p->subsume_by(proj);
+      }
     }
     break;
   }

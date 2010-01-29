@@ -43,7 +43,9 @@ void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_met
 }
 #endif
 
-CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual, JVMState* jvms, bool allow_inline, float prof_factor) {
+CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual,
+                                       JVMState* jvms, bool allow_inline,
+                                       float prof_factor) {
   CallGenerator* cg;
 
   // Dtrace currently doesn't work unless all calls are vanilla
@@ -116,7 +118,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
         // TO DO:  When UseOldInlining is removed, copy the ILT code elsewhere.
         float site_invoke_ratio = prof_factor;
         // Note:  ilt is for the root of this parse, not the present call site.
-        ilt = new InlineTree(this, jvms->method(), jvms->caller(), site_invoke_ratio);
+        ilt = new InlineTree(this, jvms->method(), jvms->caller(), site_invoke_ratio, 0);
       }
       WarmCallInfo scratch_ci;
       if (!UseOldInlining)
@@ -128,6 +130,12 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
 
       if (allow_inline) {
         CallGenerator* cg = CallGenerator::for_inline(call_method, expected_uses);
+        if (require_inline && cg != NULL && should_delay_inlining(call_method, jvms)) {
+          // Delay the inlining of this method to give us the
+          // opportunity to perform some high level optimizations
+          // first.
+          return CallGenerator::for_late_inline(call_method, cg);
+        }
         if (cg == NULL) {
           // Fall through.
         } else if (require_inline || !InlineWarmCalls) {
@@ -218,6 +226,57 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
     }
   }
 
+  // Do MethodHandle calls.
+  if (call_method->is_method_handle_invoke()) {
+    if (jvms->method()->java_code_at_bci(jvms->bci()) != Bytecodes::_invokedynamic) {
+      GraphKit kit(jvms);
+      Node* n = kit.argument(0);
+
+      if (n->Opcode() == Op_ConP) {
+        const TypeOopPtr* oop_ptr = n->bottom_type()->is_oopptr();
+        ciObject* const_oop = oop_ptr->const_oop();
+        ciMethodHandle* method_handle = const_oop->as_method_handle();
+
+        // Set the actually called method to have access to the class
+        // and signature in the MethodHandleCompiler.
+        method_handle->set_callee(call_method);
+
+        // Get an adapter for the MethodHandle.
+        ciMethod* target_method = method_handle->get_method_handle_adapter();
+
+        CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
+        if (hit_cg != NULL && hit_cg->is_inline())
+          return hit_cg;
+      }
+
+      return CallGenerator::for_direct_call(call_method);
+    }
+    else {
+      // Get the MethodHandle from the CallSite.
+      ciMethod* caller_method = jvms->method();
+      ciBytecodeStream str(caller_method);
+      str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
+      ciCallSite*     call_site     = str.get_call_site();
+      ciMethodHandle* method_handle = call_site->get_target();
+
+      // Set the actually called method to have access to the class
+      // and signature in the MethodHandleCompiler.
+      method_handle->set_callee(call_method);
+
+      // Get an adapter for the MethodHandle.
+      ciMethod* target_method = method_handle->get_invokedynamic_adapter();
+
+      CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
+      if (hit_cg != NULL && hit_cg->is_inline()) {
+        CallGenerator* miss_cg = CallGenerator::for_dynamic_call(call_method);
+        return CallGenerator::for_predicted_dynamic_call(method_handle, miss_cg, hit_cg, prof_factor);
+      }
+
+      // If something failed, generate a normal dynamic call.
+      return CallGenerator::for_dynamic_call(call_method);
+    }
+  }
+
   // There was no special inlining tactic, or it bailed out.
   // Use a more generic tactic, like a simple call.
   if (call_is_virtual) {
@@ -225,8 +284,61 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   } else {
     // Class Hierarchy Analysis or Type Profile reveals a unique target,
     // or it is a static or special call.
-    return CallGenerator::for_direct_call(call_method);
+    return CallGenerator::for_direct_call(call_method, should_delay_inlining(call_method, jvms));
   }
+}
+
+// Return true for methods that shouldn't be inlined early so that
+// they are easier to analyze and optimize as intrinsics.
+bool Compile::should_delay_inlining(ciMethod* call_method, JVMState* jvms) {
+  if (has_stringbuilder()) {
+
+    if ((call_method->holder() == C->env()->StringBuilder_klass() ||
+         call_method->holder() == C->env()->StringBuffer_klass()) &&
+        (jvms->method()->holder() == C->env()->StringBuilder_klass() ||
+         jvms->method()->holder() == C->env()->StringBuffer_klass())) {
+      // Delay SB calls only when called from non-SB code
+      return false;
+    }
+
+    switch (call_method->intrinsic_id()) {
+      case vmIntrinsics::_StringBuilder_void:
+      case vmIntrinsics::_StringBuilder_int:
+      case vmIntrinsics::_StringBuilder_String:
+      case vmIntrinsics::_StringBuilder_append_char:
+      case vmIntrinsics::_StringBuilder_append_int:
+      case vmIntrinsics::_StringBuilder_append_String:
+      case vmIntrinsics::_StringBuilder_toString:
+      case vmIntrinsics::_StringBuffer_void:
+      case vmIntrinsics::_StringBuffer_int:
+      case vmIntrinsics::_StringBuffer_String:
+      case vmIntrinsics::_StringBuffer_append_char:
+      case vmIntrinsics::_StringBuffer_append_int:
+      case vmIntrinsics::_StringBuffer_append_String:
+      case vmIntrinsics::_StringBuffer_toString:
+      case vmIntrinsics::_Integer_toString:
+        return true;
+
+      case vmIntrinsics::_String_String:
+        {
+          Node* receiver = jvms->map()->in(jvms->argoff() + 1);
+          if (receiver->is_Proj() && receiver->in(0)->is_CallStaticJava()) {
+            CallStaticJavaNode* csj = receiver->in(0)->as_CallStaticJava();
+            ciMethod* m = csj->method();
+            if (m != NULL &&
+                (m->intrinsic_id() == vmIntrinsics::_StringBuffer_toString ||
+                 m->intrinsic_id() == vmIntrinsics::_StringBuilder_toString))
+              // Delay String.<init>(new SB())
+              return true;
+          }
+          return false;
+        }
+
+      default:
+        return false;
+    }
+  }
+  return false;
 }
 
 
@@ -240,19 +352,11 @@ bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* kl
   // Interface classes can be loaded & linked and never get around to
   // being initialized.  Uncommon-trap for not-initialized static or
   // v-calls.  Let interface calls happen.
-  ciInstanceKlass* holder_klass  = dest_method->holder();
+  ciInstanceKlass* holder_klass = dest_method->holder();
   if (!holder_klass->is_initialized() &&
       !holder_klass->is_interface()) {
     uncommon_trap(Deoptimization::Reason_uninitialized,
                   Deoptimization::Action_reinterpret,
-                  holder_klass);
-    return true;
-  }
-  if (dest_method->is_method_handle_invoke()
-      && holder_klass->name() == ciSymbol::java_dyn_Dynamic()) {
-    // FIXME: NYI
-    uncommon_trap(Deoptimization::Reason_unhandled,
-                  Deoptimization::Action_none,
                   holder_klass);
     return true;
   }
@@ -274,6 +378,7 @@ void Parse::do_call() {
   bool is_virtual = bc() == Bytecodes::_invokevirtual;
   bool is_virtual_or_interface = is_virtual || bc() == Bytecodes::_invokeinterface;
   bool has_receiver = is_virtual_or_interface || bc() == Bytecodes::_invokespecial;
+  bool is_invokedynamic = bc() == Bytecodes::_invokedynamic;
 
   // Find target being called
   bool             will_link;
@@ -282,7 +387,8 @@ void Parse::do_call() {
   ciKlass* holder = iter().get_declared_method_holder();
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
 
-  int   nargs    = dest_method->arg_size();
+  int nargs = dest_method->arg_size();
+  if (is_invokedynamic)  nargs -= 1;
 
   // uncommon-trap when callee is unloaded, uninitialized or will not link
   // bailout when too many arguments for register representation
@@ -296,7 +402,7 @@ void Parse::do_call() {
     return;
   }
   assert(holder_klass->is_loaded(), "");
-  assert(dest_method->is_static() == !has_receiver, "must match bc");
+  assert((dest_method->is_static() || is_invokedynamic) == !has_receiver , "must match bc");
   // Note: this takes into account invokeinterface of methods declared in java/lang/Object,
   // which should be invokevirtuals but according to the VM spec may be invokeinterfaces
   assert(holder_klass->is_interface() || holder_klass->super() == NULL || (bc() != Bytecodes::_invokeinterface), "must match bc");

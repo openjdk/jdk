@@ -396,11 +396,11 @@ JNI_ENTRY(jmethodID, jni_FromReflectedMethod(JNIEnv *env, jobject method))
   oop mirror     = NULL;
   int slot       = 0;
 
-  if (reflected->klass() == SystemDictionary::reflect_constructor_klass()) {
+  if (reflected->klass() == SystemDictionary::reflect_Constructor_klass()) {
     mirror = java_lang_reflect_Constructor::clazz(reflected);
     slot   = java_lang_reflect_Constructor::slot(reflected);
   } else {
-    assert(reflected->klass() == SystemDictionary::reflect_method_klass(), "wrong type");
+    assert(reflected->klass() == SystemDictionary::reflect_Method_klass(), "wrong type");
     mirror = java_lang_reflect_Method::clazz(reflected);
     slot   = java_lang_reflect_Method::slot(reflected);
   }
@@ -496,7 +496,7 @@ JNI_ENTRY(jclass, jni_GetSuperclass(JNIEnv *env, jclass sub))
   klassOop super = Klass::cast(k)->java_super();
   // super2 is the value computed by the compiler's getSuperClass intrinsic:
   debug_only(klassOop super2 = ( Klass::cast(k)->oop_is_javaArray()
-                                 ? SystemDictionary::object_klass()
+                                 ? SystemDictionary::Object_klass()
                                  : Klass::cast(k)->super() ) );
   assert(super == super2,
          "java_super computation depends on interface, array, other super");
@@ -584,7 +584,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
   if (thread->has_pending_exception()) {
     Handle ex(thread, thread->pending_exception());
     thread->clear_pending_exception();
-    if (ex->is_a(SystemDictionary::threaddeath_klass())) {
+    if (ex->is_a(SystemDictionary::ThreadDeath_klass())) {
       // Don't print anything if we are being killed.
     } else {
       jio_fprintf(defaultStream::error_stream(), "Exception ");
@@ -593,12 +593,12 @@ JNI_ENTRY_NO_PRESERVE(void, jni_ExceptionDescribe(JNIEnv *env))
         jio_fprintf(defaultStream::error_stream(),
         "in thread \"%s\" ", thread->get_thread_name());
       }
-      if (ex->is_a(SystemDictionary::throwable_klass())) {
+      if (ex->is_a(SystemDictionary::Throwable_klass())) {
         JavaValue result(T_VOID);
         JavaCalls::call_virtual(&result,
                                 ex,
                                 KlassHandle(THREAD,
-                                  SystemDictionary::throwable_klass()),
+                                  SystemDictionary::Throwable_klass()),
                                 vmSymbolHandles::printStackTrace_name(),
                                 vmSymbolHandles::void_method_signature(),
                                 THREAD);
@@ -3230,6 +3230,21 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
 
   jint result = JNI_ERR;
   DT_RETURN_MARK(CreateJavaVM, jint, (const jint&)result);
+
+  // We're about to use Atomic::xchg for synchronization.  Some Zero
+  // platforms use the GCC builtin __sync_lock_test_and_set for this,
+  // but __sync_lock_test_and_set is not guaranteed to do what we want
+  // on all architectures.  So we check it works before relying on it.
+#if defined(ZERO) && defined(ASSERT)
+  {
+    jint a = 0xcafebabe;
+    jint b = Atomic::xchg(0xdeadbeef, &a);
+    void *c = &a;
+    void *d = Atomic::xchg_ptr(&b, &c);
+    assert(a == (jint) 0xdeadbeef && b == (jint) 0xcafebabe, "Atomic::xchg() works");
+    assert(c == &b && d == &a, "Atomic::xchg_ptr() works");
+  }
+#endif // ZERO && ASSERT
 
   // At the moment it's only possible to have one Java VM,
   // since some of the runtime state is in global variables.

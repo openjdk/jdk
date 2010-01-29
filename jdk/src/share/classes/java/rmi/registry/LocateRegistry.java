@@ -187,7 +187,7 @@ public final class LocateRegistry {
      * host that accepts requests on the specified <code>port</code>.
      *
      * <p>The <code>Registry</code> instance is exported as if the static
-     * {@link UnicastRemoteObject.exportObject(Remote,int)
+     * {@link UnicastRemoteObject#exportObject(Remote,int)
      * UnicastRemoteObject.exportObject} method is invoked, passing the
      * <code>Registry</code> instance and the specified <code>port</code> as
      * arguments, except that the <code>Registry</code> instance is
@@ -213,7 +213,7 @@ public final class LocateRegistry {
      *
      * <p>The <code>Registry</code> instance is exported as if
      * the static {@link
-     * UnicastRemoteObject.exportObject(Remote,int,RMIClientSocketFactory,RMIServerSocketFactory)
+     * UnicastRemoteObject#exportObject(Remote,int,RMIClientSocketFactory,RMIServerSocketFactory)
      * UnicastRemoteObject.exportObject} method is invoked, passing the
      * <code>Registry</code> instance, the specified <code>port</code>, the
      * specified <code>RMIClientSocketFactory</code>, and the specified
