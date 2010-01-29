@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ class ciMethod : public ciObject {
   CI_PACKAGE_ACCESS
   friend class ciEnv;
   friend class ciExceptionHandlerStream;
+  friend class ciBytecodeStream;
+  friend class ciMethodHandle;
 
  private:
   // General method information.
@@ -213,7 +215,10 @@ class ciMethod : public ciObject {
   bool check_call(int refinfo_index, bool is_static) const;
   void build_method_data();  // make sure it exists in the VM also
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
-  bool is_method_handle_invoke();
+
+  // JSR 292 support
+  bool is_method_handle_invoke()  const;
+  bool is_method_handle_adapter() const;
   ciInstance* method_handle_type();
 
   // What kind of ciObject is this?
@@ -251,4 +256,10 @@ class ciMethod : public ciObject {
   // Print the name of this method in various incarnations.
   void print_name(outputStream* st = tty);
   void print_short_name(outputStream* st = tty);
+
+  methodOop get_method_handle_target() {
+    klassOop receiver_limit_oop = NULL;
+    int flags = 0;
+    return MethodHandles::decode_method(get_oop(), receiver_limit_oop, flags);
+  }
 };

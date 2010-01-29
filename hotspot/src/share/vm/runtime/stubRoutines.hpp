@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,20 @@ class StubRoutines: AllStatic {
   static address _unsafe_arraycopy;
   static address _generic_arraycopy;
 
+  // These are versions of the java.lang.Math methods which perform
+  // the same operations as the intrinsic version.  They are used for
+  // constant folding in the compiler to ensure equivalence.  If the
+  // intrinsic version returns the same result as the strict version
+  // then they can be set to the appropriate function from
+  // SharedRuntime.
+  static double (*_intrinsic_log)(double);
+  static double (*_intrinsic_log10)(double);
+  static double (*_intrinsic_exp)(double);
+  static double (*_intrinsic_pow)(double, double);
+  static double (*_intrinsic_sin)(double);
+  static double (*_intrinsic_cos)(double);
+  static double (*_intrinsic_tan)(double);
+
  public:
   // Initialization/Testing
   static void    initialize1();                            // must happen before universe::genesis
@@ -244,6 +258,35 @@ class StubRoutines: AllStatic {
   static address checkcast_arraycopy()     { return _checkcast_arraycopy; }
   static address unsafe_arraycopy()        { return _unsafe_arraycopy; }
   static address generic_arraycopy()       { return _generic_arraycopy; }
+
+  static double  intrinsic_log(double d) {
+    assert(_intrinsic_log != NULL, "must be defined");
+    return _intrinsic_log(d);
+  }
+  static double  intrinsic_log10(double d) {
+    assert(_intrinsic_log != NULL, "must be defined");
+    return _intrinsic_log10(d);
+  }
+  static double  intrinsic_exp(double d) {
+    assert(_intrinsic_exp != NULL, "must be defined");
+    return _intrinsic_exp(d);
+  }
+  static double  intrinsic_pow(double d, double d2) {
+    assert(_intrinsic_pow != NULL, "must be defined");
+    return _intrinsic_pow(d, d2);
+  }
+  static double  intrinsic_sin(double d) {
+    assert(_intrinsic_sin != NULL, "must be defined");
+    return _intrinsic_sin(d);
+  }
+  static double  intrinsic_cos(double d) {
+    assert(_intrinsic_cos != NULL, "must be defined");
+    return _intrinsic_cos(d);
+  }
+  static double  intrinsic_tan(double d) {
+    assert(_intrinsic_tan != NULL, "must be defined");
+    return _intrinsic_tan(d);
+  }
 
   //
   // Default versions of the above arraycopy functions for platforms which do

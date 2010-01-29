@@ -125,7 +125,25 @@ void Parse::do_field_access(bool is_get, bool is_field) {
 
 void Parse::do_get_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool is_field) {
   // Does this field have a constant value?  If so, just push the value.
-  if (field->is_constant() && push_constant(field->constant_value()))  return;
+  if (field->is_constant()) {
+    if (field->is_static()) {
+      // final static field
+      if (push_constant(field->constant_value()))
+        return;
+    }
+    else {
+      // final non-static field of a trusted class ({java,sun}.dyn
+      // classes).
+      if (obj->is_Con()) {
+        const TypeOopPtr* oop_ptr = obj->bottom_type()->isa_oopptr();
+        ciObject* constant_oop = oop_ptr->const_oop();
+        ciConstant constant = field->constant_value_of(constant_oop);
+
+        if (push_constant(constant, true))
+          return;
+      }
+    }
+  }
 
   ciType* field_klass = field->type();
   bool is_vol = field->is_volatile();
@@ -145,7 +163,7 @@ void Parse::do_get_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool 
     if (!field->type()->is_loaded()) {
       type = TypeInstPtr::BOTTOM;
       must_assert_null = true;
-    } else if (field->is_constant()) {
+    } else if (field->is_constant() && field->is_static()) {
       // This can happen if the constant oop is non-perm.
       ciObject* con = field->constant_value().as_object();
       // Do not "join" in the previous type; it doesn't add value,
@@ -240,19 +258,19 @@ void Parse::do_put_xxx(const TypePtr* obj_type, Node* obj, ciField* field, bool 
     // membar is dependent on the store, keeping any other membars generated
     // below from floating up past the store.
     int adr_idx = C->get_alias_index(adr_type);
-    insert_mem_bar_volatile(Op_MemBarVolatile, adr_idx);
+    insert_mem_bar_volatile(Op_MemBarVolatile, adr_idx, store);
 
     // Now place a membar for AliasIdxBot for the unknown yet-to-be-parsed
     // volatile alias indices. Skip this if the membar is redundant.
     if (adr_idx != Compile::AliasIdxBot) {
-      insert_mem_bar_volatile(Op_MemBarVolatile, Compile::AliasIdxBot);
+      insert_mem_bar_volatile(Op_MemBarVolatile, Compile::AliasIdxBot, store);
     }
 
     // Finally, place alias-index-specific membars for each volatile index
     // that isn't the adr_idx membar. Typically there's only 1 or 2.
     for( int i = Compile::AliasIdxRaw; i < C->num_alias_types(); i++ ) {
       if (i != adr_idx && C->alias_type(i)->is_volatile()) {
-        insert_mem_bar_volatile(Op_MemBarVolatile, i);
+        insert_mem_bar_volatile(Op_MemBarVolatile, i, store);
       }
     }
   }

@@ -35,7 +35,7 @@ CFLAGS += $(DEBUG_CFLAGS/BYFILE)
 # Linker mapfile
 MAPFILE = $(GAMMADIR)/make/linux/makefiles/mapfile-vers-debug
 
-G_SUFFIX =
+G_SUFFIX = _g
 VERSION = debug
 SYSDEFS += -DASSERT -DDEBUG
 PICFLAGS = DEFAULT

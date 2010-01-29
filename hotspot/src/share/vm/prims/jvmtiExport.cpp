@@ -319,7 +319,27 @@ address JvmtiExport::get_field_modification_count_addr() {
 
 jint
 JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
-  /* To Do: add version checks */
+  // The JVMTI_VERSION_INTERFACE_JVMTI part of the version number
+  // has already been validated in JNI GetEnv().
+  int major, minor, micro;
+
+  // micro version doesn't matter here (yet?)
+  decode_version_values(version, &major, &minor, &micro);
+  switch (major) {
+  case 1:
+      switch (minor) {
+      case 0:  // version 1.0.<micro> is recognized
+      case 1:  // version 1.1.<micro> is recognized
+          break;
+
+      default:
+          return JNI_EVERSION;  // unsupported minor version number
+      }
+      break;
+
+  default:
+      return JNI_EVERSION;  // unsupported major version number
+  }
 
   if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
     JavaThread* current_thread = (JavaThread*) ThreadLocalStorage::thread();
@@ -328,13 +348,13 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     __ENTRY(jvmtiEnv*, JvmtiExport::get_jvmti_interface, current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
 
-    JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti();
+    JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti(version);
     *penv = jvmti_env->jvmti_external();  // actual type is jvmtiEnv* -- not to be confused with JvmtiEnv*
     return JNI_OK;
 
   } else if (JvmtiEnv::get_phase() == JVMTI_PHASE_ONLOAD) {
     // not live, no thread to transition
-    JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti();
+    JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti(version);
     *penv = jvmti_env->jvmti_external();  // actual type is jvmtiEnv* -- not to be confused with JvmtiEnv*
     return JNI_OK;
 
@@ -343,6 +363,15 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     *penv = NULL;
     return JNI_EDETACHED;
   }
+}
+
+
+void
+JvmtiExport::decode_version_values(jint version, int * major, int * minor,
+                                   int * micro) {
+  *major = (version & JVMTI_VERSION_MASK_MAJOR) >> JVMTI_VERSION_SHIFT_MAJOR;
+  *minor = (version & JVMTI_VERSION_MASK_MINOR) >> JVMTI_VERSION_SHIFT_MINOR;
+  *micro = (version & JVMTI_VERSION_MASK_MICRO) >> JVMTI_VERSION_SHIFT_MICRO;
 }
 
 void JvmtiExport::enter_primordial_phase() {
@@ -627,7 +656,7 @@ static inline klassOop oop_to_klassOop(oop obj) {
   klassOop k = obj->klass();
 
   // if the object is a java.lang.Class then return the java mirror
-  if (k == SystemDictionary::class_klass()) {
+  if (k == SystemDictionary::Class_klass()) {
     if (!java_lang_Class::is_primitive(obj)) {
       k = java_lang_Class::as_klassOop(obj);
       assert(k != NULL, "class for non-primitive mirror must exist");
@@ -1896,7 +1925,7 @@ void JvmtiExport::record_vm_internal_object_allocation(oop obj) {
       if (collector != NULL && collector->is_enabled()) {
         // Don't record classes as these will be notified via the ClassLoad
         // event.
-        if (obj->klass() != SystemDictionary::class_klass()) {
+        if (obj->klass() != SystemDictionary::Class_klass()) {
           collector->record_allocation(obj);
         }
       }

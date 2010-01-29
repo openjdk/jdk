@@ -149,11 +149,15 @@ c2compiler.cpp                          runtime.hpp
 c2compiler.hpp                          abstractCompiler.hpp
 
 callGenerator.cpp                       addnode.hpp
+callGenerator.cpp                       bcEscapeAnalyzer.hpp
 callGenerator.cpp                       callGenerator.hpp
 callGenerator.cpp                       callnode.hpp
 callGenerator.cpp                       cfgnode.hpp
 callGenerator.cpp                       compileLog.hpp
 callGenerator.cpp                       connode.hpp
+callGenerator.cpp                       ciCPCache.hpp
+callGenerator.cpp                       ciMethodHandle.hpp
+callGenerator.cpp                       javaClasses.hpp
 callGenerator.cpp                       parse.hpp
 callGenerator.cpp                       rootnode.hpp
 callGenerator.cpp                       runtime.hpp
@@ -321,6 +325,7 @@ compile.cpp                             phaseX.hpp
 compile.cpp                             rootnode.hpp
 compile.cpp                             runtime.hpp
 compile.cpp                             signature.hpp
+compile.cpp                             stringopts.hpp
 compile.cpp                             stubRoutines.hpp
 compile.cpp                             systemDictionary.hpp
 compile.cpp                             timer.hpp
@@ -389,6 +394,9 @@ divnode.hpp                             type.hpp
 
 doCall.cpp                              addnode.hpp
 doCall.cpp                              callGenerator.hpp
+doCall.cpp                              ciCallSite.hpp
+doCall.cpp                              ciCPCache.hpp
+doCall.cpp                              ciMethodHandle.hpp
 doCall.cpp                              cfgnode.hpp
 doCall.cpp                              compileLog.hpp
 doCall.cpp                              linkResolver.hpp
@@ -476,12 +484,16 @@ graphKit.cpp                            rootnode.hpp
 graphKit.cpp                            runtime.hpp
 graphKit.cpp                            sharedRuntime.hpp
 
+graphKit.hpp                            addnode.hpp
 graphKit.hpp                            callnode.hpp
 graphKit.hpp                            cfgnode.hpp
 graphKit.hpp                            ciEnv.hpp
+graphKit.hpp                            divnode.hpp
 graphKit.hpp                            compile.hpp
 graphKit.hpp                            deoptimization.hpp
 graphKit.hpp                            phaseX.hpp
+graphKit.hpp                            mulnode.hpp
+graphKit.hpp                            subnode.hpp
 graphKit.hpp                            type.hpp
 
 idealKit.cpp                            addnode.hpp
@@ -490,7 +502,10 @@ idealKit.cpp                            cfgnode.hpp
 idealKit.cpp                            idealKit.hpp
 idealKit.cpp				runtime.hpp
 
+idealKit.hpp                            addnode.hpp
+idealKit.hpp                            cfgnode.hpp
 idealKit.hpp                            connode.hpp
+idealKit.hpp                            divnode.hpp
 idealKit.hpp                            mulnode.hpp
 idealKit.hpp                            phaseX.hpp
 idealKit.hpp                            subnode.hpp
@@ -586,6 +601,7 @@ locknode.hpp                            subnode.hpp
 
 loopTransform.cpp                       addnode.hpp
 loopTransform.cpp                       allocation.inline.hpp
+loopTransform.cpp                       callnode.hpp
 loopTransform.cpp                       connode.hpp
 loopTransform.cpp                       compileLog.hpp
 loopTransform.cpp                       divnode.hpp
@@ -641,6 +657,7 @@ macro.cpp                               addnode.hpp
 macro.cpp                               callnode.hpp
 macro.cpp                               cfgnode.hpp
 macro.cpp                               compile.hpp
+macro.cpp                              compileLog.hpp
 macro.cpp                               connode.hpp
 macro.cpp                               locknode.hpp
 macro.cpp                               loopnode.hpp
@@ -992,6 +1009,21 @@ split_if.cpp                            allocation.inline.hpp
 split_if.cpp                            callnode.hpp
 split_if.cpp                            connode.hpp
 split_if.cpp                            loopnode.hpp
+
+stringopts.hpp                          phaseX.hpp
+stringopts.hpp                          node.hpp
+
+stringopts.cpp                          addnode.hpp
+stringopts.cpp                          callnode.hpp
+stringopts.cpp                          callGenerator.hpp
+stringopts.cpp                          compileLog.hpp
+stringopts.cpp                          divnode.hpp
+stringopts.cpp                          idealKit.hpp
+stringopts.cpp                          graphKit.hpp
+stringopts.cpp                          rootnode.hpp
+stringopts.cpp                          runtime.hpp
+stringopts.cpp                          subnode.hpp
+stringopts.cpp                          stringopts.hpp
 
 stubGenerator_<arch_model>.cpp          runtime.hpp
 

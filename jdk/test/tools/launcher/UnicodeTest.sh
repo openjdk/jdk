@@ -54,7 +54,7 @@ mkdir UnicodeTest-src UnicodeTest-classes
 
 echo "creating test source files"
 "$JAVAC" -d . "${TESTSRC}"/UnicodeTest.java
-CLASS_NAME=`"$JAVA" UnicodeTest`
+CLASS_NAME=`"$JAVA" UnicodeTest | sed -e 's@\\r@@g' `
 
 if [ "$CLASS_NAME" = "" ]
 then

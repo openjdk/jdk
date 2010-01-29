@@ -177,7 +177,7 @@ const char* StatSampler::get_system_property(const char* name, TRAPS) {
 
   // public static String getProperty(String key, String def);
   JavaCalls::call_static(&result,
-                         KlassHandle(THREAD, SystemDictionary::system_klass()),
+                         KlassHandle(THREAD, SystemDictionary::System_klass()),
                          vmSymbolHandles::getProperty_name(),
                          vmSymbolHandles::string_string_signature(),
                          key_str,

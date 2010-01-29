@@ -56,13 +56,13 @@ HS_DTRACE_PROBE_DECL6(hotspot, compiled__method__unload,
 #endif
 
 bool nmethod::is_compiled_by_c1() const {
+  if (compiler() == NULL || method() == NULL)  return false;  // can happen during debug printing
   if (is_native_method()) return false;
-  assert(compiler() != NULL, "must be");
   return compiler()->is_c1();
 }
 bool nmethod::is_compiled_by_c2() const {
+  if (compiler() == NULL || method() == NULL)  return false;  // can happen during debug printing
   if (is_native_method()) return false;
-  assert(compiler() != NULL, "must be");
   return compiler()->is_c2();
 }
 
@@ -414,9 +414,8 @@ int nmethod::total_size() const {
 }
 
 const char* nmethod::compile_kind() const {
-  if (method() == NULL)    return "unloaded";
-  if (is_native_method())  return "c2n";
   if (is_osr_method())     return "osr";
+  if (method() != NULL && is_native_method())  return "c2n";
   return NULL;
 }
 
@@ -1127,6 +1126,9 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   }
   flags.state = unloaded;
 
+  // Log the unloading.
+  log_state_change();
+
   // The methodOop is gone at this point
   assert(_method == NULL, "Tautology");
 
@@ -1137,8 +1139,6 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
 
 void nmethod::invalidate_osr_method() {
   assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod");
-  if (_entry_bci != InvalidOSREntryBci)
-    inc_decompile_count();
   // Remove from list of active nmethods
   if (method() != NULL)
     instanceKlass::cast(method()->method_holder())->remove_osr_nmethod(this);
@@ -1146,59 +1146,63 @@ void nmethod::invalidate_osr_method() {
   _entry_bci = InvalidOSREntryBci;
 }
 
-void nmethod::log_state_change(int state) const {
+void nmethod::log_state_change() const {
   if (LogCompilation) {
     if (xtty != NULL) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant %sthread='" UINTX_FORMAT "'",
-                       (state == zombie ? "zombie='1' " : ""),
-                       os::current_thread_id());
+      if (flags.state == unloaded) {
+        xtty->begin_elem("make_unloaded thread='" UINTX_FORMAT "'",
+                         os::current_thread_id());
+      } else {
+        xtty->begin_elem("make_not_entrant thread='" UINTX_FORMAT "'%s",
+                         os::current_thread_id(),
+                         (flags.state == zombie ? " zombie='1'" : ""));
+      }
       log_identity(xtty);
       xtty->stamp();
       xtty->end_elem();
     }
   }
-  if (PrintCompilation) {
-    print_on(tty, state == zombie ? "made zombie " : "made not entrant ");
+  if (PrintCompilation && flags.state != unloaded) {
+    print_on(tty, flags.state == zombie ? "made zombie " : "made not entrant ");
     tty->cr();
   }
 }
 
 // Common functionality for both make_not_entrant and make_zombie
-void nmethod::make_not_entrant_or_zombie(int state) {
+bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
 
-  // Code for an on-stack-replacement nmethod is removed when a class gets unloaded.
-  // They never become zombie/non-entrant, so the nmethod sweeper will never remove
-  // them. Instead the entry_bci is set to InvalidOSREntryBci, so the osr nmethod
-  // will never be used anymore. That the nmethods only gets removed when class unloading
-  // happens, make life much simpler, since the nmethods are not just going to disappear
-  // out of the blue.
-  if (is_osr_method()) {
-    if (osr_entry_bci() != InvalidOSREntryBci) {
-      // only log this once
-      log_state_change(state);
-    }
-    invalidate_osr_method();
-    return;
+  // If the method is already zombie there is nothing to do
+  if (is_zombie()) {
+    return false;
   }
-
-  // If the method is already zombie or set to the state we want, nothing to do
-  if (is_zombie() || (state == not_entrant && is_not_entrant())) {
-    return;
-  }
-
-  log_state_change(state);
 
   // Make sure the nmethod is not flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
 
   {
+    // invalidate osr nmethod before acquiring the patching lock since
+    // they both acquire leaf locks and we don't want a deadlock.
+    // This logic is equivalent to the logic below for patching the
+    // verified entry point of regular methods.
+    if (is_osr_method()) {
+      // this effectively makes the osr nmethod not entrant
+      invalidate_osr_method();
+    }
+
     // Enter critical section.  Does not block for safepoint.
     MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+
+    if (flags.state == state) {
+      // another thread already performed this transition so nothing
+      // to do, but return false to indicate this.
+      return false;
+    }
+
     // The caller can be calling the method statically or through an inline
     // cache call.
-    if (!is_not_entrant()) {
+    if (!is_osr_method() && !is_not_entrant()) {
       NativeJump::patch_verified_entry(entry_point(), verified_entry_point(),
                   SharedRuntime::get_handle_wrong_method_stub());
       assert (NativeJump::instruction_size == nmethod::_zombie_instruction_size, "");
@@ -1217,6 +1221,10 @@ void nmethod::make_not_entrant_or_zombie(int state) {
 
     // Change state
     flags.state = state;
+
+    // Log the transition once
+    log_state_change();
+
   } // leave critical region under Patching_lock
 
   if (state == not_entrant) {
@@ -1239,7 +1247,6 @@ void nmethod::make_not_entrant_or_zombie(int state) {
 
   // It's a true state change, so mark the method as decompiled.
   inc_decompile_count();
-
 
   // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload event
   // and it hasn't already been reported for this nmethod then report it now.
@@ -1268,7 +1275,7 @@ void nmethod::make_not_entrant_or_zombie(int state) {
 
   // Check whether method got unloaded at a safepoint before this,
   // if so we can skip the flushing steps below
-  if (method() == NULL) return;
+  if (method() == NULL) return true;
 
   // Remove nmethod from method.
   // We need to check if both the _code and _from_compiled_code_entry_point
@@ -1282,6 +1289,8 @@ void nmethod::make_not_entrant_or_zombie(int state) {
     HandleMark hm;
     method()->clear_code();
   }
+
+  return true;
 }
 
 
@@ -1715,9 +1724,9 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
   if (!method()->is_native()) {
     SimpleScopeDesc ssd(this, fr.pc());
     Bytecode_invoke* call = Bytecode_invoke_at(ssd.method(), ssd.bci());
-    bool is_static = call->is_invokestatic();
+    bool has_receiver = call->has_receiver();
     symbolOop signature = call->signature();
-    fr.oops_compiled_arguments_do(signature, is_static, reg_map, f);
+    fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
   }
 }
 
@@ -1753,6 +1762,14 @@ void nmethod::copy_scopes_pcs(PcDesc* pcs, int count) {
   assert(prev_offset == PcDesc::upper_offset_limit,
          "must end with a sentinel");
 #endif //ASSERT
+
+  // Search for MethodHandle invokes and tag the nmethod.
+  for (int i = 0; i < count; i++) {
+    if (pcs[i].is_method_handle_invoke()) {
+      set_has_method_handle_invokes(true);
+      break;
+    }
+  }
 
   int size = count * sizeof(PcDesc);
   assert(scopes_pcs_size() >= size, "oob");
@@ -2017,6 +2034,18 @@ void nmethodLocker::unlock_nmethod(nmethod* nm) {
 bool nmethod::is_deopt_pc(address pc) {
   bool ret =  pc == deopt_handler_begin();
   return ret;
+}
+
+
+// -----------------------------------------------------------------------------
+// MethodHandle
+
+bool nmethod::is_method_handle_return(address return_pc) {
+  if (!has_method_handle_invokes())  return false;
+  PcDesc* pd = pc_desc_at(return_pc);
+  if (pd == NULL)
+    return false;
+  return pd->is_method_handle_invoke();
 }
 
 
@@ -2368,6 +2397,107 @@ ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
                          p->obj_decode_offset(), p->should_reexecute());
   }
   return NULL;
+}
+
+void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) {
+  if (block_begin == entry_point())             stream->print_cr("[Entry Point]");
+  if (block_begin == verified_entry_point())    stream->print_cr("[Verified Entry Point]");
+  if (block_begin == exception_begin())         stream->print_cr("[Exception Handler]");
+  if (block_begin == stub_begin())              stream->print_cr("[Stub Code]");
+  if (block_begin == consts_begin())            stream->print_cr("[Constants]");
+  if (block_begin == entry_point()) {
+    methodHandle m = method();
+    if (m.not_null()) {
+      stream->print("  # ");
+      m->print_value_on(stream);
+      stream->cr();
+    }
+    if (m.not_null() && !is_osr_method()) {
+      ResourceMark rm;
+      int sizeargs = m->size_of_parameters();
+      BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sizeargs);
+      VMRegPair* regs   = NEW_RESOURCE_ARRAY(VMRegPair, sizeargs);
+      {
+        int sig_index = 0;
+        if (!m->is_static())
+          sig_bt[sig_index++] = T_OBJECT; // 'this'
+        for (SignatureStream ss(m->signature()); !ss.at_return_type(); ss.next()) {
+          BasicType t = ss.type();
+          sig_bt[sig_index++] = t;
+          if (type2size[t] == 2) {
+            sig_bt[sig_index++] = T_VOID;
+          } else {
+            assert(type2size[t] == 1, "size is 1 or 2");
+          }
+        }
+        assert(sig_index == sizeargs, "");
+      }
+      const char* spname = "sp"; // make arch-specific?
+      intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs, false);
+      int stack_slot_offset = this->frame_size() * wordSize;
+      int tab1 = 14, tab2 = 24;
+      int sig_index = 0;
+      int arg_index = (m->is_static() ? 0 : -1);
+      bool did_old_sp = false;
+      for (SignatureStream ss(m->signature()); !ss.at_return_type(); ) {
+        bool at_this = (arg_index == -1);
+        bool at_old_sp = false;
+        BasicType t = (at_this ? T_OBJECT : ss.type());
+        assert(t == sig_bt[sig_index], "sigs in sync");
+        if (at_this)
+          stream->print("  # this: ");
+        else
+          stream->print("  # parm%d: ", arg_index);
+        stream->move_to(tab1);
+        VMReg fst = regs[sig_index].first();
+        VMReg snd = regs[sig_index].second();
+        if (fst->is_reg()) {
+          stream->print("%s", fst->name());
+          if (snd->is_valid())  {
+            stream->print(":%s", snd->name());
+          }
+        } else if (fst->is_stack()) {
+          int offset = fst->reg2stack() * VMRegImpl::stack_slot_size + stack_slot_offset;
+          if (offset == stack_slot_offset)  at_old_sp = true;
+          stream->print("[%s+0x%x]", spname, offset);
+        } else {
+          stream->print("reg%d:%d??", (int)(intptr_t)fst, (int)(intptr_t)snd);
+        }
+        stream->print(" ");
+        stream->move_to(tab2);
+        stream->print("= ");
+        if (at_this) {
+          m->method_holder()->print_value_on(stream);
+        } else {
+          bool did_name = false;
+          if (!at_this && ss.is_object()) {
+            symbolOop name = ss.as_symbol_or_null();
+            if (name != NULL) {
+              name->print_value_on(stream);
+              did_name = true;
+            }
+          }
+          if (!did_name)
+            stream->print("%s", type2name(t));
+        }
+        if (at_old_sp) {
+          stream->print("  (%s of caller)", spname);
+          did_old_sp = true;
+        }
+        stream->cr();
+        sig_index += type2size[t];
+        arg_index += 1;
+        if (!at_this)  ss.next();
+      }
+      if (!did_old_sp) {
+        stream->print("  # ");
+        stream->move_to(tab1);
+        stream->print("[%s+0x%x]", spname, stack_slot_offset);
+        stream->print("  (%s of caller)", spname);
+        stream->cr();
+      }
+    }
+  }
 }
 
 void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin, u_char* end) {

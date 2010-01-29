@@ -457,7 +457,7 @@ static volatile int max_hrtime_lock = LOCK_FREE;     // Update counter with LSB 
 
 
 void os::Solaris::initialize_system_info() {
-  _processor_count = sysconf(_SC_NPROCESSORS_CONF);
+  set_processor_count(sysconf(_SC_NPROCESSORS_CONF));
   _processors_online = sysconf (_SC_NPROCESSORS_ONLN);
   _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) * (julong)sysconf(_SC_PAGESIZE);
 }
@@ -5803,6 +5803,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   // Return immediately if a permit is available.
   if (_counter > 0) {
       _counter = 0 ;
+      OrderAccess::fence();
       return ;
   }
 
@@ -5846,6 +5847,7 @@ void Parker::park(bool isAbsolute, jlong time) {
     _counter = 0;
     status = os::Solaris::mutex_unlock(_mutex);
     assert (status == 0, "invariant") ;
+    OrderAccess::fence();
     return;
   }
 
@@ -5892,6 +5894,7 @@ void Parker::park(bool isAbsolute, jlong time) {
     jt->java_suspend_self();
   }
 
+  OrderAccess::fence();
 }
 
 void Parker::unpark() {

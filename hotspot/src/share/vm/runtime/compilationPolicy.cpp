@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,16 @@ bool CompilationPolicy::mustBeCompiled(methodHandle m) {
 bool CompilationPolicy::canBeCompiled(methodHandle m) {
   if (m->is_abstract()) return false;
   if (DontCompileHugeMethods && m->code_size() > HugeMethodLimit) return false;
+
+  // Math intrinsics should never be compiled as this can lead to
+  // monotonicity problems because the interpreter will prefer the
+  // compiled code to the intrinsic version.  This can't happen in
+  // production because the invocation counter can't be incremented
+  // but we shouldn't expose the system to this problem in testing
+  // modes.
+  if (!AbstractInterpreter::can_be_compiled(m)) {
+    return false;
+  }
 
   return !m->is_not_compilable();
 }

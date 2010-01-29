@@ -316,6 +316,21 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
         assert(adr_idx == Compile::AliasIdxRaw, "address must match or be raw");
       }
       mem = mem->in(MemNode::Memory);
+    } else if (mem->is_ClearArray()) {
+      if (!ClearArrayNode::step_through(&mem, alloc->_idx, phase)) {
+        // Can not bypass initialization of the instance
+        // we are looking.
+        debug_only(intptr_t offset;)
+        assert(alloc == AllocateNode::Ideal_allocation(mem->in(3), phase, offset), "sanity");
+        InitializeNode* init = alloc->as_Allocate()->initialization();
+        // We are looking for stored value, return Initialize node
+        // or memory edge from Allocate node.
+        if (init != NULL)
+          return init;
+        else
+          return alloc->in(TypeFunc::Memory); // It will produce zero value (see callers).
+      }
+      // Otherwise skip it (the call updated 'mem' value).
     } else if (mem->Opcode() == Op_SCMemProj) {
       assert(mem->in(0)->is_LoadStore(), "sanity");
       const TypePtr* atype = mem->in(0)->in(MemNode::Address)->bottom_type()->is_ptr();
@@ -823,6 +838,18 @@ void PhaseMacroExpand::process_users_of_allocation(AllocateNode *alloc) {
           Node *n = use->last_out(k);
           uint oc2 = use->outcnt();
           if (n->is_Store()) {
+#ifdef ASSERT
+            // Verify that there is no dependent MemBarVolatile nodes,
+            // they should be removed during IGVN, see MemBarNode::Ideal().
+            for (DUIterator_Fast pmax, p = n->fast_outs(pmax);
+                                       p < pmax; p++) {
+              Node* mb = n->fast_out(p);
+              assert(mb->is_Initialize() || !mb->is_MemBar() ||
+                     mb->req() <= MemBarNode::Precedent ||
+                     mb->in(MemBarNode::Precedent) != n,
+                     "MemBarVolatile should be eliminated for non-escaping object");
+            }
+#endif
             _igvn.replace_node(n, n->in(MemNode::Memory));
           } else {
             eliminate_card_mark(n);
@@ -912,15 +939,29 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
     return false;
   }
 
+  CompileLog* log = C->log();
+  if (log != NULL) {
+    Node* klass = alloc->in(AllocateNode::KlassNode);
+    const TypeKlassPtr* tklass = _igvn.type(klass)->is_klassptr();
+    log->head("eliminate_allocation type='%d'",
+              log->identify(tklass->klass()));
+    JVMState* p = alloc->jvms();
+    while (p != NULL) {
+      log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
+      p = p->caller();
+    }
+    log->tail("eliminate_allocation");
+  }
+
   process_users_of_allocation(alloc);
 
 #ifndef PRODUCT
-if (PrintEliminateAllocations) {
-  if (alloc->is_AllocateArray())
-    tty->print_cr("++++ Eliminated: %d AllocateArray", alloc->_idx);
-  else
-    tty->print_cr("++++ Eliminated: %d Allocate", alloc->_idx);
-}
+  if (PrintEliminateAllocations) {
+    if (alloc->is_AllocateArray())
+      tty->print_cr("++++ Eliminated: %d AllocateArray", alloc->_idx);
+    else
+      tty->print_cr("++++ Eliminated: %d Allocate", alloc->_idx);
+  }
 #endif
 
   return true;
@@ -1638,6 +1679,18 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
         } // for (uint i = 0; i < oldbox->outcnt();)
       } // if (!oldbox->is_eliminated())
   } // if (alock->is_Lock() && !lock->is_coarsened())
+
+  CompileLog* log = C->log();
+  if (log != NULL) {
+    log->head("eliminate_lock lock='%d'",
+              alock->is_Lock());
+    JVMState* p = alock->jvms();
+    while (p != NULL) {
+      log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
+      p = p->caller();
+    }
+    log->tail("eliminate_lock");
+  }
 
   #ifndef PRODUCT
   if (PrintEliminateLocks) {

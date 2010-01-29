@@ -351,9 +351,16 @@ void
 CollectionSetChooser::printSortedHeapRegions() {
   gclog_or_tty->print_cr("Printing %d Heap Regions sorted by amount of known garbage",
                 _numMarkedRegions);
+
+  DEBUG_ONLY(int marked_count = 0;)
   for (int i = 0; i < _markedRegions.length(); i++) {
-    printHeapRegion(_markedRegions.at(i));
+    HeapRegion* r = _markedRegions.at(i);
+    if (r != NULL) {
+      printHeapRegion(r);
+      DEBUG_ONLY(marked_count++;)
+    }
   }
+  assert(marked_count == _numMarkedRegions, "must be");
   gclog_or_tty->print_cr("Done sorted heap region print");
 }
 
