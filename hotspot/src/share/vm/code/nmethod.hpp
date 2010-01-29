@@ -95,6 +95,8 @@ struct nmFlags {
   unsigned int has_unsafe_access:1;          // May fault due to unsafe access.
   unsigned int has_method_handle_invokes:1;  // Has this method MethodHandle invokes?
 
+  unsigned int speculatively_disconnected:1; // Marked for potential unload
+
   void clear();
 };
 
@@ -137,6 +139,7 @@ class nmethod : public CodeBlob {
   // To support simple linked-list chaining of nmethods:
   nmethod*  _osr_link;         // from instanceKlass::osr_nmethods_head
   nmethod*  _scavenge_root_link; // from CodeCache::scavenge_root_nmethods
+  nmethod*  _saved_nmethod_link; // from CodeCache::speculatively_disconnect
 
   static nmethod* volatile _oops_do_mark_nmethods;
   nmethod*        volatile _oops_do_mark_link;
@@ -413,6 +416,9 @@ class nmethod : public CodeBlob {
   bool  has_method_handle_invokes() const         { return flags.has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { flags.has_method_handle_invokes = z; }
 
+  bool  is_speculatively_disconnected() const     { return flags.speculatively_disconnected; }
+  void  set_speculatively_disconnected(bool z)     { flags.speculatively_disconnected = z; }
+
   int   level() const                             { return flags.level; }
   void  set_level(int newLevel)                   { check_safepoint(); flags.level = newLevel; }
 
@@ -436,6 +442,9 @@ class nmethod : public CodeBlob {
 #endif //PRODUCT
   nmethod* scavenge_root_link() const                  { return _scavenge_root_link; }
   void     set_scavenge_root_link(nmethod *n)          { _scavenge_root_link = n; }
+
+  nmethod* saved_nmethod_link() const                  { return _saved_nmethod_link; }
+  void     set_saved_nmethod_link(nmethod *n)          { _saved_nmethod_link = n; }
 
  public:
 

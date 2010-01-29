@@ -2146,19 +2146,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       // CodeCache is full, disable compilation
       // Ought to log this but compile log is only per compile thread
       // and we're some non descript Java thread.
-      UseInterpreter = true;
-      if (UseCompiler || AlwaysCompileLoopMethods ) {
-#ifndef PRODUCT
-        warning("CodeCache is full. Compiler has been disabled");
-        if (CompileTheWorld || ExitOnFullCodeCache) {
-          before_exit(JavaThread::current());
-          exit_globals(); // will delete tty
-          vm_direct_exit(CompileTheWorld ? 0 : 1);
-        }
-#endif
-        UseCompiler               = false;
-        AlwaysCompileLoopMethods  = false;
-      }
+      MutexUnlocker mu(AdapterHandlerLibrary_lock);
+      CompileBroker::handle_full_code_cache();
       return NULL; // Out of CodeCache space
     }
     entry->relocate(B->instructions_begin());
@@ -2282,19 +2271,8 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
     // CodeCache is full, disable compilation
     // Ought to log this but compile log is only per compile thread
     // and we're some non descript Java thread.
-    UseInterpreter = true;
-    if (UseCompiler || AlwaysCompileLoopMethods ) {
-#ifndef PRODUCT
-      warning("CodeCache is full. Compiler has been disabled");
-      if (CompileTheWorld || ExitOnFullCodeCache) {
-        before_exit(JavaThread::current());
-        exit_globals(); // will delete tty
-        vm_direct_exit(CompileTheWorld ? 0 : 1);
-      }
-#endif
-      UseCompiler               = false;
-      AlwaysCompileLoopMethods  = false;
-    }
+    MutexUnlocker mu(AdapterHandlerLibrary_lock);
+    CompileBroker::handle_full_code_cache();
   }
   return nm;
 }

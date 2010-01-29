@@ -587,6 +587,7 @@ nmethod::nmethod(
     _osr_link                = NULL;
     _scavenge_root_link      = NULL;
     _scavenge_root_state     = 0;
+    _saved_nmethod_link      = NULL;
     _compiler                = NULL;
     // We have no exception handler or deopt handler make the
     // values something that will never match a pc like the nmethod vtable entry
@@ -1033,7 +1034,7 @@ void nmethod::cleanup_inline_caches() {
         if( cb != NULL && cb->is_nmethod() ) {
           nmethod* nm = (nmethod*)cb;
           // Clean inline caches pointing to both zombie and not_entrant methods
-          if (!nm->is_in_use()) ic->set_to_clean();
+          if (!nm->is_in_use() || (nm->method()->code() != nm)) ic->set_to_clean();
         }
         break;
       }
@@ -1043,7 +1044,7 @@ void nmethod::cleanup_inline_caches() {
         if( cb != NULL && cb->is_nmethod() ) {
           nmethod* nm = (nmethod*)cb;
           // Clean inline caches pointing to both zombie and not_entrant methods
-          if (!nm->is_in_use()) csc->set_to_clean();
+          if (!nm->is_in_use() || (nm->method()->code() != nm)) csc->set_to_clean();
         }
         break;
       }
@@ -1312,7 +1313,8 @@ void nmethod::flush() {
   // completely deallocate this method
   EventMark m("flushing nmethod " INTPTR_FORMAT " %s", this, "");
   if (PrintMethodFlushing) {
-    tty->print_cr("*flushing nmethod " INTPTR_FORMAT ". Live blobs: %d", this, CodeCache::nof_blobs());
+    tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT "/Free CodeCache:" SIZE_FORMAT "Kb",
+        _compile_id, this, CodeCache::nof_blobs(), CodeCache::unallocated_capacity()/1024);
   }
 
   // We need to deallocate any ExceptionCache data.
@@ -1328,6 +1330,10 @@ void nmethod::flush() {
 
   if (on_scavenge_root_list()) {
     CodeCache::drop_scavenge_root_nmethod(this);
+  }
+
+  if (is_speculatively_disconnected()) {
+    CodeCache::remove_saved_code(this);
   }
 
   ((CodeBlob*)(this))->flush();

@@ -705,6 +705,16 @@ address methodOopDesc::make_adapters(methodHandle mh, TRAPS) {
 // This function must not hit a safepoint!
 address methodOopDesc::verified_code_entry() {
   debug_only(No_Safepoint_Verifier nsv;)
+  nmethod *code = (nmethod *)OrderAccess::load_ptr_acquire(&_code);
+  if (code == NULL && UseCodeCacheFlushing) {
+    nmethod *saved_code = CodeCache::find_and_remove_saved_code(this);
+    if (saved_code != NULL) {
+      methodHandle method(this);
+      assert( ! saved_code->is_osr_method(), "should not get here for osr" );
+      set_code( method, saved_code );
+    }
+  }
+
   assert(_from_compiled_entry != NULL, "must be set");
   return _from_compiled_entry;
 }
@@ -733,8 +743,8 @@ void methodOopDesc::set_code(methodHandle mh, nmethod *code) {
   int comp_level = code->comp_level();
   // In theory there could be a race here. In practice it is unlikely
   // and not worth worrying about.
-  if (comp_level > highest_tier_compile()) {
-    set_highest_tier_compile(comp_level);
+  if (comp_level > mh->highest_tier_compile()) {
+    mh->set_highest_tier_compile(comp_level);
   }
 
   OrderAccess::storestore();
