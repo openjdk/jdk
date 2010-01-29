@@ -3117,6 +3117,15 @@ class CommandLineFlags {
   notproduct(bool, ExitOnFullCodeCache, false,                              \
           "Exit the VM if we fill the code cache.")                         \
                                                                             \
+  product(bool, UseCodeCacheFlushing, false,                                \
+          "Attempt to clean the code cache before shutting off compiler")   \
+                                                                            \
+  product(intx,  MinCodeCacheFlushingInterval, 30,                          \
+          "Min number of seconds between code cache cleaning sessions")     \
+                                                                            \
+  product(uintx,  CodeCacheFlushingMinimumFreeSpace, 1500*K,                \
+          "When less than X space left, start code cache cleaning")         \
+                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \

@@ -1093,7 +1093,7 @@ void Compile::Fill_buffer() {
   cb->initialize(total_req, locs_req);
 
   // Have we run out of code space?
-  if (cb->blob() == NULL) {
+  if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
     turn_off_compiler(this);
     return;
   }
@@ -1314,7 +1314,7 @@ void Compile::Fill_buffer() {
 
       // Verify that there is sufficient space remaining
       cb->insts()->maybe_expand_to_ensure_remaining(MAX_inst_size);
-      if (cb->blob() == NULL) {
+      if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
         turn_off_compiler(this);
         return;
       }
@@ -1433,7 +1433,7 @@ void Compile::Fill_buffer() {
   }
 
   // One last check for failed CodeBuffer::expand:
-  if (cb->blob() == NULL) {
+  if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
     turn_off_compiler(this);
     return;
   }
