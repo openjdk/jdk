@@ -98,7 +98,7 @@
         import.jdk should be unset, or set to jdk home (to use rt.jar)
         or to jdk repo (to use src/share/classes).
         Based on the value, if any, set up default values for javac's sourcepath,
-        classpath and bootclasspath. Note: the default values are overridden 
+        classpath and bootclasspath. Note: the default values are overridden
         in the build-bootstrap-classes macro. -->
 
     <available property="import.jdk.src.dir" value="${import.jdk}/src/share/classes"
@@ -107,14 +107,21 @@
         ignoresystemclasses="true"
         classpath="${import.jdk}/jre/lib/rt.jar" classname="java.nio.file.Path"/>
 
+    <!-- Set the default value of the sourcepath used for javac. -->
     <condition property="javac.sourcepath" value="${build.genstubs.dir}" else="">
         <isset property="import.jdk.src.dir"/>
     </condition>
 
+    <!-- Set the default value of the classpath used for javac. -->
     <property name="javac.classpath" value=""/>
 
+    <!-- Set the default bootclasspath option used for javac. 
+	Note that different variants of the option are used, meaning we can't just 
+	define the value for the option.
+	Note the explicit use of the standard property ${path.separator} in the following.
+	This is because Ant is not clever enough to handle direct use of : or ; -->
     <condition property="javac.bootclasspath.opt"
-            value="-Xbootclasspath:${build.classes.dir}:${import.jdk.jar}"
+            value="-Xbootclasspath:${build.classes.dir}${path.separator}${import.jdk.jar}"
             else="-Xbootclasspath/p:${build.classes.dir}">
         <isset property="import.jdk.jar"/>
     </condition>
@@ -552,8 +559,8 @@
                     <compilerarg line="${javac.version.opt}"/>
                     <compilerarg line="${javac.lint.opts}"/>
                 </javac>
-                <copy todir="@{classes.dir}">
-                    <fileset dir="${src.classes.dir}" includes="@{includes}">
+                <copy todir="@{classes.dir}" includeemptydirs="false">
+                    <fileset dir="${src.classes.dir}" includes="@{includes}" excludes="@{excludes}">
                         <exclude name="**/*.java"/>
                         <exclude name="**/*.properties"/>
                         <exclude name="**/*-template"/>

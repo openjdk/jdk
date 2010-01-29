@@ -144,30 +144,13 @@ void ciObjectFactory::init_shared_objects() {
   ciEnv::_obj_array_klass_klass_instance =
     get(Universe::objArrayKlassKlassObj())
       ->as_obj_array_klass_klass();
-  ciEnv::_ArrayStoreException =
-    get(SystemDictionary::ArrayStoreException_klass())
-      ->as_instance_klass();
-  ciEnv::_Class =
-    get(SystemDictionary::class_klass())
-      ->as_instance_klass();
-  ciEnv::_ClassCastException =
-    get(SystemDictionary::ClassCastException_klass())
-      ->as_instance_klass();
-  ciEnv::_Object =
-    get(SystemDictionary::object_klass())
-      ->as_instance_klass();
-  ciEnv::_Throwable =
-    get(SystemDictionary::throwable_klass())
-      ->as_instance_klass();
-  ciEnv::_Thread =
-    get(SystemDictionary::thread_klass())
-      ->as_instance_klass();
-  ciEnv::_OutOfMemoryError =
-    get(SystemDictionary::OutOfMemoryError_klass())
-      ->as_instance_klass();
-  ciEnv::_String =
-    get(SystemDictionary::string_klass())
-      ->as_instance_klass();
+
+#define WK_KLASS_DEFN(name, ignore_s, opt)                              \
+  if (SystemDictionary::name() != NULL) \
+    ciEnv::_##name = get(SystemDictionary::name())->as_instance_klass();
+
+  WK_KLASSES_DO(WK_KLASS_DEFN)
+#undef WK_KLASS_DEFN
 
   for (int len = -1; len != _ci_objects->length(); ) {
     len = _ci_objects->length();
@@ -324,13 +307,21 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
     return new (arena()) ciMethodData(h_md);
   } else if (o->is_instance()) {
     instanceHandle h_i(THREAD, (instanceOop)o);
-    return new (arena()) ciInstance(h_i);
+    if (java_dyn_CallSite::is_instance(o))
+      return new (arena()) ciCallSite(h_i);
+    else if (java_dyn_MethodHandle::is_instance(o))
+      return new (arena()) ciMethodHandle(h_i);
+    else
+      return new (arena()) ciInstance(h_i);
   } else if (o->is_objArray()) {
     objArrayHandle h_oa(THREAD, (objArrayOop)o);
     return new (arena()) ciObjArray(h_oa);
   } else if (o->is_typeArray()) {
     typeArrayHandle h_ta(THREAD, (typeArrayOop)o);
     return new (arena()) ciTypeArray(h_ta);
+  } else if (o->is_constantPoolCache()) {
+    constantPoolCacheHandle h_cpc(THREAD, (constantPoolCacheOop) o);
+    return new (arena()) ciCPCache(h_cpc);
   }
 
   // The oop is of some type not supported by the compiler interface.
@@ -567,7 +558,7 @@ ciObjectFactory::NonPermObject* &ciObjectFactory::find_non_perm(oop key) {
   if (key->is_perm() && _non_perm_count == 0) {
     return emptyBucket;
   } else if (key->is_instance()) {
-    if (key->klass() == SystemDictionary::class_klass()) {
+    if (key->klass() == SystemDictionary::Class_klass()) {
       // class mirror instances are always perm
       return emptyBucket;
     }

@@ -24,6 +24,7 @@
  */
 
 /**
+ * <em>PROVISIONAL API, WORK IN PROGRESS:</em>
  * This package contains dynamic language support provided directly by
  * the Java core class libraries and virtual machine.
  * @author John Rose, JSR 292 EG

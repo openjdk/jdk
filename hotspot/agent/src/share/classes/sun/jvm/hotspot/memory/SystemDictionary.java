@@ -63,12 +63,12 @@ public class SystemDictionary {
     javaSystemLoaderField = type.getOopField("_java_system_loader");
     nofBuckets = db.lookupIntConstant("SystemDictionary::_nof_buckets").intValue();
 
-    objectKlassField = type.getOopField(WK_KLASS("object_klass"));
-    classLoaderKlassField = type.getOopField(WK_KLASS("classloader_klass"));
-    stringKlassField = type.getOopField(WK_KLASS("string_klass"));
-    systemKlassField = type.getOopField(WK_KLASS("system_klass"));
-    threadKlassField = type.getOopField(WK_KLASS("thread_klass"));
-    threadGroupKlassField = type.getOopField(WK_KLASS("threadGroup_klass"));
+    objectKlassField = type.getOopField(WK_KLASS("Object_klass"));
+    classLoaderKlassField = type.getOopField(WK_KLASS("ClassLoader_klass"));
+    stringKlassField = type.getOopField(WK_KLASS("String_klass"));
+    systemKlassField = type.getOopField(WK_KLASS("System_klass"));
+    threadKlassField = type.getOopField(WK_KLASS("Thread_klass"));
+    threadGroupKlassField = type.getOopField(WK_KLASS("ThreadGroup_klass"));
   }
 
   // This WK functions must follow the definitions in systemDictionary.hpp:

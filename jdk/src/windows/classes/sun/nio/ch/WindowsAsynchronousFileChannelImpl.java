@@ -445,20 +445,17 @@ public class WindowsAsynchronousFileChannelImpl
                 // allocate OVERLAPPED
                 overlapped = ioCache.add(result);
 
-                // synchronize on result to allow this thread handle the case
-                // where the read completes immediately.
-                synchronized (result) {
-                    n = readFile(handle, address, rem, position, overlapped);
-                    if (n == IOStatus.UNAVAILABLE) {
-                        // I/O is pending
-                        return;
-                    }
-                    // read completed immediately:
-                    // 1. update buffer position
-                    // 2. release waiters
-                    updatePosition(n);
+                // initiate read
+                n = readFile(handle, address, rem, position, overlapped);
+                if (n == IOStatus.UNAVAILABLE) {
+                    // I/O is pending
+                    return;
+                } else if (n == IOStatus.EOF) {
                     result.setResult(n);
+                } else {
+                    throw new InternalError("Unexpected result: " + n);
                 }
+
             } catch (Throwable x) {
                 // failed to initiate read
                 result.setFailure(toIOException(x));
@@ -466,12 +463,9 @@ public class WindowsAsynchronousFileChannelImpl
                 end();
             }
 
-            // read failed or EOF so completion port will not be notified
-            if (n < 0 && overlapped != 0L) {
+            // release resources
+            if (overlapped != 0L)
                 ioCache.remove(overlapped);
-            }
-
-            // return direct buffer to cache if substituted
             releaseBufferIfSubstituted();
 
             // invoke completion handler
@@ -634,20 +628,15 @@ public class WindowsAsynchronousFileChannelImpl
                 // allocate an OVERLAPPED structure
                 overlapped = ioCache.add(result);
 
-                // synchronize on result to allow this thread handle the case
-                // where the read completes immediately.
-                synchronized (result) {
-                    n = writeFile(handle, address, rem, position, overlapped);
-                    if (n == IOStatus.UNAVAILABLE) {
-                        // I/O is pending
-                        return;
-                    }
-                    // read completed immediately:
-                    // 1. update buffer position
-                    // 2. release waiters
-                    updatePosition(n);
-                    result.setResult(n);
+                // initiate the write
+                n = writeFile(handle, address, rem, position, overlapped);
+                if (n == IOStatus.UNAVAILABLE) {
+                    // I/O is pending
+                    return;
+                } else {
+                    throw new InternalError("Unexpected result: " + n);
                 }
+
             } catch (Throwable x) {
                 // failed to initiate read:
                 result.setFailure(toIOException(x));

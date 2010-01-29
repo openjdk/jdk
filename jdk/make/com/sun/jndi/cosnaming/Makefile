@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../../..
+MODULE  = jndi-cosnaming
 PACKAGE = com.sun.jndi.cosnaming
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

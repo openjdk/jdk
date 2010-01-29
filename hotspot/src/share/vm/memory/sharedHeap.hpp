@@ -224,10 +224,6 @@ public:
                           CodeBlobClosure* code_roots,
                           OopClosure* non_root_closure);
 
-
-  // Like CollectedHeap::collect, but assume that the caller holds the Heap_lock.
-  virtual void collect_locked(GCCause::Cause cause) = 0;
-
   // The functions below are helper functions that a subclass of
   // "SharedHeap" can use in the implementation of its virtual
   // functions.

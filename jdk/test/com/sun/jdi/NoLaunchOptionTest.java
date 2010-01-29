@@ -31,6 +31,9 @@
  *  @build VMConnection
  *  @run main/othervm NoLaunchOptionTest
  */
+
+import java.net.ServerSocket;
+
 public class NoLaunchOptionTest extends Object {
     private Process subprocess;
     private int subprocessStatus;
@@ -121,12 +124,19 @@ public class NoLaunchOptionTest extends Object {
     }
 
     public static void main(String[] args) throws Exception {
+        // find a free port
+        ServerSocket ss = new ServerSocket(0);
+        int port = ss.getLocalPort();
+        ss.close();
+        String address = String.valueOf(port);
+
         String javaExe = System.getProperty("java.home") +
             java.io.File.separator + "bin" +
             java.io.File.separator + "java";
         String targetClass = "NotAClass";
         String cmds [] = {javaExe,
-                          "-agentlib:jdwp=transport=dt_socket,address=8000," +
+                          "-agentlib:jdwp=transport=dt_socket,address=" +
+                          address + "," +
                           "onthrow=java.lang.ClassNotFoundException,suspend=n",
                           targetClass};
         NoLaunchOptionTest myTest = new NoLaunchOptionTest();

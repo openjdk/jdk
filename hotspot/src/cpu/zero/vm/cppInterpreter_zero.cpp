@@ -204,6 +204,20 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
     goto unwind_and_return;
   }
 
+  // Update the invocation counter
+  if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
+    thread->set_do_not_unlock();
+    InvocationCounter *counter = method->invocation_counter();
+    counter->increment();
+    if (counter->reached_InvocationLimit()) {
+      CALL_VM_NOCHECK(
+        InterpreterRuntime::frequency_counter_overflow(thread, NULL));
+      if (HAS_PENDING_EXCEPTION)
+        goto unwind_and_return;
+    }
+    thread->clr_do_not_unlock();
+  }
+
   // Lock if necessary
   BasicObjectLock *monitor;
   monitor = NULL;
@@ -231,7 +245,7 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
     if (handlerAddr == NULL) {
       CALL_VM_NOCHECK(InterpreterRuntime::prepare_native_call(thread, method));
       if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
+        goto unlock_unwind_and_return;
 
       handlerAddr = method->signature_handler();
       assert(handlerAddr != NULL, "eh?");
@@ -240,7 +254,7 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
       CALL_VM_NOCHECK(handlerAddr =
         InterpreterRuntime::slow_signature_handler(thread, method, NULL,NULL));
       if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
+        goto unlock_unwind_and_return;
     }
     handler = \
       InterpreterRuntime::SignatureHandler::from_handlerAddr(handlerAddr);
@@ -351,10 +365,10 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   // Reset handle block
   thread->active_handles()->clear();
 
-  // Unlock if necessary.  It seems totally wrong that this
-  // is skipped in the event of an exception but apparently
-  // the template interpreter does this so we do too.
-  if (monitor && !HAS_PENDING_EXCEPTION) {
+ unlock_unwind_and_return:
+
+  // Unlock if necessary
+  if (monitor) {
     BasicLock *lock = monitor->lock();
     markOop header = lock->displaced_header();
     oop rcvr = monitor->obj();

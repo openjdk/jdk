@@ -144,8 +144,8 @@ else
   ifdef ALT_JDK_TOPDIR
     ANT_OPTIONS += -Dimport.jdk=$(ALT_JDK_TOPDIR)
   else 
-    ifdef ALT_JDK_IMPORT_DIR
-      ANT_OPTIONS += -Dimport.jdk=$(ALT_JDK_IMPORT_DIR)
+    ifdef ALT_JDK_IMPORT_PATH
+      ANT_OPTIONS += -Dimport.jdk=$(ALT_JDK_IMPORT_PATH)
     endif
   endif
 endif

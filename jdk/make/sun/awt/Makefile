@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = awt
 PACKAGE = sun.awt
 LIBRARY = awt
 PRODUCT = sun
@@ -313,15 +314,15 @@ dgalibs: $(DGALIBS)
 
 $(LIBDIR)/$(LIBARCH)/libxinerama.so: $(CLOSED_SRC)/solaris/lib/$(ARCH)/libxinerama.so
 	$(install-file)
-	$(CHMOD) a+x $@
+	$(call chmod-file, a+x)
 
 $(LIBDIR)/$(LIBARCH)/libjdgaSUNW%.so: $(CLOSED_SRC)/solaris/lib/$(ARCH)/libjdgaSUNW%.so
 	$(install-file)
-	$(CHMOD) a+x $@
+	$(call chmod-file, a+x)
 
 $(LIBDIR)/$(LIBARCH)/libjdgaSUNWafb.so: $(LIBDIR)/$(LIBARCH)/libjdgaSUNWffb.so
 	$(prep-target)
-	$(LN) -s libjdgaSUNWffb.so $(LIBDIR)/$(LIBARCH)/libjdgaSUNWafb.so
+	$(call install-sym-link, libjdgaSUNWffb.so)
 
 clean:: dgalib.clean
 
@@ -405,7 +406,8 @@ $(LIBDIR)/%.bfc: $(FONTCONFIGS_SRC)/$(FONTCONFIGS_SRC_PREFIX)%.properties \
     $(COMPILEFONTCONFIG_JARFILE)
 	$(prep-target)
 	$(BOOT_JAVA_CMD) -jar $(COMPILEFONTCONFIG_JARFILE) $< $@
-	$(CHMOD) 444 $(@)
+	$(install-module-file)
+	$(call chmod-file, 444)
 	@$(java-vm-cleanup)
 
 fontconfigs.clean :

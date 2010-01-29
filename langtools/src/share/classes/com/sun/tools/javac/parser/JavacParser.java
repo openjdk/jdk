@@ -2613,12 +2613,12 @@ public class JavacParser implements Parser {
             body = toP(F.at(identPos).AnonymousClassDef(mods1, defs));
         }
         if (args.isEmpty() && body == null)
-            createPos = Position.NOPOS;
-        JCIdent ident = F.at(Position.NOPOS).Ident(enumName);
+            createPos = identPos;
+        JCIdent ident = F.at(identPos).Ident(enumName);
         JCNewClass create = F.at(createPos).NewClass(null, typeArgs, ident, args, body);
-        if (createPos != Position.NOPOS)
+        if (createPos != identPos)
             storeEnd(create, S.prevEndPos());
-        ident = F.at(Position.NOPOS).Ident(enumName);
+        ident = F.at(identPos).Ident(enumName);
         JCTree result = toP(F.at(pos).VarDef(mods, name, ident, create));
         attach(result, dc);
         return result;

@@ -207,7 +207,7 @@ static jint set_bool_flag(const char* name, AttachOperation* op, outputStream* o
     int tmp;
     int n = sscanf(arg1, "%d", &tmp);
     if (n != 1) {
-      out->print_cr("flag value has to be boolean (1 or 0)");
+      out->print_cr("flag value must be a boolean (1 or 0)");
       return JNI_ERR;
     }
     value = (tmp != 0);
@@ -226,11 +226,11 @@ static jint set_intx_flag(const char* name, AttachOperation* op, outputStream* o
   if ((arg1 = op->arg(1)) != NULL) {
     int n = sscanf(arg1, INTX_FORMAT, &value);
     if (n != 1) {
-      out->print_cr("flag value has to be integer");
+      out->print_cr("flag value must be an integer");
       return JNI_ERR;
     }
   }
-  bool res = CommandLineFlags::intxAtPut((char*)name,  &value, ATTACH_ON_DEMAND);
+  bool res = CommandLineFlags::intxAtPut((char*)name, &value, ATTACH_ON_DEMAND);
   if (! res) {
     out->print_cr("setting flag %s failed", name);
   }
@@ -245,11 +245,30 @@ static jint set_uintx_flag(const char* name, AttachOperation* op, outputStream* 
   if ((arg1 = op->arg(1)) != NULL) {
     int n = sscanf(arg1, UINTX_FORMAT, &value);
     if (n != 1) {
-      out->print_cr("flag value has to be integer");
+      out->print_cr("flag value must be an unsigned integer");
       return JNI_ERR;
     }
   }
-  bool res = CommandLineFlags::uintxAtPut((char*)name,  &value, ATTACH_ON_DEMAND);
+  bool res = CommandLineFlags::uintxAtPut((char*)name, &value, ATTACH_ON_DEMAND);
+  if (! res) {
+    out->print_cr("setting flag %s failed", name);
+  }
+
+  return res? JNI_OK : JNI_ERR;
+}
+
+// set a uint64_t global flag using value from AttachOperation
+static jint set_uint64_t_flag(const char* name, AttachOperation* op, outputStream* out) {
+  uint64_t value;
+  const char* arg1;
+  if ((arg1 = op->arg(1)) != NULL) {
+    int n = sscanf(arg1, UINT64_FORMAT, &value);
+    if (n != 1) {
+      out->print_cr("flag value must be an unsigned 64-bit integer");
+      return JNI_ERR;
+    }
+  }
+  bool res = CommandLineFlags::uint64_tAtPut((char*)name, &value, ATTACH_ON_DEMAND);
   if (! res) {
     out->print_cr("setting flag %s failed", name);
   }
@@ -261,10 +280,10 @@ static jint set_uintx_flag(const char* name, AttachOperation* op, outputStream* 
 static jint set_ccstr_flag(const char* name, AttachOperation* op, outputStream* out) {
   const char* value;
   if ((value = op->arg(1)) == NULL) {
-    out->print_cr("flag value has to be a string");
+    out->print_cr("flag value must be a string");
     return JNI_ERR;
   }
-  bool res = CommandLineFlags::ccstrAtPut((char*)name,  &value, ATTACH_ON_DEMAND);
+  bool res = CommandLineFlags::ccstrAtPut((char*)name, &value, ATTACH_ON_DEMAND);
   if (res) {
     FREE_C_HEAP_ARRAY(char, value);
   } else {
@@ -291,6 +310,8 @@ static jint set_flag(AttachOperation* op, outputStream* out) {
       return set_intx_flag(name, op, out);
     } else if (f->is_uintx()) {
       return set_uintx_flag(name, op, out);
+    } else if (f->is_uint64_t()) {
+      return set_uint64_t_flag(name, op, out);
     } else if (f->is_ccstr()) {
       return set_ccstr_flag(name, op, out);
     } else {
@@ -416,7 +437,7 @@ void AttachListener::init() {
                        string,
                        CHECK);
 
-  KlassHandle group(THREAD, SystemDictionary::threadGroup_klass());
+  KlassHandle group(THREAD, SystemDictionary::ThreadGroup_klass());
   JavaCalls::call_special(&result,
                         thread_group,
                         group,

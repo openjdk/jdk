@@ -692,7 +692,7 @@ public:
 
   // Reserved (g1 only; super method includes perm), capacity and the used
   // portion in bytes.
-  size_t g1_reserved_obj_bytes() { return _g1_reserved.byte_size(); }
+  size_t g1_reserved_obj_bytes() const { return _g1_reserved.byte_size(); }
   virtual size_t capacity() const;
   virtual size_t used() const;
   // This should be called when we're not holding the heap lock. The
@@ -1004,6 +1004,10 @@ public:
   // storage in the heap comes from a young region or not.
   // See ReduceInitialCardMarks.
   virtual bool can_elide_tlab_store_barriers() const {
+    return true;
+  }
+
+  virtual bool card_mark_must_follow_store() const {
     return true;
   }
 
