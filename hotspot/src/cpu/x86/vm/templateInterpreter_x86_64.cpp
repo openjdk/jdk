@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,21 +100,26 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
   return entry;
 }
 
-// Arguments are: required type in rarg1, failing object (or NULL) in rarg2
+// Arguments are: required type at TOS+8, failing object (or NULL) at TOS+4.
 address TemplateInterpreterGenerator::generate_WrongMethodType_handler() {
   address entry = __ pc();
 
   __ pop(c_rarg2);              // failing object is at TOS
   __ pop(c_rarg1);              // required type is at TOS+8
 
-  // expression stack must be empty before entering the VM if an
-  // exception happened
+  __ verify_oop(c_rarg1);
+  __ verify_oop(c_rarg2);
+
+  // Various method handle types use interpreter registers as temps.
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Expression stack must be empty before entering the VM for an exception.
   __ empty_expression_stack();
 
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address,
-                              InterpreterRuntime::
-                              throw_WrongMethodTypeException),
+                              InterpreterRuntime::throw_WrongMethodTypeException),
              // pass required type, failing object (or NULL)
              c_rarg1, c_rarg2);
   return entry;
@@ -166,8 +171,7 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 
 
 address TemplateInterpreterGenerator::generate_return_entry_for(TosState state,
-                                                                int step, bool unbox) {
-  assert(!unbox, "NYI");//6815692//
+                                                                int step) {
 
   // amd64 doesn't need to do anything special about compiled returns
   // to the interpreter so the code that exists on x86 to place a sentinel
@@ -183,15 +187,29 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state,
   __ restore_bcp();
   __ restore_locals();
 
-  __ get_cache_and_index_at_bcp(rbx, rcx, 1);
+  Label L_got_cache, L_giant_index;
+  if (EnableInvokeDynamic) {
+    __ cmpb(Address(r13, 0), Bytecodes::_invokedynamic);
+    __ jcc(Assembler::equal, L_giant_index);
+  }
+  __ get_cache_and_index_at_bcp(rbx, rcx, 1, false);
+  __ bind(L_got_cache);
   __ movl(rbx, Address(rbx, rcx,
-                       Address::times_8,
+                       Address::times_ptr,
                        in_bytes(constantPoolCacheOopDesc::base_offset()) +
                        3 * wordSize));
   __ andl(rbx, 0xFF);
   if (TaggedStackInterpreter) __ shll(rbx, 1); // 2 slots per parameter.
   __ lea(rsp, Address(rsp, rbx, Address::times_8));
   __ dispatch_next(state, step);
+
+  // out of the main line of code...
+  if (EnableInvokeDynamic) {
+    __ bind(L_giant_index);
+    __ get_cache_and_index_at_bcp(rbx, rcx, 1, true);
+    __ jmp(L_got_cache);
+  }
+
   return entry;
 }
 
@@ -431,8 +449,12 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ addptr(rax, stack_base);
   __ subptr(rax, stack_size);
 
+  // Use the maximum number of pages we might bang.
+  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages) ? StackShadowPages :
+                                                                              (StackRedPages+StackYellowPages);
+
   // add in the red and yellow zone sizes
-  __ addptr(rax, (StackRedPages + StackYellowPages) * page_size);
+  __ addptr(rax, max_pages * page_size);
 
   // check against the current stack bottom
   __ cmpptr(rsp, rax);
@@ -1434,6 +1456,23 @@ address AbstractInterpreterGenerator::generate_method_entry(
                                 generate_normal_entry(synchronized);
 }
 
+// These should never be compiled since the interpreter will prefer
+// the compiled version to the intrinsic version.
+bool AbstractInterpreter::can_be_compiled(methodHandle m) {
+  switch (method_kind(m)) {
+    case Interpreter::java_lang_math_sin     : // fall thru
+    case Interpreter::java_lang_math_cos     : // fall thru
+    case Interpreter::java_lang_math_tan     : // fall thru
+    case Interpreter::java_lang_math_abs     : // fall thru
+    case Interpreter::java_lang_math_log     : // fall thru
+    case Interpreter::java_lang_math_log10   : // fall thru
+    case Interpreter::java_lang_math_sqrt    :
+      return false;
+    default:
+      return true;
+  }
+}
+
 // How much stack a method activation needs in words.
 int AbstractInterpreter::size_top_interpreter_activation(methodOop method) {
   const int entry_size = frame::interpreter_frame_monitor_size();
@@ -1484,8 +1523,10 @@ int AbstractInterpreter::layout_activation(methodOop method,
          tempcount* Interpreter::stackElementWords() + popframe_extra_args;
   if (interpreter_frame != NULL) {
 #ifdef ASSERT
-    assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(),
-           "Frame not properly walkable");
+    if (!EnableMethodHandles)
+      // @@@ FIXME: Should we correct interpreter_frame_sender_sp in the calling sequences?
+      // Probably, since deoptimization doesn't work yet.
+      assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
     assert(caller->sp() == interpreter_frame->sender_sp(), "Frame not properly walkable(2)");
 #endif
 

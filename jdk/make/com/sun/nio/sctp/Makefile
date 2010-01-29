@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../../..
+MODULE  = sctp
 PACKAGE = com.sun.nio.sctp
 LIBRARY = sctp
 PRODUCT = sun

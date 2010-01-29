@@ -1,0 +1,149 @@
+#
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+# public final java.nio.channels.SocketChannel getChannel()
+@Optional
+  sun.security.ssl.BaseSSLSocketImpl -> java.nio.channels.SocketChannel
+
+# public XMLDecoder(java.io.InputStream)
+# public XMLDecoder(java.io.InputStream, java.lang.Object)
+# public XMLDecoder(java.io.InputStream, java.lang.Object, java.beans.ExceptionListener)
+# public XMLDecoder(java.io.InputStream, java.lang.Object, java.beans.ExceptionListener, java.lang.ClassLoader)
+# public XMLDecoder(org.xml.sax.InputSource)
+@Optional
+  java.beans.XMLDecoder -> com.sun.beans.decoder.DocumentHandler
+  java.beans.XMLDecoder -> org.xml.sax.InputSource
+
+# public static org.xml.sax.helpers.DefaultHandler createHandler(java.lang.Object, java.beans.ExceptionListener, java.lang.ClassLoader)
+@Optional
+  java.beans.XMLDecoder -> com.sun.beans.decoder.DocumentHandler
+  java.beans.XMLDecoder -> org.xml.sax.helpers.DefaultHandler
+
+# public final java.nio.channels.FileChannel getChannel()
+@Optional
+  java.net.SocketInputStream -> java.nio.channels.FileChannel
+
+# public final java.nio.channels.FileChannel getChannel()
+@Optional
+  java.net.SocketOutputStream -> java.nio.channels.FileChannel
+
+# public Scanner(java.io.File)
+# public Scanner(java.io.File, java.lang.String)
+@Optional
+  java.util.Scanner -> java.nio.channels.ReadableByteChannel
+  java.util.Scanner -> java.nio.channels.Channels
+
+# public Scanner(java.nio.file.FileRef)
+# public Scanner(java.nio.file.FileRef, java.lang.String)
+@Optional
+  java.util.Scanner -> java.nio.file.FileRef
+  java.util.Scanner -> java.nio.file.OpenOption
+
+# public Scanner(java.nio.channels.ReadableByteChannel)
+# public Scanner(java.nio.channels.ReadableByteChannel, java.lang.String)
+@Optional
+  java.util.Scanner -> java.nio.channels.ReadableByteChannel
+  java.util.Scanner -> java.nio.channels.Channels
+
+# private static void loadSnmpAgent(java.lang.String, java.util.Properties)
+@Optional
+  sun.management.Agent -> sun.management.snmp.AdaptorBootstrap
+
+# public void connect()
+@Optional
+  sun.net.www.protocol.http.HttpURLConnection -> java.net.SecureCacheResponse
+
+# private static sun.security.util.PermissionFactory<?> permissionFactory()
+@Optional
+  sun.security.util.SecurityConstants$AWT -> sun.awt.AWTPermissionFactory
+
+# sun.util.logging.LoggingSupport
+@Optional
+  sun.util.logging.LoggingSupport -> java.util.logging.LoggingProxyImpl
+
+# public java.nio.channels.DatagramChannel getChannel()
+@Optional
+  java.net.DatagramSocket -> java.nio.channels.DatagramChannel
+
+# public java.nio.channels.SocketChannel getChannel()
+@Optional
+  java.net.Socket -> java.nio.channels.SocketChannel
+
+# public java.nio.channels.ServerSocketChannel getChannel()
+@Optional
+  java.net.ServerSocket -> java.nio.channels.ServerSocketChannel
+
+# public final java.nio.channels.FileChannel getChannel()
+@Optional
+  java.io.RandomAccessFile -> java.nio.channels.FileChannel
+  java.io.RandomAccessFile -> sun.nio.ch.FileChannelImpl
+
+# public static sun.nio.cs.StreamDecoder forDecoder(java.nio.channels.ReadableByteChannel, java.nio.charset.CharsetDecoder, int)
+@Optional
+  sun.nio.cs.StreamDecoder -> java.nio.channels.ReadableByteChannel
+
+# private static java.nio.channels.FileChannel getChannel(java.io.FileInputStream)
+# StreamDecoder(java.io.InputStream, java.lang.Object, java.nio.charset.CharsetDecoder)
+@Optional
+  sun.nio.cs.StreamDecoder -> java.nio.channels.FileChannel
+
+# StreamDecoder(java.nio.channels.ReadableByteChannel, java.nio.charset.CharsetDecoder, int)
+@Optional
+  sun.nio.cs.StreamDecoder -> java.nio.channels.ReadableByteChannel
+
+# public static java.io.File createTemporaryFile(java.lang.String, java.lang.String, java.nio.file.attribute.FileAttribute<?>[])
+@Optional
+  java.io.File -> java.io.TempFileHelper
+  java.io.File -> java.nio.file.attribute.FileAttribute
+
+# public java.nio.file.Path toPath()
+@Optional
+  java.io.File -> java.nio.file.Paths
+  java.io.File -> java.nio.file.Path
+
+# public static sun.nio.cs.StreamEncoder forEncoder(java.nio.channels.WritableByteChannel, java.nio.charset.CharsetEncoder, int)
+# private StreamEncoder(java.nio.channels.WritableByteChannel, java.nio.charset.CharsetEncoder, int)
+@Optional
+  sun.nio.cs.StreamEncoder -> java.nio.channels.WritableByteChannel
+
+# public java.nio.channels.FileChannel getChannel()
+@Optional
+  java.io.FileOutputStream -> java.nio.channels.FileChannel
+  java.io.FileOutputStream -> sun.nio.ch.FileChannelImpl
+
+# public java.nio.channels.FileChannel getChannel()
+@Optional
+  java.io.FileInputStream -> java.nio.channels.FileChannel
+  java.io.FileInputStream -> sun.nio.ch.FileChannelImpl
+
+# public void loadFromXML(java.io.InputStream)
+# public void storeToXML(java.io.OutputStream, java.lang.String, java.lang.String)
+@Optional
+  java.util.Properties -> java.util.XMLUtils
+
+# public static java.nio.channels.Channel inheritedChannel()
+@Optional
+  java.lang.System -> java.nio.channels.Channel
+  java.lang.System -> java.nio.channels.spi.SelectorProvider

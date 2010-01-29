@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,37 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-void PtrQueue::handle_zero_index() {
-  assert(0 == _index, "Precondition.");
-  // This thread records the full buffer and allocates a new one (while
-  // holding the lock if there is one).
-  void** buf = _buf;
-  _buf = qset()->allocate_buffer();
-  _sz = qset()->buffer_size();
-  _index = _sz;
-  assert(0 <= _index && _index <= _sz, "Invariant.");
-  if (buf != NULL) {
-    if (_lock) {
-      locking_enqueue_completed_buffer(buf);
-    } else {
-      qset()->enqueue_complete_buffer(buf);
+/**
+ * @test
+ * @bug 6901572
+ * @summary JVM 1.6.16 crash on loops: assert(has_node(i),"")
+ *
+ * @run main/othervm Test
+ */
+
+
+public class Test {
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 2; i++)
+            NestedLoop();
     }
-  }
+
+    public static long NestedLoop() {
+        final int n = 50;
+        long startTime = System.currentTimeMillis();
+        int x = 0;
+        for(int a = 0; a < n; a++)
+            for(int b = 0; b < n; b++)
+                for(int c = 0; c < n; c++)
+                    for(int d = 0; d < n; d++)
+                        for(int e = 0; e < n; e++)
+                            for(int f = 0; f < n; f++)
+                                x++;
+        long stopTime = System.currentTimeMillis();
+
+        return stopTime - startTime;
+    }
 }

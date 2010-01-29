@@ -256,8 +256,8 @@ abstract class AbstractPath extends Path {
                 }
                 if (option == null)
                     throw new NullPointerException();
-                throw new IllegalArgumentException("'" + option +
-                    "' is not a valid copy option");
+                throw new UnsupportedOperationException("'" + option +
+                    "' is not a recognized copy option");
             }
             return result;
         }
@@ -279,9 +279,21 @@ abstract class AbstractPath extends Path {
         if (attrs.isSymbolicLink())
             throw new IOException("Copying of symbolic links not supported");
 
-        // delete target file
-        if (opts.replaceExisting)
-            target.deleteIfExists();
+        // check if target exists
+        boolean exists;
+        if (opts.replaceExisting) {
+            try {
+                target.deleteIfExists();
+                exists = false;
+            } catch (DirectoryNotEmptyException x) {
+                // let exception translate to FileAlreadyExistsException (6895012)
+                exists = true;
+            }
+        } else {
+            exists = target.exists();
+        }
+        if (exists)
+            throw new FileAlreadyExistsException(target.toString());
 
         // create directory or file
         if (attrs.isDirectory()) {
@@ -318,7 +330,7 @@ abstract class AbstractPath extends Path {
         ReadableByteChannel rbc = newByteChannel();
         try {
             // open target file for writing
-            SeekableByteChannel sbc = target.newByteChannel(CREATE, WRITE);
+            SeekableByteChannel sbc = target.newByteChannel(CREATE_NEW, WRITE);
 
             // simple copy loop
             try {

@@ -1002,7 +1002,7 @@ public class ZipFileIndex {
                         // Do nothing
                     } finally {
                         try {
-                            if (raf == null) {
+                            if (raf != null) {
                                 raf.close();
                             }
                         } catch (Throwable t) {

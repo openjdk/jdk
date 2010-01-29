@@ -204,8 +204,8 @@ void VMThread::create() {
 }
 
 
-VMThread::VMThread() : Thread() {
-  // nothing to do
+VMThread::VMThread() : NamedThread() {
+  set_name("VM Thread");
 }
 
 void VMThread::destroy() {

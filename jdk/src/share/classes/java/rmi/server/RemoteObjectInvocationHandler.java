@@ -138,7 +138,6 @@ public class RemoteObjectInvocationHandler
      * instance
      * @throws  Throwable the exception to throw from the method invocation
      * on the proxy instance
-     * @see
      **/
     public Object invoke(Object proxy, Method method, Object[] args)
         throws Throwable

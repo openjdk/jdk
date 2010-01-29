@@ -54,7 +54,6 @@ class ParallelScavengeHeap : public CollectedHeap {
  protected:
   static inline size_t total_invocations();
   HeapWord* allocate_new_tlab(size_t size);
-  void fill_all_tlabs(bool retire);
 
  public:
   ParallelScavengeHeap() : CollectedHeap() {
@@ -189,6 +188,10 @@ class ParallelScavengeHeap : public CollectedHeap {
   // via a TLAB up to the first subsequent safepoint.
   virtual bool can_elide_tlab_store_barriers() const {
     return true;
+  }
+
+  virtual bool card_mark_must_follow_store() const {
+    return false;
   }
 
   // Return true if we don't we need a store barrier for
