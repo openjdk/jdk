@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,9 +222,9 @@ void frame::patch_pc(Thread* thread, address pc) {
   }
   ((address *)sp())[-1] = pc;
   _cb = CodeCache::find_blob(pc);
-  if (_cb != NULL && _cb->is_nmethod() && ((nmethod*)_cb)->is_deopt_pc(_pc)) {
-    address orig = (((nmethod*)_cb)->get_original_pc(this));
-    assert(orig == _pc, "expected original to be stored before patching");
+  address original_pc = nmethod::get_deopt_original_pc(this);
+  if (original_pc != NULL) {
+    assert(original_pc == _pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
     // leave _pc as is
   } else {
@@ -323,19 +323,39 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
   return fr;
 }
 
+
+//------------------------------------------------------------------------------
+// frame::sender_for_interpreter_frame
 frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
-  // sp is the raw sp from the sender after adapter or interpreter extension
-  intptr_t* sp = (intptr_t*) addr_at(sender_sp_offset);
+  // SP is the raw SP from the sender after adapter or interpreter
+  // extension.
+  intptr_t* sender_sp = this->sender_sp();
 
   // This is the sp before any possible extension (adapter/locals).
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
+
+  // Stored FP.
+  intptr_t* saved_fp = link();
 
   address sender_pc = this->sender_pc();
   CodeBlob* sender_cb = CodeCache::find_blob_unsafe(sender_pc);
   assert(sender_cb, "sanity");
   nmethod* sender_nm = sender_cb->as_nmethod_or_null();
-  if (sender_nm != NULL && sender_nm->is_method_handle_return(sender_pc)) {
-    unextended_sp = (intptr_t*) at(link_offset);
+
+  if (sender_nm != NULL) {
+    // If the sender PC is a deoptimization point, get the original
+    // PC.  For MethodHandle call site the unextended_sp is stored in
+    // saved_fp.
+    if (sender_nm->is_deopt_mh_entry(sender_pc)) {
+      DEBUG_ONLY(verify_deopt_mh_original_pc(sender_nm, saved_fp));
+      unextended_sp = saved_fp;
+    }
+    else if (sender_nm->is_deopt_entry(sender_pc)) {
+      DEBUG_ONLY(verify_deopt_original_pc(sender_nm, unextended_sp));
+    }
+    else if (sender_nm->is_method_handle_return(sender_pc)) {
+      unextended_sp = saved_fp;
+    }
   }
 
   // The interpreter and compiler(s) always save EBP/RBP in a known
@@ -359,40 +379,51 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
     }
 #endif // AMD64
   }
-#endif /* COMPILER2 */
-  return frame(sp, unextended_sp, link(), sender_pc);
+#endif // COMPILER2
+
+  return frame(sender_sp, unextended_sp, saved_fp, sender_pc);
 }
 
 
-//------------------------------sender_for_compiled_frame-----------------------
+//------------------------------------------------------------------------------
+// frame::sender_for_compiled_frame
 frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
-  const bool c1_compiled = _cb->is_compiled_by_c1();
 
   // frame owned by optimizing compiler
-  intptr_t* sender_sp = NULL;
-
   assert(_cb->frame_size() >= 0, "must have non-zero frame size");
-  sender_sp = unextended_sp() + _cb->frame_size();
+  intptr_t* sender_sp = unextended_sp() + _cb->frame_size();
+  intptr_t* unextended_sp = sender_sp;
 
   // On Intel the return_address is always the word on the stack
   address sender_pc = (address) *(sender_sp-1);
 
-  // This is the saved value of ebp which may or may not really be an fp.
-  // it is only an fp if the sender is an interpreter frame (or c1?)
+  // This is the saved value of EBP which may or may not really be an FP.
+  // It is only an FP if the sender is an interpreter frame (or C1?).
+  intptr_t* saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
 
-  intptr_t *saved_fp = (intptr_t*)*(sender_sp - frame::sender_sp_offset);
-
-  intptr_t* unextended_sp = sender_sp;
-  // If we are returning to a compiled method handle call site,
-  // the saved_fp will in fact be a saved value of the unextended SP.
-  // The simplest way to tell whether we are returning to such a call
-  // site is as follows:
+  // If we are returning to a compiled MethodHandle call site, the
+  // saved_fp will in fact be a saved value of the unextended SP.  The
+  // simplest way to tell whether we are returning to such a call site
+  // is as follows:
   CodeBlob* sender_cb = CodeCache::find_blob_unsafe(sender_pc);
   assert(sender_cb, "sanity");
   nmethod* sender_nm = sender_cb->as_nmethod_or_null();
-  if (sender_nm != NULL && sender_nm->is_method_handle_return(sender_pc)) {
-    unextended_sp = saved_fp;
+
+  if (sender_nm != NULL) {
+    // If the sender PC is a deoptimization point, get the original
+    // PC.  For MethodHandle call site the unextended_sp is stored in
+    // saved_fp.
+    if (sender_nm->is_deopt_mh_entry(sender_pc)) {
+      DEBUG_ONLY(verify_deopt_mh_original_pc(sender_nm, saved_fp));
+      unextended_sp = saved_fp;
+    }
+    else if (sender_nm->is_deopt_entry(sender_pc)) {
+      DEBUG_ONLY(verify_deopt_original_pc(sender_nm, unextended_sp));
+    }
+    else if (sender_nm->is_method_handle_return(sender_pc)) {
+      unextended_sp = saved_fp;
+    }
   }
 
   if (map->update_map()) {
@@ -403,7 +434,7 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     if (_cb->oop_maps() != NULL) {
       OopMapSet::update_register_map(this, map);
     }
-    // Since the prolog does the save and restore of epb there is no oopmap
+    // Since the prolog does the save and restore of EBP there is no oopmap
     // for it so we must fill in its location as if there was an oopmap entry
     // since if our caller was compiled code there could be live jvm state in it.
     map->set_location(rbp->as_VMReg(), (address) (sender_sp - frame::sender_sp_offset));
@@ -422,6 +453,9 @@ frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   return frame(sender_sp, unextended_sp, saved_fp, sender_pc);
 }
 
+
+//------------------------------------------------------------------------------
+// frame::sender
 frame frame::sender(RegisterMap* map) const {
   // Default is we done have to follow them. The sender_for_xxx will
   // update it accordingly
