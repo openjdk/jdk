@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,9 +366,8 @@ frame::frame(intptr_t* sp, intptr_t* younger_sp, bool younger_frame_adjusted_sta
   // as get_original_pc() needs correct value for unextended_sp()
   if (_pc != NULL) {
     _cb = CodeCache::find_blob(_pc);
-    address original_pc = nmethod::get_deopt_original_pc(this);
-    if (original_pc != NULL) {
-      _pc = original_pc;
+    if (_cb != NULL && _cb->is_nmethod() && ((nmethod*)_cb)->is_deopt_pc(_pc)) {
+      _pc = ((nmethod*)_cb)->get_original_pc(this);
       _deopt_state = is_deoptimized;
     } else {
       _deopt_state = not_deoptimized;
@@ -520,9 +519,9 @@ void frame::patch_pc(Thread* thread, address pc) {
   _cb = CodeCache::find_blob(pc);
   *O7_addr() = pc - pc_return_offset;
   _cb = CodeCache::find_blob(_pc);
-  address original_pc = nmethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
-    assert(original_pc == _pc, "expected original to be stored before patching");
+  if (_cb != NULL && _cb->is_nmethod() && ((nmethod*)_cb)->is_deopt_pc(_pc)) {
+    address orig = ((nmethod*)_cb)->get_original_pc(this);
+    assert(orig == _pc, "expected original to be stored before patching");
     _deopt_state = is_deoptimized;
   } else {
     _deopt_state = not_deoptimized;
