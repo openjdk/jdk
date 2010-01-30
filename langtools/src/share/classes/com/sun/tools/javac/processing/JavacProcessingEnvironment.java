@@ -67,6 +67,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -893,14 +894,20 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         errorStatus = true;
                         break runAround;
                     } else {
-                        ListBuffer<ClassSymbol> classes = enterNewClassFiles(currentContext);
+                        List<ClassSymbol> newClasses = enterNewClassFiles(currentContext);
                         compiler.enterTrees(roots);
 
                         // annotationsPresentInSource =
                         // collector.findAnnotations(parsedFiles);
-                        classes.appendList(getTopLevelClasses(parsedFiles));
-                        topLevelClasses  = classes.toList();
-                        packageInfoFiles = getPackageInfoFiles(parsedFiles);
+                        ListBuffer<ClassSymbol> tlc = new ListBuffer<ClassSymbol>();
+                        tlc.appendList(getTopLevelClasses(parsedFiles));
+                        tlc.appendList(getTopLevelClassesFromClasses(newClasses));
+                        topLevelClasses  = tlc.toList();
+
+                        ListBuffer<PackageSymbol> pif = new ListBuffer<PackageSymbol>();
+                        pif.appendList(getPackageInfoFiles(parsedFiles));
+                        pif.appendList(getPackageInfoFilesFromClasses(newClasses));
+                        packageInfoFiles = pif.toList();
 
                         annotationsPresent = new LinkedHashSet<TypeElement>();
                         for (ClassSymbol classSym : topLevelClasses)
@@ -1026,20 +1033,30 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
     }
 
-    private ListBuffer<ClassSymbol> enterNewClassFiles(Context currentContext) {
+    private List<ClassSymbol> enterNewClassFiles(Context currentContext) {
         ClassReader reader = ClassReader.instance(currentContext);
         Names names = Names.instance(currentContext);
-        ListBuffer<ClassSymbol> list = new ListBuffer<ClassSymbol>();
+        List<ClassSymbol> list = List.nil();
 
         for (Map.Entry<String,JavaFileObject> entry : filer.getGeneratedClasses().entrySet()) {
             Name name = names.fromString(entry.getKey());
             JavaFileObject file = entry.getValue();
             if (file.getKind() != JavaFileObject.Kind.CLASS)
                 throw new AssertionError(file);
-            ClassSymbol cs = reader.enterClass(name, file);
-            list.append(cs);
+            ClassSymbol cs;
+            if (isPkgInfo(file, JavaFileObject.Kind.CLASS)) {
+                Name packageName = Convert.packagePart(name);
+                PackageSymbol p = reader.enterPackage(packageName);
+                if (p.package_info == null)
+                    p.package_info = reader.enterClass(Convert.shortName(name), p);
+                cs = p.package_info;
+                if (cs.classfile == null)
+                    cs.classfile = file;
+            } else
+                cs = reader.enterClass(name, file);
+            list = list.prepend(cs);
         }
-        return list;
+        return list.reverse();
     }
 
     /**
@@ -1066,16 +1083,42 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return classes.reverse();
     }
 
+    private List<ClassSymbol> getTopLevelClassesFromClasses(List<? extends ClassSymbol> syms) {
+        List<ClassSymbol> classes = List.nil();
+        for (ClassSymbol sym : syms) {
+            if (!isPkgInfo(sym)) {
+                classes = classes.prepend(sym);
+            }
+        }
+        return classes.reverse();
+    }
+
     private List<PackageSymbol> getPackageInfoFiles(List<? extends JCCompilationUnit> units) {
         List<PackageSymbol> packages = List.nil();
         for (JCCompilationUnit unit : units) {
-            boolean isPkgInfo = unit.sourcefile.isNameCompatible("package-info",
-                                                                 JavaFileObject.Kind.SOURCE);
-            if (isPkgInfo) {
+            if (isPkgInfo(unit.sourcefile, JavaFileObject.Kind.SOURCE)) {
                 packages = packages.prepend(unit.packge);
             }
         }
         return packages.reverse();
+    }
+
+    private List<PackageSymbol> getPackageInfoFilesFromClasses(List<? extends ClassSymbol> syms) {
+        List<PackageSymbol> packages = List.nil();
+        for (ClassSymbol sym : syms) {
+            if (isPkgInfo(sym)) {
+                packages = packages.prepend((PackageSymbol) sym.owner);
+            }
+        }
+        return packages.reverse();
+    }
+
+    private boolean isPkgInfo(JavaFileObject fo, JavaFileObject.Kind kind) {
+        return fo.isNameCompatible("package-info", kind);
+    }
+
+    private boolean isPkgInfo(ClassSymbol sym) {
+        return isPkgInfo(sym.classfile, JavaFileObject.Kind.CLASS) && (sym.packge().package_info == sym);
     }
 
     private Context contextForNextRound(Context context, boolean shareNames)
