@@ -1361,7 +1361,7 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
 // We are calling the interpreter via a c2i. Normally this would mean that
 // we were called by a compiled method. However we could have lost a race
 // where we went int -> i2c -> c2i and so the caller could in fact be
-// interpreted. If the caller is compiled we attampt to patch the caller
+// interpreted. If the caller is compiled we attempt to patch the caller
 // so he no longer calls into the interpreter.
 IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, address caller_pc))
   methodOop moop(method);
@@ -1377,10 +1377,19 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
   // we did we'd leap into space because the callsite needs to use
   // "to interpreter" stub in order to load up the methodOop. Don't
   // ask me how I know this...
-  //
 
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
-  if ( !cb->is_nmethod() || entry_point == moop->get_c2i_entry()) {
+  if (!cb->is_nmethod() || entry_point == moop->get_c2i_entry()) {
+    return;
+  }
+
+  // The check above makes sure this is a nmethod.
+  nmethod* nm = cb->as_nmethod_or_null();
+  assert(nm, "must be");
+
+  // Don't fixup MethodHandle call sites as c2i/i2c adapters are used
+  // to implement MethodHandle actions.
+  if (nm->is_method_handle_return(caller_pc)) {
     return;
   }
 
@@ -1395,7 +1404,7 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
 
   if (moop->code() == NULL) return;
 
-  if (((nmethod*)cb)->is_in_use()) {
+  if (nm->is_in_use()) {
 
     // Expect to find a native call there (unless it was no-inline cache vtable dispatch)
     MutexLockerEx ml_patch(Patching_lock, Mutex::_no_safepoint_check_flag);
