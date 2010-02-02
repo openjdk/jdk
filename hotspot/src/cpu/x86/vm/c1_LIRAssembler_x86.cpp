@@ -3209,7 +3209,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   Register mdo  = op->mdo()->as_register();
   __ movoop(mdo, md->constant_encoding());
   Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-  __ addl(counter_addr, DataLayout::counter_increment);
   Bytecodes::Code bc = method->java_code_at_bci(bci);
   // Perform additional virtual call profiling for invokevirtual and
   // invokeinterface bytecodes
@@ -3276,14 +3275,18 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         __ jcc(Assembler::notEqual, next_test);
         __ movptr(recv_addr, recv);
         __ movl(Address(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i))), DataLayout::counter_increment);
-        if (i < (VirtualCallData::row_limit() - 1)) {
-          __ jmp(update_done);
-        }
+        __ jmp(update_done);
         __ bind(next_test);
       }
+      // Receiver did not match any saved receiver and there is no empty row for it.
+      // Increment total counter to indicate polimorphic case.
+      __ addl(counter_addr, DataLayout::counter_increment);
 
       __ bind(update_done);
     }
+  } else {
+    // Static call
+    __ addl(counter_addr, DataLayout::counter_increment);
   }
 }
 

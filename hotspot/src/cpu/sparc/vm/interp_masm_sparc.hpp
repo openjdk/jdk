@@ -290,9 +290,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void test_mdp_data_at(int offset, Register value, Label& not_equal_continue,
                         Register scratch);
 
-  void record_klass_in_profile(Register receiver, Register scratch);
+  void record_klass_in_profile(Register receiver, Register scratch, bool is_virtual_call);
   void record_klass_in_profile_helper(Register receiver, Register scratch,
-                                      int start_row, Label& done);
+                                      int start_row, Label& done, bool is_virtual_call);
 
   void update_mdp_by_offset(int offset_of_disp, Register scratch);
   void update_mdp_by_offset(Register reg, int offset_of_disp,

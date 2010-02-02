@@ -1117,7 +1117,6 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
     if (_method->code() == this) {
       _method->clear_code(); // Break a cycle
     }
-    inc_decompile_count();     // Last chance to make a mark on the MDO
     _method = NULL;            // Clear the method of this dead nmethod
   }
   // Make the class unloaded - i.e., change state and notify sweeper
@@ -1177,15 +1176,17 @@ void nmethod::log_state_change() const {
 bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
 
-  // If the method is already zombie there is nothing to do
-  if (is_zombie()) {
-    return false;
-  }
+  bool was_alive = false;
 
   // Make sure the nmethod is not flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
 
   {
+    // If the method is already zombie there is nothing to do
+    if (is_zombie()) {
+      return false;
+    }
+
     // invalidate osr nmethod before acquiring the patching lock since
     // they both acquire leaf locks and we don't want a deadlock.
     // This logic is equivalent to the logic below for patching the
@@ -1223,6 +1224,8 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       assert(state == not_entrant, "other cases may need to be handled differently");
     }
 
+    was_alive = is_in_use(); // Read state under lock
+
     // Change state
     flags.state = state;
 
@@ -1249,8 +1252,11 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     mark_as_seen_on_stack();
   }
 
-  // It's a true state change, so mark the method as decompiled.
-  inc_decompile_count();
+  if (was_alive) {
+    // It's a true state change, so mark the method as decompiled.
+    // Do it only for transition from alive.
+    inc_decompile_count();
+  }
 
   // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload event
   // and it hasn't already been reported for this nmethod then report it now.

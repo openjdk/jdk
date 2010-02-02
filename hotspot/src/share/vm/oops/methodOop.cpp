@@ -575,12 +575,6 @@ bool methodOopDesc::is_not_compilable(int comp_level) const {
     return true;
   }
 
-  methodDataOop mdo = method_data();
-  if (mdo != NULL
-      && (uint)mdo->decompile_count() > (uint)PerMethodRecompilationCutoff) {
-    // Since (uint)-1 is large, -1 really means 'no cutoff'.
-    return true;
-  }
 #ifdef COMPILER2
   if (is_tier1_compile(comp_level)) {
     if (is_not_tier1_compilable()) {
@@ -594,6 +588,15 @@ bool methodOopDesc::is_not_compilable(int comp_level) const {
 
 // call this when compiler finds that this method is not compilable
 void methodOopDesc::set_not_compilable(int comp_level) {
+  if (PrintCompilation) {
+    ttyLocker ttyl;
+    tty->print("made not compilable ");
+    this->print_short_name(tty);
+    int size = this->code_size();
+    if (size > 0)
+      tty->print(" (%d bytes)", size);
+    tty->cr();
+  }
   if ((TraceDeoptimization || LogCompilation) && (xtty != NULL)) {
     ttyLocker ttyl;
     xtty->begin_elem("make_not_compilable thread='%d'", (int) os::current_thread_id());

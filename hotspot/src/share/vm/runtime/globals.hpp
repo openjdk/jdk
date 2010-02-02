@@ -2864,7 +2864,7 @@ class CommandLineFlags {
   product(intx, PerMethodRecompilationCutoff, 400,                          \
           "After recompiling N times, stay in the interpreter (-1=>'Inf')") \
                                                                             \
-  product(intx, PerBytecodeRecompilationCutoff, 100,                        \
+  product(intx, PerBytecodeRecompilationCutoff, 200,                        \
           "Per-BCI limit on repeated recompilation (-1=>'Inf')")            \
                                                                             \
   product(intx, PerMethodTrapLimit,  100,                                   \
