@@ -149,11 +149,7 @@ public class TypeAnnotations {
                     JCFieldAccess fieldFrame = (JCFieldAccess)frame;
                     if ("class".contentEquals(fieldFrame.name)) {
                         p.type = TargetType.CLASS_LITERAL;
-                        if (fieldFrame.selected instanceof JCAnnotatedType) {
-                            p.pos = TreeInfo.typeIn(fieldFrame).pos;
-                        } else if (fieldFrame.selected instanceof JCArrayTypeTree) {
-                            p.pos = fieldFrame.selected.pos;
-                        }
+                        p.pos = TreeInfo.innermostType(fieldFrame.selected).pos;
                     } else
                         throw new AssertionError();
                     return p;
