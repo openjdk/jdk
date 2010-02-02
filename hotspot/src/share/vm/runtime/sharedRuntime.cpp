@@ -364,7 +364,7 @@ oop SharedRuntime::retrieve_receiver( symbolHandle sig, frame caller ) {
 
 
 void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, Handle h_exception) {
-  if (JvmtiExport::can_post_exceptions()) {
+  if (JvmtiExport::can_post_on_exceptions()) {
     vframeStream vfst(thread, true);
     methodHandle method = methodHandle(thread, vfst.method());
     address bcp = method()->bcp_from(vfst.bci());

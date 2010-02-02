@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -810,7 +810,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     // we are switching to old paradigm: search for exception handler in caller_frame
     // instead in exception handler of caller_frame.sender()
 
-    if (JvmtiExport::can_post_exceptions()) {
+    if (JvmtiExport::can_post_on_exceptions()) {
       // "Full-speed catching" is not necessary here,
       // since we're notifying the VM on every catch.
       // Force deoptimization and the rest of the lookup
@@ -975,8 +975,8 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
     assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
     frame caller_frame = stub_frame.sender(&reg_map);
 
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    // bypass VM_DeoptimizeFrame and deoptimize the frame directly
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
   }
 }
 

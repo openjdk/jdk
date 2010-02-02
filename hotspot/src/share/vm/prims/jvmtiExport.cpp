@@ -877,7 +877,7 @@ void JvmtiExport::post_raw_breakpoint(JavaThread *thread, methodOop method, addr
 bool              JvmtiExport::_can_get_source_debug_extension            = false;
 bool              JvmtiExport::_can_maintain_original_method_order        = false;
 bool              JvmtiExport::_can_post_interpreter_events               = false;
-bool              JvmtiExport::_can_post_exceptions                       = false;
+bool              JvmtiExport::_can_post_on_exceptions                    = false;
 bool              JvmtiExport::_can_post_breakpoint                       = false;
 bool              JvmtiExport::_can_post_field_access                     = false;
 bool              JvmtiExport::_can_post_field_modification               = false;
@@ -908,6 +908,7 @@ bool              JvmtiExport::_should_post_garbage_collection_finish     = fals
 bool              JvmtiExport::_should_post_object_free                   = false;
 bool              JvmtiExport::_should_post_resource_exhausted            = false;
 bool              JvmtiExport::_should_post_vm_object_alloc               = false;
+bool              JvmtiExport::_should_post_on_exceptions                 = false;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
