@@ -1338,13 +1338,14 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     // Whether the interpreter is producing MDO data or not, we also need
     // to use the MDO to detect hot deoptimization points and control
     // aggressive optimization.
+    bool inc_recompile_count = false;
+    ProfileData* pdata = NULL;
     if (ProfileTraps && update_trap_state && trap_mdo.not_null()) {
       assert(trap_mdo() == get_method_data(thread, trap_method, false), "sanity");
       uint this_trap_count = 0;
       bool maybe_prior_trap = false;
       bool maybe_prior_recompile = false;
-      ProfileData* pdata
-        = query_update_method_data(trap_mdo, trap_bci, reason,
+      pdata = query_update_method_data(trap_mdo, trap_bci, reason,
                                    //outputs:
                                    this_trap_count,
                                    maybe_prior_trap,
@@ -1380,18 +1381,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         // Detect repeated recompilation at the same BCI, and enforce a limit.
         if (make_not_entrant && maybe_prior_recompile) {
           // More than one recompile at this point.
-          trap_mdo->inc_overflow_recompile_count();
-          if (maybe_prior_trap
-              && ((uint)trap_mdo->overflow_recompile_count()
-                  > (uint)PerBytecodeRecompilationCutoff)) {
-            // Give up on the method containing the bad BCI.
-            if (trap_method() == nm->method()) {
-              make_not_compilable = true;
-            } else {
-              trap_method->set_not_compilable();
-              // But give grace to the enclosing nm->method().
-            }
-          }
+          inc_recompile_count = maybe_prior_trap;
         }
       } else {
         // For reasons which are not recorded per-bytecode, we simply
@@ -1418,7 +1408,17 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         reset_counters = true;
       }
 
-      if (make_not_entrant && pdata != NULL) {
+    }
+
+    // Take requested actions on the method:
+
+    // Recompile
+    if (make_not_entrant) {
+      if (!nm->make_not_entrant()) {
+        return; // the call did not change nmethod's state
+      }
+
+      if (pdata != NULL) {
         // Record the recompilation event, if any.
         int tstate0 = pdata->trap_state();
         int tstate1 = trap_state_set_recompiled(tstate0, true);
@@ -1427,7 +1427,19 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
       }
     }
 
-    // Take requested actions on the method:
+    if (inc_recompile_count) {
+      trap_mdo->inc_overflow_recompile_count();
+      if ((uint)trap_mdo->overflow_recompile_count() >
+          (uint)PerBytecodeRecompilationCutoff) {
+        // Give up on the method containing the bad BCI.
+        if (trap_method() == nm->method()) {
+          make_not_compilable = true;
+        } else {
+          trap_method->set_not_compilable();
+          // But give grace to the enclosing nm->method().
+        }
+      }
+    }
 
     // Reset invocation counters
     if (reset_counters) {
@@ -1437,13 +1449,8 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         reset_invocation_counter(trap_scope);
     }
 
-    // Recompile
-    if (make_not_entrant) {
-      nm->make_not_entrant();
-    }
-
     // Give up compiling
-    if (make_not_compilable) {
+    if (make_not_compilable && !nm->method()->is_not_compilable()) {
       assert(make_not_entrant, "consistent");
       nm->method()->set_not_compilable();
     }
@@ -1516,9 +1523,11 @@ Deoptimization::query_update_method_data(methodDataHandle trap_mdo,
       if (tstate1 != tstate0)
         pdata->set_trap_state(tstate1);
     } else {
-      if (LogCompilation && xtty != NULL)
+      if (LogCompilation && xtty != NULL) {
+        ttyLocker ttyl;
         // Missing MDP?  Leave a small complaint in the log.
         xtty->elem("missing_mdp bci='%d'", trap_bci);
+      }
     }
   }
 
@@ -1672,6 +1681,7 @@ const char* Deoptimization::_trap_reason_name[Reason_LIMIT] = {
   "class_check",
   "array_check",
   "intrinsic",
+  "bimorphic",
   "unloaded",
   "uninitialized",
   "unreached",
