@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,7 +442,7 @@ void LIR_Assembler::emit_exception_handler() {
 
   // if the method does not have an exception handler, then there is
   // no reason to search for one
-  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_exceptions()) {
+  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_on_exceptions()) {
     // the exception oop and pc are in rax, and rdx
     // no other registers need to be preserved, so invalidate them
     __ invalidate_registers(false, true, true, false, true, true);

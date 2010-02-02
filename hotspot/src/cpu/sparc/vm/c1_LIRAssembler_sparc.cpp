@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,7 +381,7 @@ void LIR_Assembler::emit_exception_handler() {
   compilation()->offsets()->set_value(CodeOffsets::Exceptions, code_offset());
 
 
-  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_exceptions()) {
+  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_on_exceptions()) {
     __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
     __ delayed()->nop();
   }
