@@ -744,6 +744,7 @@ public class ClassWriter {
                 out.writeByte(p.type_index);
                 break;
             case CLASS_LITERAL:
+            case CLASS_LITERAL_GENERIC_OR_ARRAY:
                 out.writeShort(p.offset);
                 break;
             // method parameter: not specified
