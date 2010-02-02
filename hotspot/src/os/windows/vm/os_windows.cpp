@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,9 @@ void os::run_periodic_checks() {
 }
 
 #ifndef _WIN64
+// previous UnhandledExceptionFilter, if there is one
+static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = NULL;
+
 LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo);
 #endif
 void os::init_system_properties_values() {
@@ -260,7 +263,8 @@ void os::init_system_properties_values() {
   }
 
 #ifndef _WIN64
-  SetUnhandledExceptionFilter(Handle_FLT_Exception);
+  // set our UnhandledExceptionFilter and save any previous one
+  prev_uef_handler = SetUnhandledExceptionFilter(Handle_FLT_Exception);
 #endif
 
   // Done
@@ -1969,7 +1973,7 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #ifndef  _WIN64
 //-----------------------------------------------------------------------------
 LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  // handle exception caused by native mothod modifying control word
+  // handle exception caused by native method modifying control word
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
 
@@ -1990,6 +1994,13 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return EXCEPTION_CONTINUE_EXECUTION;
       }
   }
+
+  if (prev_uef_handler != NULL) {
+    // We didn't handle this exception so pass it to the previous
+    // UnhandledExceptionFilter.
+    return (prev_uef_handler)(exceptionInfo);
+  }
+
   return EXCEPTION_CONTINUE_SEARCH;
 }
 #else //_WIN64
