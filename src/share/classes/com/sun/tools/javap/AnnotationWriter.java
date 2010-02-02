@@ -162,6 +162,7 @@ public class AnnotationWriter extends BasicWriter {
             print(pos.type_index);
             break;
         case CLASS_LITERAL:
+        case CLASS_LITERAL_GENERIC_OR_ARRAY:
             if (showOffsets) {
                 print(", offset=");
                 print(pos.offset);
