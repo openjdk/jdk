@@ -1806,55 +1806,78 @@ void SharedRuntime::print_call_statistics(int comp_total) {
 class AdapterFingerPrint : public CHeapObj {
  private:
   union {
-    signed char  _compact[12];
-    int          _compact_int[3];
-    intptr_t*    _fingerprint;
+    int  _compact[3];
+    int* _fingerprint;
   } _value;
-  int _length; // A negative length indicates that _value._fingerprint is the array.
-               // Otherwise it's in the compact form.
+  int _length; // A negative length indicates the fingerprint is in the compact form,
+               // Otherwise _value._fingerprint is the array.
 
- public:
-  AdapterFingerPrint(int total_args_passed, VMRegPair* regs) {
-    assert(sizeof(_value._compact) == sizeof(_value._compact_int), "must match");
-    _length = total_args_passed * 2;
-    if (_length < (int)sizeof(_value._compact)) {
-      _value._compact_int[0] = _value._compact_int[1] = _value._compact_int[2] = 0;
-      // Storing the signature encoded as signed chars hits about 98%
-      // of the time.
-      signed char* ptr = _value._compact;
-      int o = 0;
-      for (int i = 0; i < total_args_passed; i++) {
-        VMRegPair pair = regs[i];
-        intptr_t v1 = pair.first()->value();
-        intptr_t v2 = pair.second()->value();
-        if (v1 == (signed char) v1 &&
-            v2 == (signed char) v2) {
-          _value._compact[o++] = v1;
-          _value._compact[o++] = v2;
-        } else {
-          goto big;
+  // Remap BasicTypes that are handled equivalently by the adapters.
+  // These are correct for the current system but someday it might be
+  // necessary to make this mapping platform dependent.
+  static BasicType adapter_encoding(BasicType in) {
+    assert((~0xf & in) == 0, "must fit in 4 bits");
+    switch(in) {
+      case T_BOOLEAN:
+      case T_BYTE:
+      case T_SHORT:
+      case T_CHAR:
+        // There are all promoted to T_INT in the calling convention
+        return T_INT;
+
+      case T_OBJECT:
+      case T_ARRAY:
+        if (!TaggedStackInterpreter) {
+#ifdef _LP64
+          return T_LONG;
+#else
+          return T_INT;
+#endif
         }
-      }
-      _length = -_length;
-      return;
-    }
-  big:
-    _value._fingerprint = NEW_C_HEAP_ARRAY(intptr_t, _length);
-    int o = 0;
-    for (int i = 0; i < total_args_passed; i++) {
-      VMRegPair pair = regs[i];
-      intptr_t v1 = pair.first()->value();
-      intptr_t v2 = pair.second()->value();
-      _value._fingerprint[o++] = v1;
-      _value._fingerprint[o++] = v2;
+        return T_OBJECT;
+
+      case T_INT:
+      case T_LONG:
+      case T_FLOAT:
+      case T_DOUBLE:
+      case T_VOID:
+        return in;
+
+      default:
+        ShouldNotReachHere();
+        return T_CONFLICT;
     }
   }
 
-  AdapterFingerPrint(AdapterFingerPrint* orig) {
-    _length = orig->_length;
-    _value = orig->_value;
-    // take ownership of any storage by destroying the length
-    orig->_length = 0;
+ public:
+  AdapterFingerPrint(int total_args_passed, BasicType* sig_bt) {
+    // The fingerprint is based on the BasicType signature encoded
+    // into an array of ints with four entries per int.
+    int* ptr;
+    int len = (total_args_passed + 3) >> 2;
+    if (len <= (int)(sizeof(_value._compact) / sizeof(int))) {
+      _value._compact[0] = _value._compact[1] = _value._compact[2] = 0;
+      // Storing the signature encoded as signed chars hits about 98%
+      // of the time.
+      _length = -len;
+      ptr = _value._compact;
+    } else {
+      _length = len;
+      _value._fingerprint = NEW_C_HEAP_ARRAY(int, _length);
+      ptr = _value._fingerprint;
+    }
+
+    // Now pack the BasicTypes with 4 per int
+    int sig_index = 0;
+    for (int index = 0; index < len; index++) {
+      int value = 0;
+      for (int byte = 0; byte < 4; byte++) {
+        if (sig_index < total_args_passed) {
+          value = (value << 4) | adapter_encoding(sig_bt[sig_index++]);
+        }
+      }
+      ptr[index] = value;
+    }
   }
 
   ~AdapterFingerPrint() {
@@ -1863,11 +1886,7 @@ class AdapterFingerPrint : public CHeapObj {
     }
   }
 
-  AdapterFingerPrint* allocate() {
-    return new AdapterFingerPrint(this);
-  }
-
-  intptr_t value(int index) {
+  int value(int index) {
     if (_length < 0) {
       return _value._compact[index];
     }
@@ -1883,9 +1902,9 @@ class AdapterFingerPrint : public CHeapObj {
   }
 
   unsigned int compute_hash() {
-    intptr_t hash = 0;
+    int hash = 0;
     for (int i = 0; i < length(); i++) {
-      intptr_t v = value(i);
+      int v = value(i);
       hash = (hash << 8) ^ v ^ (hash >> 5);
     }
     return (unsigned int)hash;
@@ -1904,9 +1923,9 @@ class AdapterFingerPrint : public CHeapObj {
       return false;
     }
     if (_length < 0) {
-      return _value._compact_int[0] == other->_value._compact_int[0] &&
-             _value._compact_int[1] == other->_value._compact_int[1] &&
-             _value._compact_int[2] == other->_value._compact_int[2];
+      return _value._compact[0] == other->_value._compact[0] &&
+             _value._compact[1] == other->_value._compact[1] &&
+             _value._compact[2] == other->_value._compact[2];
     } else {
       for (int i = 0; i < _length; i++) {
         if (_value._fingerprint[i] != other->_value._fingerprint[i]) {
@@ -1954,10 +1973,15 @@ class AdapterHandlerTable : public BasicHashtable {
     add_entry(index, entry);
   }
 
+  void free_entry(AdapterHandlerEntry* entry) {
+    entry->deallocate();
+    BasicHashtable::free_entry(entry);
+  }
+
   // Find a entry with the same fingerprint if it exists
-  AdapterHandlerEntry* lookup(int total_args_passed, VMRegPair* regs) {
+  AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt) {
     debug_only(_lookups++);
-    AdapterFingerPrint fp(total_args_passed, regs);
+    AdapterFingerPrint fp(total_args_passed, sig_bt);
     unsigned int hash = fp.compute_hash();
     int index = hash_to_index(hash);
     for (AdapterHandlerEntry* e = bucket(index); e != NULL; e = e->next()) {
@@ -2129,17 +2153,26 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
     }
     assert(i == total_args_passed, "");
 
-    // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
-    int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, false);
-
     // Lookup method signature's fingerprint
-    entry = _adapters->lookup(total_args_passed, regs);
+    entry = _adapters->lookup(total_args_passed, sig_bt);
+
+#ifdef ASSERT
+    AdapterHandlerEntry* shared_entry = NULL;
+    if (VerifyAdapterSharing && entry != NULL) {
+      shared_entry = entry;
+      entry = NULL;
+    }
+#endif
+
     if (entry != NULL) {
       return entry;
     }
 
+    // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
+    int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed, false);
+
     // Make a C heap allocated version of the fingerprint to store in the adapter
-    fingerprint = new AdapterFingerPrint(total_args_passed, regs);
+    fingerprint = new AdapterFingerPrint(total_args_passed, sig_bt);
 
     // Create I2C & C2I handlers
 
@@ -2157,6 +2190,20 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
                                                      sig_bt,
                                                      regs,
                                                      fingerprint);
+
+#ifdef ASSERT
+      if (VerifyAdapterSharing) {
+        if (shared_entry != NULL) {
+          assert(shared_entry->compare_code(buf->instructions_begin(), buffer.code_size(), total_args_passed, sig_bt),
+                 "code must match");
+          // Release the one just created and return the original
+          _adapters->free_entry(entry);
+          return shared_entry;
+        } else  {
+          entry->save_code(buf->instructions_begin(), buffer.code_size(), total_args_passed, sig_bt);
+        }
+      }
+#endif
 
       B = BufferBlob::create(AdapterHandlerEntry::name, &buffer);
       NOT_PRODUCT(code_size = buffer.code_size());
@@ -2211,6 +2258,44 @@ void AdapterHandlerEntry::relocate(address new_base) {
     _c2i_entry += delta;
     _c2i_unverified_entry += delta;
 }
+
+
+void AdapterHandlerEntry::deallocate() {
+  delete _fingerprint;
+#ifdef ASSERT
+  if (_saved_code) FREE_C_HEAP_ARRAY(unsigned char, _saved_code);
+  if (_saved_sig)  FREE_C_HEAP_ARRAY(Basictype, _saved_sig);
+#endif
+}
+
+
+#ifdef ASSERT
+// Capture the code before relocation so that it can be compared
+// against other versions.  If the code is captured after relocation
+// then relative instructions won't be equivalent.
+void AdapterHandlerEntry::save_code(unsigned char* buffer, int length, int total_args_passed, BasicType* sig_bt) {
+  _saved_code = NEW_C_HEAP_ARRAY(unsigned char, length);
+  _code_length = length;
+  memcpy(_saved_code, buffer, length);
+  _total_args_passed = total_args_passed;
+  _saved_sig = NEW_C_HEAP_ARRAY(BasicType, _total_args_passed);
+  memcpy(_saved_sig, sig_bt, _total_args_passed * sizeof(BasicType));
+}
+
+
+bool AdapterHandlerEntry::compare_code(unsigned char* buffer, int length, int total_args_passed, BasicType* sig_bt) {
+  if (length != _code_length) {
+    return false;
+  }
+  for (int i = 0; i < length; i++) {
+    if (buffer[i] != _saved_code[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+#endif
+
 
 // Create a native wrapper for this native method.  The wrapper converts the
 // java compiled calling convention to the native convention, handlizes
