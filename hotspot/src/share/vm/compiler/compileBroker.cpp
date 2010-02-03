@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1132,7 +1132,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
   // the specified level
   if (is_native &&
       (!CICompileNatives || !compiler(comp_level)->supports_native())) {
-    method->set_not_compilable();
+    method->set_not_compilable_quietly();
     return true;
   }
 
@@ -1156,7 +1156,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
       method->print_short_name(tty);
       tty->cr();
     }
-    method->set_not_compilable();
+    method->set_not_compilable_quietly();
   }
 
   return false;
@@ -1189,7 +1189,7 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
   }
 
   // Method was not in the appropriate compilation range.
-  method->set_not_compilable();
+  method->set_not_compilable_quietly();
   return 0;
 }
 
@@ -1590,10 +1590,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (is_osr) {
       method->set_not_osr_compilable();
     } else {
-      method->set_not_compilable();
+      method->set_not_compilable_quietly();
     }
   } else if (compilable == ciEnv::MethodCompilable_not_at_tier) {
-    method->set_not_compilable(task->comp_level());
+    method->set_not_compilable_quietly(task->comp_level());
   }
 
   // Note that the queued_for_compilation bits are cleared without
