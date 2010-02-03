@@ -742,6 +742,9 @@ class CommandLineFlags {
   diagnostic(bool, PrintAdapterHandlers, false,                             \
           "Print code generated for i2c/c2i adapters")                      \
                                                                             \
+  develop(bool, VerifyAdapterSharing, false,                                \
+          "Verify that the code for shared adapters is the equivalent")     \
+                                                                            \
   diagnostic(bool, PrintAssembly, false,                                    \
           "Print assembly code (using external disassembler.so)")           \
                                                                             \
