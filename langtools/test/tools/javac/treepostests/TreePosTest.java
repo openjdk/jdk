@@ -98,7 +98,7 @@ import static com.sun.tools.javac.util.Position.NOPOS;
  * @test
  * @bug 6919889
  * @summary assorted position errors in compiler syntax trees
- * @run main TreePosTest -q -r -ef ./tools/javac/typeAnnotations .
+ * @run main TreePosTest -q -r -ef ./tools/javac/typeAnnotations -ef ./tools/javap/typeAnnotations  .
  */
 public class TreePosTest {
     /**
