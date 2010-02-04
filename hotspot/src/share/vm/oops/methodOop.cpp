@@ -587,8 +587,8 @@ bool methodOopDesc::is_not_compilable(int comp_level) const {
 }
 
 // call this when compiler finds that this method is not compilable
-void methodOopDesc::set_not_compilable(int comp_level) {
-  if (PrintCompilation) {
+void methodOopDesc::set_not_compilable(int comp_level, bool report) {
+  if (PrintCompilation && report) {
     ttyLocker ttyl;
     tty->print("made not compilable ");
     this->print_short_name(tty);

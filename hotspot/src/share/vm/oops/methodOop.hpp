@@ -596,7 +596,10 @@ class methodOopDesc : public oopDesc {
   // whether it is not compilable for another reason like having a
   // breakpoint set in it.
   bool is_not_compilable(int comp_level = CompLevel_highest_tier) const;
-  void set_not_compilable(int comp_level = CompLevel_highest_tier);
+  void set_not_compilable(int comp_level = CompLevel_highest_tier, bool report = true);
+  void set_not_compilable_quietly(int comp_level = CompLevel_highest_tier) {
+    set_not_compilable(comp_level, false);
+  }
 
   bool is_not_osr_compilable() const             { return is_not_compilable() || access_flags().is_not_osr_compilable(); }
   void set_not_osr_compilable()                  { _access_flags.set_not_osr_compilable(); }
