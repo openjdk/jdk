@@ -706,6 +706,11 @@ JRT_LEAF(void, OptoRuntime::profile_receiver_type_C(DataLayout* data, oopDesc* r
     // vc->set_receiver_count(empty_row, DataLayout::counter_increment);
     int count_off = ReceiverTypeData::receiver_count_cell_index(empty_row);
     *(mdp + count_off) = DataLayout::counter_increment;
+  } else {
+    // Receiver did not match any saved receiver and there is no empty row for it.
+    // Increment total counter to indicate polimorphic case.
+    intptr_t* count_p = (intptr_t*)(((byte*)(data)) + in_bytes(CounterData::count_offset()));
+    *count_p += DataLayout::counter_increment;
   }
 JRT_END
 
