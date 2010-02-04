@@ -1295,10 +1295,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 node.sym = null;
                 super.visitIdent(node);
             }
-            public void visitApply(JCMethodInvocation node) {
-                scan(node.typeargs);
-                super.visitApply(node);
-            }
         };
 
 
