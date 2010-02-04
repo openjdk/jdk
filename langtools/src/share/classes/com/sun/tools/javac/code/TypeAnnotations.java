@@ -240,13 +240,6 @@ public class TypeAnnotations {
             return p;
         }
 
-        @Override
-        public void visitApply(JCMethodInvocation tree) {
-            scan(tree.meth);
-            scan(tree.typeargs);
-            scan(tree.args);
-        }
-
         private void setTypeAnnotationPos(List<JCTypeAnnotation> annotations, TypeAnnotationPosition position) {
             for (JCTypeAnnotation anno : annotations) {
                 anno.annotation_position = position;
