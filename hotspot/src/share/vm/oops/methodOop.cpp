@@ -575,12 +575,6 @@ bool methodOopDesc::is_not_compilable(int comp_level) const {
     return true;
   }
 
-  methodDataOop mdo = method_data();
-  if (mdo != NULL
-      && (uint)mdo->decompile_count() > (uint)PerMethodRecompilationCutoff) {
-    // Since (uint)-1 is large, -1 really means 'no cutoff'.
-    return true;
-  }
 #ifdef COMPILER2
   if (is_tier1_compile(comp_level)) {
     if (is_not_tier1_compilable()) {
@@ -593,7 +587,16 @@ bool methodOopDesc::is_not_compilable(int comp_level) const {
 }
 
 // call this when compiler finds that this method is not compilable
-void methodOopDesc::set_not_compilable(int comp_level) {
+void methodOopDesc::set_not_compilable(int comp_level, bool report) {
+  if (PrintCompilation && report) {
+    ttyLocker ttyl;
+    tty->print("made not compilable ");
+    this->print_short_name(tty);
+    int size = this->code_size();
+    if (size > 0)
+      tty->print(" (%d bytes)", size);
+    tty->cr();
+  }
   if ((TraceDeoptimization || LogCompilation) && (xtty != NULL)) {
     ttyLocker ttyl;
     xtty->begin_elem("make_not_compilable thread='%d'", (int) os::current_thread_id());
@@ -705,6 +708,16 @@ address methodOopDesc::make_adapters(methodHandle mh, TRAPS) {
 // This function must not hit a safepoint!
 address methodOopDesc::verified_code_entry() {
   debug_only(No_Safepoint_Verifier nsv;)
+  nmethod *code = (nmethod *)OrderAccess::load_ptr_acquire(&_code);
+  if (code == NULL && UseCodeCacheFlushing) {
+    nmethod *saved_code = CodeCache::find_and_remove_saved_code(this);
+    if (saved_code != NULL) {
+      methodHandle method(this);
+      assert( ! saved_code->is_osr_method(), "should not get here for osr" );
+      set_code( method, saved_code );
+    }
+  }
+
   assert(_from_compiled_entry != NULL, "must be set");
   return _from_compiled_entry;
 }
@@ -733,8 +746,8 @@ void methodOopDesc::set_code(methodHandle mh, nmethod *code) {
   int comp_level = code->comp_level();
   // In theory there could be a race here. In practice it is unlikely
   // and not worth worrying about.
-  if (comp_level > highest_tier_compile()) {
-    set_highest_tier_compile(comp_level);
+  if (comp_level > mh->highest_tier_compile()) {
+    mh->set_highest_tier_compile(comp_level);
   }
 
   OrderAccess::storestore();

@@ -1239,17 +1239,19 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver, Register
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(mdp, profile_continue);
 
-    // We are making a call.  Increment the count.
-    increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
-
     Label skip_receiver_profile;
     if (receiver_can_be_null) {
+      Label not_null;
       testptr(receiver, receiver);
-      jcc(Assembler::zero, skip_receiver_profile);
+      jccb(Assembler::notZero, not_null);
+      // We are making a call.  Increment the count for null receiver.
+      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+      jmp(skip_receiver_profile);
+      bind(not_null);
     }
 
     // Record the receiver type.
-    record_klass_in_profile(receiver, mdp, reg2);
+    record_klass_in_profile(receiver, mdp, reg2, true);
     bind(skip_receiver_profile);
 
     // The method data pointer needs to be updated to reflect the new target.
@@ -1263,10 +1265,14 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver, Register
 
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register receiver, Register mdp,
-                                        Register reg2,
-                                        int start_row, Label& done) {
-  if (TypeProfileWidth == 0)
+                                        Register reg2, int start_row,
+                                        Label& done, bool is_virtual_call) {
+  if (TypeProfileWidth == 0) {
+    if (is_virtual_call) {
+      increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+    }
     return;
+  }
 
   int last_row = VirtualCallData::row_limit() - 1;
   assert(start_row <= last_row, "must be work left to do");
@@ -1294,19 +1300,28 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
     bind(next_test);
 
     if (row == start_row) {
+      Label found_null;
       // Failed the equality check on receiver[n]...  Test for null.
       testptr(reg2, reg2);
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        jcc(Assembler::notZero, done);
+        if (is_virtual_call) {
+          jccb(Assembler::zero, found_null);
+          // Receiver did not match any saved receiver and there is no empty row for it.
+          // Increment total counter to indicate polimorphic case.
+          increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
+          jmp(done);
+          bind(found_null);
+        } else {
+          jcc(Assembler::notZero, done);
+        }
         break;
       }
       // Since null is rare, make it be the branch-taken case.
-      Label found_null;
       jcc(Assembler::zero, found_null);
 
       // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done);
+      record_klass_in_profile_helper(receiver, mdp, reg2, start_row + 1, done, is_virtual_call);
 
       // Found a null.  Keep searching for a matching receiver,
       // but remember that this is an empty (unused) slot.
@@ -1323,16 +1338,18 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
   int count_offset = in_bytes(VirtualCallData::receiver_count_offset(start_row));
   movptr(reg2, (int32_t)DataLayout::counter_increment);
   set_mdp_data_at(mdp, count_offset, reg2);
-  jmp(done);
+  if (start_row > 0) {
+    jmp(done);
+  }
 }
 
 void InterpreterMacroAssembler::record_klass_in_profile(Register receiver,
-                                                        Register mdp,
-                                                        Register reg2) {
+                                                        Register mdp, Register reg2,
+                                                        bool is_virtual_call) {
   assert(ProfileInterpreter, "must be profiling");
   Label done;
 
-  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done);
+  record_klass_in_profile_helper(receiver, mdp, reg2, 0, done, is_virtual_call);
 
   bind (done);
 }
@@ -1425,7 +1442,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register mdp, Register klass, 
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, mdp, reg2);
+      record_klass_in_profile(klass, mdp, reg2, false);
       assert(reg2 == rdi, "we know how to fix this blown reg");
       restore_locals();         // Restore EDI
     }
