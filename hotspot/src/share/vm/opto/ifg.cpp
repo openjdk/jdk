@@ -736,28 +736,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
         // the flags and assumes it's dead.  This keeps the (useless)
         // flag-setting behavior alive while also keeping the (useful)
         // memory update effect.
-        uint begin = 1;
-        uint end = n->req();
-        if (n->Opcode() == Op_SCMemProj) {
-          begin = 0;
-        } else if (n->is_Mach()) {
-          switch (n->as_Mach()->ideal_Opcode()) {
-            case Op_MemBarAcquire:
-            case Op_MemBarVolatile:
-              if (n->len() >= MemBarNode::Precedent + 1 &&
-                  n->in(MemBarNode::Precedent) != NULL &&
-                  n->in(MemBarNode::Precedent)->outcnt() == 1) {
-                // This membar node is the single user of it's input
-                // so the input won't be considered live and this node
-                // would get deleted during copy elimination so force
-                // it to be live.
-                end = MemBarNode::Precedent + 1;
-              }
-              break;
-          }
-        }
-
-        for( uint k = begin; k < end; k++ ) {
+        for( uint k = ((n->Opcode() == Op_SCMemProj) ? 0:1); k < n->req(); k++ ) {
           Node *def = n->in(k);
           uint x = n2lidx(def);
           if( !x ) continue;
