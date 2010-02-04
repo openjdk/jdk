@@ -962,18 +962,10 @@ void ciEnv::register_method(ciMethod* target,
     if (nm == NULL) {
       // The CodeCache is full.  Print out warning and disable compilation.
       record_failure("code cache is full");
-      UseInterpreter = true;
-      if (UseCompiler || AlwaysCompileLoopMethods ) {
-#ifndef PRODUCT
-        warning("CodeCache is full. Compiler has been disabled");
-        if (CompileTheWorld || ExitOnFullCodeCache) {
-          before_exit(JavaThread::current());
-          exit_globals(); // will delete tty
-          vm_direct_exit(CompileTheWorld ? 0 : 1);
-        }
-#endif
-        UseCompiler               = false;
-        AlwaysCompileLoopMethods  = false;
+      {
+        MutexUnlocker ml(Compile_lock);
+        MutexUnlocker locker(MethodCompileQueue_lock);
+        CompileBroker::handle_full_code_cache();
       }
     } else {
       NOT_PRODUCT(nm->set_has_debug_info(has_debug_info); )
