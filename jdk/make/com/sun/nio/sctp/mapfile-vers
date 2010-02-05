@@ -25,9 +25,14 @@
 
 SUNWprivate_1.1 {
 	global:
+		Java_sun_nio_ch_SctpNet_init;
 		Java_sun_nio_ch_SctpNet_socket0;
 		Java_sun_nio_ch_SctpNet_bindx;
 		Java_sun_nio_ch_SctpNet_branch0;
+		Java_sun_nio_ch_SctpNet_listen0;
+		Java_sun_nio_ch_SctpNet_connect0;
+		Java_sun_nio_ch_SctpNet_close0;
+		Java_sun_nio_ch_SctpNet_preClose0;
 		Java_sun_nio_ch_SctpNet_getLocalAddresses0;
 		Java_sun_nio_ch_SctpNet_getRemoteAddresses0;
 		Java_sun_nio_ch_SctpNet_getPrimAddrOption0;

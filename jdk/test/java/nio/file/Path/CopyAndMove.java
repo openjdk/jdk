@@ -22,10 +22,10 @@
  */
 
 /* @test
- * @bug 4313887 6838333
+ * @bug 4313887 6838333 6917021
  * @summary Unit test for java.nio.file.Path copyTo/moveTo methods
  * @library ..
- * @build CopyAndMove
+ * @build CopyAndMove PassThroughFileSystem
  * @run main/othervm CopyAndMove
  */
 
@@ -40,22 +40,31 @@ import java.util.*;
 public class CopyAndMove {
     static final Random rand = new Random();
     static boolean heads() { return rand.nextBoolean(); }
-    static boolean supportsLinks;
 
     public static void main(String[] args) throws Exception {
         Path dir1 = TestUtil.createTemporaryDirectory();
         try {
-            supportsLinks = TestUtil.supportsLinks(dir1);
+            // Same directory
+            doCopyTests(dir1, dir1, TestUtil.supportsLinks(dir1));
+            doMoveTests(dir1, dir1, TestUtil.supportsLinks(dir1));
 
-            // Exercise copyTo
-            doCopyTests(dir1);
+            // Different directories. Use test.dir if possible as it might be
+            // a different volume/file system and so improve test coverage.
+            String testDir = System.getProperty("test.dir", ".");
+            Path dir2 = TestUtil.createTemporaryDirectory(testDir);
+            try {
+                boolean testSymbolicLinks =
+                    TestUtil.supportsLinks(dir1) && TestUtil.supportsLinks(dir2);
+                doCopyTests(dir1, dir2, testSymbolicLinks);
+                doMoveTests(dir1, dir2, testSymbolicLinks);
+            } finally {
+                TestUtil.removeAll(dir2);
+            }
 
-            // Exercise moveTo
-            // if test.dir differs to temporary file system then can test
-            // moving between devices
-            String testDir = System.getProperty("test.dir");
-            Path dir2 = (testDir != null) ? Paths.get(testDir) : dir1;
-            doMoveTests(dir1, dir2);
+            // Target is location associated with custom provider
+            Path dir3 = PassThroughFileSystem.create().getPath(dir1.toString());
+            doCopyTests(dir1, dir3, false);
+            doMoveTests(dir1, dir3, false);
 
         } finally {
             TestUtil.removeAll(dir1);
@@ -186,30 +195,37 @@ public class CopyAndMove {
         checkBasicAttributes(basicAttributes,
             Attributes.readBasicFileAttributes(target, NOFOLLOW_LINKS));
 
-        // verify POSIX attributes
-        if (posixAttributes != null && !basicAttributes.isSymbolicLink()) {
-            checkPosixAttributes(posixAttributes,
-                Attributes.readPosixFileAttributes(target, NOFOLLOW_LINKS));
-        }
+        // verify other attributes when same provider
+        if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
 
-        // verify DOS attributes
-        if (dosAttributes != null && !basicAttributes.isSymbolicLink()) {
-            checkDosAttributes(dosAttributes,
-                Attributes.readDosFileAttributes(target, NOFOLLOW_LINKS));
-        }
+            // verify POSIX attributes
+            if (posixAttributes != null && !basicAttributes.isSymbolicLink()) {
+                checkPosixAttributes(posixAttributes,
+                    Attributes.readPosixFileAttributes(target, NOFOLLOW_LINKS));
+            }
 
-        // verify named attributes
-        if (namedAttributes != null &&
-            target.getFileStore().supportsFileAttributeView("xattr"))
-        {
-            checkUserDefinedFileAttributes(namedAttributes, readUserDefinedFileAttributes(target));
+            // verify DOS attributes
+            if (dosAttributes != null && !basicAttributes.isSymbolicLink()) {
+                checkDosAttributes(dosAttributes,
+                    Attributes.readDosFileAttributes(target, NOFOLLOW_LINKS));
+            }
+
+            // verify named attributes
+            if (namedAttributes != null &&
+                target.getFileStore().supportsFileAttributeView("xattr"))
+            {
+                checkUserDefinedFileAttributes(namedAttributes,
+                                               readUserDefinedFileAttributes(target));
+            }
         }
     }
 
     /**
      * Tests all possible ways to invoke moveTo
      */
-    static void doMoveTests(Path dir1, Path dir2) throws IOException {
+    static void doMoveTests(Path dir1, Path dir2, boolean supportsLinks)
+        throws IOException
+    {
         Path source, target, entry;
 
         boolean sameDevice = dir1.getFileStore().equals(dir2.getFileStore());
@@ -220,7 +236,7 @@ public class CopyAndMove {
          * Test: move regular file, target does not exist
          */
         source = createSourceFile(dir1);
-        target = getTargetFile(dir1);
+        target = getTargetFile(dir2);
         moveAndVerify(source, target);
         target.delete();
 
@@ -228,7 +244,7 @@ public class CopyAndMove {
          * Test: move regular file, target exists
          */
         source = createSourceFile(dir1);
-        target = getTargetFile(dir1).createFile();
+        target = getTargetFile(dir2).createFile();
         try {
             moveAndVerify(source, target);
             throw new RuntimeException("FileAlreadyExistsException expected");
@@ -248,7 +264,7 @@ public class CopyAndMove {
          * Test: move regular file, target does not exist
          */
         source = createSourceFile(dir1);
-        target = getTargetFile(dir1);
+        target = getTargetFile(dir2);
         moveAndVerify(source, target, REPLACE_EXISTING);
         target.delete();
 
@@ -256,7 +272,7 @@ public class CopyAndMove {
          * Test: move regular file, target exists
          */
         source = createSourceFile(dir1);
-        target = getTargetFile(dir1).createFile();
+        target = getTargetFile(dir2).createFile();
         moveAndVerify(source, target, REPLACE_EXISTING);
         target.delete();
 
@@ -264,7 +280,7 @@ public class CopyAndMove {
          * Test: move regular file, target exists and is empty directory
          */
         source = createSourceFile(dir1);
-        target = getTargetFile(dir1).createDirectory();
+        target = getTargetFile(dir2).createDirectory();
         moveAndVerify(source, target, REPLACE_EXISTING);
         target.delete();
 
@@ -272,7 +288,7 @@ public class CopyAndMove {
          * Test: move regular file, target exists and is non-empty directory
          */
         source = createSourceFile(dir1);
-        target = getTargetFile(dir1).createDirectory();
+        target = getTargetFile(dir2).createDirectory();
         entry = target.resolve("foo").createFile();
         try {
             moveAndVerify(source, target);
@@ -311,7 +327,7 @@ public class CopyAndMove {
          * Test: move empty directory, target does not exist
          */
         source = createSourceDirectory(dir1);
-        target = getTargetFile(dir1);
+        target = getTargetFile(dir2);
         moveAndVerify(source, target);
         target.delete();
 
@@ -319,7 +335,7 @@ public class CopyAndMove {
          * Test: move empty directory, target exists
          */
         source = createSourceDirectory(dir1);
-        target = getTargetFile(dir1).createFile();
+        target = getTargetFile(dir2).createFile();
         try {
             moveAndVerify(source, target);
             throw new RuntimeException("FileAlreadyExistsException expected");
@@ -339,7 +355,7 @@ public class CopyAndMove {
          * Test: move empty directory, target does not exist
          */
         source = createSourceDirectory(dir1);
-        target = getTargetFile(dir1);
+        target = getTargetFile(dir2);
         moveAndVerify(source, target, REPLACE_EXISTING);
         target.delete();
 
@@ -347,7 +363,7 @@ public class CopyAndMove {
          * Test: move empty directory, target exists
          */
         source = createSourceDirectory(dir1);
-        target = getTargetFile(dir1).createFile();
+        target = getTargetFile(dir2).createFile();
         moveAndVerify(source, target, REPLACE_EXISTING);
         target.delete();
 
@@ -355,7 +371,7 @@ public class CopyAndMove {
          * Test: move empty, target exists and is empty directory
          */
         source = createSourceDirectory(dir1);
-        target = getTargetFile(dir1).createDirectory();
+        target = getTargetFile(dir2).createDirectory();
         moveAndVerify(source, target, REPLACE_EXISTING);
         target.delete();
 
@@ -363,7 +379,7 @@ public class CopyAndMove {
          * Test: move empty directory, target exists and is non-empty directory
          */
         source = createSourceDirectory(dir1);
-        target = getTargetFile(dir1).createDirectory();
+        target = getTargetFile(dir2).createDirectory();
         entry = target.resolve("foo").createFile();
         try {
             moveAndVerify(source, target, REPLACE_EXISTING);
@@ -418,7 +434,7 @@ public class CopyAndMove {
         if (supportsLinks) {
             Path tmp = createSourceFile(dir1);
             source = dir1.resolve("link").createSymbolicLink(tmp);
-            target = getTargetFile(dir1);
+            target = getTargetFile(dir2);
             moveAndVerify(source, target);
             target.delete();
             tmp.delete();
@@ -429,7 +445,7 @@ public class CopyAndMove {
          */
         if (supportsLinks) {
             source = dir1.resolve("link").createSymbolicLink(dir2);
-            target = getTargetFile(dir1);
+            target = getTargetFile(dir2);
             moveAndVerify(source, target);
             target.delete();
         }
@@ -440,7 +456,7 @@ public class CopyAndMove {
         if (supportsLinks) {
             Path tmp = Paths.get("doesnotexist");
             source = dir1.resolve("link").createSymbolicLink(tmp);
-            target = getTargetFile(dir1);
+            target = getTargetFile(dir2);
             moveAndVerify(source, target);
             target.delete();
         }
@@ -450,7 +466,7 @@ public class CopyAndMove {
          */
         if (supportsLinks) {
             source = dir1.resolve("link").createSymbolicLink(dir2);
-            target = getTargetFile(dir1).createFile();
+            target = getTargetFile(dir2).createFile();
             try {
                 moveAndVerify(source, target);
                 throw new RuntimeException("FileAlreadyExistsException expected");
@@ -465,7 +481,7 @@ public class CopyAndMove {
          */
         if (supportsLinks) {
             source = dir1.resolve("link").createSymbolicLink(dir2);
-            target = getTargetFile(dir1).createFile();
+            target = getTargetFile(dir2).createFile();
             moveAndVerify(source, target, REPLACE_EXISTING);
             target.delete();
         }
@@ -475,7 +491,7 @@ public class CopyAndMove {
          */
         if (supportsLinks) {
             source = dir1.resolve("link").createSymbolicLink(dir2);
-            target = getTargetFile(dir1).createDirectory();
+            target = getTargetFile(dir2).createDirectory();
             moveAndVerify(source, target, REPLACE_EXISTING);
             target.delete();
         }
@@ -485,7 +501,7 @@ public class CopyAndMove {
          */
         if (supportsLinks) {
             source = dir1.resolve("link").createSymbolicLink(dir2);
-            target = getTargetFile(dir1).createDirectory();
+            target = getTargetFile(dir2).createDirectory();
             entry = target.resolve("foo").createFile();
             try {
                 moveAndVerify(source, target);
@@ -502,7 +518,7 @@ public class CopyAndMove {
          */
         if (supportsLinks) {
             source = dir1.resolve("link").createSymbolicLink(dir1);
-            target = getTargetFile(dir1).createFile();
+            target = getTargetFile(dir2).createFile();
             moveAndVerify(source, target, REPLACE_EXISTING);
             target.delete();
         }
@@ -513,7 +529,7 @@ public class CopyAndMove {
          * Test nulls
          */
         source = createSourceFile(dir1);
-        target = getTargetFile(dir1);
+        target = getTargetFile(dir2);
         try {
             source.moveTo(null);
             throw new RuntimeException("NullPointerException expected");
@@ -533,7 +549,7 @@ public class CopyAndMove {
          * Test UOE
          */
         source = createSourceFile(dir1);
-        target = getTargetFile(dir1);
+        target = getTargetFile(dir2);
         try {
             source.moveTo(target, new CopyOption() { });
         } catch (UnsupportedOperationException x) { }
@@ -577,28 +593,32 @@ public class CopyAndMove {
             checkBasicAttributes(basicAttributes,
                 Attributes.readBasicFileAttributes(source, linkOptions));
 
-            // check POSIX attributes are copied
-            String os = System.getProperty("os.name");
-            if (os.equals("SunOS") || os.equals("Linux")) {
-                checkPosixAttributes(
-                    Attributes.readPosixFileAttributes(source, linkOptions),
-                    Attributes.readPosixFileAttributes(target, linkOptions));
-            }
+            // verify other attributes when same provider
+            if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
 
-            // check DOS attributes are copied
-            if (os.startsWith("Windows")) {
-                checkDosAttributes(
-                    Attributes.readDosFileAttributes(source, linkOptions),
-                    Attributes.readDosFileAttributes(target, linkOptions));
-            }
+                // check POSIX attributes are copied
+                String os = System.getProperty("os.name");
+                if (os.equals("SunOS") || os.equals("Linux")) {
+                    checkPosixAttributes(
+                        Attributes.readPosixFileAttributes(source, linkOptions),
+                        Attributes.readPosixFileAttributes(target, linkOptions));
+                }
 
-            // check named attributes are copied
-            if (followLinks &&
-                source.getFileStore().supportsFileAttributeView("xattr") &&
-                target.getFileStore().supportsFileAttributeView("xattr"))
-            {
-                checkUserDefinedFileAttributes(readUserDefinedFileAttributes(source),
-                                     readUserDefinedFileAttributes(target));
+                // check DOS attributes are copied
+                if (os.startsWith("Windows")) {
+                    checkDosAttributes(
+                        Attributes.readDosFileAttributes(source, linkOptions),
+                        Attributes.readDosFileAttributes(target, linkOptions));
+                }
+
+                // check named attributes are copied
+                if (followLinks &&
+                    source.getFileStore().supportsFileAttributeView("xattr") &&
+                    target.getFileStore().supportsFileAttributeView("xattr"))
+                {
+                    checkUserDefinedFileAttributes(readUserDefinedFileAttributes(source),
+                                                   readUserDefinedFileAttributes(target));
+                }
             }
         }
     }
@@ -606,7 +626,9 @@ public class CopyAndMove {
     /**
      * Tests all possible ways to invoke copyTo
      */
-    static void doCopyTests(Path dir) throws IOException {
+    static void doCopyTests(Path dir1, Path dir2, boolean supportsLinks)
+        throws IOException
+    {
         Path source, target, link, entry;
 
         // -- regular file --
@@ -614,8 +636,8 @@ public class CopyAndMove {
         /**
          * Test: move regular file, target does not exist
          */
-        source = createSourceFile(dir);
-        target = getTargetFile(dir);
+        source = createSourceFile(dir1);
+        target = getTargetFile(dir2);
         copyAndVerify(source, target);
         source.delete();
         target.delete();
@@ -623,8 +645,8 @@ public class CopyAndMove {
         /**
          * Test: copy regular file, target exists
          */
-        source = createSourceFile(dir);
-        target = getTargetFile(dir).createFile();
+        source = createSourceFile(dir1);
+        target = getTargetFile(dir2).createFile();
         try {
             copyAndVerify(source, target);
             throw new RuntimeException("FileAlreadyExistsException expected");
@@ -643,8 +665,8 @@ public class CopyAndMove {
         /**
          * Test: copy regular file, target does not exist
          */
-        source = createSourceFile(dir);
-        target = getTargetFile(dir);
+        source = createSourceFile(dir1);
+        target = getTargetFile(dir2);
         copyAndVerify(source, target, REPLACE_EXISTING);
         source.delete();
         target.delete();
@@ -652,8 +674,8 @@ public class CopyAndMove {
         /**
          * Test: copy regular file, target exists
          */
-        source = createSourceFile(dir);
-        target = getTargetFile(dir).createFile();
+        source = createSourceFile(dir1);
+        target = getTargetFile(dir2).createFile();
         copyAndVerify(source, target, REPLACE_EXISTING);
         source.delete();
         target.delete();
@@ -661,8 +683,8 @@ public class CopyAndMove {
         /**
          * Test: copy regular file, target exists and is empty directory
          */
-        source = createSourceFile(dir);
-        target = getTargetFile(dir).createDirectory();
+        source = createSourceFile(dir1);
+        target = getTargetFile(dir2).createDirectory();
         copyAndVerify(source, target, REPLACE_EXISTING);
         source.delete();
         target.delete();
@@ -670,8 +692,8 @@ public class CopyAndMove {
         /**
          * Test: copy regular file, target exists and is non-empty directory
          */
-        source = createSourceFile(dir);
-        target = getTargetFile(dir).createDirectory();
+        source = createSourceFile(dir1);
+        target = getTargetFile(dir2).createDirectory();
         entry = target.resolve("foo").createFile();
         try {
             copyAndVerify(source, target);
@@ -685,8 +707,8 @@ public class CopyAndMove {
         /**
          * Test: copy regular file + attributes
          */
-        source = createSourceFile(dir);
-        target = getTargetFile(dir);
+        source = createSourceFile(dir1);
+        target = getTargetFile(dir2);
         copyAndVerify(source, target, COPY_ATTRIBUTES);
         source.delete();
         target.delete();
@@ -697,8 +719,8 @@ public class CopyAndMove {
         /*
          * Test: copy directory, target does not exist
          */
-        source = createSourceDirectory(dir);
-        target = getTargetFile(dir);
+        source = createSourceDirectory(dir1);
+        target = getTargetFile(dir2);
         copyAndVerify(source, target);
         source.delete();
         target.delete();
@@ -706,8 +728,8 @@ public class CopyAndMove {
         /**
          * Test: copy directory, target exists
          */
-        source = createSourceDirectory(dir);
-        target = getTargetFile(dir).createFile();
+        source = createSourceDirectory(dir1);
+        target = getTargetFile(dir2).createFile();
         try {
             copyAndVerify(source, target);
             throw new RuntimeException("FileAlreadyExistsException expected");
@@ -726,8 +748,8 @@ public class CopyAndMove {
         /**
          * Test: copy directory, target does not exist
          */
-        source = createSourceDirectory(dir);
-        target = getTargetFile(dir);
+        source = createSourceDirectory(dir1);
+        target = getTargetFile(dir2);
         copyAndVerify(source, target, REPLACE_EXISTING);
         source.delete();
         target.delete();
@@ -735,8 +757,8 @@ public class CopyAndMove {
         /**
          * Test: copy directory, target exists
          */
-        source = createSourceDirectory(dir);
-        target = getTargetFile(dir).createFile();
+        source = createSourceDirectory(dir1);
+        target = getTargetFile(dir2).createFile();
         copyAndVerify(source, target, REPLACE_EXISTING);
         source.delete();
         target.delete();
@@ -744,8 +766,8 @@ public class CopyAndMove {
         /**
          * Test: copy directory, target exists and is empty directory
          */
-        source = createSourceDirectory(dir);
-        target = getTargetFile(dir).createDirectory();
+        source = createSourceDirectory(dir1);
+        target = getTargetFile(dir2).createDirectory();
         copyAndVerify(source, target, REPLACE_EXISTING);
         source.delete();
         target.delete();
@@ -753,8 +775,8 @@ public class CopyAndMove {
         /**
          * Test: copy directory, target exists and is non-empty directory
          */
-        source = createSourceDirectory(dir);
-        target = getTargetFile(dir).createDirectory();
+        source = createSourceDirectory(dir1);
+        target = getTargetFile(dir2).createDirectory();
         entry = target.resolve("foo").createFile();
         try {
             copyAndVerify(source, target, REPLACE_EXISTING);
@@ -768,8 +790,8 @@ public class CopyAndMove {
         /*
          * Test: copy directory + attributes
          */
-        source = createSourceDirectory(dir);
-        target = getTargetFile(dir);
+        source = createSourceDirectory(dir1);
+        target = getTargetFile(dir2);
         copyAndVerify(source, target, COPY_ATTRIBUTES);
         source.delete();
         target.delete();
@@ -780,9 +802,9 @@ public class CopyAndMove {
          * Test: Follow link
          */
         if (supportsLinks) {
-            source = createSourceFile(dir);
-            link = dir.resolve("link").createSymbolicLink(source);
-            target = getTargetFile(dir);
+            source = createSourceFile(dir1);
+            link = dir1.resolve("link").createSymbolicLink(source);
+            target = getTargetFile(dir2);
             copyAndVerify(link, target);
             link.delete();
             source.delete();
@@ -792,9 +814,9 @@ public class CopyAndMove {
          * Test: Copy link (to file)
          */
         if (supportsLinks) {
-            source = createSourceFile(dir);
-            link = dir.resolve("link").createSymbolicLink(source);
-            target = getTargetFile(dir);
+            source = createSourceFile(dir1);
+            link = dir1.resolve("link").createSymbolicLink(source);
+            target = getTargetFile(dir2);
             copyAndVerify(link, target, NOFOLLOW_LINKS);
             link.delete();
             source.delete();
@@ -804,9 +826,9 @@ public class CopyAndMove {
          * Test: Copy link (to directory)
          */
         if (supportsLinks) {
-            source = dir.resolve("mydir").createDirectory();
-            link = dir.resolve("link").createSymbolicLink(source);
-            target = getTargetFile(dir);
+            source = dir1.resolve("mydir").createDirectory();
+            link = dir1.resolve("link").createSymbolicLink(source);
+            target = getTargetFile(dir2);
             copyAndVerify(link, target, NOFOLLOW_LINKS);
             link.delete();
             source.delete();
@@ -817,8 +839,8 @@ public class CopyAndMove {
          */
         if (supportsLinks) {
             assertTrue(source.notExists());
-            link = dir.resolve("link").createSymbolicLink(source);
-            target = getTargetFile(dir);
+            link = dir1.resolve("link").createSymbolicLink(source);
+            target = getTargetFile(dir2);
             copyAndVerify(link, target, NOFOLLOW_LINKS);
             link.delete();
         }
@@ -830,8 +852,8 @@ public class CopyAndMove {
             System.getProperty("os.name").startsWith("Windows"))
         {
             Path unc = Paths.get("\\\\rialto\\share\\file");
-            link = dir.resolve("link").createSymbolicLink(unc);
-            target = getTargetFile(dir);
+            link = dir1.resolve("link").createSymbolicLink(unc);
+            target = getTargetFile(dir2);
             copyAndVerify(link, target, NOFOLLOW_LINKS);
             link.delete();
         }
@@ -841,8 +863,8 @@ public class CopyAndMove {
         /**
          * Test nulls
          */
-        source = createSourceFile(dir);
-        target = getTargetFile(dir);
+        source = createSourceFile(dir1);
+        target = getTargetFile(dir2);
         try {
             source.copyTo(null);
             throw new RuntimeException("NullPointerException expected");
@@ -861,8 +883,8 @@ public class CopyAndMove {
         /**
          * Test UOE
          */
-        source = createSourceFile(dir);
-        target = getTargetFile(dir);
+        source = createSourceFile(dir1);
+        target = getTargetFile(dir2);
         try {
             source.copyTo(target, new CopyOption() { });
         } catch (UnsupportedOperationException x) { }

@@ -23,7 +23,9 @@
 
 /**
  * @test
- * @compile HelloPathWorld.java
+ * @bug 6906175 6915476 6915497
+ * @summary Path-based JavaFileManager
+ * @compile -g HelloPathWorld.java
  * @run main CompileTest
  */
 
@@ -92,7 +94,8 @@ public class CompileTest {
         options.addAll(Arrays.asList(opts));
         options.addAll(Arrays.asList(
                 "-verbose", "-XDverboseCompilePolicy",
-                "-d", classes.toString()
+                "-d", classes.toString(),
+                "-g"
         ));
         Iterable<? extends JavaFileObject> compilationUnits =
                 fm.getJavaFileObjects(testSrcDir.resolve(className + ".java"));
@@ -109,6 +112,8 @@ public class CompileTest {
         File expect = new File("classes." + count + "/" + className + ".class");
         if (!expect.exists())
             throw new Exception("expected file not found: " + expect);
+        // Note that we explicitly specify -g for compiling both the actual class and the expected class.
+        // This isolates the expected class from javac options that might be given to jtreg.
         long expectedSize = new File(testClassesDir.toString(), className + ".class").length();
         long actualSize = expect.length();
         if (expectedSize != actualSize)
