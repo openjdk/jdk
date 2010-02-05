@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = media
 PACKAGE = sun.awt.medialib
 LIBRARY = mlib_image
 PRODUCT = sun
