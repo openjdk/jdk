@@ -607,7 +607,9 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           _implicit_null_throws++;
 #endif
           target_pc = nm->continuation_for_implicit_exception(pc);
-          guarantee(target_pc != 0, "must have a continuation point");
+          // If there's an unexpected fault, target_pc might be NULL,
+          // in which case we want to fall through into the normal
+          // error handling code.
         }
 
         break; // fall through
@@ -621,14 +623,15 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
         _implicit_div0_throws++;
 #endif
         target_pc = nm->continuation_for_implicit_exception(pc);
-        guarantee(target_pc != 0, "must have a continuation point");
+        // If there's an unexpected fault, target_pc might be NULL,
+        // in which case we want to fall through into the normal
+        // error handling code.
         break; // fall through
       }
 
       default: ShouldNotReachHere();
     }
 
-    guarantee(target_pc != NULL, "must have computed destination PC for implicit exception");
     assert(exception_kind == IMPLICIT_NULL || exception_kind == IMPLICIT_DIVIDE_BY_ZERO, "wrong implicit exception kind");
 
     // for AbortVMOnException flag
