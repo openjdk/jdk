@@ -2010,7 +2010,10 @@ address nmethod::continuation_for_implicit_exception(address pc) {
     print_pcs();
   }
 #endif
-  guarantee(cont_offset != 0, "unhandled implicit exception in compiled code");
+  if (cont_offset == 0) {
+    // Let the normal error handling report the exception
+    return NULL;
+  }
   return instructions_begin() + cont_offset;
 }
 
