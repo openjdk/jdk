@@ -2730,9 +2730,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   }
 
   Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias);
-  __ lduw(counter_addr, tmp1);
-  __ add(tmp1, DataLayout::counter_increment, tmp1);
-  __ stw(tmp1, counter_addr);
   Bytecodes::Code bc = method->java_code_at_bci(bci);
   // Perform additional virtual call profiling for invokevirtual and
   // invokeinterface bytecodes
@@ -2822,15 +2819,23 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         __ set(DataLayout::counter_increment, tmp1);
         __ st_ptr(tmp1, mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) -
                   mdo_offset_bias);
-        if (i < (VirtualCallData::row_limit() - 1)) {
-          __ br(Assembler::always, false, Assembler::pt, update_done);
-          __ delayed()->nop();
-        }
+        __ br(Assembler::always, false, Assembler::pt, update_done);
+        __ delayed()->nop();
         __ bind(next_test);
       }
+      // Receiver did not match any saved receiver and there is no empty row for it.
+      // Increment total counter to indicate polymorphic case.
+      __ lduw(counter_addr, tmp1);
+      __ add(tmp1, DataLayout::counter_increment, tmp1);
+      __ stw(tmp1, counter_addr);
 
       __ bind(update_done);
     }
+  } else {
+    // Static call
+    __ lduw(counter_addr, tmp1);
+    __ add(tmp1, DataLayout::counter_increment, tmp1);
+    __ stw(tmp1, counter_addr);
   }
 }
 
