@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -752,12 +752,20 @@ bool GraphKit::dead_locals_are_killed() {
 
 // Helper function for enforcing certain bytecodes to reexecute if
 // deoptimization happens
-static bool should_reexecute_implied_by_bytecode(JVMState *jvms) {
+static bool should_reexecute_implied_by_bytecode(JVMState *jvms, bool is_anewarray) {
   ciMethod* cur_method = jvms->method();
   int       cur_bci   = jvms->bci();
   if (cur_method != NULL && cur_bci != InvocationEntryBci) {
     Bytecodes::Code code = cur_method->java_code_at_bci(cur_bci);
-    return Interpreter::bytecode_should_reexecute(code);
+    return Interpreter::bytecode_should_reexecute(code) ||
+           is_anewarray && code == Bytecodes::_multianewarray;
+    // Reexecute _multianewarray bytecode which was replaced with
+    // sequence of [a]newarray. See Parse::do_multianewarray().
+    //
+    // Note: interpreter should not have it set since this optimization
+    // is limited by dimensions and guarded by flag so in some cases
+    // multianewarray() runtime calls will be generated and
+    // the bytecode should not be reexecutes (stack will not be reset).
   } else
     return false;
 }
@@ -808,7 +816,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   // For a known set of bytecodes, the interpreter should reexecute them if
   // deoptimization happens. We set the reexecute state for them here
   if (out_jvms->is_reexecute_undefined() && //don't change if already specified
-      should_reexecute_implied_by_bytecode(out_jvms)) {
+      should_reexecute_implied_by_bytecode(out_jvms, call->is_AllocateArray())) {
     out_jvms->set_should_reexecute(true); //NOTE: youngest_jvms not changed
   }
 
