@@ -2505,6 +2505,7 @@ G1CollectedHeap* G1CollectedHeap::heap() {
 }
 
 void G1CollectedHeap::gc_prologue(bool full /* Ignored */) {
+  // always_do_update_barrier = false;
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
   // Call allocation profiler
   AllocationProfiler::iterate_since_last_gc();
@@ -2518,6 +2519,7 @@ void G1CollectedHeap::gc_epilogue(bool full /* Ignored */) {
   // is set.
   COMPILER2_PRESENT(assert(DerivedPointerTable::is_empty(),
                         "derived pointer present"));
+  // always_do_update_barrier = true;
 }
 
 void G1CollectedHeap::do_collection_pause() {
