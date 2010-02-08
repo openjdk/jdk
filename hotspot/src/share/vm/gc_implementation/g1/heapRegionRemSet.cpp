@@ -258,42 +258,6 @@ class PosParPRT: public PerRegionTable {
     ReserveParTableExpansion = 1
   };
 
-  void par_expand() {
-    int n = HeapRegionRemSet::num_par_rem_sets()-1;
-    if (n <= 0) return;
-    if (_par_tables == NULL) {
-      PerRegionTable* res =
-        (PerRegionTable*)
-        Atomic::cmpxchg_ptr((PerRegionTable*)ReserveParTableExpansion,
-                            &_par_tables, NULL);
-      if (res != NULL) return;
-      // Otherwise, we reserved the right to do the expansion.
-
-      PerRegionTable** ptables = NEW_C_HEAP_ARRAY(PerRegionTable*, n);
-      for (int i = 0; i < n; i++) {
-        PerRegionTable* ptable = PerRegionTable::alloc(hr());
-        ptables[i] = ptable;
-      }
-      // Here we do not need an atomic.
-      _par_tables = ptables;
-#if COUNT_PAR_EXPANDS
-      print_par_expand();
-#endif
-      // We must put this table on the expanded list.
-      PosParPRT* exp_head = _par_expanded_list;
-      while (true) {
-        set_next_par_expanded(exp_head);
-        PosParPRT* res =
-          (PosParPRT*)
-          Atomic::cmpxchg_ptr(this, &_par_expanded_list, exp_head);
-        if (res == exp_head) return;
-        // Otherwise.
-        exp_head = res;
-      }
-      ShouldNotReachHere();
-    }
-  }
-
   void par_contract() {
     assert(_par_tables != NULL, "Precondition.");
     int n = HeapRegionRemSet::num_par_rem_sets()-1;
@@ -391,13 +355,49 @@ public:
   void set_next(PosParPRT* nxt) { _next = nxt; }
   PosParPRT** next_addr() { return &_next; }
 
+  bool should_expand(int tid) {
+    return par_tables() == NULL && tid > 0 && hr()->is_gc_alloc_region();
+  }
+
+  void par_expand() {
+    int n = HeapRegionRemSet::num_par_rem_sets()-1;
+    if (n <= 0) return;
+    if (_par_tables == NULL) {
+      PerRegionTable* res =
+        (PerRegionTable*)
+        Atomic::cmpxchg_ptr((PerRegionTable*)ReserveParTableExpansion,
+                            &_par_tables, NULL);
+      if (res != NULL) return;
+      // Otherwise, we reserved the right to do the expansion.
+
+      PerRegionTable** ptables = NEW_C_HEAP_ARRAY(PerRegionTable*, n);
+      for (int i = 0; i < n; i++) {
+        PerRegionTable* ptable = PerRegionTable::alloc(hr());
+        ptables[i] = ptable;
+      }
+      // Here we do not need an atomic.
+      _par_tables = ptables;
+#if COUNT_PAR_EXPANDS
+      print_par_expand();
+#endif
+      // We must put this table on the expanded list.
+      PosParPRT* exp_head = _par_expanded_list;
+      while (true) {
+        set_next_par_expanded(exp_head);
+        PosParPRT* res =
+          (PosParPRT*)
+          Atomic::cmpxchg_ptr(this, &_par_expanded_list, exp_head);
+        if (res == exp_head) return;
+        // Otherwise.
+        exp_head = res;
+      }
+      ShouldNotReachHere();
+    }
+  }
+
   void add_reference(OopOrNarrowOopStar from, int tid) {
     // Expand if necessary.
     PerRegionTable** pt = par_tables();
-    if (par_tables() == NULL && tid > 0 && hr()->is_gc_alloc_region()) {
-      par_expand();
-      pt = par_tables();
-    }
     if (pt != NULL) {
       // We always have to assume that mods to table 0 are in parallel,
       // because of the claiming scheme in parallel expansion.  A thread
@@ -696,7 +696,21 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
   // OtherRegionsTable for why this is OK.
   assert(prt != NULL, "Inv");
 
-  prt->add_reference(from, tid);
+  if (prt->should_expand(tid)) {
+    MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
+    HeapRegion* prt_hr = prt->hr();
+    if (prt_hr == from_hr) {
+      // Make sure the table still corresponds to the same region
+      prt->par_expand();
+      prt->add_reference(from, tid);
+    }
+    // else: The table has been concurrently coarsened, evicted, and
+    // the table data structure re-used for another table. So, we
+    // don't need to add the reference any more given that the table
+    // has been coarsened and the whole region will be scanned anyway.
+  } else {
+    prt->add_reference(from, tid);
+  }
   if (G1RecordHRRSOops) {
     HeapRegionRemSet::record(hr(), from);
 #if HRRS_VERBOSE
