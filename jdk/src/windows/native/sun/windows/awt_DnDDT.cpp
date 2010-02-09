@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,27 @@
  */
 
 #include "awt.h"
+#include <shlwapi.h>
+#include <shellapi.h>
+#include <memory.h>
+
 #include "awt_DataTransferer.h"
-#include "awt_DnDDT.h"
-#include "awt_DnDDS.h"
 #include "awt_Toolkit.h"
 #include "java_awt_dnd_DnDConstants.h"
 #include "sun_awt_windows_WDropTargetContextPeer.h"
 #include "awt_Container.h"
+#include "alloc.h"
+#include "awt_ole.h"
+#include "awt_DnDDT.h"
+#include "awt_DnDDS.h"
 
-#include <memory.h>
-#include <shellapi.h>
 
 // forwards
 
 extern "C" {
-DWORD __cdecl convertActionsToDROPEFFECT(jint actions);
-jint  __cdecl convertDROPEFFECTToActions(DWORD effects);
-
-DWORD __cdecl mapModsToDROPEFFECT(DWORD, DWORD);
+    DWORD __cdecl convertActionsToDROPEFFECT(jint actions);
+    jint  __cdecl convertDROPEFFECTToActions(DWORD effects);
+    DWORD __cdecl mapModsToDROPEFFECT(DWORD, DWORD);
 } // extern "C"
 
 
@@ -64,6 +67,7 @@ AwtDropTarget::AwtDropTarget(JNIEnv* env, AwtComponent* component) {
     m_dtcp          = NULL;
     m_cfFormats     = NULL;
     m_mutex         = ::CreateMutex(NULL, FALSE, NULL);
+    m_pIDropTargetHelper = NULL;
 }
 
 /**
@@ -129,6 +133,13 @@ ULONG __stdcall AwtDropTarget::Release() {
 
 HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
+    if (NULL != m_pIDropTargetHelper) {
+        m_pIDropTargetHelper->DragEnter(
+            m_window,
+            pDataObj,
+            (LPPOINT)&pt,
+            *pdwEffect);
+    }
 
     AwtInterfaceLocker _lk(this);
 
@@ -200,6 +211,12 @@ HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWOR
 
 HRESULT __stdcall AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
+    if (NULL != m_pIDropTargetHelper) {
+        m_pIDropTargetHelper->DragOver(
+            (LPPOINT)&pt,
+            *pdwEffect
+        );
+    }
 
     AwtInterfaceLocker _lk(this);
 
@@ -250,6 +267,9 @@ HRESULT __stdcall AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __
 
 HRESULT __stdcall AwtDropTarget::DragLeave() {
     TRY_NO_VERIFY;
+    if (NULL != m_pIDropTargetHelper) {
+        m_pIDropTargetHelper->DragLeave();
+    }
 
     AwtInterfaceLocker _lk(this);
 
@@ -288,7 +308,13 @@ HRESULT __stdcall AwtDropTarget::DragLeave() {
 
 HRESULT __stdcall AwtDropTarget::Drop(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
-
+    if (NULL != m_pIDropTargetHelper) {
+        m_pIDropTargetHelper->Drop(
+            pDataObj,
+            (LPPOINT)&pt,
+            *pdwEffect
+        );
+    }
     AwtInterfaceLocker _lk(this);
 
     JNIEnv* env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
@@ -410,9 +436,22 @@ void AwtDropTarget::RegisterTarget(WORD show) {
     // if we are'nt yet visible, defer until the parent is!
 
     if (show) {
-        res = ::RegisterDragDrop(m_window, (IDropTarget*)this);
+        OLE_TRY
+        OLE_HRT(CoCreateInstance(
+            CLSID_DragDropHelper,
+            NULL,
+            CLSCTX_ALL,
+            IID_IDropTargetHelper,
+            (LPVOID*)&m_pIDropTargetHelper
+        ))
+        OLE_HRT(::RegisterDragDrop(m_window, (IDropTarget*)this))
+        OLE_CATCH
+        res = OLE_HR;
     } else {
         res = ::RevokeDragDrop(m_window);
+        if (NULL != m_pIDropTargetHelper) {
+            m_pIDropTargetHelper->Release();
+        }
     }
 
     if (res == S_OK) m_registered = show;
@@ -454,301 +493,487 @@ void AwtDropTarget::_GetData(void* param) {
  * Returns the data object being transferred.
  */
 
-jobject AwtDropTarget::GetData(jlong fmt) {
-    JNIEnv* env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    if (env->EnsureLocalCapacity(1) < 0) {
-        return (jobject)NULL;
-    }
-
+HRESULT AwtDropTarget::ExtractNativeData(
+    jlong fmt,
+    LONG lIndex,
+    STGMEDIUM *pmedium)
+{
     FORMATETC format = { (unsigned short)fmt };
-    STGMEDIUM stgmedium;
-    HRESULT hResult = E_FAIL;
+    HRESULT hr = E_INVALIDARG;
 
-    static const DWORD supportedTymeds[] = { TYMED_ISTREAM, TYMED_ENHMF,
-                                             TYMED_GDI, TYMED_MFPICT,
-                                             TYMED_FILE, TYMED_HGLOBAL };
-    static const int nSupportedTymeds = 6;
+    static const DWORD supportedTymeds[] = {
+        TYMED_ISTREAM,
+        TYMED_ENHMF,
+        TYMED_GDI,
+        TYMED_MFPICT,
+        TYMED_FILE,
+        TYMED_HGLOBAL
+    };
 
-    for (int i = 0; i < nSupportedTymeds; i++) {
-
+    for (int i = 0; i < sizeof(supportedTymeds)/sizeof(supportedTymeds[0]); ++i) {
         // Only TYMED_HGLOBAL is supported for CF_LOCALE.
         if (fmt == CF_LOCALE && supportedTymeds[i] != TYMED_HGLOBAL) {
             continue;
         }
 
         format.tymed = supportedTymeds[i];
+        FORMATETC *cpp = (FORMATETC *)bsearch(
+            (const void *)&format,
+            (const void *)m_formats,
+            (size_t)m_nformats,
+            (size_t)sizeof(FORMATETC),
+            _compar);
 
-        FORMATETC *cpp = (FORMATETC *)bsearch((const void *)&format,
-                                              (const void *)m_formats,
-                                              (size_t)      m_nformats,
-                                              (size_t)      sizeof(FORMATETC),
-                                              _compar
-                                              );
-
-        if (cpp == (FORMATETC *)NULL) {
+        if (NULL == cpp) {
             continue;
         }
 
-        memcpy(&format, cpp, sizeof(FORMATETC));
+        format = *cpp;
+        format.lindex = lIndex;
 
-        hResult = m_dataObject->GetData(&format, &stgmedium);
-
-        if (hResult == S_OK) {
-            break;
+        hr = m_dataObject->GetData(&format, pmedium);
+        if (SUCCEEDED(hr)) {
+            return hr;
         }
     }
+    return hr;
+}
 
-    // Failed to retrieve data.
-    if (hResult != S_OK) {
-        return (jobject)NULL;
+HRESULT CheckRetValue(
+    JNIEnv* env,
+    jobject ret)
+{
+    if (!JNU_IsNull(env, safe_ExceptionOccurred(env))) {
+        return E_UNEXPECTED;
+    } else if (JNU_IsNull(env, ret)) {
+        return E_INVALIDARG;
     }
+    return S_OK;
+}
 
+jobject AwtDropTarget::ConvertNativeData(JNIEnv* env, jlong fmt, STGMEDIUM *pmedium) /*throw std::bad_alloc */
+{
     jobject ret = NULL;
     jbyteArray paletteDataLocal = NULL;
-
-    switch (stgmedium.tymed) {
+    HRESULT hr = S_OK;
+    switch (pmedium->tymed) {
         case TYMED_HGLOBAL: {
             if (fmt == CF_LOCALE) {
-                LCID *lcid = (LCID *)::GlobalLock(stgmedium.hGlobal);
-                if (lcid == NULL) {
-                    ::ReleaseStgMedium(&stgmedium);
-                    return NULL;
+                LCID *lcid = (LCID *)::GlobalLock(pmedium->hGlobal);
+                if (NULL == lcid) {
+                    hr = E_INVALIDARG;
+                } else {
+                    try{
+                        ret = AwtDataTransferer::LCIDToTextEncoding(env, *lcid);
+                        hr = CheckRetValue(env, ret);
+                    } catch (std::bad_alloc&) {
+                        hr = E_OUTOFMEMORY;
+                    }
+                    ::GlobalUnlock(pmedium->hGlobal);
                 }
-                try {
-                    ret = AwtDataTransferer::LCIDToTextEncoding(env, *lcid);
-                } catch (...) {
-                    ::GlobalUnlock(stgmedium.hGlobal);
-                    ::ReleaseStgMedium(&stgmedium);
-                    throw;
-                }
-                ::GlobalUnlock(stgmedium.hGlobal);
-                ::ReleaseStgMedium(&stgmedium);
             } else {
                 ::SetLastError(0); // clear error
                 // Warning C4244.
                 // Cast SIZE_T (__int64 on 64-bit/unsigned int on 32-bit)
                 // to jsize (long).
-                SIZE_T globalSize = ::GlobalSize(stgmedium.hGlobal);
+                SIZE_T globalSize = ::GlobalSize(pmedium->hGlobal);
                 jsize size = (globalSize <= INT_MAX) ? (jsize)globalSize : INT_MAX;
                 if (size == 0 && ::GetLastError() != 0) {
-                    ::SetLastError(0); // clear error
-                    ::ReleaseStgMedium(&stgmedium);
-                    return (jobject)NULL; // failed
+                    hr = E_INVALIDARG;
+                } else {
+                    jbyteArray bytes = env->NewByteArray(size);
+                    if (NULL == bytes) {
+                        hr = E_OUTOFMEMORY;
+                    } else {
+                        LPVOID data = ::GlobalLock(pmedium->hGlobal);
+                        if (NULL == data) {
+                            hr = E_INVALIDARG;
+                        } else {
+                            env->SetByteArrayRegion(bytes, 0, size, (jbyte *)data);
+                            ret = bytes;
+                            //bytes is not null here => no CheckRetValue call
+                            ::GlobalUnlock(pmedium->hGlobal);
+                        }
+                    }
                 }
-
-                jbyteArray bytes = env->NewByteArray(size);
-                if (bytes == NULL) {
-                    ::ReleaseStgMedium(&stgmedium);
-                    throw std::bad_alloc();
-                }
-
-                LPVOID data = ::GlobalLock(stgmedium.hGlobal);
-                env->SetByteArrayRegion(bytes, 0, size, (jbyte *)data);
-                ::GlobalUnlock(stgmedium.hGlobal);
-                ::ReleaseStgMedium(&stgmedium);
-
-                ret = bytes;
             }
             break;
         }
         case TYMED_FILE: {
-            jobject local = JNU_NewStringPlatform(env, stgmedium.lpszFileName);
+            jobject local = JNU_NewStringPlatform(
+                env,
+                pmedium->lpszFileName);
             jstring fileName = (jstring)env->NewGlobalRef(local);
             env->DeleteLocalRef(local);
 
             STGMEDIUM *stgm = NULL;
             try {
+                //on success stgm would be deallocated by JAVA call freeStgMedium
                 stgm = (STGMEDIUM *)safe_Malloc(sizeof(STGMEDIUM));
+                memcpy(stgm, pmedium, sizeof(STGMEDIUM));
+                // Warning C4311.
+                // Cast pointer to jlong (__int64).
+                ret = call_dTCgetfs(env, fileName, (jlong)stgm);
+                hr = CheckRetValue(env, ret);
             } catch (std::bad_alloc&) {
-                env->DeleteGlobalRef(fileName);
-                ::ReleaseStgMedium(&stgmedium);
-                throw;
+                hr = E_OUTOFMEMORY;
             }
-            memcpy(stgm, &stgmedium, sizeof(STGMEDIUM));
-
-            // Warning C4311.
-            // Cast pointer to jlong (__int64).
-            ret = call_dTCgetfs(env, fileName, (jlong)stgm);
-            try {
-                if (JNU_IsNull(env, ret) ||
-                        !JNU_IsNull(env, safe_ExceptionOccurred(env))) {
-                    env->DeleteGlobalRef(fileName);
-                    free((void*)stgm);
-                    ::ReleaseStgMedium(&stgmedium);
-                    return (jobject)NULL;
-                }
-            } catch (std::bad_alloc&) {
+            if (FAILED(hr)) {
+                //free just on error
                 env->DeleteGlobalRef(fileName);
-                free((void*)stgm);
-                ::ReleaseStgMedium(&stgmedium);
-                throw;
+                free(stgm);
             }
             break;
         }
-
         case TYMED_ISTREAM: {
-           WDTCPIStreamWrapper* istream = new WDTCPIStreamWrapper(&stgmedium);
-
-           // Warning C4311.
-           // Cast pointer to jlong (__int64).
-           ret = call_dTCgetis(env, (jlong)istream);
-           try {
-               if (JNU_IsNull(env, ret) ||
-                       !JNU_IsNull(env, safe_ExceptionOccurred(env))) {
-                   istream->Close();
-                   return (jobject)NULL;
-               }
-           } catch (std::bad_alloc&) {
-               istream->Close();
-               throw;
-           }
-           break;
+            WDTCPIStreamWrapper* istream = NULL;
+            try {
+                istream = new WDTCPIStreamWrapper(pmedium);
+                // Warning C4311.
+                // Cast pointer to jlong (__int64).
+                ret = call_dTCgetis(env, (jlong)istream);
+                hr = CheckRetValue(env, ret);
+            } catch (std::bad_alloc&) {
+                hr = E_OUTOFMEMORY;
+            }
+            if (FAILED(hr) && NULL!=istream) {
+                //free just on error
+                istream->Close();
+            }
+            break;
         }
-
         case TYMED_GDI:
             // Currently support only CF_PALETTE for TYMED_GDI.
-            switch (fmt) {
-            case CF_PALETTE: {
-                ret = AwtDataTransferer::GetPaletteBytes(stgmedium.hBitmap,
-                                                         0, TRUE);
-                break;
+            if (CF_PALETTE == fmt) {
+                ret = AwtDataTransferer::GetPaletteBytes(
+                    pmedium->hBitmap,
+                    0,
+                    TRUE);
+                hr = CheckRetValue(env, ret);
             }
-            }
-            ::ReleaseStgMedium(&stgmedium);
             break;
         case TYMED_MFPICT:
         case TYMED_ENHMF: {
             HENHMETAFILE hEnhMetaFile = NULL;
-            LPBYTE lpEmfBits = NULL;
-
-            if (stgmedium.tymed == TYMED_MFPICT) {
+            if (pmedium->tymed == TYMED_MFPICT ) {
+                //let's create ENHMF from MFPICT to simplify treatment
                 LPMETAFILEPICT lpMetaFilePict =
-                    (LPMETAFILEPICT)::GlobalLock(stgmedium.hMetaFilePict);
-                UINT uSize = ::GetMetaFileBitsEx(lpMetaFilePict->hMF, 0, NULL);
-                DASSERT(uSize != 0);
-
-                try {
-                    LPBYTE lpMfBits = (LPBYTE)safe_Malloc(uSize);
-                    VERIFY(::GetMetaFileBitsEx(lpMetaFilePict->hMF, uSize,
-                                               lpMfBits) == uSize);
-                    hEnhMetaFile = ::SetWinMetaFileBits(uSize,
-                                                        lpMfBits,
-                                                        NULL,
-                                                        lpMetaFilePict);
-                    free(lpMfBits);
-                } catch (...) {
-                    ::GlobalUnlock(stgmedium.hMetaFilePict);
-                    throw;
+                    (LPMETAFILEPICT)::GlobalLock(pmedium->hMetaFilePict);
+                if (NULL == lpMetaFilePict) {
+                    hr = E_INVALIDARG;
+                } else {
+                    UINT uSize = ::GetMetaFileBitsEx(lpMetaFilePict->hMF, 0, NULL);
+                    if (0 == uSize) {
+                        hr = E_INVALIDARG;
+                    } else {
+                        try{
+                            LPBYTE lpMfBits = (LPBYTE)safe_Malloc(uSize);
+                            VERIFY(::GetMetaFileBitsEx(
+                                lpMetaFilePict->hMF,
+                                uSize,
+                                lpMfBits) == uSize);
+                            hEnhMetaFile = ::SetWinMetaFileBits(
+                                uSize,
+                                lpMfBits,
+                                NULL,
+                                lpMetaFilePict);
+                            free(lpMfBits);
+                        } catch (std::bad_alloc&) {
+                            hr = E_OUTOFMEMORY;
+                        }
+                    }
+                    ::GlobalUnlock(pmedium->hMetaFilePict);
                 }
-                ::GlobalUnlock(stgmedium.hMetaFilePict);
             } else {
-                hEnhMetaFile = stgmedium.hEnhMetaFile;
+                hEnhMetaFile = pmedium->hEnhMetaFile;
             }
 
-            try {
-                paletteDataLocal =
-                    AwtDataTransferer::GetPaletteBytes(hEnhMetaFile,
-                                                       OBJ_ENHMETAFILE,
-                                                       FALSE);
+            if (NULL == hEnhMetaFile) {
+                hr = E_INVALIDARG;
+            } else {
+                try {
+                    paletteDataLocal = AwtDataTransferer::GetPaletteBytes(
+                        hEnhMetaFile,
+                        OBJ_ENHMETAFILE,
+                        FALSE);
+                    //paletteDataLocal can be NULL here - it is not a error!
 
-                UINT uEmfSize = ::GetEnhMetaFileBits(hEnhMetaFile, 0, NULL);
-                DASSERT(uEmfSize != 0);
+                    UINT uEmfSize = ::GetEnhMetaFileBits(hEnhMetaFile, 0, NULL);
+                    DASSERT(uEmfSize != 0);
 
-                lpEmfBits = (LPBYTE)safe_Malloc(uEmfSize);
-                VERIFY(::GetEnhMetaFileBits(hEnhMetaFile, uEmfSize,
-                                            lpEmfBits) == uEmfSize);
+                    LPBYTE lpEmfBits = (LPBYTE)safe_Malloc(uEmfSize);
+                    //no chance to throw exception before catch => no more try-blocks
+                    //and no leaks on lpEmfBits
 
-                if (stgmedium.tymed == TYMED_MFPICT) {
-                    ::DeleteEnhMetaFile(hEnhMetaFile);
-                } else {
-                    ::ReleaseStgMedium(&stgmedium);
-                }
-                hEnhMetaFile = NULL;
+                    VERIFY(::GetEnhMetaFileBits(
+                        hEnhMetaFile,
+                        uEmfSize,
+                        lpEmfBits) == uEmfSize);
 
-                jbyteArray bytes = env->NewByteArray(uEmfSize);
-                if (bytes == NULL) {
-                    throw std::bad_alloc();
-                }
-
-                env->SetByteArrayRegion(bytes, 0, uEmfSize, (jbyte*)lpEmfBits);
-                free(lpEmfBits);
-                lpEmfBits = NULL;
-
-                ret = bytes;
-            } catch (...) {
-                if (!JNU_IsNull(env, paletteDataLocal)) {
-                    env->DeleteLocalRef(paletteDataLocal);
-                    paletteDataLocal = NULL;
-                }
-                if (hEnhMetaFile != NULL) {
-                    if (stgmedium.tymed == TYMED_MFPICT) {
-                        ::DeleteEnhMetaFile(hEnhMetaFile);
+                    jbyteArray bytes = env->NewByteArray(uEmfSize);
+                    if (NULL == bytes) {
+                        hr = E_OUTOFMEMORY;
                     } else {
-                        ::ReleaseStgMedium(&stgmedium);
+                        env->SetByteArrayRegion(bytes, 0, uEmfSize, (jbyte*)lpEmfBits);
+                        ret = bytes;
+                        //bytes is not null here => no CheckRetValue call
                     }
-                    hEnhMetaFile = NULL;
-                }
-                if (lpEmfBits != NULL) {
                     free(lpEmfBits);
-                    lpEmfBits = NULL;
+                } catch (std::bad_alloc&) {
+                    hr = E_OUTOFMEMORY;
                 }
-                throw;
+                if (pmedium->tymed == TYMED_MFPICT) {
+                    //because we create it manually
+                    ::DeleteEnhMetaFile(hEnhMetaFile);
+                }
             }
             break;
         }
         case TYMED_ISTORAGE:
         default:
-            ::ReleaseStgMedium(&stgmedium);
-            return (jobject)NULL;
+            hr = E_NOTIMPL;
+            break;
     }
 
-    if (ret == NULL) {
-        return (jobject)NULL;
+    if (FAILED(hr)) {
+        //clear exception garbage for hr = E_UNEXPECTED
+        ret  = NULL;
+    } else {
+        switch (fmt) {
+        case CF_METAFILEPICT:
+        case CF_ENHMETAFILE:
+            // If we failed to retrieve palette entries from metafile,
+            // fall through and try CF_PALETTE format.
+        case CF_DIB: {
+            if (JNU_IsNull(env, paletteDataLocal)) {
+                jobject paletteData = GetData(CF_PALETTE);
+
+                if (JNU_IsNull(env, paletteData)) {
+                    paletteDataLocal =
+                        AwtDataTransferer::GetPaletteBytes(NULL, 0, TRUE);
+                } else {
+                    // GetData() returns a global ref.
+                    // We want to deal with local ref.
+                    paletteDataLocal = (jbyteArray)env->NewLocalRef(paletteData);
+                    env->DeleteGlobalRef(paletteData);
+                }
+            }
+            DASSERT(!JNU_IsNull(env, paletteDataLocal) &&
+                    !JNU_IsNull(env, ret));
+
+            jobject concat = AwtDataTransferer::ConcatData(env, paletteDataLocal, ret);
+            env->DeleteLocalRef(ret);
+            ret = concat;
+            hr = CheckRetValue(env, ret);
+            break;
+        }
+        }
     }
 
-    switch (fmt) {
-    case CF_METAFILEPICT:
-    case CF_ENHMETAFILE:
-        // If we failed to retrieve palette entries from metafile,
-        // fall through and try CF_PALETTE format.
-    case CF_DIB: {
-        if (JNU_IsNull(env, paletteDataLocal)) {
-            jobject paletteData = GetData(CF_PALETTE);
+    if (!JNU_IsNull(env, paletteDataLocal) ) {
+        env->DeleteLocalRef(paletteDataLocal);
+    }
+    jobject global = NULL;
+    if (SUCCEEDED(hr)) {
+        global = env->NewGlobalRef(ret);
+        env->DeleteLocalRef(ret);
+    } else if (E_UNEXPECTED == hr) {
+        //internal Java non-GPF exception
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    } else if (E_OUTOFMEMORY == hr) {
+        throw std::bad_alloc();
+    } //NULL returns for all other cases
+    return global;
+}
 
-            if (JNU_IsNull(env, paletteData)) {
-                paletteDataLocal =
-                    AwtDataTransferer::GetPaletteBytes(NULL, 0, TRUE);
-            } else {
-                // GetData() returns a global ref.
-                // We want to deal with local ref.
-                paletteDataLocal = (jbyteArray)env->NewLocalRef(paletteData);
-                env->DeleteGlobalRef(paletteData);
+HRESULT AwtDropTarget::SaveIndexToFile(LPCTSTR pFileName, UINT lIndex)
+{
+    OLE_TRY
+    STGMEDIUM stgmedium;
+    OLE_HRT( ExtractNativeData(CF_FILECONTENTS, lIndex, &stgmedium) );
+    OLE_NEXT_TRY
+        IStreamPtr spSrc;
+        if (TYMED_HGLOBAL == stgmedium.tymed) {
+            OLE_HRT( CreateStreamOnHGlobal(
+                stgmedium.hGlobal,
+                FALSE,
+                &spSrc
+            ));
+        } else if(TYMED_ISTREAM == stgmedium.tymed) {
+            spSrc = stgmedium.pstm;
+        }
+        if (NULL == spSrc) {
+            OLE_HRT(E_INVALIDARG);
+        }
+        IStreamPtr spDst;
+        OLE_HRT(SHCreateStreamOnFile(
+            pFileName,
+            STGM_WRITE | STGM_CREATE,
+            &spDst
+        ));
+        STATSTG si = {0};
+        OLE_HRT( spSrc->Stat(&si, STATFLAG_NONAME ) );
+        OLE_HRT( spSrc->CopyTo(spDst, si.cbSize, NULL, NULL) );
+    OLE_CATCH
+    ::ReleaseStgMedium(&stgmedium);
+    OLE_CATCH
+    OLE_RETURN_HR;
+}
+
+
+HRESULT GetTempPathWithSlash(JNIEnv *env, _bstr_t &bsTempPath) /*throws _com_error*/
+{
+    static _bstr_t _bsPath;
+
+    OLE_TRY
+    if (0 == _bsPath.length()) {
+        BOOL bSafeEmergency = TRUE;
+        TCHAR szPath[MAX_PATH*2];
+        JLClass systemCls(env, env->FindClass("java/lang/System"));
+        if (systemCls) {
+            jmethodID idGetProperty = env->GetStaticMethodID(
+                    systemCls,
+                    "getProperty",
+                    "(Ljava/lang/String;)Ljava/lang/String;");
+            if (0 != idGetProperty) {
+                static TCHAR param[] = _T("java.io.tmpdir");
+                JLString tempdir(env, JNU_NewStringPlatform(env, param));
+                if (tempdir) {
+                    JLString jsTempPath(env, (jstring)env->CallStaticObjectMethod(
+                        systemCls,
+                        idGetProperty,
+                        (jstring)tempdir
+                    ));
+                    if (jsTempPath) {
+                        _bsPath = (LPCWSTR)JavaStringBuffer(env, jsTempPath);
+                        OLE_HRT(SHGetFolderPath(
+                            NULL,
+                            CSIDL_WINDOWS,
+                            NULL,
+                            0,
+                            szPath));
+                        _tcscat(szPath, _T("\\"));
+                        //Dead environment block leads to fact that windows folder becomes temporary path.
+                        //For example while jtreg execution %TEMP%, %TMP% and etc. aren't defined.
+                        bSafeEmergency = ( 0 == _tcsicmp(_bsPath, szPath) );
+                    }
+                }
             }
         }
-        DASSERT(!JNU_IsNull(env, paletteDataLocal) &&
-                !JNU_IsNull(env, ret));
-
-        jobject concat = AwtDataTransferer::ConcatData(env, paletteDataLocal, ret);
-
-        if (!JNU_IsNull(env, safe_ExceptionOccurred(env))) {
-            env->ExceptionDescribe();
-            env->ExceptionClear();
-            env->DeleteLocalRef(ret);
-            env->DeleteLocalRef(paletteDataLocal);
-            return (jobject)NULL;
+        if (bSafeEmergency) {
+            OLE_HRT(SHGetFolderPath(
+                NULL,
+                CSIDL_INTERNET_CACHE|CSIDL_FLAG_CREATE,
+                NULL,
+                0,
+                szPath));
+            _tcscat(szPath, _T("\\"));
+            _bsPath = szPath;
         }
-
-        env->DeleteLocalRef(ret);
-        env->DeleteLocalRef(paletteDataLocal);
-        ret = concat;
-
-        break;
     }
-    }
+    OLE_CATCH
+    bsTempPath = _bsPath;
+    OLE_RETURN_HR
+}
 
-    jobject global = env->NewGlobalRef(ret);
-    env->DeleteLocalRef(ret);
+jobject AwtDropTarget::ConvertMemoryMappedData(JNIEnv* env, jlong fmt, STGMEDIUM *pmedium) /*throw std::bad_alloc */
+{
+    jobject retObj = NULL;
+    OLE_TRY
+    if (TYMED_HGLOBAL != pmedium->tymed) {
+        OLE_HRT(E_INVALIDARG);
+    }
+    FILEGROUPDESCRIPTORA *pfgdHead = (FILEGROUPDESCRIPTORA *)::GlobalLock(pmedium->hGlobal);
+    if (NULL == pfgdHead) {
+        OLE_HRT(E_INVALIDARG);
+    }
+    OLE_NEXT_TRY
+        if (0 == pfgdHead->cItems) {
+            OLE_HRT(E_INVALIDARG);
+        }
+        IStreamPtr spFileNames;
+        OLE_HRT( CreateStreamOnHGlobal(
+            NULL,
+            TRUE,
+            &spFileNames
+        ));
+
+        _bstr_t sbTempDir;
+        OLE_HRT( GetTempPathWithSlash(env, sbTempDir) );
+        FILEDESCRIPTORA *pfgdA = pfgdHead->fgd;
+        FILEDESCRIPTORW *pfgdW = (FILEDESCRIPTORW *)pfgdA;
+        for (UINT i = 0; i < pfgdHead->cItems; ++i) {
+            _bstr_t stFullName(sbTempDir);
+            if(CF_FILEGROUPDESCRIPTORA == fmt) {
+                stFullName += pfgdA->cFileName; //as CHAR
+                ++pfgdA;
+            } else {
+                stFullName += pfgdW->cFileName; //as WCHAR
+                ++pfgdW;
+            }
+            OLE_HRT(SaveIndexToFile(
+                stFullName,
+                i));
+            //write to stream with zero terminator
+            OLE_HRT( spFileNames->Write((LPCTSTR)stFullName, (stFullName.length() + 1)*sizeof(TCHAR), NULL) );
+        }
+        OLE_HRT( spFileNames->Write(_T(""), sizeof(TCHAR), NULL) );
+        STATSTG st;
+        OLE_HRT( spFileNames->Stat(&st, STATFLAG_NONAME) );
+
+        //empty lists was forbidden: pfgdHead->cItems > 0
+        jbyteArray bytes = env->NewByteArray(st.cbSize.LowPart);
+        if (NULL == bytes) {
+            OLE_HRT(E_OUTOFMEMORY);
+        } else {
+            HGLOBAL glob;
+            OLE_HRT(GetHGlobalFromStream(spFileNames, &glob));
+            jbyte *pFileListWithDoubleZeroTerminator = (jbyte *)::GlobalLock(glob);
+            env->SetByteArrayRegion(bytes, 0, st.cbSize.LowPart, pFileListWithDoubleZeroTerminator);
+            ::GlobalUnlock(pFileListWithDoubleZeroTerminator);
+            retObj = bytes;
+        }
+        //std::bad_alloc could happen in JStringBuffer
+        //no leaks due to wrapper
+    OLE_CATCH_BAD_ALLOC
+    ::GlobalUnlock(pmedium->hGlobal);
+    OLE_CATCH
+    jobject global = NULL;
+    if (SUCCEEDED(OLE_HR)) {
+        global = env->NewGlobalRef(retObj);
+        env->DeleteLocalRef(retObj);
+    } else if (E_OUTOFMEMORY == OLE_HR) {
+        throw std::bad_alloc();
+    }
     return global;
+}
+
+jobject AwtDropTarget::GetData(jlong fmt)
+{
+    JNIEnv* env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    if (env->EnsureLocalCapacity(1) < 0) {
+        return (jobject)NULL;
+    }
+    jobject ret = NULL;
+    OLE_TRY
+    STGMEDIUM stgmedium;
+    OLE_HRT( ExtractNativeData(fmt, -1, &stgmedium) );
+    OLE_NEXT_TRY
+        if (CF_FILEGROUPDESCRIPTORA == fmt ||
+            CF_FILEGROUPDESCRIPTORW == fmt)
+        {
+            ret = ConvertMemoryMappedData(env, fmt, &stgmedium);
+        } else {
+            ret = ConvertNativeData(env, fmt, &stgmedium);
+        }
+    OLE_CATCH_BAD_ALLOC
+    ::ReleaseStgMedium(&stgmedium);
+    OLE_CATCH
+    if (E_OUTOFMEMORY == OLE_HR) {
+        throw std::bad_alloc();
+    }
+    return ret;
 }
 
 /**
@@ -791,14 +1016,14 @@ void AwtDropTarget::LoadCache(IDataObject* pDataObj) {
         ULONG     actual = 1;
 
             res = pEnumFormatEtc->Next((ULONG)1, &tmp, &actual);
-
-        if (res == S_FALSE) break;
+            if (res == S_FALSE)
+                break;
 
         if (!(tmp.cfFormat  >= 1                &&
               tmp.ptd       == NULL             &&
-              tmp.lindex    == -1               &&
+                (tmp.lindex == -1 || CF_FILECONTENTS==tmp.cfFormat) &&
               tmp.dwAspect  == DVASPECT_CONTENT &&
-              (tmp.tymed    == TYMED_HGLOBAL    ||
+                ( tmp.tymed == TYMED_HGLOBAL ||
                tmp.tymed    == TYMED_FILE       ||
                tmp.tymed    == TYMED_ISTREAM    ||
                tmp.tymed    == TYMED_GDI        ||
@@ -806,7 +1031,8 @@ void AwtDropTarget::LoadCache(IDataObject* pDataObj) {
                tmp.tymed    == TYMED_ENHMF
               ) // but not ISTORAGE
              )
-        ) continue;
+            )
+                continue;
 
         if (m_dataObject->QueryGetData(&tmp) != S_OK) continue;
 
@@ -1005,6 +1231,7 @@ WDTCPIStreamWrapper::WDTCPIStreamWrapper(STGMEDIUM* stgmedium) {
 
     m_stgmedium = *stgmedium;
     m_istream   = stgmedium->pstm;
+    m_istream->AddRef();
     m_mutex     = ::CreateMutex(NULL, FALSE, NULL);
 
     if (javaIOExceptionClazz == (jclass)NULL) {
@@ -1024,7 +1251,7 @@ WDTCPIStreamWrapper::WDTCPIStreamWrapper(STGMEDIUM* stgmedium) {
 
 WDTCPIStreamWrapper::~WDTCPIStreamWrapper() {
     ::CloseHandle(m_mutex);
-
+    m_istream->Release();
     ::ReleaseStgMedium(&m_stgmedium);
 }
 
