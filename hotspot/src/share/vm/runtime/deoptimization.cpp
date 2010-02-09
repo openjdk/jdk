@@ -145,6 +145,27 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
     if (EliminateAllocations) {
       assert (chunk->at(0)->scope() != NULL,"expect only compiled java frames");
       GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects();
+
+      // The flag return_oop() indicates call sites which return oop
+      // in compiled code. Such sites include java method calls,
+      // runtime calls (for example, used to allocate new objects/arrays
+      // on slow code path) and any other calls generated in compiled code.
+      // It is not guaranteed that we can get such information here only
+      // by analyzing bytecode in deoptimized frames. This is why this flag
+      // is set during method compilation (see Compile::Process_OopMap_Node()).
+      bool save_oop_result = chunk->at(0)->scope()->return_oop();
+      Handle return_value;
+      if (save_oop_result) {
+        // Reallocation may trigger GC. If deoptimization happened on return from
+        // call which returns oop we need to save it since it is not in oopmap.
+        oop result = deoptee.saved_oop_result(&map);
+        assert(result == NULL || result->is_oop(), "must be oop");
+        return_value = Handle(thread, result);
+        assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
+        if (TraceDeoptimization) {
+          tty->print_cr("SAVED OOP RESULT " INTPTR_FORMAT " in thread " INTPTR_FORMAT, result, thread);
+        }
+      }
       bool reallocated = false;
       if (objects != NULL) {
         JRT_BLOCK
@@ -158,8 +179,12 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
           ttyLocker ttyl;
           tty->print_cr("REALLOC OBJECTS in thread " INTPTR_FORMAT, thread);
           print_objects(objects);
-      }
+        }
 #endif
+      }
+      if (save_oop_result) {
+        // Restore result.
+        deoptee.set_saved_oop_result(&map, return_value());
       }
     }
     if (EliminateLocks) {
