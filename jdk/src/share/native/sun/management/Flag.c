@@ -84,6 +84,7 @@ Java_sun_management_Flag_getFlags
 
     jint num_flags, i, index;
     jmmVMGlobal* globals;
+    size_t gsize;
     const char* class_name = "sun/management/Flag";
     const char* signature = "(Ljava/lang/String;Ljava/lang/Object;ZZLcom/sun/management/VMOption$Origin;)V";
     jobject origin;
@@ -100,12 +101,14 @@ Java_sun_management_Flag_getFlags
         return 0;
     }
 
-    globals = (jmmVMGlobal*) malloc(count * sizeof(jmmVMGlobal));
+    gsize = count * sizeof(jmmVMGlobal);
+    globals = (jmmVMGlobal*) malloc(gsize);
     if (globals == NULL) {
         JNU_ThrowOutOfMemoryError(env, 0);
         return 0;
     }
 
+    memset(globals, 0, gsize);
     num_flags = jmm_interface->GetVMGlobals(env, names, globals, count);
     if (num_flags == 0) {
         free(globals);
