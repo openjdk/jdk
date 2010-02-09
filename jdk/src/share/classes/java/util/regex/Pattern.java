@@ -861,6 +861,14 @@ public final class Pattern
     private transient int patternLength;
 
     /**
+     * If the Start node might possibly match supplementary characters.
+     * It is set to true during compiling if
+     * (1) There is supplementary char in pattern, or
+     * (2) There is complement node of Category or Block
+     */
+    private transient boolean hasSupplementary;
+
+    /**
      * Compiles the given regular expression into a pattern.  </p>
      *
      * @param  regex
@@ -1481,7 +1489,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         // Use double zero to terminate pattern
         temp = new int[patternLength + 2];
 
-        boolean hasSupplementary = false;
+        hasSupplementary = false;
         int c, count = 0;
         // Convert all chars into code points
         for (int x = 0; x < patternLength; x += Character.charCount(c)) {
@@ -1787,7 +1795,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * character or unpaired surrogate.
      */
     private static final boolean isSupplementary(int ch) {
-        return ch >= Character.MIN_SUPPLEMENTARY_CODE_POINT || isSurrogate(ch);
+        return ch >= Character.MIN_SUPPLEMENTARY_CODE_POINT ||
+               Character.isSurrogate((char)ch);
     }
 
     /**
@@ -1885,7 +1894,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     } else {
                         oneLetter = false;
                     }
-                    node = family(oneLetter).maybeComplement(comp);
+                    node = family(oneLetter, comp);
                 } else {
                     unread();
                     node = atom();
@@ -2001,7 +2010,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                             unread();
                         else
                             oneLetter = false;
-                        return family(oneLetter).maybeComplement(comp);
+                        return family(oneLetter, comp);
                     }
                 }
                 unread();
@@ -2404,7 +2413,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     unread();
                 else
                     oneLetter = false;
-                return family(oneLetter).maybeComplement(comp);
+                return family(oneLetter, comp);
             } else { // ordinary escape
                 unread();
                 ch = escape(true, true);
@@ -2450,9 +2459,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     /**
      * Parses a Unicode character family and returns its representative node.
      */
-    private CharProperty family(boolean singleLetter) {
+    private CharProperty family(boolean singleLetter,
+                                boolean maybeComplement)
+    {
         next();
         String name;
+        CharProperty node;
 
         if (singleLetter) {
             int c = temp[cursor];
@@ -2477,12 +2489,18 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
 
         if (name.startsWith("In")) {
-            return unicodeBlockPropertyFor(name.substring(2));
+            node = unicodeBlockPropertyFor(name.substring(2));
         } else {
             if (name.startsWith("Is"))
                 name = name.substring(2);
-            return charPropertyNodeFor(name);
+            node = charPropertyNodeFor(name);
         }
+        if (maybeComplement) {
+            if (node instanceof Category || node instanceof Block)
+                hasSupplementary = true;
+            node = node.complement();
+        }
+        return node;
     }
 
     /**
@@ -2495,9 +2513,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         } catch (IllegalArgumentException iae) {
             throw error("Unknown character block name {" + name + "}");
         }
-        return new CharProperty() {
-                boolean isSatisfiedBy(int ch) {
-                    return block == Character.UnicodeBlock.of(ch);}};
+        return new Block(block);
     }
 
     /**
@@ -2968,13 +2984,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     // Utility methods for code point support
     //
 
-    /**
-     * Tests a surrogate value.
-     */
-    private static final boolean isSurrogate(int c) {
-        return c >= Character.MIN_HIGH_SURROGATE && c <= Character.MAX_LOW_SURROGATE;
-    }
-
     private static final int countChars(CharSequence seq, int index,
                                         int lengthInCodePoints) {
         // optimization
@@ -3174,20 +3183,17 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 matcher.hitEnd = true;
                 return false;
             }
-            boolean ret = false;
             int guard = matcher.to - minLength;
             for (; i <= guard; i++) {
-                if (ret = next.match(matcher, i, seq))
-                    break;
-                if (i == guard)
-                    matcher.hitEnd = true;
+                if (next.match(matcher, i, seq)) {
+                    matcher.first = i;
+                    matcher.groups[0] = matcher.first;
+                    matcher.groups[1] = matcher.last;
+                    return true;
+                }
             }
-            if (ret) {
-                matcher.first = i;
-                matcher.groups[0] = matcher.first;
-                matcher.groups[1] = matcher.last;
-            }
-            return ret;
+            matcher.hitEnd = true;
+            return false;
         }
         boolean study(TreeInfo info) {
             next.study(info);
@@ -3209,27 +3215,28 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 matcher.hitEnd = true;
                 return false;
             }
-            boolean ret = false;
             int guard = matcher.to - minLength;
             while (i <= guard) {
-                if ((ret = next.match(matcher, i, seq)) || i == guard)
+                //if ((ret = next.match(matcher, i, seq)) || i == guard)
+                if (next.match(matcher, i, seq)) {
+                    matcher.first = i;
+                    matcher.groups[0] = matcher.first;
+                    matcher.groups[1] = matcher.last;
+                    return true;
+                }
+                if (i == guard)
                     break;
                 // Optimization to move to the next character. This is
                 // faster than countChars(seq, i, 1).
                 if (Character.isHighSurrogate(seq.charAt(i++))) {
-                    if (i < seq.length() && Character.isLowSurrogate(seq.charAt(i))) {
+                    if (i < seq.length() &&
+                        Character.isLowSurrogate(seq.charAt(i))) {
                         i++;
                     }
                 }
-                if (i == guard)
-                    matcher.hitEnd = true;
             }
-            if (ret) {
-                matcher.first = i;
-                matcher.groups[0] = matcher.first;
-                matcher.groups[1] = matcher.last;
-            }
-            return ret;
+            matcher.hitEnd = true;
+            return false;
         }
     }
 
@@ -3461,9 +3468,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     boolean isSatisfiedBy(int ch) {
                         return ! CharProperty.this.isSatisfiedBy(ch);}};
         }
-        CharProperty maybeComplement(boolean complement) {
-            return complement ? complement() : this;
-        }
         boolean match(Matcher matcher, int i, CharSequence seq) {
             if (i < matcher.to) {
                 int ch = Character.codePointAt(seq, i);
@@ -3545,6 +3549,20 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         boolean isSatisfiedBy(int ch) {
             return lower == ch ||
                 lower == Character.toLowerCase(Character.toUpperCase(ch));
+        }
+    }
+
+
+    /**
+     * Node class that matches a Unicode block.
+     */
+    static final class Block extends CharProperty {
+        final Character.UnicodeBlock block;
+        Block(Character.UnicodeBlock block) {
+            this.block = block;
+        }
+        boolean isSatisfiedBy(int ch) {
+            return block == Character.UnicodeBlock.of(ch);
         }
     }
 
