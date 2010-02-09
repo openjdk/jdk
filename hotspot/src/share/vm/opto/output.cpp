@@ -795,6 +795,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
+  bool return_oop = false;
 
   // Add the safepoint in the DebugInfoRecorder
   if( !mach->is_MachCall() ) {
@@ -807,6 +808,11 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     if (mcall->is_MachCallJava())
       is_method_handle_invoke = mcall->as_MachCallJava()->_method_handle_invoke;
 
+    // Check if a call returns an object.
+    if (mcall->return_value_is_used() &&
+        mcall->tf()->range()->field_at(TypeFunc::Parms)->isa_ptr()) {
+      return_oop = true;
+    }
     safepoint_pc_offset += mcall->ret_addr_offset();
     debug_info()->add_safepoint(safepoint_pc_offset, mcall->_oop_map);
   }
@@ -919,7 +925,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     assert(jvms->bci() >= InvocationEntryBci && jvms->bci() <= 0x10000, "must be a valid or entry BCI");
     assert(!jvms->should_reexecute() || depth == max_depth, "reexecute allowed only for the youngest");
     // Now we can describe the scope.
-    debug_info()->describe_scope(safepoint_pc_offset, scope_method, jvms->bci(), jvms->should_reexecute(), is_method_handle_invoke, locvals, expvals, monvals);
+    debug_info()->describe_scope(safepoint_pc_offset, scope_method, jvms->bci(), jvms->should_reexecute(), is_method_handle_invoke, return_oop, locvals, expvals, monvals);
   } // End jvms loop
 
   // Mark the end of the scope set.
