@@ -1571,20 +1571,8 @@ public class BasicSliderUI extends SliderUI{
             offset = 0;
             scrollTimer.stop();
 
-            // This is the way we have to determine snap-to-ticks.  It's
-            // hard to explain but since ChangeEvents don't give us any
-            // idea what has changed we don't have a way to stop the thumb
-            // bounds from being recalculated.  Recalculating the thumb
-            // bounds moves the thumb over the current value (i.e., snapping
-            // to the ticks).
-            if (slider.getSnapToTicks() /*|| slider.getSnapToValue()*/ ) {
-                isDragging = false;
-                slider.setValueIsAdjusting(false);
-            }
-            else {
-                slider.setValueIsAdjusting(false);
-                isDragging = false;
-            }
+            isDragging = false;
+            slider.setValueIsAdjusting(false);
             slider.repaint();
         }
 
