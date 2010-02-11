@@ -31,7 +31,13 @@ BUILDDIR = ..
 PRODUCT = demos
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = applets jfc jvmti management jni scripting jpda
+SUBDIRS            = jni
+SUBDIRS_desktop    = applets jfc
+SUBDIRS_management = management
+SUBDIRS_misc       = scripting
+SUBDIRS_tools      = jpda jvmti
+
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build:: nbproject
 	$(SUBDIRS-loop)
