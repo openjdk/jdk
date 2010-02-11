@@ -104,3 +104,16 @@ template <class T> inline void G1ParScanClosure::do_oop_nv(T* p) {
     }
   }
 }
+
+template <class T> inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (_g1->in_cset_fast_test(obj)) {
+      Prefetch::write(obj->mark_addr(), 0);
+      Prefetch::read(obj->mark_addr(), (HeapWordSize*2));
+      _par_scan_state->push_on_queue(p);
+    }
+  }
+}
