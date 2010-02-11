@@ -187,7 +187,8 @@ private:
   void clear_outgoing_entries();
 
   enum ParIterState { Unclaimed, Claimed, Complete };
-  ParIterState _iter_state;
+  volatile ParIterState _iter_state;
+  volatile jlong _iter_claimed;
 
   // Unused unless G1RecordHRRSOops is true.
 
@@ -209,6 +210,7 @@ public:
                    HeapRegion* hr);
 
   static int num_par_rem_sets();
+  static void setup_remset_size();
 
   HeapRegion* hr() const {
     return _other_regions.hr();
@@ -271,6 +273,19 @@ public:
   void set_iter_complete();
   // Returns "true" iff the region's iteration is complete.
   bool iter_is_complete();
+
+  // Support for claiming blocks of cards during iteration
+  void set_iter_claimed(size_t x) { _iter_claimed = (jlong)x; }
+  size_t iter_claimed() const { return (size_t)_iter_claimed; }
+  // Claim the next block of cards
+  size_t iter_claimed_next(size_t step) {
+    size_t current, next;
+    do {
+      current = iter_claimed();
+      next = current + step;
+    } while (Atomic::cmpxchg((jlong)next, &_iter_claimed, (jlong)current) != (jlong)current);
+    return current;
+  }
 
   // Initialize the given iterator to iterate over this rem set.
   void init_iterator(HeapRegionRemSetIterator* iter) const;

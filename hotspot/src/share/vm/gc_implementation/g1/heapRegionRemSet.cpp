@@ -505,12 +505,13 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr) :
   typedef PosParPRT* PosParPRTPtr;
   if (_max_fine_entries == 0) {
     assert(_mod_max_fine_entries_mask == 0, "Both or none.");
-    _max_fine_entries = (size_t)(1 << G1LogRSRegionEntries);
+    size_t max_entries_log = (size_t)log2_long((jlong)G1RSetRegionEntries);
+    _max_fine_entries = (size_t)(1 << max_entries_log);
     _mod_max_fine_entries_mask = _max_fine_entries - 1;
 #if SAMPLE_FOR_EVICTION
     assert(_fine_eviction_sample_size == 0
            && _fine_eviction_stride == 0, "All init at same time.");
-    _fine_eviction_sample_size = MAX2((size_t)4, (size_t)G1LogRSRegionEntries);
+    _fine_eviction_sample_size = MAX2((size_t)4, max_entries_log);
     _fine_eviction_stride = _max_fine_entries / _fine_eviction_sample_size;
 #endif
   }
@@ -655,13 +656,6 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
 #endif
       }
 
-      // Otherwise, transfer from sparse to fine-grain.
-      CardIdx_t cards[SparsePRTEntry::CardsPerEntry];
-      if (G1HRRSUseSparseTable) {
-        bool res = _sparse_table.get_cards(from_hrs_ind, &cards[0]);
-        assert(res, "There should have been an entry");
-      }
-
       if (_n_fine_entries == _max_fine_entries) {
         prt = delete_region_table();
       } else {
@@ -676,10 +670,12 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
       _fine_grain_regions[ind] = prt;
       _n_fine_entries++;
 
-      // Add in the cards from the sparse table.
       if (G1HRRSUseSparseTable) {
-        for (int i = 0; i < SparsePRTEntry::CardsPerEntry; i++) {
-          CardIdx_t c = cards[i];
+        // Transfer from sparse to fine-grain.
+        SparsePRTEntry *sprt_entry = _sparse_table.get_entry(from_hrs_ind);
+        assert(sprt_entry != NULL, "There should have been an entry");
+        for (int i = 0; i < SparsePRTEntry::cards_num(); i++) {
+          CardIdx_t c = sprt_entry->card(i);
           if (c != SparsePRTEntry::NullEntry) {
             prt->add_card(c);
           }
@@ -1084,6 +1080,19 @@ HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
 {}
 
 
+void HeapRegionRemSet::setup_remset_size() {
+  // Setup sparse and fine-grain tables sizes.
+  // table_size = base * (log(region_size / 1M) + 1)
+  int region_size_log_mb = MAX2((int)HeapRegion::LogOfHRGrainBytes - (int)LOG_M, 0);
+  if (FLAG_IS_DEFAULT(G1RSetSparseRegionEntries)) {
+    G1RSetSparseRegionEntries = G1RSetSparseRegionEntriesBase * (region_size_log_mb + 1);
+  }
+  if (FLAG_IS_DEFAULT(G1RSetRegionEntries)) {
+    G1RSetRegionEntries = G1RSetRegionEntriesBase * (region_size_log_mb + 1);
+  }
+  guarantee(G1RSetSparseRegionEntries > 0 && G1RSetRegionEntries > 0 , "Sanity");
+}
+
 void HeapRegionRemSet::init_for_par_iteration() {
   _iter_state = Unclaimed;
 }
@@ -1399,7 +1408,7 @@ void HeapRegionRemSet::test() {
   os::sleep(Thread::current(), (jlong)5000, false);
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  // Run with "-XX:G1LogRSRegionEntries=2", so that 1 and 5 end up in same
+  // Run with "-XX:G1LogRSetRegionEntries=2", so that 1 and 5 end up in same
   // hash bucket.
   HeapRegion* hr0 = g1h->region_at(0);
   HeapRegion* hr1 = g1h->region_at(1);
