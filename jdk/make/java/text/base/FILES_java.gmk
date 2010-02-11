@@ -29,7 +29,6 @@ FILES_java = \
     java/text/AttributedString.java \
     java/text/BreakDictionary.java \
     java/text/BreakIterator.java \
-    java/text/Bidi.java \
     java/text/CharacterIterator.java \
     java/text/CharacterIteratorFieldDelegate.java \
     java/text/ChoiceFormat.java \
@@ -76,10 +75,6 @@ FILES_java = \
         sun/text/Normalizer.java \
         sun/text/SupplementaryCharacterData.java \
         sun/text/UCompactIntArray.java \
-            sun/text/bidi/BidiBase.java \
-            sun/text/bidi/BidiLine.java \
-            sun/text/bidi/BidiRun.java \
-            \
             sun/text/normalizer/CharTrie.java \
             sun/text/normalizer/CharacterIteratorWrapper.java \
             sun/text/normalizer/ICUBinary.java \
