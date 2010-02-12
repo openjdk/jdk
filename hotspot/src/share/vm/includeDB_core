@@ -1484,6 +1484,7 @@ deoptimization.cpp                      thread.hpp
 deoptimization.cpp                      vframe.hpp
 deoptimization.cpp                      vframeArray.hpp
 deoptimization.cpp                      vframe_hp.hpp
+deoptimization.cpp                      vmreg_<arch>.inline.hpp
 deoptimization.cpp                      xmlstream.hpp
 
 deoptimization.hpp                      allocation.hpp

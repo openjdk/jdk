@@ -3279,7 +3279,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         __ bind(next_test);
       }
       // Receiver did not match any saved receiver and there is no empty row for it.
-      // Increment total counter to indicate polimorphic case.
+      // Increment total counter to indicate polymorphic case.
       __ addl(counter_addr, DataLayout::counter_increment);
 
       __ bind(update_done);
