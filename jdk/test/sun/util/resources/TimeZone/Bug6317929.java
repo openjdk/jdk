@@ -180,11 +180,11 @@ public class Bug6317929 {
                                        "(\ub274 \uc0ac\uc6b0\uc2a4 \uc6e8\uc77c\uc988)\"");
         tzLocale = locales2Test[7];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("Eastern Standard Time (Nya Sydwales)"))
+           ("Eastern, normaltid (Nya Sydwales)"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"Eastern Standard Time " +
+                                       "\"Eastern, normaltid " +
                                        "(Nya Sydwales)\"");
         tzLocale = locales2Test[8];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
