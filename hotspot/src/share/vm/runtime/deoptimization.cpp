@@ -938,21 +938,6 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
   if (TraceDeoptimization) {
     ttyLocker ttyl;
     tty->print_cr("     Created vframeArray " INTPTR_FORMAT, array);
-    if (Verbose) {
-      int count = 0;
-      // this used to leak deoptimizedVFrame like it was going out of style!!!
-      for (int index = 0; index < array->frames(); index++ ) {
-        vframeArrayElement* e = array->element(index);
-        e->print(tty);
-
-        /*
-          No printing yet.
-        array->vframe_at(index)->print_activation(count++);
-        // better as...
-        array->print_activation_for(index, count++);
-        */
-      }
-    }
   }
 #endif // PRODUCT
 
