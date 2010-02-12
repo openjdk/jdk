@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   CompileLog* log = this->log();
   if (log != NULL) {
     int rid = (receiver_count >= 0)? log->identify(profile.receiver(0)): -1;
-    int r2id = (profile.morphism() == 2)? log->identify(profile.receiver(1)):-1;
+    int r2id = (rid != -1 && profile.has_receiver(1))? log->identify(profile.receiver(1)):-1;
     log->begin_elem("call method='%d' count='%d' prof_factor='%g'",
                     log->identify(call_method), site_count, prof_factor);
     if (call_is_virtual)  log->print(" virtual='1'");
