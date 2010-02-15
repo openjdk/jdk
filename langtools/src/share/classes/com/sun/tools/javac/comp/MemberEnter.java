@@ -1065,11 +1065,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             super.visitNewArray(tree);
         }
         @Override
-        public void visitApply(JCMethodInvocation tree) {
-            super.visitApply(tree);
-            scan(tree.typeargs);
-        }
-        @Override
         public void visitMethodDef(JCMethodDecl tree) {
             annotate(tree, tree.receiverAnnotations);
             super.visitMethodDef(tree);

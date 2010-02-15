@@ -1994,18 +1994,13 @@ public class Lower extends TreeTranslator {
                                                tree.packageAnnotations),
                                 name, List.<JCTypeParameter>nil(),
                                 null, List.<JCExpression>nil(), List.<JCTree>nil());
-            ClassSymbol c = reader.enterClass(name, tree.packge);
-            c.flatname = names.fromString(tree.packge + "." + name);
-            c.sourcefile = tree.sourcefile;
-            c.completer = null;
-            c.members_field = new Scope(c);
-            c.flags_field = flags;
+            ClassSymbol c = tree.packge.package_info;
+            c.flags_field |= flags;
             c.attributes_field = tree.packge.attributes_field;
             ClassType ctype = (ClassType) c.type;
             ctype.supertype_field = syms.objectType;
             ctype.interfaces_field = List.nil();
             packageAnnotationsClass.sym = c;
-
 
             translated.append(packageAnnotationsClass);
         }
