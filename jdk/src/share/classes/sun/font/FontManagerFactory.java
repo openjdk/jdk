@@ -68,38 +68,34 @@ public final class FontManagerFactory {
             return instance;
         }
 
-        String fmClassName = AccessController.doPrivileged(
-                new GetPropertyAction("sun.font.fontmanager",
-                                      DEFAULT_CLASS));
+        AccessController.doPrivileged(new PrivilegedAction() {
 
-        try {
-            @SuppressWarnings("unchecked")
-            ClassLoader cl = (ClassLoader)
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        return ClassLoader.getSystemClassLoader();
-                    }
-                });
+            public Object run() {
+                try {
+                    String fmClassName =
+                            System.getProperty("sun.font.fontmanager",
+                                               DEFAULT_CLASS);
+                    ClassLoader cl = ClassLoader.getSystemClassLoader();
+                    Class fmClass = Class.forName(fmClassName, true, cl);
+                    instance = (FontManager) fmClass.newInstance();
+                } catch (ClassNotFoundException ex) {
+                    InternalError err = new InternalError();
+                    err.initCause(ex);
+                    throw err;
 
-            @SuppressWarnings("unchecked")
-            Class fmClass = Class.forName(fmClassName, true, cl);
-            instance = (FontManager) fmClass.newInstance();
+                } catch (InstantiationException ex) {
+                    InternalError err = new InternalError();
+                    err.initCause(ex);
+                    throw err;
 
-        } catch (ClassNotFoundException ex) {
-            InternalError err = new InternalError();
-            err.initCause(ex);
-            throw err;
-
-        } catch (InstantiationException ex) {
-            InternalError err = new InternalError();
-            err.initCause(ex);
-            throw err;
-
-        } catch (IllegalAccessException ex) {
-            InternalError err = new InternalError();
-            err.initCause(ex);
-            throw err;
-        }
+                } catch (IllegalAccessException ex) {
+                    InternalError err = new InternalError();
+                    err.initCause(ex);
+                    throw err;
+                }
+                return null;
+            }
+        });
 
         return instance;
     }

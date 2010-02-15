@@ -31,7 +31,7 @@ BUILDDIR = ../..
 PACKAGE = sun.nio
 PRODUCT = sun
 
-OTHER_JAVACFLAGS += -Xlint:serial -Werror
+OTHER_JAVACFLAGS += -Xlint:serial,-deprecation -Werror
 include $(BUILDDIR)/common/Defs.gmk
 
 #
