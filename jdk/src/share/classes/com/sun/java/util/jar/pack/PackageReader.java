@@ -27,7 +27,6 @@ package com.sun.java.util.jar.pack;
 
 import java.io.*;
 import java.util.*;
-import java.util.logging.Level;
 import com.sun.java.util.jar.pack.Package.Class;
 import com.sun.java.util.jar.pack.Package.File;
 import com.sun.java.util.jar.pack.Package.InnerClass;
@@ -162,7 +161,7 @@ class PackageReader extends BandStructure {
 
             ok = true;
         } catch (Exception ee) {
-            Utils.log.log(Level.WARNING, "Error on input: "+ee, ee);
+            Utils.log.warning("Error on input: "+ee, ee);
             if (verbose > 0)
                 Utils.log.info("Stream offsets:"+
                                  " served="+in.getBytesServed()+
