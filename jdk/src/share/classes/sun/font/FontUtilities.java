@@ -32,9 +32,9 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.security.AccessController;
 
+import java.security.PrivilegedAction;
 import javax.swing.plaf.FontUIResource;
 
-import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -42,79 +42,82 @@ import sun.util.logging.PlatformLogger;
  */
 public final class FontUtilities {
 
-    public static final boolean isSolaris;
+    public static boolean isSolaris;
 
-    public static final boolean isLinux;
+    public static boolean isLinux;
 
-    public static final boolean isSolaris8;
+    public static boolean isSolaris8;
 
-    public static final boolean isSolaris9;
+    public static boolean isSolaris9;
 
-    public static final boolean isOpenSolaris;
+    public static boolean isOpenSolaris;
 
-    public static final boolean useT2K;
+    public static boolean useT2K;
 
-    public static final boolean isWindows;
+    public static boolean isWindows;
 
-    public static final boolean isOpenJDK;
+    public static boolean isOpenJDK;
 
     static final String LUCIDA_FILE_NAME = "LucidaSansRegular.ttf";
 
     // This static initializer block figures out the OS constants.
     static {
 
-        String osName = AccessController.doPrivileged(
-                                new GetPropertyAction("os.name", "unknownOS"));
-        isSolaris = osName.startsWith("SunOS");
+        AccessController.doPrivileged(new PrivilegedAction () {
+            public Object run() {
+                String osName = System.getProperty("os.name", "unknownOS");
+                isSolaris = osName.startsWith("SunOS");
 
-        isLinux = osName.startsWith("Linux");
+                isLinux = osName.startsWith("Linux");
 
-        String t2kStr = AccessController.doPrivileged(
-                              new GetPropertyAction("sun.java2d.font.scaler"));
-        if (t2kStr != null) {
-            useT2K = "t2k".equals(t2kStr);
-        } else {
-            useT2K = false;
-        }
-        if (isSolaris) {
-            String version = AccessController.doPrivileged(
-                                   new GetPropertyAction("os.version", "0.0"));
-            isSolaris8 = version.startsWith("5.8");
-            isSolaris9 = version.startsWith("5.9");
-            float ver = Float.parseFloat(version);
-            if (ver > 5.10f) {
-                File f = new File("/etc/release");
-                String line = null;
-                try {
-                    FileInputStream fis = new FileInputStream(f);
-                    InputStreamReader isr = new InputStreamReader(
-                                                            fis, "ISO-8859-1");
-                    BufferedReader br = new BufferedReader(isr);
-                    line = br.readLine();
-                    fis.close();
-                } catch (Exception ex) {
-                    // Nothing to do here.
-                }
-                if (line != null && line.indexOf("OpenSolaris") >= 0) {
-                    isOpenSolaris = true;
+                String t2kStr = System.getProperty("sun.java2d.font.scaler");
+                if (t2kStr != null) {
+                    useT2K = "t2k".equals(t2kStr);
                 } else {
+                    useT2K = false;
+                }
+                if (isSolaris) {
+                    String version = System.getProperty("os.version", "0.0");
+                    isSolaris8 = version.startsWith("5.8");
+                    isSolaris9 = version.startsWith("5.9");
+                    float ver = Float.parseFloat(version);
+                    if (ver > 5.10f) {
+                        File f = new File("/etc/release");
+                        String line = null;
+                        try {
+                            FileInputStream fis = new FileInputStream(f);
+                            InputStreamReader isr = new InputStreamReader(
+                                                            fis, "ISO-8859-1");
+                            BufferedReader br = new BufferedReader(isr);
+                            line = br.readLine();
+                            fis.close();
+                        } catch (Exception ex) {
+                            // Nothing to do here.
+                        }
+                        if (line != null && line.indexOf("OpenSolaris") >= 0) {
+                            isOpenSolaris = true;
+                        } else {
+                            isOpenSolaris = false;
+                        }
+                    } else {
+                        isOpenSolaris = false;
+                    }
+                } else {
+                    isSolaris8 = false;
+                    isSolaris9 = false;
                     isOpenSolaris = false;
                 }
-            } else {
-                isOpenSolaris= false;
+                isWindows = osName.startsWith("Windows");
+                String jreLibDirName = System.getProperty("java.home", "")
+                                                      + File.separator + "lib";
+                String jreFontDirName =
+                        jreLibDirName + File.separator + "fonts";
+                File lucidaFile = new File(jreFontDirName + File.separator
+                                           + LUCIDA_FILE_NAME);
+                isOpenJDK = !lucidaFile.exists();
+                return null;
             }
-        } else {
-            isSolaris8 = false;
-            isSolaris9 = false;
-            isOpenSolaris = false;
-        }
-        isWindows = osName.startsWith("Windows");
-        String jreLibDirName = AccessController.doPrivileged(
-               new GetPropertyAction("java.home","")) + File.separator + "lib";
-        String jreFontDirName = jreLibDirName + File.separator + "fonts";
-        File lucidaFile =
-                new File(jreFontDirName + File.separator + LUCIDA_FILE_NAME);
-        isOpenJDK = !lucidaFile.exists();
+        });
     }
 
     /**
