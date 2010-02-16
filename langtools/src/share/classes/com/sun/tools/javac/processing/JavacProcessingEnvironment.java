@@ -874,20 +874,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
                     JavaFileManager fileManager = currentContext.get(JavaFileManager.class);
 
-                    List<JavaFileObject> fileObjects = List.nil();
-                    for (JavaFileObject jfo : filer.getGeneratedSourceFileObjects() ) {
-                        fileObjects = fileObjects.prepend(jfo);
-                    }
-
-
                     compiler = JavaCompiler.instance(currentContext);
-                    List<JCCompilationUnit> parsedFiles = compiler.parseFiles(fileObjects);
-                    roots = cleanTrees(roots).reverse();
-
-
-                    for (JCCompilationUnit unit : parsedFiles)
-                        roots = roots.prepend(unit);
-                    roots = roots.reverse();
+                    List<JCCompilationUnit> parsedFiles = sourcesToParsedFiles(compiler);
+                    roots = cleanTrees(roots).appendList(parsedFiles);
 
                     // Check for errors after parsing
                     if (compiler.parseErrors()) {
@@ -921,11 +910,16 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     break runAround; // No new files
             }
         }
-        runLastRound(xout, roundNumber, errorStatus, taskListener);
+        roots = runLastRound(xout, roundNumber, errorStatus, compiler, roots, taskListener);
+        // Set error status for any files compiled and generated in
+        // the last round
+        if (compiler.parseErrors())
+            errorStatus = true;
 
         compiler.close(false);
         currentContext = contextForNextRound(currentContext, true);
         compiler = JavaCompiler.instance(currentContext);
+
         filer.newRound(currentContext, true);
         filer.warnIfUnclosedFiles();
         warnIfUnmatchedOptions();
@@ -979,10 +973,22 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return compiler;
     }
 
+    private List<JCCompilationUnit> sourcesToParsedFiles(JavaCompiler compiler)
+        throws IOException {
+        List<JavaFileObject> fileObjects = List.nil();
+        for (JavaFileObject jfo : filer.getGeneratedSourceFileObjects() ) {
+            fileObjects = fileObjects.prepend(jfo);
+        }
+
+       return compiler.parseFiles(fileObjects);
+    }
+
     // Call the last round of annotation processing
-    private void runLastRound(PrintWriter xout,
-                              int roundNumber,
-                              boolean errorStatus,
+    private List<JCCompilationUnit> runLastRound(PrintWriter xout,
+                                                 int roundNumber,
+                                                 boolean errorStatus,
+                                                 JavaCompiler compiler,
+                                                 List<JCCompilationUnit> roots,
                               TaskListener taskListener) throws IOException {
         roundNumber++;
         List<ClassSymbol> noTopLevelClasses = List.nil();
@@ -1003,6 +1009,15 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (taskListener != null)
                 taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING_ROUND));
         }
+
+        // Add any sources generated during the last round to the set
+        // of files to be compiled.
+        if (moreToDo()) {
+            List<JCCompilationUnit> parsedFiles = sourcesToParsedFiles(compiler);
+            roots = cleanTrees(roots).appendList(parsedFiles);
+        }
+
+        return roots;
     }
 
     private void updateProcessingState(Context currentContext, boolean lastRound) {
