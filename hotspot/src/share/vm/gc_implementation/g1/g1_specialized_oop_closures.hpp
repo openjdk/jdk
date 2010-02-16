@@ -33,11 +33,12 @@ enum G1Barrier {
 };
 
 template<bool do_gen_barrier, G1Barrier barrier,
-         bool do_mark_forwardee, bool skip_cset_test>
+         bool do_mark_forwardee>
 class G1ParCopyClosure;
 class G1ParScanClosure;
+class G1ParPushHeapRSClosure;
 
-typedef G1ParCopyClosure<false, G1BarrierEvac, false, true> G1ParScanHeapEvacClosure;
+typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacClosure;
 
 class FilterIntoCSClosure;
 class FilterOutOfRegionClosure;
@@ -51,6 +52,7 @@ class FilterAndMarkInHeapRegionAndIntoCSClosure;
 #define FURTHER_SPECIALIZED_OOP_OOP_ITERATE_CLOSURES(f) \
       f(G1ParScanHeapEvacClosure,_nv)                   \
       f(G1ParScanClosure,_nv)                           \
+      f(G1ParPushHeapRSClosure,_nv)                     \
       f(FilterIntoCSClosure,_nv)                        \
       f(FilterOutOfRegionClosure,_nv)                   \
       f(FilterInHeapRegionAndIntoCSClosure,_nv)         \
