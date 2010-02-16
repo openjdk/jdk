@@ -101,7 +101,11 @@ class SourceOrderDeclScanner extends DeclarationScanner {
         }
         @SuppressWarnings("cast")
         private int compareEqualPosition(Declaration d1, Declaration d2) {
-            assert d1.getPosition() == d2.getPosition();
+            assert
+                (d1.getPosition() == d2.getPosition()) || // Handles d1 == d2 == null
+                (d1.getPosition().file().compareTo(d2.getPosition().file()) == 0 &&
+                 d1.getPosition().line()   == d2.getPosition().line() &&
+                 d1.getPosition().column() == d2.getPosition().column());
 
             DeclPartialOrder dpo1 = new DeclPartialOrder();
             DeclPartialOrder dpo2 = new DeclPartialOrder();
