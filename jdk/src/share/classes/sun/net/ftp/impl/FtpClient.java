@@ -671,6 +671,10 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         }
         if (!issueCommand(cmd)) {
             s.close();
+            if (getLastReplyCode() == FtpReplyCode.FILE_UNAVAILABLE) {
+                // Ensure backward compatibility
+                throw new FileNotFoundException(cmd);
+            }
             throw new sun.net.ftp.FtpProtocolException(cmd + ":" + getResponseString(), getLastReplyCode());
         }
         return s;
@@ -688,7 +692,16 @@ public class FtpClient extends sun.net.ftp.FtpClient {
         Socket clientSocket;
 
         if (passiveMode) {
-            return openPassiveDataConnection(cmd);
+            try {
+                return openPassiveDataConnection(cmd);
+            } catch (sun.net.ftp.FtpProtocolException e) {
+                // If Passive mode failed, fall back on PORT
+                // Otherwise throw exception
+                String errmsg = e.getMessage();
+                if (!errmsg.startsWith("PASV") && !errmsg.startsWith("EPSV")) {
+                    throw e;
+                }
+            }
         }
         ServerSocket portSocket;
         InetAddress myAddress;

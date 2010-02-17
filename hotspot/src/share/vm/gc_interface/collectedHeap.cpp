@@ -66,7 +66,8 @@ void CollectedHeap::pre_initialize() {
   // Used for ReduceInitialCardMarks (when COMPILER2 is used);
   // otherwise remains unused.
 #ifdef COMPLER2
-  _defer_initial_card_mark = ReduceInitialCardMarks && (DeferInitialCardMark || card_mark_must_follow_store());
+  _defer_initial_card_mark =    ReduceInitialCardMarks && can_elide_tlab_store_barriers()
+                             && (DeferInitialCardMark || card_mark_must_follow_store());
 #else
   assert(_defer_initial_card_mark == false, "Who would set it?");
 #endif

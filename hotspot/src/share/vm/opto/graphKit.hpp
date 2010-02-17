@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,6 +250,11 @@ class GraphKit : public Phase {
   // The JVMS must allow the bytecode to be re-executed
   // via an uncommon trap.
   void builtin_throw(Deoptimization::DeoptReason reason, Node* arg = NULL);
+
+  // Helper to check the JavaThread::_should_post_on_exceptions flag
+  // and branch to an uncommon_trap if it is true (with the specified reason and must_throw)
+  void uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptReason reason,
+                                                  bool must_throw) ;
 
   // Helper Functions for adding debug information
   void kill_dead_locals();
