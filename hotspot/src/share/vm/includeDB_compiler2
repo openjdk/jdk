@@ -775,6 +775,7 @@ output.cpp                              allocation.inline.hpp
 output.cpp                              assembler.inline.hpp
 output.cpp                              callnode.hpp
 output.cpp                              cfgnode.hpp
+output.cpp                              compileBroker.hpp
 output.cpp                              debugInfo.hpp
 output.cpp                              debugInfoRec.hpp
 output.cpp                              handles.inline.hpp

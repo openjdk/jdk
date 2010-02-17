@@ -1,5 +1,5 @@
 /**
- * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import infos.ThirdBeanBeanInfo;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;
+import java.lang.ref.Reference;
 import java.lang.reflect.Field;
 
 import sun.awt.SunToolkit;
@@ -61,9 +62,10 @@ public class TestBeanInfo implements Runnable {
         try {
             actual = Introspector.getBeanInfo(type);
             type = actual.getClass();
-            Field field = type.getDeclaredField("targetBeanInfo"); // NON-NLS: field name
+            Field field = type.getDeclaredField("targetBeanInfoRef"); // NON-NLS: field name
             field.setAccessible(true);
-            actual = (BeanInfo) field.get(actual);
+            Reference ref = (Reference) field.get(actual);
+            actual = (BeanInfo) ref.get();
         }
         catch (Exception exception) {
             throw new Error("unexpected error", exception);

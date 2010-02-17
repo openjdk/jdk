@@ -172,7 +172,7 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
     DWORD ret;
     IP_ADAPTER_ADDRESSES *ptr, *adapters=0;
     ULONG len=ipinflen, count=0;
-    netif *nif=0, *dup_nif, *last=0, *loopif=0;
+    netif *nif=0, *dup_nif, *last=0, *loopif=0, *curr;
     int tun=0, net=0;
 
     *netifPP = 0;
@@ -195,6 +195,20 @@ int getAllInterfacesAndAddresses (JNIEnv *env, netif **netifPP)
             loopif = nif;
         }
         last = nif;
+    }
+
+    // Retrieve IPv4 addresses with the IP Helper API
+    curr = *netifPP;
+    while (curr != NULL) {
+        netaddr *netaddrP;
+        ret = enumAddresses_win(env, curr, &netaddrP);
+        if ((*env)->ExceptionOccurred(env)) {
+            free_netaddr(netaddrP);
+            return -1;
+        }
+        curr->addrs = netaddrP;
+        curr->naddrs += ret;
+        curr = curr->next;
     }
 
     ret = getAdapters (env, &adapters);
@@ -350,6 +364,14 @@ static int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP) {
         /* address is only usable if dad state is preferred or deprecated */
         if (uni_addr->DadState == IpDadStateDeprecated ||
                 uni_addr->DadState == IpDadStatePreferred) {
+            sock = uni_addr->Address.lpSockaddr;
+
+            // IPv4 addresses already retrieved with enumAddresses_win
+            if (sock->sa_family == AF_INET) {
+                uni_addr = uni_addr->Next;
+                continue;
+            }
+
             curr = (netaddr *)calloc (1, sizeof (netaddr));
             if (curr == 0) {
                 return -1;
@@ -361,15 +383,9 @@ static int getAddrsFromAdapter(IP_ADAPTER_ADDRESSES *ptr, netaddr **netaddrPP) {
                 prev->next = curr;
             }
             prev = curr;
-            sock = uni_addr->Address.lpSockaddr;
             SOCKETADDRESS_COPY (&curr->addr, sock);
             if (prefix != NULL) {
               curr->mask = (short)prefix->PrefixLength;
-              if (sock->sa_family == AF_INET) {
-                sock = prefix->Address.lpSockaddr;
-                SOCKETADDRESS_COPY(&curr->brdcast, sock);
-                curr->brdcast.him4.sin_addr.s_addr |= htonl((0xffffffff >> curr->mask));
-              }
               prefix = prefix->Next;
             }
             count ++;

@@ -291,6 +291,10 @@
           "a particular entry exceeds this value.")                         \
                                                                             \
   develop(bool, G1VerifyCTCleanup, false,                                   \
-          "Verify card table cleanup.")
+          "Verify card table cleanup.")                                     \
+                                                                            \
+  develop(bool, ReduceInitialCardMarksForG1, false,                         \
+          "When ReduceInitialCardMarks is true, this flag setting "         \
+          " controls whether G1 allows the RICM optimization")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)

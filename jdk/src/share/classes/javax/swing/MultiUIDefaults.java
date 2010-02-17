@@ -27,6 +27,7 @@ package javax.swing;
 
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -89,11 +90,7 @@ class MultiUIDefaults extends UIDefaults
 
     @Override
     public int size() {
-        int n = super.size();
-        for (UIDefaults table : tables) {
-            n += (table != null) ? table.size() : 0;
-        }
-        return n;
+        return entrySet().size();
     }
 
     @Override
@@ -104,40 +101,26 @@ class MultiUIDefaults extends UIDefaults
     @Override
     public Enumeration<Object> keys()
     {
-        Enumeration[] enums = new Enumeration[1 + tables.length];
-        enums[0] = super.keys();
-        for(int i = 0; i < tables.length; i++) {
-            UIDefaults table = tables[i];
-            if (table != null) {
-                enums[i + 1] = table.keys();
-            }
-        }
-        return new MultiUIDefaultsEnumerator(enums);
+        return new MultiUIDefaultsEnumerator(
+                MultiUIDefaultsEnumerator.Type.KEYS, entrySet());
     }
 
     @Override
     public Enumeration<Object> elements()
     {
-        Enumeration[] enums = new Enumeration[1 + tables.length];
-        enums[0] = super.elements();
-        for(int i = 0; i < tables.length; i++) {
-            UIDefaults table = tables[i];
-            if (table != null) {
-                enums[i + 1] = table.elements();
-            }
-        }
-        return new MultiUIDefaultsEnumerator(enums);
+        return new MultiUIDefaultsEnumerator(
+                MultiUIDefaultsEnumerator.Type.ELEMENTS, entrySet());
     }
 
     @Override
     public Set<Entry<Object, Object>> entrySet() {
         Set<Entry<Object, Object>> set = new HashSet<Entry<Object, Object>>();
-        if (tables == null) return set;
-        for (UIDefaults table : tables) {
-            if (table != null) {
-                set.addAll(table.entrySet());
+        for (int i = tables.length - 1; i >= 0; i--) {
+            if (tables[i] != null) {
+                set.addAll(tables[i].entrySet());
             }
         }
+        set.addAll(super.entrySet());
         return set;
     }
 
@@ -152,50 +135,46 @@ class MultiUIDefaults extends UIDefaults
 
     private static class MultiUIDefaultsEnumerator implements Enumeration<Object>
     {
-        Enumeration[] enums;
-        int n = 0;
+        public static enum Type { KEYS, ELEMENTS };
+        private Iterator<Entry<Object, Object>> iterator;
+        private Type type;
 
-        MultiUIDefaultsEnumerator(Enumeration[] enums) {
-            this.enums = enums;
+        MultiUIDefaultsEnumerator(Type type, Set<Entry<Object, Object>> entries) {
+            this.type = type;
+            this.iterator = entries.iterator();
         }
 
         public boolean hasMoreElements() {
-            for(int i = n; i < enums.length; i++) {
-                Enumeration e = enums[i];
-                if ((e != null) && (e.hasMoreElements())) {
-                    return true;
-                }
-            }
-            return false;
+            return iterator.hasNext();
         }
 
         public Object nextElement() {
-            for(; n < enums.length; n++) {
-                Enumeration e = enums[n];
-                if ((e != null) && (e.hasMoreElements())) {
-                    return e.nextElement();
-                }
+            switch (type) {
+                case KEYS: return iterator.next().getKey();
+                case ELEMENTS: return iterator.next().getValue();
+                default: return null;
             }
-            return null;
         }
     }
 
     @Override
     public Object remove(Object key)
     {
-        Object value = super.remove(key);
-        if (value != null) {
-            return value;
-        }
-
-        for (UIDefaults table : tables) {
-            value = (table != null) ? table.remove(key) : null;
-            if (value != null) {
-                return value;
+        Object value = null;
+        for (int i = tables.length - 1; i >= 0; i--) {
+            if (tables[i] != null) {
+                Object v = tables[i].remove(key);
+                if (v != null) {
+                    value = v;
+                }
             }
         }
+        Object v = super.remove(key);
+        if (v != null) {
+            value = v;
+        }
 
-        return null;
+        return value;
     }
 
     @Override
