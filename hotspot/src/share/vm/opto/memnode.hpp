@@ -583,9 +583,22 @@ public:
 // Preceeding equivalent StoreCMs may be eliminated.
 class StoreCMNode : public StoreNode {
  private:
+  virtual uint hash() const { return StoreNode::hash() + _oop_alias_idx; }
+  virtual uint cmp( const Node &n ) const {
+    return _oop_alias_idx == ((StoreCMNode&)n)._oop_alias_idx
+      && StoreNode::cmp(n);
+  }
+  virtual uint size_of() const { return sizeof(*this); }
   int _oop_alias_idx;   // The alias_idx of OopStore
+
 public:
-  StoreCMNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store, int oop_alias_idx ) : StoreNode(c,mem,adr,at,val,oop_store), _oop_alias_idx(oop_alias_idx) {}
+  StoreCMNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store, int oop_alias_idx ) :
+    StoreNode(c,mem,adr,at,val,oop_store),
+    _oop_alias_idx(oop_alias_idx) {
+    assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
+           _oop_alias_idx == Compile::AliasIdxBot && Compile::current()->AliasLevel() == 0,
+           "bad oop alias idx");
+  }
   virtual int Opcode() const;
   virtual Node *Identity( PhaseTransform *phase );
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);

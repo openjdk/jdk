@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1580,7 +1580,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
   uint num_proj = _proj_list.size();
 
   // Perform any 1-to-many expansions required
-  MachNode *ex = mach->Expand(s,_proj_list);
+  MachNode *ex = mach->Expand(s,_proj_list, mem);
   if( ex != mach ) {
     assert(ex->ideal_reg() == mach->ideal_reg(), "ideal types should match");
     if( ex->in(1)->is_Con() )
