@@ -2815,6 +2815,15 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     DebugNonSafepoints = true;
   }
 
+#ifndef PRODUCT
+  if (CompileTheWorld) {
+    // Force NmethodSweeper to sweep whole CodeCache each time.
+    if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
+      NmethodSweepFraction = 1;
+    }
+  }
+#endif
+
   if (PrintCommandLineFlags) {
     CommandLineFlags::printSetFlags();
   }

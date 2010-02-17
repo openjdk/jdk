@@ -232,7 +232,7 @@ public final class CollationElementIterator
                     buffer = makeReorderedBuffer(consonant, value, buffer, true);
                     value = buffer[0];
                     expIndex = 1;
-                } else {
+                } else if (consonant != NormalizerBase.DONE) {
                     text.previous();
                 }
             }
@@ -242,7 +242,7 @@ public final class CollationElementIterator
                     buffer = makeReorderedBuffer(consonant, value, buffer, true);
                     value = buffer[0];
                     expIndex = 1;
-                } else {
+                } else if (consonant != NormalizerBase.DONE) {
                     text.previous();
                 }
             }

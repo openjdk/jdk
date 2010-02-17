@@ -222,10 +222,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Label& not_equal_continue);
 
   void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2);
+                               Register reg2, bool is_virtual_call);
   void record_klass_in_profile_helper(Register receiver, Register mdp,
-                                      Register reg2,
-                                      int start_row, Label& done);
+                                      Register reg2, int start_row,
+                                      Label& done, bool is_virtual_call);
 
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register reg, int offset_of_disp);
