@@ -258,6 +258,7 @@ static void clearStreamBuffer(streamBufferPtr sb) {
 
 typedef struct pixelBufferStruct {
     jobject hpixelObject;   // Usually a DataBuffer bank as a byte array
+    unsigned int byteBufferLength;
     union pixptr {
         INT32         *ip;  // Pinned buffer pointer, as 32-bit ints
         unsigned char *bp;  // Pinned buffer pointer, as bytes
@@ -270,6 +271,7 @@ typedef struct pixelBufferStruct {
  */
 static void initPixelBuffer(pixelBufferPtr pb) {
     pb->hpixelObject = NULL;
+    pb->byteBufferLength = 0;
     pb->buf.ip = NULL;
 }
 
@@ -279,13 +281,13 @@ static void initPixelBuffer(pixelBufferPtr pb) {
  */
 static int setPixelBuffer(JNIEnv *env, pixelBufferPtr pb, jobject obj) {
     pb->hpixelObject = (*env)->NewGlobalRef(env, obj);
-
     if (pb->hpixelObject == NULL) {
         JNU_ThrowByName( env,
                          "java/lang/OutOfMemoryError",
                          "Setting Pixel Buffer");
         return NOT_OK;
     }
+    pb->byteBufferLength = (*env)->GetArrayLength(env, pb->hpixelObject);
     return OK;
 }
 
@@ -302,6 +304,7 @@ static void resetPixelBuffer(JNIEnv *env, pixelBufferPtr pb) {
         unpinPixelBuffer(env, pb);
         (*env)->DeleteGlobalRef(env, pb->hpixelObject);
         pb->hpixelObject = NULL;
+        pb->byteBufferLength = 0;
     }
 }
 
@@ -1828,6 +1831,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
     boolean orderedBands = TRUE;
     imageIODataPtr data = (imageIODataPtr) ptr;
     j_decompress_ptr cinfo;
+    unsigned int numBytes;
 
     /* verify the inputs */
 
@@ -2027,15 +2031,22 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
                 // scanline buffer into the raster.
                 in = scanLinePtr + (sourceXStart * cinfo->output_components);
                 if (pixelLimit > in) {
-                    memcpy(out, in, pixelLimit - in);
+                    numBytes = pixelLimit - in;
+                    if (numBytes > data->pixelBuf.byteBufferLength) {
+                        numBytes = data->pixelBuf.byteBufferLength;
+                    }
+                    memcpy(out, in, numBytes);
                 }
             } else {
+                numBytes = numBands;
                 for (in = scanLinePtr+sourceXStart*cinfo->output_components;
-                     in < pixelLimit;
+                     in < pixelLimit &&
+                       numBytes <= data->pixelBuf.byteBufferLength;
                      in += pixelStride) {
                     for (i = 0; i < numBands; i++) {
                         *out++ = *(in+bands[i]);
                     }
+                    numBytes += numBands;
                 }
             }
 
