@@ -805,8 +805,12 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     mcall = mach->as_MachCall();
 
     // Is the call a MethodHandle call?
-    if (mcall->is_MachCallJava())
-      is_method_handle_invoke = mcall->as_MachCallJava()->_method_handle_invoke;
+    if (mcall->is_MachCallJava()) {
+      if (mcall->as_MachCallJava()->_method_handle_invoke) {
+        assert(has_method_handle_invokes(), "must have been set during call generation");
+        is_method_handle_invoke = true;
+      }
+    }
 
     // Check if a call returns an object.
     if (mcall->return_value_is_used() &&
@@ -1092,9 +1096,21 @@ void Compile::Fill_buffer() {
   deopt_handler_req += MAX_stubs_size; // add marginal slop for handler
   stub_req += MAX_stubs_size;   // ensure per-stub margin
   code_req += MAX_inst_size;    // ensure per-instruction margin
+
   if (StressCodeBuffers)
     code_req = const_req = stub_req = exception_handler_req = deopt_handler_req = 0x10;  // force expansion
-  int total_req = code_req + pad_req + stub_req + exception_handler_req + deopt_handler_req + const_req;
+
+  int total_req =
+    code_req +
+    pad_req +
+    stub_req +
+    exception_handler_req +
+    deopt_handler_req +              // deopt handler
+    const_req;
+
+  if (has_method_handle_invokes())
+    total_req += deopt_handler_req;  // deopt MH handler
+
   CodeBuffer* cb = code_buffer();
   cb->initialize(total_req, locs_req);
 
@@ -1436,10 +1452,13 @@ void Compile::Fill_buffer() {
     _code_offsets.set_value(CodeOffsets::Exceptions, emit_exception_handler(*cb));
     // Emit the deopt handler code.
     _code_offsets.set_value(CodeOffsets::Deopt, emit_deopt_handler(*cb));
-    // Emit the MethodHandle deopt handler code.  We can use the same
-    // code as for the normal deopt handler, we just need a different
-    // entry point address.
-    _code_offsets.set_value(CodeOffsets::DeoptMH, emit_deopt_handler(*cb));
+
+    // Emit the MethodHandle deopt handler code (if required).
+    if (has_method_handle_invokes()) {
+      // We can use the same code as for the normal deopt handler, we
+      // just need a different entry point address.
+      _code_offsets.set_value(CodeOffsets::DeoptMH, emit_deopt_handler(*cb));
+    }
   }
 
   // One last check for failed CodeBuffer::expand:
