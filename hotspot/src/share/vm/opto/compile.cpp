@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -465,6 +465,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _code_buffer("Compile::Fill_buffer"),
                   _orig_pc_slot(0),
                   _orig_pc_slot_offset_in_bytes(0),
+                  _has_method_handle_invokes(false),
                   _node_bundling_limit(0),
                   _node_bundling_base(NULL),
                   _java_calls(0),
@@ -759,6 +760,7 @@ Compile::Compile( ciEnv* ci_env,
     _do_escape_analysis(false),
     _failure_reason(NULL),
     _code_buffer("Compile::Fill_buffer"),
+    _has_method_handle_invokes(false),
     _node_bundling_limit(0),
     _node_bundling_base(NULL),
     _java_calls(0),
