@@ -2117,6 +2117,18 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl,
 bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   if (!UseLoopPredicate) return false;
 
+  if (!loop->_head->is_Loop()) {
+    // Could be a simple region when irreducible loops are present.
+    return false;
+  }
+
+  CountedLoopNode *cl = NULL;
+  if (loop->_head->is_CountedLoop()) {
+    cl = loop->_head->as_CountedLoop();
+    // do nothing for iteration-splitted loops
+    if (!cl->is_normal_loop()) return false;
+  }
+
   // Too many traps seen?
   bool tmt = C->too_many_traps(C->method(), 0, Deoptimization::Reason_predicate);
   int tc = C->trap_count(Deoptimization::Reason_predicate);
@@ -2127,13 +2139,6 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       tty->print_cr("");
     }
     return false;
-  }
-
-  CountedLoopNode *cl = NULL;
-  if (loop->_head->is_CountedLoop()) {
-    cl = loop->_head->as_CountedLoop();
-    // do nothing for iteration-splitted loops
-    if(!cl->is_normal_loop()) return false;
   }
 
   LoopNode *lpn  = loop->_head->as_Loop();
