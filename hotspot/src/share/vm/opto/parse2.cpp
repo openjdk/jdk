@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2079,13 +2079,6 @@ void Parse::do_one_bytecode() {
     // null exception oop throws NULL pointer exception
     do_null_check(peek(), T_OBJECT);
     if (stopped())  return;
-    if (env()->jvmti_can_post_exceptions()) {
-      // "Full-speed throwing" is not necessary here,
-      // since we're notifying the VM on every throw.
-      uncommon_trap(Deoptimization::Reason_unhandled,
-                    Deoptimization::Action_none);
-      return;
-    }
     // Hook the thrown exception directly to subsequent handlers.
     if (BailoutToInterpreterForThrows) {
       // Keep method interpreted from now on.
@@ -2093,6 +2086,11 @@ void Parse::do_one_bytecode() {
                     Deoptimization::Action_make_not_compilable);
       return;
     }
+    if (env()->jvmti_can_post_on_exceptions()) {
+      // check if we must post exception events, take uncommon trap if so (with must_throw = false)
+      uncommon_trap_if_should_post_on_exceptions(Deoptimization::Reason_unhandled, false);
+    }
+    // Here if either can_post_on_exceptions or should_post_on_exceptions is false
     add_exception_state(make_exception_state(peek()));
     break;
 

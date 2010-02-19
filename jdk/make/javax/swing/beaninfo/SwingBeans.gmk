@@ -25,7 +25,7 @@
 
 #
 # Makefile to build the BeanInfo generation tool (ie, a doclet), and
-# then the beaninfo itself.  Swing versions prior to 1.2 is no longer
+# then the beaninfo itself.  Swing versions prior to 1.2 are no longer
 # built.
 #
 # This makefile could be a lot simpler if we made it more regular.
@@ -44,13 +44,12 @@ swing-1.2-beans-debug:
 	$(MAKE) DEBUG_FLAG=true make-swing-beans
 
 
-LOCAL_JAVADOC   = $(JAVADOC_CMD) $(JAVADOCFLAGS)
 # get the absolute path to the jar command.
 PREFIX          = 1.2
-JAVADOCFLAGS    = $(NO_PROPRIETARY_API_WARNINGS) $(LANGUAGE_VERSION)
+JAVADOCFLAGS    += $(NO_PROPRIETARY_API_WARNINGS) $(LANGUAGE_VERSION)
 SWINGPKG        = javax/swing
 LOCAL_JAVAC_FLAGS = $(OTHER_JAVACFLAGS)
-# since LOCAL_JAVADOC runs on ALT_BOOTDIR, the doclet and all its classes must be compiled to match
+# since JAVADOC_CMD runs on ALT_BOOTDIR, the doclet and all its classes must be compiled to match
 DOCLET_JAVAC_FLAGS = -source 6 -target 6
 
 include FILES.gmk
@@ -114,7 +113,7 @@ mkbeaninfo: $(BEANSRCDIR) .delete.beanlist $(FILES_beans) .javadoc.beanlist
 
 .javadoc.beanlist:
 	if [ -s $(TEMPDIR)/.beans.list ]; \
-	then $(LOCAL_JAVADOC) $(DOCLETFLAGS) -x $(DEBUG_FLAG) -d $(BEANSRCDIR) -t $(DOCLETSRC)/SwingBeanInfo.template -docletpath $(DOCLETDST) \
+	then $(JAVADOC_CMD) $(DOCLETFLAGS) -x $(DEBUG_FLAG) -d $(BEANSRCDIR) -t $(DOCLETSRC)/SwingBeanInfo.template -docletpath $(DOCLETDST) \
 	    $(shell if [ -s $(TEMPDIR)/.beans.list ]; then $(CAT) $(TEMPDIR)/.beans.list; fi); \
 	fi
 	@$(java-vm-cleanup)

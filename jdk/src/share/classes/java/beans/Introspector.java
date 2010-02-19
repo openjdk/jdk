@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import com.sun.beans.WeakCache;
 import com.sun.beans.finder.BeanInfoFinder;
 import com.sun.beans.finder.ClassFinder;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
@@ -39,6 +41,7 @@ import java.util.Iterator;
 import java.util.EventListener;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.WeakHashMap;
 
 import sun.awt.AppContext;
 import sun.reflect.misc.ReflectUtil;
@@ -155,11 +158,11 @@ public class Introspector {
             return (new Introspector(beanClass, null, USE_ALL_BEANINFO)).getBeanInfo();
         }
         synchronized (BEANINFO_CACHE) {
-            WeakCache<Class<?>, BeanInfo> beanInfoCache =
-                    (WeakCache<Class<?>, BeanInfo>) AppContext.getAppContext().get(BEANINFO_CACHE);
+            Map<Class<?>, BeanInfo> beanInfoCache =
+                    (Map<Class<?>, BeanInfo>) AppContext.getAppContext().get(BEANINFO_CACHE);
 
             if (beanInfoCache == null) {
-                beanInfoCache = new WeakCache<Class<?>, BeanInfo>();
+                beanInfoCache = new WeakHashMap<Class<?>, BeanInfo>();
                 AppContext.getAppContext().put(BEANINFO_CACHE, beanInfoCache);
             }
             BeanInfo beanInfo = beanInfoCache.get(beanClass);
@@ -341,7 +344,7 @@ public class Introspector {
 
     public static void flushCaches() {
         synchronized (BEANINFO_CACHE) {
-            WeakCache beanInfoCache = (WeakCache) AppContext.getAppContext().get(BEANINFO_CACHE);
+            Map beanInfoCache = (Map) AppContext.getAppContext().get(BEANINFO_CACHE);
             if (beanInfoCache != null) {
                 beanInfoCache.clear();
             }
@@ -369,7 +372,7 @@ public class Introspector {
             throw new NullPointerException();
         }
         synchronized (BEANINFO_CACHE) {
-            WeakCache beanInfoCache = (WeakCache) AppContext.getAppContext().get(BEANINFO_CACHE);
+            Map beanInfoCache = (Map) AppContext.getAppContext().get(BEANINFO_CACHE);
             if (beanInfoCache != null) {
                 beanInfoCache.put(clz, null);
             }
@@ -1458,7 +1461,7 @@ class GenericBeanInfo extends SimpleBeanInfo {
     private PropertyDescriptor[] properties;
     private int defaultProperty;
     private MethodDescriptor[] methods;
-    private BeanInfo targetBeanInfo;
+    private final Reference<BeanInfo> targetBeanInfoRef;
 
     public GenericBeanInfo(BeanDescriptor beanDescriptor,
                 EventSetDescriptor[] events, int defaultEvent,
@@ -1470,7 +1473,7 @@ class GenericBeanInfo extends SimpleBeanInfo {
         this.properties = properties;
         this.defaultProperty = defaultProperty;
         this.methods = methods;
-        this.targetBeanInfo = targetBeanInfo;
+        this.targetBeanInfoRef = new SoftReference<BeanInfo>(targetBeanInfo);
     }
 
     /**
@@ -1509,7 +1512,7 @@ class GenericBeanInfo extends SimpleBeanInfo {
                 methods[i] = new MethodDescriptor(old.methods[i]);
             }
         }
-        targetBeanInfo = old.targetBeanInfo;
+        this.targetBeanInfoRef = old.targetBeanInfoRef;
     }
 
     public PropertyDescriptor[] getPropertyDescriptors() {
@@ -1537,6 +1540,7 @@ class GenericBeanInfo extends SimpleBeanInfo {
     }
 
     public java.awt.Image getIcon(int iconKind) {
+        BeanInfo targetBeanInfo = this.targetBeanInfoRef.get();
         if (targetBeanInfo != null) {
             return targetBeanInfo.getIcon(iconKind);
         }

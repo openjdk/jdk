@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -663,15 +663,23 @@ public class PKIXParameters implements CertPathParameters {
      */
     public Object clone() {
         try {
-            Object copy = super.clone();
-            // Must clone these because addCertStore, et al. modify them
+            PKIXParameters copy = (PKIXParameters)super.clone();
+
+            // must clone these because addCertStore, et al. modify them
             if (certStores != null) {
-                certStores = new ArrayList<CertStore>(certStores);
+                copy.certStores = new ArrayList<CertStore>(certStores);
             }
             if (certPathCheckers != null) {
-                certPathCheckers =
-                        new ArrayList<PKIXCertPathChecker>(certPathCheckers);
+                copy.certPathCheckers =
+                    new ArrayList<PKIXCertPathChecker>(certPathCheckers.size());
+                for (PKIXCertPathChecker checker : certPathCheckers) {
+                    copy.certPathCheckers.add(
+                                    (PKIXCertPathChecker)checker.clone());
+                }
             }
+
+            // other class fields are immutable to public, don't bother
+            // to clone the read-only fields.
             return copy;
         } catch (CloneNotSupportedException e) {
             /* Cannot happen */

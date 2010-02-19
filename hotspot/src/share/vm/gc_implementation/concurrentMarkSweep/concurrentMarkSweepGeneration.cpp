@@ -3655,9 +3655,7 @@ bool CMSCollector::markFromRootsWork(bool asynch) {
   verify_work_stacks_empty();
   verify_overflow_empty();
   assert(_revisitStack.isEmpty(), "tabula rasa");
-
-  DEBUG_ONLY(RememberKlassesChecker cmx(CMSClassUnloadingEnabled);)
-
+  DEBUG_ONLY(RememberKlassesChecker cmx(should_unload_classes());)
   bool result = false;
   if (CMSConcurrentMTEnabled && ParallelCMSThreads > 0) {
     result = do_marking_mt(asynch);
@@ -4124,7 +4122,6 @@ void CMSConcMarkingTask::do_work_steal(int i) {
 void CMSConcMarkingTask::coordinator_yield() {
   assert(ConcurrentMarkSweepThread::cms_thread_has_cms_token(),
          "CMS thread should hold CMS token");
-
   DEBUG_ONLY(RememberKlassesChecker mux(false);)
   // First give up the locks, then yield, then re-lock
   // We should probably use a constructor/destructor idiom to
@@ -4201,9 +4198,7 @@ bool CMSCollector::do_marking_mt(bool asynch) {
   // Mutate the Refs discovery so it is MT during the
   // multi-threaded marking phase.
   ReferenceProcessorMTMutator mt(ref_processor(), num_workers > 1);
-
-  DEBUG_ONLY(RememberKlassesChecker cmx(CMSClassUnloadingEnabled);)
-
+  DEBUG_ONLY(RememberKlassesChecker cmx(should_unload_classes());)
   conc_workers()->start_task(&tsk);
   while (tsk.yielded()) {
     tsk.coordinator_yield();
@@ -4472,7 +4467,7 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
     // for cleaner interfaces.
     rp->preclean_discovered_references(
           rp->is_alive_non_header(), &keep_alive, &complete_trace,
-          &yield_cl);
+          &yield_cl, should_unload_classes());
   }
 
   if (clean_survivor) {  // preclean the active survivor space(s)
@@ -4494,7 +4489,7 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
     SurvivorSpacePrecleanClosure
       sss_cl(this, _span, &_markBitMap, &_markStack,
              &pam_cl, before_count, CMSYield);
-    DEBUG_ONLY(RememberKlassesChecker mx(CMSClassUnloadingEnabled);)
+    DEBUG_ONLY(RememberKlassesChecker mx(should_unload_classes());)
     dng->from()->object_iterate_careful(&sss_cl);
     dng->to()->object_iterate_careful(&sss_cl);
   }
@@ -4665,7 +4660,7 @@ size_t CMSCollector::preclean_mod_union_table(
         verify_work_stacks_empty();
         verify_overflow_empty();
         sample_eden();
-        DEBUG_ONLY(RememberKlassesChecker mx(CMSClassUnloadingEnabled);)
+        DEBUG_ONLY(RememberKlassesChecker mx(should_unload_classes());)
         stop_point =
           gen->cmsSpace()->object_iterate_careful_m(dirtyRegion, cl);
       }
@@ -4753,7 +4748,7 @@ size_t CMSCollector::preclean_card_table(ConcurrentMarkSweepGeneration* gen,
       sample_eden();
       verify_work_stacks_empty();
       verify_overflow_empty();
-      DEBUG_ONLY(RememberKlassesChecker mx(CMSClassUnloadingEnabled);)
+      DEBUG_ONLY(RememberKlassesChecker mx(should_unload_classes());)
       HeapWord* stop_point =
         gen->cmsSpace()->object_iterate_careful_m(dirtyRegion, cl);
       if (stop_point != NULL) {
@@ -4853,7 +4848,7 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
   assert(haveFreelistLocks(), "must have free list locks");
   assert_lock_strong(bitMapLock());
 
-  DEBUG_ONLY(RememberKlassesChecker fmx(CMSClassUnloadingEnabled);)
+  DEBUG_ONLY(RememberKlassesChecker fmx(should_unload_classes());)
   if (!init_mark_was_synchronous) {
     // We might assume that we need not fill TLAB's when
     // CMSScavengeBeforeRemark is set, because we may have just done

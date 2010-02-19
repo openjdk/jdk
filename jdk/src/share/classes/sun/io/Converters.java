@@ -85,10 +85,11 @@ public class Converters {
      * this code can be involved in the startup sequence it's important to keep
      * the footprint down.
      */
-    private static SoftReference[][] classCache
-        = new SoftReference[][] {
-            new SoftReference[CACHE_SIZE],
-            new SoftReference[CACHE_SIZE]
+    @SuppressWarnings("unchecked")
+    private static SoftReference<Object[]>[][] classCache
+        = (SoftReference<Object[]>[][]) new SoftReference<?>[][] {
+            new SoftReference<?>[CACHE_SIZE],
+            new SoftReference<?>[CACHE_SIZE]
         };
 
     private static void moveToFront(Object[] oa, int i) {
@@ -98,28 +99,28 @@ public class Converters {
         oa[0] = ob;
     }
 
-    private static Class cache(int type, Object encoding) {
-        SoftReference[] srs = classCache[type];
+    private static Class<?> cache(int type, Object encoding) {
+        SoftReference<Object[]>[] srs = classCache[type];
         for (int i = 0; i < CACHE_SIZE; i++) {
-            SoftReference sr = srs[i];
+            SoftReference<Object[]> sr = srs[i];
             if (sr == null)
                 continue;
-            Object[] oa = (Object[])sr.get();
+            Object[] oa = sr.get();
             if (oa == null) {
                 srs[i] = null;
                 continue;
             }
             if (oa[1].equals(encoding)) {
                 moveToFront(srs, i);
-                return (Class)oa[0];
+                return (Class<?>)oa[0];
             }
         }
         return null;
     }
 
-    private static Class cache(int type, Object encoding, Class c) {
-        SoftReference[] srs = classCache[type];
-        srs[CACHE_SIZE - 1] = new SoftReference(new Object[] { c, encoding });
+    private static Class<?> cache(int type, Object encoding, Class<?> c) {
+        SoftReference<Object[]>[] srs = classCache[type];
+        srs[CACHE_SIZE - 1] = new SoftReference<Object[]>(new Object[] { c, encoding });
         moveToFront(srs, CACHE_SIZE - 1);
         return c;
     }
@@ -129,12 +130,12 @@ public class Converters {
      */
     public static boolean isCached(int type, String encoding) {
         synchronized (lock) {
-            SoftReference[] srs = classCache[type];
+            SoftReference<Object[]>[] srs = classCache[type];
             for (int i = 0; i < CACHE_SIZE; i++) {
-                SoftReference sr = srs[i];
+                SoftReference<Object[]> sr = srs[i];
                 if (sr == null)
                     continue;
-                Object[] oa = (Object[])sr.get();
+                Object[] oa = sr.get();
                 if (oa == null) {
                     srs[i] = null;
                     continue;
@@ -152,9 +153,9 @@ public class Converters {
     private static String getConverterPackageName() {
         String cp = converterPackageName;
         if (cp != null) return cp;
-        java.security.PrivilegedAction pa =
+        java.security.PrivilegedAction<String> pa =
             new sun.security.action.GetPropertyAction("file.encoding.pkg");
-        cp = (String)java.security.AccessController.doPrivileged(pa);
+        cp = java.security.AccessController.doPrivileged(pa);
         if (cp != null) {
             /* Property is set, so take it as the true converter package */
             converterPackageName = cp;
@@ -168,9 +169,9 @@ public class Converters {
     public static String getDefaultEncodingName() {
         synchronized (lock) {
             if (defaultEncoding == null) {
-                java.security.PrivilegedAction pa =
+                java.security.PrivilegedAction<String> pa =
                     new sun.security.action.GetPropertyAction("file.encoding");
-                defaultEncoding = (String)java.security.AccessController.doPrivileged(pa);
+                defaultEncoding = java.security.AccessController.doPrivileged(pa);
             }
         }
         return defaultEncoding;
@@ -194,7 +195,7 @@ public class Converters {
      * encoding, or throw an UnsupportedEncodingException if no such class can
      * be found
      */
-    private static Class getConverterClass(int type, String encoding)
+    private static Class<?> getConverterClass(int type, String encoding)
         throws UnsupportedEncodingException
     {
         String enc = null;
@@ -241,7 +242,7 @@ public class Converters {
      * Instantiate the given converter class, or throw an
      * UnsupportedEncodingException if it cannot be instantiated
      */
-    private static Object newConverter(String enc, Class c)
+    private static Object newConverter(String enc, Class<?> c)
         throws UnsupportedEncodingException
     {
         try {
@@ -261,7 +262,7 @@ public class Converters {
     static Object newConverter(int type, String enc)
         throws UnsupportedEncodingException
     {
-        Class c;
+        Class<?> c;
         synchronized (lock) {
             c = cache(type, enc);
             if (c == null) {
@@ -279,9 +280,9 @@ public class Converters {
      * not yet defined, return a class that implements the fallback default
      * encoding, which is just ISO 8859-1.
      */
-    private static Class getDefaultConverterClass(int type) {
+    private static Class<?> getDefaultConverterClass(int type) {
         boolean fillCache = false;
-        Class c;
+        Class<?> c;
 
         /* First check the class cache */
         c = cache(type, DEFAULT_NAME);
@@ -325,7 +326,7 @@ public class Converters {
      * encoding cannot be determined.
      */
     static Object newDefaultConverter(int type) {
-        Class c;
+        Class<?> c;
         synchronized (lock) {
             c = getDefaultConverterClass(type);
         }

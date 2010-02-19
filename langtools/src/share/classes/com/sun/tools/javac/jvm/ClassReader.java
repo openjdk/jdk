@@ -1425,11 +1425,11 @@ public class ClassReader implements Completer {
          // Class extends and implements clauses
         case CLASS_EXTENDS:
         case CLASS_EXTENDS_GENERIC_OR_ARRAY:
-            position.type_index = nextByte();
+            position.type_index = nextChar();
             break;
         // throws
         case THROWS:
-            position.type_index = nextByte();
+            position.type_index = nextChar();
             break;
         case CLASS_LITERAL:
         case CLASS_LITERAL_GENERIC_OR_ARRAY:

@@ -113,7 +113,7 @@ public class ByteToCharUTF8 extends ByteToCharConverter {
                         savedSize = 1;
                     } else {
                         savedSize = 2;
-                        savedBytes[1] = (byte)input[byteOff++];
+                        savedBytes[1] = input[byteOff++];
                     }
                     break;
                 }
@@ -135,11 +135,11 @@ public class ByteToCharUTF8 extends ByteToCharConverter {
                         savedSize = 1;
                     } else if (byteOff + 1 >= inEnd) {
                         savedSize = 2;
-                        savedBytes[1] = (byte)input[byteOff++];
+                        savedBytes[1] = input[byteOff++];
                     } else {
                         savedSize = 3;
-                        savedBytes[1] = (byte)input[byteOff++];
-                        savedBytes[2] = (byte)input[byteOff++];
+                        savedBytes[1] = input[byteOff++];
+                        savedBytes[2] = input[byteOff++];
                     }
                     break;
                 }
@@ -154,10 +154,10 @@ public class ByteToCharUTF8 extends ByteToCharConverter {
                     throw new MalformedInputException();
                 }
                 // this byte sequence is UTF16 character
-                int ucs4 = (int)(0x07 & byte1) << 18 |
-                           (int)(0x3f & byte2) << 12 |
-                           (int)(0x3f & byte3) <<  6 |
-                           (int)(0x3f & byte4);
+                int ucs4 = (0x07 & byte1) << 18 |
+                           (0x3f & byte2) << 12 |
+                           (0x3f & byte3) <<  6 |
+                           (0x3f & byte4);
                 outputChar[0] = (char)((ucs4 - 0x10000) / 0x400 + 0xd800);
                 outputChar[1] = (char)((ucs4 - 0x10000) % 0x400 + 0xdc00);
                 outputSize = 2;
