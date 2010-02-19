@@ -263,10 +263,13 @@ class ReferenceProcessor : public CHeapObj {
     int                parallel_gc_threads = 1,
     bool               mt_processing = false,
     bool               discovered_list_needs_barrier = false);
+
   // RefDiscoveryPolicy values
-  enum {
+  enum DiscoveryPolicy {
     ReferenceBasedDiscovery = 0,
-    ReferentBasedDiscovery  = 1
+    ReferentBasedDiscovery  = 1,
+    DiscoveryPolicyMin      = ReferenceBasedDiscovery,
+    DiscoveryPolicyMax      = ReferentBasedDiscovery
   };
 
   static void init_statics();

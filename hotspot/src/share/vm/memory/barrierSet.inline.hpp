@@ -42,16 +42,6 @@ void BarrierSet::write_ref_field(void* field, oop new_val) {
   }
 }
 
-void BarrierSet::write_ref_array(MemRegion mr) {
-  assert((HeapWord*)align_size_down((uintptr_t)mr.start(), HeapWordSize) == mr.start() , "Unaligned start");
-  assert((HeapWord*)align_size_up  ((uintptr_t)mr.end(),   HeapWordSize) == mr.end(),    "Unaligned end"  );
-  if (kind() == CardTableModRef) {
-    ((CardTableModRefBS*)this)->inline_write_ref_array(mr);
-  } else {
-    write_ref_array_work(mr);
-  }
-}
-
 // count is number of array elements being written
 void BarrierSet::write_ref_array(HeapWord* start, size_t count) {
   assert(count <= (size_t)max_intx, "count too large");
@@ -61,12 +51,12 @@ void BarrierSet::write_ref_array(HeapWord* start, size_t count) {
   // strictly necessary for current uses, but a case of good hygiene and,
   // if you will, aesthetics) and the second upward (this is essential for
   // current uses) to a HeapWord boundary, so we mark all cards overlapping
-  // this write. In the event that this evolves in the future to calling a
+  // this write. If this evolves in the future to calling a
   // logging barrier of narrow oop granularity, like the pre-barrier for G1
   // (mentioned here merely by way of example), we will need to change this
-  // interface, much like the pre-barrier one above, so it is "exactly precise"
-  // (if i may be allowed the adverbial redundancy for emphasis) and does not
-  // include narrow oop slots not included in the original write interval.
+  // interface, so it is "exactly precise" (if i may be allowed the adverbial
+  // redundancy for emphasis) and does not include narrow oop slots not
+  // included in the original write interval.
   HeapWord* aligned_start = (HeapWord*)align_size_down((uintptr_t)start, HeapWordSize);
   HeapWord* aligned_end   = (HeapWord*)align_size_up  ((uintptr_t)end,   HeapWordSize);
   // If compressed oops were not being used, these should already be aligned
