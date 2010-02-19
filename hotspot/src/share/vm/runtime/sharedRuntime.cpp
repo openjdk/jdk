@@ -607,7 +607,9 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           _implicit_null_throws++;
 #endif
           target_pc = nm->continuation_for_implicit_exception(pc);
-          guarantee(target_pc != 0, "must have a continuation point");
+          // If there's an unexpected fault, target_pc might be NULL,
+          // in which case we want to fall through into the normal
+          // error handling code.
         }
 
         break; // fall through
@@ -621,14 +623,15 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
         _implicit_div0_throws++;
 #endif
         target_pc = nm->continuation_for_implicit_exception(pc);
-        guarantee(target_pc != 0, "must have a continuation point");
+        // If there's an unexpected fault, target_pc might be NULL,
+        // in which case we want to fall through into the normal
+        // error handling code.
         break; // fall through
       }
 
       default: ShouldNotReachHere();
     }
 
-    guarantee(target_pc != NULL, "must have computed destination PC for implicit exception");
     assert(exception_kind == IMPLICIT_NULL || exception_kind == IMPLICIT_DIVIDE_BY_ZERO, "wrong implicit exception kind");
 
     // for AbortVMOnException flag
@@ -1944,7 +1947,7 @@ class AdapterHandlerTable : public BasicHashtable {
 
  private:
 
-#ifdef ASSERT
+#ifndef PRODUCT
   static int _lookups; // number of calls to lookup
   static int _buckets; // number of buckets checked
   static int _equals;  // number of buckets checked with matching hash
@@ -1980,16 +1983,16 @@ class AdapterHandlerTable : public BasicHashtable {
 
   // Find a entry with the same fingerprint if it exists
   AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt) {
-    debug_only(_lookups++);
+    NOT_PRODUCT(_lookups++);
     AdapterFingerPrint fp(total_args_passed, sig_bt);
     unsigned int hash = fp.compute_hash();
     int index = hash_to_index(hash);
     for (AdapterHandlerEntry* e = bucket(index); e != NULL; e = e->next()) {
-      debug_only(_buckets++);
+      NOT_PRODUCT(_buckets++);
       if (e->hash() == hash) {
-        debug_only(_equals++);
+        NOT_PRODUCT(_equals++);
         if (fp.equals(e->fingerprint())) {
-#ifdef ASSERT
+#ifndef PRODUCT
           if (fp.is_compact()) _compact++;
           _hits++;
 #endif
@@ -2000,6 +2003,7 @@ class AdapterHandlerTable : public BasicHashtable {
     return NULL;
   }
 
+#ifndef PRODUCT
   void print_statistics() {
     ResourceMark rm;
     int longest = 0;
@@ -2018,15 +2022,14 @@ class AdapterHandlerTable : public BasicHashtable {
     }
     tty->print_cr("AdapterHandlerTable: empty %d longest %d total %d average %f",
                   empty, longest, total, total / (double)nonempty);
-#ifdef ASSERT
     tty->print_cr("AdapterHandlerTable: lookups %d buckets %d equals %d hits %d compact %d",
                   _lookups, _buckets, _equals, _hits, _compact);
-#endif
   }
+#endif
 };
 
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 int AdapterHandlerTable::_lookups;
 int AdapterHandlerTable::_buckets;

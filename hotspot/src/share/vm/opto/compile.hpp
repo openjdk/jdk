@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,6 +165,9 @@ class Compile : public Phase {
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
+
+  // JSR 292
+  bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -335,6 +338,10 @@ class Compile : public Phase {
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
   void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
 #endif
+
+  // JSR 292
+  bool              has_method_handle_invokes() const { return _has_method_handle_invokes;     }
+  void          set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
 
   void begin_method() {
 #ifndef PRODUCT
