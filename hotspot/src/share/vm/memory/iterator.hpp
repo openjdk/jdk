@@ -296,23 +296,32 @@ public:
 // RememberKlassesChecker can be passed "false" to turn off checking.
 // It is used by CMS when CMS yields to a different collector.
 class RememberKlassesChecker: StackObj {
- bool _state;
- bool _skip;
+ bool _saved_state;
+ bool _do_check;
  public:
-  RememberKlassesChecker(bool checking_on) : _state(false), _skip(false) {
-    _skip = !(ClassUnloading && !UseConcMarkSweepGC ||
-              CMSClassUnloadingEnabled && UseConcMarkSweepGC);
-    if (_skip) {
-      return;
+  RememberKlassesChecker(bool checking_on) : _saved_state(false),
+    _do_check(true) {
+    // The ClassUnloading unloading flag affects the collectors except
+    // for CMS.
+    // CMS unloads classes if CMSClassUnloadingEnabled is true or
+    // if ExplicitGCInvokesConcurrentAndUnloadsClasses is true and
+    // the current collection is an explicit collection.  Turning
+    // on the checking in general for
+    // ExplicitGCInvokesConcurrentAndUnloadsClasses and
+    // UseConcMarkSweepGC should not lead to false positives.
+    _do_check =
+      ClassUnloading && !UseConcMarkSweepGC ||
+      CMSClassUnloadingEnabled && UseConcMarkSweepGC ||
+      ExplicitGCInvokesConcurrentAndUnloadsClasses && UseConcMarkSweepGC;
+    if (_do_check) {
+      _saved_state = OopClosure::must_remember_klasses();
+      OopClosure::set_must_remember_klasses(checking_on);
     }
-    _state = OopClosure::must_remember_klasses();
-    OopClosure::set_must_remember_klasses(checking_on);
   }
   ~RememberKlassesChecker() {
-    if (_skip) {
-      return;
+    if (_do_check) {
+      OopClosure::set_must_remember_klasses(_saved_state);
     }
-    OopClosure::set_must_remember_klasses(_state);
   }
 };
 #endif  // ASSERT

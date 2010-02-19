@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,54 +112,82 @@ public class Encoder {
 
     /**
      * Returns the persistence delegate for the given type.
-     * The persistence delegate is calculated
-     * by applying the following of rules in order:
-     * <ul>
+     * The persistence delegate is calculated by applying
+     * the following rules in order:
+     * <ol>
      * <li>
-     * If the type is an array, an internal persistence
-     * delegate is returned which will instantiate an
-     * array of the appropriate type and length, initializing
-     * each of its elements as if they are properties.
+     * If a persistence delegate is associated with the given type
+     * by using the {@link #setPersistenceDelegate} method
+     * it is returned.
      * <li>
-     * If the type is a proxy, an internal persistence
-     * delegate is returned which will instantiate a
-     * new proxy instance using the static
-     * "newProxyInstance" method defined in the
-     * Proxy class.
+     * A persistence delegate is then looked up by the name
+     * composed of the the fully qualified name of the given type
+     * and the "PersistenceDelegate" postfix.
+     * For example, a persistence delegate for the {@code Bean} class
+     * should be named {@code BeanPersistenceDelegate}
+     * and located in the same package.
+     * <pre>
+     * public class Bean { ... }
+     * public class BeanPersistenceDelegate { ... }</pre>
+     * The instance of the {@code BeanPersistenceDelegate} class
+     * is returned for the {@code Bean} class.
      * <li>
-     * If the BeanInfo for this type has a <code>BeanDescriptor</code>
-     * which defined a "persistenceDelegate" property, this
-     * value is returned.
+     * If the type is {@code null},
+     * a shared internal persistence delegate is returned
+     * that encodes {@code null} value.
      * <li>
-     * In all other cases the default persistence delegate
-     * is returned. The default persistence delegate assumes
-     * the type is a <em>JavaBean</em>, implying that it has a default constructor
-     * and that its state may be characterized by the matching pairs
-     * of "setter" and "getter" methods returned by the Introspector.
+     * If the type is a {@code enum} declaration,
+     * a shared internal persistence delegate is returned
+     * that encodes constants of this enumeration
+     * by their names.
+     * <li>
+     * If the type is a primitive type or the corresponding wrapper,
+     * a shared internal persistence delegate is returned
+     * that encodes values of the given type.
+     * <li>
+     * If the type is an array,
+     * a shared internal persistence delegate is returned
+     * that encodes an array of the appropriate type and length,
+     * and each of its elements as if they are properties.
+     * <li>
+     * If the type is a proxy,
+     * a shared internal persistence delegate is returned
+     * that encodes a proxy instance by using
+     * the {@link java.lang.reflect.Proxy#newProxyInstance} method.
+     * <li>
+     * If the {@link BeanInfo} for this type has a {@link BeanDescriptor}
+     * which defined a "persistenceDelegate" attribute,
+     * the value of this named attribute is returned.
+     * <li>
+     * In all other cases the default persistence delegate is returned.
+     * The default persistence delegate assumes the type is a <em>JavaBean</em>,
+     * implying that it has a default constructor and that its state
+     * may be characterized by the matching pairs of "setter" and "getter"
+     * methods returned by the {@link Introspector} class.
      * The default constructor is the constructor with the greatest number
      * of parameters that has the {@link ConstructorProperties} annotation.
-     * If none of the constructors have the {@code ConstructorProperties} annotation,
+     * If none of the constructors has the {@code ConstructorProperties} annotation,
      * then the nullary constructor (constructor with no parameters) will be used.
-     * For example, in the following the nullary constructor
-     * for {@code Foo} will be used, while the two parameter constructor
-     * for {@code Bar} will be used.
-     * <code>
-     *   public class Foo {
+     * For example, in the following code fragment, the nullary constructor
+     * for the {@code Foo} class will be used,
+     * while the two-parameter constructor
+     * for the {@code Bar} class will be used.
+     * <pre>
+     * public class Foo {
      *     public Foo() { ... }
      *     public Foo(int x) { ... }
-     *   }
-     *   public class Bar {
+     * }
+     * public class Bar {
      *     public Bar() { ... }
      *     &#64;ConstructorProperties({"x"})
      *     public Bar(int x) { ... }
      *     &#64;ConstructorProperties({"x", "y"})
      *     public Bar(int x, int y) { ... }
-     *   }
-     * </code>
-     * </ul>
+     * }</pre>
+     * </ol>
      *
-     * @param  type The type of the object.
-     * @return The persistence delegate for this type of object.
+     * @param type  the class of the objects
+     * @return the persistence delegate for the given type
      *
      * @see #setPersistenceDelegate
      * @see java.beans.Introspector#getBeanInfo
@@ -176,21 +204,18 @@ public class Encoder {
     }
 
     /**
-     * Sets the persistence delegate associated with this <code>type</code> to
-     * <code>persistenceDelegate</code>.
+     * Associates the specified persistence delegate with the given type.
      *
-     * @param  type The class of objects that <code>persistenceDelegate</code> applies to.
-     * @param  persistenceDelegate The persistence delegate for instances of <code>type</code>.
+     * @param type  the class of objects that the specified persistence delegate applies to
+     * @param delegate  the persistence delegate for instances of the given type
      *
      * @see #getPersistenceDelegate
      * @see java.beans.Introspector#getBeanInfo
      * @see java.beans.BeanInfo#getBeanDescriptor
      */
-    public void setPersistenceDelegate(Class<?> type,
-                                       PersistenceDelegate persistenceDelegate)
-    {
+    public void setPersistenceDelegate(Class<?> type, PersistenceDelegate delegate) {
         synchronized (this.finder) {
-            this.finder.register(type, persistenceDelegate);
+            this.finder.register(type, delegate);
         }
     }
 

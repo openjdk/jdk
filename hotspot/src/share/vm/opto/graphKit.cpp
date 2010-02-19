@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,16 +455,44 @@ Bytecodes::Code GraphKit::java_bc() const {
     return Bytecodes::_illegal;
 }
 
+void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptReason reason,
+                                                          bool must_throw) {
+    // if the exception capability is set, then we will generate code
+    // to check the JavaThread.should_post_on_exceptions flag to see
+    // if we actually need to report exception events (for this
+    // thread).  If we don't need to report exception events, we will
+    // take the normal fast path provided by add_exception_events.  If
+    // exception event reporting is enabled for this thread, we will
+    // take the uncommon_trap in the BuildCutout below.
+
+    // first must access the should_post_on_exceptions_flag in this thread's JavaThread
+    Node* jthread = _gvn.transform(new (C, 1) ThreadLocalNode());
+    Node* adr = basic_plus_adr(top(), jthread, in_bytes(JavaThread::should_post_on_exceptions_flag_offset()));
+    Node* should_post_flag = make_load(control(), adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, false);
+
+    // Test the should_post_on_exceptions_flag vs. 0
+    Node* chk = _gvn.transform( new (C, 3) CmpINode(should_post_flag, intcon(0)) );
+    Node* tst = _gvn.transform( new (C, 2) BoolNode(chk, BoolTest::eq) );
+
+    // Branch to slow_path if should_post_on_exceptions_flag was true
+    { BuildCutout unless(this, tst, PROB_MAX);
+      // Do not try anything fancy if we're notifying the VM on every throw.
+      // Cf. case Bytecodes::_athrow in parse2.cpp.
+      uncommon_trap(reason, Deoptimization::Action_none,
+                    (ciKlass*)NULL, (char*)NULL, must_throw);
+    }
+
+}
+
 //------------------------------builtin_throw----------------------------------
 void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   bool must_throw = true;
 
-  if (env()->jvmti_can_post_exceptions()) {
-    // Do not try anything fancy if we're notifying the VM on every throw.
-    // Cf. case Bytecodes::_athrow in parse2.cpp.
-    uncommon_trap(reason, Deoptimization::Action_none,
-                  (ciKlass*)NULL, (char*)NULL, must_throw);
-    return;
+  if (env()->jvmti_can_post_on_exceptions()) {
+    // check if we must post exception events, take uncommon trap if so
+    uncommon_trap_if_should_post_on_exceptions(reason, must_throw);
+    // here if should_post_on_exceptions is false
+    // continue on with the normal codegen
   }
 
   // If this particular condition has not yet happened at this

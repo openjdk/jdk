@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -587,11 +587,13 @@ nmethod::nmethod(
     _osr_link                = NULL;
     _scavenge_root_link      = NULL;
     _scavenge_root_state     = 0;
+    _saved_nmethod_link      = NULL;
     _compiler                = NULL;
     // We have no exception handler or deopt handler make the
     // values something that will never match a pc like the nmethod vtable entry
     _exception_offset        = 0;
     _deoptimize_offset       = 0;
+    _deoptimize_mh_offset    = 0;
     _orig_pc_offset          = 0;
 #ifdef HAVE_DTRACE_H
     _trap_offset             = 0;
@@ -682,6 +684,7 @@ nmethod::nmethod(
     // values something that will never match a pc like the nmethod vtable entry
     _exception_offset        = 0;
     _deoptimize_offset       = 0;
+    _deoptimize_mh_offset    = 0;
     _trap_offset             = offsets->value(CodeOffsets::Dtrace_trap);
     _orig_pc_offset          = 0;
     _stub_offset             = data_offset();
@@ -794,6 +797,7 @@ nmethod::nmethod(
     // Exception handler and deopt handler are in the stub section
     _exception_offset        = _stub_offset + offsets->value(CodeOffsets::Exceptions);
     _deoptimize_offset       = _stub_offset + offsets->value(CodeOffsets::Deopt);
+    _deoptimize_mh_offset    = _stub_offset + offsets->value(CodeOffsets::DeoptMH);
     _consts_offset           = instructions_offset() + code_buffer->total_offset_of(code_buffer->consts()->start());
     _scopes_data_offset      = data_offset();
     _scopes_pcs_offset       = _scopes_data_offset   + round_to(debug_info->data_size         (), oopSize);
@@ -1033,7 +1037,7 @@ void nmethod::cleanup_inline_caches() {
         if( cb != NULL && cb->is_nmethod() ) {
           nmethod* nm = (nmethod*)cb;
           // Clean inline caches pointing to both zombie and not_entrant methods
-          if (!nm->is_in_use()) ic->set_to_clean();
+          if (!nm->is_in_use() || (nm->method()->code() != nm)) ic->set_to_clean();
         }
         break;
       }
@@ -1043,7 +1047,7 @@ void nmethod::cleanup_inline_caches() {
         if( cb != NULL && cb->is_nmethod() ) {
           nmethod* nm = (nmethod*)cb;
           // Clean inline caches pointing to both zombie and not_entrant methods
-          if (!nm->is_in_use()) csc->set_to_clean();
+          if (!nm->is_in_use() || (nm->method()->code() != nm)) csc->set_to_clean();
         }
         break;
       }
@@ -1113,7 +1117,6 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
     if (_method->code() == this) {
       _method->clear_code(); // Break a cycle
     }
-    inc_decompile_count();     // Last chance to make a mark on the MDO
     _method = NULL;            // Clear the method of this dead nmethod
   }
   // Make the class unloaded - i.e., change state and notify sweeper
@@ -1173,15 +1176,17 @@ void nmethod::log_state_change() const {
 bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
 
-  // If the method is already zombie there is nothing to do
-  if (is_zombie()) {
-    return false;
-  }
+  bool was_alive = false;
 
   // Make sure the nmethod is not flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
 
   {
+    // If the method is already zombie there is nothing to do
+    if (is_zombie()) {
+      return false;
+    }
+
     // invalidate osr nmethod before acquiring the patching lock since
     // they both acquire leaf locks and we don't want a deadlock.
     // This logic is equivalent to the logic below for patching the
@@ -1219,6 +1224,8 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       assert(state == not_entrant, "other cases may need to be handled differently");
     }
 
+    was_alive = is_in_use(); // Read state under lock
+
     // Change state
     flags.state = state;
 
@@ -1245,8 +1252,11 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     mark_as_seen_on_stack();
   }
 
-  // It's a true state change, so mark the method as decompiled.
-  inc_decompile_count();
+  if (was_alive) {
+    // It's a true state change, so mark the method as decompiled.
+    // Do it only for transition from alive.
+    inc_decompile_count();
+  }
 
   // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload event
   // and it hasn't already been reported for this nmethod then report it now.
@@ -1312,7 +1322,8 @@ void nmethod::flush() {
   // completely deallocate this method
   EventMark m("flushing nmethod " INTPTR_FORMAT " %s", this, "");
   if (PrintMethodFlushing) {
-    tty->print_cr("*flushing nmethod " INTPTR_FORMAT ". Live blobs: %d", this, CodeCache::nof_blobs());
+    tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT "/Free CodeCache:" SIZE_FORMAT "Kb",
+        _compile_id, this, CodeCache::nof_blobs(), CodeCache::unallocated_capacity()/1024);
   }
 
   // We need to deallocate any ExceptionCache data.
@@ -1328,6 +1339,10 @@ void nmethod::flush() {
 
   if (on_scavenge_root_list()) {
     CodeCache::drop_scavenge_root_nmethod(this);
+  }
+
+  if (is_speculatively_disconnected()) {
+    CodeCache::remove_saved_code(this);
   }
 
   ((CodeBlob*)(this))->flush();
@@ -2031,9 +2046,21 @@ void nmethodLocker::unlock_nmethod(nmethod* nm) {
   guarantee(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
 }
 
-bool nmethod::is_deopt_pc(address pc) {
-  bool ret =  pc == deopt_handler_begin();
-  return ret;
+
+// -----------------------------------------------------------------------------
+// nmethod::get_deopt_original_pc
+//
+// Return the original PC for the given PC if:
+// (a) the given PC belongs to a nmethod and
+// (b) it is a deopt PC
+address nmethod::get_deopt_original_pc(const frame* fr) {
+  if (fr->cb() == NULL)  return NULL;
+
+  nmethod* nm = fr->cb()->as_nmethod_or_null();
+  if (nm != NULL && nm->is_deopt_pc(fr->pc()))
+    return nm->get_original_pc(fr);
+
+  return NULL;
 }
 
 
@@ -2404,6 +2431,8 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin) {
   if (block_begin == verified_entry_point())    stream->print_cr("[Verified Entry Point]");
   if (block_begin == exception_begin())         stream->print_cr("[Exception Handler]");
   if (block_begin == stub_begin())              stream->print_cr("[Stub Code]");
+  if (block_begin == deopt_handler_begin())     stream->print_cr("[Deopt Handler Code]");
+  if (block_begin == deopt_mh_handler_begin())  stream->print_cr("[Deopt MH Handler Code]");
   if (block_begin == consts_begin())            stream->print_cr("[Constants]");
   if (block_begin == entry_point()) {
     methodHandle m = method();
