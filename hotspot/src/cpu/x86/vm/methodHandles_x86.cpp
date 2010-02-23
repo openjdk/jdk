@@ -584,7 +584,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       Label done;
       __ movptr(rdx_temp, vmarg);
-      __ testl(rdx_temp, rdx_temp);
+      __ testptr(rdx_temp, rdx_temp);
       __ jccb(Assembler::zero, done);         // no cast if null
       __ load_klass(rdx_temp, rdx_temp);
 
