@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,12 @@
 # have any questions.
 #
 
-#
-# Makefile for building JNDI RMI registry service provider
-#
-
-BUILDDIR = ../../../..
+BUILDDIR = ../../..
+MODULE   = management
+PACKAGE  = java.nio
+PRODUCT  = java
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = registry
-include $(BUILDDIR)/common/Subdirs.gmk
+FILES_java = java/nio/BufferPoolMXBean.java
 
-all build clean clobber::
-	$(SUBDIRS-loop)
-
-clean clobber::
-	$(RM) -r $(CLASSDESTDIR)/com/sun/jndi/rmi
+include $(BUILDDIR)/common/Classes.gmk

@@ -40,6 +40,7 @@ AUTO_JAVA_PRUNE = plaf
 SUBDIRS = html32dtd plaf
 
 include $(BUILDDIR)/common/Classes.gmk
+include $(BUILDDIR)/common/Subdirs.gmk
 
 build: other_files
 	$(SUBDIRS-loop)

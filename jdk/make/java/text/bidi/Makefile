@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,22 @@
 # have any questions.
 #
 
-#
-# Makefile for building JNDI RMI registry service provider
-#
-
-BUILDDIR = ../../../..
+BUILDDIR = ../../..
+PACKAGE = java.text
+PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = registry
-include $(BUILDDIR)/common/Subdirs.gmk
+#
+# Files for Bidi that is not in the base module
+#
+FILES_java = \
+    java/text/Bidi.java \
+    sun/text/bidi/BidiBase.java \
+    sun/text/bidi/BidiLine.java \
+    sun/text/bidi/BidiRun.java \
+    sun/text/CodePointIterator.java
 
-all build clean clobber::
-	$(SUBDIRS-loop)
-
-clean clobber::
-	$(RM) -r $(CLASSDESTDIR)/com/sun/jndi/rmi
+#
+# Include
+#
+include $(BUILDDIR)/common/Classes.gmk

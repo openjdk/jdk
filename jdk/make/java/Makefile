@@ -38,9 +38,13 @@ SUBDIRS += hpi version jvm redist verify fdlibm java sun_nio jli main zip
 
 # Others
 #    Note: java_crw_demo java_hprof_demo are demos but must be delivered built in sdk
-SUBDIRS += security npt java_crw_demo java_hprof_demo \
-	    math awt util text applet net nio dyn \
-	    sql rmi jar beans logging management instrument
+
+SUBDIRS += security math util text net nio jar
+
+SUBDIRS_desktop    = awt applet beans
+SUBDIRS_management = management
+SUBDIRS_misc       = npt java_crw_demo java_hprof_demo \
+                     logging instrument dyn sql rmi
 
 
 ifeq ($(PLATFORM), solaris)
@@ -52,6 +56,8 @@ endif # PLATFORM
 ifeq ($(PLATFORM), linux)
   SUBDIRS += jexec
 endif # PLATFORM
+
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)
