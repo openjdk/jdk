@@ -1021,6 +1021,7 @@ codeCache.cpp                           codeBlob.hpp
 codeCache.cpp                           codeCache.hpp
 codeCache.cpp                           dependencies.hpp
 codeCache.cpp                           gcLocker.hpp
+codeCache.cpp                           handles.inline.hpp
 codeCache.cpp                           icache.hpp
 codeCache.cpp                           iterator.hpp
 codeCache.cpp                           java.hpp
