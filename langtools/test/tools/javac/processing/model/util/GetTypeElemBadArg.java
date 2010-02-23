@@ -37,7 +37,6 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 @SupportedAnnotationTypes("*")
 public class GetTypeElemBadArg extends AbstractProcessor {
 
@@ -62,6 +61,12 @@ public class GetTypeElemBadArg extends AbstractProcessor {
             throw new AssertionError();
         }
         return true;
+    }
+
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     private static void tellAbout(TypeElement t) {

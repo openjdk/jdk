@@ -39,8 +39,6 @@ import javax.lang.model.util.*;
 
 import static javax.lang.model.type.TypeKind.*;
 
-
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 @SupportedAnnotationTypes("*")
 public class NoTypes extends AbstractProcessor {
 
@@ -58,6 +56,11 @@ public class NoTypes extends AbstractProcessor {
         if (!round.processingOver())
             doit(annoTypes, round);
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     private void doit(Set<? extends TypeElement> annoTypes,

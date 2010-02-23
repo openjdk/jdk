@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,7 @@
  * have any questions.
  */
 
-import java.io.*;
-import java.util.*;
-import javax.annotation.processing.*;
-import javax.lang.model.*;
-import javax.lang.model.element.*;
-
-@SupportedAnnotationTypes("*")
-public class A extends AbstractProcessor {
-    public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv) {
-        Filer filer = processingEnv.getFiler();
-        try {
-            OutputStream out = filer.createClassFile(getClass().getName()+"_0").openOutputStream();
-            out.close();
-        } catch (IOException e) {
-            throw new Error(e);
-        }
-        return true;
-    }
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-}
+/**
+ * A dummy class to be compiled.
+ */
+public class Dummy {}
