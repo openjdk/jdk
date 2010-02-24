@@ -1724,6 +1724,13 @@ class CommandLineFlags {
           "Percentage CMS generation occupancy to start a CMS collection "  \
           "cycle. A negative value means that CMSTriggerRatio is used")     \
                                                                             \
+  product(uintx, InitiatingHeapOccupancyPercent, 45,                        \
+          "Percentage of the (entire) heap occupancy to start a "           \
+          "concurrent GC cycle. It us used by GCs that trigger a "          \
+          "concurrent GC cycle based on the occupancy of the entire heap, " \
+          "not just one of the generations (e.g., G1). A value of 0 "       \
+          "denotes 'do constant GC cycles'.")                               \
+                                                                            \
   product(intx, CMSInitiatingPermOccupancyFraction, -1,                     \
           "Percentage CMS perm generation occupancy to start a "            \
           "CMScollection cycle. A negative value means that "               \

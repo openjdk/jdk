@@ -299,10 +299,6 @@ void G1CollectorPolicy::init() {
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
-  if (G1SteadyStateUsed < 50) {
-    vm_exit_during_initialization("G1SteadyStateUsed must be at least 50%.");
-  }
-
   initialize_gc_policy_counters();
 
   if (G1Gen) {
@@ -1425,7 +1421,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
       record_concurrent_mark_init_end_pre(0.0);
 
     size_t min_used_targ =
-      (_g1->capacity() / 100) * (G1SteadyStateUsed - G1SteadyStateUsedDelta);
+      (_g1->capacity() / 100) * InitiatingHeapOccupancyPercent;
 
     if (cur_used_bytes > min_used_targ) {
       if (cur_used_bytes <= _prev_collection_pause_used_at_end_bytes) {
@@ -2618,13 +2614,6 @@ bool
 G1CollectorPolicy_BestRegionsFirst::should_do_collection_pause(size_t
                                                                word_size) {
   assert(_g1->regions_accounted_for(), "Region leakage!");
-  // Initiate a pause when we reach the steady-state "used" target.
-  size_t used_hard = (_g1->capacity() / 100) * G1SteadyStateUsed;
-  size_t used_soft =
-   MAX2((_g1->capacity() / 100) * (G1SteadyStateUsed - G1SteadyStateUsedDelta),
-        used_hard/2);
-  size_t used = _g1->used();
-
   double max_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
 
   size_t young_list_length = _g1->young_list_length();
