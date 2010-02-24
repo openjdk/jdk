@@ -88,9 +88,6 @@
   diagnostic(bool, G1TraceConcRefinement, false,                            \
           "Trace G1 concurrent refinement")                                 \
                                                                             \
-  product(intx, G1MarkStackSize, 2 * 1024 * 1024,                           \
-          "Size of the mark stack for concurrent marking.")                 \
-                                                                            \
   product(intx, G1MarkRegionStackSize, 1024 * 1024,                         \
           "Size of the region stack for concurrent marking.")               \
                                                                             \

@@ -447,7 +447,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
     gclog_or_tty->print_cr("[global] init, heap start = "PTR_FORMAT", "
                            "heap end = "PTR_FORMAT, _heap_start, _heap_end);
 
-  _markStack.allocate(G1MarkStackSize);
+  _markStack.allocate(MarkStackSize);
   _regionStack.allocate(G1MarkRegionStackSize);
 
   // Create & start a ConcurrentMark thread.
@@ -483,8 +483,8 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
     _accum_task_vtime[i] = 0.0;
   }
 
-  if (ParallelMarkingThreads > ParallelGCThreads) {
-    vm_exit_during_initialization("Can't have more ParallelMarkingThreads "
+  if (ConcGCThreads > ParallelGCThreads) {
+    vm_exit_during_initialization("Can't have more ConcGCThreads "
                                   "than ParallelGCThreads.");
   }
   if (ParallelGCThreads == 0) {
@@ -494,11 +494,11 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
     _sleep_factor             = 0.0;
     _marking_task_overhead    = 1.0;
   } else {
-    if (ParallelMarkingThreads > 0) {
-      // notice that ParallelMarkingThreads overwrites G1MarkingOverheadPercent
+    if (ConcGCThreads > 0) {
+      // notice that ConcGCThreads overwrites G1MarkingOverheadPercent
       // if both are set
 
-      _parallel_marking_threads = ParallelMarkingThreads;
+      _parallel_marking_threads = ConcGCThreads;
       _sleep_factor             = 0.0;
       _marking_task_overhead    = 1.0;
     } else if (G1MarkingOverheadPercent > 0) {

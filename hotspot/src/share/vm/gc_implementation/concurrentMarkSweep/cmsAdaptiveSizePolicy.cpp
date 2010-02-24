@@ -46,9 +46,9 @@ CMSAdaptiveSizePolicy::CMSAdaptiveSizePolicy(size_t init_eden_size,
 
   _processor_count = os::active_processor_count();
 
-  if (CMSConcurrentMTEnabled && (ParallelCMSThreads > 1)) {
+  if (CMSConcurrentMTEnabled && (ConcGCThreads > 1)) {
     assert(_processor_count > 0, "Processor count is suspect");
-    _concurrent_processor_count = MIN2((uint) ParallelCMSThreads,
+    _concurrent_processor_count = MIN2((uint) ConcGCThreads,
                                        (uint) _processor_count);
   } else {
     _concurrent_processor_count = 1;

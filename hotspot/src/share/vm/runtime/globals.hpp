@@ -1245,9 +1245,6 @@ class CommandLineFlags {
   product(uintx, ParallelGCThreads, 0,                                      \
           "Number of parallel threads parallel gc will use")                \
                                                                             \
-  product(uintx, ParallelCMSThreads, 0,                                     \
-          "Max number of threads CMS will use for concurrent work")         \
-                                                                            \
   develop(bool, ParallelOldGCSplitALot, false,                              \
           "Provoke splitting (copying data from a young gen space to"       \
           "multiple destination spaces)")                                   \
@@ -1258,8 +1255,8 @@ class CommandLineFlags {
   develop(bool, TraceRegionTasksQueuing, false,                             \
           "Trace the queuing of the region tasks")                          \
                                                                             \
-  product(uintx, ParallelMarkingThreads, 0,                                 \
-          "Number of marking threads concurrent gc will use")               \
+  product(uintx, ConcGCThreads, 0,                                          \
+          "Number of threads concurrent gc will use")                       \
                                                                             \
   product(uintx, YoungPLABSize, 4096,                                       \
           "Size of young gen promotion labs (in HeapWords)")                \
@@ -1535,11 +1532,11 @@ class CommandLineFlags {
   develop(bool, CMSOverflowEarlyRestoration, false,                         \
           "Whether preserved marks should be restored early")               \
                                                                             \
-  product(uintx, CMSMarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),           \
-          "Size of CMS marking stack")                                      \
+  product(uintx, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),              \
+          "Size of marking stack")                                          \
                                                                             \
-  product(uintx, CMSMarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),       \
-          "Max size of CMS marking stack")                                  \
+  product(uintx, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),          \
+          "Max size of marking stack")                                      \
                                                                             \
   notproduct(bool, CMSMarkStackOverflowALot, false,                         \
           "Whether we should simulate frequent marking stack / work queue"  \

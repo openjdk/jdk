@@ -176,6 +176,7 @@ arguments.cpp                           management.hpp
 arguments.cpp                           oop.inline.hpp
 arguments.cpp                           os_<os_family>.inline.hpp
 arguments.cpp                           referenceProcessor.hpp
+arguments.cpp                           taskqueue.hpp
 arguments.cpp                           universe.inline.hpp
 arguments.cpp                           vm_version_<arch>.hpp
 
