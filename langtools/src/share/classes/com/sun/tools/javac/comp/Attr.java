@@ -2636,6 +2636,7 @@ public class Attr extends JCTree.Visitor {
                 if (tree.bounds.tail.nonEmpty()) {
                     log.error(tree.bounds.tail.head.pos(),
                               "type.var.may.not.be.followed.by.other.bounds");
+                    log.unrecoverableError = true;
                     tree.bounds = List.of(tree.bounds.head);
                     a.bound = bs.head;
                 }
