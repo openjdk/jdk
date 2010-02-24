@@ -100,13 +100,6 @@
   develop(intx, G1ConcZFMaxRegions, 1,                                      \
           "Stop zero-filling when # of zf'd regions reaches")               \
                                                                             \
-  product(intx, G1SteadyStateUsed, 90,                                      \
-          "If non-0, try to maintain 'used' at this pct (of max)")          \
-                                                                            \
-  product(intx, G1SteadyStateUsedDelta, 30,                                 \
-          "If G1SteadyStateUsed is non-0, then do pause this number of "    \
-          "of percentage points earlier if no marking is in progress.")     \
-                                                                            \
   develop(bool, G1SATBBarrierPrintNullPreVals, false,                       \
           "If true, count frac of ptr writes with null pre-vals.")          \
                                                                             \

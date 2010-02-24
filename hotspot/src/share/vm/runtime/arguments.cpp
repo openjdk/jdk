@@ -1737,6 +1737,11 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
+  if (UseG1GC) {
+    status = status && verify_percentage(InitiatingHeapOccupancyPercent,
+                                         "InitiatingHeapOccupancyPercent");
+  }
+
   status = status && verify_interval(RefDiscoveryPolicy,
                                      ReferenceProcessor::DiscoveryPolicyMin,
                                      ReferenceProcessor::DiscoveryPolicyMax,
