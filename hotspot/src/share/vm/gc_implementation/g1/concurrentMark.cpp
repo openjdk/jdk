@@ -461,7 +461,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
   assert(_markBitMap2.covers(rs), "_markBitMap2 inconsistency");
 
   SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
-  satb_qs.set_buffer_size(G1SATBLogBufferSize);
+  satb_qs.set_buffer_size(G1SATBBufferSize);
 
   int size = (int) MAX2(ParallelGCThreads, (size_t)1);
   _par_cleanup_thread_state = NEW_C_HEAP_ARRAY(ParCleanupThreadState*, size);

@@ -70,7 +70,7 @@
   develop(intx, G1PausesBtwnConcMark, -1,                                   \
           "If positive, fixed number of pauses between conc markings")      \
                                                                             \
-  diagnostic(bool, G1SummarizeConcurrentMark, false,                        \
+  diagnostic(bool, G1SummarizeConcMark, false,                              \
           "Summarize concurrent mark info")                                 \
                                                                             \
   diagnostic(bool, G1SummarizeRSetStats, false,                             \
@@ -85,7 +85,7 @@
   diagnostic(bool, G1SummarizeZFStats, false,                               \
           "Summarize zero-filling info")                                    \
                                                                             \
-  diagnostic(bool, G1TraceConcurrentRefinement, false,                      \
+  diagnostic(bool, G1TraceConcRefinement, false,                            \
           "Trace G1 concurrent refinement")                                 \
                                                                             \
   product(intx, G1MarkStackSize, 2 * 1024 * 1024,                           \
@@ -110,10 +110,10 @@
   develop(bool, G1SATBBarrierPrintNullPreVals, false,                       \
           "If true, count frac of ptr writes with null pre-vals.")          \
                                                                             \
-  product(intx, G1SATBLogBufferSize, 1*K,                                   \
+  product(intx, G1SATBBufferSize, 1*K,                                      \
           "Number of entries in an SATB log buffer.")                       \
                                                                             \
-  product(intx, G1SATBProcessCompletedThreshold, 20,                        \
+  develop(intx, G1SATBProcessCompletedThreshold, 20,                        \
           "Number of completed buffers that triggers log processing.")      \
                                                                             \
   develop(intx, G1ExtraRegionSurvRate, 33,                                  \
@@ -127,7 +127,7 @@
   develop(bool, G1SATBPrintStubs, false,                                    \
           "If true, print generated stubs for the SATB barrier")            \
                                                                             \
-  product(intx, G1ExpandByPercentOfAvailable, 20,                           \
+  experimental(intx, G1ExpandByPercentOfAvailable, 20,                      \
           "When expanding, % of uncommitted space to claim.")               \
                                                                             \
   develop(bool, G1RSBarrierRegionFilter, true,                              \
@@ -165,36 +165,36 @@
   product(intx, G1UpdateBufferSize, 256,                                    \
           "Size of an update buffer")                                       \
                                                                             \
-  product(intx, G1ConcRefineYellowZone, 0,                                  \
+  product(intx, G1ConcRefinementYellowZone, 0,                              \
           "Number of enqueued update buffers that will "                    \
           "trigger concurrent processing. Will be selected ergonomically "  \
           "by default.")                                                    \
                                                                             \
-  product(intx, G1ConcRefineRedZone, 0,                                     \
+  product(intx, G1ConcRefinementRedZone, 0,                                 \
           "Maximum number of enqueued update buffers before mutator "       \
           "threads start processing new ones instead of enqueueing them. "  \
           "Will be selected ergonomically by default. Zero will disable "   \
           "concurrent processing.")                                         \
                                                                             \
-  product(intx, G1ConcRefineGreenZone, 0,                                   \
+  product(intx, G1ConcRefinementGreenZone, 0,                               \
           "The number of update buffers that are left in the queue by the " \
           "concurrent processing threads. Will be selected ergonomically "  \
           "by default.")                                                    \
                                                                             \
-  product(intx, G1ConcRefineServiceInterval, 300,                           \
+  product(intx, G1ConcRefinementServiceIntervalMillis, 300,                 \
           "The last concurrent refinement thread wakes up every "           \
           "specified number of milliseconds to do miscellaneous work.")     \
                                                                             \
-  product(intx, G1ConcRefineThresholdStep, 0,                               \
+  product(intx, G1ConcRefinementThresholdStep, 0,                           \
           "Each time the rset update queue increases by this amount "       \
           "activate the next refinement thread if available. "              \
           "Will be selected ergonomically by default.")                     \
                                                                             \
-  product(intx, G1RSUpdatePauseFractionPercent, 10,                         \
+  product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
           "process RS update buffers during the collection pause.")         \
                                                                             \
-  product(bool, G1AdaptiveConcRefine, true,                                 \
+  product(bool, G1UseAdaptiveConcRefinement, true,                          \
           "Select green, yellow and red zones adaptively to meet the "      \
           "the pause requirements.")                                        \
                                                                             \
@@ -245,15 +245,15 @@
           "the number of regions for which we'll print a surv rate "        \
           "summary.")                                                       \
                                                                             \
-  product(bool, G1UseScanOnlyPrefix, false,                                 \
+  develop(bool, G1UseScanOnlyPrefix, false,                                 \
           "It determines whether the system will calculate an optimum "     \
           "scan-only set.")                                                 \
                                                                             \
-  product(intx, G1MinReservePercent, 10,                                    \
+  product(intx, G1ReservePercent, 10,                                       \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
                                                                             \
-  diagnostic(bool, G1PrintRegions, false,                                   \
+  diagnostic(bool, G1PrintHeapRegions, false,                               \
           "If set G1 will print information on which regions are being "    \
           "allocated and which are reclaimed.")                             \
                                                                             \
@@ -262,9 +262,6 @@
                                                                             \
   develop(bool, G1HRRSFlushLogBuffersOnVerify, false,                       \
           "Forces flushing of log buffers before verification.")            \
-                                                                            \
-  product(bool, G1UseSurvivorSpaces, true,                                  \
-          "When true, use survivor space.")                                 \
                                                                             \
   develop(bool, G1FailOnFPError, false,                                     \
           "When set, G1 will fail when it encounters an FP 'error', "       \
@@ -280,21 +277,21 @@
           "If non-0 is the size of the G1 survivor space, "                 \
           "otherwise SurvivorRatio is used to determine the size")          \
                                                                             \
-  product(bool, G1ForgetfulMMUTracker, false,                               \
+  product(bool, G1UseFixedWindowMMUTracker, false,                          \
           "If the MMU tracker's memory is full, forget the oldest entry")   \
                                                                             \
   product(uintx, G1HeapRegionSize, 0,                                       \
           "Size of the G1 regions.")                                        \
                                                                             \
-  experimental(bool, G1ParallelRSetUpdatingEnabled, false,                  \
+  experimental(bool, G1UseParallelRSetUpdating, false,                      \
           "Enables the parallelization of remembered set updating "         \
           "during evacuation pauses")                                       \
                                                                             \
-  experimental(bool, G1ParallelRSetScanningEnabled, false,                  \
+  experimental(bool, G1UseParallelRSetScanning, false,                      \
           "Enables the parallelization of remembered set scanning "         \
           "during evacuation pauses")                                       \
                                                                             \
-  product(uintx, G1ParallelRSetThreads, 0,                                  \
+  product(uintx, G1ConcRefinementThreads, 0,                                \
           "If non-0 is the number of parallel rem set update threads, "     \
           "otherwise the value is determined ergonomically.")               \
                                                                             \
