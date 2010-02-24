@@ -37,9 +37,6 @@
   develop(intx, G1MarkingOverheadPercent, 0,                                \
           "Overhead of concurrent marking")                                 \
                                                                             \
-  product(uintx, G1YoungGenSize, 0,                                         \
-          "Size of the G1 young generation, 0 is the adaptive policy")      \
-                                                                            \
   develop(bool, G1Gen, true,                                                \
           "If true, it will enable the generational G1")                    \
                                                                             \
