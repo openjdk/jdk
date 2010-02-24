@@ -292,10 +292,37 @@ void G1CollectorPolicy::initialize_flags() {
   CollectorPolicy::initialize_flags();
 }
 
+// The easiest way to deal with the parsing of the NewSize /
+// MaxNewSize / etc. parameteres is to re-use the code in the
+// TwoGenerationCollectorPolicy class. This is similar to what
+// ParallelScavenge does with its GenerationSizer class (see
+// ParallelScavengeHeap::initialize()). We might change this in the
+// future, but it's a good start.
+class G1YoungGenSizer : public TwoGenerationCollectorPolicy {
+  size_t size_to_region_num(size_t byte_size) {
+    return MAX2((size_t) 1, byte_size / HeapRegion::GrainBytes);
+  }
+
+public:
+  G1YoungGenSizer() {
+    initialize_flags();
+    initialize_size_info();
+  }
+
+  size_t min_young_region_num() {
+    return size_to_region_num(_min_gen0_size);
+  }
+  size_t initial_young_region_num() {
+    return size_to_region_num(_initial_gen0_size);
+  }
+  size_t max_young_region_num() {
+    return size_to_region_num(_max_gen0_size);
+  }
+};
+
 void G1CollectorPolicy::init() {
   // Set aside an initial future to_space.
   _g1 = G1CollectedHeap::heap();
-  size_t regions = Universe::heap()->capacity() / HeapRegion::GrainBytes;
 
   assert(Heap_lock->owned_by_self(), "Locking discipline.");
 
@@ -304,12 +331,15 @@ void G1CollectorPolicy::init() {
   if (G1Gen) {
     _in_young_gc_mode = true;
 
-    if (G1YoungGenSize == 0) {
+    G1YoungGenSizer sizer;
+    size_t initial_region_num = sizer.initial_young_region_num();
+
+    if (UseAdaptiveSizePolicy) {
       set_adaptive_young_list_length(true);
       _young_list_fixed_length = 0;
     } else {
       set_adaptive_young_list_length(false);
-      _young_list_fixed_length = (G1YoungGenSize / HeapRegion::GrainBytes);
+      _young_list_fixed_length = initial_region_num;
     }
      _free_regions_at_end_of_collection = _g1->free_regions();
      _scan_only_regions_at_end_of_collection = 0;
