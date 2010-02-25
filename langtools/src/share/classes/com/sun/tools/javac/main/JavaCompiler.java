@@ -1105,7 +1105,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             return env;
 
         if (verboseCompilePolicy)
-            log.printLines(log.noticeWriter, "[attribute " + env.enclClass.sym + "]");
+            Log.printLines(log.noticeWriter, "[attribute " + env.enclClass.sym + "]");
         if (verbose)
             printVerbose("checking.attribution", env.enclClass.sym);
 
