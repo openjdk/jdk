@@ -690,10 +690,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             ProcessorState ps = psi.next();
             Set<String>  matchedNames = new HashSet<String>();
             Set<TypeElement> typeElements = new LinkedHashSet<TypeElement>();
-            for (String unmatchedAnnotationName : unmatchedAnnotations.keySet()) {
+
+            for (Map.Entry<String, TypeElement> entry: unmatchedAnnotations.entrySet()) {
+                String unmatchedAnnotationName = entry.getKey();
                 if (ps.annotationSupported(unmatchedAnnotationName) ) {
                     matchedNames.add(unmatchedAnnotationName);
-                    TypeElement te = unmatchedAnnotations.get(unmatchedAnnotationName);
+                    TypeElement te = entry.getValue();
                     if (te != null)
                         typeElements.add(te);
                 }
@@ -790,7 +792,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                      List<JCCompilationUnit> roots,
                                      List<ClassSymbol> classSymbols,
                                      Iterable<? extends PackageSymbol> pckSymbols)
-    throws IOException {
+        throws IOException {
 
         log = Log.instance(context);
         // Writer for -XprintRounds and -XprintProcessorInfo data
@@ -1218,7 +1220,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return false;
     }
 
-    private class AnnotationCollector extends TreeScanner {
+    private static class AnnotationCollector extends TreeScanner {
         List<JCTree> path = List.nil();
         static final boolean verbose = false;
         List<JCAnnotation> annotations = List.nil();
