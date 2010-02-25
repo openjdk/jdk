@@ -189,6 +189,11 @@ public class Check {
             sunApiHandler.report(pos, msg, args);
     }
 
+    public void warnStatic(DiagnosticPosition pos, String msg, Object... args) {
+        if (lint.isEnabled(LintCategory.STATIC))
+            log.warning(pos, msg, args);
+    }
+
     /**
      * Report any deferred diagnostics.
      */
