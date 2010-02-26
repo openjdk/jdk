@@ -260,7 +260,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                     archive = openArchive(directory);
                 } catch (IOException ex) {
                     log.error("error.reading.file",
-                       directory, ex.getLocalizedMessage());
+                       directory, getMessage(ex));
                     return;
                 }
             }
@@ -489,7 +489,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 archive = new MissingArchive(zipFileName);
             } catch (IOException ex) {
                 if (zipFileName.exists())
-                    log.error("error.reading.file", zipFileName, ex.getLocalizedMessage());
+                    log.error("error.reading.file", zipFileName, getMessage(ex));
                 archive = new MissingArchive(zipFileName);
             }
 
@@ -837,5 +837,24 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                 return result;
         }
         throw new IllegalArgumentException("Invalid relative path: " + file);
+    }
+
+    /**
+     * Get a detail message from an IOException.
+     * Most, but not all, instances of IOException provide a non-null result
+     * for getLocalizedMessage().  But some instances return null: in these
+     * cases, fallover to getMessage(), and if even that is null, return the
+     * name of the exception itself.
+     * @param e an IOException
+     * @return a string to include in a compiler diagnostic
+     */
+    public static String getMessage(IOException e) {
+        String s = e.getLocalizedMessage();
+        if (s != null)
+            return s;
+        s = e.getMessage();
+        if (s != null)
+            return s;
+        return e.toString();
     }
 }
