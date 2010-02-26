@@ -1785,6 +1785,8 @@ bool PhaseIdealLoop::is_uncommon_trap_proj(ProjNode* proj, bool must_reason_pred
 bool PhaseIdealLoop::is_uncommon_trap_if_pattern(ProjNode *proj, bool must_reason_predicate) {
   Node *in0 = proj->in(0);
   if (!in0->is_If()) return false;
+  // Variation of a dead If node.
+  if (in0->outcnt() < 2)  return false;
   IfNode* iff = in0->as_If();
 
   // we need "If(Conv2B(Opaque1(...)))" pattern for must_reason_predicate
