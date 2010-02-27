@@ -109,7 +109,7 @@ public class SynthSliderUI extends BasicSliderUI
      * Uninstalls default setting. This method is called when a
      * {@code LookAndFeel} is uninstalled.
      */
-    protected void uninstallDefaults() {
+    protected void uninstallDefaults(JSlider slider) {
         SynthContext context = getContext(slider, ENABLED);
         style.uninstallDefaults(context);
         context.dispose();
