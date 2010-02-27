@@ -169,15 +169,13 @@ public class BasicSliderUI extends SliderUI{
                                                     + c + " when it only knows about "
                                                     + slider + ".");
 
-        LookAndFeel.uninstallBorder(slider);
-
         scrollTimer.stop();
         scrollTimer = null;
 
+        uninstallDefaults(slider);
         uninstallListeners( slider );
         uninstallKeyboardActions(slider);
 
-        focusInsets = null;
         insetCache = null;
         leftToRightCache = true;
         focusRect = null;
@@ -208,6 +206,12 @@ public class BasicSliderUI extends SliderUI{
         // use default if missing so that BasicSliderUI can be used in other
         // LAFs like Nimbus
         if (focusInsets == null) focusInsets = new InsetsUIResource(2,2,2,2);
+    }
+
+    protected void uninstallDefaults(JSlider slider) {
+        LookAndFeel.uninstallBorder(slider);
+
+        focusInsets = null;
     }
 
     protected TrackListener createTrackListener(JSlider slider) {
