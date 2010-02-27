@@ -865,13 +865,17 @@ public class SynthSliderUI extends BasicSliderUI
                     valueRect.y, -1);
         }
 
-        SynthContext subcontext = getContext(slider, Region.SLIDER_TRACK);
-        paintTrack(subcontext, g, trackRect);
-        subcontext.dispose();
+        if (slider.getPaintTrack() && clip.intersects(trackRect)) {
+            SynthContext subcontext = getContext(slider, Region.SLIDER_TRACK);
+            paintTrack(subcontext, g, trackRect);
+            subcontext.dispose();
+        }
 
-        subcontext = getContext(slider, Region.SLIDER_THUMB);
-        paintThumb(subcontext, g, thumbRect);
-        subcontext.dispose();
+        if (clip.intersects(thumbRect)) {
+            SynthContext subcontext = getContext(slider, Region.SLIDER_THUMB);
+            paintThumb(subcontext, g, thumbRect);
+            subcontext.dispose();
+        }
 
         if (slider.getPaintTicks() && clip.intersects(tickRect)) {
             paintTicks(g);
