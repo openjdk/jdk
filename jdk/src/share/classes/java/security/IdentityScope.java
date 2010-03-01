@@ -129,7 +129,8 @@ class IdentityScope extends Identity {
     /**
      * Returns the system's identity scope.
      *
-     * @return the system's identity scope.
+     * @return the system's identity scope, or {@code null} if none has been
+     *         set.
      *
      * @see #setSystemScope
      */
