@@ -317,7 +317,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
         continue;
       }
     }
-    if (type->basic_type() == T_ADDRESS) {
+    if (osr_block->flow()->local_type_at(index)->is_return_address()) {
       // In our current system it's illegal for jsr addresses to be
       // live into an OSR entry point because the compiler performs
       // inlining of jsrs.  ciTypeFlow has a bailout that detect this
