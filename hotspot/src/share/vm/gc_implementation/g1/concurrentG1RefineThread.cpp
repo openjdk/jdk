@@ -107,7 +107,7 @@ void ConcurrentG1RefineThread::run_young_rs_sampling() {
     if (_should_terminate) {
       break;
     }
-    _monitor->wait(Mutex::_no_safepoint_check_flag, G1ConcRefineServiceInterval);
+    _monitor->wait(Mutex::_no_safepoint_check_flag, G1ConcRefinementServiceIntervalMillis);
   }
 }
 
@@ -127,7 +127,7 @@ bool ConcurrentG1RefineThread::is_active() {
 void ConcurrentG1RefineThread::activate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   if (_worker_id > 0) {
-    if (G1TraceConcurrentRefinement) {
+    if (G1TraceConcRefinement) {
       DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
       gclog_or_tty->print_cr("G1-Refine-activated worker %d, on threshold %d, current %d",
                              _worker_id, _threshold, (int)dcqs.completed_buffers_num());
@@ -143,7 +143,7 @@ void ConcurrentG1RefineThread::activate() {
 void ConcurrentG1RefineThread::deactivate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   if (_worker_id > 0) {
-    if (G1TraceConcurrentRefinement) {
+    if (G1TraceConcRefinement) {
       DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
       gclog_or_tty->print_cr("G1-Refine-deactivated worker %d, off threshold %d, current %d",
                              _worker_id, _deactivation_threshold, (int)dcqs.completed_buffers_num());
@@ -218,9 +218,13 @@ void ConcurrentG1RefineThread::run() {
 
 
 void ConcurrentG1RefineThread::yield() {
-  if (G1TraceConcurrentRefinement) gclog_or_tty->print_cr("G1-Refine-yield");
+  if (G1TraceConcRefinement) {
+    gclog_or_tty->print_cr("G1-Refine-yield");
+  }
   _sts.yield("G1 refine");
-  if (G1TraceConcurrentRefinement) gclog_or_tty->print_cr("G1-Refine-yield-end");
+  if (G1TraceConcRefinement) {
+    gclog_or_tty->print_cr("G1-Refine-yield-end");
+  }
 }
 
 void ConcurrentG1RefineThread::stop() {
@@ -241,7 +245,9 @@ void ConcurrentG1RefineThread::stop() {
       Terminator_lock->wait();
     }
   }
-  if (G1TraceConcurrentRefinement) gclog_or_tty->print_cr("G1-Refine-stop");
+  if (G1TraceConcRefinement) {
+    gclog_or_tty->print_cr("G1-Refine-stop");
+  }
 }
 
 void ConcurrentG1RefineThread::print() const {
