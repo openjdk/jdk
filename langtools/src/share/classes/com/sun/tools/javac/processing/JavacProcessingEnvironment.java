@@ -799,9 +799,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         PrintWriter xout = context.get(Log.outKey);
         TaskListener taskListener = context.get(TaskListener.class);
 
-
-        AnnotationCollector collector = new AnnotationCollector();
-
         JavaCompiler compiler = JavaCompiler.instance(context);
         compiler.todo.clear(); // free the compiler's resources
 
@@ -1218,45 +1215,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         return false;
-    }
-
-    private static class AnnotationCollector extends TreeScanner {
-        List<JCTree> path = List.nil();
-        static final boolean verbose = false;
-        List<JCAnnotation> annotations = List.nil();
-
-        public List<JCAnnotation> findAnnotations(List<? extends JCTree> nodes) {
-            annotations = List.nil();
-            scan(nodes);
-            List<JCAnnotation> found = annotations;
-            annotations = List.nil();
-            return found.reverse();
-        }
-
-        public void scan(JCTree node) {
-            if (node == null)
-                return;
-            Symbol sym = TreeInfo.symbolFor(node);
-            if (sym != null)
-                path = path.prepend(node);
-            super.scan(node);
-            if (sym != null)
-                path = path.tail;
-        }
-
-        public void visitAnnotation(JCAnnotation node) {
-            annotations = annotations.prepend(node);
-            if (verbose) {
-                StringBuilder sb = new StringBuilder();
-                for (JCTree tree : path.reverse()) {
-                    System.err.print(sb);
-                    System.err.println(TreeInfo.symbolFor(tree));
-                    sb.append("  ");
-                }
-                System.err.print(sb);
-                System.err.println(node);
-            }
-        }
     }
 
     private static <T extends JCTree> List<T> cleanTrees(List<T> nodes) {
