@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 
 bool CompileBroker::_initialized = false;
 volatile bool CompileBroker::_should_block = false;
+volatile jint CompileBroker::_should_compile_new_jobs = run_compilation;
 
 // The installed compiler(s)
 AbstractCompiler* CompileBroker::_compilers[2];
@@ -986,6 +987,13 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
       return method_code;
     }
     if (method->is_not_compilable(comp_level)) return NULL;
+
+    nmethod* saved = CodeCache::find_and_remove_saved_code(method());
+    if (saved != NULL) {
+      method->set_code(method, saved);
+      return saved;
+    }
+
   } else {
     // osr compilation
 #ifndef TIERED
@@ -1035,6 +1043,14 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   // a lock the compiling thread can not acquire. Prefetch it here.
   if (JvmtiExport::should_post_compiled_method_load()) {
     method->jmethod_id();
+  }
+
+  // If the compiler is shut off due to code cache flushing or otherwise,
+  // fail out now so blocking compiles dont hang the java thread
+  if (!should_compile_new_jobs() || (UseCodeCacheFlushing && CodeCache::needs_flushing())) {
+    method->invocation_counter()->decay();
+    method->backedge_counter()->decay();
+    return NULL;
   }
 
   // do the compilation
@@ -1116,7 +1132,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
   // the specified level
   if (is_native &&
       (!CICompileNatives || !compiler(comp_level)->supports_native())) {
-    method->set_not_compilable();
+    method->set_not_compilable_quietly();
     return true;
   }
 
@@ -1140,7 +1156,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
       method->print_short_name(tty);
       tty->cr();
     }
-    method->set_not_compilable();
+    method->set_not_compilable_quietly();
   }
 
   return false;
@@ -1173,7 +1189,7 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
   }
 
   // Method was not in the appropriate compilation range.
-  method->set_not_compilable();
+  method->set_not_compilable_quietly();
   return 0;
 }
 
@@ -1325,26 +1341,13 @@ void CompileBroker::compiler_thread_loop() {
     {
       // We need this HandleMark to avoid leaking VM handles.
       HandleMark hm(thread);
+
       if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) {
-        // The CodeCache is full.  Print out warning and disable compilation.
-        UseInterpreter = true;
-        if (UseCompiler || AlwaysCompileLoopMethods ) {
-          if (log != NULL) {
-            log->begin_elem("code_cache_full");
-            log->stamp();
-            log->end_elem();
-          }
-#ifndef PRODUCT
-          warning("CodeCache is full. Compiler has been disabled");
-          if (CompileTheWorld || ExitOnFullCodeCache) {
-            before_exit(thread);
-            exit_globals(); // will delete tty
-            vm_direct_exit(CompileTheWorld ? 0 : 1);
-          }
-#endif
-          UseCompiler               = false;
-          AlwaysCompileLoopMethods  = false;
-        }
+        // the code cache is really full
+        handle_full_code_cache();
+      } else if (UseCodeCacheFlushing && CodeCache::needs_flushing()) {
+        // Attempt to start cleaning the code cache while there is still a little headroom
+        NMethodSweeper::handle_full_code_cache(false);
       }
 
       CompileTask* task = queue->get();
@@ -1369,7 +1372,7 @@ void CompileBroker::compiler_thread_loop() {
       // Never compile a method if breakpoints are present in it
       if (method()->number_of_breakpoints() == 0) {
         // Compile the method.
-        if (UseCompiler || AlwaysCompileLoopMethods) {
+        if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
 #ifdef COMPILER1
           // Allow repeating compilations for the purpose of benchmarking
           // compile speed. This is not useful for customers.
@@ -1587,10 +1590,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     if (is_osr) {
       method->set_not_osr_compilable();
     } else {
-      method->set_not_compilable();
+      method->set_not_compilable_quietly();
     }
   } else if (compilable == ciEnv::MethodCompilable_not_at_tier) {
-    method->set_not_compilable(task->comp_level());
+    method->set_not_compilable_quietly(task->comp_level());
   }
 
   // Note that the queued_for_compilation bits are cleared without
@@ -1612,6 +1615,38 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 #endif
 }
 
+
+// ------------------------------------------------------------------
+// CompileBroker::handle_full_code_cache
+//
+// The CodeCache is full.  Print out warning and disable compilation or
+// try code cache cleaning so compilation can continue later.
+void CompileBroker::handle_full_code_cache() {
+  UseInterpreter = true;
+  if (UseCompiler || AlwaysCompileLoopMethods ) {
+    CompilerThread* thread = CompilerThread::current();
+    CompileLog* log = thread->log();
+    if (log != NULL) {
+      log->begin_elem("code_cache_full");
+      log->stamp();
+      log->end_elem();
+    }
+  #ifndef PRODUCT
+    warning("CodeCache is full. Compiler has been disabled");
+    if (CompileTheWorld || ExitOnFullCodeCache) {
+      before_exit(JavaThread::current());
+      exit_globals(); // will delete tty
+      vm_direct_exit(CompileTheWorld ? 0 : 1);
+    }
+  #endif
+    if (UseCodeCacheFlushing) {
+      NMethodSweeper::handle_full_code_cache(true);
+    } else {
+      UseCompiler               = false;
+      AlwaysCompileLoopMethods  = false;
+    }
+  }
+}
 
 // ------------------------------------------------------------------
 // CompileBroker::set_last_compile

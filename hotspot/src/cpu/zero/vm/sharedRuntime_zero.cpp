@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008, 2009 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,10 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(
                         int total_args_passed,
                         int comp_args_on_stack,
                         const BasicType *sig_bt,
-                        const VMRegPair *regs) {
-  return new AdapterHandlerEntry(
+                        const VMRegPair *regs,
+                        AdapterFingerPrint *fingerprint) {
+  return AdapterHandlerLibrary::new_entry(
+    fingerprint,
     ShouldNotCallThisStub(),
     ShouldNotCallThisStub(),
     ShouldNotCallThisStub());

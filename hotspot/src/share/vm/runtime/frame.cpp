@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,11 @@ void RegisterMap::print() const {
 
 address frame::raw_pc() const {
   if (is_deoptimized_frame()) {
-    return ((nmethod*) cb())->deopt_handler_begin() - pc_return_offset;
+    nmethod* nm = cb()->as_nmethod_or_null();
+    if (nm->is_method_handle_return(pc()))
+      return nm->deopt_mh_handler_begin() - pc_return_offset;
+    else
+      return nm->deopt_handler_begin() - pc_return_offset;
   } else {
     return (pc() - pc_return_offset);
   }
@@ -269,10 +273,16 @@ void frame::deoptimize(JavaThread* thread, bool thread_is_known_safe) {
   } // NeedsDeoptSuspend
 
 
-  address deopt = nm->deopt_handler_begin();
+  // If the call site is a MethodHandle call site use the MH deopt
+  // handler.
+  address deopt = nm->is_method_handle_return(pc()) ?
+    nm->deopt_mh_handler_begin() :
+    nm->deopt_handler_begin();
+
   // Save the original pc before we patch in the new one
   nm->set_original_pc(this, pc());
   patch_pc(thread, deopt);
+
 #ifdef ASSERT
   {
     RegisterMap map(thread, false);
@@ -596,12 +606,12 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
   for (BasicObjectLock* current = interpreter_frame_monitor_end();
        current < interpreter_frame_monitor_begin();
        current = next_monitor_in_interpreter_frame(current)) {
-    st->print_cr(" [ - obj ");
+    st->print(" - obj    [");
     current->obj()->print_value_on(st);
-    st->cr();
-    st->print_cr(" - lock ");
+    st->print_cr("]");
+    st->print(" - lock   [");
     current->lock()->print_on(st);
-    st->cr();
+    st->print_cr("]");
   }
   // monitor
   st->print_cr(" - monitor[" INTPTR_FORMAT "]", interpreter_frame_monitor_begin());

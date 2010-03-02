@@ -36,6 +36,8 @@ else # !OPENJDK
     ICCPROFILE_SRC_DIR = $(CLOSED_SRC)/share/lib/cmm/kcms
 endif # OPENJDK
 
+include $(BUILDDIR)/common/Subdirs.gmk
+
 #
 # ICC Profiles used by the CMM.
 #

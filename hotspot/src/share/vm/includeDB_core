@@ -175,6 +175,7 @@ arguments.cpp                           jvmtiExport.hpp
 arguments.cpp                           management.hpp
 arguments.cpp                           oop.inline.hpp
 arguments.cpp                           os_<os_family>.inline.hpp
+arguments.cpp                           referenceProcessor.hpp
 arguments.cpp                           universe.inline.hpp
 arguments.cpp                           vm_version_<arch>.hpp
 
@@ -921,6 +922,7 @@ classFileStream.hpp                     top.hpp
 
 classLoader.cpp                         allocation.inline.hpp
 classLoader.cpp                         arguments.hpp
+classLoader.cpp                         bytecodeStream.hpp
 classLoader.cpp                         classFileParser.hpp
 classLoader.cpp                         classFileStream.hpp
 classLoader.cpp                         classLoader.hpp
@@ -948,6 +950,7 @@ classLoader.cpp                         jvm_misc.hpp
 classLoader.cpp                         management.hpp
 classLoader.cpp                         oop.inline.hpp
 classLoader.cpp                         oopFactory.hpp
+classLoader.cpp                         oopMapCache.hpp
 classLoader.cpp                         os_<os_family>.inline.hpp
 classLoader.cpp                         symbolOop.hpp
 classLoader.cpp                         systemDictionary.hpp
@@ -1030,6 +1033,7 @@ codeCache.cpp                           objArrayOop.hpp
 codeCache.cpp                           oop.inline.hpp
 codeCache.cpp                           pcDesc.hpp
 codeCache.cpp                           resourceArea.hpp
+codeCache.cpp                           xmlstream.hpp
 
 codeCache.hpp                           allocation.hpp
 codeCache.hpp                           codeBlob.hpp
@@ -1118,6 +1122,7 @@ compileBroker.cpp                       nativeLookup.hpp
 compileBroker.cpp                       oop.inline.hpp
 compileBroker.cpp                       os.hpp
 compileBroker.cpp                       sharedRuntime.hpp
+compileBroker.cpp                       sweeper.hpp
 compileBroker.cpp                       systemDictionary.hpp
 compileBroker.cpp                       vmSymbols.hpp
 
@@ -1479,6 +1484,7 @@ deoptimization.cpp                      thread.hpp
 deoptimization.cpp                      vframe.hpp
 deoptimization.cpp                      vframeArray.hpp
 deoptimization.cpp                      vframe_hp.hpp
+deoptimization.cpp                      vmreg_<arch>.inline.hpp
 deoptimization.cpp                      xmlstream.hpp
 
 deoptimization.hpp                      allocation.hpp
@@ -2530,6 +2536,7 @@ jvmtiExport.hpp                         growableArray.hpp
 jvmtiExport.hpp                         handles.hpp
 jvmtiExport.hpp                         iterator.hpp
 jvmtiExport.hpp                         jvmti.h
+jvmtiExport.hpp                         jvmticmlr.h
 jvmtiExport.hpp                         oop.hpp
 jvmtiExport.hpp                         oopsHierarchy.hpp
 
@@ -2648,6 +2655,7 @@ loaderConstraints.cpp                   resourceArea.hpp
 loaderConstraints.cpp                   safepoint.hpp
 
 loaderConstraints.hpp                   dictionary.hpp
+loaderConstraints.hpp                   placeholders.hpp
 loaderConstraints.hpp                   hashtable.hpp
 
 location.cpp                            debugInfo.hpp
@@ -3716,6 +3724,7 @@ sharedHeap.hpp                          permGen.hpp
 sharedRuntime.cpp                       abstractCompiler.hpp
 sharedRuntime.cpp                       arguments.hpp
 sharedRuntime.cpp                       biasedLocking.hpp
+sharedRuntime.cpp                       compileBroker.hpp
 sharedRuntime.cpp                       compiledIC.hpp
 sharedRuntime.cpp                       compilerOracle.hpp
 sharedRuntime.cpp                       copy.hpp
@@ -3724,6 +3733,7 @@ sharedRuntime.cpp                       events.hpp
 sharedRuntime.cpp                       forte.hpp
 sharedRuntime.cpp                       gcLocker.inline.hpp
 sharedRuntime.cpp                       handles.inline.hpp
+sharedRuntime.cpp                       hashtable.inline.hpp
 sharedRuntime.cpp                       init.hpp
 sharedRuntime.cpp                       interfaceSupport.hpp
 sharedRuntime.cpp                       interpreterRuntime.hpp
@@ -3751,6 +3761,7 @@ sharedRuntime.cpp                       xmlstream.hpp
 sharedRuntime.hpp                       allocation.hpp
 sharedRuntime.hpp                       bytecodeHistogram.hpp
 sharedRuntime.hpp                       bytecodeTracer.hpp
+sharedRuntime.hpp                       hashtable.hpp
 sharedRuntime.hpp                       linkResolver.hpp
 sharedRuntime.hpp                       resourceArea.hpp
 sharedRuntime.hpp                       threadLocalStorage.hpp
@@ -3968,6 +3979,7 @@ stubs.hpp                               os_<os_family>.inline.hpp
 
 sweeper.cpp                             atomic.hpp
 sweeper.cpp                             codeCache.hpp
+sweeper.cpp                             compileBroker.hpp
 sweeper.cpp                             events.hpp
 sweeper.cpp                             methodOop.hpp
 sweeper.cpp                             mutexLocker.hpp
@@ -3975,6 +3987,8 @@ sweeper.cpp                             nmethod.hpp
 sweeper.cpp                             os.hpp
 sweeper.cpp                             resourceArea.hpp
 sweeper.cpp                             sweeper.hpp
+sweeper.cpp                             vm_operations.hpp
+sweeper.cpp                             xmlstream.hpp
 
 symbolKlass.cpp                         gcLocker.hpp
 symbolKlass.cpp                         handles.inline.hpp
@@ -4628,6 +4642,7 @@ vm_operations.cpp                       deoptimization.hpp
 vm_operations.cpp                       interfaceSupport.hpp
 vm_operations.cpp                       isGCActiveMark.hpp
 vm_operations.cpp                       resourceArea.hpp
+vm_operations.cpp                       sweeper.hpp
 vm_operations.cpp                       threadService.hpp
 vm_operations.cpp                       thread_<os_family>.inline.hpp
 vm_operations.cpp                       vmSymbols.hpp

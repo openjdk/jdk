@@ -436,15 +436,21 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
           // we will set result._method also.
         }
         // Determine call site's morphism.
-        // The call site count could be == (receivers_count_total + 1)
-        // not only in the case of a polymorphic call but also in the case
-        // when a method data snapshot is taken after the site count was updated
-        // but before receivers counters were updated.
-        if (morphism == result._limit) {
-           // There were no array klasses and morphism <= MorphismLimit.
-           if (morphism <  ciCallProfile::MorphismLimit ||
-               morphism == ciCallProfile::MorphismLimit &&
-               (receivers_count_total+1) >= count) {
+        // The call site count is 0 with known morphism (onlt 1 or 2 receivers)
+        // or < 0 in the case of a type check failured for checkcast, aastore, instanceof.
+        // The call site count is > 0 in the case of a polymorphic virtual call.
+        if (morphism > 0 && morphism == result._limit) {
+           // The morphism <= MorphismLimit.
+           if ((morphism <  ciCallProfile::MorphismLimit) ||
+               (morphism == ciCallProfile::MorphismLimit && count == 0)) {
+#ifdef ASSERT
+             if (count > 0) {
+               this->print_short_name(tty);
+               tty->print_cr(" @ bci:%d", bci);
+               this->print_codes();
+               assert(false, "this call site should not be polymorphic");
+             }
+#endif
              result._morphism = morphism;
            }
         }
@@ -452,10 +458,8 @@ ciCallProfile ciMethod::call_profile_at_bci(int bci) {
         // zero or less, presume that this is a typecheck profile and
         // do nothing.  Otherwise, increase count to be the sum of all
         // receiver's counts.
-        if (count > 0) {
-          if (count < receivers_count_total) {
-            count = receivers_count_total;
-          }
+        if (count >= 0) {
+          count += receivers_count_total;
         }
       }
       result._count = count;

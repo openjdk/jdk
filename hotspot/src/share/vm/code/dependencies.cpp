@@ -843,13 +843,15 @@ static bool count_find_witness_calls() {
     if (occasional_print || final_stats) {
       // Every now and then dump a little info about dependency searching.
       if (xtty != NULL) {
-        xtty->elem("deps_find_witness calls='%d' steps='%d' recursions='%d' singles='%d'",
+       ttyLocker ttyl;
+       xtty->elem("deps_find_witness calls='%d' steps='%d' recursions='%d' singles='%d'",
                    deps_find_witness_calls,
                    deps_find_witness_steps,
                    deps_find_witness_recursions,
                    deps_find_witness_singles);
       }
       if (final_stats || (TraceDependencies && WizardMode)) {
+        ttyLocker ttyl;
         tty->print_cr("Dependency check (find_witness) "
                       "calls=%d, steps=%d (avg=%.1f), recursions=%d, singles=%d",
                       deps_find_witness_calls,

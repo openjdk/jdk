@@ -38,10 +38,19 @@ ifndef OPENJDK
   endif
 endif
 
+# jarsigner is part of JRE
+SUBDIRS = java security net/ssl jarsigner
+
+SUBDIRS_management = jmx
+SUBDIRS_desktop    = image inputmethods
+SUBDIRS_enterprise = crypto/provider jndi \
+                     org xml rowset net/httpserver
+SUBDIRS_misc       = $(SCRIPT_SUBDIR) tracing servicetag nio demo
+
 # Omit mirror since it's built with the apt tool.
-SUBDIRS = $(SCRIPT_SUBDIR) image security crypto/provider jndi jmx \
-    java org xml rowset net/httpserver net/ssl demo \
-    tools jarsigner tracing servicetag nio
+SUBDIRS_tools      = tools
+
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)
