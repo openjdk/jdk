@@ -1172,7 +1172,7 @@ class StubGenerator: public StubCodeGenerator {
             __ movptr(c_rarg0, addr);
             __ movptr(c_rarg1, count);
           }
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre)));
+          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
           __ popa();
         }
         break;
@@ -1212,7 +1212,7 @@ class StubGenerator: public StubCodeGenerator {
           __ shrptr(scratch, LogBytesPerHeapOop);  // convert to element count
           __ mov(c_rarg0, start);
           __ mov(c_rarg1, scratch);
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post)));
+          __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), 2);
           __ popa();
         }
         break;

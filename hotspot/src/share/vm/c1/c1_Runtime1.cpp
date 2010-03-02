@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,8 @@ static void deopt_caller() {
     RegisterMap reg_map(thread, false);
     frame runtime_frame = thread->last_frame();
     frame caller_frame = runtime_frame.sender(&reg_map);
-    VM_DeoptimizeFrame deopt(thread, caller_frame.id());
-    VMThread::execute(&deopt);
+    // bypass VM_DeoptimizeFrame and deoptimize the frame directly
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
     assert(caller_is_deopted(), "Must be deoptimized");
   }
 }
@@ -354,7 +354,7 @@ JRT_END
 
 
 JRT_ENTRY(void, Runtime1::post_jvmti_exception_throw(JavaThread* thread))
-  if (JvmtiExport::can_post_exceptions()) {
+  if (JvmtiExport::can_post_on_exceptions()) {
     vframeStream vfst(thread, true);
     address bcp = vfst.method()->bcp_from(vfst.bci());
     JvmtiExport::post_exception_throw(thread, vfst.method(), bcp, thread->exception_oop());
@@ -437,7 +437,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
   if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
 
-  if (JvmtiExport::can_post_exceptions()) {
+  if (JvmtiExport::can_post_on_exceptions()) {
     // To ensure correct notification of exception catches and throws
     // we have to deoptimize here.  If we attempted to notify the
     // catches and throws during this exception lookup it's possible
@@ -1075,6 +1075,7 @@ enum {
 };
 
 
+// Below length is the # elements copied.
 template <class T> int obj_arraycopy_work(oopDesc* src, T* src_addr,
                                           oopDesc* dst, T* dst_addr,
                                           int length) {
@@ -1083,22 +1084,22 @@ template <class T> int obj_arraycopy_work(oopDesc* src, T* src_addr,
   // barrier. The assert will fail if this is not the case.
   // Note that we use the non-virtual inlineable variant of write_ref_array.
   BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->has_write_ref_array_opt(),
-         "Barrier set must have ref array opt");
+  assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
+  assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
   if (src == dst) {
     // same object, no check
+    bs->write_ref_array_pre(dst_addr, length);
     Copy::conjoint_oops_atomic(src_addr, dst_addr, length);
-    bs->write_ref_array(MemRegion((HeapWord*)dst_addr,
-                                  (HeapWord*)(dst_addr + length)));
+    bs->write_ref_array((HeapWord*)dst_addr, length);
     return ac_ok;
   } else {
     klassOop bound = objArrayKlass::cast(dst->klass())->element_klass();
     klassOop stype = objArrayKlass::cast(src->klass())->element_klass();
     if (stype == bound || Klass::cast(stype)->is_subtype_of(bound)) {
       // Elements are guaranteed to be subtypes, so no check necessary
+      bs->write_ref_array_pre(dst_addr, length);
       Copy::conjoint_oops_atomic(src_addr, dst_addr, length);
-      bs->write_ref_array(MemRegion((HeapWord*)dst_addr,
-                                    (HeapWord*)(dst_addr + length)));
+      bs->write_ref_array((HeapWord*)dst_addr, length);
       return ac_ok;
     }
   }
@@ -1162,9 +1163,16 @@ JRT_LEAF(void, Runtime1::oop_arraycopy(HeapWord* src, HeapWord* dst, int num))
 #endif
 
   if (num == 0) return;
-  Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
   BarrierSet* bs = Universe::heap()->barrier_set();
-  bs->write_ref_array(MemRegion(dst, dst + num));
+  assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
+  assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
+  if (UseCompressedOops) {
+    bs->write_ref_array_pre((narrowOop*)dst, num);
+  } else {
+    bs->write_ref_array_pre((oop*)dst, num);
+  }
+  Copy::conjoint_oops_atomic((oop*) src, (oop*) dst, num);
+  bs->write_ref_array(dst, num);
 JRT_END
 
 

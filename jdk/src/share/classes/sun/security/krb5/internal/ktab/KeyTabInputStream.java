@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import java.io.InputStream;
 public class KeyTabInputStream extends KrbDataInputStream implements KeyTabConstants {
 
     boolean DEBUG = Krb5.DEBUG;
-    static int index;
+    int index;
 
     public KeyTabInputStream(InputStream is) {
         super(is);

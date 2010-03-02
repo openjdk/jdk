@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,8 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-zip_version \
 	sane-unzip_version \
  	sane-msvcrt_path \
-        sane-freetype
+        sane-freetype \
+        sane-build_modules
 
 ######################################################
 # check for COPYRIGHT_YEAR variable
@@ -845,6 +846,21 @@ sane-freetype:
 endif
 
 ######################################################
+# if specified, BUILD_MODULES must contain valid values.
+######################################################
+MODULES_REGEX="all|base|desktop|management|enterprise|misc|tools"
+sane-build_modules:
+ifdef BUILD_MODULES
+	@for m in $(BUILD_MODULES) ; do \
+            valid=`$(ECHO) $$m | $(EGREP) $(MODULES_REGEX)`; \
+            if [ "x$$valid" = "x" ] ; then \
+                $(ECHO) "ERROR: $$m set in the BUILD_MODULES variable is invalid.\n" \
+                "" >> $(ERROR_FILE); \
+            fi \
+	done
+endif
+
+######################################################
 # CUPS_HEADERS_PATH must be valid
 ######################################################
 sane-cups:
@@ -1093,6 +1109,7 @@ endif
 # Check for existence of misc Hotspot imported files
 ######################################################
 HOTSPOT_INCLUDE_FILE_LIST  = jvmti.h
+HOTSPOT_INCLUDE_FILE_LIST  += jvmticmlr.h
 #HOTSPOT_INCLUDE_FILE_LIST += jni.h jni_md.h
 #HOTSPOT_INCLUDE_FILE_LIST += jvm.h jvm_md.h
 #HOTSPOT_INCLUDE_FILE_LIST += jmm.h

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -851,10 +851,10 @@ void AdapterGenerator::gen_c2i_adapter(
       __ set(reg2offset(r_1) + extraspace + bias, ld_off);
 #else
       int ld_off = reg2offset(r_1) + extraspace + bias;
+#endif // _LP64
 #ifdef ASSERT
       G1_forced = true;
 #endif // ASSERT
-#endif // _LP64
       r_1 = G1_scratch->as_VMReg();// as part of the load/store shuffle
       if (!r_2->is_valid()) __ ld (base, ld_off, G1_scratch);
       else                  __ ldx(base, ld_off, G1_scratch);
@@ -865,9 +865,11 @@ void AdapterGenerator::gen_c2i_adapter(
       if (sig_bt[i] == T_OBJECT || sig_bt[i] == T_ARRAY) {
         store_c2i_object(r, base, st_off);
       } else if (sig_bt[i] == T_LONG || sig_bt[i] == T_DOUBLE) {
+#ifndef _LP64
         if (TieredCompilation) {
           assert(G1_forced || sig_bt[i] != T_LONG, "should not use register args for longs");
         }
+#endif // _LP64
         store_c2i_long(r, base, st_off, r_2->is_stack());
       } else {
         store_c2i_int(r, base, st_off);
@@ -1189,7 +1191,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
                                                             // VMReg max_arg,
                                                             int comp_args_on_stack, // VMRegStackSlots
                                                             const BasicType *sig_bt,
-                                                            const VMRegPair *regs) {
+                                                            const VMRegPair *regs,
+                                                            AdapterFingerPrint* fingerprint) {
   address i2c_entry = __ pc();
 
   AdapterGenerator agen(masm);
@@ -1258,7 +1261,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   agen.gen_c2i_adapter(total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
 
   __ flush();
-  return new AdapterHandlerEntry(i2c_entry, c2i_entry, c2i_unverified_entry);
+  return AdapterHandlerLibrary::new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
 
 }
 

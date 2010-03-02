@@ -457,7 +457,8 @@ void LoaderConstraintTable::merge_loader_constraints(
 }
 
 
-void LoaderConstraintTable::verify(Dictionary* dictionary) {
+void LoaderConstraintTable::verify(Dictionary* dictionary,
+                                   PlaceholderTable* placeholders) {
   Thread *thread = Thread::current();
   for (int cindex = 0; cindex < _loader_constraint_size; cindex++) {
     for (LoaderConstraintEntry* probe = bucket(cindex);
@@ -472,7 +473,23 @@ void LoaderConstraintTable::verify(Dictionary* dictionary) {
         unsigned int d_hash = dictionary->compute_hash(name, loader);
         int d_index = dictionary->hash_to_index(d_hash);
         klassOop k = dictionary->find_class(d_index, d_hash, name, loader);
-        guarantee(k == probe->klass(), "klass should be in dictionary");
+        if (k != NULL) {
+          // We found the class in the system dictionary, so we should
+          // make sure that the klassOop matches what we already have.
+          guarantee(k == probe->klass(), "klass should be in dictionary");
+        } else {
+          // If we don't find the class in the system dictionary, it
+          // has to be in the placeholders table.
+          unsigned int p_hash = placeholders->compute_hash(name, loader);
+          int p_index = placeholders->hash_to_index(p_hash);
+          PlaceholderEntry* entry = placeholders->get_entry(p_index, p_hash,
+                                                            name, loader);
+
+          // The instanceKlass might not be on the entry, so the only
+          // thing we can check here is whether we were successful in
+          // finding the class in the placeholders table.
+          guarantee(entry != NULL, "klass should be in the placeholders");
+        }
       }
       for (int n = 0; n< probe->num_loaders(); n++) {
         guarantee(probe->loader(n)->is_oop_or_null(), "should be oop");

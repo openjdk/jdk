@@ -895,6 +895,8 @@ public class WToolkit extends SunToolkit implements Runnable {
                               Integer.valueOf(50));
         desktopProperties.put("DnD.Autoscroll.interval",
                               Integer.valueOf(50));
+        desktopProperties.put("DnD.isDragImageSupported",
+                              Boolean.TRUE);
         desktopProperties.put("Shell.shellFolderManager",
                               "sun.awt.shell.Win32ShellFolderManager2");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   CompileLog* log = this->log();
   if (log != NULL) {
     int rid = (receiver_count >= 0)? log->identify(profile.receiver(0)): -1;
-    int r2id = (profile.morphism() == 2)? log->identify(profile.receiver(1)):-1;
+    int r2id = (rid != -1 && profile.has_receiver(1))? log->identify(profile.receiver(1)):-1;
     log->begin_elem("call method='%d' count='%d' prof_factor='%g'",
                     log->identify(call_method), site_count, prof_factor);
     if (call_is_virtual)  log->print(" virtual='1'");
@@ -182,26 +182,16 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
             }
           }
           CallGenerator* miss_cg;
+          Deoptimization::DeoptReason reason = (profile.morphism() == 2) ?
+                                    Deoptimization::Reason_bimorphic :
+                                    Deoptimization::Reason_class_check;
           if (( profile.morphism() == 1 ||
                (profile.morphism() == 2 && next_hit_cg != NULL) ) &&
-
-              !too_many_traps(Deoptimization::Reason_class_check)
-
-              // Check only total number of traps per method to allow
-              // the transition from monomorphic to bimorphic case between
-              // compilations without falling into virtual call.
-              // A monomorphic case may have the class_check trap flag is set
-              // due to the time gap between the uncommon trap processing
-              // when flags are set in MDO and the call site bytecode execution
-              // in Interpreter when MDO counters are updated.
-              // There was also class_check trap in monomorphic case due to
-              // the bug 6225440.
-
+              !too_many_traps(jvms->method(), jvms->bci(), reason)
              ) {
             // Generate uncommon trap for class check failure path
             // in case of monomorphic or bimorphic virtual call site.
-            miss_cg = CallGenerator::for_uncommon_trap(call_method,
-                        Deoptimization::Reason_class_check,
+            miss_cg = CallGenerator::for_uncommon_trap(call_method, reason,
                         Deoptimization::Action_maybe_recompile);
           } else {
             // Generate virtual call for class check failure path

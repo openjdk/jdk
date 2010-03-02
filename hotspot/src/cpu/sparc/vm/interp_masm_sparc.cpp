@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1681,11 +1681,8 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(profile_continue);
 
-    // We are making a call.  Increment the count.
-    increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch);
-
     // Record the receiver type.
-    record_klass_in_profile(receiver, scratch);
+    record_klass_in_profile(receiver, scratch, true);
 
     // The method data pointer needs to be updated to reflect the new target.
     update_mdp_by_constant(in_bytes(VirtualCallData::virtual_call_data_size()));
@@ -1695,9 +1692,13 @@ void InterpreterMacroAssembler::profile_virtual_call(Register receiver,
 
 void InterpreterMacroAssembler::record_klass_in_profile_helper(
                                         Register receiver, Register scratch,
-                                        int start_row, Label& done) {
-  if (TypeProfileWidth == 0)
+                                        int start_row, Label& done, bool is_virtual_call) {
+  if (TypeProfileWidth == 0) {
+    if (is_virtual_call) {
+      increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch);
+    }
     return;
+  }
 
   int last_row = VirtualCallData::row_limit() - 1;
   assert(start_row <= last_row, "must be work left to do");
@@ -1714,6 +1715,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
     // See if the receiver is receiver[n].
     int recvr_offset = in_bytes(VirtualCallData::receiver_offset(row));
     test_mdp_data_at(recvr_offset, receiver, next_test, scratch);
+    // delayed()->tst(scratch);
 
     // The receiver is receiver[n].  Increment count[n].
     int count_offset = in_bytes(VirtualCallData::receiver_count_offset(row));
@@ -1723,20 +1725,31 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
     bind(next_test);
 
     if (test_for_null_also) {
+      Label found_null;
       // Failed the equality check on receiver[n]...  Test for null.
       if (start_row == last_row) {
         // The only thing left to do is handle the null case.
-        brx(Assembler::notZero, false, Assembler::pt, done);
-        delayed()->nop();
+        if (is_virtual_call) {
+          brx(Assembler::zero, false, Assembler::pn, found_null);
+          delayed()->nop();
+          // Receiver did not match any saved receiver and there is no empty row for it.
+          // Increment total counter to indicate polymorphic case.
+          increment_mdp_data_at(in_bytes(CounterData::count_offset()), scratch);
+          ba(false, done);
+          delayed()->nop();
+          bind(found_null);
+        } else {
+          brx(Assembler::notZero, false, Assembler::pt, done);
+          delayed()->nop();
+        }
         break;
       }
       // Since null is rare, make it be the branch-taken case.
-      Label found_null;
       brx(Assembler::zero, false, Assembler::pn, found_null);
       delayed()->nop();
 
       // Put all the "Case 3" tests here.
-      record_klass_in_profile_helper(receiver, scratch, start_row + 1, done);
+      record_klass_in_profile_helper(receiver, scratch, start_row + 1, done, is_virtual_call);
 
       // Found a null.  Keep searching for a matching receiver,
       // but remember that this is an empty (unused) slot.
@@ -1753,16 +1766,18 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
   int count_offset = in_bytes(VirtualCallData::receiver_count_offset(start_row));
   mov(DataLayout::counter_increment, scratch);
   set_mdp_data_at(count_offset, scratch);
-  ba(false, done);
-  delayed()->nop();
+  if (start_row > 0) {
+    ba(false, done);
+    delayed()->nop();
+  }
 }
 
 void InterpreterMacroAssembler::record_klass_in_profile(Register receiver,
-                                                        Register scratch) {
+                                                        Register scratch, bool is_virtual_call) {
   assert(ProfileInterpreter, "must be profiling");
   Label done;
 
-  record_klass_in_profile_helper(receiver, scratch, 0, done);
+  record_klass_in_profile_helper(receiver, scratch, 0, done, is_virtual_call);
 
   bind (done);
 }
@@ -1840,7 +1855,7 @@ void InterpreterMacroAssembler::profile_typecheck(Register klass,
       mdp_delta = in_bytes(VirtualCallData::virtual_call_data_size());
 
       // Record the object type.
-      record_klass_in_profile(klass, scratch);
+      record_klass_in_profile(klass, scratch, false);
     }
 
     // The method data pointer needs to be updated.

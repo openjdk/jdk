@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2005 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@ include $(BUILDDIR)/common/Defs.gmk
 
 FILES_h = $(INCLUDEDIR)/jni.h 			\
 	  $(PLATFORM_INCLUDE)/jni_md.h		\
-          $(INCLUDEDIR)/jvmti.h			\
+	  $(INCLUDEDIR)/jvmti.h			\
+	  $(INCLUDEDIR)/jvmticmlr.h		\
 	  $(INCLUDEDIR)/classfile_constants.h
 
 $(INCLUDEDIR)/%.h: $(SHARE_SRC)/javavm/export/%.h

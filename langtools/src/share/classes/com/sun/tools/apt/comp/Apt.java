@@ -496,57 +496,12 @@ public class Apt extends ListBuffer<Env<AttrContext>> {
      * won't match anything.
      */
     Pattern importStringToPattern(String s) {
-        if (s.equals("*")) {
-            return allMatches;
+        if (com.sun.tools.javac.processing.JavacProcessingEnvironment.isValidImportString(s)) {
+            return com.sun.tools.javac.processing.JavacProcessingEnvironment.validImportStringToPattern(s);
         } else {
-            String t = s;
-            boolean star = false;
-
-            /*
-             * Validate string from factory is legal.  If the string
-             * has more than one asterisks or the asterisks does not
-             * appear as the last character (preceded by a period),
-             * the string is not legal.
-             */
-
-            boolean valid = true;
-            int index = t.indexOf('*');
-            if (index != -1) {
-                // '*' must be last character...
-                if (index == t.length() -1) {
-                     // ... and preceeding character must be '.'
-                    if ( index-1 >= 0 ) {
-                        valid = t.charAt(index-1) == '.';
-                        // Strip off ".*$" for identifier checks
-                        t = t.substring(0, t.length()-2);
-                    }
-                } else
-                    valid = false;
-            }
-
-            // Verify string is off the form (javaId \.)+ or javaId
-            if (valid) {
-                String[] javaIds = t.split("\\.", t.length()+2);
-                for(String javaId: javaIds)
-                    valid &= isJavaIdentifier(javaId);
-            }
-
-            if (!valid) {
-                Bark bark = Bark.instance(context);
-                bark.aptWarning("MalformedSupportedString", s);
-                return noMatches; // won't match any valid identifier
-            }
-
-            String s_prime = s.replaceAll("\\.", "\\\\.");
-
-            if (s_prime.endsWith("*")) {
-                s_prime =  s_prime.substring(0, s_prime.length() - 1) + ".+";
-            }
-
-            return Pattern.compile(s_prime);
+            Bark bark = Bark.instance(context);
+            bark.aptWarning("MalformedSupportedString", s);
+            return com.sun.tools.javac.processing.JavacProcessingEnvironment.noMatches;
         }
     }
-
-    private static final Pattern allMatches = Pattern.compile(".*");
-    private static final Pattern noMatches  = Pattern.compile("(\\P{all})+");
 }

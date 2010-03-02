@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1193,6 +1193,9 @@ class JavaThread: public Thread {
   static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags       ); }
 
   static ByteSize do_not_unlock_if_synchronized_offset() { return byte_offset_of(JavaThread, _do_not_unlock_if_synchronized); }
+  static ByteSize should_post_on_exceptions_flag_offset() {
+    return byte_offset_of(JavaThread, _should_post_on_exceptions_flag);
+  }
 
 #ifndef SERIALGC
   static ByteSize satb_mark_queue_offset()       { return byte_offset_of(JavaThread, _satb_mark_queue); }
@@ -1431,6 +1434,16 @@ public:
   int get_interp_only_mode()                { return _interp_only_mode; }
   void increment_interp_only_mode()         { ++_interp_only_mode; }
   void decrement_interp_only_mode()         { --_interp_only_mode; }
+
+  // support for cached flag that indicates whether exceptions need to be posted for this thread
+  // if this is false, we can avoid deoptimizing when events are thrown
+  // this gets set to reflect whether jvmtiExport::post_exception_throw would actually do anything
+ private:
+  int    _should_post_on_exceptions_flag;
+
+ public:
+  int   should_post_on_exceptions_flag()  { return _should_post_on_exceptions_flag; }
+  void  set_should_post_on_exceptions_flag(int val)  { _should_post_on_exceptions_flag = val; }
 
  private:
   ThreadStatistics *_thread_stat;
