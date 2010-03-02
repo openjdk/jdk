@@ -2929,7 +2929,7 @@ class CommandLineFlags {
   product(uintx, OldSize, ScaleForWordSize(4*M),                            \
           "Initial tenured generation size (in bytes)")                     \
                                                                             \
-  product(uintx, NewSize, ScaleForWordSize(4*M),                            \
+  product(uintx, NewSize, ScaleForWordSize(1*M),                            \
           "Initial new generation size (in bytes)")                         \
                                                                             \
   product(uintx, MaxNewSize, max_uintx,                                     \
