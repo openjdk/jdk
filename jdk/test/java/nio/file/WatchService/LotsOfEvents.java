@@ -102,7 +102,7 @@ public class LotsOfEvents {
 
         int nread = 0;
         boolean gotOverflow = false;
-        do {
+        while (key != null) {
             List<WatchEvent<?>> events = key.pollEvents();
             for (WatchEvent<?> event: events) {
                 WatchEvent.Kind<?> kind = event.kind();
@@ -122,7 +122,7 @@ public class LotsOfEvents {
             if (!key.reset())
                 throw new RuntimeException("Key is no longer valid");
             key = watcher.poll(2, TimeUnit.SECONDS);
-        } while (key != null);
+        }
 
         // check that all expected events were received or there was an overflow
         if (nread < count && !gotOverflow)
@@ -168,7 +168,7 @@ public class LotsOfEvents {
                 // process events and ensure that we don't get repeated modify
                 // events for the same file.
                 WatchKey key = watcher.poll(15, TimeUnit.SECONDS);
-                do {
+                while (key != null) {
                     Set<Path> modified = new HashSet<Path>();
                     for (WatchEvent<?> event: key.pollEvents()) {
                         WatchEvent.Kind<?> kind = event.kind();
@@ -186,7 +186,7 @@ public class LotsOfEvents {
                     if (!key.reset())
                         throw new RuntimeException("Key is no longer valid");
                     key = watcher.poll(2, TimeUnit.SECONDS);
-                } while (key != null);
+                }
             }
 
         } finally {
