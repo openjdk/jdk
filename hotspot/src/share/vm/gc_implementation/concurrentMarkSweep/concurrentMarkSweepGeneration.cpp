@@ -723,8 +723,9 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Support for parallelizing survivor space rescan
   if (CMSParallelRemarkEnabled && CMSParallelSurvivorRemarkEnabled) {
-    size_t max_plab_samples = cp->max_gen0_size()/
-                                ((SurvivorRatio+2)*MinTLABSize);
+    const size_t max_plab_samples =
+      ((DefNewGeneration*)_young_gen)->max_survivor_size()/MinTLABSize;
+
     _survivor_plab_array  = NEW_C_HEAP_ARRAY(ChunkArray, ParallelGCThreads);
     _survivor_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, 2*max_plab_samples);
     _cursor               = NEW_C_HEAP_ARRAY(size_t, ParallelGCThreads);
