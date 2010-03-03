@@ -110,8 +110,9 @@ class MarkSweep : AllStatic {
   // Vars
   //
  protected:
-  // Traversal stack used during phase1
+  // Traversal stacks used during phase1
   static GrowableArray<oop>*             _marking_stack;
+  static GrowableArray<ObjArrayTask>*    _objarray_stack;
   // Stack for live klasses to revisit at end of marking phase
   static GrowableArray<Klass*>*          _revisit_klass_stack;
   // Set (stack) of MDO's to revisit at end of marking phase
@@ -188,6 +189,7 @@ class MarkSweep : AllStatic {
   template <class T> static inline void mark_and_follow(T* p);
   // Check mark and maybe push on marking stack
   template <class T> static inline void mark_and_push(T* p);
+  static inline void push_objarray(oop obj, size_t index);
 
   static void follow_stack();   // Empty marking stack.
 

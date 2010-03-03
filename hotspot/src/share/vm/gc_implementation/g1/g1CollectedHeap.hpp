@@ -56,8 +56,8 @@ class ConcurrentZFThread;
 #  define IF_G1_DETAILED_STATS(code)
 #endif
 
-typedef GenericTaskQueue<StarTask>    RefToScanQueue;
-typedef GenericTaskQueueSet<StarTask> RefToScanQueueSet;
+typedef GenericTaskQueue<StarTask>          RefToScanQueue;
+typedef GenericTaskQueueSet<RefToScanQueue> RefToScanQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
