@@ -30,7 +30,7 @@
  * @compile  NameOrder.java
  */
 
-package test.tools.javac.generics.NameOrder;
+package NameOrder;
 
 interface a {}
 interface b {}
