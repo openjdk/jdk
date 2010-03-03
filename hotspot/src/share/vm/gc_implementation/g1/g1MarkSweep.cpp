@@ -101,6 +101,8 @@ void G1MarkSweep::allocate_stacks() {
 
   GenMarkSweep::_marking_stack =
     new (ResourceObj::C_HEAP) GrowableArray<oop>(4000, true);
+  GenMarkSweep::_objarray_stack =
+    new (ResourceObj::C_HEAP) GrowableArray<ObjArrayTask>(50, true);
 
   int size = SystemDictionary::number_of_classes() * 2;
   GenMarkSweep::_revisit_klass_stack =

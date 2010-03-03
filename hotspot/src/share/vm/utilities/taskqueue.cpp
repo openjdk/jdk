@@ -31,10 +31,6 @@ uint ParallelTaskTerminator::_total_spins = 0;
 uint ParallelTaskTerminator::_total_peeks = 0;
 #endif
 
-bool TaskQueueSuper::peek() {
-  return _bottom != _age.top();
-}
-
 int TaskQueueSetSuper::randomParkAndMiller(int *seed0) {
   const int a =      16807;
   const int m = 2147483647;
@@ -179,6 +175,13 @@ void ParallelTaskTerminator::reset_for_reuse() {
     _offered_termination = 0;
   }
 }
+
+#ifdef ASSERT
+bool ObjArrayTask::is_valid() const {
+  return _obj != NULL && _obj->is_objArray() && _index > 0 &&
+    _index < objArrayOop(_obj)->length();
+}
+#endif // ASSERT
 
 bool RegionTaskQueueWithOverflow::is_empty() {
   return (_region_queue.size() == 0) &&

@@ -2724,8 +2724,10 @@ markOop.inline.hpp                      markOop.hpp
 
 markSweep.cpp                           compileBroker.hpp
 markSweep.cpp                           methodDataOop.hpp
+markSweep.cpp				objArrayKlass.inline.hpp
 
 markSweep.hpp                           collectedHeap.hpp
+markSweep.hpp				taskqueue.hpp
 
 memRegion.cpp                           globals.hpp
 memRegion.cpp                           memRegion.hpp
@@ -3054,8 +3056,10 @@ objArrayKlass.cpp                       copy.hpp
 objArrayKlass.cpp                       genOopClosures.inline.hpp
 objArrayKlass.cpp                       handles.inline.hpp
 objArrayKlass.cpp                       instanceKlass.hpp
+objArrayKlass.cpp                       markSweep.inline.hpp
 objArrayKlass.cpp                       mutexLocker.hpp
 objArrayKlass.cpp                       objArrayKlass.hpp
+objArrayKlass.cpp                       objArrayKlass.inline.hpp
 objArrayKlass.cpp                       objArrayKlassKlass.hpp
 objArrayKlass.cpp                       objArrayOop.hpp
 objArrayKlass.cpp                       oop.inline.hpp
@@ -3066,10 +3070,11 @@ objArrayKlass.cpp                       systemDictionary.hpp
 objArrayKlass.cpp                       universe.inline.hpp
 objArrayKlass.cpp                       vmSymbols.hpp
 
-
 objArrayKlass.hpp                       arrayKlass.hpp
 objArrayKlass.hpp                       instanceKlass.hpp
 objArrayKlass.hpp                       specialized_oop_closures.hpp
+
+objArrayKlass.inline.hpp		objArrayKlass.hpp
 
 objArrayKlassKlass.cpp                  collectedHeap.inline.hpp
 objArrayKlassKlass.cpp                  instanceKlass.hpp
@@ -4096,6 +4101,7 @@ task.cpp                                timer.hpp
 task.hpp                                top.hpp
 
 taskqueue.cpp                           debug.hpp
+taskqueue.cpp				oop.inline.hpp
 taskqueue.cpp                           os.hpp
 taskqueue.cpp                           taskqueue.hpp
 taskqueue.cpp                           thread_<os_family>.inline.hpp
