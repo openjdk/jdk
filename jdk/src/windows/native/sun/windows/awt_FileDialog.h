@@ -49,6 +49,7 @@ public:
     static jmethodID handleSelectedMID;
     static jmethodID handleCancelMID;
     static jmethodID checkFilenameFilterMID;
+    static jmethodID isMultipleModeMID;
 
     /* java.awt.FileDialog field and method ids */
     static jfieldID modeID;
@@ -68,6 +69,9 @@ public:
     static void _DisposeOrHide(void *param);
     static void _ToFront(void *param);
     static void _ToBack(void *param);
+
+private:
+    static UINT GetBufferLength(LPTSTR buffer, UINT limit);
 };
 
 #endif /* FILE_DIALOG_H */

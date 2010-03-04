@@ -32,6 +32,8 @@ PRODUCT = java
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = jmx-scandir
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

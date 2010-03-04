@@ -824,7 +824,6 @@ bool Parse::can_rerun_bytecode() {
   case Bytecodes::_ddiv:
   case Bytecodes::_checkcast:
   case Bytecodes::_instanceof:
-  case Bytecodes::_athrow:
   case Bytecodes::_anewarray:
   case Bytecodes::_newarray:
   case Bytecodes::_multianewarray:
@@ -834,6 +833,8 @@ bool Parse::can_rerun_bytecode() {
     return true;
     break;
 
+  // Don't rerun athrow since it's part of the exception path.
+  case Bytecodes::_athrow:
   case Bytecodes::_invokestatic:
   case Bytecodes::_invokedynamic:
   case Bytecodes::_invokespecial:

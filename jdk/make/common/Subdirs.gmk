@@ -1,0 +1,204 @@
+# Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions
+#
+
+#
+# Generic makefile for building subdirectories.
+#
+# SUBDIRS variables to specify the subdirectories to build recursively.
+# Makefile has to include Subdirs.gmk AFTER all SUBDIRS variables are
+# defined.
+#
+# This file does not contain any rule.
+#
+# WARNING: This file is shared with other workspaces.
+#          So when it includes other files, it must use JDK_TOPDIR.
+
+#
+# SUBDIRS          subdirs for the base module always get built
+# SUBDIRS_<group>  subdirs for the named group
+#
+# By default, subdirs specified in the SUBDIRS and all SUBDIRS_* 
+# variables will be built.
+# 
+# BUILD_MODULES variable can be used to specify one or more groups
+# to be built (BUILD_MODULES=all will build all groups).
+#
+# Variables of the currently supported groups are:
+#  SUBDIRS_desktop    
+#  SUBDIRS_management
+#  SUBDIRS_enterprise
+#  SUBDIRS_misc
+#  SUBDIRS_tools
+# 
+# Change to the above list also need to update 
+# make/common/shared/Sanity.gmk.  NOTE: this list is subject
+# to change till the JDK 7 SE profiles/modules are finalized.
+# 
+# Eventually we want to restructure the make directory
+# according to these grouping (e.g. make/desktop/...) and
+# the SUBDIRS_<group> variables would not be needed.
+# 
+# To build the desktop and tools groups only, you can do:
+# gnumake BUILD_MODULES="desktop tools" ...
+# 
+
+# Iterate the subdirectories specified in $1.
+# - cd into each subdir and make them
+
+# Given a SUBDIRS* list (first argument), cd into them and make them
+#   SUBDIRS_MAKEFLAGS      Make settings for a subdir make
+#   SUBDIRS_MAKEFLAGS-$@   Make settings specific to this target
+#
+define subdirs-group-loop
+@$(ECHO) "Begin Processing SUBDIRS: $($1)"
+@for i in DUMMY $($1) ; do \
+  if [ "$$i" != "DUMMY" ] ; then \
+    $(MAKE) -C $$i $@ $(SUBDIRS_MAKEFLAGS) $(SUBDIRS_MAKEFLAGS-$@) \
+            FULL_VERSION=$(FULL_VERSION) RELEASE=$(RELEASE) || exit 1; \
+  fi ; \
+done
+@$(ECHO) "Done Processing SUBDIRS: $($1)"
+endef
+
+# Given a OTHERSUBDIRS list, cd into them and make them (extra loop define)
+#   OTHERSUBDIRS_MAKEFLAGS      Make settings for a subdir make
+define OTHERSUBDIRS-loop
+@$(ECHO) "Begin Processing OTHERSUBDIRS: $(OTHERSUBDIRS)"
+@for i in DUMMY $(OTHERSUBDIRS) ; do \
+  if [ "$$i" != "DUMMY" ] ; then \
+    $(MAKE) -C $$i $@ $(OTHERSUBDIRS_MAKEFLAGS) \
+            FULL_VERSION=$(FULL_VERSION) RELEASE=$(RELEASE) || exit 1; \
+  fi ; \
+done
+@$(ECHO) "Done Processing OTHERSUBDIRS: $(OTHERSUBDIRS)"
+endef
+
+#
+# Iterate the list specified in SUBDIRS_<group> only if
+# SUBDIRS_<group> is set and <group> or "all" is specified
+# in the BUILD_MODULES variable
+#
+ifdef SUBDIRS_desktop 
+  ifneq (,$(findstring desktop, $(BUILD_MODULES)))
+      define subdirs-desktop-loop
+         @$(call subdirs-group-loop,SUBDIRS_desktop)
+      endef
+  else
+    define subdirs-desktop-loop
+    endef
+  endif
+else   
+  define subdirs-desktop-loop
+  endef
+endif   # SUBDIRS_desktop 
+
+ifdef SUBDIRS_enterprise 
+  ifneq (,$(findstring enterprise, $(BUILD_MODULES)))
+      define subdirs-enterprise-loop
+         @$(call subdirs-group-loop,SUBDIRS_enterprise)
+      endef
+  else
+    define subdirs-enterprise-loop
+    endef
+  endif
+else   
+define subdirs-enterprise-loop
+endef
+endif   # SUBDIRS_enterprise 
+
+ifdef SUBDIRS_management 
+  ifneq (,$(findstring management, $(BUILD_MODULES)))
+      define subdirs-management-loop
+         @$(call subdirs-group-loop,SUBDIRS_management)
+      endef
+  else
+    define subdirs-management-loop
+    endef
+  endif
+else   
+define subdirs-management-loop
+endef
+endif   # SUBDIRS_management 
+
+ifdef SUBDIRS_misc 
+  ifneq (,$(findstring misc, $(BUILD_MODULES)))
+      define subdirs-misc-loop
+         @$(call subdirs-group-loop,SUBDIRS_misc)
+      endef
+  else
+    define subdirs-misc-loop
+    endef
+  endif
+else   
+define subdirs-misc-loop
+endef
+endif   # SUBDIRS_misc 
+
+ifdef SUBDIRS_tools 
+  ifneq (,$(findstring tools, $(BUILD_MODULES)))
+      define subdirs-tools-loop
+         @$(call subdirs-group-loop,SUBDIRS_tools)
+      endef
+  else
+    define subdirs-tools-loop
+    endef
+  endif
+else   
+define subdirs-tools-loop
+endef
+endif   # SUBDIRS_tools 
+
+#
+# If BUILD_MODULES is not set or it's set to "all",
+# iterate all groups.
+SUBDIRS_all = $(SUBDIRS) $(SUBDIRS_desktop) $(SUBDIRS_enterprise) \
+	      $(SUBDIRS_management) $(SUBDIRS_misc) $(SUBDIRS_tools)
+
+ifndef BUILD_MODULES
+define SUBDIRS-loop
+  @$(call subdirs-group-loop,SUBDIRS_all)
+endef
+
+else
+
+ifneq (,$(findstring all, $(BUILD_MODULES)))
+define SUBDIRS-loop
+  @$(call subdirs-group-loop,SUBDIRS_all)
+endef
+
+else # BUILD_MODULES set 
+#
+# Iterate SUBDIRS and the groups specified in BUILD_MODULES
+#
+define SUBDIRS-loop
+  @$(call subdirs-group-loop,SUBDIRS)
+  @$(subdirs-desktop-loop)
+  @$(subdirs-enterprise-loop)
+  @$(subdirs-management-loop)
+  @$(subdirs-misc-loop)
+  @$(subdirs-tools-loop)
+endef
+
+endif
+endif # BUILD_MODULES
