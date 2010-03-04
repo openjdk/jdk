@@ -336,6 +336,8 @@ class Arguments : AllStatic {
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore) {
     return is_bad_option(option, ignore, NULL);
   }
+  static bool verify_interval(uintx val, uintx min,
+                              uintx max, const char* name);
   static bool verify_percentage(uintx value, const char* name);
   static void describe_range_error(ArgsRange errcode);
   static ArgsRange check_memory_size(julong size, julong min_size);
