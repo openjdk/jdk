@@ -253,7 +253,8 @@ class IRScopeDebugInfo: public CompilationResourceObj {
     // reexecute allowed only for the topmost frame
     bool reexecute = topmost ? should_reexecute() : false;
     bool is_method_handle_invoke = false;
-    recorder->describe_scope(pc_offset, scope()->method(), bci(), reexecute, is_method_handle_invoke, locvals, expvals, monvals);
+    bool return_oop = false; // This flag will be ignored since it used only for C2 with escape analysis.
+    recorder->describe_scope(pc_offset, scope()->method(), bci(), reexecute, is_method_handle_invoke, return_oop, locvals, expvals, monvals);
   }
 };
 

@@ -32,6 +32,8 @@ PRODUCT = plugin
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = dom net
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 
