@@ -628,7 +628,8 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
   LIR_Const* c = src->as_constant_ptr();
 
   switch (c->type()) {
-    case T_INT: {
+    case T_INT:
+    case T_ADDRESS: {
       assert(patch_code == lir_patch_none, "no patching handled here");
       __ movl(dest->as_register(), c->as_jint());
       break;
@@ -711,6 +712,7 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
   switch (c->type()) {
     case T_INT:  // fall through
     case T_FLOAT:
+    case T_ADDRESS:
       __ movl(frame_map()->address_for_slot(dest->single_stack_ix()), c->as_jint_bits());
       break;
 
@@ -746,6 +748,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
   switch (type) {
     case T_INT:    // fall through
     case T_FLOAT:
+    case T_ADDRESS:
       __ movl(as_Address(addr), c->as_jint_bits());
       break;
 

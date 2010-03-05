@@ -1072,7 +1072,8 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
   LIR_Const* c = src->as_constant_ptr();
   switch (c->type()) {
     case T_INT:
-    case T_FLOAT: {
+    case T_FLOAT:
+    case T_ADDRESS: {
       Register src_reg = O7;
       int value = c->as_jint_bits();
       if (value == 0) {
@@ -1128,7 +1129,8 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
   }
   switch (c->type()) {
     case T_INT:
-    case T_FLOAT: {
+    case T_FLOAT:
+    case T_ADDRESS: {
       LIR_Opr tmp = FrameMap::O7_opr;
       int value = c->as_jint_bits();
       if (value == 0) {
@@ -1200,6 +1202,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
   switch (c->type()) {
     case T_INT:
+    case T_ADDRESS:
       {
         jint con = c->as_jint();
         if (to_reg->is_single_cpu()) {
