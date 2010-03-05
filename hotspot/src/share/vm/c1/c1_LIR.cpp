@@ -76,7 +76,7 @@ LIR_Opr LIR_OprFact::value_type(ValueType* type) {
       return LIR_OprFact::oopConst(type->as_ObjectType()->encoding());
     }
   }
-  case addressTag: return LIR_OprFact::intConst(type->as_AddressConstant()->value());
+  case addressTag: return LIR_OprFact::addressConst(type->as_AddressConstant()->value());
   case intTag    : return LIR_OprFact::intConst(type->as_IntConstant()->value());
   case floatTag  : return LIR_OprFact::floatConst(type->as_FloatConstant()->value());
   case longTag   : return LIR_OprFact::longConst(type->as_LongConstant()->value());
@@ -89,7 +89,7 @@ LIR_Opr LIR_OprFact::value_type(ValueType* type) {
 LIR_Opr LIR_OprFact::dummy_value_type(ValueType* type) {
   switch (type->tag()) {
     case objectTag: return LIR_OprFact::oopConst(NULL);
-    case addressTag:
+    case addressTag:return LIR_OprFact::addressConst(0);
     case intTag:    return LIR_OprFact::intConst(0);
     case floatTag:  return LIR_OprFact::floatConst(0.0);
     case longTag:   return LIR_OprFact::longConst(0);
@@ -1411,6 +1411,7 @@ void LIR_OprDesc::print(outputStream* out) const {
 // LIR_Address
 void LIR_Const::print_value_on(outputStream* out) const {
   switch (type()) {
+    case T_ADDRESS:out->print("address:%d",as_jint());          break;
     case T_INT:    out->print("int:%d",   as_jint());           break;
     case T_LONG:   out->print("lng:%lld", as_jlong());          break;
     case T_FLOAT:  out->print("flt:%f",   as_jfloat());         break;
