@@ -17,7 +17,7 @@ import com.sun.source.tree.*;
 import com.sun.source.util.*;
 import com.sun.tools.javac.tree.JCTree;
 
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
+
 @SupportedAnnotationTypes("*")
 public class T6406771 extends AbstractProcessor {
     String[] tests = {
@@ -95,4 +95,8 @@ public class T6406771 extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
 }

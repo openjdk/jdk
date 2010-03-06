@@ -38,7 +38,6 @@ import javax.lang.model.element.*;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
 
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 @SupportedAnnotationTypes("*")
 public class T6855236 extends AbstractProcessor {
 
@@ -61,6 +60,11 @@ public class T6855236 extends AbstractProcessor {
         }
 
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     class CodeVisitor extends TreePathScanner<Object, Trees> {

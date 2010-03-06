@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
   int popframe_preserved_args_size_in_bytes = 0;
   int popframe_preserved_args_size_in_words = 0;
   if (is_top_frame) {
-  JvmtiThreadState *state = thread->jvmti_thread_state();
+    JvmtiThreadState *state = thread->jvmti_thread_state();
     if (JvmtiExport::can_pop_frame() &&
         (thread->has_pending_popframe() || thread->popframe_forcing_deopt_reexecution())) {
       if (thread->has_pending_popframe()) {
@@ -381,7 +381,6 @@ void vframeArrayElement::unpack_on_stack(int callee_parameters,
     RegisterMap map(thread);
     vframe* f = vframe::new_vframe(iframe(), &map, thread);
     f->print();
-    iframe()->interpreter_frame_print_on(tty);
 
     tty->print_cr("locals size     %d", locals()->size());
     tty->print_cr("expression size %d", expressions()->size());
@@ -582,7 +581,7 @@ void vframeArray::print_on_2(outputStream* st)  {
 }
 
 void vframeArrayElement::print(outputStream* st) {
-  st->print_cr(" - interpreter_frame -> sp: ", INTPTR_FORMAT, iframe()->sp());
+  st->print_cr(" - interpreter_frame -> sp: " INTPTR_FORMAT, iframe()->sp());
 }
 
 void vframeArray::print_value_on(outputStream* st) const {
