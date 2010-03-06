@@ -146,7 +146,16 @@ public class ProcessCommunicator {
                          final String classPathArguments, final String [] args)
     {
         StringBuilder commandBuilder = new StringBuilder();
-        commandBuilder.append(javaPath).append(classPathArguments).append(classToExecute.getName());
+        commandBuilder.append(javaPath).append(" ");
+        commandBuilder.append("-cp ").append(System.getProperty("test.classes", ".")).append(File.pathSeparatorChar);
+
+        if (classPathArguments.trim().length() > 0) {
+            commandBuilder.append(classPathArguments).append(" ");
+        }
+
+        commandBuilder.append(" ");
+        commandBuilder.append(classToExecute.getName());
+
         for (String argument:args) {
             commandBuilder.append(" ").append(argument);
         }
