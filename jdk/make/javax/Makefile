@@ -30,19 +30,24 @@
 BUILDDIR = ..
 include $(BUILDDIR)/common/Defs.gmk
 
-# imageio uses xml, so build it last
+SUBDIRS = others
 
-SUBDIRS = \
-	others \
-	accessibility \
-	print \
-	swing \
-	crypto \
-	sound \
-	sql \
-	rmi \
-	management \
-	imageio
+SUBDIRS_management = management
+
+SUBDIRS_misc = \
+        crypto \
+        sql \
+        rmi
+
+# imageio uses xml, so build it last
+SUBDIRS_desktop = \
+        accessibility \
+        print \
+        swing \
+        sound \
+        imageio
+
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build:
 	$(SUBDIRS-loop)

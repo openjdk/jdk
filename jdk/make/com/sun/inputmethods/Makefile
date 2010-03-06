@@ -32,6 +32,8 @@ PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = indicim thaiim
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 
