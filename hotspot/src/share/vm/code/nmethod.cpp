@@ -988,7 +988,8 @@ ScopeDesc* nmethod::scope_desc_at(address pc) {
   PcDesc* pd = pc_desc_at(pc);
   guarantee(pd != NULL, "scope must be present");
   return new ScopeDesc(this, pd->scope_decode_offset(),
-                       pd->obj_decode_offset(), pd->should_reexecute());
+                       pd->obj_decode_offset(), pd->should_reexecute(),
+                       pd->return_oop());
 }
 
 
@@ -2010,7 +2011,10 @@ address nmethod::continuation_for_implicit_exception(address pc) {
     print_pcs();
   }
 #endif
-  guarantee(cont_offset != 0, "unhandled implicit exception in compiled code");
+  if (cont_offset == 0) {
+    // Let the normal error handling report the exception
+    return NULL;
+  }
   return instructions_begin() + cont_offset;
 }
 
@@ -2156,7 +2160,8 @@ void nmethod::verify_interrupt_point(address call_site) {
   PcDesc* pd = pc_desc_at(ic->end_of_call());
   assert(pd != NULL, "PcDesc must exist");
   for (ScopeDesc* sd = new ScopeDesc(this, pd->scope_decode_offset(),
-                                     pd->obj_decode_offset(), pd->should_reexecute());
+                                     pd->obj_decode_offset(), pd->should_reexecute(),
+                                     pd->return_oop());
        !sd->is_top(); sd = sd->sender()) {
     sd->verify();
   }
@@ -2421,7 +2426,8 @@ ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   PcDesc* p = pc_desc_near(begin+1);
   if (p != NULL && p->real_pc(this) <= end) {
     return new ScopeDesc(this, p->scope_decode_offset(),
-                         p->obj_decode_offset(), p->should_reexecute());
+                         p->obj_decode_offset(), p->should_reexecute(),
+                         p->return_oop());
   }
   return NULL;
 }
