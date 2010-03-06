@@ -1623,7 +1623,7 @@ public:
   template <class T> void push_on_queue(T* ref) {
     assert(ref != NULL, "invariant");
     assert(has_partial_array_mask(ref) ||
-           _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(ref)), "invariant");
+           _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(ref)), "invariant");
 #ifdef ASSERT
     if (has_partial_array_mask(ref)) {
       oop p = clear_partial_array_mask(ref);
@@ -1644,9 +1644,9 @@ public:
       assert((oop*)ref != NULL, "pop_local() returned true");
       assert(UseCompressedOops || !ref.is_narrow(), "Error");
       assert(has_partial_array_mask((oop*)ref) ||
-             _g1h->obj_in_cs(ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)ref)
-                                             : oopDesc::load_decode_heap_oop((oop*)ref)),
-             "invariant");
+             _g1h->is_in_g1_reserved(ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)ref)
+                                                     : oopDesc::load_decode_heap_oop((oop*)ref)),
+              "invariant");
       IF_G1_DETAILED_STATS(note_pop());
     } else {
       StarTask null_task;
@@ -1659,9 +1659,9 @@ public:
     assert((oop*)new_ref != NULL, "pop() from a local non-empty stack");
     assert(UseCompressedOops || !new_ref.is_narrow(), "Error");
     assert(has_partial_array_mask((oop*)new_ref) ||
-           _g1h->obj_in_cs(new_ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)new_ref)
-                                               : oopDesc::load_decode_heap_oop((oop*)new_ref)),
-             "invariant");
+           _g1h->is_in_g1_reserved(new_ref.is_narrow() ? oopDesc::load_decode_heap_oop((narrowOop*)new_ref)
+                                                       : oopDesc::load_decode_heap_oop((oop*)new_ref)),
+           "invariant");
     ref = new_ref;
   }
 
@@ -1825,12 +1825,12 @@ public:
           assert(UseCompressedOops, "Error");
           narrowOop* p = (narrowOop*)ref_to_scan;
           assert(!has_partial_array_mask(p) &&
-                 _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+                 _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
           deal_with_reference(p);
         } else {
           oop* p = (oop*)ref_to_scan;
-          assert((has_partial_array_mask(p) && _g1h->obj_in_cs(clear_partial_array_mask(p))) ||
-                 _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+          assert((has_partial_array_mask(p) && _g1h->is_in_g1_reserved(clear_partial_array_mask(p))) ||
+                 _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
           deal_with_reference(p);
         }
       }
@@ -1844,12 +1844,12 @@ public:
             assert(UseCompressedOops, "Error");
             narrowOop* p = (narrowOop*)ref_to_scan;
             assert(!has_partial_array_mask(p) &&
-                   _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+                    _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
             deal_with_reference(p);
           } else {
             oop* p = (oop*)ref_to_scan;
             assert((has_partial_array_mask(p) && _g1h->obj_in_cs(clear_partial_array_mask(p))) ||
-                  _g1h->obj_in_cs(oopDesc::load_decode_heap_oop(p)), "sanity");
+                   _g1h->is_in_g1_reserved(oopDesc::load_decode_heap_oop(p)), "sanity");
             deal_with_reference(p);
           }
         }

@@ -218,6 +218,8 @@ ifeq ($(PLATFORM), solaris)
 endif
 
 SUBDIRS = reflect
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build:
 	$(SUBDIRS-loop)
 clean clobber::

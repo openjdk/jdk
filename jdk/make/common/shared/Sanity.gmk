@@ -218,7 +218,8 @@ include $(JDK_MAKE_SHARED_DIR)/Sanity-Settings.gmk
 	sane-zip_version \
 	sane-unzip_version \
  	sane-msvcrt_path \
-        sane-freetype
+        sane-freetype \
+        sane-build_modules
 
 ######################################################
 # check for COPYRIGHT_YEAR variable
@@ -842,6 +843,21 @@ sane-freetype: $(TEMPDIR)/freetypeinfo
 else
 #do nothing  (not OpenJDK)
 sane-freetype: 
+endif
+
+######################################################
+# if specified, BUILD_MODULES must contain valid values.
+######################################################
+MODULES_REGEX="all|base|desktop|management|enterprise|misc|tools"
+sane-build_modules:
+ifdef BUILD_MODULES
+	@for m in $(BUILD_MODULES) ; do \
+            valid=`$(ECHO) $$m | $(EGREP) $(MODULES_REGEX)`; \
+            if [ "x$$valid" = "x" ] ; then \
+                $(ECHO) "ERROR: $$m set in the BUILD_MODULES variable is invalid.\n" \
+                "" >> $(ERROR_FILE); \
+            fi \
+	done
 endif
 
 ######################################################
