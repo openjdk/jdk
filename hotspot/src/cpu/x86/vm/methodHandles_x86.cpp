@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -715,9 +715,14 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       switch (ek) {
       case _adapter_opt_i2l:
         {
+#ifdef _LP64
+          __ movslq(rdx_temp, vmarg1);  // Load sign-extended
+          __ movq(vmarg1, rdx_temp);    // Store into first slot
+#else
           __ movl(rdx_temp, vmarg1);
-          __ sarl(rdx_temp, 31);  // __ extend_sign()
+          __ sarl(rdx_temp, BitsPerInt - 1);  // __ extend_sign()
           __ movl(vmarg2, rdx_temp); // store second word
+#endif
         }
         break;
       case _adapter_opt_unboxl:
@@ -727,10 +732,15 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           int value_offset = java_lang_boxing_object::value_offset_in_bytes(T_LONG);
           assert(value_offset == java_lang_boxing_object::value_offset_in_bytes(T_DOUBLE), "");
           __ null_check(rdx_temp, value_offset);
+#ifdef _LP64
+          __ movq(rbx_temp, Address(rdx_temp, value_offset));
+          __ movq(vmarg1, rbx_temp);
+#else
           __ movl(rbx_temp, Address(rdx_temp, value_offset + 0*BytesPerInt));
           __ movl(rdx_temp, Address(rdx_temp, value_offset + 1*BytesPerInt));
           __ movl(vmarg1, rbx_temp);
           __ movl(vmarg2, rdx_temp);
+#endif
         }
         break;
       default:
@@ -925,8 +935,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // 'stack_move' is negative number of words to duplicate
       Register rdx_stack_move = rdx_temp;
-      __ movl(rdx_stack_move, rcx_amh_conversion);
-      __ sarl(rdx_stack_move, CONV_STACK_MOVE_SHIFT);
+      __ movl2ptr(rdx_stack_move, rcx_amh_conversion);
+      __ sarptr(rdx_stack_move, CONV_STACK_MOVE_SHIFT);
 
       int argslot0_num = 0;
       Address argslot0 = __ argument_address(RegisterOrConstant(argslot0_num));
@@ -988,8 +998,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // 'stack_move' is number of words to drop
       Register rdi_stack_move = rdi;
-      __ movl(rdi_stack_move, rcx_amh_conversion);
-      __ sarl(rdi_stack_move, CONV_STACK_MOVE_SHIFT);
+      __ movl2ptr(rdi_stack_move, rcx_amh_conversion);
+      __ sarptr(rdi_stack_move, CONV_STACK_MOVE_SHIFT);
       remove_arg_slots(_masm, rdi_stack_move,
                        rax_argslot, rbx_temp, rdx_temp);
 
@@ -1079,8 +1089,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ lea(rdx_argslot_limit, Address(rax_argslot, Interpreter::stackElementSize()));
         // 'stack_move' is negative number of words to insert
         Register rdi_stack_move = rdi;
-        __ movl(rdi_stack_move, rcx_amh_conversion);
-        __ sarl(rdi_stack_move, CONV_STACK_MOVE_SHIFT);
+        __ movl2ptr(rdi_stack_move, rcx_amh_conversion);
+        __ sarptr(rdi_stack_move, CONV_STACK_MOVE_SHIFT);
         Register rsi_temp = rsi_array;  // spill this
         insert_arg_slots(_masm, rdi_stack_move, -1,
                          rax_argslot, rbx_temp, rsi_temp);
