@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,8 +214,8 @@ public class XMLEncoder extends Encoder {
     private Object owner;
     private int indentation = 0;
     private boolean internal = false;
-    private Map valueToExpression;
-    private Map targetToStatementList;
+    private Map<Object, ValueData> valueToExpression;
+    private Map<Object, List<Statement>> targetToStatementList;
     private boolean preambleWritten = false;
     private NameGenerator nameGenerator;
 
@@ -287,8 +287,8 @@ public class XMLEncoder extends Encoder {
         this.declaration = declaration;
         this.indentation = indentation;
         this.out = new OutputStreamWriter(out, cs.newEncoder());
-        valueToExpression = new IdentityHashMap();
-        targetToStatementList = new IdentityHashMap();
+        valueToExpression = new IdentityHashMap<Object, ValueData>();
+        targetToStatementList = new IdentityHashMap<Object, List<Statement>>();
         nameGenerator = new NameGenerator();
     }
 
@@ -331,13 +331,12 @@ public class XMLEncoder extends Encoder {
         }
     }
 
-    private Vector statementList(Object target) {
-        Vector list = (Vector)targetToStatementList.get(target);
-        if (list != null) {
-            return list;
+    private List<Statement> statementList(Object target) {
+        List<Statement> list = targetToStatementList.get(target);
+        if (list == null) {
+            list = new ArrayList<Statement>();
+            targetToStatementList.put(target, list);
         }
-        list = new Vector();
-        targetToStatementList.put(target, list);
         return list;
     }
 
@@ -363,13 +362,13 @@ public class XMLEncoder extends Encoder {
         }
         d.marked = true;
         Object target = exp.getTarget();
+        mark(exp);
         if (!(target instanceof Class)) {
             statementList(target).add(exp);
             // Pending: Why does the reference count need to
             // be incremented here?
             d.refs++;
         }
-        mark(exp);
     }
 
     private void mark(Statement stm) {
@@ -463,9 +462,9 @@ public class XMLEncoder extends Encoder {
             preambleWritten = true;
         }
         indentation++;
-        Vector roots = statementList(this);
-        for(int i = 0; i < roots.size(); i++) {
-            Statement s = (Statement)roots.get(i);
+        List<Statement> statements = statementList(this);
+        while (!statements.isEmpty()) {
+            Statement s = statements.remove(0);
             if ("writeObject".equals(s.getMethodName())) {
                 outputValue(s.getArguments()[0], this, true);
             }
@@ -513,7 +512,7 @@ public class XMLEncoder extends Encoder {
     }
 
     private ValueData getValueData(Object o) {
-        ValueData d = (ValueData)valueToExpression.get(o);
+        ValueData d = valueToExpression.get(o);
         if (d == null) {
             d = new ValueData();
             valueToExpression.put(o, d);
@@ -619,11 +618,11 @@ public class XMLEncoder extends Encoder {
         }
 
         if (d.name != null) {
-            writeln("<object idref=" + quote(d.name) + "/>");
-            return;
+            outputXML(isArgument ? "object" : "void", " idref=" + quote(d.name), value);
         }
-
-        outputStatement(d.exp, outer, isArgument);
+        else if (d.exp != null) {
+            outputStatement(d.exp, outer, isArgument);
+        }
     }
 
     private static String quoteCharCode(int code) {
@@ -683,13 +682,6 @@ public class XMLEncoder extends Encoder {
         String tag = (expression && isArgument) ? "object" : "void";
         String attributes = "";
         ValueData d = getValueData(value);
-        if (expression) {
-            if (d.refs > 1) {
-                String instanceName = nameGenerator.instanceName(value);
-                d.name = instanceName;
-                attributes = attributes + " id=" + quote(instanceName);
-            }
-        }
 
         // Special cases for targets.
         if (target == outer) {
@@ -706,13 +698,19 @@ public class XMLEncoder extends Encoder {
         else {
             d.refs = 2;
             getValueData(target).refs++;
-            outputValue(target, outer, false);
-            if (isArgument) {
-                outputValue(value, outer, false);
+            List<Statement> statements = statementList(target);
+            if (!statements.contains(exp)) {
+                statements.add(exp);
             }
+            outputValue(target, outer, false);
+            outputValue(value, outer, isArgument);
             return;
         }
-
+        if (expression && (d.refs > 1)) {
+            String instanceName = nameGenerator.instanceName(value);
+            d.name = instanceName;
+            attributes = attributes + " id=" + quote(instanceName);
+        }
 
         // Special cases for methods.
         if ((!expression && methodName.equals("set") && args.length == 2 &&
@@ -730,8 +728,11 @@ public class XMLEncoder extends Encoder {
         else if (!methodName.equals("new") && !methodName.equals("newInstance")) {
             attributes = attributes + " method=" + quote(methodName);
         }
+        outputXML(tag, attributes, value, args);
+    }
 
-        Vector statements = statementList(value);
+    private void outputXML(String tag, String attributes, Object value, Object... args) {
+        List<Statement> statements = statementList(value);
         // Use XML's short form when there is no body.
         if (args.length == 0 && statements.size() == 0) {
             writeln("<" + tag + attributes + "/>");
@@ -745,8 +746,8 @@ public class XMLEncoder extends Encoder {
             outputValue(args[i], null, true);
         }
 
-        for(int i = 0; i < statements.size(); i++) {
-            Statement s = (Statement)statements.get(i);
+        while (!statements.isEmpty()) {
+            Statement s = statements.remove(0);
             outputStatement(s, value, false);
         }
 

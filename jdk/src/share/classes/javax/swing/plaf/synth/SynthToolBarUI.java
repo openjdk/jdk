@@ -248,23 +248,26 @@ public class SynthToolBarUI extends BasicToolBarUI
                                                 toolBar.getOrientation());
     }
 
-    // Overloaded to do nothing so we can share listeners.
     /**
-     * @inheritDoc
+     * This implementation does nothing, because the {@code rollover}
+     * property of the {@code JToolBar} class is not used
+     * in the Synth Look and Feel.
      */
     @Override
     protected void setBorderToNonRollover(Component c) {}
 
-    // Overloaded to do nothing so we can share listeners.
     /**
-     * @inheritDoc
+     * This implementation does nothing, because the {@code rollover}
+     * property of the {@code JToolBar} class is not used
+     * in the Synth Look and Feel.
      */
     @Override
     protected void setBorderToRollover(Component c) {}
 
-    // Overloaded to do nothing so we can share listeners.
     /**
-     * @inheritDoc
+     * This implementation does nothing, because the {@code rollover}
+     * property of the {@code JToolBar} class is not used
+     * in the Synth Look and Feel.
      */
     @Override
     protected void setBorderToNormal(Component c) {}
