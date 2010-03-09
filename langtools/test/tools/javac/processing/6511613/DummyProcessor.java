@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,20 @@
  * have any questions.
  */
 
-/*
- * @test
- * @bug 4851006
- * @summary generics: type inference failure due to a bug in ClassSymbol.isLess
- * @author gafter
- *
- * @compile NameOrder.java
- */
+import javax.annotation.processing.*;
+import javax.lang.model.*;
+import javax.lang.model.element.*;
+import java.util.Set;
 
-package NameOrder;
-
-interface a {}
-interface b {}
-interface c {}
-
-class AB implements a, b {}
-class CA implements c, a {}
-
-// this is how to trigger a symptom:
-abstract class X {
-    <T> T f(T t1, T t2) { return null; }
-    void g() {
-        a x = f( new AB(), new CA() );
+@SupportedAnnotationTypes("*")
+public class DummyProcessor extends  AbstractProcessor {
+   public boolean process(Set<? extends TypeElement> annotations,
+                  RoundEnvironment roundEnv) {
+       return true;
+   }
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 }
+
