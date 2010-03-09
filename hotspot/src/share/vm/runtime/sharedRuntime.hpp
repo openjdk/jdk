@@ -96,10 +96,9 @@ class SharedRuntime: AllStatic {
   static jdouble dexp(jdouble x);
   static jdouble dpow(jdouble x, jdouble y);
 
-
   // exception handling across interpreter/compiler boundaries
-  static address raw_exception_handler_for_return_address(address return_address);
-  static address exception_handler_for_return_address(address return_address);
+  static address raw_exception_handler_for_return_address(JavaThread* thread, address return_address);
+  static address exception_handler_for_return_address(JavaThread* thread, address return_address);
 
 #ifndef SERIALGC
   // G1 write barriers
