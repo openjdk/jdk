@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,21 @@
 
 /*
  * @test
- * @bug 4851006
- * @summary generics: type inference failure due to a bug in ClassSymbol.isLess
- * @author gafter
+ * @bug 6511613
+ * @summary javac unexpectedly doesn't fail in some cases if an annotation processor specified
  *
- * @compile NameOrder.java
+ * @build DummyProcessor
+ * @compile/fail clss41701.java
+ * @compile/fail -processor DummyProcessor clss41701.java
  */
 
-package NameOrder;
+import java.io.PrintStream;
 
-interface a {}
-interface b {}
-interface c {}
+interface clss41701i {
+    void run();
+}
 
-class AB implements a, b {}
-class CA implements c, a {}
-
-// this is how to trigger a symptom:
-abstract class X {
-    <T> T f(T t1, T t2) { return null; }
-    void g() {
-        a x = f( new AB(), new CA() );
-    }
+class clss41701a<A extends clss41701i,
+                 B extends clss41701i,
+                 C extends A&B> {
 }

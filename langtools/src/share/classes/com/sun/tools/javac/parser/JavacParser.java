@@ -1561,7 +1561,10 @@ public class JavacParser implements Parser {
             JCNewClass newClass = classCreatorRest(newpos, null, typeArgs, t);
             if (newClass.def != null) {
                 assert newClass.def.mods.annotations.isEmpty();
-                newClass.def.mods.annotations = List.convert(JCAnnotation.class, newAnnotations);
+                if (newAnnotations.nonEmpty()) {
+                    newClass.def.mods.pos = earlier(newClass.def.mods.pos, newAnnotations.head.pos);
+                    newClass.def.mods.annotations = List.convert(JCAnnotation.class, newAnnotations);
+                }
             }
             return newClass;
         } else {
@@ -3014,6 +3017,18 @@ public class JavacParser implements Parser {
     static int prec(Token token) {
         int oc = optag(token);
         return (oc >= 0) ? TreeInfo.opPrec(oc) : -1;
+    }
+
+    /**
+     * Return the lesser of two positions, making allowance for either one
+     * being unset.
+     */
+    static int earlier(int pos1, int pos2) {
+        if (pos1 == Position.NOPOS)
+            return pos2;
+        if (pos2 == Position.NOPOS)
+            return pos1;
+        return (pos1 < pos2 ? pos1 : pos2);
     }
 
     /** Return operation tag of binary operator represented by token,
