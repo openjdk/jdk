@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,17 @@
  * have any questions.
  */
 
+
 /*
- * @test
- * @bug 4851006
- * @summary generics: type inference failure due to a bug in ClassSymbol.isLess
- * @author gafter
- *
- * @compile NameOrder.java
+ * This file is not a regular test, but is processed by ./TreePosTest.java,
+ * which verifies the position info in the javac tree.
+ * To run the test standalone, compile TreePosTest, then run TreePosTest
+ * on this file.
+ * @bug 6931927
+ * @summary position issues with synthesized anonymous class
  */
-
-package NameOrder;
-
-interface a {}
-interface b {}
-interface c {}
-
-class AB implements a, b {}
-class CA implements c, a {}
-
-// this is how to trigger a symptom:
-abstract class X {
-    <T> T f(T t1, T t2) { return null; }
-    void g() {
-        a x = f( new AB(), new CA() );
+class TestAnnotatedAnonClass {
+    void m() {
+        Object o = new @Deprecated Object() { };
     }
 }

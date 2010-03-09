@@ -26,6 +26,8 @@
 package com.sun.tools.javac.model;
 
 import com.sun.tools.javac.util.*;
+import java.io.ObjectInputStream;
+import java.io.IOException;
 import java.lang.annotation.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -268,10 +270,10 @@ public class AnnotationProxyMaker {
      * The toString, hashCode, and equals methods foward to the underlying
      * type.
      */
-    private static class MirroredTypeExceptionProxy extends ExceptionProxy {
+    private static final class MirroredTypeExceptionProxy extends ExceptionProxy {
         static final long serialVersionUID = 269;
 
-        private transient final TypeMirror type;
+        private transient TypeMirror type;
         private final String typeString;
 
         MirroredTypeExceptionProxy(TypeMirror t) {
@@ -296,6 +298,13 @@ public class AnnotationProxyMaker {
         protected RuntimeException generateException() {
             return new MirroredTypeException(type);
         }
+
+        // Explicitly set all transient fields.
+        private void readObject(ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+            s.defaultReadObject();
+            type = null;
+        }
     }
 
 
@@ -304,10 +313,10 @@ public class AnnotationProxyMaker {
      * The toString, hashCode, and equals methods foward to the underlying
      * types.
      */
-    private static class MirroredTypesExceptionProxy extends ExceptionProxy {
+    private static final class MirroredTypesExceptionProxy extends ExceptionProxy {
         static final long serialVersionUID = 269;
 
-        private transient final List<TypeMirror> types;
+        private transient List<TypeMirror> types;
         private final String typeStrings;
 
         MirroredTypesExceptionProxy(List<TypeMirror> ts) {
@@ -332,6 +341,13 @@ public class AnnotationProxyMaker {
 
         protected RuntimeException generateException() {
             return new MirroredTypesException(types);
+        }
+
+        // Explicitly set all transient fields.
+        private void readObject(ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
+            s.defaultReadObject();
+            types = null;
         }
     }
 }

@@ -30,7 +30,7 @@
  * @compile/fail  PrimitiveVariant.java
  */
 
-package test.tools.javac.generics.PrimitiveVariant;
+package PrimitiveVariant;
 
 interface I {
     double m();

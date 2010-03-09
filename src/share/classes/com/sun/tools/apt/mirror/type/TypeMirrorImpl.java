@@ -71,6 +71,6 @@ public abstract class TypeMirrorImpl implements TypeMirror {
      * {@inheritDoc}
      */
     public int hashCode() {
-        return env.jctypes.hashCode(type);
+        return Types.hashCode(type);
     }
 }
