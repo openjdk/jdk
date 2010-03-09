@@ -840,6 +840,7 @@ enum LIR_Code {
       , lir_optvirtual_call
       , lir_icvirtual_call
       , lir_virtual_call
+      , lir_dynamic_call
   , end_opJavaCall
   , begin_opArrayCopy
       , lir_arraycopy
@@ -1051,6 +1052,16 @@ class LIR_OpJavaCall: public LIR_OpCall {
 
   LIR_Opr receiver() const                       { return _receiver; }
   ciMethod* method() const                       { return _method;   }
+
+  // JSR 292 support.
+  bool is_invokedynamic() const                  { return code() == lir_dynamic_call; }
+  bool is_method_handle_invoke() const {
+    return
+      is_invokedynamic()  // An invokedynamic is always a MethodHandle call site.
+      ||
+      (method()->holder()->name() == ciSymbol::java_dyn_MethodHandle() &&
+       method()->name()           == ciSymbol::invoke_name());
+  }
 
   intptr_t vtable_offset() const {
     assert(_code == lir_virtual_call, "only have vtable for real vcall");
@@ -1765,6 +1776,10 @@ class LIR_List: public CompilationResourceObj {
   void call_virtual(ciMethod* method, LIR_Opr receiver, LIR_Opr result,
                     intptr_t vtable_offset, LIR_OprList* arguments, CodeEmitInfo* info) {
     append(new LIR_OpJavaCall(lir_virtual_call, method, receiver, result, vtable_offset, arguments, info));
+  }
+  void call_dynamic(ciMethod* method, LIR_Opr receiver, LIR_Opr result,
+                    address dest, LIR_OprList* arguments, CodeEmitInfo* info) {
+    append(new LIR_OpJavaCall(lir_dynamic_call, method, receiver, result, dest, arguments, info));
   }
 
   void get_thread(LIR_Opr result)                { append(new LIR_Op0(lir_get_thread, result)); }
