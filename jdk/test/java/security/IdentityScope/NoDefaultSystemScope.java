@@ -1,12 +1,10 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,24 +21,22 @@
  * have any questions.
  */
 
-package java.lang;
-
-import java.util.Iterator;
-
-/**
- * Implementing this interface allows an object to be the target of
- * the "foreach" statement.
- *
- * @param <T> the type of elements returned by the iterator
- *
- * @since 1.5
+/*
+ * @test
+ * @bug 6921001
+ * @summary The default system identity scope is now null.
  */
-public interface Iterable<T> {
+import java.security.*;
 
-    /**
-     * Returns an iterator over a set of elements of type T.
-     *
-     * @return an Iterator.
-     */
-    Iterator<T> iterator();
+public class NoDefaultSystemScope {
+
+    public static void main(String args[]) throws Exception {
+        IdentityScope s = IdentityScope.getSystemScope();
+
+        if (s != null) {
+            throw new Exception("The default system scope should be null");
+        }
+        System.out.println("TEST PASSED");
+    }
 }
+

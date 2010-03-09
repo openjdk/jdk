@@ -687,13 +687,13 @@ endif
 ######################################################
 sane-alt_outputdir:
 ifdef ALT_OUTPUTDIR
-	@if [ `$(ECHO) $(subst \,/,$(ALT_OUTPUTDIR)) | $(EGREP) -ci '^([a-z]:)?/'` -ne 1 ]; then \
+	@if [ `$(ECHO) $(subst \,/,$(ALT_OUTPUTDIR)) | $(EGREP) -c '^([A-Za-z]:)?/'` -ne 1 ]; then \
 	  $(ECHO) "ERROR: ALT_OUTPUTDIR must be an Absolute Path Name, \n" \
 	    "      not a Relative Path Name. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
   ifeq ($(PLATFORM), windows)
-	@if [ `$(ECHO) $(subst \,/,$(ALT_OUTPUTDIR)) | $(EGREP) -ci '^([a-z]:)'` -ne 1 ]; then \
+	@if [ `$(ECHO) $(subst \,/,$(ALT_OUTPUTDIR)) | $(EGREP) -c '^([A-Za-z]:)'` -ne 1 ]; then \
 	  $(ECHO) "ERROR: On windows, ALT_OUTPUTDIR must contain the drive letter. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
@@ -742,7 +742,7 @@ sane-outputdir:
 ######################################################
 sane-alt_bootdir:
 ifdef ALT_BOOTDIR
-	@if [ `$(ECHO) $(subst \,/,$(ALT_BOOTDIR)) | $(EGREP) -ci '^([a-z]:)?/'` -ne 1 ]; then \
+	@if [ `$(ECHO) $(subst \,/,$(ALT_BOOTDIR)) | $(EGREP) -c '^([A-Za-z]:)?/'` -ne 1 ]; then \
 	  $(ECHO) "ERROR: ALT_BOOTDIR must be an Absolute Path Name, \n" \
 	    "      not a Relative Path Name. \n" \
 	    "      The current value of ALT_BOOTDIR is \n" \
@@ -772,7 +772,7 @@ sane-bootdir:
 ######################################################
 sane-local-bootdir:
 ifeq ($(PLATFORM), windows)
-	@if [ `$(ECHO) $(BOOTDIR) | $(EGREP) -ci '^J:'` -ne 0 ]; then \
+	@if [ `$(ECHO) $(BOOTDIR) | $(EGREP) -c '^[jJ]:'` -ne 0 ]; then \
 	  $(ECHO) "WARNING: Your BOOTDIR is located on the J: drive. Often the J:\n" \
 	    "        drive is mapped over a network. Using a mapped drive for\n" \
 	    "        the BOOTDIR may significantly slow down the build process.\n" \
@@ -789,7 +789,7 @@ endif
 ######################################################
 sane-cacerts:
   ifdef ALT_CACERTS_FILE
-	@if [ `$(ECHO) $(subst \,/,$(ALT_CACERTS_FILE)) | $(EGREP) -ci '^([a-z]:)?/'` -ne 1 ]; then \
+	@if [ `$(ECHO) $(subst \,/,$(ALT_CACERTS_FILE)) | $(EGREP) -c '^([A-Za-z]:)?/'` -ne 1 ]; then \
 	  $(ECHO) "ERROR: ALT_CACERTS_FILE must be an Absolute Path Name, \n" \
 	    "      not a Relative Path Name. \n" \
 	    "      The current value of ALT_CACERTS_FILE is \n" \
@@ -1538,7 +1538,7 @@ endif
 sane-mozilla:
 ifeq ($(ARCH_DATA_MODEL), 32)
   ifdef ALT_MOZILLA_HEADERS_PATH
-	@if [ `$(ECHO) $(subst \,/,$(ALT_MOZILLA_HEADERS_PATH)) | $(EGREP) -ci '^([a-z]:)?/'` -ne 1 ]; then \
+	@if [ `$(ECHO) $(subst \,/,$(ALT_MOZILLA_HEADERS_PATH)) | $(EGREP) -c '^([A-Za-z]:)?/'` -ne 1 ]; then \
 	  $(ECHO) "ERROR: ALT_MOZILLA_HEADERS_PATH must be an Absolute Path Name, \n" \
 	    "      not a Relative Path Name. \n" \
 	    "      The current value of ALT_MOZILLA_HEADERS_PATH is \n" \
