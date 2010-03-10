@@ -256,7 +256,7 @@ JRT_END
 // The continuation address is the entry point of the exception handler of the
 // previous frame depending on the return address.
 
-address SharedRuntime::raw_exception_handler_for_return_address(address return_address) {
+address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
   assert(frame::verify_return_pc(return_address), "must be a return pc");
 
   // the fastest case first
@@ -264,6 +264,8 @@ address SharedRuntime::raw_exception_handler_for_return_address(address return_a
   if (blob != NULL && blob->is_nmethod()) {
     nmethod* code = (nmethod*)blob;
     assert(code != NULL, "nmethod must be present");
+    // Check if the return address is a MethodHandle call site.
+    thread->set_is_method_handle_exception(code->is_method_handle_return(return_address));
     // native nmethods don't have exception handlers
     assert(!code->is_native_method(), "no exception handler");
     assert(code->header_begin() != code->exception_begin(), "no exception handler");
@@ -289,6 +291,8 @@ address SharedRuntime::raw_exception_handler_for_return_address(address return_a
     if (blob->is_nmethod()) {
       nmethod* code = (nmethod*)blob;
       assert(code != NULL, "nmethod must be present");
+      // Check if the return address is a MethodHandle call site.
+      thread->set_is_method_handle_exception(code->is_method_handle_return(return_address));
       assert(code->header_begin() != code->exception_begin(), "no exception handler");
       return code->exception_begin();
     }
@@ -309,9 +313,10 @@ address SharedRuntime::raw_exception_handler_for_return_address(address return_a
 }
 
 
-JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(address return_address))
-  return raw_exception_handler_for_return_address(return_address);
+JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(JavaThread* thread, address return_address))
+  return raw_exception_handler_for_return_address(thread, return_address);
 JRT_END
+
 
 address SharedRuntime::get_poll_stub(address pc) {
   address stub;
@@ -464,16 +469,6 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     // the bytecodes.
     t = table.entry_for(catch_pco, -1, 0);
   }
-
-#ifdef COMPILER1
-  if (nm->is_compiled_by_c1() && t == NULL && handler_bci == -1) {
-    // Exception is not handled by this frame so unwind.  Note that
-    // this is not the same as how C2 does this.  C2 emits a table
-    // entry that dispatches to the unwind code in the nmethod.
-    return NULL;
-  }
-#endif /* COMPILER1 */
-
 
   if (t == NULL) {
     tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d", ret_pc, handler_bci);
@@ -892,12 +887,13 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   RegisterMap cbl_map(thread, false);
   frame caller_frame = thread->last_frame().sender(&cbl_map);
 
-  CodeBlob* cb = caller_frame.cb();
-  guarantee(cb != NULL && cb->is_nmethod(), "must be called from nmethod");
+  CodeBlob* caller_cb = caller_frame.cb();
+  guarantee(caller_cb != NULL && caller_cb->is_nmethod(), "must be called from nmethod");
+  nmethod* caller_nm = caller_cb->as_nmethod_or_null();
   // make sure caller is not getting deoptimized
   // and removed before we are done with it.
   // CLEANUP - with lazy deopt shouldn't need this lock
-  nmethodLocker caller_lock((nmethod*)cb);
+  nmethodLocker caller_lock(caller_nm);
 
 
   // determine call info & receiver
@@ -929,6 +925,13 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   }
 #endif
 
+  // JSR 292
+  // If the resolved method is a MethodHandle invoke target the call
+  // site must be a MethodHandle call site.
+  if (callee_method->is_method_handle_invoke()) {
+    assert(caller_nm->is_method_handle_return(caller_frame.pc()), "must be MH call site");
+  }
+
   // Compute entry points. This might require generation of C2I converter
   // frames, so we cannot be holding any locks here. Furthermore, the
   // computation of the entry points is independent of patching the call.  We
@@ -940,13 +943,12 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   StaticCallInfo static_call_info;
   CompiledICInfo virtual_call_info;
 
-
   // Make sure the callee nmethod does not get deoptimized and removed before
   // we are done patching the code.
-  nmethod* nm = callee_method->code();
-  nmethodLocker nl_callee(nm);
+  nmethod* callee_nm = callee_method->code();
+  nmethodLocker nl_callee(callee_nm);
 #ifdef ASSERT
-  address dest_entry_point = nm == NULL ? 0 : nm->entry_point(); // used below
+  address dest_entry_point = callee_nm == NULL ? 0 : callee_nm->entry_point(); // used below
 #endif
 
   if (is_virtual) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1822,7 +1822,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ add(issuing_pc_addr, Oissuing_pc->after_save());  // likewise set I1 to a value local to the caller
   __ super_call_VM_leaf(L7_thread_cache,
                         CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address),
-                        Oissuing_pc->after_save());
+                        G2_thread, Oissuing_pc->after_save());
 
   // The caller's SP was adjusted upon method entry to accomodate
   // the callee's non-argument locals. Undo that adjustment.

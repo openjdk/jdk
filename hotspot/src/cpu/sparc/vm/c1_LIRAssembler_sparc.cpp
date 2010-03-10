@@ -378,12 +378,7 @@ int LIR_Assembler::emit_exception_handler() {
 
   int offset = code_offset();
 
-  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_on_exceptions()) {
-    __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
-    __ delayed()->nop();
-  }
-
-  __ call(Runtime1::entry_for(Runtime1::unwind_exception_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
   __ delayed()->nop();
   debug_only(__ stop("should have gone to the caller");)
   assert(code_offset() - offset <= exception_handler_size, "overflow");
@@ -685,35 +680,45 @@ void LIR_Assembler::align_call(LIR_Code) {
 }
 
 
-void LIR_Assembler::call(address entry, relocInfo::relocType rtype, CodeEmitInfo* info) {
-  __ call(entry, rtype);
+void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
+  __ call(op->addr(), rtype);
   // the peephole pass fills the delay slot
 }
 
 
-void LIR_Assembler::ic_call(address entry, CodeEmitInfo* info) {
+void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   RelocationHolder rspec = virtual_call_Relocation::spec(pc());
   __ set_oop((jobject)Universe::non_oop_word(), G5_inline_cache_reg);
   __ relocate(rspec);
-  __ call(entry, relocInfo::none);
+  __ call(op->addr(), relocInfo::none);
   // the peephole pass fills the delay slot
 }
 
 
-void LIR_Assembler::vtable_call(int vtable_offset, CodeEmitInfo* info) {
-  add_debug_info_for_null_check_here(info);
+void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
+  add_debug_info_for_null_check_here(op->info());
   __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), G3_scratch);
-  if (__ is_simm13(vtable_offset) ) {
-    __ ld_ptr(G3_scratch, vtable_offset, G5_method);
+  if (__ is_simm13(op->vtable_offset())) {
+    __ ld_ptr(G3_scratch, op->vtable_offset(), G5_method);
   } else {
     // This will generate 2 instructions
-    __ set(vtable_offset, G5_method);
+    __ set(op->vtable_offset(), G5_method);
     // ld_ptr, set_hi, set
     __ ld_ptr(G3_scratch, G5_method, G5_method);
   }
   __ ld_ptr(G5_method, methodOopDesc::from_compiled_offset(), G3_scratch);
   __ callr(G3_scratch, G0);
   // the peephole pass fills the delay slot
+}
+
+
+void LIR_Assembler::preserve_SP() {
+  Unimplemented();
+}
+
+
+void LIR_Assembler::restore_SP() {
+  Unimplemented();
 }
 
 
