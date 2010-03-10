@@ -541,6 +541,7 @@ ciConstantPoolCache.hpp                 resourceArea.hpp
 
 ciCPCache.cpp                           cpCacheOop.hpp
 ciCPCache.cpp                           ciCPCache.hpp
+ciCPCache.cpp                           ciUtilities.hpp
 
 ciCPCache.hpp                           ciClassList.hpp
 ciCPCache.hpp                           ciObject.hpp

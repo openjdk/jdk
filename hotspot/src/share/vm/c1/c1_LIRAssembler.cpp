@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,9 +301,9 @@ void LIR_Assembler::add_debug_info_for_branch(CodeEmitInfo* info) {
 }
 
 
-void LIR_Assembler::add_call_info(int pc_offset, CodeEmitInfo* cinfo) {
+void LIR_Assembler::add_call_info(int pc_offset, CodeEmitInfo* cinfo, bool is_method_handle_invoke) {
   flush_debug_info(pc_offset);
-  cinfo->record_debug_info(compilation()->debug_info_recorder(), pc_offset);
+  cinfo->record_debug_info(compilation()->debug_info_recorder(), pc_offset, is_method_handle_invoke);
   if (cinfo->exception_handlers() != NULL) {
     compilation()->add_exception_handlers_for_pco(pc_offset, cinfo->exception_handlers());
   }
@@ -413,6 +413,12 @@ void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {
 void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   verify_oop_map(op->info());
 
+  // JSR 292
+  // Preserve the SP over MethodHandle call sites.
+  if (op->is_method_handle_invoke()) {
+    preserve_SP();
+  }
+
   if (os::is_MP()) {
     // must align calls sites, otherwise they can't be updated atomically on MP hardware
     align_call(op->code());
@@ -423,19 +429,25 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
 
   switch (op->code()) {
   case lir_static_call:
-    call(op->addr(), relocInfo::static_call_type, op->info());
+    call(op, relocInfo::static_call_type);
     break;
   case lir_optvirtual_call:
-    call(op->addr(), relocInfo::opt_virtual_call_type, op->info());
+  case lir_dynamic_call:
+    call(op, relocInfo::opt_virtual_call_type);
     break;
   case lir_icvirtual_call:
-    ic_call(op->addr(), op->info());
+    ic_call(op);
     break;
   case lir_virtual_call:
-    vtable_call(op->vtable_offset(), op->info());
+    vtable_call(op);
     break;
   default: ShouldNotReachHere();
   }
+
+  if (op->is_method_handle_invoke()) {
+    restore_SP();
+  }
+
 #if defined(X86) && defined(TIERED)
   // C2 leave fpu stack dirty clean it
   if (UseSSE < 2) {
