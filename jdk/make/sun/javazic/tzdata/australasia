@@ -289,11 +289,30 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # <a href="http://www.fiji.gov.fj/publish/page_16198.shtml">
 # http://www.fiji.gov.fj/publish/page_16198.shtml
 # </a>
+
+# From Steffen Thorsen (2010-03-03):
+# The Cabinet in Fiji has decided to end DST about a month early, on
+# 2010-03-28 at 03:00.
+# The plan is to observe DST again, from 2010-10-24 to sometime in March
+# 2011 (last Sunday a good guess?).
+#
+# Official source:
+# <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=1096:3310-cabinet-approves-change-in-daylight-savings-dates&catid=49:cabinet-releases&Itemid=166">
+# http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=1096:3310-cabinet-approves-change-in-daylight-savings-dates&catid=49:cabinet-releases&Itemid=166
+# </a>
+#
+# A bit more background info here:
+# <a href="http://www.timeanddate.com/news/time/fiji-dst-ends-march-2010.html">
+# http://www.timeanddate.com/news/time/fiji-dst-ends-march-2010.html
+# </a>
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	S
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
 Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	S
-Rule	Fiji	2010	only	-	Apr	25	3:00	0	-
+Rule	Fiji	2010	only	-	Mar	lastSun	3:00	0	-
+Rule	Fiji	2010	only	-	Oct	24	2:00	1:00	S
+Rule	Fiji	2011	only	-	Mar	lastSun 3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:53:40 -	LMT	1915 Oct 26	# Suva
 			12:00	Fiji	FJ%sT	# Fiji Time
@@ -471,70 +490,30 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 
 # Samoa
 
-# From Alexander Krivenyshev (2008-12-06):
-# The Samoa government (Western Samoa) may implement DST on the first Sunday of 
-# October 2009 (October 4, 2009) until the last Sunday of March 2010 (March 28, 
-# 2010). 
-# 
-# "Selected Committee reports to Cabinet on Daylight Saving Time",
-# Government of Samoa:
-# <a href="http://www.govt.ws/pr_article.cfm?pr_id=560">
-# http://www.govt.ws/pr_article.cfm?pr_id=560
-# </a>
-# or
-# <a href="http://www.worldtimezone.com/dst_news/dst_news_samoa01.html">
-# http://www.worldtimezone.com/dst_news/dst_news_samoa01.html
-# </a>
-
-# From Steffen Thorsen (2009-08-27):
-# Samoa's parliament passed the Daylight Saving Bill 2009, and will start 
-# daylight saving time on the first Sunday of October 2009 and end on the 
-# last Sunday of March 2010. We hope that the full text will be published 
-# soon, but we believe that the bill is only valid for 2009-2010. Samoa's 
-# Daylight Saving Act 2009 will be enforced as soon as the Head of State 
-# executes a proclamation publicizing this Act.
+# From Steffen Thorsen (2009-10-16):
+# We have been in contact with the government of Samoa again, and received
+# the following info:
 #
-# Some background information here, which will be updated once we have 
-# more details:
+# "Cabinet has now approved Daylight Saving to be effected next year
+# commencing from the last Sunday of September 2010 and conclude first
+# Sunday of April 2011."
+#
+# Background info:
 # <a href="http://www.timeanddate.com/news/time/samoa-dst-plan-2009.html">
 # http://www.timeanddate.com/news/time/samoa-dst-plan-2009.html
 # </a>
-
-# From Alexander Krivenyshev (2009-10-03):
-# First, my deepest condolences to people of Samoa islands and all families and
-# loved ones around the world who lost their lives in the earthquake and tsunami.
 #
-# Considering the recent devastation on Samoa by earthquake and tsunami and that
-# many government offices/ ministers are closed- not sure if "Daylight Saving
-# Bill 2009" will be implemented in next few days- on October 4, 2009.
-#
-# Here is reply from Consulate-General of Samoa in New Zealand
-# ---------------------------
-# Consul General
-# consulgeneral@samoaconsulate.org.nz
-#
-# Talofa Alexander,
-#
-# Thank you for your sympathy for our country but at this time we have not
-# been informed about the Daylight Savings Time Change.  Most Ministries in
-# Apia are closed or relocating due to weather concerns.
-#
-# When we do find out if they are still proceeding with the time change we
-# will advise you soonest.
-#
-# Kind Regards,
-# Lana
-# for: Consul General
-
-# From Steffen Thorsen (2009-10-05):
-# We have called a hotel in Samoa and asked about local time there - they 
-# are still on standard time.
+# Samoa's Daylight Saving Time Act 2009 is available here, but does not
+# contain any dates:
+# <a href="http://www.parliament.gov.ws/documents/acts/Daylight%20Saving%20Act%20%202009%20%28English%29%20-%20Final%207-7-091.pdf">
+# http://www.parliament.gov.ws/documents/acts/Daylight%20Saving%20Act%20%202009%20%28English%29%20-%20Final%207-7-091.pdf
+# </a>
 
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
 			-11:30	-	SAMT	1950		# Samoa Time
-			-11:00	-	WST	2009 Oct 4
-			-11:00	1:00	WSDT	2010 Mar 28
+			-11:00	-	WST	2010 Oct 24
+			-11:00	1:00	WSDT	2011 Apr 3
 			-11:00	-	WST
 
 # Solomon Is
