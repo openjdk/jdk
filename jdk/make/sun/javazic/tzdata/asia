@@ -247,11 +247,31 @@ Zone	Asia/Bahrain	3:22:20 -	LMT	1920		# Al Manamah
 # until further notice." I take that last sentence as the
 # establishment of a rule.
 
+# From Nobutomo Nakano (2010-02-19):
+# We received a report from Bangladesh saying that the start/end of
+# Bangladesh DST is incorrect. Currently we have only the Bengali version
+# of the official mail from BTRC which describes the following:
+#
+# "From 2010 each year when local standard time is about to reach
+# March 31 at 10:59:00 PM clocks are turned forward 1 hour (11:59:00 PM)
+# and when local daylight time is about to October 31 at 11:59:00 PM
+# clocks are turned backward 1 hour (10:59:00 PM)."
+#
+# So, DST will start/end 1 minute earlier.
+
+# From Arthur David Olson (2010-03-03):
+# The file
+# <a href=http://www.cabinet.gov/bd/file_upload/news_events/en_169.pdf>
+# http://www.cabinet.gov/bd/file_upload/news_events/en_169.pdf
+# </a>
+# is in Bengali; it does contain two "31"s as well as two "11.59"s and a "10.59"
+# which is consistent with the information provided by Nobutomo Nakano.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Dhaka	2009	only	-	Jun	19	23:00	1:00	S
-Rule	Dhaka	2010	only	-	Jan	1	0:00	0	-
-Rule	Dhaka	2010	max	-	Mar	31	23:00	1:00	S
-Rule	Dhaka	2010	max	-	Nov	1	0:00	0	-
+Rule	Dhaka	2009	only	-	Dec	31	23:59	0	-
+Rule	Dhaka	2010	max	-	Mar	31	22:59	1:00	S
+Rule	Dhaka	2010	max	-	Oct	31	23:59	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dhaka	6:01:40 -	LMT	1890
