@@ -661,7 +661,6 @@ java/net/Socket/DeadlockTest.java				generic-all
 java/net/Socket/AccurateTimeout.java			 	generic-all
 java/net/Socket/asyncClose/BrokenPipe.java		 	generic-all
 java/net/Socket/CloseAvailable.java			 	generic-all
-java/net/Socket/FDClose.java				 	generic-all
 
 # Linux X64 address already in use, samevm issues
 java/net/Socket/LingerTest.java 			 	generic-all
