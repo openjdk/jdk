@@ -1785,6 +1785,8 @@ bool PhaseIdealLoop::is_uncommon_trap_proj(ProjNode* proj, bool must_reason_pred
 bool PhaseIdealLoop::is_uncommon_trap_if_pattern(ProjNode *proj, bool must_reason_predicate) {
   Node *in0 = proj->in(0);
   if (!in0->is_If()) return false;
+  // Variation of a dead If node.
+  if (in0->outcnt() < 2)  return false;
   IfNode* iff = in0->as_If();
 
   // we need "If(Conv2B(Opaque1(...)))" pattern for must_reason_predicate
@@ -2117,6 +2119,18 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl,
 bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   if (!UseLoopPredicate) return false;
 
+  if (!loop->_head->is_Loop()) {
+    // Could be a simple region when irreducible loops are present.
+    return false;
+  }
+
+  CountedLoopNode *cl = NULL;
+  if (loop->_head->is_CountedLoop()) {
+    cl = loop->_head->as_CountedLoop();
+    // do nothing for iteration-splitted loops
+    if (!cl->is_normal_loop()) return false;
+  }
+
   // Too many traps seen?
   bool tmt = C->too_many_traps(C->method(), 0, Deoptimization::Reason_predicate);
   int tc = C->trap_count(Deoptimization::Reason_predicate);
@@ -2127,13 +2141,6 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       tty->print_cr("");
     }
     return false;
-  }
-
-  CountedLoopNode *cl = NULL;
-  if (loop->_head->is_CountedLoop()) {
-    cl = loop->_head->as_CountedLoop();
-    // do nothing for iteration-splitted loops
-    if(!cl->is_normal_loop()) return false;
   }
 
   LoopNode *lpn  = loop->_head->as_Loop();
