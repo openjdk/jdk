@@ -2137,7 +2137,7 @@ void JavaThread::create_stack_guard_pages() {
   int allocate = os::allocate_stack_guard_pages();
   // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
 
-  if (allocate && !os::commit_memory((char *) low_addr, len)) {
+  if (allocate && !os::create_stack_guard_pages((char *) low_addr, len)) {
     warning("Attempt to allocate stack guard pages failed.");
     return;
   }
@@ -2158,7 +2158,7 @@ void JavaThread::remove_stack_guard_pages() {
   size_t len = (StackYellowPages + StackRedPages) * os::vm_page_size();
 
   if (os::allocate_stack_guard_pages()) {
-    if (os::uncommit_memory((char *) low_addr, len)) {
+    if (os::remove_stack_guard_pages((char *) low_addr, len)) {
       _stack_guard_state = stack_guard_unused;
     } else {
       warning("Attempt to deallocate stack guard pages failed.");
