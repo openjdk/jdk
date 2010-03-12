@@ -744,6 +744,9 @@ java/net/ProxySelector/B6737819.java				generic-all
 # Suspect many of these tests auffer from using fixed ports, no concrete 
 #   evidence.
 
+# Failing on Solaris x86 and Linux x86, filed 6934585
+java/nio/channels/AsynchronousSocketChannel/Basic.java		generic-all
+
 # Occasionally Failing with java.lang.AssertionError on Windows X64
 #  at sun.nio.ch.PendingIoCache.clearPendingIoMap(PendingIoCache.java:144)
 #java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java	windows-all
@@ -946,6 +949,15 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 ############################################################################
 
 # jdk_security
+
+# Failing on Solaris i586, 3/9/2010, not a -samevm issue (jdk_security3)
+sun/security/pkcs11/Secmod/AddPrivateKey.java			solaris-i586
+sun/security/pkcs11/ec/ReadCertificates.java			solaris-i586
+sun/security/pkcs11/ec/ReadPKCS12.java				solaris-i586
+sun/security/pkcs11/ec/TestCurves.java				solaris-i586
+sun/security/pkcs11/ec/TestECDSA.java				solaris-i586
+sun/security/pkcs11/ec/TestECGenSpec.java			solaris-i586
+sun/security/pkcs11/ec/TestKeyFactory.java			solaris-i586
 
 # Unknown problem, could be a jtreg -samevm issue?
 #  Error while cleaning up threads after test
