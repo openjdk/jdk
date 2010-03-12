@@ -49,7 +49,7 @@ fi
 endef
 
 # Test target list for langtools repository
-LANGTOOLS_TEST_LIST = langtools_all
+LANGTOOLS_TEST_LIST = langtools_jtreg
 
 # Test target list for jdk repository
 JDK_TEST_LIST = \
@@ -74,7 +74,7 @@ all: $(JDK_TEST_LIST) $(LANGTOOLS_TEST_LIST)
 
 # Test targets
 $(LANGTOOLS_TEST_LIST):
-	@$(call SUBDIR_TEST, $(LANGTOOLS_DIR), all)
+	@$(call SUBDIR_TEST, $(LANGTOOLS_DIR), $(subst langtools_,,$@))
 $(JDK_TEST_LIST):
 	@$(call SUBDIR_TEST, $(JDK_DIR), $@)
 
