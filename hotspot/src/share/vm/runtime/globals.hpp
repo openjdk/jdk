@@ -2289,6 +2289,10 @@ class CommandLineFlags {
           "print safepoint statistics only when safepoint takes"            \
           " more than PrintSafepointSatisticsTimeout in millis")            \
                                                                             \
+  product(bool, TraceSafepointCleanupTime, false,                           \
+          "print the break down of clean up tasks performed during"         \
+          " safepoint")                                                     \
+                                                                            \
   develop(bool, InlineAccessors, true,                                      \
           "inline accessor methods (get/set)")                              \
                                                                             \
