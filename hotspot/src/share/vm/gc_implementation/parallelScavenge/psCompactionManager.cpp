@@ -28,6 +28,8 @@
 PSOldGen*            ParCompactionManager::_old_gen = NULL;
 ParCompactionManager**  ParCompactionManager::_manager_array = NULL;
 OopTaskQueueSet*     ParCompactionManager::_stack_array = NULL;
+ParCompactionManager::ObjArrayTaskQueueSet*
+  ParCompactionManager::_objarray_queues = NULL;
 ObjectStartArray*    ParCompactionManager::_start_array = NULL;
 ParMarkBitMap*       ParCompactionManager::_mark_bitmap = NULL;
 RegionTaskQueueSet*   ParCompactionManager::_region_array = NULL;
@@ -46,6 +48,11 @@ ParCompactionManager::ParCompactionManager() :
 
   // We want the overflow stack to be permanent
   _overflow_stack = new (ResourceObj::C_HEAP) GrowableArray<oop>(10, true);
+
+  _objarray_queue.initialize();
+  _objarray_overflow_stack =
+    new (ResourceObj::C_HEAP) ObjArrayOverflowStack(10, true);
+
 #ifdef USE_RegionTaskQueueWithOverflow
   region_stack()->initialize();
 #else
@@ -69,6 +76,7 @@ ParCompactionManager::ParCompactionManager() :
 
 ParCompactionManager::~ParCompactionManager() {
   delete _overflow_stack;
+  delete _objarray_overflow_stack;
   delete _revisit_klass_stack;
   delete _revisit_mdo_stack;
   // _manager_array and _stack_array are statics
@@ -86,18 +94,21 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
 
   assert(_manager_array == NULL, "Attempt to initialize twice");
   _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads+1 );
-  guarantee(_manager_array != NULL, "Could not initialize promotion manager");
+  guarantee(_manager_array != NULL, "Could not allocate manager_array");
 
   _stack_array = new OopTaskQueueSet(parallel_gc_threads);
-  guarantee(_stack_array != NULL, "Count not initialize promotion manager");
+  guarantee(_stack_array != NULL, "Could not allocate stack_array");
+  _objarray_queues = new ObjArrayTaskQueueSet(parallel_gc_threads);
+  guarantee(_objarray_queues != NULL, "Could not allocate objarray_queues");
   _region_array = new RegionTaskQueueSet(parallel_gc_threads);
-  guarantee(_region_array != NULL, "Count not initialize promotion manager");
+  guarantee(_region_array != NULL, "Could not allocate region_array");
 
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i] = new ParCompactionManager();
     guarantee(_manager_array[i] != NULL, "Could not create ParCompactionManager");
     stack_array()->register_queue(i, _manager_array[i]->marking_stack());
+    _objarray_queues->register_queue(i, &_manager_array[i]->_objarray_queue);
 #ifdef USE_RegionTaskQueueWithOverflow
     region_array()->register_queue(i, _manager_array[i]->region_stack()->task_queue());
 #else
@@ -203,36 +214,30 @@ void ParCompactionManager::reset() {
   }
 }
 
-void ParCompactionManager::drain_marking_stacks(OopClosure* blk) {
-#ifdef ASSERT
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
-  assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
-  MutableSpace* to_space = heap->young_gen()->to_space();
-  MutableSpace* old_space = heap->old_gen()->object_space();
-  MutableSpace* perm_space = heap->perm_gen()->object_space();
-#endif /* ASSERT */
-
-
+void ParCompactionManager::follow_marking_stacks() {
   do {
-
-    // Drain overflow stack first, so other threads can steal from
-    // claimed stack while we work.
-    while(!overflow_stack()->is_empty()) {
-      oop obj = overflow_stack()->pop();
-      obj->follow_contents(this);
+    // Drain the overflow stack first, to allow stealing from the marking stack.
+    while (!overflow_stack()->is_empty()) {
+      overflow_stack()->pop()->follow_contents(this);
     }
-
     oop obj;
-    // obj is a reference!!!
     while (marking_stack()->pop_local(obj)) {
-      // It would be nice to assert about the type of objects we might
-      // pop, but they can come from anywhere, unfortunately.
       obj->follow_contents(this);
     }
-  } while((marking_stack()->size() != 0) || (overflow_stack()->length() != 0));
 
-  assert(marking_stack()->size() == 0, "Sanity");
-  assert(overflow_stack()->length() == 0, "Sanity");
+    ObjArrayTask task;
+    while (!_objarray_overflow_stack->is_empty()) {
+      task = _objarray_overflow_stack->pop();
+      objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
+      k->oop_follow_contents(this, task.obj(), task.index());
+    }
+    while (_objarray_queue.pop_local(task)) {
+      objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
+      k->oop_follow_contents(this, task.obj(), task.index());
+    }
+  } while (!marking_stacks_empty());
+
+  assert(marking_stacks_empty(), "Sanity");
 }
 
 void ParCompactionManager::drain_region_overflow_stack() {
