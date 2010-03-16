@@ -596,10 +596,6 @@ sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java
 #   Interrupted or IO exception, maybe writing to non-unique named file?
 com/sun/net/httpserver/bugs/B6373555.java			generic-all
 
-# Dies on pretty much all platforms when run with -ea -esa, Assertion error
-java/net/CookieHandler/TestHttpCookie.java			generic-all
-java/net/URLClassLoader/closetest/CloseTest.java		generic-all
-
 # Fails on OpenSolaris, BindException unexpected 
 java/net/BindException/Test.java				generic-all
 
