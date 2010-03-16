@@ -567,9 +567,6 @@ class AdapterHandlerEntry : public BasicHashtableEntry {
   AdapterHandlerEntry();
 
  public:
-  // The name we give all buffer blobs
-  static const char* name;
-
   address get_i2c_entry()            { return _i2c_entry; }
   address get_c2i_entry()            { return _c2i_entry; }
   address get_c2i_unverified_entry() { return _c2i_unverified_entry; }

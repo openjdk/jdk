@@ -115,6 +115,10 @@ class MethodHandles: AllStatic {
   static const char*        _entry_names[_EK_LIMIT+1];
   static jobject            _raise_exception_method;
 
+  // Adapters.
+  static MethodHandlesAdapterBlob* _adapter_code;
+  static int                       _adapter_code_size;
+
   static bool ek_valid(EntryKind ek)            { return (uint)ek < (uint)_EK_LIMIT; }
   static bool conv_op_valid(int op)             { return (uint)op < (uint)CONV_OP_LIMIT; }
 
@@ -230,7 +234,10 @@ class MethodHandles: AllStatic {
   // bit values for suppress argument to expand_MemberName:
   enum { _suppress_defc = 1, _suppress_name = 2, _suppress_type = 4 };
 
-  // called from InterpreterGenerator and StubGenerator
+  // Generate MethodHandles adapters.
+  static void generate_adapters();
+
+  // Called from InterpreterGenerator and MethodHandlesAdapterGenerator.
   static address generate_method_handle_interpreter_entry(MacroAssembler* _masm);
   static void generate_method_handle_stub(MacroAssembler* _masm, EntryKind ek);
 
@@ -447,3 +454,14 @@ class MethodHandleEntry {
 
 address MethodHandles::from_compiled_entry(EntryKind ek) { return entry(ek)->from_compiled_entry(); }
 address MethodHandles::from_interpreted_entry(EntryKind ek) { return entry(ek)->from_interpreted_entry(); }
+
+
+//------------------------------------------------------------------------------
+// MethodHandlesAdapterGenerator
+//
+class MethodHandlesAdapterGenerator : public StubCodeGenerator {
+public:
+  MethodHandlesAdapterGenerator(CodeBuffer* code) : StubCodeGenerator(code) {}
+
+  void generate();
+};

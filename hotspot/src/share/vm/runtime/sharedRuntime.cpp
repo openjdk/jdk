@@ -582,7 +582,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           // 3. Implict null exception in nmethod
 
           if (!cb->is_nmethod()) {
-            guarantee(cb->is_adapter_blob(),
+            guarantee(cb->is_adapter_blob() || cb->is_method_handles_adapter_blob(),
                       "exception happened outside interpreter, nmethods and vtable stubs (1)");
             // There is no handler here, so we will simply unwind.
             return StubRoutines::throw_NullPointerException_at_call_entry();
@@ -2079,7 +2079,6 @@ class AdapterHandlerTableIterator : public StackObj {
 
 // ---------------------------------------------------------------------------
 // Implementation of AdapterHandlerLibrary
-const char* AdapterHandlerEntry::name = "I2C/C2I adapters";
 AdapterHandlerTable* AdapterHandlerLibrary::_adapters = NULL;
 AdapterHandlerEntry* AdapterHandlerLibrary::_abstract_method_handler = NULL;
 const int AdapterHandlerLibrary_size = 16*K;
@@ -2131,7 +2130,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
   ResourceMark rm;
 
   NOT_PRODUCT(int code_size);
-  BufferBlob *B = NULL;
+  AdapterBlob* B = NULL;
   AdapterHandlerEntry* entry = NULL;
   AdapterFingerPrint* fingerprint = NULL;
   {
@@ -2181,7 +2180,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 
     // Create I2C & C2I handlers
 
-    BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
+    BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
       CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
       short buffer_locs[20];
@@ -2210,7 +2209,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       }
 #endif
 
-      B = BufferBlob::create(AdapterHandlerEntry::name, &buffer);
+      B = AdapterBlob::create(&buffer);
       NOT_PRODUCT(code_size = buffer.code_size());
     }
     if (B == NULL) {
@@ -2242,7 +2241,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
     jio_snprintf(blob_id,
                  sizeof(blob_id),
                  "%s(%s)@" PTR_FORMAT,
-                 AdapterHandlerEntry::name,
+                 B->name(),
                  fingerprint->as_string(),
                  B->instructions_begin());
     VTune::register_stub(blob_id, B->instructions_begin(), B->instructions_end());
