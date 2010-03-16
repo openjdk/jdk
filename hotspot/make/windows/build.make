@@ -233,6 +233,12 @@ develop: checks $(variantDir) $(variantDir)\local.make sanity
 	cd $(variantDir)
 	nmake -nologo -f $(WorkSpace)\make\windows\makefiles\top.make BUILD_FLAVOR=product DEVELOP=1 ARCH=$(ARCH)
 
+# target to create just the directory structure
+tree: checks $(variantDir) $(variantDir)\local.make sanity
+	mkdir $(variantDir)\product
+	mkdir $(variantDir)\debug
+	mkdir $(variantDir)\fastdebug
+
 sanity:
 	@ echo;
 	@ cd $(variantDir)
