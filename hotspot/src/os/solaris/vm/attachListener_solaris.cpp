@@ -668,13 +668,18 @@ jint AttachListener::pd_set_flag(AttachOperation* op, outputStream* out) {
     }
   }
 
-  if (strcmp(name, "ExtendedDTraceProbes") != 0) {
-    out->print_cr("flag '%s' cannot be changed", name);
-    return JNI_ERR;
+  if (strcmp(name, "ExtendedDTraceProbes") == 0) {
+    DTrace::set_extended_dprobes(flag);
+    return JNI_OK;
   }
 
-  DTrace::set_extended_dprobes(flag);
-  return JNI_OK;
+  if (strcmp(name, "DTraceMonitorProbes") == 0) {
+    DTrace::set_monitor_dprobes(flag);
+    return JNI_OK;
+  }
+
+  out->print_cr("flag '%s' cannot be changed", name);
+  return JNI_ERR;
 }
 
 void AttachListener::pd_detachall() {
