@@ -712,12 +712,12 @@ void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
 }
 
 
-void LIR_Assembler::preserve_SP() {
+void LIR_Assembler::preserve_SP(LIR_OpJavaCall* op) {
   Unimplemented();
 }
 
 
-void LIR_Assembler::restore_SP() {
+void LIR_Assembler::restore_SP(LIR_OpJavaCall* op) {
   Unimplemented();
 }
 
