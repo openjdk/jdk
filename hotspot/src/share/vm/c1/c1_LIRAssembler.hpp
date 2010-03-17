@@ -209,8 +209,9 @@ class LIR_Assembler: public CompilationResourceObj {
   void ic_call(     LIR_OpJavaCall* op);
   void vtable_call( LIR_OpJavaCall* op);
 
-  void preserve_SP();
-  void restore_SP();
+  // JSR 292
+  void preserve_SP(LIR_OpJavaCall* op);
+  void restore_SP( LIR_OpJavaCall* op);
 
   void osr_entry();
 

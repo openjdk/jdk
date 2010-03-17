@@ -2762,13 +2762,13 @@ void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
 }
 
 
-void LIR_Assembler::preserve_SP() {
-  __ movptr(rbp, rsp);
+void LIR_Assembler::preserve_SP(LIR_OpJavaCall* op) {
+  __ movptr(FrameMap::method_handle_invoke_SP_save_opr()->as_register(), rsp);
 }
 
 
-void LIR_Assembler::restore_SP() {
-  __ movptr(rsp, rbp);
+void LIR_Assembler::restore_SP(LIR_OpJavaCall* op) {
+  __ movptr(rsp, FrameMap::method_handle_invoke_SP_save_opr()->as_register());
 }
 
 

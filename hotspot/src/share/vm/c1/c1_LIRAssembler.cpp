@@ -416,7 +416,7 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   // JSR 292
   // Preserve the SP over MethodHandle call sites.
   if (op->is_method_handle_invoke()) {
-    preserve_SP();
+    preserve_SP(op);
   }
 
   if (os::is_MP()) {
@@ -445,7 +445,7 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   }
 
   if (op->is_method_handle_invoke()) {
-    restore_SP();
+    restore_SP(op);
   }
 
 #if defined(X86) && defined(TIERED)
