@@ -690,10 +690,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             ProcessorState ps = psi.next();
             Set<String>  matchedNames = new HashSet<String>();
             Set<TypeElement> typeElements = new LinkedHashSet<TypeElement>();
-            for (String unmatchedAnnotationName : unmatchedAnnotations.keySet()) {
+
+            for (Map.Entry<String, TypeElement> entry: unmatchedAnnotations.entrySet()) {
+                String unmatchedAnnotationName = entry.getKey();
                 if (ps.annotationSupported(unmatchedAnnotationName) ) {
                     matchedNames.add(unmatchedAnnotationName);
-                    TypeElement te = unmatchedAnnotations.get(unmatchedAnnotationName);
+                    TypeElement te = entry.getValue();
                     if (te != null)
                         typeElements.add(te);
                 }
@@ -790,15 +792,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                      List<JCCompilationUnit> roots,
                                      List<ClassSymbol> classSymbols,
                                      Iterable<? extends PackageSymbol> pckSymbols)
-    throws IOException {
+        throws IOException {
 
         log = Log.instance(context);
         // Writer for -XprintRounds and -XprintProcessorInfo data
         PrintWriter xout = context.get(Log.outKey);
         TaskListener taskListener = context.get(TaskListener.class);
-
-
-        AnnotationCollector collector = new AnnotationCollector();
 
         JavaCompiler compiler = JavaCompiler.instance(context);
         compiler.todo.clear(); // free the compiler's resources
@@ -878,7 +877,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     roots = cleanTrees(roots).appendList(parsedFiles);
 
                     // Check for errors after parsing
-                    if (compiler.parseErrors()) {
+                    if (log.unrecoverableError) {
                         errorStatus = true;
                         break runAround;
                     } else {
@@ -912,7 +911,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         roots = runLastRound(xout, roundNumber, errorStatus, compiler, roots, taskListener);
         // Set error status for any files compiled and generated in
         // the last round
-        if (compiler.parseErrors())
+        if (log.unrecoverableError)
             errorStatus = true;
 
         compiler.close(false);
@@ -1216,45 +1215,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         return false;
-    }
-
-    private class AnnotationCollector extends TreeScanner {
-        List<JCTree> path = List.nil();
-        static final boolean verbose = false;
-        List<JCAnnotation> annotations = List.nil();
-
-        public List<JCAnnotation> findAnnotations(List<? extends JCTree> nodes) {
-            annotations = List.nil();
-            scan(nodes);
-            List<JCAnnotation> found = annotations;
-            annotations = List.nil();
-            return found.reverse();
-        }
-
-        public void scan(JCTree node) {
-            if (node == null)
-                return;
-            Symbol sym = TreeInfo.symbolFor(node);
-            if (sym != null)
-                path = path.prepend(node);
-            super.scan(node);
-            if (sym != null)
-                path = path.tail;
-        }
-
-        public void visitAnnotation(JCAnnotation node) {
-            annotations = annotations.prepend(node);
-            if (verbose) {
-                StringBuilder sb = new StringBuilder();
-                for (JCTree tree : path.reverse()) {
-                    System.err.print(sb);
-                    System.err.println(TreeInfo.symbolFor(tree));
-                    sb.append("  ");
-                }
-                System.err.print(sb);
-                System.err.println(node);
-            }
-        }
     }
 
     private static <T extends JCTree> List<T> cleanTrees(List<T> nodes) {

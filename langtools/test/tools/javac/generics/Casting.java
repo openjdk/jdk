@@ -30,7 +30,7 @@
  * @compile  Casting.java
  */
 
-package test.tools.javac.generics.Casting;
+package Casting;
 
 class Test {}
 

@@ -457,8 +457,10 @@ public class Apt extends ListBuffer<Env<AttrContext>> {
                 throw new UsageMessageNeededException();
 
             try {
-                for(AnnotationProcessorFactory apFactory: factoryToAnnotation.keySet()) {
-                    AnnotationProcessor processor = apFactory.getProcessorFor(factoryToAnnotation.get(apFactory),
+                for(Map.Entry<AnnotationProcessorFactory, Set<AnnotationTypeDeclaration>> entry :
+                        factoryToAnnotation.entrySet()) {
+                    AnnotationProcessorFactory  apFactory = entry.getKey();
+                    AnnotationProcessor processor = apFactory.getProcessorFor(entry.getValue(),
                                                                               trivAPE);
                     if (processor != null)
                         processors.add(processor);
