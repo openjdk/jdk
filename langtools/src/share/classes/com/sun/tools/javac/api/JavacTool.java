@@ -137,7 +137,7 @@ public final class JavacTool implements JavaCompiler {
     }
 
     private static boolean match(OptionKind clientKind, OptionKind optionKind) {
-        return (clientKind == (optionKind == OptionKind.HIDDEN ? optionKind.EXTENDED : optionKind));
+        return (clientKind == (optionKind == OptionKind.HIDDEN ? OptionKind.EXTENDED : optionKind));
     }
 
     public JavacFileManager getStandardFileManager(

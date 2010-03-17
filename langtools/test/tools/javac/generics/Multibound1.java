@@ -30,7 +30,7 @@
  * @compile/fail  Multibound1.java
  */
 
-package test.tools.javac.generics.Multibound1;
+package Multibound1;
 
 interface A {}
 interface B {}

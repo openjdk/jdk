@@ -34,7 +34,10 @@ import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.parser.*; // XXX
 import com.sun.tools.javac.util.*; // XXX
 import java.io.*;
+import java.net.*;
 import java.nio.*;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -42,6 +45,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.*;
+
+import static javax.tools.StandardLocation.CLASS_PATH;
+import static javax.tools.StandardLocation.SOURCE_PATH;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 public class TestJavacTaskScanner extends ToolTester {
 
@@ -56,6 +63,7 @@ public class TestJavacTaskScanner extends ToolTester {
     TestJavacTaskScanner(File file) {
         final Iterable<? extends JavaFileObject> compilationUnits =
             fm.getJavaFileObjects(new File[] {file});
+        StandardJavaFileManager fm = getLocalFileManager(tool, null, null);
         task = (JavacTaskImpl)tool.getTask(null, fm, null, null, null, compilationUnits);
         task.getContext().put(Scanner.Factory.scannerFactoryKey,
                 new MyScanner.Factory(task.getContext(), this));
@@ -83,7 +91,7 @@ public class TestJavacTaskScanner extends ToolTester {
         System.out.println("#parseTypeElements: " + numParseTypeElements);
         System.out.println("#allMembers: " + numAllMembers);
 
-        check(numTokens, "#Tokens", 891);
+        check(numTokens, "#Tokens", 1222);
         check(numParseTypeElements, "#parseTypeElements", 136);
         check(numAllMembers, "#allMembers", 67);
     }
@@ -116,6 +124,47 @@ public class TestJavacTaskScanner extends ToolTester {
             System.out.format("%s : %s%n", member.getSimpleName(), member.asType());
             numAllMembers++;
         }
+    }
+
+    /* Similar to ToolTester.getFileManager, except that this version also ensures
+     * javac classes will be available on the classpath.  The javac classes are assumed
+     * to be on the classpath used to run this test (this is true when using jtreg).
+     * The classes are found by obtaining the URL for a sample javac class, using
+     * getClassLoader().getResource(), and then deconstructing the URL to find the
+     * underlying directory or jar file to place on the classpath.
+     */
+    public StandardJavaFileManager getLocalFileManager(JavaCompiler tool,
+                                                        DiagnosticListener<JavaFileObject> dl,
+                                                        Charset encoding) {
+        File javac_classes;
+        try {
+            final String javacMainClass = "com/sun/tools/javac/Main.class";
+            URL url = getClass().getClassLoader().getResource(javacMainClass);
+            if (url == null)
+                throw new Error("can't locate javac classes");
+            URI uri = url.toURI();
+            String scheme = uri.getScheme();
+            String ssp = uri.getSchemeSpecificPart();
+            if (scheme.equals("jar")) {
+                javac_classes = new File(new URI(ssp.substring(0, ssp.indexOf("!/"))));
+            } else if (scheme.equals("file")) {
+                javac_classes = new File(ssp.substring(0, ssp.indexOf(javacMainClass)));
+            } else
+                throw new Error("unknown URL: " + url);
+        } catch (URISyntaxException e) {
+            throw new Error(e);
+        }
+        System.err.println("javac_classes: " + javac_classes);
+
+        StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, encoding);
+        try {
+            fm.setLocation(SOURCE_PATH,  Arrays.asList(test_src));
+            fm.setLocation(CLASS_PATH,   Arrays.asList(test_classes, javac_classes));
+            fm.setLocation(CLASS_OUTPUT, Arrays.asList(test_classes));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+        return fm;
     }
 }
 

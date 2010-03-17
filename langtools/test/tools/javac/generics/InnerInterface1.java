@@ -30,7 +30,7 @@
  * @compile  InnerInterface1.java
  */
 
-package test.tools.javac.generics.InnerInterface1;
+package InnerInterface1;
 
 interface Iterator<E> {
 }

@@ -29,9 +29,9 @@ import java.io.*;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.util.*;
+import sun.misc.IOUtils;
 
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
 
@@ -677,50 +677,39 @@ abstract class JavaKeyStore extends KeyStoreSpi {
                     entry.date = new Date(dis.readLong());
 
                     // Read the private key
-                    try {
-                        entry.protectedPrivKey = new byte[dis.readInt()];
-                    } catch (OutOfMemoryError e) {
-                        throw new IOException("Keysize too big");
-                    }
-                    dis.readFully(entry.protectedPrivKey);
+                    entry.protectedPrivKey =
+                            IOUtils.readFully(dis, dis.readInt(), true);
 
                     // Read the certificate chain
                     int numOfCerts = dis.readInt();
-                    try {
-                        if (numOfCerts > 0) {
-                            entry.chain = new Certificate[numOfCerts];
-                        }
-                    } catch (OutOfMemoryError e) {
-                        throw new IOException
-                            ("Too many certificates in chain");
-                    }
-                    for (int j = 0; j < numOfCerts; j++) {
-                        if (xVersion == 2) {
-                            // read the certificate type, and instantiate a
-                            // certificate factory of that type (reuse
-                            // existing factory if possible)
-                            String certType = dis.readUTF();
-                            if (cfs.containsKey(certType)) {
-                                // reuse certificate factory
-                                cf = cfs.get(certType);
-                            } else {
-                                // create new certificate factory
-                                cf = CertificateFactory.getInstance(certType);
-                                // store the certificate factory so we can
-                                // reuse it later
-                                cfs.put(certType, cf);
+                    if (numOfCerts > 0) {
+                        List<Certificate> certs = new ArrayList<>(
+                                numOfCerts > 10 ? 10 : numOfCerts);
+                        for (int j = 0; j < numOfCerts; j++) {
+                            if (xVersion == 2) {
+                                // read the certificate type, and instantiate a
+                                // certificate factory of that type (reuse
+                                // existing factory if possible)
+                                String certType = dis.readUTF();
+                                if (cfs.containsKey(certType)) {
+                                    // reuse certificate factory
+                                    cf = cfs.get(certType);
+                                } else {
+                                    // create new certificate factory
+                                    cf = CertificateFactory.getInstance(certType);
+                                    // store the certificate factory so we can
+                                    // reuse it later
+                                    cfs.put(certType, cf);
+                                }
                             }
+                            // instantiate the certificate
+                            encoded = IOUtils.readFully(dis, dis.readInt(), true);
+                            bais = new ByteArrayInputStream(encoded);
+                            certs.add(cf.generateCertificate(bais));
+                            bais.close();
                         }
-                        // instantiate the certificate
-                        try {
-                            encoded = new byte[dis.readInt()];
-                        } catch (OutOfMemoryError e) {
-                            throw new IOException("Certificate too big");
-                        }
-                        dis.readFully(encoded);
-                        bais = new ByteArrayInputStream(encoded);
-                        entry.chain[j] = cf.generateCertificate(bais);
-                        bais.close();
+                        // We can be sure now that numOfCerts of certs are read
+                        entry.chain = certs.toArray(new Certificate[numOfCerts]);
                     }
 
                     // Add the entry to the list
@@ -753,12 +742,7 @@ abstract class JavaKeyStore extends KeyStoreSpi {
                             cfs.put(certType, cf);
                         }
                     }
-                    try {
-                        encoded = new byte[dis.readInt()];
-                    } catch (OutOfMemoryError e) {
-                        throw new IOException("Certificate too big");
-                    }
-                    dis.readFully(encoded);
+                    encoded = IOUtils.readFully(dis, dis.readInt(), true);
                     bais = new ByteArrayInputStream(encoded);
                     entry.cert = cf.generateCertificate(bais);
                     bais.close();
