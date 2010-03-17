@@ -57,11 +57,12 @@ if not "%7" == ""      goto usage
 if "%1" == "product"   goto test1
 if "%1" == "debug"     goto test1
 if "%1" == "fastdebug" goto test1
+if "%1" == "tree"      goto test1
 goto usage
 
 :test1
 if "%2" == "core"      goto test2
-if "%2" == "kernel"   goto test2
+if "%2" == "kernel"    goto test2
 if "%2" == "compiler1" goto test2
 if "%2" == "compiler2" goto test2
 if "%2" == "tiered"    goto test2
@@ -70,6 +71,7 @@ if "%2" == "adlc"      goto build_adlc
 goto usage
 
 :test2
+if "%1" == "tree"      goto build_tree
 REM check_j2se_version
 REM jvmti.make requires J2SE 1.4.x or newer.
 REM If not found then fail fast.
@@ -93,6 +95,10 @@ goto end
 nmake -f %3/make/windows/build.make Variant=compiler2 WorkSpace=%3 BootStrapDir=%4 BuildUser="%USERNAME%" HOTSPOT_BUILD_VERSION=%5 ADLC_ONLY=1 %1
 goto end
 
+:build_tree
+nmake -f %3/make/windows/build.make Variant=%2 WorkSpace=%3 BootStrapDir=%4 BuildUser="%USERNAME%" HOTSPOT_BUILD_VERSION="%5" %1
+goto end
+
 :usage
 echo Usage: build flavor version workspace bootstrap_dir [build_id] [windbg_home]
 echo.
@@ -100,8 +106,10 @@ echo where:
 echo flavor is "product", "debug" or "fastdebug",
 echo version is "core", "kernel", "compiler1", "compiler2", or "tiered",
 echo workspace is source directory without trailing slash, 
-echo bootstrap_dir is a full path to echo a JDK in which bin/java 
-echo   and bin/javac are present and working, and echo build_id is an 
+echo bootstrap_dir is a full path to a JDK in which bin/java 
+echo   and bin/javac are present and working, and build_id is an 
 echo   optional build identifier displayed by java -version
+exit 1
 
 :end
+exit %errorlevel%
