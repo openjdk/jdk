@@ -2859,6 +2859,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 #endif // _LP64
 
+  // MethodHandles code does not support TaggedStackInterpreter.
+  if (EnableMethodHandles && TaggedStackInterpreter) {
+    warning("TaggedStackInterpreter is not supported by MethodHandles code.  Disabling TaggedStackInterpreter.");
+    TaggedStackInterpreter = false;
+  }
+
   // Check the GC selections again.
   if (!check_gc_consistency()) {
     return JNI_EINVAL;

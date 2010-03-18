@@ -2376,8 +2376,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
   CodeEmitInfo* info = state_for(x, x->state());
 
   // invokedynamics can deoptimize.
-  bool is_invokedynamic = x->code() == Bytecodes::_invokedynamic;
-  CodeEmitInfo* deopt_info = is_invokedynamic ? state_for(x, x->state_before()) : NULL;
+  CodeEmitInfo* deopt_info = x->is_invokedynamic() ? state_for(x, x->state_before()) : NULL;
 
   invoke_load_arguments(x, args, arg_list);
 
