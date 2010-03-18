@@ -45,6 +45,8 @@ import sun.security.internal.interfaces.TlsMasterSecret;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
+import sun.security.util.DerValue;
+
 /**
  * Key implementation classes.
  *
@@ -1000,8 +1002,16 @@ abstract class P11Key implements Key {
             try {
                 params = P11ECKeyFactory.decodeParameters
                             (attributes[1].getByteArray());
+                DerValue wECPoint = new DerValue(attributes[0].getByteArray());
+                if (wECPoint.getTag() != DerValue.tag_OctetString)
+                    throw new IOException("Unexpected tag: " +
+                        wECPoint.getTag());
+                params = P11ECKeyFactory.decodeParameters
+                            (attributes[1].getByteArray());
                 w = P11ECKeyFactory.decodePoint
-                            (attributes[0].getByteArray(), params.getCurve());
+                    (wECPoint.getDataBytes(), params.getCurve());
+
+
             } catch (Exception e) {
                 throw new RuntimeException("Could not parse key values", e);
             }

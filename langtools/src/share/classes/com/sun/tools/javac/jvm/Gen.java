@@ -808,8 +808,8 @@ public class Gen extends JCTree.Visitor {
             code.resolve(secondJumps);
             CondItem second = genCond(tree.falsepart, CRT_FLOW_TARGET);
             CondItem result = items.makeCondItem(second.opcode,
-                                      code.mergeChains(trueJumps, second.trueJumps),
-                                      code.mergeChains(falseJumps, second.falseJumps));
+                                      Code.mergeChains(trueJumps, second.trueJumps),
+                                      Code.mergeChains(falseJumps, second.falseJumps));
             if (markBranches) result.tree = tree.falsepart;
             return result;
         } else {
@@ -1322,7 +1322,7 @@ public class Gen extends JCTree.Visitor {
                 if (useJsrLocally) {
                     if (tree.finalizer != null) {
                         Code.State jsrState = code.state.dup();
-                        jsrState.push(code.jsrReturnValue);
+                        jsrState.push(Code.jsrReturnValue);
                         tryEnv.info.cont =
                             new Chain(code.emitJump(jsr),
                                       tryEnv.info.cont,
@@ -1375,7 +1375,7 @@ public class Gen extends JCTree.Visitor {
                 genFinalizer(env);
                 if (hasFinalizer || l.tail.nonEmpty()) {
                     code.statBegin(TreeInfo.endPos(env.tree));
-                    exitChain = code.mergeChains(exitChain,
+                    exitChain = Code.mergeChains(exitChain,
                                                  code.branch(goto_));
                 }
                 endFinalizerGap(env);
@@ -1714,7 +1714,7 @@ public class Gen extends JCTree.Visitor {
         for (Attribute.TypeCompound ta : meth.typeAnnotations) {
             if (ta.position.pos == treePos) {
                 ta.position.offset = code.cp;
-                ta.position.lvarOffset[0] = code.cp;
+                ta.position.lvarOffset = new int[] { code.cp };
                 ta.position.isValidOffset = true;
             }
         }
@@ -1726,7 +1726,7 @@ public class Gen extends JCTree.Visitor {
         for (Attribute.TypeCompound ta : meth.owner.typeAnnotations) {
             if (ta.position.pos == treePos) {
                 ta.position.offset = code.cp;
-                ta.position.lvarOffset[0] = code.cp;
+                ta.position.lvarOffset = new int[] { code.cp };
                 ta.position.isValidOffset = true;
             }
         }
@@ -1738,7 +1738,7 @@ public class Gen extends JCTree.Visitor {
             for (Attribute.TypeCompound ta : s.typeAnnotations) {
                 if (ta.position.pos == treePos) {
                     ta.position.offset = code.cp;
-                    ta.position.lvarOffset[0] = code.cp;
+                    ta.position.lvarOffset = new int[] { code.cp };
                     ta.position.isValidOffset = true;
                 }
             }
@@ -1963,7 +1963,7 @@ public class Gen extends JCTree.Visitor {
                 result = items.
                     makeCondItem(rcond.opcode,
                                  rcond.trueJumps,
-                                 code.mergeChains(falseJumps,
+                                 Code.mergeChains(falseJumps,
                                                   rcond.falseJumps));
             } else {
                 result = lcond;
@@ -1976,7 +1976,7 @@ public class Gen extends JCTree.Visitor {
                 CondItem rcond = genCond(tree.rhs, CRT_FLOW_TARGET);
                 result = items.
                     makeCondItem(rcond.opcode,
-                                 code.mergeChains(trueJumps, rcond.trueJumps),
+                                 Code.mergeChains(trueJumps, rcond.trueJumps),
                                  rcond.falseJumps);
             } else {
                 result = lcond;
@@ -2158,6 +2158,11 @@ public class Gen extends JCTree.Visitor {
             code.emitop2(ldc2, makeRef(tree.pos(), tree.selected.type));
             result = items.makeStackItem(pt);
             return;
+        } else if (tree.name == names.TYPE) {
+            // Set the annotation positions for primitive class literals
+            // (e.g. int.class) which have been converted to TYPE field
+            // access on the corresponding boxed type (e.g. Integer.TYPE).
+            setTypeAnnotationPositions(tree.pos);
         }
 
         Symbol ssym = TreeInfo.symbol(tree.selected);

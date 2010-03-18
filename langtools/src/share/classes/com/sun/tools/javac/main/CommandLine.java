@@ -82,7 +82,7 @@ public class CommandLine {
         st.commentChar('#');
         st.quoteChar('"');
         st.quoteChar('\'');
-        while (st.nextToken() != st.TT_EOF) {
+        while (st.nextToken() != StreamTokenizer.TT_EOF) {
             args.append(st.sval);
         }
         r.close();
