@@ -217,21 +217,21 @@ void ParCompactionManager::reset() {
 void ParCompactionManager::follow_marking_stacks() {
   do {
     // Drain the overflow stack first, to allow stealing from the marking stack.
+    oop obj;
     while (!overflow_stack()->is_empty()) {
       overflow_stack()->pop()->follow_contents(this);
     }
-    oop obj;
     while (marking_stack()->pop_local(obj)) {
       obj->follow_contents(this);
     }
 
+    // Process ObjArrays one at a time to avoid marking stack bloat.
     ObjArrayTask task;
-    while (!_objarray_overflow_stack->is_empty()) {
+    if (!_objarray_overflow_stack->is_empty()) {
       task = _objarray_overflow_stack->pop();
       objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
       k->oop_follow_contents(this, task.obj(), task.index());
-    }
-    while (_objarray_queue.pop_local(task)) {
+    } else if (_objarray_queue.pop_local(task)) {
       objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
       k->oop_follow_contents(this, task.obj(), task.index());
     }
