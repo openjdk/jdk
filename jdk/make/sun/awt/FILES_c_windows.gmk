@@ -179,6 +179,8 @@ FILES_cpp = \
 	awt_Mlib.cpp \
 	awt_new.cpp \
 	awt_TrayIcon.cpp \
+	awt_DCHolder.cpp \
+	awt_ole.cpp \
 	ShaderList.cpp \
 	D3DBlitLoops.cpp \
 	D3DBufImgOps.cpp \

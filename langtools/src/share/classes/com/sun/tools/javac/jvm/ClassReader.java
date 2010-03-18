@@ -1135,7 +1135,7 @@ public class ClassReader implements Completer {
         self.name = simpleBinaryName(self.flatname, c.flatname) ;
         self.owner = m != null ? m : c;
         if (self.name.isEmpty())
-            self.fullname = null;
+            self.fullname = names.empty;
         else
             self.fullname = ClassSymbol.formFullName(self.name, self.owner);
 
@@ -1425,11 +1425,11 @@ public class ClassReader implements Completer {
          // Class extends and implements clauses
         case CLASS_EXTENDS:
         case CLASS_EXTENDS_GENERIC_OR_ARRAY:
-            position.type_index = nextByte();
+            position.type_index = nextChar();
             break;
         // throws
         case THROWS:
-            position.type_index = nextByte();
+            position.type_index = nextChar();
             break;
         case CLASS_LITERAL:
         case CLASS_LITERAL_GENERIC_OR_ARRAY:

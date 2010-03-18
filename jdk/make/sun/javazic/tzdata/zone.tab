@@ -301,11 +301,14 @@ MW	-1547+03500	Africa/Blantyre
 MX	+1924-09909	America/Mexico_City	Central Time - most locations
 MX	+2105-08646	America/Cancun	Central Time - Quintana Roo
 MX	+2058-08937	America/Merida	Central Time - Campeche, Yucatan
-MX	+2540-10019	America/Monterrey	Central Time - Coahuila, Durango, Nuevo Leon, Tamaulipas
+MX	+2540-10019	America/Monterrey	Mexican Central Time - Coahuila, Durango, Nuevo Leon, Tamaulipas away from US border
+MX	+2550-09730	America/Matamoros	US Central Time - Coahuila, Durango, Nuevo Leon, Tamaulipas near US border
 MX	+2313-10625	America/Mazatlan	Mountain Time - S Baja, Nayarit, Sinaloa
-MX	+2838-10605	America/Chihuahua	Mountain Time - Chihuahua
+MX	+2838-10605	America/Chihuahua	Mexican Mountain Time - Chihuahua away from US border
+MX	+2934-10425	America/Ojinaga	US Mountain Time - Chihuahua near US border
 MX	+2904-11058	America/Hermosillo	Mountain Standard Time - Sonora
-MX	+3232-11701	America/Tijuana	Pacific Time
+MX	+3232-11701	America/Tijuana	US Pacific Time - Baja California near US border
+MX	+3018-11452	America/Santa_Isabel	Mexican Pacific Time - Baja California away from US border
 MY	+0310+10142	Asia/Kuala_Lumpur	peninsular Malaysia
 MY	+0133+11020	Asia/Kuching	Sabah & Sarawak
 MZ	-2558+03235	Africa/Maputo
