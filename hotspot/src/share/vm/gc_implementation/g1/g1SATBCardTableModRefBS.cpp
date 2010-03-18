@@ -35,7 +35,7 @@ G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(MemRegion whole_heap,
 
 void G1SATBCardTableModRefBS::enqueue(oop pre_val) {
   assert(pre_val->is_oop_or_null(true), "Error");
-  if (!JavaThread::satb_mark_queue_set().active()) return;
+  if (!JavaThread::satb_mark_queue_set().is_active()) return;
   Thread* thr = Thread::current();
   if (thr->is_Java_thread()) {
     JavaThread* jt = (JavaThread*)thr;
@@ -51,7 +51,7 @@ template <class T> void
 G1SATBCardTableModRefBS::write_ref_field_pre_static(T* field,
                                                     oop new_val,
                                                     JavaThread* jt) {
-  if (!JavaThread::satb_mark_queue_set().active()) return;
+  if (!JavaThread::satb_mark_queue_set().is_active()) return;
   T heap_oop = oopDesc::load_heap_oop(field);
   if (!oopDesc::is_null(heap_oop)) {
     oop pre_val = oopDesc::decode_heap_oop_not_null(heap_oop);
@@ -62,7 +62,7 @@ G1SATBCardTableModRefBS::write_ref_field_pre_static(T* field,
 
 template <class T> void
 G1SATBCardTableModRefBS::write_ref_array_pre_work(T* dst, int count) {
-  if (!JavaThread::satb_mark_queue_set().active()) return;
+  if (!JavaThread::satb_mark_queue_set().is_active()) return;
   T* elem_ptr = dst;
   for (int i = 0; i < count; i++, elem_ptr++) {
     T heap_oop = oopDesc::load_heap_oop(elem_ptr);
