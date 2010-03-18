@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,7 +677,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ add(I7, frame::pc_return_offset, Oissuing_pc->after_save());
 
         __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address),
-                        Oissuing_pc->after_save());
+                        G2_thread, Oissuing_pc->after_save());
         __ verify_not_null_oop(Oexception->after_save());
         __ jmp(O0, 0);
         __ delayed()->restore();
@@ -985,7 +985,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
 void Runtime1::generate_handle_exception(StubAssembler* sasm, OopMapSet* oop_maps, OopMap* oop_map, bool) {
   Label no_deopt;
-  Label no_handler;
 
   __ verify_not_null_oop(Oexception);
 
@@ -1003,29 +1002,20 @@ void Runtime1::generate_handle_exception(StubAssembler* sasm, OopMapSet* oop_map
   // whether it had a handler or not we will deoptimize
   // by entering the deopt blob with a pending exception.
 
+#ifdef ASSERT
+  Label done;
   __ tst(O0);
-  __ br(Assembler::zero, false, Assembler::pn, no_handler);
+  __ br(Assembler::notZero, false, Assembler::pn, done);
   __ delayed()->nop();
+  __ stop("should have found address");
+  __ bind(done);
+#endif
 
   // restore the registers that were saved at the beginning and jump to the exception handler.
   restore_live_registers(sasm);
 
   __ jmp(O0, 0);
   __ delayed()->restore();
-
-  __ bind(no_handler);
-  __ mov(L0, I7); // restore return address
-
-  // restore exception oop
-  __ ld_ptr(G2_thread, in_bytes(JavaThread::exception_oop_offset()), Oexception->after_save());
-  __ st_ptr(G0, G2_thread, in_bytes(JavaThread::exception_oop_offset()));
-
-  __ restore();
-
-  AddressLiteral exc(Runtime1::entry_for(Runtime1::unwind_exception_id));
-  __ jump_to(exc, G4);
-  __ delayed()->nop();
-
 
   oop_maps->add_gc_map(call_offset, oop_map);
 }

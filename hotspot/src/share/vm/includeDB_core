@@ -541,6 +541,7 @@ ciConstantPoolCache.hpp                 resourceArea.hpp
 
 ciCPCache.cpp                           cpCacheOop.hpp
 ciCPCache.cpp                           ciCPCache.hpp
+ciCPCache.cpp                           ciUtilities.hpp
 
 ciCPCache.hpp                           ciClassList.hpp
 ciCPCache.hpp                           ciObject.hpp
@@ -2016,6 +2017,7 @@ init.cpp                                handles.inline.hpp
 init.cpp                                icBuffer.hpp
 init.cpp                                icache.hpp
 init.cpp                                init.hpp
+init.cpp                                methodHandles.hpp
 init.cpp                                safepoint.hpp
 init.cpp                                sharedRuntime.hpp
 init.cpp                                universe.hpp
@@ -2870,6 +2872,7 @@ methodHandles.cpp                       methodHandles.hpp
 methodHandles.cpp                       oopFactory.hpp
 methodHandles.cpp                       reflection.hpp
 methodHandles.cpp                       signature.hpp
+methodHandles.cpp                       stubRoutines.hpp
 methodHandles.cpp                       symbolTable.hpp
 
 methodHandles_<arch>.cpp                allocation.inline.hpp

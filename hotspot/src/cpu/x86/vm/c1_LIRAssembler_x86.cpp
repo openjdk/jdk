@@ -436,40 +436,18 @@ int LIR_Assembler::emit_exception_handler() {
 
   int offset = code_offset();
 
-  // if the method does not have an exception handler, then there is
-  // no reason to search for one
-  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_on_exceptions()) {
-    // the exception oop and pc are in rax, and rdx
-    // no other registers need to be preserved, so invalidate them
-    __ invalidate_registers(false, true, true, false, true, true);
-
-    // check that there is really an exception
-    __ verify_not_null_oop(rax);
-
-    // search an exception handler (rax: exception oop, rdx: throwing pc)
-    __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_nofpu_id)));
-
-    // if the call returns here, then the exception handler for particular
-    // exception doesn't exist -> unwind activation and forward exception to caller
-  }
-
-  // the exception oop is in rax,
+  // the exception oop and pc are in rax, and rdx
   // no other registers need to be preserved, so invalidate them
-  __ invalidate_registers(false, true, true, true, true, true);
+  __ invalidate_registers(false, true, true, false, true, true);
 
   // check that there is really an exception
   __ verify_not_null_oop(rax);
 
-  // unlock the receiver/klass if necessary
-  // rax,: exception
-  ciMethod* method = compilation()->method();
-  if (method->is_synchronized() && GenerateSynchronizationCode) {
-    monitorexit(FrameMap::rbx_oop_opr, FrameMap::rcx_opr, SYNC_header, 0, rax);
-  }
+  // search an exception handler (rax: exception oop, rdx: throwing pc)
+  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_nofpu_id)));
 
-  // unwind activation and forward exception to caller
-  // rax,: exception
-  __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
+  __ stop("should not reach here");
+
   assert(code_offset() - offset <= exception_handler_size, "overflow");
   __ end_a_stub();
 
@@ -495,8 +473,10 @@ int LIR_Assembler::emit_deopt_handler() {
 
   int offset = code_offset();
   InternalAddress here(__ pc());
+
   __ pushptr(here.addr());
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
+
   assert(code_offset() - offset <= deopt_handler_size, "overflow");
   __ end_a_stub();
 
@@ -593,7 +573,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   }
 
   // Pop the stack before the safepoint code
-  __ leave();
+  __ remove_frame(initial_frame_size_in_bytes());
 
   bool result_is_oop = result->is_valid() ? result->is_oop() : false;
 
@@ -648,7 +628,8 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
   LIR_Const* c = src->as_constant_ptr();
 
   switch (c->type()) {
-    case T_INT: {
+    case T_INT:
+    case T_ADDRESS: {
       assert(patch_code == lir_patch_none, "no patching handled here");
       __ movl(dest->as_register(), c->as_jint());
       break;
@@ -731,6 +712,7 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
   switch (c->type()) {
     case T_INT:  // fall through
     case T_FLOAT:
+    case T_ADDRESS:
       __ movl(frame_map()->address_for_slot(dest->single_stack_ix()), c->as_jint_bits());
       break;
 
@@ -766,6 +748,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
   switch (type) {
     case T_INT:    // fall through
     case T_FLOAT:
+    case T_ADDRESS:
       __ movl(as_Address(addr), c->as_jint_bits());
       break;
 
@@ -2738,6 +2721,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
     switch (code) {
       case lir_static_call:
       case lir_optvirtual_call:
+      case lir_dynamic_call:
         offset += NativeCall::displacement_offset;
         break;
       case lir_icvirtual_call:
@@ -2753,29 +2737,40 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 
-void LIR_Assembler::call(address entry, relocInfo::relocType rtype, CodeEmitInfo* info) {
+void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   assert(!os::is_MP() || (__ offset() + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
-  __ call(AddressLiteral(entry, rtype));
-  add_call_info(code_offset(), info);
+  __ call(AddressLiteral(op->addr(), rtype));
+  add_call_info(code_offset(), op->info(), op->is_method_handle_invoke());
 }
 
 
-void LIR_Assembler::ic_call(address entry, CodeEmitInfo* info) {
+void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc());
   __ movoop(IC_Klass, (jobject)Universe::non_oop_word());
   assert(!os::is_MP() ||
          (__ offset() + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
-  __ call(AddressLiteral(entry, rh));
-  add_call_info(code_offset(), info);
+  __ call(AddressLiteral(op->addr(), rh));
+  add_call_info(code_offset(), op->info(), op->is_method_handle_invoke());
 }
 
 
 /* Currently, vtable-dispatch is only enabled for sparc platforms */
-void LIR_Assembler::vtable_call(int vtable_offset, CodeEmitInfo* info) {
+void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
   ShouldNotReachHere();
 }
+
+
+void LIR_Assembler::preserve_SP(LIR_OpJavaCall* op) {
+  __ movptr(FrameMap::method_handle_invoke_SP_save_opr()->as_register(), rsp);
+}
+
+
+void LIR_Assembler::restore_SP(LIR_OpJavaCall* op) {
+  __ movptr(rsp, FrameMap::method_handle_invoke_SP_save_opr()->as_register());
+}
+
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
@@ -2829,10 +2824,12 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
     } else {
       unwind_id = Runtime1::handle_exception_nofpu_id;
     }
+    __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
   } else {
-    unwind_id = Runtime1::unwind_exception_id;
+    // remove the activation
+    __ remove_frame(initial_frame_size_in_bytes());
+    __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
   }
-  __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
 
   // enough room for two byte trap
   __ nop();

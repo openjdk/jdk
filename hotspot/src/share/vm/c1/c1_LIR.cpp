@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ LIR_Opr LIR_OprFact::value_type(ValueType* type) {
       return LIR_OprFact::oopConst(type->as_ObjectType()->encoding());
     }
   }
-  case addressTag: return LIR_OprFact::intConst(type->as_AddressConstant()->value());
+  case addressTag: return LIR_OprFact::addressConst(type->as_AddressConstant()->value());
   case intTag    : return LIR_OprFact::intConst(type->as_IntConstant()->value());
   case floatTag  : return LIR_OprFact::floatConst(type->as_FloatConstant()->value());
   case longTag   : return LIR_OprFact::longConst(type->as_LongConstant()->value());
@@ -89,7 +89,7 @@ LIR_Opr LIR_OprFact::value_type(ValueType* type) {
 LIR_Opr LIR_OprFact::dummy_value_type(ValueType* type) {
   switch (type->tag()) {
     case objectTag: return LIR_OprFact::oopConst(NULL);
-    case addressTag:
+    case addressTag:return LIR_OprFact::addressConst(0);
     case intTag:    return LIR_OprFact::intConst(0);
     case floatTag:  return LIR_OprFact::floatConst(0.0);
     case longTag:   return LIR_OprFact::longConst(0);
@@ -689,9 +689,10 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_static_call:
     case lir_optvirtual_call:
     case lir_icvirtual_call:
-    case lir_virtual_call: {
-      assert(op->as_OpJavaCall() != NULL, "must be");
-      LIR_OpJavaCall* opJavaCall = (LIR_OpJavaCall*)op;
+    case lir_virtual_call:
+    case lir_dynamic_call: {
+      LIR_OpJavaCall* opJavaCall = op->as_OpJavaCall();
+      assert(opJavaCall != NULL, "must be");
 
       if (opJavaCall->_receiver->is_valid())     do_input(opJavaCall->_receiver);
 
@@ -704,6 +705,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       }
 
       if (opJavaCall->_info)                     do_info(opJavaCall->_info);
+      if (opJavaCall->is_method_handle_invoke()) do_temp(FrameMap::method_handle_invoke_SP_save_opr());
       do_call();
       if (opJavaCall->_result->is_valid())       do_output(opJavaCall->_result);
 
@@ -1410,6 +1412,7 @@ void LIR_OprDesc::print(outputStream* out) const {
 // LIR_Address
 void LIR_Const::print_value_on(outputStream* out) const {
   switch (type()) {
+    case T_ADDRESS:out->print("address:%d",as_jint());          break;
     case T_INT:    out->print("int:%d",   as_jint());           break;
     case T_LONG:   out->print("lng:%lld", as_jlong());          break;
     case T_FLOAT:  out->print("flt:%f",   as_jfloat());         break;
@@ -1590,6 +1593,7 @@ const char * LIR_Op::name() const {
      case lir_optvirtual_call:       s = "optvirtual";    break;
      case lir_icvirtual_call:        s = "icvirtual";     break;
      case lir_virtual_call:          s = "virtual";       break;
+     case lir_dynamic_call:          s = "dynamic";       break;
      // LIR_OpArrayCopy
      case lir_arraycopy:             s = "arraycopy";     break;
      // LIR_OpLock

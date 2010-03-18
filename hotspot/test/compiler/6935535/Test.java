@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,30 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-// ciCPCache
-//
-// This class represents a constant pool cache.
-//
-// Note: This class is called ciCPCache as ciConstantPoolCache is used
-// for something different.
-class ciCPCache : public ciObject {
-public:
-  ciCPCache(constantPoolCacheHandle cpcache) : ciObject(cpcache) {}
+/**
+ * @test
+ * @bug 6935535
+ * @summary String.indexOf() returns incorrect result on x86 with SSE4.2
+ *
+ * @run main/othervm -Xcomp Test
+ */
 
-  // What kind of ciObject is this?
-  bool is_cpcache() const { return true; }
+public class Test {
 
-  // Get the offset in bytes from the oop to the f1 field of the
-  // requested entry.
-  size_t get_f1_offset(int index);
+  static int IndexOfTest(String str) {
+    return str.indexOf("1111111111111xx1x");
+  }
 
-  bool is_f1_null_at(int index);
+  public static void main(String args[]) {
+    String str = "1111111111111xx1111111111111xx1x";
+    str = str.substring(0, 31);
+    int idx = IndexOfTest(str);
+    System.out.println("IndexOf(" + "1111111111111xx1x" + ") = " + idx + " in " + str);
+    if (idx != -1) {
+      System.exit(97);
+    }
+  }
+}
 
-  void print();
-};
