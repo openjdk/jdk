@@ -760,7 +760,10 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  satb_mq_set.set_active_all_threads(true);
+  // This is the start of  the marking cycle, we're expected all
+  // threads to have SATB queues with active set to false.
+  satb_mq_set.set_active_all_threads(true, /* new active value */
+                                     false /* expected_active */);
 
   // update_g1_committed() will be called at the end of an evac pause
   // when marking is on. So, it's also called at the end of the
@@ -1079,7 +1082,11 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
       gclog_or_tty->print_cr("\nRemark led to restart for overflow.");
   } else {
     // We're done with marking.
-    JavaThread::satb_mark_queue_set().set_active_all_threads(false);
+    // This is the end of  the marking cycle, we're expected all
+    // threads to have SATB queues with active set to true.
+    JavaThread::satb_mark_queue_set().set_active_all_threads(
+                                                  false, /* new active value */
+                                                  true /* expected_active */);
 
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
@@ -2586,7 +2593,11 @@ void ConcurrentMark::abort() {
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   satb_mq_set.abandon_partial_marking();
-  satb_mq_set.set_active_all_threads(false);
+  // This can be called either during or outside marking, we'll read
+  // the expected_active value from the SATB queue set.
+  satb_mq_set.set_active_all_threads(
+                                 false, /* new active value */
+                                 satb_mq_set.is_active() /* expected_active */);
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,
