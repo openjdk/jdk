@@ -3704,7 +3704,14 @@ void CMTask::do_marking_step(double time_target_ms) {
         // enough to point to the next possible object header (the
         // bitmap knows by how much we need to move it as it knows its
         // granularity).
-        move_finger_to(_nextMarkBitMap->nextWord(_finger));
+        assert(_finger < _region_limit, "invariant");
+        HeapWord* new_finger = _nextMarkBitMap->nextWord(_finger);
+        // Check if bitmap iteration was aborted while scanning the last object
+        if (new_finger >= _region_limit) {
+            giveup_current_region();
+        } else {
+            move_finger_to(new_finger);
+        }
       }
     }
     // At this point we have either completed iterating over the
