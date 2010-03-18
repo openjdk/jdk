@@ -111,7 +111,8 @@ void MarkSweep::follow_stack() {
       assert (obj->is_gc_marked(), "p must be marked");
       obj->follow_contents();
     }
-    while (!_objarray_stack->is_empty()) {
+    // Process ObjArrays one at a time to avoid marking stack bloat.
+    if (!_objarray_stack->is_empty()) {
       ObjArrayTask task = _objarray_stack->pop();
       objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
       k->oop_follow_contents(task.obj(), task.index());
