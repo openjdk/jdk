@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -688,18 +688,21 @@ void Runtime1::generate_handle_exception(StubAssembler *sasm, OopMapSet* oop_map
   int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, exception_handler_for_pc));
   oop_maps->add_gc_map(call_offset, oop_map);
 
-  // rax,: handler address or NULL if no handler exists
+  // rax,: handler address
   //      will be the deopt blob if nmethod was deoptimized while we looked up
   //      handler regardless of whether handler existed in the nmethod.
 
   // only rax, is valid at this time, all other registers have been destroyed by the runtime call
   __ invalidate_registers(false, true, true, true, true, true);
 
+#ifdef ASSERT
   // Do we have an exception handler in the nmethod?
-  Label no_handler;
   Label done;
   __ testptr(rax, rax);
-  __ jcc(Assembler::zero, no_handler);
+  __ jcc(Assembler::notZero, done);
+  __ stop("no handler found");
+  __ bind(done);
+#endif
 
   // exception handler found
   // patch the return address -> the stub will directly return to the exception handler
@@ -712,36 +715,14 @@ void Runtime1::generate_handle_exception(StubAssembler *sasm, OopMapSet* oop_map
   __ leave();
   __ ret(0);
 
-  __ bind(no_handler);
-  // no exception handler found in this method, so the exception is
-  // forwarded to the caller (using the unwind code of the nmethod)
-  // there is no need to restore the registers
-
-  // restore the real return address that was saved before the RT-call
-  __ movptr(real_return_addr, Address(rsp, temp_1_off * VMRegImpl::stack_slot_size));
-  __ movptr(Address(rbp, 1*BytesPerWord), real_return_addr);
-
-  // load address of JavaThread object for thread-local data
-  NOT_LP64(__ get_thread(thread);)
-  // restore exception oop into rax, (convention for unwind code)
-  __ movptr(exception_oop, Address(thread, JavaThread::exception_oop_offset()));
-
-  // clear exception fields in JavaThread because they are no longer needed
-  // (fields must be cleared because they are processed by GC otherwise)
-  __ movptr(Address(thread, JavaThread::exception_oop_offset()), NULL_WORD);
-  __ movptr(Address(thread, JavaThread::exception_pc_offset()), NULL_WORD);
-
-  // pop the stub frame off
-  __ leave();
-
-  generate_unwind_exception(sasm);
-  __ stop("should not reach here");
 }
 
 
 void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // incoming parameters
   const Register exception_oop = rax;
+  // callee-saved copy of exception_oop during runtime call
+  const Register exception_oop_callee_saved = NOT_LP64(rsi) LP64_ONLY(r14);
   // other registers used in this stub
   const Register exception_pc = rdx;
   const Register handler_addr = rbx;
@@ -769,38 +750,39 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // clear the FPU stack in case any FPU results are left behind
   __ empty_FPU_stack();
 
-  // leave activation of nmethod
-  __ leave();
-  // store return address (is on top of stack after leave)
+  // save exception_oop in callee-saved register to preserve it during runtime calls
+  __ verify_not_null_oop(exception_oop);
+  __ movptr(exception_oop_callee_saved, exception_oop);
+
+  NOT_LP64(__ get_thread(thread);)
+  // Get return address (is on top of stack after leave).
   __ movptr(exception_pc, Address(rsp, 0));
 
-  __ verify_oop(exception_oop);
-
-  // save exception oop from rax, to stack before call
-  __ push(exception_oop);
-
   // search the exception handler address of the caller (using the return address)
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), exception_pc);
-  // rax,: exception handler address of the caller
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), thread, exception_pc);
+  // rax: exception handler address of the caller
 
-  // only rax, is valid at this time, all other registers have been destroyed by the call
-  __ invalidate_registers(false, true, true, true, true, true);
+  // Only RAX and RSI are valid at this time, all other registers have been destroyed by the call.
+  __ invalidate_registers(false, true, true, true, false, true);
 
   // move result of call into correct register
   __ movptr(handler_addr, rax);
 
-  // restore exception oop in rax, (required convention of exception handler)
-  __ pop(exception_oop);
+  // Restore exception oop to RAX (required convention of exception handler).
+  __ movptr(exception_oop, exception_oop_callee_saved);
 
-  __ verify_oop(exception_oop);
+  // verify that there is really a valid exception in rax
+  __ verify_not_null_oop(exception_oop);
 
   // get throwing pc (= return address).
   // rdx has been destroyed by the call, so it must be set again
   // the pop is also necessary to simulate the effect of a ret(0)
   __ pop(exception_pc);
 
-  // verify that that there is really a valid exception in rax,
-  __ verify_not_null_oop(exception_oop);
+  // Restore SP from BP if the exception PC is a MethodHandle call site.
+  NOT_LP64(__ get_thread(thread);)
+  __ cmpl(Address(thread, JavaThread::is_method_handle_exception_offset()), 0);
+  __ cmovptr(Assembler::notEqual, rsp, rbp);
 
   // continue at exception handler (return address removed)
   // note: do *not* remove arguments when unwinding the
@@ -808,9 +790,9 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   //       all arguments on the stack when entering the
   //       runtime to determine the exception handler
   //       (GC happens at call site with arguments!)
-  // rax,: exception oop
+  // rax: exception oop
   // rdx: throwing pc
-  // rbx,: exception handler
+  // rbx: exception handler
   __ jmp(handler_addr);
 }
 
