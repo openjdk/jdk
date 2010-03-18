@@ -2528,6 +2528,7 @@ get_stack_bounds(uintptr_t *bottom, uintptr_t *top)
     char *str = NULL;
     ssize_t len = getline(&str, &dummy, f);
     if (len == -1) {
+      fclose(f);
       return false;
     }
 
@@ -2543,14 +2544,14 @@ get_stack_bounds(uintptr_t *bottom, uintptr_t *top)
         uintptr_t sp = (uintptr_t)__builtin_frame_address(0);
         if (sp >= *bottom && sp <= *top) {
           free(str);
+          fclose(f);
           return true;
         }
       }
     }
-
     free(str);
   }
-
+  fclose(f);
   return false;
 }
 
