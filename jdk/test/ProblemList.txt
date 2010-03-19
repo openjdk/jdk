@@ -643,9 +643,6 @@ java/net/ipv6tests/TcpTest.java 			 	generic-all
 # Linux i586, fails with unexpected output
 java/net/MulticastSocket/NoLoopbackPackets.java 	 	linux-i586
 
-# Times out on windows x64, fails with samevm on solaris 11 i586
-java/net/ServerSocket/AcceptCauseFileDescriptorLeak.java 	generic-all
-
 # Address already in use
 java/net/DatagramSocket/DatagramTimeout.java			generic-all
 
