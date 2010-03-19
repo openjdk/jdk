@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 import java.security.*;
-import java.security.interfaces.ECPublicKey;
-
+import java.security.interfaces.*;
 import sun.nio.ch.DirectBuffer;
 
 import sun.security.util.*;
@@ -88,7 +87,7 @@ final class P11Signature extends SignatureSpi {
     // mechanism id
     private final long mechanism;
 
-    // digest algorithm OID, if we do RSA padding ourselves
+    // digest algorithm OID, if we encode RSA signature ourselves
     private final ObjectIdentifier digestOID;
 
     // type, one of T_* below
@@ -103,7 +102,7 @@ final class P11Signature extends SignatureSpi {
     // associated session, if any
     private Session session;
 
-    // mode, on of M_* below
+    // mode, one of M_* below
     private int mode;
 
     // flag indicating whether an operation is initialized
@@ -137,6 +136,9 @@ final class P11Signature extends SignatureSpi {
         this.token = token;
         this.algorithm = algorithm;
         this.mechanism = mechanism;
+        byte[] buffer = null;
+        ObjectIdentifier digestOID = null;
+        MessageDigest md = null;
         switch ((int)mechanism) {
         case (int)CKM_MD2_RSA_PKCS:
         case (int)CKM_MD5_RSA_PKCS:
@@ -146,34 +148,25 @@ final class P11Signature extends SignatureSpi {
         case (int)CKM_SHA512_RSA_PKCS:
             keyAlgorithm = "RSA";
             type = T_UPDATE;
-            digestOID = null;
             buffer = new byte[1];
-            md = null;
             break;
         case (int)CKM_DSA_SHA1:
             keyAlgorithm = "DSA";
             type = T_UPDATE;
-            digestOID = null;
             buffer = new byte[1];
-            md = null;
             break;
         case (int)CKM_ECDSA_SHA1:
             keyAlgorithm = "EC";
             type = T_UPDATE;
-            digestOID = null;
             buffer = new byte[1];
-            md = null;
             break;
         case (int)CKM_DSA:
             keyAlgorithm = "DSA";
-            digestOID = null;
             if (algorithm.equals("DSA")) {
                 type = T_DIGEST;
                 md = MessageDigest.getInstance("SHA-1");
-                buffer = null;
             } else if (algorithm.equals("RawDSA")) {
                 type = T_RAW;
-                md = null;
                 buffer = new byte[20];
             } else {
                 throw new ProviderException(algorithm);
@@ -181,10 +174,8 @@ final class P11Signature extends SignatureSpi {
             break;
         case (int)CKM_ECDSA:
             keyAlgorithm = "EC";
-            digestOID = null;
             if (algorithm.equals("NONEwithECDSA")) {
                 type = T_RAW;
-                md = null;
                 buffer = new byte[RAW_ECDSA_MAX];
             } else {
                 String digestAlg;
@@ -201,14 +192,12 @@ final class P11Signature extends SignatureSpi {
                 }
                 type = T_DIGEST;
                 md = MessageDigest.getInstance(digestAlg);
-                buffer = null;
             }
             break;
         case (int)CKM_RSA_PKCS:
         case (int)CKM_RSA_X_509:
             keyAlgorithm = "RSA";
             type = T_DIGEST;
-            buffer = null;
             if (algorithm.equals("MD5withRSA")) {
                 md = MessageDigest.getInstance("MD5");
                 digestOID = AlgorithmId.MD5_oid;
@@ -234,6 +223,9 @@ final class P11Signature extends SignatureSpi {
         default:
             throw new ProviderException("Unknown mechanism: " + mechanism);
         }
+        this.buffer = buffer;
+        this.digestOID = digestOID;
+        this.md = md;
         session = token.getOpSession();
     }
 
@@ -326,9 +318,52 @@ final class P11Signature extends SignatureSpi {
         }
     }
 
+    private void checkRSAKeyLength(int len) throws InvalidKeyException {
+        RSAPadding padding;
+        try {
+            padding = RSAPadding.getInstance
+                (RSAPadding.PAD_BLOCKTYPE_1, (len + 7) >> 3);
+        } catch (InvalidAlgorithmParameterException iape) {
+            throw new InvalidKeyException(iape.getMessage());
+        }
+        int maxDataSize = padding.getMaxDataSize();
+        int encodedLength;
+        if (algorithm.equals("MD5withRSA") ||
+            algorithm.equals("MD2withRSA")) {
+            encodedLength = 34;
+        } else if (algorithm.equals("SHA1withRSA")) {
+            encodedLength = 35;
+        } else if (algorithm.equals("SHA256withRSA")) {
+            encodedLength = 51;
+        } else if (algorithm.equals("SHA384withRSA")) {
+            encodedLength = 67;
+        } else if (algorithm.equals("SHA512withRSA")) {
+            encodedLength = 83;
+        } else {
+            throw new ProviderException("Unknown signature algo: " + algorithm);
+        }
+        if (encodedLength > maxDataSize) {
+            throw new InvalidKeyException
+                ("Key is too short for this signature algorithm");
+        }
+    }
+
     // see JCA spec
     protected void engineInitVerify(PublicKey publicKey)
             throws InvalidKeyException {
+        if (publicKey == null) {
+            throw new InvalidKeyException("Key must not be null");
+        }
+        // Need to check RSA key length whenever a new key is set
+        if (keyAlgorithm.equals("RSA") && publicKey != p11Key) {
+            int keyLen;
+            if (publicKey instanceof P11Key) {
+                keyLen = ((P11Key) publicKey).keyLength();
+            } else {
+                keyLen = ((RSAKey) publicKey).getModulus().bitLength();
+            }
+            checkRSAKeyLength(keyLen);
+        }
         cancelOperation();
         mode = M_VERIFY;
         p11Key = P11KeyFactory.convertKey(token, publicKey, keyAlgorithm);
@@ -338,6 +373,19 @@ final class P11Signature extends SignatureSpi {
     // see JCA spec
     protected void engineInitSign(PrivateKey privateKey)
             throws InvalidKeyException {
+        if (privateKey == null) {
+            throw new InvalidKeyException("Key must not be null");
+        }
+        // Need to check RSA key length whenever a new key is set
+        if (keyAlgorithm.equals("RSA") && privateKey != p11Key) {
+            int keyLen;
+            if (privateKey instanceof P11Key) {
+                keyLen = ((P11Key) privateKey).keyLength;
+            } else {
+                keyLen = ((RSAKey) privateKey).getModulus().bitLength();
+            }
+            checkRSAKeyLength(keyLen);
+        }
         cancelOperation();
         mode = M_SIGN;
         p11Key = P11KeyFactory.convertKey(token, privateKey, keyAlgorithm);
