@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.pkcs11;
 
 import java.util.*;
-
+import java.io.*;
 import java.security.*;
 
 import sun.security.pkcs11.wrapper.*;
@@ -61,8 +61,27 @@ final class P11SecureRandom extends SecureRandomSpi {
     // buffer, if mixing is used
     private byte[] mixBuffer;
 
-    // bytes remaining in buffer, if mixing is used
+    // bytes remaining in mixBuffer, if mixing is used
     private int buffered;
+
+    /*
+     * we buffer data internally for efficiency but limit the lifetime
+     * to avoid using stale bits.
+     */
+    // lifetime in ms, currently 100 ms (0.1 s)
+    private static final long MAX_IBUFFER_TIME = 100;
+
+    // size of the internal buffer
+    private static final int IBUFFER_SIZE = 32;
+
+    // internal buffer for the random bits
+    private transient byte[] iBuffer = new byte[IBUFFER_SIZE];
+
+    // number of bytes remain in iBuffer
+    private transient int ibuffered = 0;
+
+    // time that data was read into iBuffer
+    private transient long lastRead = 0L;
 
     P11SecureRandom(Token token) {
         this.token = token;
@@ -104,16 +123,29 @@ final class P11SecureRandom extends SecureRandomSpi {
         if ((bytes == null) || (bytes.length == 0)) {
             return;
         }
-        Session session = null;
-        try {
-            session = token.getOpSession();
-            token.p11.C_GenerateRandom(session.id(), bytes);
-            mix(bytes);
-        } catch (PKCS11Exception e) {
-            throw new ProviderException("nextBytes() failed", e);
-        } finally {
-            token.releaseSession(session);
+        if (bytes.length <= IBUFFER_SIZE)  {
+            int ofs = 0;
+            synchronized (iBuffer) {
+                while (ofs < bytes.length) {
+                    long time = System.currentTimeMillis();
+                    // refill the internal buffer if empty or stale
+                    if ((ibuffered == 0) ||
+                            !(time - lastRead < MAX_IBUFFER_TIME)) {
+                        lastRead = time;
+                        implNextBytes(iBuffer);
+                        ibuffered = IBUFFER_SIZE;
+                    }
+                    // copy the buffered bytes into 'bytes'
+                    while ((ofs < bytes.length) && (ibuffered > 0)) {
+                        bytes[ofs++] = iBuffer[IBUFFER_SIZE - ibuffered--];
+                    }
+                }
+            }
+        } else {
+            // avoid using the buffer - just fill bytes directly
+            implNextBytes(bytes);
         }
+
     }
 
     // see JCA spec
@@ -143,4 +175,17 @@ final class P11SecureRandom extends SecureRandomSpi {
         }
     }
 
+    // fill up the specified buffer with random bytes, and mix them
+    private void implNextBytes(byte[] bytes) {
+        Session session = null;
+        try {
+            session = token.getOpSession();
+            token.p11.C_GenerateRandom(session.id(), bytes);
+            mix(bytes);
+        } catch (PKCS11Exception e) {
+            throw new ProviderException("nextBytes() failed", e);
+        } finally {
+            token.releaseSession(session);
+        }
+    }
 }
