@@ -198,7 +198,12 @@ public class Lint
         /**
          * Warn about Sun proprietary API that may be removed in a future release.
          */
-        SUNAPI("sunapi", true);
+        SUNAPI("sunapi", true),
+
+        /**
+         * Warn about issues relating to use of statics
+         */
+        STATIC("static");
 
         LintCategory(String option) {
             this(option, false);

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package java.beans;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-
 import java.lang.reflect.Method;
-
 import java.util.List;
 import java.util.ArrayList;
 
@@ -167,23 +165,6 @@ public class MethodDescriptor extends FeatureDescriptor {
     }
 
     /*
-    public String toString() {
-        String message = "name=" + getName();
-        Class cls = getClass0();
-        if (cls != null) {
-            message += ", class=";
-            message += cls.getName();
-        }
-        String[] names = getParamNames();
-        if (names != null) {
-            for (int i = 0; i < names.length; i++) {
-                message += ", param=" + names[i];
-            }
-        }
-        return message;
-        } */
-
-    /*
      * Package-private constructor
      * Merge two method descriptors.  Where they conflict, give the
      * second argument (y) priority over the first argument (x).
@@ -233,4 +214,15 @@ public class MethodDescriptor extends FeatureDescriptor {
         }
     }
 
+    void appendTo(StringBuilder sb) {
+        appendTo(sb, "method", this.methodRef);
+        if (this.parameterDescriptors != null) {
+            sb.append("; parameterDescriptors={");
+            for (ParameterDescriptor pd : this.parameterDescriptors) {
+                sb.append(pd).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            sb.append("}");
+        }
+    }
 }
