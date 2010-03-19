@@ -253,7 +253,7 @@ final class DualPivotQuicksort {
                         a[less] = ak;
                     }
                     less++;
-                } else { // (a[k] > pivot1) -  Move a[k] to right part
+                } else { // (a[k] > pivot1) - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -531,7 +531,7 @@ final class DualPivotQuicksort {
                         a[less] = ak;
                     }
                     less++;
-                } else { // (a[k] > pivot1) -  Move a[k] to right part
+                } else { // (a[k] > pivot1) - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -826,7 +826,7 @@ final class DualPivotQuicksort {
                         a[less] = ak;
                     }
                     less++;
-                } else { // (a[k] > pivot1) -  Move a[k] to right part
+                } else { // (a[k] > pivot1) - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -1119,7 +1119,7 @@ final class DualPivotQuicksort {
                         a[less] = ak;
                     }
                     less++;
-                } else { // (a[k] > pivot1) -  Move a[k] to right part
+                } else { // (a[k] > pivot1) - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -1414,7 +1414,7 @@ final class DualPivotQuicksort {
                         a[less] = ak;
                     }
                     less++;
-                } else { // (a[k] > pivot1) -  Move a[k] to right part
+                } else { // (a[k] > pivot1) - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -1531,7 +1531,7 @@ final class DualPivotQuicksort {
      * Sorts the specified range of the array into ascending order. The range
      * to be sorted extends from the index {@code fromIndex}, inclusive, to
      * the index {@code toIndex}, exclusive. If {@code fromIndex == toIndex},
-     * the range to be sorted is empty  and the call is a no-op).
+     * the range to be sorted is empty and the call is a no-op).
      *
      * <p>The {@code <} relation does not provide a total order on all float
      * values: {@code -0.0f == 0.0f} is {@code true} and a {@code Float.NaN}
@@ -1787,7 +1787,7 @@ final class DualPivotQuicksort {
                         a[less] = ak;
                     }
                     less++;
-                } else { // (a[k] > pivot1) -  Move a[k] to right part
+                } else { // (a[k] > pivot1) - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
@@ -2160,7 +2160,7 @@ final class DualPivotQuicksort {
                         a[less] = ak;
                     }
                     less++;
-                } else { // (a[k] > pivot1) -  Move a[k] to right part
+                } else { // (a[k] > pivot1) - Move a[k] to right part
                     /*
                      * We know that pivot1 == a[e3] == pivot2. Thus, we know
                      * that great will still be >= k when the following loop
