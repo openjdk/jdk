@@ -614,14 +614,15 @@ public final class AlphaComposite implements Composite {
     }
 
     private AlphaComposite(int rule, float alpha) {
-        if (alpha < 0.0f || alpha > 1.0f) {
-            throw new IllegalArgumentException("alpha value out of range");
-        }
         if (rule < MIN_RULE || rule > MAX_RULE) {
             throw new IllegalArgumentException("unknown composite rule");
         }
-        this.rule = rule;
-        this.extraAlpha = alpha;
+        if (alpha >= 0.0f && alpha <= 1.0f) {
+            this.rule = rule;
+            this.extraAlpha = alpha;
+        } else {
+            throw new IllegalArgumentException("alpha value out of range");
+        }
     }
 
     /**

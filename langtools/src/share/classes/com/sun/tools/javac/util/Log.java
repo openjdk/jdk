@@ -192,6 +192,12 @@ public class Log extends AbstractLog {
      */
     public int nwarnings = 0;
 
+    /**
+     * Whether or not an unrecoverable error has been seen.
+     * Unrecoverable errors prevent subsequent annotation processing.
+     */
+    public boolean unrecoverableError;
+
     /** A set of all errors generated so far. This is used to avoid printing an
      *  error message more than once. For each error, a pair consisting of the
      *  source file name and source code position of the error is added to the set.

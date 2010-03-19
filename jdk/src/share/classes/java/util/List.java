@@ -89,6 +89,8 @@ package java.util;
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
  *
+ * @param <E> the type of elements in this list
+ *
  * @author  Josh Bloch
  * @author  Neal Gafter
  * @see Collection

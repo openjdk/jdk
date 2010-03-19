@@ -45,8 +45,7 @@ import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.LookAndFeel;
 import javax.swing.border.Border;
-import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.UIResource;
+import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicTableUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
@@ -158,7 +157,7 @@ public class SynthTableUI extends BasicTableUI
                 if (gridColor == null) {
                     gridColor = style.getColor(context, ColorType.FOREGROUND);
                 }
-                table.setGridColor(gridColor);
+                table.setGridColor(gridColor == null ? new ColorUIResource(Color.GRAY) : gridColor);
             }
 
             useTableColors = style.getBoolean(context,

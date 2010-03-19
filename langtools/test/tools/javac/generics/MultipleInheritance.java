@@ -30,7 +30,7 @@
  * @compile  MultipleInheritance.java
  */
 
-package test.tools.javac.generics.MultipleInheritance;
+package MultipleInheritance;
 
 import java.util.*;
 

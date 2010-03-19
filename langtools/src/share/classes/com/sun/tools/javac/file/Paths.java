@@ -320,7 +320,7 @@ public class Paths {
                     addFile(f, warn);
                 }
             } catch (IOException e) {
-                log.error("error.reading.file", jarFile, e.getLocalizedMessage());
+                log.error("error.reading.file", jarFile, JavacFileManager.getMessage(e));
             }
         }
     }
