@@ -162,7 +162,7 @@ public abstract class Symbol implements Element {
      * the default package; otherwise, the owner symbol is returned
      */
     public Symbol location() {
-        if (owner.name == null || (owner.name.isEmpty() && owner.kind != PCK)) {
+        if (owner.name == null || (owner.name.isEmpty() && owner.kind != PCK && owner.kind != TYP)) {
             return null;
         }
         return owner;

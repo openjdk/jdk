@@ -201,7 +201,7 @@ public class BasicDiagnosticFormatter extends AbstractDiagnosticFormatter {
     private String selectFormat(JCDiagnostic d) {
         DiagnosticSource source = d.getDiagnosticSource();
         String format = getConfiguration().getFormat(BasicFormatKind.DEFAULT_NO_POS_FORMAT);
-        if (source != null) {
+        if (source != null && source != DiagnosticSource.NO_SOURCE) {
             if (d.getIntPosition() != Position.NOPOS) {
                 format = getConfiguration().getFormat(BasicFormatKind.DEFAULT_POS_FORMAT);
             } else if (source.getFile() != null &&

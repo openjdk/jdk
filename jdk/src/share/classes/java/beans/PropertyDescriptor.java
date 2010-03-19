@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.beans;
 
 import java.lang.ref.Reference;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 
@@ -710,22 +709,12 @@ public class PropertyDescriptor extends FeatureDescriptor {
         return baseName;
     }
 
-    /*
-    public String toString() {
-        String message = "name=" + getName();
-        message += ", class=" + getClass0();
-        message += ", type=" + getPropertyType();
-
-        message += ", writeMethod=";
-        message += writeMethodName;
-
-        message += ", readMethod=";
-        message += readMethodName;
-
-        message += ", bound=" + bound;
-        message += ", constrained=" + constrained;
-
-        return message;
+    void appendTo(StringBuilder sb) {
+        appendTo(sb, "bound", this.bound);
+        appendTo(sb, "constrained", this.constrained);
+        appendTo(sb, "propertyEditorClass", this.propertyEditorClassRef);
+        appendTo(sb, "propertyType", this.propertyTypeRef);
+        appendTo(sb, "readMethod", this.readMethodRef);
+        appendTo(sb, "writeMethod", this.writeMethodRef);
     }
-    */
 }
