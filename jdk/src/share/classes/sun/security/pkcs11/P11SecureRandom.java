@@ -188,4 +188,13 @@ final class P11SecureRandom extends SecureRandomSpi {
             token.releaseSession(session);
         }
     }
+
+    private void readObject(ObjectInputStream in)
+            throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // assign default values to non-null transient fields
+        iBuffer = new byte[IBUFFER_SIZE];
+        ibuffered = 0;
+        lastRead = 0L;
+    }
 }
