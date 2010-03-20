@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,16 @@ size_t ciCPCache::get_f1_offset(int index) {
     ConstantPoolCacheEntry::f1_offset();
 
   return in_bytes(f1_offset);
+}
+
+
+// ------------------------------------------------------------------
+// ciCPCache::is_f1_null_at
+bool ciCPCache::is_f1_null_at(int index) {
+  VM_ENTRY_MARK;
+  constantPoolCacheOop cpcache = (constantPoolCacheOop) get_oop();
+  oop f1 = cpcache->secondary_entry_at(index)->f1();
+  return (f1 == NULL);
 }
 
 

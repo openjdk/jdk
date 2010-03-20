@@ -173,13 +173,20 @@ public class SynthViewportUI extends ViewportUI
     }
 
     /**
-     * @inheritDoc
+     * Paints the border. The method is never called,
+     * because the {@code JViewport} class does not support a border.
+     * This implementation does nothing.
+     *
+     * @param context a component context
+     * @param g the {@code Graphics} to paint on
+     * @param x the X coordinate
+     * @param y the Y coordinate
+     * @param w width of the border
+     * @param h height of the border
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
-        // This does nothing on purpose, JViewport doesn't allow a border
-        // and therefor this will NEVER be called.
     }
 
     /**

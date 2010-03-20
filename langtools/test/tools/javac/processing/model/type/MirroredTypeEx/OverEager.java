@@ -38,7 +38,6 @@ import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 import static javax.lang.model.util.ElementFilter.*;
 
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 @SupportedAnnotationTypes("IAm")
 @IAm(OverEager.class)
 public class OverEager extends AbstractProcessor {
@@ -57,6 +56,11 @@ public class OverEager extends AbstractProcessor {
         if (!round.processingOver())
             doit(annoTypes, round);
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     private void doit(Set<? extends TypeElement> annoTypes,

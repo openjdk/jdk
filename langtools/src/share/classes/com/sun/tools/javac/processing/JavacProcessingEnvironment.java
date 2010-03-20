@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.processing;
 
-
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.regex.*;
@@ -691,10 +690,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             ProcessorState ps = psi.next();
             Set<String>  matchedNames = new HashSet<String>();
             Set<TypeElement> typeElements = new LinkedHashSet<TypeElement>();
-            for (String unmatchedAnnotationName : unmatchedAnnotations.keySet()) {
+
+            for (Map.Entry<String, TypeElement> entry: unmatchedAnnotations.entrySet()) {
+                String unmatchedAnnotationName = entry.getKey();
                 if (ps.annotationSupported(unmatchedAnnotationName) ) {
                     matchedNames.add(unmatchedAnnotationName);
-                    TypeElement te = unmatchedAnnotations.get(unmatchedAnnotationName);
+                    TypeElement te = entry.getValue();
                     if (te != null)
                         typeElements.add(te);
                 }
@@ -791,15 +792,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                      List<JCCompilationUnit> roots,
                                      List<ClassSymbol> classSymbols,
                                      Iterable<? extends PackageSymbol> pckSymbols)
-    throws IOException {
+        throws IOException {
 
         log = Log.instance(context);
         // Writer for -XprintRounds and -XprintProcessorInfo data
         PrintWriter xout = context.get(Log.outKey);
         TaskListener taskListener = context.get(TaskListener.class);
-
-
-        AnnotationCollector collector = new AnnotationCollector();
 
         JavaCompiler compiler = JavaCompiler.instance(context);
         compiler.todo.clear(); // free the compiler's resources
@@ -874,23 +872,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
                     JavaFileManager fileManager = currentContext.get(JavaFileManager.class);
 
-                    List<JavaFileObject> fileObjects = List.nil();
-                    for (JavaFileObject jfo : filer.getGeneratedSourceFileObjects() ) {
-                        fileObjects = fileObjects.prepend(jfo);
-                    }
-
-
                     compiler = JavaCompiler.instance(currentContext);
-                    List<JCCompilationUnit> parsedFiles = compiler.parseFiles(fileObjects);
-                    roots = cleanTrees(roots).reverse();
-
-
-                    for (JCCompilationUnit unit : parsedFiles)
-                        roots = roots.prepend(unit);
-                    roots = roots.reverse();
+                    List<JCCompilationUnit> parsedFiles = sourcesToParsedFiles(compiler);
+                    roots = cleanTrees(roots).appendList(parsedFiles);
 
                     // Check for errors after parsing
-                    if (compiler.parseErrors()) {
+                    if (log.unrecoverableError) {
                         errorStatus = true;
                         break runAround;
                     } else {
@@ -921,11 +908,16 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     break runAround; // No new files
             }
         }
-        runLastRound(xout, roundNumber, errorStatus, taskListener);
+        roots = runLastRound(xout, roundNumber, errorStatus, compiler, roots, taskListener);
+        // Set error status for any files compiled and generated in
+        // the last round
+        if (log.unrecoverableError)
+            errorStatus = true;
 
         compiler.close(false);
         currentContext = contextForNextRound(currentContext, true);
         compiler = JavaCompiler.instance(currentContext);
+
         filer.newRound(currentContext, true);
         filer.warnIfUnclosedFiles();
         warnIfUnmatchedOptions();
@@ -979,10 +971,22 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return compiler;
     }
 
+    private List<JCCompilationUnit> sourcesToParsedFiles(JavaCompiler compiler)
+        throws IOException {
+        List<JavaFileObject> fileObjects = List.nil();
+        for (JavaFileObject jfo : filer.getGeneratedSourceFileObjects() ) {
+            fileObjects = fileObjects.prepend(jfo);
+        }
+
+       return compiler.parseFiles(fileObjects);
+    }
+
     // Call the last round of annotation processing
-    private void runLastRound(PrintWriter xout,
-                              int roundNumber,
-                              boolean errorStatus,
+    private List<JCCompilationUnit> runLastRound(PrintWriter xout,
+                                                 int roundNumber,
+                                                 boolean errorStatus,
+                                                 JavaCompiler compiler,
+                                                 List<JCCompilationUnit> roots,
                               TaskListener taskListener) throws IOException {
         roundNumber++;
         List<ClassSymbol> noTopLevelClasses = List.nil();
@@ -1003,6 +1007,15 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (taskListener != null)
                 taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING_ROUND));
         }
+
+        // Add any sources generated during the last round to the set
+        // of files to be compiled.
+        if (moreToDo()) {
+            List<JCCompilationUnit> parsedFiles = sourcesToParsedFiles(compiler);
+            roots = cleanTrees(roots).appendList(parsedFiles);
+        }
+
+        return roots;
     }
 
     private void updateProcessingState(Context currentContext, boolean lastRound) {
@@ -1204,45 +1217,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return false;
     }
 
-    private class AnnotationCollector extends TreeScanner {
-        List<JCTree> path = List.nil();
-        static final boolean verbose = false;
-        List<JCAnnotation> annotations = List.nil();
-
-        public List<JCAnnotation> findAnnotations(List<? extends JCTree> nodes) {
-            annotations = List.nil();
-            scan(nodes);
-            List<JCAnnotation> found = annotations;
-            annotations = List.nil();
-            return found.reverse();
-        }
-
-        public void scan(JCTree node) {
-            if (node == null)
-                return;
-            Symbol sym = TreeInfo.symbolFor(node);
-            if (sym != null)
-                path = path.prepend(node);
-            super.scan(node);
-            if (sym != null)
-                path = path.tail;
-        }
-
-        public void visitAnnotation(JCAnnotation node) {
-            annotations = annotations.prepend(node);
-            if (verbose) {
-                StringBuilder sb = new StringBuilder();
-                for (JCTree tree : path.reverse()) {
-                    System.err.print(sb);
-                    System.err.println(TreeInfo.symbolFor(tree));
-                    sb.append("  ");
-                }
-                System.err.print(sb);
-                System.err.println(node);
-            }
-        }
-    }
-
     private static <T extends JCTree> List<T> cleanTrees(List<T> nodes) {
         for (T node : nodes)
             treeCleaner.scan(node);
@@ -1340,115 +1314,62 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return specifiedPackages;
     }
 
-    // Borrowed from DocletInvoker and apt
-    // TODO: remove from apt's Main
-    /**
-     * Utility method for converting a search path string to an array
-     * of directory and JAR file URLs.
-     *
-     * @param path the search path string
-     * @return the resulting array of directory and JAR file URLs
-     */
-    public static URL[] pathToURLs(String path) {
-        StringTokenizer st = new StringTokenizer(path, File.pathSeparator);
-        URL[] urls = new URL[st.countTokens()];
-        int count = 0;
-        while (st.hasMoreTokens()) {
-            URL url = fileToURL(new File(st.nextToken()));
-            if (url != null) {
-                urls[count++] = url;
-            }
-        }
-        if (urls.length != count) {
-            URL[] tmp = new URL[count];
-            System.arraycopy(urls, 0, tmp, 0, count);
-            urls = tmp;
-        }
-        return urls;
-    }
-
-    /**
-     * Returns the directory or JAR file URL corresponding to the specified
-     * local file name.
-     *
-     * @param file the File object
-     * @return the resulting directory or JAR file URL, or null if unknown
-     */
-    private static URL fileToURL(File file) {
-        String name;
-        try {
-            name = file.getCanonicalPath();
-        } catch (IOException e) {
-            name = file.getAbsolutePath();
-        }
-        name = name.replace(File.separatorChar, '/');
-        if (!name.startsWith("/")) {
-            name = "/" + name;
-        }
-        // If the file does not exist, then assume that it's a directory
-        if (!file.isFile()) {
-            name = name + "/";
-        }
-        try {
-            return new URL("file", "", name);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("file");
-        }
-    }
-
-
-
     private static final Pattern allMatches = Pattern.compile(".*");
+    public static final Pattern noMatches  = Pattern.compile("(\\P{all})+");
 
-    private static final Pattern noMatches  = Pattern.compile("(\\P{all})+");
     /**
-     * Convert import-style string to regex matching that string.  If
-     * the string is a valid import-style string, return a regex that
-     * won't match anything.
+     * Convert import-style string for supported annotations into a
+     * regex matching that string.  If the string is a valid
+     * import-style string, return a regex that won't match anything.
      */
-    // TODO: remove version in Apt.java
-    public static Pattern importStringToPattern(String s, Processor p, Log log) {
+    private static Pattern importStringToPattern(String s, Processor p, Log log) {
+        if (isValidImportString(s)) {
+            return validImportStringToPattern(s);
+        } else {
+            log.warning("proc.malformed.supported.string", s, p.getClass().getName());
+            return noMatches; // won't match any valid identifier
+        }
+    }
+
+    /**
+     * Return true if the argument string is a valid import-style
+     * string specifying claimed annotations; return false otherwise.
+     */
+    public static boolean isValidImportString(String s) {
+        if (s.equals("*"))
+            return true;
+
+        boolean valid = true;
+        String t = s;
+        int index = t.indexOf('*');
+
+        if (index != -1) {
+            // '*' must be last character...
+            if (index == t.length() -1) {
+                // ... any and preceding character must be '.'
+                if ( index-1 >= 0 ) {
+                    valid = t.charAt(index-1) == '.';
+                    // Strip off ".*$" for identifier checks
+                    t = t.substring(0, t.length()-2);
+                }
+            } else
+                return false;
+        }
+
+        // Verify string is off the form (javaId \.)+ or javaId
+        if (valid) {
+            String[] javaIds = t.split("\\.", t.length()+2);
+            for(String javaId: javaIds)
+                valid &= SourceVersion.isIdentifier(javaId);
+        }
+        return valid;
+    }
+
+    public static Pattern validImportStringToPattern(String s) {
         if (s.equals("*")) {
             return allMatches;
         } else {
-            String t = s;
-            boolean star = false;
-
-            /*
-             * Validate string from factory is legal.  If the string
-             * has more than one asterisks or the asterisks does not
-             * appear as the last character (preceded by a period),
-             * the string is not legal.
-             */
-
-            boolean valid = true;
-            int index = t.indexOf('*');
-            if (index != -1) {
-                // '*' must be last character...
-                if (index == t.length() -1) {
-                     // ... and preceeding character must be '.'
-                    if ( index-1 >= 0 ) {
-                        valid = t.charAt(index-1) == '.';
-                        // Strip off ".*$" for identifier checks
-                        t = t.substring(0, t.length()-2);
-                    }
-                } else
-                    valid = false;
-            }
-
-            // Verify string is off the form (javaId \.)+ or javaId
-            if (valid) {
-                String[] javaIds = t.split("\\.", t.length()+2);
-                for(String javaId: javaIds)
-                    valid &= SourceVersion.isIdentifier(javaId);
-            }
-
-            if (!valid) {
-                log.warning("proc.malformed.supported.string", s, p.getClass().getName());
-                return noMatches; // won't match any valid identifier
-            }
-
-            String s_prime = s.replaceAll("\\.", "\\\\.");
+            String s_prime = s.replace(".", "\\.");
 
             if (s_prime.endsWith("*")) {
                 s_prime =  s_prime.substring(0, s_prime.length() - 1) + ".+";

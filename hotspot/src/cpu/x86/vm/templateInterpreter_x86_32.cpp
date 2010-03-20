@@ -1550,6 +1550,7 @@ int AbstractInterpreter::layout_activation(methodOop method,
 void TemplateInterpreterGenerator::generate_throw_exception() {
   // Entry point in previous activation (i.e., if the caller was interpreted)
   Interpreter::_rethrow_exception_entry = __ pc();
+  const Register thread = rcx;
 
   // Restore sp to interpreter_frame_last_sp even though we are going
   // to empty the expression stack for the exception processing.
@@ -1598,10 +1599,10 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // Set the popframe_processing bit in pending_popframe_condition indicating that we are
   // currently handling popframe, so that call_VMs that may happen later do not trigger new
   // popframe handling cycles.
-  __ get_thread(rcx);
-  __ movl(rdx, Address(rcx, JavaThread::popframe_condition_offset()));
+  __ get_thread(thread);
+  __ movl(rdx, Address(thread, JavaThread::popframe_condition_offset()));
   __ orl(rdx, JavaThread::popframe_processing_bit);
-  __ movl(Address(rcx, JavaThread::popframe_condition_offset()), rdx);
+  __ movl(Address(thread, JavaThread::popframe_condition_offset()), rdx);
 
   {
     // Check to see whether we are returning to a deoptimized frame.
@@ -1629,8 +1630,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ subptr(rdi, rax);
     __ addptr(rdi, wordSize);
     // Save these arguments
-    __ get_thread(rcx);
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::popframe_preserve_args), rcx, rax, rdi);
+    __ get_thread(thread);
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::popframe_preserve_args), thread, rax, rdi);
 
     __ remove_activation(vtos, rdx,
                          /* throw_monitor_exception */ false,
@@ -1638,8 +1639,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                          /* notify_jvmdi */ false);
 
     // Inform deoptimization that it is responsible for restoring these arguments
-    __ get_thread(rcx);
-    __ movl(Address(rcx, JavaThread::popframe_condition_offset()), JavaThread::popframe_force_deopt_reexecution_bit);
+    __ get_thread(thread);
+    __ movl(Address(thread, JavaThread::popframe_condition_offset()), JavaThread::popframe_force_deopt_reexecution_bit);
 
     // Continue in deoptimization handler
     __ jmp(rdx);
@@ -1665,12 +1666,12 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // expression stack if necessary.
   __ mov(rax, rsp);
   __ movptr(rbx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ get_thread(rcx);
+  __ get_thread(thread);
   // PC must point into interpreter here
-  __ set_last_Java_frame(rcx, noreg, rbp, __ pc());
-  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), rcx, rax, rbx);
-  __ get_thread(rcx);
-  __ reset_last_Java_frame(rcx, true, true);
+  __ set_last_Java_frame(thread, noreg, rbp, __ pc());
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), thread, rax, rbx);
+  __ get_thread(thread);
+  __ reset_last_Java_frame(thread, true, true);
   // Restore the last_sp and null it out
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
@@ -1684,8 +1685,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   }
 
   // Clear the popframe condition flag
-  __ get_thread(rcx);
-  __ movl(Address(rcx, JavaThread::popframe_condition_offset()), JavaThread::popframe_inactive);
+  __ get_thread(thread);
+  __ movl(Address(thread, JavaThread::popframe_condition_offset()), JavaThread::popframe_inactive);
 
   __ dispatch_next(vtos);
   // end of PopFrame support
@@ -1694,27 +1695,27 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(rax);
-  __ get_thread(rcx);
-  __ movptr(Address(rcx, JavaThread::vm_result_offset()), rax);
+  __ get_thread(thread);
+  __ movptr(Address(thread, JavaThread::vm_result_offset()), rax);
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, rdx, false, true, false);
   // restore exception
-  __ get_thread(rcx);
-  __ movptr(rax, Address(rcx, JavaThread::vm_result_offset()));
-  __ movptr(Address(rcx, JavaThread::vm_result_offset()), NULL_WORD);
+  __ get_thread(thread);
+  __ movptr(rax, Address(thread, JavaThread::vm_result_offset()));
+  __ movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
   __ verify_oop(rax);
 
   // Inbetween activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects
   // the following registers set up:
   //
-  // rax,: exception
+  // rax: exception
   // rdx: return address/pc that threw exception
   // rsp: expression stack of caller
-  // rbp,: rbp, of caller
+  // rbp: rbp, of caller
   __ push(rax);                                  // save exception
   __ push(rdx);                                  // save return address
-  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rdx);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), thread, rdx);
   __ mov(rbx, rax);                              // save exception handler
   __ pop(rdx);                                   // restore return address
   __ pop(rax);                                   // restore exception
@@ -1728,6 +1729,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 //
 address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state) {
   address entry = __ pc();
+  const Register thread = rcx;
 
   __ restore_bcp();
   __ restore_locals();
@@ -1735,8 +1737,8 @@ address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state
   __ empty_FPU_stack();
   __ load_earlyret_value(state);
 
-  __ get_thread(rcx);
-  __ movptr(rcx, Address(rcx, JavaThread::jvmti_thread_state_offset()));
+  __ get_thread(thread);
+  __ movptr(rcx, Address(thread, JavaThread::jvmti_thread_state_offset()));
   const Address cond_addr(rcx, JvmtiThreadState::earlyret_state_offset());
 
   // Clear the earlyret state

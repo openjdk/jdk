@@ -1637,6 +1637,9 @@ void JavaThread::cleanup_failed_attach_current_thread() {
     JNIHandleBlock::release_block(block);
   }
 
+  // These have to be removed while this is still a valid thread.
+  remove_stack_guard_pages();
+
   if (UseTLAB) {
     tlab().make_parsable(true);  // retire TLAB, if any
   }

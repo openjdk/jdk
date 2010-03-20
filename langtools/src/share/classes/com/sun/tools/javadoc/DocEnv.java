@@ -34,7 +34,6 @@ import com.sun.javadoc.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.Context;
@@ -73,10 +72,6 @@ public class DocEnv {
     /** Referenced directly in RootDocImpl. */
     JavadocClassReader reader;
 
-    /** The compiler's attribution phase (needed to evaluate
-     *  constant initializers). */
-    Attr attr;
-
     /** Javadoc's own version of the compiler's enter phase. */
     JavadocEnter enter;
 
@@ -90,8 +85,6 @@ public class DocEnv {
 
     /** Access filter (public, protected, ...).  */
     ModifierFilter showAccess;
-
-    private ClassDocImpl runtimeException;
 
     /** True if we are using a sentence BreakIterator. */
     boolean breakiterator;
@@ -129,7 +122,6 @@ public class DocEnv {
         syms = Symtab.instance(context);
         reader = JavadocClassReader.instance0(context);
         enter = JavadocEnter.instance0(context);
-        attr = Attr.instance(context);
         names = Names.instance(context);
         externalizableSym = reader.enterClass(names.fromString("java.io.Externalizable"));
         chk = Check.instance(context);

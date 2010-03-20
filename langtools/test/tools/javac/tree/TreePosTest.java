@@ -98,7 +98,7 @@ import static com.sun.tools.javac.util.Position.NOPOS;
  * @test
  * @bug 6919889
  * @summary assorted position errors in compiler syntax trees
- * @run main TreePosTest -q -r -ef ./tools/javac/typeAnnotations -ef ./tools/javap/typeAnnotations  .
+ * @run main TreePosTest -q -r -ef ./tools/javac/typeAnnotations -ef ./tools/javap/typeAnnotations -et ANNOTATED_TYPE .
  */
 public class TreePosTest {
     /**
@@ -150,6 +150,8 @@ public class TreePosTest {
                 tags.add(args[++i]);
             else if (arg.equals("-ef") && i + 1 < args.length)
                 excludeFiles.add(new File(baseDir, args[++i]));
+            else if (arg.equals("-et") && i + 1 < args.length)
+                excludeTags.add(args[++i]);
             else if (arg.equals("-r")) {
                 if (excludeFiles.size() > 0)
                     throw new Error("-r must be used before -ef");
@@ -199,6 +201,7 @@ public class TreePosTest {
         out.println("-t tag    Limit checks to tree nodes with this tag");
         out.println("          Can be repeated if desired");
         out.println("-ef file  Exclude file or directory");
+        out.println("-et tag   Exclude tree nodes with given tag name");
         out.println("");
         out.println("files may be directories or files");
         out.println("directories will be scanned recursively");
@@ -304,6 +307,8 @@ public class TreePosTest {
     Set<String> tags = new HashSet<String>();
     /** Set of files and directories to be excluded from analysis. */
     Set<File> excludeFiles = new HashSet<File>();
+    /** Set of tag names to be excluded from analysis. */
+    Set<String> excludeTags = new HashSet<String>();
     /** Table of printable names for tree tag values. */
     TagNames tagNames = new TagNames();
 
@@ -324,7 +329,7 @@ public class TreePosTest {
                 return;
 
             Info self = new Info(tree, endPosTable);
-            if (check(self)) {
+            if (check(encl, self)) {
                 // Modifiers nodes are present throughout the tree even where
                 // there is no corresponding source text.
                 // Redundant semicolons in a class definition can cause empty
@@ -392,8 +397,13 @@ public class TreePosTest {
                 super.visitVarDef(tree);
         }
 
-        boolean check(Info x) {
-            return tags.size() == 0 || tags.contains(tagNames.get(x.tag));
+        boolean check(Info encl, Info self) {
+            if (excludeTags.size() > 0) {
+                if (encl != null && excludeTags.contains(tagNames.get(encl.tag))
+                        || excludeTags.contains(tagNames.get(self.tag)))
+                    return false;
+            }
+            return tags.size() == 0 || tags.contains(tagNames.get(self.tag));
         }
 
         void check(String label, Info encl, Info self, boolean ok) {

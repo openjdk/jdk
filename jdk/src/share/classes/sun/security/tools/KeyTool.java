@@ -151,7 +151,7 @@ public final class KeyTool {
 
     enum Command {
         CERTREQ("Generates a certificate request",
-            ALIAS, SIGALG, FILEOUT, KEYPASS, KEYSTORE,
+            ALIAS, SIGALG, FILEOUT, KEYPASS, KEYSTORE, DNAME,
             STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
             PROVIDERARG, PROVIDERPATH, V, PROTECTED),
         CHANGEALIAS("Changes an entry's alias",
@@ -167,7 +167,7 @@ public final class KeyTool {
             STORETYPE, PROVIDERNAME, PROVIDERCLASS, PROVIDERARG,
             PROVIDERPATH, V, PROTECTED),
         GENKEYPAIR("Generates a key pair",
-            ALIAS, KEYALG, KEYSIZE, SIGALG, DESTALIAS,
+            ALIAS, KEYALG, KEYSIZE, SIGALG, DESTALIAS, DNAME,
             STARTDATE, EXT, VALIDITY, KEYPASS, KEYSTORE,
             STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
             PROVIDERARG, PROVIDERPATH, V, PROTECTED),
@@ -176,7 +176,7 @@ public final class KeyTool {
             STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
             PROVIDERARG, PROVIDERPATH, V, PROTECTED),
         GENCERT("Generates certificate from a certificate request",
-            RFC, INFILE, OUTFILE, ALIAS, SIGALG,
+            RFC, INFILE, OUTFILE, ALIAS, SIGALG, DNAME,
             STARTDATE, EXT, VALIDITY, KEYPASS, KEYSTORE,
             STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
             PROVIDERARG, PROVIDERPATH, V, PROTECTED),

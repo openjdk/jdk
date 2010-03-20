@@ -121,13 +121,20 @@ JVM_OBJ_FILES = $(Obj_Files)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE)
+mapfile : $(MAPFILE) vm.def
 	rm -f $@
-	cat $^ > $@
+	awk '{ if ($$0 ~ "INSERT VTABLE SYMBOLS HERE")	\
+                 { system ("cat vm.def"); }		\
+               else					\
+                 { print $$0 }				\
+             }' > $@ < $(MAPFILE)
 
 mapfile_reorder : mapfile $(REORDERFILE)
 	rm -f $@
 	cat $^ > $@
+
+vm.def: $(Res_Files) $(Obj_Files)
+	sh $(GAMMADIR)/make/linux/makefiles/build_vm_def.sh *.o > $@
 
 ifeq ($(ZERO_LIBARCH), ppc64)
   STATIC_CXX = false

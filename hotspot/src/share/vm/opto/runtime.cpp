@@ -708,7 +708,7 @@ JRT_LEAF(void, OptoRuntime::profile_receiver_type_C(DataLayout* data, oopDesc* r
     *(mdp + count_off) = DataLayout::counter_increment;
   } else {
     // Receiver did not match any saved receiver and there is no empty row for it.
-    // Increment total counter to indicate polimorphic case.
+    // Increment total counter to indicate polymorphic case.
     intptr_t* count_p = (intptr_t*)(((byte*)(data)) + in_bytes(CounterData::count_offset()));
     *count_p += DataLayout::counter_increment;
   }
@@ -864,7 +864,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
     thread->set_exception_handler_pc(handler_address);
     thread->set_exception_stack_size(0);
 
-    // Check if the exception PC is a MethodHandle call.
+    // Check if the exception PC is a MethodHandle call site.
     thread->set_is_method_handle_exception(nm->is_method_handle_return(pc));
   }
 
@@ -952,7 +952,7 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
 
   thread->set_vm_result(exception);
   // Frame not compiled (handles deoptimization blob)
-  return SharedRuntime::raw_exception_handler_for_return_address(ret_pc);
+  return SharedRuntime::raw_exception_handler_for_return_address(thread, ret_pc);
 }
 
 

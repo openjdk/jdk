@@ -175,6 +175,8 @@ arguments.cpp                           jvmtiExport.hpp
 arguments.cpp                           management.hpp
 arguments.cpp                           oop.inline.hpp
 arguments.cpp                           os_<os_family>.inline.hpp
+arguments.cpp                           referenceProcessor.hpp
+arguments.cpp                           taskqueue.hpp
 arguments.cpp                           universe.inline.hpp
 arguments.cpp                           vm_version_<arch>.hpp
 
@@ -539,6 +541,7 @@ ciConstantPoolCache.hpp                 resourceArea.hpp
 
 ciCPCache.cpp                           cpCacheOop.hpp
 ciCPCache.cpp                           ciCPCache.hpp
+ciCPCache.cpp                           ciUtilities.hpp
 
 ciCPCache.hpp                           ciClassList.hpp
 ciCPCache.hpp                           ciObject.hpp
@@ -1020,6 +1023,7 @@ codeCache.cpp                           codeBlob.hpp
 codeCache.cpp                           codeCache.hpp
 codeCache.cpp                           dependencies.hpp
 codeCache.cpp                           gcLocker.hpp
+codeCache.cpp                           handles.inline.hpp
 codeCache.cpp                           icache.hpp
 codeCache.cpp                           iterator.hpp
 codeCache.cpp                           java.hpp
@@ -1483,6 +1487,7 @@ deoptimization.cpp                      thread.hpp
 deoptimization.cpp                      vframe.hpp
 deoptimization.cpp                      vframeArray.hpp
 deoptimization.cpp                      vframe_hp.hpp
+deoptimization.cpp                      vmreg_<arch>.inline.hpp
 deoptimization.cpp                      xmlstream.hpp
 
 deoptimization.hpp                      allocation.hpp
@@ -2012,6 +2017,7 @@ init.cpp                                handles.inline.hpp
 init.cpp                                icBuffer.hpp
 init.cpp                                icache.hpp
 init.cpp                                init.hpp
+init.cpp                                methodHandles.hpp
 init.cpp                                safepoint.hpp
 init.cpp                                sharedRuntime.hpp
 init.cpp                                universe.hpp
@@ -2653,6 +2659,7 @@ loaderConstraints.cpp                   resourceArea.hpp
 loaderConstraints.cpp                   safepoint.hpp
 
 loaderConstraints.hpp                   dictionary.hpp
+loaderConstraints.hpp                   placeholders.hpp
 loaderConstraints.hpp                   hashtable.hpp
 
 location.cpp                            debugInfo.hpp
@@ -2865,6 +2872,7 @@ methodHandles.cpp                       methodHandles.hpp
 methodHandles.cpp                       oopFactory.hpp
 methodHandles.cpp                       reflection.hpp
 methodHandles.cpp                       signature.hpp
+methodHandles.cpp                       stubRoutines.hpp
 methodHandles.cpp                       symbolTable.hpp
 
 methodHandles_<arch>.cpp                allocation.inline.hpp

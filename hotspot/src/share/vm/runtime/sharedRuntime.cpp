@@ -256,7 +256,7 @@ JRT_END
 // The continuation address is the entry point of the exception handler of the
 // previous frame depending on the return address.
 
-address SharedRuntime::raw_exception_handler_for_return_address(address return_address) {
+address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
   assert(frame::verify_return_pc(return_address), "must be a return pc");
 
   // the fastest case first
@@ -264,6 +264,8 @@ address SharedRuntime::raw_exception_handler_for_return_address(address return_a
   if (blob != NULL && blob->is_nmethod()) {
     nmethod* code = (nmethod*)blob;
     assert(code != NULL, "nmethod must be present");
+    // Check if the return address is a MethodHandle call site.
+    thread->set_is_method_handle_exception(code->is_method_handle_return(return_address));
     // native nmethods don't have exception handlers
     assert(!code->is_native_method(), "no exception handler");
     assert(code->header_begin() != code->exception_begin(), "no exception handler");
@@ -289,6 +291,8 @@ address SharedRuntime::raw_exception_handler_for_return_address(address return_a
     if (blob->is_nmethod()) {
       nmethod* code = (nmethod*)blob;
       assert(code != NULL, "nmethod must be present");
+      // Check if the return address is a MethodHandle call site.
+      thread->set_is_method_handle_exception(code->is_method_handle_return(return_address));
       assert(code->header_begin() != code->exception_begin(), "no exception handler");
       return code->exception_begin();
     }
@@ -309,9 +313,10 @@ address SharedRuntime::raw_exception_handler_for_return_address(address return_a
 }
 
 
-JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(address return_address))
-  return raw_exception_handler_for_return_address(return_address);
+JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(JavaThread* thread, address return_address))
+  return raw_exception_handler_for_return_address(thread, return_address);
 JRT_END
+
 
 address SharedRuntime::get_poll_stub(address pc) {
   address stub;
@@ -465,16 +470,6 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     t = table.entry_for(catch_pco, -1, 0);
   }
 
-#ifdef COMPILER1
-  if (nm->is_compiled_by_c1() && t == NULL && handler_bci == -1) {
-    // Exception is not handled by this frame so unwind.  Note that
-    // this is not the same as how C2 does this.  C2 emits a table
-    // entry that dispatches to the unwind code in the nmethod.
-    return NULL;
-  }
-#endif /* COMPILER1 */
-
-
   if (t == NULL) {
     tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d", ret_pc, handler_bci);
     tty->print_cr("   Exception:");
@@ -587,7 +582,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           // 3. Implict null exception in nmethod
 
           if (!cb->is_nmethod()) {
-            guarantee(cb->is_adapter_blob(),
+            guarantee(cb->is_adapter_blob() || cb->is_method_handles_adapter_blob(),
                       "exception happened outside interpreter, nmethods and vtable stubs (1)");
             // There is no handler here, so we will simply unwind.
             return StubRoutines::throw_NullPointerException_at_call_entry();
@@ -607,7 +602,9 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
           _implicit_null_throws++;
 #endif
           target_pc = nm->continuation_for_implicit_exception(pc);
-          guarantee(target_pc != 0, "must have a continuation point");
+          // If there's an unexpected fault, target_pc might be NULL,
+          // in which case we want to fall through into the normal
+          // error handling code.
         }
 
         break; // fall through
@@ -621,14 +618,15 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
         _implicit_div0_throws++;
 #endif
         target_pc = nm->continuation_for_implicit_exception(pc);
-        guarantee(target_pc != 0, "must have a continuation point");
+        // If there's an unexpected fault, target_pc might be NULL,
+        // in which case we want to fall through into the normal
+        // error handling code.
         break; // fall through
       }
 
       default: ShouldNotReachHere();
     }
 
-    guarantee(target_pc != NULL, "must have computed destination PC for implicit exception");
     assert(exception_kind == IMPLICIT_NULL || exception_kind == IMPLICIT_DIVIDE_BY_ZERO, "wrong implicit exception kind");
 
     // for AbortVMOnException flag
@@ -889,12 +887,13 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   RegisterMap cbl_map(thread, false);
   frame caller_frame = thread->last_frame().sender(&cbl_map);
 
-  CodeBlob* cb = caller_frame.cb();
-  guarantee(cb != NULL && cb->is_nmethod(), "must be called from nmethod");
+  CodeBlob* caller_cb = caller_frame.cb();
+  guarantee(caller_cb != NULL && caller_cb->is_nmethod(), "must be called from nmethod");
+  nmethod* caller_nm = caller_cb->as_nmethod_or_null();
   // make sure caller is not getting deoptimized
   // and removed before we are done with it.
   // CLEANUP - with lazy deopt shouldn't need this lock
-  nmethodLocker caller_lock((nmethod*)cb);
+  nmethodLocker caller_lock(caller_nm);
 
 
   // determine call info & receiver
@@ -926,6 +925,13 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   }
 #endif
 
+  // JSR 292
+  // If the resolved method is a MethodHandle invoke target the call
+  // site must be a MethodHandle call site.
+  if (callee_method->is_method_handle_invoke()) {
+    assert(caller_nm->is_method_handle_return(caller_frame.pc()), "must be MH call site");
+  }
+
   // Compute entry points. This might require generation of C2I converter
   // frames, so we cannot be holding any locks here. Furthermore, the
   // computation of the entry points is independent of patching the call.  We
@@ -937,13 +943,12 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
   StaticCallInfo static_call_info;
   CompiledICInfo virtual_call_info;
 
-
   // Make sure the callee nmethod does not get deoptimized and removed before
   // we are done patching the code.
-  nmethod* nm = callee_method->code();
-  nmethodLocker nl_callee(nm);
+  nmethod* callee_nm = callee_method->code();
+  nmethodLocker nl_callee(callee_nm);
 #ifdef ASSERT
-  address dest_entry_point = nm == NULL ? 0 : nm->entry_point(); // used below
+  address dest_entry_point = callee_nm == NULL ? 0 : callee_nm->entry_point(); // used below
 #endif
 
   if (is_virtual) {
@@ -1944,7 +1949,7 @@ class AdapterHandlerTable : public BasicHashtable {
 
  private:
 
-#ifdef ASSERT
+#ifndef PRODUCT
   static int _lookups; // number of calls to lookup
   static int _buckets; // number of buckets checked
   static int _equals;  // number of buckets checked with matching hash
@@ -1980,16 +1985,16 @@ class AdapterHandlerTable : public BasicHashtable {
 
   // Find a entry with the same fingerprint if it exists
   AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt) {
-    debug_only(_lookups++);
+    NOT_PRODUCT(_lookups++);
     AdapterFingerPrint fp(total_args_passed, sig_bt);
     unsigned int hash = fp.compute_hash();
     int index = hash_to_index(hash);
     for (AdapterHandlerEntry* e = bucket(index); e != NULL; e = e->next()) {
-      debug_only(_buckets++);
+      NOT_PRODUCT(_buckets++);
       if (e->hash() == hash) {
-        debug_only(_equals++);
+        NOT_PRODUCT(_equals++);
         if (fp.equals(e->fingerprint())) {
-#ifdef ASSERT
+#ifndef PRODUCT
           if (fp.is_compact()) _compact++;
           _hits++;
 #endif
@@ -2000,6 +2005,7 @@ class AdapterHandlerTable : public BasicHashtable {
     return NULL;
   }
 
+#ifndef PRODUCT
   void print_statistics() {
     ResourceMark rm;
     int longest = 0;
@@ -2018,15 +2024,14 @@ class AdapterHandlerTable : public BasicHashtable {
     }
     tty->print_cr("AdapterHandlerTable: empty %d longest %d total %d average %f",
                   empty, longest, total, total / (double)nonempty);
-#ifdef ASSERT
     tty->print_cr("AdapterHandlerTable: lookups %d buckets %d equals %d hits %d compact %d",
                   _lookups, _buckets, _equals, _hits, _compact);
-#endif
   }
+#endif
 };
 
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 int AdapterHandlerTable::_lookups;
 int AdapterHandlerTable::_buckets;
@@ -2074,7 +2079,6 @@ class AdapterHandlerTableIterator : public StackObj {
 
 // ---------------------------------------------------------------------------
 // Implementation of AdapterHandlerLibrary
-const char* AdapterHandlerEntry::name = "I2C/C2I adapters";
 AdapterHandlerTable* AdapterHandlerLibrary::_adapters = NULL;
 AdapterHandlerEntry* AdapterHandlerLibrary::_abstract_method_handler = NULL;
 const int AdapterHandlerLibrary_size = 16*K;
@@ -2126,7 +2130,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
   ResourceMark rm;
 
   NOT_PRODUCT(int code_size);
-  BufferBlob *B = NULL;
+  AdapterBlob* B = NULL;
   AdapterHandlerEntry* entry = NULL;
   AdapterFingerPrint* fingerprint = NULL;
   {
@@ -2176,7 +2180,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
 
     // Create I2C & C2I handlers
 
-    BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
+    BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
       CodeBuffer buffer(buf->instructions_begin(), buf->instructions_size());
       short buffer_locs[20];
@@ -2205,7 +2209,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       }
 #endif
 
-      B = BufferBlob::create(AdapterHandlerEntry::name, &buffer);
+      B = AdapterBlob::create(&buffer);
       NOT_PRODUCT(code_size = buffer.code_size());
     }
     if (B == NULL) {
@@ -2237,7 +2241,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
     jio_snprintf(blob_id,
                  sizeof(blob_id),
                  "%s(%s)@" PTR_FORMAT,
-                 AdapterHandlerEntry::name,
+                 B->name(),
                  fingerprint->as_string(),
                  B->instructions_begin());
     VTune::register_stub(blob_id, B->instructions_begin(), B->instructions_end());

@@ -44,20 +44,20 @@ ConcurrentG1Refine::ConcurrentG1Refine() :
 {
 
   // Ergomonically select initial concurrent refinement parameters
-  if (FLAG_IS_DEFAULT(G1ConcRefineGreenZone)) {
-    FLAG_SET_DEFAULT(G1ConcRefineGreenZone, MAX2<int>(ParallelGCThreads, 1));
+  if (FLAG_IS_DEFAULT(G1ConcRefinementGreenZone)) {
+    FLAG_SET_DEFAULT(G1ConcRefinementGreenZone, MAX2<int>(ParallelGCThreads, 1));
   }
-  set_green_zone(G1ConcRefineGreenZone);
+  set_green_zone(G1ConcRefinementGreenZone);
 
-  if (FLAG_IS_DEFAULT(G1ConcRefineYellowZone)) {
-    FLAG_SET_DEFAULT(G1ConcRefineYellowZone, green_zone() * 3);
+  if (FLAG_IS_DEFAULT(G1ConcRefinementYellowZone)) {
+    FLAG_SET_DEFAULT(G1ConcRefinementYellowZone, green_zone() * 3);
   }
-  set_yellow_zone(MAX2<int>(G1ConcRefineYellowZone, green_zone()));
+  set_yellow_zone(MAX2<int>(G1ConcRefinementYellowZone, green_zone()));
 
-  if (FLAG_IS_DEFAULT(G1ConcRefineRedZone)) {
-    FLAG_SET_DEFAULT(G1ConcRefineRedZone, yellow_zone() * 2);
+  if (FLAG_IS_DEFAULT(G1ConcRefinementRedZone)) {
+    FLAG_SET_DEFAULT(G1ConcRefinementRedZone, yellow_zone() * 2);
   }
-  set_red_zone(MAX2<int>(G1ConcRefineRedZone, yellow_zone()));
+  set_red_zone(MAX2<int>(G1ConcRefinementRedZone, yellow_zone()));
   _n_worker_threads = thread_num();
   // We need one extra thread to do the young gen rset size sampling.
   _n_threads = _n_worker_threads + 1;
@@ -76,15 +76,15 @@ ConcurrentG1Refine::ConcurrentG1Refine() :
 }
 
 void ConcurrentG1Refine::reset_threshold_step() {
-  if (FLAG_IS_DEFAULT(G1ConcRefineThresholdStep)) {
+  if (FLAG_IS_DEFAULT(G1ConcRefinementThresholdStep)) {
     _thread_threshold_step = (yellow_zone() - green_zone()) / (worker_thread_num() + 1);
   } else {
-    _thread_threshold_step = G1ConcRefineThresholdStep;
+    _thread_threshold_step = G1ConcRefinementThresholdStep;
   }
 }
 
 int ConcurrentG1Refine::thread_num() {
-  return MAX2<int>((G1ParallelRSetThreads > 0) ? G1ParallelRSetThreads : ParallelGCThreads, 1);
+  return MAX2<int>((G1ConcRefinementThreads > 0) ? G1ConcRefinementThreads : ParallelGCThreads, 1);
 }
 
 void ConcurrentG1Refine::init() {
@@ -300,7 +300,23 @@ jbyte* ConcurrentG1Refine::cache_insert(jbyte* card_ptr, bool* defer) {
   int count;
   jbyte* cached_ptr = add_card_count(card_ptr, &count, defer);
   assert(cached_ptr != NULL, "bad cached card ptr");
-  assert(!is_young_card(cached_ptr), "shouldn't get a card in young region");
+
+  if (is_young_card(cached_ptr)) {
+    // The region containing cached_ptr has been freed during a clean up
+    // pause, reallocated, and tagged as young.
+    assert(cached_ptr != card_ptr, "shouldn't be");
+
+    // We've just inserted a new old-gen card pointer into the card count
+    // cache and evicted the previous contents of that count slot.
+    // The evicted card pointer has been determined to be in a young region
+    // and so cannot be the newly inserted card pointer (that will be
+    // in an old region).
+    // The count for newly inserted card will be set to zero during the
+    // insertion, so we don't want to defer the cleaning of the newly
+    // inserted card pointer.
+    assert(*defer == false, "deferring non-hot card");
+    return NULL;
+  }
 
   // The card pointer we obtained from card count cache is not hot
   // so do not store it in the cache; return it for immediate
