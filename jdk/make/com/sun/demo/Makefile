@@ -38,6 +38,8 @@ PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = jvmti
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

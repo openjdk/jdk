@@ -336,11 +336,19 @@ class Arguments : AllStatic {
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore) {
     return is_bad_option(option, ignore, NULL);
   }
+  static bool verify_interval(uintx val, uintx min,
+                              uintx max, const char* name);
   static bool verify_percentage(uintx value, const char* name);
   static void describe_range_error(ArgsRange errcode);
   static ArgsRange check_memory_size(julong size, julong min_size);
   static ArgsRange parse_memory_size(const char* s, julong* long_arg,
                                      julong min_size);
+  // Parse a string for a unsigned integer.  Returns true if value
+  // is an unsigned integer greater than or equal to the minimum
+  // parameter passed and returns the value in uintx_arg.  Returns
+  // false otherwise, with uintx_arg undefined.
+  static bool parse_uintx(const char* value, uintx* uintx_arg,
+                          uintx min_size);
 
   // methods to build strings from individual args
   static void build_jvm_args(const char* arg);

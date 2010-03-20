@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,11 +222,15 @@ void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
     }
   } else {
     LoadField* lf = x->array()->as_LoadField();
-    if (lf != NULL && lf->field()->is_constant()) {
-      ciObject* c = lf->field()->constant_value().as_object();
-      if (c->is_array()) {
-        ciArray* array = (ciArray*) c;
-        set_constant(array->length());
+    if (lf != NULL) {
+      ciField* field = lf->field();
+      if (field->is_constant() && field->is_static()) {
+        // final static field
+        ciObject* c = field->constant_value().as_object();
+        if (c->is_array()) {
+          ciArray* array = (ciArray*) c;
+          set_constant(array->length());
+        }
       }
     }
   }

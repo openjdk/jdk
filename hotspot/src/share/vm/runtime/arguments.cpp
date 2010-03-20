@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1203,6 +1203,11 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   if (!FLAG_IS_DEFAULT(CMSParPromoteBlocksToClaim) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
     CFLS_LAB::modify_initialization(OldPLABSize, OldPLABWeight);
   }
+  if (PrintGCDetails && Verbose) {
+    tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
+      MarkStackSize / K, MarkStackSizeMax / K);
+    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
+  }
 }
 #endif // KERNEL
 
@@ -1338,6 +1343,17 @@ void Arguments::set_g1_gc_flags() {
   // Set the maximum pause time goal to be a reasonable default.
   if (FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
     FLAG_SET_DEFAULT(MaxGCPauseMillis, 200);
+  }
+
+  if (FLAG_IS_DEFAULT(MarkStackSize)) {
+    // Size as a multiple of TaskQueueSuper::N which is larger
+    // for 64-bit.
+    FLAG_SET_DEFAULT(MarkStackSize, 128 * TaskQueueSuper::total_size());
+  }
+  if (PrintGCDetails && Verbose) {
+    tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
+      MarkStackSize / K, MarkStackSizeMax / K);
+    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
   }
 }
 
@@ -1486,6 +1502,20 @@ bool Arguments::created_by_java_launcher() {
 
 //===========================================================================================================
 // Parsing of main arguments
+
+bool Arguments::verify_interval(uintx val, uintx min,
+                                uintx max, const char* name) {
+  // Returns true iff value is in the inclusive interval [min..max]
+  // false, otherwise.
+  if (val >= min && val <= max) {
+    return true;
+  }
+  jio_fprintf(defaultStream::error_stream(),
+              "%s of " UINTX_FORMAT " is invalid; must be between " UINTX_FORMAT
+              " and " UINTX_FORMAT "\n",
+              name, val, min, max);
+  return false;
+}
 
 bool Arguments::verify_percentage(uintx value, const char* name) {
   if (value <= 100) {
@@ -1723,6 +1753,21 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
+  if (UseG1GC) {
+    status = status && verify_percentage(InitiatingHeapOccupancyPercent,
+                                         "InitiatingHeapOccupancyPercent");
+  }
+
+  status = status && verify_interval(RefDiscoveryPolicy,
+                                     ReferenceProcessor::DiscoveryPolicyMin,
+                                     ReferenceProcessor::DiscoveryPolicyMax,
+                                     "RefDiscoveryPolicy");
+
+  // Limit the lower bound of this flag to 1 as it is used in a division
+  // expression.
+  status = status && verify_interval(TLABWasteTargetPercent,
+                                     1, 100, "TLABWasteTargetPercent");
+
   return status;
 }
 
@@ -1764,6 +1809,29 @@ static bool match_option(const JavaVMOption* option, const char** names, const c
   for (/* empty */; *names != NULL; ++names) {
     if (match_option(option, *names, tail)) {
       if (**tail == '\0' || tail_allowed && **tail == ':') {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool Arguments::parse_uintx(const char* value,
+                            uintx* uintx_arg,
+                            uintx min_size) {
+
+  // Check the sign first since atomull() parses only unsigned values.
+  bool value_is_positive = !(*value == '-');
+
+  if (value_is_positive) {
+    julong n;
+    bool good_return = atomull(value, &n);
+    if (good_return) {
+      bool above_minimum = n >= min_size;
+      bool value_is_too_large = n > max_uintx;
+
+      if (above_minimum && !value_is_too_large) {
+        *uintx_arg = n;
         return true;
       }
     }
@@ -2429,6 +2497,37 @@ SOLARIS_ONLY(
       jio_fprintf(defaultStream::error_stream(),
                   "Please use -XX:YoungPLABSize in place of "
                   "-XX:ParallelGCToSpaceAllocBufferSize in the future\n");
+    } else if (match_option(option, "-XX:CMSMarkStackSize=", &tail) ||
+               match_option(option, "-XX:G1MarkStackSize=", &tail)) {
+      julong stack_size = 0;
+      ArgsRange errcode = parse_memory_size(tail, &stack_size, 1);
+      if (errcode != arg_in_range) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid mark stack size: %s\n", option->optionString);
+        describe_range_error(errcode);
+        return JNI_EINVAL;
+      }
+      FLAG_SET_CMDLINE(uintx, MarkStackSize, stack_size);
+    } else if (match_option(option, "-XX:CMSMarkStackSizeMax=", &tail)) {
+      julong max_stack_size = 0;
+      ArgsRange errcode = parse_memory_size(tail, &max_stack_size, 1);
+      if (errcode != arg_in_range) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid maximum mark stack size: %s\n",
+                    option->optionString);
+        describe_range_error(errcode);
+        return JNI_EINVAL;
+      }
+      FLAG_SET_CMDLINE(uintx, MarkStackSizeMax, max_stack_size);
+    } else if (match_option(option, "-XX:ParallelMarkingThreads=", &tail) ||
+               match_option(option, "-XX:ParallelCMSThreads=", &tail)) {
+      uintx conc_threads = 0;
+      if (!parse_uintx(tail, &conc_threads, 1)) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid concurrent threads: %s\n", option->optionString);
+        return JNI_EINVAL;
+      }
+      FLAG_SET_CMDLINE(uintx, ConcGCThreads, conc_threads);
     } else if (match_option(option, "-XX:", &tail)) { // -XX:xxxx
       // Skip -XX:Flags= since that case has already been handled
       if (strncmp(tail, "Flags=", strlen("Flags=")) != 0) {
@@ -2499,6 +2598,9 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     SOLARIS_ONLY(FLAG_SET_DEFAULT(UseMPSS, false));
     SOLARIS_ONLY(FLAG_SET_DEFAULT(UseISM, false));
   }
+
+  // Tiered compilation is undefined with C1.
+  TieredCompilation = false;
 
 #else
   if (!FLAG_IS_DEFAULT(OptoLoopAlignment) && FLAG_IS_DEFAULT(MaxLoopPad)) {
@@ -2756,6 +2858,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
   }
 #endif // _LP64
+
+  // MethodHandles code does not support TaggedStackInterpreter.
+  if (EnableMethodHandles && TaggedStackInterpreter) {
+    warning("TaggedStackInterpreter is not supported by MethodHandles code.  Disabling TaggedStackInterpreter.");
+    TaggedStackInterpreter = false;
+  }
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {

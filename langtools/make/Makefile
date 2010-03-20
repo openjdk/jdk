@@ -70,7 +70,7 @@ ifdef QUIET
 endif
 
 ifdef VERBOSE
-  ANT_OPTIONS += -verbose -diagnostics
+  ANT_OPTIONS += -verbose -debug
 endif
 
 ifdef JDK_VERSION

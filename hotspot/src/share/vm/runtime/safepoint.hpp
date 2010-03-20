@@ -65,6 +65,7 @@ class SafepointSynchronize : AllStatic {
   };
 
   typedef struct {
+    float  _time_stamp;                        // record when the current safepoint occurs in seconds
     int    _vmop_type;                         // type of VM operation triggers the safepoint
     int    _nof_total_threads;                 // total number of Java threads
     int    _nof_initial_running_threads;       // total number of initially seen running threads
@@ -73,14 +74,14 @@ class SafepointSynchronize : AllStatic {
     int    _nof_threads_hit_page_trap;         // total number of threads hitting the page trap
     jlong  _time_to_spin;                      // total time in millis spent in spinning
     jlong  _time_to_wait_to_block;             // total time in millis spent in waiting for to block
+    jlong  _time_to_do_cleanups;               // total time in millis spent in performing cleanups
     jlong  _time_to_sync;                      // total time in millis spent in getting to _synchronized
     jlong  _time_to_exec_vmop;                 // total time in millis spent in vm operation itself
-    jlong  _time_elapsed_since_last_safepoint; // time elasped since last safepoint
   } SafepointStats;
 
  private:
   static volatile SynchronizeState _state;     // Threads might read this flag directly, without acquireing the Threads_lock
-  static volatile int _waiting_to_block;       // No. of threads we are waiting for to block.
+  static volatile int _waiting_to_block;       // number of threads we are waiting for to block
 
   // This counter is used for fast versions of jni_Get<Primitive>Field.
   // An even value means there is no ongoing safepoint operations.
@@ -91,19 +92,22 @@ class SafepointSynchronize : AllStatic {
 public:
   static volatile int _safepoint_counter;
 private:
-
-  static jlong   _last_safepoint;      // Time of last safepoint
+  static long       _end_of_last_safepoint;     // Time of last safepoint in milliseconds
 
   // statistics
-  static SafepointStats*  _safepoint_stats;     // array of SafepointStats struct
-  static int              _cur_stat_index;      // current index to the above array
-  static julong           _safepoint_reasons[]; // safepoint count for each VM op
-  static julong           _coalesced_vmop_count;// coalesced vmop count
-  static jlong            _max_sync_time;       // maximum sync time in nanos
+  static jlong            _safepoint_begin_time;     // time when safepoint begins
+  static SafepointStats*  _safepoint_stats;          // array of SafepointStats struct
+  static int              _cur_stat_index;           // current index to the above array
+  static julong           _safepoint_reasons[];      // safepoint count for each VM op
+  static julong           _coalesced_vmop_count;     // coalesced vmop count
+  static jlong            _max_sync_time;            // maximum sync time in nanos
+  static jlong            _max_vmop_time;            // maximum vm operation time in nanos
+  static float            _ts_of_current_safepoint;  // time stamp of current safepoint in seconds
 
   static void begin_statistics(int nof_threads, int nof_running);
   static void update_statistics_on_spin_end();
   static void update_statistics_on_sync_end(jlong end_time);
+  static void update_statistics_on_cleanup_end(jlong end_time);
   static void end_statistics(jlong end_time);
   static void print_statistics();
   inline static void inc_page_trap_count() {
@@ -140,7 +144,9 @@ public:
   static void handle_polling_page_exception(JavaThread *thread);
 
   // VM Thread interface for determining safepoint rate
-  static long last_non_safepoint_interval()               { return os::javaTimeMillis() - _last_safepoint; }
+  static long last_non_safepoint_interval() {
+    return os::javaTimeMillis() - _end_of_last_safepoint;
+  }
   static bool is_cleanup_needed();
   static void do_cleanup_tasks();
 

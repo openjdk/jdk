@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,7 +242,7 @@ class IRScopeDebugInfo: public CompilationResourceObj {
   //Whether we should reexecute this bytecode for deopt
   bool should_reexecute();
 
-  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool topmost) {
+  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool topmost, bool is_method_handle_invoke = false) {
     if (caller() != NULL) {
       // Order is significant:  Must record caller first.
       caller()->record_debug_info(recorder, pc_offset, false/*topmost*/);
@@ -252,8 +252,8 @@ class IRScopeDebugInfo: public CompilationResourceObj {
     DebugToken* monvals = recorder->create_monitor_values(monitors());
     // reexecute allowed only for the topmost frame
     bool reexecute = topmost ? should_reexecute() : false;
-    bool is_method_handle_invoke = false;
-    recorder->describe_scope(pc_offset, scope()->method(), bci(), reexecute, is_method_handle_invoke, locvals, expvals, monvals);
+    bool return_oop = false; // This flag will be ignored since it used only for C2 with escape analysis.
+    recorder->describe_scope(pc_offset, scope()->method(), bci(), reexecute, is_method_handle_invoke, return_oop, locvals, expvals, monvals);
   }
 };
 
@@ -302,7 +302,7 @@ class CodeEmitInfo: public CompilationResourceObj {
   int bci() const                                { return _bci; }
 
   void add_register_oop(LIR_Opr opr);
-  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset);
+  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool is_method_handle_invoke = false);
 
   CodeEmitInfo* next() const        { return _next; }
   void set_next(CodeEmitInfo* next) { _next = next; }
