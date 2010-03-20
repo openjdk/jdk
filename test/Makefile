@@ -42,6 +42,7 @@ if [ -d $1 ] ; then \
     $(MAKE) -C $1/test $2 ; \
   else \
     echo "ERROR: File does not exist: $1/test/Makefile"; \
+    exit 1; \
   fi; \
 else \
   echo "WARNING: No testing done, directory does not exist: $1"; \
