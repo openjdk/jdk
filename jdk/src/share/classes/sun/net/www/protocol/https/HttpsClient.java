@@ -630,7 +630,7 @@ final class HttpsClient extends HttpClient
         if (!needsTunneling()) {
             return null;
         } else {
-            return ((InetSocketAddress)proxy.address()).getHostName();
+            return super.getProxyHostUsed();
         }
     }
 
