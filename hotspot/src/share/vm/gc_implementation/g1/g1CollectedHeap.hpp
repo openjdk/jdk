@@ -56,8 +56,8 @@ class ConcurrentZFThread;
 #  define IF_G1_DETAILED_STATS(code)
 #endif
 
-typedef GenericTaskQueue<StarTask>    RefToScanQueue;
-typedef GenericTaskQueueSet<StarTask> RefToScanQueueSet;
+typedef GenericTaskQueue<StarTask>          RefToScanQueue;
+typedef GenericTaskQueueSet<RefToScanQueue> RefToScanQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
@@ -1055,7 +1055,12 @@ public:
 
   // Returns "true" iff the given word_size is "very large".
   static bool isHumongous(size_t word_size) {
-    return word_size >= _humongous_object_threshold_in_words;
+    // Note this has to be strictly greater-than as the TLABs
+    // are capped at the humongous thresold and we want to
+    // ensure that we don't try to allocate a TLAB as
+    // humongous and that we don't allocate a humongous
+    // object in a TLAB.
+    return word_size > _humongous_object_threshold_in_words;
   }
 
   // Update mod union table with the set of dirty cards.
