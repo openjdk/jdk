@@ -25,8 +25,9 @@
 #include "incls/_precompiled.incl"
 #include "incls/_markSweep.cpp.incl"
 
-GrowableArray<oop>*     MarkSweep::_marking_stack       = NULL;
-GrowableArray<Klass*>*  MarkSweep::_revisit_klass_stack = NULL;
+GrowableArray<oop>*          MarkSweep::_marking_stack = NULL;
+GrowableArray<ObjArrayTask>* MarkSweep::_objarray_stack = NULL;
+GrowableArray<Klass*>*       MarkSweep::_revisit_klass_stack = NULL;
 GrowableArray<DataLayout*>*  MarkSweep::_revisit_mdo_stack = NULL;
 
 GrowableArray<oop>*     MarkSweep::_preserved_oop_stack = NULL;
@@ -104,11 +105,19 @@ void MarkSweep::MarkAndPushClosure::do_oop(oop* p)       { mark_and_push(p); }
 void MarkSweep::MarkAndPushClosure::do_oop(narrowOop* p) { mark_and_push(p); }
 
 void MarkSweep::follow_stack() {
-  while (!_marking_stack->is_empty()) {
-    oop obj = _marking_stack->pop();
-    assert (obj->is_gc_marked(), "p must be marked");
-    obj->follow_contents();
-  }
+  do {
+    while (!_marking_stack->is_empty()) {
+      oop obj = _marking_stack->pop();
+      assert (obj->is_gc_marked(), "p must be marked");
+      obj->follow_contents();
+    }
+    // Process ObjArrays one at a time to avoid marking stack bloat.
+    if (!_objarray_stack->is_empty()) {
+      ObjArrayTask task = _objarray_stack->pop();
+      objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
+      k->oop_follow_contents(task.obj(), task.index());
+    }
+  } while (!_marking_stack->is_empty() || !_objarray_stack->is_empty());
 }
 
 MarkSweep::FollowStackClosure MarkSweep::follow_stack_closure;

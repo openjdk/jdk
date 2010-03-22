@@ -901,7 +901,6 @@ class PSParallelCompact : AllStatic {
   // Mark live objects
   static void marking_phase(ParCompactionManager* cm,
                             bool maximum_heap_compaction);
-  static void follow_stack(ParCompactionManager* cm);
   static void follow_weak_klass_links();
   static void follow_mdo_weak_refs();
 
@@ -1276,7 +1275,7 @@ inline void PSParallelCompact::follow_root(ParCompactionManager* cm, T* p) {
       }
     }
   }
-  follow_stack(cm);
+  cm->follow_marking_stacks();
 }
 
 template <class T>
