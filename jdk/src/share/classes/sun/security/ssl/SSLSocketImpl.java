@@ -1840,6 +1840,11 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
         return host;
     }
 
+    // ONLY used by HttpsClient to setup the URI specified hostname
+    synchronized public void setHost(String host) {
+        this.host = host;
+    }
+
     /**
      * Gets an input stream to read from the peer on the other side.
      * Data read from this stream was always integrity protected in
