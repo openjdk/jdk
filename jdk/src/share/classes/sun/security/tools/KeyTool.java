@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ import sun.security.x509.*;
 
 import static java.security.KeyStore.*;
 import static sun.security.tools.KeyTool.Command.*;
+import static sun.security.tools.KeyTool.Option.*;
 
 /**
  * This tool manages keystores.
@@ -150,77 +151,77 @@ public final class KeyTool {
 
     enum Command {
         CERTREQ("Generates a certificate request",
-            "-alias", "-sigalg", "-file", "-keypass", "-keystore",
-            "-storepass", "-storetype", "-providername", "-providerclass",
-            "-providerarg", "-providerpath", "-v", "-protected"),
+            ALIAS, SIGALG, FILEOUT, KEYPASS, KEYSTORE, DNAME,
+            STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
+            PROVIDERARG, PROVIDERPATH, V, PROTECTED),
         CHANGEALIAS("Changes an entry's alias",
-            "-alias", "-destalias", "-keypass", "-keystore", "-storepass",
-            "-storetype", "-providername", "-providerclass", "-providerarg",
-            "-providerpath", "-v", "-protected"),
+            ALIAS, DESTALIAS, KEYPASS, KEYSTORE, STOREPASS,
+            STORETYPE, PROVIDERNAME, PROVIDERCLASS, PROVIDERARG,
+            PROVIDERPATH, V, PROTECTED),
         DELETE("Deletes an entry",
-            "-alias", "-keystore", "-storepass", "-storetype",
-            "-providername", "-providerclass", "-providerarg",
-            "-providerpath", "-v", "-protected"),
+            ALIAS, KEYSTORE, STOREPASS, STORETYPE,
+            PROVIDERNAME, PROVIDERCLASS, PROVIDERARG,
+            PROVIDERPATH, V, PROTECTED),
         EXPORTCERT("Exports certificate",
-            "-rfc", "-alias", "-file", "-keystore", "-storepass",
-            "-storetype", "-providername", "-providerclass", "-providerarg",
-            "-providerpath", "-v", "-protected"),
+            RFC, ALIAS, FILEOUT, KEYSTORE, STOREPASS,
+            STORETYPE, PROVIDERNAME, PROVIDERCLASS, PROVIDERARG,
+            PROVIDERPATH, V, PROTECTED),
         GENKEYPAIR("Generates a key pair",
-            "-alias", "-keyalg", "-keysize", "-sigalg", "-destalias",
-            "-startdate", "-ext", "-validity", "-keypass", "-keystore",
-            "-storepass", "-storetype", "-providername", "-providerclass",
-            "-providerarg", "-providerpath", "-v", "-protected"),
+            ALIAS, KEYALG, KEYSIZE, SIGALG, DESTALIAS, DNAME,
+            STARTDATE, EXT, VALIDITY, KEYPASS, KEYSTORE,
+            STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
+            PROVIDERARG, PROVIDERPATH, V, PROTECTED),
         GENSECKEY("Generates a secret key",
-            "-alias", "-keypass", "-keyalg", "-keysize", "-keystore",
-            "-storepass", "-storetype", "-providername", "-providerclass",
-            "-providerarg", "-providerpath", "-v", "-protected"),
+            ALIAS, KEYPASS, KEYALG, KEYSIZE, KEYSTORE,
+            STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
+            PROVIDERARG, PROVIDERPATH, V, PROTECTED),
         GENCERT("Generates certificate from a certificate request",
-            "-rfc", "-infile", "-outfile", "-alias", "-sigalg",
-            "-startdate", "-ext", "-validity", "-keypass", "-keystore",
-            "-storepass", "-storetype", "-providername", "-providerclass",
-            "-providerarg", "-providerpath", "-v", "-protected"),
+            RFC, INFILE, OUTFILE, ALIAS, SIGALG, DNAME,
+            STARTDATE, EXT, VALIDITY, KEYPASS, KEYSTORE,
+            STOREPASS, STORETYPE, PROVIDERNAME, PROVIDERCLASS,
+            PROVIDERARG, PROVIDERPATH, V, PROTECTED),
         IDENTITYDB("Imports entries from a JDK 1.1.x-style identity database",
-            "-file", "-storetype", "-keystore", "-storepass", "-providername",
-            "-providerclass", "-providerarg", "-providerpath", "-v"),
+            FILEIN, STORETYPE, KEYSTORE, STOREPASS, PROVIDERNAME,
+            PROVIDERCLASS, PROVIDERARG, PROVIDERPATH, V),
         IMPORTCERT("Imports a certificate or a certificate chain",
-            "-noprompt", "-trustcacerts", "-protected", "-alias", "-file",
-            "-keypass", "-keystore", "-storepass", "-storetype",
-            "-providername", "-providerclass", "-providerarg",
-            "-providerpath", "-v"),
+            NOPROMPT, TRUSTCACERTS, PROTECTED, ALIAS, FILEIN,
+            KEYPASS, KEYSTORE, STOREPASS, STORETYPE,
+            PROVIDERNAME, PROVIDERCLASS, PROVIDERARG,
+            PROVIDERPATH, V),
         IMPORTKEYSTORE("Imports one or all entries from another keystore",
-            "-srckeystore", "-destkeystore", "-srcstoretype",
-            "-deststoretype", "-srcstorepass", "-deststorepass",
-            "-srcprotected", "-srcprovidername", "-destprovidername",
-            "-srcalias", "-destalias", "-srckeypass", "-destkeypass",
-            "-noprompt", "-providerclass", "-providerarg", "-providerpath",
-            "-v"),
+            SRCKEYSTORE, DESTKEYSTORE, SRCSTORETYPE,
+            DESTSTORETYPE, SRCSTOREPASS, DESTSTOREPASS,
+            SRCPROTECTED, SRCPROVIDERNAME, DESTPROVIDERNAME,
+            SRCALIAS, DESTALIAS, SRCKEYPASS, DESTKEYPASS,
+            NOPROMPT, PROVIDERCLASS, PROVIDERARG, PROVIDERPATH,
+            V),
         KEYCLONE("Clones a key entry",
-            "-alias", "-destalias", "-keypass", "-new", "-storetype",
-            "-keystore", "-storepass", "-providername", "-providerclass",
-            "-providerarg", "-providerpath", "-v"),
+            ALIAS, DESTALIAS, KEYPASS, NEW, STORETYPE,
+            KEYSTORE, STOREPASS, PROVIDERNAME, PROVIDERCLASS,
+            PROVIDERARG, PROVIDERPATH, V),
         KEYPASSWD("Changes the key password of an entry",
-            "-alias", "-keypass", "-new", "-keystore", "-storepass",
-            "-storetype", "-providername", "-providerclass", "-providerarg",
-            "-providerpath", "-v"),
+            ALIAS, KEYPASS, NEW, KEYSTORE, STOREPASS,
+            STORETYPE, PROVIDERNAME, PROVIDERCLASS, PROVIDERARG,
+            PROVIDERPATH, V),
         LIST("Lists entries in a keystore",
-            "-rfc", "-alias", "-keystore", "-storepass", "-storetype",
-            "-providername", "-providerclass", "-providerarg",
-            "-providerpath", "-v", "-protected"),
+            RFC, ALIAS, KEYSTORE, STOREPASS, STORETYPE,
+            PROVIDERNAME, PROVIDERCLASS, PROVIDERARG,
+            PROVIDERPATH, V, PROTECTED),
         PRINTCERT("Prints the content of a certificate",
-            "-rfc", "-file", "-sslserver", "-jarfile", "-v"),
+            RFC, FILEIN, SSLSERVER, JARFILE, V),
         PRINTCERTREQ("Prints the content of a certificate request",
-            "-file", "-v"),
+            FILEIN, V),
         SELFCERT("Generates a self-signed certificate",
-            "-alias", "-sigalg", "-dname", "-startdate", "-validity", "-keypass",
-            "-storetype", "-keystore", "-storepass", "-providername",
-            "-providerclass", "-providerarg", "-providerpath", "-v"),
+            ALIAS, SIGALG, DNAME, STARTDATE, VALIDITY, KEYPASS,
+            STORETYPE, KEYSTORE, STOREPASS, PROVIDERNAME,
+            PROVIDERCLASS, PROVIDERARG, PROVIDERPATH, V),
         STOREPASSWD("Changes the store password of a keystore",
-            "-new", "-keystore", "-storepass", "-storetype", "-providername",
-            "-providerclass", "-providerarg", "-providerpath", "-v");
+            NEW, KEYSTORE, STOREPASS, STORETYPE, PROVIDERNAME,
+            PROVIDERCLASS, PROVIDERARG, PROVIDERPATH, V);
 
         final String description;
-        final String[] options;
-        Command(String d, String... o) {
+        final Option[] options;
+        Command(String d, Option... o) {
             description = d;
             options = o;
         }
@@ -230,50 +231,60 @@ public final class KeyTool {
         }
     };
 
-    private static String[][] options = {
-        // name, arg, description
-        {"-alias", "<alias>", "alias name of the entry to process"},
-        {"-destalias", "<destalias>", "destination alias"},
-        {"-destkeypass", "<arg>", "destination key password"},
-        {"-destkeystore", "<destkeystore>", "destination keystore name"},
-        {"-destprotected", null, "destination keystore password protected"},
-        {"-destprovidername", "<destprovidername>", "destination keystore provider name"},
-        {"-deststorepass", "<arg>", "destination keystore password"},
-        {"-deststoretype", "<deststoretype>", "destination keystore type"},
-        {"-dname", "<dname>", "distinguished name"},
-        {"-ext", "<value>", "X.509 extension"},
-        {"-file", "<filename>", "output file name"},
-        {"-file", "<filename>", "input file name"},
-        {"-infile", "<filename>", "input file name"},
-        {"-keyalg", "<keyalg>", "key algorithm name"},
-        {"-keypass", "<arg>", "key password"},
-        {"-keysize", "<keysize>", "key bit size"},
-        {"-keystore", "<keystore>", "keystore name"},
-        {"-new", "<arg>", "new password"},
-        {"-noprompt", null, "do not prompt"},
-        {"-outfile", "<filename>", "output file name"},
-        {"-protected", null, "password through protected mechanism"},
-        {"-providerarg", "<arg>", "provider argument"},
-        {"-providerclass", "<providerclass>", "provider class name"},
-        {"-providername", "<providername>", "provider name"},
-        {"-providerpath", "<pathlist>", "provider classpath"},
-        {"-rfc", null, "output in RFC style"},
-        {"-sigalg", "<sigalg>", "signature algorithm name"},
-        {"-srcalias", "<srcalias>", "source alias"},
-        {"-srckeypass", "<arg>", "source keystore password"},
-        {"-srckeystore", "<srckeystore>", "source keystore name"},
-        {"-srcprotected", null, "source keystore password protected"},
-        {"-srcprovidername", "<srcprovidername>", "source keystore provider name"},
-        {"-srcstorepass", "<arg>", "source keystore password"},
-        {"-srcstoretype", "<srcstoretype>", "source keystore type"},
-        {"-sslserver", "<server[:port]>", "SSL server host and port"},
-        {"-jarfile", "<filename>", "signed jar file"},
-        {"-startdate", "<startdate>", "certificate validity start date/time"},
-        {"-storepass", "<arg>", "keystore password"},
-        {"-storetype", "<storetype>", "keystore type"},
-        {"-trustcacerts", null, "trust certificates from cacerts"},
-        {"-v", null, "verbose output"},
-        {"-validity", "<valDays>", "validity number of days"},
+    enum Option {
+        ALIAS("alias", "<alias>", "alias name of the entry to process"),
+        DESTALIAS("destalias", "<destalias>", "destination alias"),
+        DESTKEYPASS("destkeypass", "<arg>", "destination key password"),
+        DESTKEYSTORE("destkeystore", "<destkeystore>", "destination keystore name"),
+        DESTPROTECTED("destprotected", null, "destination keystore password protected"),
+        DESTPROVIDERNAME("destprovidername", "<destprovidername>", "destination keystore provider name"),
+        DESTSTOREPASS("deststorepass", "<arg>", "destination keystore password"),
+        DESTSTORETYPE("deststoretype", "<deststoretype>", "destination keystore type"),
+        DNAME("dname", "<dname>", "distinguished name"),
+        EXT("ext", "<value>", "X.509 extension"),
+        FILEOUT("file", "<filename>", "output file name"),
+        FILEIN("file", "<filename>", "input file name"),
+        INFILE("infile", "<filename>", "input file name"),
+        KEYALG("keyalg", "<keyalg>", "key algorithm name"),
+        KEYPASS("keypass", "<arg>", "key password"),
+        KEYSIZE("keysize", "<keysize>", "key bit size"),
+        KEYSTORE("keystore", "<keystore>", "keystore name"),
+        NEW("new", "<arg>", "new password"),
+        NOPROMPT("noprompt", null, "do not prompt"),
+        OUTFILE("outfile", "<filename>", "output file name"),
+        PROTECTED("protected", null, "password through protected mechanism"),
+        PROVIDERARG("providerarg", "<arg>", "provider argument"),
+        PROVIDERCLASS("providerclass", "<providerclass>", "provider class name"),
+        PROVIDERNAME("providername", "<providername>", "provider name"),
+        PROVIDERPATH("providerpath", "<pathlist>", "provider classpath"),
+        RFC("rfc", null, "output in RFC style"),
+        SIGALG("sigalg", "<sigalg>", "signature algorithm name"),
+        SRCALIAS("srcalias", "<srcalias>", "source alias"),
+        SRCKEYPASS("srckeypass", "<arg>", "source keystore password"),
+        SRCKEYSTORE("srckeystore", "<srckeystore>", "source keystore name"),
+        SRCPROTECTED("srcprotected", null, "source keystore password protected"),
+        SRCPROVIDERNAME("srcprovidername", "<srcprovidername>", "source keystore provider name"),
+        SRCSTOREPASS("srcstorepass", "<arg>", "source keystore password"),
+        SRCSTORETYPE("srcstoretype", "<srcstoretype>", "source keystore type"),
+        SSLSERVER("sslserver", "<server[:port]>", "SSL server host and port"),
+        JARFILE("jarfile", "<filename>", "signed jar file"),
+        STARTDATE("startdate", "<startdate>", "certificate validity start date/time"),
+        STOREPASS("storepass", "<arg>", "keystore password"),
+        STORETYPE("storetype", "<storetype>", "keystore type"),
+        TRUSTCACERTS("trustcacerts", null, "trust certificates from cacerts"),
+        V("v", null, "verbose output"),
+        VALIDITY("validity", "<valDays>", "validity number of days");
+
+        final String name, arg, description;
+        Option(String name, String arg, String description) {
+            this.name = name;
+            this.arg = arg;
+            this.description = description;
+        }
+        @Override
+        public String toString() {
+            return "-" + name;
+        }
     };
 
     private static final Class[] PARAM_STRING = { String.class };
@@ -344,10 +355,10 @@ public final class KeyTool {
 
             // Check if the last option needs an arg
             if (i == args.length - 1) {
-                for (String[] option: options) {
+                for (Option option: Option.values()) {
                     // Only options with an arg need to be checked
-                    if (collator.compare(flags, option[0]) == 0) {
-                        if (option[1] != null) errorNeedArgument(flags);
+                    if (collator.compare(flags, option.toString()) == 0) {
+                        if (option.arg != null) errorNeedArgument(flags);
                         break;
                     }
                 }
@@ -3792,21 +3803,13 @@ public final class KeyTool {
             // Length of left side of options list
             int lenLeft = 0;
             for (int j=0; j<left.length; j++) {
-                for (String[] opt: options) {
-                    if (collator.compare(opt[0], command.options[j]) == 0) {
-                        left[j] = opt[0];
-                        if (opt[1] != null) left[j] += " " + opt[1];
-                        if (left[j].length() > lenLeft) {
-                            lenLeft = left[j].length();
-                        }
-                        right[j] = rb.getString(opt[2]);
-                        found = true;
-                        break;
-                    }
+                Option opt = command.options[j];
+                left[j] = opt.toString();
+                if (opt.arg != null) left[j] += " " + opt.arg;
+                if (left[j].length() > lenLeft) {
+                    lenLeft = left[j].length();
                 }
-                if (!found) {
-                    throw new RuntimeException("ERROR: CANNOT FIND " + command.options[j]);
-                }
+                right[j] = rb.getString(opt.description);
             }
             for (int j=0; j<left.length; j++) {
                 System.err.printf(" %-" + lenLeft + "s  %s\n",

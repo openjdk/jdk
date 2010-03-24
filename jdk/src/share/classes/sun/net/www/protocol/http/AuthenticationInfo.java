@@ -111,7 +111,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      * at the same time, then all but the first will block until
      * the first completes its authentication.
      */
-    static private HashMap requests = new HashMap ();
+    static private HashMap<String,Thread> requests = new HashMap<>();
 
     /* check if a request for this destination is in progress
      * return false immediately if not. Otherwise block until
@@ -125,7 +125,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         synchronized (requests) {
             Thread t, c;
             c = Thread.currentThread();
-            if ((t=(Thread)requests.get(key))==null) {
+            if ((t = requests.get(key)) == null) {
                 requests.put (key, c);
                 return false;
             }
@@ -147,8 +147,11 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      */
     static private void requestCompleted (String key) {
         synchronized (requests) {
-            boolean waspresent = requests.remove (key) != null;
-            assert waspresent;
+            Thread thread = requests.get(key);
+            if (thread != null && thread == Thread.currentThread()) {
+                boolean waspresent = requests.remove(key) != null;
+                assert waspresent;
+            }
             requests.notifyAll();
         }
     }
