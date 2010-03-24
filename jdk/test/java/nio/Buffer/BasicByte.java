@@ -38,6 +38,26 @@ public class BasicByte
     extends Basic
 {
 
+    private static final byte[] VALUES = {
+        Byte.MIN_VALUE,
+        (byte) -1,
+        (byte) 0,
+        (byte) 1,
+        Byte.MAX_VALUE,
+
+
+
+
+
+
+
+
+
+
+
+
+    };
+
     private static void relGet(ByteBuffer b) {
         int n = b.capacity();
         byte v;
@@ -309,6 +329,12 @@ public class BasicByte
 
 
 
+    private static void fail(String problem,
+                             ByteBuffer xb, ByteBuffer yb,
+                             byte x, byte y) {
+        fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
+    }
+
     private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
         boolean caught = false;
         try {
@@ -521,6 +547,42 @@ public class BasicByte
             fail("Non-identical buffers equal", b, b2);
         if (b.compareTo(b2) <= 0)
             fail("Comparison to lesser buffer <= 0", b, b2);
+
+        // Check equals and compareTo with interesting values
+        for (byte x : VALUES) {
+            ByteBuffer xb = ByteBuffer.wrap(new byte[] { x });
+            if (xb.compareTo(xb) != 0) {
+                fail("compareTo not reflexive", xb, xb, x, x);
+            }
+            if (! xb.equals(xb)) {
+                fail("equals not reflexive", xb, xb, x, x);
+            }
+            for (byte y : VALUES) {
+                ByteBuffer yb = ByteBuffer.wrap(new byte[] { y });
+                if (xb.compareTo(yb) != - yb.compareTo(xb)) {
+                    fail("compareTo not anti-symmetric",
+                         xb, yb, x, y);
+                }
+                if ((xb.compareTo(yb) == 0) != xb.equals(yb)) {
+                    fail("compareTo inconsistent with equals",
+                         xb, yb, x, y);
+                }
+                if (xb.compareTo(yb) != Byte.compare(x, y)) {
+
+
+
+
+
+
+                    fail("Incorrect results for ByteBuffer.compareTo",
+                         xb, yb, x, y);
+                }
+                if (xb.equals(yb) != ((x == y) || ((x != x) && (y != y)))) {
+                    fail("Incorrect results for ByteBuffer.equals",
+                         xb, yb, x, y);
+                }
+            }
+        }
 
         // Sub, dup
 

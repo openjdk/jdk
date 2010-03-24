@@ -111,7 +111,7 @@ class java_lang_String : AllStatic {
 
   // Testers
   static bool is_instance(oop obj) {
-    return obj != NULL && obj->klass() == SystemDictionary::string_klass();
+    return obj != NULL && obj->klass() == SystemDictionary::String_klass();
   }
 
   // Debugging
@@ -161,7 +161,7 @@ class java_lang_Class : AllStatic {
   static void print_signature(oop java_class, outputStream *st);
   // Testing
   static bool is_instance(oop obj) {
-    return obj != NULL && obj->klass() == SystemDictionary::class_klass();
+    return obj != NULL && obj->klass() == SystemDictionary::Class_klass();
   }
   static bool is_primitive(oop java_class);
   static BasicType primitive_type(oop java_class);
@@ -1027,6 +1027,7 @@ class java_dyn_MethodType: AllStatic {
   static oop            form(oop mt);
 
   static oop            ptype(oop mt, int index);
+  static int            ptype_count(oop mt);
 
   static symbolOop      as_signature(oop mt, bool intern_if_not_found, TRAPS);
   static void           print_signature(oop mt, outputStream* st);
@@ -1061,9 +1062,9 @@ class java_dyn_MethodTypeForm: AllStatic {
 };
 
 
-// Interface to sun.dyn.CallSiteImpl objects
+// Interface to java.dyn.CallSite objects
 
-class sun_dyn_CallSiteImpl: AllStatic {
+class java_dyn_CallSite: AllStatic {
   friend class JavaClasses;
 
 private:
@@ -1082,6 +1083,14 @@ public:
 
   static oop            vmmethod(oop site);
   static void       set_vmmethod(oop site, oop ref);
+
+  // Testers
+  static bool is_subclass(klassOop klass) {
+    return Klass::cast(klass)->is_subclass_of(SystemDictionary::CallSite_klass());
+  }
+  static bool is_instance(oop obj) {
+    return obj != NULL && is_subclass(obj->klass());
+  }
 
   // Accessors for code generation:
   static int target_offset_in_bytes()           { return _target_offset; }

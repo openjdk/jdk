@@ -34,7 +34,6 @@
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
-import java.util.concurrent.*;
 import com.sun.net.httpserver.*;
 
 public class CloseTest {
@@ -107,7 +106,6 @@ public class CloseTest {
             } else {
                 copyFile (new File (src, f), new File (dst, f));
             }
-            assert false;
         }
     }
 

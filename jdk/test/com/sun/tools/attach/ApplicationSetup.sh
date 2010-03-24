@@ -49,7 +49,11 @@ startApplication()
   # "java" process.
   if [ "$OS" = "Windows" ]; then
     sleep 2
-    realpid=`ps -o pid,ppid,comm|grep ${pid}|grep "java"|cut -c1-6`
+    if [ "${isCygwin}" = "true" ] ; then
+      realpid=`ps -p ${pid} | tail -1 | awk '{print $4;}'`
+    else
+      realpid=`ps -o pid,ppid,comm|grep ${pid}|grep "java"|cut -c1-6`
+    fi
     pid=${realpid}
   fi
                                                                                                                   
@@ -57,7 +61,7 @@ startApplication()
   attempts=0
   while true; do
     sleep 1
-    port=`tail -1 ${OUTPUTFILE}`
+    port=`tail -1 ${OUTPUTFILE} | sed -e 's@\\r@@g' `
     if [ ! -z "$port" ]; then
       # In case of errors wait time for output to be flushed
       sleep 1

@@ -579,7 +579,7 @@ static inline jlong tag_for(JvmtiTagMap* tag_map, oop o) {
 // If the object is a java.lang.Class then return the klassOop,
 // otherwise return the original object
 static inline oop klassOop_if_java_lang_Class(oop o) {
-  if (o->klass() == SystemDictionary::class_klass()) {
+  if (o->klass() == SystemDictionary::Class_klass()) {
     if (!java_lang_Class::is_primitive(o)) {
       o = (oop)java_lang_Class::as_klassOop(o);
       assert(o != NULL, "class for non-primitive mirror must exist");
@@ -644,7 +644,7 @@ class CallbackWrapper : public StackObj {
     } else {
       // if the object represents a runtime class then use the
       // tag for java.lang.Class
-      _klass = SystemDictionary::class_klass();
+      _klass = SystemDictionary::Class_klass();
     }
     _klass_tag = tag_for(tag_map, _klass);
   }
@@ -747,7 +747,7 @@ class TwoOopCallbackWrapper : public CallbackWrapper {
       // get referrer class tag.
       klassOop k = (_referrer == referrer) ?  // Check if referrer is a class...
           _referrer->klass()                  // No, just get its class
-         : SystemDictionary::class_klass();   // Yes, its class is Class
+         : SystemDictionary::Class_klass();   // Yes, its class is Class
       _referrer_klass_tag = tag_for(tag_map, k);
     }
   }
@@ -1126,7 +1126,7 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
                                          oop str,
                                          void* user_data)
 {
-  assert(str->klass() == SystemDictionary::string_klass(), "not a string");
+  assert(str->klass() == SystemDictionary::String_klass(), "not a string");
 
   // get the string value and length
   // (string value may be offset from the base)
@@ -1186,7 +1186,7 @@ static jint invoke_primitive_field_callback_for_static_fields
   // for static fields only the index will be set
   static jvmtiHeapReferenceInfo reference_info = { 0 };
 
-  assert(obj->klass() == SystemDictionary::class_klass(), "not a class");
+  assert(obj->klass() == SystemDictionary::Class_klass(), "not a class");
   if (java_lang_Class::is_primitive(obj)) {
     return 0;
   }
@@ -1498,7 +1498,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   if (callbacks()->primitive_field_callback != NULL && obj->is_instance()) {
     jint res;
     jvmtiPrimitiveFieldCallback cb = callbacks()->primitive_field_callback;
-    if (obj->klass() == SystemDictionary::class_klass()) {
+    if (obj->klass() == SystemDictionary::Class_klass()) {
       res = invoke_primitive_field_callback_for_static_fields(&wrapper,
                                                                     obj,
                                                                     cb,
@@ -1515,7 +1515,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   // string callback
   if (!is_array &&
       callbacks()->string_primitive_value_callback != NULL &&
-      obj->klass() == SystemDictionary::string_klass()) {
+      obj->klass() == SystemDictionary::String_klass()) {
     jint res = invoke_string_value_callback(
                 callbacks()->string_primitive_value_callback,
                 &wrapper,
@@ -2381,7 +2381,7 @@ inline bool CallbackInvoker::report_primitive_array_values(oop obj) {
 
 // invoke the string value callback
 inline bool CallbackInvoker::report_string_value(oop str) {
-  assert(str->klass() == SystemDictionary::string_klass(), "not a string");
+  assert(str->klass() == SystemDictionary::String_klass(), "not a string");
 
   AdvancedHeapWalkContext* context = advanced_context();
   assert(context->string_primitive_value_callback() != NULL, "no callback");
@@ -2928,7 +2928,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(klassOop k) {
 
     // super (only if something more interesting than java.lang.Object)
     klassOop java_super = ik->java_super();
-    if (java_super != NULL && java_super != SystemDictionary::object_klass()) {
+    if (java_super != NULL && java_super != SystemDictionary::Object_klass()) {
       oop super = Klass::cast(java_super)->java_mirror();
       if (!CallbackInvoker::report_superclass_reference(mirror, super)) {
         return false;
@@ -3070,7 +3070,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
 
   // if the object is a java.lang.String
   if (is_reporting_string_values() &&
-      o->klass() == SystemDictionary::string_klass()) {
+      o->klass() == SystemDictionary::String_klass()) {
     if (!CallbackInvoker::report_string_value(o)) {
       return false;
     }
@@ -3255,7 +3255,7 @@ bool VM_HeapWalkOperation::visit(oop o) {
 
   // instance
   if (o->is_instance()) {
-    if (o->klass() == SystemDictionary::class_klass()) {
+    if (o->klass() == SystemDictionary::Class_klass()) {
       o = klassOop_if_java_lang_Class(o);
       if (o->is_klass()) {
         // a java.lang.Class

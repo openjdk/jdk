@@ -118,28 +118,33 @@ class CodeWriter extends BasicWriter {
 
     public void writeInstr(Instruction instr) {
         print(String.format("%4d: %-13s ", instr.getPC(), instr.getMnemonic()));
-        instr.accept(instructionPrinter, null);
+        // compute the number of indentations for the body of multi-line instructions
+        // This is 6 (the width of "%4d: "), divided by the width of each indentation level,
+        // and rounded up to the next integer.
+        int indentWidth = options.indentWidth;
+        int indent = (6 + indentWidth - 1) / indentWidth;
+        instr.accept(instructionPrinter, indent);
         println();
     }
     // where
-    Instruction.KindVisitor<Void,Void> instructionPrinter =
-            new Instruction.KindVisitor<Void,Void>() {
+    Instruction.KindVisitor<Void,Integer> instructionPrinter =
+            new Instruction.KindVisitor<Void,Integer>() {
 
-        public Void visitNoOperands(Instruction instr, Void p) {
+        public Void visitNoOperands(Instruction instr, Integer indent) {
             return null;
         }
 
-        public Void visitArrayType(Instruction instr, TypeKind kind, Void p) {
+        public Void visitArrayType(Instruction instr, TypeKind kind, Integer indent) {
             print(" " + kind.name);
             return null;
         }
 
-        public Void visitBranch(Instruction instr, int offset, Void p) {
+        public Void visitBranch(Instruction instr, int offset, Integer indent) {
             print((instr.getPC() + offset));
             return null;
         }
 
-        public Void visitConstantPoolRef(Instruction instr, int index, Void p) {
+        public Void visitConstantPoolRef(Instruction instr, int index, Integer indent) {
             print("#" + index);
             tab();
             print("// ");
@@ -147,7 +152,7 @@ class CodeWriter extends BasicWriter {
             return null;
         }
 
-        public Void visitConstantPoolRefAndValue(Instruction instr, int index, int value, Void p) {
+        public Void visitConstantPoolRefAndValue(Instruction instr, int index, int value, Integer indent) {
             print("#" + index + ",  " + value);
             tab();
             print("// ");
@@ -155,46 +160,48 @@ class CodeWriter extends BasicWriter {
             return null;
         }
 
-        public Void visitLocal(Instruction instr, int index, Void p) {
+        public Void visitLocal(Instruction instr, int index, Integer indent) {
             print(index);
             return null;
         }
 
-        public Void visitLocalAndValue(Instruction instr, int index, int value, Void p) {
+        public Void visitLocalAndValue(Instruction instr, int index, int value, Integer indent) {
             print(index + ", " + value);
             return null;
         }
 
-        public Void visitLookupSwitch(Instruction instr, int default_, int npairs, int[] matches, int[] offsets) {
+        public Void visitLookupSwitch(Instruction instr,
+                int default_, int npairs, int[] matches, int[] offsets, Integer indent) {
             int pc = instr.getPC();
             print("{ // " + npairs);
-            indent(+1);
+            indent(indent);
             for (int i = 0; i < npairs; i++) {
-                print("\n" + matches[i] + ": " + (pc + offsets[i]));
+                print(String.format("%n%12d: %d", matches[i], (pc + offsets[i])));
             }
-            print("\ndefault: " + (pc + default_) + " }");
-            indent(-1);
+            print("\n     default: " + (pc + default_) + "\n}");
+            indent(-indent);
             return null;
         }
 
-        public Void visitTableSwitch(Instruction instr, int default_, int low, int high, int[] offsets) {
+        public Void visitTableSwitch(Instruction instr,
+                int default_, int low, int high, int[] offsets, Integer indent) {
             int pc = instr.getPC();
-            print("{ //" + low + " to " + high);
-            indent(+1);
+            print("{ // " + low + " to " + high);
+            indent(indent);
             for (int i = 0; i < offsets.length; i++) {
-                print("\n" + (low + i) + ": " + (pc + offsets[i]));
+                print(String.format("%n%12d: %d", (low + i), (pc + offsets[i])));
             }
-            print("\ndefault: " + (pc + default_) + " }");
-            indent(-1);
+            print("\n     default: " + (pc + default_) + "\n}");
+            indent(-indent);
             return null;
         }
 
-        public Void visitValue(Instruction instr, int value, Void p) {
+        public Void visitValue(Instruction instr, int value, Integer indent) {
             print(value);
             return null;
         }
 
-        public Void visitUnknown(Instruction instr, Void p) {
+        public Void visitUnknown(Instruction instr, Integer indent) {
             return null;
         }
     };

@@ -92,7 +92,7 @@ Bangkok Standard Time:14,15::Asia/Bangkok:
 North Asia Standard Time:14,15::Asia/Krasnoyarsk:
 SE Asia:14,15::Asia/Bangkok:
 SE Asia Standard Time:14,15::Asia/Bangkok:
-North Asia East Standard Time:16,17::Asia/Ulaanbaatar:
+North Asia East Standard Time:16,17:RU:Asia/Irkutsk:
 Singapore:16,17:SG:Asia/Singapore:
 Singapore Standard Time:16,17:SG:Asia/Singapore:
 Taipei:16,17::Asia/Taipei:
@@ -184,4 +184,5 @@ Venezuela Standard Time:915,915::America/Caracas:
 Kamchatka Standard Time:916,916:RU:Asia/Kamchatka:
 Paraguay Standard Time:917,917:PY:America/Asuncion:
 Western Brazilian Standard Time:918,918:BR:America/Rio_Branco:
-Armenian Standard Time:919,919:AM:Asia/Yerevan:
+Ulaanbaatar Standard Time:919,919::Asia/Ulaanbaatar:
+Armenian Standard Time:920,920:AM:Asia/Yerevan:

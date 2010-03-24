@@ -101,4 +101,3 @@ text: .text%Java_java_util_TimeZone_getSystemTimeZoneID;
 text: .text%findJavaTZ_md;
 text: .text%Java_java_lang_StrictMath_log;
 text: .text%Java_java_lang_StrictMath_sqrt;
-text: .text%Java_java_lang_StrictMath_floor;

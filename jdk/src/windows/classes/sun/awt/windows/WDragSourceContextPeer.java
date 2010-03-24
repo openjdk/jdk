@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@ package sun.awt.windows;
 
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 
 import java.awt.datatransfer.Transferable;
 
@@ -88,11 +92,56 @@ final class WDragSourceContextPeer extends SunDragSourceContextPeer {
             throw new InvalidDnDOperationException("failed to create native peer");
         }
 
-        setNativeContext(nativeCtxtLocal);
+        int[] imageData = null;
+        Point op = null;
 
+        Image im = getDragImage();
+        int imageWidth = -1;
+        int imageHeight = -1;
+        if (im != null) {
+            //image is ready (partial images are ok)
+            try{
+                imageWidth = im.getWidth(null);
+                imageHeight = im.getHeight(null);
+                if (imageWidth < 0 || imageHeight < 0) {
+                    throw new InvalidDnDOperationException("drag image is not ready");
+                }
+                //We could get an exception from user code here.
+                //"im" and "dragImageOffset" are user-defined objects
+                op = getDragImageOffset(); //op could not be null here
+                BufferedImage bi = new BufferedImage(
+                        imageWidth,
+                        imageHeight,
+                        BufferedImage.TYPE_INT_ARGB);
+                bi.getGraphics().drawImage(im, 0, 0, null);
+
+                //we can get out-of-memory here
+                imageData = ((DataBufferInt)bi.getData().getDataBuffer()).getData();
+            } catch (Throwable ex) {
+                throw new InvalidDnDOperationException("drag image creation problem: " + ex.getMessage());
+            }
+        }
+
+        //We shouldn't have user-level exceptions since now.
+        //Any exception leads to corrupted D'n'D state.
+        setNativeContext(nativeCtxtLocal);
         WDropTargetContextPeer.setCurrentJVMLocalSourceTransferable(trans);
 
-        doDragDrop(getNativeContext(), getCursor());
+        if (imageData != null) {
+            doDragDrop(
+                    getNativeContext(),
+                    getCursor(),
+                    imageData,
+                    imageWidth, imageHeight,
+                    op.x, op.y);
+        } else {
+            doDragDrop(
+                    getNativeContext(),
+                    getCursor(),
+                    null,
+                    -1, -1,
+                    0, 0);
+        }
     }
 
     /**
@@ -110,7 +159,12 @@ final class WDragSourceContextPeer extends SunDragSourceContextPeer {
      * downcall into native code
      */
 
-    native void doDragDrop(long nativeCtxt, Cursor cursor);
+    native void doDragDrop(
+            long nativeCtxt,
+            Cursor cursor,
+            int[] imageData,
+            int imgWidth, int imgHight,
+            int offsetX, int offsetY);
 
     protected native void setNativeCursor(long nativeCtxt, Cursor c, int cType);
 

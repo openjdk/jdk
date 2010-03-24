@@ -449,25 +449,6 @@ public class ClassWriter {
             out.writeShort(entry.index);
         }
 
-        public Void visitModule(Module_attribute attr, ClassOutputStream out) {
-            out.writeShort(attr.module_name);
-            return null;
-        }
-
-        public Void visitModuleExportTable(ModuleExportTable_attribute attr, ClassOutputStream out) {
-            out.writeShort(attr.export_type_table.length);
-            for (int i: attr.export_type_table)
-                out.writeShort(i);
-            return null;
-        }
-
-        public Void visitModuleMemberTable(ModuleMemberTable_attribute attr, ClassOutputStream out) {
-            out.writeShort(attr.package_member_table.length);
-            for (int i: attr.package_member_table)
-                out.writeShort(i);
-            return null;
-        }
-
         public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, ClassOutputStream out) {
             annotationWriter.write(attr.annotations, out);
             return null;
@@ -763,6 +744,7 @@ public class ClassWriter {
                 out.writeByte(p.type_index);
                 break;
             case CLASS_LITERAL:
+            case CLASS_LITERAL_GENERIC_OR_ARRAY:
                 out.writeShort(p.offset);
                 break;
             // method parameter: not specified

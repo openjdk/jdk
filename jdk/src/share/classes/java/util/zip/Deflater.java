@@ -332,7 +332,7 @@ class Deflater {
     /**
      * Compresses the input data and fills specified buffer with compressed
      * data. Returns actual number of bytes of compressed data. A return value
-     * of 0 indicates that {@link needsInput() needsInput} should be called
+     * of 0 indicates that {@link #needsInput() needsInput} should be called
      * in order to determine if more input data is required.
      *
      * <p>This method uses {@link #NO_FLUSH} as its compression flush mode.
@@ -353,7 +353,7 @@ class Deflater {
     /**
      * Compresses the input data and fills specified buffer with compressed
      * data. Returns actual number of bytes of compressed data. A return value
-     * of 0 indicates that {@link needsInput() needsInput} should be called
+     * of 0 indicates that {@link #needsInput() needsInput} should be called
      * in order to determine if more input data is required.
      *
      * <p>This method uses {@link #NO_FLUSH} as its compression flush mode.

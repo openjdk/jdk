@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.File;
 
 import java.net.URL;
 
@@ -71,6 +72,10 @@ import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
 
 import sun.awt.image.ImageRepresentation;
 import sun.awt.image.ToolkitImage;
+
+import java.util.ArrayList;
+
+import java.io.ByteArrayOutputStream;
 
 /**
  * Platform-specific support for the data transfer subsystem.
@@ -125,6 +130,10 @@ public class WDataTransferer extends DataTransferer {
     public static final long CFSTR_INETURL = registerClipboardFormat("UniformResourceLocator");
     public static final long CF_PNG = registerClipboardFormat("PNG");
     public static final long CF_JFIF = registerClipboardFormat("JFIF");
+
+    public static final long CF_FILEGROUPDESCRIPTORW = registerClipboardFormat("FileGroupDescriptorW");
+    public static final long CF_FILEGROUPDESCRIPTORA = registerClipboardFormat("FileGroupDescriptor");
+    //CF_FILECONTENTS supported as mandatory associated clipboard
 
     private static final Long L_CF_LOCALE = (Long)
       predefinedClipboardNameMap.get(predefinedClipboardNames[CF_LOCALE]);
@@ -199,6 +208,30 @@ public class WDataTransferer extends DataTransferer {
             str = new HTMLCodec(str,  EHTMLReadMode.HTML_READ_SELECTION);
         }
 
+        if (format == CF_FILEGROUPDESCRIPTORA || format == CF_FILEGROUPDESCRIPTORW) {
+            if (null != str ) {
+                str.close();
+            }
+            if (bytes == null || !DataFlavor.javaFileListFlavor.equals(flavor)) {
+                throw new IOException("data translation failed");
+            }
+            String st = new String(bytes, 0, bytes.length, "UTF-16LE");
+            String[] filenames = st.split("\0");
+            if( 0 == filenames.length ){
+                return null;
+            }
+
+            // Convert the strings to File objects
+            File[] files = new File[filenames.length];
+            for (int i = 0; i < filenames.length; ++i) {
+                files[i] = new File(filenames[i]);
+                //They are temp-files from memory Stream, so they have to be removed on exit
+                files[i].deleteOnExit();
+            }
+            // Turn the list of Files into a List and return
+            return Arrays.asList(files);
+        }
+
         if (format == CFSTR_INETURL &&
             URL.class.equals(flavor.getRepresentationClass()))
         {
@@ -229,7 +262,7 @@ public class WDataTransferer extends DataTransferer {
     }
 
     public boolean isFileFormat(long format) {
-        return format == CF_HDROP;
+        return format == CF_HDROP || format == CF_FILEGROUPDESCRIPTORA || format == CF_FILEGROUPDESCRIPTORW;
     }
 
     protected Long getFormatForNativeAsLong(String str) {
@@ -340,6 +373,33 @@ public class WDataTransferer extends DataTransferer {
 
         byte[] imageData = buffer.getData();
         return imageDataToPlatformImageBytes(imageData, width, height, format);
+    }
+
+    private static final byte [] UNICODE_NULL_TERMINATOR =  new byte [] {0,0};
+
+    protected ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList)
+        throws IOException
+    {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        if(fileList.isEmpty()) {
+            //store empty unicode string (null terminator)
+            bos.write(UNICODE_NULL_TERMINATOR);
+        } else {
+            for (int i = 0; i < fileList.size(); i++) {
+                byte[] bytes = fileList.get(i).getBytes(getDefaultUnicodeEncoding());
+                //store unicode string with null terminator
+                bos.write(bytes, 0, bytes.length);
+                bos.write(UNICODE_NULL_TERMINATOR);
+            }
+        }
+
+        // According to MSDN the byte array have to be double NULL-terminated.
+        // The array contains Unicode characters, so each NULL-terminator is
+        // a pair of bytes
+
+        bos.write(UNICODE_NULL_TERMINATOR);
+        return bos;
     }
 
    /**

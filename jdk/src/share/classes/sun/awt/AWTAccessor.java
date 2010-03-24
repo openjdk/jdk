@@ -98,7 +98,7 @@ public final class AWTAccessor {
          * Returns whether the component is visible without invoking
          * any client code.
          */
-        boolean isVisible_NoClientCode(Component comp);
+        boolean isVisible(Component comp);
 
         /**
          * Sets the RequestFocusController.
@@ -114,6 +114,112 @@ public final class AWTAccessor {
          * Sets the appContext of the component.
          */
         void setAppContext(Component comp, AppContext appContext);
+
+        /**
+         * Returns the parent of the component.
+         */
+        Container getParent(Component comp);
+
+        /**
+         * Sets the parent of the component to the specified parent.
+         */
+        void setParent(Component comp, Container parent);
+
+        /**
+         * Resizes the component to the specified width and height.
+         */
+        void setSize(Component comp, int width, int height);
+
+        /**
+         * Returns the location of the component.
+         */
+        Point getLocation(Component comp);
+
+        /**
+         * Moves the component to the new location.
+         */
+        void setLocation(Component comp, int x, int y);
+
+        /**
+         * Determines whether this component is enabled.
+         */
+        boolean isEnabled(Component comp);
+
+        /**
+         * Determines whether this component is displayable.
+         */
+        boolean isDisplayable(Component comp);
+
+        /**
+         * Gets the cursor set in the component.
+         */
+        Cursor getCursor(Component comp);
+
+        /**
+         * Returns the peer of the component.
+         */
+        ComponentPeer getPeer(Component comp);
+
+        /**
+         * Sets the peer of the component to the specified peer.
+         */
+        void setPeer(Component comp, ComponentPeer peer);
+
+        /**
+         * Determines whether this component is lightweight.
+         */
+        boolean isLightweight(Component comp);
+
+        /**
+         * Returns whether or not paint messages received from
+         * the operating system should be ignored.
+         */
+        boolean getIgnoreRepaint(Component comp);
+
+        /**
+         * Returns the width of the component.
+         */
+        int getWidth(Component comp);
+
+        /**
+         * Returns the height of the component.
+         */
+        int getHeight(Component comp);
+
+        /**
+         * Returns the x coordinate of the component.
+         */
+        int getX(Component comp);
+
+        /**
+         * Returns the y coordinate of the component.
+         */
+        int getY(Component comp);
+
+        /**
+         * Gets the foreground color of this component.
+         */
+        Color getForeground(Component comp);
+
+        /**
+         * Gets the background color of this component.
+         */
+        Color getBackground(Component comp);
+
+        /**
+         * Sets the background of this component to the specified color.
+         */
+        void setBackground(Component comp, Color background);
+
+        /**
+         * Gets the font of the component.
+         */
+        Font getFont(Component comp);
+
+        /**
+         * Processes events occurring on this component.
+         */
+        void processEvent(Component comp, AWTEvent e);
     }
 
     /*
@@ -169,6 +275,22 @@ public final class AWTAccessor {
          * components in the specified window to the specified value.
          */
         void setLWRequestStatus(Window changed, boolean status);
+
+        /**
+         * Indicates whether this window should receive focus on subsequently
+         * being shown, or being moved to the front.
+         */
+        boolean isAutoRequestFocus(Window w);
+
+        /**
+         * Indicates whether the specified window is an utility window for TrayIcon.
+         */
+        boolean isTrayIconWindow(Window w);
+
+        /**
+         * Marks the specified window as an utility window for TrayIcon.
+         */
+        void setTrayIconWindow(Window w, boolean isTrayIconWindow);
     }
 
     /*
@@ -249,13 +371,13 @@ public final class AWTAccessor {
      */
     public interface EventQueueAccessor {
         /*
-         * Gets the next event queue.
-         */
-        EventQueue getNextQueue(EventQueue eventQueue);
-        /*
          * Gets the event dispatch thread.
          */
         Thread getDispatchThread(EventQueue eventQueue);
+        /*
+         * Checks if the current thread is EDT for the given EQ.
+         */
+        public boolean isDispatchThreadImpl(EventQueue eventQueue);
     }
 
     /*
@@ -268,6 +390,30 @@ public final class AWTAccessor {
         boolean isTrayIconPopup(PopupMenu popupMenu);
     }
 
+    /*
+     * An accessor for the FileDialog class
+     */
+    public interface FileDialogAccessor {
+        /*
+         * Sets the files the user selects
+         */
+        void setFiles(FileDialog fileDialog, String directory, String files[]);
+
+        /*
+         * Sets the file the user selects
+         */
+        void setFile(FileDialog fileDialog, String file);
+
+        /*
+         * Sets the directory the user selects
+         */
+        void setDirectory(FileDialog fileDialog, String directory);
+
+        /*
+         * Returns whether the file dialog allows the multiple file selection.
+         */
+        boolean isMultipleMode(FileDialog fileDialog);
+    }
 
     /*
      * The java.awt.Component class accessor object.
@@ -308,6 +454,11 @@ public final class AWTAccessor {
      * The java.awt.PopupMenu class accessor object.
      */
     private static PopupMenuAccessor popupMenuAccessor;
+
+    /*
+     * The java.awt.FileDialog class accessor object.
+     */
+    private static FileDialogAccessor fileDialogAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -445,4 +596,22 @@ public final class AWTAccessor {
         }
         return popupMenuAccessor;
     }
+
+    /*
+     * Set an accessor object for the java.awt.FileDialog class.
+     */
+    public static void setFileDialogAccessor(FileDialogAccessor fda) {
+        fileDialogAccessor = fda;
+    }
+
+    /*
+     * Retrieve the accessor object for the java.awt.FileDialog class.
+     */
+    public static FileDialogAccessor getFileDialogAccessor() {
+        if (fileDialogAccessor == null) {
+            unsafe.ensureClassInitialized(FileDialog.class);
+        }
+        return fileDialogAccessor;
+    }
+
 }

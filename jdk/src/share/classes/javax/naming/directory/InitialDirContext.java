@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ public class InitialDirContext extends InitialContext implements DirContext {
      *
      * <p> This constructor will not modify <tt>environment</tt>
      * or save a reference to it, but may save a clone.
+     * Caller should not modify mutable keys and values in
+     * <tt>environment</tt> after it has been passed to the constructor.
      *
      * @param environment
      *          environment used to create the initial DirContext.

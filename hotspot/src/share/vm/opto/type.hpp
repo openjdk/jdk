@@ -847,9 +847,6 @@ public:
   // Constant pointer to array
   static const TypeAryPtr *make( PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id = InstanceBot);
 
-  // Convenience
-  static const TypeAryPtr *make(ciObject* o);
-
   // Return a 'ptr' version of this type
   virtual const Type *cast_to_ptr_type(PTR ptr) const;
 

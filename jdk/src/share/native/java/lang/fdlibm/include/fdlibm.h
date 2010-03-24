@@ -29,7 +29,7 @@
 #ifdef __NEWVALID       /* special setup for Sun test regime */
 #if defined(i386) || defined(i486) || \
         defined(intel) || defined(x86) || \
-        defined(i86pc) || defined(_M_IA64)
+        defined(i86pc) || defined(_M_IA64) || defined(ia64)
 #define _LITTLE_ENDIAN
 #endif
 #endif

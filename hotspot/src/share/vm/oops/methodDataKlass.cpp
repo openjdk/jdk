@@ -214,14 +214,14 @@ void methodDataKlass::oop_print_on(oop obj, outputStream* st) {
   m->print_data_on(st);
 }
 
+#endif //PRODUCT
+
 void methodDataKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_methodData(), "should be method data");
   methodDataOop m = methodDataOop(obj);
   st->print("method data for ");
   m->method()->print_value_on(st);
 }
-
-#endif // !PRODUCT
 
 const char* methodDataKlass::internal_name() const {
   return "{method data}";

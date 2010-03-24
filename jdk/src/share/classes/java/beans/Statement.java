@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,13 +74,19 @@ public class Statement {
     ClassLoader loader;
 
     /**
-     * Creates a new <code>Statement</code> object with a <code>target</code>,
-     * <code>methodName</code> and <code>arguments</code> as per the parameters.
+     * Creates a new {@link Statement} object
+     * for the specified target object to invoke the method
+     * specified by the name and by the array of arguments.
+     * <p>
+     * The {@code target} and the {@code methodName} values should not be {@code null}.
+     * Otherwise an attempt to execute this {@code Expression}
+     * will result in a {@code NullPointerException}.
+     * If the {@code arguments} value is {@code null},
+     * an empty array is used as the value of the {@code arguments} property.
      *
-     * @param target The target of this statement.
-     * @param methodName The methodName of this statement.
-     * @param arguments The arguments of this statement. If <code>null</code> then an empty array will be used.
-     *
+     * @param target  the target object of this statement
+     * @param methodName  the name of the method to invoke on the specified target
+     * @param arguments  the array of arguments to invoke the specified method
      */
     @ConstructorProperties({"target", "methodName", "arguments"})
     public Statement(Object target, String methodName, Object[] arguments) {
@@ -90,27 +96,36 @@ public class Statement {
     }
 
     /**
-     * Returns the target of this statement.
+     * Returns the target object of this statement.
+     * If this method returns {@code null},
+     * the {@link #execute} method
+     * throws a {@code NullPointerException}.
      *
-     * @return The target of this statement.
+     * @return the target object of this statement
      */
     public Object getTarget() {
         return target;
     }
 
     /**
-     * Returns the name of the method.
+     * Returns the name of the method to invoke.
+     * If this method returns {@code null},
+     * the {@link #execute} method
+     * throws a {@code NullPointerException}.
      *
-     * @return The name of the method.
+     * @return the name of the method
      */
     public String getMethodName() {
         return methodName;
     }
 
     /**
-     * Returns the arguments of this statement.
+     * Returns the arguments for the method to invoke.
+     * The number of arguments and their types
+     * must match the method being  called.
+     * {@code null} can be used as a synonym of an empty array.
      *
-     * @return the arguments of this statement.
+     * @return the array of arguments
      */
     public Object[] getArguments() {
         return arguments;
@@ -179,6 +194,9 @@ public class Statement {
         }
 
         Object[] arguments = getArguments();
+        if (arguments == null) {
+            arguments = emptyArray;
+        }
         // Class.forName() won't load classes outside
         // of core from a class inside core. Special
         // case this method.
@@ -310,7 +328,9 @@ public class Statement {
         Object target = getTarget();
         String methodName = getMethodName();
         Object[] arguments = getArguments();
-
+        if (arguments == null) {
+            arguments = emptyArray;
+        }
         StringBuffer result = new StringBuffer(instanceName(target) + "." + methodName + "(");
         int n = arguments.length;
         for(int i = 0; i < n; i++) {

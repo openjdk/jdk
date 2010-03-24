@@ -40,7 +40,6 @@ import javax.lang.model.util.*;
 import static javax.lang.model.util.ElementFilter.*;
 
 
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 @SupportedAnnotationTypes("*")
 public class OverridesSpecEx extends AbstractProcessor {
 
@@ -58,6 +57,11 @@ public class OverridesSpecEx extends AbstractProcessor {
         if (!round.processingOver())
             doit(annoTypes, round);
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     private void doit(Set<? extends TypeElement> annoTypes,

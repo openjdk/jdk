@@ -46,5 +46,5 @@ $JAR -cf ${TESTCLASSES}/dummy.jar \
 echo "Running test ..."
 
 $JAVA -classpath \
-  ${TESTCLASSES}${PS}${TESTCLASSES}/dummy.jar \
+  "${TESTCLASSES}${PS}${TESTCLASSES}/dummy.jar" \
   ProviderTest

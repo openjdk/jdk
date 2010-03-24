@@ -33,12 +33,13 @@ import java.awt.Component;
  * the cells in a JList.  For example, to use a JLabel as a
  * ListCellRenderer, you would write something like this:
  * <pre>
- * class MyCellRenderer extends JLabel implements ListCellRenderer {
+ * {@code
+ * class MyCellRenderer extends JLabel implements ListCellRenderer<Object> {
  *     public MyCellRenderer() {
  *         setOpaque(true);
  *     }
  *
- *     public Component getListCellRendererComponent(JList list,
+ *     public Component getListCellRendererComponent(JList<?> list,
  *                                                   Object value,
  *                                                   int index,
  *                                                   boolean isSelected,
@@ -75,14 +76,17 @@ import java.awt.Component;
  *         return this;
  *     }
  * }
+ * }
  * </pre>
+ *
+ * @param <E> the type of values this renderer can be used for
  *
  * @see JList
  * @see DefaultListCellRenderer
  *
  * @author Hans Muller
  */
-public interface ListCellRenderer
+public interface ListCellRenderer<E>
 {
     /**
      * Return a component that has been configured to display the specified
@@ -104,8 +108,8 @@ public interface ListCellRenderer
      * @see ListModel
      */
     Component getListCellRendererComponent(
-        JList list,
-        Object value,
+        JList<? extends E> list,
+        E value,
         int index,
         boolean isSelected,
         boolean cellHasFocus);

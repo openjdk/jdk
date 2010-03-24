@@ -38,6 +38,26 @@ public class Basic$Type$
     extends Basic
 {
 
+    private static final $type$[] VALUES = {
+        $Fulltype$.MIN_VALUE,
+        ($type$) -1,
+        ($type$) 0,
+        ($type$) 1,
+        $Fulltype$.MAX_VALUE,
+#if[float]
+        $Fulltype$.NEGATIVE_INFINITY,
+        $Fulltype$.POSITIVE_INFINITY,
+        $Fulltype$.NaN,
+        ($type$) -0.0,
+#end[float]
+#if[double]
+        $Fulltype$.NEGATIVE_INFINITY,
+        $Fulltype$.POSITIVE_INFINITY,
+        $Fulltype$.NaN,
+        ($type$) -0.0,
+#end[double]
+    };
+
     private static void relGet($Type$Buffer b) {
         int n = b.capacity();
         $type$ v;
@@ -309,6 +329,12 @@ public class Basic$Type$
 
 #end[byte]
 
+    private static void fail(String problem,
+                             $Type$Buffer xb, $Type$Buffer yb,
+                             $type$ x, $type$ y) {
+        fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
+    }
+
     private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
         boolean caught = false;
         try {
@@ -521,6 +547,42 @@ public class Basic$Type$
             fail("Non-identical buffers equal", b, b2);
         if (b.compareTo(b2) <= 0)
             fail("Comparison to lesser buffer <= 0", b, b2);
+
+        // Check equals and compareTo with interesting values
+        for ($type$ x : VALUES) {
+            $Type$Buffer xb = $Type$Buffer.wrap(new $type$[] { x });
+            if (xb.compareTo(xb) != 0) {
+                fail("compareTo not reflexive", xb, xb, x, x);
+            }
+            if (! xb.equals(xb)) {
+                fail("equals not reflexive", xb, xb, x, x);
+            }
+            for ($type$ y : VALUES) {
+                $Type$Buffer yb = $Type$Buffer.wrap(new $type$[] { y });
+                if (xb.compareTo(yb) != - yb.compareTo(xb)) {
+                    fail("compareTo not anti-symmetric",
+                         xb, yb, x, y);
+                }
+                if ((xb.compareTo(yb) == 0) != xb.equals(yb)) {
+                    fail("compareTo inconsistent with equals",
+                         xb, yb, x, y);
+                }
+                if (xb.compareTo(yb) != $Fulltype$.compare(x, y)) {
+#if[float]
+                    if (x == 0.0 && y == 0.0) continue;
+#end[float]
+#if[double]
+                    if (x == 0.0 && y == 0.0) continue;
+#end[double]
+                    fail("Incorrect results for $Type$Buffer.compareTo",
+                         xb, yb, x, y);
+                }
+                if (xb.equals(yb) != ((x == y) || ((x != x) && (y != y)))) {
+                    fail("Incorrect results for $Type$Buffer.equals",
+                         xb, yb, x, y);
+                }
+            }
+        }
 
         // Sub, dup
 

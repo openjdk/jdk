@@ -38,6 +38,26 @@ public class BasicShort
     extends Basic
 {
 
+    private static final short[] VALUES = {
+        Short.MIN_VALUE,
+        (short) -1,
+        (short) 0,
+        (short) 1,
+        Short.MAX_VALUE,
+
+
+
+
+
+
+
+
+
+
+
+
+    };
+
     private static void relGet(ShortBuffer b) {
         int n = b.capacity();
         short v;
@@ -309,6 +329,12 @@ public class BasicShort
 
 
 
+    private static void fail(String problem,
+                             ShortBuffer xb, ShortBuffer yb,
+                             short x, short y) {
+        fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
+    }
+
     private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
         boolean caught = false;
         try {
@@ -521,6 +547,42 @@ public class BasicShort
             fail("Non-identical buffers equal", b, b2);
         if (b.compareTo(b2) <= 0)
             fail("Comparison to lesser buffer <= 0", b, b2);
+
+        // Check equals and compareTo with interesting values
+        for (short x : VALUES) {
+            ShortBuffer xb = ShortBuffer.wrap(new short[] { x });
+            if (xb.compareTo(xb) != 0) {
+                fail("compareTo not reflexive", xb, xb, x, x);
+            }
+            if (! xb.equals(xb)) {
+                fail("equals not reflexive", xb, xb, x, x);
+            }
+            for (short y : VALUES) {
+                ShortBuffer yb = ShortBuffer.wrap(new short[] { y });
+                if (xb.compareTo(yb) != - yb.compareTo(xb)) {
+                    fail("compareTo not anti-symmetric",
+                         xb, yb, x, y);
+                }
+                if ((xb.compareTo(yb) == 0) != xb.equals(yb)) {
+                    fail("compareTo inconsistent with equals",
+                         xb, yb, x, y);
+                }
+                if (xb.compareTo(yb) != Short.compare(x, y)) {
+
+
+
+
+
+
+                    fail("Incorrect results for ShortBuffer.compareTo",
+                         xb, yb, x, y);
+                }
+                if (xb.equals(yb) != ((x == y) || ((x != x) && (y != y)))) {
+                    fail("Incorrect results for ShortBuffer.equals",
+                         xb, yb, x, y);
+                }
+            }
+        }
 
         // Sub, dup
 

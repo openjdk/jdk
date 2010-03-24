@@ -251,8 +251,10 @@ class IRScopeDebugInfo: public CompilationResourceObj {
     DebugToken* expvals = recorder->create_scope_values(expressions());
     DebugToken* monvals = recorder->create_monitor_values(monitors());
     // reexecute allowed only for the topmost frame
-    bool      reexecute = topmost ? should_reexecute() : false;
-    recorder->describe_scope(pc_offset, scope()->method(), bci(), reexecute, locvals, expvals, monvals);
+    bool reexecute = topmost ? should_reexecute() : false;
+    bool is_method_handle_invoke = false;
+    bool return_oop = false; // This flag will be ignored since it used only for C2 with escape analysis.
+    recorder->describe_scope(pc_offset, scope()->method(), bci(), reexecute, is_method_handle_invoke, return_oop, locvals, expvals, monvals);
   }
 };
 

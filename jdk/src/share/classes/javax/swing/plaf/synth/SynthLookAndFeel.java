@@ -234,44 +234,9 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * <code>shouldUpdateStyleOnAncestorChanged</code> as necessary.
      */
     static boolean shouldUpdateStyle(PropertyChangeEvent event) {
-        String eName = event.getPropertyName();
-        if ("name" == eName) {
-            // Always update on a name change
-            return true;
-        }
-        else if ("componentOrientation" == eName) {
-            // Always update on a component orientation change
-            return true;
-        }
-        else if ("ancestor" == eName && event.getNewValue() != null) {
-            // Only update on an ancestor change when getting a valid
-            // parent and the LookAndFeel wants this.
-            LookAndFeel laf = UIManager.getLookAndFeel();
-            return (laf instanceof SynthLookAndFeel &&
-                    ((SynthLookAndFeel)laf).
-                     shouldUpdateStyleOnAncestorChanged());
-        }
-        // Note: The following two nimbus based overrides should be refactored
-        // to be in the Nimbus LAF. Due to constraints in an update release,
-        // we couldn't actually provide the public API necessary to allow
-        // NimbusLookAndFeel (a subclass of SynthLookAndFeel) to provide its
-        // own rules for shouldUpdateStyle.
-        else if ("Nimbus.Overrides" == eName) {
-            // Always update when the Nimbus.Overrides client property has
-            // been changed
-            return true;
-        }
-        else if ("Nimbus.Overrides.InheritDefaults" == eName) {
-            // Always update when the Nimbus.Overrides.InheritDefaults
-            // client property has changed
-            return true;
-        }
-        else if ("JComponent.sizeVariant" == eName) {
-            // Always update when the JComponent.sizeVariant
-            // client property has changed
-            return true;
-        }
-        return false;
+        LookAndFeel laf = UIManager.getLookAndFeel();
+        return (laf instanceof SynthLookAndFeel &&
+                ((SynthLookAndFeel) laf).shouldUpdateStyleOnEvent(event));
     }
 
     /**
@@ -303,12 +268,6 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * @param c Component to update style for.
      */
     public static void updateStyles(Component c) {
-        _updateStyles(c);
-        c.repaint();
-    }
-
-    // Implementation for updateStyles
-    private static void _updateStyles(Component c) {
         if (c instanceof JComponent) {
             // Yes, this is hacky. A better solution is to get the UI
             // and cast, but JComponent doesn't expose a getter for the UI
@@ -332,6 +291,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                 updateStyles(child);
             }
         }
+        c.repaint();
     }
 
     /**
@@ -785,6 +745,27 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * when the ancestor changed.
      */
     public boolean shouldUpdateStyleOnAncestorChanged() {
+        return false;
+    }
+
+    /**
+     * Returns whether or not the UIs should update their styles when a
+     * particular event occurs.
+     *
+     * @param ev a {@code PropertyChangeEvent}
+     * @return whether or not the UIs should update their styles
+     * @since 1.7
+     */
+    protected boolean shouldUpdateStyleOnEvent(PropertyChangeEvent ev) {
+        String eName = ev.getPropertyName();
+        if ("name" == eName || "componentOrientation" == eName) {
+            return true;
+        }
+        if ("ancestor" == eName && ev.getNewValue() != null) {
+            // Only update on an ancestor change when getting a valid
+            // parent and the LookAndFeel wants this.
+            return shouldUpdateStyleOnAncestorChanged();
+        }
         return false;
     }
 

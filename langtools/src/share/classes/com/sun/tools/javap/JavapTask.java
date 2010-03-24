@@ -236,12 +236,6 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             }
         },
 
-        new Option(false, "-XDjsr277") {
-            void process(JavapTask task, String opt, String arg) {
-                task.options.jsr277 = true;
-            }
-        },
-
         new Option(false, "-XDdetails") {
             void process(JavapTask task, String opt, String arg) {
                 task.options.details = EnumSet.allOf(InstructionDetailWriter.Kind.class);
@@ -586,7 +580,6 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         sourceWriter.setFileManager(fileManager);
 
         attributeFactory.setCompat(options.compat);
-        attributeFactory.setJSR277(options.jsr277);
 
         boolean ok = true;
 

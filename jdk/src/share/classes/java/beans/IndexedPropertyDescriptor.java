@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.beans;
 
 import java.lang.ref.Reference;
-
 import java.lang.reflect.Method;
 
 /**
@@ -117,8 +116,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * This constructor takes the name of a simple property, and Method
      * objects for reading and writing the property.
      *
-     * @param propertyName The programmatic name of the pro
-perty.
+     * @param propertyName The programmatic name of the property.
      * @param readMethod The method used for reading the property values as an array.
      *          May be null if the property is write-only or must be indexed.
      * @param writeMethod The method used for writing the property values as an array.
@@ -313,11 +311,14 @@ perty.
     }
 
     /**
-     * Gets the <code>Class</code> object of the indexed properties' type.
-     * The returned <code>Class</code> may describe a primitive type such as <code>int</code>.
+     * Returns the Java type info for the indexed property.
+     * Note that the {@code Class} object may describe
+     * primitive Java types such as {@code int}.
+     * This type is returned by the indexed read method
+     * or is used as the parameter type of the indexed write method.
      *
-     * @return The <code>Class</code> for the indexed properties' type; may return <code>null</code>
-     *         if the type cannot be determined.
+     * @return the {@code Class} object that represents the Java type info,
+     *         or {@code null} if the type cannot be determined
      */
     public synchronized Class<?> getIndexedPropertyType() {
         Class type = getIndexedPropertyType0();
@@ -515,20 +516,10 @@ perty.
         return result;
     }
 
-    /*
-    public String toString() {
-        String message = super.toString();
-
-        message += ", indexedType=";
-        message += getIndexedPropertyType();
-
-        message += ", indexedWriteMethod=";
-        message += indexedWriteMethodName;
-
-        message += ", indexedReadMethod=";
-        message += indexedReadMethodName;
-
-        return message;
+    void appendTo(StringBuilder sb) {
+        super.appendTo(sb);
+        appendTo(sb, "indexedPropertyType", this.indexedPropertyTypeRef);
+        appendTo(sb, "indexedReadMethod", this.indexedReadMethodRef);
+        appendTo(sb, "indexedWriteMethod", this.indexedWriteMethodRef);
     }
-    */
 }

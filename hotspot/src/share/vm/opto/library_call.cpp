@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3697,12 +3697,14 @@ bool LibraryCallKit::inline_native_Reflection_getCallerClass() {
 
 // Helper routine for above
 bool LibraryCallKit::is_method_invoke_or_aux_frame(JVMState* jvms) {
+  ciMethod* method = jvms->method();
+
   // Is this the Method.invoke method itself?
-  if (jvms->method()->intrinsic_id() == vmIntrinsics::_invoke)
+  if (method->intrinsic_id() == vmIntrinsics::_invoke)
     return true;
 
   // Is this a helper, defined somewhere underneath MethodAccessorImpl.
-  ciKlass* k = jvms->method()->holder();
+  ciKlass* k = method->holder();
   if (k->is_instance_klass()) {
     ciInstanceKlass* ik = k->as_instance_klass();
     for (; ik != NULL; ik = ik->super()) {
@@ -3711,6 +3713,10 @@ bool LibraryCallKit::is_method_invoke_or_aux_frame(JVMState* jvms) {
         return true;
       }
     }
+  }
+  else if (method->is_method_handle_adapter()) {
+    // This is an internal adapter frame from the MethodHandleCompiler -- skip it
+    return true;
   }
 
   return false;

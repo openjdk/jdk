@@ -48,11 +48,13 @@ import javax.swing.event.*;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
+ * @param <E> the type of the elements of this model
+ *
  * @author Hans Muller
  */
-public class DefaultListModel extends AbstractListModel
+public class DefaultListModel<E> extends AbstractListModel<E>
 {
-    private Vector delegate = new Vector();
+    private Vector<E> delegate = new Vector<E>();
 
     /**
      * Returns the number of components in this list.
@@ -83,7 +85,7 @@ public class DefaultListModel extends AbstractListModel
      *             list
      * @see #get(int)
      */
-    public Object getElementAt(int index) {
+    public E getElementAt(int index) {
         return delegate.elementAt(index);
     }
 
@@ -175,7 +177,7 @@ public class DefaultListModel extends AbstractListModel
      * @return  an enumeration of the components of this list
      * @see Vector#elements()
      */
-    public Enumeration<?> elements() {
+    public Enumeration<E> elements() {
         return delegate.elements();
     }
 
@@ -260,7 +262,7 @@ public class DefaultListModel extends AbstractListModel
      * @see #get(int)
      * @see Vector#elementAt(int)
      */
-    public Object elementAt(int index) {
+    public E elementAt(int index) {
         return delegate.elementAt(index);
     }
 
@@ -271,7 +273,7 @@ public class DefaultListModel extends AbstractListModel
      * @return     the first component of this list
      * @see Vector#firstElement()
      */
-    public Object firstElement() {
+    public E firstElement() {
         return delegate.firstElement();
     }
 
@@ -283,13 +285,13 @@ public class DefaultListModel extends AbstractListModel
      * @return  the last component of the list
      * @see Vector#lastElement()
      */
-    public Object lastElement() {
+    public E lastElement() {
         return delegate.lastElement();
     }
 
     /**
      * Sets the component at the specified <code>index</code> of this
-     * list to be the specified object. The previous component at that
+     * list to be the specified element. The previous component at that
      * position is discarded.
      * <p>
      * Throws an <code>ArrayIndexOutOfBoundsException</code> if the index
@@ -300,13 +302,13 @@ public class DefaultListModel extends AbstractListModel
      *    <code>List</code> interface defined in the 1.2 Collections framework.
      * </blockquote>
      *
-     * @param      obj     what the component is to be set to
+     * @param      element what the component is to be set to
      * @param      index   the specified index
      * @see #set(int,Object)
      * @see Vector#setElementAt(Object,int)
      */
-    public void setElementAt(Object obj, int index) {
-        delegate.setElementAt(obj, index);
+    public void setElementAt(E element, int index) {
+        delegate.setElementAt(element, index);
         fireContentsChanged(this, index, index);
     }
 
@@ -331,7 +333,7 @@ public class DefaultListModel extends AbstractListModel
     }
 
     /**
-     * Inserts the specified object as a component in this list at the
+     * Inserts the specified element as a component in this list at the
      * specified <code>index</code>.
      * <p>
      * Throws an <code>ArrayIndexOutOfBoundsException</code> if the index
@@ -342,26 +344,26 @@ public class DefaultListModel extends AbstractListModel
      *    <code>List</code> interface defined in the 1.2 Collections framework.
      * </blockquote>
      *
-     * @param      obj     the component to insert
+     * @param      element the component to insert
      * @param      index   where to insert the new component
      * @exception  ArrayIndexOutOfBoundsException  if the index was invalid
      * @see #add(int,Object)
      * @see Vector#insertElementAt(Object,int)
      */
-    public void insertElementAt(Object obj, int index) {
-        delegate.insertElementAt(obj, index);
+    public void insertElementAt(E element, int index) {
+        delegate.insertElementAt(element, index);
         fireIntervalAdded(this, index, index);
     }
 
     /**
      * Adds the specified component to the end of this list.
      *
-     * @param   obj   the component to be added
+     * @param   element   the component to be added
      * @see Vector#addElement(Object)
      */
-    public void addElement(Object obj) {
+    public void addElement(E element) {
         int index = delegate.size();
-        delegate.addElement(obj);
+        delegate.addElement(element);
         fireIntervalAdded(this, index, index);
     }
 
@@ -441,7 +443,7 @@ public class DefaultListModel extends AbstractListModel
      *
      * @param index index of element to return
      */
-    public Object get(int index) {
+    public E get(int index) {
         return delegate.elementAt(index);
     }
 
@@ -457,8 +459,8 @@ public class DefaultListModel extends AbstractListModel
      * @param element element to be stored at the specified position
      * @return the element previously at the specified position
      */
-    public Object set(int index, Object element) {
-        Object rv = delegate.elementAt(index);
+    public E set(int index, E element) {
+        E rv = delegate.elementAt(index);
         delegate.setElementAt(element, index);
         fireContentsChanged(this, index, index);
         return rv;
@@ -474,7 +476,7 @@ public class DefaultListModel extends AbstractListModel
      * @param index index at which the specified element is to be inserted
      * @param element element to be inserted
      */
-    public void add(int index, Object element) {
+    public void add(int index, E element) {
         delegate.insertElementAt(element, index);
         fireIntervalAdded(this, index, index);
     }
@@ -488,9 +490,10 @@ public class DefaultListModel extends AbstractListModel
      * (<code>index &lt; 0 || index &gt;= size()</code>).
      *
      * @param index the index of the element to removed
+     * @return the element previously at the specified position
      */
-    public Object remove(int index) {
-        Object rv = delegate.elementAt(index);
+    public E remove(int index) {
+        E rv = delegate.elementAt(index);
         delegate.removeElementAt(index);
         fireIntervalRemoved(this, index, index);
         return rv;

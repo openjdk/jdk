@@ -29,6 +29,7 @@
 
 BUILDDIR = ../..
 
+MODULE  = samples
 PRODUCT = java
 
 include $(BUILDDIR)/common/Defs.gmk

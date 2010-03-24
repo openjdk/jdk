@@ -1,5 +1,5 @@
 //
-// Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,7 @@ arguments.cpp                           jvmtiExport.hpp
 arguments.cpp                           management.hpp
 arguments.cpp                           oop.inline.hpp
 arguments.cpp                           os_<os_family>.inline.hpp
+arguments.cpp                           referenceProcessor.hpp
 arguments.cpp                           universe.inline.hpp
 arguments.cpp                           vm_version_<arch>.hpp
 
@@ -289,7 +290,7 @@ attachListener.hpp                      allocation.hpp
 attachListener.hpp                      debug.hpp
 attachListener.hpp                      ostream.hpp
 
-barrierSet.cpp				barrierSet.hpp
+barrierSet.cpp				barrierSet.inline.hpp
 barrierSet.cpp			        collectedHeap.hpp
 barrierSet.cpp				universe.hpp
 
@@ -516,6 +517,11 @@ ciArrayKlassKlass.hpp                   ciKlassKlass.hpp
 
 ciCallProfile.hpp                       ciClassList.hpp
 
+ciCallSite.cpp                          ciCallSite.hpp
+ciCallSite.cpp                          ciUtilities.hpp
+
+ciCallSite.hpp                          ciInstance.hpp
+
 ciConstant.cpp                          allocation.hpp
 ciConstant.cpp                          allocation.inline.hpp
 ciConstant.cpp                          ciConstant.hpp
@@ -531,6 +537,12 @@ ciConstantPoolCache.cpp                 ciUtilities.hpp
 
 ciConstantPoolCache.hpp                 growableArray.hpp
 ciConstantPoolCache.hpp                 resourceArea.hpp
+
+ciCPCache.cpp                           cpCacheOop.hpp
+ciCPCache.cpp                           ciCPCache.hpp
+
+ciCPCache.hpp                           ciClassList.hpp
+ciCPCache.hpp                           ciObject.hpp
 
 ciEnv.cpp                               allocation.inline.hpp
 ciEnv.cpp                               ciConstant.hpp
@@ -570,6 +582,7 @@ ciEnv.hpp                               debugInfoRec.hpp
 ciEnv.hpp                               dependencies.hpp
 ciEnv.hpp                               exceptionHandlerTable.hpp
 ciEnv.hpp                               oopMap.hpp
+ciEnv.hpp                               systemDictionary.hpp
 ciEnv.hpp                               thread.hpp
 
 ciExceptionHandler.cpp                  ciExceptionHandler.hpp
@@ -592,6 +605,7 @@ ciField.cpp                             universe.inline.hpp
 ciField.hpp                             ciClassList.hpp
 ciField.hpp                             ciConstant.hpp
 ciField.hpp                             ciFlags.hpp
+ciField.hpp                             ciInstance.hpp
 
 ciFlags.cpp                             ciFlags.hpp
 
@@ -678,6 +692,7 @@ ciMethod.hpp                            ciFlags.hpp
 ciMethod.hpp                            ciInstanceKlass.hpp
 ciMethod.hpp                            ciObject.hpp
 ciMethod.hpp                            ciSignature.hpp
+ciMethod.hpp                            methodHandles.hpp
 ciMethod.hpp                            methodLiveness.hpp
 
 ciMethodBlocks.cpp                      bytecode.hpp
@@ -708,6 +723,15 @@ ciMethodKlass.cpp                       ciUtilities.hpp
 
 ciMethodKlass.hpp                       ciKlass.hpp
 ciMethodKlass.hpp                       ciSymbol.hpp
+
+ciMethodHandle.cpp                      ciClassList.hpp
+ciMethodHandle.cpp                      ciInstance.hpp
+ciMethodHandle.cpp                      ciMethodHandle.hpp
+ciMethodHandle.cpp                      ciUtilities.hpp
+ciMethodHandle.cpp                      methodHandles.hpp
+ciMethodHandle.cpp                      methodHandleWalk.hpp
+
+ciMethodHandle.hpp                      methodHandles.hpp
 
 ciNullObject.cpp                        ciNullObject.hpp
 
@@ -754,11 +778,14 @@ ciObject.hpp                            handles.hpp
 ciObject.hpp                            jniHandles.hpp
 
 ciObjectFactory.cpp                     allocation.inline.hpp
+ciObjectFactory.cpp                     ciCallSite.hpp
+ciObjectFactory.cpp                     ciCPCache.hpp
 ciObjectFactory.cpp                     ciInstance.hpp
 ciObjectFactory.cpp                     ciInstanceKlass.hpp
 ciObjectFactory.cpp                     ciInstanceKlassKlass.hpp
 ciObjectFactory.cpp                     ciMethod.hpp
 ciObjectFactory.cpp                     ciMethodData.hpp
+ciObjectFactory.cpp                     ciMethodHandle.hpp
 ciObjectFactory.cpp                     ciMethodKlass.hpp
 ciObjectFactory.cpp                     ciNullObject.hpp
 ciObjectFactory.cpp                     ciObjArray.hpp
@@ -792,6 +819,7 @@ ciSignature.hpp                         ciSymbol.hpp
 ciSignature.hpp                         globalDefinitions.hpp
 ciSignature.hpp                         growableArray.hpp
 
+ciStreams.cpp                           ciCallSite.hpp
 ciStreams.cpp                           ciConstant.hpp
 ciStreams.cpp                           ciField.hpp
 ciStreams.cpp                           ciStreams.hpp
@@ -894,6 +922,7 @@ classFileStream.hpp                     top.hpp
 
 classLoader.cpp                         allocation.inline.hpp
 classLoader.cpp                         arguments.hpp
+classLoader.cpp                         bytecodeStream.hpp
 classLoader.cpp                         classFileParser.hpp
 classLoader.cpp                         classFileStream.hpp
 classLoader.cpp                         classLoader.hpp
@@ -921,6 +950,7 @@ classLoader.cpp                         jvm_misc.hpp
 classLoader.cpp                         management.hpp
 classLoader.cpp                         oop.inline.hpp
 classLoader.cpp                         oopFactory.hpp
+classLoader.cpp                         oopMapCache.hpp
 classLoader.cpp                         os_<os_family>.inline.hpp
 classLoader.cpp                         symbolOop.hpp
 classLoader.cpp                         systemDictionary.hpp
@@ -1003,6 +1033,7 @@ codeCache.cpp                           objArrayOop.hpp
 codeCache.cpp                           oop.inline.hpp
 codeCache.cpp                           pcDesc.hpp
 codeCache.cpp                           resourceArea.hpp
+codeCache.cpp                           xmlstream.hpp
 
 codeCache.hpp                           allocation.hpp
 codeCache.hpp                           codeBlob.hpp
@@ -1091,6 +1122,7 @@ compileBroker.cpp                       nativeLookup.hpp
 compileBroker.cpp                       oop.inline.hpp
 compileBroker.cpp                       os.hpp
 compileBroker.cpp                       sharedRuntime.hpp
+compileBroker.cpp                       sweeper.hpp
 compileBroker.cpp                       systemDictionary.hpp
 compileBroker.cpp                       vmSymbols.hpp
 
@@ -1291,6 +1323,7 @@ cpCacheOop.cpp                          jvmtiRedefineClassesTrace.hpp
 cpCacheOop.cpp                          markSweep.inline.hpp
 cpCacheOop.cpp                          objArrayOop.hpp
 cpCacheOop.cpp                          oop.inline.hpp
+cpCacheOop.cpp                          rewriter.hpp
 cpCacheOop.cpp                          universe.inline.hpp
 
 cpCacheOop.hpp                          allocation.hpp
@@ -1451,6 +1484,7 @@ deoptimization.cpp                      thread.hpp
 deoptimization.cpp                      vframe.hpp
 deoptimization.cpp                      vframeArray.hpp
 deoptimization.cpp                      vframe_hp.hpp
+deoptimization.cpp                      vmreg_<arch>.inline.hpp
 deoptimization.cpp                      xmlstream.hpp
 
 deoptimization.hpp                      allocation.hpp
@@ -1497,6 +1531,7 @@ disassembler.cpp                        disassembler.hpp
 disassembler.cpp                        fprofiler.hpp
 disassembler.cpp                        handles.inline.hpp
 disassembler.cpp                        hpi.hpp
+disassembler.cpp                        javaClasses.hpp
 disassembler.cpp                        stubCodeGenerator.hpp
 disassembler.cpp                        stubRoutines.hpp
 
@@ -2501,6 +2536,7 @@ jvmtiExport.hpp                         growableArray.hpp
 jvmtiExport.hpp                         handles.hpp
 jvmtiExport.hpp                         iterator.hpp
 jvmtiExport.hpp                         jvmti.h
+jvmtiExport.hpp                         jvmticmlr.h
 jvmtiExport.hpp                         oop.hpp
 jvmtiExport.hpp                         oopsHierarchy.hpp
 
@@ -2619,6 +2655,7 @@ loaderConstraints.cpp                   resourceArea.hpp
 loaderConstraints.cpp                   safepoint.hpp
 
 loaderConstraints.hpp                   dictionary.hpp
+loaderConstraints.hpp                   placeholders.hpp
 loaderConstraints.hpp                   hashtable.hpp
 
 location.cpp                            debugInfo.hpp
@@ -2811,6 +2848,12 @@ methodDataOop.hpp                       bytecodes.hpp
 methodDataOop.hpp                       oop.hpp
 methodDataOop.hpp                       orderAccess.hpp
 methodDataOop.hpp                       universe.hpp
+
+methodHandleWalk.hpp                    methodHandles.hpp
+
+methodHandleWalk.cpp                    methodHandleWalk.hpp
+methodHandleWalk.cpp                    oopFactory.hpp
+methodHandleWalk.cpp                    rewriter.hpp
 
 methodHandles.hpp                       frame.inline.hpp
 methodHandles.hpp                       globals.hpp
@@ -3469,6 +3512,7 @@ reflection.cpp                          javaCalls.hpp
 reflection.cpp                          javaClasses.hpp
 reflection.cpp                          jvm.h
 reflection.cpp                          linkResolver.hpp
+reflection.cpp                          methodHandleWalk.hpp
 reflection.cpp                          objArrayKlass.hpp
 reflection.cpp                          objArrayOop.hpp
 reflection.cpp                          oopFactory.hpp
@@ -3680,6 +3724,7 @@ sharedHeap.hpp                          permGen.hpp
 sharedRuntime.cpp                       abstractCompiler.hpp
 sharedRuntime.cpp                       arguments.hpp
 sharedRuntime.cpp                       biasedLocking.hpp
+sharedRuntime.cpp                       compileBroker.hpp
 sharedRuntime.cpp                       compiledIC.hpp
 sharedRuntime.cpp                       compilerOracle.hpp
 sharedRuntime.cpp                       copy.hpp
@@ -3688,6 +3733,7 @@ sharedRuntime.cpp                       events.hpp
 sharedRuntime.cpp                       forte.hpp
 sharedRuntime.cpp                       gcLocker.inline.hpp
 sharedRuntime.cpp                       handles.inline.hpp
+sharedRuntime.cpp                       hashtable.inline.hpp
 sharedRuntime.cpp                       init.hpp
 sharedRuntime.cpp                       interfaceSupport.hpp
 sharedRuntime.cpp                       interpreterRuntime.hpp
@@ -3715,6 +3761,7 @@ sharedRuntime.cpp                       xmlstream.hpp
 sharedRuntime.hpp                       allocation.hpp
 sharedRuntime.hpp                       bytecodeHistogram.hpp
 sharedRuntime.hpp                       bytecodeTracer.hpp
+sharedRuntime.hpp                       hashtable.hpp
 sharedRuntime.hpp                       linkResolver.hpp
 sharedRuntime.hpp                       resourceArea.hpp
 sharedRuntime.hpp                       threadLocalStorage.hpp
@@ -3932,6 +3979,7 @@ stubs.hpp                               os_<os_family>.inline.hpp
 
 sweeper.cpp                             atomic.hpp
 sweeper.cpp                             codeCache.hpp
+sweeper.cpp                             compileBroker.hpp
 sweeper.cpp                             events.hpp
 sweeper.cpp                             methodOop.hpp
 sweeper.cpp                             mutexLocker.hpp
@@ -3939,6 +3987,8 @@ sweeper.cpp                             nmethod.hpp
 sweeper.cpp                             os.hpp
 sweeper.cpp                             resourceArea.hpp
 sweeper.cpp                             sweeper.hpp
+sweeper.cpp                             vm_operations.hpp
+sweeper.cpp                             xmlstream.hpp
 
 symbolKlass.cpp                         gcLocker.hpp
 symbolKlass.cpp                         handles.inline.hpp
@@ -4592,6 +4642,7 @@ vm_operations.cpp                       deoptimization.hpp
 vm_operations.cpp                       interfaceSupport.hpp
 vm_operations.cpp                       isGCActiveMark.hpp
 vm_operations.cpp                       resourceArea.hpp
+vm_operations.cpp                       sweeper.hpp
 vm_operations.cpp                       threadService.hpp
 vm_operations.cpp                       thread_<os_family>.inline.hpp
 vm_operations.cpp                       vmSymbols.hpp

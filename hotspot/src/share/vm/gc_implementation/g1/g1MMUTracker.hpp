@@ -99,7 +99,10 @@ private:
   // The array is of fixed size and I don't think we'll need more than
   // two or three entries with the current behaviour of G1 pauses.
   // If the array is full, an easy fix is to look for the pauses with
-  // the shortest gap between them and concolidate them.
+  // the shortest gap between them and consolidate them.
+  // For now, we have taken the expedient alternative of forgetting
+  // the oldest entry in the event that +G1ForgetfulMMUTracker, thus
+  // potentially violating MMU specs for some time thereafter.
 
   G1MMUTrackerQueueElem _array[QueueLength];
   int                   _head_index;

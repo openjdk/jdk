@@ -141,13 +141,19 @@ public enum Wrapper {
      *  @throws IllegalArgumentException for unexpected types
      */
     public static Wrapper forPrimitiveType(Class<?> type) {
+        Wrapper w = findPrimitiveType(type);
+        if (w != null)  return w;
+        if (type.isPrimitive())
+            throw new InternalError(); // redo hash function
+        throw newIllegalArgumentException("not primitive: "+type);
+    }
+
+    static Wrapper findPrimitiveType(Class<?> type) {
         Wrapper w = FROM_PRIM[hashPrim(type)];
         if (w != null && w.primitiveType == type) {
             return w;
         }
-        if (type.isPrimitive())
-            throw new InternalError(); // redo hash function
-        throw newIllegalArgumentException("not primitive: "+type);
+        return null;
     }
 
     /** Return the wrapper that wraps values into the given wrapper type.
@@ -160,7 +166,7 @@ public enum Wrapper {
         Wrapper w = findWrapperType(type);
         if (w != null)  return w;
         for (Wrapper x : values())
-            if (w.wrapperType == type)
+            if (x.wrapperType == type)
                 throw new InternalError(); // redo hash function
         throw newIllegalArgumentException("not wrapper: "+type);
     }
@@ -244,8 +250,10 @@ public enum Wrapper {
     public Class<?> wrapperType() { return wrapperType; }
 
     /** What is the wrapper type for this wrapper?
-     * The example type must be the wrapper type,
+     * Otherwise, the example type must be the wrapper type,
      * or the corresponding primitive type.
+     * (For {@code OBJECT}, the example type can be any non-primitive,
+     * and is normalized to {@code Object.class}.)
      * The resulting class type has the same type parameter.
      */
     public <T> Class<T> wrapperType(Class<T> exampleType) {
@@ -290,6 +298,16 @@ public enum Wrapper {
         return type.isPrimitive();
     }
 
+    /** What is the bytecode signature character for this type?
+     *  All non-primitives, including array types, report as 'L', the signature character for references.
+     */
+    public static char basicTypeChar(Class<?> type) {
+        if (!type.isPrimitive())
+            return 'L';
+        else
+            return forPrimitiveType(type).basicTypeChar();
+    }
+
     /** What is the bytecode signature character for this wrapper's
      *  primitive type?
      */
@@ -309,7 +327,7 @@ public enum Wrapper {
     /** Cast a wrapped value to the given type, which may be either a primitive or wrapper type.
      *  Performs standard primitive conversions, including truncation and float conversions.
      *  The given type must be compatible with this wrapper.  That is, it must either
-     *  be the wrapper type (or a subtype, in the case of {@code OBJECT} or else
+     *  be the wrapper type (or a subtype, in the case of {@code OBJECT}) or else
      *  it must be the wrapper's primitive type.
      *  @throws ClassCastException if the given type is not compatible with this wrapper
      */
@@ -326,9 +344,17 @@ public enum Wrapper {
      * If the target type is a primitive, change it to a wrapper.
      */
     static <T> Class<T> forceType(Class<?> type, Class<T> exampleType) {
+        boolean z = (type == exampleType ||
+               type.isPrimitive() && forPrimitiveType(type) == findWrapperType(exampleType) ||
+               exampleType.isPrimitive() && forPrimitiveType(exampleType) == findWrapperType(type) ||
+               type == Object.class && !exampleType.isPrimitive());
+        if (!z)
+            System.out.println(type+" <= "+exampleType);
         assert(type == exampleType ||
-               type == asWrapperType(exampleType) ||
-               type == Object.class && exampleType.isInterface());
+               type.isPrimitive() && forPrimitiveType(type) == findWrapperType(exampleType) ||
+               exampleType.isPrimitive() && forPrimitiveType(exampleType) == findWrapperType(type) ||
+               type == Object.class && !exampleType.isPrimitive());
+        @SuppressWarnings("unchecked")
         Class<T> result = (Class<T>) type;  // unchecked warning is expected here
         return result;
     }

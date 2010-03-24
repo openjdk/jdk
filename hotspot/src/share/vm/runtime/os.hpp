@@ -60,24 +60,26 @@ enum ThreadPriority {        // JLS 20.20.1-3
 typedef void (*java_call_t)(JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
 
 class os: AllStatic {
- private:
+ public:
   enum { page_sizes_max = 9 }; // Size of _page_sizes array (8 plus a sentinel)
 
+ private:
   static OSThread*          _starting_thread;
   static address            _polling_page;
   static volatile int32_t * _mem_serialize_page;
   static uintptr_t          _serialize_page_mask;
+ public:
   static size_t             _page_sizes[page_sizes_max];
 
+ private:
   static void init_page_sizes(size_t default_page_size) {
     _page_sizes[0] = default_page_size;
     _page_sizes[1] = 0; // sentinel
   }
 
  public:
-
-  static void init(void);                       // Called before command line parsing
-  static jint init_2(void);                    // Called after command line parsing
+  static void init(void);   // Called before command line parsing
+  static jint init_2(void); // Called after command line parsing
 
   // File names are case-insensitive on windows only
   // Override me as needed
@@ -141,6 +143,7 @@ class os: AllStatic {
   static int processor_count() {
     return _processor_count;
   }
+  static void set_processor_count(int count) { _processor_count = count; }
 
   // Returns the number of CPUs this process is currently allowed to run on.
   // Note that on some OSes this can change dynamically.
@@ -294,19 +297,16 @@ class os: AllStatic {
   }
 
   static bool    is_memory_serialize_page(JavaThread *thread, address addr) {
-    address thr_addr;
     if (UseMembar) return false;
-    // Calculate thread specific address
+    // Previously this function calculated the exact address of this
+    // thread's serialize page, and checked if the faulting address
+    // was equal.  However, some platforms mask off faulting addresses
+    // to the page size, so now we just check that the address is
+    // within the page.  This makes the thread argument unnecessary,
+    // but we retain the NULL check to preserve existing behaviour.
     if (thread == NULL) return false;
-    // TODO-FIXME: some platforms mask off faulting addresses to the base pagesize.
-    // Instead of using a test for equality we should probably use something
-    // of the form:
-    // return ((_mem_serialize_page ^ addr) & -pagesize) == 0
-    //
-    thr_addr  = (address)(((uintptr_t)thread >>
-                get_serialize_page_shift_count()) &
-                get_serialize_page_mask()) + (uintptr_t)_mem_serialize_page;
-    return  (thr_addr == addr);
+    address page = (address) _mem_serialize_page;
+    return addr >= page && addr < (page + os::vm_page_size());
   }
 
   static void block_on_serialize_page_trap();

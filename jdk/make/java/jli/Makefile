@@ -30,6 +30,7 @@
 # its manifestations (java, javaw, javac, ...).
 #
 BUILDDIR = ../..
+MODULE  = base
 LIBRARY = jli
 PRODUCT = java
 
@@ -152,7 +153,6 @@ STATIC_LIBRARY_NAME = $(LIBPREFIX)$(LIBRARY).lib
 STATIC_LIBRARY = $(STATIC_LIBRARY_DIR)/$(STATIC_LIBRARY_NAME)
 
 $(STATIC_LIBRARY_DIR): $(OBJDIR)
-	@$(prep-target)
 	@$(MKDIR) $(STATIC_LIBRARY_DIR)
 
 $(STATIC_LIBRARY): $(STATIC_LIBRARY_DIR)
