@@ -133,7 +133,7 @@ extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 
 #else
 
-#define SOCKADDR        union { struct sockaddr_in him4 }
+#define SOCKADDR        union { struct sockaddr_in him4; }
 #define SOCKADDR_LEN    sizeof(SOCKADDR)
 
 #endif

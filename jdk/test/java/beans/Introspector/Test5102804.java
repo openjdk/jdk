@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 5102804
- * @ignore This test is not predictable with regards to GC
  * @summary Tests memory leak
  * @author Sergey Malenkov
+ * @run main/othervm -ms16m -mx16m Test5102804
  */
 
 import java.beans.BeanInfo;

@@ -1926,9 +1926,9 @@ public class Code {
         for (Attribute.TypeCompound ta : lv.sym.typeAnnotations) {
             TypeAnnotationPosition p = ta.position;
             while (p != null) {
-                p.lvarOffset[0] = (int)lv.start_pc;
-                p.lvarLength[0] = (int)lv.length;
-                p.lvarIndex[0] = (int)lv.reg;
+                p.lvarOffset = new int[] { (int)lv.start_pc };
+                p.lvarLength = new int[] { (int)lv.length };
+                p.lvarIndex = new int[] { (int)lv.reg };
                 p.isValidOffset = true;
                 p = p.wildcard_position;
             }

@@ -26,7 +26,6 @@
 FILES_src = \
 	java/nio/Bits.java \
 	java/nio/Buffer.java \
-	java/nio/BufferPoolMXBean.java \
 	java/nio/ByteOrder.java \
 	java/nio/MappedByteBuffer.java \
 	java/nio/StringCharBuffer.java \

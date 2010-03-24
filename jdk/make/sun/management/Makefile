@@ -47,6 +47,8 @@ else
 endif
 SUBDIRS += jmxremote
  
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 
