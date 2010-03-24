@@ -44,6 +44,7 @@ jmethodID AwtFileDialog::setHWndMID;
 jmethodID AwtFileDialog::handleSelectedMID;
 jmethodID AwtFileDialog::handleCancelMID;
 jmethodID AwtFileDialog::checkFilenameFilterMID;
+jmethodID AwtFileDialog::isMultipleModeMID;
 
 /* FileDialog ids */
 jfieldID AwtFileDialog::modeID;
@@ -56,6 +57,13 @@ jfieldID AwtFileDialog::filterID;
 static TCHAR s_fileFilterString[MAX_FILTER_STRING];
 /* Non-localized suffix of the filter string */
 static const TCHAR s_additionalString[] = TEXT(" (*.*)\0*.*\0");
+
+// Default limit of the output buffer.
+#define SINGLE_MODE_BUFFER_LIMIT     MAX_PATH+1
+#define MULTIPLE_MODE_BUFFER_LIMIT   32768
+
+// The name of the property holding the pointer to the OPENFILENAME structure.
+static LPCTSTR OpenFileNameProp = TEXT("AWT_OFN");
 
 /***********************************************************************/
 
@@ -140,6 +148,8 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
                                                                            FileDialogWndProc);
             ::SetProp(parent, NativeDialogWndProcProp, reinterpret_cast<HANDLE>(lpfnWndProc));
 
+            ::SetProp(parent, OpenFileNameProp, (void *)lParam);
+
             break;
         }
         case WM_DESTROY: {
@@ -149,6 +159,7 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
                                                        lpfnWndProc);
             ::RemoveProp(parent, ModalDialogPeerProp);
             ::RemoveProp(parent, NativeDialogWndProcProp);
+            ::RemoveProp(parent, OpenFileNameProp);
             break;
         }
         case WM_NOTIFY: {
@@ -174,6 +185,30 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
                     // to unblock all the windows blocked by this dialog as it will
                     // be closed soon
                     env->CallVoidMethod(peer, AwtFileDialog::setHWndMID, (jlong)0);
+                } else if (notifyEx->hdr.code == CDN_SELCHANGE) {
+                    // reallocate the buffer if the buffer is too small
+                    LPOPENFILENAME lpofn = (LPOPENFILENAME)GetProp(parent, OpenFileNameProp);
+
+                    UINT nLength = CommDlg_OpenSave_GetSpec(parent, NULL, 0) +
+                                   CommDlg_OpenSave_GetFolderPath(parent, NULL, 0);
+
+                    if (lpofn->nMaxFile < nLength)
+                    {
+                        // allocate new buffer
+                        LPTSTR newBuffer = new TCHAR[nLength];
+
+                        if (newBuffer) {
+                            memset(newBuffer, 0, nLength * sizeof(TCHAR));
+                            LPTSTR oldBuffer = lpofn->lpstrFile;
+                            lpofn->lpstrFile = newBuffer;
+                            lpofn->nMaxFile = nLength;
+                            // free the previously allocated buffer
+                            if (oldBuffer) {
+                                delete[] oldBuffer;
+                            }
+
+                        }
+                    }
                 }
             }
             break;
@@ -193,7 +228,6 @@ AwtFileDialog::Show(void *p)
     WCHAR unicodeChar = L' ';
     LPTSTR fileBuffer = NULL;
     LPTSTR currentDirectory = NULL;
-    OPENFILENAME ofn;
     jint mode = 0;
     BOOL result = FALSE;
     DWORD dlgerr;
@@ -204,6 +238,10 @@ AwtFileDialog::Show(void *p)
     jobject target = NULL;
     jobject parent = NULL;
     AwtComponent* awtParent = NULL;
+    jboolean multipleMode = JNI_FALSE;
+
+    OPENFILENAME ofn;
+    memset(&ofn, 0, sizeof(ofn));
 
     /*
      * There's a situation (see bug 4906972) when InvokeFunction (by which this method is called)
@@ -233,7 +271,16 @@ AwtFileDialog::Show(void *p)
             (jstring)env->GetObjectField(target, AwtFileDialog::dirID);
         JavaStringBuffer directoryBuffer(env, directory);
 
-        fileBuffer = new TCHAR[MAX_PATH+1];
+        multipleMode = env->CallBooleanMethod(peer, AwtFileDialog::isMultipleModeMID);
+
+        UINT bufferLimit;
+        if (multipleMode == JNI_TRUE) {
+            bufferLimit = MULTIPLE_MODE_BUFFER_LIMIT;
+        } else {
+            bufferLimit = SINGLE_MODE_BUFFER_LIMIT;
+        }
+        LPTSTR fileBuffer = new TCHAR[bufferLimit];
+        memset(fileBuffer, 0, bufferLimit * sizeof(TCHAR));
 
         file = (jstring)env->GetObjectField(target, AwtFileDialog::fileID);
         if (file != NULL) {
@@ -243,8 +290,6 @@ AwtFileDialog::Show(void *p)
         } else {
             fileBuffer[0] = _T('\0');
         }
-
-        memset(&ofn, 0, sizeof(ofn));
 
         ofn.lStructSize = sizeof(ofn);
         ofn.lpstrFilter = s_fileFilterString;
@@ -265,18 +310,22 @@ AwtFileDialog::Show(void *p)
             ofn.hwndOwner = NULL;
         }
         ofn.lpstrFile = fileBuffer;
-        ofn.nMaxFile = MAX_PATH;
+        ofn.nMaxFile = bufferLimit;
         ofn.lpstrTitle = titleBuffer;
         ofn.lpstrInitialDir = directoryBuffer;
         ofn.Flags = OFN_LONGNAMES | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY |
                     OFN_ENABLEHOOK | OFN_EXPLORER | OFN_ENABLESIZING;
         fileFilter = env->GetObjectField(peer,
         AwtFileDialog::fileFilterID);
-    if (!JNU_IsNull(env,fileFilter)) {
-        ofn.Flags |= OFN_ENABLEINCLUDENOTIFY;
-    }
+        if (!JNU_IsNull(env,fileFilter)) {
+            ofn.Flags |= OFN_ENABLEINCLUDENOTIFY;
+        }
         ofn.lCustData = (LPARAM)peer;
         ofn.lpfnHook = (LPOFNHOOKPROC)FileDialogHookProc;
+
+        if (multipleMode == JNI_TRUE) {
+            ofn.Flags |= OFN_ALLOWMULTISELECT;
+        }
 
         // Save current directory, so we can reset if it changes.
         currentDirectory = new TCHAR[MAX_PATH+1];
@@ -318,11 +367,12 @@ AwtFileDialog::Show(void *p)
 
         // Report result to peer.
         if (result) {
-            jstring tmpJString = (_tcslen(ofn.lpstrFile) == 0 ?
-                JNU_NewStringPlatform(env, L"") :
-                JNU_NewStringPlatform(env, ofn.lpstrFile));
-            env->CallVoidMethod(peer, AwtFileDialog::handleSelectedMID, tmpJString);
-            env->DeleteLocalRef(tmpJString);
+            jint length = (jint)GetBufferLength(ofn.lpstrFile, ofn.nMaxFile);
+            jcharArray jnames = env->NewCharArray(length);
+            env->SetCharArrayRegion(jnames, 0, length, (jchar*)ofn.lpstrFile);
+
+            env->CallVoidMethod(peer, AwtFileDialog::handleSelectedMID, jnames);
+            env->DeleteLocalRef(jnames);
         } else {
             env->CallVoidMethod(peer, AwtFileDialog::handleCancelMID);
         }
@@ -338,7 +388,8 @@ AwtFileDialog::Show(void *p)
         env->DeleteGlobalRef(peer);
 
         delete[] currentDirectory;
-        delete[] fileBuffer;
+        if (ofn.lpstrFile)
+            delete[] ofn.lpstrFile;
         throw;
     }
 
@@ -351,7 +402,8 @@ AwtFileDialog::Show(void *p)
     env->DeleteGlobalRef(peer);
 
     delete[] currentDirectory;
-    delete[] fileBuffer;
+    if (ofn.lpstrFile)
+        delete[] ofn.lpstrFile;
 }
 
 BOOL
@@ -416,6 +468,18 @@ void AwtFileDialog::_ToBack(void *param)
     env->DeleteGlobalRef(self);
 }
 
+// Returns the length of the double null terminated output buffer
+UINT AwtFileDialog::GetBufferLength(LPTSTR buffer, UINT limit)
+{
+    UINT index = 0;
+    while ((index < limit) &&
+           (buffer[index] != NULL || buffer[index+1] != NULL))
+    {
+        index++;
+    }
+    return index;
+}
+
 /************************************************************************
  * WFileDialogPeer native methods
  */
@@ -434,11 +498,12 @@ Java_sun_awt_windows_WFileDialogPeer_initIDs(JNIEnv *env, jclass cls)
     AwtFileDialog::setHWndMID =
         env->GetMethodID(cls, "setHWnd", "(J)V");
     AwtFileDialog::handleSelectedMID =
-        env->GetMethodID(cls, "handleSelected", "(Ljava/lang/String;)V");
+        env->GetMethodID(cls, "handleSelected", "([C)V");
     AwtFileDialog::handleCancelMID =
         env->GetMethodID(cls, "handleCancel", "()V");
     AwtFileDialog::checkFilenameFilterMID =
         env->GetMethodID(cls, "checkFilenameFilter", "(Ljava/lang/String;)Z");
+    AwtFileDialog::isMultipleModeMID = env->GetMethodID(cls, "isMultipleMode", "()Z");
 
     /* java.awt.FileDialog fields */
     cls = env->FindClass("java/awt/FileDialog");
@@ -455,6 +520,7 @@ Java_sun_awt_windows_WFileDialogPeer_initIDs(JNIEnv *env, jclass cls)
     DASSERT(AwtFileDialog::setHWndMID != NULL);
     DASSERT(AwtFileDialog::handleSelectedMID != NULL);
     DASSERT(AwtFileDialog::handleCancelMID != NULL);
+    DASSERT(AwtFileDialog::isMultipleModeMID != NULL);
 
     DASSERT(AwtFileDialog::modeID != NULL);
     DASSERT(AwtFileDialog::dirID != NULL);

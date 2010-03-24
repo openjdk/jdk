@@ -28,34 +28,39 @@ package javax.swing.plaf.synth;
 
 import javax.swing.*;
 import javax.swing.colorchooser.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicColorChooserUI;
-import java.util.*;
 import java.awt.*;
-import java.awt.image.*;
-import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.Serializable;
-import sun.swing.plaf.synth.SynthUI;
 
 
 /**
- * Synth's ColorChooserUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JColorChooser}.
  *
  * @author Tom Santos
  * @author Steve Wilson
+ * @since 1.7
  */
-class SynthColorChooserUI extends BasicColorChooserUI implements
+public class SynthColorChooserUI extends BasicColorChooserUI implements
         PropertyChangeListener, SynthUI {
     private SynthStyle style;
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent c) {
         return new SynthColorChooserUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected AbstractColorChooserPanel[] createDefaultChoosers() {
         SynthContext context = getContext(chooser, ENABLED);
         AbstractColorChooserPanel[] panels = (AbstractColorChooserPanel[])
@@ -68,6 +73,10 @@ class SynthColorChooserUI extends BasicColorChooserUI implements
         return panels;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults() {
         super.installDefaults();
         updateStyle(chooser);
@@ -79,6 +88,10 @@ class SynthColorChooserUI extends BasicColorChooserUI implements
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(chooser, ENABLED);
 
@@ -88,16 +101,28 @@ class SynthColorChooserUI extends BasicColorChooserUI implements
         super.uninstallDefaults();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installListeners() {
         super.installListeners();
         chooser.addPropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallListeners() {
         chooser.removePropertyChangeListener(this);
         super.uninstallListeners();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -107,14 +132,23 @@ class SynthColorChooserUI extends BasicColorChooserUI implements
                     SynthLookAndFeel.getRegion(c), style, state);
     }
 
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
-    }
-
     private int getComponentState(JComponent c) {
         return SynthLookAndFeel.getComponentState(c);
     }
 
+    /**
+     * Notifies this UI delegate to repaint the specified component.
+     * This method paints the component background, then calls
+     * the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * <p>In general, this method does not need to be overridden by subclasses.
+     * All Look and Feel rendering code should reside in the {@code paint} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -125,6 +159,16 @@ class SynthColorChooserUI extends BasicColorChooserUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component according to the Look and Feel.
+     * <p>This method is not used by Synth Look and Feel.
+     * Painting is handled by the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -132,14 +176,30 @@ class SynthColorChooserUI extends BasicColorChooserUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     * This implementation does not perform any actions.
+     *
+     * @param context context for the component being painted
+     * @param g the {@code Graphics} object used for painting
+     * @see #update(Graphics,JComponent)
+     */
     protected void paint(SynthContext context, Graphics g) {
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintColorChooserBorder(context, g, x, y,w,h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle((JColorChooser)e.getSource());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,11 @@ public class GSSManagerImpl extends GSSManager {
         Oid[] mechs = list.getMechs();
         Oid[] retVal = new Oid[mechs.length];
         int pos = 0;
+
+        // Compatibility with RFC 2853 old NT_HOSTBASED_SERVICE value.
+        if (nameType.equals(GSSNameImpl.oldHostbasedServiceName)) {
+            nameType = GSSName.NT_HOSTBASED_SERVICE;
+        }
 
         // Iterate thru all mechs in GSS
         for (int i = 0; i < mechs.length; i++) {

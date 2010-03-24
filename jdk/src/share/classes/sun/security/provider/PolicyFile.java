@@ -298,16 +298,13 @@ public class PolicyFile extends java.security.Policy {
 
     private static final int DEFAULT_CACHE_SIZE = 1;
 
-    /** the scope to check */
-    private static IdentityScope scope = null;
-
     // contains the policy grant entries, PD cache, and alias mapping
     private AtomicReference<PolicyInfo> policyInfo =
         new AtomicReference<PolicyInfo>();
     private boolean constructed = false;
 
     private boolean expandProperties = true;
-    private boolean ignoreIdentityScope = false;
+    private boolean ignoreIdentityScope = true;
     private boolean allowSystemProperties = true;
     private boolean notUtf8 = false;
     private URL url;
@@ -2030,83 +2027,7 @@ public class PolicyFile extends java.security.Policy {
     private boolean checkForTrustedIdentity(final Certificate cert,
         PolicyInfo myInfo)
     {
-        if (cert == null)
-            return false;
-
-        // see if we are ignoring the identity scope or not
-        if (ignoreIdentityScope)
-            return false;
-
-        // try to initialize scope
-        synchronized(PolicyFile.class) {
-            if (scope == null) {
-                IdentityScope is = IdentityScope.getSystemScope();
-
-                if (is instanceof sun.security.provider.IdentityDatabase) {
-                    scope = is;
-                } else {
-                    // leave scope null
-                }
-            }
-        }
-
-        if (scope == null) {
-            ignoreIdentityScope = true;
-            return false;
-        }
-
-        // need privileged block for getIdentity in case we are trying
-        // to get a signer
-        final Identity id = AccessController.doPrivileged(
-                              new java.security.PrivilegedAction<Identity>() {
-            public Identity run() {
-                return scope.getIdentity(cert.getPublicKey());
-            }
-        });
-
-        if (isTrusted(id)) {
-            if (debug != null) {
-                debug.println("Adding policy entry for trusted Identity: ");
-                //needed for identity toString!
-                AccessController.doPrivileged(
-                      new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        debug.println("  identity = " + id);
-                        return null;
-                    }
-                });
-                debug.println("");
-            }
-
-            // add it to the policy for future reference
-            Certificate certs[] = new Certificate[] {cert};
-            PolicyEntry pe = new PolicyEntry(new CodeSource(null, certs));
-            pe.add(SecurityConstants.ALL_PERMISSION);
-
-            myInfo.identityPolicyEntries.add(pe);
-
-            // add it to the mapping as well so
-            // we don't have to go through this again
-            myInfo.aliasMapping.put(cert, id.getName());
-
-            return true;
-        }
         return false;
-    }
-
-    private static boolean isTrusted(Identity id) {
-            if (id instanceof SystemIdentity) {
-                SystemIdentity sysid = (SystemIdentity)id;
-                if (sysid.isTrusted()) {
-                    return true;
-                }
-            } else if (id instanceof SystemSigner) {
-                SystemSigner sysid = (SystemSigner)id;
-                if (sysid.isTrusted()) {
-                    return true;
-                }
-            }
-            return false;
     }
 
     /**

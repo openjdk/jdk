@@ -512,6 +512,23 @@ public class EncryptionKey
     }
 
     /**
+     * Determines if a kvno matches another kvno. Used in the method
+     * findKey(type, kvno, keys). Always returns true if either input
+     * is null or zero, in case any side does not have kvno info available.
+     *
+     * Note: zero is included because N/A is not a legal value for kvno
+     * in javax.security.auth.kerberos.KerberosKey. Therefore, the info
+     * that the kvno is N/A might be lost when converting between this
+     * class and KerberosKey.
+     */
+    private static boolean versionMatches(Integer v1, Integer v2) {
+        if (v1 == null || v1 == 0 || v2 == null || v2 == 0) {
+            return true;
+        }
+        return v1.equals(v2);
+    }
+
+    /**
      * Find a key with given etype and kvno
      * @param kvno if null, return any (first?) key
      */
@@ -525,15 +542,20 @@ public class EncryptionKey
         }
 
         int ktype;
+        boolean etypeFound = false;
         for (int i = 0; i < keys.length; i++) {
             ktype = keys[i].getEType();
             if (EType.isSupported(ktype)) {
                 Integer kv = keys[i].getKeyVersionNumber();
-                if (etype == ktype && (kvno == null || kvno.equals(kv))) {
-                    return keys[i];
+                if (etype == ktype) {
+                    etypeFound = true;
+                    if (versionMatches(kvno, kv)) {
+                        return keys[i];
+                    }
                 }
             }
         }
+
         // Key not found.
         // allow DES key to be used for the DES etypes
         if ((etype == EncryptedData.ETYPE_DES_CBC_CRC ||
@@ -543,11 +565,15 @@ public class EncryptionKey
                 if (ktype == EncryptedData.ETYPE_DES_CBC_CRC ||
                         ktype == EncryptedData.ETYPE_DES_CBC_MD5) {
                     Integer kv = keys[i].getKeyVersionNumber();
-                    if (kvno == null || kvno.equals(kv)) {
+                    etypeFound = true;
+                    if (versionMatches(kvno, kv)) {
                         return new EncryptionKey(etype, keys[i].getBytes());
                     }
                 }
             }
+        }
+        if (etypeFound) {
+            throw new KrbException(Krb5.KRB_AP_ERR_BADKEYVER);
         }
         return null;
     }

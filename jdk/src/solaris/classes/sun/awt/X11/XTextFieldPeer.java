@@ -55,7 +55,7 @@ import java.awt.im.InputMethodRequests;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.CausedFocusEvent;
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 
 public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XTextField");
@@ -115,13 +115,14 @@ public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         setBounds(x, y, width, height, SET_BOUNDS);
 
-        foreground = ComponentAccessor.getForeground(target);
+        AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+        foreground = compAccessor.getForeground(target);
         if (foreground == null)
             foreground = SystemColor.textText;
 
         setForeground(foreground);
 
-        background = ComponentAccessor.getBackground(target);
+        background = compAccessor.getBackground(target);
         if (background == null) {
             if (((TextField)target).isEditable()) background = SystemColor.text;
             else background = SystemColor.control;
@@ -130,8 +131,8 @@ public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
         if (!target.isBackgroundSet()) {
             // This is a way to set the background color of the TextArea
-            // without calling setBackground - go through reflection
-            ComponentAccessor.setBackground(target, background);
+            // without calling setBackground - go through accessor
+            compAccessor.setBackground(target, background);
         }
         if (!target.isForegroundSet()) {
             target.setForeground(SystemColor.textText);
@@ -392,7 +393,7 @@ public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     }
 
     void handleJavaKeyEvent(KeyEvent e) {
-        ComponentAccessor.processEvent(xtext,e);
+        AWTAccessor.getComponentAccessor().processEvent(xtext,e);
     }
 
 
@@ -620,7 +621,7 @@ public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
             this.peer = peer;
             setDoubleBuffered(true);
             setFocusable(false);
-            ComponentAccessor.setParent(this,parent);
+            AWTAccessor.getComponentAccessor().setParent(this,parent);
             setBackground(peer.getPeerBackground());
             setForeground(peer.getPeerForeground());
             setFont(peer.getPeerFont());

@@ -40,41 +40,35 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   // when the number of the rset update buffer crosses a certain threshold. A successor
   // would self-deactivate when the number of the buffers falls below the threshold.
   bool _active;
-  ConcurrentG1RefineThread *       _next;
- public:
-  virtual void run();
+  ConcurrentG1RefineThread* _next;
+  Monitor* _monitor;
+  ConcurrentG1Refine* _cg1r;
 
-  bool is_active()  { return _active;  }
-  void activate()   { _active = true;  }
-  void deactivate() { _active = false; }
+  int _thread_threshold_step;
+  // This thread activation threshold
+  int _threshold;
+  // This thread deactivation threshold
+  int _deactivation_threshold;
 
- private:
-  ConcurrentG1Refine*              _cg1r;
+  void sample_young_list_rs_lengths();
+  void run_young_rs_sampling();
+  void wait_for_completed_buffers();
 
-  double                           _interval_ms;
-
-  void decreaseInterval(int processing_time_ms) {
-    double min_interval_ms = (double) processing_time_ms;
-    _interval_ms = 0.8 * _interval_ms;
-    if (_interval_ms < min_interval_ms)
-      _interval_ms = min_interval_ms;
-  }
-  void increaseInterval(int processing_time_ms) {
-    double max_interval_ms = 9.0 * (double) processing_time_ms;
-    _interval_ms = 1.1 * _interval_ms;
-    if (max_interval_ms > 0 && _interval_ms > max_interval_ms)
-      _interval_ms = max_interval_ms;
-  }
-
-  void sleepBeforeNextCycle();
+  void set_active(bool x) { _active = x; }
+  bool is_active();
+  void activate();
+  void deactivate();
 
   // For use by G1CollectedHeap, which is a friend.
   static SuspendibleThreadSet* sts() { return &_sts; }
 
- public:
+public:
+  virtual void run();
   // Constructor
   ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next,
                            int worker_id_offset, int worker_id);
+
+  void initialize();
 
   // Printing
   void print() const;
@@ -83,13 +77,10 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   // Total virtual time so far.
   double vtime_accum() { return _vtime_accum; }
 
-  ConcurrentG1Refine* cg1r()                     { return _cg1r;     }
-
-  void            sample_young_list_rs_lengths();
+  ConcurrentG1Refine* cg1r() { return _cg1r;     }
 
   // Yield for GC
-  void            yield();
-
+  void yield();
   // shutdown
   void stop();
 };

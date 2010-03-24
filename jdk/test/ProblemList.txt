@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -431,6 +431,17 @@ java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
 
 # jdk_management
 
+# Fails on linux: KO: StringMonitor notification missed or not emitted
+javax/management/monitor/NonComparableAttributeValueTest.java	generic-all
+
+# Port conflict? Fails with communication error
+sun/management/jmxremote/bootstrap/PasswordFilePermissionTest.sh generic-all
+
+# Fails on Windows 2000, Test failed for iiop java.lang.NullPointerException
+#  at org.omg.stub.javax.management.remote.rmi._RMIConnectionImpl_Tie._invoke(Unknown Source)
+#  at com.sun.corba.se.impl.protocol.CorbaServerRequestDispatcherImpl.dispatchToServant(CorbaServerRequestDispatcherImpl.java:653)
+javax/management/remote/mandatory/connection/ReconnectTest.java generic-all
+
 # Solaris 10 sparc, NPE from org.omg.stub.javax.management.remote.rmi._RMIConnectionImpl_Tie._invoke
 javax/management/remote/mandatory/threads/ExecutorTest.java 	generic-all
 
@@ -493,10 +504,6 @@ javax/management/monitor/AttributeArbitraryDataTypeTest.java	generic-all
 
 # Problems with rounding add failures on solaris-sparcv9 and -server
 java/math/BigDecimal/AddTests.java			 	solaris-sparcv9
-
-# Problems on windows with samevm, missing inputstream close()?
-# Also times out on solaris-sparcv9 -server
-java/math/BigInteger/BigIntegerTest.java		 	generic-all
 
 # Should be samevm? But seems problematic with samevm on windows
 java/math/BigInteger/ModPow65537.java			 	generic-all
@@ -570,6 +577,7 @@ javax/print/attribute/ChromaticityValues.java			generic-all
 javax/print/attribute/GetCopiesSupported.java			generic-all
 javax/print/attribute/SidesPageRangesTest.java			generic-all
 javax/print/attribute/SupportedPrintableAreas.java		generic-all
+javax/print/attribute/AttributeTest.java                        generic-all
 
 # Only print test left, excluding just because all print tests have been
 javax/print/attribute/MediaMappingsTest.java 			generic-all
@@ -580,6 +588,13 @@ javax/print/attribute/MediaMappingsTest.java 			generic-all
 
 # Suspect many of these tests auffer from using fixed ports, no concrete 
 #   evidence.
+
+# Times out on Windows X64
+sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java generic-all
+
+# Dies on Solaris 10 sparc and sparcv9, Linux  -ea -esa with 
+#   Interrupted or IO exception, maybe writing to non-unique named file?
+com/sun/net/httpserver/bugs/B6373555.java			generic-all
 
 # Fails on OpenSolaris, BindException unexpected 
 java/net/BindException/Test.java				generic-all
@@ -628,9 +643,6 @@ java/net/ipv6tests/TcpTest.java 			 	generic-all
 # Linux i586, fails with unexpected output
 java/net/MulticastSocket/NoLoopbackPackets.java 	 	linux-i586
 
-# Times out on windows x64, fails with samevm on solaris 11 i586
-java/net/ServerSocket/AcceptCauseFileDescriptorLeak.java 	generic-all
-
 # Address already in use
 java/net/DatagramSocket/DatagramTimeout.java			generic-all
 
@@ -642,7 +654,6 @@ java/net/Socket/DeadlockTest.java				generic-all
 java/net/Socket/AccurateTimeout.java			 	generic-all
 java/net/Socket/asyncClose/BrokenPipe.java		 	generic-all
 java/net/Socket/CloseAvailable.java			 	generic-all
-java/net/Socket/FDClose.java				 	generic-all
 
 # Linux X64 address already in use, samevm issues
 java/net/Socket/LingerTest.java 			 	generic-all
@@ -682,8 +693,6 @@ java/net/URLConnection/TimeoutTest.java 		 	generic-all
 java/net/URLConnection/ZeroContentLength.java		 	generic-all
 
 # Solaris 11 i586 fails with samevm, not sure why
-java/net/Authenticator/B4769350.java				generic-all
-java/net/HttpURLConnection/HttpResponseCode.java		generic-all
 java/net/ResponseCache/B6181108.java				generic-all
 java/net/ResponseCache/ResponseCacheTest.java			generic-all
 java/net/URL/GetContent.java					generic-all
@@ -717,12 +726,52 @@ sun/net/www/http/KeepAliveCache/KeepAliveTimerThread.java	generic-all
 # Connection refused, windows samevm
 sun/net/www/protocol/http/DigestTest.java			generic-all
 
+# Fails on Fedora 9 32bit & 64bit & Solaris 10, wrong proxy for http://localhost/index.html
+java/net/ProxySelector/B6737819.java				generic-all
+
 ############################################################################
 
 # jdk_nio
 
 # Suspect many of these tests auffer from using fixed ports, no concrete 
 #   evidence.
+
+# Failing on Solaris x86 and Linux x86, filed 6934585
+java/nio/channels/AsynchronousSocketChannel/Basic.java		generic-all
+
+# Occasionally Failing with java.lang.AssertionError on Windows X64
+#  at sun.nio.ch.PendingIoCache.clearPendingIoMap(PendingIoCache.java:144)
+#java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java	windows-all
+
+# Some kind of sleep/wake problem on Windows X64
+java/nio/channels/Selector/Wakeup.java				windows-all
+
+# Fails with -ea -esa, Assertion error, but only on Solaris 10 machines?
+com/sun/nio/sctp/SctpChannel/Send.java				generic-all
+com/sun/nio/sctp/SctpChannel/Shutdown.java			generic-all
+
+# Fails on Windows 2000, Can't delete test directory .\x.SetLastModified.dir
+#    at SetLastModified.main(SetLastModified.java:107)
+java/io/File/SetLastModified.java                               generic-all
+
+# Fails on Solaris 10 x64, address already in use
+java/nio/channels/DatagramChannel/SRTest.java			generic-all
+
+# Fails on Solaris 10 x86, times out
+java/nio/channels/DatagramChannel/Sender.java			generic-all
+
+# Fails on Fedora 9 x86, address in use
+java/nio/channels/Selector/SelectWrite.java			generic-all
+
+# Fails on Fedora 9 32bit times out
+java/nio/channels/DatagramChannel/EmptyBuffer.java		generic-all
+
+# Fails on Windows 2000, ExceptionInInitializerError
+#   in WindowsAsynchronousServerSocketChannelImpl.java:316
+java/nio/channels/AsynchronousChannelGroup/Unbounded.java	generic-all
+
+# Fails on Windows 2000,  times out
+java/nio/channels/FileChannel/Transfer.java			generic-all
 
 # Fails on OpenSolaris, IllegalStateException: Cannot add or remove addresses 
 #    from a channel that is bound to the wildcard address
@@ -892,6 +941,69 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 ############################################################################
 
 # jdk_security
+
+# Failing on Solaris i586, 3/9/2010, not a -samevm issue (jdk_security3)
+sun/security/pkcs11/Secmod/AddPrivateKey.java			solaris-i586
+sun/security/pkcs11/ec/ReadCertificates.java			solaris-i586
+sun/security/pkcs11/ec/ReadPKCS12.java				solaris-i586
+sun/security/pkcs11/ec/TestCurves.java				solaris-i586
+sun/security/pkcs11/ec/TestECDSA.java				solaris-i586
+sun/security/pkcs11/ec/TestECGenSpec.java			solaris-i586
+sun/security/pkcs11/ec/TestKeyFactory.java			solaris-i586
+
+# Unknown problem, could be a jtreg -samevm issue?
+#  Error while cleaning up threads after test
+java/security/Security/SynchronizedAccess.java			generic-all
+
+# Failing on Solaris X64 (-d64 -server) with:
+#  GSSException: Failure unspecified at GSS-API level 
+#    (Mechanism level: Specified version of key is not available (44))
+sun/security/krb5/auto/BasicKrb5Test.java			generic-all
+
+# Solaris X86 failures, readjar.jks: No such file or directory
+sun/security/tools/keytool/readjar.sh				generic-all
+
+# Fails with -ea -esa, but only on Solaris sparc? Suspect it is timing out
+sun/security/tools/keytool/standard.sh				generic-all
+
+# Fails on Solaris 10 X64, address already in use
+sun/security/krb5/auto/HttpNegotiateServer.java			generic-all
+
+# Fails on almost all platforms
+#   java.lang.UnsupportedClassVersionError: SerialTest : 
+#      Unsupported major.minor version 51.0
+#    at java.lang.ClassLoader.defineClass1(Native Method)
+sun/security/util/Oid/S11N.sh					generic-all
+
+# Fails on Fedora 9 32bit
+#  GSSException: Failure unspecified at GSS-API level (Mechanism level: 
+#    Invalid argument (400) - Cannot find key of appropriate type to decrypt 
+#    AP REP - DES CBC mode with MD5)
+#  at sun.security.jgss.krb5.Krb5Context.acceptSecContext(Krb5Context.java:778)
+sun/security/krb5/auto/NonMutualSpnego.java			generic-all
+
+# Fails on Solaris 10 sparc, GSSException: Failure unspecified at GSS-API level
+#   Also fails on Windows 2000 similar way
+sun/security/krb5/auto/ok-as-delegate.sh			generic-all
+
+# Fails on Windows 2000, GSSException: Failure unspecified at GSS-API level
+#    (Mechanism level: Request is a replay (34))
+sun/security/krb5/auto/ok-as-delegate-xrealm.sh			generic-all
+
+# Fails on Windows 2000, ExceptionInInitializerError
+sun/security/mscapi/AccessKeyStore.sh				generic-all
+
+# Fails on Windows 2000, UnsatisfiedLinkError: libnspr4.dll: Access is denied
+sun/security/pkcs11/KeyAgreement/TestDH.java			generic-all
+
+# Fails on Windows 2000, UnsatisfiedLinkError: libnspr4.dll: Access is denied
+sun/security/pkcs11/fips/ClientJSSEServerJSSE.java		generic-all
+
+# Fails on Solaris 10, KrbException: Additional pre-authentication required (25)
+sun/security/krb5/auto/basic.sh					generic-all
+
+# Fails on Fedora 9 64bit, PKCS11Exception: CKR_DEVICE_ERROR
+sun/security/pkcs11/KeyAgreement/TestDH.java			generic-all
 
 # Run too slow on Solaris 10 sparc
 sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/SSLSocketTimeoutNulls.java solaris-sparc
@@ -1088,6 +1200,16 @@ java/text/Bidi/Bug6665028.java				 	linux-x64
 #  So most if not all tools tests are now being run with "othervm" mode.
 #  Some of these tools tests have a tendency to use fixed ports, bad idea.
 
+# Fails with -ea -esa on Solaris, Assertion error (Solaris specific test)
+com/sun/tracing/BasicFunctionality.java				generic-all
+
+# Fails on Fedora 9 32bit, jps output differs problem
+sun/tools/jstatd/jstatdDefaults.sh				generic-all
+
+# Fails on Linux Fedora 9 32bit, Could not read data for remote JVM 16133
+#       jstat output differs from expected output
+sun/tools/jstatd/jstatdExternalRegistry.sh			generic-all
+
 # Output of jps differs from expected output.
 #   Invalid argument count on solaris-sparc and x64
 sun/tools/jstatd/jstatdPort.sh					generic-all
@@ -1098,6 +1220,11 @@ sun/tools/jps/jps-l_2.sh					generic-all
 sun/tools/jps/jps-lm.sh						generic-all
 sun/tools/jps/jps-Vvml_2.sh					generic-all
 sun/tools/jps/jps-m_2.sh					generic-all
+
+# Fails on Solaris 10 sparcv9, shell exits with 1
+#  Turning off use of shared archive because of choice of garbage collector or large pages 
+#  Could not synchronize with target
+sun/tools/jps/jps-v_1.sh					generic-all
 
 # Fails on OpenSolaris "Could not synchronize with target"
 sun/tools/jps/jps-Defaults.sh					generic-all
@@ -1159,6 +1286,19 @@ tools/jar/index/MetaInf.java				 	windows-all
 ############################################################################
 
 # jdk_util
+
+# Fails with assertion error on windows
+#   11 separate stacktraces created... file reuse problem?
+java/util/zip/ZipFile/ReadLongZipFileName.java			generic-all
+
+# Recent failure on all platforms
+sun/util/resources/TimeZone/Bug6317929.java			generic-all
+
+# Fails with -ea -esa on all platforms with Assertion error
+java/util/ResourceBundle/Test4300693.java			generic-all
+
+# Failing on all -client 32bit platforms starting with b77? See 6908348.
+java/util/concurrent/BlockingQueue/CancelledProducerConsumerLoops.java generic-all
 
 # Assert error, failures, on Linux Fedora 9 -server
 #   Windows samevm failure, assert error "Passed = 134, failed = 2"

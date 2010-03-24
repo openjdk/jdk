@@ -26,6 +26,7 @@
 package java.lang;
 import java.util.Random;
 import sun.misc.FpUtils;
+import sun.misc.DoubleConsts;
 
 /**
  * The class {@code StrictMath} contains methods for performing basic
@@ -316,7 +317,9 @@ public final class StrictMath {
      *          floating-point value that is greater than or equal to
      *          the argument and is equal to a mathematical integer.
      */
-    public static native double ceil(double a);
+    public static double ceil(double a) {
+        return floorOrCeil(a, -0.0, 1.0, 1.0);
+    }
 
     /**
      * Returns the largest (closest to positive infinity)
@@ -333,7 +336,54 @@ public final class StrictMath {
      *          floating-point value that less than or equal to the argument
      *          and is equal to a mathematical integer.
      */
-    public static native double floor(double a);
+    public static double floor(double a) {
+        return floorOrCeil(a, -1.0, 0.0, -1.0);
+    }
+
+    /**
+     * Internal method to share logic between floor and ceil.
+     *
+     * @param a the value to be floored or ceiled
+     * @param negativeBoundary result for values in (-1, 0)
+     * @param positiveBoundary result for values in (0, 1)
+     * @param increment value to add when the argument is non-integral
+     */
+    private static double floorOrCeil(double a,
+                                      double negativeBoundary,
+                                      double positiveBoundary,
+                                      double sign) {
+        int exponent = Math.getExponent(a);
+
+        if (exponent < 0) {
+            /*
+             * Absolute value of argument is less than 1.
+             * floorOrceil(-0.0) => -0.0
+             * floorOrceil(+0.0) => +0.0
+             */
+            return ((a == 0.0) ? a :
+                    ( (a < 0.0) ?  negativeBoundary : positiveBoundary) );
+        } else if (exponent >= 52) {
+            /*
+             * Infinity, NaN, or a value so large it must be integral.
+             */
+            return a;
+        }
+        // Else the argument is either an integral value already XOR it
+        // has to be rounded to one.
+        assert exponent >= 0 && exponent <= 51;
+
+        long doppel = Double.doubleToRawLongBits(a);
+        long mask   = DoubleConsts.SIGNIF_BIT_MASK >> exponent;
+
+        if ( (mask & doppel) == 0L )
+            return a; // integral value
+        else {
+            double result = Double.longBitsToDouble(doppel & (~mask));
+            if (sign*a > 0.0)
+                result = result + sign;
+            return result;
+        }
+    }
 
     /**
      * Returns the {@code double} value that is closest in value

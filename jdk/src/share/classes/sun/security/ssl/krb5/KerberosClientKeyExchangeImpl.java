@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,12 @@ import sun.security.krb5.internal.EncTicketPart;
 import sun.security.krb5.internal.crypto.KeyUsage;
 
 import sun.security.jgss.krb5.Krb5Util;
+import sun.security.krb5.KrbException;
+import sun.security.krb5.internal.Krb5;
 
 import sun.security.ssl.Debug;
 import sun.security.ssl.HandshakeInStream;
 import sun.security.ssl.HandshakeOutStream;
-import sun.security.ssl.KerberosClientKeyExchange;
 import sun.security.ssl.ProtocolVersion;
 
 /**
@@ -188,7 +189,14 @@ public final class KerberosClientKeyExchangeImpl
             // See if we have the right key to decrypt the ticket to get
             // the session key.
             int encPartKeyType = encPart.getEType();
-            KerberosKey dkey = findKey(encPartKeyType, serverKeys);
+            Integer encPartKeyVersion = encPart.getKeyVersionNumber();
+            KerberosKey dkey = null;
+            try {
+                dkey = findKey(encPartKeyType, encPartKeyVersion, serverKeys);
+            } catch (KrbException ke) { // a kvno mismatch
+                throw new IOException(
+                        "Cannot find key matching version number", ke);
+            }
             if (dkey == null) {
                 // %%% Should print string repr of etype
                 throw new IOException(
@@ -355,12 +363,34 @@ public final class KerberosClientKeyExchangeImpl
         return localPrincipal;
     }
 
-    private static KerberosKey findKey(int etype, KerberosKey[] keys) {
+    /**
+     * Determines if a kvno matches another kvno. Used in the method
+     * findKey(etype, version, keys). Always returns true if either input
+     * is null or zero, in case any side does not have kvno info available.
+     *
+     * Note: zero is included because N/A is not a legal value for kvno
+     * in javax.security.auth.kerberos.KerberosKey. Therefore, the info
+     * that the kvno is N/A might be lost when converting between
+     * EncryptionKey and KerberosKey.
+     */
+    private static boolean versionMatches(Integer v1, int v2) {
+        if (v1 == null || v1 == 0 || v2 == 0) {
+            return true;
+        }
+        return v1.equals(v2);
+    }
+
+    private static KerberosKey findKey(int etype, Integer version,
+            KerberosKey[] keys) throws KrbException {
         int ktype;
+        boolean etypeFound = false;
         for (int i = 0; i < keys.length; i++) {
             ktype = keys[i].getKeyType();
             if (etype == ktype) {
-                return keys[i];
+                etypeFound = true;
+                if (versionMatches(version, keys[i].getVersionNumber())) {
+                    return keys[i];
+                }
             }
         }
         // Key not found.
@@ -370,13 +400,19 @@ public final class KerberosClientKeyExchangeImpl
             for (int i = 0; i < keys.length; i++) {
                 ktype = keys[i].getKeyType();
                 if (ktype == EncryptedData.ETYPE_DES_CBC_CRC ||
-                    ktype == EncryptedData.ETYPE_DES_CBC_MD5) {
-                    return new KerberosKey(keys[i].getPrincipal(),
-                        keys[i].getEncoded(),
-                        etype,
-                        keys[i].getVersionNumber());
+                        ktype == EncryptedData.ETYPE_DES_CBC_MD5) {
+                    etypeFound = true;
+                    if (versionMatches(version, keys[i].getVersionNumber())) {
+                        return new KerberosKey(keys[i].getPrincipal(),
+                            keys[i].getEncoded(),
+                            etype,
+                            keys[i].getVersionNumber());
+                    }
                 }
             }
+        }
+        if (etypeFound) {
+            throw new KrbException(Krb5.KRB_AP_ERR_BADKEYVER);
         }
         return null;
     }

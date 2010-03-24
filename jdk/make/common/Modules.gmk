@@ -1,0 +1,481 @@
+#
+# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+JDK_MODULE_IMAGE_DIR = $(ABS_OUTPUTDIR)/jdk-module-image
+JRE_MODULE_IMAGE_DIR = $(ABS_OUTPUTDIR)/jre-module-image
+
+#
+# modules   Target to build jdk and jre module image
+#
+#           There is one jar file per module containing classes only.
+#           All module jars are currently placed under jre/lib directory.
+#
+# Open issues that need further investigation:
+# 1. Classes in jre/lib/ext/dnsns.jar are currently put in jre/lib/jndi-dns
+#    module.  META-INF/services file is not installed.
+# 2. Signed jars
+#    For JDK build, signed jars are copied to the build.
+#    All jars in the module image are unsigned.
+
+MODULE_IMAGEBINDIR = bin
+
+#
+# Targets.
+#
+INITIAL_MODULE_IMAGE_JRE=initial-module-image-jre
+INITIAL_MODULE_IMAGE_JDK=initial-module-image-jdk
+ifeq ($(PLATFORM), solaris)
+  ifeq ($(ARCH_DATA_MODEL), 64)
+    INITIAL_MODULE_IMAGE_JRE=initial-module-image-jre-sol64
+    INITIAL_MODULE_IMAGE_JDK=initial-module-image-jdk-sol64
+  endif
+endif
+
+modules modules-clobber \
+initial-module-image-jre initial-module-image-jdk \
+initial-module-image-jre-sol64 initial-module-image-jdk-sol64 \
+trim-module-image-jre trim-module-image-jdk \
+process-module-image-jre process-module-image-jdk ::
+	@$(ECHO) ">>>Making "$@" @ `$(DATE)` ..."
+
+# Order is important here, trim jre after jdk image is created
+modules:: gen-modules \
+	 sanity-module-images post-sanity-module-images  \
+	 $(INITIAL_MODULE_IMAGE_JRE) $(INITIAL_MODULE_IMAGE_JDK) \
+	 trim-module-image-jre trim-module-image-jdk \
+	 process-module-image-jre process-module-image-jdk
+
+# Don't use these
+module-image-jre:: initial-module-image-jre trim-module-image-jre process-module-image-jre
+module-image-jdk:: initial-module-image-jdk trim-module-image-jdk process-module-image-jdk
+
+#
+# Paths to these files we need
+JDK_MODULE_LICENSES   = $(LICENSE_DOCLIST_JDK:%=$(JDK_MODULE_IMAGE_DIR)/%)
+JDK_MODULE_64_LICENSES = $(LICENSE_DOCLIST_JDK:%=$(JDK_MODULE_IMAGE_DIR)/%64)
+JDK_MODULE_DOCFILES   = $(OTHER_DOCLIST_JDK:%=$(JDK_MODULE_IMAGE_DIR)/%)
+
+JRE_MODULE_LICENSES   = $(LICENSE_DOCLIST_JRE:%=$(JRE_MODULE_IMAGE_DIR)/%)
+JRE_MODULE_64_LICENSES = $(LICENSE_DOCLIST_JRE:%=$(JRE_MODULE_IMAGE_DIR)/%64)
+JRE_MODULE_DOCFILES   = $(OTHER_DOCLIST_JRE:%=$(JRE_MODULE_IMAGE_DIR)/%)
+JRE_MODULE_DOCFILES  += $(JRE_NAMECHANGE_DOCLIST:%=$(JRE_MODULE_IMAGE_DIR)/%$(TEXT_SUFFIX))
+
+###### RULES
+
+# JDK files
+$(JDK_MODULE_IMAGE_DIR)/%: $(SHARE_JDK_DOC_SRC)/%
+	$(process-doc-file)
+# Removes LICENSE_VERSION or not
+ifdef LICENSE_VERSION
+$(JDK_MODULE_IMAGE_DIR)/%: $(SHARE_JDK_DOC_SRC)/%$(LICENSE_VERSION)
+	$(process-doc-file)
+$(JDK_MODULE_IMAGE_DIR)/%64: $(SHARE_JDK_DOC_SRC)/%$(LICENSE_VERSION)
+	$(process-doc-file)
+else
+$(JDK_MODULE_IMAGE_DIR)/%64: $(SHARE_JDK_DOC_SRC)/%
+	$(process-doc-file)
+endif
+
+# JRE files 
+$(JRE_MODULE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%
+	$(process-doc-file)
+# Add $(TEXT_SUFFIX) suffix
+ifdef TEXT_SUFFIX
+$(JRE_MODULE_IMAGE_DIR)/%$(TEXT_SUFFIX): $(SHARE_JRE_DOC_SRC)/%
+	$(process-doc-file)
+endif
+# Removes LICENSE_VERSION or not
+ifdef LICENSE_VERSION
+$(JRE_MODULE_IMAGE_DIR)/%: $(SHARE_JRE_DOC_SRC)/%$(LICENSE_VERSION)
+	$(process-doc-file)
+$(JRE_MODULE_IMAGE_DIR)/%64: $(SHARE_JRE_DOC_SRC)/%$(LICENSE_VERSION)
+	$(process-doc-file)
+else
+$(JRE_MODULE_IMAGE_DIR)/%64: $(SHARE_JRE_DOC_SRC)/%
+	$(process-doc-file)
+endif
+
+######################################################
+# JRE Image
+######################################################
+
+MODULES_LIST = $(MODULES_TEMPDIR)/classlist/modules.list
+
+# Modules in the jre/lib/security directory
+POLICY_MODULES = US_export_policy local_policy
+
+# Modules in the modules/ext directory
+EXT_MODULES = localedata security-sunec security-sunjce
+
+# Build PKCS#11 on all platforms except 64-bit Windows.
+PKCS11 = security-sunpkcs11
+ifeq ($(ARCH_DATA_MODEL), 64)
+  ifeq ($(PLATFORM), windows)
+    PKCS11 =
+  endif
+endif
+
+EXT_MODULES += $(PKCS11)
+
+# Build Microsoft CryptoAPI provider only on (non-64-bit) Windows platform.
+ifeq ($(PLATFORM), windows)
+  ifneq ($(ARCH_DATA_MODEL), 64)
+    EXT_MODULES += security-sunmscapi
+  endif
+endif
+
+# Modules for JDK only
+JDK_MODULES = tools
+
+gen-modules:
+	$(CD) modules; $(MAKE) all
+
+initial-module-image-jre-setup:
+	$(RM) -r $(JRE_MODULE_IMAGE_DIR)
+	$(MKDIR) -p $(JRE_MODULE_IMAGE_DIR)
+
+# 64-bit solaris jre image contains only the 64-bit add-on files.
+initial-module-image-jre-sol64:: initial-module-image-jre-setup \
+			  $(JRE_MODULE_LICENSES) $(JRE_MODULE_64_LICENSES)
+	@# Use tar instead of cp to preserve the symbolic links
+	for dir in bin lib ; do \
+	  ( $(CD) $(OUTPUTDIR) && \
+		$(TAR) cf - `$(FIND) $$dir -name '$(ARCH)' -print` | \
+		($(CD) $(JRE_MODULE_IMAGE_DIR) && $(TAR) xf -) ) ; \
+	done
+	@# Remove some files from the jre area
+	for t in $(NOTJRETOOLS) ; do \
+	    $(RM) $(JRE_MODULE_IMAGE_DIR)/bin$(ISA_DIR)/$$t ; \
+	done
+	$(RM) `$(FIND) $(JRE_MODULE_IMAGE_DIR)/lib -name 'orb.idl'`
+	$(RM) `$(FIND) $(JRE_MODULE_IMAGE_DIR)/lib -name 'ir.idl'`
+
+# Construct an initial jre image (initial jdk jre) no trimming or stripping
+initial-module-image-jre:: initial-module-image-jre-setup \
+		    $(JRE_LICENSES) $(JRE_MODULE_DOCFILES) \
+		    $(BUILDMETAINDEX_JARFILE)
+	@# Copy in bin directory
+	$(CD) $(OUTPUTDIR) && $(FIND) bin -depth | $(CPIO) -pdum $(JRE_MODULE_IMAGE_DIR)
+	@# CTE plugin security change require new empty directory lib/applet
+	$(MKDIR) -p $(JRE_MODULE_IMAGE_DIR)/lib/applet
+	@# Copy files but not .jar in lib directory 
+	$(CD) $(OUTPUTDIR) && $(FIND) lib -depth | $(EGREP) -v ".jar$$" | $(CPIO) -pdum $(JRE_MODULE_IMAGE_DIR)
+	@#
+	@# copy modules to jre/lib
+	@#
+	for m in `$(NAWK) '{print $$1}' $(MODULES_LIST)` ; do \
+	    $(CP) $(MODULES_DIR)/$$m/lib/$$m.jar $(JRE_MODULE_IMAGE_DIR)/lib ; \
+	done
+	$(MKDIR) -p $(JRE_MODULE_IMAGE_DIR)/lib/ext
+	for m in $(EXT_MODULES) ; do \
+           $(MV) $(JRE_MODULE_IMAGE_DIR)/lib/$$m.jar $(JRE_MODULE_IMAGE_DIR)/lib/ext ; \
+        done
+	for m in $(POLICY_MODULES) ; do \
+           $(MV) $(JRE_MODULE_IMAGE_DIR)/lib/$$m.jar $(JRE_MODULE_IMAGE_DIR)/lib/security; \
+        done
+	@# Remove jdk modules
+	for m in $(JDK_MODULES) ; do \
+           $(RM) $(JRE_MODULE_IMAGE_DIR)/lib/$$m.jar ; \
+        done
+
+	@# Make sure all directories are read/execute for everyone
+	$(CHMOD) a+rx `$(FIND) $(JRE_MODULE_IMAGE_DIR) -type d`
+	@# Remove some files from the jre area
+	for t in $(NOTJRETOOLS) ; do \
+	    $(RM) $(JRE_MODULE_IMAGE_DIR)/bin$(ISA_DIR)/$$t ; \
+	done
+	@# Remove orb.idl and ir.idl from jre
+	$(FIND) $(JRE_MODULE_IMAGE_DIR)/lib -name 'orb.idl' -exec $(RM) \{} \;
+	$(FIND) $(JRE_MODULE_IMAGE_DIR)/lib -name 'ir.idl' -exec $(RM) \{} \;
+	@# Generate meta-index to make boot and extension class loaders lazier
+	$(CD) $(JRE_MODULE_IMAGE_DIR)/lib && \
+	    $(BOOT_JAVA_CMD) -jar $(BUILDMETAINDEX_JARFILE) \
+		-o meta-index *.jar
+	@$(CD) $(JRE_MODULE_IMAGE_DIR)/lib && $(java-vm-cleanup)
+	$(CD) $(JRE_MODULE_IMAGE_DIR)/lib/ext && \
+	    $(BOOT_JAVA_CMD) -jar $(BUILDMETAINDEX_JARFILE) \
+		-o meta-index *.jar
+	@$(CD) $(JRE_MODULE_IMAGE_DIR)/lib/ext && $(java-vm-cleanup)
+ifeq ($(PLATFORM), windows)
+	@# Remove certain *.lib files
+	$(CD) $(JRE_MODULE_IMAGE_DIR)/lib && \
+            $(RM) java.$(LIB_SUFFIX) jvm.$(LIB_SUFFIX) \
+                  hpi.$(LIB_SUFFIX) awt.$(LIB_SUFFIX) jawt.$(LIB_SUFFIX)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+	@# The Java Kernel JRE image ships with a special VM.  It is not included
+	@# in the full JRE image, so remove it.  Also, is it only for 32-bit windows.
+	$(CD) $(JRE_MODULE_IMAGE_DIR)/bin && $(RM) -r kernel
+  endif
+endif # Windows
+ifneq ($(PLATFORM), windows)
+	$(call copy-man-pages,$(JRE_MODULE_IMAGE_DIR),$(JRE_MAN_PAGES))
+endif # !windows
+
+# Trim out any extra files not for the jre shipment but wanted in the jdk jre.
+#   (Note the jdk WILL want the jre image before this trimming)
+#   Removes server VM on Windows 32bit.
+#   Remove certain shared libraries that should not be in the jre image
+#      but should be in the jdk jre image.
+trim-module-image-jre::
+ifeq ($(PLATFORM), windows)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+	$(RM) -r $(JRE_MODULE_IMAGE_DIR)/bin/server
+  endif
+  ifdef NOTJRE_SHARED_LIBS
+	for l in $(NOTJRE_SHARED_LIBS) ; do \
+	    $(RM) $(JRE_MODULE_IMAGE_DIR)/bin/$$l ; \
+	done ;
+  endif
+else # PLATFORM
+  ifdef NOTJRE_SHARED_LIBS
+	for l in $(NOTJRE_SHARED_LIBS) ; do \
+	    $(RM) $(JRE_MODULE_IMAGE_DIR)/lib/$(LIBARCH)/$$l ; \
+	done ;
+  endif
+endif # PLATFORM
+
+# Get list of all Elf files in the jre
+JRE_MODULE_ELF_LIST=$(MODULES_TEMPDIR)/jre-elf-files.list
+$(JRE_MODULE_ELF_LIST):
+	@$(prep-target)
+ifneq ($(PLATFORM), windows)
+	$(RM) $@
+	$(FIND) $(JRE_MODULE_IMAGE_DIR)/lib -type f -name \*.$(LIB_SUFFIX) >> $@
+	$(FILE) `$(FIND) $(JRE_MODULE_IMAGE_DIR)/bin -type f -name \*$(EXE_SUFFIX)` \
+	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
+endif
+
+# Post process the image (strips and mcs on Elf files we are shipping)
+#   (Note the jdk WILL want the jre image before this processing)
+process-module-image-jre:: $(JRE_MODULE_ELF_LIST)
+ifneq ($(POST_STRIP_PROCESS), )
+	for f in `$(CAT) $(JRE_MODULE_ELF_LIST)`; do \
+	  $(CHMOD) u+w $${f}; \
+	  $(ECHO) $(POST_STRIP_PROCESS) $${f}; \
+	  $(POST_STRIP_PROCESS) $${f}; \
+	  $(CHMOD) go-w $${f}; \
+	done
+endif
+ifneq ($(POST_MCS_PROCESS), )
+	for f in `$(CAT) $(JRE_MODULE_ELF_LIST)`; do \
+	  $(CHMOD) u+w $${f}; \
+	  $(ECHO) $(POST_MCS_PROCESS) $${f}; \
+	  $(POST_MCS_PROCESS) $${f}; \
+	  $(CHMOD) go-w $${f}; \
+	done
+endif
+	$(RM) $(JRE_MODULE_ELF_LIST)
+
+######################################################
+# JDK Image
+######################################################
+# Note: cpio ($(CPIO)) sometimes leaves directories without rx access.
+
+initial-module-image-jdk-setup:
+	$(RM) -r $(JDK_MODULE_IMAGE_DIR)
+	$(MKDIR) -p $(JDK_MODULE_IMAGE_DIR)/jre
+	($(CD) $(JRE_MODULE_IMAGE_DIR) && $(FIND) . -depth -print \
+	      | $(CPIO) -pdum $(JDK_MODULE_IMAGE_DIR)/jre )
+	$(RM) -rf $(JDK_MODULE_IMAGE_DIR)/jre/man
+	$(CHMOD) a+rx `$(FIND) $(JDK_MODULE_IMAGE_DIR) -type d`
+
+initial-module-image-jdk64-bindemos:
+	for dir in bin demo ; do \
+	  ( $(CD) $(OUTPUTDIR) && \
+		$(TAR) cf - `$(FIND) $$dir -name '$(LIBARCH)' -print` | \
+		($(CD) $(JDK_MODULE_IMAGE_DIR) && $(TAR) xf -) ) ; \
+        done
+
+# Solaris 64 bit image is special
+initial-module-image-jdk-sol64:: initial-module-image-jdk-setup \
+			  initial-module-image-jdk64-bindemos \
+			  $(JDK_MODULE_LICENSES) $(JDK_MODULARLIZED_64_LICENSES)
+
+# DB files to add
+ifeq ($(OPENJDK),true)
+
+initial-module-image-jdk-db:
+
+else
+
+# Create the list of db *.zip files to bundle with jdk
+ABS_DB_PATH  :=$(call FullPath,$(CLOSED_SHARE_SRC)/db)
+DB_ZIP_LIST = $(shell $(LS) $(ABS_DB_PATH)/*.zip 2>/dev/null)
+
+initial-module-image-jdk-db: $(DB_ZIP_LIST)
+	$(MKDIR) -p $(JDK_MODULE_IMAGE_DIR)/db
+	for d in $(DB_ZIP_LIST); do \
+          ($(CD) $(JDK_MODULE_IMAGE_DIR)/db && $(UNZIP) -o $$d); \
+	done
+
+endif
+
+# Standard jdk image
+initial-module-image-jdk:: initial-module-image-jdk-setup \
+		    initial-module-image-jdk-db \
+		    $(JDK_MODULE_LICENSES) $(JDK_MODULE_DOCFILES)
+	$(MKDIR) $(JDK_MODULE_IMAGE_DIR)/lib
+	@#
+	@# copy jdk modules to jdk/lib
+	@#
+	$(MKDIR) -p $(JDK_MODULE_IMAGE_DIR)/lib
+	for m in $(JDK_MODULES) ; do \
+	    $(CP) $(MODULES_DIR)/$$m/lib/$$m.jar $(JDK_MODULE_IMAGE_DIR)/lib ; \
+        done
+  ifeq ($(PLATFORM), windows)
+	@#
+	@# lib/
+	@#
+	$(CP) $(LIBDIR)/$(LIB_PREFIX)jvm.$(LIB_SUFFIX) $(JDK_MODULE_IMAGE_DIR)/lib
+	$(CP) $(LIBDIR)/$(LIB_PREFIX)jawt.$(LIB_SUFFIX) $(JDK_MODULE_IMAGE_DIR)/lib
+	@#
+	@# bin/
+	@#
+	@# copy all EXE files and only certain DLL files from BINDIR
+	$(MKDIR) -p $(JDK_MODULE_IMAGE_DIR)/bin
+	$(CP) $(BINDIR)/*$(EXE_SUFFIX) $(JDK_MODULE_IMAGE_DIR)/bin
+	$(CP) $(BINDIR)/jli.$(LIBRARY_SUFFIX) $(JDK_MODULE_IMAGE_DIR)/bin
+    ifeq ($(ARCH_DATA_MODEL), 32)
+      ifeq ($(COMPILER_VERSION), VS2003)
+	$(CP) $(BINDIR)/msvc*71.$(LIBRARY_SUFFIX) $(JDK_MODULE_IMAGE_DIR)/bin
+      endif
+    endif
+  else # PLATFORM
+	@#
+	@# bin/
+	@#
+	($(CD) $(BINDIR)/.. && $(TAR) cf - \
+	    `$(FIND) bin \( -type f -o -type l \) -print `) | \
+	    ($(CD) $(JDK_MODULE_IMAGE_DIR) && $(TAR) xf -)
+  endif # PLATFORM
+	@#
+	@# lib/ct.sym
+	@#
+	$(MKDIR) -p $(OUTPUTDIR)/symbols/META-INF/sym
+	$(JAVAC_CMD) -XDprocess.packages -proc:only \
+	    -processor com.sun.tools.javac.sym.CreateSymbols \
+	    -Acom.sun.tools.javac.sym.Jar=$(RT_JAR) \
+	    -Acom.sun.tools.javac.sym.Dest=$(OUTPUTDIR)/symbols/META-INF/sym/rt.jar \
+	    $(CORE_PKGS) $(NON_CORE_PKGS) $(EXCLUDE_PROPWARN_PKGS)
+	$(BOOT_JAR_CMD) c0f $(LIBDIR)/ct.sym \
+	    -C $(OUTPUTDIR)/symbols META-INF $(BOOT_JAR_JFLAGS)
+	@$(java-vm-cleanup)
+	$(CP) $(LIBDIR)/ct.sym $(JDK_MODULE_IMAGE_DIR)/lib/ct.sym
+	@#
+	@# CORBA supported orb.idl and ir.idl should be copied to lib
+	@#
+	$(CP) $(LIBDIR)/orb.idl $(JDK_MODULE_IMAGE_DIR)/lib/orb.idl
+	$(CP) $(LIBDIR)/ir.idl $(JDK_MODULE_IMAGE_DIR)/lib/ir.idl
+  ifeq ($(PLATFORM), linux)
+	@#
+	@# on Linux copy jexec from jre/lib to /lib
+	@#
+	$(CP) $(LIBDIR)/jexec $(JDK_MODULE_IMAGE_DIR)/lib/jexec
+  endif # PLATFORM
+	@#
+	@# demo, include
+	@#
+	$(CP) -r -f $(DEMODIR) $(JDK_MODULE_IMAGE_DIR)
+	$(CP) -r -f $(SAMPLEDIR) $(JDK_MODULE_IMAGE_DIR)
+	$(CP) -r $(INCLUDEDIR) $(JDK_MODULE_IMAGE_DIR)
+	@#
+	@# Swing BeanInfo generation
+	@#
+	$(CD) javax/swing/beaninfo && $(MAKE) JDK_IMAGE_DIR=$(JDK_MODULE_IMAGE_DIR) swing-1.2-beans
+ifneq ($(PLATFORM), windows)
+	$(call copy-man-pages,$(JDK_MODULE_IMAGE_DIR),$(JDK_MAN_PAGES))
+endif # !windows
+
+# Trim out files we don't want to ship
+trim-module-image-jdk::
+	@# Remove tools that should not be part of SDK.
+	for t in $(NOTJDKTOOLS); do \
+	    $(RM) $(JDK_MODULE_IMAGE_DIR)/bin/$${t}$(EXE_SUFFIX) \
+		  $(JDK_MODULE_IMAGE_DIR)/bin/*/native_threads/$${t}$(EXE_SUFFIX); \
+	done
+
+# Get list of Elf files in the jdk
+JDK_MODULE_ELF_LIST=$(MODULES_TEMPDIR)/jdk-elf-files.list
+$(JDK_MODULE_ELF_LIST):
+	@$(prep-target)
+ifneq ($(PLATFORM), windows)
+	$(RM) $@
+	$(FIND) $(JDK_MODULE_IMAGE_DIR)/jre/lib -type f -name \*.$(LIB_SUFFIX) >> $@
+	$(FILE) `$(FIND) $(JDK_MODULE_IMAGE_DIR)/jre/bin -type f -name \*$(EXE_SUFFIX)` \
+	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
+	file `$(FIND) $(JDK_MODULE_IMAGE_DIR)/bin -type f -name \*$(EXE_SUFFIX)` \
+	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
+endif
+
+# Post process the image (strips and mcs on files we are shipping)
+process-module-image-jdk:: $(JDK_MODULE_ELF_LIST)
+ifneq ($(POST_STRIP_PROCESS), )
+	for f in `$(CAT) $(JDK_MODULE_ELF_LIST)`; do \
+	  $(CHMOD) u+w $${f}; \
+	  $(ECHO) $(POST_STRIP_PROCESS) $${f}; \
+	  $(POST_STRIP_PROCESS) $${f}; \
+	  $(CHMOD) go-w $${f}; \
+	done
+endif
+ifneq ($(POST_MCS_PROCESS), )
+	for f in `$(CAT) $(JDK_MODULE_ELF_LIST)`; do \
+	  $(CHMOD) u+w $${f}; \
+	  $(ECHO) $(POST_MCS_PROCESS) $${f}; \
+	  $(POST_MCS_PROCESS) $${f}; \
+	  $(CHMOD) go-w $${f}; \
+	done
+endif
+	$(RM) $(JDK_MODULE_ELF_LIST)
+
+######################################################
+# clobber
+######################################################
+modules-clobber::
+	$(RM) -r $(JDK_MODULE_IMAGE_DIR)
+	$(RM) -r $(JRE_MODULE_IMAGE_DIR)
+
+#
+# TODO - nop for now
+sanity-module-images post-sanity-module-images:
+
+modules modules-clobber::
+	@$(ECHO) ">>>Finished making "$@" @ `$(DATE)` ..."
+	@$(java-vm-cleanup)
+
+.PHONY: modules module-image-jre module-image-jdk \
+	initial-module-image-jre initial-module-image-jdk \
+	initial-module-image-jre-sol64 initial-module-image-jdk-sol64 \
+        initial-module-image-jdk-setup \
+	initial-module-image-jdk-db \
+        initial-module-image-jdk64-bindemos \
+        initial-module-image-jre-setup \
+	trim-module-image-jre trim-module-image-jdk \
+	process-module-image-jre process-module-image-jdk \
+	install-previous-jre install-previous-jdk \
+	modules-clobber
+
+# Force rule
+FRC:
+

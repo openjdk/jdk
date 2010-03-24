@@ -155,7 +155,6 @@ public class ProcessCommunicator {
 
         commandBuilder.append(" ");
         commandBuilder.append(classToExecute.getName());
-
         for (String argument:args) {
             commandBuilder.append(" ").append(argument);
         }

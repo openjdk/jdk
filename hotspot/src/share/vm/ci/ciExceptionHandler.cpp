@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,16 @@
 //
 // Get the exception klass that this handler catches.
 ciInstanceKlass* ciExceptionHandler::catch_klass() {
+  VM_ENTRY_MARK;
   assert(!is_catch_all(), "bad index");
   if (_catch_klass == NULL) {
     bool will_link;
-    ciKlass* k = CURRENT_ENV->get_klass_by_index(_loading_klass,
+    assert(_loading_klass->get_instanceKlass()->is_linked(), "must be linked before accessing constant pool");
+    constantPoolHandle cpool(_loading_klass->get_instanceKlass()->constants());
+    ciKlass* k = CURRENT_ENV->get_klass_by_index(cpool,
                                                  _catch_klass_index,
-                                                 will_link);
+                                                 will_link,
+                                                 _loading_klass);
     if (!will_link && k->is_loaded()) {
       GUARDED_VM_ENTRY(
         k = CURRENT_ENV->get_unloaded_klass(_loading_klass, k->name());

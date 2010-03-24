@@ -74,6 +74,7 @@ import            -- copy in the pre-built components (e.g. VM) \n\
 import_product    -- copy in the product components \n\
 import_fastdebug  -- copy in the fastdebug components \n\
 import_debug      -- copy in the debug components \n\
+modules           -- build the jdk and jre module images (experimental) \n\
 sccs_get          -- make sure all SCCS files are up-to-date (need SCCS) \n\
 create_links      -- create softlinks in Solaris 32bit build to 64bit dirs \n\
 "
@@ -239,7 +240,12 @@ import_product:
 
 all build:: sanity-all post-sanity-all
 
-SUBDIRS    = tools java javax org sun sunw com jpda mkdemo mksample launchers
+SUBDIRS       = tools java javax sun com
+SUBDIRS_tools = launchers
+SUBDIRS_misc  = org sunw jpda mkdemo mksample
+
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build::
 	$(SUBDIRS-loop)
 
@@ -257,6 +263,7 @@ docs:: sanity-docs post-sanity-docs
 # Release engineering targets.
 #
 include $(BUILDDIR)/common/Release.gmk
+include $(BUILDDIR)/common/Modules.gmk
 
 #
 # Cscope targets.

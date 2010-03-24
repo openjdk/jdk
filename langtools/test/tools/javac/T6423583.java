@@ -37,7 +37,6 @@ import com.sun.source.tree.*;
 import com.sun.source.util.*;
 
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class T6423583 extends AbstractProcessor {
     boolean b1 = true;
     boolean b2 = false;
@@ -59,6 +58,10 @@ public class T6423583 extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
 
     private static class Test extends TreeScanner<Void,Void> {
 

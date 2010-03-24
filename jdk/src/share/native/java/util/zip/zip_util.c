@@ -251,11 +251,16 @@ freeZip(jzfile *zip)
     if (zip->lock != NULL) MDESTROY(zip->lock);
     free(zip->name);
     freeCEN(zip);
+
 #ifdef USE_MMAP
-    if (zip->maddr != NULL) munmap((char *)zip->maddr, zip->mlen);
-#else
-    free(zip->cencache.data);
+    if (zip->usemmap) {
+        if (zip->maddr != NULL)
+            munmap((char *)zip->maddr, zip->mlen);
+    } else
 #endif
+    {
+        free(zip->cencache.data);
+    }
     if (zip->comment != NULL)
         free(zip->comment);
     if (zip->zfd != -1) ZFILE_Close(zip->zfd);
@@ -585,49 +590,53 @@ readCEN(jzfile *zip, jint knownTotal)
         ZIP_FORMAT_ERROR("invalid END header (bad central directory offset)");
 
 #ifdef USE_MMAP
-     /* On Solaris & Linux prior to JDK 6, we used to mmap the whole jar file to
-      * read the jar file contents. However, this greatly increased the perceived
-      * footprint numbers because the mmap'ed pages were adding into the totals shown
-      * by 'ps' and 'top'. We switched to mmaping only the central directory of jar
-      * file while calling 'read' to read the rest of jar file. Here are a list of
-      * reasons apart from above of why we are doing so:
-      * 1. Greatly reduces mmap overhead after startup complete;
-      * 2. Avoids dual path code maintainance;
-      * 3. Greatly reduces risk of address space (not virtual memory) exhaustion.
-      */
-    if (pagesize == 0) {
-        pagesize = (jlong)sysconf(_SC_PAGESIZE);
-        if (pagesize == 0) goto Catch;
-    }
-    if (cenpos > pagesize) {
-        offset = cenpos & ~(pagesize - 1);
-    } else {
-        offset = 0;
-    }
-    /* When we are not calling recursively, knownTotal is -1. */
-    if (knownTotal == -1) {
-        void* mappedAddr;
-        /* Mmap the CEN and END part only. We have to figure
-           out the page size in order to make offset to be multiples of
-           page size.
-        */
-        zip->mlen = cenpos - offset + cenlen + endhdrlen;
-        zip->offset = offset;
-        mappedAddr = mmap64(0, zip->mlen, PROT_READ, MAP_SHARED, zip->zfd, (off64_t) offset);
-        zip->maddr = (mappedAddr == (void*) MAP_FAILED) ? NULL :
-            (unsigned char*)mappedAddr;
-
-        if (zip->maddr == NULL) {
-            jio_fprintf(stderr, "mmap failed for CEN and END part of zip file\n");
-            goto Catch;
+    if (zip->usemmap) {
+      /* On Solaris & Linux prior to JDK 6, we used to mmap the whole jar file to
+       * read the jar file contents. However, this greatly increased the perceived
+       * footprint numbers because the mmap'ed pages were adding into the totals shown
+       * by 'ps' and 'top'. We switched to mmaping only the central directory of jar
+       * file while calling 'read' to read the rest of jar file. Here are a list of
+       * reasons apart from above of why we are doing so:
+       * 1. Greatly reduces mmap overhead after startup complete;
+       * 2. Avoids dual path code maintainance;
+       * 3. Greatly reduces risk of address space (not virtual memory) exhaustion.
+       */
+        if (pagesize == 0) {
+            pagesize = (jlong)sysconf(_SC_PAGESIZE);
+            if (pagesize == 0) goto Catch;
         }
-    }
-    cenbuf = zip->maddr + cenpos - offset;
-#else
-    if ((cenbuf = malloc((size_t) cenlen)) == NULL ||
-        (readFullyAt(zip->zfd, cenbuf, cenlen, cenpos) == -1))
-        goto Catch;
+        if (cenpos > pagesize) {
+            offset = cenpos & ~(pagesize - 1);
+        } else {
+            offset = 0;
+        }
+        /* When we are not calling recursively, knownTotal is -1. */
+        if (knownTotal == -1) {
+            void* mappedAddr;
+            /* Mmap the CEN and END part only. We have to figure
+               out the page size in order to make offset to be multiples of
+               page size.
+            */
+            zip->mlen = cenpos - offset + cenlen + endhdrlen;
+            zip->offset = offset;
+            mappedAddr = mmap64(0, zip->mlen, PROT_READ, MAP_SHARED, zip->zfd, (off64_t) offset);
+            zip->maddr = (mappedAddr == (void*) MAP_FAILED) ? NULL :
+                (unsigned char*)mappedAddr;
+
+            if (zip->maddr == NULL) {
+                jio_fprintf(stderr, "mmap failed for CEN and END part of zip file\n");
+                goto Catch;
+            }
+        }
+        cenbuf = zip->maddr + cenpos - offset;
+    } else
 #endif
+    {
+        if ((cenbuf = malloc((size_t) cenlen)) == NULL ||
+            (readFullyAt(zip->zfd, cenbuf, cenlen, cenpos) == -1))
+        goto Catch;
+    }
+
     cenend = cenbuf + cenlen;
 
     /* Initialize zip file data structures based on the total number
@@ -700,9 +709,11 @@ readCEN(jzfile *zip, jint knownTotal)
     cenpos = -1;
 
  Finally:
-#ifndef USE_MMAP
-    free(cenbuf);
+#ifdef USE_MMAP
+    if (!zip->usemmap)
 #endif
+        free(cenbuf);
+
     return cenpos;
 }
 
@@ -782,8 +793,16 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
  * If a zip error occurs, then *pmsg will be set to the error message text if
  * pmsg != 0. Otherwise, *pmsg will be set to NULL.
  */
+
 jzfile *
 ZIP_Put_In_Cache(const char *name, ZFILE zfd, char **pmsg, jlong lastModified)
+{
+    return ZIP_Put_In_Cache0(name, zfd, pmsg, lastModified, JNI_TRUE);
+}
+
+jzfile *
+ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
+                 jboolean usemmap)
 {
     static char errbuf[256];
     jlong len;
@@ -793,6 +812,9 @@ ZIP_Put_In_Cache(const char *name, ZFILE zfd, char **pmsg, jlong lastModified)
         return NULL;
     }
 
+#ifdef USE_MMAP
+    zip->usemmap = usemmap;
+#endif
     zip->refs = 1;
     zip->lastModified = lastModified;
 
@@ -877,8 +899,6 @@ ZIP_Close(jzfile *zip)
     return;
 }
 
-#ifndef USE_MMAP
-
 /* Empirically, most CEN headers are smaller than this. */
 #define AMPLE_CEN_HEADER_SIZE 160
 
@@ -928,7 +948,6 @@ sequentialAccessReadCENHeader(jzfile *zip, jlong cenpos)
     cache->pos  = cenpos;
     return cen;
 }
-#endif /* not USE_MMAP */
 
 typedef enum { ACCESS_RANDOM, ACCESS_SEQUENTIAL } AccessHint;
 
@@ -953,14 +972,17 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
     ze->comment = NULL;
 
 #ifdef USE_MMAP
-    cen = (char*) zip->maddr + zc->cenpos - zip->offset;
-#else
-    if (accessHint == ACCESS_RANDOM)
-        cen = readCENHeader(zip, zc->cenpos, AMPLE_CEN_HEADER_SIZE);
-    else
-        cen = sequentialAccessReadCENHeader(zip, zc->cenpos);
-    if (cen == NULL) goto Catch;
+    if (zip->usemmap) {
+        cen = (char*) zip->maddr + zc->cenpos - zip->offset;
+    } else
 #endif
+    {
+        if (accessHint == ACCESS_RANDOM)
+            cen = readCENHeader(zip, zc->cenpos, AMPLE_CEN_HEADER_SIZE);
+        else
+            cen = sequentialAccessReadCENHeader(zip, zc->cenpos);
+        if (cen == NULL) goto Catch;
+    }
 
     nlen      = CENNAM(cen);
     elen      = CENEXT(cen);
@@ -976,7 +998,6 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
     if ((ze->name = malloc(nlen + 1)) == NULL) goto Catch;
     memcpy(ze->name, cen + CENHDR, nlen);
     ze->name[nlen] = '\0';
-
     if (elen > 0) {
         char *extra = cen + CENHDR + nlen;
 
@@ -1037,9 +1058,10 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
     ze = NULL;
 
  Finally:
-#ifndef USE_MMAP
-    if (cen != NULL && accessHint == ACCESS_RANDOM) free(cen);
+#ifdef USE_MMAP
+    if (!zip->usemmap)
 #endif
+        if (cen != NULL && accessHint == ACCESS_RANDOM) free(cen);
     return ze;
 }
 

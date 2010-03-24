@@ -41,6 +41,8 @@ package java.util;
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
  *
+ * @param <E> the type of elements returned by this iterator
+ *
  * @author  Josh Bloch
  * @see Collection
  * @see ListIterator

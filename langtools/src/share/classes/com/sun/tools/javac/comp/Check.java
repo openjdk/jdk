@@ -189,6 +189,11 @@ public class Check {
             sunApiHandler.report(pos, msg, args);
     }
 
+    public void warnStatic(DiagnosticPosition pos, String msg, Object... args) {
+        if (lint.isEnabled(LintCategory.STATIC))
+            log.warning(pos, msg, args);
+    }
+
     /**
      * Report any deferred diagnostics.
      */
@@ -2047,7 +2052,7 @@ public class Check {
             Symbol m = TreeInfo.symbol(assign.lhs);
             if (m == null || m.type.isErroneous()) continue;
             if (!members.remove(m))
-                log.error(arg.pos(), "duplicate.annotation.member.value",
+                log.error(assign.lhs.pos(), "duplicate.annotation.member.value",
                           m.name, a.type);
             if (assign.rhs.getTag() == ANNOTATION)
                 validateAnnotation((JCAnnotation)assign.rhs);

@@ -42,7 +42,7 @@ void VM_G1CollectFull::doit() {
 void VM_G1IncCollectionPause::doit() {
   JvmtiGCForAllocationMarker jgcm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  GCCauseSetter x(g1h, GCCause::_g1_inc_collection_pause);
+  GCCauseSetter x(g1h, _gc_cause);
   g1h->do_collection_pause_at_safepoint();
 }
 

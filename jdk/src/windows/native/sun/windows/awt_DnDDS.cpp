@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,30 @@
  * have any questions.
  */
 
-#include "awt.h"
+#pragma push_macro("bad_alloc")
+//"bad_alloc" would be introduced in STL as "std::zbad_alloc" and discarded by linker
+//by this action we avoid the conflict with AWT implementation of "bad_alloc"
+//we need <new> inclusion for STL "new" oprators set.
+#define bad_alloc zbad_alloc
+#include <new>
+#pragma pop_macro("bad_alloc")
+//"bad_alloc" is undefined from here
+
+//we need to include any STL container before <awt.h> inclusion due to
+//"new" re-redefinition that is in conflict with in-place new allocator
+//applied in STL.
+#if defined(_DEBUG) || defined(DEBUG)
+    //forward declaration of "new" operator from <awt.h>
+    extern void * operator new(size_t size, const char * filename, int linenumber);
+    //"new" operator definition that is consistent with re-defined
+    //in <awt.h> "delete" operator
+    void * operator new(size_t size) {return operator new(size, "stl", 1);}
+#endif
+#include <map>
+
+#include <awt.h>
+#include <shlobj.h>
+
 #include "jlong.h"
 #include "awt_DataTransferer.h"
 #include "awt_DnDDS.h"
@@ -37,8 +60,14 @@
 #include "sun_awt_dnd_SunDragSourceContextPeer.h"
 #include "sun_awt_windows_WDragSourceContextPeer.h"
 
-#include <memory.h>
-#include <shlobj.h>
+#include "awt_ole.h"
+#include "awt_DCHolder.h"
+
+bool operator < (const FORMATETC &fr, const FORMATETC &fl) {
+    return memcmp(&fr, &fl, sizeof(FORMATETC)) < 0;
+}
+
+typedef std::map<FORMATETC, STGMEDIUM> CDataMap;
 
 #define GALLOCFLG (GMEM_DDESHARE | GMEM_MOVEABLE | GMEM_ZEROINIT)
 #define JAVA_BUTTON_MASK (java_awt_event_InputEvent_BUTTON1_DOWN_MASK | \
@@ -50,19 +79,155 @@ DWORD __cdecl convertActionsToDROPEFFECT(jint actions);
 jint  __cdecl convertDROPEFFECTToActions(DWORD effects);
 }
 
+class PictureDragHelper
+{
+private:
+    static CDataMap st;
+    static IDragSourceHelper *pHelper;
+public:
+    static HRESULT Create(
+        JNIEnv* env,
+        jintArray imageData,
+        int imageWidth,
+        int imageHeight,
+        int anchorX,
+        int anchorY,
+        IDataObject *pIDataObject)
+    {
+        if (NULL == imageData) {
+            return S_FALSE;
+        }
+        OLE_TRY
+        OLE_HRT( CoCreateInstance(
+            CLSID_DragDropHelper,
+            NULL,
+            CLSCTX_ALL,
+            IID_IDragSourceHelper,
+            (LPVOID*)&pHelper))
+
+        jintArray ia = imageData;
+        jsize iPointCoint = env->GetArrayLength(ia);
+
+        DCHolder ph;
+        ph.Create(NULL, imageWidth, imageHeight, TRUE);
+        env->GetIntArrayRegion(ia, 0, iPointCoint, (jint*)ph.m_pPoints);
+
+        SHDRAGIMAGE sdi;
+        sdi.sizeDragImage.cx = imageWidth;
+        sdi.sizeDragImage.cy = imageHeight;
+        sdi.ptOffset.x = anchorX;
+        sdi.ptOffset.y = anchorY;
+        sdi.crColorKey = 0xFFFFFFFF;
+        sdi.hbmpDragImage = ph;
+
+        // this call assures that the bitmap will be dragged around
+        OLE_HR = pHelper->InitializeFromBitmap(
+            &sdi,
+            pIDataObject
+        );
+        // in case of an error we need to destroy the image, else the helper object takes ownership
+        if (FAILED(OLE_HR)) {
+            DeleteObject(sdi.hbmpDragImage);
+        }
+        OLE_CATCH
+        OLE_RETURN_HR
+    }
+
+    static void Destroy()
+    {
+        if (NULL!=pHelper) {
+            CleanFormatMap();
+            pHelper->Release();
+            pHelper = NULL;
+        }
+    }
+
+    static void CleanFormatMap()
+    {
+        for (CDataMap::iterator i = st.begin(); st.end() != i; i = st.erase(i)) {
+            ::ReleaseStgMedium(&i->second);
+        }
+    }
+    static void SetData(const FORMATETC &format, const STGMEDIUM &medium)
+    {
+        CDataMap::iterator i = st.find(format);
+        if (st.end() != i) {
+            ::ReleaseStgMedium(&i->second);
+            i->second = medium;
+        } else {
+            st[format] = medium;
+        }
+    }
+    static const FORMATETC *FindFormat(const FORMATETC &format)
+    {
+        static FORMATETC fm = {0};
+        CDataMap::iterator i = st.find(format);
+        if (st.end() != i) {
+            return &i->first;
+        }
+        for (i = st.begin(); st.end() != i; ++i) {
+            if (i->first.cfFormat==format.cfFormat) {
+                return &i->first;
+            }
+        }
+        return NULL;
+    }
+    static STGMEDIUM *FindData(const FORMATETC &format)
+    {
+        CDataMap::iterator i = st.find(format);
+        if (st.end() != i) {
+            return &i->second;
+        }
+        for (i = st.begin(); st.end() != i; ++i) {
+            const FORMATETC &f = i->first;
+            if (f.cfFormat==format.cfFormat && (f.tymed == (f.tymed & format.tymed))) {
+                return &i->second;
+            }
+        }
+        return NULL;
+    }
+};
+
+
+CDataMap PictureDragHelper::st;
+IDragSourceHelper *PictureDragHelper::pHelper = NULL;
+
+extern const CLIPFORMAT CF_PERFORMEDDROPEFFECT = ::RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
+extern const CLIPFORMAT CF_FILEGROUPDESCRIPTORW = ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW);
+extern const CLIPFORMAT CF_FILEGROUPDESCRIPTORA = ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA);
+extern const CLIPFORMAT CF_FILECONTENTS = ::RegisterClipboardFormat(CFSTR_FILECONTENTS);
+
 typedef struct {
     AwtDragSource* dragSource;
     jobject        cursor;
+    jintArray      imageData;
+    jint           imageWidth;
+    jint           imageHeight;
+    jint           x;
+    jint           y;
 } StartDragRec;
 
 /**
  * StartDrag
  */
 
-void AwtDragSource::StartDrag(AwtDragSource* self, jobject cursor) {
+void AwtDragSource::StartDrag(
+    AwtDragSource* self,
+    jobject cursor,
+    jintArray imageData,
+    jint imageWidth,
+    jint imageHeight,
+    jint x,
+    jint y)
+{
     StartDragRec* sdrp = new StartDragRec;
     sdrp->dragSource = self;
+    sdrp->imageData = imageData;
     sdrp->cursor = cursor;
+    sdrp->imageWidth = imageWidth;
+    sdrp->imageHeight = imageHeight;
+    sdrp->x = x;
+    sdrp->y = y;
 
     AwtToolkit::GetInstance().WaitForSingleObject(self->m_mutex);
 
@@ -82,6 +247,17 @@ void AwtDragSource::_DoDragDrop(void* param) {
     JNIEnv*        env          = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     jobject        peer         = env->NewLocalRef(dragSource->GetPeer());
 
+    if (sdrp->imageData) {
+        PictureDragHelper::Create(
+            env,
+            sdrp->imageData,
+            sdrp->imageWidth,
+            sdrp->imageHeight,
+            sdrp->x,
+            sdrp->y,
+            (IDataObject*)dragSource);
+        env->DeleteGlobalRef(sdrp->imageData);
+    }
     dragSource->SetCursor(sdrp->cursor);
     env->DeleteGlobalRef(sdrp->cursor);
     delete sdrp;
@@ -116,6 +292,7 @@ void AwtDragSource::_DoDragDrop(void* param) {
     DASSERT(AwtDropTarget::IsCurrentDnDDataObject(dragSource));
     AwtDropTarget::SetCurrentDnDDataObject(NULL);
 
+    PictureDragHelper::Destroy();
     dragSource->Release();
 }
 
@@ -268,7 +445,10 @@ void AwtDragSource::LoadCache(jlongArray formats) {
             idx++;
 
             // now make a copy, but with a TYMED of HGLOBAL
-            memcpy(m_types + idx, m_types + idx - 1, sizeof(FORMATETC));
+            m_types[idx] = m_types[idx-1];
+            m_types[idx].tymed = TYMED_HGLOBAL;
+            idx++;
+            break;
         case CF_HDROP:
             m_types[idx].tymed = TYMED_HGLOBAL;
             idx++;
@@ -348,6 +528,14 @@ AwtDragSource::MatchFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn,
                               FORMATETC *cacheEnt) {
     TRY;
 
+    const FORMATETC *pFormat = PictureDragHelper::FindFormat(*pFormatEtcIn);
+    if (NULL != pFormat) {
+        if (NULL != cacheEnt) {
+            *cacheEnt = *pFormat;
+        }
+        return S_OK;
+    }
+
     if ((pFormatEtcIn->tymed & (TYMED_HGLOBAL | TYMED_ISTREAM | TYMED_ENHMF |
                                 TYMED_MFPICT)) == 0) {
         return DV_E_TYMED;
@@ -357,8 +545,7 @@ AwtDragSource::MatchFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn,
         return DV_E_DVASPECT;
     }
 
-    FORMATETC tmp;
-    memcpy(&tmp, pFormatEtcIn, sizeof(FORMATETC));
+    FORMATETC tmp = *pFormatEtcIn;
 
     static const DWORD supportedTymeds[] =
         { TYMED_ISTREAM, TYMED_HGLOBAL, TYMED_ENHMF, TYMED_MFPICT };
@@ -367,22 +554,22 @@ AwtDragSource::MatchFormatEtc(FORMATETC __RPC_FAR *pFormatEtcIn,
     for (int i = 0; i < nSupportedTymeds; i++) {
         /*
          * Fix for BugTraq Id 4426805.
-         * Match only if the tymed is supported by the requestor.
+         * Match only if the tymed is supported by the requester.
          */
         if ((pFormatEtcIn->tymed & supportedTymeds[i]) == 0) {
             continue;
         }
 
         tmp.tymed = supportedTymeds[i];
-        FORMATETC *cp = (FORMATETC *)bsearch((const void *)&tmp,
+        pFormat = (const FORMATETC *)bsearch((const void *)&tmp,
                                              (const void *)m_types,
                                              (size_t)      m_ntypes,
                                              (size_t)      sizeof(FORMATETC),
                                                            _compar
                                              );
-        if (cp != (FORMATETC *)NULL) {
+        if (NULL != pFormat) {
             if (cacheEnt != (FORMATETC *)NULL) {
-                memcpy(cacheEnt, cp, sizeof(FORMATETC));
+                *cacheEnt = *pFormat;
             }
             return S_OK;
         }
@@ -481,7 +668,7 @@ HRESULT __stdcall  AwtDragSource::QueryContinueDrag(BOOL fEscapeKeyPressed, DWOR
 
     //CR 6480706 - MS Bug on hold
     HCURSOR hNeedCursor;
-    if(
+    if (
         m_bRestoreNodropCustomCursor &&
         m_cursor != NULL &&
         (hNeedCursor = m_cursor->GetHCursor()) != ::GetCursor() )
@@ -579,6 +766,19 @@ HRESULT __stdcall  AwtDragSource::GiveFeedback(DWORD dwEffect) {
 HRESULT __stdcall AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
                                          STGMEDIUM __RPC_FAR *pmedium) {
     TRY;
+    STGMEDIUM *pPicMedia = PictureDragHelper::FindData(*pFormatEtc);
+    if (NULL != pPicMedia) {
+        *pmedium = *pPicMedia;
+        //return  outside, so AddRef the instance of pstm or hGlobal!
+        if (pmedium->tymed == TYMED_ISTREAM) {
+            pmedium->pstm->AddRef();
+            pmedium->pUnkForRelease = (IUnknown *)NULL;
+        } else if (pmedium->tymed == TYMED_HGLOBAL) {
+            AddRef();
+            pmedium->pUnkForRelease = (IDropSource *)this;
+        }
+        return S_OK;
+    }
 
     HRESULT res = GetProcessId(pFormatEtc, pmedium);
     if (res == S_OK) {
@@ -648,7 +848,7 @@ HRESULT __stdcall AwtDragSource::GetData(FORMATETC __RPC_FAR *pFormatEtc,
             dropfiles->pt.x = m_dropPoint.x;
             dropfiles->pt.y = m_dropPoint.y;
             dropfiles->fNC = m_fNC;
-            dropfiles->fWide = FALSE; // good guess!
+            dropfiles->fWide = TRUE; // good guess!
             dataout += sizeof(DROPFILES);
         }
 
@@ -815,7 +1015,7 @@ HRESULT __stdcall AwtDragSource::GetDataHere(FORMATETC __RPC_FAR *pFormatEtc,
             dropfiles->pt.x = m_dropPoint.x;
             dropfiles->pt.y = m_dropPoint.y;
             dropfiles->fNC = m_fNC;
-            dropfiles->fWide = FALSE; // good guess!
+            dropfiles->fWide = TRUE; // good guess!
             dataout += sizeof(DROPFILES);
         }
 
@@ -870,14 +1070,18 @@ HRESULT __stdcall  AwtDragSource::GetCanonicalFormatEtc(FORMATETC __RPC_FAR *pFo
  */
 
 HRESULT __stdcall AwtDragSource::SetData(FORMATETC __RPC_FAR *pFormatEtc, STGMEDIUM __RPC_FAR *pmedium, BOOL fRelease) {
-    static CLIPFORMAT CF_PERFORMEDDROPEFFECT = ::RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
-
     if (pFormatEtc->cfFormat == CF_PERFORMEDDROPEFFECT && pmedium->tymed == TYMED_HGLOBAL) {
         m_dwPerformedDropEffect = *(DWORD*)::GlobalLock(pmedium->hGlobal);
         ::GlobalUnlock(pmedium->hGlobal);
         if (fRelease) {
             ::ReleaseStgMedium(pmedium);
         }
+        return S_OK;
+    }
+
+    if (fRelease) {
+        //we are copying pmedium as a structure for further use, so no any release!
+        PictureDragHelper::SetData(*pFormatEtc, *pmedium);
         return S_OK;
     }
     return E_UNEXPECTED;
@@ -1538,12 +1742,28 @@ Java_sun_awt_windows_WDragSourceContextPeer_createDragSource(
  * doDragDrop
  */
 
-JNIEXPORT void JNICALL Java_sun_awt_windows_WDragSourceContextPeer_doDragDrop(JNIEnv* env, jobject self, jlong nativeCtxt, jobject cursor) {
+JNIEXPORT void JNICALL Java_sun_awt_windows_WDragSourceContextPeer_doDragDrop(
+    JNIEnv* env,
+    jobject self,
+    jlong nativeCtxt,
+    jobject cursor,
+    jintArray imageData,
+    jint imageWidth, jint imageHeight,
+    jint x, jint y)
+{
     TRY;
 
     cursor = env->NewGlobalRef(cursor);
+    if (NULL != imageData) {
+        imageData = (jintArray)env->NewGlobalRef(imageData);
+    }
 
-    AwtDragSource::StartDrag((AwtDragSource*)nativeCtxt, cursor);
+    AwtDragSource::StartDrag(
+        (AwtDragSource*)nativeCtxt,
+        cursor,
+        imageData,
+        imageWidth, imageHeight,
+        x, y);
 
     CATCH_BAD_ALLOC;
 }

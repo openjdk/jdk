@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = debugging
 PRODUCT = jpda
 include $(BUILDDIR)/common/Defs.gmk
 
@@ -35,6 +36,8 @@ SUBDIRS = socket
 ifeq ($(PLATFORM), windows)
 SUBDIRS += shmem
 endif # PLATFORM
+
+include $(BUILDDIR)/common/Subdirs.gmk
 all build clean clobber::
 	$(SUBDIRS-loop)
 

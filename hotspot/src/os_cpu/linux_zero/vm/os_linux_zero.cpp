@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,21 @@ void os::Linux::set_fpu_control_word(int fpu) {
 }
 
 bool os::is_allocatable(size_t bytes) {
-  ShouldNotCallThis();
+#ifdef _LP64
+  return true;
+#else
+  if (bytes < 2 * G) {
+    return true;
+  }
+
+  char* addr = reserve_memory(bytes, NULL);
+
+  if (addr != NULL) {
+    release_memory(addr, bytes);
+  }
+
+  return addr != NULL;
+#endif // _LP64
 }
 
 ///////////////////////////////////////////////////////////////////////////////

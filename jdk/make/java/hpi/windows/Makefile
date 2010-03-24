@@ -26,8 +26,9 @@
 #
 # Makefile for Windows HPI DLL
 #
-BUILDDIR = ../../..
-LIBRARY   = hpi
+BUILDDIR     = ../../..
+MODULE       = base
+LIBRARY      = hpi
 PRODUCT      = java
 THREADDIR    = windows_threads
 LIB_LOCATION = $(BINDIR)
