@@ -684,8 +684,6 @@ java/net/SocketInputStream/SocketClosedException.java	 	generic-all
 java/net/SocketInputStream/SocketTimeout.java		 	generic-all
 
 # Linux i586, address already in use or timeout, samevm issues
-java/net/URLConnection/B5052093.java			 	generic-all
-java/net/URLConnection/contentHandler/UserContentHandler.java 	generic-all
 java/net/URLConnection/DisconnectAfterEOF.java		 	generic-all
 java/net/URLConnection/HandleContentTypeWithAttrs.java	 	generic-all
 java/net/URLConnection/Responses.java			 	generic-all
@@ -696,8 +694,6 @@ java/net/URLConnection/ZeroContentLength.java		 	generic-all
 java/net/ResponseCache/B6181108.java				generic-all
 java/net/ResponseCache/ResponseCacheTest.java			generic-all
 java/net/URL/GetContent.java					generic-all
-java/net/URL/TestIPv6Addresses.java				generic-all
-java/net/URLClassLoader/HttpTest.java				generic-all
 java/net/URLConnection/HttpContinueStackOverflow.java		generic-all
 java/net/URLConnection/Redirect307Test.java			generic-all
 java/net/URLConnection/RedirectLimit.java			generic-all
@@ -725,9 +721,6 @@ sun/net/www/http/KeepAliveCache/KeepAliveTimerThread.java	generic-all
 
 # Connection refused, windows samevm
 sun/net/www/protocol/http/DigestTest.java			generic-all
-
-# Fails on Fedora 9 32bit & 64bit & Solaris 10, wrong proxy for http://localhost/index.html
-java/net/ProxySelector/B6737819.java				generic-all
 
 ############################################################################
 
