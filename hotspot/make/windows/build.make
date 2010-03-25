@@ -27,6 +27,9 @@
 # environment variables (Variant, WorkSpace, BootStrapDir, BuildUser, HOTSPOT_BUILD_VERSION)
 # are passed in as command line arguments.
 
+# Note: Running nmake or build.bat from the Windows command shell requires
+# that "sh" be accessible on the PATH. An MKS install does this.
+
 # SA components are built if BUILD_WIN_SA=1 is specified.
 # See notes in README. This produces files:
 #  1. sa-jdi.jar       - This is built before building jvm.dll
