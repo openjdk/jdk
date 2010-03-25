@@ -48,6 +48,7 @@ else
   TOOL_DIR=`dirname "$SH"`
 fi
 
+DIRNAME="$TOOL_DIR/dirname"
 HEAD="$TOOL_DIR/head"
 ECHO="$TOOL_DIR/echo"
 EXPR="$TOOL_DIR/expr"
@@ -76,8 +77,13 @@ if [ "x$FORCE_LINK_VER" != "x" ]; then
 else
   # use the "link" command that is co-located with the "cl" command
   cl_cmd=`which cl`
-  cl_dir=`dirname $cl_cmd`
-  LINK_VER_RAW=`$cl_dir/link 2>&1 | "$HEAD" -n 1 | "$SED" 's/.*Version[\ ]*\([0-9][0-9.]*\).*/\1/'`
+  if [ "x$cl_cmd" != "x" ]; then
+    link_cmd=`$DIRNAME "$cl_cmd"`/link
+  else
+    # which can't find "cl" so just use which ever "link" we find
+    link_cmd="link"
+  fi
+  LINK_VER_RAW=`"$link_cmd" 2>&1 | "$HEAD" -n 1 | "$SED" 's/.*Version[\ ]*\([0-9][0-9.]*\).*/\1/'`
   LINK_VER_MAJOR=`"$ECHO" $LINK_VER_RAW | "$CUT" -d'.' -f1`
   LINK_VER_MINOR=`"$ECHO" $LINK_VER_RAW | "$CUT" -d'.' -f2`
   LINK_VER_MICRO=`"$ECHO" $LINK_VER_RAW | "$CUT" -d'.' -f3`

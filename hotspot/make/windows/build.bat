@@ -28,6 +28,9 @@ REM
 REM Since we don't have uname and we could be cross-compiling,
 REM Use the compiler to determine which ARCH we are building
 REM 
+REM Note: Running this batch file from the Windows command shell requires
+REM that "grep" be accessible on the PATH. An MKS install does this.
+REM 
 cl 2>&1 | grep "IA-64" >NUL
 if %errorlevel% == 0 goto isia64
 cl 2>&1 | grep "AMD64" >NUL
@@ -109,7 +112,7 @@ echo workspace is source directory without trailing slash,
 echo bootstrap_dir is a full path to a JDK in which bin/java 
 echo   and bin/javac are present and working, and build_id is an 
 echo   optional build identifier displayed by java -version
-exit 1
+exit /b 1
 
 :end
-exit %errorlevel%
+exit /b %errorlevel%
