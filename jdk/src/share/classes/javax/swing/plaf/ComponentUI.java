@@ -60,13 +60,13 @@ public abstract class ComponentUI {
     }
 
     /**
-     * Configures the specified component appropriate for the look and feel.
+     * Configures the specified component appropriately for the look and feel.
      * This method is invoked when the <code>ComponentUI</code> instance is being installed
      * as the UI delegate on the specified component.  This method should
      * completely configure the component for the look and feel,
      * including the following:
      * <ol>
-     * <li>Install any default property values for color, fonts, borders,
+     * <li>Install default property values for color, fonts, borders,
      *     icons, opacity, etc. on the component.  Whenever possible,
      *     property values initialized by the client program should <i>not</i>
      *     be overridden.
@@ -116,7 +116,7 @@ public abstract class ComponentUI {
     }
 
     /**
-     * Paints the specified component appropriate for the look and feel.
+     * Paints the specified component appropriately for the look and feel.
      * This method is invoked from the <code>ComponentUI.update</code> method when
      * the specified component is being painted.  Subclasses should override
      * this method and use the specified <code>Graphics</code> object to
@@ -134,15 +134,15 @@ public abstract class ComponentUI {
     }
 
     /**
-     * Notifies this UI delegate that it's time to paint the specified
+     * Notifies this UI delegate that it is time to paint the specified
      * component.  This method is invoked by <code>JComponent</code>
      * when the specified component is being painted.
-     * By default this method will fill the specified component with
-     * its background color (if its <code>opaque</code> property is
-     * <code>true</code>) and then immediately call <code>paint</code>.
-     * In general this method need not be overridden by subclasses;
-     * all look-and-feel rendering code should reside in the <code>paint</code>
-     * method.
+     *
+     * <p>By default this method fills the specified component with
+     * its background color if its {@code opaque} property is {@code true},
+     * and then immediately calls {@code paint}. In general this method need
+     * not be overridden by subclasses; all look-and-feel rendering code should
+     * reside in the {@code paint} method.
      *
      * @param g the <code>Graphics</code> context in which to paint
      * @param c the component being painted;

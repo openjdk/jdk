@@ -26,9 +26,6 @@
  * @bug     4958003
  * @summary Range static factory fails to compute size in Jumbo enum set
  * @author  Josh Bloch
- *
- * @compile -source 1.5 JumboRange.java
- * @run main JumboRange
  */
 
 import java.util.*;

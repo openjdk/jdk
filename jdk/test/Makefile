@@ -1,5 +1,5 @@
 #
-# Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1995-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,25 +37,19 @@ GET=
 AWK       = awk
 CAT       = cat
 CD        = cd
-CHMOD     = chmod
 CP        = cp
 CUT       = cut
 ECHO      = echo
 EGREP     = egrep
 EXPAND    = expand
-EXPR      = expr
-KILL      = /usr/bin/kill
 MKDIR     = mkdir
-NOHUP     = nohup
 PWD       = pwd
 SED       = sed
-SLEEP     = sleep
 SORT      = sort
 TEE       = tee
 UNAME     = uname
 UNIQ      = uniq
 WC        = wc
-XHOST     = xhost
 ZIP       = zip
 
 # Get OS name from uname
@@ -211,66 +205,6 @@ ifdef JPRT_ARCHIVE_BUNDLE
   ARCHIVE_BUNDLE = $(JPRT_ARCHIVE_BUNDLE)
 endif
 
-# DISPLAY settings for virtual frame buffer
-START_XVFB = start-Xvfb.sh
-NOHUP_OUTPUT = $(ABS_TEST_OUTPUT_DIR)/start-Xvfb.nohup-output.txt
-DISPLAY_PID_FILE=$(ABS_TEST_OUTPUT_DIR)/xvfb-display-number.txt
-DISPLAY_SLEEP_TIME=10
-DISPLAY_MAX_SLEEPS=10
-ifeq ($(OS_NAME),solaris)
-  VIRTUAL_FRAME_BUFFER = true
-endif
-ifeq ($(OS_NAME),linux)
-  VIRTUAL_FRAME_BUFFER = true
-endif
-
-# Does not work yet, display dies as soon as it gets used. :^(
-VIRTUAL_FRAME_BUFFER = false
-
-# Are we using a VIRTUAL_FRAME_BUFFER (Xvfb)
-ifeq ($(VIRTUAL_FRAME_BUFFER),true)
-  
-  PREP_DISPLAY = \
-    $(CP) $(START_XVFB) $(ABS_TEST_OUTPUT_DIR); \
-    $(CHMOD) a+x $(ABS_TEST_OUTPUT_DIR)/$(START_XVFB); \
-    ( $(CD) $(ABS_TEST_OUTPUT_DIR) && \
-      $(NOHUP) $(ABS_TEST_OUTPUT_DIR)/$(START_XVFB) $(DISPLAY_PID_FILE) > $(NOHUP_OUTPUT) 2>&1 && \
-      $(SLEEP) $(DISPLAY_SLEEP_TIME) ) & \
-    count=1; \
-    while [ ! -s $(DISPLAY_PID_FILE) ] ; do \
-      $(ECHO) "Sleeping $(DISPLAY_SLEEP_TIME) more seconds, DISPLAY not ready"; \
-      $(SLEEP) $(DISPLAY_SLEEP_TIME); \
-      count=`$(EXPR) $${count} '+' 1`; \
-      if [ $${count} -gt $(DISPLAY_MAX_SLEEPS) ] ; then \
-        $(ECHO) "ERROR: DISPLAY not ready, giving up on DISPLAY"; \
-        exit 9; \
-      fi; \
-    done ; \
-    DISPLAY=":`$(CAT) $(DISPLAY_PID_FILE)`"; \
-    export DISPLAY; \
-    $(CAT) $(NOHUP_OUTPUT); \
-    $(ECHO) "Prepared DISPLAY=$${DISPLAY}"; \
-    $(XHOST) || \
-    ( $(ECHO) "ERROR: No display" ; exit 8)
-
-  KILL_DISPLAY = \
-    ( \
-      DISPLAY=":`$(CAT) $(DISPLAY_PID_FILE)`"; \
-      export DISPLAY; \
-      if [ -s "$(DISPLAY_PID_FILE)" ] ; then \
-        $(KILL) `$(CAT) $(DISPLAY_PID_FILE)` > /dev/null 2>&1; \
-        $(KILL) -9 `$(CAT) $(DISPLAY_PID_FILE)` > /dev/null 2>&1; \
-      fi; \
-      $(ECHO) "Killed DISPLAY=$${DISPLAY}"; \
-    )
-
-else
-  
-  PREP_DISPLAY = $(ECHO) "VIRTUAL_FRAME_BUFFER=$(VIRTUAL_FRAME_BUFFER)"
-  KILL_DISPLAY = $(ECHO) "VIRTUAL_FRAME_BUFFER=$(VIRTUAL_FRAME_BUFFER)"
-
-endif
-
 # How to create the test bundle (pass or fail, we want to create this)
 #   Follow command with ";$(BUNDLE_UP_AND_EXIT)", so it always gets executed.
 ZIP_UP_RESULTS = ( $(MKDIR) -p `dirname $(ARCHIVE_BUNDLE)`     \
@@ -282,13 +216,25 @@ STATS_TXT = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/$(STATS_TXT_NAME)
 RUNLIST   = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/runlist.txt
 PASSLIST  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/passlist.txt
 FAILLIST  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/faillist.txt
+EXITCODE  = $(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/exitcode.txt
+
+TESTEXIT = \
+  if [ ! -s $(EXITCODE) ] ; then \
+    $(ECHO) "ERROR: EXITCODE file not filled in."; \
+    $(ECHO) "1" > $(EXITCODE); \
+  fi ; \
+  testExitCode=`$(CAT) $(EXITCODE)`; \
+  $(ECHO) "EXIT CODE: $${testExitCode}"; \
+  exit $${testExitCode}
+
 BUNDLE_UP_AND_EXIT = \
 ( \
-  exitCode=$$? && \
+  jtregExitCode=$$? && \
   _summary="$(SUMMARY_TXT)"; \
-  $(RM) -f $(STATS_TXT) $(RUNLIST) $(PASSLIST) $(FAILLIST); \
+  $(RM) -f $(STATS_TXT) $(RUNLIST) $(PASSLIST) $(FAILLIST) $(EXITCODE); \
+  $(ECHO) "$${jtregExitCode}" > $(EXITCODE); \
   if [ -r "$${_summary}" ] ; then \
-    $(ECHO) "Summary: $${_summary}" > $(STATS_TXT); \
+    $(ECHO) "Summary: $(UNIQUE_DIR)" > $(STATS_TXT); \
     $(EXPAND) $${_summary} | $(EGREP) -v ' Not run\.' > $(RUNLIST); \
     $(EGREP) ' Passed\.' $(RUNLIST) \
       | $(EGREP) -v ' Error\.' \
@@ -297,10 +243,13 @@ BUNDLE_UP_AND_EXIT = \
       $(EGREP) ' Error\.' $(RUNLIST); \
       $(EGREP) -v ' Passed\.' $(RUNLIST) ) \
       | $(SORT) | $(UNIQ) > $(FAILLIST); \
-    if [ $${exitCode} != 0 -o -s $(FAILLIST) ] ; then \
+    if [ $${jtregExitCode} != 0 -o -s $(FAILLIST) ] ; then \
       $(EXPAND) $(FAILLIST) \
         | $(CUT) -d' ' -f1 \
         | $(SED) -e 's@^@FAILED: @' >> $(STATS_TXT); \
+      if [ $${jtregExitCode} = 0 ] ; then \
+        jtregExitCode=1; \
+      fi; \
     fi; \
     runc="`$(CAT) $(RUNLIST)      | $(WC) -l | $(AWK) '{print $$1;}'`"; \
     passc="`$(CAT) $(PASSLIST)    | $(WC) -l | $(AWK) '{print $$1;}'`"; \
@@ -312,8 +261,8 @@ BUNDLE_UP_AND_EXIT = \
     $(ECHO) "Missing file: $${_summary}" >> $(STATS_TXT); \
   fi; \
   $(CAT) $(STATS_TXT); \
-  $(ZIP_UP_RESULTS) && $(KILL_DISPLAY) && \
-  exit $${exitCode} \
+  $(ZIP_UP_RESULTS) ; \
+  $(TESTEXIT) \
 )
 
 ################################################################
@@ -337,9 +286,11 @@ clean:
 # jtreg tests
 
 # Expect JT_HOME to be set for jtreg tests. (home for jtreg)
-JT_HOME = $(SLASH_JAVA)/re/jtreg/4.0/promoted/latest/binaries/jtreg
-ifdef JPRT_JTREG_HOME
-  JT_HOME = $(JPRT_JTREG_HOME)
+ifndef JT_HOME
+  JT_HOME = $(SLASH_JAVA)/re/jtreg/4.0/promoted/latest/binaries/jtreg
+  ifdef JPRT_JTREG_HOME
+    JT_HOME = $(JPRT_JTREG_HOME)
+  endif
 endif
 
 # Expect JPRT to set TESTDIRS to the jtreg test dirs
@@ -353,7 +304,8 @@ ifndef USE_JTREG_SAMEVM
 endif
 # With samevm, you cannot use -javaoptions?
 ifeq ($(USE_JTREG_SAMEVM),true)
-  EXTRA_JTREG_OPTIONS += -samevm $(JAVA_ARGS) $(JAVA_ARGS:%=-vmoption:%)
+  JTREG_SAMEVM_OPTION = -samevm
+  EXTRA_JTREG_OPTIONS += $(JTREG_SAMEVM_OPTION) $(JAVA_ARGS) $(JAVA_ARGS:%=-vmoption:%)
   JTREG_TEST_OPTIONS = $(JAVA_VM_ARGS:%=-vmoption:%)
 else
   JTREG_TEST_OPTIONS = $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_VM_ARGS:%=-vmoption:%)
@@ -361,21 +313,22 @@ endif
 
 # Some tests annoy me and fail frequently
 PROBLEM_LIST=ProblemList.txt
+PROBLEM_LISTS=$(PROBLEM_LIST) $(wildcard closed/$(PROBLEM_LIST))
 EXCLUDELIST=$(ABS_TEST_OUTPUT_DIR)/excludelist.txt
 
 # Create exclude list for this platform and arch
 ifdef NO_EXCLUDES
-$(EXCLUDELIST): $(PROBLEM_LIST) $(TESTDIRS)
+$(EXCLUDELIST): $(PROBLEM_LISTS) $(TESTDIRS)
 	@$(ECHO) "NOTHING_EXCLUDED" > $@
 else
-$(EXCLUDELIST): $(PROBLEM_LIST) $(TESTDIRS)
+$(EXCLUDELIST): $(PROBLEM_LISTS) $(TESTDIRS)
 	@$(RM) $@ $@.temp1 $@.temp2
-	@( ( $(EGREP) -- '$(OS_NAME)-all'           $< ) ;\
-	   ( $(EGREP) -- '$(OS_NAME)-$(OS_ARCH)'    $< ) ;\
-	   ( $(EGREP) -- '$(OS_NAME)-$(OS_VERSION)' $< ) ;\
-	   ( $(EGREP) -- 'generic-$(OS_ARCH)'       $< ) ;\
-           ( $(EGREP) -- 'generic-all'              $< ) ;\
-           ( $(ECHO) "#") ;\
+	@(($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-all'          ) ;\
+	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_ARCH)'   ) ;\
+	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- '$(OS_NAME)-$(OS_VERSION)') ;\
+	  ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- 'generic-$(OS_ARCH)'      ) ;\
+          ($(CAT) $(PROBLEM_LISTS) | $(EGREP) -- 'generic-all'             ) ;\
+          ($(ECHO) "#") ;\
         ) | $(SED) -e 's@^[\ ]*@@' \
           | $(EGREP) -v '^#' > $@.temp1
 	@for tdir in $(TESTDIRS) ; do \
@@ -386,18 +339,23 @@ $(EXCLUDELIST): $(PROBLEM_LIST) $(TESTDIRS)
 	@$(ECHO) "Excluding list contains `$(EXPAND) $@ | $(WC) -l` items"
 endif
 
+# Select list of directories that exist
+define TestDirs
+$(foreach i,$1,$(wildcard ${i})) $(foreach i,$1,$(wildcard closed/${i}))
+endef
 # Running batches of tests with or without samevm
 define RunSamevmBatch
-$(ECHO) "Running tests in samevm mode: $?"
-$(MAKE) TESTDIRS="$?" USE_JTREG_SAMEVM=true  UNIQUE_DIR=$@ jtreg_tests
+$(ECHO) "Running tests in samevm mode: $(call TestDirs, $?)"
+$(MAKE) TESTDIRS="$(call TestDirs, $?)" USE_JTREG_SAMEVM=true  UNIQUE_DIR=$@ jtreg_tests
 endef
 define RunOthervmBatch
-$(ECHO) "Running tests in othervm mode: $?"
-$(MAKE) TESTDIRS="$?" USE_JTREG_SAMEVM=false UNIQUE_DIR=$@ jtreg_tests
+$(ECHO) "Running tests in othervm mode: $(call TestDirs, $?)"
+$(MAKE) TESTDIRS="$(call TestDirs, $?)" USE_JTREG_SAMEVM=false UNIQUE_DIR=$@ jtreg_tests
 endef
 define SummaryInfo
-$(ECHO) "Summary for: $?"
+$(ECHO) "########################################################"
 $(CAT) $(?:%=$(ABS_TEST_OUTPUT_DIR)/%/$(STATS_TXT_NAME))
+$(ECHO) "########################################################"
 endef
 
 # ------------------------------------------------------------------
@@ -424,9 +382,16 @@ JDK_ALL_TARGETS += jdk_beans2
 jdk_beans2: java/beans/Beans java/beans/EventHandler java/beans/XMLDecoder \
             java/beans/PropertyEditor
 	$(call RunOthervmBatch)
+
+# Stable othervm testruns (minus items from PROBLEM_LIST)
+#   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_beans3
 jdk_beans3: java/beans/XMLEncoder
 	$(call RunOthervmBatch)
+
+# All beans tests
+jdk_beans: jdk_beans1 jdk_beans2 jdk_beans3
+	@$(SummaryInfo)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_io
@@ -449,6 +414,10 @@ jdk_management1: javax/management
 JDK_ALL_TARGETS += jdk_management2
 jdk_management2: com/sun/jmx com/sun/management sun/management
 	$(call RunOthervmBatch)
+
+# All management tests
+jdk_management: jdk_management1 jdk_management2
+	@$(SummaryInfo)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_math
@@ -478,9 +447,16 @@ JDK_ALL_TARGETS += jdk_nio2
 jdk_nio2: java/nio/Buffer java/nio/ByteOrder \
           java/nio/channels java/nio/BufferPoolMXBean java/nio/MappedByteBuffer
 	$(call RunOthervmBatch)
+
+# Stable othervm testruns (minus items from PROBLEM_LIST)
+#   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_nio3
 jdk_nio3: com/sun/nio sun/nio
 	$(call RunOthervmBatch)
+
+# All nio tests
+jdk_nio: jdk_nio1 jdk_nio2 jdk_nio3
+	@$(SummaryInfo)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has serious problems with these tests
@@ -498,9 +474,16 @@ jdk_security1: java/security
 JDK_ALL_TARGETS += jdk_security2
 jdk_security2: javax/crypto com/sun/crypto
 	$(call RunOthervmBatch)
+
+# Stable othervm testruns (minus items from PROBLEM_LIST)
+#   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_security3
 jdk_security3: com/sun/security lib/security javax/security sun/security
 	$(call RunOthervmBatch)
+
+# All security tests
+jdk_security: jdk_security1 jdk_security2 jdk_security3
+	@$(SummaryInfo)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using samevm has problems, and doesn't help performance as much as others.
@@ -513,14 +496,20 @@ JDK_ALL_TARGETS += jdk_text
 jdk_text: java/text sun/text
 	$(call RunSamevmBatch)
 
-# Stable othervm testruns (minus items from PROBLEM_LIST)
-#   Using samevm has serious problems with these tests
+# Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_tools1
 jdk_tools1: com/sun/jdi
-	$(call RunOthervmBatch)
+	$(call RunSamevmBatch)
+
+# Stable othervm testruns (minus items from PROBLEM_LIST)
+#   Using samevm has serious problems with these tests
 JDK_ALL_TARGETS += jdk_tools2
 jdk_tools2: com/sun/tools sun/jvmstat sun/tools tools vm com/sun/servicetag com/sun/tracing
 	$(call RunOthervmBatch)
+
+# All tools tests
+jdk_tools: jdk_tools1 jdk_tools2
+	@$(SummaryInfo)
 
 # Stable samevm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_util
@@ -530,7 +519,9 @@ jdk_util: java/util sun/util
 # ------------------------------------------------------------------
 
 # Run all tests
-jdk_all: $(filter-out jdk_awt jdk_rmi jdk_swing, $(JDK_ALL_TARGETS))
+FILTER_OUT_LIST=jdk_awt jdk_rmi jdk_swing
+JDK_ALL_STABLE_TARGETS := $(filter-out $(FILTER_OUT_LIST), $(JDK_ALL_TARGETS))
+jdk_all: $(JDK_ALL_STABLE_TARGETS)
 	@$(SummaryInfo)
 
 # These are all phony targets
@@ -544,16 +535,22 @@ JTREG = $(JT_HOME)/win32/bin/jtreg
 JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 # Only run automatic tests
 JTREG_BASIC_OPTIONS += -a
+# Always turn on assertions
+JTREG_ASSERT_OPTION = -ea -esa
+JTREG_BASIC_OPTIONS += $(JTREG_ASSERT_OPTION)
 # Report details on all failed or error tests, times too
 JTREG_BASIC_OPTIONS += -v:fail,error,time
 # Retain all files for failing tests
 JTREG_BASIC_OPTIONS += -retain:fail,error
 # Ignore tests are not run and completely silent about it
-JTREG_BASIC_OPTIONS += -ignore:quiet
-# Multiple by 2 the timeout numbers
-JTREG_BASIC_OPTIONS += -timeoutFactor:2
+JTREG_IGNORE_OPTION = -ignore:quiet
+JTREG_BASIC_OPTIONS += $(JTREG_IGNORE_OPTION)
+# Multiple by 4 the timeout numbers
+JTREG_TIMEOUT_OPTION =  -timeoutFactor:4
+JTREG_BASIC_OPTIONS += $(JTREG_TIMEOUT_OPTION)
 # Boost the max memory for jtreg to avoid gc thrashing
-JTREG_BASIC_OPTIONS += -J-Xmx512m
+JTREG_MEMORY_OPTION = -J-Xmx512m
+JTREG_BASIC_OPTIONS += $(JTREG_MEMORY_OPTION)
 
 # Make sure jtreg exists
 $(JTREG): $(JT_HOME)
@@ -566,7 +563,6 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG) $(EXCLUDELIST)
 	(                                                                    \
 	  ( JT_HOME=$(shell $(GETMIXEDPATH) "$(JT_HOME)");                   \
             export JT_HOME;                                                  \
-	    $(PREP_DISPLAY) &&                                               \
             $(shell $(GETMIXEDPATH) "$(JTREG)")                              \
               $(JTREG_BASIC_OPTIONS)                                         \
               -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport  \
@@ -576,7 +572,7 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG) $(EXCLUDELIST)
               $(JTREG_TEST_OPTIONS)                                          \
               $(TESTDIRS)                                                    \
 	  ) ; $(BUNDLE_UP_AND_EXIT)                                          \
-	) 2>&1 | $(TEE) $(ABS_TEST_OUTPUT_DIR)/output.txt
+	) 2>&1 | $(TEE) $(ABS_TEST_OUTPUT_DIR)/output.txt ; $(TESTEXIT)
 
 PHONY_LIST += jtreg_tests
 

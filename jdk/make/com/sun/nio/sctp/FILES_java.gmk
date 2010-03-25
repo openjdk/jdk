@@ -57,8 +57,7 @@ FILES_java += \
 	sun/nio/ch/SctpResultContainer.java \
 	sun/nio/ch/SctpSendFailed.java \
 	sun/nio/ch/SctpServerChannelImpl.java \
-	sun/nio/ch/SctpShutdown.java \
-	sun/nio/ch/SctpSocketDispatcher.java
+	sun/nio/ch/SctpShutdown.java
 else
 FILES_java += \
 	sun/nio/ch/SctpChannelImpl.java \

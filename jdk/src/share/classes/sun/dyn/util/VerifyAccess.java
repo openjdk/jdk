@@ -26,8 +26,12 @@
 package sun.dyn.util;
 
 import java.dyn.LinkagePermission;
+import java.dyn.MethodHandles.Lookup;
+import java.dyn.NoAccessException;
 import java.lang.reflect.Modifier;
-import sun.dyn.Access;
+import sun.dyn.MemberName;
+import sun.dyn.MethodHandleImpl;
+import sun.dyn.empty.Empty;
 
 /**
  * This class centralizes information about the JVM's linkage access control.
@@ -45,21 +49,21 @@ public class VerifyAccess {
      * <p>
      * Some circumstances require an additional check on the
      * leading parameter (the receiver) of the method, if it is non-static.
-     * In the case of {@code invokespecial} ({@code doDispatch} is false),
+     * In the case of {@code invokespecial} ({@code isSpecialInvoke} is true),
      * the leading parameter must be the accessing class or a subclass.
      * In the case of a call to a {@code protected} method outside the same
      * package, the same constraint applies.
      * @param m the proposed callee
-     * @param doDispatch if false, a non-static m will be invoked as if by {@code invokespecial}
+     * @param isSpecialInvoke if true, a non-static method m is checked as if for {@code invokespecial}
      * @param lookupClass the class for which the access check is being made
      * @return null if the method is not accessible, else a receiver type constraint, else {@code Object.class}
      */
     public static Class<?> isAccessible(Class<?> defc, int mods,
-            boolean doDispatch, Class<?> lookupClass) {
+            Class<?> lookupClass, boolean isSpecialInvoke) {
         if (!isAccessible(defc, lookupClass))
             return null;
         Class<?> constraint = Object.class;
-        if (!doDispatch && !Modifier.isStatic(mods)) {
+        if (isSpecialInvoke && !Modifier.isStatic(mods)) {
             constraint = lookupClass;
         }
         if (Modifier.isPublic(mods))
@@ -165,5 +169,39 @@ public class VerifyAccess {
         if (security == null)  return;  // open season
         if (isSamePackage(requestingClass, subjectClass))  return;
         security.checkPermission(new LinkagePermission(permissionName, requestingClass));
+    }
+
+    private static RuntimeException checkNameFailed(MemberName self, Lookup lookup, String comment) {
+        return new NoAccessException("cannot access from "+lookup+": "+self.toString()+": "+comment);
+    }
+    public static void checkName(MemberName self, Lookup lookup) {
+        Class<?> lc = lookup.lookupClass();
+        if (lc == null)  return;  // lookup is privileged
+        Class<?> dc = self.getDeclaringClass();
+        int samepkg = 0;
+        // First check the containing class.  Must be public or local.
+        if (!Modifier.isPublic(dc.getModifiers())) {
+            if (lc != Empty.class)
+                samepkg = (isSamePackage(dc, lc) ? 1 : -1);
+            if (samepkg <= 0)
+                throw checkNameFailed(self, lookup, "class is not public");
+        }
+        // At this point dc is known to be accessible.
+        if (self.isPublic()) {
+            return;
+        } else if (lc == Empty.class) {
+            throw checkNameFailed(self, lookup, "member is not public");
+        } else if (self.isProtected()) {
+            if (dc.isAssignableFrom(lc))  return;
+        } else if (self.isPrivate()) {
+            if (isSamePackageMember(dc, lc))  return;
+            throw checkNameFailed(self, lookup, "member is private");
+        }
+        // Fall-through handles the package-private and protected cases.
+        if (samepkg == 0)
+            samepkg = (isSamePackage(dc, lc) ? 1 : -1);
+        if (samepkg > 0)  return;
+        throw checkNameFailed(self, lookup,
+                self.isProtected() ? "member is protected" : "member is private to package");
     }
 }

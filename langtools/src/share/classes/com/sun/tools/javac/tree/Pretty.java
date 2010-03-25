@@ -54,7 +54,7 @@ public class Pretty extends JCTree.Visitor {
     /** Set when we are producing source output.  If we're not
      *  producing source output, we can sometimes give more detail in
      *  the output even though that detail would not be valid java
-     *  soruce.
+     *  source.
      */
     private final boolean sourceOutput;
 
@@ -468,6 +468,10 @@ public class Pretty extends JCTree.Visitor {
                 print(" throws ");
                 printExprs(tree.thrown);
             }
+            if (tree.defaultValue != null) {
+                print(" default ");
+                printExpr(tree.defaultValue);
+            }
             if (tree.body != null) {
                 print(" ");
                 printStat(tree.body);
@@ -489,6 +493,20 @@ public class Pretty extends JCTree.Visitor {
                 print("/*public static final*/ ");
                 print(tree.name);
                 if (tree.init != null) {
+                    if (sourceOutput && tree.init.getTag() == JCTree.NEWCLASS) {
+                        print(" /*enum*/ ");
+                        JCNewClass init = (JCNewClass) tree.init;
+                        if (init.args != null && init.args.nonEmpty()) {
+                            print("(");
+                            print(init.args);
+                            print(")");
+                        }
+                        if (init.def != null && init.def.defs != null) {
+                            print(" ");
+                            printBlock(init.def.defs);
+                        }
+                        return;
+                    }
                     print(" /* = ");
                     printExpr(tree.init);
                     print(" */");
@@ -1134,20 +1152,7 @@ public class Pretty extends JCTree.Visitor {
 
     // Prints the inner element type of a nested array
     private void printBaseElementType(JCTree tree) throws IOException {
-        switch (tree.getTag()) {
-        case JCTree.TYPEARRAY:
-            printBaseElementType(((JCArrayTypeTree)tree).elemtype);
-            return;
-        case JCTree.WILDCARD:
-            printBaseElementType(((JCWildcard)tree).inner);
-            return;
-        case JCTree.ANNOTATED_TYPE:
-            printBaseElementType(((JCAnnotatedType)tree).underlyingType);
-            return;
-        default:
-            printExpr(tree);
-            return;
-        }
+        printExpr(TreeInfo.innermostType(tree));
     }
 
     // prints the brackets of a nested array in reverse order

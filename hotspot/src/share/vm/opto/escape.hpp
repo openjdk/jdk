@@ -210,6 +210,8 @@ private:
   Unique_Node_List  _delayed_worklist; // Nodes to be processed before
                                        // the call build_connection_graph().
 
+  GrowableArray<MergeMemNode *>  _mergemem_worklist; // List of all MergeMem nodes
+
   VectorSet                _processed; // Records which nodes have been
                                        // processed.
 
@@ -289,7 +291,7 @@ private:
   bool split_AddP(Node *addp, Node *base,  PhaseGVN  *igvn);
   PhiNode *create_split_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, PhaseGVN  *igvn, bool &new_created);
   PhiNode *split_memory_phi(PhiNode *orig_phi, int alias_idx, GrowableArray<PhiNode *>  &orig_phi_worklist, PhaseGVN  *igvn);
-  Node *find_mem(Node *mem, int alias_idx, PhaseGVN  *igvn);
+  void  move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phis, PhaseGVN *igvn);
   Node *find_inst_mem(Node *mem, int alias_idx,GrowableArray<PhiNode *>  &orig_phi_worklist,  PhaseGVN  *igvn);
 
   // Propagate unique types created for unescaped allocated objects
@@ -298,7 +300,6 @@ private:
 
   // manage entries in _node_map
   void  set_map(int idx, Node *n)        { _node_map.map(idx, n); }
-  void  set_map_phi(int idx, PhiNode *p) { _node_map.map(idx, (Node *) p); }
   Node *get_map(int idx)                 { return _node_map[idx]; }
   PhiNode *get_map_phi(int idx) {
     Node *phi = _node_map[idx];
@@ -314,6 +315,9 @@ private:
 
   // Set the escape state of a node
   void set_escape_state(uint ni, PointsToNode::EscapeState es);
+
+  // Search for objects which are not scalar replaceable.
+  void verify_escape_state(int nidx, VectorSet& ptset, PhaseTransform* phase);
 
 public:
   ConnectionGraph(Compile *C);

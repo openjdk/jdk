@@ -27,7 +27,6 @@ package javax.swing.plaf.synth;
 
 import javax.swing.*;
 import javax.swing.text.*;
-import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicTextFieldUI;
 import java.awt.*;
@@ -35,11 +34,9 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.beans.PropertyChangeEvent;
 
-import sun.swing.plaf.synth.SynthUI;
 
 /**
- * Basis of a look and feel for a JTextField in the Synth
- * look and feel.
+ * Provides the Synth L&F UI delegate for {@link javax.swing.JTextField}.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with
@@ -51,25 +48,20 @@ import sun.swing.plaf.synth.SynthUI;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @author  Shannon Hickey
+ * @since 1.7
  */
-class SynthTextFieldUI
-    extends BasicTextFieldUI
-    implements SynthUI, FocusListener
-{
+public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
+    private Handler handler = new Handler();
     private SynthStyle style;
 
     /**
      * Creates a UI for a JTextField.
      *
      * @param c the text field
-     * @return the UI
+     * @return the UI object
      */
     public static ComponentUI createUI(JComponent c) {
         return new SynthTextFieldUI();
-    }
-
-    public SynthTextFieldUI() {
-        super();
     }
 
     private void updateStyle(JTextComponent comp) {
@@ -155,8 +147,12 @@ class SynthTextFieldUI
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
-        return getContext(c, getComponentState(c));
+        return getContext(c, SynthLookAndFeel.getComponentState(c));
     }
 
     private SynthContext getContext(JComponent c, int state) {
@@ -164,10 +160,19 @@ class SynthTextFieldUI
                     SynthLookAndFeel.getRegion(c), style, state);
     }
 
-    private int getComponentState(JComponent c) {
-        return SynthLookAndFeel.getComponentState(c);
-    }
-
+    /**
+     * Notifies this UI delegate to repaint the specified component.
+     * This method paints the component background, then calls
+     * the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * <p>In general, this method does not need to be overridden by subclasses.
+     * All Look and Feel rendering code should reside in the {@code paint} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -178,12 +183,16 @@ class SynthTextFieldUI
     }
 
     /**
-     * Paints the interface.  This is routed to the
-     * paintSafely method under the guarantee that
-     * the model won't change from the view of this thread
-     * while it's rendering (if the associated model is
-     * derived from AbstractDocument).  This enables the
+     * Paints the specified component.
+     * <p>This is routed to the {@link #paintSafely} method under
+     * the guarantee that the model does not change from the view of this
+     * thread while it is rendering (if the associated model is
+     * derived from {@code AbstractDocument}).  This enables the
      * model to potentially be updated asynchronously.
+     *
+     * @param context context for the component being painted
+     * @param g the {@code Graphics} object used for painting
+     * @see #update(Graphics,JComponent)
      */
     protected void paint(SynthContext context, Graphics g) {
         super.paint(g, getComponent());
@@ -194,11 +203,20 @@ class SynthTextFieldUI
                                                 c.getWidth(), c.getHeight());
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintTextFieldBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     * Overridden to do nothing.
+     */
+    @Override
     protected void paintBackground(Graphics g) {
         // Overriden to do nothing, all our painting is done from update/paint.
     }
@@ -214,6 +232,7 @@ class SynthTextFieldUI
      *
      * @param evt the property change event
      */
+    @Override
     protected void propertyChange(PropertyChangeEvent evt) {
         if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
             updateStyle((JTextComponent)evt.getSource());
@@ -221,26 +240,26 @@ class SynthTextFieldUI
         super.propertyChange(evt);
     }
 
-    public void focusGained(FocusEvent e) {
-        getComponent().repaint();
-    }
-
-    public void focusLost(FocusEvent e) {
-        getComponent().repaint();
-    }
-
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults() {
         // Installs the text cursor on the component
         super.installDefaults();
         updateStyle(getComponent());
-        getComponent().addFocusListener(this);
+        getComponent().addFocusListener(handler);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(getComponent(), ENABLED);
 
         getComponent().putClientProperty("caretAspectRatio", null);
-        getComponent().removeFocusListener(this);
+        getComponent().removeFocusListener(handler);
 
         style.uninstallDefaults(context);
         context.dispose();
@@ -248,7 +267,13 @@ class SynthTextFieldUI
         super.uninstallDefaults();
     }
 
-    public void installUI(JComponent c) {
-        super.installUI(c);
+    private final class Handler implements FocusListener {
+        public void focusGained(FocusEvent e) {
+            getComponent().repaint();
+        }
+
+        public void focusLost(FocusEvent e) {
+            getComponent().repaint();
+        }
     }
 }

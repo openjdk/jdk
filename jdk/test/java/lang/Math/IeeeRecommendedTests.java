@@ -26,8 +26,6 @@
  * @bug 4860891 4826732 4780454 4939441 4826652
  * @summary Tests for IEEE 754[R] recommended functions and similar methods
  * @author Joseph D. Darcy
- * @compile -source 1.5 IeeeRecommendedTests.java
- * @run main IeeeRecommendedTests
  */
 
 import sun.misc.FpUtils;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,13 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
   HeapWord* obj = top();
   if (pointer_delta(end(), obj) >= size) {
     // successful thread-local allocation
-
-    DEBUG_ONLY(Copy::fill_to_words(obj, size, badHeapWordVal));
+#ifdef ASSERT
+    // Skip mangling the space corresponding to the object header to
+    // ensure that the returned space is not considered parsable by
+    // any concurrent GC thread.
+    size_t hdr_size = CollectedHeap::min_fill_size();
+    Copy::fill_to_words(obj + hdr_size, size - hdr_size, badHeapWordVal);
+#endif // ASSERT
     // This addition is safe because we know that top is
     // at least size below end, so the add can't wrap.
     set_top(obj + size);

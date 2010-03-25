@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 5012882 6299047
  * @summary Test jvmti hprof
  *
- * @compile -source 1.5 -g HelloWorld.java ../DemoRun.java
+ * @compile -g HelloWorld.java ../DemoRun.java
  * @build CpuTimesTest
  * @run main CpuTimesTest HelloWorld
  */
@@ -42,7 +42,7 @@ public class CpuTimesTest {
 
         /* Make sure patterns in output look ok */
         if (hprof.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in oputput");
+            throw new RuntimeException("Test failed - ERROR seen in output");
         }
 
         /* Must be a pass. */

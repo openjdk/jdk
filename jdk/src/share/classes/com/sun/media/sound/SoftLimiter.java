@@ -79,7 +79,7 @@ public class SoftLimiter implements SoftAudioProcessor {
             if (silentcounter > 60) {
                 if (!mix) {
                     bufferLout.clear();
-                    bufferRout.clear();
+                    if (bufferRout != null) bufferRout.clear();
                 }
                 return;
             }

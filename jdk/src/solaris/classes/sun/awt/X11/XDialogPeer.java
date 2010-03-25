@@ -28,7 +28,7 @@ import java.util.*;
 import java.awt.*;
 import java.awt.peer.*;
 import java.awt.event.*;
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 
 import sun.awt.*;
 
@@ -117,7 +117,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         try {
             javaToplevels = XWindowPeer.collectJavaToplevels();
             for (Window w : toBlock) {
-                XWindowPeer wp = (XWindowPeer)ComponentAccessor.getPeer(w);
+                XWindowPeer wp = (XWindowPeer)AWTAccessor.getComponentAccessor().getPeer(w);
                 if (wp != null) {
                     wp.setModalBlocked((Dialog)target, true, javaToplevels);
                 }
@@ -139,7 +139,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         XWindowPeer focusedWindowPeer = null;
 
         if (focusedWindow != null) {
-            focusedWindowPeer = (XWindowPeer)ComponentAccessor.getPeer(focusedWindow);
+            focusedWindowPeer = (XWindowPeer)AWTAccessor.getComponentAccessor().getPeer(focusedWindow);
         } else {
             /*
              * For the case when a potential blocked window is not yet focused

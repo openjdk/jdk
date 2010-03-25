@@ -120,6 +120,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     case Op_LoadRange:
     case Op_LoadD_unaligned:
     case Op_LoadL_unaligned:
+      assert(mach->in(2) == val, "should be address");
       break;
     case Op_StoreB:
     case Op_StoreC:
@@ -146,6 +147,21 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     default:                    // Also check for embedded loads
       if( !mach->needs_anti_dependence_check() )
         continue;               // Not an memory op; skip it
+      {
+        // Check that value is used in memory address.
+        Node* base;
+        Node* index;
+        const MachOper* oper = mach->memory_inputs(base, index);
+        if (oper == NULL || oper == (MachOper*)-1) {
+          continue;             // Not an memory op; skip it
+        }
+        if (val == base ||
+            val == index && val->bottom_type()->isa_narrowoop()) {
+          break;                // Found it
+        } else {
+          continue;             // Skip it
+        }
+      }
       break;
     }
     // check if the offset is not too high for implicit exception
@@ -542,6 +558,16 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
   // pointers as far as the kill mask goes.
   bool exclude_soe = op == Op_CallRuntime;
 
+  // If the call is a MethodHandle invoke, we need to exclude the
+  // register which is used to save the SP value over MH invokes from
+  // the mask.  Otherwise this register could be used for
+  // deoptimization information.
+  if (op == Op_CallStaticJava) {
+    MachCallStaticJavaNode* mcallstaticjava = (MachCallStaticJavaNode*) mcall;
+    if (mcallstaticjava->_method_handle_invoke)
+      proj->_rout.OR(Matcher::method_handle_invoke_SP_save_mask());
+  }
+
   // Fill in the kill mask for the call
   for( OptoReg::Name r = OptoReg::Name(0); r < _last_Mach_Reg; r=OptoReg::add(r,1) ) {
     if( !regs.Member(r) ) {     // Not already defined by the call
@@ -616,8 +642,9 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
           assert(cfg->_bbs[oop_store->_idx]->_dom_depth <= this->_dom_depth, "oop_store must dominate card-mark");
         }
       }
-      if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_MemBarAcquire &&
-          n->req() > TypeFunc::Parms ) {
+      if( n->is_Mach() && n->req() > TypeFunc::Parms &&
+          (n->as_Mach()->ideal_Opcode() == Op_MemBarAcquire ||
+           n->as_Mach()->ideal_Opcode() == Op_MemBarVolatile) ) {
         // MemBarAcquire could be created without Precedent edge.
         // del_req() replaces the specified edge with the last input edge
         // and then removes the last edge. If the specified edge > number of

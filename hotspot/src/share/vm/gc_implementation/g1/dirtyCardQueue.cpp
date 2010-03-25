@@ -61,8 +61,8 @@ bool DirtyCardQueue::apply_closure_to_buffer(CardTableEntryClosure* cl,
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif // _MSC_VER
 
-DirtyCardQueueSet::DirtyCardQueueSet() :
-  PtrQueueSet(true /*notify_when_complete*/),
+DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
+  PtrQueueSet(notify_when_complete),
   _closure(NULL),
   _shared_dirty_card_queue(this, true /*perm*/),
   _free_ids(NULL),
@@ -77,12 +77,12 @@ size_t DirtyCardQueueSet::num_par_ids() {
 }
 
 void DirtyCardQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
+                                   int process_completed_threshold,
                                    int max_completed_queue,
                                    Mutex* lock, PtrQueueSet* fl_owner) {
-  PtrQueueSet::initialize(cbl_mon, fl_lock, max_completed_queue, fl_owner);
+  PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold,
+                          max_completed_queue, fl_owner);
   set_buffer_size(G1UpdateBufferSize);
-  set_process_completed_threshold(G1UpdateBufferQueueProcessingThreshold);
-
   _shared_dirty_card_queue.set_lock(lock);
   _free_ids = new FreeIdSet((int) num_par_ids(), _cbl_mon);
 }
@@ -154,9 +154,10 @@ bool DirtyCardQueueSet::mut_process_buffer(void** buf) {
   return b;
 }
 
-DirtyCardQueueSet::CompletedBufferNode*
-DirtyCardQueueSet::get_completed_buffer_lock(int stop_at) {
-  CompletedBufferNode* nd = NULL;
+
+BufferNode*
+DirtyCardQueueSet::get_completed_buffer(int stop_at) {
+  BufferNode* nd = NULL;
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
 
   if ((int)_n_completed_buffers <= stop_at) {
@@ -166,53 +167,31 @@ DirtyCardQueueSet::get_completed_buffer_lock(int stop_at) {
 
   if (_completed_buffers_head != NULL) {
     nd = _completed_buffers_head;
-    _completed_buffers_head = nd->next;
+    _completed_buffers_head = nd->next();
     if (_completed_buffers_head == NULL)
       _completed_buffers_tail = NULL;
     _n_completed_buffers--;
+    assert(_n_completed_buffers >= 0, "Invariant");
   }
   debug_only(assert_completed_buffer_list_len_correct_locked());
   return nd;
 }
 
-// We only do this in contexts where there is no concurrent enqueueing.
-DirtyCardQueueSet::CompletedBufferNode*
-DirtyCardQueueSet::get_completed_buffer_CAS() {
-  CompletedBufferNode* nd = _completed_buffers_head;
-
-  while (nd != NULL) {
-    CompletedBufferNode* next = nd->next;
-    CompletedBufferNode* result =
-      (CompletedBufferNode*)Atomic::cmpxchg_ptr(next,
-                                                &_completed_buffers_head,
-                                                nd);
-    if (result == nd) {
-      return result;
-    } else {
-      nd = _completed_buffers_head;
-    }
-  }
-  assert(_completed_buffers_head == NULL, "Loop post");
-  _completed_buffers_tail = NULL;
-  return NULL;
-}
-
 bool DirtyCardQueueSet::
 apply_closure_to_completed_buffer_helper(int worker_i,
-                                         CompletedBufferNode* nd) {
+                                         BufferNode* nd) {
   if (nd != NULL) {
+    void **buf = BufferNode::make_buffer_from_node(nd);
+    size_t index = nd->index();
     bool b =
-      DirtyCardQueue::apply_closure_to_buffer(_closure, nd->buf,
-                                              nd->index, _sz,
+      DirtyCardQueue::apply_closure_to_buffer(_closure, buf,
+                                              index, _sz,
                                               true, worker_i);
-    void** buf = nd->buf;
-    size_t index = nd->index;
-    delete nd;
     if (b) {
       deallocate_buffer(buf);
       return true;  // In normal case, go on to next buffer.
     } else {
-      enqueue_complete_buffer(buf, index, true);
+      enqueue_complete_buffer(buf, index);
       return false;
     }
   } else {
@@ -222,40 +201,36 @@ apply_closure_to_completed_buffer_helper(int worker_i,
 
 bool DirtyCardQueueSet::apply_closure_to_completed_buffer(int worker_i,
                                                           int stop_at,
-                                                          bool with_CAS)
+                                                          bool during_pause)
 {
-  CompletedBufferNode* nd = NULL;
-  if (with_CAS) {
-    guarantee(stop_at == 0, "Precondition");
-    nd = get_completed_buffer_CAS();
-  } else {
-    nd = get_completed_buffer_lock(stop_at);
-  }
+  assert(!during_pause || stop_at == 0, "Should not leave any completed buffers during a pause");
+  BufferNode* nd = get_completed_buffer(stop_at);
   bool res = apply_closure_to_completed_buffer_helper(worker_i, nd);
   if (res) Atomic::inc(&_processed_buffers_rs_thread);
   return res;
 }
 
 void DirtyCardQueueSet::apply_closure_to_all_completed_buffers() {
-  CompletedBufferNode* nd = _completed_buffers_head;
+  BufferNode* nd = _completed_buffers_head;
   while (nd != NULL) {
     bool b =
-      DirtyCardQueue::apply_closure_to_buffer(_closure, nd->buf, 0, _sz,
-                                              false);
+      DirtyCardQueue::apply_closure_to_buffer(_closure,
+                                              BufferNode::make_buffer_from_node(nd),
+                                              0, _sz, false);
     guarantee(b, "Should not stop early.");
-    nd = nd->next;
+    nd = nd->next();
   }
 }
 
 void DirtyCardQueueSet::abandon_logs() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
-  CompletedBufferNode* buffers_to_delete = NULL;
+  BufferNode* buffers_to_delete = NULL;
   {
     MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
     while (_completed_buffers_head != NULL) {
-      CompletedBufferNode* nd = _completed_buffers_head;
-      _completed_buffers_head = nd->next;
-      nd->next = buffers_to_delete;
+      BufferNode* nd = _completed_buffers_head;
+      _completed_buffers_head = nd->next();
+      nd->set_next(buffers_to_delete);
       buffers_to_delete = nd;
     }
     _n_completed_buffers = 0;
@@ -263,10 +238,9 @@ void DirtyCardQueueSet::abandon_logs() {
     debug_only(assert_completed_buffer_list_len_correct_locked());
   }
   while (buffers_to_delete != NULL) {
-    CompletedBufferNode* nd = buffers_to_delete;
-    buffers_to_delete = nd->next;
-    deallocate_buffer(nd->buf);
-    delete nd;
+    BufferNode* nd = buffers_to_delete;
+    buffers_to_delete = nd->next();
+    deallocate_buffer(BufferNode::make_buffer_from_node(nd));
   }
   // Since abandon is done only at safepoints, we can safely manipulate
   // these queues.

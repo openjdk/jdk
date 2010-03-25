@@ -1337,7 +1337,11 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 return (TableCellRenderer)renderer;
             }
             else {
-                return getDefaultRenderer(columnClass.getSuperclass());
+                Class c = columnClass.getSuperclass();
+                if (c == null && columnClass != Object.class) {
+                    c = Object.class;
+                }
+                return getDefaultRenderer(c);
             }
         }
     }
@@ -2502,10 +2506,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         Color old = this.selectionForeground;
         this.selectionForeground = selectionForeground;
         firePropertyChange("selectionForeground", old, selectionForeground);
-        if ( !selectionForeground.equals(old) )
-        {
-            repaint();
-        }
+        repaint();
     }
 
     /**
@@ -2543,10 +2544,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         Color old = this.selectionBackground;
         this.selectionBackground = selectionBackground;
         firePropertyChange("selectionBackground", old, selectionBackground);
-        if ( !selectionBackground.equals(old) )
-        {
-            repaint();
-        }
+        repaint();
     }
 
     /**

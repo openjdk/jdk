@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,13 +66,23 @@ bool CompilationPolicy::mustBeCompiled(methodHandle m) {
   if (!canBeCompiled(m))      return false;
 
   return !UseInterpreter ||                                              // must compile all methods
-         (UseCompiler && AlwaysCompileLoopMethods && m->has_loops()); // eagerly compile loop methods
+         (UseCompiler && AlwaysCompileLoopMethods && m->has_loops() && CompileBroker::should_compile_new_jobs()); // eagerly compile loop methods
 }
 
 // Returns true if m is allowed to be compiled
 bool CompilationPolicy::canBeCompiled(methodHandle m) {
   if (m->is_abstract()) return false;
   if (DontCompileHugeMethods && m->code_size() > HugeMethodLimit) return false;
+
+  // Math intrinsics should never be compiled as this can lead to
+  // monotonicity problems because the interpreter will prefer the
+  // compiled code to the intrinsic version.  This can't happen in
+  // production because the invocation counter can't be incremented
+  // but we shouldn't expose the system to this problem in testing
+  // modes.
+  if (!AbstractInterpreter::can_be_compiled(m)) {
+    return false;
+  }
 
   return !m->is_not_compilable();
 }
@@ -127,7 +137,7 @@ void SimpleCompPolicy::method_invocation_event( methodHandle m, TRAPS) {
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
 
-  if (!delayCompilationDuringStartup() && canBeCompiled(m) && UseCompiler) {
+  if (!delayCompilationDuringStartup() && canBeCompiled(m) && UseCompiler && CompileBroker::should_compile_new_jobs()) {
     nmethod* nm = m->code();
     if (nm == NULL ) {
       const char* comment = "count";
@@ -152,7 +162,7 @@ void SimpleCompPolicy::method_back_branch_event(methodHandle m, int branch_bci, 
   int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (!m->is_not_osr_compilable() && !delayCompilationDuringStartup() && canBeCompiled(m)) {
+  if (!m->is_not_osr_compilable() && !delayCompilationDuringStartup() && canBeCompiled(m) && CompileBroker::should_compile_new_jobs()) {
     CompileBroker::compile_method(m, loop_top_bci, m, hot_count, comment, CHECK);
 
     NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(loop_top_bci));)
@@ -194,7 +204,7 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, TRAPS) {
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
 
-  if (m->code() == NULL && !delayCompilationDuringStartup() && canBeCompiled(m) && UseCompiler) {
+  if (m->code() == NULL && !delayCompilationDuringStartup() && canBeCompiled(m) && UseCompiler && CompileBroker::should_compile_new_jobs()) {
     ResourceMark rm(THREAD);
     JavaThread *thread = (JavaThread*)THREAD;
     frame       fr     = thread->last_frame();
@@ -238,7 +248,7 @@ void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int branch_bc
   int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
-  if (!m->is_not_osr_compilable() && !delayCompilationDuringStartup() && canBeCompiled(m)) {
+  if (!m->is_not_osr_compilable() && !delayCompilationDuringStartup() && canBeCompiled(m) && CompileBroker::should_compile_new_jobs()) {
     CompileBroker::compile_method(m, loop_top_bci, m, hot_count, comment, CHECK);
 
     NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(loop_top_bci));)

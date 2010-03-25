@@ -89,6 +89,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = security-sunpkcs11
 PACKAGE = sun.security.pkcs11
 LIBRARY = j2pkcs11
 PRODUCT = sun
@@ -161,6 +162,16 @@ else
   OTHER_LDLIBS = -ldl $(JVMLIB)
 endif
 
+# Other config files
+SUNPKCS11_CFG   =
+
+ifeq ($(PLATFORM), solaris)
+SUNPKCS11_CFG   = sunpkcs11-cfg
+endif # PLATFORM
+
+SUNPKCS11_CFG_SRC   = $(TOPDIR)/src/share/lib/security/sunpkcs11-solaris.cfg
+SUNPKCS11_CFG_BUILD = $(LIBDIR)/security/sunpkcs11-solaris.cfg
+
 #
 # We use a variety of subdirectories in the $(TEMPDIR) depending on what
 # part of the build we're doing.  Both OPENJDK/JDK builds are initially
@@ -174,11 +185,16 @@ UNSIGNED_DIR = $(TEMPDIR)/unsigned
 #
 
 ifdef OPENJDK
-all: build-jar install-jar
+all: $(SUNPKCS11_CFG) build-jar install-jar
 else
-all: build-jar install-prebuilt
+all: $(SUNPKCS11_CFG) build-jar install-prebuilt
 	$(build-warning)
 endif
+
+sunpkcs11-cfg: $(SUNPKCS11_CFG_BUILD)
+
+$(SUNPKCS11_CFG_BUILD): $(SUNPKCS11_CFG_SRC)
+	$(install-file)
 
 include $(BUILDDIR)/javax/crypto/Defs-jce.gmk
 
@@ -271,7 +287,7 @@ $(JAR_DESTFILE): $(UNSIGNED_DIR)/sunpkcs11.jar
 else
 $(JAR_DESTFILE): $(SIGNED_DIR)/sunpkcs11.jar
 endif
-	$(install-file)
+	$(install-non-module-file)
 
 ifndef OPENJDK
 install-prebuilt:
@@ -287,6 +303,7 @@ endif
 
 clobber clean::
 	$(RM) -r $(JAR_DESTFILE) $(TEMPDIR) $(JCE_BUILD_DIR)
+	$(RM) $(SUNPKCS11_CFG_BUILD) 
 
 .PHONY: build-jar jar install-jar
 ifndef OPENJDK

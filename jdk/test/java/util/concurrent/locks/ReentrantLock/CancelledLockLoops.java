@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile -source 1.5 CancelledLockLoops.java
+ * @compile CancelledLockLoops.java
  * @run main/timeout=2800 CancelledLockLoops
  * @summary tests lockInterruptibly.
  * Checks for responsiveness of locks to interrupts. Runs under that

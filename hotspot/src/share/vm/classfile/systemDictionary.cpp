@@ -60,10 +60,10 @@ oop SystemDictionary::java_system_loader() {
 }
 
 void SystemDictionary::compute_java_system_loader(TRAPS) {
-  KlassHandle system_klass(THREAD, WK_KLASS(classloader_klass));
+  KlassHandle system_klass(THREAD, WK_KLASS(ClassLoader_klass));
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
-                         KlassHandle(THREAD, WK_KLASS(classloader_klass)),
+                         KlassHandle(THREAD, WK_KLASS(ClassLoader_klass)),
                          vmSymbolHandles::getSystemClassLoader_name(),
                          vmSymbolHandles::void_classloader_signature(),
                          CHECK);
@@ -99,6 +99,15 @@ bool SystemDictionary::is_parallelCapable(Handle class_loader) {
   return java_lang_Class::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
+// ParallelDefineClass flag does not apply to bootclass loader
+bool SystemDictionary::is_parallelDefine(Handle class_loader) {
+   if (class_loader.is_null()) return false;
+   if (AllowParallelDefineClass && java_lang_Class::parallelCapable(class_loader())) {
+     return true;
+   }
+   return false;
+}
+// ----------------------------------------------------------------------------
 // Resolving of classes
 
 // Forwards to resolve_or_null
@@ -119,7 +128,7 @@ klassOop SystemDictionary::handle_resolution_exception(symbolHandle class_name, 
     // in which case we have to check whether the pending exception is a ClassNotFoundException,
     // and if so convert it to a NoClassDefFoundError
     // And chain the original ClassNotFoundException
-    if (throw_error && PENDING_EXCEPTION->is_a(SystemDictionary::classNotFoundException_klass())) {
+    if (throw_error && PENDING_EXCEPTION->is_a(SystemDictionary::ClassNotFoundException_klass())) {
       ResourceMark rm(THREAD);
       assert(klass_h() == NULL, "Should not have result with exception pending");
       Handle e(THREAD, PENDING_EXCEPTION);
@@ -350,7 +359,7 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
 
   assert(class_loader() != NULL, "should not have non-null protection domain for null classloader");
 
-  KlassHandle system_loader(THREAD, SystemDictionary::classloader_klass());
+  KlassHandle system_loader(THREAD, SystemDictionary::ClassLoader_klass());
   JavaCalls::call_special(&result,
                          class_loader,
                          system_loader,
@@ -724,17 +733,17 @@ klassOop SystemDictionary::resolve_instance_class_or_null(symbolHandle class_nam
       // Do actual loading
       k = load_instance_class(name, class_loader, THREAD);
 
-      // For UnsyncloadClass and AllowParallelDefineClass only:
+      // For UnsyncloadClass only
       // If they got a linkageError, check if a parallel class load succeeded.
       // If it did, then for bytecode resolution the specification requires
       // that we return the same result we did for the other thread, i.e. the
       // successfully loaded instanceKlass
       // Should not get here for classloaders that support parallelism
-      // with the new cleaner mechanism
+      // with the new cleaner mechanism, even with AllowParallelDefineClass
       // Bootstrap goes through here to allow for an extra guarantee check
       if (UnsyncloadClass || (class_loader.is_null())) {
         if (k.is_null() && HAS_PENDING_EXCEPTION
-          && PENDING_EXCEPTION->is_a(SystemDictionary::linkageError_klass())) {
+          && PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {
           MutexLocker mu(SystemDictionary_lock, THREAD);
           klassOop check = find_class(d_index, d_hash, name, class_loader);
           if (check != NULL) {
@@ -1358,7 +1367,7 @@ instanceKlassHandle SystemDictionary::load_instance_class(symbolHandle class_nam
 
     JavaValue result(T_OBJECT);
 
-    KlassHandle spec_klass (THREAD, SystemDictionary::classloader_klass());
+    KlassHandle spec_klass (THREAD, SystemDictionary::ClassLoader_klass());
 
     // Call public unsynchronized loadClass(String) directly for all class loaders
     // for parallelCapable class loaders. JDK >=7, loadClass(String, boolean) will
@@ -1483,14 +1492,17 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
 }
 
 // Support parallel classloading
-// Initial implementation for bootstrap classloader
-// For custom class loaders that support parallel classloading,
+// All parallel class loaders, including bootstrap classloader
+// lock a placeholder entry for this class/class_loader pair
+// to allow parallel defines of different classes for this class loader
 // With AllowParallelDefine flag==true, in case they do not synchronize around
 // FindLoadedClass/DefineClass, calls, we check for parallel
 // loading for them, wait if a defineClass is in progress
 // and return the initial requestor's results
+// This flag does not apply to the bootstrap classloader.
 // With AllowParallelDefine flag==false, call through to define_instance_class
 // which will throw LinkageError: duplicate class definition.
+// False is the requested default.
 // For better performance, the class loaders should synchronize
 // findClass(), i.e. FindLoadedClass/DefineClassIfAbsent or they
 // potentially waste time reading and parsing the bytestream.
@@ -1511,9 +1523,11 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(symbolHandle
   {
     MutexLocker mu(SystemDictionary_lock, THREAD);
     // First check if class already defined
-    klassOop check = find_class(d_index, d_hash, name_h, class_loader);
-    if (check != NULL) {
-      return(instanceKlassHandle(THREAD, check));
+    if (UnsyncloadClass || (is_parallelDefine(class_loader))) {
+      klassOop check = find_class(d_index, d_hash, name_h, class_loader);
+      if (check != NULL) {
+        return(instanceKlassHandle(THREAD, check));
+      }
     }
 
     // Acquire define token for this class/classloader
@@ -1529,7 +1543,7 @@ instanceKlassHandle SystemDictionary::find_or_define_instance_class(symbolHandle
     // Only special cases allow parallel defines and can use other thread's results
     // Other cases fall through, and may run into duplicate defines
     // caught by finding an entry in the SystemDictionary
-    if ((UnsyncloadClass || AllowParallelDefineClass) && (probe->instanceKlass() != NULL)) {
+    if ((UnsyncloadClass || is_parallelDefine(class_loader)) && (probe->instanceKlass() != NULL)) {
         probe->remove_seen_thread(THREAD, PlaceholderTable::DEFINE_CLASS);
         placeholders()->find_and_remove(p_index, p_hash, name_h, class_loader, THREAD);
         SystemDictionary_lock->notify_all();
@@ -1930,13 +1944,13 @@ void SystemDictionary::initialize_wk_klasses_until(WKID limit_id, WKID &start_id
 
 
 void SystemDictionary::initialize_preloaded_classes(TRAPS) {
-  assert(WK_KLASS(object_klass) == NULL, "preloaded classes should only be initialized once");
+  assert(WK_KLASS(Object_klass) == NULL, "preloaded classes should only be initialized once");
   // Preload commonly used klasses
   WKID scan = FIRST_WKID;
   // first do Object, String, Class
-  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(class_klass), scan, CHECK);
+  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
 
-  debug_only(instanceKlass::verify_class_klass_nonstatic_oop_maps(WK_KLASS(class_klass)));
+  debug_only(instanceKlass::verify_class_klass_nonstatic_oop_maps(WK_KLASS(Class_klass)));
 
   // Fixup mirrors for classes loaded before java.lang.Class.
   // These calls iterate over the objects currently in the perm gen
@@ -1947,17 +1961,17 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   Universe::fixup_mirrors(CHECK);
 
   // do a bunch more:
-  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(reference_klass), scan, CHECK);
+  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Reference_klass), scan, CHECK);
 
   // Preload ref klasses and set reference types
-  instanceKlass::cast(WK_KLASS(reference_klass))->set_reference_type(REF_OTHER);
-  instanceRefKlass::update_nonstatic_oop_maps(WK_KLASS(reference_klass));
+  instanceKlass::cast(WK_KLASS(Reference_klass))->set_reference_type(REF_OTHER);
+  instanceRefKlass::update_nonstatic_oop_maps(WK_KLASS(Reference_klass));
 
-  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(phantom_reference_klass), scan, CHECK);
-  instanceKlass::cast(WK_KLASS(soft_reference_klass))->set_reference_type(REF_SOFT);
-  instanceKlass::cast(WK_KLASS(weak_reference_klass))->set_reference_type(REF_WEAK);
-  instanceKlass::cast(WK_KLASS(final_reference_klass))->set_reference_type(REF_FINAL);
-  instanceKlass::cast(WK_KLASS(phantom_reference_klass))->set_reference_type(REF_PHANTOM);
+  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(PhantomReference_klass), scan, CHECK);
+  instanceKlass::cast(WK_KLASS(SoftReference_klass))->set_reference_type(REF_SOFT);
+  instanceKlass::cast(WK_KLASS(WeakReference_klass))->set_reference_type(REF_WEAK);
+  instanceKlass::cast(WK_KLASS(FinalReference_klass))->set_reference_type(REF_FINAL);
+  instanceKlass::cast(WK_KLASS(PhantomReference_klass))->set_reference_type(REF_PHANTOM);
 
   WKID meth_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
   WKID meth_group_end   = WK_KLASS_ENUM_NAME(WrongMethodTypeException_klass);
@@ -1970,10 +1984,10 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
     scan = WKID(meth_group_end+1);
   }
   WKID indy_group_start = WK_KLASS_ENUM_NAME(Linkage_klass);
-  WKID indy_group_end   = WK_KLASS_ENUM_NAME(Dynamic_klass);
+  WKID indy_group_end   = WK_KLASS_ENUM_NAME(InvokeDynamic_klass);
   initialize_wk_klasses_until(indy_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
-    initialize_wk_klasses_through(indy_group_start, scan, CHECK);
+    initialize_wk_klasses_through(indy_group_end, scan, CHECK);
   }
   if (_well_known_klasses[indy_group_start] == NULL) {
     // Skip the rest of the dynamic typing classes, if Linkage is not loaded.
@@ -1982,14 +1996,14 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
 
   initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
 
-  _box_klasses[T_BOOLEAN] = WK_KLASS(boolean_klass);
-  _box_klasses[T_CHAR]    = WK_KLASS(char_klass);
-  _box_klasses[T_FLOAT]   = WK_KLASS(float_klass);
-  _box_klasses[T_DOUBLE]  = WK_KLASS(double_klass);
-  _box_klasses[T_BYTE]    = WK_KLASS(byte_klass);
-  _box_klasses[T_SHORT]   = WK_KLASS(short_klass);
-  _box_klasses[T_INT]     = WK_KLASS(int_klass);
-  _box_klasses[T_LONG]    = WK_KLASS(long_klass);
+  _box_klasses[T_BOOLEAN] = WK_KLASS(Boolean_klass);
+  _box_klasses[T_CHAR]    = WK_KLASS(Character_klass);
+  _box_klasses[T_FLOAT]   = WK_KLASS(Float_klass);
+  _box_klasses[T_DOUBLE]  = WK_KLASS(Double_klass);
+  _box_klasses[T_BYTE]    = WK_KLASS(Byte_klass);
+  _box_klasses[T_SHORT]   = WK_KLASS(Short_klass);
+  _box_klasses[T_INT]     = WK_KLASS(Integer_klass);
+  _box_klasses[T_LONG]    = WK_KLASS(Long_klass);
   //_box_klasses[T_OBJECT]  = WK_KLASS(object_klass);
   //_box_klasses[T_ARRAY]   = WK_KLASS(object_klass);
 
@@ -2000,11 +2014,11 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
 #endif // KERNEL
 
   { // Compute whether we should use loadClass or loadClassInternal when loading classes.
-    methodOop method = instanceKlass::cast(classloader_klass())->find_method(vmSymbols::loadClassInternal_name(), vmSymbols::string_class_signature());
+    methodOop method = instanceKlass::cast(ClassLoader_klass())->find_method(vmSymbols::loadClassInternal_name(), vmSymbols::string_class_signature());
     _has_loadClassInternal = (method != NULL);
   }
   { // Compute whether we should use checkPackageAccess or NOT
-    methodOop method = instanceKlass::cast(classloader_klass())->find_method(vmSymbols::checkPackageAccess_name(), vmSymbols::class_protectiondomain_signature());
+    methodOop method = instanceKlass::cast(ClassLoader_klass())->find_method(vmSymbols::checkPackageAccess_name(), vmSymbols::class_protectiondomain_signature());
     _has_checkPackageAccess = (method != NULL);
   }
 }
@@ -2343,6 +2357,8 @@ methodOop SystemDictionary::find_method_handle_invoke(symbolHandle signature,
   SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature);
   if (spe == NULL || spe->property_oop() == NULL) {
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
+    if (THREAD->is_Compiler_thread())
+      return NULL;              // do not attempt from within compiler
     Handle mt = compute_method_handle_type(signature(),
                                            class_loader, protection_domain,
                                            CHECK_NULL);
@@ -2375,7 +2391,7 @@ Handle SystemDictionary::compute_method_handle_type(symbolHandle signature,
                                                     TRAPS) {
   Handle empty;
   int npts = ArgumentCount(signature()).size();
-  objArrayHandle pts = oopFactory::new_objArray(SystemDictionary::class_klass(), npts, CHECK_(empty));
+  objArrayHandle pts = oopFactory::new_objArray(SystemDictionary::Class_klass(), npts, CHECK_(empty));
   int arg = 0;
   Handle rt;                            // the return type from the signature
   for (SignatureStream ss(signature()); !ss.is_done(); ss.next()) {
@@ -2421,7 +2437,7 @@ Handle SystemDictionary::make_dynamic_call_site(KlassHandle caller,
                                                 methodHandle mh_invdyn,
                                                 TRAPS) {
   Handle empty;
-  // call sun.dyn.CallSiteImpl::makeSite(caller, name, mtype, cmid, cbci)
+  // call java.dyn.CallSite::makeSite(caller, name, mtype, cmid, cbci)
   oop name_str_oop = StringTable::intern(name(), CHECK_(empty)); // not a handle!
   JavaCallArguments args(Handle(THREAD, caller->java_mirror()));
   args.push_oop(name_str_oop);
@@ -2430,17 +2446,19 @@ Handle SystemDictionary::make_dynamic_call_site(KlassHandle caller,
   args.push_int(caller_bci);
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result,
-                         SystemDictionary::CallSiteImpl_klass(),
+                         SystemDictionary::CallSite_klass(),
                          vmSymbols::makeSite_name(), vmSymbols::makeSite_signature(),
                          &args, CHECK_(empty));
   oop call_site_oop = (oop) result.get_jobject();
   assert(call_site_oop->is_oop()
-         /*&& sun_dyn_CallSiteImpl::is_instance(call_site_oop)*/, "must be sane");
-  sun_dyn_CallSiteImpl::set_vmmethod(call_site_oop, mh_invdyn());
+         /*&& java_dyn_CallSite::is_instance(call_site_oop)*/, "must be sane");
+  java_dyn_CallSite::set_vmmethod(call_site_oop, mh_invdyn());
   if (TraceMethodHandles) {
+#ifndef PRODUCT
     tty->print_cr("Linked invokedynamic bci=%d site="INTPTR_FORMAT":", caller_bci, call_site_oop);
     call_site_oop->print();
     tty->cr();
+#endif //PRODUCT
   }
   return call_site_oop;
 }
@@ -2453,9 +2471,17 @@ Handle SystemDictionary::find_bootstrap_method(KlassHandle caller,
 
   instanceKlassHandle ik(THREAD, caller());
 
-  if (ik->bootstrap_method() != NULL) {
-    return Handle(THREAD, ik->bootstrap_method());
+  oop boot_method_oop = ik->bootstrap_method();
+  if (boot_method_oop != NULL) {
+    if (TraceMethodHandles) {
+      tty->print_cr("bootstrap method for "PTR_FORMAT" cached as "PTR_FORMAT":", ik(), boot_method_oop);
+    }
+    NOT_PRODUCT(if (!boot_method_oop->is_oop()) { tty->print_cr("*** boot MH of "PTR_FORMAT" = "PTR_FORMAT, ik(), boot_method_oop); ik()->print(); });
+    assert(boot_method_oop->is_oop()
+           && java_dyn_MethodHandle::is_instance(boot_method_oop), "must be sane");
+    return Handle(THREAD, boot_method_oop);
   }
+  boot_method_oop = NULL;  // GC safety
 
   // call java.dyn.Linkage::findBootstrapMethod(caller, sbk)
   JavaCallArguments args(Handle(THREAD, ik->java_mirror()));
@@ -2469,9 +2495,18 @@ Handle SystemDictionary::find_bootstrap_method(KlassHandle caller,
                          vmSymbols::findBootstrapMethod_name(),
                          vmSymbols::findBootstrapMethod_signature(),
                          &args, CHECK_(empty));
-  oop boot_method_oop = (oop) result.get_jobject();
+  boot_method_oop = (oop) result.get_jobject();
 
   if (boot_method_oop != NULL) {
+    if (TraceMethodHandles) {
+#ifndef PRODUCT
+      tty->print_cr("--------");
+      tty->print_cr("bootstrap method for "PTR_FORMAT" computed as "PTR_FORMAT":", ik(), boot_method_oop);
+      ik()->print();
+      boot_method_oop->print();
+      tty->print_cr("========");
+#endif //PRODUCT
+    }
     assert(boot_method_oop->is_oop()
            && java_dyn_MethodHandle::is_instance(boot_method_oop), "must be sane");
     // probably no race conditions, but let's be careful:
@@ -2480,6 +2515,14 @@ Handle SystemDictionary::find_bootstrap_method(KlassHandle caller,
     else
       boot_method_oop = ik->bootstrap_method();
   } else {
+    if (TraceMethodHandles) {
+#ifndef PRODUCT
+      tty->print_cr("--------");
+      tty->print_cr("bootstrap method for "PTR_FORMAT" computed as NULL:", ik());
+      ik()->print();
+      tty->print_cr("========");
+#endif //PRODUCT
+    }
     boot_method_oop = ik->bootstrap_method();
   }
 
@@ -2547,7 +2590,7 @@ void SystemDictionary::verify() {
 
   // Verify constraint table
   guarantee(constraints() != NULL, "Verify of loader constraints failed");
-  constraints()->verify(dictionary());
+  constraints()->verify(dictionary(), placeholders());
 }
 
 

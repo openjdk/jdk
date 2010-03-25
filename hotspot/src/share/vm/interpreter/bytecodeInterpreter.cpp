@@ -281,7 +281,7 @@
 
 #define DO_BACKEDGE_CHECKS(skip, branch_pc)                                                         \
     if ((skip) <= 0) {                                                                              \
-      if (UseCompiler && UseLoopCounter) {                                                          \
+      if (UseLoopCounter) {                                                                         \
         bool do_OSR = UseOnStackReplacement;                                                        \
         BACKEDGE_COUNT->increment();                                                                \
         if (do_OSR) do_OSR = BACKEDGE_COUNT->reached_InvocationLimit();                             \
@@ -289,16 +289,12 @@
           nmethod*  osr_nmethod;                                                                    \
           OSR_REQUEST(osr_nmethod, branch_pc);                                                      \
           if (osr_nmethod != NULL && osr_nmethod->osr_entry_bci() != InvalidOSREntryBci) {          \
-            intptr_t* buf;                                                                          \
-            CALL_VM(buf=SharedRuntime::OSR_migration_begin(THREAD), handle_exception);              \
+            intptr_t* buf = SharedRuntime::OSR_migration_begin(THREAD);                             \
             istate->set_msg(do_osr);                                                                \
             istate->set_osr_buf((address)buf);                                                      \
             istate->set_osr_entry(osr_nmethod->osr_entry());                                        \
             return;                                                                                 \
           }                                                                                         \
-        } else {                                                                                    \
-          INCR_INVOCATION_COUNT;                                                                    \
-          SAFEPOINT;                                                                                \
         }                                                                                           \
       }  /* UseCompiler ... */                                                                      \
       INCR_INVOCATION_COUNT;                                                                        \
@@ -1281,12 +1277,7 @@ run:
           jfloat f;
           jdouble r;
           f = STACK_FLOAT(-1);
-#ifdef IA64
-          // IA64 gcc bug
-          r = ( f == 0.0f ) ? (jdouble) f : (jdouble) f + ia64_double_zero;
-#else
           r = (jdouble) f;
-#endif
           MORE_STACK(-1); // POP
           SET_STACK_DOUBLE(r, 1);
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, 2);

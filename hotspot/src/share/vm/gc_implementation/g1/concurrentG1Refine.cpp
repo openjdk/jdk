@@ -42,28 +42,49 @@ ConcurrentG1Refine::ConcurrentG1Refine() :
   _n_periods(0),
   _threads(NULL), _n_threads(0)
 {
-  if (G1ConcRefine) {
-    _n_threads = (int)thread_num();
-    if (_n_threads > 0) {
-      _threads = NEW_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads);
-      int worker_id_offset = (int)DirtyCardQueueSet::num_par_ids();
-      ConcurrentG1RefineThread *next = NULL;
-      for (int i = _n_threads - 1; i >= 0; i--) {
-        ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, worker_id_offset, i);
-        assert(t != NULL, "Conc refine should have been created");
-        assert(t->cg1r() == this, "Conc refine thread should refer to this");
-        _threads[i] = t;
-        next = t;
-      }
-    }
+
+  // Ergomonically select initial concurrent refinement parameters
+  if (FLAG_IS_DEFAULT(G1ConcRefineGreenZone)) {
+    FLAG_SET_DEFAULT(G1ConcRefineGreenZone, MAX2<int>(ParallelGCThreads, 1));
+  }
+  set_green_zone(G1ConcRefineGreenZone);
+
+  if (FLAG_IS_DEFAULT(G1ConcRefineYellowZone)) {
+    FLAG_SET_DEFAULT(G1ConcRefineYellowZone, green_zone() * 3);
+  }
+  set_yellow_zone(MAX2<int>(G1ConcRefineYellowZone, green_zone()));
+
+  if (FLAG_IS_DEFAULT(G1ConcRefineRedZone)) {
+    FLAG_SET_DEFAULT(G1ConcRefineRedZone, yellow_zone() * 2);
+  }
+  set_red_zone(MAX2<int>(G1ConcRefineRedZone, yellow_zone()));
+  _n_worker_threads = thread_num();
+  // We need one extra thread to do the young gen rset size sampling.
+  _n_threads = _n_worker_threads + 1;
+  reset_threshold_step();
+
+  _threads = NEW_C_HEAP_ARRAY(ConcurrentG1RefineThread*, _n_threads);
+  int worker_id_offset = (int)DirtyCardQueueSet::num_par_ids();
+  ConcurrentG1RefineThread *next = NULL;
+  for (int i = _n_threads - 1; i >= 0; i--) {
+    ConcurrentG1RefineThread* t = new ConcurrentG1RefineThread(this, next, worker_id_offset, i);
+    assert(t != NULL, "Conc refine should have been created");
+    assert(t->cg1r() == this, "Conc refine thread should refer to this");
+    _threads[i] = t;
+    next = t;
   }
 }
 
-size_t ConcurrentG1Refine::thread_num() {
-  if (G1ConcRefine) {
-    return (G1ParallelRSetThreads > 0) ? G1ParallelRSetThreads : ParallelGCThreads;
+void ConcurrentG1Refine::reset_threshold_step() {
+  if (FLAG_IS_DEFAULT(G1ConcRefineThresholdStep)) {
+    _thread_threshold_step = (yellow_zone() - green_zone()) / (worker_thread_num() + 1);
+  } else {
+    _thread_threshold_step = G1ConcRefineThresholdStep;
   }
-  return 0;
+}
+
+int ConcurrentG1Refine::thread_num() {
+  return MAX2<int>((G1ParallelRSetThreads > 0) ? G1ParallelRSetThreads : ParallelGCThreads, 1);
 }
 
 void ConcurrentG1Refine::init() {
@@ -119,6 +140,15 @@ void ConcurrentG1Refine::stop() {
   if (_threads != NULL) {
     for (int i = 0; i < _n_threads; i++) {
       _threads[i]->stop();
+    }
+  }
+}
+
+void ConcurrentG1Refine::reinitialize_threads() {
+  reset_threshold_step();
+  if (_threads != NULL) {
+    for (int i = 0; i < _n_threads; i++) {
+      _threads[i]->initialize();
     }
   }
 }
@@ -270,7 +300,23 @@ jbyte* ConcurrentG1Refine::cache_insert(jbyte* card_ptr, bool* defer) {
   int count;
   jbyte* cached_ptr = add_card_count(card_ptr, &count, defer);
   assert(cached_ptr != NULL, "bad cached card ptr");
-  assert(!is_young_card(cached_ptr), "shouldn't get a card in young region");
+
+  if (is_young_card(cached_ptr)) {
+    // The region containing cached_ptr has been freed during a clean up
+    // pause, reallocated, and tagged as young.
+    assert(cached_ptr != card_ptr, "shouldn't be");
+
+    // We've just inserted a new old-gen card pointer into the card count
+    // cache and evicted the previous contents of that count slot.
+    // The evicted card pointer has been determined to be in a young region
+    // and so cannot be the newly inserted card pointer (that will be
+    // in an old region).
+    // The count for newly inserted card will be set to zero during the
+    // insertion, so we don't want to defer the cleaning of the newly
+    // inserted card pointer.
+    assert(*defer == false, "deferring non-hot card");
+    return NULL;
+  }
 
   // The card pointer we obtained from card count cache is not hot
   // so do not store it in the cache; return it for immediate
@@ -384,4 +430,3 @@ void ConcurrentG1Refine::print_worker_threads_on(outputStream* st) const {
     st->cr();
   }
 }
-

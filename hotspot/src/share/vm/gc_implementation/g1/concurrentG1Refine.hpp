@@ -29,6 +29,31 @@ class G1RemSet;
 class ConcurrentG1Refine: public CHeapObj {
   ConcurrentG1RefineThread** _threads;
   int _n_threads;
+  int _n_worker_threads;
+ /*
+  * The value of the update buffer queue length falls into one of 3 zones:
+  * green, yellow, red. If the value is in [0, green) nothing is
+  * done, the buffers are left unprocessed to enable the caching effect of the
+  * dirtied cards. In the yellow zone [green, yellow) the concurrent refinement
+  * threads are gradually activated. In [yellow, red) all threads are
+  * running. If the length becomes red (max queue length) the mutators start
+  * processing the buffers.
+  *
+  * There are some interesting cases (with G1AdaptiveConcRefine turned off):
+  * 1) green = yellow = red = 0. In this case the mutator will process all
+  *    buffers. Except for those that are created by the deferred updates
+  *    machinery during a collection.
+  * 2) green = 0. Means no caching. Can be a good way to minimize the
+  *    amount of time spent updating rsets during a collection.
+  */
+  int _green_zone;
+  int _yellow_zone;
+  int _red_zone;
+
+  int _thread_threshold_step;
+
+  // Reset the threshold step value based of the current zone boundaries.
+  void reset_threshold_step();
 
   // The cache for card refinement.
   bool   _use_cache;
@@ -147,6 +172,8 @@ class ConcurrentG1Refine: public CHeapObj {
   void init(); // Accomplish some initialization that has to wait.
   void stop();
 
+  void reinitialize_threads();
+
   // Iterate over the conc refine threads
   void threads_do(ThreadClosure *tc);
 
@@ -178,7 +205,20 @@ class ConcurrentG1Refine: public CHeapObj {
 
   void clear_and_record_card_counts();
 
-  static size_t thread_num();
+  static int thread_num();
 
   void print_worker_threads_on(outputStream* st) const;
+
+  void set_green_zone(int x)  { _green_zone = x;  }
+  void set_yellow_zone(int x) { _yellow_zone = x; }
+  void set_red_zone(int x)    { _red_zone = x;    }
+
+  int green_zone() const      { return _green_zone;  }
+  int yellow_zone() const     { return _yellow_zone; }
+  int red_zone() const        { return _red_zone;    }
+
+  int total_thread_num() const  { return _n_threads;        }
+  int worker_thread_num() const { return _n_worker_threads; }
+
+  int thread_threshold_step() const { return _thread_threshold_step; }
 };

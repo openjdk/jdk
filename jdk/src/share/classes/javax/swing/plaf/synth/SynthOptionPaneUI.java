@@ -28,34 +28,45 @@ package javax.swing.plaf.synth;
 import java.awt.*;
 import java.beans.*;
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
 import sun.swing.DefaultLookup;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
- * Synth's OptionPaneUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JOptionPane}.
  *
  * @author James Gosling
  * @author Scott Violet
  * @author Amy Fowler
+ * @since 1.7
  */
-class SynthOptionPaneUI extends BasicOptionPaneUI implements
+public class SynthOptionPaneUI extends BasicOptionPaneUI implements
                                 PropertyChangeListener, SynthUI {
     private SynthStyle style;
 
     /**
-      * Creates a new BasicOptionPaneUI instance.
-      */
+     * Creates a new UI object for the given component.
+     *
+     * @param x component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent x) {
         return new SynthOptionPaneUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults() {
         updateStyle(optionPane);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installListeners() {
         super.installListeners();
         optionPane.addPropertyChangeListener(this);
@@ -80,6 +91,10 @@ class SynthOptionPaneUI extends BasicOptionPaneUI implements
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(optionPane, ENABLED);
 
@@ -88,11 +103,19 @@ class SynthOptionPaneUI extends BasicOptionPaneUI implements
         style = null;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
         optionPane.removePropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installComponents() {
         optionPane.add(createMessageArea());
 
@@ -108,6 +131,10 @@ class SynthOptionPaneUI extends BasicOptionPaneUI implements
         optionPane.applyComponentOrientation(optionPane.getComponentOrientation());
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -117,14 +144,23 @@ class SynthOptionPaneUI extends BasicOptionPaneUI implements
                     SynthLookAndFeel.getRegion(c), style, state);
     }
 
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
-    }
-
     private int getComponentState(JComponent c) {
         return SynthLookAndFeel.getComponentState(c);
     }
 
+    /**
+     * Notifies this UI delegate to repaint the specified component.
+     * This method paints the component background, then calls
+     * the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * <p>In general, this method does not need to be overridden by subclasses.
+     * All Look and Feel rendering code should reside in the {@code paint} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -135,6 +171,16 @@ class SynthOptionPaneUI extends BasicOptionPaneUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component according to the Look and Feel.
+     * <p>This method is not used by Synth Look and Feel.
+     * Painting is handled by the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -142,30 +188,50 @@ class SynthOptionPaneUI extends BasicOptionPaneUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component. This implementation does nothing.
+     *
+     * @param context context for the component being painted
+     * @param g the {@code Graphics} object used for painting
+     * @see #update(Graphics,JComponent)
+     */
     protected void paint(SynthContext context, Graphics g) {
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintOptionPaneBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle((JOptionPane)e.getSource());
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected boolean getSizeButtonsToSameWidth() {
         return DefaultLookup.getBoolean(optionPane, this,
                                         "OptionPane.sameSizeButtons", true);
     }
 
     /**
-     * Messaged from installComponents to create a Container containing the
-     * body of the message. The icon is the created by calling
-     * <code>addIcon</code>.
+     * Called from {@link #installComponents} to create a {@code Container}
+     * containing the body of the message. The icon is the created by calling
+     * {@link #addIcon}.
      */
+    @Override
     protected Container createMessageArea() {
         JPanel top = new JPanel();
         top.setName("OptionPane.messageArea");
@@ -206,6 +272,10 @@ class SynthOptionPaneUI extends BasicOptionPaneUI implements
         return top;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected Container createSeparator() {
         JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
 

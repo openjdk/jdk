@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,12 +456,12 @@ objArrayHandle methodOopDesc::resolved_checked_exceptions_impl(methodOop this_oo
     return objArrayHandle(THREAD, Universe::the_empty_class_klass_array());
   } else {
     methodHandle h_this(THREAD, this_oop);
-    objArrayOop m_oop = oopFactory::new_objArray(SystemDictionary::class_klass(), length, CHECK_(objArrayHandle()));
+    objArrayOop m_oop = oopFactory::new_objArray(SystemDictionary::Class_klass(), length, CHECK_(objArrayHandle()));
     objArrayHandle mirrors (THREAD, m_oop);
     for (int i = 0; i < length; i++) {
       CheckedExceptionElement* table = h_this->checked_exceptions_start(); // recompute on each iteration, not gc safe
       klassOop k = h_this->constants()->klass_at(table[i].class_cp_index, CHECK_(objArrayHandle()));
-      assert(Klass::cast(k)->is_subclass_of(SystemDictionary::throwable_klass()), "invalid exception class");
+      assert(Klass::cast(k)->is_subclass_of(SystemDictionary::Throwable_klass()), "invalid exception class");
       mirrors->obj_at_put(i, Klass::cast(k)->java_mirror());
     }
     return mirrors;
@@ -575,12 +575,6 @@ bool methodOopDesc::is_not_compilable(int comp_level) const {
     return true;
   }
 
-  methodDataOop mdo = method_data();
-  if (mdo != NULL
-      && (uint)mdo->decompile_count() > (uint)PerMethodRecompilationCutoff) {
-    // Since (uint)-1 is large, -1 really means 'no cutoff'.
-    return true;
-  }
 #ifdef COMPILER2
   if (is_tier1_compile(comp_level)) {
     if (is_not_tier1_compilable()) {
@@ -593,7 +587,16 @@ bool methodOopDesc::is_not_compilable(int comp_level) const {
 }
 
 // call this when compiler finds that this method is not compilable
-void methodOopDesc::set_not_compilable(int comp_level) {
+void methodOopDesc::set_not_compilable(int comp_level, bool report) {
+  if (PrintCompilation && report) {
+    ttyLocker ttyl;
+    tty->print("made not compilable ");
+    this->print_short_name(tty);
+    int size = this->code_size();
+    if (size > 0)
+      tty->print(" (%d bytes)", size);
+    tty->cr();
+  }
   if ((TraceDeoptimization || LogCompilation) && (xtty != NULL)) {
     ttyLocker ttyl;
     xtty->begin_elem("make_not_compilable thread='%d'", (int) os::current_thread_id());
@@ -688,7 +691,7 @@ address methodOopDesc::make_adapters(methodHandle mh, TRAPS) {
   // so making them eagerly shouldn't be too expensive.
   AdapterHandlerEntry* adapter = AdapterHandlerLibrary::get_adapter(mh);
   if (adapter == NULL ) {
-    THROW_0(vmSymbols::java_lang_OutOfMemoryError());
+    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "out of space in CodeCache for adapters");
   }
 
   mh->set_adapter_entry(adapter);
@@ -705,6 +708,16 @@ address methodOopDesc::make_adapters(methodHandle mh, TRAPS) {
 // This function must not hit a safepoint!
 address methodOopDesc::verified_code_entry() {
   debug_only(No_Safepoint_Verifier nsv;)
+  nmethod *code = (nmethod *)OrderAccess::load_ptr_acquire(&_code);
+  if (code == NULL && UseCodeCacheFlushing) {
+    nmethod *saved_code = CodeCache::find_and_remove_saved_code(this);
+    if (saved_code != NULL) {
+      methodHandle method(this);
+      assert( ! saved_code->is_osr_method(), "should not get here for osr" );
+      set_code( method, saved_code );
+    }
+  }
+
   assert(_from_compiled_entry != NULL, "must be set");
   return _from_compiled_entry;
 }
@@ -733,8 +746,8 @@ void methodOopDesc::set_code(methodHandle mh, nmethod *code) {
   int comp_level = code->comp_level();
   // In theory there could be a race here. In practice it is unlikely
   // and not worth worrying about.
-  if (comp_level > highest_tier_compile()) {
-    set_highest_tier_compile(comp_level);
+  if (comp_level > mh->highest_tier_compile()) {
+    mh->set_highest_tier_compile(comp_level);
   }
 
   OrderAccess::storestore();
@@ -819,6 +832,18 @@ jint* methodOopDesc::method_type_offsets_chain() {
     OrderAccess::release_store(&pchase[0], step0);
   }
   return pchase;
+}
+
+//------------------------------------------------------------------------------
+// methodOopDesc::is_method_handle_adapter
+//
+// Tests if this method is an internal adapter frame from the
+// MethodHandleCompiler.
+bool methodOopDesc::is_method_handle_adapter() const {
+  return ((name() == vmSymbols::invoke_name() &&
+           method_holder() == SystemDictionary::MethodHandle_klass())
+          ||
+          method_holder() == SystemDictionary::InvokeDynamic_klass());
 }
 
 methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
@@ -1032,8 +1057,8 @@ bool methodOopDesc::load_signature_classes(methodHandle m, TRAPS) {
       // We are loading classes eagerly. If a ClassNotFoundException or
       // a LinkageError was generated, be sure to ignore it.
       if (HAS_PENDING_EXCEPTION) {
-        if (PENDING_EXCEPTION->is_a(SystemDictionary::classNotFoundException_klass()) ||
-            PENDING_EXCEPTION->is_a(SystemDictionary::linkageError_klass())) {
+        if (PENDING_EXCEPTION->is_a(SystemDictionary::ClassNotFoundException_klass()) ||
+            PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {
           CLEAR_PENDING_EXCEPTION;
         } else {
           return false;

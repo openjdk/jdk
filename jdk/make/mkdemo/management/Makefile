@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = demos
 PRODUCT = demos
 include $(BUILDDIR)/common/Defs.gmk
 
@@ -36,6 +37,8 @@ SUBDIRS = FullThreadDump \
 	  VerboseGC      \
 	  MemoryMonitor  \
 	  JTop
+
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)

@@ -26,8 +26,6 @@
  * @bug 4891872 4989735 4990789 5020490
  * @summary Check isEnum() method
  * @author Joseph D. Darcy
- * @compile -source 1.5 IsEnum.java
- * @run main IsEnum
  */
 
 import java.lang.annotation.*;

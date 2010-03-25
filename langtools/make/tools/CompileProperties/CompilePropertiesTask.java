@@ -45,6 +45,7 @@ public class CompilePropertiesTask extends MatchingTask {
         this.superclass = superclass;
     }
 
+    @Override
     public void execute() {
         CompileProperties.Log log = new CompileProperties.Log() {
             public void error(String msg, Exception e) {
@@ -84,7 +85,7 @@ public class CompilePropertiesTask extends MatchingTask {
             log("Generating " + count + " resource files to " + destDir, Project.MSG_INFO);
             CompileProperties cp = new CompileProperties();
             cp.setLog(log);
-            boolean ok = cp.run((String[])mainOpts.toArray(new String[mainOpts.size()]));
+            boolean ok = cp.run(mainOpts.toArray(new String[mainOpts.size()]));
             if (!ok)
                 throw new BuildException("CompileProperties failed.");
         }

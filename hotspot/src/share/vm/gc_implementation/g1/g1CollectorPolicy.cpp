@@ -205,6 +205,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   // policy is created before the heap, we have to set this up here,
   // so it's done as soon as possible.
   HeapRegion::setup_heap_region_size(Arguments::min_heap_size());
+  HeapRegionRemSet::setup_remset_size();
 
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
@@ -1516,8 +1517,30 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
       (end_time_sec - _recent_prev_end_times_for_all_gcs_sec->oldest()) * 1000.0;
     update_recent_gc_times(end_time_sec, elapsed_ms);
     _recent_avg_pause_time_ratio = _recent_gc_times_ms->sum()/interval_ms;
-    // using 1.01 to account for floating point inaccuracies
-    assert(recent_avg_pause_time_ratio() < 1.01, "All GC?");
+    if (recent_avg_pause_time_ratio() < 0.0 ||
+        (recent_avg_pause_time_ratio() - 1.0 > 0.0)) {
+#ifndef PRODUCT
+      // Dump info to allow post-facto debugging
+      gclog_or_tty->print_cr("recent_avg_pause_time_ratio() out of bounds");
+      gclog_or_tty->print_cr("-------------------------------------------");
+      gclog_or_tty->print_cr("Recent GC Times (ms):");
+      _recent_gc_times_ms->dump();
+      gclog_or_tty->print_cr("(End Time=%3.3f) Recent GC End Times (s):", end_time_sec);
+      _recent_prev_end_times_for_all_gcs_sec->dump();
+      gclog_or_tty->print_cr("GC = %3.3f, Interval = %3.3f, Ratio = %3.3f",
+                             _recent_gc_times_ms->sum(), interval_ms, recent_avg_pause_time_ratio());
+      // In debug mode, terminate the JVM if the user wants to debug at this point.
+      assert(!G1FailOnFPError, "Debugging data for CR 6898948 has been dumped above");
+#endif  // !PRODUCT
+      // Clip ratio between 0.0 and 1.0, and continue. This will be fixed in
+      // CR 6902692 by redoing the manner in which the ratio is incrementally computed.
+      if (_recent_avg_pause_time_ratio < 0.0) {
+        _recent_avg_pause_time_ratio = 0.0;
+      } else {
+        assert(_recent_avg_pause_time_ratio - 1.0 > 0.0, "Ctl-point invariant");
+        _recent_avg_pause_time_ratio = 1.0;
+      }
+    }
   }
 
   if (G1PolicyVerbose > 1) {
@@ -1892,12 +1915,57 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
   calculate_young_list_min_length();
   calculate_young_list_target_config();
 
+  // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
+  double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSUpdatePauseFractionPercent / 100.0;
+  adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
+
   // </NEW PREDICTION>
 
   _target_pause_time_ms = -1.0;
 }
 
 // <NEW PREDICTION>
+
+void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
+                                                     double update_rs_processed_buffers,
+                                                     double goal_ms) {
+  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+  ConcurrentG1Refine *cg1r = G1CollectedHeap::heap()->concurrent_g1_refine();
+
+  if (G1AdaptiveConcRefine) {
+    const int k_gy = 3, k_gr = 6;
+    const double inc_k = 1.1, dec_k = 0.9;
+
+    int g = cg1r->green_zone();
+    if (update_rs_time > goal_ms) {
+      g = (int)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
+    } else {
+      if (update_rs_time < goal_ms && update_rs_processed_buffers > g) {
+        g = (int)MAX2(g * inc_k, g + 1.0);
+      }
+    }
+    // Change the refinement threads params
+    cg1r->set_green_zone(g);
+    cg1r->set_yellow_zone(g * k_gy);
+    cg1r->set_red_zone(g * k_gr);
+    cg1r->reinitialize_threads();
+
+    int processing_threshold_delta = MAX2((int)(cg1r->green_zone() * sigma()), 1);
+    int processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
+                                    cg1r->yellow_zone());
+    // Change the barrier params
+    dcqs.set_process_completed_threshold(processing_threshold);
+    dcqs.set_max_completed_queue(cg1r->red_zone());
+  }
+
+  int curr_queue_size = dcqs.completed_buffers_num();
+  if (curr_queue_size >= cg1r->yellow_zone()) {
+    dcqs.set_completed_queue_padding(curr_queue_size);
+  } else {
+    dcqs.set_completed_queue_padding(0);
+  }
+  dcqs.notify_if_necessary();
+}
 
 double
 G1CollectorPolicy::
@@ -2825,8 +2893,15 @@ choose_collection_set() {
   double non_young_start_time_sec;
   start_recording_regions();
 
-  guarantee(_target_pause_time_ms > -1.0,
+  guarantee(_target_pause_time_ms > -1.0
+            NOT_PRODUCT(|| Universe::heap()->gc_cause() == GCCause::_scavenge_alot),
             "_target_pause_time_ms should have been set!");
+#ifndef PRODUCT
+  if (_target_pause_time_ms <= -1.0) {
+    assert(ScavengeALot && Universe::heap()->gc_cause() == GCCause::_scavenge_alot, "Error");
+    _target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
+  }
+#endif
   assert(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);
@@ -2972,7 +3047,3 @@ record_collection_pause_end(bool abandoned) {
   G1CollectorPolicy::record_collection_pause_end(abandoned);
   assert(assertMarkedBytesDataOK(), "Marked regions not OK at pause end.");
 }
-
-// Local Variables: ***
-// c-indentation-style: gnu ***
-// End: ***

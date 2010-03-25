@@ -26,9 +26,6 @@
  * @summary Verify that TC_OBJECT followed by a class descriptor for an enum
  *          class results in an InvalidClassException, as does TC_ENUM followed
  *          by a class descriptor for a non-enum class.
- *
- * @compile -source 1.5 Test.java
- * @run main Test
  */
 
 import java.io.*;

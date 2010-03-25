@@ -29,38 +29,37 @@ import javax.swing.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
 import javax.swing.text.View;
-
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.Insets;
-import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Font;
 import java.awt.FontMetrics;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
- * Synth's LabelUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JLabel}.
  *
  * @author Scott Violet
+ * @since 1.7
  */
-class SynthLabelUI extends BasicLabelUI implements SynthUI {
+public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     private SynthStyle style;
 
     /**
      * Returns the LabelUI implementation used for the skins look and feel.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
      */
     public static ComponentUI createUI(JComponent c){
         return new SynthLabelUI();
     }
 
-
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults(JLabel c) {
         updateStyle(c);
     }
@@ -71,6 +70,10 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults(JLabel c){
         SynthContext context = getContext(c, ENABLED);
 
@@ -79,6 +82,10 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
         style = null;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -86,10 +93,6 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
     private SynthContext getContext(JComponent c, int state) {
         return SynthContext.getContext(SynthContext.class, c,
                     SynthLookAndFeel.getRegion(c), style, state);
-    }
-
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
     }
 
     private int getComponentState(JComponent c) {
@@ -101,6 +104,10 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
         return state;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public int getBaseline(JComponent c, int width, int height) {
         if (c == null) {
             throw new NullPointerException("Component must be non-null");
@@ -149,10 +156,18 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
     }
 
     /**
-     * Notifies this UI delegate that it's time to paint the specified
-     * component.  This method is invoked by <code>JComponent</code>
-     * when the specified component is being painted.
+     * Notifies this UI delegate to repaint the specified component.
+     * This method paints the component background, then calls
+     * the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * <p>In general, this method does not need to be overridden by subclasses.
+     * All Look and Feel rendering code should reside in the {@code paint} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
      */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -163,6 +178,16 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
         context.dispose();
     }
 
+    /**
+     * Paints the specified component according to the Look and Feel.
+     * <p>This method is not used by Synth Look and Feel.
+     * Painting is handled by the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -170,6 +195,13 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     *
+     * @param context context for the component being painted
+     * @param g the {@code Graphics} object used for painting
+     * @see #update(Graphics,JComponent)
+     */
     protected void paint(SynthContext context, Graphics g) {
         JLabel label = (JLabel)context.getComponent();
         Icon icon = (label.isEnabled()) ? label.getIcon() :
@@ -185,11 +217,19 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
             label.getIconTextGap(), label.getDisplayedMnemonicIndex(), 0);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintLabelBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public Dimension getPreferredSize(JComponent c) {
         JLabel label = (JLabel)c;
         Icon icon = (label.isEnabled()) ? label.getIcon() :
@@ -207,7 +247,10 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
         return size;
     }
 
-
+    /**
+     * @inheritDoc
+     */
+    @Override
     public Dimension getMinimumSize(JComponent c) {
         JLabel label = (JLabel)c;
         Icon icon = (label.isEnabled()) ? label.getIcon() :
@@ -225,6 +268,10 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
         return size;
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public Dimension getMaximumSize(JComponent c) {
         JLabel label = (JLabel)c;
         Icon icon = (label.isEnabled()) ? label.getIcon() :
@@ -242,7 +289,10 @@ class SynthLabelUI extends BasicLabelUI implements SynthUI {
         return size;
     }
 
-
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         super.propertyChange(e);
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {

@@ -88,6 +88,8 @@ class DebugInformationRecorder: public ResourceObj {
                       ciMethod*   method,
                       int         bci,
                       bool        reexecute,
+                      bool        is_method_handle_invoke = false,
+                      bool        return_oop = false,
                       DebugToken* locals      = NULL,
                       DebugToken* expressions = NULL,
                       DebugToken* monitors    = NULL);

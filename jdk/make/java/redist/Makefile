@@ -35,6 +35,7 @@
 # 
 
 BUILDDIR = ../..
+MODULE   = base
 PRODUCT  = java
 include $(BUILDDIR)/common/Defs.gmk
 
@@ -61,7 +62,14 @@ CLASSSHARINGDATA_DIR   = $(BUILDDIR)/tools/sharing
 # Needed to do file copy
 ABS_BUILDDIR :=$(call FullPath,$(BUILDDIR))
 
-all: build
+SUBDIRS_desktop = fonts
+SUBDIRS_tools   = sajdi
+include $(BUILDDIR)/common/Subdirs.gmk
+
+all clean clobber::
+	$(SUBDIRS-loop)
+
+all:: build
 
 # List of files created here or coming from BUILDDIR area (this workspace)
 INTERNAL_IMPORT_LIST = $(LIBDIR)/classlist
@@ -69,30 +77,6 @@ INTERNAL_IMPORT_LIST = $(LIBDIR)/classlist
 # List of files coming from outside this workspace
 IMPORT_LIST = $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME) \
               $(LIB_LOCATION)/$(SERVER_LOCATION)/Xusage.txt
-
-# INCLUDE_SA is false on platforms where SA is not supported.
-# On platforms where it is supported, we want to allow it to
-# not be present, at least temporarily.  So,
-# if the SA files (well, just sa-jdi.jar) do not exist 
-# in the HOTSPOT_IMPORT_PATH, then we won't build SA.
-SA_EXISTS := $(shell if [ -r $(HOTSPOT_IMPORT_PATH)/lib/sa-jdi.jar ] ; then \
-                          $(ECHO) true; \
-                        else \
-                          $(ECHO) false; \
-                        fi)
-
-ifeq ($(SA_EXISTS), false)
-  INCLUDE_SA := false
-endif
-
-ifeq ($(INCLUDE_SA), true)
-  IMPORT_LIST += $(LIBDIR)/sa-jdi.jar \
-                 $(LIB_LOCATION)/$(SALIB_NAME)
-  ifeq ($(PLATFORM), windows)
-    IMPORT_LIST += $(LIB_LOCATION)/$(SAMAP_NAME) \
-                   $(LIB_LOCATION)/$(SAPDB_NAME)
-  endif
-endif # INCLUDE_SA
 
 # Hotspot client is only available on 32-bit non-Zero builds
 ifneq ($(ZERO_BUILD), true)
@@ -110,10 +94,10 @@ IMPORT_LIST += $(MS_RUNTIME_LIBRARIES:%=$(BINDIR)/%)
 # NOTE: These might actually come from BUILDDIR, depends on the settings.
 $(BINDIR)/msvcrt.dll: $(MSVCRT_DLL_PATH)/msvcrt.dll
 	$(install-import-file)
-	$(CHMOD) a+x $@
+	$(call chmod-file, a+x)
 $(BINDIR)/$(MSVCRNN_DLL): $(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)
 	$(install-import-file)
-	$(CHMOD) a+x $@
+	$(call chmod-file, a+x)
 
 # Get the hotspot .map and .pdb files for client and server
 IMPORT_LIST += \
@@ -140,26 +124,32 @@ $(LIBDIR)/$(JVMLIB_NAME): $(HOTSPOT_LIB_PATH)/$(JVMLIB_NAME)
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMMAP_NAME)  $@
+	@$(install-module-file)
 
 $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVMMAP_NAME)  $@
+	@$(install-module-file)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMMAP_NAME) $@
+	@$(install-module-file)
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVMPDB_NAME)  $@
+	@$(install-module-file)
 
 $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVMPDB_NAME)  $@
+	@$(install-module-file)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME): 
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMPDB_NAME) $@
+	@$(install-module-file)
 
 #  Windows     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  Windows
 else # PLATFORM
@@ -194,10 +184,8 @@ endif
 # For backwards compatability, make a link of the 32-bit client JVM to $(LIBDIR)
 IMPORT_LIST += $(LIB_LOCATION)/$(JVM_NAME)
 
-# create a link from lib/libjvm.so to client/libjvm.so
 $(LIB_LOCATION)/$(JVM_NAME): $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_NAME)
 	@$(prep-target)
-	$(LN) -s $(CLIENT_LOCATION)/$(JVM_NAME) $@
 
 #  solaris   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ solaris
 endif # 32bit solaris
@@ -222,7 +210,7 @@ $(LIB_LOCATION)/$(LIBJSIG_NAME): $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJ
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME) \
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME):
 	@$(prep-target)
-	$(LN) -s ../$(LIBJSIG_NAME) $@
+	$(call install-sym-link, ../$(LIBJSIG_NAME))
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDB_NAME)
 	$(install-import-file)
@@ -248,28 +236,6 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/Xusage.txt : $(HOTSPOT_CLIENT_PATH)/Xusage.tx
 $(LIB_LOCATION)/$(KERNEL_LOCATION)/Xusage.txt : $(HOTSPOT_KERNEL_PATH)/Xusage.txt
 	$(install-file)
 
-ifeq ($(INCLUDE_SA), true)
-# The Serviceability Agent is built in the Hotspot workspace.
-# It contains two files:
-#  - sa-jdi.jar:  This goes into the same dir as tools.jar.
-#  - a shared library:  sawindbg.dll on windows / libproc.sa on unix
-#		        This goes into the same dir as the other
-#			shared libs, eg. libjdwp.so.
-$(LIBDIR)/sa-jdi.jar: $(HOTSPOT_IMPORT_PATH)/lib/sa-jdi.jar
-	$(install-import-file)
-
-$(LIB_LOCATION)/$(SALIB_NAME): $(HOTSPOT_SALIB_PATH)/$(SALIB_NAME)
-	$(install-import-file)
-
-ifeq ($(PLATFORM), windows)
-$(LIB_LOCATION)/$(SAPDB_NAME): $(HOTSPOT_SALIB_PATH)/$(SAPDB_NAME)
-	$(install-import-file)
-
-$(LIB_LOCATION)/$(SAMAP_NAME): $(HOTSPOT_SALIB_PATH)/$(SAMAP_NAME)
-	$(install-import-file)
-endif # windows
-endif # INCLUDE_SA
-
 #
 # Specific to OpenJDK building
 #
@@ -290,7 +256,7 @@ INTERNAL_IMPORT_LIST += \
 
 $(LIBDIR)/jce.jar: \
 	    $(BUILDDIR)/closed/tools/crypto/jce/jce.jar
-	$(install-file)
+	$(install-non-module-file)
 $(LIBDIR)/security/US_export_policy.jar: \
 	    $(BUILDDIR)/closed/tools/crypto/jce/US_export_policy.jar
 	$(install-file)
@@ -311,46 +277,6 @@ $(LIBDIR)/classlist: \
 	$(BOOT_JAVA_CMD) -jar $(ADDJSUM_JARFILE) \
 	    $(CLASSSHARINGDATA_DIR)/classlist.$(PLATFORM) $@.temp
 	$(MV) $@.temp $@
-
-ifndef OPENJDK
-
-# Lucida font files are not included in the OpenJDK distribution.
-# Get names of font files
-include FILES.gmk
-
-# Copy font files into OUTPUTDIR area
-
-FONTFILES = $(SHARED_FONTFILES)
-FONTSDIR  = $(LIBDIR)/fonts
-FONTSDIRFILE  = $(FONTSDIR)/fonts.dir
-INTERNAL_IMPORT_LIST += $(FONTFILES) 
-
-ifneq ($(PLATFORM), windows)
-  INTERNAL_IMPORT_LIST += $(FONTSDIRFILE)
-endif
-
-$(LIBDIR)/fonts/%.ttf: $(CLOSED_SRC)/share/lib/fonts/%.ttf
-	$(install-file)
-
-$(FONTSDIRFILE): $(PLATFORM_SRC)/classes/sun/awt/motif/java.fonts.dir
-	$(install-file)
-
-ifeq ($(PLATFORM), linux)
-
-# The oblique fonts are only needed/wanted on Linux.
-
-OBLFONTSDIR  = $(LIBDIR)/oblique-fonts
-OBLFONTSDIRFILE	 = $(OBLFONTSDIR)/fonts.dir
-INTERNAL_IMPORT_LIST += $(OBLIQUE_FONTFILES) $(OBLFONTSDIRFILE)
-
-$(LIBDIR)/oblique-fonts/%.ttf: $(CLOSED_SRC)/share/lib/fonts/oblique/%.ttf
-	$(install-file)
-
-$(OBLFONTSDIRFILE): $(PLATFORM_SRC)/classes/sun/awt/motif/java.oblique-fonts.dir
-	$(install-file)
-
-endif # linux
-endif # !OPENJDK
 
 # Import internal files (ones that are stashed in this source tree)
 import_internal_files : $(INTERNAL_IMPORT_LIST)
