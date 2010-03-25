@@ -23,7 +23,13 @@
 /*
  * @test
  * @bug 6737819
+ * @run main/othervm B6737819
  * @summary sun.misc.net.DefaultProxySelector doesn't use proxy setting to localhost
+ */
+
+/* Run in othervm mode since the test sets HTTP proxy system properties that
+ * are read once and cached by the protocol handler. A previous test using the
+ * HTTP handler may run and these system properties may be ignored for this test.
  */
 
 import java.net.ProxySelector;

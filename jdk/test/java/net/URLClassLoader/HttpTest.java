@@ -56,9 +56,9 @@ public class HttpTest {
             }
 
             public void run() {
+                InputStream in = null;
                 try {
-
-                    InputStream in = s.getInputStream();
+                    in = s.getInputStream();
                     for (;;) {
 
                         // read entire request from client
@@ -111,6 +111,9 @@ public class HttpTest {
                     } // for
 
                 } catch (Exception e) {
+                    unexpected(e);
+                } finally {
+                    if (in != null) { try {in.close(); } catch(IOException e) {unexpected(e);} }
                 }
             }
         }
@@ -129,6 +132,11 @@ public class HttpTest {
                 }
             } catch (Exception e) {
             }
+        }
+
+        void unexpected(Exception e) {
+            System.out.println(e);
+            e.printStackTrace();
         }
 
         public static HttpServer create() throws Exception {
@@ -211,6 +219,7 @@ public class HttpTest {
         //          one GET request
         svr.counters().reset();
         InputStream in = cl.getResourceAsStream("foo2.gif");
+        in.close();
         System.out.println(svr.counters());
         if (svr.counters().getCount() > 1) {
             failed = true;
