@@ -38,6 +38,8 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
     int word;
     struct {
       unsigned int reexecute: 1;
+      unsigned int is_method_handle_invoke: 1;
+      unsigned int return_oop: 1;
     } bits;
     bool operator ==(const PcDescFlags& other) { return word == other.word; }
   } _flags;
@@ -71,6 +73,12 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
       _obj_decode_offset == pd->_obj_decode_offset &&
       _flags == pd->_flags;
   }
+
+  bool     is_method_handle_invoke()       const { return _flags.bits.is_method_handle_invoke;     }
+  void set_is_method_handle_invoke(bool z)       {        _flags.bits.is_method_handle_invoke = z; }
+
+  bool     return_oop()                    const { return _flags.bits.return_oop;     }
+  void set_return_oop(bool z)                    {        _flags.bits.return_oop = z; }
 
   // Returns the real pc
   address real_pc(const nmethod* code) const;

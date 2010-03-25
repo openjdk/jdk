@@ -121,7 +121,7 @@ public class Seppuku extends Thread implements Runnable {
 }
 EOJAVA
 
-    Sys "$javac" "-source" "1.5" "Seppuku.java"
+    Sys "$javac" "Seppuku.java"
     CheckCommandResults "$expectedRC" "$expectedOut" "$expectedErr" \
 	"$java" "Seppuku"
     Cleanup

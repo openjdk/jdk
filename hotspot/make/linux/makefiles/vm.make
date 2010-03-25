@@ -113,8 +113,9 @@ include $(MAKEFILES_DIR)/dtrace.make
 #----------------------------------------------------------------------
 # JVM
 
-JVM    = jvm$(G_SUFFIX)
-LIBJVM = lib$(JVM).so
+JVM      = jvm
+LIBJVM   = lib$(JVM).so
+LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
 JVM_OBJ_FILES = $(Obj_Files)
 
@@ -201,6 +202,7 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 		       $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM);       \
 	    $(LINK_LIB.CC/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
+	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
 	    if [ -x /usr/sbin/selinuxenabled ] ; then                   \
 	      /usr/sbin/selinuxenabled;                                 \
               if [ $$? = 0 ] ; then					\

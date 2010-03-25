@@ -33,43 +33,70 @@ import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 
-public class Test6329581 implements ExceptionListener {
-
-    public static void main(String[] args) throws Exception {
-        ExceptionListener listener = new Test6329581();
-        // write bean to byte array
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        XMLEncoder encoder = new XMLEncoder(out);
-        encoder.setExceptionListener(listener);
-        encoder.writeObject(getClassLoader("beans.jar").loadClass("test.Bean").newInstance());
-        encoder.close();
-        // read bean from byte array
-        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
-        XMLDecoder decoder = new XMLDecoder(in, null, listener, getClassLoader("beans.jar"));
-        Object object = decoder.readObject();
-        decoder.close();
-
-        if (!object.getClass().getClassLoader().getClass().equals(URLClassLoader.class)) {
-            throw new Error("bean is loaded with unexpected class loader");
-        }
+public class Test6329581 extends URLClassLoader implements ExceptionListener {
+    public static final class Bean {
     }
 
-    private static ClassLoader getClassLoader(String name) throws Exception {
-        StringBuilder sb = new StringBuilder(256);
-        sb.append("file:");
-        sb.append(System.getProperty("test.src", "."));
-        sb.append(File.separatorChar);
-        sb.append(name);
+    public static void main(String[] args) throws Exception {
+        new Test6329581().decode(new Test6329581().encode(Bean.class.getName()));
+    }
 
-        URL[] url = { new URL(sb.toString()) };
-        return new URLClassLoader(url);
+    private Test6329581() {
+        super(new URL[] {
+                Test6329581.class.getProtectionDomain().getCodeSource().getLocation()
+        });
+    }
+
+    @Override
+    protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        Class c = findLoadedClass(name);
+        if (c == null) {
+            if (Bean.class.getName().equals(name)) {
+                c = findClass(name);
+            }
+            else try {
+                c = getParent().loadClass(name);
+            }
+            catch (ClassNotFoundException exception) {
+                c = findClass(name);
+            }
+        }
+        if (resolve) {
+            resolveClass(c);
+        }
+        return c;
     }
 
     public void exceptionThrown(Exception exception) {
         throw new Error("unexpected exception", exception);
+    }
+
+    private void validate(Object object) {
+        if (!object.getClass().getClassLoader().equals(this)) {
+            throw new Error("Bean is loaded with unexpected class loader");
+        }
+    }
+
+    private byte[] encode(String name) throws Exception {
+        Object object = loadClass(name).newInstance();
+        validate(object);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        XMLEncoder encoder = new XMLEncoder(out);
+        encoder.setExceptionListener(this);
+        encoder.writeObject(object);
+        encoder.close();
+        return out.toByteArray();
+    }
+
+    private Object decode(byte[] array) {
+        ByteArrayInputStream in = new ByteArrayInputStream(array);
+        XMLDecoder decoder = new XMLDecoder(in, null, this, this);
+        Object object = decoder.readObject();
+        validate(object);
+        decoder.close();
+        return object;
     }
 }

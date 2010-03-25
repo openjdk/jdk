@@ -25,8 +25,6 @@
 // Classes in support of keeping track of promotions into a non-Contiguous
 // space, in this case a CompactibleFreeListSpace.
 
-#define CFLS_LAB_REFILL_STATS 0
-
 // Forward declarations
 class CompactibleFreeListSpace;
 class BlkClosure;
@@ -89,6 +87,9 @@ class SpoolBlock: public FreeChunk {
     displacedHdr = (markOop*)&displacedHdr;
     nextSpoolBlock = NULL;
   }
+
+  void print_on(outputStream* st) const;
+  void print() const { print_on(gclog_or_tty); }
 };
 
 class PromotionInfo VALUE_OBJ_CLASS_SPEC {
@@ -121,7 +122,7 @@ class PromotionInfo VALUE_OBJ_CLASS_SPEC {
     return _promoHead == NULL;
   }
   void startTrackingPromotions();
-  void stopTrackingPromotions();
+  void stopTrackingPromotions(uint worker_id = 0);
   bool tracking() const          { return _tracking;  }
   void track(PromotedObject* trackOop);      // keep track of a promoted oop
   // The following variant must be used when trackOop is not fully
@@ -161,6 +162,9 @@ class PromotionInfo VALUE_OBJ_CLASS_SPEC {
     _nextIndex = 0;
 
   }
+
+  void print_on(outputStream* st) const;
+  void print_statistics(uint worker_id) const;
 };
 
 class LinearAllocBlock VALUE_OBJ_CLASS_SPEC {
@@ -243,6 +247,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   mutable Mutex _freelistLock;
   // locking verifier convenience function
   void assert_locked() const PRODUCT_RETURN;
+  void assert_locked(const Mutex* lock) const PRODUCT_RETURN;
 
   // Linear allocation blocks
   LinearAllocBlock _smallLinearAllocBlock;
@@ -281,13 +286,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Locks protecting the exact lists during par promotion allocation.
   Mutex* _indexedFreeListParLocks[IndexSetSize];
 
-#if CFLS_LAB_REFILL_STATS
-  // Some statistics.
-  jint  _par_get_chunk_from_small;
-  jint  _par_get_chunk_from_large;
-#endif
-
-
   // Attempt to obtain up to "n" blocks of the size "word_sz" (which is
   // required to be smaller than "IndexSetSize".)  If successful,
   // adds them to "fl", which is required to be an empty free list.
@@ -320,7 +318,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Helper function for getChunkFromIndexedFreeList.
   // Replenish the indexed free list for this "size".  Do not take from an
   // underpopulated size.
-  FreeChunk*  getChunkFromIndexedFreeListHelper(size_t size);
+  FreeChunk*  getChunkFromIndexedFreeListHelper(size_t size, bool replenish = true);
 
   // Get a chunk from the indexed free list.  If the indexed free list
   // does not have a free chunk, try to replenish the indexed free list
@@ -429,10 +427,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void initialize_sequential_subtasks_for_rescan(int n_threads);
   void initialize_sequential_subtasks_for_marking(int n_threads,
          HeapWord* low = NULL);
-
-#if CFLS_LAB_REFILL_STATS
-  void print_par_alloc_stats();
-#endif
 
   // Space enquiries
   size_t used() const;
@@ -617,6 +611,12 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Do some basic checks on the the free lists.
   void checkFreeListConsistency()         const PRODUCT_RETURN;
 
+  // Printing support
+  void dump_at_safepoint_with_locks(CMSCollector* c, outputStream* st);
+  void print_indexed_free_lists(outputStream* st) const;
+  void print_dictionary_free_lists(outputStream* st) const;
+  void print_promo_info_blocks(outputStream* st) const;
+
   NOT_PRODUCT (
     void initializeIndexedFreeListArrayReturnedBytes();
     size_t sumIndexedFreeListArrayReturnedBytes();
@@ -638,8 +638,9 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
   // Statistics functions
   // Initialize census for lists before the sweep.
-  void beginSweepFLCensus(float sweep_current,
-                          float sweep_estimate);
+  void beginSweepFLCensus(float inter_sweep_current,
+                          float inter_sweep_estimate,
+                          float intra_sweep_estimate);
   // Set the surplus for each of the free lists.
   void setFLSurplus();
   // Set the hint for each of the free lists.
@@ -730,16 +731,17 @@ class CFLS_LAB : public CHeapObj {
   FreeList _indexedFreeList[CompactibleFreeListSpace::IndexSetSize];
 
   // Initialized from a command-line arg.
-  size_t _blocks_to_claim;
 
-#if CFLS_LAB_REFILL_STATS
-  // Some statistics.
-  int _refills;
-  int _blocksTaken;
-  static int _tot_refills;
-  static int _tot_blocksTaken;
-  static int _next_threshold;
-#endif
+  // Allocation statistics in support of dynamic adjustment of
+  // #blocks to claim per get_from_global_pool() call below.
+  static AdaptiveWeightedAverage
+                 _blocks_to_claim  [CompactibleFreeListSpace::IndexSetSize];
+  static size_t _global_num_blocks [CompactibleFreeListSpace::IndexSetSize];
+  static int    _global_num_workers[CompactibleFreeListSpace::IndexSetSize];
+  size_t        _num_blocks        [CompactibleFreeListSpace::IndexSetSize];
+
+  // Internal work method
+  void get_from_global_pool(size_t word_sz, FreeList* fl);
 
 public:
   CFLS_LAB(CompactibleFreeListSpace* cfls);
@@ -748,7 +750,12 @@ public:
   HeapWord* alloc(size_t word_sz);
 
   // Return any unused portions of the buffer to the global pool.
-  void retire();
+  void retire(int tid);
+
+  // Dynamic OldPLABSize sizing
+  static void compute_desired_plab_size();
+  // When the settings are modified from default static initialization
+  static void modify_initialization(size_t n, unsigned wt);
 };
 
 size_t PromotionInfo::refillSize() const {

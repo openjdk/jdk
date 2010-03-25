@@ -81,7 +81,7 @@ public:
 
   void purge_loader_constraints(BoolObjectClosure* is_alive);
 
-  void verify(Dictionary* dictionary);
+  void verify(Dictionary* dictionary, PlaceholderTable* placeholders);
 #ifndef PRODUCT
   void print();
 #endif

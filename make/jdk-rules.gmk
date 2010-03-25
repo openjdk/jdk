@@ -30,43 +30,20 @@
 JDK_JAVA_EXE = $(OUTPUTDIR)/bin/java$(EXE_SUFFIX)
 
 # NO_IMAGES may be set in conjunction with DEV_ONLY
-ifdef NO_IMAGES
-  IMAGES_TARGET =
-else
-  IMAGES_TARGET = images
+IMAGES_TARGET = images
+ifdef DEV_ONLY
+  ifdef NO_IMAGES
+    IMAGES_TARGET =
+  endif
 endif
 
-# No DOCS build when JDK_UPDATE_VERSION set
-ifdef JDK_UPDATE_VERSION
-  DOCS_TARGET =
-else
-  DOCS_TARGET = docs
-endif
-
-# NO_DOCS may be set in conjunction with DEV_ONLY
-ifdef NO_DOCS
+# GENERATE_DOCS determines if we ask for the docs target
+DOCS_TARGET = docs
+ifeq ($(GENERATE_DOCS),false)
   DOCS_TARGET =
 endif
-
-# If langtools not being built, full jdk javadoc is not possible
-ifneq ($(BUILD_LANGTOOLS), true)
-  DOCS_TARGET =
-endif
-ifneq ($(BUILD_CORBA), true)
-  DOCS_TARGET =
-endif
-ifneq ($(BUILD_JAXP), true)
-  DOCS_TARGET =
-endif
-ifneq ($(BUILD_JAXWS), true)
-  DOCS_TARGET =
-endif
-
-ifndef DEV_ONLY
-  JDK_BUILD_TARGETS = sanity all $(DOCS_TARGET) images
-else
-  JDK_BUILD_TARGETS = sanity all $(IMAGES_TARGET)
-endif
+  
+JDK_BUILD_TARGETS = sanity all $(DOCS_TARGET) $(IMAGES_TARGET)
 
 JDK_CLOBBER_TARGETS = clobber
 

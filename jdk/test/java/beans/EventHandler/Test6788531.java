@@ -36,7 +36,7 @@ public class Test6788531 {
     public static void main(String[] args) throws Exception {
         JButton button = new JButton("hi");
         button.addActionListener(EventHandler.create(ActionListener.class, new Private(), "run"));
-        button.addActionListener(EventHandler.create(ActionListener.class, new PrivateGeneric(), "run", "generic"));
+        button.addActionListener(EventHandler.create(ActionListener.class, new PrivateGeneric(), "run", "actionCommand"));
         button.doClick();
     }
 

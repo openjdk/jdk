@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,15 +41,13 @@
  * options are turned into "-foo" options to the vm.  This option
  * filtering is handled in a number of places in the launcher, some of
  * it in machine-dependent code.  In this file, the function
- * CheckJVMType removes vm style options and TranslateApplicationArgs
- * removes "-J" prefixes.  On unix platforms, the
- * CreateExecutionEnvironment function from the unix java_md.c file
- * processes and removes -d<n> options.  However, in case
- * CreateExecutionEnvironment does not need to exec because
- * LD_LIBRARY_PATH is set acceptably and the data model does not need
- * to be changed, ParseArguments will screen out the redundant -d<n>
- * options and prevent them from being passed to the vm; this is done
- * by RemovableOption.
+ * CheckJvmType removes vm style options and TranslateApplicationArgs
+ * removes "-J" prefixes.  The CreateExecutionEnvironment function processes
+ * and removes -d<n> options. On unix, there is a possibility that the running
+ * data model may not match to the desired data model, in this case an exec is
+ * required to start the desired model. If the data models match, then
+ * ParseArguments will remove the -d<n> flags. If the data models do not match
+ * the CreateExecutionEnviroment will remove the -d<n> flags.
  */
 
 
@@ -95,6 +93,7 @@ static int numOptions, maxOptions;
  * Prototypes for functions internal to launcher.
  */
 static void SetClassPath(const char *s);
+static void SetModulesBootClassPath(const char *s);
 static void SelectVersion(int argc, char **argv, char **main_class);
 static jboolean ParseArguments(int *pargc, char ***pargv, char **pjarfile,
                                char **pclassname, int *pret, const char *jvmpath);
@@ -278,6 +277,9 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     if (!ParseArguments(&argc, &argv, &jarfile, &classname, &ret, jvmpath)) {
         return(ret);
     }
+
+    /* Set bootclasspath for modules */
+    SetModulesBootClassPath(jrepath);
 
     /* Override class path if -jar flag was specified */
     if (jarfile != 0) {
@@ -686,6 +688,44 @@ SetClassPath(const char *s)
     const char *orig = s;
     static const char format[] = "-Djava.class.path=%s";
     s = JLI_WildcardExpandClasspath(s);
+    def = JLI_MemAlloc(sizeof(format)
+                       - 2 /* strlen("%s") */
+                       + JLI_StrLen(s));
+    sprintf(def, format, s);
+    AddOption(def, NULL);
+    if (s != orig)
+        JLI_MemFree((char *) s);
+}
+
+/*
+ * Set the bootclasspath for modules.
+ * A temporary workaround until jigsaw is integrated into JDK 7.
+ */
+static void
+SetModulesBootClassPath(const char *jrepath)
+{
+    char *def, *s;
+    char pathname[MAXPATHLEN];
+    const char separator[] = { FILE_SEPARATOR, '\0' };
+    const char *orig = jrepath;
+    static const char format[] = "-Xbootclasspath/p:%s";
+    struct stat statbuf;
+
+    /* return if jre/lib/rt.jar exists */
+    sprintf(pathname, "%s%slib%srt.jar", jrepath, separator, separator);
+    if (stat(pathname, &statbuf) == 0) {
+        return;
+    }
+
+    /* return if jre/classes exists */
+    sprintf(pathname, "%s%sclasses", jrepath, separator);
+    if (stat(pathname, &statbuf) == 0) {
+        return;
+    }
+
+    /* modularized jre */
+    sprintf(pathname, "%s%slib%s*", jrepath, separator, separator);
+    s = (char *) JLI_WildcardExpandClasspath(pathname);
     def = JLI_MemAlloc(sizeof(format)
                        - 2 /* strlen("%s") */
                        + JLI_StrLen(s));
@@ -1891,11 +1931,11 @@ DumpState()
  * Return JNI_TRUE for an option string that has no effect but should
  * _not_ be passed on to the vm; return JNI_FALSE otherwise.  On
  * Solaris SPARC, this screening needs to be done if:
- * 1) LD_LIBRARY_PATH does _not_ need to be reset and
- * 2) -d32 or -d64 is passed to a binary with a matching data model
- *    (the exec in SetLibraryPath removes -d<n> options and points the
- *    exec to the proper binary).  When this exec is not done, these options
- *    would end up getting passed onto the vm.
+ *    -d32 or -d64 is passed to a binary with an unmatched data model
+ *    (the exec in CreateExecutionEnvironment removes -d<n> options and points the
+ *    exec to the proper binary).  In the case of when the data model and the
+ *    requested version is matched, an exec would not occur, and these options
+ *    were erroneously passed to the vm.
  */
 jboolean
 RemovableOption(char * option)

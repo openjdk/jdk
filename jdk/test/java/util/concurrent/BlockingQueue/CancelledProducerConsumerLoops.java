@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile -source 1.5 CancelledProducerConsumerLoops.java
+ * @compile CancelledProducerConsumerLoops.java
  * @run main/timeout=7000 CancelledProducerConsumerLoops
  * @summary Checks for responsiveness of blocking queues to cancellation.
  * Runs under the assumption that ITERS computations require more than
@@ -146,13 +146,13 @@ public class CancelledProducerConsumerLoops {
         oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), pairs, iters);
         oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), pairs, iters);
+        oneRun(new SynchronousQueue<Integer>(), pairs, iters / 8);
+
+        /* TODO: unbounded queue implementations are prone to OOME
+        oneRun(new PriorityBlockingQueue<Integer>(iters / 2 * pairs), pairs, iters / 4);
         oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
         oneRun(new LTQasSQ<Integer>(), pairs, iters);
         oneRun(new HalfSyncLTQ<Integer>(), pairs, iters);
-        oneRun(new SynchronousQueue<Integer>(), pairs, iters / 8);
-
-        /* PriorityBlockingQueue is unbounded
-        oneRun(new PriorityBlockingQueue<Integer>(iters / 2 * pairs), pairs, iters / 4);
         */
     }
 

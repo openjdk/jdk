@@ -307,8 +307,18 @@ public class TreeInfo {
         case(JCTree.POSTINC):
         case(JCTree.POSTDEC):
             return getStartPos(((JCUnary) tree).arg);
-        case(JCTree.ANNOTATED_TYPE):
-            return getStartPos(((JCAnnotatedType) tree).underlyingType);
+        case(JCTree.ANNOTATED_TYPE): {
+            JCAnnotatedType node = (JCAnnotatedType) tree;
+            if (node.annotations.nonEmpty())
+                return getStartPos(node.annotations.head);
+            return getStartPos(node.underlyingType);
+        }
+        case(JCTree.NEWCLASS): {
+            JCNewClass node = (JCNewClass)tree;
+            if (node.encl != null)
+                return getStartPos(node.encl);
+            break;
+        }
         case(JCTree.VARDEF): {
             JCVariableDecl node = (JCVariableDecl)tree;
             if (node.mods.pos != Position.NOPOS) {
@@ -406,6 +416,8 @@ public class TreeInfo {
             return getEndPos(((JCUnary) tree).arg, endPositions);
         case(JCTree.WHILELOOP):
             return getEndPos(((JCWhileLoop) tree).body, endPositions);
+        case(JCTree.ANNOTATED_TYPE):
+            return getEndPos(((JCAnnotatedType) tree).underlyingType, endPositions);
         case(JCTree.ERRONEOUS): {
             JCErroneous node = (JCErroneous)tree;
             if (node.errs != null && node.errs.nonEmpty())
@@ -889,6 +901,19 @@ public class TreeInfo {
             return tree;
         default:
             throw new AssertionError("Unexpected type tree: " + tree);
+        }
+    }
+
+    public static JCTree innermostType(JCTree type) {
+        switch (type.getTag()) {
+        case JCTree.TYPEARRAY:
+            return innermostType(((JCArrayTypeTree)type).elemtype);
+        case JCTree.WILDCARD:
+            return innermostType(((JCWildcard)type).inner);
+        case JCTree.ANNOTATED_TYPE:
+            return innermostType(((JCAnnotatedType)type).underlyingType);
+        default:
+            return type;
         }
     }
 }

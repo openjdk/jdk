@@ -24,41 +24,44 @@
  */
 package javax.swing.plaf.synth;
 
-import javax.swing.plaf.basic.BasicHTML;
 import java.awt.*;
-import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.*;
-import javax.swing.text.View;
-import sun.swing.plaf.synth.*;
 import sun.swing.MenuItemLayoutHelper;
 
 
 /**
- * Synth's MenuItemUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JMenuItem}.
  *
  * @author Georges Saab
  * @author David Karlton
  * @author Arnaud Weber
  * @author Fredrik Lagerblad
+ * @since 1.7
  */
-class SynthMenuItemUI extends BasicMenuItemUI implements
+public class SynthMenuItemUI extends BasicMenuItemUI implements
                                    PropertyChangeListener, SynthUI {
     private SynthStyle style;
     private SynthStyle accStyle;
 
-    private String acceleratorDelimiter;
-
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param c component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent c) {
         return new SynthMenuItemUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void uninstallUI(JComponent c) {
         super.uninstallUI(c);
         // Remove values from the parent's Client Properties.
@@ -69,10 +72,18 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
         }
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults() {
         updateStyle(menuItem);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installListeners() {
         super.installListeners();
         menuItem.addPropertyChangeListener(this);
@@ -122,6 +133,10 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
         accContext.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(menuItem, ENABLED);
         style.uninstallDefaults(context);
@@ -137,11 +152,19 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
         super.uninstallDefaults();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallListeners() {
         super.uninstallListeners();
         menuItem.removePropertyChangeListener(this);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -151,17 +174,13 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
                     SynthLookAndFeel.getRegion(c), style, state);
     }
 
-    public SynthContext getContext(JComponent c, Region region) {
+    SynthContext getContext(JComponent c, Region region) {
         return getContext(c, region, getComponentState(c, region));
     }
 
     private SynthContext getContext(JComponent c, Region region, int state) {
         return SynthContext.getContext(SynthContext.class, c,
                                        region, accStyle, state);
-    }
-
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
     }
 
     private int getComponentState(JComponent c) {
@@ -186,6 +205,10 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
         return getComponentState(c);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected Dimension getPreferredMenuItemSize(JComponent c,
                                                      Icon checkIcon,
                                                      Icon arrowIcon,
@@ -203,6 +226,19 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
     }
 
 
+    /**
+     * Notifies this UI delegate to repaint the specified component.
+     * This method paints the component background, then calls
+     * the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * <p>In general, this method does not need to be overridden by subclasses.
+     * All Look and Feel rendering code should reside in the {@code paint} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -212,6 +248,16 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component according to the Look and Feel.
+     * <p>This method is not used by Synth Look and Feel.
+     * Painting is handled by the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
+    @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -219,6 +265,13 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     *
+     * @param context context for the component being painted
+     * @param g the {@code Graphics} object used for painting
+     * @see #update(Graphics,JComponent)
+     */
     protected void paint(SynthContext context, Graphics g) {
         SynthContext accContext = getContext(menuItem,
                                              Region.MENU_ITEM_ACCELERATOR);
@@ -236,11 +289,19 @@ class SynthMenuItemUI extends BasicMenuItemUI implements
         SynthGraphicsUtils.paintBackground(context, g, c);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintMenuItemBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void propertyChange(PropertyChangeEvent e) {
         if (SynthLookAndFeel.shouldUpdateStyle(e)) {
             updateStyle((JMenuItem)e.getSource());

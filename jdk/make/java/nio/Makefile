@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = nio
 PACKAGE = java.nio
 LIBRARY = nio
 PRODUCT = java
@@ -303,7 +304,11 @@ endif # PLATFORM
 # Rules
 #
 
+SUBDIRS_management = mxbean
+include $(BUILDDIR)/common/Subdirs.gmk
+
 build: sources
+	$(SUBDIRS-loop)
 
 clean clobber::
 	$(RM) -r $(NIO_GEN) $(SNIO_GEN)
@@ -816,7 +821,7 @@ SOR_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSOR_SRC) | \
 	$(NAWK) '/^.*Copyright.*Sun/ { print $$3 }') 
 
 $(TEMPDIR)/$(GENSOR_SRC) : $(GENSOR_SRC)
-	$(install-file)
+	$(install-non-module-file)
 
 $(GENSOR_EXE) : $(TEMPDIR)/$(GENSOR_SRC)
 	$(prep-target)
@@ -834,7 +839,7 @@ $(SCH_GEN)/SocketOptionRegistry.java: $(GENSOR_EXE)
 GENCSSRC = $(BUILDDIR)/tools/CharsetMapping
 CHARSETMAPPING_JARFILE = $(BUILDTOOLJARDIR)/charsetmapping.jar
 
-$(FILES_gensbcs_out): $(GENCSSRC)/SingleByte-X.java $(GENCSSRC)/sbcs
+$(FILES_gensbcs_out): $(GENCSSRC)/SingleByte-X.java.template $(GENCSSRC)/sbcs
 	@$(prep-target)
 	$(BOOT_JAVA_CMD) -jar $(CHARSETMAPPING_JARFILE) $(GENCSSRC) $(SCS_GEN) sbcs
 

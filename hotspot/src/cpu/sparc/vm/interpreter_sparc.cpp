@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,6 +393,11 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
   return ((InterpreterGenerator*)this)->generate_normal_entry(synchronized);
 }
 
+
+bool AbstractInterpreter::can_be_compiled(methodHandle m) {
+  // No special entry points that preclude compilation
+  return true;
+}
 
 // This method tells the deoptimizer how big an interpreted frame must be:
 int AbstractInterpreter::size_activation(methodOop method,

@@ -34,13 +34,12 @@ import java.util.Set;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
+import javax.lang.model.SourceVersion;
 import static javax.tools.Diagnostic.Kind.*;
-import static javax.lang.model.SourceVersion.RELEASE_6;
 
 @interface TestMe {}
 
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(RELEASE_6)
 public class T6424358 extends AbstractProcessor {
     @TestMe enum Test { FOO; }
 
@@ -65,5 +64,10 @@ public class T6424358 extends AbstractProcessor {
         for (Element e : roundEnvironment.getElementsAnnotatedWith(testMe))
             scan.scan(e);
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 }

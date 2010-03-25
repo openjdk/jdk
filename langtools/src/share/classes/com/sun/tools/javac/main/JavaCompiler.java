@@ -549,12 +549,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             return log.nwarnings;
     }
 
-    /** Whether or not any parse errors have occurred.
-     */
-    public boolean parseErrors() {
-        return parseErrors;
-    }
-
     /** Try to open input stream with given name.
      *  Report an error if this fails.
      *  @param filename   The file name of the input stream to be opened.
@@ -564,7 +558,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             inputFiles.add(filename);
             return filename.getCharContent(false);
         } catch (IOException e) {
-            log.error("error.reading.file", filename, e.getLocalizedMessage());
+            log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
             return null;
         }
     }
@@ -588,7 +582,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             int initialErrorCount = log.nerrors;
             Parser parser = parserFactory.newParser(content, keepComments(), genEndPos, lineDebugInfo);
             tree = parser.parseCompilationUnit();
-            parseErrors |= (log.nerrors > initialErrorCount);
+            log.unrecoverableError |= (log.nerrors > initialErrorCount);
             if (verbose) {
                 printVerbose("parsing.done", Long.toString(elapsed(msec)));
             }
@@ -723,7 +717,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         try {
             tree = parse(filename, filename.getCharContent(false));
         } catch (IOException e) {
-            log.error("error.reading.file", filename, e);
+            log.error("error.reading.file", filename, JavacFileManager.getMessage(e));
             tree = make.TopLevel(List.<JCTree.JCAnnotation>nil(), null, List.<JCTree>nil());
         } finally {
             log.useSource(prev);
@@ -767,9 +761,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     private boolean hasBeenUsed = false;
     private long start_msec = 0;
     public long elapsed_msec = 0;
-
-    /** Track whether any errors occurred while parsing source text. */
-    private boolean parseErrors = false;
 
     public void compile(List<JavaFileObject> sourceFileObject)
         throws Throwable {
@@ -1114,7 +1105,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             return env;
 
         if (verboseCompilePolicy)
-            log.printLines(log.noticeWriter, "[attribute " + env.enclClass.sym + "]");
+            Log.printLines(log.noticeWriter, "[attribute " + env.enclClass.sym + "]");
         if (verbose)
             printVerbose("checking.attribution", env.enclClass.sym);
 

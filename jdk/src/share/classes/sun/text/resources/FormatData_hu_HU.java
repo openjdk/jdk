@@ -51,7 +51,7 @@ public class FormatData_hu_HU extends ListResourceBundle {
             { "NumberPatterns",
                 new String[] {
                     "#,##0.###;-#,##0.###", // decimal pattern
-                    "\u00A4#,##0.##;-\u00A4#,##0.##", // currency pattern
+                    "#,##0.## \u00A4;-#,##0.## \u00A4", // currency pattern
                     "#,##0%" // percent pattern
                 }
             },

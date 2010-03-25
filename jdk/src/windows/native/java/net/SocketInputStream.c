@@ -121,6 +121,9 @@ Java_java_net_SocketInputStream_socketRead0(JNIEnv *env, jobject this,
             newfd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
             if (newfd == -1) {
                 NET_ThrowSocketException(env, "Socket Closed");
+                if (bufP != BUF) {
+                    free(bufP);
+                }
                 return -1;
             }
         }

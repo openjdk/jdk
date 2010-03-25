@@ -31,47 +31,52 @@ import javax.swing.text.*;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicEditorPaneUI;
 import java.beans.PropertyChangeEvent;
-import sun.swing.plaf.synth.SynthUI;
 
 /**
- * Provides the look and feel for a JEditorPane in the
- * Synth look and feel.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JEditorPane}.
  *
  * @author  Shannon Hickey
+ * @since 1.7
  */
-class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
+public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
     private SynthStyle style;
     /*
      * I would prefer to use UIResource instad of this.
      * Unfortunately Boolean is a final class
      */
     private Boolean localTrue = Boolean.TRUE;
-    private Boolean localFalse = Boolean.FALSE;
 
     /**
-     * Creates a UI for the JTextPane.
+     * Creates a new UI object for the given component.
      *
-     * @param c the JTextPane component
-     * @return the UI
+     * @param c component to create UI object for
+     * @return the UI object
      */
     public static ComponentUI createUI(JComponent c) {
         return new SynthEditorPaneUI();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void installDefaults() {
         // Installs the text cursor on the component
         super.installDefaults();
         JComponent c = getComponent();
         Object clientProperty =
             c.getClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES);
-        if (clientProperty == null
-            || clientProperty == localFalse) {
-            c.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES,
-                                localTrue);
+        if (clientProperty == null) {
+            c.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, localTrue);
         }
         updateStyle(getComponent());
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void uninstallDefaults() {
         SynthContext context = getContext(getComponent(), ENABLED);
         JComponent c = getComponent();
@@ -84,7 +89,7 @@ class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
         Object clientProperty =
             c.getClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES);
         if (clientProperty == localTrue) {
-            getComponent().putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES,
+            c.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES,
                                              Boolean.FALSE);
         }
         super.uninstallDefaults();
@@ -100,6 +105,7 @@ class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
      *
      * @param evt the property change event
      */
+    @Override
     protected void propertyChange(PropertyChangeEvent evt) {
         if (SynthLookAndFeel.shouldUpdateStyle(evt)) {
             updateStyle((JTextComponent)evt.getSource());
@@ -124,6 +130,10 @@ class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
         context.dispose();
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -137,6 +147,19 @@ class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
         return SynthLookAndFeel.getComponentState(c);
     }
 
+    /**
+     * Notifies this UI delegate to repaint the specified component.
+     * This method paints the component background, then calls
+     * the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * <p>In general, this method does not need to be overridden by subclasses.
+     * All Look and Feel rendering code should reside in the {@code paint} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
+    @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
 
@@ -146,10 +169,21 @@ class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     *
+     * @param context context for the component being painted
+     * @param g the {@code Graphics} object used for painting
+     * @see #update(Graphics,JComponent)
+     */
     protected void paint(SynthContext context, Graphics g) {
         super.paint(g, getComponent());
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     protected void paintBackground(Graphics g) {
         // Overriden to do nothing, all our painting is done from update/paint.
     }
@@ -159,6 +193,10 @@ class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
                                                   c.getWidth(), c.getHeight());
     }
 
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintEditorPaneBorder(context, g, x, y, w, h);

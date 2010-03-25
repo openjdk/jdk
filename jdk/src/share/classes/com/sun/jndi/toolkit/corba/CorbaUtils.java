@@ -33,10 +33,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Enumeration;
-import java.applet.Applet;
 
 import org.omg.CORBA.ORB;
 
+import javax.naming.Context;
 import javax.naming.ConfigurationException;
 
 /**
@@ -191,16 +191,48 @@ public class CorbaUtils {
         }
 
         // Get Applet from environment
-        Applet applet = null;
         if (env != null) {
-            applet = (Applet) env.get("java.naming.applet");
+            Object applet = env.get(Context.APPLET);
+            if (applet != null) {
+                // Create ORBs for an applet
+                return initAppletORB(applet, orbProp);
+            }
         }
 
-        // Create ORBs using applet and orbProp
-        if (applet != null) {
-            return ORB.init(applet, orbProp);
-        } else {
-            return ORB.init(new String[0], orbProp);
+        // Create ORBs using orbProp for a standalone application
+        return ORB.init(new String[0], orbProp);
+    }
+
+    /**
+     * This method returns a new ORB instance for the given applet
+     * without creating a static dependency on java.applet.
+     */
+    private static ORB initAppletORB(Object applet, Properties orbProp) {
+        try {
+            Class<?> appletClass  = Class.forName("java.applet.Applet", true, null);
+            if (!appletClass.isInstance(applet)) {
+                throw new ClassCastException(applet.getClass().getName());
+            }
+
+            // invoke the static method ORB.init(applet, orbProp);
+            Method method = ORB.class.getMethod("init", appletClass, Properties.class);
+            return (ORB) method.invoke(null, applet, orbProp);
+        } catch (ClassNotFoundException e) {
+            // java.applet.Applet doesn't exist and the applet parameter is
+            // non-null; so throw CCE
+            throw new ClassCastException(applet.getClass().getName());
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError(e);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException) {
+                throw (RuntimeException) cause;
+            } else if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            throw new AssertionError(e);
+        } catch (IllegalAccessException iae) {
+            throw new AssertionError(iae);
         }
     }
 

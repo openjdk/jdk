@@ -325,9 +325,9 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (!(target instanceof Container) || win == null || win.getTarget() == null) {
             return false;
         }
-        Container parent = ComponentAccessor.getParent_NoClientCode(win.target);
+        Container parent = AWTAccessor.getComponentAccessor().getParent(win.target);
         while (parent != null && parent != target) {
-            parent = ComponentAccessor.getParent_NoClientCode(parent);
+            parent = AWTAccessor.getComponentAccessor().getParent(parent);
         }
         return (parent == target);
     }
@@ -560,10 +560,11 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         int h = xe.get_height();
 
         Component target = (Component)getEventSource();
+        AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
 
-        if (!ComponentAccessor.getIgnoreRepaint(target)
-            && ComponentAccessor.getWidth(target) != 0
-            && ComponentAccessor.getHeight(target) != 0)
+        if (!compAccessor.getIgnoreRepaint(target)
+            && compAccessor.getWidth(target) != 0
+            && compAccessor.getHeight(target) != 0)
         {
             handleExposeEvent(target, x, y, w, h);
         }
@@ -950,7 +951,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
                     XAwtState.setComponentMouseEntered(null);
                 }
             } else {
-                ((XComponentPeer) ComponentAccessor.getPeer(target))
+                ((XComponentPeer) AWTAccessor.getComponentAccessor().getPeer(target))
                     .pSetCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             }
         }
@@ -1387,7 +1388,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             Component comp = target;
 
             while (comp != null && !(comp instanceof Window)) {
-                comp = ComponentAccessor.getParent_NoClientCode(comp);
+                comp = AWTAccessor.getComponentAccessor().getParent(comp);
             }
 
             // applets, embedded, etc - translate directly

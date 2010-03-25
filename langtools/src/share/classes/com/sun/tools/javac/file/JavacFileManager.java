@@ -26,29 +26,16 @@
 package com.sun.tools.javac.file;
 
 import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.lang.ref.SoftReference;
-import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
-import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -66,18 +53,13 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
-import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
-import com.sun.tools.javac.main.JavacOption;
 import com.sun.tools.javac.main.OptionName;
-import com.sun.tools.javac.main.RecognizedOptions;
+import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Options;
 
 import static javax.tools.StandardLocation.*;
 import static com.sun.tools.javac.main.OptionName.*;
@@ -91,7 +73,7 @@ import static com.sun.tools.javac.main.OptionName.*;
  * This code and its internal interfaces are subject to change or
  * deletion without notice.</b>
  */
-public class JavacFileManager implements StandardJavaFileManager {
+public class JavacFileManager extends BaseFileManager implements StandardJavaFileManager {
 
     boolean useZipFileIndex;
 
@@ -102,16 +84,9 @@ public class JavacFileManager implements StandardJavaFileManager {
             return buffer.toString().toCharArray();
     }
 
-    /**
-     * The log to be used for error reporting.
-     */
-    protected Log log;
-
     /** Encapsulates knowledge of paths
      */
     private Paths paths;
-
-    private Options options;
 
     private FSInfo fsInfo;
 
@@ -134,12 +109,6 @@ public class JavacFileManager implements StandardJavaFileManager {
 
     protected boolean mmappedIO;
     protected boolean ignoreSymbolFile;
-    protected String classLoaderClass;
-
-    /**
-     * User provided charset (through javax.tools).
-     */
-    protected Charset charset;
 
     /**
      * Register a Context.Factory to create a JavacFileManager.
@@ -157,18 +126,18 @@ public class JavacFileManager implements StandardJavaFileManager {
      * it as the JavaFileManager for that context.
      */
     public JavacFileManager(Context context, boolean register, Charset charset) {
+        super(charset);
         if (register)
             context.put(JavaFileManager.class, this);
-        byteBufferCache = new ByteBufferCache();
-        this.charset = charset;
         setContext(context);
     }
 
     /**
      * Set the context for JavacFileManager.
      */
+    @Override
     public void setContext(Context context) {
-        log = Log.instance(context);
+        super.setContext(context);
         if (paths == null) {
             paths = Paths.instance(context);
         } else {
@@ -177,14 +146,12 @@ public class JavacFileManager implements StandardJavaFileManager {
             paths.setContext(context);
         }
 
-        options = Options.instance(context);
         fsInfo = FSInfo.instance(context);
 
         useZipFileIndex = System.getProperty("useJavaUtilZip") == null;// TODO: options.get("useJavaUtilZip") == null;
 
         mmappedIO = options.get("mmappedIO") != null;
         ignoreSymbolFile = options.get("ignore.symbol.file") != null;
-        classLoaderClass = options.get("procloader");
     }
 
     public JavaFileObject getFileForInput(String name) {
@@ -212,17 +179,6 @@ public class JavacFileManager implements StandardJavaFileManager {
 
     public Iterable<? extends JavaFileObject> getJavaFileObjects(String... names) {
         return getJavaFileObjectsFromStrings(Arrays.asList(nullCheck(names)));
-    }
-
-    protected JavaFileObject.Kind getKind(String extension) {
-        if (extension.equals(JavaFileObject.Kind.CLASS.extension))
-            return JavaFileObject.Kind.CLASS;
-        else if (extension.equals(JavaFileObject.Kind.SOURCE.extension))
-            return JavaFileObject.Kind.SOURCE;
-        else if (extension.equals(JavaFileObject.Kind.HTML.extension))
-            return JavaFileObject.Kind.HTML;
-        else
-            return JavaFileObject.Kind.OTHER;
     }
 
     private static boolean isValidName(String name) {
@@ -304,7 +260,7 @@ public class JavacFileManager implements StandardJavaFileManager {
                     archive = openArchive(directory);
                 } catch (IOException ex) {
                     log.error("error.reading.file",
-                       directory, ex.getLocalizedMessage());
+                       directory, getMessage(ex));
                     return;
                 }
             }
@@ -359,9 +315,7 @@ public class JavacFileManager implements StandardJavaFileManager {
     }
 
     private boolean isValidFile(String s, Set<JavaFileObject.Kind> fileKinds) {
-        int lastDot = s.lastIndexOf(".");
-        String extn = (lastDot == -1 ? s : s.substring(lastDot));
-        JavaFileObject.Kind kind = getKind(extn);
+        JavaFileObject.Kind kind = getKind(s);
         return fileKinds.contains(kind);
     }
 
@@ -535,7 +489,7 @@ public class JavacFileManager implements StandardJavaFileManager {
                 archive = new MissingArchive(zipFileName);
             } catch (IOException ex) {
                 if (zipFileName.exists())
-                    log.error("error.reading.file", zipFileName, ex.getLocalizedMessage());
+                    log.error("error.reading.file", zipFileName, getMessage(ex));
                 archive = new MissingArchive(zipFileName);
             }
 
@@ -564,18 +518,6 @@ public class JavacFileManager implements StandardJavaFileManager {
         }
     }
 
-    CharBuffer getCachedContent(JavaFileObject file) {
-        SoftReference<CharBuffer> r = contentCache.get(file);
-        return (r == null ? null : r.get());
-    }
-
-    void cache(JavaFileObject file, CharBuffer cb) {
-        contentCache.put(file, new SoftReference<CharBuffer>(cb));
-    }
-
-    private final Map<JavaFileObject, SoftReference<CharBuffer>> contentCache
-            = new HashMap<JavaFileObject, SoftReference<CharBuffer>>();
-
     private String defaultEncodingName;
     private String getDefaultEncodingName() {
         if (defaultEncodingName == null) {
@@ -583,161 +525,6 @@ public class JavacFileManager implements StandardJavaFileManager {
                 new OutputStreamWriter(new ByteArrayOutputStream()).getEncoding();
         }
         return defaultEncodingName;
-    }
-
-    protected String getEncodingName() {
-        String encName = options.get(OptionName.ENCODING);
-        if (encName == null)
-            return getDefaultEncodingName();
-        else
-            return encName;
-    }
-
-    protected Source getSource() {
-        String sourceName = options.get(OptionName.SOURCE);
-        Source source = null;
-        if (sourceName != null)
-            source = Source.lookup(sourceName);
-        return (source != null ? source : Source.DEFAULT);
-    }
-
-    /**
-     * Make a byte buffer from an input stream.
-     */
-    ByteBuffer makeByteBuffer(InputStream in)
-        throws IOException {
-        int limit = in.available();
-        if (mmappedIO && in instanceof FileInputStream) {
-            // Experimental memory mapped I/O
-            FileInputStream fin = (FileInputStream)in;
-            return fin.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, limit);
-        }
-        if (limit < 1024) limit = 1024;
-        ByteBuffer result = byteBufferCache.get(limit);
-        int position = 0;
-        while (in.available() != 0) {
-            if (position >= limit)
-                // expand buffer
-                result = ByteBuffer.
-                    allocate(limit <<= 1).
-                    put((ByteBuffer)result.flip());
-            int count = in.read(result.array(),
-                position,
-                limit - position);
-            if (count < 0) break;
-            result.position(position += count);
-        }
-        return (ByteBuffer)result.flip();
-    }
-
-    void recycleByteBuffer(ByteBuffer bb) {
-        byteBufferCache.put(bb);
-    }
-
-    /**
-     * A single-element cache of direct byte buffers.
-     */
-    private static class ByteBufferCache {
-        private ByteBuffer cached;
-        ByteBuffer get(int capacity) {
-            if (capacity < 20480) capacity = 20480;
-            ByteBuffer result =
-                (cached != null && cached.capacity() >= capacity)
-                ? (ByteBuffer)cached.clear()
-                : ByteBuffer.allocate(capacity + capacity>>1);
-            cached = null;
-            return result;
-        }
-        void put(ByteBuffer x) {
-            cached = x;
-        }
-    }
-
-    private final ByteBufferCache byteBufferCache;
-
-    CharsetDecoder getDecoder(String encodingName, boolean ignoreEncodingErrors) {
-        Charset cs = (this.charset == null)
-            ? Charset.forName(encodingName)
-            : this.charset;
-        CharsetDecoder decoder = cs.newDecoder();
-
-        CodingErrorAction action;
-        if (ignoreEncodingErrors)
-            action = CodingErrorAction.REPLACE;
-        else
-            action = CodingErrorAction.REPORT;
-
-        return decoder
-            .onMalformedInput(action)
-            .onUnmappableCharacter(action);
-    }
-
-    /**
-     * Decode a ByteBuffer into a CharBuffer.
-     */
-    CharBuffer decode(ByteBuffer inbuf, boolean ignoreEncodingErrors) {
-        String encodingName = getEncodingName();
-        CharsetDecoder decoder;
-        try {
-            decoder = getDecoder(encodingName, ignoreEncodingErrors);
-        } catch (IllegalCharsetNameException e) {
-            log.error("unsupported.encoding", encodingName);
-            return (CharBuffer)CharBuffer.allocate(1).flip();
-        } catch (UnsupportedCharsetException e) {
-            log.error("unsupported.encoding", encodingName);
-            return (CharBuffer)CharBuffer.allocate(1).flip();
-        }
-
-        // slightly overestimate the buffer size to avoid reallocation.
-        float factor =
-            decoder.averageCharsPerByte() * 0.8f +
-            decoder.maxCharsPerByte() * 0.2f;
-        CharBuffer dest = CharBuffer.
-            allocate(10 + (int)(inbuf.remaining()*factor));
-
-        while (true) {
-            CoderResult result = decoder.decode(inbuf, dest, true);
-            dest.flip();
-
-            if (result.isUnderflow()) { // done reading
-                // make sure there is at least one extra character
-                if (dest.limit() == dest.capacity()) {
-                    dest = CharBuffer.allocate(dest.capacity()+1).put(dest);
-                    dest.flip();
-                }
-                return dest;
-            } else if (result.isOverflow()) { // buffer too small; expand
-                int newCapacity =
-                    10 + dest.capacity() +
-                    (int)(inbuf.remaining()*decoder.maxCharsPerByte());
-                dest = CharBuffer.allocate(newCapacity).put(dest);
-            } else if (result.isMalformed() || result.isUnmappable()) {
-                // bad character in input
-
-                // report coding error (warn only pre 1.5)
-                if (!getSource().allowEncodingErrors()) {
-                    log.error(new SimpleDiagnosticPosition(dest.limit()),
-                              "illegal.char.for.encoding",
-                              charset == null ? encodingName : charset.name());
-                } else {
-                    log.warning(new SimpleDiagnosticPosition(dest.limit()),
-                                "illegal.char.for.encoding",
-                                charset == null ? encodingName : charset.name());
-                }
-
-                // skip past the coding error
-                inbuf.position(inbuf.position() + result.length());
-
-                // undo the flip() to prepare the output buffer
-                // for more translation
-                dest.position(dest.limit());
-                dest.limit(dest.capacity());
-                dest.put((char)0xfffd); // backward compatible
-            } else {
-                throw new AssertionError(result);
-            }
-        }
-        // unreached
     }
 
     public ClassLoader getClassLoader(Location location) {
@@ -754,39 +541,7 @@ public class JavacFileManager implements StandardJavaFileManager {
             }
         }
 
-        URL[] urls = lb.toArray(new URL[lb.size()]);
-        ClassLoader thisClassLoader = getClass().getClassLoader();
-
-        // Bug: 6558476
-        // Ideally, ClassLoader should be Closeable, but before JDK7 it is not.
-        // On older versions, try the following, to get a closeable classloader.
-
-        // 1: Allow client to specify the class to use via hidden option
-        if (classLoaderClass != null) {
-            try {
-                Class<? extends ClassLoader> loader =
-                        Class.forName(classLoaderClass).asSubclass(ClassLoader.class);
-                Class<?>[] constrArgTypes = { URL[].class, ClassLoader.class };
-                Constructor<? extends ClassLoader> constr = loader.getConstructor(constrArgTypes);
-                return constr.newInstance(new Object[] { urls, thisClassLoader });
-            } catch (Throwable t) {
-                // ignore errors loading user-provided class loader, fall through
-            }
-        }
-
-        // 2: If URLClassLoader implements Closeable, use that.
-        if (Closeable.class.isAssignableFrom(URLClassLoader.class))
-            return new URLClassLoader(urls, thisClassLoader);
-
-        // 3: Try using private reflection-based CloseableURLClassLoader
-        try {
-            return new CloseableURLClassLoader(urls, thisClassLoader);
-        } catch (Throwable t) {
-            // ignore errors loading workaround class loader, fall through
-        }
-
-        // 4: If all else fails, use plain old standard URLClassLoader
-        return new URLClassLoader(urls, thisClassLoader);
+        return getClassLoader(lb.toArray(new URL[lb.size()]));
     }
 
     public Iterable<JavaFileObject> list(Location location,
@@ -834,38 +589,6 @@ public class JavacFileManager implements StandardJavaFileManager {
         if (!(b instanceof BaseFileObject))
             throw new IllegalArgumentException("Not supported: " + b);
         return a.equals(b);
-    }
-
-    public boolean handleOption(String current, Iterator<String> remaining) {
-        for (JavacOption o: javacFileManagerOptions) {
-            if (o.matches(current))  {
-                if (o.hasArg()) {
-                    if (remaining.hasNext()) {
-                        if (!o.process(options, current, remaining.next()))
-                            return true;
-                    }
-                } else {
-                    if (!o.process(options, current))
-                        return true;
-                }
-                // operand missing, or process returned false
-                throw new IllegalArgumentException(current);
-            }
-        }
-
-        return false;
-    }
-    // where
-        private static JavacOption[] javacFileManagerOptions =
-            RecognizedOptions.getJavacFileManagerOptions(
-            new RecognizedOptions.GrumpyHelper());
-
-    public int isSupportedOption(String option) {
-        for (JavacOption o : javacFileManagerOptions) {
-            if (o.matches(option))
-                return o.hasArg() ? 1 : 0;
-        }
-        return -1;
     }
 
     public boolean hasLocation(Location location) {
@@ -1116,14 +839,22 @@ public class JavacFileManager implements StandardJavaFileManager {
         throw new IllegalArgumentException("Invalid relative path: " + file);
     }
 
-    private static <T> T nullCheck(T o) {
-        o.getClass(); // null check
-        return o;
-    }
-
-    private static <T> Iterable<T> nullCheck(Iterable<T> it) {
-        for (T t : it)
-            t.getClass(); // null check
-        return it;
+    /**
+     * Get a detail message from an IOException.
+     * Most, but not all, instances of IOException provide a non-null result
+     * for getLocalizedMessage().  But some instances return null: in these
+     * cases, fallover to getMessage(), and if even that is null, return the
+     * name of the exception itself.
+     * @param e an IOException
+     * @return a string to include in a compiler diagnostic
+     */
+    public static String getMessage(IOException e) {
+        String s = e.getLocalizedMessage();
+        if (s != null)
+            return s;
+        s = e.getMessage();
+        if (s != null)
+            return s;
+        return e.toString();
     }
 }

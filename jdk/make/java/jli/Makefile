@@ -30,6 +30,7 @@
 # its manifestations (java, javaw, javac, ...).
 #
 BUILDDIR = ../..
+MODULE  = base
 LIBRARY = jli
 PRODUCT = java
 
@@ -96,6 +97,7 @@ OTHER_CPPFLAGS += $(LIBARCH_DEFINES)
 
 
 ifneq ($(PLATFORM), windows)	# UNIX systems
+        LD_RUNPATH_EXTRAS += ..
 	LIB_LOCATION = $(LIBDIR)/$(LIBARCH)/jli
 	# Note: its important to keep this order meaning -lc is the
 	# last library otherwise it could cause compatibility issues
@@ -151,7 +153,6 @@ STATIC_LIBRARY_NAME = $(LIBPREFIX)$(LIBRARY).lib
 STATIC_LIBRARY = $(STATIC_LIBRARY_DIR)/$(STATIC_LIBRARY_NAME)
 
 $(STATIC_LIBRARY_DIR): $(OBJDIR)
-	@$(prep-target)
 	@$(MKDIR) $(STATIC_LIBRARY_DIR)
 
 $(STATIC_LIBRARY): $(STATIC_LIBRARY_DIR)

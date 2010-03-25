@@ -40,24 +40,41 @@ import java.awt.event.ContainerEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.FocusEvent;
 
-import sun.swing.plaf.synth.SynthUI;
-
-
 /**
- * Synth's ScrollPaneUI.
+ * Provides the Synth L&F UI delegate for
+ * {@link javax.swing.JScrollPane}.
  *
  * @author Scott Violet
+ * @since 1.7
  */
-class SynthScrollPaneUI extends BasicScrollPaneUI implements
-                 PropertyChangeListener, SynthUI {
+public class SynthScrollPaneUI extends BasicScrollPaneUI
+                               implements PropertyChangeListener, SynthUI {
     private SynthStyle style;
     private boolean viewportViewHasFocus = false;
     private ViewportViewFocusHandler viewportViewFocusHandler;
 
+    /**
+     * Creates a new UI object for the given component.
+     *
+     * @param x component to create UI object for
+     * @return the UI object
+     */
     public static ComponentUI createUI(JComponent x) {
         return new SynthScrollPaneUI();
     }
 
+    /**
+     * Notifies this UI delegate to repaint the specified component.
+     * This method paints the component background, then calls
+     * the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * <p>In general, this method does not need to be overridden by subclasses.
+     * All Look and Feel rendering code should reside in the {@code paint} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
     @Override
     public void update(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
@@ -69,6 +86,15 @@ class SynthScrollPaneUI extends BasicScrollPaneUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component according to the Look and Feel.
+     * <p>This method is not used by Synth Look and Feel.
+     * Painting is handled by the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
+     */
     @Override
     public void paint(Graphics g, JComponent c) {
         SynthContext context = getContext(c);
@@ -77,6 +103,13 @@ class SynthScrollPaneUI extends BasicScrollPaneUI implements
         context.dispose();
     }
 
+    /**
+     * Paints the specified component.
+     *
+     * @param context context for the component being painted
+     * @param g the {@code Graphics} object used for painting
+     * @see #update(Graphics,JComponent)
+     */
     protected void paint(SynthContext context, Graphics g) {
         Border vpBorder = scrollpane.getViewportBorder();
         if (vpBorder != null) {
@@ -85,12 +118,18 @@ class SynthScrollPaneUI extends BasicScrollPaneUI implements
         }
     }
 
-
+    /**
+     * @inheritDoc
+     */
+    @Override
     public void paintBorder(SynthContext context, Graphics g, int x,
                             int y, int w, int h) {
         context.getPainter().paintScrollPaneBorder(context, g, x, y, w, h);
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void installDefaults(JScrollPane scrollpane) {
         updateStyle(scrollpane);
@@ -114,7 +153,9 @@ class SynthScrollPaneUI extends BasicScrollPaneUI implements
         context.dispose();
     }
 
-
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void installListeners(JScrollPane c) {
         super.installListeners(c);
@@ -129,6 +170,9 @@ class SynthScrollPaneUI extends BasicScrollPaneUI implements
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void uninstallDefaults(JScrollPane c) {
         SynthContext context = getContext(c, ENABLED);
@@ -141,7 +185,9 @@ class SynthScrollPaneUI extends BasicScrollPaneUI implements
         }
     }
 
-
+    /**
+     * @inheritDoc
+     */
     @Override
     protected void uninstallListeners(JComponent c) {
         super.uninstallListeners(c);
@@ -156,7 +202,10 @@ class SynthScrollPaneUI extends BasicScrollPaneUI implements
         }
     }
 
-
+    /**
+     * @inheritDoc
+     */
+    @Override
     public SynthContext getContext(JComponent c) {
         return getContext(c, getComponentState(c));
     }
@@ -165,12 +214,6 @@ class SynthScrollPaneUI extends BasicScrollPaneUI implements
         return SynthContext.getContext(SynthContext.class, c,
                     SynthLookAndFeel.getRegion(c), style, state);
     }
-
-
-    private Region getRegion(JComponent c) {
-        return SynthLookAndFeel.getRegion(c);
-    }
-
 
     private int getComponentState(JComponent c) {
         int baseState = SynthLookAndFeel.getComponentState(c);

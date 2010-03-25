@@ -306,7 +306,7 @@ public class BasicTableHeaderUI extends TableHeaderUI {
     }
 
     /**
-     * Initialize JTableHeader properties, e.g. font, foreground, and background.
+     * Initializes JTableHeader properties such as font, foreground, and background.
      * The font, foreground, and background properties are only set if their
      * current value is either null or a UIResource, other properties are set
      * if the current value is null.
@@ -403,9 +403,9 @@ public class BasicTableHeaderUI extends TableHeaderUI {
     }
 
     /**
-     * This method gets called every time the rollover column in the table
-     * header is updated. Every look and feel supporting rollover effect
-     * in table header should override this method and repaint the header.
+     * This method gets called every time when a rollover column in the table
+     * header is updated. Every look and feel that supports a rollover effect
+     * in a table header should override this method and repaint the header.
      *
      * @param oldColumn the index of the previous rollover column or -1 if the
      * mouse was not over a column
@@ -736,7 +736,6 @@ public class BasicTableHeaderUI extends TableHeaderUI {
     }
 
     private Dimension createHeaderSize(long width) {
-        TableColumnModel columnModel = header.getColumnModel();
         // None of the callers include the intercell spacing, do it here.
         if (width > Integer.MAX_VALUE) {
             width = Integer.MAX_VALUE;

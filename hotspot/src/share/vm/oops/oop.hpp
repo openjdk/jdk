@@ -30,13 +30,12 @@
 // no virtual functions allowed
 
 // store into oop with store check
-template <class T> void oop_store(T* p, oop v);
-template <class T> void oop_store(volatile T* p, oop v);
+template <class T> inline void oop_store(T* p, oop v);
+template <class T> inline void oop_store(volatile T* p, oop v);
 
 // store into oop without store check
-template <class T> void oop_store_without_check(T* p, oop v);
-template <class T> void oop_store_without_check(volatile T* p, oop v);
-
+template <class T> inline void oop_store_without_check(T* p, oop v);
+template <class T> inline void oop_store_without_check(volatile T* p, oop v);
 
 extern bool always_do_update_barrier;
 

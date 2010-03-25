@@ -26,6 +26,7 @@
 # WARNING: Make sure the OPENJDK plugs are up-to-date, see make/common/internal/BinaryPlugs.gmk
 
 BUILDDIR = ../..
+MODULE  = sound
 PACKAGE = javax.sound
 LIBRARY = jsound
 PRODUCT = sun
@@ -108,22 +109,14 @@ ifeq ($(PLATFORM), linux)
 endif # PLATFORM linux
 
 ifeq ($(PLATFORM), solaris)
-  ifneq ($(ARCH), amd64)
-    # build with ports and direct audio
-    CPPFLAGS += -DUSE_PORTS=TRUE 	\
-                -DUSE_DAUDIO=TRUE
+  # build with ports and direct audio
+  CPPFLAGS += -DUSE_PORTS=TRUE 	\
+              -DUSE_DAUDIO=TRUE
 
-    INCLUDE_PORTS = TRUE
-    INCLUDE_DAUDIO = TRUE
-    INCLUDE_MIDI = TRUE
-  else
-    # build with empty MIDI i/o
-    INCLUDE_MIDI = TRUE
-    # build with empty ports
-    INCLUDE_PORTS = TRUE
-    # build with empty direct audio
-    INCLUDE_DAUDIO = TRUE
-  endif
+  INCLUDE_PORTS = TRUE
+  INCLUDE_DAUDIO = TRUE
+  # build with empty MIDI i/o
+  INCLUDE_MIDI = TRUE
 endif # PLATFORM solaris
 
 # for dynamic inclusion of extra sound libs: these
@@ -166,6 +159,7 @@ vpath %.cpp $(PLATFORM_SRC)/native/com/sun/media/sound
 # Include rules
 #
 include $(BUILDDIR)/common/Library.gmk
+include $(BUILDDIR)/common/Subdirs.gmk
 
 #
 # Rules that copy files.

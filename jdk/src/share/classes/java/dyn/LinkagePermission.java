@@ -88,7 +88,7 @@ public final class LinkagePermission extends BasicPermission {
     /**
      * Create a new LinkagePermission with the given name.
      * The name is the symbolic name of the LinkagePermission, such as
-     * "registerBootstrapMethod", "invalidateClass.*", etc. An asterisk
+     * "registerBootstrapMethod", "invalidateCallerClass.*", etc. An asterisk
      * may appear at the end of the name, following a ".", or by itself, to
      * signify a wildcard match.
      *

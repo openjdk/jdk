@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008, 2009 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ void CppInterpreter::main_loop(int recurse, TRAPS) {
     }
     else if (istate->msg() == BytecodeInterpreter::return_from_method) {
       // Copy the result into the caller's frame
-      result_slots = type2size[method->result_type()];
+      result_slots = type2size[result_type_of(method)];
       assert(result_slots >= 0 && result_slots <= 2, "what?");
       result = istate->stack() + result_slots;
       break;
@@ -204,6 +204,20 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
     goto unwind_and_return;
   }
 
+  // Update the invocation counter
+  if ((UseCompiler || CountCompiledCalls) && !method->is_synchronized()) {
+    thread->set_do_not_unlock();
+    InvocationCounter *counter = method->invocation_counter();
+    counter->increment();
+    if (counter->reached_InvocationLimit()) {
+      CALL_VM_NOCHECK(
+        InterpreterRuntime::frequency_counter_overflow(thread, NULL));
+      if (HAS_PENDING_EXCEPTION)
+        goto unwind_and_return;
+    }
+    thread->clr_do_not_unlock();
+  }
+
   // Lock if necessary
   BasicObjectLock *monitor;
   monitor = NULL;
@@ -231,7 +245,7 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
     if (handlerAddr == NULL) {
       CALL_VM_NOCHECK(InterpreterRuntime::prepare_native_call(thread, method));
       if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
+        goto unlock_unwind_and_return;
 
       handlerAddr = method->signature_handler();
       assert(handlerAddr != NULL, "eh?");
@@ -240,7 +254,7 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
       CALL_VM_NOCHECK(handlerAddr =
         InterpreterRuntime::slow_signature_handler(thread, method, NULL,NULL));
       if (HAS_PENDING_EXCEPTION)
-        goto unwind_and_return;
+        goto unlock_unwind_and_return;
     }
     handler = \
       InterpreterRuntime::SignatureHandler::from_handlerAddr(handlerAddr);
@@ -351,10 +365,10 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
   // Reset handle block
   thread->active_handles()->clear();
 
-  // Unlock if necessary.  It seems totally wrong that this
-  // is skipped in the event of an exception but apparently
-  // the template interpreter does this so we do too.
-  if (monitor && !HAS_PENDING_EXCEPTION) {
+ unlock_unwind_and_return:
+
+  // Unlock if necessary
+  if (monitor) {
     BasicLock *lock = monitor->lock();
     markOop header = lock->displaced_header();
     oop rcvr = monitor->obj();
@@ -380,9 +394,10 @@ void CppInterpreter::native_entry(methodOop method, intptr_t UNUSED, TRAPS) {
 
   // Push our result
   if (!HAS_PENDING_EXCEPTION) {
-    stack->set_sp(stack->sp() - type2size[method->result_type()]);
+    BasicType type = result_type_of(method);
+    stack->set_sp(stack->sp() - type2size[type]);
 
-    switch (method->result_type()) {
+    switch (type) {
     case T_VOID:
       break;
 
@@ -691,6 +706,26 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
   assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers,
          "index out of bounds");
   return i;
+}
+
+BasicType CppInterpreter::result_type_of(methodOop method) {
+  BasicType t;
+  switch (method->result_index()) {
+    case 0 : t = T_BOOLEAN; break;
+    case 1 : t = T_CHAR;    break;
+    case 2 : t = T_BYTE;    break;
+    case 3 : t = T_SHORT;   break;
+    case 4 : t = T_INT;     break;
+    case 5 : t = T_LONG;    break;
+    case 6 : t = T_VOID;    break;
+    case 7 : t = T_FLOAT;   break;
+    case 8 : t = T_DOUBLE;  break;
+    case 9 : t = T_OBJECT;  break;
+    default: ShouldNotReachHere();
+  }
+  assert(AbstractInterpreter::BasicType_as_index(t) == method->result_index(),
+         "out of step with AbstractInterpreter::BasicType_as_index");
+  return t;
 }
 
 address InterpreterGenerator::generate_empty_entry() {

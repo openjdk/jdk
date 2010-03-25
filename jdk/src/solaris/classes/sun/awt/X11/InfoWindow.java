@@ -45,6 +45,7 @@ public abstract class InfoWindow extends Window {
 
     protected InfoWindow(Frame parent, Color borderColor) {
         super(parent);
+        setType(Window.Type.POPUP);
         container = new Container() {
             @Override
             public Insets getInsets() {
@@ -188,21 +189,22 @@ public abstract class InfoWindow extends Window {
          * WARNING: this method is executed on Toolkit thread!
          */
         private void display() {
-            String tooltipString = liveArguments.getTooltipString();
-            if (tooltipString == null) {
-                return;
-            } else if (tooltipString.length() >  TOOLTIP_MAX_LENGTH) {
-                textLabel.setText(tooltipString.substring(0, TOOLTIP_MAX_LENGTH));
-            } else {
-                textLabel.setText(tooltipString);
-            }
-
             // Execute on EDT to avoid deadlock (see 6280857).
             SunToolkit.executeOnEventHandlerThread(target, new Runnable() {
                     public void run() {
                         if (liveArguments.isDisposed()) {
                             return;
                         }
+
+                        String tooltipString = liveArguments.getTooltipString();
+                        if (tooltipString == null) {
+                            return;
+                        } else if (tooltipString.length() >  TOOLTIP_MAX_LENGTH) {
+                            textLabel.setText(tooltipString.substring(0, TOOLTIP_MAX_LENGTH));
+                        } else {
+                            textLabel.setText(tooltipString);
+                        }
+
                         Point pointer = (Point)AccessController.doPrivileged(new PrivilegedAction() {
                                 public Object run() {
                                     if (!isPointerOverTrayIcon(liveArguments.getBounds())) {

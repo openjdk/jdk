@@ -83,8 +83,8 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
                                      "Hora de verano Central", "CDT"};
         String CTT[] = new String[] {"Hora est\u00e1ndar de China", "CST",
                                      "Hora de verano de China", "CDT"};
-        String CUBA[] = new String[] {"Cuba Standard Time", "CST",
-                                      "Cuba Daylight Time", "CDT"};
+        String CUBA[] = new String[] {"Hora est\u00e1ndar de Cuba", "CST",
+                                      "Hora de verano de Cuba", "CDT"};
         String DARWIN[] = new String[] {"Hora est\u00e1ndar Central (territorio del Norte)", "CST",
                                         "Hora de verano Central (territorio del Norte)", "CST"};
         String DUBLIN[] = new String[] {"Hora del Meridiano de Greenwich", "GMT",
@@ -173,8 +173,8 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
                                      "Hora de verano de Truk", "TRUST"};
         String ULAT[]= new String[] {"Hora de Ulan Bator", "ULAT",
                                      "Hora de verano de Ulan Bator", "ULAST"};
-        String WART[] = new String[] {"Hora de Argentina", "WART",
-                                      "Hora de verano de Argentina", "WARST"};
+        String WART[] = new String[] {"Hora de Argentina Occidental", "WART",
+                                      "Hora de verano de Argentina Occidental", "WARST"};
         String WAT[] = new String[] {"Hora de \u00c1frica Occidental", "WAT",
                                      "Hora de verano de \u00c1frica Occidental", "WAST"};
         String WET[] = new String[] {"Hora de Europa Occidental", "WET",
@@ -384,6 +384,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"America/Manaus", AMT},
             {"America/Marigot", AST},
             {"America/Martinique", AST},
+            {"America/Matamoros", CST},
             {"America/Mazatlan", MST},
             {"America/Mendoza", AGT},
             {"America/Menominee", CST},
@@ -403,6 +404,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"America/Noronha", NORONHA},
             {"America/North_Dakota/Center", CST},
             {"America/North_Dakota/New_Salem", CST},
+            {"America/Ojinaga", MST},
             {"America/Panama", EST},
             {"America/Pangnirtung", EST},
             {"America/Paramaribo", new String[] {"Hora de Surinam", "SRT",
@@ -419,6 +421,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"America/Resolute", RST},
             {"America/Rio_Branco", AMT},
             {"America/Rosario", AGT},
+            {"America/Santa_Isabel", PST},
             {"America/Santarem", BRT},
             {"America/Santiago", CLT},
             {"America/Santo_Domingo", AST},
@@ -595,8 +598,8 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"Australia/Canberra", EST_NSW},
             {"Australia/Currie", EST_NSW},
             {"Australia/Darwin", DARWIN},
-            {"Australia/Eucla", new String[] {"Central Western Standard Time (Australia)", "CWST",
-                                              "Central Western Summer Time (Australia)", "CWST"}},
+            {"Australia/Eucla", new String[] {"Hora est\u00e1ndar de Australia Central y Occidental", "CWST",
+                                              "Hora de verano de Australia Central y Occidental", "CWST"}},
             {"Australia/Hobart", TASMANIA},
             {"Australia/LHI", LORD_HOWE},
             {"Australia/Lindeman", BRISBANE},

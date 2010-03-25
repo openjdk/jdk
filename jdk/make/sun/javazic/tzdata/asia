@@ -218,6 +218,41 @@ Zone	Asia/Bahrain	3:22:20 -	LMT	1920		# Al Manamah
 # http://www.thaindian.com/newsportal/business/bangladesh-to-continue-indefinitely-with-advanced-time_100259987.html
 # </a>
 
+# From Alexander Krivenyshev (2009-12-24):
+# According to Bangladesh newspaper "The Daily Star,"
+# Bangladesh will change its clock back to Standard Time on Dec 31, 2009.
+#
+# Clock goes back 1-hr on Dec 31 night.
+# <a href="http://www.thedailystar.net/newDesign/news-details.php?nid=119228">
+# http://www.thedailystar.net/newDesign/news-details.php?nid=119228
+# </a>
+# and
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_bangladesh05.html">
+# http://www.worldtimezone.com/dst_news/dst_news_bangladesh05.html
+# </a>
+#
+# "...The government yesterday decided to put the clock back by one hour
+# on December 31 midnight and the new time will continue until March 31,
+# 2010 midnight. The decision came at a cabinet meeting at the Prime
+# Minister's Office last night..."
+
+# From Danvin Ruangchan (2009-12-24):
+# ...the news mentions DST will be turned off again 7 months after March
+# 31st on Oct 31, 2010.
+
+# From Arthur David Olson (2009-12-26):
+# Indeed, "The government will advance again the Banglasdesh Standard
+# Time by one one hour on March 31 next year by enforcing the Daylight
+# Saving Time (DST) for seven months. It will continue till October 31
+# until further notice." I take that last sentence as the
+# establishment of a rule.
+
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Dhaka	2009	only	-	Jun	19	23:00	1:00	S
+Rule	Dhaka	2010	only	-	Jan	1	0:00	0	-
+Rule	Dhaka	2010	max	-	Mar	31	23:00	1:00	S
+Rule	Dhaka	2010	max	-	Nov	1	0:00	0	-
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dhaka	6:01:40 -	LMT	1890
 			5:53:20	-	HMT	1941 Oct    # Howrah Mean Time?
@@ -225,8 +260,8 @@ Zone	Asia/Dhaka	6:01:40 -	LMT	1890
 			5:30	-	IST	1942 Sep
 			6:30	-	BURT	1951 Sep 30
 			6:00	-	DACT	1971 Mar 26 # Dacca Time
-			6:00	-	BDT	2009 Jun 19 23:00 # Bangladesh Time
-			6:00	1:00	BDST
+			6:00	-	BDT	2009
+			6:00	Dhaka	BD%sT
 
 # Bhutan
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -385,6 +420,69 @@ Zone	Asia/Urumqi	5:50:20	-	LMT	1928 # or Urumchi
 # West Xinjiang, including Aksu, Atushi, Yining, Hetian, Cele, Luopu, Nileke,
 # Zhaosu, Tekesi, Gongliu, Chabuchaer, Huocheng, Bole, Pishan, Suiding,
 # and Yarkand.
+
+# From Luther Ma (2009-10-17):
+# Almost all (>99.9%) ethnic Chinese (properly ethnic Han) living in
+# Xinjiang use Chinese Standard Time. Some are aware of Xinjiang time,
+# but have no need of it. All planes, trains, and schools function on
+# what is called "Beijing time." When Han make an appointment in Chinese
+# they implicitly use Beijing time.
+#
+# On the other hand, ethnic Uyghurs, who make up about half the
+# population of Xinjiang, typically use "Xinjiang time" which is two
+# hours behind Beijing time, or UTC +0600. The government of the Xinjiang
+# Uyghur Autonomous Region, (XAUR, or just Xinjiang for short) as well as
+# local governments such as the Urumqi city government use both times in
+# publications, referring to what is popularly called Xinjiang time as
+# "Urumqi time." When Uyghurs make an appointment in the Uyghur language
+# they almost invariably use Xinjiang time.
+#
+# (Their ethnic Han compatriots would typically have no clue of its
+# widespread use, however, because so extremely few of them are fluent in
+# Uyghur, comparable to the number of Anglo-Americans fluent in Navajo.)
+#
+# (...As with the rest of China there was a brief interval ending in 1990
+# or 1991 when summer time was in use.  The confusion was severe, with
+# the province not having dual times but four times in use at the same
+# time. Some areas remained on standard Xinjiang time or Beijing time and
+# others moving their clocks ahead.)
+#
+# ...an example of an official website using of Urumqi time.
+#
+# The first few lines of the Google translation of
+# <a href="http://www.fjysgl.gov.cn/show.aspx?id=2379&cid=39">
+# http://www.fjysgl.gov.cn/show.aspx?id=2379&cid=39
+# </a>
+# (retrieved 2009-10-13)
+# > Urumqi fire seven people are missing the alleged losses of at least
+# > 500 million yuan
+# >
+# > (Reporter Dong Liu) the day before 20:20 or so (Urumqi Time 18:20),
+# > Urumqi City Department of International Plaza Luther Qiantang River
+# > burst fire. As of yesterday, 18:30, Urumqi City Fire officers and men
+# > have worked continuously for 22 hours...
+
+# From Luther Ma (2009-11-19):
+# With the risk of being redundant to previous answers these are the most common
+# English "transliterations" (w/o using non-English symbols):
+#
+# 1. Wulumuqi...
+# 2. Kashi...
+# 3. Urumqi...
+# 4. Kashgar...
+# ...
+# 5. It seems that Uyghurs in Urumqi has been using Xinjiang since at least the
+# 1960's. I know of one Han, now over 50, who grew up in the surrounding
+# countryside and used Xinjiang time as a child.
+#
+# 6. Likewise for Kashgar and the rest of south Xinjiang I don't know of any
+# start date for Xinjiang time.
+#
+# Without having access to local historical records, nor the ability to legally
+# publish them, I would go with October 1, 1949, when Xinjiang became the Uyghur
+# Autonomous Region under the PRC. (Before that Uyghurs, of course, would also
+# not be using Beijing time, but some local time.)
+
 Zone	Asia/Kashgar	5:03:56	-	LMT	1928 # or Kashi or Kaxgar
 			5:30	-	KAST	1940	 # Kashgar Time
 			5:00	-	KAST	1980 May
@@ -392,8 +490,8 @@ Zone	Asia/Kashgar	5:03:56	-	LMT	1928 # or Kashi or Kaxgar
 
 
 # From Lee Yiu Chung (2009-10-24):
-# I found there are some mistakes for the historial DST rule for Hong
-# Kong. Accoring to the DST record from Hong Kong Observatory (actually,
+# I found there are some mistakes for the...DST rule for Hong
+# Kong. [According] to the DST record from Hong Kong Observatory (actually,
 # it is not [an] observatory, but the official meteorological agency of HK,
 # and also serves as the official timing agency), there are some missing
 # and incorrect rules. Although the exact switch over time is missing, I

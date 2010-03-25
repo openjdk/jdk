@@ -24,7 +24,7 @@
 /**
  * @test
  * @test 4422738
- * @compile -source 1.4 -target 1.4 InvalidParameters.java
+ * @compile -source 1.4 InvalidParameters.java
  * @run main InvalidParameters
  * @summary Make sure PKIXBuilderParameters(Set) detects invalid
  *          parameters and throws correct exceptions

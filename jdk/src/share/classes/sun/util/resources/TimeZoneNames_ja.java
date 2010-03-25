@@ -83,8 +83,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                      "\u4e2d\u90e8\u590f\u6642\u9593", "CDT"};
         String CTT[] = new String[] {"\u4e2d\u56fd\u6a19\u6e96\u6642", "CST",
                                      "\u4e2d\u56fd\u590f\u6642\u9593", "CDT"};
-        String CUBA[] = new String[] {"Cuba Standard Time", "CST",
-                                      "Cuba Daylight Time", "CDT"};
+        String CUBA[] = new String[] {"\u30ad\u30e5\u30fc\u30d0\u6a19\u6e96\u6642", "CST",
+                                      "\u30ad\u30e5\u30fc\u30d0\u590f\u6642\u9593", "CDT"};
         String DARWIN[] = new String[] {"\u4e2d\u90e8\u6a19\u6e96\u6642 (\u30ce\u30fc\u30b6\u30f3\u30c6\u30ea\u30c8\u30ea\u30fc)", "CST",
                                         "\u4e2d\u90e8\u590f\u6642\u9593 (\u30ce\u30fc\u30b6\u30f3\u30c6\u30ea\u30c8\u30ea\u30fc)", "CST"};
         String DUBLIN[] = new String[] {"\u30b0\u30ea\u30cb\u30c3\u30b8\u6a19\u6e96\u6642", "GMT",
@@ -173,8 +173,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                       "\u30c8\u30e9\u30c3\u30af\u590f\u6642\u9593", "TRUST"};
         String ULAT[]= new String[] {"\u30a6\u30e9\u30fc\u30f3\u30d0\u30fc\u30c8\u30eb\u6642\u9593", "ULAT",
                                      "\u30a6\u30e9\u30fc\u30f3\u30d0\u30fc\u30c8\u30eb\u590f\u6642\u9593", "ULAST"};
-        String WART[] = new String[] {"\u30a2\u30eb\u30bc\u30f3\u30c1\u30f3\u6642\u9593", "WART",
-                                      "\u30a2\u30eb\u30bc\u30f3\u30c1\u30f3\u590f\u6642\u9593", "WARST"};
+        String WART[] = new String[] {"\u897f\u30a2\u30eb\u30bc\u30f3\u30c1\u30f3\u6642\u9593", "WART",
+                                      "\u897f\u30a2\u30eb\u30bc\u30f3\u30c1\u30f3\u590f\u6642\u9593", "WARST"};
         String WAT[] = new String[] {"\u897f\u30a2\u30d5\u30ea\u30ab\u6642\u9593", "WAT",
                                      "\u897f\u30a2\u30d5\u30ea\u30ab\u590f\u6642\u9593", "WAST"};
         String WET[] = new String[] {"\u897f\u30e8\u30fc\u30ed\u30c3\u30d1\u6642\u9593", "WET",
@@ -384,6 +384,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Manaus", AMT},
             {"America/Marigot", AST},
             {"America/Martinique", AST},
+            {"America/Matamoros", CST},
             {"America/Mazatlan", MST},
             {"America/Mendoza", AGT},
             {"America/Menominee", CST},
@@ -403,6 +404,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Noronha", NORONHA},
             {"America/North_Dakota/Center", CST},
             {"America/North_Dakota/New_Salem", CST},
+            {"America/Ojinaga", MST},
             {"America/Panama", EST},
             {"America/Pangnirtung", EST},
             {"America/Paramaribo", new String[] {"\u30b9\u30ea\u30ca\u30e0\u6642\u9593", "SRT",
@@ -419,6 +421,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Resolute", RST},
             {"America/Rio_Branco", AMT},
             {"America/Rosario", AGT},
+            {"America/Santa_Isabel", PST},
             {"America/Santarem", BRT},
             {"America/Santiago", CLT},
             {"America/Santo_Domingo", AST},
@@ -594,8 +597,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Australia/Canberra", EST_NSW},
             {"Australia/Currie", EST_NSW},
             {"Australia/Darwin", DARWIN},
-            {"Australia/Eucla", new String[] {"Central Western Standard Time (Australia)", "CWST",
-                                              "Central Western Summer Time (Australia)", "CWST"}},
+            {"Australia/Eucla", new String[] {"\u4e2d\u897f\u90e8\u6a19\u6e96\u6642 (\u30aa\u30fc\u30b9\u30c8\u30e9\u30ea\u30a2)", "CWST",
+                                              "\u4e2d\u897f\u90e8\u590f\u6642\u9593 (\u30aa\u30fc\u30b9\u30c8\u30e9\u30ea\u30a2)", "CWST"}},
             {"Australia/Hobart", TASMANIA},
             {"Australia/LHI", LORD_HOWE},
             {"Australia/Lindeman", BRISBANE},

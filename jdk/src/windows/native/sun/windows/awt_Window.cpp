@@ -163,9 +163,11 @@ jfieldID AwtWindow::sysXID;
 jfieldID AwtWindow::sysYID;
 jfieldID AwtWindow::sysWID;
 jfieldID AwtWindow::sysHID;
+jfieldID AwtWindow::windowTypeID;
 
 jmethodID AwtWindow::getWarningStringMID;
 jmethodID AwtWindow::calculateSecurityWarningPositionMID;
+jmethodID AwtWindow::windowTypeNameMID;
 
 int AwtWindow::ms_instanceCounter = 0;
 HHOOK AwtWindow::ms_hCBTFilter;
@@ -216,6 +218,9 @@ AwtWindow::AwtWindow() {
     hContentBitmap = NULL;
 
     ::InitializeCriticalSection(&contentBitmapCS);
+
+    m_windowType = Type::NORMAL;
+    m_alwaysOnTop = false;
 }
 
 AwtWindow::~AwtWindow()
@@ -348,10 +353,10 @@ void AwtWindow::RepositionSecurityWarning(JNIEnv *env)
     RECT rect;
     CalculateWarningWindowBounds(env, &rect);
 
-    ::SetWindowPos(warningWindow, HWND_NOTOPMOST,
+    ::SetWindowPos(warningWindow, IsAlwaysOnTop() ? HWND_TOPMOST : GetHWnd(),
             rect.left, rect.top,
             rect.right - rect.left, rect.bottom - rect.top,
-            SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOZORDER |
+            SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE |
             SWP_NOOWNERZORDER
             );
 }
@@ -474,6 +479,9 @@ void AwtWindow::CreateHWnd(JNIEnv *env, LPCWSTR title,
         env->DeleteLocalRef(javaWarningString);
     }
     env->DeleteLocalRef(target);
+
+    InitType(env, peer);
+    TweakStyle(windowStyle, windowExStyle);
 
     AwtCanvas::CreateHWnd(env, title,
             windowStyle,
@@ -645,7 +653,10 @@ void AwtWindow::UnregisterWarningWindowClass()
 
 HICON AwtWindow::GetSecurityWarningIcon()
 {
-    HICON ico = AwtToolkit::GetInstance().GetSecurityWarningIcon(securityWarningAnimationStage,
+    // It is assumed that the icon at index 0 is gray
+    const UINT index = securityAnimationKind == akShow ?
+        securityWarningAnimationStage : 0;
+    HICON ico = AwtToolkit::GetInstance().GetSecurityWarningIcon(index,
             warningWindowWidth, warningWindowHeight);
     return ico;
 }
@@ -821,7 +832,9 @@ void AwtWindow::StartSecurityAnimation(AnimationKind kind)
             securityAnimationTimerElapse, NULL);
 
     if (securityAnimationKind == akShow) {
-        ::SetWindowPos(warningWindow, HWND_NOTOPMOST, 0, 0, 0, 0,
+        ::SetWindowPos(warningWindow,
+                IsAlwaysOnTop() ? HWND_TOPMOST : GetHWnd(),
+                0, 0, 0, 0,
                 SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE |
                 SWP_SHOWWINDOW | SWP_NOOWNERZORDER);
 
@@ -980,6 +993,50 @@ void AwtWindow::_RepositionSecurityWarning(void* param)
   ret:
     env->DeleteGlobalRef(self);
     delete rsws;
+}
+
+void AwtWindow::InitType(JNIEnv *env, jobject peer)
+{
+    jobject type = env->GetObjectField(peer, windowTypeID);
+    if (type == NULL) {
+        return;
+    }
+
+    jstring value = (jstring)env->CallObjectMethod(type, windowTypeNameMID);
+    if (value == NULL) {
+        env->DeleteLocalRef(type);
+        return;
+    }
+
+    const char* valueNative = env->GetStringUTFChars(value, 0);
+    if (valueNative == NULL) {
+        env->DeleteLocalRef(value);
+        env->DeleteLocalRef(type);
+        return;
+    }
+
+    if (strcmp(valueNative, "UTILITY") == 0) {
+        m_windowType = Type::UTILITY;
+    } else if (strcmp(valueNative, "POPUP") == 0) {
+        m_windowType = Type::POPUP;
+    }
+
+    env->ReleaseStringUTFChars(value, valueNative);
+    env->DeleteLocalRef(value);
+    env->DeleteLocalRef(type);
+}
+
+void AwtWindow::TweakStyle(DWORD & style, DWORD & exStyle)
+{
+    switch (GetType()) {
+        case Type::UTILITY:
+            exStyle |= WS_EX_TOOLWINDOW;
+            break;
+        case Type::POPUP:
+            style &= ~WS_OVERLAPPED;
+            style |= WS_POPUP;
+            break;
+    }
 }
 
 /* Create a new AwtWindow object and window.   */
@@ -2216,6 +2273,7 @@ void AwtWindow::_SetAlwaysOnTop(void *param)
     if (::IsWindow(w->GetHWnd()))
     {
         w->SendMessage(WM_AWT_SETALWAYSONTOP, (WPARAM)value, (LPARAM)w);
+        w->m_alwaysOnTop = (bool)value;
     }
 ret:
     env->DeleteGlobalRef(self);
@@ -3008,6 +3066,11 @@ Java_java_awt_Window_initIDs(JNIEnv *env, jclass cls)
     AwtWindow::calculateSecurityWarningPositionMID =
         env->GetMethodID(cls, "calculateSecurityWarningPosition", "(DDDD)Ljava/awt/geom/Point2D;");
 
+    jclass windowTypeClass = env->FindClass("java/awt/Window$Type");
+    AwtWindow::windowTypeNameMID =
+        env->GetMethodID(windowTypeClass, "name", "()Ljava/lang/String;");
+    env->DeleteLocalRef(windowTypeClass);
+
     CATCH_BAD_ALLOC;
 }
 
@@ -3034,6 +3097,9 @@ Java_sun_awt_windows_WWindowPeer_initIDs(JNIEnv *env, jclass cls)
     AwtWindow::sysYID = env->GetFieldID(cls, "sysY", "I");
     AwtWindow::sysWID = env->GetFieldID(cls, "sysW", "I");
     AwtWindow::sysHID = env->GetFieldID(cls, "sysH", "I");
+
+    AwtWindow::windowTypeID = env->GetFieldID(cls, "windowType",
+            "Ljava/awt/Window$Type;");
 
     CATCH_BAD_ALLOC;
 }
