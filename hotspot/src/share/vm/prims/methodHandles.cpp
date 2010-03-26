@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,10 @@ const char*        MethodHandles::_entry_names[_EK_LIMIT+1] = {
   NULL
 };
 
+// Adapters.
+MethodHandlesAdapterBlob* MethodHandles::_adapter_code      = NULL;
+int                       MethodHandles::_adapter_code_size = StubRoutines::method_handles_adapters_code_size;
+
 jobject MethodHandles::_raise_exception_method;
 
 #ifdef ASSERT
@@ -94,6 +98,41 @@ bool MethodHandles::spot_check_entry_names() {
   return true;
 }
 #endif
+
+
+//------------------------------------------------------------------------------
+// MethodHandles::generate_adapters
+//
+void MethodHandles::generate_adapters() {
+  if (!EnableMethodHandles || SystemDictionary::MethodHandle_klass() == NULL)  return;
+
+  assert(_adapter_code == NULL, "generate only once");
+
+  ResourceMark rm;
+  TraceTime timer("MethodHandles adapters generation", TraceStartupTime);
+  _adapter_code = MethodHandlesAdapterBlob::create(_adapter_code_size);
+  if (_adapter_code == NULL)
+    vm_exit_out_of_memory(_adapter_code_size, "CodeCache: no room for MethodHandles adapters");
+  CodeBuffer code(_adapter_code->instructions_begin(), _adapter_code->instructions_size());
+
+  MethodHandlesAdapterGenerator g(&code);
+  g.generate();
+}
+
+
+//------------------------------------------------------------------------------
+// MethodHandlesAdapterGenerator::generate
+//
+void MethodHandlesAdapterGenerator::generate() {
+  // Generate generic method handle adapters.
+  for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
+       ek < MethodHandles::_EK_LIMIT;
+       ek = MethodHandles::EntryKind(1 + (int)ek)) {
+    StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
+    MethodHandles::generate_method_handle_stub(_masm, ek);
+  }
+}
+
 
 void MethodHandles::set_enabled(bool z) {
   if (_enabled != z) {

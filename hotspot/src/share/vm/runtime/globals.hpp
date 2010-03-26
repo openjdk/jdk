@@ -1795,6 +1795,10 @@ class CommandLineFlags {
   product(uintx, PreserveMarkStackSize, 1024,                               \
           "Size for stack used in promotion failure handling")              \
                                                                             \
+  develop(uintx, ObjArrayMarkingStride, 512,                                \
+          "Number of ObjArray elements to push onto the marking stack"      \
+          "before pushing a continuation entry")                            \
+                                                                            \
   product_pd(bool, UseTLAB, "Use thread-local object allocation")           \
                                                                             \
   product_pd(bool, ResizeTLAB,                                              \

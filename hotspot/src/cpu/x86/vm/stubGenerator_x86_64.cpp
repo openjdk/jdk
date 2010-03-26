@@ -466,7 +466,7 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("call exception_handler_for_return_address");
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
-                    c_rarg0);
+                    r15_thread, c_rarg0);
     __ mov(rbx, rax);
 
     // setup rax & rdx, remove return address & clear pending exception
@@ -3008,16 +3008,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
-
-    // generic method handle stubs
-    if (EnableMethodHandles && SystemDictionary::MethodHandle_klass() != NULL) {
-      for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
-           ek < MethodHandles::_EK_LIMIT;
-           ek = MethodHandles::EntryKind(1 + (int)ek)) {
-        StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
-        MethodHandles::generate_method_handle_stub(_masm, ek);
-      }
-    }
 
     generate_math_stubs();
   }

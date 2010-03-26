@@ -988,10 +988,12 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
     }
     if (method->is_not_compilable(comp_level)) return NULL;
 
-    nmethod* saved = CodeCache::find_and_remove_saved_code(method());
-    if (saved != NULL) {
-      method->set_code(method, saved);
-      return saved;
+    if (UseCodeCacheFlushing) {
+      nmethod* saved = CodeCache::find_and_remove_saved_code(method());
+      if (saved != NULL) {
+        method->set_code(method, saved);
+        return saved;
+      }
     }
 
   } else {

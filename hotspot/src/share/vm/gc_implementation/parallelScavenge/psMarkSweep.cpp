@@ -479,6 +479,7 @@ void PSMarkSweep::allocate_stacks() {
   _preserved_oop_stack = NULL;
 
   _marking_stack = new (ResourceObj::C_HEAP) GrowableArray<oop>(4000, true);
+  _objarray_stack = new (ResourceObj::C_HEAP) GrowableArray<ObjArrayTask>(50, true);
 
   int size = SystemDictionary::number_of_classes() * 2;
   _revisit_klass_stack = new (ResourceObj::C_HEAP) GrowableArray<Klass*>(size, true);
@@ -497,6 +498,7 @@ void PSMarkSweep::deallocate_stacks() {
   }
 
   delete _marking_stack;
+  delete _objarray_stack;
   delete _revisit_klass_stack;
   delete _revisit_mdo_stack;
 }

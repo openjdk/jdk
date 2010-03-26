@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Map.Entry;
 
 /**
  * The FeatureDescriptor class is the common baseclass for PropertyDescriptor,
@@ -393,4 +394,52 @@ public class FeatureDescriptor {
     private String name;
     private String displayName;
     private Hashtable<String, Object> table;
+
+    /**
+     * Returns a string representation of the object.
+     *
+     * @return a string representation of the object
+     *
+     * @since 1.7
+     */
+    public String toString() {
+        StringBuilder sb = new StringBuilder(getClass().getName());
+        sb.append("[name=").append(this.name);
+        appendTo(sb, "displayName", this.displayName);
+        appendTo(sb, "shortDescription", this.shortDescription);
+        appendTo(sb, "preferred", this.preferred);
+        appendTo(sb, "hidden", this.hidden);
+        appendTo(sb, "expert", this.expert);
+        if ((this.table != null) && !this.table.isEmpty()) {
+            sb.append("; values={");
+            for (Entry<String, Object> entry : this.table.entrySet()) {
+                sb.append(entry.getKey()).append("=").append(entry.getValue()).append("; ");
+            }
+            sb.setLength(sb.length() - 2);
+            sb.append("}");
+        }
+        appendTo(sb);
+        return sb.append("]").toString();
+    }
+
+    void appendTo(StringBuilder sb) {
+    }
+
+    static void appendTo(StringBuilder sb, String name, Reference reference) {
+        if (reference != null) {
+            appendTo(sb, name, reference.get());
+        }
+    }
+
+    static void appendTo(StringBuilder sb, String name, Object value) {
+        if (value != null) {
+            sb.append("; ").append(name).append("=").append(value);
+        }
+    }
+
+    static void appendTo(StringBuilder sb, String name, boolean value) {
+        if (value) {
+            sb.append("; ").append(name);
+        }
+    }
 }

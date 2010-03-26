@@ -369,7 +369,7 @@ class StubGenerator: public StubCodeGenerator {
   // The pending exception in Thread is converted into a Java-level exception.
   //
   // Contract with Java-level exception handlers:
-  // rax,: exception
+  // rax: exception
   // rdx: throwing pc
   //
   // NOTE: At entry of this stub, exception-pc must be on stack !!
@@ -377,6 +377,12 @@ class StubGenerator: public StubCodeGenerator {
   address generate_forward_exception() {
     StubCodeMark mark(this, "StubRoutines", "forward exception");
     address start = __ pc();
+    const Register thread = rcx;
+
+    // other registers used in this stub
+    const Register exception_oop = rax;
+    const Register handler_addr  = rbx;
+    const Register exception_pc  = rdx;
 
     // Upon entry, the sp points to the return address returning into Java
     // (interpreted or compiled) code; i.e., the return address becomes the
@@ -389,8 +395,8 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef ASSERT
     // make sure this code is only executed if there is a pending exception
     { Label L;
-      __ get_thread(rcx);
-      __ cmpptr(Address(rcx, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+      __ get_thread(thread);
+      __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
       __ jcc(Assembler::notEqual, L);
       __ stop("StubRoutines::forward exception: no pending exception (1)");
       __ bind(L);
@@ -398,33 +404,40 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     // compute exception handler into rbx,
-    __ movptr(rax, Address(rsp, 0));
+    __ get_thread(thread);
+    __ movptr(exception_pc, Address(rsp, 0));
     BLOCK_COMMENT("call exception_handler_for_return_address");
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rax);
-    __ mov(rbx, rax);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), thread, exception_pc);
+    __ mov(handler_addr, rax);
 
-    // setup rax, & rdx, remove return address & clear pending exception
-    __ get_thread(rcx);
-    __ pop(rdx);
-    __ movptr(rax, Address(rcx, Thread::pending_exception_offset()));
-    __ movptr(Address(rcx, Thread::pending_exception_offset()), NULL_WORD);
+    // setup rax & rdx, remove return address & clear pending exception
+    __ get_thread(thread);
+    __ pop(exception_pc);
+    __ movptr(exception_oop, Address(thread, Thread::pending_exception_offset()));
+    __ movptr(Address(thread, Thread::pending_exception_offset()), NULL_WORD);
 
 #ifdef ASSERT
     // make sure exception is set
     { Label L;
-      __ testptr(rax, rax);
+      __ testptr(exception_oop, exception_oop);
       __ jcc(Assembler::notEqual, L);
       __ stop("StubRoutines::forward exception: no pending exception (2)");
       __ bind(L);
     }
 #endif
 
+    // Verify that there is really a valid exception in RAX.
+    __ verify_oop(exception_oop);
+
+    // Restore SP from BP if the exception PC is a MethodHandle call site.
+    __ cmpl(Address(thread, JavaThread::is_method_handle_exception_offset()), 0);
+    __ cmovptr(Assembler::notEqual, rsp, rbp);
+
     // continue at exception handler (return address removed)
-    // rax,: exception
-    // rbx,: exception handler
+    // rax: exception
+    // rbx: exception handler
     // rdx: throwing pc
-    __ verify_oop(rax);
-    __ jmp(rbx);
+    __ jmp(handler_addr);
 
     return start;
   }
@@ -2262,16 +2275,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
-
-    // generic method handle stubs
-    if (EnableMethodHandles && SystemDictionary::MethodHandle_klass() != NULL) {
-      for (MethodHandles::EntryKind ek = MethodHandles::_EK_FIRST;
-           ek < MethodHandles::_EK_LIMIT;
-           ek = MethodHandles::EntryKind(1 + (int)ek)) {
-        StubCodeMark mark(this, "MethodHandle", MethodHandles::entry_name(ek));
-        MethodHandles::generate_method_handle_stub(_masm, ek);
-      }
-    }
 
     generate_math_stubs();
   }

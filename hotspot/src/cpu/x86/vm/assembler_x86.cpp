@@ -8460,6 +8460,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
   subptr(str1, result); // Restore counter
   shrl(str1, 1);
   addl(cnt1, str1);
+  decrementl(cnt1);
   lea(str1, Address(result, 2)); // Reload string
 
   // Load substr

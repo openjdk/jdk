@@ -1135,7 +1135,7 @@ public class ClassReader implements Completer {
         self.name = simpleBinaryName(self.flatname, c.flatname) ;
         self.owner = m != null ? m : c;
         if (self.name.isEmpty())
-            self.fullname = null;
+            self.fullname = names.empty;
         else
             self.fullname = ClassSymbol.formFullName(self.name, self.owner);
 
