@@ -30,6 +30,8 @@
  * @compile ThrowsIntersection_2.java
  */
 
+package ThrowsIntersection_2;
+
 class Ex1 extends Exception {}
 class Ex2 extends Exception {}
 class Ex3 extends Exception {}

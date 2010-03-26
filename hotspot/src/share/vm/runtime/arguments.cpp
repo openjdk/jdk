@@ -1346,9 +1346,7 @@ void Arguments::set_g1_gc_flags() {
   }
 
   if (FLAG_IS_DEFAULT(MarkStackSize)) {
-    // Size as a multiple of TaskQueueSuper::N which is larger
-    // for 64-bit.
-    FLAG_SET_DEFAULT(MarkStackSize, 128 * TaskQueueSuper::total_size());
+    FLAG_SET_DEFAULT(MarkStackSize, 128 * TASKQUEUE_SIZE);
   }
   if (PrintGCDetails && Verbose) {
     tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
@@ -2858,6 +2856,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
   }
 #endif // _LP64
+
+  // MethodHandles code does not support TaggedStackInterpreter.
+  if (EnableMethodHandles && TaggedStackInterpreter) {
+    warning("TaggedStackInterpreter is not supported by MethodHandles code.  Disabling TaggedStackInterpreter.");
+    TaggedStackInterpreter = false;
+  }
 
   // Check the GC selections again.
   if (!check_gc_consistency()) {
