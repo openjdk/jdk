@@ -2397,8 +2397,8 @@ void G1CollectedHeap::verify(bool allow_dirty,
       print_on(gclog_or_tty, true /* extended */);
       gclog_or_tty->print_cr("");
       if (VerifyDuringGC && G1VerifyDuringGCPrintReachable) {
-        concurrent_mark()->print_reachable(use_prev_marking,
-                                           "failed-verification");
+        concurrent_mark()->print_reachable("at-verification-failure",
+                                           use_prev_marking, false /* all */);
       }
       gclog_or_tty->flush();
     }
@@ -3118,6 +3118,11 @@ void G1CollectedHeap::get_gc_alloc_regions() {
     } else {
       // the region was retained from the last collection
       ++_gc_alloc_region_counts[ap];
+      if (G1PrintHeapRegions) {
+        gclog_or_tty->print_cr("new alloc region %d:["PTR_FORMAT", "PTR_FORMAT"], "
+                               "top "PTR_FORMAT,
+                               alloc_region->hrs_index(), alloc_region->bottom(), alloc_region->end(), alloc_region->top());
+      }
     }
 
     if (alloc_region != NULL) {

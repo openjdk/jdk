@@ -2942,10 +2942,11 @@ record_concurrent_mark_cleanup_end(size_t freed_bytes,
 void G1CollectorPolicy::
 add_to_collection_set(HeapRegion* hr) {
   if (G1PrintHeapRegions) {
-    gclog_or_tty->print_cr("added region to cset %d:["PTR_FORMAT", "PTR_FORMAT"], "
-                  "top "PTR_FORMAT", young %s",
-                  hr->hrs_index(), hr->bottom(), hr->end(),
-                  hr->top(), (hr->is_young()) ? "YES" : "NO");
+    gclog_or_tty->print_cr("added region to cset "
+                           "%d:["PTR_FORMAT", "PTR_FORMAT"], "
+                           "top "PTR_FORMAT", %s",
+                           hr->hrs_index(), hr->bottom(), hr->end(),
+                           hr->top(), hr->is_young() ? "YOUNG" : "NOT_YOUNG");
   }
 
   if (_g1->mark_in_progress())
