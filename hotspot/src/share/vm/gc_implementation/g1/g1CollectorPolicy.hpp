@@ -215,6 +215,8 @@ protected:
   SurvRateGroup*        _survivor_surv_rate_group;
   // add here any more surv rate groups
 
+  double                _gc_overhead_perc;
+
   bool during_marking() {
     return _during_marking;
   }

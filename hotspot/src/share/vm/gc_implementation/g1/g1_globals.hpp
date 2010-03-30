@@ -40,9 +40,6 @@
   develop(bool, G1Gen, true,                                                \
           "If true, it will enable the generational G1")                    \
                                                                             \
-  develop(intx, G1GCPercent, 10,                                            \
-          "The desired percent time spent on GC")                           \
-                                                                            \
   develop(intx, G1PolicyVerbose, 0,                                         \
           "The verbosity level on G1 policy decisions")                     \
                                                                             \
