@@ -236,42 +236,20 @@ Zone	Asia/Bahrain	3:22:20 -	LMT	1920		# Al Manamah
 # 2010 midnight. The decision came at a cabinet meeting at the Prime
 # Minister's Office last night..."
 
-# From Danvin Ruangchan (2009-12-24):
-# ...the news mentions DST will be turned off again 7 months after March
-# 31st on Oct 31, 2010.
-
-# From Arthur David Olson (2009-12-26):
-# Indeed, "The government will advance again the Banglasdesh Standard
-# Time by one one hour on March 31 next year by enforcing the Daylight
-# Saving Time (DST) for seven months. It will continue till October 31
-# until further notice." I take that last sentence as the
-# establishment of a rule.
-
-# From Nobutomo Nakano (2010-02-19):
-# We received a report from Bangladesh saying that the start/end of
-# Bangladesh DST is incorrect. Currently we have only the Bengali version
-# of the official mail from BTRC which describes the following:
-#
-# "From 2010 each year when local standard time is about to reach
-# March 31 at 10:59:00 PM clocks are turned forward 1 hour (11:59:00 PM)
-# and when local daylight time is about to October 31 at 11:59:00 PM
-# clocks are turned backward 1 hour (10:59:00 PM)."
-#
-# So, DST will start/end 1 minute earlier.
-
-# From Arthur David Olson (2010-03-03):
-# The file
-# <a href=http://www.cabinet.gov/bd/file_upload/news_events/en_169.pdf>
-# http://www.cabinet.gov/bd/file_upload/news_events/en_169.pdf
+# From Alexander Krivenyshev (2010-03-22):
+# According to Bangladesh newspaper "The Daily Star,"
+# Cabinet cancels Daylight Saving Time 
+# <a href="http://www.thedailystar.net/newDesign/latest_news.php?nid=22817">
+# http://www.thedailystar.net/newDesign/latest_news.php?nid=22817
 # </a>
-# is in Bengali; it does contain two "31"s as well as two "11.59"s and a "10.59"
-# which is consistent with the information provided by Nobutomo Nakano.
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_bangladesh06.html">
+# http://www.worldtimezone.com/dst_news/dst_news_bangladesh06.html
+# </a>
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Dhaka	2009	only	-	Jun	19	23:00	1:00	S
 Rule	Dhaka	2009	only	-	Dec	31	23:59	0	-
-Rule	Dhaka	2010	max	-	Mar	31	22:59	1:00	S
-Rule	Dhaka	2010	max	-	Oct	31	23:59	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dhaka	6:01:40 -	LMT	1890
@@ -2151,6 +2129,32 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # http://www.worldtimezone.com/dst_news/dst_news_gazastrip02.html
 # </a>
 
+# From Alexander Krivenyshev (2010-03-19):
+# According to Voice of Palestine DST will last for 191 days, from March
+# 26, 2010 till "the last Sunday before the tenth day of Tishri
+# (October), each year" (October 03, 2010?)
+#
+# <a href="http://palvoice.org/forums/showthread.php?t=245697">
+# http://palvoice.org/forums/showthread.php?t=245697
+# </a>
+# (in Arabic)
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_westbank03.html">
+# http://www.worldtimezone.com/dst_news/dst_news_westbank03.html
+# </a>
+
+# From Steffen Thorsen (2010-03-24):
+# ...Ma'an News Agency reports that Hamas cabinet has decided it will
+# start one day later, at 12:01am. Not sure if they really mean 12:01am or
+# noon though:
+#
+# <a href="http://www.maannews.net/eng/ViewDetails.aspx?ID=271178">
+# http://www.maannews.net/eng/ViewDetails.aspx?ID=271178
+# </a>
+# (Ma'an News Agency)
+# "At 12:01am Friday, clocks in Israel and the West Bank will change to
+# 1:01am, while Gaza clocks will change at 12:01am Saturday morning."
+
 # The rules for Egypt are stolen from the `africa' file.
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -2168,7 +2172,8 @@ Rule Palestine	2006	2008	-	Apr	 1	0:00	1:00	S
 Rule Palestine	2006	only	-	Sep	22	0:00	0	-
 Rule Palestine	2007	only	-	Sep	Thu>=8	2:00	0	-
 Rule Palestine	2008	only	-	Aug	lastFri	2:00	0	-
-Rule Palestine	2009	max	-	Mar	lastFri	0:00	1:00	S
+Rule Palestine	2009	only	-	Mar	lastFri	0:00	1:00	S
+Rule Palestine	2010	max	-	Mar	lastSat	0:01	1:00	S
 Rule Palestine	2009	max	-	Sep	Fri>=1	2:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -2460,9 +2465,18 @@ Rule	Syria	2007	only	-	Nov	 Fri>=1	0:00	0	-
 # Thursday of the month or the start of the last Friday of the month or
 # something else. For now, use the start of the last Friday.
 
+# From Steffen Thorsen (2010-03-17):
+# The "Syrian News Station" reported on 2010-03-16 that the Council of
+# Ministers has decided that Syria will start DST on midnight Thursday
+# 2010-04-01: (midnight between Thursday and Friday):
+# <a href="http://sns.sy/sns/?path=news/read/11421">
+# http://sns.sy/sns/?path=news/read/11421 (Arabic)
+# </a>
+
 Rule	Syria	2008	only	-	Apr	Fri>=1	0:00	1:00	S
 Rule	Syria	2008	only	-	Nov	1	0:00	0	-
-Rule	Syria	2009	max	-	Mar	lastFri	0:00	1:00	S
+Rule	Syria	2009	only	-	Mar	lastFri	0:00	1:00	S
+Rule	Syria	2010	max	-	Apr	Fri>=1	0:00	1:00	S
 Rule	Syria	2009	max	-	Oct	lastFri	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
