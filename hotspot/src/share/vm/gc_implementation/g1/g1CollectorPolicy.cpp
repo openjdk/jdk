@@ -198,7 +198,9 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _recorded_survivor_regions(0),
   _recorded_survivor_head(NULL),
   _recorded_survivor_tail(NULL),
-  _survivors_age_table(true)
+  _survivors_age_table(true),
+
+  _gc_overhead_perc(0.0)
 
 {
   // Set up the region size and associated fields. Given that the
@@ -274,6 +276,11 @@ G1CollectorPolicy::G1CollectorPolicy() :
   // fixed, then _max_survivor_regions will be calculated at
   // calculate_young_list_target_config during initialization
   _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
+
+  assert(GCTimeRatio > 0,
+         "we should have set it to a default value set_g1_gc_flags() "
+         "if a user set it to 0");
+  _gc_overhead_perc = 100.0 * (1.0 / (1.0 + GCTimeRatio));
 
   initialize_all();
 }
@@ -2288,7 +2295,7 @@ G1CollectorPolicy::conservative_avg_survival_fraction_work(double avg,
 }
 
 size_t G1CollectorPolicy::expansion_amount() {
-  if ((int)(recent_avg_pause_time_ratio() * 100.0) > G1GCPercent) {
+  if ((recent_avg_pause_time_ratio() * 100.0) > _gc_overhead_perc) {
     // We will double the existing space, or take
     // G1ExpandByPercentOfAvailable % of the available expansion
     // space, whichever is smaller, bounded below by a minimum
