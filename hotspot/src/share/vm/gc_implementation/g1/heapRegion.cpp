@@ -75,6 +75,16 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
 
+  void print_object(outputStream* out, oop obj) {
+#ifdef PRODUCT
+    klassOop k = obj->klass();
+    const char* class_name = instanceKlass::cast(k)->external_name();
+    out->print_cr("class name %s", class_name);
+#else // PRODUCT
+    obj->print_on(out);
+#endif // PRODUCT
+  }
+
   template <class T> void do_oop_work(T* p) {
     assert(_containing_obj != NULL, "Precondition");
     assert(!_g1h->is_obj_dead_cond(_containing_obj, _use_prev_marking),
@@ -90,21 +100,29 @@ public:
           gclog_or_tty->print_cr("----------");
         }
         if (!_g1h->is_in_closed_subset(obj)) {
+          HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
           gclog_or_tty->print_cr("Field "PTR_FORMAT
-                        " of live obj "PTR_FORMAT
-                        " points to obj "PTR_FORMAT
-                        " not in the heap.",
-                        p, (void*) _containing_obj, (void*) obj);
+                                 " of live obj "PTR_FORMAT" in region "
+                                 "["PTR_FORMAT", "PTR_FORMAT")",
+                                 p, (void*) _containing_obj,
+                                 from->bottom(), from->end());
+          print_object(gclog_or_tty, _containing_obj);
+          gclog_or_tty->print_cr("points to obj "PTR_FORMAT" not in the heap",
+                                 (void*) obj);
         } else {
+          HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
+          HeapRegion* to   = _g1h->heap_region_containing((HeapWord*)obj);
           gclog_or_tty->print_cr("Field "PTR_FORMAT
-                        " of live obj "PTR_FORMAT
-                        " points to dead obj "PTR_FORMAT".",
-                        p, (void*) _containing_obj, (void*) obj);
+                                 " of live obj "PTR_FORMAT" in region "
+                                 "["PTR_FORMAT", "PTR_FORMAT")",
+                                 p, (void*) _containing_obj,
+                                 from->bottom(), from->end());
+          print_object(gclog_or_tty, _containing_obj);
+          gclog_or_tty->print_cr("points to dead obj "PTR_FORMAT" in region "
+                                 "["PTR_FORMAT", "PTR_FORMAT")",
+                                 (void*) obj, to->bottom(), to->end());
+          print_object(gclog_or_tty, obj);
         }
-        gclog_or_tty->print_cr("Live obj:");
-        _containing_obj->print_on(gclog_or_tty);
-        gclog_or_tty->print_cr("Bad referent:");
-        obj->print_on(gclog_or_tty);
         gclog_or_tty->print_cr("----------");
         _failures = true;
         failed = true;
@@ -723,6 +741,8 @@ void HeapRegion::print_on(outputStream* st) const {
   else
     st->print("  ");
   st->print(" %5d", _gc_time_stamp);
+  st->print(" PTAMS "PTR_FORMAT" NTAMS "PTR_FORMAT,
+            prev_top_at_mark_start(), next_top_at_mark_start());
   G1OffsetTableContigSpace::print_on(st);
 }
 
