@@ -25,15 +25,19 @@
 
 package sun.io;
 
-public class CharToByteMS950_HKSCS extends CharToByteHKSCS {
-    CharToByteMS950 cbMS950 = new CharToByteMS950();
+import sun.nio.cs.ext.DoubleByte;
+import sun.nio.cs.ext.MS950_HKSCS;
+
+public class CharToByteMS950_HKSCS extends CharToByteDBCS_ASCII {
+
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new MS950_HKSCS().newEncoder();
 
     public String getCharacterEncoding() {
         return "MS950_HKSCS";
     }
 
-    protected int getNative(char ch) {
-        int r = super.getNative(ch);
-        return (r != 0) ? r : cbMS950.encodeChar(ch);
+    public CharToByteMS950_HKSCS() {
+        super(enc);
     }
 }

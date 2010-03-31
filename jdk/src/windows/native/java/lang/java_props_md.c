@@ -451,7 +451,7 @@ getEncodingInternal(int index)
 {
     char * ret = encoding_names[langIDMap[index].encoding];
 
-    //Traditional Chinese Windows should use MS950_HKSCS as the
+    //Traditional Chinese Windows should use MS950_HKSCS_XP as the
     //default encoding, if HKSCS patch has been installed.
     // "old" MS950 0xfa41 -> u+e001
     // "new" MS950 0xfa41 -> u+92db
@@ -460,7 +460,7 @@ getEncodingInternal(int index)
         WCHAR  unicodeChar;
         MultiByteToWideChar(CP_ACP, 0, mbChar, 2, &unicodeChar, 1);
         if (unicodeChar == 0x92db) {
-            ret = "MS950_HKSCS";
+            ret = "MS950_HKSCS_XP";
         }
     } else {
         //SimpChinese Windows should use GB18030 as the default
@@ -650,6 +650,8 @@ GetJavaProperties(JNIEnv* env)
 {
     static java_props_t sprops = {0};
 
+    OSVERSIONINFOEX ver;
+
     if (sprops.user_dir) {
         return &sprops;
     }
@@ -676,10 +678,10 @@ GetJavaProperties(JNIEnv* env)
         sprops.font_dir = (path != 0) ? strdup(path) : NULL;
     }
 
+
     /* OS properties */
     {
         char buf[100];
-        OSVERSIONINFOEX ver;
         SYSTEM_INFO si;
         PGNSI pGNSI;
 
@@ -931,6 +933,17 @@ GetJavaProperties(JNIEnv* env)
                 sprops.sun_jnu_encoding = "Cp1252";
             } else {
                 sprops.sun_jnu_encoding = getEncodingInternal(index);
+            }
+            if (langID == 0x0c04 && ver.dwMajorVersion == 6) {
+                // MS claims "Vista has built-in support for HKSCS-2004.
+                // All of the HKSCS-2004 characters have Unicode 4.1.
+                // PUA code point assignments". But what it really means
+                // is that the HKSCS-2004 is ONLY supported in Unicode.
+                // Test indicates the MS950 in its zh_HK locale is a
+                // "regular" MS950 which does not handle HKSCS-2004 at
+                // all. Set encoding to MS950_HKSCS.
+                sprops.encoding = "MS950_HKSCS";
+                sprops.sun_jnu_encoding = "MS950_HKSCS";
             }
         }
     }
