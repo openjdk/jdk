@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2004 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,20 +31,16 @@ import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.HistoricallyNamedCharset;
 import static sun.nio.cs.CharsetMapping.*;
 
-public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset
+public class MS950_HKSCS_XP extends Charset
 {
-    public MS950_HKSCS() {
-        super("x-MS950-HKSCS", ExtendedCharsets.aliasesFor("x-MS950-HKSCS"));
-    }
-
-    public String historicalName() {
-        return "MS950_HKSCS";
+    public MS950_HKSCS_XP() {
+        super("x-MS950-HKSCS-XP", ExtendedCharsets.aliasesFor("x-MS950-HKSCS-XP"));
     }
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
                 || (cs instanceof MS950)
-                || (cs instanceof MS950_HKSCS));
+                || (cs instanceof MS950_HKSCS_XP));
     }
 
     public CharsetDecoder newDecoder() {
@@ -59,15 +55,25 @@ public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset
         private static DoubleByte.Decoder ms950 =
             (DoubleByte.Decoder)new MS950().newDecoder();
 
+        /*
+         * Note current decoder decodes 0x8BC2 --> U+F53A
+         * ie. maps to Unicode PUA.
+         * Unaccounted discrepancy between this mapping
+         * inferred from MS950/windows-950 and the published
+         * MS HKSCS mappings which maps 0x8BC2 --> U+5C22
+         * a character defined with the Unified CJK block
+         */
         private static char[][] b2cBmp = new char[0x100][];
-        private static char[][] b2cSupp = new char[0x100][];
         static {
-            initb2c(b2cBmp, HKSCSMapping.b2cBmpStr);
-            initb2c(b2cSupp, HKSCSMapping.b2cSuppStr);
+            initb2c(b2cBmp, HKSCS_XPMapping.b2cBmpStr);
+        }
+
+        public char decodeDoubleEx(int b1, int b2) {
+            return UNMAPPABLE_DECODING;
         }
 
         private Decoder(Charset cs) {
-            super(cs, ms950, b2cBmp, b2cSupp);
+            super(cs, ms950, b2cBmp, null);
         }
     }
 
@@ -75,15 +81,22 @@ public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset
         private static DoubleByte.Encoder ms950 =
             (DoubleByte.Encoder)new MS950().newEncoder();
 
+        /*
+         * Note current encoder encodes U+F53A --> 0x8BC2
+         * Published MS HKSCS mappings show
+         * U+5C22 <--> 0x8BC2
+         */
         static char[][] c2bBmp = new char[0x100][];
-        static char[][] c2bSupp = new char[0x100][];
         static {
-            initc2b(c2bBmp, HKSCSMapping.b2cBmpStr, HKSCSMapping.pua);
-            initc2b(c2bSupp, HKSCSMapping.b2cSuppStr, null);
+            initc2b(c2bBmp, HKSCS_XPMapping.b2cBmpStr, null);
+        }
+
+        public int encodeSupp(int cp) {
+            return UNMAPPABLE_ENCODING;
         }
 
         private Encoder(Charset cs) {
-            super(cs, ms950, c2bBmp, c2bSupp);
+            super(cs, ms950, c2bBmp, null);
         }
     }
 }

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4473201 4696726 4652234 4482298 4784385 4966197 4267354 5015668
+ * @bug 4473201 4696726 4652234 4482298 4784385 4966197 4267354 5015668 6911753
  * @summary Check that registered charsets are actually registered
  */
 
@@ -240,7 +240,6 @@ public class RegisteredCharsets {
                     "Big5_HKSCS",
                     "big5hk",
                     "big5-hkscs",
-                    "big5-hkscs:unicode3.0",
                     "big5hkscs"
                 });
 
