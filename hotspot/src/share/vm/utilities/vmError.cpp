@@ -807,8 +807,8 @@ void VMError::report_and_die() {
       if (fd == -1) {
         // try temp directory
         const char * tmpdir = os::get_temp_directory();
-        jio_snprintf(buffer, sizeof(buffer), "%shs_err_pid%u.log",
-                     (tmpdir ? tmpdir : ""), os::current_process_id());
+        jio_snprintf(buffer, sizeof(buffer), "%s%shs_err_pid%u.log",
+                     tmpdir, os::file_separator(), os::current_process_id());
         fd = open(buffer, O_WRONLY | O_CREAT | O_TRUNC, 0666);
       }
 
