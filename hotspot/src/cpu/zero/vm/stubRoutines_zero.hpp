@@ -1,6 +1,6 @@
 /*
  * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008, 2009 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,10 @@
     code_size1 = 0,      // The assembler will fail with a guarantee
     code_size2 = 0       // if these are too small.  Simply increase
   };                     // them if that happens.
+
+  enum method_handles_platform_dependent_constants {
+    method_handles_adapters_code_size = 0
+  };
 
 #ifdef IA32
   class x86 {
