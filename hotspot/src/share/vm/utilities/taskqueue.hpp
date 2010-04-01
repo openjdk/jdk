@@ -22,6 +22,7 @@
  *
  */
 
+template <unsigned int N>
 class TaskQueueSuper: public CHeapObj {
 protected:
   // Internal type for indexing the queue; also used for the tag.
@@ -30,10 +31,7 @@ protected:
   // The first free element after the last one pushed (mod N).
   volatile uint _bottom;
 
-  enum {
-    N = 1 << NOT_LP64(14) LP64_ONLY(17), // Queue size: 16K or 128K
-    MOD_N_MASK = N - 1                   // To compute x mod N efficiently.
-  };
+  enum { MOD_N_MASK = N - 1 };
 
   class Age {
   public:
@@ -84,12 +82,12 @@ protected:
 
   // Returns a number in the range [0..N).  If the result is "N-1", it should be
   // interpreted as 0.
-  uint dirty_size(uint bot, uint top) {
+  uint dirty_size(uint bot, uint top) const {
     return (bot - top) & MOD_N_MASK;
   }
 
   // Returns the size corresponding to the given "bot" and "top".
-  uint size(uint bot, uint top) {
+  uint size(uint bot, uint top) const {
     uint sz = dirty_size(bot, top);
     // Has the queue "wrapped", so that bottom is less than top?  There's a
     // complicated special case here.  A pair of threads could perform pop_local
@@ -111,17 +109,17 @@ protected:
 public:
   TaskQueueSuper() : _bottom(0), _age() {}
 
-  // Return "true" if the TaskQueue contains any tasks.
-  bool peek();
+  // Return true if the TaskQueue contains any tasks.
+  bool peek() { return _bottom != _age.top(); }
 
   // Return an estimate of the number of elements in the queue.
   // The "careful" version admits the possibility of pop_local/pop_global
   // races.
-  uint size() {
+  uint size() const {
     return size(_bottom, _age.top());
   }
 
-  uint dirty_size() {
+  uint dirty_size() const {
     return dirty_size(_bottom, _age.top());
   }
 
@@ -132,19 +130,36 @@ public:
 
   // Maximum number of elements allowed in the queue.  This is two less
   // than the actual queue size, for somewhat complicated reasons.
-  uint max_elems() { return N - 2; }
+  uint max_elems() const { return N - 2; }
 
   // Total size of queue.
   static const uint total_size() { return N; }
 };
 
-template<class E> class GenericTaskQueue: public TaskQueueSuper {
+template<class E, unsigned int N = TASKQUEUE_SIZE>
+class GenericTaskQueue: public TaskQueueSuper<N> {
+protected:
+  typedef typename TaskQueueSuper<N>::Age Age;
+  typedef typename TaskQueueSuper<N>::idx_t idx_t;
+
+  using TaskQueueSuper<N>::_bottom;
+  using TaskQueueSuper<N>::_age;
+  using TaskQueueSuper<N>::increment_index;
+  using TaskQueueSuper<N>::decrement_index;
+  using TaskQueueSuper<N>::dirty_size;
+
+public:
+  using TaskQueueSuper<N>::max_elems;
+  using TaskQueueSuper<N>::size;
+
 private:
   // Slow paths for push, pop_local.  (pop_global has no fast path.)
   bool push_slow(E t, uint dirty_n_elems);
   bool pop_local_slow(uint localBot, Age oldAge);
 
 public:
+  typedef E element_type;
+
   // Initializes the queue to empty.
   GenericTaskQueue();
 
@@ -175,19 +190,19 @@ private:
   volatile E* _elems;
 };
 
-template<class E>
-GenericTaskQueue<E>::GenericTaskQueue():TaskQueueSuper() {
+template<class E, unsigned int N>
+GenericTaskQueue<E, N>::GenericTaskQueue() {
   assert(sizeof(Age) == sizeof(size_t), "Depends on this.");
 }
 
-template<class E>
-void GenericTaskQueue<E>::initialize() {
+template<class E, unsigned int N>
+void GenericTaskQueue<E, N>::initialize() {
   _elems = NEW_C_HEAP_ARRAY(E, N);
   guarantee(_elems != NULL, "Allocation failed.");
 }
 
-template<class E>
-void GenericTaskQueue<E>::oops_do(OopClosure* f) {
+template<class E, unsigned int N>
+void GenericTaskQueue<E, N>::oops_do(OopClosure* f) {
   // tty->print_cr("START OopTaskQueue::oops_do");
   uint iters = size();
   uint index = _bottom;
@@ -203,21 +218,21 @@ void GenericTaskQueue<E>::oops_do(OopClosure* f) {
   // tty->print_cr("END OopTaskQueue::oops_do");
 }
 
-
-template<class E>
-bool GenericTaskQueue<E>::push_slow(E t, uint dirty_n_elems) {
+template<class E, unsigned int N>
+bool GenericTaskQueue<E, N>::push_slow(E t, uint dirty_n_elems) {
   if (dirty_n_elems == N - 1) {
     // Actually means 0, so do the push.
     uint localBot = _bottom;
-    _elems[localBot] = t;
+    // g++ complains if the volatile result of the assignment is unused.
+    const_cast<E&>(_elems[localBot] = t);
     OrderAccess::release_store(&_bottom, increment_index(localBot));
     return true;
   }
   return false;
 }
 
-template<class E>
-bool GenericTaskQueue<E>::
+template<class E, unsigned int N>
+bool GenericTaskQueue<E, N>::
 pop_local_slow(uint localBot, Age oldAge) {
   // This queue was observed to contain exactly one element; either this
   // thread will claim it, or a competing "pop_global".  In either case,
@@ -249,8 +264,8 @@ pop_local_slow(uint localBot, Age oldAge) {
   return false;
 }
 
-template<class E>
-bool GenericTaskQueue<E>::pop_global(E& t) {
+template<class E, unsigned int N>
+bool GenericTaskQueue<E, N>::pop_global(E& t) {
   Age oldAge = _age.get();
   uint localBot = _bottom;
   uint n_elems = size(localBot, oldAge.top());
@@ -258,7 +273,7 @@ bool GenericTaskQueue<E>::pop_global(E& t) {
     return false;
   }
 
-  t = _elems[oldAge.top()];
+  const_cast<E&>(t = _elems[oldAge.top()]);
   Age newAge(oldAge);
   newAge.increment();
   Age resAge = _age.cmpxchg(newAge, oldAge);
@@ -269,8 +284,8 @@ bool GenericTaskQueue<E>::pop_global(E& t) {
   return resAge == oldAge;
 }
 
-template<class E>
-GenericTaskQueue<E>::~GenericTaskQueue() {
+template<class E, unsigned int N>
+GenericTaskQueue<E, N>::~GenericTaskQueue() {
   FREE_C_HEAP_ARRAY(E, _elems);
 }
 
@@ -283,16 +298,18 @@ public:
   virtual bool peek() = 0;
 };
 
-template<class E> class GenericTaskQueueSet: public TaskQueueSetSuper {
+template<class T>
+class GenericTaskQueueSet: public TaskQueueSetSuper {
 private:
   uint _n;
-  GenericTaskQueue<E>** _queues;
+  T** _queues;
 
 public:
+  typedef typename T::element_type E;
+
   GenericTaskQueueSet(int n) : _n(n) {
-    typedef GenericTaskQueue<E>* GenericTaskQueuePtr;
+    typedef T* GenericTaskQueuePtr;
     _queues = NEW_C_HEAP_ARRAY(GenericTaskQueuePtr, n);
-    guarantee(_queues != NULL, "Allocation failure.");
     for (int i = 0; i < n; i++) {
       _queues[i] = NULL;
     }
@@ -302,9 +319,9 @@ public:
   bool steal_best_of_2(uint queue_num, int* seed, E& t);
   bool steal_best_of_all(uint queue_num, int* seed, E& t);
 
-  void register_queue(uint i, GenericTaskQueue<E>* q);
+  void register_queue(uint i, T* q);
 
-  GenericTaskQueue<E>* queue(uint n);
+  T* queue(uint n);
 
   // The thread with queue number "queue_num" (and whose random number seed
   // is at "seed") is trying to steal a task from some other queue.  (It
@@ -316,27 +333,27 @@ public:
   bool peek();
 };
 
-template<class E>
-void GenericTaskQueueSet<E>::register_queue(uint i, GenericTaskQueue<E>* q) {
+template<class T> void
+GenericTaskQueueSet<T>::register_queue(uint i, T* q) {
   assert(i < _n, "index out of range.");
   _queues[i] = q;
 }
 
-template<class E>
-GenericTaskQueue<E>* GenericTaskQueueSet<E>::queue(uint i) {
+template<class T> T*
+GenericTaskQueueSet<T>::queue(uint i) {
   return _queues[i];
 }
 
-template<class E>
-bool GenericTaskQueueSet<E>::steal(uint queue_num, int* seed, E& t) {
+template<class T> bool
+GenericTaskQueueSet<T>::steal(uint queue_num, int* seed, E& t) {
   for (uint i = 0; i < 2 * _n; i++)
     if (steal_best_of_2(queue_num, seed, t))
       return true;
   return false;
 }
 
-template<class E>
-bool GenericTaskQueueSet<E>::steal_best_of_all(uint queue_num, int* seed, E& t) {
+template<class T> bool
+GenericTaskQueueSet<T>::steal_best_of_all(uint queue_num, int* seed, E& t) {
   if (_n > 2) {
     int best_k;
     uint best_sz = 0;
@@ -359,8 +376,8 @@ bool GenericTaskQueueSet<E>::steal_best_of_all(uint queue_num, int* seed, E& t) 
   }
 }
 
-template<class E>
-bool GenericTaskQueueSet<E>::steal_1_random(uint queue_num, int* seed, E& t) {
+template<class T> bool
+GenericTaskQueueSet<T>::steal_1_random(uint queue_num, int* seed, E& t) {
   if (_n > 2) {
     uint k = queue_num;
     while (k == queue_num) k = randomParkAndMiller(seed) % _n;
@@ -375,8 +392,8 @@ bool GenericTaskQueueSet<E>::steal_1_random(uint queue_num, int* seed, E& t) {
   }
 }
 
-template<class E>
-bool GenericTaskQueueSet<E>::steal_best_of_2(uint queue_num, int* seed, E& t) {
+template<class T> bool
+GenericTaskQueueSet<T>::steal_best_of_2(uint queue_num, int* seed, E& t) {
   if (_n > 2) {
     uint k1 = queue_num;
     while (k1 == queue_num) k1 = randomParkAndMiller(seed) % _n;
@@ -397,8 +414,8 @@ bool GenericTaskQueueSet<E>::steal_best_of_2(uint queue_num, int* seed, E& t) {
   }
 }
 
-template<class E>
-bool GenericTaskQueueSet<E>::peek() {
+template<class T>
+bool GenericTaskQueueSet<T>::peek() {
   // Try all the queues.
   for (uint j = 0; j < _n; j++) {
     if (_queues[j]->peek())
@@ -468,14 +485,16 @@ public:
 #endif
 };
 
-template<class E> inline bool GenericTaskQueue<E>::push(E t) {
+template<class E, unsigned int N> inline bool
+GenericTaskQueue<E, N>::push(E t) {
   uint localBot = _bottom;
   assert((localBot >= 0) && (localBot < N), "_bottom out of range.");
   idx_t top = _age.top();
   uint dirty_n_elems = dirty_size(localBot, top);
-  assert((dirty_n_elems >= 0) && (dirty_n_elems < N), "n_elems out of range.");
+  assert(dirty_n_elems < N, "n_elems out of range.");
   if (dirty_n_elems < max_elems()) {
-    _elems[localBot] = t;
+    // g++ complains if the volatile result of the assignment is unused.
+    const_cast<E&>(_elems[localBot] = t);
     OrderAccess::release_store(&_bottom, increment_index(localBot));
     return true;
   } else {
@@ -483,7 +502,8 @@ template<class E> inline bool GenericTaskQueue<E>::push(E t) {
   }
 }
 
-template<class E> inline bool GenericTaskQueue<E>::pop_local(E& t) {
+template<class E, unsigned int N> inline bool
+GenericTaskQueue<E, N>::pop_local(E& t) {
   uint localBot = _bottom;
   // This value cannot be N-1.  That can only occur as a result of
   // the assignment to bottom in this method.  If it does, this method
@@ -497,7 +517,7 @@ template<class E> inline bool GenericTaskQueue<E>::pop_local(E& t) {
   // This is necessary to prevent any read below from being reordered
   // before the store just above.
   OrderAccess::fence();
-  t = _elems[localBot];
+  const_cast<E&>(t = _elems[localBot]);
   // This is a second read of "age"; the "size()" above is the first.
   // If there's still at least one element in the queue, based on the
   // "_bottom" and "age" we've read, then there can be no interference with
@@ -514,17 +534,23 @@ template<class E> inline bool GenericTaskQueue<E>::pop_local(E& t) {
 }
 
 typedef oop Task;
-typedef GenericTaskQueue<Task>         OopTaskQueue;
-typedef GenericTaskQueueSet<Task>      OopTaskQueueSet;
+typedef GenericTaskQueue<Task>            OopTaskQueue;
+typedef GenericTaskQueueSet<OopTaskQueue> OopTaskQueueSet;
 
-
-#define COMPRESSED_OOP_MASK  1
+#ifdef _MSC_VER
+#pragma warning(push)
+// warning C4522: multiple assignment operators specified
+#pragma warning(disable:4522)
+#endif
 
 // This is a container class for either an oop* or a narrowOop*.
 // Both are pushed onto a task queue and the consumer will test is_narrow()
 // to determine which should be processed.
 class StarTask {
   void*  _holder;        // either union oop* or narrowOop*
+
+  enum { COMPRESSED_OOP_MASK = 1 };
+
  public:
   StarTask(narrowOop* p) {
     assert(((uintptr_t)p & COMPRESSED_OOP_MASK) == 0, "Information loss!");
@@ -540,20 +566,61 @@ class StarTask {
     return (narrowOop*)((uintptr_t)_holder & ~COMPRESSED_OOP_MASK);
   }
 
-  // Operators to preserve const/volatile in assignments required by gcc
-  void operator=(const volatile StarTask& t) volatile { _holder = t._holder; }
+  StarTask& operator=(const StarTask& t) {
+    _holder = t._holder;
+    return *this;
+  }
+  volatile StarTask& operator=(const volatile StarTask& t) volatile {
+    _holder = t._holder;
+    return *this;
+  }
 
   bool is_narrow() const {
     return (((uintptr_t)_holder & COMPRESSED_OOP_MASK) != 0);
   }
 };
 
-typedef GenericTaskQueue<StarTask>     OopStarTaskQueue;
-typedef GenericTaskQueueSet<StarTask>  OopStarTaskQueueSet;
+class ObjArrayTask
+{
+public:
+  ObjArrayTask(oop o = NULL, int idx = 0): _obj(o), _index(idx) { }
+  ObjArrayTask(oop o, size_t idx): _obj(o), _index(int(idx)) {
+    assert(idx <= size_t(max_jint), "too big");
+  }
+  ObjArrayTask(const ObjArrayTask& t): _obj(t._obj), _index(t._index) { }
+
+  ObjArrayTask& operator =(const ObjArrayTask& t) {
+    _obj = t._obj;
+    _index = t._index;
+    return *this;
+  }
+  volatile ObjArrayTask&
+  operator =(const volatile ObjArrayTask& t) volatile {
+    _obj = t._obj;
+    _index = t._index;
+    return *this;
+  }
+
+  inline oop obj()   const { return _obj; }
+  inline int index() const { return _index; }
+
+  DEBUG_ONLY(bool is_valid() const); // Tasks to be pushed/popped must be valid.
+
+private:
+  oop _obj;
+  int _index;
+};
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+typedef GenericTaskQueue<StarTask>            OopStarTaskQueue;
+typedef GenericTaskQueueSet<OopStarTaskQueue> OopStarTaskQueueSet;
 
 typedef size_t RegionTask;  // index for region
-typedef GenericTaskQueue<RegionTask>    RegionTaskQueue;
-typedef GenericTaskQueueSet<RegionTask> RegionTaskQueueSet;
+typedef GenericTaskQueue<RegionTask>         RegionTaskQueue;
+typedef GenericTaskQueueSet<RegionTaskQueue> RegionTaskQueueSet;
 
 class RegionTaskQueueWithOverflow: public CHeapObj {
  protected:
