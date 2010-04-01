@@ -28,10 +28,10 @@ class CardTableRS;
 class CardTableModRefBS;
 class DefNewGeneration;
 
-template<class E> class GenericTaskQueue;
-typedef GenericTaskQueue<oop> OopTaskQueue;
-template<class E> class GenericTaskQueueSet;
-typedef GenericTaskQueueSet<oop> OopTaskQueueSet;
+template<class E, unsigned int N> class GenericTaskQueue;
+typedef GenericTaskQueue<oop, TASKQUEUE_SIZE> OopTaskQueue;
+template<class T> class GenericTaskQueueSet;
+typedef GenericTaskQueueSet<OopTaskQueue> OopTaskQueueSet;
 
 // Closure for iterating roots from a particular generation
 // Note: all classes deriving from this MUST call this do_barrier

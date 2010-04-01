@@ -62,7 +62,7 @@ protected:
 public:
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
-  PtrQueue(PtrQueueSet*, bool perm = false);
+  PtrQueue(PtrQueueSet*, bool perm = false, bool active = false);
   // Release any contained resources.
   void flush();
   // Calls flush() when destroyed.
@@ -100,6 +100,8 @@ public:
       assert(_index == _sz, "invariant: queues are empty when activated.");
     }
   }
+
+  bool is_active() { return _active; }
 
   static int byte_index_to_index(int ind) {
     assert((ind % oopSize) == 0, "Invariant.");
@@ -257,7 +259,7 @@ public:
   bool process_completed_buffers() { return _process_completed; }
   void set_process_completed(bool x) { _process_completed = x; }
 
-  bool active() { return _all_active; }
+  bool is_active() { return _all_active; }
 
   // Set the buffer size.  Should be called before any "enqueue" operation
   // can be called.  And should only be called once.
