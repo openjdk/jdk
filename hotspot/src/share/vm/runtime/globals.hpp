@@ -2502,10 +2502,6 @@ class CommandLineFlags {
   notproduct(bool, TraceSpilling, false,                                    \
           "Trace spilling")                                                 \
                                                                             \
-  develop(bool, DeutschShiffmanExceptions, true,                            \
-          "Fast check to find exception handler for precisely typed "       \
-          "exceptions")                                                     \
-                                                                            \
   product(bool, SplitIfBlocks, true,                                        \
           "Clone compares and control flow through merge points to fold "   \
           "some branches")                                                  \

@@ -2328,6 +2328,17 @@ run:
       }
 
       DEFAULT:
+#ifdef ZERO
+          // Some zero configurations use the C++ interpreter as a
+          // fallback interpreter and have support for platform
+          // specific fast bytecodes which aren't supported here, so
+          // redispatch to the equivalent non-fast bytecode when they
+          // are encountered.
+          if (Bytecodes::is_defined((Bytecodes::Code)opcode)) {
+              opcode = (jubyte)Bytecodes::java_code((Bytecodes::Code)opcode);
+              goto opcode_switch;
+          }
+#endif
           fatal2("\t*** Unimplemented opcode: %d = %s\n",
                  opcode, Bytecodes::name((Bytecodes::Code)opcode));
           goto finish;

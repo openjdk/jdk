@@ -798,67 +798,6 @@ void Compile::rethrow_exceptions(JVMState* jvms) {
   initial_gvn()->transform_no_reclaim(exit);
 }
 
-bool Parse::can_rerun_bytecode() {
-  switch (bc()) {
-  case Bytecodes::_ldc:
-  case Bytecodes::_ldc_w:
-  case Bytecodes::_ldc2_w:
-  case Bytecodes::_getfield:
-  case Bytecodes::_putfield:
-  case Bytecodes::_getstatic:
-  case Bytecodes::_putstatic:
-  case Bytecodes::_arraylength:
-  case Bytecodes::_baload:
-  case Bytecodes::_caload:
-  case Bytecodes::_iaload:
-  case Bytecodes::_saload:
-  case Bytecodes::_faload:
-  case Bytecodes::_aaload:
-  case Bytecodes::_laload:
-  case Bytecodes::_daload:
-  case Bytecodes::_bastore:
-  case Bytecodes::_castore:
-  case Bytecodes::_iastore:
-  case Bytecodes::_sastore:
-  case Bytecodes::_fastore:
-  case Bytecodes::_aastore:
-  case Bytecodes::_lastore:
-  case Bytecodes::_dastore:
-  case Bytecodes::_irem:
-  case Bytecodes::_idiv:
-  case Bytecodes::_lrem:
-  case Bytecodes::_ldiv:
-  case Bytecodes::_frem:
-  case Bytecodes::_fdiv:
-  case Bytecodes::_drem:
-  case Bytecodes::_ddiv:
-  case Bytecodes::_checkcast:
-  case Bytecodes::_instanceof:
-  case Bytecodes::_anewarray:
-  case Bytecodes::_newarray:
-  case Bytecodes::_multianewarray:
-  case Bytecodes::_new:
-  case Bytecodes::_monitorenter:  // can re-run initial null check, only
-  case Bytecodes::_return:
-    return true;
-    break;
-
-  // Don't rerun athrow since it's part of the exception path.
-  case Bytecodes::_athrow:
-  case Bytecodes::_invokestatic:
-  case Bytecodes::_invokedynamic:
-  case Bytecodes::_invokespecial:
-  case Bytecodes::_invokevirtual:
-  case Bytecodes::_invokeinterface:
-    return false;
-    break;
-
-  default:
-    assert(false, "unexpected bytecode produced an exception");
-    return true;
-  }
-}
-
 //---------------------------do_exceptions-------------------------------------
 // Process exceptions arising from the current bytecode.
 // Send caught exceptions to the proper handler within this method.
@@ -871,9 +810,6 @@ void Parse::do_exceptions() {
     while (pop_exception_state() != NULL) ;
     return;
   }
-
-  // Make sure we can classify this bytecode if we need to.
-  debug_only(can_rerun_bytecode());
 
   PreserveJVMState pjvms(this, false);
 
