@@ -55,12 +55,11 @@ class vframeStreamForte : public vframeStreamCommon {
 };
 
 
-static void is_decipherable_compiled_frame(frame* fr, RegisterMap* map,
-  bool* is_compiled_p, bool* is_walkable_p);
+static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmethod* nm);
 static bool is_decipherable_interpreted_frame(JavaThread* thread,
-                                                frame* fr,
-                                                methodOop* method_p,
-                                                int* bci_p);
+                                              frame* fr,
+                                              methodOop* method_p,
+                                              int* bci_p);
 
 
 
@@ -122,40 +121,42 @@ void vframeStreamForte::forte_next() {
 // Determine if 'fr' is a decipherable compiled frame. We are already
 // assured that fr is for a java nmethod.
 
-static bool is_decipherable_compiled_frame(frame* fr) {
-
-  assert(fr->cb() != NULL && fr->cb()->is_nmethod(), "invariant");
-  nmethod* nm = (nmethod*) fr->cb();
+static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, nmethod* nm) {
   assert(nm->is_java_method(), "invariant");
 
-  // First try and find an exact PcDesc
+  if (thread->has_last_Java_frame() && thread->last_Java_pc() == fr->pc()) {
+    // We're stopped at a call into the JVM so look for a PcDesc with
+    // the actual pc reported by the frame.
+    PcDesc* pc_desc = nm->pc_desc_at(fr->pc());
 
-  PcDesc* pc_desc = nm->pc_desc_at(fr->pc());
-
-  // Did we find a useful PcDesc?
-  if (pc_desc != NULL &&
-      pc_desc->scope_decode_offset() == DebugInformationRecorder::serialized_null) {
-
-    address probe_pc = fr->pc() + 1;
-    pc_desc = nm->pc_desc_near(probe_pc);
-
-    // Now do we have a useful PcDesc?
-
+    // Did we find a useful PcDesc?
     if (pc_desc != NULL &&
-        pc_desc->scope_decode_offset() == DebugInformationRecorder::serialized_null) {
-      // No debug information available for this pc
-      // vframeStream would explode if we try and walk the frames.
-      return false;
+        pc_desc->scope_decode_offset() != DebugInformationRecorder::serialized_null) {
+      return true;
     }
-
-    // This PcDesc is useful however we must adjust the frame's pc
-    // so that the vframeStream lookups will use this same pc
-
-    fr->set_pc(pc_desc->real_pc(nm));
   }
 
+  // We're at some random pc in the nmethod so search for the PcDesc
+  // whose pc is greater than the current PC.  It's done this way
+  // because the extra PcDescs that are recorded for improved debug
+  // info record the end of the region covered by the ScopeDesc
+  // instead of the beginning.
+  PcDesc* pc_desc = nm->pc_desc_near(fr->pc() + 1);
+
+  // Now do we have a useful PcDesc?
+  if (pc_desc == NULL ||
+      pc_desc->scope_decode_offset() == DebugInformationRecorder::serialized_null) {
+    // No debug information available for this pc
+    // vframeStream would explode if we try and walk the frames.
+    return false;
+  }
+
+  // This PcDesc is useful however we must adjust the frame's pc
+  // so that the vframeStream lookups will use this same pc
+  fr->set_pc(pc_desc->real_pc(nm));
   return true;
 }
+
 
 // Determine if 'fr' is a walkable interpreted frame. Returns false
 // if it is not. *method_p, and *bci_p are not set when false is
@@ -166,9 +167,9 @@ static bool is_decipherable_compiled_frame(frame* fr) {
 // even if a valid BCI cannot be found.
 
 static bool is_decipherable_interpreted_frame(JavaThread* thread,
-                                                frame* fr,
-                                                methodOop* method_p,
-                                                int* bci_p) {
+                                              frame* fr,
+                                              methodOop* method_p,
+                                              int* bci_p) {
   assert(fr->is_interpreted_frame(), "just checking");
 
   // top frame is an interpreted frame
@@ -323,12 +324,14 @@ static bool find_initial_Java_frame(JavaThread* thread,
       // have a PCDesc that can get us a bci however we did find
       // a method
 
-      if (!is_decipherable_compiled_frame(&candidate)) {
+      if (!is_decipherable_compiled_frame(thread, &candidate, nm)) {
         return false;
       }
 
       // is_decipherable_compiled_frame may modify candidate's pc
       *initial_frame_p = candidate;
+
+      assert(nm->pc_desc_at(candidate.pc()) != NULL, "if it's decipherable then pc must be valid");
 
       return true;
     }
