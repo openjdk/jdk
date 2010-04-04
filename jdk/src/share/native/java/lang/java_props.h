@@ -28,21 +28,29 @@
 
 #include <jni_util.h>
 
+/* The preferred native type for storing text on the current OS */
+#ifdef WIN32
+#include <tchar.h>
+typedef WCHAR nchar;
+#else
+typedef char nchar;
+#endif
+
 typedef struct {
     char *os_name;
     char *os_version;
     char *os_arch;
 
-    char *tmp_dir;
-    char *font_dir;
-    char *user_dir;
+    nchar *tmp_dir;
+    nchar *font_dir;
+    nchar *user_dir;
 
     char *file_separator;
     char *path_separator;
     char *line_separator;
 
-    char *user_name;
-    char *user_home;
+    nchar *user_name;
+    nchar *user_home;
 
     char *language;
     char *country;
@@ -71,5 +79,6 @@ typedef struct {
 } java_props_t;
 
 java_props_t *GetJavaProperties(JNIEnv *env);
+jstring GetStringPlatform(JNIEnv *env, nchar* str);
 
 #endif /* _JAVA_PROPS_H */

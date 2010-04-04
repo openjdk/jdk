@@ -145,11 +145,11 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
     HANDLE errWrite = INVALID_HANDLE_VALUE;
     SECURITY_ATTRIBUTES sa;
     PROCESS_INFORMATION pi;
-    STARTUPINFO si;
-    LPTSTR  pcmd      = NULL;
-    LPCTSTR pdir      = NULL;
-    LPVOID  penvBlock = NULL;
-    jlong  *handles   = NULL;
+    STARTUPINFOW si;
+    const jchar*  pcmd = NULL;
+    const jchar*  pdir = NULL;
+    const jchar*  penvBlock = NULL;
+    jlong  *handles = NULL;
     jlong ret = 0;
     OSVERSIONINFO ver;
     jboolean onNT = JNI_FALSE;
@@ -161,22 +161,17 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
         onNT = JNI_TRUE;
 
     assert(cmd != NULL);
-    pcmd = (LPTSTR) JNU_GetStringPlatformChars(env, cmd, NULL);
+    pcmd = (*env)->GetStringChars(env, cmd, NULL);
     if (pcmd == NULL) goto Catch;
 
     if (dir != 0) {
-        pdir = (LPCTSTR) JNU_GetStringPlatformChars(env, dir, NULL);
+        pdir = (*env)->GetStringChars(env, dir, NULL);
         if (pdir == NULL) goto Catch;
-        pdir = (LPCTSTR) JVM_NativePath((char *)pdir);
     }
-
     if (envBlock != NULL) {
-        penvBlock = onNT
-            ? (LPVOID) ((*env)->GetStringChars(env, envBlock, NULL))
-            : (LPVOID) JNU_GetStringPlatformChars(env, envBlock, NULL);
+        penvBlock = ((*env)->GetStringChars(env, envBlock, NULL));
         if (penvBlock == NULL) goto Catch;
     }
-
     assert(stdHandles != NULL);
     handles = (*env)->GetLongArrayElements(env, stdHandles, NULL);
     if (handles == NULL) goto Catch;
@@ -237,30 +232,17 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
     if (onNT)
         processFlag = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
     else
-        processFlag = selectProcessFlag(env, cmd);
-
-    /* Java and Windows are both pure Unicode systems at heart.
-     * Windows has both a legacy byte-based API and a 16-bit Unicode
-     * "W" API.  The Right Thing here is to call CreateProcessW, since
-     * that will allow all process-related information like command
-     * line arguments to be passed properly to the child.  We don't do
-     * that currently, since we would first have to have "W" versions
-     * of JVM_NativePath and perhaps other functions.  In the
-     * meantime, we can call CreateProcess with the magic flag
-     * CREATE_UNICODE_ENVIRONMENT, which passes only the environment
-     * in "W" mode.  We will fix this later. */
-
-    ret = CreateProcess(0,           /* executable name */
-                        pcmd,        /* command line */
-                        0,           /* process security attribute */
-                        0,           /* thread security attribute */
-                        TRUE,        /* inherits system handles */
-                        processFlag, /* selected based on exe type */
-                        penvBlock,   /* environment block */
-                        pdir,        /* change to the new current directory */
-                        &si,         /* (in)  startup information */
-                        &pi);        /* (out) process information */
-
+        processFlag = selectProcessFlag(env, cmd) | CREATE_UNICODE_ENVIRONMENT;
+    ret = CreateProcessW(0,                /* executable name */
+                         (LPWSTR)pcmd,     /* command line */
+                         0,                /* process security attribute */
+                         0,                /* thread security attribute */
+                         TRUE,             /* inherits system handles */
+                         processFlag,      /* selected based on exe type */
+                         (LPVOID)penvBlock,/* environment block */
+                         (LPCWSTR)pdir,    /* change to the new current directory */
+                         &si,              /* (in)  startup information */
+                         &pi);             /* (out) process information */
     if (!ret) {
         win32Error(env, "CreateProcess");
         goto Catch;
@@ -276,18 +258,13 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
     closeSafely(errWrite);
 
     if (pcmd != NULL)
-        JNU_ReleaseStringPlatformChars(env, cmd, (char *) pcmd);
+        (*env)->ReleaseStringChars(env, cmd, pcmd);
     if (pdir != NULL)
-        JNU_ReleaseStringPlatformChars(env, dir, (char *) pdir);
-    if (penvBlock != NULL) {
-        if (onNT)
-            (*env)->ReleaseStringChars(env, envBlock, (jchar *) penvBlock);
-        else
-            JNU_ReleaseStringPlatformChars(env, dir, (char *) penvBlock);
-    }
+        (*env)->ReleaseStringChars(env, dir, pdir);
+    if (penvBlock != NULL)
+        (*env)->ReleaseStringChars(env, envBlock, penvBlock);
     if (handles != NULL)
         (*env)->ReleaseLongArrayElements(env, stdHandles, handles, 0);
-
     return ret;
 
  Catch:
