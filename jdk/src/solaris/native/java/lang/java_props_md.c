@@ -416,3 +416,9 @@ GetJavaProperties(JNIEnv *env)
 
     return &sprops;
 }
+
+jstring
+GetStringPlatform(JNIEnv *env, nchar* cstr)
+{
+    return JNU_NewStringPlatform(env, cstr);
+}

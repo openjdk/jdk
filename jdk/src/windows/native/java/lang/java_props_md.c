@@ -513,14 +513,14 @@ getJavaIDFromLangID(LANGID langID)
 /*
  * Code to figure out the user's home directory using the registry
 */
-static char *
+static WCHAR*
 getHomeFromRegistry()
 {
     HKEY key;
     int rc;
     DWORD type;
-    char *p;
-    char path[MAX_PATH+1];
+    WCHAR *p;
+    WCHAR path[MAX_PATH+1];
     int size = MAX_PATH+1;
 
     rc = RegOpenKeyEx(HKEY_CURRENT_USER, SHELL_KEY, 0, KEY_READ, &key);
@@ -530,18 +530,18 @@ getHomeFromRegistry()
     }
 
     path[0] = 0;
-    rc = RegQueryValueEx(key, "Desktop", 0, &type, path, &size);
+    rc = RegQueryValueExW(key, L"Desktop", 0, &type, (LPBYTE)path, &size);
     if (rc != ERROR_SUCCESS || type != REG_SZ) {
         return NULL;
     }
     RegCloseKey(key);
     /* Get the parent of Desktop directory */
-    p = strrchr(path, '\\');
+    p = wcsrchr(path, L'\\');
     if (p == NULL) {
         return NULL;
     }
-    *p = '\0';
-    return strdup(path);
+    *p = L'\0';
+    return _wcsdup(path);
 }
 
 /*
@@ -550,16 +550,16 @@ getHomeFromRegistry()
 typedef HRESULT (WINAPI *GetSpecialFolderType)(HWND, int, LPITEMIDLIST *);
 typedef BOOL (WINAPI *GetPathFromIDListType)(LPCITEMIDLIST, LPSTR);
 
-char *
+WCHAR*
 getHomeFromShell32()
 {
-    HMODULE lib = LoadLibrary("SHELL32.DLL");
+    HMODULE lib = LoadLibraryW(L"SHELL32.DLL");
     GetSpecialFolderType do_get_folder;
     GetPathFromIDListType do_get_path;
     HRESULT rc;
     LPITEMIDLIST item_list = 0;
-    char *p;
-    char path[MAX_PATH+1];
+    WCHAR *p;
+    WCHAR path[MAX_PATH+1];
     int size = MAX_PATH+1;
 
     if (lib == 0) {
@@ -568,7 +568,7 @@ getHomeFromShell32()
     }
 
     do_get_folder = (GetSpecialFolderType)GetProcAddress(lib, "SHGetSpecialFolderLocation");
-    do_get_path = (GetPathFromIDListType)GetProcAddress(lib, "SHGetPathFromIDListA");
+    do_get_path = (GetPathFromIDListType)GetProcAddress(lib, "SHGetPathFromIDListW");
 
     if (do_get_folder == 0 || do_get_path == 0) {
         // the library doesn't hold the right functions !!??
@@ -582,10 +582,10 @@ getHomeFromShell32()
     }
 
     path[0] = 0;
-    (*do_get_path)(item_list, path);
+    (*do_get_path)(item_list, (LPSTR)path);
 
     /* Get the parent of Desktop directory */
-    p = strrchr(path, '\\');
+    p = wcsrchr(path, L'\\');
     if (p) {
         *p = 0;
     }
@@ -598,8 +598,7 @@ getHomeFromShell32()
      * We also don't unload the SHELL32 DLL.  We've paid the hit for loading
      * it and we may need it again later.
      */
-
-    return strdup(path);
+    return _wcsdup(path);
 }
 
 static boolean
@@ -661,10 +660,10 @@ GetJavaProperties(JNIEnv* env)
 
     /* tmp dir */
     {
-        char tmpdir[MAX_PATH + 1];
+        WCHAR tmpdir[MAX_PATH + 1];
         /* we might want to check that this succeed */
-        GetTempPath(MAX_PATH + 1, tmpdir);
-        sprops.tmp_dir = strdup(tmpdir);
+        GetTempPathW(MAX_PATH + 1, tmpdir);
+        sprops.tmp_dir = _wcsdup(tmpdir);
     }
 
     /* Printing properties */
@@ -674,10 +673,9 @@ GetJavaProperties(JNIEnv* env)
     sprops.graphics_env = "sun.awt.Win32GraphicsEnvironment";
 
     {    /* This is used only for debugging of font problems. */
-        char *path = getenv("JAVA2D_FONTPATH");
-        sprops.font_dir = (path != 0) ? strdup(path) : NULL;
+        WCHAR *path = _wgetenv(L"JAVA2D_FONTPATH");
+        sprops.font_dir = (path != NULL) ? _wcsdup(path) : NULL;
     }
-
 
     /* OS properties */
     {
@@ -830,14 +828,14 @@ GetJavaProperties(JNIEnv* env)
      * 100 K of footprint.
      */
     {
-        char *uname = getenv("USERNAME");
-        if (uname != NULL && strlen(uname) > 0) {
-            sprops.user_name = strdup(uname);
+        WCHAR *uname = _wgetenv(L"USERNAME");
+        if (uname != NULL && wcslen(uname) > 0) {
+            sprops.user_name = _wcsdup(uname);
         } else {
-            char buf[100];
+            WCHAR buf[100];
             int buflen = sizeof(buf);
             sprops.user_name =
-                GetUserName(buf, &buflen) ? strdup(buf) : "unknown";
+                GetUserNameW(buf, &buflen) ? _wcsdup(buf) : L"unknown";
         }
     }
 
@@ -858,14 +856,13 @@ GetJavaProperties(JNIEnv* env)
      *     On single-user Win95, user.home gets set to c:\windows.
      */
     {
-        char *homep = getHomeFromRegistry();
+        WCHAR *homep = getHomeFromRegistry();
         if (homep == NULL) {
             homep = getHomeFromShell32();
-            if (homep == NULL) {
-                homep = "C:\\";
-            }
+            if (homep == NULL)
+                homep = L"C:\\";
         }
-        sprops.user_home = homep;
+        sprops.user_home = _wcsdup(homep);
     }
 
     /*
@@ -963,9 +960,9 @@ GetJavaProperties(JNIEnv* env)
 
     /* Current directory */
     {
-        char buf[MAX_PATH];
-        GetCurrentDirectory(sizeof(buf), buf);
-        sprops.user_dir = strdup(buf);
+        WCHAR buf[MAX_PATH];
+        GetCurrentDirectoryW(sizeof(buf), buf);
+        sprops.user_dir = _wcsdup(buf);
     }
 
     sprops.file_separator = "\\";
@@ -973,4 +970,10 @@ GetJavaProperties(JNIEnv* env)
     sprops.line_separator = "\r\n";
 
     return &sprops;
+}
+
+jstring
+GetStringPlatform(JNIEnv *env, nchar* wcstr)
+{
+    return (*env)->NewString(env, wcstr, wcslen(wcstr));
 }
