@@ -32,23 +32,19 @@ public class Main {
 
     public static void main(String args[]) throws Exception {
         if (args.length < 3 ) {
-            System.out.println("Usage: java -jar charsetmapping.jar src dst mType...");
+            System.out.println("Usage: java -jar charsetmapping.jar src dst mType [copyrightSrc]");
             System.exit(1);
         }
         if ("sbcs".equals(args[2]) || "extsbcs".equals(args[2])) {
-            GenerateSBCS.genSBCS(args);
+            SBCS.genClass(args);
         } else if ("dbcs".equals(args[2])) {
-            GenerateDBCS.genDBCS(args);
-
+            DBCS.genClass(args);
         } else if ("euctw".equals(args[2])) {
-            if (args.length != 4) {
-                System.out.println("Usage: java -jar charsetmapping.jar srcDir dstDir euctw copyrightSrc");
-                System.exit(1);
-            }
-            GenerateEUC_TW.genEUC_TW(args);
+            EUC_TW.genClass(args);
         } else if ("sjis0213".equals(args[2])) {
-            GenerateMapping.genMapping(args);
+            JIS0213.genClass(args);
+        } else if ("hkscs".equals(args[2])) {
+            HKSCS.genClass(args);
         }
     }
-
 }

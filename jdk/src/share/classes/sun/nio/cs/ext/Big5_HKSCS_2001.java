@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2004 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,17 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.HistoricallyNamedCharset;
-import static sun.nio.cs.CharsetMapping.*;
 
-public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset
+public class Big5_HKSCS_2001 extends Charset
 {
-    public MS950_HKSCS() {
-        super("x-MS950-HKSCS", ExtendedCharsets.aliasesFor("x-MS950-HKSCS"));
-    }
-
-    public String historicalName() {
-        return "MS950_HKSCS";
+    public Big5_HKSCS_2001() {
+        super("x-Big5-HKSCS-2001", ExtendedCharsets.aliasesFor("x-Big5-HKSCS-2001"));
     }
 
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
-                || (cs instanceof MS950)
-                || (cs instanceof MS950_HKSCS));
+                || (cs instanceof Big5)
+                || (cs instanceof Big5_HKSCS_2001));
     }
 
     public CharsetDecoder newDecoder() {
@@ -55,35 +50,36 @@ public class MS950_HKSCS extends Charset implements HistoricallyNamedCharset
         return new Encoder(this);
     }
 
-    static class Decoder extends HKSCS.Decoder {
-        private static DoubleByte.Decoder ms950 =
-            (DoubleByte.Decoder)new MS950().newDecoder();
+    private static class Decoder extends HKSCS.Decoder {
+        private static DoubleByte.Decoder big5 =
+            (DoubleByte.Decoder)new Big5().newDecoder();
 
         private static char[][] b2cBmp = new char[0x100][];
         private static char[][] b2cSupp = new char[0x100][];
         static {
-            initb2c(b2cBmp, HKSCSMapping.b2cBmpStr);
-            initb2c(b2cSupp, HKSCSMapping.b2cSuppStr);
+            initb2c(b2cBmp, HKSCS2001Mapping.b2cBmpStr);
+            initb2c(b2cSupp, HKSCS2001Mapping.b2cSuppStr);
         }
 
         private Decoder(Charset cs) {
-            super(cs, ms950, b2cBmp, b2cSupp);
+            super(cs, big5, b2cBmp, b2cSupp);
         }
     }
 
     private static class Encoder extends HKSCS.Encoder {
-        private static DoubleByte.Encoder ms950 =
-            (DoubleByte.Encoder)new MS950().newEncoder();
+        private static DoubleByte.Encoder big5 =
+            (DoubleByte.Encoder)new Big5().newEncoder();
 
         static char[][] c2bBmp = new char[0x100][];
         static char[][] c2bSupp = new char[0x100][];
         static {
-            initc2b(c2bBmp, HKSCSMapping.b2cBmpStr, HKSCSMapping.pua);
-            initc2b(c2bSupp, HKSCSMapping.b2cSuppStr, null);
+            initc2b(c2bBmp, HKSCS2001Mapping.b2cBmpStr,
+                    HKSCS2001Mapping.pua);
+            initc2b(c2bSupp, HKSCS2001Mapping.b2cSuppStr, null);
         }
 
         private Encoder(Charset cs) {
-            super(cs, ms950, c2bBmp, c2bSupp);
+            super(cs, big5, c2bBmp, c2bSupp);
         }
     }
 }

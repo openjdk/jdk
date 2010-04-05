@@ -25,15 +25,18 @@
 
 package sun.io;
 
-public class CharToByteBig5_HKSCS extends CharToByteHKSCS_2001 {
-    CharToByteBig5 cbBig5 = new CharToByteBig5();
+import sun.nio.cs.ext.DoubleByte;
+import sun.nio.cs.ext.Big5_HKSCS;
+
+public class CharToByteBig5_HKSCS extends CharToByteDBCS_ASCII {
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new Big5_HKSCS().newEncoder();
 
     public String getCharacterEncoding() {
         return "Big5_HKSCS";
     }
 
-    protected int getNative(char ch) {
-        int r = super.getNative(ch);
-        return (r != 0) ? r : cbBig5.getNative(ch);
+    public CharToByteBig5_HKSCS() {
+        super(enc);
     }
 }

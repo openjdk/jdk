@@ -34,7 +34,7 @@ import java.nio.charset.CharsetDecoder;
    ExtendedCharsets class, because if we want to have a public HKSCS,
    it probably should be HKSCS_2001 not HKSCS.
 */
-public class HKSCS extends sun.nio.cs.ext.HKSCS {
+public class HKSCS extends sun.nio.cs.ext.MS950_HKSCS_XP {
     public HKSCS () {
         super();
     }

@@ -32,11 +32,11 @@ import java.util.Scanner;
 import java.util.Formatter;
 import java.util.regex.*;
 import java.nio.charset.*;
-import static build.tools.charsetmapping.CharsetMapping.*;
+import static build.tools.charsetmapping.Utils.*;
 
-public class GenerateSBCS {
+public class SBCS {
 
-    public static void genSBCS(String args[]) throws Exception {
+    public static void genClass(String args[]) throws Exception {
 
         Scanner s = new Scanner(new File(args[0], args[2]));
         while (s.hasNextLine()) {
@@ -55,8 +55,8 @@ public class GenerateSBCS {
             String pkgName  = fields[4];
             System.out.printf("%s,%s,%s,%b,%s%n", clzName, csName, hisName, isASCII, pkgName);
 
-            genClass(args[0], args[1], "SingleByte-X.java.template",
-                     clzName, csName, hisName, pkgName, isASCII);
+            genClass0(args[0], args[1], "SingleByte-X.java.template",
+                      clzName, csName, hisName, pkgName, isASCII);
         }
     }
 
@@ -108,13 +108,13 @@ public class GenerateSBCS {
 
     static Pattern sbmap = Pattern.compile("0x(\\p{XDigit}++)\\s++U\\+(\\p{XDigit}++)(\\s++#.*)?");
 
-    private static void genClass(String srcDir, String dstDir,
-                                 String template,
-                                 String clzName,
-                                 String csName,
-                                 String hisName,
-                                 String pkgName,
-                                 boolean isASCII)
+    private static void genClass0(String srcDir, String dstDir,
+                                  String template,
+                                  String clzName,
+                                  String csName,
+                                  String hisName,
+                                  String pkgName,
+                                  boolean isASCII)
         throws Exception
     {
         StringBuilder b2cSB = new StringBuilder();
