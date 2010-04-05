@@ -67,10 +67,13 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
         (*env)->DeleteLocalRef(env, r); \
     } else ((void) 0)
 
-#define PUTPROP_ForPlatformCString(props, key, val) \
+/*  "key" is a char type string with only ASCII character in it.
+    "val" is a nchar (typedefed in java_props.h) type string  */
+
+#define PUTPROP_ForPlatformNString(props, key, val) \
     if (1) { \
-        jstring jkey = JNU_NewStringPlatform(env, key); \
-        jstring jval = JNU_NewStringPlatform(env, val); \
+        jstring jkey = (*env)->NewStringUTF(env, key);  \
+        jstring jval = GetStringPlatform(env, val); \
         jobject r = (*env)->CallObjectMethod(env, props, putID, jkey, jval); \
         if ((*env)->ExceptionOccurred(env)) return NULL; \
         (*env)->DeleteLocalRef(env, jkey); \
@@ -150,7 +153,7 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
             (sprops->cpu_isalist ? sprops->cpu_isalist : ""));
     PUTPROP(props, "sun.cpu.endian",  sprops->cpu_endian);
 
-    /* !!! DO NOT call PUTPROP_ForPlatformCString before this line !!!
+    /* !!! DO NOT call PUTPROP_ForPlatformNString before this line !!!
      * !!! I18n properties have not been set up yet !!!
      */
 
@@ -195,18 +198,18 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
      */
     PUTPROP(props, "java.awt.graphicsenv", sprops->graphics_env);
     if (sprops->font_dir != NULL) {
-        PUTPROP_ForPlatformCString(props,
+        PUTPROP_ForPlatformNString(props,
                                    "sun.java2d.fontpath", sprops->font_dir);
     }
 
-    PUTPROP_ForPlatformCString(props, "java.io.tmpdir", sprops->tmp_dir);
+    PUTPROP_ForPlatformNString(props, "java.io.tmpdir", sprops->tmp_dir);
 
-    PUTPROP_ForPlatformCString(props, "user.name", sprops->user_name);
-    PUTPROP_ForPlatformCString(props, "user.home", sprops->user_home);
+    PUTPROP_ForPlatformNString(props, "user.name", sprops->user_name);
+    PUTPROP_ForPlatformNString(props, "user.home", sprops->user_home);
 
     PUTPROP(props, "user.timezone", sprops->timezone);
 
-    PUTPROP_ForPlatformCString(props, "user.dir", sprops->user_dir);
+    PUTPROP_ForPlatformNString(props, "user.dir", sprops->user_dir);
 
     /* This is a sun. property as it is currently only set for Gnome and
      * Windows desktops.

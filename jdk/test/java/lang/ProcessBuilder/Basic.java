@@ -26,6 +26,7 @@
  * @bug 4199068 4738465 4937983 4930681 4926230 4931433 4932663 4986689
  *      5026830 5023243 5070673 4052517 4811767 6192449 6397034 6413313
  *      6464154 6523983 6206031 4960438 6631352 6631966 6850957 6850958
+ *      4947220
  * @summary Basic tests for Process and Environment Variable code
  * @run main/othervm Basic
  * @author Martin Buchholz
@@ -1456,13 +1457,14 @@ public class Basic {
                 new File(System.getProperty("user.dir")).getCanonicalPath();
             String[] sdirs = new String[]
                 {".", "..", "/", "/bin",
-                 "C:", "c:", "C:/", "c:\\", "\\", "\\bin" };
+                 "C:", "c:", "C:/", "c:\\", "\\", "\\bin",
+                 "c:\\windows  ", "c:\\Program Files", "c:\\Program Files\\" };
             for (String sdir : sdirs) {
                 File dir = new File(sdir);
                 if (! (dir.isDirectory() && dir.exists()))
                     continue;
                 out.println("Testing directory " + dir);
-                dir = new File(dir.getCanonicalPath());
+                //dir = new File(dir.getCanonicalPath());
 
                 ProcessBuilder pb = new ProcessBuilder();
                 equal(pb.directory(), null);
@@ -1470,13 +1472,34 @@ public class Basic {
 
                 pb.directory(dir);
                 equal(pb.directory(), dir);
-                equal(pwdInChild(pb), dir.toString());
+                equal(pwdInChild(pb), dir.getCanonicalPath());
 
                 pb.directory(null);
                 equal(pb.directory(), null);
                 equal(pwdInChild(pb), canonicalUserDir);
 
                 pb.directory(dir);
+            }
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Working directory with Unicode in child
+        //----------------------------------------------------------------
+        try {
+            if (UnicodeOS.is()) {
+                File dir = new File(System.getProperty("test.dir", "."),
+                                    "ProcessBuilderDir\u4e00\u4e02");
+                try {
+                    if (!dir.exists())
+                        dir.mkdir();
+                    out.println("Testing Unicode directory:" + dir);
+                    ProcessBuilder pb = new ProcessBuilder();
+                    pb.directory(dir);
+                    equal(pwdInChild(pb), dir.getCanonicalPath());
+                } finally {
+                    if (dir.exists())
+                        dir.delete();
+                }
             }
         } catch (Throwable t) { unexpected(t); }
 
