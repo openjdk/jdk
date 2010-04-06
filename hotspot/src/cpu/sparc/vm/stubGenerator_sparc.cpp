@@ -2000,6 +2000,27 @@ class StubGenerator: public StubCodeGenerator {
   //      to:    O1
   //      count: O2 treated as signed
   //
+  // count -= 2;
+  // if ( count >= 0 ) { // >= 2 elements
+  //   if ( count > 6) { // >= 8 elements
+  //     count -= 6; // original count - 8
+  //     do {
+  //       copy_8_elements;
+  //       count -= 8;
+  //     } while ( count >= 0 );
+  //     count += 6;
+  //   }
+  //   if ( count >= 0 ) { // >= 2 elements
+  //     do {
+  //       copy_2_elements;
+  //     } while ( (count=count-2) >= 0 );
+  //   }
+  // }
+  // count += 2;
+  // if ( count != 0 ) { // 1 element left
+  //   copy_1_element;
+  // }
+  //
   void generate_disjoint_long_copy_core(bool aligned) {
     Label L_copy_8_bytes, L_copy_16_bytes, L_exit;
     const Register from    = O0;  // source array address
@@ -2012,6 +2033,38 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(G0, offset0);   // offset from start of arrays (0)
       __ brx(Assembler::negative, false, Assembler::pn, L_copy_8_bytes );
       __ delayed()->add(offset0, 8, offset8);
+
+    // Copy by 64 bytes chunks
+    Label L_copy_64_bytes;
+    const Register from64 = O3;  // source address
+    const Register to64   = G3;  // destination address
+      __ subcc(count, 6, O3);
+      __ brx(Assembler::negative, false, Assembler::pt, L_copy_16_bytes );
+      __ delayed()->mov(to,   to64);
+      // Now we can use O4(offset0), O5(offset8) as temps
+      __ mov(O3, count);
+      __ mov(from, from64);
+
+      __ align(16);
+    __ BIND(L_copy_64_bytes);
+      for( int off = 0; off < 64; off += 16 ) {
+        __ ldx(from64,  off+0, O4);
+        __ ldx(from64,  off+8, O5);
+        __ stx(O4, to64,  off+0);
+        __ stx(O5, to64,  off+8);
+      }
+      __ deccc(count, 8);
+      __ inc(from64, 64);
+      __ brx(Assembler::greaterEqual, false, Assembler::pt, L_copy_64_bytes);
+      __ delayed()->inc(to64, 64);
+
+      // Restore O4(offset0), O5(offset8)
+      __ sub(from64, from, offset0);
+      __ inccc(count, 6);
+      __ brx(Assembler::negative, false, Assembler::pn, L_copy_8_bytes );
+      __ delayed()->add(offset0, 8, offset8);
+
+      // Copy by 16 bytes chunks
       __ align(16);
     __ BIND(L_copy_16_bytes);
       __ ldx(from, offset0, O3);
@@ -2023,6 +2076,7 @@ class StubGenerator: public StubCodeGenerator {
       __ brx(Assembler::greaterEqual, false, Assembler::pt, L_copy_16_bytes);
       __ delayed()->inc(offset8, 16);
 
+      // Copy last 8 bytes
     __ BIND(L_copy_8_bytes);
       __ inccc(count, 2);
       __ brx(Assembler::zero, true, Assembler::pn, L_exit );
