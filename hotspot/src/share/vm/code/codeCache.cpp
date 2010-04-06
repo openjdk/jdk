@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,9 +284,11 @@ void CodeCache::scavenge_root_nmethods_do(CodeBlobClosure* f) {
       cur->print_on(tty, is_live ? "scavenge root" : "dead scavenge root"); tty->cr();
     }
 #endif //PRODUCT
-    if (is_live)
+    if (is_live) {
       // Perform cur->oops_do(f), maybe just once per nmethod.
       f->do_code_blob(cur);
+      cur->fix_oop_relocations();
+    }
   }
 
   // Check for stray marks.
