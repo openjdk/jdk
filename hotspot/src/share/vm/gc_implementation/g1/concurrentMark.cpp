@@ -708,24 +708,46 @@ ConcurrentMark::~ConcurrentMark() {
 //
 
 void ConcurrentMark::clearNextBitmap() {
-   guarantee(!G1CollectedHeap::heap()->mark_in_progress(), "Precondition.");
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1CollectorPolicy* g1p = g1h->g1_policy();
 
-   // clear the mark bitmap (no grey objects to start with).
-   // We need to do this in chunks and offer to yield in between
-   // each chunk.
-   HeapWord* start  = _nextMarkBitMap->startWord();
-   HeapWord* end    = _nextMarkBitMap->endWord();
-   HeapWord* cur    = start;
-   size_t chunkSize = M;
-   while (cur < end) {
-     HeapWord* next = cur + chunkSize;
-     if (next > end)
-       next = end;
-     MemRegion mr(cur,next);
-     _nextMarkBitMap->clearRange(mr);
-     cur = next;
-     do_yield_check();
-   }
+  // Make sure that the concurrent mark thread looks to still be in
+  // the current cycle.
+  guarantee(cmThread()->during_cycle(), "invariant");
+
+  // We are finishing up the current cycle by clearing the next
+  // marking bitmap and getting it ready for the next cycle. During
+  // this time no other cycle can start. So, let's make sure that this
+  // is the case.
+  guarantee(!g1h->mark_in_progress(), "invariant");
+
+  // clear the mark bitmap (no grey objects to start with).
+  // We need to do this in chunks and offer to yield in between
+  // each chunk.
+  HeapWord* start  = _nextMarkBitMap->startWord();
+  HeapWord* end    = _nextMarkBitMap->endWord();
+  HeapWord* cur    = start;
+  size_t chunkSize = M;
+  while (cur < end) {
+    HeapWord* next = cur + chunkSize;
+    if (next > end)
+      next = end;
+    MemRegion mr(cur,next);
+    _nextMarkBitMap->clearRange(mr);
+    cur = next;
+    do_yield_check();
+
+    // Repeat the asserts from above. We'll do them as asserts here to
+    // minimize their overhead on the product. However, we'll have
+    // them as guarantees at the beginning / end of the bitmap
+    // clearing to get some checking in the product.
+    assert(cmThread()->during_cycle(), "invariant");
+    assert(!g1h->mark_in_progress(), "invariant");
+  }
+
+  // Repeat the asserts from above.
+  guarantee(cmThread()->during_cycle(), "invariant");
+  guarantee(!g1h->mark_in_progress(), "invariant");
 }
 
 class NoteStartOfMarkHRClosure: public HeapRegionClosure {
