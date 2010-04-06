@@ -249,6 +249,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     boolean isUserServerAuth;
     boolean isUserProxyAuth;
 
+    String serverAuthKey, proxyAuthKey;
+
     /* Progress source */
     protected ProgressSource pi;
 
@@ -1503,11 +1505,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
             throw e;
         } finally {
-            if (respCode == HTTP_PROXY_AUTH && proxyAuthentication != null) {
-                proxyAuthentication.endAuthRequest();
+            if (proxyAuthKey != null) {
+                AuthenticationInfo.endAuthRequest(proxyAuthKey);
             }
-            else if (respCode == HTTP_UNAUTHORIZED && serverAuthentication != null) {
-                serverAuthentication.endAuthRequest();
+            if (serverAuthKey != null) {
+                AuthenticationInfo.endAuthRequest(serverAuthKey);
             }
         }
     }
@@ -1720,8 +1722,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                       statusLine + "\"");
             }
         } finally  {
-            if (respCode == HTTP_PROXY_AUTH && proxyAuthentication != null) {
-                proxyAuthentication.endAuthRequest();
+            if (proxyAuthKey != null) {
+                AuthenticationInfo.endAuthRequest(proxyAuthKey);
             }
         }
 
@@ -1837,10 +1839,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             if (realm == null)
                 realm = "";
-            ret = AuthenticationInfo.getProxyAuth(host,
-                                                  port,
-                                                  realm,
-                                                  authScheme);
+            proxyAuthKey = AuthenticationInfo.getProxyAuthKey(host, port, realm, authScheme);
+            ret = AuthenticationInfo.getProxyAuth(proxyAuthKey);
             if (ret == null) {
                 switch (authScheme) {
                 case BASIC:
@@ -1981,7 +1981,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             domain = p.findValue ("domain");
             if (realm == null)
                 realm = "";
-            ret = AuthenticationInfo.getServerAuth(url, realm, authScheme);
+            serverAuthKey = AuthenticationInfo.getServerAuthKey(url, realm, authScheme);
+            ret = AuthenticationInfo.getServerAuth(serverAuthKey);
             InetAddress addr = null;
             if (ret == null) {
                 try {
