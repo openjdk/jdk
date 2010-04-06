@@ -1143,7 +1143,7 @@ static void mcast_set_if_by_if_v4(JNIEnv *env, jobject this, int fd, jobject val
     jobject addr;
     int i;
 
-    if (ni_addrsID == NULL) {
+    if (ni_addrsID == NULL || ia_addressID == NULL) {
         jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
         CHECK_NULL(c);
         ni_addrsID = (*env)->GetFieldID(env, c, "addrs",
