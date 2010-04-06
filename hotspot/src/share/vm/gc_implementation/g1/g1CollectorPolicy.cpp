@@ -178,8 +178,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
   // so the hack is to do the cast  QQQ FIXME
   _pauses_btwn_concurrent_mark((size_t)G1PausesBtwnConcMark),
   _n_marks_since_last_pause(0),
-  _conc_mark_initiated(false),
-  _should_initiate_conc_mark(false),
+  _initiate_conc_mark_if_possible(false),
+  _during_initial_mark_pause(false),
   _should_revert_to_full_young_gcs(false),
   _last_full_young_gc(false),
 
@@ -793,7 +793,7 @@ void G1CollectorPolicy::calculate_young_list_target_config(size_t rs_lengths) {
                            elapsed_time_ms,
                            calculations,
                            full_young_gcs() ? "full" : "partial",
-                           should_initiate_conc_mark() ? " i-m" : "",
+                           during_initial_mark_pause() ? " i-m" : "",
                            _in_marking_window,
                            _in_marking_window_im);
 #endif // TRACE_CALC_YOUNG_CONFIG
@@ -1040,7 +1040,8 @@ void G1CollectorPolicy::record_full_collection_end() {
   set_full_young_gcs(true);
   _last_full_young_gc = false;
   _should_revert_to_full_young_gcs = false;
-  _should_initiate_conc_mark = false;
+  clear_initiate_conc_mark_if_possible();
+  clear_during_initial_mark_pause();
   _known_garbage_bytes = 0;
   _known_garbage_ratio = 0.0;
   _in_marking_window = false;
@@ -1186,7 +1187,8 @@ void G1CollectorPolicy::record_concurrent_mark_init_start() {
 void G1CollectorPolicy::record_concurrent_mark_init_end_pre(double
                                                    mark_init_elapsed_time_ms) {
   _during_marking = true;
-  _should_initiate_conc_mark = false;
+  assert(!initiate_conc_mark_if_possible(), "we should have cleared it by now");
+  clear_during_initial_mark_pause();
   _cur_mark_stop_world_time_ms = mark_init_elapsed_time_ms;
 }
 
@@ -1257,7 +1259,6 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_end_work2() {
   }
   _n_pauses_at_mark_end = _n_pauses;
   _n_marks_since_last_pause++;
-  _conc_mark_initiated = false;
 }
 
 void
@@ -1453,17 +1454,24 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
 #endif // PRODUCT
 
   if (in_young_gc_mode()) {
-    last_pause_included_initial_mark = _should_initiate_conc_mark;
+    last_pause_included_initial_mark = during_initial_mark_pause();
     if (last_pause_included_initial_mark)
       record_concurrent_mark_init_end_pre(0.0);
 
     size_t min_used_targ =
       (_g1->capacity() / 100) * InitiatingHeapOccupancyPercent;
 
-    if (cur_used_bytes > min_used_targ) {
-      if (cur_used_bytes <= _prev_collection_pause_used_at_end_bytes) {
-      } else if (!_g1->mark_in_progress() && !_last_full_young_gc) {
-        _should_initiate_conc_mark = true;
+
+    if (!_g1->mark_in_progress() && !_last_full_young_gc) {
+      assert(!last_pause_included_initial_mark, "invariant");
+      if (cur_used_bytes > min_used_targ &&
+          cur_used_bytes > _prev_collection_pause_used_at_end_bytes) {
+        assert(!during_initial_mark_pause(), "we should not see this here");
+
+        // Note: this might have already been set, if during the last
+        // pause we decided to start a cycle but at the beginning of
+        // this pause we decided to postpone it. That's OK.
+        set_initiate_conc_mark_if_possible();
       }
     }
 
@@ -1754,7 +1762,7 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
 
   bool new_in_marking_window = _in_marking_window;
   bool new_in_marking_window_im = false;
-  if (_should_initiate_conc_mark) {
+  if (during_initial_mark_pause()) {
     new_in_marking_window = true;
     new_in_marking_window_im = true;
   }
@@ -2173,7 +2181,13 @@ void G1CollectorPolicy::check_if_region_is_too_expensive(double
   if (predicted_time_ms > _expensive_region_limit_ms) {
     if (!in_young_gc_mode()) {
         set_full_young_gcs(true);
-      _should_initiate_conc_mark = true;
+        // We might want to do something different here. However,
+        // right now we don't support the non-generational G1 mode
+        // (and in fact we are planning to remove the associated code,
+        // see CR 6814390). So, let's leave it as is and this will be
+        // removed some time in the future
+        ShouldNotReachHere();
+        set_during_initial_mark_pause();
     } else
       // no point in doing another partial one
       _should_revert_to_full_young_gcs = true;
@@ -2695,6 +2709,50 @@ bool G1CollectorPolicy_BestRegionsFirst::assertMarkedBytesDataOK() {
   return true;
 }
 #endif
+
+void
+G1CollectorPolicy::decide_on_conc_mark_initiation() {
+  // We are about to decide on whether this pause will be an
+  // initial-mark pause.
+
+  // First, during_initial_mark_pause() should not be already set. We
+  // will set it here if we have to. However, it should be cleared by
+  // the end of the pause (it's only set for the duration of an
+  // initial-mark pause).
+  assert(!during_initial_mark_pause(), "pre-condition");
+
+  if (initiate_conc_mark_if_possible()) {
+    // We had noticed on a previous pause that the heap occupancy has
+    // gone over the initiating threshold and we should start a
+    // concurrent marking cycle. So we might initiate one.
+
+    bool during_cycle = _g1->concurrent_mark()->cmThread()->during_cycle();
+    if (!during_cycle) {
+      // The concurrent marking thread is not "during a cycle", i.e.,
+      // it has completed the last one. So we can go ahead and
+      // initiate a new cycle.
+
+      set_during_initial_mark_pause();
+
+      // And we can now clear initiate_conc_mark_if_possible() as
+      // we've already acted on it.
+      clear_initiate_conc_mark_if_possible();
+    } else {
+      // The concurrent marking thread is still finishing up the
+      // previous cycle. If we start one right now the two cycles
+      // overlap. In particular, the concurrent marking thread might
+      // be in the process of clearing the next marking bitmap (which
+      // we will use for the next cycle if we start one). Starting a
+      // cycle now will be bad given that parts of the marking
+      // information might get cleared by the marking thread. And we
+      // cannot wait for the marking thread to finish the cycle as it
+      // periodically yields while clearing the next marking bitmap
+      // and, if it's in a yield point, it's waiting for us to
+      // finish. So, at this point we will not start a cycle and we'll
+      // let the concurrent marking thread complete the last one.
+    }
+  }
+}
 
 void
 G1CollectorPolicy_BestRegionsFirst::
