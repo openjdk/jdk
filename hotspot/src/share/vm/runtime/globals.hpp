@@ -3110,6 +3110,9 @@ class CommandLineFlags {
   develop_pd(intx, CodeEntryAlignment,                                      \
           "Code entry alignment for generated code (in bytes)")             \
                                                                             \
+  product_pd(intx, OptoLoopAlignment,                                       \
+          "Align inner loops to zero relative to this modulus")             \
+                                                                            \
   product_pd(uintx, InitialCodeCacheSize,                                   \
           "Initial code cache size (in bytes)")                             \
                                                                             \

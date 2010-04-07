@@ -52,9 +52,6 @@
           "Code alignment for interior entry points "                       \
           "in generated code (in bytes)")                                   \
                                                                             \
-  product_pd(intx, OptoLoopAlignment,                                       \
-          "Align inner loops to zero relative to this modulus")             \
-                                                                            \
   product(intx, MaxLoopPad, (OptoLoopAlignment-1),                          \
           "Align a loop if padding size in bytes is less or equal to this value") \
                                                                             \

@@ -2849,7 +2849,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
 
 void LIR_Assembler::align_backward_branch_target() {
-  __ align(16);
+  __ align(OptoLoopAlignment);
 }
 
 
