@@ -1052,7 +1052,8 @@ class CommandLineFlags {
           "Use SSE2 MOVDQU instruction for Arraycopy")                      \
                                                                             \
   product(intx, FieldsAllocationStyle, 1,                                   \
-          "0 - type based with oops first, 1 - with oops last")             \
+          "0 - type based with oops first, 1 - with oops last, "            \
+          "2 - oops in super and sub classes are together")                 \
                                                                             \
   product(bool, CompactFields, true,                                        \
           "Allocate nonstatic fields in gaps between previous fields")      \
