@@ -123,16 +123,16 @@ void typeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
      || (((unsigned int) length + (unsigned int) dst_pos) > (unsigned int) d->length()) ) {
     THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
   }
+  // Check zero copy
+  if (length == 0)
+    return;
 
   // This is an attempt to make the copy_array fast.
-  // NB: memmove takes care of overlapping memory segments.
-  // Potential problem: memmove is not guaranteed to be word atomic
-  // Revisit in Merlin
   int l2es = log2_element_size();
   int ihs = array_header_in_bytes() / wordSize;
-  char* src = (char*) ((oop*)s + ihs) + (src_pos << l2es);
-  char* dst = (char*) ((oop*)d + ihs) + (dst_pos << l2es);
-  memmove(dst, src, length << l2es);
+  char* src = (char*) ((oop*)s + ihs) + ((size_t)src_pos << l2es);
+  char* dst = (char*) ((oop*)d + ihs) + ((size_t)dst_pos << l2es);
+  Copy::conjoint_memory_atomic(src, dst, (size_t)length << l2es);
 }
 
 
