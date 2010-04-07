@@ -40,6 +40,9 @@ define_pd_global(bool, ImplicitNullChecks,          true);  // Generate code for
 define_pd_global(bool, UncommonNullCast,            true);  // Uncommon-trap NULLs past to check cast
 
 define_pd_global(intx, CodeEntryAlignment,    32);
+// The default setting 16/16 seems to work best.
+// (For _228_jack 16/16 is 2% better than 4/4, 16/4, 32/32, 32/16, or 16/32.)
+define_pd_global(intx, OptoLoopAlignment,     16);  // = 4*wordSize
 define_pd_global(intx, InlineFrequencyCount,  50);  // we can use more inlining on the SPARC
 define_pd_global(intx, InlineSmallCode,       1500);
 #ifdef _LP64

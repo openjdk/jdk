@@ -86,14 +86,14 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(InteriorEntryAlignment)) {
       FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
     }
-    if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
-      FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
-    }
     if (is_niagara1_plus() && FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
       // Use smaller prefetch distance on N2
       FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
     }
 #endif
+    if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
+      FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
+    }
   }
 
   // Use hardware population count instruction if available.
