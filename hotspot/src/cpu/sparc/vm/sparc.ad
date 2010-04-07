@@ -471,6 +471,9 @@ extern bool can_branch_register( Node *bol, Node *cmp );
 source %{
 #define __ _masm.
 
+// Block initializing store
+#define ASI_BLK_INIT_QUAD_LDD_P    0xE2
+
 // tertiary op of a LoadP or StoreP encoding
 #define REGP_OP true
 
@@ -6147,6 +6150,7 @@ instruct prefetchr( memory mem ) %{
 %}
 
 instruct prefetchw( memory mem ) %{
+  predicate(AllocatePrefetchStyle != 3 );
   match( PrefetchWrite mem );
   ins_cost(MEMORY_REF_COST);
 
@@ -6156,6 +6160,23 @@ instruct prefetchw( memory mem ) %{
   ins_pipe(iload_mem);
 %}
 
+// Use BIS instruction to prefetch.
+instruct prefetchw_bis( memory mem ) %{
+  predicate(AllocatePrefetchStyle == 3);
+  match( PrefetchWrite mem );
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "STXA   G0,$mem\t! // Block initializing store" %}
+  ins_encode %{
+     Register base = as_Register($mem$$base);
+     int disp = $mem$$disp;
+     if (disp != 0) {
+       __ add(base, AllocatePrefetchStepSize, base);
+     }
+     __ stxa(G0, base, G0, ASI_BLK_INIT_QUAD_LDD_P);
+  %}
+  ins_pipe(istore_mem_reg);
+%}
 
 //----------Store Instructions-------------------------------------------------
 // Store Byte

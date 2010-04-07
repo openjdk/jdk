@@ -2708,7 +2708,8 @@ class CommandLineFlags {
   product(intx,  AllocatePrefetchStyle, 1,                                  \
           "0 = no prefetch, "                                               \
           "1 = prefetch instructions for each allocation, "                 \
-          "2 = use TLAB watermark to gate allocation prefetch")             \
+          "2 = use TLAB watermark to gate allocation prefetch, "            \
+          "3 = use BIS instruction on Sparc for allocation prefetch")       \
                                                                             \
   product(intx,  AllocatePrefetchDistance, -1,                              \
           "Distance to prefetch ahead of allocation pointer")               \
