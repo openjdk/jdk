@@ -2942,6 +2942,9 @@ void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
   // the same region
   assert(r == NULL || !r->is_gc_alloc_region(),
          "shouldn't already be a GC alloc region");
+  assert(r == NULL || !r->isHumongous(),
+         "humongous regions shouldn't be used as GC alloc regions");
+
   HeapWord* original_top = NULL;
   if (r != NULL)
     original_top = r->top();
@@ -3084,12 +3087,17 @@ void G1CollectedHeap::get_gc_alloc_regions() {
 
       if (alloc_region->in_collection_set() ||
           alloc_region->top() == alloc_region->end() ||
-          alloc_region->top() == alloc_region->bottom()) {
-        // we will discard the current GC alloc region if it's in the
-        // collection set (it can happen!), if it's already full (no
-        // point in using it), or if it's empty (this means that it
-        // was emptied during a cleanup and it should be on the free
-        // list now).
+          alloc_region->top() == alloc_region->bottom() ||
+          alloc_region->isHumongous()) {
+        // we will discard the current GC alloc region if
+        // * it's in the collection set (it can happen!),
+        // * it's already full (no point in using it),
+        // * it's empty (this means that it was emptied during
+        // a cleanup and it should be on the free list now), or
+        // * it's humongous (this means that it was emptied
+        // during a cleanup and was added to the free list, but
+        // has been subseqently used to allocate a humongous
+        // object that may be less than the region size).
 
         alloc_region = NULL;
       }
