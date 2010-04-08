@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 
 #define DEF_MEM_LEVEL 8
 
-static jfieldID strmID;
 static jfieldID levelID;
 static jfieldID strategyID;
 static jfieldID setParamsID;
@@ -49,7 +48,6 @@ static jfieldID bufID, offID, lenID;
 JNIEXPORT void JNICALL
 Java_java_util_zip_Deflater_initIDs(JNIEnv *env, jclass cls)
 {
-    strmID = (*env)->GetFieldID(env, cls, "strm", "J");
     levelID = (*env)->GetFieldID(env, cls, "level", "I");
     strategyID = (*env)->GetFieldID(env, cls, "strategy", "I");
     setParamsID = (*env)->GetFieldID(env, cls, "setParams", "Z");
@@ -94,7 +92,7 @@ Java_java_util_zip_Deflater_init(JNIEnv *env, jclass cls, jint level,
 }
 
 JNIEXPORT void JNICALL
-Java_java_util_zip_Deflater_setDictionary(JNIEnv *env, jclass cls, jlong strm,
+Java_java_util_zip_Deflater_setDictionary(JNIEnv *env, jclass cls, jlong addr,
                                           jarray b, jint off, jint len)
 {
     Bytef *buf = (*env)->GetPrimitiveArrayCritical(env, b, 0);
@@ -102,7 +100,7 @@ Java_java_util_zip_Deflater_setDictionary(JNIEnv *env, jclass cls, jlong strm,
     if (buf == 0) {/* out of memory */
         return;
     }
-    res = deflateSetDictionary((z_stream *)jlong_to_ptr(strm), buf + off, len);
+    res = deflateSetDictionary((z_stream *)jlong_to_ptr(addr), buf + off, len);
     (*env)->ReleasePrimitiveArrayCritical(env, b, buf, 0);
     switch (res) {
     case Z_OK:
@@ -111,151 +109,144 @@ Java_java_util_zip_Deflater_setDictionary(JNIEnv *env, jclass cls, jlong strm,
         JNU_ThrowIllegalArgumentException(env, 0);
         break;
     default:
-        JNU_ThrowInternalError(env, ((z_stream *)jlong_to_ptr(strm))->msg);
+        JNU_ThrowInternalError(env, ((z_stream *)jlong_to_ptr(addr))->msg);
         break;
     }
 }
 
 JNIEXPORT jint JNICALL
-Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this,
+Java_java_util_zip_Deflater_deflateBytes(JNIEnv *env, jobject this, jlong addr,
                                          jarray b, jint off, jint len, jint flush)
 {
-    z_stream *strm = jlong_to_ptr((*env)->GetLongField(env, this, strmID));
+    z_stream *strm = jlong_to_ptr(addr);
 
-    if (strm == 0) {
-        JNU_ThrowNullPointerException(env, 0);
-        return 0;
+    jarray this_buf = (*env)->GetObjectField(env, this, bufID);
+    jint this_off = (*env)->GetIntField(env, this, offID);
+    jint this_len = (*env)->GetIntField(env, this, lenID);
+    jbyte *in_buf;
+    jbyte *out_buf;
+    int res;
+    if ((*env)->GetBooleanField(env, this, setParamsID)) {
+        int level = (*env)->GetIntField(env, this, levelID);
+        int strategy = (*env)->GetIntField(env, this, strategyID);
+
+        in_buf = (jbyte *) malloc(this_len);
+        if (in_buf == 0) {
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return 0;
+        }
+        (*env)->GetByteArrayRegion(env, this_buf, this_off, this_len, in_buf);
+        out_buf = (jbyte *) malloc(len);
+        if (out_buf == 0) {
+            free(in_buf);
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return 0;
+        }
+
+        strm->next_in = (Bytef *) in_buf;
+        strm->next_out = (Bytef *) out_buf;
+        strm->avail_in = this_len;
+        strm->avail_out = len;
+        res = deflateParams(strm, level, strategy);
+
+        if (res == Z_OK) {
+            (*env)->SetByteArrayRegion(env, b, off, len - strm->avail_out, out_buf);
+        }
+        free(out_buf);
+        free(in_buf);
+
+        switch (res) {
+        case Z_OK:
+            (*env)->SetBooleanField(env, this, setParamsID, JNI_FALSE);
+            this_off += this_len - strm->avail_in;
+            (*env)->SetIntField(env, this, offID, this_off);
+            (*env)->SetIntField(env, this, lenID, strm->avail_in);
+            return len - strm->avail_out;
+        case Z_BUF_ERROR:
+            (*env)->SetBooleanField(env, this, setParamsID, JNI_FALSE);
+            return 0;
+        default:
+            JNU_ThrowInternalError(env, strm->msg);
+            return 0;
+        }
     } else {
-        jarray this_buf = (*env)->GetObjectField(env, this, bufID);
-        jint this_off = (*env)->GetIntField(env, this, offID);
-        jint this_len = (*env)->GetIntField(env, this, lenID);
-        jbyte *in_buf;
-        jbyte *out_buf;
-        int res;
-        if ((*env)->GetBooleanField(env, this, setParamsID)) {
-            int level = (*env)->GetIntField(env, this, levelID);
-            int strategy = (*env)->GetIntField(env, this, strategyID);
+        jboolean finish = (*env)->GetBooleanField(env, this, finishID);
+        in_buf = (jbyte *) malloc(this_len);
+        if (in_buf == 0) {
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return 0;
+        }
+        (*env)->GetByteArrayRegion(env, this_buf, this_off, this_len, in_buf);
 
-            in_buf = (jbyte *) malloc(this_len);
-            if (in_buf == 0) {
-                JNU_ThrowOutOfMemoryError(env, 0);
-                return 0;
-            }
-            (*env)->GetByteArrayRegion(env, this_buf, this_off, this_len, in_buf);
-
-            out_buf = (jbyte *) malloc(len);
-            if (out_buf == 0) {
-                free(in_buf);
-                JNU_ThrowOutOfMemoryError(env, 0);
-                return 0;
-            }
-
-            strm->next_in = (Bytef *) in_buf;
-            strm->next_out = (Bytef *) out_buf;
-            strm->avail_in = this_len;
-            strm->avail_out = len;
-            res = deflateParams(strm, level, strategy);
-
-            if (res == Z_OK) {
-                (*env)->SetByteArrayRegion(env, b, off, len - strm->avail_out, out_buf);
-            }
-            free(out_buf);
+        out_buf = (jbyte *) malloc(len);
+        if (out_buf == 0) {
             free(in_buf);
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return 0;
+        }
 
-            switch (res) {
-            case Z_OK:
-                (*env)->SetBooleanField(env, this, setParamsID, JNI_FALSE);
-                this_off += this_len - strm->avail_in;
-                (*env)->SetIntField(env, this, offID, this_off);
-                (*env)->SetIntField(env, this, lenID, strm->avail_in);
-                return len - strm->avail_out;
-            case Z_BUF_ERROR:
-                (*env)->SetBooleanField(env, this, setParamsID, JNI_FALSE);
-                return 0;
+        strm->next_in = (Bytef *) in_buf;
+        strm->next_out = (Bytef *) out_buf;
+        strm->avail_in = this_len;
+        strm->avail_out = len;
+        res = deflate(strm, finish ? Z_FINISH : flush);
+
+        if (res == Z_STREAM_END || res == Z_OK) {
+            (*env)->SetByteArrayRegion(env, b, off, len - strm->avail_out, out_buf);
+        }
+        free(out_buf);
+        free(in_buf);
+
+        switch (res) {
+        case Z_STREAM_END:
+            (*env)->SetBooleanField(env, this, finishedID, JNI_TRUE);
+            /* fall through */
+        case Z_OK:
+            this_off += this_len - strm->avail_in;
+            (*env)->SetIntField(env, this, offID, this_off);
+            (*env)->SetIntField(env, this, lenID, strm->avail_in);
+            return len - strm->avail_out;
+        case Z_BUF_ERROR:
+            return 0;
             default:
-                JNU_ThrowInternalError(env, strm->msg);
-                return 0;
-            }
-        } else {
-            jboolean finish = (*env)->GetBooleanField(env, this, finishID);
-
-            in_buf = (jbyte *) malloc(this_len);
-            if (in_buf == 0) {
-                JNU_ThrowOutOfMemoryError(env, 0);
-                return 0;
-            }
-            (*env)->GetByteArrayRegion(env, this_buf, this_off, this_len, in_buf);
-
-            out_buf = (jbyte *) malloc(len);
-            if (out_buf == 0) {
-                free(in_buf);
-                JNU_ThrowOutOfMemoryError(env, 0);
-                return 0;
-            }
-
-            strm->next_in = (Bytef *) in_buf;
-            strm->next_out = (Bytef *) out_buf;
-            strm->avail_in = this_len;
-            strm->avail_out = len;
-            res = deflate(strm, finish ? Z_FINISH : flush);
-
-            if (res == Z_STREAM_END || res == Z_OK) {
-                (*env)->SetByteArrayRegion(env, b, off, len - strm->avail_out, out_buf);
-            }
-            free(out_buf);
-            free(in_buf);
-
-            switch (res) {
-            case Z_STREAM_END:
-                (*env)->SetBooleanField(env, this, finishedID, JNI_TRUE);
-                /* fall through */
-            case Z_OK:
-                this_off += this_len - strm->avail_in;
-                (*env)->SetIntField(env, this, offID, this_off);
-                (*env)->SetIntField(env, this, lenID, strm->avail_in);
-                return len - strm->avail_out;
-            case Z_BUF_ERROR:
-                return 0;
-            default:
-                JNU_ThrowInternalError(env, strm->msg);
-                return 0;
-            }
+            JNU_ThrowInternalError(env, strm->msg);
+            return 0;
         }
     }
 }
 
 JNIEXPORT jint JNICALL
-Java_java_util_zip_Deflater_getAdler(JNIEnv *env, jclass cls, jlong strm)
+Java_java_util_zip_Deflater_getAdler(JNIEnv *env, jclass cls, jlong addr)
 {
-    return ((z_stream *)jlong_to_ptr(strm))->adler;
+    return ((z_stream *)jlong_to_ptr(addr))->adler;
 }
 
 JNIEXPORT jlong JNICALL
-Java_java_util_zip_Deflater_getBytesRead(JNIEnv *env, jclass cls, jlong strm)
+Java_java_util_zip_Deflater_getBytesRead(JNIEnv *env, jclass cls, jlong addr)
 {
-    return ((z_stream *)jlong_to_ptr(strm))->total_in;
+    return ((z_stream *)jlong_to_ptr(addr))->total_in;
 }
 
 JNIEXPORT jlong JNICALL
-Java_java_util_zip_Deflater_getBytesWritten(JNIEnv *env, jclass cls, jlong strm)
+Java_java_util_zip_Deflater_getBytesWritten(JNIEnv *env, jclass cls, jlong addr)
 {
-    return ((z_stream *)jlong_to_ptr(strm))->total_out;
+    return ((z_stream *)jlong_to_ptr(addr))->total_out;
 }
 
 JNIEXPORT void JNICALL
-Java_java_util_zip_Deflater_reset(JNIEnv *env, jclass cls, jlong strm)
+Java_java_util_zip_Deflater_reset(JNIEnv *env, jclass cls, jlong addr)
 {
-    if (deflateReset((z_stream *)jlong_to_ptr(strm)) != Z_OK) {
+    if (deflateReset((z_stream *)jlong_to_ptr(addr)) != Z_OK) {
         JNU_ThrowInternalError(env, 0);
     }
 }
 
 JNIEXPORT void JNICALL
-Java_java_util_zip_Deflater_end(JNIEnv *env, jclass cls, jlong strm)
+Java_java_util_zip_Deflater_end(JNIEnv *env, jclass cls, jlong addr)
 {
-    if (deflateEnd((z_stream *)jlong_to_ptr(strm)) == Z_STREAM_ERROR) {
+    if (deflateEnd((z_stream *)jlong_to_ptr(addr)) == Z_STREAM_ERROR) {
         JNU_ThrowInternalError(env, 0);
     } else {
-        free((z_stream *)jlong_to_ptr(strm));
+        free((z_stream *)jlong_to_ptr(addr));
     }
 }

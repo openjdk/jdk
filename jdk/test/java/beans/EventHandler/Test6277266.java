@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class Test6277266 {
             );
             throw new Error("SecurityException expected");
         } catch (InvocationTargetException exception) {
-            if (exception.getCause().getCause() instanceof SecurityException){
+            if (exception.getCause() instanceof SecurityException){
                 return; // expected security exception
             }
             throw new Error("unexpected exception", exception);

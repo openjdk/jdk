@@ -133,11 +133,8 @@ Java_sun_management_Flag_getFlags
                                            globals[i].value.j);
             break;
         default:
-            // unsupported type
-            sprintf(errmsg, "Unsupported VMGlobal Type %d", globals[i].type);
-            JNU_ThrowInternalError(env, errmsg);
-            free(globals);
-            return 0;
+            // ignore unsupported type
+            continue;
         }
         switch (globals[i].origin) {
         case JMM_VMGLOBAL_ORIGIN_DEFAULT:

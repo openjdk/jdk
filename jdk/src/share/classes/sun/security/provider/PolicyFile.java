@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,9 @@ import java.lang.reflect.ReflectPermission;
 import javax.sound.sampled.AudioPermission;
 import javax.net.ssl.SSLPermission;
 */
+import sun.misc.JavaSecurityProtectionDomainAccess;
+import static sun.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
+import sun.misc.SharedSecrets;
 import sun.security.util.Password;
 import sun.security.util.PolicyUtil;
 import sun.security.util.PropertyExpander;
@@ -1102,7 +1105,7 @@ public class PolicyFile extends java.security.Policy {
     /**
      * Refreshes the policy object by re-reading all the policy files.
      */
-    public void refresh() {
+    @Override public void refresh() {
         init(url);
     }
 
@@ -1119,9 +1122,10 @@ public class PolicyFile extends java.security.Policy {
      *
      * @see java.security.ProtectionDomain
      */
+    @Override
     public boolean implies(ProtectionDomain pd, Permission p) {
         PolicyInfo pi = policyInfo.get();
-        Map<ProtectionDomain, PermissionCollection> pdMap = pi.getPdMapping();
+        ProtectionDomainCache pdMap = pi.getPdMapping();
 
         PermissionCollection pc = pdMap.get(pd);
 
@@ -1167,6 +1171,7 @@ public class PolicyFile extends java.security.Policy {
      * @return the Permissions granted to the provided
      *          <code>ProtectionDomain</code>.
      */
+    @Override
     public PermissionCollection getPermissions(ProtectionDomain domain) {
         Permissions perms = new Permissions();
 
@@ -1202,6 +1207,7 @@ public class PolicyFile extends java.security.Policy {
      *
      * @return the set of permissions according to the policy.
      */
+    @Override
     public PermissionCollection getPermissions(CodeSource codesource) {
         return getPermissions(new Permissions(), codesource);
     }
@@ -2119,7 +2125,7 @@ public class PolicyFile extends java.security.Policy {
             return codesource;
         }
 
-        public String toString(){
+        @Override public String toString(){
             StringBuilder sb = new StringBuilder();
             sb.append(ResourcesMgr.getString("("));
             sb.append(getCodeSource());
@@ -2255,7 +2261,7 @@ public class PolicyFile extends java.security.Policy {
          *
          * @return false.
          */
-        public boolean implies(Permission p) {
+        @Override public boolean implies(Permission p) {
             return false;
         }
 
@@ -2272,7 +2278,7 @@ public class PolicyFile extends java.security.Policy {
          * type (class) name, permission name, actions, and
          * certificates as this object.
          */
-        public boolean equals(Object obj) {
+        @Override public boolean equals(Object obj) {
             if (obj == this)
                 return true;
 
@@ -2320,7 +2326,7 @@ public class PolicyFile extends java.security.Policy {
          *
          * @return a hash code value for this object.
          */
-        public int hashCode() {
+        @Override public int hashCode() {
             int hash = type.hashCode();
             if (name != null)
                 hash ^= name.hashCode();
@@ -2339,7 +2345,7 @@ public class PolicyFile extends java.security.Policy {
          *
          * @return the empty string "".
          */
-        public String getActions() {
+        @Override public String getActions() {
             return "";
         }
 
@@ -2366,7 +2372,7 @@ public class PolicyFile extends java.security.Policy {
          *
          * @return information about this SelfPermission.
          */
-        public String toString() {
+        @Override public String toString() {
             return "(SelfPermission " + type + " " + name + " " + actions + ")";
         }
     }
@@ -2388,7 +2394,7 @@ public class PolicyFile extends java.security.Policy {
         final Map aliasMapping;
 
         // Maps ProtectionDomain to PermissionCollection
-        private final Map<ProtectionDomain, PermissionCollection>[] pdMapping;
+        private final ProtectionDomainCache[] pdMapping;
         private java.util.Random random;
 
         PolicyInfo(int numCaches) {
@@ -2397,16 +2403,17 @@ public class PolicyFile extends java.security.Policy {
                 Collections.synchronizedList(new ArrayList<PolicyEntry>(2));
             aliasMapping = Collections.synchronizedMap(new HashMap(11));
 
-            pdMapping = new Map[numCaches];
+            pdMapping = new ProtectionDomainCache[numCaches];
+            JavaSecurityProtectionDomainAccess jspda
+                = SharedSecrets.getJavaSecurityProtectionDomainAccess();
             for (int i = 0; i < numCaches; i++) {
-                pdMapping[i] = Collections.synchronizedMap
-                    (new WeakHashMap<ProtectionDomain, PermissionCollection>());
+                pdMapping[i] = jspda.getProtectionDomainCache();
             }
             if (numCaches > 1) {
                 random = new java.util.Random();
             }
         }
-        Map<ProtectionDomain, PermissionCollection> getPdMapping() {
+        ProtectionDomainCache getPdMapping() {
             if (pdMapping.length == 1) {
                 return pdMapping[0];
             } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,51 +21,31 @@
  * have any questions.
  */
 
-/**
- * @test
- * @bug 4152799
- * @summary  test to see if interrupting a socket accept closes fd0
- */
-import java.net.*;
 import java.io.*;
-import java.util.*;
+import java.security.cert.*;
 
-public class FDClose {
-
-    static boolean isServerReady = false;
+class SlowStreamReader {
 
     public static void main(String[] args) throws Exception {
-
-        Thread me = Thread.currentThread();
-
-        // Put a thread waiting on SocketServer.Accept
-        AReader test = new AReader();
-        Thread readerThread = new Thread(test);
-        readerThread.start();
-
-        // wait for the server socket to be ready
-        while (!isServerReady) {
-            me.sleep(100);
+        CertificateFactory factory = CertificateFactory.getInstance("X.509");
+        if (factory.generateCertificates(System.in).size() != 5) {
+            throw new Exception("Not all certs read");
         }
-
-        // Interrupt the waiting thread
-        readerThread.interrupt();
-
-        // Wait another moment
-        me.sleep(100);
-
-        // Check to see if fd0 is closed
-        System.in.available();
     }
+}
 
-    public static class AReader implements Runnable {
-        public void run() {
-            try {
-                ServerSocket sock = new ServerSocket(0);
-                isServerReady = true;
-                sock.accept();
-            } catch (Exception e) {
+class SlowStreamWriter {
+    public static void main(String[] args) throws Exception {
+        for (int i=0; i<5; i++) {
+            FileInputStream fin = new FileInputStream(new File(new File(
+                    System.getProperty("test.src", "."), "openssl"), "pem"));
+            byte[] buffer = new byte[4096];
+            while (true) {
+                int len = fin.read(buffer);
+                if (len < 0) break;
+                System.out.write(buffer, 0, len);
             }
+            Thread.sleep(2000);
         }
     }
 }

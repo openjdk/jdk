@@ -47,9 +47,11 @@ public class TcpTest extends Tests {
         try {
             ia4any = InetAddress.getByName ("0.0.0.0");
             ia6any = InetAddress.getByName ("::0");
-            int scope = ia6addr.getScopeId();
-            if (scope != 0) {
-                ia6bad = InetAddress.getByName ("fe80::1:2:3:4:5:6%"+scope);
+            if (ia6addr != null) {
+                int scope = ia6addr.getScopeId();
+                if (scope != 0) {
+                    ia6bad = InetAddress.getByName ("fe80::1:2:3:4:5:6%"+scope);
+                }
             } else {
                 ia6bad = InetAddress.getByName ("fe80::1:2:3:4:5:6");
             }
