@@ -762,7 +762,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * component's background color to be painted.
      * <li>
      * Installs the default caret and highlighter into the
-     * associated component.
+     * associated component. These properties are only set if their
+     * current value is either {@code null} or an instance of
+     * {@link UIResource}.
      * <li>
      * Attaches to the editor and model.  If there is no
      * model, a default one is created.
