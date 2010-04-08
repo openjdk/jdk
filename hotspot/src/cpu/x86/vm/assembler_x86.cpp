@@ -3365,6 +3365,13 @@ void Assembler::shrdl(Register dst, Register src) {
 
 #else // LP64
 
+void Assembler::set_byte_if_not_zero(Register dst) {
+  int enc = prefix_and_encode(dst->encoding(), true);
+  emit_byte(0x0F);
+  emit_byte(0x95);
+  emit_byte(0xE0 | enc);
+}
+
 // 64bit only pieces of the assembler
 // This should only be used by 64bit instructions that can use rip-relative
 // it cannot be used by instructions that want an immediate value.
