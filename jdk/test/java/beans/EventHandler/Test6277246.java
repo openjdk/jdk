@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,10 @@ public class Test6277246 {
         catch (NoSuchMethodException exception) {
             throw new Error("unexpected exception", exception);
         }
+        catch (SecurityException exception) {
+            // expected security exception
+        }
         catch (RuntimeException exception) {
-            if (exception.getCause() instanceof SecurityException) {
-                return; // expected security exception
-            }
             throw new Error("unexpected exception", exception);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,13 @@ import java.util.Scanner;
 import java.util.Formatter;
 import java.util.regex.*;
 import java.nio.charset.*;
-import static build.tools.charsetmapping.CharsetMapping.*;
+import static build.tools.charsetmapping.Utils.*;
 
-public class GenerateDBCS {
+public class DBCS {
     // pattern used by this class to read in mapping table
     static Pattern mPattern = Pattern.compile("(?:0x)?(\\p{XDigit}++)\\s++(?:0x)?(\\p{XDigit}++)(?:\\s++#.*)?");
-    public static void genDBCS(String args[]) throws Exception {
+
+    public static void genClass(String args[]) throws Exception {
 
         Scanner s = new Scanner(new File(args[0], args[2]));
         while (s.hasNextLine()) {
@@ -63,81 +64,29 @@ public class GenerateDBCS {
             int    b2Min    = toInteger(fields[8]);
             int    b2Max    = toInteger(fields[9]);
             System.out.printf("%s,%s,%s,%b,%s%n", clzName, csName, hisName, isASCII, pkgName);
-            genClass(args[0], args[1], "DoubleByte-X.java.template",
+            genClass0(args[0], args[1], "DoubleByte-X.java.template",
                     clzName, csName, hisName, pkgName,
                     isASCII, type,
                     b1Min, b1Max, b2Min, b2Max);
         }
     }
 
-    private static int toInteger(String s) {
+    static int toInteger(String s) {
         if (s.startsWith("0x") || s.startsWith("0X"))
             return Integer.valueOf(s.substring(2), 16);
         else
             return Integer.valueOf(s);
     }
 
-    private static void outString(Formatter out,
-                                  char[] cc, int off, int end,
-                                  String closure)
-    {
-        while (off < end) {
-            out.format("        \"");
-            for (int j = 0; j < 8; j++) {
-                if (off == end)
-                    break;
-                char c = cc[off++];
-                switch (c) {
-                case '\b':
-                    out.format("\\b"); break;
-                case '\t':
-                    out.format("\\t"); break;
-                case '\n':
-                    out.format("\\n"); break;
-                case '\f':
-                    out.format("\\f"); break;
-                case '\r':
-                    out.format("\\r"); break;
-                case '\"':
-                    out.format("\\\""); break;
-                case '\'':
-                    out.format("\\'"); break;
-                case '\\':
-                    out.format("\\\\"); break;
-                default:
-                    out.format("\\u%04X", c & 0xffff);
-                }
-            }
-            if (off == end)
-                out.format("\" %s%n", closure);
-            else
-                out.format("\" + %n");
-        }
-    }
-
-    private static void outString(Formatter out,
-                                  char[] db,
-                                  int b1,
-                                  int b2Min, int b2Max,
-                                  String closure)
-    {
-        char[] cc = new char[b2Max - b2Min + 1];
-        int off = 0;
-        for (int b2 = b2Min; b2 <= b2Max; b2++) {
-            cc[off++] = db[(b1 << 8) | b2];
-        }
-        outString(out, cc, 0, cc.length, closure);
-    }
-
-    private static void genClass(String srcDir, String dstDir, String template,
-                                 String clzName,
-                                 String csName,
-                                 String hisName,
-                                 String pkgName,
-                                 boolean isASCII,
-                                 String type,
-                                 int b1Min, int b1Max,
-                                 int b2Min, int b2Max)
+    private static void genClass0(String srcDir, String dstDir, String template,
+                                  String clzName,
+                                  String csName,
+                                  String hisName,
+                                  String pkgName,
+                                  boolean isASCII,
+                                  String type,
+                                  int b1Min, int b1Max,
+                                  int b2Min, int b2Max)
         throws Exception
     {
 
@@ -172,21 +121,21 @@ public class GenerateDBCS {
                 c2bIndex[e.cp>>8] = 1;
             }
         }
-        Formatter fm = new Formatter(b2cSB);
-        fm.format("%n    static final String b2cSBStr =%n");
-        outString(fm, db, 0x00, 0x100,  ";");
+        Output out = new Output(new Formatter(b2cSB));
+        out.format("%n    static final String b2cSBStr =%n");
+        out.format(db, 0x00, 0x100,  ";");
 
-        fm.format("%n        static final String[] b2cStr = {%n");
+        out.format("%n        static final String[] b2cStr = {%n");
         for (int i = 0; i < 0x100; i++) {
             if (b2cIndex[i] == UNMAPPABLE_DECODING) {
-                fm.format("            null,%n");  //unmappable segments
+                out.format("            null,%n");  //unmappable segments
             } else {
-                outString(fm, db, i, b2Min, b2Max, ",");
+                out.format(db, i, b2Min, b2Max, ",");
             }
         }
 
-        fm.format("        };%n");
-        fm.close();
+        out.format("        };%n");
+        out.close();
 
         // (2)now parse the .nr file which includes "b->c" non-roundtrip entries
         File f = new File(srcDir, clzName + ".nr");
@@ -201,10 +150,10 @@ public class GenerateDBCS {
                 sb.append((char)e.cp);
             }
             char[] nr = sb.toString().toCharArray();
-            fm = new Formatter(b2cNRSB);
-            fm.format("String b2cNR =%n");
-            outString(fm, nr, 0, nr.length,  ";");
-            fm.close();
+            out = new Output(new Formatter(b2cNRSB));
+            out.format("String b2cNR =%n");
+            out.format(nr, 0, nr.length,  ";");
+            out.close();
         } else {
             b2cNRSB.append("String b2cNR = null;");
         }
@@ -226,10 +175,10 @@ public class GenerateDBCS {
                 sb.append((char)e.cp);
             }
             char[] nr = sb.toString().toCharArray();
-            fm = new Formatter(c2bNRSB);
-            fm.format("String c2bNR =%n");
-            outString(fm, nr, 0, nr.length,  ";");
-            fm.close();
+            out = new Output(new Formatter(c2bNRSB));
+            out.format("String c2bNR =%n");
+            out.format(nr, 0, nr.length,  ";");
+            out.close();
         } else {
             c2bNRSB.append("String c2bNR = null;");
         }
@@ -240,15 +189,15 @@ public class GenerateDBCS {
         String c2bNR = c2bNRSB.toString();
 
         Scanner s = new Scanner(new File(srcDir, template));
-        PrintStream out = new PrintStream(new FileOutputStream(
-                              new File(dstDir, clzName + ".java")));
+        PrintStream ops = new PrintStream(new FileOutputStream(
+                             new File(dstDir, clzName + ".java")));
         if (hisName == null)
             hisName = "";
 
         while (s.hasNextLine()) {
             String line = s.nextLine();
             if (line.indexOf("$") == -1) {
-                out.println(line);
+                ops.println(line);
                 continue;
             }
             line = line.replace("$PACKAGE$" , pkgName)
@@ -280,8 +229,8 @@ public class GenerateDBCS {
                        .replace("$NONROUNDTRIP_B2C$", b2cNR)
                        .replace("$NONROUNDTRIP_C2B$", c2bNR);
 
-            out.println(line);
+            ops.println(line);
         }
-        out.close();
+        ops.close();
     }
 }

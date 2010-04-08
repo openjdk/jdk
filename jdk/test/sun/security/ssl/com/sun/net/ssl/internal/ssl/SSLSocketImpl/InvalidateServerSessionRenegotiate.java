@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 4403428
  * @summary Invalidating JSSE session on server causes SSLProtocolException
+ * @ignore incompatible with disabled unsafe renegotiation (6898739), please
+ *         reenable when safe renegotiation is implemented.
  * @author Brad Wetmore
  */
 

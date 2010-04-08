@@ -29,7 +29,6 @@ import java.net.Socket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.net.URL;
 import java.net.Proxy;
 import java.util.Arrays;
 import java.security.AccessController;
@@ -157,10 +156,15 @@ public class NetworkClient {
                         public Socket run() {
                                        return new Socket(proxy);
                                    }});
-            } else
+            } else if (proxy.type() == Proxy.Type.DIRECT) {
+                s = createSocket();
+            } else {
+                // Still connecting through a proxy
+                // server & port will be the proxy address and port
                 s = new Socket(Proxy.NO_PROXY);
+            }
         } else
-            s = new Socket();
+            s = createSocket();
         // Instance specific timeouts do have priority, that means
         // connectTimeout & readTimeout (-1 means not set)
         // Then global default timeouts
@@ -180,6 +184,15 @@ public class NetworkClient {
             s.setSoTimeout(defaultSoTimeout);
         }
         return s;
+    }
+
+    /**
+     * The following method, createSocket, is provided to allow the
+     * https client to override it so that it may use its socket factory
+     * to create the socket.
+     */
+    protected Socket createSocket() throws IOException {
+        return new java.net.Socket();
     }
 
     protected InetAddress getLocalAddress() throws IOException {
