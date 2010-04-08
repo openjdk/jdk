@@ -430,7 +430,7 @@ class StubGenerator: public StubCodeGenerator {
     __ verify_oop(exception_oop);
 
     // Restore SP from BP if the exception PC is a MethodHandle call site.
-    __ cmpl(Address(thread, JavaThread::is_method_handle_exception_offset()), 0);
+    __ cmpl(Address(thread, JavaThread::is_method_handle_return_offset()), 0);
     __ cmovptr(Assembler::notEqual, rsp, rbp);
 
     // continue at exception handler (return address removed)

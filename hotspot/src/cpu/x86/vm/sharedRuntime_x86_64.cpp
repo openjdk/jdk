@@ -3328,8 +3328,8 @@ void OptoRuntime::generate_exception_blob() {
 
   // rax: exception handler
 
-  // Restore SP from BP if the exception PC is a MethodHandle call.
-  __ cmpl(Address(r15_thread, JavaThread::is_method_handle_exception_offset()), 0);
+  // Restore SP from BP if the exception PC is a MethodHandle call site.
+  __ cmpl(Address(r15_thread, JavaThread::is_method_handle_return_offset()), 0);
   __ cmovptr(Assembler::notEqual, rsp, rbp);
 
   // We have a handler in rax (could be deopt blob).
