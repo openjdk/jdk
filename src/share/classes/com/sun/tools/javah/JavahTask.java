@@ -318,12 +318,6 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
     int run(String[] args) {
         try {
             handleOptions(args);
-            if (classes == null || classes.size() == 0) {
-                if (help || version || fullVersion)
-                    return 0;
-                else
-                    return 1;
-            }
             boolean ok = run();
             return ok ? 0 : 1;
         } catch (BadArgs e) {
@@ -355,7 +349,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             fileManager = getDefaultFileManager(diagnosticListener, log);
 
         Iterator<String> iter = args.iterator();
-        boolean noArgs = !iter.hasNext();
+        noArgs = !iter.hasNext();
 
         while (iter.hasNext()) {
             String arg = iter.next();
@@ -416,9 +410,9 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
 
         Util util = new Util(log, diagnosticListener);
 
-        if (help) {
+        if (noArgs || help) {
             showHelp();
-            return true;
+            return help; // treat noArgs as an error for purposes of exit code
         }
 
         if (version || fullVersion) {
@@ -636,6 +630,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
     String usercp;
     List<String> classes;
     boolean verbose;
+    boolean noArgs;
     boolean help;
     boolean trace;
     boolean version;

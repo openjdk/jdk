@@ -225,15 +225,15 @@ public class ClassWriter extends BasicWriter {
         writeModifiers(flags.getFieldModifiers());
         Signature_attribute sigAttr = getSignature(f.attributes);
         if (sigAttr == null)
-            print(getFieldType(f.descriptor));
+            print(getJavaFieldType(f.descriptor));
         else {
             try {
                 Type t = sigAttr.getParsedSignature().getType(constant_pool);
-                print(t);
+                print(getJavaName(t.toString()));
             } catch (ConstantPoolException e) {
                 // report error?
                 // fall back on non-generic descriptor
-                print(getFieldType(f.descriptor));
+                print(getJavaFieldType(f.descriptor));
             }
         }
         print(" ");
@@ -314,14 +314,14 @@ public class ClassWriter extends BasicWriter {
         }
         if (getName(m).equals("<init>")) {
             print(getJavaName(classFile));
-            print(getParameterTypes(d, flags));
+            print(getJavaParameterTypes(d, flags));
         } else if (getName(m).equals("<clinit>")) {
             print("{}");
         } else {
-            print(getReturnType(d));
+            print(getJavaReturnType(d));
             print(" ");
             print(getName(m));
-            print(getParameterTypes(d, flags));
+            print(getJavaParameterTypes(d, flags));
         }
 
         Attribute e_attr = m.attributes.get(Attribute.Exceptions);
@@ -460,9 +460,9 @@ public class ClassWriter extends BasicWriter {
         }
     }
 
-    String getFieldType(Descriptor d) {
+    String getJavaFieldType(Descriptor d) {
         try {
-            return d.getFieldType(constant_pool);
+            return getJavaName(d.getFieldType(constant_pool));
         } catch (ConstantPoolException e) {
             return report(e);
         } catch (DescriptorException e) {
@@ -470,9 +470,9 @@ public class ClassWriter extends BasicWriter {
         }
     }
 
-    String getReturnType(Descriptor d) {
+    String getJavaReturnType(Descriptor d) {
         try {
-            return d.getReturnType(constant_pool);
+            return getJavaName(d.getReturnType(constant_pool));
         } catch (ConstantPoolException e) {
             return report(e);
         } catch (DescriptorException e) {
@@ -480,9 +480,9 @@ public class ClassWriter extends BasicWriter {
         }
     }
 
-    String getParameterTypes(Descriptor d, AccessFlags flags) {
+    String getJavaParameterTypes(Descriptor d, AccessFlags flags) {
         try {
-            return adjustVarargs(flags, d.getParameterTypes(constant_pool));
+            return getJavaName(adjustVarargs(flags, d.getParameterTypes(constant_pool)));
         } catch (ConstantPoolException e) {
             return report(e);
         } catch (DescriptorException e) {
