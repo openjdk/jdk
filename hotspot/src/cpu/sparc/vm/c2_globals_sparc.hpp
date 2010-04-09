@@ -60,9 +60,6 @@ define_pd_global(intx, FreqInlineSize,               175);
 define_pd_global(intx, INTPRESSURE,                  48);  // large register set
 define_pd_global(intx, InteriorEntryAlignment,       16);  // = CodeEntryAlignment
 define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
-// The default setting 16/16 seems to work best.
-// (For _228_jack 16/16 is 2% better than 4/4, 16/4, 32/32, 32/16, or 16/32.)
-define_pd_global(intx, OptoLoopAlignment,            16);  // = 4*wordSize
 define_pd_global(intx, RegisterCostAreaRatio,        12000);
 define_pd_global(bool, UseTLAB,                      true);
 define_pd_global(bool, ResizeTLAB,                   true);

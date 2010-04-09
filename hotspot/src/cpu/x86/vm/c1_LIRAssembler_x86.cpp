@@ -2690,19 +2690,14 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
   } else {
     assert(code == lir_cmp_l2i, "check");
 #ifdef _LP64
-      Register dest = dst->as_register();
-      __ xorptr(dest, dest);
-      Label high, done;
-      __ cmpptr(left->as_register_lo(), right->as_register_lo());
-      __ jcc(Assembler::equal, done);
-      __ jcc(Assembler::greater, high);
-      __ decrement(dest);
-      __ jmp(done);
-      __ bind(high);
-      __ increment(dest);
-
-      __ bind(done);
-
+    Label done;
+    Register dest = dst->as_register();
+    __ cmpptr(left->as_register_lo(), right->as_register_lo());
+    __ movl(dest, -1);
+    __ jccb(Assembler::less, done);
+    __ set_byte_if_not_zero(dest);
+    __ movzbl(dest, dest);
+    __ bind(done);
 #else
     __ lcmp2int(left->as_register_hi(),
                 left->as_register_lo(),
