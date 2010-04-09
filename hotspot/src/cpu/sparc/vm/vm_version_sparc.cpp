@@ -86,14 +86,24 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(InteriorEntryAlignment)) {
       FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
     }
+    if (is_niagara1_plus()) {
+      if (AllocatePrefetchStyle > 0 && FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+        // Use BIS instruction for allocation prefetch.
+        FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
+        if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+          // Use smaller prefetch distance on N2 with BIS
+          FLAG_SET_DEFAULT(AllocatePrefetchDistance, 64);
+        }
+      }
+      if (AllocatePrefetchStyle != 3 && FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+        // Use different prefetch distance without BIS
+        FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
+      }
+    }
+#endif
     if (FLAG_IS_DEFAULT(OptoLoopAlignment)) {
       FLAG_SET_DEFAULT(OptoLoopAlignment, 4);
     }
-    if (is_niagara1_plus() && FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
-      // Use smaller prefetch distance on N2
-      FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
-    }
-#endif
   }
 
   // Use hardware population count instruction if available.
