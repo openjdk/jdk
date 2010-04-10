@@ -624,6 +624,11 @@ public class DNSIdentities {
     volatile static boolean serverReady = false;
 
     /*
+     * Is the connection ready to close?
+     */
+    volatile static boolean closeReady = false;
+
+    /*
      * Turn on SSL debugging?
      */
     static boolean debug = false;
@@ -670,11 +675,14 @@ public class DNSIdentities {
             out.print("Testing\r\n");
             out.flush();
         } finally {
-             // close the socket
-             Thread.sleep(2000);
-             System.out.println("Server closing socket");
-             sslSocket.close();
-             serverReady = false;
+            // close the socket
+            while (!closeReady) {
+                Thread.sleep(50);
+            }
+
+            System.out.println("Server closing socket");
+            sslSocket.close();
+            serverReady = false;
         }
 
     }
@@ -704,12 +712,17 @@ public class DNSIdentities {
         URL url = new URL("https://localhost:" + serverPort+"/");
         System.out.println("url is "+url.toString());
 
-        http = (HttpsURLConnection)url.openConnection();
+        try {
+            http = (HttpsURLConnection)url.openConnection();
 
-        int respCode = http.getResponseCode();
-        System.out.println("respCode = "+respCode);
-
-        http.disconnect();
+            int respCode = http.getResponseCode();
+            System.out.println("respCode = "+respCode);
+        } finally {
+            if (http != null) {
+                http.disconnect();
+            }
+            closeReady = true;
+        }
     }
 
     /*
