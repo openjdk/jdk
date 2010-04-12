@@ -13830,8 +13830,21 @@
 0xF9D4	0x9F49	# <CJK>
 0xF9D5	0x9F98	# <CJK>
 #
+# from Big5.b2c-irreversible
+#
 0xA15A	0xFF3F #SPACING UNDERSCORE
 0xA1FE	0x2571 #LT DIAG UP RIGHT TO LOW LEFT
 0xA240	0x2572 #LT DIAG UP LEFT TO LOW RIGHTG
 0xA2CC	0x5341 #HANGHZOU NUMERAL TEN
 0xA2CE	0x5345 #HANGZHOU NUMERAL THIRTY
+#
+# Add the following 5 characters from Big5.c2b-irreversible
+# It appears these 5 should be here to be the round-trip
+# for these 5 characters. Above 5 are the b->c only nrt.
+#
+0xA1C4	0xFF3F
+0xA2AC	0x2571
+0xA2AD	0x2572
+0xA451	0x5341
+0xA4CA	0x5345
+#
