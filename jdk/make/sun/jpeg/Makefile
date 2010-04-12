@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = java2d
 PACKAGE = sun.awt
 LIBRARY = jpeg
 PRODUCT = sun

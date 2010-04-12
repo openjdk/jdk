@@ -26,19 +26,21 @@
 # include "incls/_scopeDesc.cpp.incl"
 
 
-ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute) {
+ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool return_oop) {
   _code          = code;
   _decode_offset = decode_offset;
   _objects       = decode_object_values(obj_decode_offset);
   _reexecute     = reexecute;
+  _return_oop    = return_oop;
   decode_body();
 }
 
-ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, bool reexecute) {
+ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, bool reexecute, bool return_oop) {
   _code          = code;
   _decode_offset = decode_offset;
   _objects       = decode_object_values(DebugInformationRecorder::serialized_null);
   _reexecute     = reexecute;
+  _return_oop    = return_oop;
   decode_body();
 }
 
@@ -48,6 +50,7 @@ ScopeDesc::ScopeDesc(const ScopeDesc* parent) {
   _decode_offset = parent->_sender_decode_offset;
   _objects       = parent->_objects;
   _reexecute     = false; //reexecute only applies to the first scope
+  _return_oop    = false;
   decode_body();
 }
 

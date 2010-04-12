@@ -43,7 +43,6 @@ public class ServantObject
     /** The real servant. The local stub may cast this field to the expected type, and then
      * invoke the operation directly. Note, the object may or may not be the actual servant
      * instance.
-     * @return The real servant
      */
     public java.lang.Object servant;
 }

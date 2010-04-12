@@ -67,6 +67,11 @@ case "$OS" in
     PS=";"
     OS="Windows"
     ;;
+  CYGWIN* )
+    PS=";"
+    OS="Windows"
+    isCygwin=true
+    ;;
   * )
     PS=":"
     ;;

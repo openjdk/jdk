@@ -162,7 +162,7 @@ public abstract class Symbol implements Element {
      * the default package; otherwise, the owner symbol is returned
      */
     public Symbol location() {
-        if (owner.name == null || (owner.name.isEmpty() && owner.kind != PCK)) {
+        if (owner.name == null || (owner.name.isEmpty() && owner.kind != PCK && owner.kind != TYP)) {
             return null;
         }
         return owner;
@@ -657,6 +657,11 @@ public abstract class Symbol implements Element {
 
         public List<Attribute.Compound> getAnnotationMirrors() {
             if (completer != null) complete();
+            if (package_info != null && package_info.completer != null) {
+                package_info.complete();
+                if (attributes_field.isEmpty())
+                    attributes_field = package_info.attributes_field;
+            }
             assert attributes_field != null;
             return attributes_field;
         }

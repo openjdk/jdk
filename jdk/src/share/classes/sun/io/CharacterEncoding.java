@@ -50,11 +50,11 @@ public class CharacterEncoding {
 
     private static boolean sjisIsMS932;
 
-    private static Map aliasTable;
+    private static Map<String,String> aliasTable;
     private static volatile boolean installedAll;
 
     static {
-        aliasTable = new HashMap(460, 1.0f);                    /* MDA */
+        aliasTable = new HashMap<>(460, 1.0f);                    /* MDA */
 
         aliasTable.put("us-ascii",              "ASCII");
         aliasTable.put("ascii",                 "ASCII");
@@ -119,11 +119,11 @@ public class CharacterEncoding {
         }
         // need to use Locale.US so we can load ISO converters in tr_TR locale
         String lower = name.toLowerCase(Locale.US);
-        String val = (String) aliasTable.get(lower);
+        String val = aliasTable.get(lower);
 
         if (val == null && !installedAll) {
             installAll();
-            val = (String) aliasTable.get(lower);
+            val = aliasTable.get(lower);
         }
         return val;
     }
@@ -131,7 +131,7 @@ public class CharacterEncoding {
     private static synchronized void installAll() {
         if (!installedAll) {
             GetPropertyAction a = new GetPropertyAction("sun.nio.cs.map");
-            String map = ((String)AccessController.doPrivileged(a));
+            String map = AccessController.doPrivileged(a);
             if (map != null) {
                 sjisIsMS932 = map.equalsIgnoreCase("Windows-31J/Shift_JIS");
             } else {
@@ -857,9 +857,9 @@ public class CharacterEncoding {
      * Auto Detect converter.
      */
     static String getSJISName() {
-        String encodeName = (String) AccessController.doPrivileged(
-                                                new PrivilegedAction() {
-            public Object run() {
+        String encodeName = AccessController.doPrivileged(
+                                               new PrivilegedAction<String>() {
+            public String run() {
                 String osName = System.getProperty("os.name");
                 if (osName.equals("Solaris") || osName.equals("SunOS")){
                     return "PCK";
@@ -880,9 +880,9 @@ public class CharacterEncoding {
 
 
     static String getEUCJPName() {
-      String encodeName = (String) AccessController.doPrivileged(
-                                              new PrivilegedAction() {
-          public Object run() {
+      String encodeName = AccessController.doPrivileged(
+                                              new PrivilegedAction<String>() {
+          public String run() {
               String osName = System.getProperty("os.name");
               if (osName.equals("Solaris") || osName.equals("SunOS"))
                   return "eucJP-open";

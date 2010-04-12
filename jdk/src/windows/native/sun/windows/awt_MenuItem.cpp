@@ -114,6 +114,7 @@ void AwtMenuItem::Dispose()
     if (m_peerObject != NULL) {
         JNI_SET_PDATA(m_peerObject, NULL);
         env->DeleteGlobalRef(m_peerObject);
+        m_peerObject = NULL;
     }
 
     AwtObject::Dispose();

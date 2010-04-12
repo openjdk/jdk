@@ -58,7 +58,7 @@ public abstract class DeclarationImpl implements Declaration {
     protected final AptEnv env;
     public final Symbol sym;
 
-    protected static DeclarationFilter identityFilter =
+    protected static final DeclarationFilter identityFilter =
             new DeclarationFilter();
 
 

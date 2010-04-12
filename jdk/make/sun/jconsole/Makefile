@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = jconsole
 PACKAGE = sun.tools.jconsole
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
@@ -79,7 +80,7 @@ $(CLASSBINDIR)/$(PKGDIR)/resources/%: $(SHARE_SRC)/classes/$(PKGDIR)/resources/%
 	$(install-file)
 
 $(TEMPDIR)/manifest: $(SHARE_SRC)/classes/$(PKGDIR)/manifest
-	$(install-file)
+	$(install-manifest-file)
 
 #
 # Extra rule to build jconsole.jar

@@ -21,6 +21,8 @@
 // have any questions.
 //  
 
+arguments.cpp                           compactibleFreeListSpace.hpp
+
 assembler_<arch>.cpp                    g1SATBCardTableModRefBS.hpp
 assembler_<arch>.cpp                    g1CollectedHeap.inline.hpp
 assembler_<arch>.cpp                    heapRegion.hpp
@@ -113,9 +115,13 @@ objArrayKlass.cpp                       heapRegionSeq.inline.hpp
 objArrayKlass.cpp                       g1CollectedHeap.inline.hpp
 objArrayKlass.cpp                       g1OopClosures.inline.hpp
 objArrayKlass.cpp                       oop.pcgc.inline.hpp
+objArrayKlass.cpp                       psCompactionManager.hpp
 objArrayKlass.cpp                       psPromotionManager.inline.hpp
 objArrayKlass.cpp                       psScavenge.inline.hpp
 objArrayKlass.cpp                       parOopClosures.inline.hpp
+
+objArrayKlass.inline.hpp		psCompactionManager.inline.hpp
+objArrayKlass.inline.hpp		psParallelCompact.hpp
 
 oop.pcgc.inline.hpp                     parNewGeneration.hpp
 oop.pcgc.inline.hpp                     parallelScavengeHeap.hpp

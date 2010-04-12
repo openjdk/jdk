@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.beans;
 
 import java.lang.ref.Reference;
-
 import java.lang.reflect.Method;
 
 /**
@@ -117,8 +116,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * This constructor takes the name of a simple property, and Method
      * objects for reading and writing the property.
      *
-     * @param propertyName The programmatic name of the pro
-perty.
+     * @param propertyName The programmatic name of the property.
      * @param readMethod The method used for reading the property values as an array.
      *          May be null if the property is write-only or must be indexed.
      * @param writeMethod The method used for writing the property values as an array.
@@ -518,20 +516,10 @@ perty.
         return result;
     }
 
-    /*
-    public String toString() {
-        String message = super.toString();
-
-        message += ", indexedType=";
-        message += getIndexedPropertyType();
-
-        message += ", indexedWriteMethod=";
-        message += indexedWriteMethodName;
-
-        message += ", indexedReadMethod=";
-        message += indexedReadMethodName;
-
-        return message;
+    void appendTo(StringBuilder sb) {
+        super.appendTo(sb);
+        appendTo(sb, "indexedPropertyType", this.indexedPropertyTypeRef);
+        appendTo(sb, "indexedReadMethod", this.indexedReadMethodRef);
+        appendTo(sb, "indexedWriteMethod", this.indexedWriteMethodRef);
     }
-    */
 }

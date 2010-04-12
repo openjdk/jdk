@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ class JvmtiEnvBase : public CHeapObj {
 
   jvmtiEnv _jvmti_external;
   jint _magic;
+  jint _version;  // version value passed to JNI GetEnv()
   JvmtiEnvBase* _next;
   bool _is_retransformable;
   const void *_env_local_storage;     // per env agent allocated data.
@@ -91,7 +92,7 @@ class JvmtiEnvBase : public CHeapObj {
   int    _native_method_prefix_count;
 
  protected:
-  JvmtiEnvBase();
+  JvmtiEnvBase(jint version);
   ~JvmtiEnvBase();
   void dispose();
   void env_dispose();
@@ -121,6 +122,9 @@ class JvmtiEnvBase : public CHeapObj {
  public:
 
   bool is_valid();
+
+  bool use_version_1_0_semantics();  // agent asked for version 1.0
+  bool use_version_1_1_semantics();  // agent asked for version 1.1
 
   bool is_retransformable()                        { return _is_retransformable; }
 

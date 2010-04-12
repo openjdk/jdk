@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE   = oldjavac
 PRODUCT	 = oldjavac
 
 include $(BUILDDIR)/common/Defs.gmk

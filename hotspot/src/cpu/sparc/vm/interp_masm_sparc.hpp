@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
                      bool check_exception = true);
 
 #ifndef CC_INTERP
-  void super_call_VM_leaf(Register thread_cache, address entry_point, Register arg_1);
+  void super_call_VM_leaf(Register thread_cache, address entry_point, Register arg_1, Register arg_2);
 
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass.  Blows registers tmp1, tmp2 and tmp3.
@@ -290,9 +290,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void test_mdp_data_at(int offset, Register value, Label& not_equal_continue,
                         Register scratch);
 
-  void record_klass_in_profile(Register receiver, Register scratch);
+  void record_klass_in_profile(Register receiver, Register scratch, bool is_virtual_call);
   void record_klass_in_profile_helper(Register receiver, Register scratch,
-                                      int start_row, Label& done);
+                                      int start_row, Label& done, bool is_virtual_call);
 
   void update_mdp_by_offset(int offset_of_disp, Register scratch);
   void update_mdp_by_offset(Register reg, int offset_of_disp,

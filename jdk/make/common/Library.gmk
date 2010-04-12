@@ -193,8 +193,17 @@ ifdef MT
 	$(MT) /manifest $(OBJDIR)/$(@F).manifest /outputresource:$(OBJDIR)/$(@F);#2
 endif
 	$(CP) $(OBJDIR)/$(@F) $@
+	$(install-module-file)
 	$(CP) $(OBJDIR)/$(LIBRARY).map $(@D)
 	$(CP) $(OBJDIR)/$(LIBRARY).pdb $(@D)
+
+$(ACTUAL_LIBRARY):: $(ACTUAL_LIBRARY_DIR)/$(LIBRARY).map $(ACTUAL_LIBRARY_DIR)/$(LIBRARY).pdb
+
+$(ACTUAL_LIBRARY_DIR)/%.map: FORCE
+	$(install-module-file)
+
+$(ACTUAL_LIBRARY_DIR)/%.pdb: FORCE
+	$(install-module-file)
 
 endif # LIBRARY
 
@@ -250,6 +259,7 @@ ifeq ($(LIBRARY), fdlibm)
 	$(AR) -r $@ $(FILES_o)
 else # LIBRARY
 	$(LINKER) $(SHARED_LIBRARY_FLAG) -o $@ $(FILES_o) $(LDLIBS)
+	$(install-module-file)
 ifeq ($(WRITE_LIBVERSION),true)
 	$(MCS) -d -a "$(FULL_VERSION)" $@
 endif # WRITE_LIBVERSION
@@ -352,6 +362,8 @@ fastdebug:
 
 openjdk:
 	$(MAKE) OPENJDK=true build
+
+FORCE:
 
 .PHONY: all build debug fastdebug
 

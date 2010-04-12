@@ -29,8 +29,7 @@ class JavaThread;
 class ObjPtrQueue: public PtrQueue {
 public:
   ObjPtrQueue(PtrQueueSet* qset_, bool perm = false) :
-    PtrQueue(qset_, perm)
-  {}
+    PtrQueue(qset_, perm, qset_->is_active()) { }
   // Apply the closure to all elements, and reset the index to make the
   // buffer empty.
   void apply_closure(ObjectClosure* cl);
@@ -55,19 +54,24 @@ class SATBMarkQueueSet: public PtrQueueSet {
   // is ignored.
   bool apply_closure_to_completed_buffer_work(bool par, int worker);
 
+#ifdef ASSERT
+  void dump_active_values(JavaThread* first, bool expected_active);
+#endif // ASSERT
 
 public:
   SATBMarkQueueSet();
 
   void initialize(Monitor* cbl_mon, Mutex* fl_lock,
-                  int max_completed_queue = 0,
-                  Mutex* lock = NULL);
+                  int process_completed_threshold,
+                  Mutex* lock);
 
   static void handle_zero_index_for_thread(JavaThread* t);
 
-  // Apply "set_active(b)" to all thread tloq's.  Should be called only
-  // with the world stopped.
-  void set_active_all_threads(bool b);
+  // Apply "set_active(b)" to all Java threads' SATB queues. It should be
+  // called only with the world stopped. The method will assert that the
+  // SATB queues of all threads it visits, as well as the SATB queue
+  // set itself, has an active value same as expected_active.
+  void set_active_all_threads(bool b, bool expected_active);
 
   // Register "blk" as "the closure" for all queues.  Only one such closure
   // is allowed.  The "apply_closure_to_completed_buffer" method will apply

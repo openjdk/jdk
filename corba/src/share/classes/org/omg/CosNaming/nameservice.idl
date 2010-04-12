@@ -256,7 +256,7 @@ module CosNaming
  * 
  * @param  n Name of the object <p>
  * 
- * @parm obj The Object to rebind with the given name <p>
+ * @param obj The Object to rebind with the given name <p>
  * 
  * @exception org.omg.CosNaming.NamingContextPackage.NotFound Indicates the name does not identify a binding.<p>
  * 

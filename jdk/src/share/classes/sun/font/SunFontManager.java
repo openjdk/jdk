@@ -3058,7 +3058,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             return;
         }
         /* Use lock specific to the font system */
-        synchronized (lucidaFontName) {
+        synchronized (this) {
             if (FontUtilities.debugFonts()) {
                 Thread.dumpStack();
                 FontUtilities.getLogger()
@@ -3194,7 +3194,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             return;
         }
         /* Use lock specific to the font system */
-        synchronized (lucidaFontName) {
+        synchronized (this) {
             if (FontUtilities.debugFonts()) {
                 Thread.dumpStack();
                 FontUtilities.getLogger().info("loadAllFontFiles() called");

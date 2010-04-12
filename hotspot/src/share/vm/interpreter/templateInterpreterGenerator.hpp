@@ -51,10 +51,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_WrongMethodType_handler();
   address generate_ArrayIndexOutOfBounds_handler(const char* name);
   address generate_continuation_for(TosState state);
-  address generate_return_entry_for(TosState state, int step, bool unbox = false);
-  address generate_return_unbox_entry_for(TosState state, int step) {
-    return generate_return_entry_for(state, step, true);
-  }
+  address generate_return_entry_for(TosState state, int step);
   address generate_earlyret_entry_for(TosState state);
   address generate_deopt_entry_for(TosState state, int step);
   address generate_safept_entry_for(TosState state, address runtime_entry);

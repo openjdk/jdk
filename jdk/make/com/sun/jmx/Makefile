@@ -51,6 +51,8 @@ else
   SUBDIRS = snmp
 endif
 
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build:
 	$(SUBDIRS-loop)
 

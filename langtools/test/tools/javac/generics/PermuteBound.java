@@ -30,7 +30,7 @@
  * @compile  PermuteBound.java
  */
 
-package test.tools.javac.generics.PermuteBound;
+package PermuteBound;
 
 class C<X, Y> {}
 

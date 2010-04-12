@@ -122,7 +122,7 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
   // Check for special boot-strapping/vm-thread handling
   if (special_exception(thread, file, line, h_exception)) return;
 
-  assert(h_exception->is_a(SystemDictionary::throwable_klass()), "exception is not a subclass of java/lang/Throwable");
+  assert(h_exception->is_a(SystemDictionary::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
 
   // set the pending exception
   thread->set_pending_exception(h_exception(), file, line);
@@ -255,7 +255,7 @@ Handle Exceptions::new_exception(Thread *thread, symbolHandle h_name,
 
     // Future: object initializer should take a cause argument
     if (h_cause() != NULL) {
-      assert(h_cause->is_a(SystemDictionary::throwable_klass()),
+      assert(h_cause->is_a(SystemDictionary::Throwable_klass()),
           "exception cause is not a subclass of java/lang/Throwable");
       JavaValue result1(T_OBJECT);
       JavaCallArguments args1;

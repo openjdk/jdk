@@ -76,7 +76,6 @@ public class T6421111 extends ToolTester {
             throw new AssertionError("Annotation processor failed");
     }
     @SupportedAnnotationTypes("*")
-    @SupportedSourceVersion(SourceVersion.RELEASE_6)
     static class MyProcessor extends AbstractProcessor {
         void test(TypeElement element, boolean fbound) {
             TypeParameterElement tpe = element.getTypeParameters().iterator().next();
@@ -95,6 +94,10 @@ public class T6421111 extends ToolTester {
             test(processingEnv.getElementUtils().getTypeElement("Test1"), false);
             test(processingEnv.getElementUtils().getTypeElement("Test2"), true);
             return false;
+        }
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
         }
     }
     public static void main(String... args) {

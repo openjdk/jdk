@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -411,6 +411,28 @@ class PatchingStub: public CodeStub {
   }
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("PatchingStub"); }
+#endif // PRODUCT
+};
+
+
+//------------------------------------------------------------------------------
+// DeoptimizeStub
+//
+class DeoptimizeStub : public CodeStub {
+private:
+  CodeEmitInfo* _info;
+
+public:
+  DeoptimizeStub(CodeEmitInfo* info) : _info(new CodeEmitInfo(info)) {}
+
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const           { return _info; }
+  virtual bool is_exception_throw_stub() const { return true; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_slow_case(_info);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("DeoptimizeStub"); }
 #endif // PRODUCT
 };
 

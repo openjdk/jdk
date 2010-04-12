@@ -48,7 +48,7 @@ failures=0
 
 echo "Running tests ..."
 
-$JAVA -classpath ${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar \
+$JAVA -classpath "${TESTCLASSES}${PS}${TESTJAVA}/lib/tools.jar" \
   BasicTests $pid $agent $badagent $redefineagent 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 

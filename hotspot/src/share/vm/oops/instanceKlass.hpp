@@ -337,12 +337,12 @@ class instanceKlass: public Klass {
   static bool is_same_class_package(oop class_loader1, symbolOop class_name1, oop class_loader2, symbolOop class_name2);
 
   // find an enclosing class (defined where original code was, in jvm.cpp!)
-  klassOop compute_enclosing_class(symbolOop& simple_name_result, TRAPS) {
+  klassOop compute_enclosing_class(bool* inner_is_member, TRAPS) {
     instanceKlassHandle self(THREAD, this->as_klassOop());
-    return compute_enclosing_class_impl(self, simple_name_result, THREAD);
+    return compute_enclosing_class_impl(self, inner_is_member, THREAD);
   }
   static klassOop compute_enclosing_class_impl(instanceKlassHandle self,
-                                               symbolOop& simple_name_result, TRAPS);
+                                               bool* inner_is_member, TRAPS);
 
   // tell if two classes have the same enclosing class (at package level)
   bool is_same_package_member(klassOop class2, TRAPS) {
@@ -839,17 +839,16 @@ public:
   // JVMTI support
   jint jvmti_class_status() const;
 
-#ifndef PRODUCT
  public:
   // Printing
-  void oop_print_on      (oop obj, outputStream* st);
   void oop_print_value_on(oop obj, outputStream* st);
+#ifndef PRODUCT
+  void oop_print_on      (oop obj, outputStream* st);
 
   void print_dependent_nmethods(bool verbose = false);
   bool is_dependent_nmethod(nmethod* nm);
 #endif
 
- public:
   // Verification
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);

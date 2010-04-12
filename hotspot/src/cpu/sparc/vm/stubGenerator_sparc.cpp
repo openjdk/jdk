@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,7 +379,7 @@ class StubGenerator: public StubCodeGenerator {
     __ save_frame(0);             // compensates for compiler weakness
     __ add(O7->after_save(), frame::pc_return_offset, Lscratch); // save the issuing PC
     BLOCK_COMMENT("call exception_handler_for_return_address");
-    __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), Lscratch);
+    __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), G2_thread, Lscratch);
     __ mov(O0, handler_reg);
     __ restore();                 // compensates for compiler weakness
 
@@ -2862,6 +2862,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    // Don't initialize the platform math functions since sparc
+    // doesn't have intrinsics for these operations.
   }
 
 

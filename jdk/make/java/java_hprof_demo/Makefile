@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = instrument
 LIBRARY = hprof
 PRODUCT = sun
 LIBRARY_OUTPUT = hprof_jvmti

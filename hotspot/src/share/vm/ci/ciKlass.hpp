@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public:
   ciKlass(KlassHandle k_h);
 
   // What is the name of this klass?
-  ciSymbol* name() { return _name; }
+  ciSymbol* name() const { return _name; }
 
   // What is its layout helper value?
   jint layout_helper() { return _layout_helper; }

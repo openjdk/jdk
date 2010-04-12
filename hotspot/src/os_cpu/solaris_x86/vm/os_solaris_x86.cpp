@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -730,11 +730,12 @@ void os::print_context(outputStream *st, void *context) {
   st->print(", RSI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RSI]);
   st->print(", RDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_RDI]);
   st->cr();
-  st->print(", R8=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R8]);
+  st->print(  "R8=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R8]);
   st->print(", R9=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R9]);
   st->print(", R10=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R10]);
   st->print(", R11=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R11]);
-  st->print(", R12=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R12]);
+  st->cr();
+  st->print(  "R12=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R12]);
   st->print(", R13=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R13]);
   st->print(", R14=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R14]);
   st->print(", R15=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_R15]);

@@ -25,6 +25,58 @@
 # include "incls/_precompiled.incl"
 # include "incls/_instanceKlass.cpp.incl"
 
+#ifdef DTRACE_ENABLED
+
+HS_DTRACE_PROBE_DECL4(hotspot, class__initialization__required,
+  char*, intptr_t, oop, intptr_t);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__recursive,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__concurrent,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__erroneous,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__super__failed,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__clinit,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__error,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
+  char*, intptr_t, oop, intptr_t, int);
+
+#define DTRACE_CLASSINIT_PROBE(type, clss, thread_type)          \
+  {                                                              \
+    char* data = NULL;                                           \
+    int len = 0;                                                 \
+    symbolOop name = (clss)->name();                             \
+    if (name != NULL) {                                          \
+      data = (char*)name->bytes();                               \
+      len = name->utf8_length();                                 \
+    }                                                            \
+    HS_DTRACE_PROBE4(hotspot, class__initialization__##type,     \
+      data, len, (clss)->class_loader(), thread_type);           \
+  }
+
+#define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
+  {                                                              \
+    char* data = NULL;                                           \
+    int len = 0;                                                 \
+    symbolOop name = (clss)->name();                             \
+    if (name != NULL) {                                          \
+      data = (char*)name->bytes();                               \
+      len = name->utf8_length();                                 \
+    }                                                            \
+    HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
+      data, len, (clss)->class_loader(), thread_type, wait);     \
+  }
+
+#else //  ndef DTRACE_ENABLED
+
+#define DTRACE_CLASSINIT_PROBE(type, clss, thread_type)
+#define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait)
+
+#endif //  ndef DTRACE_ENABLED
+
 bool instanceKlass::should_be_initialized() const {
   return !is_initialized();
 }
@@ -292,6 +344,10 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   // A class could already be verified, since it has been reflected upon.
   this_oop->link_class(CHECK);
 
+  DTRACE_CLASSINIT_PROBE(required, instanceKlass::cast(this_oop()), -1);
+
+  bool wait = false;
+
   // refer to the JVM book page 47 for description of steps
   // Step 1
   { ObjectLocker ol(this_oop, THREAD);
@@ -303,19 +359,25 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     // we might end up throwing IE from link/symbol resolution sites
     // that aren't expected to throw.  This would wreak havoc.  See 6320309.
     while(this_oop->is_being_initialized() && !this_oop->is_reentrant_initialization(self)) {
+        wait = true;
       ol.waitUninterruptibly(CHECK);
     }
 
     // Step 3
-    if (this_oop->is_being_initialized() && this_oop->is_reentrant_initialization(self))
+    if (this_oop->is_being_initialized() && this_oop->is_reentrant_initialization(self)) {
+      DTRACE_CLASSINIT_PROBE_WAIT(recursive, instanceKlass::cast(this_oop()), -1,wait);
       return;
+    }
 
     // Step 4
-    if (this_oop->is_initialized())
+    if (this_oop->is_initialized()) {
+      DTRACE_CLASSINIT_PROBE_WAIT(concurrent, instanceKlass::cast(this_oop()), -1,wait);
       return;
+    }
 
     // Step 5
     if (this_oop->is_in_error_state()) {
+      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, instanceKlass::cast(this_oop()), -1,wait);
       ResourceMark rm(THREAD);
       const char* desc = "Could not initialize class ";
       const char* className = this_oop->external_name();
@@ -348,6 +410,7 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
         this_oop->set_initialization_state_and_notify(initialization_error, THREAD); // Locks object, set state, and notify all waiting threads
         CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, superclass initialization error is thrown below
       }
+      DTRACE_CLASSINIT_PROBE_WAIT(super__failed, instanceKlass::cast(this_oop()), -1,wait);
       THROW_OOP(e());
     }
   }
@@ -356,6 +419,7 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   {
     assert(THREAD->is_Java_thread(), "non-JavaThread in initialize_impl");
     JavaThread* jt = (JavaThread*)THREAD;
+    DTRACE_CLASSINIT_PROBE_WAIT(clinit, instanceKlass::cast(this_oop()), -1,wait);
     // Timer includes any side effects of class initialization (resolution,
     // etc), but not recursive entry into call_class_initializer().
     PerfClassTraceTime timer(ClassLoader::perf_class_init_time(),
@@ -383,7 +447,8 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
       this_oop->set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
     }
-    if (e->is_a(SystemDictionary::error_klass())) {
+    DTRACE_CLASSINIT_PROBE_WAIT(error, instanceKlass::cast(this_oop()), -1,wait);
+    if (e->is_a(SystemDictionary::Error_klass())) {
       THROW_OOP(e());
     } else {
       JavaCallArguments args(e);
@@ -392,6 +457,7 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
                 &args);
     }
   }
+  DTRACE_CLASSINIT_PROBE_WAIT(end, instanceKlass::cast(this_oop()), -1,wait);
 }
 
 
@@ -568,7 +634,7 @@ void instanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
     THROW_MSG(throwError ? vmSymbols::java_lang_InstantiationError()
               : vmSymbols::java_lang_InstantiationException(), external_name());
   }
-  if (as_klassOop() == SystemDictionary::class_klass()) {
+  if (as_klassOop() == SystemDictionary::Class_klass()) {
     ResourceMark rm(THREAD);
     THROW_MSG(throwError ? vmSymbols::java_lang_IllegalAccessError()
               : vmSymbols::java_lang_IllegalAccessException(), external_name());
@@ -2045,8 +2111,9 @@ bool instanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
     // As we walk along, look for equalities between outer1 and class2.
     // Eventually, the walks will terminate as outer1 stops
     // at the top-level class around the original class.
-    symbolOop ignore_name;
-    klassOop next = outer1->compute_enclosing_class(ignore_name, CHECK_false);
+    bool ignore_inner_is_member;
+    klassOop next = outer1->compute_enclosing_class(&ignore_inner_is_member,
+                                                    CHECK_false);
     if (next == NULL)  break;
     if (next == class2())  return true;
     outer1 = instanceKlassHandle(THREAD, next);
@@ -2055,8 +2122,9 @@ bool instanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
   // Now do the same for class2.
   instanceKlassHandle outer2 = class2;
   for (;;) {
-    symbolOop ignore_name;
-    klassOop next = outer2->compute_enclosing_class(ignore_name, CHECK_false);
+    bool ignore_inner_is_member;
+    klassOop next = outer2->compute_enclosing_class(&ignore_inner_is_member,
+                                                    CHECK_false);
     if (next == NULL)  break;
     // Might as well check the new outer against all available values.
     if (next == class1())  return true;
@@ -2223,7 +2291,7 @@ void FieldPrinter::do_field(fieldDescriptor* fd) {
 void instanceKlass::oop_print_on(oop obj, outputStream* st) {
   Klass::oop_print_on(obj, st);
 
-  if (as_klassOop() == SystemDictionary::string_klass()) {
+  if (as_klassOop() == SystemDictionary::String_klass()) {
     typeArrayOop value  = java_lang_String::value(obj);
     juint        offset = java_lang_String::offset(obj);
     juint        length = java_lang_String::length(obj);
@@ -2243,7 +2311,7 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
   FieldPrinter print_nonstatic_field(st, obj);
   do_nonstatic_fields(&print_nonstatic_field);
 
-  if (as_klassOop() == SystemDictionary::class_klass()) {
+  if (as_klassOop() == SystemDictionary::Class_klass()) {
     st->print(BULLET"signature: ");
     java_lang_Class::print_signature(obj, st);
     st->cr();
@@ -2266,11 +2334,13 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
   }
 }
 
+#endif //PRODUCT
+
 void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
   st->print("a ");
   name()->print_value_on(st);
   obj->print_address_on(st);
-  if (as_klassOop() == SystemDictionary::string_klass()
+  if (as_klassOop() == SystemDictionary::String_klass()
       && java_lang_String::value(obj) != NULL) {
     ResourceMark rm;
     int len = java_lang_String::length(obj);
@@ -2279,7 +2349,7 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
     st->print(" = \"%s\"", str);
     if (len > plen)
       st->print("...[%d]", len);
-  } else if (as_klassOop() == SystemDictionary::class_klass()) {
+  } else if (as_klassOop() == SystemDictionary::Class_klass()) {
     klassOop k = java_lang_Class::as_klassOop(obj);
     st->print(" = ");
     if (k != NULL) {
@@ -2296,8 +2366,6 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
     java_lang_boxing_object::print(obj, st);
   }
 }
-
-#endif // ndef PRODUCT
 
 const char* instanceKlass::internal_name() const {
   return external_name();
@@ -2346,7 +2414,7 @@ void instanceKlass::verify_class_klass_nonstatic_oop_maps(klassOop k) {
 
     // Check that we have the right class
     static bool first_time = true;
-    guarantee(k == SystemDictionary::class_klass() && first_time, "Invalid verify of maps");
+    guarantee(k == SystemDictionary::Class_klass() && first_time, "Invalid verify of maps");
     first_time = false;
     const int extra = java_lang_Class::number_of_fake_oop_fields;
     guarantee(ik->nonstatic_field_size() == extra, "just checking");

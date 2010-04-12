@@ -1730,7 +1730,7 @@ module PortableInterceptor {
      * <p>
      * Any number of components may exist with the same component ID. 
      * 
-     * @param a_component The IOP.TaggedComponent to add.
+     * @param tagged_component The IOP.TaggedComponent to add.
      */
     void add_ior_component 
       (in IOP::TaggedComponent tagged_component);
@@ -1744,7 +1744,7 @@ module PortableInterceptor {
      * <p>
      * Any number of components may exist with the same component ID. 
      * 
-     * @param a_component The <code>IOP.TaggedComponent</code> to add. 
+     * @param tagged_component The <code>IOP.TaggedComponent</code> to add. 
      * @param profile_id The profile id of the profile to 
      *     which this component will be added.
      * @exception BAD_PARAM thrown, with a standard minor code of 29, if the 

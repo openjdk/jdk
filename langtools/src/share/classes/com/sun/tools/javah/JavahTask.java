@@ -255,9 +255,11 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         }
 
         this.classes = new ArrayList<String>();
-        for (String classname: classes) {
-            classname.getClass(); // null-check
-            this.classes.add(classname);
+        if (classes != null) {
+            for (String classname: classes) {
+                classname.getClass(); // null-check
+                this.classes.add(classname);
+            }
         }
     }
 
@@ -316,6 +318,12 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
     int run(String[] args) {
         try {
             handleOptions(args);
+            if (classes == null || classes.size() == 0) {
+                if (help || version || fullVersion)
+                    return 0;
+                else
+                    return 1;
+            }
             boolean ok = run();
             return ok ? 0 : 1;
         } catch (BadArgs e) {
@@ -347,8 +355,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             fileManager = getDefaultFileManager(diagnosticListener, log);
 
         Iterator<String> iter = args.iterator();
-        if (!iter.hasNext())
-            help = true;
+        boolean noArgs = !iter.hasNext();
 
         while (iter.hasNext()) {
             String arg = iter.next();
@@ -365,7 +372,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         }
 
         if ((classes == null || classes.size() == 0) &&
-                !(help || version || fullVersion)) {
+                !(noArgs || help || version || fullVersion)) {
             throw new BadArgs("err.no.classes.specified");
         }
 

@@ -30,7 +30,7 @@
 
 OS=`uname -s`
 case "$OS" in
-    Windows_* )
+    Windows_* | CYGWIN* )
         echo "ulimit not on Windows"
         exit 0
         ;;

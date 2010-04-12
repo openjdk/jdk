@@ -1,5 +1,5 @@
 #
-# Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2004-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,23 +28,27 @@
 #
 
 BUILDDIR = ../..
+MODULE  = demos
 PRODUCT = demos
 include $(BUILDDIR)/common/Defs.gmk
 
 # Can be built in any order, the JRE version of hprof and java_crw_demo are
 #   really built in make/java.
-#   The hprof target here just deliveres the sources and README files.
+#   The hprof target here just delivers the sources and README files.
 #   The java_crw_demo and agent_util files are copied into each demo that
 #   uses them.
 SUBDIRS = \
 	  versionCheck \
-          gctest \
+	  compiledMethodLoad \
+	  gctest \
 	  heapViewer \
 	  heapTracker \
 	  minst \
 	  mtrace \
 	  waiters \
 	  hprof
+
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)

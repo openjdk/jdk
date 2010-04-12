@@ -89,6 +89,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = security-sunmscapi
 PACKAGE = sun.security.mscapi
 LIBRARY = sunmscapi
 PRODUCT = sun
@@ -271,7 +272,7 @@ $(JAR_DESTFILE): $(UNSIGNED_DIR)/sunmscapi.jar
 else
 $(JAR_DESTFILE): $(SIGNED_DIR)/sunmscapi.jar
 endif
-	$(install-file)
+	$(install-non-module-file)
 
 ifndef OPENJDK
 install-prebuilt:

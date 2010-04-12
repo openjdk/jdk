@@ -64,14 +64,13 @@ class objArrayKlassKlass : public arrayKlassKlass {
   // helpers
   static klassOop allocate_objArray_klass_impl(objArrayKlassKlassHandle this_oop, int n, KlassHandle element_klass, TRAPS);
 
-#ifndef PRODUCT
  public:
   // Printing
-  void oop_print_on(oop obj, outputStream* st);
   void oop_print_value_on(oop obj, outputStream* st);
-#endif
+#ifndef PRODUCT
+  void oop_print_on(oop obj, outputStream* st);
+#endif //PRODUCT
 
- public:
   // Verification
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);

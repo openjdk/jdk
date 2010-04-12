@@ -30,7 +30,7 @@
  * @compile/fail Constant.java
  */
 
-package test.tools.javac.annotation.Constant;
+package Constant;
 
 @T(a = X.x)
 @interface T {

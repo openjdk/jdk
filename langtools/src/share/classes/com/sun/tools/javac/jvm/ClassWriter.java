@@ -965,11 +965,11 @@ public class ClassWriter extends ClassFile {
          // Class extends and implements clauses
         case CLASS_EXTENDS:
         case CLASS_EXTENDS_GENERIC_OR_ARRAY:
-            databuf.appendByte(p.type_index);
+            databuf.appendChar(p.type_index);
             break;
         // throws
         case THROWS:
-            databuf.appendByte(p.type_index);
+            databuf.appendChar(p.type_index);
             break;
         case CLASS_LITERAL:
         case CLASS_LITERAL_GENERIC_OR_ARRAY:

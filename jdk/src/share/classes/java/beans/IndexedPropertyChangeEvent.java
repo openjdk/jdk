@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ public class IndexedPropertyChangeEvent extends PropertyChangeEvent {
         this.index = index;
     }
 
-
     /**
      * Gets the index of the property that was changed.
      *
@@ -71,5 +70,9 @@ public class IndexedPropertyChangeEvent extends PropertyChangeEvent {
      */
     public int getIndex() {
         return index;
+    }
+
+    void appendTo(StringBuilder sb) {
+        sb.append("; index=").append(getIndex());
     }
 }

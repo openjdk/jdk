@@ -491,7 +491,7 @@ JVM_ENTRY(jobjectArray, jmm_GetInputArgumentArray(JNIEnv *env))
   int num_flags = Arguments::num_jvm_flags();
   int num_args = Arguments::num_jvm_args();
 
-  instanceKlassHandle ik (THREAD, SystemDictionary::string_klass());
+  instanceKlassHandle ik (THREAD, SystemDictionary::String_klass());
   objArrayOop r = oopFactory::new_objArray(ik(), num_args + num_flags, CHECK_NULL);
   objArrayHandle result_h(THREAD, r);
 
@@ -790,7 +790,7 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
   assert(!has_undefined_init_size, "Undefined init size");
   assert(!has_undefined_max_size, "Undefined max size");
 
-  MemoryUsage usage((heap ? Arguments::initial_heap_size() : total_init),
+  MemoryUsage usage((heap ? InitialHeapSize : total_init),
                     total_used,
                     total_committed,
                     (heap ? Universe::heap()->max_capacity() : total_max));
@@ -1321,7 +1321,7 @@ JVM_ENTRY(jobjectArray, jmm_GetLoadedClasses(JNIEnv *env))
   LoadedClassesEnumerator lce(THREAD);  // Pass current Thread as parameter
 
   int num_classes = lce.num_loaded_classes();
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::class_klass(), num_classes, CHECK_0);
+  objArrayOop r = oopFactory::new_objArray(SystemDictionary::Class_klass(), num_classes, CHECK_0);
   objArrayHandle classes_ah(THREAD, r);
 
   for (int i = 0; i < num_classes; i++) {
@@ -1481,7 +1481,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
   // last flag entry is always NULL, so subtract 1
   int nFlags = (int) Flag::numFlags - 1;
   // allocate a temp array
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::string_klass(),
+  objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
                                            nFlags, CHECK_0);
   objArrayHandle flags_ah(THREAD, r);
   int num_entries = 0;
@@ -1497,7 +1497,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
 
   if (num_entries < nFlags) {
     // Return array of right length
-    objArrayOop res = oopFactory::new_objArray(SystemDictionary::string_klass(), num_entries, CHECK_0);
+    objArrayOop res = oopFactory::new_objArray(SystemDictionary::String_klass(), num_entries, CHECK_0);
     for(int i = 0; i < num_entries; i++) {
       res->obj_at_put(i, flags_ah->obj_at(i));
     }
@@ -1507,16 +1507,17 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
   return (jobjectArray)JNIHandles::make_local(env, flags_ah());
 JVM_END
 
-// utility function used by jmm_GetVMGlobals
-void add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag, TRAPS) {
+// Utility function used by jmm_GetVMGlobals.  Returns false if flag type
+// can't be determined, true otherwise.  If false is returned, then *global
+// will be incomplete and invalid.
+bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag, TRAPS) {
   Handle flag_name;
   if (name() == NULL) {
-    flag_name = java_lang_String::create_from_str(flag->name, CHECK);
+    flag_name = java_lang_String::create_from_str(flag->name, CHECK_false);
   } else {
     flag_name = name;
   }
   global->name = (jstring)JNIHandles::make_local(env, flag_name());
-  global->type = JMM_VMGLOBAL_TYPE_UNKNOWN;
 
   if (flag->is_bool()) {
     global->value.z = flag->get_bool() ? JNI_TRUE : JNI_FALSE;
@@ -1527,10 +1528,16 @@ void add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
   } else if (flag->is_uintx()) {
     global->value.j = (jlong)flag->get_uintx();
     global->type = JMM_VMGLOBAL_TYPE_JLONG;
+  } else if (flag->is_uint64_t()) {
+    global->value.j = (jlong)flag->get_uint64_t();
+    global->type = JMM_VMGLOBAL_TYPE_JLONG;
   } else if (flag->is_ccstr()) {
-    Handle str = java_lang_String::create_from_str(flag->get_ccstr(), CHECK);
+    Handle str = java_lang_String::create_from_str(flag->get_ccstr(), CHECK_false);
     global->value.l = (jobject)JNIHandles::make_local(env, str());
     global->type = JMM_VMGLOBAL_TYPE_JSTRING;
+  } else {
+    global->type = JMM_VMGLOBAL_TYPE_UNKNOWN;
+    return false;
   }
 
   global->writeable = flag->is_writeable();
@@ -1557,6 +1564,8 @@ void add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
     default:
       global->origin = JMM_VMGLOBAL_ORIGIN_OTHER;
   }
+
+  return true;
 }
 
 // Fill globals array of count length with jmmVMGlobal entries
@@ -1583,7 +1592,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     objArrayHandle names_ah(THREAD, ta);
     // Make sure we have a String array
     klassOop element_klass = objArrayKlass::cast(names_ah->klass())->element_klass();
-    if (element_klass != SystemDictionary::string_klass()) {
+    if (element_klass != SystemDictionary::String_klass()) {
       THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                  "Array element type is not String class", 0);
     }
@@ -1599,8 +1608,8 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
       Handle sh(THREAD, s);
       char* str = java_lang_String::as_utf8_string(s);
       Flag* flag = Flag::find_flag(str, strlen(str));
-      if (flag != NULL) {
-        add_global_entry(env, sh, &globals[i], flag, THREAD);
+      if (flag != NULL &&
+          add_global_entry(env, sh, &globals[i], flag, THREAD)) {
         num_entries++;
       } else {
         globals[i].name = NULL;
@@ -1617,8 +1626,8 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     for (int i = 0; i < nFlags && num_entries < count;  i++) {
       Flag* flag = &Flag::flags[i];
       // Exclude the locked (diagnostic, experimental) flags
-      if (flag->is_unlocked() || flag->is_unlocker()) {
-        add_global_entry(env, null_h, &globals[num_entries], flag, THREAD);
+      if ((flag->is_unlocked() || flag->is_unlocker()) &&
+          add_global_entry(env, null_h, &globals[num_entries], flag, THREAD)) {
         num_entries++;
       }
     }
@@ -1650,11 +1659,14 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
     bool bvalue = (new_value.z == JNI_TRUE ? true : false);
     succeed = CommandLineFlags::boolAtPut(name, &bvalue, MANAGEMENT);
   } else if (flag->is_intx()) {
-    intx ivalue = new_value.j;
+    intx ivalue = (intx)new_value.j;
     succeed = CommandLineFlags::intxAtPut(name, &ivalue, MANAGEMENT);
   } else if (flag->is_uintx()) {
-    uintx uvalue = new_value.j;
+    uintx uvalue = (uintx)new_value.j;
     succeed = CommandLineFlags::uintxAtPut(name, &uvalue, MANAGEMENT);
+  } else if (flag->is_uint64_t()) {
+    uint64_t uvalue = (uint64_t)new_value.j;
+    succeed = CommandLineFlags::uint64_tAtPut(name, &uvalue, MANAGEMENT);
   } else if (flag->is_ccstr()) {
     oop str = JNIHandles::resolve_external_guard(new_value.l);
     if (str == NULL) {
@@ -1734,7 +1746,7 @@ JVM_ENTRY(jint, jmm_GetInternalThreadTimes(JNIEnv *env,
 
   // Make sure we have a String array
   klassOop element_klass = objArrayKlass::cast(names_ah->klass())->element_klass();
-  if (element_klass != SystemDictionary::string_klass()) {
+  if (element_klass != SystemDictionary::String_klass()) {
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                "Array element type is not String class", 0);
   }
@@ -1769,7 +1781,7 @@ static Handle find_deadlocks(bool object_monitors_only, TRAPS) {
     num_threads += cycle->num_threads();
   }
 
-  objArrayOop r = oopFactory::new_objArray(SystemDictionary::thread_klass(), num_threads, CHECK_NH);
+  objArrayOop r = oopFactory::new_objArray(SystemDictionary::Thread_klass(), num_threads, CHECK_NH);
   objArrayHandle threads_ah(THREAD, r);
 
   int index = 0;

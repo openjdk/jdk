@@ -59,7 +59,6 @@ define_pd_global(intx, FLOATPRESSURE,                52);  // C2 on V9 gets to u
 define_pd_global(intx, FreqInlineSize,               175);
 define_pd_global(intx, INTPRESSURE,                  48);  // large register set
 define_pd_global(intx, InteriorEntryAlignment,       16);  // = CodeEntryAlignment
-define_pd_global(intx, NewRatio,                     2);
 define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
 // The default setting 16/16 seems to work best.
 // (For _228_jack 16/16 is 2% better than 4/4, 16/4, 32/32, 32/16, or 16/32.)
@@ -83,25 +82,25 @@ define_pd_global(bool, OptoScheduling,               true);
 // sequence of instructions to load a 64 bit pointer.
 //
 // InitialCodeCacheSize derived from specjbb2000 run.
-define_pd_global(intx, InitialCodeCacheSize,     2048*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(intx, ReservedCodeCacheSize,    48*M);
-define_pd_global(intx, CodeCacheExpansionSize,   64*K);
+define_pd_global(intx, InitialCodeCacheSize,         2048*K); // Integral multiple of CodeCacheExpansionSize
+define_pd_global(intx, ReservedCodeCacheSize,        48*M);
+define_pd_global(intx, CodeCacheExpansionSize,       64*K);
 
 // Ergonomics related flags
-define_pd_global(uintx, DefaultMaxRAM,           32*G);
+define_pd_global(uint64_t,MaxRAM,                    128ULL*G);
 #else
 // InitialCodeCacheSize derived from specjbb2000 run.
-define_pd_global(intx, InitialCodeCacheSize,     1536*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(intx, ReservedCodeCacheSize,    32*M);
-define_pd_global(intx, CodeCacheExpansionSize,   32*K);
+define_pd_global(intx, InitialCodeCacheSize,         1536*K); // Integral multiple of CodeCacheExpansionSize
+define_pd_global(intx, ReservedCodeCacheSize,        32*M);
+define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 // Ergonomics related flags
-define_pd_global(uintx, DefaultMaxRAM,           1*G);
+define_pd_global(uint64_t,MaxRAM,                    4ULL*G);
 #endif
-define_pd_global(uintx,CodeCacheMinBlockLength,  4);
+define_pd_global(uintx,CodeCacheMinBlockLength,      4);
 
 // Heap related flags
-define_pd_global(uintx, PermSize,    ScaleForWordSize(16*M));
-define_pd_global(uintx, MaxPermSize, ScaleForWordSize(64*M));
+define_pd_global(uintx,PermSize,    ScaleForWordSize(16*M));
+define_pd_global(uintx,MaxPermSize, ScaleForWordSize(64*M));
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);

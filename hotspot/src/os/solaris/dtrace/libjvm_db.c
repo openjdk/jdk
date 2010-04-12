@@ -937,54 +937,56 @@ scope_desc_at(Nmethod_t *N, int32_t decode_offset, Vframe_t *vf)
   return err;
 }
 
-static int
-scopeDesc_chain(Nmethod_t *N)
-{
+static int scopeDesc_chain(Nmethod_t *N) {
   int32_t decode_offset = 0;
   int32_t err;
 
-  if (debug > 2)
-      fprintf(stderr, "\t scopeDesc_chain: BEGIN\n");
+  if (debug > 2) {
+    fprintf(stderr, "\t scopeDesc_chain: BEGIN\n");
+  }
 
   err = ps_pread(N->J->P, N->pc_desc + OFFSET_PcDesc_scope_decode_offset,
                  &decode_offset, SZ32);
   CHECK_FAIL(err);
 
   while (decode_offset > 0) {
-      if (debug > 2)
-          fprintf(stderr, "\t scopeDesc_chain: decode_offset: %#x\n", decode_offset);
+    Vframe_t *vf = &N->vframes[N->vf_cnt];
 
-      Vframe_t *vf = &N->vframes[N->vf_cnt];
+    if (debug > 2) {
+      fprintf(stderr, "\t scopeDesc_chain: decode_offset: %#x\n", decode_offset);
+    }
 
-      err = scope_desc_at(N, decode_offset, vf);
+    err = scope_desc_at(N, decode_offset, vf);
+    CHECK_FAIL(err);
+
+    if (vf->methodIdx > N->oops_len) {
+      fprintf(stderr, "\t scopeDesc_chain: (methodIdx > oops_len) !\n");
+      return -1;
+    }
+    err = read_pointer(N->J, N->nm + N->oops_beg + (vf->methodIdx-1)*POINTER_SIZE,
+                       &vf->methodOop);
+    CHECK_FAIL(err);
+
+    if (vf->methodOop) {
+      N->vf_cnt++;
+      err = line_number_from_bci(N->J, vf);
       CHECK_FAIL(err);
-
-      if (vf->methodIdx > N->oops_len) {
-          fprintf(stderr, "\t scopeDesc_chain: (methodIdx > oops_len) !\n");
-          return -1;
+      if (debug > 2) {
+        fprintf(stderr, "\t scopeDesc_chain: methodOop: %#8llx, line: %ld\n",
+                vf->methodOop, vf->line);
       }
-      err = read_pointer(N->J, N->nm + N->oops_beg + (vf->methodIdx-1)*POINTER_SIZE,
-                               &vf->methodOop);
-      CHECK_FAIL(err);
-
-      if (vf->methodOop) {
-          N->vf_cnt++;
-          err = line_number_from_bci(N->J, vf);
-          CHECK_FAIL(err);
-          if (debug > 2) {
-              fprintf(stderr, "\t scopeDesc_chain: methodOop: %#8llx, line: %ld\n",
-                              vf->methodOop, vf->line);
-          }
-      }
-      decode_offset = vf->sender_decode_offset;
+    }
+    decode_offset = vf->sender_decode_offset;
   }
-  if (debug > 2)
-      fprintf(stderr, "\t scopeDesc_chain: END \n\n");
+  if (debug > 2) {
+    fprintf(stderr, "\t scopeDesc_chain: END \n\n");
+  }
   return PS_OK;
 
  fail:
-  if (debug)
-      fprintf(stderr, "\t scopeDesc_chain: FAIL \n\n");
+  if (debug) {
+    fprintf(stderr, "\t scopeDesc_chain: FAIL \n\n");
+  }
   return err;
 }
 

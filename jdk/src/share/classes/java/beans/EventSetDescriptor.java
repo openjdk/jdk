@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.beans;
 
 import java.lang.ref.Reference;
-
 import java.lang.reflect.Method;
 
 /**
@@ -357,8 +356,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
      * @return The method used to register a listener at the event source.
      */
     public synchronized Method getAddListenerMethod() {
-        return (addMethodDescriptor != null ?
-                    addMethodDescriptor.getMethod() : null);
+        return getMethod(this.addMethodDescriptor);
     }
 
     private synchronized void setAddListenerMethod(Method method) {
@@ -378,8 +376,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
      * @return The method used to remove a listener at the event source.
      */
     public synchronized Method getRemoveListenerMethod() {
-        return (removeMethodDescriptor != null ?
-                    removeMethodDescriptor.getMethod() : null);
+        return getMethod(this.removeMethodDescriptor);
     }
 
     private synchronized void setRemoveListenerMethod(Method method) {
@@ -401,8 +398,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
      * @since 1.4
      */
     public synchronized Method getGetListenerMethod() {
-        return (getMethodDescriptor != null ?
-                    getMethodDescriptor.getMethod() : null);
+        return getMethod(this.getMethodDescriptor);
     }
 
     private synchronized void setGetListenerMethod(Method method) {
@@ -521,5 +517,20 @@ public class EventSetDescriptor extends FeatureDescriptor {
 
         unicast = old.unicast;
         inDefaultEventSet = old.inDefaultEventSet;
+    }
+
+    void appendTo(StringBuilder sb) {
+        appendTo(sb, "unicast", this.unicast);
+        appendTo(sb, "inDefaultEventSet", this.inDefaultEventSet);
+        appendTo(sb, "listenerType", this.listenerTypeRef);
+        appendTo(sb, "getListenerMethod", getMethod(this.getMethodDescriptor));
+        appendTo(sb, "addListenerMethod", getMethod(this.addMethodDescriptor));
+        appendTo(sb, "removeListenerMethod", getMethod(this.removeMethodDescriptor));
+    }
+
+    private static Method getMethod(MethodDescriptor descriptor) {
+        return (descriptor != null)
+                ? descriptor.getMethod()
+                : null;
     }
 }

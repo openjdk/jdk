@@ -36,8 +36,8 @@ import sun.dyn.util.ValueConversions;
 import sun.dyn.util.Wrapper;
 
 /**
- * Adapters which mediate between incoming calls which are not generic
- * and outgoing calls which are.  Any call can be represented generically
+ * Adapters which mediate between incoming calls which are generic
+ * and outgoing calls which are not.  Any call can be represented generically
  * boxing up its arguments, and (on return) unboxing the return value.
  * <p>
  * A call is "generic" (in MethodHandle terms) if its MethodType features
@@ -50,9 +50,6 @@ import sun.dyn.util.Wrapper;
  * either binds internally or else takes as a leading argument).
  * (To stretch the term, adapter-like method handles may have multiple
  * targets or be polymorphic across multiple call types.)
- * <p>
- * This adapter can sometimes be more directly implemented
- * by the JVM's built-in OP_SPREAD_ARGS adapter.
  * @author jrose
  */
 class FromGeneric {
@@ -99,7 +96,7 @@ class FromGeneric {
         }
         this.internalType = internalType0;
         this.adapter = ad;
-        MethodType tepType = targetType.insertParameterType(0, adapter.getClass());
+        MethodType tepType = targetType.insertParameterTypes(0, adapter.getClass());
         this.entryPoint = ad.prototypeEntryPoint();
         this.returnConversion = computeReturnConversion(targetType, internalType0);
         this.unboxingInvoker = computeUnboxingInvoker(targetType, internalType0);
@@ -146,7 +143,7 @@ class FromGeneric {
         if (fixArgs == null)
             throw new InternalError("bad fixArgs");
         // reinterpret the calling sequence as raw:
-        MethodHandle retyper = AdapterMethodHandle.makeRawRetypeOnly(Access.TOKEN,
+        MethodHandle retyper = AdapterMethodHandle.makeRetypeRaw(Access.TOKEN,
                                         Invokers.invokerType(internalType), fixArgs);
         if (retyper == null)
             throw new InternalError("bad retyper");
@@ -226,7 +223,10 @@ class FromGeneric {
                 // Produce an instance configured as a prototype.
                 return ctor.newInstance(entryPoint);
             } catch (IllegalArgumentException ex) {
-            } catch (InvocationTargetException ex) {
+            } catch (InvocationTargetException wex) {
+                Throwable ex = wex.getTargetException();
+                if (ex instanceof Error)  throw (Error)ex;
+                if (ex instanceof RuntimeException)  throw (RuntimeException)ex;
             } catch (InstantiationException ex) {
             } catch (IllegalAccessException ex) {
             }
@@ -260,6 +260,11 @@ class FromGeneric {
         protected final MethodHandle convert;  // raw(R) => Object
         protected final MethodHandle target;   // (any**N) => R
 
+        @Override
+        public String toString() {
+            return target.toString();
+        }
+
         protected boolean isPrototype() { return target == null; }
         protected Adapter(MethodHandle entryPoint) {
             this(entryPoint, null, entryPoint, null);
@@ -284,11 +289,11 @@ class FromGeneric {
         // { return new ThisType(entryPoint, convert, target); }
 
         /// Conversions on the value returned from the target.
-        protected Object convert_L(Object result) { return convert.<Object>invoke(result); }
-        protected Object convert_I(int    result) { return convert.<Object>invoke(result); }
-        protected Object convert_J(long   result) { return convert.<Object>invoke(result); }
-        protected Object convert_F(float  result) { return convert.<Object>invoke(result); }
-        protected Object convert_D(double result) { return convert.<Object>invoke(result); }
+        protected Object convert_L(Object result) throws Throwable { return convert.<Object>invoke(result); }
+        protected Object convert_I(int    result) throws Throwable { return convert.<Object>invoke(result); }
+        protected Object convert_J(long   result) throws Throwable { return convert.<Object>invoke(result); }
+        protected Object convert_F(float  result) throws Throwable { return convert.<Object>invoke(result); }
+        protected Object convert_D(double result) throws Throwable { return convert.<Object>invoke(result); }
 
         static private final String CLASS_PREFIX; // "sun.dyn.FromGeneric$"
         static {
@@ -317,11 +322,11 @@ class FromGeneric {
                         { super(e, i, c, t); }
         protected xA2 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new xA2(e, i, c, t); }
-        protected Object invoke_L2(Object a0, Object a1) { return convert_L(invoker.<Object>invoke(target, a0, a1)); }
-        protected Object invoke_I2(Object a0, Object a1) { return convert_I(invoker.<int   >invoke(target, a0, a1)); }
-        protected Object invoke_J2(Object a0, Object a1) { return convert_J(invoker.<long  >invoke(target, a0, a1)); }
-        protected Object invoke_F2(Object a0, Object a1) { return convert_F(invoker.<float >invoke(target, a0, a1)); }
-        protected Object invoke_D2(Object a0, Object a1) { return convert_D(invoker.<double>invoke(target, a0, a1)); }
+        protected Object invoke_L2(Object a0, Object a1) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1)); }
+        protected Object invoke_I2(Object a0, Object a1) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1)); }
+        protected Object invoke_J2(Object a0, Object a1) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1)); }
+        protected Object invoke_F2(Object a0, Object a1) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1)); }
+        protected Object invoke_D2(Object a0, Object a1) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1)); }
     }
     // */
 
@@ -342,7 +347,7 @@ class genclasses {
         "        protected @cat@ makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)",
         "                        { return new @cat@(e, i, c, t); }",
         "        //@each-R@",
-        "        protected Object invoke_@catN@(@Tvav@) { return convert_@Rc@(invoker.<@R@>invoke(target@av@)); }",
+        "        protected Object invoke_@catN@(@Tvav@) throws Throwable { return convert_@Rc@(invoker.<@R@>invoke(target@av@)); }",
         "        //@end-R@",
         "    }",
     } };
@@ -498,11 +503,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A0 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A0(e, i, c, t); }
-        protected Object invoke_L0() { return convert_L(invoker.<Object>invoke(target)); }
-        protected Object invoke_I0() { return convert_I(invoker.<int   >invoke(target)); }
-        protected Object invoke_J0() { return convert_J(invoker.<long  >invoke(target)); }
-        protected Object invoke_F0() { return convert_F(invoker.<float >invoke(target)); }
-        protected Object invoke_D0() { return convert_D(invoker.<double>invoke(target)); }
+        protected Object invoke_L0() throws Throwable { return convert_L(invoker.<Object>invoke(target)); }
+        protected Object invoke_I0() throws Throwable { return convert_I(invoker.<int   >invoke(target)); }
+        protected Object invoke_J0() throws Throwable { return convert_J(invoker.<long  >invoke(target)); }
+        protected Object invoke_F0() throws Throwable { return convert_F(invoker.<float >invoke(target)); }
+        protected Object invoke_D0() throws Throwable { return convert_D(invoker.<double>invoke(target)); }
     }
     static class A1 extends Adapter {
         protected A1(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -510,11 +515,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A1 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A1(e, i, c, t); }
-        protected Object invoke_L1(Object a0) { return convert_L(invoker.<Object>invoke(target, a0)); }
-        protected Object invoke_I1(Object a0) { return convert_I(invoker.<int   >invoke(target, a0)); }
-        protected Object invoke_J1(Object a0) { return convert_J(invoker.<long  >invoke(target, a0)); }
-        protected Object invoke_F1(Object a0) { return convert_F(invoker.<float >invoke(target, a0)); }
-        protected Object invoke_D1(Object a0) { return convert_D(invoker.<double>invoke(target, a0)); }
+        protected Object invoke_L1(Object a0) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0)); }
+        protected Object invoke_I1(Object a0) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0)); }
+        protected Object invoke_J1(Object a0) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0)); }
+        protected Object invoke_F1(Object a0) throws Throwable { return convert_F(invoker.<float >invoke(target, a0)); }
+        protected Object invoke_D1(Object a0) throws Throwable { return convert_D(invoker.<double>invoke(target, a0)); }
     }
     static class A2 extends Adapter {
         protected A2(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -522,11 +527,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A2 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A2(e, i, c, t); }
-        protected Object invoke_L2(Object a0, Object a1) { return convert_L(invoker.<Object>invoke(target, a0, a1)); }
-        protected Object invoke_I2(Object a0, Object a1) { return convert_I(invoker.<int   >invoke(target, a0, a1)); }
-        protected Object invoke_J2(Object a0, Object a1) { return convert_J(invoker.<long  >invoke(target, a0, a1)); }
-        protected Object invoke_F2(Object a0, Object a1) { return convert_F(invoker.<float >invoke(target, a0, a1)); }
-        protected Object invoke_D2(Object a0, Object a1) { return convert_D(invoker.<double>invoke(target, a0, a1)); }
+        protected Object invoke_L2(Object a0, Object a1) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1)); }
+        protected Object invoke_I2(Object a0, Object a1) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1)); }
+        protected Object invoke_J2(Object a0, Object a1) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1)); }
+        protected Object invoke_F2(Object a0, Object a1) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1)); }
+        protected Object invoke_D2(Object a0, Object a1) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1)); }
     }
     static class A3 extends Adapter {
         protected A3(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -534,11 +539,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A3 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A3(e, i, c, t); }
-        protected Object invoke_L3(Object a0, Object a1, Object a2) { return convert_L(invoker.<Object>invoke(target, a0, a1, a2)); }
-        protected Object invoke_I3(Object a0, Object a1, Object a2) { return convert_I(invoker.<int   >invoke(target, a0, a1, a2)); }
-        protected Object invoke_J3(Object a0, Object a1, Object a2) { return convert_J(invoker.<long  >invoke(target, a0, a1, a2)); }
-        protected Object invoke_F3(Object a0, Object a1, Object a2) { return convert_F(invoker.<float >invoke(target, a0, a1, a2)); }
-        protected Object invoke_D3(Object a0, Object a1, Object a2) { return convert_D(invoker.<double>invoke(target, a0, a1, a2)); }
+        protected Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1, a2)); }
+        protected Object invoke_I3(Object a0, Object a1, Object a2) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1, a2)); }
+        protected Object invoke_J3(Object a0, Object a1, Object a2) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1, a2)); }
+        protected Object invoke_F3(Object a0, Object a1, Object a2) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1, a2)); }
+        protected Object invoke_D3(Object a0, Object a1, Object a2) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1, a2)); }
     }
     static class A4 extends Adapter {
         protected A4(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -546,11 +551,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A4 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A4(e, i, c, t); }
-        protected Object invoke_L4(Object a0, Object a1, Object a2, Object a3) { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3)); }
-        protected Object invoke_I4(Object a0, Object a1, Object a2, Object a3) { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3)); }
-        protected Object invoke_J4(Object a0, Object a1, Object a2, Object a3) { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3)); }
-        protected Object invoke_F4(Object a0, Object a1, Object a2, Object a3) { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3)); }
-        protected Object invoke_D4(Object a0, Object a1, Object a2, Object a3) { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3)); }
+        protected Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3)); }
+        protected Object invoke_I4(Object a0, Object a1, Object a2, Object a3) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3)); }
+        protected Object invoke_J4(Object a0, Object a1, Object a2, Object a3) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3)); }
+        protected Object invoke_F4(Object a0, Object a1, Object a2, Object a3) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3)); }
+        protected Object invoke_D4(Object a0, Object a1, Object a2, Object a3) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3)); }
     }
     static class A5 extends Adapter {
         protected A5(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -558,11 +563,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A5 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A5(e, i, c, t); }
-        protected Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4)); }
-        protected Object invoke_I5(Object a0, Object a1, Object a2, Object a3, Object a4) { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4)); }
-        protected Object invoke_J5(Object a0, Object a1, Object a2, Object a3, Object a4) { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4)); }
-        protected Object invoke_F5(Object a0, Object a1, Object a2, Object a3, Object a4) { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4)); }
-        protected Object invoke_D5(Object a0, Object a1, Object a2, Object a3, Object a4) { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4)); }
+        protected Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4)); }
+        protected Object invoke_I5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4)); }
+        protected Object invoke_J5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4)); }
+        protected Object invoke_F5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4)); }
+        protected Object invoke_D5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4)); }
     }
     static class A6 extends Adapter {
         protected A6(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -570,11 +575,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A6 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A6(e, i, c, t); }
-        protected Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_I6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_J6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_F6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_D6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_I6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_J6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_F6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_D6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5)); }
     }
     static class A7 extends Adapter {
         protected A7(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -582,11 +587,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A7 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A7(e, i, c, t); }
-        protected Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_I7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_J7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_F7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_D7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_I7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_J7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_F7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_D7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5, a6)); }
     }
     static class A8 extends Adapter {
         protected A8(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -594,11 +599,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A8 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A8(e, i, c, t); }
-        protected Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_I8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_J8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_F8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_D8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_I8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_J8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_F8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_D8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7)); }
     }
     static class A9 extends Adapter {
         protected A9(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -606,11 +611,11 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A9 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A9(e, i, c, t); }
-        protected Object invoke_L9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_I9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_J9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_F9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_D9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_I9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_J9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_F9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_D9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
     }
     static class A10 extends Adapter {
         protected A10(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
@@ -618,10 +623,10 @@ class genclasses {
                         { super(e, i, c, t); }
         protected A10 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t)
                         { return new A10(e, i, c, t); }
-        protected Object invoke_L10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_I10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_J10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_F10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_D10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return convert_L(invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_I10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return convert_I(invoker.<int   >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_J10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return convert_J(invoker.<long  >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_F10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return convert_F(invoker.<float >invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_D10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return convert_D(invoker.<double>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
     }
 }

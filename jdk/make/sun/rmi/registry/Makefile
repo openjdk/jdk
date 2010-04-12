@@ -28,6 +28,7 @@
 #
 
 BUILDDIR = ../../..
+MODULE  = rmi
 PACKAGE = sun.rmi.registry
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
@@ -48,3 +49,7 @@ RESOURCE_BUNDLES_UNCOMPILED_PROPERTIES = $(PKGDIR)/resources/rmiregistry.propert
 #
 include $(BUILDDIR)/common/Classes.gmk
 
+build: rmiregistry
+
+rmiregistry:
+	$(call make-launcher, rmiregistry, sun.rmi.registry.RegistryImpl, , )

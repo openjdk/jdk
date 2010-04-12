@@ -240,7 +240,12 @@ import_product:
 
 all build:: sanity-all post-sanity-all
 
-SUBDIRS    = tools java javax org sun sunw com jpda mkdemo mksample launchers
+SUBDIRS       = tools java javax sun com
+SUBDIRS_tools = launchers
+SUBDIRS_misc  = org sunw jpda mkdemo mksample
+
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build::
 	$(SUBDIRS-loop)
 

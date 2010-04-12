@@ -91,10 +91,18 @@ class objArrayKlass : public arrayKlass {
 
   // Garbage collection
   void oop_follow_contents(oop obj);
+  inline void oop_follow_contents(oop obj, int index);
+  template <class T> inline void objarray_follow_contents(oop obj, int index);
+
   int  oop_adjust_pointers(oop obj);
 
   // Parallel Scavenge and Parallel Old
   PARALLEL_GC_DECLS
+#ifndef SERIALGC
+  inline void oop_follow_contents(ParCompactionManager* cm, oop obj, int index);
+  template <class T> inline void
+    objarray_follow_contents(ParCompactionManager* cm, oop obj, int index);
+#endif // !SERIALGC
 
   // Iterators
   int oop_oop_iterate(oop obj, OopClosure* blk) {
@@ -119,18 +127,16 @@ class objArrayKlass : public arrayKlass {
  private:
    static klassOop array_klass_impl   (objArrayKlassHandle this_oop, bool or_null, int n, TRAPS);
 
-#ifndef PRODUCT
  public:
   // Printing
-  void oop_print_on      (oop obj, outputStream* st);
   void oop_print_value_on(oop obj, outputStream* st);
-#endif
+#ifndef PRODUCT
+  void oop_print_on      (oop obj, outputStream* st);
+#endif //PRODUCT
 
- public:
   // Verification
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);
   void oop_verify_old_oop(oop obj, oop* p, bool allow_dirty);
   void oop_verify_old_oop(oop obj, narrowOop* p, bool allow_dirty);
-
 };

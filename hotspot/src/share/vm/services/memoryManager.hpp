@@ -54,7 +54,9 @@ public:
     ParNew,
     ConcurrentMarkSweep,
     PSScavenge,
-    PSMarkSweep
+    PSMarkSweep,
+    G1YoungGen,
+    G1OldGen
   };
 
   MemoryManager();
@@ -85,6 +87,8 @@ public:
   static GCMemoryManager* get_cms_memory_manager();
   static GCMemoryManager* get_psScavenge_memory_manager();
   static GCMemoryManager* get_psMarkSweep_memory_manager();
+  static GCMemoryManager* get_g1YoungGen_memory_manager();
+  static GCMemoryManager* get_g1OldGen_memory_manager();
 
 };
 
@@ -230,4 +234,22 @@ public:
 
   MemoryManager::Name kind() { return MemoryManager::PSMarkSweep; }
   const char* name()         { return "PS MarkSweep"; }
+};
+
+class G1YoungGenMemoryManager : public GCMemoryManager {
+private:
+public:
+  G1YoungGenMemoryManager() : GCMemoryManager() {}
+
+  MemoryManager::Name kind() { return MemoryManager::G1YoungGen; }
+  const char* name()         { return "G1 Young Generation"; }
+};
+
+class G1OldGenMemoryManager : public GCMemoryManager {
+private:
+public:
+  G1OldGenMemoryManager() : GCMemoryManager() {}
+
+  MemoryManager::Name kind() { return MemoryManager::G1OldGen; }
+  const char* name()         { return "G1 Old Generation"; }
 };

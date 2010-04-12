@@ -40,6 +40,7 @@ class GenCollectedHeap;
 class ParallelScavengeHeap;
 class CompactingPermGenGen;
 class CMSPermGenGen;
+class G1CollectedHeap;
 
 // VM Monitoring and Management Support
 
@@ -88,6 +89,13 @@ private:
   static void add_psPerm_memory_pool(PSPermGen* perm,
                                      MemoryManager* mgr);
 
+  static void add_g1YoungGen_memory_pool(G1CollectedHeap* g1h,
+                                         MemoryManager* major_mgr,
+                                         MemoryManager* minor_mgr);
+  static void add_g1OldGen_memory_pool(G1CollectedHeap* g1h,
+                                       MemoryManager* mgr);
+  static void add_g1PermGen_memory_pool(G1CollectedHeap* g1h,
+                                        MemoryManager* mgr);
 
   static MemoryPool* add_space(ContiguousSpace* space,
                                const char* name,
@@ -111,6 +119,7 @@ private:
 
   static void add_gen_collected_heap_info(GenCollectedHeap* heap);
   static void add_parallel_scavenge_heap_info(ParallelScavengeHeap* heap);
+  static void add_g1_heap_info(G1CollectedHeap* g1h);
 
 public:
   static void set_universe_heap(CollectedHeap* heap);

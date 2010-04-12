@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,14 +189,17 @@ void LIR_Assembler::osr_entry() {
   Register OSR_buf = osrBufferPointer()->as_register();
   { assert(frame::interpreter_frame_monitor_size() == BasicObjectLock::size(), "adjust code below");
     int monitor_offset = BytesPerWord * method()->max_locals() +
-      (BasicObjectLock::size() * BytesPerWord) * (number_of_locks - 1);
+      (2 * BytesPerWord) * (number_of_locks - 1);
+    // SharedRuntime::OSR_migration_begin() packs BasicObjectLocks in
+    // the OSR buffer using 2 word entries: first the lock and then
+    // the oop.
     for (int i = 0; i < number_of_locks; i++) {
-      int slot_offset = monitor_offset - ((i * BasicObjectLock::size()) * BytesPerWord);
+      int slot_offset = monitor_offset - ((i * 2) * BytesPerWord);
 #ifdef ASSERT
       // verify the interpreter's monitor has a non-null object
       {
         Label L;
-        __ ld_ptr(OSR_buf, slot_offset + BasicObjectLock::obj_offset_in_bytes(), O7);
+        __ ld_ptr(OSR_buf, slot_offset + 1*BytesPerWord, O7);
         __ cmp(G0, O7);
         __ br(Assembler::notEqual, false, Assembler::pt, L);
         __ delayed()->nop();
@@ -205,9 +208,9 @@ void LIR_Assembler::osr_entry() {
       }
 #endif // ASSERT
       // Copy the lock field into the compiled activation.
-      __ ld_ptr(OSR_buf, slot_offset + BasicObjectLock::lock_offset_in_bytes(), O7);
+      __ ld_ptr(OSR_buf, slot_offset + 0, O7);
       __ st_ptr(O7, frame_map()->address_for_monitor_lock(i));
-      __ ld_ptr(OSR_buf, slot_offset + BasicObjectLock::obj_offset_in_bytes(), O7);
+      __ ld_ptr(OSR_buf, slot_offset + 1*BytesPerWord, O7);
       __ st_ptr(O7, frame_map()->address_for_monitor_object(i));
     }
   }
@@ -354,7 +357,7 @@ void LIR_Assembler::monitorexit(LIR_Opr obj_opr, LIR_Opr lock_opr, Register hdr,
 }
 
 
-void LIR_Assembler::emit_exception_handler() {
+int LIR_Assembler::emit_exception_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
@@ -370,28 +373,22 @@ void LIR_Assembler::emit_exception_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("exception handler overflow");
-    return;
+    return -1;
   }
-#ifdef ASSERT
+
   int offset = code_offset();
-#endif // ASSERT
-  compilation()->offsets()->set_value(CodeOffsets::Exceptions, code_offset());
 
-
-  if (compilation()->has_exception_handlers() || compilation()->env()->jvmti_can_post_exceptions()) {
-    __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
-    __ delayed()->nop();
-  }
-
-  __ call(Runtime1::entry_for(Runtime1::unwind_exception_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
   __ delayed()->nop();
   debug_only(__ stop("should have gone to the caller");)
   assert(code_offset() - offset <= exception_handler_size, "overflow");
-
   __ end_a_stub();
+
+  return offset;
 }
 
-void LIR_Assembler::emit_deopt_handler() {
+
+int LIR_Assembler::emit_deopt_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
   // must still point into the code area in order to avoid assertion
@@ -405,23 +402,18 @@ void LIR_Assembler::emit_deopt_handler() {
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("deopt handler overflow");
-    return;
+    return -1;
   }
-#ifdef ASSERT
+
   int offset = code_offset();
-#endif // ASSERT
-  compilation()->offsets()->set_value(CodeOffsets::Deopt, code_offset());
-
   AddressLiteral deopt_blob(SharedRuntime::deopt_blob()->unpack());
-
   __ JUMP(deopt_blob, G3_scratch, 0); // sethi;jmp
   __ delayed()->nop();
-
   assert(code_offset() - offset <= deopt_handler_size, "overflow");
-
   debug_only(__ stop("should have gone to the caller");)
-
   __ end_a_stub();
+
+  return offset;
 }
 
 
@@ -688,35 +680,45 @@ void LIR_Assembler::align_call(LIR_Code) {
 }
 
 
-void LIR_Assembler::call(address entry, relocInfo::relocType rtype, CodeEmitInfo* info) {
-  __ call(entry, rtype);
+void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
+  __ call(op->addr(), rtype);
   // the peephole pass fills the delay slot
 }
 
 
-void LIR_Assembler::ic_call(address entry, CodeEmitInfo* info) {
+void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   RelocationHolder rspec = virtual_call_Relocation::spec(pc());
   __ set_oop((jobject)Universe::non_oop_word(), G5_inline_cache_reg);
   __ relocate(rspec);
-  __ call(entry, relocInfo::none);
+  __ call(op->addr(), relocInfo::none);
   // the peephole pass fills the delay slot
 }
 
 
-void LIR_Assembler::vtable_call(int vtable_offset, CodeEmitInfo* info) {
-  add_debug_info_for_null_check_here(info);
+void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
+  add_debug_info_for_null_check_here(op->info());
   __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), G3_scratch);
-  if (__ is_simm13(vtable_offset) ) {
-    __ ld_ptr(G3_scratch, vtable_offset, G5_method);
+  if (__ is_simm13(op->vtable_offset())) {
+    __ ld_ptr(G3_scratch, op->vtable_offset(), G5_method);
   } else {
     // This will generate 2 instructions
-    __ set(vtable_offset, G5_method);
+    __ set(op->vtable_offset(), G5_method);
     // ld_ptr, set_hi, set
     __ ld_ptr(G3_scratch, G5_method, G5_method);
   }
   __ ld_ptr(G5_method, methodOopDesc::from_compiled_offset(), G3_scratch);
   __ callr(G3_scratch, G0);
   // the peephole pass fills the delay slot
+}
+
+
+void LIR_Assembler::preserve_SP(LIR_OpJavaCall* op) {
+  Unimplemented();
+}
+
+
+void LIR_Assembler::restore_SP(LIR_OpJavaCall* op) {
+  Unimplemented();
 }
 
 
@@ -953,9 +955,11 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
         } else {
 #ifdef _LP64
           assert(base != to_reg->as_register_lo(), "can't handle this");
+          assert(O7 != to_reg->as_register_lo(), "can't handle this");
           __ ld(base, offset + hi_word_offset_in_bytes, to_reg->as_register_lo());
+          __ lduw(base, offset + lo_word_offset_in_bytes, O7); // in case O7 is base or offset, use it last
           __ sllx(to_reg->as_register_lo(), 32, to_reg->as_register_lo());
-          __ ld(base, offset + lo_word_offset_in_bytes, to_reg->as_register_lo());
+          __ or3(to_reg->as_register_lo(), O7, to_reg->as_register_lo());
 #else
           if (base == to_reg->as_register_lo()) {
             __ ld(base, offset + hi_word_offset_in_bytes, to_reg->as_register_hi());
@@ -976,8 +980,8 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
           FloatRegister reg = to_reg->as_double_reg();
           // split unaligned loads
           if (unaligned || PatchALot) {
-            __ ldf(FloatRegisterImpl::S, base, offset + BytesPerWord, reg->successor());
-            __ ldf(FloatRegisterImpl::S, base, offset,                reg);
+            __ ldf(FloatRegisterImpl::S, base, offset + 4, reg->successor());
+            __ ldf(FloatRegisterImpl::S, base, offset,     reg);
           } else {
             __ ldf(FloatRegisterImpl::D, base, offset, to_reg->as_double_reg());
           }
@@ -1068,7 +1072,8 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
   LIR_Const* c = src->as_constant_ptr();
   switch (c->type()) {
     case T_INT:
-    case T_FLOAT: {
+    case T_FLOAT:
+    case T_ADDRESS: {
       Register src_reg = O7;
       int value = c->as_jint_bits();
       if (value == 0) {
@@ -1124,7 +1129,8 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
   }
   switch (c->type()) {
     case T_INT:
-    case T_FLOAT: {
+    case T_FLOAT:
+    case T_ADDRESS: {
       LIR_Opr tmp = FrameMap::O7_opr;
       int value = c->as_jint_bits();
       if (value == 0) {
@@ -1196,6 +1202,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
   switch (c->type()) {
     case T_INT:
+    case T_ADDRESS:
       {
         jint con = c->as_jint();
         if (to_reg->is_single_cpu()) {
@@ -2200,6 +2207,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register len     = O2;
 
   __ add(src, arrayOopDesc::base_offset_in_bytes(basic_type), src_ptr);
+  LP64_ONLY(__ sra(src_pos, 0, src_pos);) //higher 32bits must be null
   if (shift == 0) {
     __ add(src_ptr, src_pos, src_ptr);
   } else {
@@ -2208,6 +2216,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
 
   __ add(dst, arrayOopDesc::base_offset_in_bytes(basic_type), dst_ptr);
+  LP64_ONLY(__ sra(dst_pos, 0, dst_pos);) //higher 32bits must be null
   if (shift == 0) {
     __ add(dst_ptr, dst_pos, dst_ptr);
   } else {
@@ -2729,9 +2738,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   }
 
   Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()) - mdo_offset_bias);
-  __ lduw(counter_addr, tmp1);
-  __ add(tmp1, DataLayout::counter_increment, tmp1);
-  __ stw(tmp1, counter_addr);
   Bytecodes::Code bc = method->java_code_at_bci(bci);
   // Perform additional virtual call profiling for invokevirtual and
   // invokeinterface bytecodes
@@ -2821,15 +2827,23 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         __ set(DataLayout::counter_increment, tmp1);
         __ st_ptr(tmp1, mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)) -
                   mdo_offset_bias);
-        if (i < (VirtualCallData::row_limit() - 1)) {
-          __ br(Assembler::always, false, Assembler::pt, update_done);
-          __ delayed()->nop();
-        }
+        __ br(Assembler::always, false, Assembler::pt, update_done);
+        __ delayed()->nop();
         __ bind(next_test);
       }
+      // Receiver did not match any saved receiver and there is no empty row for it.
+      // Increment total counter to indicate polymorphic case.
+      __ lduw(counter_addr, tmp1);
+      __ add(tmp1, DataLayout::counter_increment, tmp1);
+      __ stw(tmp1, counter_addr);
 
       __ bind(update_done);
     }
+  } else {
+    // Static call
+    __ lduw(counter_addr, tmp1);
+    __ add(tmp1, DataLayout::counter_increment, tmp1);
+    __ stw(tmp1, counter_addr);
   }
 }
 

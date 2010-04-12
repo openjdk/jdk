@@ -1977,6 +1977,58 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # http://www.conae.gob.mx/ahorro/horaver2001_m1_2002.html (2002-02-20)
 # confirms this.  Sonora as usual is the only state where DST is not applied.
 
+# From Steffen Thorsen (2009-12-28):
+#
+# Steffen Thorsen wrote:
+# > Mexico's House of Representatives has approved a proposal for northern
+# > Mexico's border cities to share the same daylight saving schedule as
+# > the United States.
+# Now this has passed both the Congress and the Senate, so starting from
+# 2010, some border regions will be the same:
+# <a href="http://www.signonsandiego.com/news/2009/dec/28/clocks-will-match-both-sides-border/">
+# http://www.signonsandiego.com/news/2009/dec/28/clocks-will-match-both-sides-border/
+# </a>
+# <a href="http://www.elmananarey.com/diario/noticia/nacional/noticias/empatan_horario_de_frontera_con_eu/621939">
+# http://www.elmananarey.com/diario/noticia/nacional/noticias/empatan_horario_de_frontera_con_eu/621939
+# </a>
+# (Spanish)
+#
+# Could not find the new law text, but the proposed law text changes are here:
+# <a href="http://gaceta.diputados.gob.mx/Gaceta/61/2009/dic/20091210-V.pdf">
+# http://gaceta.diputados.gob.mx/Gaceta/61/2009/dic/20091210-V.pdf
+# </a>
+# (Gaceta Parlamentaria)
+#
+# There is also a list of the votes here:
+# <a href="http://gaceta.diputados.gob.mx/Gaceta/61/2009/dic/V2-101209.html">
+# http://gaceta.diputados.gob.mx/Gaceta/61/2009/dic/V2-101209.html
+# </a>
+#
+# Our page:
+# <a href="http://www.timeanddate.com/news/time/north-mexico-dst-change.html">
+# http://www.timeanddate.com/news/time/north-mexico-dst-change.html
+# </a>
+
+# From Arthur David Olson (2010-01-20):
+# The page
+# <a href="http://dof.gob.mx/nota_detalle.php?codigo=5127480&fecha=06/01/2010">
+# http://dof.gob.mx/nota_detalle.php?codigo=5127480&fecha=06/01/2010
+# </a>
+# includes this text:
+# En los municipios fronterizos de Tijuana y Mexicali en Baja California;
+# Ju&aacute;rez y Ojinaga en Chihuahua; Acu&ntilde;a y Piedras Negras en Coahuila;
+# An&aacute;huac en Nuevo Le&oacute;n; y Nuevo Laredo, Reynosa y Matamoros en
+# Tamaulipas, la aplicaci&oacute;n de este horario estacional surtir&aacute; efecto
+# desde las dos horas del segundo domingo de marzo y concluir&aacute; a las dos
+# horas del primer domingo de noviembre.
+# En los municipios fronterizos que se encuentren ubicados en la franja
+# fronteriza norte en el territorio comprendido entre la l&iacute;nea
+# internacional y la l&iacute;nea paralela ubicada a una distancia de veinte
+# kil&oacute;metros, as&iacute; como la Ciudad de Ensenada, Baja California, hacia el
+# interior del pa&iacute;s, la aplicaci&oacute;n de este horario estacional surtir&aacute;
+# efecto desde las dos horas del segundo domingo de marzo y concluir&aacute; a
+# las dos horas del primer domingo de noviembre.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Mexico	1939	only	-	Feb	5	0:00	1:00	D
 Rule	Mexico	1939	only	-	Jun	25	0:00	0	S
@@ -2003,13 +2055,19 @@ Zone America/Merida	-5:58:28 -	LMT	1922 Jan  1  0:01:32
 			-6:00	-	CST	1981 Dec 23
 			-5:00	-	EST	1982 Dec  2
 			-6:00	Mexico	C%sT
-# Coahuila, Durango, Nuevo Leon, Tamaulipas
+# Coahuila, Durango, Nuevo Leon, Tamaulipas (near US border)
+Zone America/Matamoros	-6:40:00 -	LMT	1921 Dec 31 23:20:00
+			-6:00	-	CST	1988
+			-6:00	US	C%sT	1989
+			-6:00	Mexico	C%sT	2010
+			-6:00	US	C%sT
+# Coahuila, Durango, Nuevo Leon, Tamaulipas (away from US border)
 Zone America/Monterrey	-6:41:16 -	LMT	1921 Dec 31 23:18:44
 			-6:00	-	CST	1988
 			-6:00	US	C%sT	1989
 			-6:00	Mexico	C%sT
 # Central Mexico
-Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  0:23:24
+Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1 0:23:24
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
 			-7:00	-	MST	1931 May  1 23:00
@@ -2018,7 +2076,19 @@ Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  0:23:24
 			-6:00	Mexico	C%sT	2001 Sep 30 02:00
 			-6:00	-	CST	2002 Feb 20
 			-6:00	Mexico	C%sT
-# Chihuahua
+# Chihuahua (near US border)
+Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan 1 0:02:20
+			-7:00	-	MST	1927 Jun 10 23:00
+			-6:00	-	CST	1930 Nov 15
+			-7:00	-	MST	1931 May  1 23:00
+			-6:00	-	CST	1931 Oct
+			-7:00	-	MST	1932 Apr  1
+			-6:00	-	CST	1996
+			-6:00	Mexico	C%sT	1998
+			-6:00	-	CST	1998 Apr Sun>=1 3:00
+			-7:00	Mexico	M%sT	2010
+			-7:00	US	M%sT
+# Chihuahua (away from US border)
 Zone America/Chihuahua	-7:04:20 -	LMT	1921 Dec 31 23:55:40
 			-7:00	-	MST	1927 Jun 10 23:00
 			-6:00	-	CST	1930 Nov 15
@@ -2052,8 +2122,28 @@ Zone America/Mazatlan	-7:05:40 -	LMT	1921 Dec 31 23:54:20
 			-7:00	-	MST	1949 Jan 14
 			-8:00	-	PST	1970
 			-7:00	Mexico	M%sT
-# Baja California
+# Baja California (near US border)
 Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
+			-7:00	-	MST	1924
+			-8:00	-	PST	1927 Jun 10 23:00
+			-7:00	-	MST	1930 Nov 15
+			-8:00	-	PST	1931 Apr  1
+			-8:00	1:00	PDT	1931 Sep 30
+			-8:00	-	PST	1942 Apr 24
+			-8:00	1:00	PWT	1945 Aug 14 23:00u
+			-8:00	1:00	PPT	1945 Nov 12 # Peace
+			-8:00	-	PST	1948 Apr  5
+			-8:00	1:00	PDT	1949 Jan 14
+			-8:00	-	PST	1954
+			-8:00	CA	P%sT	1961
+			-8:00	-	PST	1976
+			-8:00	US	P%sT	1996
+			-8:00	Mexico	P%sT	2001
+			-8:00	US	P%sT	2002 Feb 20
+			-8:00	Mexico	P%sT	2010
+			-8:00	US	P%sT
+# Baja California (away from US border)
+Zone America/Santa_Isabel	-7:39:28 -	LMT	1922 Jan  1  0:20:32
 			-7:00	-	MST	1924
 			-8:00	-	PST	1927 Jun 10 23:00
 			-7:00	-	MST	1930 Nov 15

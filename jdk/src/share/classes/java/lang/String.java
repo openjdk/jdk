@@ -1492,7 +1492,7 @@ public final class String
      */
     public int hashCode() {
         int h = hash;
-        if (h == 0) {
+        if (h == 0 && count > 0) {
             int off = offset;
             char val[] = value;
             int len = count;

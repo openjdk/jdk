@@ -26,6 +26,9 @@
 package java.dyn;
 
 import sun.dyn.util.BytecodeName;
+import sun.dyn.Access;
+import sun.dyn.CallSiteImpl;
+import sun.dyn.MethodHandleImpl;
 
 /**
  * An {@code invokedynamic} call site, as reified by the
@@ -52,15 +55,25 @@ import sun.dyn.util.BytecodeName;
  * @see Linkage#registerBootstrapMethod(java.lang.Class, java.dyn.MethodHandle)
  * @author John Rose, JSR 292 EG
  */
-public class CallSite {
+public class CallSite
+        // Note: This is an implementation inheritance hack, and will be removed
+        // with a JVM change which moves the required hidden state onto this class.
+        extends CallSiteImpl
+{
+    private static final Access IMPL_TOKEN = Access.getToken();
+
+    /*
+
     // Fields used only by the JVM.  Do not use or change.
     private Object vmmethod;
     int callerMID, callerBCI;  // supplied by the JVM
 
-    MethodHandle target;
+    private MethodHandle target;
+
     final Object caller;  // usually a class
     final String name;
     final MethodType type;
+    */
 
     /**
      * Make a call site given the parameters from a call to the bootstrap method.
@@ -72,16 +85,21 @@ public class CallSite {
      * @param type the method handle type derived from descriptor of the {@code invokedynamic} instruction
      */
     public CallSite(Object caller, String name, MethodType type) {
-        this.caller = caller;
-        this.name = name;
-        this.type = type;
+        super(IMPL_TOKEN, caller, name, type);
     }
 
     private static void privateInitializeCallSite(CallSite site, int callerMID, int callerBCI) {
         site.callerMID = callerMID;
         site.callerBCI = callerBCI;
-        if (site.target == null)
-            site.setTarget(site.initialTarget());
+        site.ensureTarget();
+    }
+    private void ensureTarget() {
+        // Note use of super, which accesses the field directly,
+        // without deferring to possible subclass overrides.
+        if (super.getTarget() == null) {
+            super.setTarget(this.initialTarget());
+            super.getTarget().type();  // provoke NPE if still null
+        }
     }
 
     /**
@@ -102,10 +120,11 @@ public class CallSite {
 
     /**
      * Report the current linkage state of the call site.  (This is mutable.)
-     * The value maybe null only if the call site is currently unlinked.
-     * When a linked call site is invoked, the target method is used directly.
-     * When an unlinked call site is invoked, its bootstrap method receives
-     * the call, as if via {@link Linkage#bootstrapInvokeDynamic}.
+     * The value may not be null after the {@code CallSite} object is returned
+     * from the bootstrap method of the {@code invokedynamic} instruction.
+     * When an {@code invokedynamic} instruction is executed, the target method
+     * of its associated {@code call site} object is invoked directly,
+     * as if via {@link MethodHandle}{@code .invoke}.
      * <p>
      * The interactions of {@code getTarget} with memory are the same
      * as of a read from an ordinary variable, such as an array element or a
@@ -118,7 +137,7 @@ public class CallSite {
      * @see #setTarget
      */
     public MethodHandle getTarget() {
-        return target;
+        return super.getTarget();
     }
 
     /**
@@ -140,13 +159,13 @@ public class CallSite {
      */
     public void setTarget(MethodHandle target) {
         checkTarget(target);
-        this.target = target;
+        super.setTarget(target);
     }
 
     protected void checkTarget(MethodHandle target) {
         target.type();  // provoke NPE
         if (!canSetTarget(target))
-            throw new WrongMethodTypeException(String.valueOf(target));
+            throw new WrongMethodTypeException(String.valueOf(target)+target.type()+" should be of type "+type());
     }
 
     protected boolean canSetTarget(MethodHandle target) {
@@ -219,6 +238,10 @@ public class CallSite {
 
     @Override
     public String toString() {
-        return "CallSite#"+hashCode()+"["+name+type+" => "+target+"]";
+        return "CallSite#"+hashCode()+"["+name+type+" => "+getTarget()+"]";
     }
+
+    // Package-local constant:
+    static final MethodHandle GET_TARGET = MethodHandleImpl.getLookup(IMPL_TOKEN).
+            findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
 }

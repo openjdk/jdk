@@ -26,7 +26,7 @@
  * @bug 6877254
  * @summary Implement StoreCMNode::Ideal to promote its OopStore above the MergeMem
  *
- * @run main/othervm -server -Xcomp -XX:+UseConcMarkSweepGC Test
+ * @run main/othervm -Xcomp Test
  */
 
 public class Test {

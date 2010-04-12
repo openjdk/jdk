@@ -26,7 +26,9 @@
 BUILDDIR = ../../..
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = nameservice 
+SUBDIRS_misc = nameservice 
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

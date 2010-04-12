@@ -309,6 +309,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(CollectedHeap,               _reserved,                                     MemRegion)                             \
   nonstatic_field(SharedHeap,                  _perm_gen,                                     PermGen*)                              \
   nonstatic_field(CollectedHeap,               _barrier_set,                                  BarrierSet*)                           \
+  nonstatic_field(CollectedHeap,               _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
   nonstatic_field(CompactibleSpace,            _compaction_top,                               HeapWord*)                             \
   nonstatic_field(CompactibleSpace,            _first_dead,                                   HeapWord*)                             \
@@ -455,40 +456,38 @@ static inline uint64_t cast_uint64_t(size_t x)
       static_field(SystemDictionary,            _shared_dictionary,                            Dictionary*)                          \
       static_field(SystemDictionary,            _system_loader_lock_obj,                       oop)                                  \
       static_field(SystemDictionary,            _loader_constraints,                           LoaderConstraintTable*)               \
-      static_field(SystemDictionary,            WK_KLASS(object_klass),                        klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(string_klass),                        klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(class_klass),                         klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(cloneable_klass),                     klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(classloader_klass),                   klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(serializable_klass),                  klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(system_klass),                        klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(throwable_klass),                     klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(threaddeath_klass),                   klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(error_klass),                         klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(exception_klass),                     klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(runtime_exception_klass),             klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(classNotFoundException_klass),        klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(noClassDefFoundError_klass),          klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(linkageError_klass),                  klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Object_klass),                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(String_klass),                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Class_klass),                         klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Cloneable_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(ClassLoader_klass),                   klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Serializable_klass),                  klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(System_klass),                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Throwable_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(ThreadDeath_klass),                   klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Error_klass),                         klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Exception_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(RuntimeException_klass),              klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(ClassNotFoundException_klass),        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(NoClassDefFoundError_klass),          klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(LinkageError_klass),                  klassOop)                             \
       static_field(SystemDictionary,            WK_KLASS(ClassCastException_klass),            klassOop)                             \
       static_field(SystemDictionary,            WK_KLASS(ArrayStoreException_klass),           klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(virtualMachineError_klass),           klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(VirtualMachineError_klass),           klassOop)                             \
       static_field(SystemDictionary,            WK_KLASS(OutOfMemoryError_klass),              klassOop)                             \
       static_field(SystemDictionary,            WK_KLASS(StackOverflowError_klass),            klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(protectionDomain_klass),              klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(ProtectionDomain_klass),              klassOop)                             \
       static_field(SystemDictionary,            WK_KLASS(AccessControlContext_klass),          klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(reference_klass),                     klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(soft_reference_klass),                klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(weak_reference_klass),                klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(final_reference_klass),               klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(phantom_reference_klass),             klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(finalizer_klass),                     klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(thread_klass),                        klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(threadGroup_klass),                   klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(properties_klass),                    klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(stringBuffer_klass),                  klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(vector_klass),                        klassOop)                             \
-      static_field(SystemDictionary,            WK_KLASS(hashtable_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Reference_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(SoftReference_klass),                 klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(FinalReference_klass),                klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(PhantomReference_klass),              klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Finalizer_klass),                     klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(Properties_klass),                    klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(StringBuffer_klass),                  klassOop)                             \
       static_field(SystemDictionary,            _box_klasses[0],                               klassOop)                             \
       static_field(SystemDictionary,            _java_system_loader,                           oop)                                  \
                                                                                                                                      \
@@ -666,6 +665,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(Thread,                      _current_pending_monitor_is_from_java,         bool)                                  \
   nonstatic_field(Thread,                      _current_waiting_monitor,                      ObjectMonitor*)                        \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
+  nonstatic_field(NamedThread,                 _processed_thread,                             JavaThread*)                           \
   nonstatic_field(JavaThread,                  _next,                                         JavaThread*)                           \
   nonstatic_field(JavaThread,                  _threadObj,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \

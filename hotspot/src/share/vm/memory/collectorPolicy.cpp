@@ -55,7 +55,7 @@ void CollectorPolicy::initialize_flags() {
 
 void CollectorPolicy::initialize_size_info() {
   // User inputs from -mx and ms are aligned
-  set_initial_heap_byte_size(Arguments::initial_heap_size());
+  set_initial_heap_byte_size(InitialHeapSize);
   if (initial_heap_byte_size() == 0) {
     set_initial_heap_byte_size(NewSize + OldSize);
   }

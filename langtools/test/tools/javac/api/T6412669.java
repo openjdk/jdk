@@ -38,7 +38,6 @@ import com.sun.source.util.*;
 import com.sun.tools.javac.api.*;
 
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class T6412669 extends AbstractProcessor {
     public static void main(String... args) throws IOException {
         String testSrc = System.getProperty("test.src", ".");
@@ -71,5 +70,10 @@ public class T6412669 extends AbstractProcessor {
             }
         }
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 }

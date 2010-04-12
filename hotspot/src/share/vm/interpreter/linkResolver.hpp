@@ -133,6 +133,7 @@ class LinkResolver: AllStatic {
 
   // static resolving for all calls except interface calls
   static void resolve_method          (methodHandle& method_result, KlassHandle& klass_result, constantPoolHandle pool, int index, TRAPS);
+  static void resolve_dynamic_method  (methodHandle& resolved_method, KlassHandle& resolved_klass, constantPoolHandle pool, int index, TRAPS);
   static void resolve_interface_method(methodHandle& method_result, KlassHandle& klass_result, constantPoolHandle pool, int index, TRAPS);
 
   // runtime/static resolving for fields

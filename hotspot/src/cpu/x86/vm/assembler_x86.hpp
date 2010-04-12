@@ -1244,7 +1244,9 @@ private:
   void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
   void pcmpestri(XMMRegister xmm1, Address src, int imm8);
 
+#ifndef _LP64 // no 32bit push/pop on amd64
   void popl(Address dst);
+#endif
 
 #ifdef _LP64
   void popq(Address dst);
@@ -1285,7 +1287,9 @@ private:
   // Interleave Low Bytes
   void punpcklbw(XMMRegister dst, XMMRegister src);
 
+#ifndef _LP64 // no 32bit push/pop on amd64
   void pushl(Address src);
+#endif
 
   void pushq(Address src);
 

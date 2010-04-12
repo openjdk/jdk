@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2007-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,7 +375,8 @@ public final class TimestampedSigner extends ContentSigner {
                 }
                 if (!isSigner) {
                     keyPurposes = cert.getExtendedKeyUsage();
-                    if (! keyPurposes.contains(KP_TIMESTAMPING_OID)) {
+                    if (keyPurposes == null ||
+                            ! keyPurposes.contains(KP_TIMESTAMPING_OID)) {
                         throw new CertificateException(
                             "Certificate is not valid for timestamping");
                     }

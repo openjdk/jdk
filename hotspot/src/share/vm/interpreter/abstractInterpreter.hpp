@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,8 @@ class AbstractInterpreter: AllStatic {
   static address    entry_for_method(methodHandle m)            { return _entry_table[method_kind(m)]; }
 
   static void       print_method_kind(MethodKind kind)          PRODUCT_RETURN;
+
+  static bool       can_be_compiled(methodHandle m);
 
   // Runtime support
 

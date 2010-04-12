@@ -241,3 +241,33 @@ double TruncatedSeq::predict_next() const {
 
   return b0 + b1 * num;
 }
+
+
+// Printing/Debugging Support
+
+void AbsSeq::dump() { dump_on(gclog_or_tty); }
+
+void AbsSeq::dump_on(outputStream* s) {
+  s->print_cr("\t _num = %d, _sum = %7.3f, _sum_of_squares = %7.3f",
+                  _num,      _sum,         _sum_of_squares);
+  s->print_cr("\t _davg = %7.3f, _dvariance = %7.3f, _alpha = %7.3f",
+                  _davg,         _dvariance,         _alpha);
+}
+
+void NumberSeq::dump_on(outputStream* s) {
+  AbsSeq::dump_on(s);
+  s->print_cr("\t\t _last = %7.3f, _maximum = %7.3f");
+}
+
+void TruncatedSeq::dump_on(outputStream* s) {
+  AbsSeq::dump_on(s);
+  s->print_cr("\t\t _length = %d, _next = %d", _length, _next);
+  for (int i = 0; i < _length; i++) {
+    if (i%5 == 0) {
+      s->cr();
+      s->print("\t");
+    }
+    s->print("\t[%d]=%7.3f", i, _sequence[i]);
+  }
+  s->print_cr("");
+}

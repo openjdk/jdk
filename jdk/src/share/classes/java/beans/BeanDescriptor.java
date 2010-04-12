@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,5 +100,10 @@ public class BeanDescriptor extends FeatureDescriptor {
         super(old);
         beanClassRef = old.beanClassRef;
         customizerClassRef = old.customizerClassRef;
+    }
+
+    void appendTo(StringBuilder sb) {
+        appendTo(sb, "beanClass", this.beanClassRef);
+        appendTo(sb, "customizerClass", this.customizerClassRef);
     }
 }

@@ -22,7 +22,6 @@
  *
  */
 
-//
 // Sets the default values for platform dependent flags used by the server compiler.
 // (see c2_globals.hpp).  Alpha-sorted.
 
@@ -46,8 +45,8 @@ define_pd_global(intx, CompileThreshold,             1000);
 define_pd_global(intx, CompileThreshold,             10000);
 #endif // TIERED
 define_pd_global(intx, Tier2CompileThreshold,        10000);
-define_pd_global(intx, Tier3CompileThreshold,        20000 );
-define_pd_global(intx, Tier4CompileThreshold,        40000 );
+define_pd_global(intx, Tier3CompileThreshold,        20000);
+define_pd_global(intx, Tier4CompileThreshold,        40000);
 
 define_pd_global(intx, BackEdgeThreshold,            100000);
 define_pd_global(intx, Tier2BackEdgeThreshold,       100000);
@@ -61,7 +60,6 @@ define_pd_global(intx, FreqInlineSize,               325);
 #ifdef AMD64
 define_pd_global(intx, INTPRESSURE,                  13);
 define_pd_global(intx, InteriorEntryAlignment,       16);
-define_pd_global(intx, NewRatio,                     2);
 define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
 define_pd_global(intx, LoopUnrollLimit,              60);
 // InitialCodeCacheSize derived from specjbb2000 run.
@@ -69,19 +67,18 @@ define_pd_global(intx, InitialCodeCacheSize,         2496*K); // Integral multip
 define_pd_global(intx, CodeCacheExpansionSize,       64*K);
 
 // Ergonomics related flags
-define_pd_global(uintx, DefaultMaxRAM, 32*G);
+define_pd_global(uint64_t,MaxRAM,                    128ULL*G);
 #else
 define_pd_global(intx, INTPRESSURE,                  6);
 define_pd_global(intx, InteriorEntryAlignment,       4);
-define_pd_global(intx, NewRatio,                     8); // Design center runs on 1.3.1
 define_pd_global(intx, NewSizeThreadIncrease,        4*K);
-define_pd_global(intx, LoopUnrollLimit,              50); // Design center runs on 1.3.1
+define_pd_global(intx, LoopUnrollLimit,              50);     // Design center runs on 1.3.1
 // InitialCodeCacheSize derived from specjbb2000 run.
 define_pd_global(intx, InitialCodeCacheSize,         2304*K); // Integral multiple of CodeCacheExpansionSize
 define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 
 // Ergonomics related flags
-define_pd_global(uintx, DefaultMaxRAM, 1*G);
+define_pd_global(uint64_t,MaxRAM,                    4ULL*G);
 #endif // AMD64
 define_pd_global(intx, OptoLoopAlignment,            16);
 define_pd_global(intx, RegisterCostAreaRatio,        16000);
@@ -97,8 +94,8 @@ define_pd_global(intx, ReservedCodeCacheSize,        48*M);
 define_pd_global(uintx,CodeCacheMinBlockLength,      4);
 
 // Heap related flags
-define_pd_global(uintx, PermSize,    ScaleForWordSize(16*M));
-define_pd_global(uintx, MaxPermSize, ScaleForWordSize(64*M));
+define_pd_global(uintx,PermSize,    ScaleForWordSize(16*M));
+define_pd_global(uintx,MaxPermSize, ScaleForWordSize(64*M));
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);

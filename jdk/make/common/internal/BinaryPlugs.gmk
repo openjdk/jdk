@@ -116,7 +116,7 @@ PLUG_IMPORT_JARFILE=$(BINARY_PLUGS_JARFILE)
 
 define import-binary-plug-file
 @$(ECHO) "PLUG IMPORT: $(@F)"
-$(install-file)
+$(install-non-module-file)
 endef # import-binary-plug-file
 
 # Import classes command
@@ -184,7 +184,7 @@ PLUG_EXPORT_JARFILE=$(PLUG_EXPORT_DIR)/jre/lib/$(BINARY_PLUGS_JARNAME)
 
 define export-binary-plug-file
 @$(ECHO) "PLUG EXPORT: $(@F)"
-$(install-file)
+$(install-non-module-file)
 endef # export-binary-plug-file
 
 # OpenJDK Binary Plug License

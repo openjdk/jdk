@@ -49,7 +49,7 @@ public interface LayoutCharacters {
 
     /** Tabulator character.
      */
-    final static byte TAB   = 0x8;
+    final static byte TAB   = 0x9;
 
     /** Line feed character.
      */

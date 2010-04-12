@@ -280,11 +280,15 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     protected boolean shouldUpdateStyleOnEvent(PropertyChangeEvent ev) {
         String eName = ev.getPropertyName();
 
-        // Always update when overrides or size variant change
-        if ("Nimbus.Overrides" == eName ||
+        // These properties affect style cached inside NimbusDefaults (6860433)
+        if ("name" == eName ||
+            "ancestor" == eName ||
+            "Nimbus.Overrides" == eName ||
             "Nimbus.Overrides.InheritDefaults" == eName ||
             "JComponent.sizeVariant" == eName) {
 
+            JComponent c = (JComponent) ev.getSource();
+            defaults.clearOverridesCache(c);
             return true;
         }
 

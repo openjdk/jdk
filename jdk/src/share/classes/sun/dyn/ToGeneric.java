@@ -34,6 +34,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import sun.dyn.util.ValueConversions;
 import sun.dyn.util.Wrapper;
+import static sun.dyn.MemberName.newIllegalArgumentException;
 
 /**
  * Adapters which mediate between incoming calls which are not generic
@@ -68,7 +69,7 @@ class ToGeneric {
     // conversion which unboxes a primitive return value
     private final MethodHandle returnConversion;
 
-    /** Compute and cache information common to all collecting adapters
+    /** Compute and cache information common to all generifying (boxing) adapters
      *  that implement members of the erasure-family of the given erased type.
      */
     private ToGeneric(MethodType entryType) {
@@ -111,30 +112,48 @@ class ToGeneric {
         // primitive arguments according to their "raw" types int/long
         MethodType intsAtEnd = MethodTypeImpl.of(primsAtEnd).primsAsInts();
         ad = findAdapter(rawEntryTypeInit = intsAtEnd);
-        if (ad == null) {
+        MethodHandle rawEntryPoint;
+        if (ad != null) {
+            rawEntryPoint = ad.prototypeEntryPoint();
+        } else {
             // Perhaps the adapter is available only for longs.
             // If so, we can use it, but there will have to be a little
             // more stack motion on each call.
             MethodType longsAtEnd = MethodTypeImpl.of(primsAtEnd).primsAsLongs();
             ad = findAdapter(rawEntryTypeInit = longsAtEnd);
-            if (ad == null) {
+            if (ad != null) {
+                MethodType eptWithLongs = longsAtEnd.insertParameterTypes(0, ad.getClass());
+                MethodType eptWithInts  =  intsAtEnd.insertParameterTypes(0, ad.getClass());
+                rawEntryPoint = ad.prototypeEntryPoint();
+                MethodType midType = eptWithLongs;  // will change longs to ints
+                for (int i = 0, nargs = midType.parameterCount(); i < nargs; i++) {
+                    if (midType.parameterType(i) != eptWithInts.parameterType(i)) {
+                        assert(midType.parameterType(i) == long.class);
+                        assert(eptWithInts.parameterType(i) == int.class);
+                        MethodType nextType = midType.changeParameterType(i, int.class);
+                        rawEntryPoint = MethodHandle.convertArguments(Access.TOKEN,
+                                rawEntryPoint, nextType, midType, null);
+                        midType = nextType;
+                    }
+                }
+                assert(midType == eptWithInts);
+            } else {
                 // If there is no statically compiled adapter,
                 // build one by means of dynamic bytecode generation.
                 ad = buildAdapterFromBytecodes(rawEntryTypeInit = intsAtEnd);
+                rawEntryPoint = ad.prototypeEntryPoint();
             }
         }
-        MethodHandle rawEntryPoint = ad.prototypeEntryPoint();
-        MethodType tepType = entryType.insertParameterType(0, ad.getClass());
+        MethodType tepType = entryType.insertParameterTypes(0, ad.getClass());
         this.entryPoint =
-            AdapterMethodHandle.makeRawRetypeOnly(Access.TOKEN, tepType, rawEntryPoint);
+            AdapterMethodHandle.makeRetypeRaw(Access.TOKEN, tepType, rawEntryPoint);
         if (this.entryPoint == null)
             throw new UnsupportedOperationException("cannot retype to "+entryType
-                    +" from "+rawEntryPoint.type().dropParameterType(0));
+                    +" from "+rawEntryPoint.type().dropParameterTypes(0, 1));
         this.returnConversion = computeReturnConversion(entryType, rawEntryTypeInit, false);
         this.rawEntryType = rawEntryTypeInit;
         this.adapter = ad;
-        this.invoker = makeRawArgumentFilter(invoker0,
-                rawEntryPoint.type().dropParameterType(0), entryType);
+        this.invoker = makeRawArgumentFilter(invoker0, rawEntryTypeInit, entryType);
     }
 
     /** A generic argument list will be created by a call of type 'raw'.
@@ -157,8 +176,8 @@ class ToGeneric {
                 if (filteredInvoker == null)  throw new UnsupportedOperationException("NYI");
             }
             MethodHandle reboxer = ValueConversions.rebox(dst, false);
-            FilterGeneric gen = new FilterGeneric(filteredInvoker.type(), (short)(1+i), (short)1, 'R');
-            filteredInvoker = gen.makeInstance(reboxer, filteredInvoker);
+            filteredInvoker = FilterGeneric.makeArgumentFilter(1+i, reboxer, filteredInvoker);
+            if (filteredInvoker == null)  throw new InternalError();
         }
         if (filteredInvoker == null)  return invoker;
         return AdapterMethodHandle.makeRetypeOnly(Access.TOKEN, invoker.type(), filteredInvoker);
@@ -209,9 +228,9 @@ class ToGeneric {
         if (convert == null)
             convert = computeReturnConversion(type, rawEntryType, true);
         // retype erased reference arguments (the cast makes it safe to do this)
-        MethodType tepType = type.insertParameterType(0, adapter.getClass());
+        MethodType tepType = type.insertParameterTypes(0, adapter.getClass());
         MethodHandle typedEntryPoint =
-            AdapterMethodHandle.makeRawRetypeOnly(Access.TOKEN, tepType, entryPoint);
+            AdapterMethodHandle.makeRetypeRaw(Access.TOKEN, tepType, entryPoint);
         return adapter.makeInstance(typedEntryPoint, invoker, convert, genericTarget);
     }
 
@@ -225,7 +244,7 @@ class ToGeneric {
     public static MethodHandle make(MethodType type, MethodHandle genericTarget) {
         MethodType gtype = genericTarget.type();
         if (type.generic() != gtype)
-            throw new IllegalArgumentException();
+            throw newIllegalArgumentException("type must be generic");
         if (type == gtype)  return genericTarget;
         return ToGeneric.of(type).makeInstance(type, genericTarget);
     }
@@ -283,7 +302,10 @@ class ToGeneric {
                 try {
                     return ctor.newInstance(entryPoint);
                 } catch (IllegalArgumentException ex) {
-                } catch (InvocationTargetException ex) {
+                } catch (InvocationTargetException wex) {
+                    Throwable ex = wex.getTargetException();
+                    if (ex instanceof Error)  throw (Error)ex;
+                    if (ex instanceof RuntimeException)  throw (RuntimeException)ex;
                 } catch (InstantiationException ex) {
                 } catch (IllegalAccessException ex) {
                 }
@@ -317,6 +339,11 @@ class ToGeneric {
         protected final MethodHandle target;   // Object... -> Object
         protected final MethodHandle convert;  // Object -> R
 
+        @Override
+        public String toString() {
+            return target.toString();
+        }
+
         protected boolean isPrototype() { return target == null; }
         /* Prototype constructor. */
         protected Adapter(MethodHandle entryPoint) {
@@ -344,33 +371,33 @@ class ToGeneric {
         // { return new ThisType(entryPoint, convert, target); }
 
         // Code to run when the arguments (<= 4) have all been boxed.
-        protected Object target()               { return invoker.<Object>invoke(target); }
-        protected Object target(Object a0)      { return invoker.<Object>invoke(target, a0); }
+        protected Object target()               throws Throwable { return invoker.<Object>invoke(target); }
+        protected Object target(Object a0)      throws Throwable { return invoker.<Object>invoke(target, a0); }
         protected Object target(Object a0, Object a1)
-                                                { return invoker.<Object>invoke(target, a0, a1); }
+                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1); }
         protected Object target(Object a0, Object a1, Object a2)
-                                                { return invoker.<Object>invoke(target, a0, a1, a2); }
+                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2); }
         protected Object target(Object a0, Object a1, Object a2, Object a3)
-                                                { return invoker.<Object>invoke(target, a0, a1, a2, a3); }
+                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3); }
         /*
-        protected Object target_0(Object... av) { return invoker.<Object>invoke(target, av); }
+        protected Object target_0(Object... av) throws Throwable { return invoker.<Object>invoke(target, av); }
         protected Object target_1(Object a0, Object... av)
-                                                { return invoker.<Object>invoke(target, a0, (Object)av); }
+                                                throws Throwable { return invoker.<Object>invoke(target, a0, (Object)av); }
         protected Object target_2(Object a0, Object a1, Object... av)
-                                                { return invoker.<Object>invoke(target, a0, a1, (Object)av); }
+                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, (Object)av); }
         protected Object target_3(Object a0, Object a1, Object a2, Object... av)
-                                                { return invoker.<Object>invoke(target, a0, a1, a2, (Object)av); }
+                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, (Object)av); }
         protected Object target_4(Object a0, Object a1, Object a2, Object a3, Object... av)
-                                                { return invoker.<Object>invoke(target, a0, a1, a2, a3, (Object)av); }
+                                                throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, (Object)av); }
         // */
         // (For more than 4 arguments, generate the code in the adapter itself.)
 
         // Code to run when the generic target has finished and produced a value.
-        protected Object return_L(Object res) { return convert.<Object>invoke(res); }
-        protected int    return_I(Object res) { return convert.<int   >invoke(res); }
-        protected long   return_J(Object res) { return convert.<long  >invoke(res); }
-        protected float  return_F(Object res) { return convert.<float >invoke(res); }
-        protected double return_D(Object res) { return convert.<double>invoke(res); }
+        protected Object return_L(Object res) throws Throwable { return convert.<Object>invoke(res); }
+        protected int    return_I(Object res) throws Throwable { return convert.<int   >invoke(res); }
+        protected long   return_J(Object res) throws Throwable { return convert.<long  >invoke(res); }
+        protected float  return_F(Object res) throws Throwable { return convert.<float >invoke(res); }
+        protected double return_D(Object res) throws Throwable { return convert.<double>invoke(res); }
 
         static private final String CLASS_PREFIX; // "sun.dyn.ToGeneric$"
         static {
@@ -397,25 +424,25 @@ class ToGeneric {
         protected A1(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A1(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A1 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A1(e, i, c, t); }
-        protected Object target(Object a0)    { return invoker.<Object>invoke(target, a0); }
-        protected Object targetA1(Object a0) { return target(a0); }
-        protected Object targetA1(int    a0) { return target(a0); }
-        protected Object targetA1(long   a0) { return target(a0); }
-        protected Object invoke_L(Object a0) { return return_L(targetA1(a0)); }
-        protected int    invoke_I(Object a0) { return return_I(targetA1(a0)); }
-        protected long   invoke_J(Object a0) { return return_J(targetA1(a0)); }
-        protected float  invoke_F(Object a0) { return return_F(targetA1(a0)); }
-        protected double invoke_D(Object a0) { return return_D(targetA1(a0)); }
-        protected Object invoke_L(int    a0) { return return_L(targetA1(a0)); }
-        protected int    invoke_I(int    a0) { return return_I(targetA1(a0)); }
-        protected long   invoke_J(int    a0) { return return_J(targetA1(a0)); }
-        protected float  invoke_F(int    a0) { return return_F(targetA1(a0)); }
-        protected double invoke_D(int    a0) { return return_D(targetA1(a0)); }
-        protected Object invoke_L(long   a0) { return return_L(targetA1(a0)); }
-        protected int    invoke_I(long   a0) { return return_I(targetA1(a0)); }
-        protected long   invoke_J(long   a0) { return return_J(targetA1(a0)); }
-        protected float  invoke_F(long   a0) { return return_F(targetA1(a0)); }
-        protected double invoke_D(long   a0) { return return_D(targetA1(a0)); }
+        protected Object target(Object a0)   throws Throwable { return invoker.<Object>invoke(target, a0); }
+        protected Object targetA1(Object a0) throws Throwable { return target(a0); }
+        protected Object targetA1(int    a0) throws Throwable { return target(a0); }
+        protected Object targetA1(long   a0) throws Throwable { return target(a0); }
+        protected Object invoke_L(Object a0) throws Throwable { return return_L(targetA1(a0)); }
+        protected int    invoke_I(Object a0) throws Throwable { return return_I(targetA1(a0)); }
+        protected long   invoke_J(Object a0) throws Throwable { return return_J(targetA1(a0)); }
+        protected float  invoke_F(Object a0) throws Throwable { return return_F(targetA1(a0)); }
+        protected double invoke_D(Object a0) throws Throwable { return return_D(targetA1(a0)); }
+        protected Object invoke_L(int    a0) throws Throwable { return return_L(targetA1(a0)); }
+        protected int    invoke_I(int    a0) throws Throwable { return return_I(targetA1(a0)); }
+        protected long   invoke_J(int    a0) throws Throwable { return return_J(targetA1(a0)); }
+        protected float  invoke_F(int    a0) throws Throwable { return return_F(targetA1(a0)); }
+        protected double invoke_D(int    a0) throws Throwable { return return_D(targetA1(a0)); }
+        protected Object invoke_L(long   a0) throws Throwable { return return_L(targetA1(a0)); }
+        protected int    invoke_I(long   a0) throws Throwable { return return_I(targetA1(a0)); }
+        protected long   invoke_J(long   a0) throws Throwable { return return_J(targetA1(a0)); }
+        protected float  invoke_F(long   a0) throws Throwable { return return_F(targetA1(a0)); }
+        protected double invoke_D(long   a0) throws Throwable { return return_D(targetA1(a0)); }
     }
     // */
 
@@ -435,13 +462,13 @@ class genclasses {
         "        protected @cat@(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype",
         "        protected @cat@(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }",
         "        protected @cat@ makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new @cat@(e, i, c, t); }",
-        "        protected Object target(@Ovav@)   { return invoker.<Object>invoke(target, @av@); }",
+        "        protected Object target(@Ovav@)   throws Throwable { return invoker.<Object>invoke(target, @av@); }",
         "        //@each-Tv@",
-        "        protected Object target@cat@(@Tvav@) { return target(@av@); }",
+        "        protected Object target@cat@(@Tvav@) throws Throwable { return target(@av@); }",
         "        //@end-Tv@",
         "        //@each-Tv@",
         "        //@each-R@",
-        "        protected @R@ invoke_@Rc@(@Tvav@) { return return_@Rc@(target@cat@(@av@)); }",
+        "        protected @R@ invoke_@Rc@(@Tvav@) throws Throwable { return return_@Rc@(target@cat@(@av@)); }",
         "        //@end-R@",
         "        //@end-Tv@",
         "    }",
@@ -595,424 +622,424 @@ class genclasses {
         protected A0(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A0(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A0 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A0(e, i, c, t); }
-        protected Object target()   { return invoker.<Object>invoke(target); }
-        protected Object targetA0() { return target(); }
-        protected Object invoke_L() { return return_L(targetA0()); }
-        protected int    invoke_I() { return return_I(targetA0()); }
-        protected long   invoke_J() { return return_J(targetA0()); }
-        protected float  invoke_F() { return return_F(targetA0()); }
-        protected double invoke_D() { return return_D(targetA0()); }
+        protected Object target()   throws Throwable { return invoker.<Object>invoke(target); }
+        protected Object targetA0() throws Throwable { return target(); }
+        protected Object invoke_L() throws Throwable { return return_L(targetA0()); }
+        protected int    invoke_I() throws Throwable { return return_I(targetA0()); }
+        protected long   invoke_J() throws Throwable { return return_J(targetA0()); }
+        protected float  invoke_F() throws Throwable { return return_F(targetA0()); }
+        protected double invoke_D() throws Throwable { return return_D(targetA0()); }
     }
     static class A1 extends Adapter {
         protected A1(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A1(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A1 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A1(e, i, c, t); }
-        protected Object target(Object a0)   { return invoker.<Object>invoke(target, a0); }
-        protected Object targetA1(Object a0) { return target(a0); }
-        protected Object targetA1(int    a0) { return target(a0); }
-        protected Object targetA1(long   a0) { return target(a0); }
-        protected Object invoke_L(Object a0) { return return_L(targetA1(a0)); }
-        protected int    invoke_I(Object a0) { return return_I(targetA1(a0)); }
-        protected long   invoke_J(Object a0) { return return_J(targetA1(a0)); }
-        protected float  invoke_F(Object a0) { return return_F(targetA1(a0)); }
-        protected double invoke_D(Object a0) { return return_D(targetA1(a0)); }
-        protected Object invoke_L(int    a0) { return return_L(targetA1(a0)); }
-        protected int    invoke_I(int    a0) { return return_I(targetA1(a0)); }
-        protected long   invoke_J(int    a0) { return return_J(targetA1(a0)); }
-        protected float  invoke_F(int    a0) { return return_F(targetA1(a0)); }
-        protected double invoke_D(int    a0) { return return_D(targetA1(a0)); }
-        protected Object invoke_L(long   a0) { return return_L(targetA1(a0)); }
-        protected int    invoke_I(long   a0) { return return_I(targetA1(a0)); }
-        protected long   invoke_J(long   a0) { return return_J(targetA1(a0)); }
-        protected float  invoke_F(long   a0) { return return_F(targetA1(a0)); }
-        protected double invoke_D(long   a0) { return return_D(targetA1(a0)); }
+        protected Object target(Object a0)   throws Throwable { return invoker.<Object>invoke(target, a0); }
+        protected Object targetA1(Object a0) throws Throwable { return target(a0); }
+        protected Object targetA1(int    a0) throws Throwable { return target(a0); }
+        protected Object targetA1(long   a0) throws Throwable { return target(a0); }
+        protected Object invoke_L(Object a0) throws Throwable { return return_L(targetA1(a0)); }
+        protected int    invoke_I(Object a0) throws Throwable { return return_I(targetA1(a0)); }
+        protected long   invoke_J(Object a0) throws Throwable { return return_J(targetA1(a0)); }
+        protected float  invoke_F(Object a0) throws Throwable { return return_F(targetA1(a0)); }
+        protected double invoke_D(Object a0) throws Throwable { return return_D(targetA1(a0)); }
+        protected Object invoke_L(int    a0) throws Throwable { return return_L(targetA1(a0)); }
+        protected int    invoke_I(int    a0) throws Throwable { return return_I(targetA1(a0)); }
+        protected long   invoke_J(int    a0) throws Throwable { return return_J(targetA1(a0)); }
+        protected float  invoke_F(int    a0) throws Throwable { return return_F(targetA1(a0)); }
+        protected double invoke_D(int    a0) throws Throwable { return return_D(targetA1(a0)); }
+        protected Object invoke_L(long   a0) throws Throwable { return return_L(targetA1(a0)); }
+        protected int    invoke_I(long   a0) throws Throwable { return return_I(targetA1(a0)); }
+        protected long   invoke_J(long   a0) throws Throwable { return return_J(targetA1(a0)); }
+        protected float  invoke_F(long   a0) throws Throwable { return return_F(targetA1(a0)); }
+        protected double invoke_D(long   a0) throws Throwable { return return_D(targetA1(a0)); }
     }
     static class A2 extends Adapter {
         protected A2(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A2(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A2 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A2(e, i, c, t); }
-        protected Object target(Object a0, Object a1)   { return invoker.<Object>invoke(target, a0, a1); }
-        protected Object targetA2(Object a0, Object a1) { return target(a0, a1); }
-        protected Object targetA2(Object a0, int    a1) { return target(a0, a1); }
-        protected Object targetA2(int    a0, int    a1) { return target(a0, a1); }
-        protected Object targetA2(Object a0, long   a1) { return target(a0, a1); }
-        protected Object targetA2(long   a0, long   a1) { return target(a0, a1); }
-        protected Object invoke_L(Object a0, Object a1) { return return_L(targetA2(a0, a1)); }
-        protected int    invoke_I(Object a0, Object a1) { return return_I(targetA2(a0, a1)); }
-        protected long   invoke_J(Object a0, Object a1) { return return_J(targetA2(a0, a1)); }
-        protected float  invoke_F(Object a0, Object a1) { return return_F(targetA2(a0, a1)); }
-        protected double invoke_D(Object a0, Object a1) { return return_D(targetA2(a0, a1)); }
-        protected Object invoke_L(Object a0, int    a1) { return return_L(targetA2(a0, a1)); }
-        protected int    invoke_I(Object a0, int    a1) { return return_I(targetA2(a0, a1)); }
-        protected long   invoke_J(Object a0, int    a1) { return return_J(targetA2(a0, a1)); }
-        protected float  invoke_F(Object a0, int    a1) { return return_F(targetA2(a0, a1)); }
-        protected double invoke_D(Object a0, int    a1) { return return_D(targetA2(a0, a1)); }
-        protected Object invoke_L(int    a0, int    a1) { return return_L(targetA2(a0, a1)); }
-        protected int    invoke_I(int    a0, int    a1) { return return_I(targetA2(a0, a1)); }
-        protected long   invoke_J(int    a0, int    a1) { return return_J(targetA2(a0, a1)); }
-        protected float  invoke_F(int    a0, int    a1) { return return_F(targetA2(a0, a1)); }
-        protected double invoke_D(int    a0, int    a1) { return return_D(targetA2(a0, a1)); }
-        protected Object invoke_L(Object a0, long   a1) { return return_L(targetA2(a0, a1)); }
-        protected int    invoke_I(Object a0, long   a1) { return return_I(targetA2(a0, a1)); }
-        protected long   invoke_J(Object a0, long   a1) { return return_J(targetA2(a0, a1)); }
-        protected float  invoke_F(Object a0, long   a1) { return return_F(targetA2(a0, a1)); }
-        protected double invoke_D(Object a0, long   a1) { return return_D(targetA2(a0, a1)); }
-        protected Object invoke_L(long   a0, long   a1) { return return_L(targetA2(a0, a1)); }
-        protected int    invoke_I(long   a0, long   a1) { return return_I(targetA2(a0, a1)); }
-        protected long   invoke_J(long   a0, long   a1) { return return_J(targetA2(a0, a1)); }
-        protected float  invoke_F(long   a0, long   a1) { return return_F(targetA2(a0, a1)); }
-        protected double invoke_D(long   a0, long   a1) { return return_D(targetA2(a0, a1)); }
+        protected Object target(Object a0, Object a1)   throws Throwable { return invoker.<Object>invoke(target, a0, a1); }
+        protected Object targetA2(Object a0, Object a1) throws Throwable { return target(a0, a1); }
+        protected Object targetA2(Object a0, int    a1) throws Throwable { return target(a0, a1); }
+        protected Object targetA2(int    a0, int    a1) throws Throwable { return target(a0, a1); }
+        protected Object targetA2(Object a0, long   a1) throws Throwable { return target(a0, a1); }
+        protected Object targetA2(long   a0, long   a1) throws Throwable { return target(a0, a1); }
+        protected Object invoke_L(Object a0, Object a1) throws Throwable { return return_L(targetA2(a0, a1)); }
+        protected int    invoke_I(Object a0, Object a1) throws Throwable { return return_I(targetA2(a0, a1)); }
+        protected long   invoke_J(Object a0, Object a1) throws Throwable { return return_J(targetA2(a0, a1)); }
+        protected float  invoke_F(Object a0, Object a1) throws Throwable { return return_F(targetA2(a0, a1)); }
+        protected double invoke_D(Object a0, Object a1) throws Throwable { return return_D(targetA2(a0, a1)); }
+        protected Object invoke_L(Object a0, int    a1) throws Throwable { return return_L(targetA2(a0, a1)); }
+        protected int    invoke_I(Object a0, int    a1) throws Throwable { return return_I(targetA2(a0, a1)); }
+        protected long   invoke_J(Object a0, int    a1) throws Throwable { return return_J(targetA2(a0, a1)); }
+        protected float  invoke_F(Object a0, int    a1) throws Throwable { return return_F(targetA2(a0, a1)); }
+        protected double invoke_D(Object a0, int    a1) throws Throwable { return return_D(targetA2(a0, a1)); }
+        protected Object invoke_L(int    a0, int    a1) throws Throwable { return return_L(targetA2(a0, a1)); }
+        protected int    invoke_I(int    a0, int    a1) throws Throwable { return return_I(targetA2(a0, a1)); }
+        protected long   invoke_J(int    a0, int    a1) throws Throwable { return return_J(targetA2(a0, a1)); }
+        protected float  invoke_F(int    a0, int    a1) throws Throwable { return return_F(targetA2(a0, a1)); }
+        protected double invoke_D(int    a0, int    a1) throws Throwable { return return_D(targetA2(a0, a1)); }
+        protected Object invoke_L(Object a0, long   a1) throws Throwable { return return_L(targetA2(a0, a1)); }
+        protected int    invoke_I(Object a0, long   a1) throws Throwable { return return_I(targetA2(a0, a1)); }
+        protected long   invoke_J(Object a0, long   a1) throws Throwable { return return_J(targetA2(a0, a1)); }
+        protected float  invoke_F(Object a0, long   a1) throws Throwable { return return_F(targetA2(a0, a1)); }
+        protected double invoke_D(Object a0, long   a1) throws Throwable { return return_D(targetA2(a0, a1)); }
+        protected Object invoke_L(long   a0, long   a1) throws Throwable { return return_L(targetA2(a0, a1)); }
+        protected int    invoke_I(long   a0, long   a1) throws Throwable { return return_I(targetA2(a0, a1)); }
+        protected long   invoke_J(long   a0, long   a1) throws Throwable { return return_J(targetA2(a0, a1)); }
+        protected float  invoke_F(long   a0, long   a1) throws Throwable { return return_F(targetA2(a0, a1)); }
+        protected double invoke_D(long   a0, long   a1) throws Throwable { return return_D(targetA2(a0, a1)); }
     }
     static class A3 extends Adapter {
         protected A3(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A3(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A3 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A3(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2)   { return invoker.<Object>invoke(target, a0, a1, a2); }
-        protected Object targetA3(Object a0, Object a1, Object a2) { return target(a0, a1, a2); }
-        protected Object targetA3(Object a0, Object a1, int    a2) { return target(a0, a1, a2); }
-        protected Object targetA3(Object a0, int    a1, int    a2) { return target(a0, a1, a2); }
-        protected Object targetA3(int    a0, int    a1, int    a2) { return target(a0, a1, a2); }
-        protected Object targetA3(Object a0, Object a1, long   a2) { return target(a0, a1, a2); }
-        protected Object targetA3(Object a0, long   a1, long   a2) { return target(a0, a1, a2); }
-        protected Object targetA3(long   a0, long   a1, long   a2) { return target(a0, a1, a2); }
-        protected Object invoke_L(Object a0, Object a1, Object a2) { return return_L(targetA3(a0, a1, a2)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2) { return return_I(targetA3(a0, a1, a2)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2) { return return_J(targetA3(a0, a1, a2)); }
-        protected float  invoke_F(Object a0, Object a1, Object a2) { return return_F(targetA3(a0, a1, a2)); }
-        protected double invoke_D(Object a0, Object a1, Object a2) { return return_D(targetA3(a0, a1, a2)); }
-        protected Object invoke_L(Object a0, Object a1, int    a2) { return return_L(targetA3(a0, a1, a2)); }
-        protected int    invoke_I(Object a0, Object a1, int    a2) { return return_I(targetA3(a0, a1, a2)); }
-        protected long   invoke_J(Object a0, Object a1, int    a2) { return return_J(targetA3(a0, a1, a2)); }
-        protected float  invoke_F(Object a0, Object a1, int    a2) { return return_F(targetA3(a0, a1, a2)); }
-        protected double invoke_D(Object a0, Object a1, int    a2) { return return_D(targetA3(a0, a1, a2)); }
-        protected Object invoke_L(Object a0, int    a1, int    a2) { return return_L(targetA3(a0, a1, a2)); }
-        protected int    invoke_I(Object a0, int    a1, int    a2) { return return_I(targetA3(a0, a1, a2)); }
-        protected long   invoke_J(Object a0, int    a1, int    a2) { return return_J(targetA3(a0, a1, a2)); }
-        protected float  invoke_F(Object a0, int    a1, int    a2) { return return_F(targetA3(a0, a1, a2)); }
-        protected double invoke_D(Object a0, int    a1, int    a2) { return return_D(targetA3(a0, a1, a2)); }
-        protected Object invoke_L(int    a0, int    a1, int    a2) { return return_L(targetA3(a0, a1, a2)); }
-        protected int    invoke_I(int    a0, int    a1, int    a2) { return return_I(targetA3(a0, a1, a2)); }
-        protected long   invoke_J(int    a0, int    a1, int    a2) { return return_J(targetA3(a0, a1, a2)); }
-        protected float  invoke_F(int    a0, int    a1, int    a2) { return return_F(targetA3(a0, a1, a2)); }
-        protected double invoke_D(int    a0, int    a1, int    a2) { return return_D(targetA3(a0, a1, a2)); }
-        protected Object invoke_L(Object a0, Object a1, long   a2) { return return_L(targetA3(a0, a1, a2)); }
-        protected int    invoke_I(Object a0, Object a1, long   a2) { return return_I(targetA3(a0, a1, a2)); }
-        protected long   invoke_J(Object a0, Object a1, long   a2) { return return_J(targetA3(a0, a1, a2)); }
-        protected float  invoke_F(Object a0, Object a1, long   a2) { return return_F(targetA3(a0, a1, a2)); }
-        protected double invoke_D(Object a0, Object a1, long   a2) { return return_D(targetA3(a0, a1, a2)); }
-        protected Object invoke_L(Object a0, long   a1, long   a2) { return return_L(targetA3(a0, a1, a2)); }
-        protected int    invoke_I(Object a0, long   a1, long   a2) { return return_I(targetA3(a0, a1, a2)); }
-        protected long   invoke_J(Object a0, long   a1, long   a2) { return return_J(targetA3(a0, a1, a2)); }
-        protected float  invoke_F(Object a0, long   a1, long   a2) { return return_F(targetA3(a0, a1, a2)); }
-        protected double invoke_D(Object a0, long   a1, long   a2) { return return_D(targetA3(a0, a1, a2)); }
-        protected Object invoke_L(long   a0, long   a1, long   a2) { return return_L(targetA3(a0, a1, a2)); }
-        protected int    invoke_I(long   a0, long   a1, long   a2) { return return_I(targetA3(a0, a1, a2)); }
-        protected long   invoke_J(long   a0, long   a1, long   a2) { return return_J(targetA3(a0, a1, a2)); }
-        protected float  invoke_F(long   a0, long   a1, long   a2) { return return_F(targetA3(a0, a1, a2)); }
-        protected double invoke_D(long   a0, long   a1, long   a2) { return return_D(targetA3(a0, a1, a2)); }
+        protected Object target(Object a0, Object a1, Object a2)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2); }
+        protected Object targetA3(Object a0, Object a1, Object a2) throws Throwable { return target(a0, a1, a2); }
+        protected Object targetA3(Object a0, Object a1, int    a2) throws Throwable { return target(a0, a1, a2); }
+        protected Object targetA3(Object a0, int    a1, int    a2) throws Throwable { return target(a0, a1, a2); }
+        protected Object targetA3(int    a0, int    a1, int    a2) throws Throwable { return target(a0, a1, a2); }
+        protected Object targetA3(Object a0, Object a1, long   a2) throws Throwable { return target(a0, a1, a2); }
+        protected Object targetA3(Object a0, long   a1, long   a2) throws Throwable { return target(a0, a1, a2); }
+        protected Object targetA3(long   a0, long   a1, long   a2) throws Throwable { return target(a0, a1, a2); }
+        protected Object invoke_L(Object a0, Object a1, Object a2) throws Throwable { return return_L(targetA3(a0, a1, a2)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2) throws Throwable { return return_I(targetA3(a0, a1, a2)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2) throws Throwable { return return_J(targetA3(a0, a1, a2)); }
+        protected float  invoke_F(Object a0, Object a1, Object a2) throws Throwable { return return_F(targetA3(a0, a1, a2)); }
+        protected double invoke_D(Object a0, Object a1, Object a2) throws Throwable { return return_D(targetA3(a0, a1, a2)); }
+        protected Object invoke_L(Object a0, Object a1, int    a2) throws Throwable { return return_L(targetA3(a0, a1, a2)); }
+        protected int    invoke_I(Object a0, Object a1, int    a2) throws Throwable { return return_I(targetA3(a0, a1, a2)); }
+        protected long   invoke_J(Object a0, Object a1, int    a2) throws Throwable { return return_J(targetA3(a0, a1, a2)); }
+        protected float  invoke_F(Object a0, Object a1, int    a2) throws Throwable { return return_F(targetA3(a0, a1, a2)); }
+        protected double invoke_D(Object a0, Object a1, int    a2) throws Throwable { return return_D(targetA3(a0, a1, a2)); }
+        protected Object invoke_L(Object a0, int    a1, int    a2) throws Throwable { return return_L(targetA3(a0, a1, a2)); }
+        protected int    invoke_I(Object a0, int    a1, int    a2) throws Throwable { return return_I(targetA3(a0, a1, a2)); }
+        protected long   invoke_J(Object a0, int    a1, int    a2) throws Throwable { return return_J(targetA3(a0, a1, a2)); }
+        protected float  invoke_F(Object a0, int    a1, int    a2) throws Throwable { return return_F(targetA3(a0, a1, a2)); }
+        protected double invoke_D(Object a0, int    a1, int    a2) throws Throwable { return return_D(targetA3(a0, a1, a2)); }
+        protected Object invoke_L(int    a0, int    a1, int    a2) throws Throwable { return return_L(targetA3(a0, a1, a2)); }
+        protected int    invoke_I(int    a0, int    a1, int    a2) throws Throwable { return return_I(targetA3(a0, a1, a2)); }
+        protected long   invoke_J(int    a0, int    a1, int    a2) throws Throwable { return return_J(targetA3(a0, a1, a2)); }
+        protected float  invoke_F(int    a0, int    a1, int    a2) throws Throwable { return return_F(targetA3(a0, a1, a2)); }
+        protected double invoke_D(int    a0, int    a1, int    a2) throws Throwable { return return_D(targetA3(a0, a1, a2)); }
+        protected Object invoke_L(Object a0, Object a1, long   a2) throws Throwable { return return_L(targetA3(a0, a1, a2)); }
+        protected int    invoke_I(Object a0, Object a1, long   a2) throws Throwable { return return_I(targetA3(a0, a1, a2)); }
+        protected long   invoke_J(Object a0, Object a1, long   a2) throws Throwable { return return_J(targetA3(a0, a1, a2)); }
+        protected float  invoke_F(Object a0, Object a1, long   a2) throws Throwable { return return_F(targetA3(a0, a1, a2)); }
+        protected double invoke_D(Object a0, Object a1, long   a2) throws Throwable { return return_D(targetA3(a0, a1, a2)); }
+        protected Object invoke_L(Object a0, long   a1, long   a2) throws Throwable { return return_L(targetA3(a0, a1, a2)); }
+        protected int    invoke_I(Object a0, long   a1, long   a2) throws Throwable { return return_I(targetA3(a0, a1, a2)); }
+        protected long   invoke_J(Object a0, long   a1, long   a2) throws Throwable { return return_J(targetA3(a0, a1, a2)); }
+        protected float  invoke_F(Object a0, long   a1, long   a2) throws Throwable { return return_F(targetA3(a0, a1, a2)); }
+        protected double invoke_D(Object a0, long   a1, long   a2) throws Throwable { return return_D(targetA3(a0, a1, a2)); }
+        protected Object invoke_L(long   a0, long   a1, long   a2) throws Throwable { return return_L(targetA3(a0, a1, a2)); }
+        protected int    invoke_I(long   a0, long   a1, long   a2) throws Throwable { return return_I(targetA3(a0, a1, a2)); }
+        protected long   invoke_J(long   a0, long   a1, long   a2) throws Throwable { return return_J(targetA3(a0, a1, a2)); }
+        protected float  invoke_F(long   a0, long   a1, long   a2) throws Throwable { return return_F(targetA3(a0, a1, a2)); }
+        protected double invoke_D(long   a0, long   a1, long   a2) throws Throwable { return return_D(targetA3(a0, a1, a2)); }
     }
 //params=[4, 5, 2, 99, 99, 99]
     static class A4 extends Adapter {
         protected A4(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A4(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A4 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A4(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3)   { return invoker.<Object>invoke(target, a0, a1, a2, a3); }
-        protected Object targetA4(Object a0, Object a1, Object a2, Object a3) { return target(a0, a1, a2, a3); }
-        protected Object targetA4(Object a0, Object a1, Object a2, int    a3) { return target(a0, a1, a2, a3); }
-        protected Object targetA4(Object a0, Object a1, int    a2, int    a3) { return target(a0, a1, a2, a3); }
-        protected Object targetA4(Object a0, int    a1, int    a2, int    a3) { return target(a0, a1, a2, a3); }
-        protected Object targetA4(int    a0, int    a1, int    a2, int    a3) { return target(a0, a1, a2, a3); }
-        protected Object targetA4(Object a0, Object a1, Object a2, long   a3) { return target(a0, a1, a2, a3); }
-        protected Object targetA4(Object a0, Object a1, long   a2, long   a3) { return target(a0, a1, a2, a3); }
-        protected Object targetA4(Object a0, long   a1, long   a2, long   a3) { return target(a0, a1, a2, a3); }
-        protected Object targetA4(long   a0, long   a1, long   a2, long   a3) { return target(a0, a1, a2, a3); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3) { return return_L(targetA4(a0, a1, a2, a3)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3) { return return_I(targetA4(a0, a1, a2, a3)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3) { return return_J(targetA4(a0, a1, a2, a3)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, int    a3) { return return_L(targetA4(a0, a1, a2, a3)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, int    a3) { return return_I(targetA4(a0, a1, a2, a3)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, int    a3) { return return_J(targetA4(a0, a1, a2, a3)); }
-        protected Object invoke_L(Object a0, Object a1, int    a2, int    a3) { return return_L(targetA4(a0, a1, a2, a3)); }
-        protected int    invoke_I(Object a0, Object a1, int    a2, int    a3) { return return_I(targetA4(a0, a1, a2, a3)); }
-        protected long   invoke_J(Object a0, Object a1, int    a2, int    a3) { return return_J(targetA4(a0, a1, a2, a3)); }
-        protected Object invoke_L(Object a0, int    a1, int    a2, int    a3) { return return_L(targetA4(a0, a1, a2, a3)); }
-        protected int    invoke_I(Object a0, int    a1, int    a2, int    a3) { return return_I(targetA4(a0, a1, a2, a3)); }
-        protected long   invoke_J(Object a0, int    a1, int    a2, int    a3) { return return_J(targetA4(a0, a1, a2, a3)); }
-        protected Object invoke_L(int    a0, int    a1, int    a2, int    a3) { return return_L(targetA4(a0, a1, a2, a3)); }
-        protected int    invoke_I(int    a0, int    a1, int    a2, int    a3) { return return_I(targetA4(a0, a1, a2, a3)); }
-        protected long   invoke_J(int    a0, int    a1, int    a2, int    a3) { return return_J(targetA4(a0, a1, a2, a3)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3) { return return_L(targetA4(a0, a1, a2, a3)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3) { return return_I(targetA4(a0, a1, a2, a3)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3) { return return_J(targetA4(a0, a1, a2, a3)); }
-        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3) { return return_L(targetA4(a0, a1, a2, a3)); }
-        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3) { return return_I(targetA4(a0, a1, a2, a3)); }
-        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3) { return return_J(targetA4(a0, a1, a2, a3)); }
-        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3) { return return_L(targetA4(a0, a1, a2, a3)); }
-        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3) { return return_I(targetA4(a0, a1, a2, a3)); }
-        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3) { return return_J(targetA4(a0, a1, a2, a3)); }
-        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3) { return return_L(targetA4(a0, a1, a2, a3)); }
-        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3) { return return_I(targetA4(a0, a1, a2, a3)); }
-        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3) { return return_J(targetA4(a0, a1, a2, a3)); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3); }
+        protected Object targetA4(Object a0, Object a1, Object a2, Object a3) throws Throwable { return target(a0, a1, a2, a3); }
+        protected Object targetA4(Object a0, Object a1, Object a2, int    a3) throws Throwable { return target(a0, a1, a2, a3); }
+        protected Object targetA4(Object a0, Object a1, int    a2, int    a3) throws Throwable { return target(a0, a1, a2, a3); }
+        protected Object targetA4(Object a0, int    a1, int    a2, int    a3) throws Throwable { return target(a0, a1, a2, a3); }
+        protected Object targetA4(int    a0, int    a1, int    a2, int    a3) throws Throwable { return target(a0, a1, a2, a3); }
+        protected Object targetA4(Object a0, Object a1, Object a2, long   a3) throws Throwable { return target(a0, a1, a2, a3); }
+        protected Object targetA4(Object a0, Object a1, long   a2, long   a3) throws Throwable { return target(a0, a1, a2, a3); }
+        protected Object targetA4(Object a0, long   a1, long   a2, long   a3) throws Throwable { return target(a0, a1, a2, a3); }
+        protected Object targetA4(long   a0, long   a1, long   a2, long   a3) throws Throwable { return target(a0, a1, a2, a3); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3) throws Throwable { return return_L(targetA4(a0, a1, a2, a3)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3) throws Throwable { return return_I(targetA4(a0, a1, a2, a3)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3) throws Throwable { return return_J(targetA4(a0, a1, a2, a3)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, int    a3) throws Throwable { return return_L(targetA4(a0, a1, a2, a3)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, int    a3) throws Throwable { return return_I(targetA4(a0, a1, a2, a3)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, int    a3) throws Throwable { return return_J(targetA4(a0, a1, a2, a3)); }
+        protected Object invoke_L(Object a0, Object a1, int    a2, int    a3) throws Throwable { return return_L(targetA4(a0, a1, a2, a3)); }
+        protected int    invoke_I(Object a0, Object a1, int    a2, int    a3) throws Throwable { return return_I(targetA4(a0, a1, a2, a3)); }
+        protected long   invoke_J(Object a0, Object a1, int    a2, int    a3) throws Throwable { return return_J(targetA4(a0, a1, a2, a3)); }
+        protected Object invoke_L(Object a0, int    a1, int    a2, int    a3) throws Throwable { return return_L(targetA4(a0, a1, a2, a3)); }
+        protected int    invoke_I(Object a0, int    a1, int    a2, int    a3) throws Throwable { return return_I(targetA4(a0, a1, a2, a3)); }
+        protected long   invoke_J(Object a0, int    a1, int    a2, int    a3) throws Throwable { return return_J(targetA4(a0, a1, a2, a3)); }
+        protected Object invoke_L(int    a0, int    a1, int    a2, int    a3) throws Throwable { return return_L(targetA4(a0, a1, a2, a3)); }
+        protected int    invoke_I(int    a0, int    a1, int    a2, int    a3) throws Throwable { return return_I(targetA4(a0, a1, a2, a3)); }
+        protected long   invoke_J(int    a0, int    a1, int    a2, int    a3) throws Throwable { return return_J(targetA4(a0, a1, a2, a3)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3) throws Throwable { return return_L(targetA4(a0, a1, a2, a3)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3) throws Throwable { return return_I(targetA4(a0, a1, a2, a3)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3) throws Throwable { return return_J(targetA4(a0, a1, a2, a3)); }
+        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3) throws Throwable { return return_L(targetA4(a0, a1, a2, a3)); }
+        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3) throws Throwable { return return_I(targetA4(a0, a1, a2, a3)); }
+        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3) throws Throwable { return return_J(targetA4(a0, a1, a2, a3)); }
+        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3) throws Throwable { return return_L(targetA4(a0, a1, a2, a3)); }
+        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3) throws Throwable { return return_I(targetA4(a0, a1, a2, a3)); }
+        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3) throws Throwable { return return_J(targetA4(a0, a1, a2, a3)); }
+        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3) throws Throwable { return return_L(targetA4(a0, a1, a2, a3)); }
+        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3) throws Throwable { return return_I(targetA4(a0, a1, a2, a3)); }
+        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3) throws Throwable { return return_J(targetA4(a0, a1, a2, a3)); }
     }
     static class A5 extends Adapter {
         protected A5(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A5(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A5 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A5(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4)   { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4); }
-        protected Object targetA5(Object a0, Object a1, Object a2, Object a3, Object a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(Object a0, Object a1, Object a2, Object a3, int    a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(Object a0, Object a1, Object a2, int    a3, int    a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(Object a0, Object a1, int    a2, int    a3, int    a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(Object a0, int    a1, int    a2, int    a3, int    a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(int    a0, int    a1, int    a2, int    a3, int    a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(Object a0, Object a1, Object a2, Object a3, long   a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(Object a0, Object a1, Object a2, long   a3, long   a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(Object a0, Object a1, long   a2, long   a3, long   a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(Object a0, long   a1, long   a2, long   a3, long   a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object targetA5(long   a0, long   a1, long   a2, long   a3, long   a4) { return target(a0, a1, a2, a3, a4); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, int    a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, int    a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, int    a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, int    a3, int    a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, int    a3, int    a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, int    a3, int    a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(Object a0, Object a1, int    a2, int    a3, int    a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(Object a0, Object a1, int    a2, int    a3, int    a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(Object a0, Object a1, int    a2, int    a3, int    a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(Object a0, int    a1, int    a2, int    a3, int    a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(Object a0, int    a1, int    a2, int    a3, int    a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(Object a0, int    a1, int    a2, int    a3, int    a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(int    a0, int    a1, int    a2, int    a3, int    a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(int    a0, int    a1, int    a2, int    a3, int    a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(int    a0, int    a1, int    a2, int    a3, int    a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
-        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4) { return return_L(targetA5(a0, a1, a2, a3, a4)); }
-        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4) { return return_I(targetA5(a0, a1, a2, a3, a4)); }
-        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4) { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4); }
+        protected Object targetA5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(Object a0, Object a1, Object a2, Object a3, int    a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(Object a0, Object a1, Object a2, int    a3, int    a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(Object a0, Object a1, int    a2, int    a3, int    a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(Object a0, int    a1, int    a2, int    a3, int    a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(int    a0, int    a1, int    a2, int    a3, int    a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(Object a0, Object a1, Object a2, Object a3, long   a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(Object a0, Object a1, Object a2, long   a3, long   a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(Object a0, Object a1, long   a2, long   a3, long   a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(Object a0, long   a1, long   a2, long   a3, long   a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object targetA5(long   a0, long   a1, long   a2, long   a3, long   a4) throws Throwable { return target(a0, a1, a2, a3, a4); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, int    a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, int    a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, int    a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, int    a3, int    a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, int    a3, int    a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, int    a3, int    a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(Object a0, Object a1, int    a2, int    a3, int    a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(Object a0, Object a1, int    a2, int    a3, int    a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(Object a0, Object a1, int    a2, int    a3, int    a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(Object a0, int    a1, int    a2, int    a3, int    a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(Object a0, int    a1, int    a2, int    a3, int    a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(Object a0, int    a1, int    a2, int    a3, int    a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(int    a0, int    a1, int    a2, int    a3, int    a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(int    a0, int    a1, int    a2, int    a3, int    a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(int    a0, int    a1, int    a2, int    a3, int    a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
+        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4) throws Throwable { return return_L(targetA5(a0, a1, a2, a3, a4)); }
+        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4) throws Throwable { return return_I(targetA5(a0, a1, a2, a3, a4)); }
+        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4) throws Throwable { return return_J(targetA5(a0, a1, a2, a3, a4)); }
     }
 //params=[6, 10, 2, 99, 0, 99]
     static class A6 extends Adapter {
         protected A6(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A6(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A6 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A6(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5)   { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5); }
-        protected Object targetA6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) { return target(a0, a1, a2, a3, a4, a5); }
-        protected Object targetA6(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5) { return target(a0, a1, a2, a3, a4, a5); }
-        protected Object targetA6(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5) { return target(a0, a1, a2, a3, a4, a5); }
-        protected Object targetA6(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5) { return target(a0, a1, a2, a3, a4, a5); }
-        protected Object targetA6(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5) { return target(a0, a1, a2, a3, a4, a5); }
-        protected Object targetA6(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5) { return target(a0, a1, a2, a3, a4, a5); }
-        protected Object targetA6(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5) { return target(a0, a1, a2, a3, a4, a5); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5) { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5) { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5) { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5) { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5) { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5) { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5) { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5) { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5) { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5) { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5) { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5) { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5) { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5) { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5) { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5) { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5) { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
-        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5) { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5); }
+        protected Object targetA6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
+        protected Object targetA6(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
+        protected Object targetA6(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
+        protected Object targetA6(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
+        protected Object targetA6(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
+        protected Object targetA6(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
+        protected Object targetA6(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return target(a0, a1, a2, a3, a4, a5); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5) throws Throwable { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5) throws Throwable { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5) throws Throwable { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5) throws Throwable { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5) throws Throwable { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5) throws Throwable { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5) throws Throwable { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5) throws Throwable { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5) throws Throwable { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return return_L(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return return_I(targetA6(a0, a1, a2, a3, a4, a5)); }
+        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5) throws Throwable { return return_J(targetA6(a0, a1, a2, a3, a4, a5)); }
     }
     static class A7 extends Adapter {
         protected A7(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A7(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A7 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A7(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6)   { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6); }
-        protected Object targetA7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) { return target(a0, a1, a2, a3, a4, a5, a6); }
-        protected Object targetA7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6) { return target(a0, a1, a2, a3, a4, a5, a6); }
-        protected Object targetA7(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6) { return target(a0, a1, a2, a3, a4, a5, a6); }
-        protected Object targetA7(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6) { return target(a0, a1, a2, a3, a4, a5, a6); }
-        protected Object targetA7(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6) { return target(a0, a1, a2, a3, a4, a5, a6); }
-        protected Object targetA7(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return target(a0, a1, a2, a3, a4, a5, a6); }
-        protected Object targetA7(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return target(a0, a1, a2, a3, a4, a5, a6); }
-        protected Object targetA7(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return target(a0, a1, a2, a3, a4, a5, a6); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6) { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6) { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6) { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6) { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6) { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6) { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6) { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6) { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6) { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6) { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6) { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6) { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
-        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6); }
+        protected Object targetA7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
+        protected Object targetA7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
+        protected Object targetA7(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
+        protected Object targetA7(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
+        protected Object targetA7(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
+        protected Object targetA7(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
+        protected Object targetA7(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
+        protected Object targetA7(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6) throws Throwable { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6) throws Throwable { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6) throws Throwable { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6) throws Throwable { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6) throws Throwable { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6) throws Throwable { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6) throws Throwable { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6) throws Throwable { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6) throws Throwable { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_L(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_I(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
+        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6) throws Throwable { return return_J(targetA7(a0, a1, a2, a3, a4, a5, a6)); }
     }
     static class A8 extends Adapter {
         protected A8(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A8(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A8 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A8(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7)   { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7) { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7) { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7) { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7) { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object targetA8(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object targetA8(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object targetA8(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object targetA8(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7) { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7) { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7) { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7) { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7) { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7) { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7) { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7) { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7) { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7) { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7) { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7) { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
-        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object targetA8(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object targetA8(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object targetA8(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object targetA8(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object targetA8(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7) throws Throwable { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7) throws Throwable { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7) throws Throwable { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7) throws Throwable { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7) throws Throwable { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7) throws Throwable { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7) throws Throwable { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7) throws Throwable { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7) throws Throwable { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_L(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_I(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
+        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7) throws Throwable { return return_J(targetA8(a0, a1, a2, a3, a4, a5, a6, a7)); }
     }
     static class A9 extends Adapter {
         protected A9(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A9(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A9 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A9(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8)   { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object targetA9(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
-        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object targetA9(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_L(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_I(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
+        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8) throws Throwable { return return_J(targetA9(a0, a1, a2, a3, a4, a5, a6, a7, a8)); }
     }
     static class A10 extends Adapter {
         protected A10(MethodHandle entryPoint) { super(entryPoint); }  // to build prototype
         protected A10(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { super(e, i, c, t); }
         protected A10 makeInstance(MethodHandle e, MethodHandle i, MethodHandle c, MethodHandle t) { return new A10(e, i, c, t); }
-        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9)   { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object targetA10(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
-        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object target(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9)   throws Throwable { return invoker.<Object>invoke(target, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object targetA10(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return target(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, Object a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, Object a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7, long   a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, long   a7, long   a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, Object a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, Object a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, Object a1, Object a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, Object a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(Object a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected Object invoke_L(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_L(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected int    invoke_I(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_I(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
+        protected long   invoke_J(long   a0, long   a1, long   a2, long   a3, long   a4, long   a5, long   a6, long   a7, long   a8, long   a9) throws Throwable { return return_J(targetA10(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)); }
     }
 }

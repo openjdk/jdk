@@ -28,6 +28,10 @@ package sun.dyn;
 import sun.dyn.util.VerifyType;
 import sun.dyn.util.Wrapper;
 import java.dyn.*;
+import java.util.List;
+import sun.dyn.MethodHandleNatives.Constants;
+import static sun.dyn.MethodHandleImpl.IMPL_LOOKUP;
+import static sun.dyn.MemberName.newIllegalArgumentException;
 
 /**
  * The flavor of method handle which emulates an invoke instruction
@@ -35,18 +39,23 @@ import java.dyn.*;
  * when the handle is created, not when it is invoked.
  * @author jrose
  */
-public class BoundMethodHandle extends MethodHandle  {
+public class BoundMethodHandle extends MethodHandle {
     //MethodHandle vmtarget;           // next BMH or final DMH or methodOop
     private final Object argument;     // argument to insert
     private final int    vmargslot;    // position at which it is inserted
 
+    private static final Access IMPL_TOKEN = Access.getToken();
+    private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory(IMPL_TOKEN);
+
     // Constructors in this class *must* be package scoped or private.
+    // Exception:  JavaMethodHandle constructors are protected.
+    // (The link between JMH and BMH is temporary.)
 
     /** Bind a direct MH to its receiver (or first ref. argument).
      *  The JVM will pre-dispatch the MH if it is not already static.
      */
     BoundMethodHandle(DirectMethodHandle mh, Object argument) {
-        super(Access.TOKEN, mh.type().dropParameterType(0));
+        super(Access.TOKEN, mh.type().dropParameterTypes(0, 1));
         // check the type now, once for all:
         this.argument = checkReferenceArgument(argument, mh, 0);
         this.vmargslot = this.type().parameterSlotCount();
@@ -56,32 +65,34 @@ public class BoundMethodHandle extends MethodHandle  {
         } else {
             this.vmtarget = mh;
         }
-     }
-
-    private static final int REF_ARG = 0, PRIM_ARG = 1, SELF_ARG = 2;
+    }
 
     /** Insert an argument into an arbitrary method handle.
      *  If argnum is zero, inserts the first argument, etc.
      *  The argument type must be a reference.
      */
     BoundMethodHandle(MethodHandle mh, Object argument, int argnum) {
-        this(mh, argument, argnum, mh.type().parameterType(argnum).isPrimitive() ? PRIM_ARG : REF_ARG);
+        this(mh.type().dropParameterTypes(argnum, argnum+1),
+             mh, argument, argnum);
     }
 
     /** Insert an argument into an arbitrary method handle.
      *  If argnum is zero, inserts the first argument, etc.
      */
-    BoundMethodHandle(MethodHandle mh, Object argument, int argnum, int whichArg) {
-        super(Access.TOKEN, mh.type().dropParameterType(argnum));
-        if (whichArg == PRIM_ARG)
+    BoundMethodHandle(MethodType type, MethodHandle mh, Object argument, int argnum) {
+        super(Access.TOKEN, type);
+        if (mh.type().parameterType(argnum).isPrimitive())
             this.argument = bindPrimitiveArgument(argument, mh, argnum);
         else {
-            if (whichArg == SELF_ARG)  argument = this;
             this.argument = checkReferenceArgument(argument, mh, argnum);
         }
-        this.vmargslot = this.type().parameterSlotDepth(argnum);
+        this.vmargslot = type.parameterSlotDepth(argnum);
+        initTarget(mh, argnum);
+    }
+
+    private void initTarget(MethodHandle mh, int argnum) {
         if (MethodHandleNatives.JVM_SUPPORT) {
-            this.vmtarget = null;  // maybe updated by JVM
+            this.vmtarget = null; // maybe updated by JVM
             MethodHandleNatives.init(this, mh, argnum);
         } else {
             this.vmtarget = mh;
@@ -97,29 +108,65 @@ public class BoundMethodHandle extends MethodHandle  {
         assert(this.getClass() == AdapterMethodHandle.class);
     }
 
-    /** Initialize the current object as a method handle, binding it
-     *  as the {@code argnum}th argument of the method handle {@code entryPoint}.
-     *  The invocation type of the resulting method handle will be the
-     *  same as {@code entryPoint},  except that the {@code argnum}th argument
-     *  type will be dropped.
-     */
-    public BoundMethodHandle(MethodHandle entryPoint, int argnum) {
-        this(entryPoint, null, argnum, SELF_ARG);
-
-        // Note:  If the conversion fails, perhaps because of a bad entryPoint,
-        // the MethodHandle.type field will not be filled in, and therefore
-        // no MH.invoke call will ever succeed.  The caller may retain a pointer
-        // to the broken method handle, but no harm can be done with it.
-    }
-
-    /** Initialize the current object as a method handle, binding it
+    /** Initialize the current object as a Java method handle, binding it
      *  as the first argument of the method handle {@code entryPoint}.
      *  The invocation type of the resulting method handle will be the
      *  same as {@code entryPoint},  except that the first argument
      *  type will be dropped.
      */
-    public BoundMethodHandle(MethodHandle entryPoint) {
-        this(entryPoint, null, 0, SELF_ARG);
+    protected BoundMethodHandle(MethodHandle entryPoint) {
+        super(Access.TOKEN, entryPoint.type().dropParameterTypes(0, 1));
+        this.argument = this; // kludge; get rid of
+        this.vmargslot = this.type().parameterSlotDepth(0);
+        initTarget(entryPoint, 0);
+        assert(this instanceof JavaMethodHandle);
+    }
+
+    /** Initialize the current object as a Java method handle.
+     */
+    protected BoundMethodHandle(String entryPointName, MethodType type, boolean matchArity) {
+        super(Access.TOKEN, null);
+        MethodHandle entryPoint
+                = findJavaMethodHandleEntryPoint(this.getClass(),
+                                        entryPointName, type, matchArity);
+        MethodHandleImpl.initType(this, entryPoint.type().dropParameterTypes(0, 1));
+        this.argument = this; // kludge; get rid of
+        this.vmargslot = this.type().parameterSlotDepth(0);
+        initTarget(entryPoint, 0);
+        assert(this instanceof JavaMethodHandle);
+    }
+
+    private static
+    MethodHandle findJavaMethodHandleEntryPoint(Class<?> caller,
+                                                String name,
+                                                MethodType type,
+                                                boolean matchArity) {
+        if (matchArity)  type.getClass();  // elicit NPE
+        List<MemberName> methods = IMPL_NAMES.getMethods(caller, true, name, null, caller);
+        MethodType foundType = null;
+        MemberName foundMethod = null;
+        for (MemberName method : methods) {
+            MethodType mtype = method.getMethodType();
+            if (type != null && type.parameterCount() != mtype.parameterCount())
+                continue;
+            else if (foundType == null)
+                foundType = mtype;
+            else if (foundType != mtype)
+                throw newIllegalArgumentException("more than one method named "+name+" in "+caller.getName());
+            // discard overrides
+            if (foundMethod == null)
+                foundMethod = method;
+            else if (foundMethod.getDeclaringClass().isAssignableFrom(method.getDeclaringClass()))
+                foundMethod = method;
+        }
+        if (foundMethod == null)
+            throw newIllegalArgumentException("no method named "+name+" in "+caller.getName());
+        MethodHandle entryPoint = MethodHandleImpl.findMethod(IMPL_TOKEN, foundMethod, true, caller);
+        if (type != null) {
+            MethodType epType = type.insertParameterTypes(0, entryPoint.type().parameterType(0));
+            entryPoint = MethodHandles.convertArguments(entryPoint, epType);
+        }
+        return entryPoint;
     }
 
     /** Make sure the given {@code argument} can be used as {@code argnum}-th
@@ -175,6 +222,24 @@ public class BoundMethodHandle extends MethodHandle  {
 
     @Override
     public String toString() {
-        return "Bound[" + super.toString() + "]";
+        MethodHandle mh = this;
+        while (mh instanceof BoundMethodHandle) {
+            Object info = MethodHandleNatives.getTargetInfo(mh);
+            if (info instanceof MethodHandle) {
+                mh = (MethodHandle) info;
+            } else {
+                String name = null;
+                if (info instanceof MemberName)
+                    name = ((MemberName)info).getName();
+                if (name != null)
+                    return name;
+                else
+                    return super.toString(); // <unknown>, probably
+            }
+            assert(mh != this);
+            if (mh instanceof JavaMethodHandle)
+                break;  // access JMH.toString(), not BMH.toString()
+        }
+        return mh.toString();
     }
 }

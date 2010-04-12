@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,16 +455,44 @@ Bytecodes::Code GraphKit::java_bc() const {
     return Bytecodes::_illegal;
 }
 
+void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptReason reason,
+                                                          bool must_throw) {
+    // if the exception capability is set, then we will generate code
+    // to check the JavaThread.should_post_on_exceptions flag to see
+    // if we actually need to report exception events (for this
+    // thread).  If we don't need to report exception events, we will
+    // take the normal fast path provided by add_exception_events.  If
+    // exception event reporting is enabled for this thread, we will
+    // take the uncommon_trap in the BuildCutout below.
+
+    // first must access the should_post_on_exceptions_flag in this thread's JavaThread
+    Node* jthread = _gvn.transform(new (C, 1) ThreadLocalNode());
+    Node* adr = basic_plus_adr(top(), jthread, in_bytes(JavaThread::should_post_on_exceptions_flag_offset()));
+    Node* should_post_flag = make_load(control(), adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, false);
+
+    // Test the should_post_on_exceptions_flag vs. 0
+    Node* chk = _gvn.transform( new (C, 3) CmpINode(should_post_flag, intcon(0)) );
+    Node* tst = _gvn.transform( new (C, 2) BoolNode(chk, BoolTest::eq) );
+
+    // Branch to slow_path if should_post_on_exceptions_flag was true
+    { BuildCutout unless(this, tst, PROB_MAX);
+      // Do not try anything fancy if we're notifying the VM on every throw.
+      // Cf. case Bytecodes::_athrow in parse2.cpp.
+      uncommon_trap(reason, Deoptimization::Action_none,
+                    (ciKlass*)NULL, (char*)NULL, must_throw);
+    }
+
+}
+
 //------------------------------builtin_throw----------------------------------
 void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
   bool must_throw = true;
 
-  if (env()->jvmti_can_post_exceptions()) {
-    // Do not try anything fancy if we're notifying the VM on every throw.
-    // Cf. case Bytecodes::_athrow in parse2.cpp.
-    uncommon_trap(reason, Deoptimization::Action_none,
-                  (ciKlass*)NULL, (char*)NULL, must_throw);
-    return;
+  if (env()->jvmti_can_post_on_exceptions()) {
+    // check if we must post exception events, take uncommon trap if so
+    uncommon_trap_if_should_post_on_exceptions(reason, must_throw);
+    // here if should_post_on_exceptions is false
+    // continue on with the normal codegen
   }
 
   // If this particular condition has not yet happened at this
@@ -752,12 +780,20 @@ bool GraphKit::dead_locals_are_killed() {
 
 // Helper function for enforcing certain bytecodes to reexecute if
 // deoptimization happens
-static bool should_reexecute_implied_by_bytecode(JVMState *jvms) {
+static bool should_reexecute_implied_by_bytecode(JVMState *jvms, bool is_anewarray) {
   ciMethod* cur_method = jvms->method();
   int       cur_bci   = jvms->bci();
   if (cur_method != NULL && cur_bci != InvocationEntryBci) {
     Bytecodes::Code code = cur_method->java_code_at_bci(cur_bci);
-    return Interpreter::bytecode_should_reexecute(code);
+    return Interpreter::bytecode_should_reexecute(code) ||
+           is_anewarray && code == Bytecodes::_multianewarray;
+    // Reexecute _multianewarray bytecode which was replaced with
+    // sequence of [a]newarray. See Parse::do_multianewarray().
+    //
+    // Note: interpreter should not have it set since this optimization
+    // is limited by dimensions and guarded by flag so in some cases
+    // multianewarray() runtime calls will be generated and
+    // the bytecode should not be reexecutes (stack will not be reset).
   } else
     return false;
 }
@@ -808,7 +844,7 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
   // For a known set of bytecodes, the interpreter should reexecute them if
   // deoptimization happens. We set the reexecute state for them here
   if (out_jvms->is_reexecute_undefined() && //don't change if already specified
-      should_reexecute_implied_by_bytecode(out_jvms)) {
+      should_reexecute_implied_by_bytecode(out_jvms, call->is_AllocateArray())) {
     out_jvms->set_should_reexecute(true); //NOTE: youngest_jvms not changed
   }
 
@@ -981,14 +1017,19 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_invokedynamic:
   case Bytecodes::_invokeinterface:
     {
-      bool is_static = (depth == 0);
       bool ignore;
       ciBytecodeStream iter(method());
       iter.reset_to_bci(bci());
       iter.next();
       ciMethod* method = iter.get_method(ignore);
       inputs = method->arg_size_no_receiver();
-      if (!is_static)  inputs += 1;
+      // Add a receiver argument, maybe:
+      if (code != Bytecodes::_invokestatic &&
+          code != Bytecodes::_invokedynamic)
+        inputs += 1;
+      // (Do not use ciMethod::arg_size(), because
+      // it might be an unloaded method, which doesn't
+      // know whether it is static or not.)
       int size = method->return_type()->size();
       depth = size - inputs;
     }
@@ -1351,8 +1392,8 @@ void GraphKit::set_all_memory(Node* newmem) {
 }
 
 //------------------------------set_all_memory_call----------------------------
-void GraphKit::set_all_memory_call(Node* call) {
-  Node* newmem = _gvn.transform( new (C, 1) ProjNode(call, TypeFunc::Memory) );
+void GraphKit::set_all_memory_call(Node* call, bool separate_io_proj) {
+  Node* newmem = _gvn.transform( new (C, 1) ProjNode(call, TypeFunc::Memory, separate_io_proj) );
   set_all_memory(newmem);
 }
 
@@ -1573,7 +1614,7 @@ void GraphKit::set_arguments_for_java_call(CallJavaNode* call) {
 //---------------------------set_edges_for_java_call---------------------------
 // Connect a newly created call into the current JVMS.
 // A return value node (if any) is returned from set_edges_for_java_call.
-void GraphKit::set_edges_for_java_call(CallJavaNode* call, bool must_throw) {
+void GraphKit::set_edges_for_java_call(CallJavaNode* call, bool must_throw, bool separate_io_proj) {
 
   // Add the predefined inputs:
   call->init_req( TypeFunc::Control, control() );
@@ -1595,13 +1636,13 @@ void GraphKit::set_edges_for_java_call(CallJavaNode* call, bool must_throw) {
   // Re-use the current map to produce the result.
 
   set_control(_gvn.transform(new (C, 1) ProjNode(call, TypeFunc::Control)));
-  set_i_o(    _gvn.transform(new (C, 1) ProjNode(call, TypeFunc::I_O    )));
-  set_all_memory_call(xcall);
+  set_i_o(    _gvn.transform(new (C, 1) ProjNode(call, TypeFunc::I_O    , separate_io_proj)));
+  set_all_memory_call(xcall, separate_io_proj);
 
   //return xcall;   // no need, caller already has it
 }
 
-Node* GraphKit::set_results_for_java_call(CallJavaNode* call) {
+Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_proj) {
   if (stopped())  return top();  // maybe the call folded up?
 
   // Capture the return value, if any.
@@ -1614,8 +1655,15 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call) {
   // Note:  Since any out-of-line call can produce an exception,
   // we always insert an I_O projection from the call into the result.
 
-  make_slow_call_ex(call, env()->Throwable_klass(), false);
+  make_slow_call_ex(call, env()->Throwable_klass(), separate_io_proj);
 
+  if (separate_io_proj) {
+    // The caller requested separate projections be used by the fall
+    // through and exceptional paths, so replace the projections for
+    // the fall through path.
+    set_i_o(_gvn.transform( new (C, 1) ProjNode(call, TypeFunc::I_O) ));
+    set_all_memory(_gvn.transform( new (C, 1) ProjNode(call, TypeFunc::Memory) ));
+  }
   return ret;
 }
 
@@ -1677,6 +1725,64 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
     set_all_memory_call(call);
   }
 }
+
+
+// Replace the call with the current state of the kit.
+void GraphKit::replace_call(CallNode* call, Node* result) {
+  JVMState* ejvms = NULL;
+  if (has_exceptions()) {
+    ejvms = transfer_exceptions_into_jvms();
+  }
+
+  SafePointNode* final_state = stop();
+
+  // Find all the needed outputs of this call
+  CallProjections callprojs;
+  call->extract_projections(&callprojs, true);
+
+  // Replace all the old call edges with the edges from the inlining result
+  C->gvn_replace_by(callprojs.fallthrough_catchproj, final_state->in(TypeFunc::Control));
+  C->gvn_replace_by(callprojs.fallthrough_memproj,   final_state->in(TypeFunc::Memory));
+  C->gvn_replace_by(callprojs.fallthrough_ioproj,    final_state->in(TypeFunc::I_O));
+
+  // Replace the result with the new result if it exists and is used
+  if (callprojs.resproj != NULL && result != NULL) {
+    C->gvn_replace_by(callprojs.resproj, result);
+  }
+
+  if (ejvms == NULL) {
+    // No exception edges to simply kill off those paths
+    C->gvn_replace_by(callprojs.catchall_catchproj, C->top());
+    C->gvn_replace_by(callprojs.catchall_memproj,   C->top());
+    C->gvn_replace_by(callprojs.catchall_ioproj,    C->top());
+
+    // Replace the old exception object with top
+    if (callprojs.exobj != NULL) {
+      C->gvn_replace_by(callprojs.exobj, C->top());
+    }
+  } else {
+    GraphKit ekit(ejvms);
+
+    // Load my combined exception state into the kit, with all phis transformed:
+    SafePointNode* ex_map = ekit.combine_and_pop_all_exception_states();
+
+    Node* ex_oop = ekit.use_exception_state(ex_map);
+
+    C->gvn_replace_by(callprojs.catchall_catchproj, ekit.control());
+    C->gvn_replace_by(callprojs.catchall_memproj,   ekit.reset_memory());
+    C->gvn_replace_by(callprojs.catchall_ioproj,    ekit.i_o());
+
+    // Replace the old exception object with the newly created one
+    if (callprojs.exobj != NULL) {
+      C->gvn_replace_by(callprojs.exobj, ex_oop);
+    }
+  }
+
+  // Disconnect the call from the graph
+  call->disconnect_inputs(NULL);
+  C->gvn_replace_by(call, C->top());
+}
+
 
 //------------------------------increment_counter------------------------------
 // for statistics: increment a VM counter by 1
@@ -3189,9 +3295,10 @@ void GraphKit::write_barrier_post(Node* oop_store,
   if (use_ReduceInitialCardMarks()
       && obj == just_allocated_object(control())) {
     // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with maybe_defer_card_mark() in runtime.cpp.
-    // That routine informs GC to take appropriate compensating steps
-    // so as to make this card-mark elision safe.
+    // Keep this code in sync with new_store_pre_barrier() in runtime.cpp.
+    // That routine informs GC to take appropriate compensating steps,
+    // upon a slow-path allocation, so as to make this card-mark
+    // elision safe.
     return;
   }
 
@@ -3459,4 +3566,3 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
   sync_kit(ideal);
 }
 #undef __
-

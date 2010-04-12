@@ -755,8 +755,19 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   }
 
   LIR_Opr addr = new_pointer_register();
-  __ move(obj.result(), addr);
-  __ add(addr, offset.result(), addr);
+  LIR_Address* a;
+  if(offset.result()->is_constant()) {
+    a = new LIR_Address(obj.result(),
+                        NOT_LP64(offset.result()->as_constant_ptr()->as_jint()) LP64_ONLY((int)offset.result()->as_constant_ptr()->as_jlong()),
+                        as_BasicType(type));
+  } else {
+    a = new LIR_Address(obj.result(),
+                        offset.result(),
+                        LIR_Address::times_1,
+                        0,
+                        as_BasicType(type));
+  }
+  __ leal(LIR_OprFact::address(a), addr);
 
   if (type == objectType) {  // Write-barrier needed for Object fields.
     // Do the pre-write barrier, if any.

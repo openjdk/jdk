@@ -387,8 +387,18 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
   cp->set_cache(cache());
 }
 
-
 #endif
+
+void constantPoolKlass::oop_print_value_on(oop obj, outputStream* st) {
+  assert(obj->is_constantPool(), "must be constantPool");
+  constantPoolOop cp = constantPoolOop(obj);
+  st->print("constant pool [%d]", cp->length());
+  if (cp->has_pseudo_string()) st->print("/pseudo_string");
+  if (cp->has_invokedynamic()) st->print("/invokedynamic");
+  cp->print_address_on(st);
+  st->print(" for ");
+  cp->pool_holder()->print_value_on(st);
+}
 
 const char* constantPoolKlass::internal_name() const {
   return "{constant pool}";

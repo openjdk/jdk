@@ -48,7 +48,7 @@ fi
 OS=`uname`
 
 case "$OS" in
-        Windows* | CYGWIN* )
+        Windows* )
             JAVAC="${TESTJAVA}/bin/javac -d . "
             JAVA="${TESTJAVA}/bin/java -classpath . "
             JAVAW="${TESTJAVA}/bin/javaw -classpath . "
@@ -56,6 +56,22 @@ case "$OS" in
             ${JAVAC} ${TESTSRC}/DefaultLocaleTest.java
             props=`${JAVA} DefaultLocaleTest`
             ${JAVAW} DefaultLocaleTest $props
+            if [ $? -ne 0 ]
+            then
+                echo "Test fails"
+                exit 1
+            fi
+            echo "Test passes"
+            exit 0
+        ;;
+        CYGWIN* )
+            JAVAC="${TESTJAVA}/bin/javac -d . "
+            JAVA="${TESTJAVA}/bin/java -classpath . "
+            JAVAW="${TESTJAVA}/bin/javaw -classpath . "
+
+            ${JAVAC} ${TESTSRC}/DefaultLocaleTest.java
+            ${JAVA} DefaultLocaleTest | sed -e s@\\r@@g > x.out
+            ${JAVAW} DefaultLocaleTest `cat x.out`
             if [ $? -ne 0 ]
             then
                 echo "Test fails"

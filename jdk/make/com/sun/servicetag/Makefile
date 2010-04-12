@@ -22,6 +22,7 @@
 # have any questions.
 
 BUILDDIR = ../../..
+MODULE  = servicetag
 PACKAGE = com.sun.servicetag
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
@@ -68,7 +69,7 @@ $(CLASSBINDIR)/%: $(SHARE_SRC)/classes/%
 
 $(SERVICETAG_LIBDIR)/jdk_header.png: $(SHARE_SRC)/classes/com/sun/servicetag/resources/jdk_header.png
 	$(install-file)
-	$(CHMOD) 444 $@
+	$(call chmod-file, 444)
 
 install-servicetag-lib:
 	@$(RM) -rf $(SERVICETAG_LIBDIR)

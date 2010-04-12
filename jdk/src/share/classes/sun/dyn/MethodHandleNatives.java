@@ -25,6 +25,7 @@
 
 package sun.dyn;
 
+import java.dyn.CallSite;
 import java.dyn.MethodHandle;
 import java.dyn.MethodType;
 import java.lang.reflect.AccessibleObject;
@@ -60,7 +61,7 @@ class MethodHandleNatives {
     static native void init(MethodType self);
 
     /** Tell the JVM that we need to change the target of an invokedynamic. */
-    static native void linkCallSite(CallSiteImpl site, MethodHandle target);
+    static native void linkCallSite(CallSite site, MethodHandle target);
 
     /** Fetch the vmtarget field.
      *  It will be sanitized as necessary to avoid exposing non-Java references.
@@ -84,8 +85,7 @@ class MethodHandleNatives {
     }
 
     /** Fetch the target of this method handle.
-     *  If it directly targets a method, return a tuple of method info.
-     *  The info is of the form new Object[]{defclass, name, sig, refclass}.
+     *  If it directly targets a method, return a MemberName for the method.
      *  If it is chained to another method handle, return that handle.
      */
     static Object getTargetInfo(MethodHandle self) {
@@ -123,7 +123,7 @@ class MethodHandleNatives {
             registerNatives();
             JVM_SUPPORT_ = true;
             JVM_PUSH_LIMIT_ = getConstant(Constants.GC_JVM_PUSH_LIMIT);
-            JVM_STACK_MOVE_UNIT_ = getConstant(Constants.GC_JVM_STACK_MOVE_LIMIT);
+            JVM_STACK_MOVE_UNIT_ = getConstant(Constants.GC_JVM_STACK_MOVE_UNIT);
             //sun.reflect.Reflection.registerMethodsToFilter(MethodHandleImpl.class, "init");
         } catch (UnsatisfiedLinkError ee) {
             // ignore; if we use init() methods later we'll see linkage errors
@@ -149,7 +149,7 @@ class MethodHandleNatives {
         // MethodHandleImpl
         static final int // for getConstant
                 GC_JVM_PUSH_LIMIT = 0,
-                GC_JVM_STACK_MOVE_LIMIT = 1;
+                GC_JVM_STACK_MOVE_UNIT = 1;
         static final int
                 ETF_HANDLE_OR_METHOD_NAME = 0, // all available data (immediate MH or method)
                 ETF_DIRECT_HANDLE         = 1, // ultimate method handle (will be a DMH, may be self)
@@ -178,19 +178,20 @@ class MethodHandleNatives {
          */
         static final int
             OP_RETYPE_ONLY   = 0x0, // no argument changes; straight retype
-            OP_CHECK_CAST    = 0x1, // ref-to-ref conversion; requires a Class argument
-            OP_PRIM_TO_PRIM  = 0x2, // converts from one primitive to another
-            OP_REF_TO_PRIM   = 0x3, // unboxes a wrapper to produce a primitive
-            OP_PRIM_TO_REF   = 0x4, // boxes a primitive into a wrapper (NYI)
-            OP_SWAP_ARGS     = 0x5, // swap arguments (vminfo is 2nd arg)
-            OP_ROT_ARGS      = 0x6, // rotate arguments (vminfo is displaced arg)
-            OP_DUP_ARGS      = 0x7, // duplicates one or more arguments (at TOS)
-            OP_DROP_ARGS     = 0x8, // remove one or more argument slots
-            OP_COLLECT_ARGS  = 0x9, // combine one or more arguments into a varargs (NYI)
-            OP_SPREAD_ARGS   = 0xA, // expand in place a varargs array (of known size)
-            OP_FLYBY         = 0xB, // operate first on reified argument list (NYI)
-            OP_RICOCHET      = 0xC, // run an adapter chain on the return value (NYI)
-            CONV_OP_LIMIT    = 0xD; // limit of CONV_OP enumeration
+            OP_RETYPE_RAW    = 0x1, // no argument changes; straight retype
+            OP_CHECK_CAST    = 0x2, // ref-to-ref conversion; requires a Class argument
+            OP_PRIM_TO_PRIM  = 0x3, // converts from one primitive to another
+            OP_REF_TO_PRIM   = 0x4, // unboxes a wrapper to produce a primitive
+            OP_PRIM_TO_REF   = 0x5, // boxes a primitive into a wrapper (NYI)
+            OP_SWAP_ARGS     = 0x6, // swap arguments (vminfo is 2nd arg)
+            OP_ROT_ARGS      = 0x7, // rotate arguments (vminfo is displaced arg)
+            OP_DUP_ARGS      = 0x8, // duplicates one or more arguments (at TOS)
+            OP_DROP_ARGS     = 0x9, // remove one or more argument slots
+            OP_COLLECT_ARGS  = 0xA, // combine one or more arguments into a varargs (NYI)
+            OP_SPREAD_ARGS   = 0xB, // expand in place a varargs array (of known size)
+            OP_FLYBY         = 0xC, // operate first on reified argument list (NYI)
+            OP_RICOCHET      = 0xD, // run an adapter chain on the return value (NYI)
+            CONV_OP_LIMIT    = 0xE; // limit of CONV_OP enumeration
         /** Shift and mask values for decoding the AMH.conversion field.
          *  These numbers are shared with the JVM for creating AMHs.
          */
@@ -209,6 +210,7 @@ class MethodHandleNatives {
                 // TODO: The following expression should be replaced by
                 // a JVM query.
                 ((1<<OP_RETYPE_ONLY)
+                |(1<<OP_RETYPE_RAW)
                 |(1<<OP_CHECK_CAST)
                 |(1<<OP_PRIM_TO_PRIM)
                 |(1<<OP_REF_TO_PRIM)
@@ -216,6 +218,7 @@ class MethodHandleNatives {
                 |(1<<OP_ROT_ARGS)
                 |(1<<OP_DUP_ARGS)
                 |(1<<OP_DROP_ARGS)
+                //|(1<<OP_SPREAD_ARGS) // FIXME: Check JVM assembly code.
                 );
 
         /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -466,20 +466,6 @@ public:
     void UninstallMouseLowLevelHook();
 };
 
-/*
- * Class to encapsulate the extraction of the java string contents
- * into a buffer and the cleanup of the buffer
- */
-class JavaStringBuffer {
-  public:
-    JavaStringBuffer(JNIEnv *env, jstring jstr);
-    INLINE ~JavaStringBuffer() { delete[] buffer; }
-    INLINE operator LPTSTR() { return buffer; }
-    INLINE operator LPARAM() { return (LPARAM)buffer; }  /* for SendMessage */
-
-  private:
-    LPTSTR buffer;
-};
 
 /*  creates an instance of T and assigns it to the argument, but only if
     the argument is initially NULL. Supposed to be thread-safe.

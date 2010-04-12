@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetBoundException;
 import java.nio.channels.spi.SelectorProvider;
@@ -49,9 +48,6 @@ import com.sun.nio.sctp.SctpStandardSocketOption;
 public class SctpServerChannelImpl extends SctpServerChannel
     implements SelChImpl
 {
-    /* Used to make native close and preClose calls */
-    private static NativeDispatcher nd;
-
     private final FileDescriptor fd;
 
     private final int fdVal;
@@ -103,7 +99,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
                 if (!isOpen())
                     throw new ClosedChannelException();
                 if (isBound())
-                    throw new AlreadyBoundException();
+                    SctpNet.throwAlreadyBoundException();
 
                 InetSocketAddress isa = (local == null) ?
                     new InetSocketAddress(0) : Net.checkAddress(local);
@@ -118,7 +114,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
                     if (isa.getAddress().isAnyLocalAddress())
                         wildcard = true;
 
-                Net.listen(fd, backlog < 1 ? 50 : backlog);
+                SctpNet.listen(fdVal, backlog < 1 ? 50 : backlog);
             }
         }
         return this;
@@ -156,7 +152,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
                 if (add) {
                     for (InetSocketAddress addr : localAddresses) {
                         if (addr.getAddress().equals(address)) {
-                            throw new AlreadyBoundException();
+                            SctpNet.throwAlreadyBoundException();
                         }
                     }
                 } else { /*removing */
@@ -261,7 +257,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
     @Override
     public void implCloseSelectableChannel() throws IOException {
         synchronized (stateLock) {
-            nd.preClose(fd);
+            SctpNet.preClose(fdVal);
             if (thread != 0)
                 NativeThread.signal(thread);
             if (!isRegistered())
@@ -282,7 +278,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
 
             // Postpone the kill if there is a thread in accept
             if (thread == 0) {
-                nd.close(fd);
+                SctpNet.close(fdVal);
                 state = ChannelState.KILLED;
             } else {
                 state = ChannelState.KILLPENDING;
@@ -423,7 +419,6 @@ public class SctpServerChannelImpl extends SctpServerChannel
         Util.load();   // loads nio & net native libraries
         java.security.AccessController.doPrivileged(
                 new sun.security.action.LoadLibraryAction("sctp"));
-        nd = new SctpSocketDispatcher();
         initIDs();
     }
 }

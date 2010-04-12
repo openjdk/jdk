@@ -72,6 +72,14 @@ GCMemoryManager* MemoryManager::get_psMarkSweep_memory_manager() {
   return (GCMemoryManager*) new PSMarkSweepMemoryManager();
 }
 
+GCMemoryManager* MemoryManager::get_g1YoungGen_memory_manager() {
+  return (GCMemoryManager*) new G1YoungGenMemoryManager();
+}
+
+GCMemoryManager* MemoryManager::get_g1OldGen_memory_manager() {
+  return (GCMemoryManager*) new G1OldGenMemoryManager();
+}
+
 instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
   // Must do an acquire so as to force ordering of subsequent
   // loads from anything _memory_mgr_obj points to or implies.

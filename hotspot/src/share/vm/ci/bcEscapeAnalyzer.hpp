@@ -61,9 +61,11 @@ class BCEscapeAnalyzer : public ResourceObj {
   BCEscapeAnalyzer* _parent;
   int               _level;
 
+ public:
   class  ArgumentMap;
   class  StateInfo;
 
+ private:
   // helper functions
   bool is_argument(int i)    { return i >= 0 && i < _arg_size; }
 

@@ -102,7 +102,9 @@ methodHandle Bytecode_invoke::static_target(TRAPS) {
   KlassHandle resolved_klass;
   constantPoolHandle constants(THREAD, _method->constants());
 
-  if (adjusted_invoke_code() != Bytecodes::_invokeinterface) {
+  if (adjusted_invoke_code() == Bytecodes::_invokedynamic) {
+    LinkResolver::resolve_dynamic_method(m, resolved_klass, constants, index(), CHECK_(methodHandle()));
+  } else if (adjusted_invoke_code() != Bytecodes::_invokeinterface) {
     LinkResolver::resolve_method(m, resolved_klass, constants, index(), CHECK_(methodHandle()));
   } else {
     LinkResolver::resolve_interface_method(m, resolved_klass, constants, index(), CHECK_(methodHandle()));

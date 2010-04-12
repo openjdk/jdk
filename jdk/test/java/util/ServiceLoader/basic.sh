@@ -50,9 +50,9 @@ case "$OS" in
       SEP='\;' ;;
 esac
 
-JARD=`pwd`/x.jar
-EXTD=`pwd`/x.ext
-TESTD=`pwd`/x.test
+JARD=x.jar
+EXTD=x.ext
+TESTD=x.test
 
 if [ \! -d $EXTD ]; then
     # Initialize

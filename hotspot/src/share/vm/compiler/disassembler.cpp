@@ -151,8 +151,10 @@ class decode_env {
     outputStream* st = output();
     if (_print_bytes && pc > pc0)
       print_insn_bytes(pc0, pc);
-    if (_nm != NULL)
+    if (_nm != NULL) {
       _nm->print_code_comment_on(st, COMMENT_COLUMN, pc0, pc);
+      // this calls reloc_string_for which calls oop::print_value_on
+    }
 
     // Output pc bucket ticks if we have any
     if (total_ticks() != 0) {
@@ -273,8 +275,15 @@ void decode_env::print_address(address adr) {
     oop obj;
     if (_nm != NULL
         && (obj = _nm->embeddedOop_at(cur_insn())) != NULL
-        && (address) obj == adr) {
+        && (address) obj == adr
+        && Universe::heap()->is_in(obj)
+        && Universe::heap()->is_in(obj->klass())) {
+      julong c = st->count();
       obj->print_value_on(st);
+      if (st->count() == c) {
+        // No output.  (Can happen in product builds.)
+        st->print("(a %s)", Klass::cast(obj->klass())->external_name());
+      }
       return;
     }
   }
@@ -286,17 +295,9 @@ void decode_env::print_address(address adr) {
 void decode_env::print_insn_labels() {
   address p = cur_insn();
   outputStream* st = output();
-  nmethod* nm = _nm;
-  if (nm != NULL) {
-    if (p == nm->entry_point())             st->print_cr("[Entry Point]");
-    if (p == nm->verified_entry_point())    st->print_cr("[Verified Entry Point]");
-    if (p == nm->exception_begin())         st->print_cr("[Exception Handler]");
-    if (p == nm->stub_begin())              st->print_cr("[Stub Code]");
-    if (p == nm->consts_begin())            st->print_cr("[Constants]");
-  }
   CodeBlob* cb = _code;
   if (cb != NULL) {
-    cb->print_block_comment(st, (intptr_t)(p - cb->instructions_begin()));
+    cb->print_block_comment(st, p);
   }
   if (_print_pc) {
     st->print("  " INTPTR_FORMAT ": ", (intptr_t) p);

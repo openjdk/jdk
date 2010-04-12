@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright 2002-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,12 @@ class JvmtiEnv : public JvmtiEnvBase {
 
 private:
     
-    JvmtiEnv();
+    JvmtiEnv(jint version);
     ~JvmtiEnv();
 
 public:
 
-    static JvmtiEnv* create_a_jvmti();
+    static JvmtiEnv* create_a_jvmti(jint version);
 
 </xsl:text>
   <xsl:apply-templates select="functionsection"/>

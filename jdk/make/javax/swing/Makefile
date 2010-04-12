@@ -24,6 +24,7 @@
 #
 
 BUILDDIR  = ../..
+MODULE    = swing
 PACKAGE   = javax.swing
 PRODUCT   = com
 SWING_SRC = $(SHARE_SRC)/classes/javax/swing
@@ -39,6 +40,7 @@ AUTO_JAVA_PRUNE = plaf
 SUBDIRS = html32dtd plaf
 
 include $(BUILDDIR)/common/Classes.gmk
+include $(BUILDDIR)/common/Subdirs.gmk
 
 build: other_files
 	$(SUBDIRS-loop)

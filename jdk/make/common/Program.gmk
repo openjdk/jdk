@@ -50,8 +50,6 @@ ACTUAL_PROGRAM_NAME = $(PROGRAM)$(EXE_SUFFIX)
 ACTUAL_PROGRAM_DIR  = $(BINDIR)
 ACTUAL_PROGRAM      = $(ACTUAL_PROGRAM_DIR)/$(ACTUAL_PROGRAM_NAME)
 
-JVMCFG = $(LIBDIR)/$(LIBARCH)/jvm.cfg
-
 # Make sure the default rule is all
 program_default_rule: all
 
@@ -116,7 +114,7 @@ endif
 
 ifeq ($(COMPILE_IT),true)
 
-$(ACTUAL_PROGRAM):: classes $(JVMCFG) $(INIT) 
+$(ACTUAL_PROGRAM):: classes $(INIT) 
 
 #
 # Windows only
@@ -190,12 +188,13 @@ $(ACTUAL_PROGRAM):: $(FILES_o)
 	@$(MKDIR) -p $(TEMPDIR)
 	$(LINK_PRE_CMD) $(CC) $(CC_OBJECT_OUTPUT_FLAG)$@ $(LDFLAGS) \
 	    $(FILES_o) $(THREADLIBS) $(LDLIBS)
+	$(install-module-file)
 
 endif # PLATFORM
 
 else  # COMPILE_IT
 
-$(ACTUAL_PROGRAM):: $(JVMCFG)
+$(ACTUAL_PROGRAM)::
 
 # Copies in the file from the JDK_IMPORT_PATH area
 $(ACTUAL_PROGRAM_DIR)/%: $(JDK_IMPORT_PATH)/jre/bin/%
@@ -270,18 +269,6 @@ $(OBJDIR)/main.$(OBJECT_SUFFIX): $(LAUNCHER_SHARE_SRC)/bin/main.c
 	@$(prep-target)
 	$(COMPILE.c) $(CC_OBJECT_OUTPUT_FLAG)$(OBJDIR)/main.$(OBJECT_SUFFIX) \
 		$(VERSION_DEFINES) $<
-
-#
-# How to install jvm.cfg. 
-#
-ifeq ($(ZERO_BUILD), true)
-JVMCFG_ARCH = zero
-else
-JVMCFG_ARCH = $(ARCH)
-endif
-
-$(JVMCFG): $(LAUNCHER_PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg 
-	$(install-file)
 
 #
 # Default dependencies

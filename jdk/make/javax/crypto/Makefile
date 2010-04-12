@@ -108,6 +108,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = base
 PACKAGE = javax.crypto
 PRODUCT = sun
 
@@ -293,7 +294,7 @@ limited: \
 
 $(UNSIGNED_POLICY_BUILDDIR)/limited/US_export_policy.jar:		\
 	    $(UNSIGNED_POLICY_BUILDDIR)/unlimited/US_export_policy.jar
-	$(install-file)
+	$(install-non-module-file)
 
 $(UNSIGNED_POLICY_BUILDDIR)/limited/local_policy.jar:			\
 	    policy/limited/default_local.policy				\
@@ -414,7 +415,7 @@ $(JAR_DESTFILE): $(UNSIGNED_DIR)/jce.jar
 else
 $(JAR_DESTFILE): $(SIGNED_DIR)/jce.jar
 endif
-	$(install-file)
+	$(install-non-module-file)
 
 #
 # Install the appropriate policy file, depending on the type of build.
@@ -425,7 +426,7 @@ else
 INSTALL_POLICYDIR = $(SIGNED_POLICY_BUILDDIR)
 endif
 
-install-limited: \
+install-limited-jars: \
 	    $(INSTALL_POLICYDIR)/limited/US_export_policy.jar	\
 	    $(INSTALL_POLICYDIR)/limited/local_policy.jar
 	$(MKDIR) -p $(POLICY_DESTDIR)
@@ -433,24 +434,28 @@ install-limited: \
 	    $(POLICY_DESTDIR)/US_export_policy.jar		\
 	    $(POLICY_DESTDIR)/local_policy.jar
 	$(CP) $^ $(POLICY_DESTDIR)
+
+install-limited: install-limited-jars install-module-files
 ifndef OPENJDK
 	$(release-warning)
 endif
 
-install-unlimited: \
+install-unlimited-jars: \
 	    $(INSTALL_POLICYDIR)/unlimited/US_export_policy.jar	\
-	    $(INSTALL_POLICYDIR)/unlimited/local_policy.jar
+	    $(INSTALL_POLICYDIR)/unlimited/local_policy.jar 
 	$(MKDIR) -p $(POLICY_DESTDIR)
 	$(RM) \
 	    $(POLICY_DESTDIR)/US_export_policy.jar		\
 	    $(POLICY_DESTDIR)/local_policy.jar
 	$(CP) $^ $(POLICY_DESTDIR)
+
+install-unlimited: install-unlimited-jars install-module-files
 ifndef OPENJDK
 	$(release-warning)
 endif
 
 ifndef OPENJDK
-install-prebuilt:
+install-prebuilt-jars:
 	@$(ECHO) "\n>>>Installing prebuilt JCE framework..."
 	$(RM) $(JAR_DESTFILE) \
 	    $(POLICY_DESTDIR)/US_export_policy.jar \
@@ -460,8 +465,16 @@ install-prebuilt:
 	    $(PREBUILT_DIR)/jce/US_export_policy.jar \
 	    $(PREBUILT_DIR)/jce/local_policy.jar \
 	    $(POLICY_DESTDIR)
+
+install-prebuilt: install-prebuilt-jars install-module-files
 endif
 
+install-module-files: \
+	   $(POLICY_DESTDIR)/US_export_policy.jar \
+	   $(POLICY_DESTDIR)/local_policy.jar
+
+$(POLICY_DESTDIR)/%.jar :
+	$(install-module-file)
 
 # =====================================================
 # Support routines.

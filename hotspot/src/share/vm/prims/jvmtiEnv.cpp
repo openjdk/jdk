@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,15 @@
  // FIXLATER: hook into JvmtiTrace
 #define TraceJVMTICalls false
 
-JvmtiEnv::JvmtiEnv() : JvmtiEnvBase() {
+JvmtiEnv::JvmtiEnv(jint version) : JvmtiEnvBase(version) {
 }
 
 JvmtiEnv::~JvmtiEnv() {
 }
 
 JvmtiEnv*
-JvmtiEnv::create_a_jvmti() {
-  return new JvmtiEnv();
+JvmtiEnv::create_a_jvmti(jint version) {
+  return new JvmtiEnv(version);
 }
 
 // VM operation class to copy jni function table at safepoint.
@@ -133,7 +133,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     if (thread_oop == NULL) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
-    if (!thread_oop->is_a(SystemDictionary::thread_klass())) {
+    if (!thread_oop->is_a(SystemDictionary::Thread_klass())) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
     JavaThread* java_thread = java_lang_Thread::thread(thread_oop);
@@ -199,7 +199,7 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
     if (k_mirror == NULL) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
-    if (!k_mirror->is_a(SystemDictionary::class_klass())) {
+    if (!k_mirror->is_a(SystemDictionary::Class_klass())) {
       return JVMTI_ERROR_INVALID_CLASS;
     }
 
@@ -266,7 +266,7 @@ JvmtiEnv::GetObjectSize(jobject object, jlong* size_ptr) {
   oop mirror = JNIHandles::resolve_external_guard(object);
   NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
 
-  if (mirror->klass() == SystemDictionary::class_klass()) {
+  if (mirror->klass() == SystemDictionary::Class_klass()) {
     if (!java_lang_Class::is_primitive(mirror)) {
         mirror = java_lang_Class::as_klassOop(mirror);
         assert(mirror != NULL, "class for non-primitive mirror must exist");
@@ -327,7 +327,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
     if (thread_oop == NULL) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
-    if (!thread_oop->is_a(SystemDictionary::thread_klass())) {
+    if (!thread_oop->is_a(SystemDictionary::Thread_klass())) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
     java_thread = java_lang_Thread::thread(thread_oop);
@@ -411,8 +411,15 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
   if (phase == JVMTI_PHASE_ONLOAD) {
     Arguments::append_sysclasspath(segment);
     return JVMTI_ERROR_NONE;
-  } else {
-    assert(phase == JVMTI_PHASE_LIVE, "sanity check");
+  } else if (use_version_1_0_semantics()) {
+    // This JvmtiEnv requested version 1.0 semantics and this function
+    // is only allowed in the ONLOAD phase in version 1.0 so we need to
+    // return an error here.
+    return JVMTI_ERROR_WRONG_PHASE;
+  } else if (phase == JVMTI_PHASE_LIVE) {
+    // The phase is checked by the wrapper that called this function,
+    // but this thread could be racing with the thread that is
+    // terminating the VM so we check one more time.
 
     // create the zip entry
     ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment);
@@ -433,6 +440,8 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     }
     ClassLoader::add_to_list(zip_entry);
     return JVMTI_ERROR_NONE;
+  } else {
+    return JVMTI_ERROR_WRONG_PHASE;
   }
 
 } /* end AddToBootstrapClassLoaderSearch */
@@ -451,10 +460,11 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
       }
     }
     return JVMTI_ERROR_NONE;
-  } else {
+  } else if (phase == JVMTI_PHASE_LIVE) {
+    // The phase is checked by the wrapper that called this function,
+    // but this thread could be racing with the thread that is
+    // terminating the VM so we check one more time.
     HandleMark hm;
-
-    assert(phase == JVMTI_PHASE_LIVE, "sanity check");
 
     // create the zip entry (which will open the zip file and hence
     // check that the segment is indeed a zip file).
@@ -504,6 +514,8 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
     }
 
     return JVMTI_ERROR_NONE;
+  } else {
+    return JVMTI_ERROR_WRONG_PHASE;
   }
 } /* end AddToSystemClassLoaderSearch */
 
@@ -580,7 +592,6 @@ JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
     break;
   case JVMTI_VERBOSE_GC:
     PrintGC = value != 0;
-    TraceClassUnloading = value != 0;
     break;
   case JVMTI_VERBOSE_JNI:
     PrintJNIResolving = value != 0;
@@ -620,7 +631,7 @@ JvmtiEnv::GetThreadState(jthread thread, jint* thread_state_ptr) {
     thread_oop = JNIHandles::resolve_external_guard(thread);
   }
 
-  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::thread_klass())) {
+  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
     return JVMTI_ERROR_INVALID_THREAD;
   }
 
@@ -858,7 +869,7 @@ JvmtiEnv::StopThread(JavaThread* java_thread, jobject exception) {
 jvmtiError
 JvmtiEnv::InterruptThread(jthread thread) {
   oop thread_oop = JNIHandles::resolve_external_guard(thread);
-  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::thread_klass()))
+  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass()))
     return JVMTI_ERROR_INVALID_THREAD;
 
   JavaThread* current_thread  = JavaThread::current();
@@ -895,7 +906,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
   } else {
     thread_oop = JNIHandles::resolve_external_guard(thread);
   }
-  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::thread_klass()))
+  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass()))
     return JVMTI_ERROR_INVALID_THREAD;
 
   Handle thread_obj(current_thread, thread_oop);
@@ -1061,7 +1072,7 @@ JvmtiEnv::GetCurrentContendedMonitor(JavaThread* java_thread, jobject* monitor_p
 jvmtiError
 JvmtiEnv::RunAgentThread(jthread thread, jvmtiStartFunction proc, const void* arg, jint priority) {
   oop thread_oop = JNIHandles::resolve_external_guard(thread);
-  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::thread_klass())) {
+  if (thread_oop == NULL || !thread_oop->is_a(SystemDictionary::Thread_klass())) {
     return JVMTI_ERROR_INVALID_THREAD;
   }
   if (priority < JVMTI_THREAD_MIN_PRIORITY || priority > JVMTI_THREAD_MAX_PRIORITY) {
@@ -2863,6 +2874,14 @@ JvmtiEnv::IsMethodSynthetic(methodOop method_oop, jboolean* is_synthetic_ptr) {
 // is_obsolete_ptr - pre-checked for NULL
 jvmtiError
 JvmtiEnv::IsMethodObsolete(methodOop method_oop, jboolean* is_obsolete_ptr) {
+  if (use_version_1_0_semantics() &&
+      get_capabilities()->can_redefine_classes == 0) {
+    // This JvmtiEnv requested version 1.0 semantics and this function
+    // requires the can_redefine_classes capability in version 1.0 so
+    // we need to return an error here.
+    return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
+  }
+
   if (method_oop == NULL || method_oop->is_obsolete()) {
     *is_obsolete_ptr = true;
   } else {

@@ -278,6 +278,17 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     _len--;
   }
 
+  // inserts the given element before the element at index i
+  void insert_before(const int idx, const E& elem) {
+    check_nesting();
+    if (_len == _max) grow(_len);
+    for (int j = _len - 1; j >= idx; j--) {
+      _data[j + 1] = _data[j];
+    }
+    _len++;
+    _data[idx] = elem;
+  }
+
   void appendAll(const GrowableArray<E>* l) {
     for (int i = 0; i < l->_len; i++) {
       raw_at_put_grow(_len, l->_data[i], 0);

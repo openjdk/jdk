@@ -192,6 +192,18 @@ public class Connect {
             testCCE(new Callable<Void>() {
                 public Void call() throws IOException {
                     cceChannel.finishConnect(); return null; } });
+
+            /* TEST 8: IOException: Connection refused. Exercises handleSocketError.
+             *         Assumption: no sctp socket listening on 3456 */
+            SocketAddress addr = new InetSocketAddress("localhost", 3456);
+            channel = SctpChannel.open();
+            try {
+                channel.connect(addr);
+                fail("should have thrown ConnectException: Connection refused");
+            } catch (IOException ioe) {
+                pass();
+            }
+
         } catch (IOException ioe) {
             unexpected(ioe);
         } finally {

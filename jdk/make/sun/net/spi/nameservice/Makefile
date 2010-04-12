@@ -27,6 +27,8 @@ BUILDDIR = ../../../..
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = dns 
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

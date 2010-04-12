@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2009-2010 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -431,6 +431,12 @@ java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
 
 # jdk_management
 
+# Fails on linux: KO: StringMonitor notification missed or not emitted
+javax/management/monitor/NonComparableAttributeValueTest.java	generic-all
+
+# Port conflict? Fails with communication error
+sun/management/jmxremote/bootstrap/PasswordFilePermissionTest.sh generic-all
+
 # Fails on Windows 2000, Test failed for iiop java.lang.NullPointerException
 #  at org.omg.stub.javax.management.remote.rmi._RMIConnectionImpl_Tie._invoke(Unknown Source)
 #  at com.sun.corba.se.impl.protocol.CorbaServerRequestDispatcherImpl.dispatchToServant(CorbaServerRequestDispatcherImpl.java:653)
@@ -571,6 +577,7 @@ javax/print/attribute/ChromaticityValues.java			generic-all
 javax/print/attribute/GetCopiesSupported.java			generic-all
 javax/print/attribute/SidesPageRangesTest.java			generic-all
 javax/print/attribute/SupportedPrintableAreas.java		generic-all
+javax/print/attribute/AttributeTest.java                        generic-all
 
 # Only print test left, excluding just because all print tests have been
 javax/print/attribute/MediaMappingsTest.java 			generic-all
@@ -581,6 +588,9 @@ javax/print/attribute/MediaMappingsTest.java 			generic-all
 
 # Suspect many of these tests auffer from using fixed ports, no concrete 
 #   evidence.
+
+# Times out on Windows X64
+sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java generic-all
 
 # Dies on Solaris 10 sparc and sparcv9, Linux  -ea -esa with 
 #   Interrupted or IO exception, maybe writing to non-unique named file?
@@ -691,7 +701,6 @@ java/net/URLConnection/TimeoutTest.java 		 	generic-all
 java/net/URLConnection/ZeroContentLength.java		 	generic-all
 
 # Solaris 11 i586 fails with samevm, not sure why
-java/net/Authenticator/B4769350.java				generic-all
 java/net/HttpURLConnection/HttpResponseCode.java		generic-all
 java/net/ResponseCache/B6181108.java				generic-all
 java/net/ResponseCache/ResponseCacheTest.java			generic-all
@@ -735,6 +744,13 @@ java/net/ProxySelector/B6737819.java				generic-all
 
 # Suspect many of these tests auffer from using fixed ports, no concrete 
 #   evidence.
+
+# Occasionally Failing with java.lang.AssertionError on Windows X64
+#  at sun.nio.ch.PendingIoCache.clearPendingIoMap(PendingIoCache.java:144)
+#java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java	windows-all
+
+# Some kind of sleep/wake problem on Windows X64
+java/nio/channels/Selector/Wakeup.java				windows-all
 
 # Fails with -ea -esa, Assertion error, but only on Solaris 10 machines?
 com/sun/nio/sctp/SctpChannel/Send.java				generic-all
@@ -931,6 +947,18 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 ############################################################################
 
 # jdk_security
+
+# Unknown problem, could be a jtreg -samevm issue?
+#  Error while cleaning up threads after test
+java/security/Security/SynchronizedAccess.java			generic-all
+
+# Failing on Solaris X64 (-d64 -server) with:
+#  GSSException: Failure unspecified at GSS-API level 
+#    (Mechanism level: Specified version of key is not available (44))
+sun/security/krb5/auto/BasicKrb5Test.java			generic-all
+
+# Solaris X86 failures, readjar.jks: No such file or directory
+sun/security/tools/keytool/readjar.sh				generic-all
 
 # Fails with -ea -esa, but only on Solaris sparc? Suspect it is timing out
 sun/security/tools/keytool/standard.sh				generic-all
@@ -1255,6 +1283,13 @@ tools/jar/index/MetaInf.java				 	windows-all
 ############################################################################
 
 # jdk_util
+
+# Fails with assertion error on windows
+#   11 separate stacktraces created... file reuse problem?
+java/util/zip/ZipFile/ReadLongZipFileName.java			generic-all
+
+# Recent failure on all platforms
+sun/util/resources/TimeZone/Bug6317929.java			generic-all
 
 # Fails with -ea -esa on all platforms with Assertion error
 java/util/ResourceBundle/Test4300693.java			generic-all

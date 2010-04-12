@@ -2020,6 +2020,10 @@ public class Attr extends JCTree.Visitor {
                               tree.pos(), site, sym.name, true);
                 }
             }
+        } else if (sym.kind != ERR && (sym.flags() & STATIC) != 0 && sym.name != names._class) {
+            // If the qualified item is not a type and the selected item is static, report
+            // a warning. Make allowance for the class of an array type e.g. Object[].class)
+            chk.warnStatic(tree, "static.not.qualified.by.type", Kinds.kindName(sym.kind), sym.owner);
         }
 
         // If we are selecting an instance member via a `super', ...
@@ -2636,6 +2640,7 @@ public class Attr extends JCTree.Visitor {
                 if (tree.bounds.tail.nonEmpty()) {
                     log.error(tree.bounds.tail.head.pos(),
                               "type.var.may.not.be.followed.by.other.bounds");
+                    log.unrecoverableError = true;
                     tree.bounds = List.of(tree.bounds.head);
                     a.bound = bs.head;
                 }

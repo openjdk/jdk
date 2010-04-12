@@ -38,7 +38,7 @@ mylib="`dirname $mydir`"/lib
 # dependent jar files for additional dependencies.
 
 if [ "$LANGTOOLS_USE_BOOTCLASSPATH" != "no" ]; then
-   cp=`unzip -c $mylib/#PROGRAM#.jar META-INF/MANIFEST.MF |
+   cp=`unzip -c "$mylib/#PROGRAM#.jar" META-INF/MANIFEST.MF |
        grep "Class-Path:" |
        sed -e 's|Class-Path: *||' -e 's|\([a-z]*\.jar\) *|'"$mylib"'/\1:|g'`
    bcp="$mylib/#PROGRAM#.jar":$cp 

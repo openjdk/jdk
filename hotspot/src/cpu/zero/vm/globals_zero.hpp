@@ -1,6 +1,6 @@
 /*
  * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
- * Copyright 2007, 2008, 2009 Red Hat, Inc.
+ * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,8 @@
  *
  */
 
-//
 // Set the default values for platform dependent flags used by the
 // runtime system.  See globals.hpp for details of what they do.
-//
 
 define_pd_global(bool,  ConvertSleepToYield,  true);
 define_pd_global(bool,  ShareVtableStubs,     true);
@@ -37,19 +35,12 @@ define_pd_global(bool,  ImplicitNullChecks,   true);
 define_pd_global(bool,  UncommonNullCast,     true);
 
 define_pd_global(intx,  CodeEntryAlignment,   32);
-define_pd_global(uintx, TLABSize,             0);
-#ifdef _LP64
-define_pd_global(uintx, NewSize,              ScaleForWordSize(2048 * K));
-#else
-define_pd_global(uintx, NewSize,              ScaleForWordSize(1024 * K));
-#endif // _LP64
 define_pd_global(intx,  InlineFrequencyCount, 100);
-define_pd_global(intx,  InlineSmallCode,      1000);
 define_pd_global(intx,  PreInflateSpin,       10);
 
 define_pd_global(intx,  StackYellowPages,     2);
 define_pd_global(intx,  StackRedPages,        1);
-define_pd_global(intx,  StackShadowPages,     3 LP64_ONLY(+3) DEBUG_ONLY(+3));
+define_pd_global(intx,  StackShadowPages,     5 LP64_ONLY(+1) DEBUG_ONLY(+3));
 
 define_pd_global(bool,  RewriteBytecodes,     true);
 define_pd_global(bool,  RewriteFrequentPairs, true);

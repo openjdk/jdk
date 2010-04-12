@@ -113,6 +113,7 @@ public class Flags {
     public static final int ENUM         = 1<<14;
 
     public static final int StandardFlags = 0x0fff;
+    public static final int ModifierFlags = StandardFlags & ~INTERFACE;
 
     // Because the following access flags are overloaded with other
     // bit positions, we translate them when reading and writing class

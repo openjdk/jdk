@@ -31,7 +31,7 @@ package org.omg.CORBA;
  * indicate whether policies should replace the
  * existing policies of an <code>Object</code> or be added to them.
  * <P>
- * The method {@link omg.org.CORBA.Object._set_policy_override} takes
+ * The method {@link org.omg.CORBA.Object#_set_policy_override} takes
  * either <code>SetOverrideType.SET_OVERRIDE</code> or
  * <code>SetOverrideType.ADD_OVERRIDE</code> as its second argument.
  * The method <code>_set_policy_override</code>

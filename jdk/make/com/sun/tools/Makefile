@@ -35,6 +35,8 @@ include $(BUILDDIR)/common/Defs.gmk
 AUTO_FILES_JAVA_DIRS = com/sun/tools/extcheck
 
 SUBDIRS = attach
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build:
 	$(SUBDIRS-loop)
 clean clobber::

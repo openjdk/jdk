@@ -49,7 +49,7 @@ object_type ClassifyObjectClosure::classify_object(oop obj, bool count) {
 
   Klass* k = obj->blueprint();
 
-  if (k->as_klassOop() == SystemDictionary::object_klass()) {
+  if (k->as_klassOop() == SystemDictionary::Object_klass()) {
     tty->print_cr("Found the class!");
   }
 

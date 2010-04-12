@@ -40,6 +40,7 @@ endif
 
 SUBDIRS_MAKEFLAGS += DEMO_IS_APPLET=true
 
+include $(BUILDDIR)/common/Subdirs.gmk
 all build clean clobber::
 	$(SUBDIRS-loop)
 

@@ -97,6 +97,9 @@ class ParScanThreadState {
   int _pushes, _pops, _steals, _steal_attempts, _term_attempts;
   int _overflow_pushes, _overflow_refills, _overflow_refill_objs;
 
+  // Stats for promotion failure
+  size_t _promotion_failure_size;
+
   // Timing numbers.
   double _start;
   double _start_strong_roots;
@@ -168,6 +171,15 @@ class ParScanThreadState {
 
   // Undo the most recent allocation ("obj", of "word_sz").
   void undo_alloc_in_to_space(HeapWord* obj, size_t word_sz);
+
+  // Promotion failure stats
+  size_t promotion_failure_size() { return promotion_failure_size(); }
+  void log_promotion_failure(size_t sz) {
+    if (_promotion_failure_size == 0) {
+      _promotion_failure_size = sz;
+    }
+  }
+  void print_and_clear_promotion_failure_size();
 
   int pushes() { return _pushes; }
   int pops()   { return _pops; }

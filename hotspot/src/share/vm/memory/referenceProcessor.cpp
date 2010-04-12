@@ -71,7 +71,7 @@ void ReferenceProcessor::init_statics() {
   assert(_sentinelRef == NULL, "should be initialized precisely once");
   EXCEPTION_MARK;
   _sentinelRef = instanceKlass::cast(
-                    SystemDictionary::reference_klass())->
+                    SystemDictionary::Reference_klass())->
                       allocate_permanent_instance(THREAD);
 
   // Initialize the master soft ref clock.
@@ -299,8 +299,8 @@ void ReferenceProcessor::process_phaseJNI(BoolObjectClosure* is_alive,
 
 
 template <class T>
-static bool enqueue_discovered_ref_helper(ReferenceProcessor* ref,
-                                          AbstractRefProcTaskExecutor* task_executor) {
+bool enqueue_discovered_ref_helper(ReferenceProcessor* ref,
+                                   AbstractRefProcTaskExecutor* task_executor) {
 
   // Remember old value of pending references list
   T* pending_list_addr = (T*)java_lang_ref_Reference::pending_list_addr();
@@ -1227,13 +1227,16 @@ void ReferenceProcessor::preclean_discovered_references(
   BoolObjectClosure* is_alive,
   OopClosure* keep_alive,
   VoidClosure* complete_gc,
-  YieldClosure* yield) {
+  YieldClosure* yield,
+  bool should_unload_classes) {
 
   NOT_PRODUCT(verify_ok_to_handle_reflists());
 
 #ifdef ASSERT
   bool must_remember_klasses = ClassUnloading && !UseConcMarkSweepGC ||
-                               CMSClassUnloadingEnabled && UseConcMarkSweepGC;
+                               CMSClassUnloadingEnabled && UseConcMarkSweepGC ||
+                               ExplicitGCInvokesConcurrentAndUnloadsClasses &&
+                                 UseConcMarkSweepGC && should_unload_classes;
   RememberKlassesChecker mx(must_remember_klasses);
 #endif
   // Soft references

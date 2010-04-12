@@ -52,11 +52,35 @@ void AdaptiveWeightedAverage::sample(float new_sample) {
   _last_sample = new_sample;
 }
 
+void AdaptiveWeightedAverage::print() const {
+  print_on(tty);
+}
+
+void AdaptiveWeightedAverage::print_on(outputStream* st) const {
+  guarantee(false, "NYI");
+}
+
+void AdaptivePaddedAverage::print() const {
+  print_on(tty);
+}
+
+void AdaptivePaddedAverage::print_on(outputStream* st) const {
+  guarantee(false, "NYI");
+}
+
+void AdaptivePaddedNoZeroDevAverage::print() const {
+  print_on(tty);
+}
+
+void AdaptivePaddedNoZeroDevAverage::print_on(outputStream* st) const {
+  guarantee(false, "NYI");
+}
+
 void AdaptivePaddedAverage::sample(float new_sample) {
-  // Compute our parent classes sample information
+  // Compute new adaptive weighted average based on new sample.
   AdaptiveWeightedAverage::sample(new_sample);
 
-  // Now compute the deviation and the new padded sample
+  // Now update the deviation and the padded average.
   float new_avg = average();
   float new_dev = compute_adaptive_average(fabsd(new_sample - new_avg),
                                            deviation());

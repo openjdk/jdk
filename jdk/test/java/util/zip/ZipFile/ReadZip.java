@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4241361 4842702 4985614 6646605 5032358
+   @bug 4241361 4842702 4985614 6646605 5032358 6923692
    @summary Make sure we can read a zip file.
  */
 
@@ -59,7 +59,7 @@ public class ReadZip {
         FileInputStream fis = new FileInputStream(
                                    new File(System.getProperty("test.src", "."),
                                             "input.zip"));
-        File newZip = new File(System.getProperty("test.src", "."),
+        File newZip = new File(System.getProperty("test.dir", "."),
                                "input2.zip");
         FileOutputStream fos = new FileOutputStream(newZip);
 

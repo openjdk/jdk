@@ -202,12 +202,11 @@ void klassKlass::oop_print_on(oop obj, outputStream* st) {
   Klass::oop_print_on(obj, st);
 }
 
+#endif //PRODUCT
 
 void klassKlass::oop_print_value_on(oop obj, outputStream* st) {
   Klass::oop_print_value_on(obj, st);
 }
-
-#endif
 
 const char* klassKlass::internal_name() const {
   return "{other class}";

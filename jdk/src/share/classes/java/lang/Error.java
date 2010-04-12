@@ -26,27 +26,31 @@
 package java.lang;
 
 /**
- * An <code>Error</code> is a subclass of <code>Throwable</code>
+ * An {@code Error} is a subclass of {@code Throwable}
  * that indicates serious problems that a reasonable application
  * should not try to catch. Most such errors are abnormal conditions.
- * The <code>ThreadDeath</code> error, though a "normal" condition,
- * is also a subclass of <code>Error</code> because most applications
+ * The {@code ThreadDeath} error, though a "normal" condition,
+ * is also a subclass of {@code Error} because most applications
  * should not try to catch it.
  * <p>
- * A method is not required to declare in its <code>throws</code>
- * clause any subclasses of <code>Error</code> that might be thrown
+ * A method is not required to declare in its {@code throws}
+ * clause any subclasses of {@code Error} that might be thrown
  * during the execution of the method but not caught, since these
  * errors are abnormal conditions that should never occur.
  *
+ * That is, {@code Error} and its subclasses are regarded as unchecked
+ * exceptions for the purposes of compile-time checking of exceptions.
+ *
  * @author  Frank Yellin
  * @see     java.lang.ThreadDeath
+ * @jls3 11.2 Compile-Time Checking of Exceptions
  * @since   JDK1.0
  */
 public class Error extends Throwable {
     static final long serialVersionUID = 4980196508277280342L;
 
     /**
-     * Constructs a new error with <code>null</code> as its detail message.
+     * Constructs a new error with {@code null} as its detail message.
      * The cause is not initialized, and may subsequently be initialized by a
      * call to {@link #initCause}.
      */
@@ -69,7 +73,7 @@ public class Error extends Throwable {
     /**
      * Constructs a new error with the specified detail message and
      * cause.  <p>Note that the detail message associated with
-     * <code>cause</code> is <i>not</i> automatically incorporated in
+     * {@code cause} is <i>not</i> automatically incorporated in
      * this error's detail message.
      *
      * @param  message the detail message (which is saved for later retrieval

@@ -43,7 +43,7 @@ import sun.swing.SwingUtilities2;
 
 /**
  * Provides the Synth L&F UI delegate for
- * {@link javax.swing.JSlider}.
+ * {@link JSlider}.
  *
  * @author Joshua Outwater
  * @since 1.7
@@ -65,7 +65,7 @@ public class SynthSliderUI extends BasicSliderUI
      * the slider has not changed sizes since being last layed out. If necessary
      * we recompute the layout.
      */
-    private Dimension lastSize = null;
+    private Dimension lastSize;
 
     private int trackHeight;
     private int trackBorder;
@@ -109,7 +109,7 @@ public class SynthSliderUI extends BasicSliderUI
      * Uninstalls default setting. This method is called when a
      * {@code LookAndFeel} is uninstalled.
      */
-    protected void uninstallDefaults() {
+    protected void uninstallDefaults(JSlider slider) {
         SynthContext context = getContext(slider, ENABLED);
         style.uninstallDefaults(context);
         context.dispose();
@@ -339,6 +339,7 @@ public class SynthSliderUI extends BasicSliderUI
      */
     @Override
     protected void calculateGeometry() {
+        calculateThumbSize();
         layout();
         calculateThumbLocation();
     }
@@ -349,10 +350,6 @@ public class SynthSliderUI extends BasicSliderUI
     protected void layout() {
         SynthContext context = getContext(slider);
         SynthGraphicsUtils synthGraphics = style.getGraphicsUtils(context);
-
-        // Set the thumb size.
-        Dimension size = getThumbSize();
-        thumbRect.setSize(size.width, size.height);
 
         // Get the insets for the track.
         Insets trackInsets = new Insets(0, 0, 0, 0);
@@ -557,39 +554,6 @@ public class SynthSliderUI extends BasicSliderUI
      * @inheritDoc
      */
     @Override
-    protected void calculateTickRect() {
-        if (slider.getOrientation() == JSlider.HORIZONTAL) {
-            tickRect.x = trackRect.x;
-            tickRect.y = trackRect.y + trackRect.height + 2 + getTickLength();
-            tickRect.width = trackRect.width;
-            tickRect.height = getTickLength();
-
-            if (!slider.getPaintTicks()) {
-                --tickRect.y;
-                tickRect.height = 0;
-            }
-        } else {
-            if (SynthLookAndFeel.isLeftToRight(slider)) {
-                tickRect.x = trackRect.x + trackRect.width;
-                tickRect.width = getTickLength();
-            } else {
-                tickRect.width = getTickLength();
-                tickRect.x = trackRect.x - tickRect.width;
-            }
-            tickRect.y = trackRect.y;
-            tickRect.height = trackRect.height;
-
-            if (!slider.getPaintTicks()) {
-                --tickRect.x;
-                tickRect.width = 0;
-            }
-        }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    @Override
     public void setThumbLocation(int x, int y) {
         super.setThumbLocation(x, y);
         // Value rect is tied to the thumb location.  We need to repaint when
@@ -788,7 +752,16 @@ public class SynthSliderUI extends BasicSliderUI
     }
 
     /**
-     * @inheritDoc
+     * Notifies this UI delegate to repaint the specified component.
+     * This method paints the component background, then calls
+     * the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * <p>In general, this method does not need to be overridden by subclasses.
+     * All Look and Feel rendering code should reside in the {@code paint} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
      */
     @Override
     public void update(Graphics g, JComponent c) {
@@ -802,7 +775,13 @@ public class SynthSliderUI extends BasicSliderUI
     }
 
     /**
-     * @inheritDoc
+     * Paints the specified component according to the Look and Feel.
+     * <p>This method is not used by Synth Look and Feel.
+     * Painting is handled by the {@link #paint(SynthContext,Graphics)} method.
+     *
+     * @param g the {@code Graphics} object used for painting
+     * @param c the component being painted
+     * @see #paint(SynthContext,Graphics)
      */
     @Override
     public void paint(Graphics g, JComponent c) {
@@ -815,7 +794,8 @@ public class SynthSliderUI extends BasicSliderUI
      * Paints the specified component.
      *
      * @param context context for the component being painted
-     * @param g {@code Graphics} object used for painting
+     * @param g the {@code Graphics} object used for painting
+     * @see #update(Graphics,JComponent)
      */
     protected void paint(SynthContext context, Graphics g) {
         recalculateIfInsetsChanged();
@@ -849,13 +829,17 @@ public class SynthSliderUI extends BasicSliderUI
                     valueRect.y, -1);
         }
 
-        SynthContext subcontext = getContext(slider, Region.SLIDER_TRACK);
-        paintTrack(subcontext, g, trackRect);
-        subcontext.dispose();
+        if (slider.getPaintTrack() && clip.intersects(trackRect)) {
+            SynthContext subcontext = getContext(slider, Region.SLIDER_TRACK);
+            paintTrack(subcontext, g, trackRect);
+            subcontext.dispose();
+        }
 
-        subcontext = getContext(slider, Region.SLIDER_THUMB);
-        paintThumb(subcontext, g, thumbRect);
-        subcontext.dispose();
+        if (clip.intersects(thumbRect)) {
+            SynthContext subcontext = getContext(slider, Region.SLIDER_THUMB);
+            paintThumb(subcontext, g, thumbRect);
+            subcontext.dispose();
+        }
 
         if (slider.getPaintTicks() && clip.intersects(tickRect)) {
             paintTicks(g);

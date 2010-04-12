@@ -31,6 +31,8 @@ BUILDDIR = ../..
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = jgss
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 
