@@ -624,6 +624,11 @@ public class IPAddressDNSIdentities {
     volatile static boolean serverReady = false;
 
     /*
+     * Is the connection ready to close?
+     */
+    volatile static boolean closeReady = false;
+
+    /*
      * Turn on SSL debugging?
      */
     static boolean debug = false;
@@ -670,11 +675,14 @@ public class IPAddressDNSIdentities {
             out.print("Testing\r\n");
             out.flush();
         } finally {
-             // close the socket
-             Thread.sleep(2000);
-             System.out.println("Server closing socket");
-             sslSocket.close();
-             serverReady = false;
+            // close the socket
+            while (!closeReady) {
+                Thread.sleep(50);
+            }
+
+            System.out.println("Server closing socket");
+            sslSocket.close();
+            serverReady = false;
         }
 
     }
@@ -716,7 +724,10 @@ public class IPAddressDNSIdentities {
             // no subject alternative names matching IP address 127.0.0.1 found
             // that's the expected exception, ignore it.
         } finally {
-            http.disconnect();
+            if (http != null) {
+                http.disconnect();
+            }
+            closeReady = true;
         }
     }
 
